@@ -1,0 +1,35 @@
+
+POST http://localhost:5100/events
+Content-Type: application/json
+
+{
+  "name": "Bitbash",
+  "startDay": "2026-01-24",
+  "endDay": "2026-01-25",
+  "salesStartDateTime": "2025-09-01T00:00:00",
+  "salesEndDateTime": "2026-01-23T00:00:00",
+  "ticketTypes": [
+    {
+      "name": "Conference",
+      "startDateTime": "2026-01-25T09:00:00",
+      "endDateTime": "2026-01-25T16:00:00",
+      "maxCapacity": 200
+    }
+  ]
+}
+
+###
+
+@ticketedEventId = f02fd7d4-7c12-a18a-a31d-e9448d62c433
+@ticketTypeId = 705e564e-be64-77a2-b552-2fcb19506385
+
+POST http://localhost:5100/registrations
+Content-Type: application/json
+
+{
+  "email": "a.molenkamp@gmail.com",
+  "ticketedEventId": "{{ticketedEventId}}",
+  "ticketTypes": [
+    "{{ticketTypeId}}"
+  ]
+}
