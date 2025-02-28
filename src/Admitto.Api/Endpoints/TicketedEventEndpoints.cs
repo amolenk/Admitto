@@ -9,17 +9,16 @@ public static class TicketedEventEndpoints
     {
         var group = app.MapGroup("/events").WithTags("Events");
 
-        // group.MapPost("/", CreateEvent)
-        //     .WithName(nameof(CreateEvent))
-        //     .Produces(StatusCodes.Status201Created)
-        //     .ProducesValidationProblem();
+        group.MapPost("/", CreateEvent)
+            .WithName(nameof(CreateEvent))
+            .Produces(StatusCodes.Status201Created)
+            .ProducesValidationProblem();
     }
 
     private static async Task<Results<Created<CreateTicketedEventResult>, ValidationProblem>> CreateEvent(
         CreateTicketedEventCommand command, CreateTicketedEventHandler handler)
     {
-        var result = await handler.Handle(command, CancellationToken.None);
-//        var result = await mediator.Send(command);
+        var result = await handler.HandleAsync(command, CancellationToken.None);
 
         return TypedResults.Created($"/events/{result.Id}", result);
     }

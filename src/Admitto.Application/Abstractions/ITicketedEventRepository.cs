@@ -1,11 +1,12 @@
-using Amolenk.Admitto.Application.Dtos;
 using Amolenk.Admitto.Domain.Entities;
 
 namespace Amolenk.Admitto.Application.Abstractions;
 
 public interface ITicketedEventRepository
 {
-    ValueTask<AggregateResult<TicketedEvent>?> GetByIdAsync(Guid ticketedEventId);
+    ValueTask<IAggregateWithEtag<TicketedEvent>?> FindByIdAsync(Guid ticketedEventId);
+
+    ValueTask<IAggregateWithEtag<TicketedEvent>> GetByIdAsync(Guid ticketedEventId);
 
     ValueTask SaveChangesAsync(
         TicketedEvent ticketedEvent,

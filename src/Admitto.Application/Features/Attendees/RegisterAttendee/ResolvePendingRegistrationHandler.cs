@@ -1,24 +1,28 @@
-using Amolenk.Admitto.Application.Dtos;
-using Amolenk.Admitto.Application.Exceptions;
-
 namespace Amolenk.Admitto.Application.Features.Attendees.RegisterAttendee;
 
 /// <summary>
-/// Confirm the pending registration for a ticketed event.
+/// Accept or reject the pending registration for a ticketed event.
 /// </summary>
 public class ResolvePendingRegistrationHandler(IAttendeeRepository attendeeRepository)
-    : IRequestHandler<FinalizeRegistrationCommand>
+    : ICommandHandler<ResolvePendingRegistrationCommand>
 {
-    public async Task Handle(FinalizeRegistrationCommand request, CancellationToken cancellationToken)
+    public async ValueTask HandleAsync(ResolvePendingRegistrationCommand command, CancellationToken cancellationToken)
     {
-        var attendeeResult = await attendeeRepository.GetByIdAsync(request.AttendeeId);
-        if (attendeeResult is null) throw new AttendeeNotFoundException();
+        var (attendee, etag) = await attendeeRepository.GetByIdAsync(command.AttendeeId);
 
-        attendeeResult.Aggregate.FinalizeRegistration(request.RegistrationId);
-
+        // Update the pending registration.
+        if (command.TicketsReserved)
+        {
+            attendee.AcceptPendingRegistration(command.RegistrationId);
+        }
+        else
+        {
+            attendee.RejectPendingReservation(command.RegistrationId);
+        }
+        
         await attendeeRepository.SaveChangesAsync(
-            attendeeResult.Aggregate,
-            attendeeResult.Etag,
-            attendeeResult.Aggregate.GetDomainEvents().Select(OutboxMessage.FromDomainEvent));
+            attendee,
+            etag,
+            attendee.GetDomainEvents().Select(OutboxMessage.FromDomainEvent));
     }
 }

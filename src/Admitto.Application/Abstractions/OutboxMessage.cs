@@ -1,26 +1,36 @@
+using System.Text.Json.Serialization;
 using Amolenk.Admitto.Domain.DomainEvents;
 
-namespace Amolenk.Admitto.Application.Dtos;
+namespace Amolenk.Admitto.Application.Abstractions;
 
 public class OutboxMessage
 {
+    [JsonConstructor]
+    private OutboxMessage(Guid id, object body, string discriminator)
+    {
+        Id = id;
+        Body = body;
+        Discriminator = discriminator;
+    }
+
+    [JsonPropertyName("id")]
+    public Guid Id { get; private set; }
+
+    [JsonPropertyName("body")]
+    public object Body { get; private set; }
+
+    [JsonPropertyName("$type")] 
+    public string Discriminator { get; private set; }
+
     public static OutboxMessage FromDomainEvent(IDomainEvent domainEvent)
     {
-        return new DomainEventOutboxMessage(domainEvent);
+        return new OutboxMessage(domainEvent.DomainEventId, domainEvent, GetDiscriminator(domainEvent.GetType()));
     }
 
     public static OutboxMessage FromCommand(ICommand command)
     {
-        return new CommandOutboxMessage(command);
+        return new OutboxMessage(command.CommandId, command, GetDiscriminator(command.GetType()));
     }
-}
-
-public class CommandOutboxMessage(ICommand command) : OutboxMessage
-{
-    public ICommand Command { get; private set; } = command;
-}
-
-public class DomainEventOutboxMessage(IDomainEvent domainEvent) : OutboxMessage
-{
-    public IDomainEvent DomainEvent { get; private set; } = domainEvent;
+    
+    private static string GetDiscriminator(Type type) => $"{type.FullName!}, {type.Assembly.GetName().Name}";
 }

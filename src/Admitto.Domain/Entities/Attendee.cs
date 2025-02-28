@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 using Amolenk.Admitto.Domain.DomainEvents;
 using Amolenk.Admitto.Domain.Utilities;
 using Amolenk.Admitto.Domain.ValueObjects;
@@ -13,14 +14,15 @@ public class Attendee : AggregateRoot
 {
     private readonly List<AttendeeRegistration> _registrations;
 
-    private Attendee(Guid id, string email) : base(id)
+    [JsonConstructor]
+    private Attendee(Guid id, string email, IReadOnlyCollection<AttendeeRegistration> registrations) : base(id)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(email);
         
         Email = email;
-        _registrations = [];
+        _registrations = registrations.ToList();
     }
-    
+
     public string Email { get; private set; }
     public IReadOnlyCollection<AttendeeRegistration> Registrations => _registrations.AsReadOnly();
     
@@ -31,7 +33,7 @@ public class Attendee : AggregateRoot
     
     public static Attendee Create(string email)
     {
-        return new Attendee(GetId(email), email);
+        return new Attendee(GetId(email), email, []);
     }
 
     public AttendeeRegistration RegisterForEvent(Guid ticketedEventId, TicketOrder ticketOrder)
@@ -45,18 +47,18 @@ public class Attendee : AggregateRoot
         return registration;
     }
 
-    public void FinalizeRegistration(Guid registrationId)
+    public void AcceptPendingRegistration(Guid registrationId)
     {
         var registration = _registrations.FirstOrDefault(r => r.Id == registrationId);
         if (registration is null)
             throw new InvalidOperationException($"Registration '{registrationId}' does not exist.");
 
-        registration.Finalize();
+        registration.Accept();
         
-        AddDomainEvent(new RegistrationFinalizedDomainEvent(Id, registrationId));
+        AddDomainEvent(new RegistrationAcceptedDomainEvent(Id, registrationId));
     }
 
-    public void RejectReservation(Guid registrationId)
+    public void RejectPendingReservation(Guid registrationId)
     {
         var registration = _registrations.FirstOrDefault(r => r.Id == registrationId);
         if (registration is null)

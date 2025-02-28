@@ -1,5 +1,6 @@
 using System.Reflection;
-using Amolenk.Admitto.Application.Behaviors;
+using Amolenk.Admitto.Application;
+using Amolenk.Admitto.Application.MessageOutbox;
 using FluentValidation;
 
 // ReSharper disable once CheckNamespace
@@ -9,11 +10,20 @@ public static class DependencyInjection
 {
     public static void AddApplicationServices(this IServiceCollection services)
     {
-        services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
+        services.AddTransient<MessageOutboxProcessor>();
 
-        services.AddMediatR(cfg => {
-            cfg.RegisterServicesFromAssembly(Assembly.GetExecutingAssembly());
-            cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(ValidationBehavior<,>));
-        });
+        services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
+        
+        // Register all command and domain event handlers
+        services.Scan(scan => scan
+            .FromAssemblyOf<ApplicationAssemblyLocator>()
+            // Command handlers
+            .AddClasses(classes => classes.AssignableTo<ICommandHandler>())
+            .AsSelfWithInterfaces()
+            .WithScopedLifetime()
+            // Domain event handlers
+            .AddClasses(classes => classes.AssignableTo<IDomainEventHandler>())
+            .AsSelfWithInterfaces()
+            .WithScopedLifetime());
     }
 }

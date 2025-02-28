@@ -13,6 +13,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Admitto.Api\Admitto.Api.csproj" />
+        <ProjectReference Include="..\Admitto.OutboxProcessor\Admitto.OutboxProcessor.csproj" />
     </ItemGroup>
 
     <ItemGroup>

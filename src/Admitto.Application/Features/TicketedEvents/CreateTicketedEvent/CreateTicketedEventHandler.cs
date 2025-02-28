@@ -1,4 +1,3 @@
-using Amolenk.Admitto.Application.Dtos;
 using Amolenk.Admitto.Domain.Entities;
 
 namespace Amolenk.Admitto.Application.Features.TicketedEvents.CreateTicketedEvent;
@@ -6,10 +5,10 @@ namespace Amolenk.Admitto.Application.Features.TicketedEvents.CreateTicketedEven
 /// <summary>
 /// Create a new ticketed event.
 /// </summary>
-public class CreateTicketedEventHandler(ITicketedEventRepository ticketedEventRepository)
-    //: IRequestHandler<CreateTicketedEventCommand, CreateTicketedEventResult>
+public class CreateTicketedEventHandler(ITicketedEventRepository ticketedEventRepository) 
+    : ICommandHandler<CreateTicketedEventCommand, CreateTicketedEventResult>
 {
-    public async Task<CreateTicketedEventResult> Handle(CreateTicketedEventCommand request, CancellationToken cancellationToken)
+    public async ValueTask<CreateTicketedEventResult> HandleAsync(CreateTicketedEventCommand request, CancellationToken cancellationToken)
     {
         var ticketedEvent = TicketedEvent.Create(request.Name, request.StartDay, request.EndDay,
             request.SalesStartDateTime, request.SalesEndDateTime);
