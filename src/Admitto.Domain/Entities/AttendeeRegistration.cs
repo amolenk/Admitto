@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Domain.Entities;
@@ -7,6 +8,7 @@ namespace Amolenk.Admitto.Domain.Entities;
 /// </summary>
 public class AttendeeRegistration : Entity
 {
+    [JsonConstructor]    
     private AttendeeRegistration(Guid id, Guid ticketedEventId, TicketOrder ticketOrder,
         AttendeeRegistrationStatus status) : base(id)
     {
@@ -25,9 +27,9 @@ public class AttendeeRegistration : Entity
             AttendeeRegistrationStatus.Pending);
     }
 
-    public void Finalize()
+    public void Accept()
     {
         // TODO other edge cases?
-        Status = AttendeeRegistrationStatus.Finalized;
+        Status = AttendeeRegistrationStatus.Accepted;
     }
 }

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 using Amolenk.Admitto.Domain.Utilities;
 using Amolenk.Admitto.Domain.ValueObjects;
 
@@ -11,15 +12,17 @@ public class TicketedEvent : AggregateRoot
 {
     private readonly List<TicketType> _ticketTypes;
 
+    [JsonConstructor]
     private TicketedEvent(Guid id, string name, DateOnly startDay, DateOnly endDay,
-        DateTime salesStartDateTime, DateTime salesEndDateTime) : base(id)
+        DateTime salesStartDateTime, DateTime salesEndDateTime, IReadOnlyCollection<TicketType> ticketTypes)
+        : base(id)
     {
         Name = name;
         StartDay = startDay;
         EndDay = endDay;
         SalesStartDateTime = salesStartDateTime;
         SalesEndDateTime = salesEndDateTime;
-        _ticketTypes = [];
+        _ticketTypes = ticketTypes.ToList();
     }
 
     public string Name { get; private set; }
@@ -44,7 +47,7 @@ public class TicketedEvent : AggregateRoot
         if (salesEndDateTime > startDay.ToDateTime(TimeOnly.MinValue))
             throw new ValidationException("Sales must close before the event starts.");
         
-        return new TicketedEvent(GetId(name), name, startDay, endDay, salesStartDateTime, salesEndDateTime);
+        return new TicketedEvent(GetId(name), name, startDay, endDay, salesStartDateTime, salesEndDateTime, []);
     }
     
     public void AddTicketType(TicketType ticketType)

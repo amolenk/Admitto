@@ -18,9 +18,9 @@ public static class AttendeeRegistrationEndpoints
     }
 
     private static async Task<Results<Created, ValidationProblem>> RegisterAttendee(
-        RegisterAttendeeCommand command, ISender mediator)
+        RegisterAttendeeCommand command, RegisterAttendeeHandler handler)
     {
-        await mediator.Send(command);
+        await handler.HandleAsync(command, CancellationToken.None);
 
         return TypedResults.Created();
     }

@@ -3,6 +3,10 @@ var builder = DistributedApplication.CreateBuilder(args);
 
 var cosmos = builder.AddConnectionString("cosmos-db");
 
+
+// builder.AddAzureCosmosDB("cosmos-db");
+
+
 // TODO Aspire 9.1 provides built-in support for the preview version of the Azure Cosmos DB emulator
 // builder.AddAzureCosmosDB("cosmos-db")
 //     .RunAsEmulator(opt => _ = opt
@@ -24,6 +28,10 @@ var cosmos = builder.AddConnectionString("cosmos-db");
 //             .WithLifetime(ContainerLifetime.Persistent)
 //      );
 
-var apiService = builder.AddProject<Projects.Admitto_Api>("api");
+var apiService = builder.AddProject<Projects.Admitto_Api>("api")
+    .WithReference(cosmos);
+
+var outboxProcessor = builder.AddProject<Projects.Admitto_OutboxProcessor>("outbox-processor")
+    .WithReference(cosmos);
 
 builder.Build().Run();

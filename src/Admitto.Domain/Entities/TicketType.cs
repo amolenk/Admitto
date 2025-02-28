@@ -1,10 +1,12 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 using Amolenk.Admitto.Domain.Utilities;
 
 namespace Amolenk.Admitto.Domain.Entities;
 
 public class TicketType : Entity
 {
+    [JsonConstructor]
     private TicketType(Guid id, string sessionName, DateTime sessionStartDateTime, DateTime sessionEndDateTime, 
         int maxCapacity) : base(id)
     {

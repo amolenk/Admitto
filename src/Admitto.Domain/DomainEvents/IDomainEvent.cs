@@ -1,8 +1,6 @@
-using MediatR;
-
 namespace Amolenk.Admitto.Domain.DomainEvents;
 
-public interface IDomainEvent : INotification
+public interface IDomainEvent
 {
     Guid DomainEventId { get; }
     
