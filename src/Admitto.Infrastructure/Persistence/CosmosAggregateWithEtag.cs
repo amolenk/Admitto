@@ -9,7 +9,7 @@ public class CosmosAggregateWithEtag<TAggregate>(TAggregate aggregate, string et
     public TAggregate Aggregate { get; } = aggregate;
     public string ETag { get; } = etag;
 
-    public void Deconstruct(out TAggregate? aggregate, out string? etag)
+    public void Deconstruct(out TAggregate aggregate, out string? etag)
     {
         aggregate = Aggregate;
         etag = ETag;

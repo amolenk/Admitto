@@ -12,9 +12,14 @@ public class TicketedEvent : AggregateRoot
 {
     private readonly List<TicketType> _ticketTypes;
 
-    [JsonConstructor]
+    private TicketedEvent()
+    {
+        
+    }
+    
+    // [JsonConstructor]
     private TicketedEvent(Guid id, string name, DateOnly startDay, DateOnly endDay,
-        DateTime salesStartDateTime, DateTime salesEndDateTime, IReadOnlyCollection<TicketType> ticketTypes)
+        DateTime salesStartDateTime, DateTime salesEndDateTime)
         : base(id)
     {
         Name = name;
@@ -22,7 +27,7 @@ public class TicketedEvent : AggregateRoot
         EndDay = endDay;
         SalesStartDateTime = salesStartDateTime;
         SalesEndDateTime = salesEndDateTime;
-        _ticketTypes = ticketTypes.ToList();
+        _ticketTypes = [];//ticketTypes.ToList();
     }
 
     public string Name { get; private set; }
@@ -47,7 +52,7 @@ public class TicketedEvent : AggregateRoot
         if (salesEndDateTime > startDay.ToDateTime(TimeOnly.MinValue))
             throw new ValidationException("Sales must close before the event starts.");
         
-        return new TicketedEvent(GetId(name), name, startDay, endDay, salesStartDateTime, salesEndDateTime, []);
+        return new TicketedEvent(GetId(name), name, startDay, endDay, salesStartDateTime, salesEndDateTime);
     }
     
     public void AddTicketType(TicketType ticketType)

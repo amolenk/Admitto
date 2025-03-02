@@ -6,13 +6,13 @@ Content-Type: application/json
   "name": "Bitbash",
   "startDay": "2026-01-24",
   "endDay": "2026-01-25",
-  "salesStartDateTime": "2025-09-01T00:00:00",
-  "salesEndDateTime": "2026-01-23T00:00:00",
+  "salesStartDateTime": "2025-09-01T00:00:00Z",
+  "salesEndDateTime": "2026-01-23T00:00:00Z",
   "ticketTypes": [
     {
       "name": "Conference",
-      "startDateTime": "2026-01-25T09:00:00",
-      "endDateTime": "2026-01-25T16:00:00",
+      "startDateTime": "2026-01-25T09:00:00Z",
+      "endDateTime": "2026-01-25T16:00:00Z",
       "maxCapacity": 200
     }
   ]
@@ -28,6 +28,9 @@ Content-Type: application/json
 
 {
   "email": "a.molenkamp@gmail.com",
+  "firstName": "Sander",
+  "lastName": "Molenkamp",
+  "organizationName": "Info Support",
   "ticketedEventId": "{{ticketedEventId}}",
   "ticketTypes": [
     "{{ticketTypeId}}"
