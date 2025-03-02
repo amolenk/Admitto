@@ -1,5 +1,10 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using Amolenk.Admitto.ApiService.Endpoints;
 using Amolenk.Admitto.ApiService.Handlers;
+using Amolenk.Admitto.Application.Data;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -32,5 +37,11 @@ app.MapDefaultEndpoints();
 app.MapAttendeeRegistrationEndpoints();
 app.MapTicketedEventEndpoints();
 
-app.Run();
+// Temporary workaround to ensure the database is created and updated
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    dbContext.Database.Migrate(); // Ensures the database is created and updated
+}
 
+app.Run();

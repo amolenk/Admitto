@@ -3,26 +3,25 @@ namespace Amolenk.Admitto.Application.Features.Attendees.RegisterAttendee;
 /// <summary>
 /// Accept or reject the pending registration for a ticketed event.
 /// </summary>
-public class ResolvePendingRegistrationHandler(IAttendeeRepository attendeeRepository)
+public class ResolvePendingRegistrationHandler(IAttendeeRegistrationRepository repository)
     : ICommandHandler<ResolvePendingRegistrationCommand>
 {
     public async ValueTask HandleAsync(ResolvePendingRegistrationCommand command, CancellationToken cancellationToken)
     {
-        var (attendee, etag) = await attendeeRepository.GetByIdAsync(command.AttendeeId);
+        var (registration, etag) = await repository.GetByIdAsync(command.RegistrationId);
 
-        // Update the pending registration.
         if (command.TicketsReserved)
         {
-            attendee.AcceptPendingRegistration(command.RegistrationId);
+            registration.Accept();
+
+            await repository.SaveChangesAsync(
+                registration,
+                etag,
+                registration.GetDomainEvents().Select(OutboxMessage.FromDomainEvent));
         }
         else
         {
-            attendee.RejectPendingReservation(command.RegistrationId);
+            await repository.DeleteAsync(registration.Id);
         }
-        
-        await attendeeRepository.SaveChangesAsync(
-            attendee,
-            etag,
-            attendee.GetDomainEvents().Select(OutboxMessage.FromDomainEvent));
     }
 }

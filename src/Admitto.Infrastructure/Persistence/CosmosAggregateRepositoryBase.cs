@@ -1,8 +1,11 @@
 using Amolenk.Admitto.Application.Abstractions;
+using Amolenk.Admitto.Application.Exceptions;
 using Amolenk.Admitto.Domain.Entities;
 using Microsoft.Azure.Cosmos;
 
 namespace Amolenk.Admitto.Infrastructure.Persistence;
+
+// TODO Extract an interface for inheritors to implement
 
 public abstract class CosmosAggregateRepositoryBase<TAggregate>(CosmosClient client)
     where TAggregate : AggregateRoot
@@ -91,6 +94,14 @@ public abstract class CosmosAggregateRepositoryBase<TAggregate>(CosmosClient cli
         }
     }
     
+    public async ValueTask DeleteAsync(Guid registrationId)
+    {
+        var container = GetContainer();
+        await container.DeleteItemAsync<CosmosDocument<TAggregate>>(
+            registrationId.ToString(),
+            new PartitionKey(registrationId.ToString()));
+    }
+    
     private async ValueTask SaveBatchChangesAsync(TAggregate aggregate, string? etag = null, IEnumerable<OutboxMessage>? outboxMessages = null,
         ICommand? processedCommand = null)
     {
@@ -133,6 +144,11 @@ public abstract class CosmosAggregateRepositoryBase<TAggregate>(CosmosClient cli
         }
 
         var response = await batch.ExecuteAsync();
+        
+        if (!response.IsSuccessStatusCode)
+        {
+            throw new ConcurrencyException("Failed to save changes.");
+        }
     }
     
     private Container GetContainer()

@@ -6,8 +6,8 @@ public interface IAggregateWithEtag<TAggregate> where TAggregate : AggregateRoot
 {
     public TAggregate Aggregate { get; }
     
-    public string ETag { get; }
+    public string? ETag { get; }
 
-    void Deconstruct(out TAggregate aggregate, out string etag);
+    void Deconstruct(out TAggregate aggregate, out string? etag);
 
 }
