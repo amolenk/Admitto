@@ -2,7 +2,7 @@ using Amolenk.Admitto.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Amolenk.Admitto.Infrastructure.Persistence;
+namespace Amolenk.Admitto.Infrastructure.Persistence.EntityConfigurations;
 
 public class TicketTypeEntityConfiguration : IEntityTypeConfiguration<TicketType>
 {

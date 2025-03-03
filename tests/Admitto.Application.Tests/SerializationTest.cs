@@ -64,7 +64,7 @@ public class SerializationTest
         var deserialized = JsonSerializer.Deserialize<CosmosDocument<OutboxMessage>>(result, 
             JsonSerializerOptions.Web);
 
-        var jsonElement = (JsonElement)deserialized.Payload.Body;
+        var jsonElement = (JsonElement)deserialized.Payload.Payload;
 
         var bodyType = Type.GetType(deserialized.Payload.Discriminator);
         

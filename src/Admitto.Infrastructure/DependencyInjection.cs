@@ -1,12 +1,10 @@
-using System.Reflection;
 using System.Text.Json;
 using Amolenk.Admitto.Application.Abstractions;
-using Amolenk.Admitto.Application.MessageOutbox;
 using Amolenk.Admitto.Infrastructure.Persistence;
 using Amolenk.Admitto.Infrastructure.Persistence.Repositories;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection;
@@ -24,27 +22,6 @@ public static class DependencyInjection
         
         builder.AddNpgsqlDbContext<ApplicationDbContext>(connectionName: "postgresdb");
         
-        
-        // var connectionString = builder.Configuration.GetConnectionString("postgresDb");
-        //
-        // var infrastructureAssembly = Assembly.GetExecutingAssembly();
-        //
-        // var model = new ModelBuilder()
-        //     .ApplyConfigurationsFromAssembly(infrastructureAssembly)
-        //     .FinalizeModel();
-        //
-        // builder.Services.AddDbContextPool<ApplicationDbContext>(options => options
-        //     .UseNpgsql(connectionString, b => b
-        //         .EnableRetryOnFailure()
-        //         .MigrationsAssembly(infrastructureAssembly))
-        //     .UseModel(model));
-        //
-        // builder.EnrichNpgsqlDbContext<ApplicationDbContext>(settings =>
-        // {
-        //     // Disable the configuration of the retry policy. It will override the NpgsqlDbContextOptions that we
-        //     // need to set the migrations assembly. We've configured the retry policy in the UseNpgsql call.
-        //     settings.DisableRetry = true;
-        // });
 
         builder.Services
             .AddScoped<IApplicationDbContext, ApplicationDbContext>();
@@ -53,8 +30,11 @@ public static class DependencyInjection
             .AddScoped<IAttendeeRegistrationRepository, CosmosAttendeeRegistrationRepository>()
             .AddScoped<ITicketedEventRepository, CosmosTicketedEventRepository>();
 
+        var connectionString = builder.Configuration.GetConnectionString("postgresdb")!;
+        
         builder.Services
-            .AddTransient<IOutboxMessageProvider, CosmosOutboxMessageProvider>();
+            .AddTransient<PgOutboxMessageDispatcher>(sp => new PgOutboxMessageDispatcher(connectionString,
+                sp.GetRequiredService<ILogger<PgOutboxMessageDispatcher>>()));
         
         return builder;
     }
