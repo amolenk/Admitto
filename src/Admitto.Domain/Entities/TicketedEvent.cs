@@ -17,7 +17,6 @@ public class TicketedEvent : AggregateRoot
         
     }
     
-    // [JsonConstructor]
     private TicketedEvent(Guid id, string name, DateOnly startDay, DateOnly endDay,
         DateTime salesStartDateTime, DateTime salesEndDateTime)
         : base(id)
@@ -27,7 +26,7 @@ public class TicketedEvent : AggregateRoot
         EndDay = endDay;
         SalesStartDateTime = salesStartDateTime;
         SalesEndDateTime = salesEndDateTime;
-        _ticketTypes = [];//ticketTypes.ToList();
+        _ticketTypes = [];
     }
 
     public string Name { get; private set; }

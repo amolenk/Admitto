@@ -1,28 +1,29 @@
 using System.Text.Json;
+using Amolenk.Admitto.Application.Abstractions;
 using Amolenk.Admitto.Domain.DomainEvents;
-using Microsoft.Extensions.DependencyInjection;
+using Amolenk.Admitto.Infrastructure.Persistence;
 
-namespace Amolenk.Admitto.Application.MessageOutbox;
+namespace Admitto.OutboxProcessor;
 
 /// <summary>
 /// Receives messages from the outbox and dispatches them to the appropriate handlers.
 /// </summary>
-public class MessageOutboxProcessor(IOutboxMessageProvider outboxMessageProvider, IServiceProvider serviceProvider)
+public class MessageOutboxWorker(PgOutboxMessageDispatcher outboxMessageDispatcher, IServiceProvider serviceProvider)
+    : BackgroundService
 {
-    public Task ExecuteAsync(CancellationToken cancellationToken)
+    protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        return outboxMessageProvider.ExecuteAsync(HandleMessageAsync, cancellationToken);
+        return outboxMessageDispatcher.ExecuteAsync(HandleMessageAsync, stoppingToken);
     }
 
     private async ValueTask HandleMessageAsync(OutboxMessage message, CancellationToken cancellationToken)
     {
         using var scope = serviceProvider.CreateScope();
         
-        var bodyJson = (JsonElement)message.Body;
         var bodyType = Type.GetType(message.Discriminator, true)!;
-
-        var body = bodyJson.Deserialize(bodyType, JsonSerializerOptions.Web);
-
+        
+        var body = message.Payload.Deserialize(bodyType, JsonSerializerOptions.Web);
+        
         switch (body)
         {
             case ICommand command:

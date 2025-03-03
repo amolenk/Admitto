@@ -5,7 +5,7 @@ var builder = Host.CreateApplicationBuilder(args);
 // Add service defaults & Aspire client integrations.
 builder.AddServiceDefaults();
 
-builder.Services.AddHostedService<Worker>();
+builder.Services.AddHostedService<MessageOutboxWorker>();
 
 // TODO Move to ServiceDefaults
 builder.Services.AddApplicationServices();

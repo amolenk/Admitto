@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Application.Features.Attendees.RegisterAttendee;
 using Amolenk.Admitto.Domain.Entities;
 
 namespace Amolenk.Admitto.Application.Features.TicketedEvents.CreateTicketedEvent;
@@ -8,7 +9,8 @@ namespace Amolenk.Admitto.Application.Features.TicketedEvents.CreateTicketedEven
 public class CreateTicketedEventHandler(IApplicationDbContext dbContext) 
     : ICommandHandler<CreateTicketedEventCommand, CreateTicketedEventResult>
 {
-    public async ValueTask<CreateTicketedEventResult> HandleAsync(CreateTicketedEventCommand request, CancellationToken cancellationToken)
+    public async ValueTask<CreateTicketedEventResult> HandleAsync(CreateTicketedEventCommand request, 
+        CancellationToken cancellationToken)
     {
         var ticketedEvent = TicketedEvent.Create(request.Name, request.StartDay, request.EndDay,
             request.SalesStartDateTime, request.SalesEndDateTime);
@@ -18,45 +20,16 @@ public class CreateTicketedEventHandler(IApplicationDbContext dbContext)
             var ticketType = TicketType.Create(ticketTypeDto.Name, ticketTypeDto.StartDateTime,
                 ticketTypeDto.EndDateTime, ticketTypeDto.MaxCapacity);
             
-            Console.WriteLine("Ticket type: " + ticketType.Id);
-            
             ticketedEvent.AddTicketType(ticketType);
         }
-
+        
         dbContext.TicketedEvents.Add(ticketedEvent);
 
-        await dbContext.SaveChangesAsync(cancellationToken);
+        var command = new ReserveTicketsCommand(Guid.NewGuid());
+        dbContext.Outbox.Add(OutboxMessage.FromCommand(command));
         
-        // await ticketedEventRepository.SaveChangesAsync(
-        //     ticketedEvent,
-        //     outboxMessages: ticketedEvent.GetDomainEvents().Select(OutboxMessage.FromDomainEvent));
+        await dbContext.SaveChangesAsync(cancellationToken);
         
         return new CreateTicketedEventResult(ticketedEvent.Id);
     }
 }
-
-// public class CreateTicketedEventHandler(ITicketedEventRepository ticketedEventRepository) 
-//     : ICommandHandler<CreateTicketedEventCommand, CreateTicketedEventResult>
-// {
-//     public async ValueTask<CreateTicketedEventResult> HandleAsync(CreateTicketedEventCommand request, CancellationToken cancellationToken)
-//     {
-//         var ticketedEvent = TicketedEvent.Create(request.Name, request.StartDay, request.EndDay,
-//             request.SalesStartDateTime, request.SalesEndDateTime);
-//         
-//         foreach (var ticketTypeDto in request.TicketTypes ?? [])
-//         {
-//             var ticketType = TicketType.Create(ticketTypeDto.Name, ticketTypeDto.StartDateTime,
-//                 ticketTypeDto.EndDateTime, ticketTypeDto.MaxCapacity);
-//             
-//             Console.WriteLine("Ticket type: " + ticketType.Id);
-//             
-//             ticketedEvent.AddTicketType(ticketType);
-//         }
-//         
-//         await ticketedEventRepository.SaveChangesAsync(
-//             ticketedEvent,
-//             outboxMessages: ticketedEvent.GetDomainEvents().Select(OutboxMessage.FromDomainEvent));
-//         
-//         return new CreateTicketedEventResult(ticketedEvent.Id);
-//     }
-// }
