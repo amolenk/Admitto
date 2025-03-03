@@ -7,7 +7,7 @@ var postgres = builder.AddPostgres("postgres")
     .WithPgWeb()
     .WithLifetime(ContainerLifetime.Persistent);
 
-var postgresDb = postgres.AddDatabase("postgresdb");
+var postgresdb = postgres.AddDatabase("postgresdb");
 
 // TODO Aspire 9.1 provides built-in support for the preview version of the Azure Cosmos DB emulator
 // builder.AddAzureCosmosDB("cosmos-db")
@@ -32,8 +32,8 @@ var postgresDb = postgres.AddDatabase("postgresdb");
 
 var apiService = builder.AddProject<Projects.Admitto_Api>("api")
     .WithReference(cosmos)
-    .WithReference(postgresDb)
-    .WaitFor(postgresDb);
+    .WithReference(postgresdb)
+    .WaitFor(postgresdb);
 
 var outboxProcessor = builder.AddProject<Projects.Admitto_OutboxProcessor>("outbox-processor")
     .WithReference(cosmos);
