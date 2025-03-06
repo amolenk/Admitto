@@ -1,5 +1,3 @@
-using Amolenk.Admitto.Application.Common.DTOs;
-
 namespace Amolenk.Admitto.Application.UseCases.Attendees.RegisterAttendee;
 
 /// <summary>
@@ -19,7 +17,7 @@ public class ReserveTicketsHandler(IApplicationContext context) : ICommandHandle
         context.TicketedEvents.Update(ticketedEvent);
         
         // Also add a command to the outbox to resolve the pending registration.
-        context.Outbox.Add(OutboxMessageDto.FromCommand(
+        context.Outbox.Add(OutboxMessage.FromCommand(
             new ResolvePendingRegistrationCommand(command.RegistrationId, succes)));
 
         // TODO Use some kind of inbox pattern to ensure exactly-once processing

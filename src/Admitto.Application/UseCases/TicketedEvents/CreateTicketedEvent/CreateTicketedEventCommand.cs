@@ -1,5 +1,3 @@
-using Amolenk.Admitto.Application.Common.DTOs;
-
 namespace Amolenk.Admitto.Application.UseCases.TicketedEvents.CreateTicketedEvent;
 
 public record CreateTicketedEventCommand(
@@ -14,3 +12,5 @@ public record CreateTicketedEventCommand(
 }
 
 public record CreateTicketedEventResult(Guid Id);
+
+public record TicketTypeDto(string Name, DateTime StartDateTime, DateTime EndDateTime, int MaxCapacity);

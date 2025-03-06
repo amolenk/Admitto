@@ -1,4 +1,3 @@
-using Amolenk.Admitto.Application.Common.DTOs;
 using Amolenk.Admitto.Domain.Entities;
 using Amolenk.Admitto.Domain.ValueObjects;
 
@@ -33,7 +32,7 @@ public class RegisterAttendeeHandler(IApplicationContext context) : ICommandHand
         
         // Add a command to the outbox to reserve the tickets asynchronously.
         // At this point, everything looks ok, but we can't be 100% sure the event isn't full.
-        context.Outbox.Add(OutboxMessageDto.FromCommand(new ReserveTicketsCommand(registration.Id)));
+        context.Outbox.Add(OutboxMessage.FromCommand(new ReserveTicketsCommand(registration.Id)));
         
         try
         {
