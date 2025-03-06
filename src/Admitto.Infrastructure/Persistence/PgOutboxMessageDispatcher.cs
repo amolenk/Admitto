@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Amolenk.Admitto.Application.Common.DTOs;
+using Amolenk.Admitto.Application.Common.Abstractions;
 using Microsoft.Extensions.Logging;
 using Npgsql.Replication;
 using Npgsql.Replication.PgOutput;
@@ -12,7 +12,7 @@ public class PgOutboxMessageDispatcher(string connectionString, ILogger<PgOutbox
     public const string SlotName = "outbox_slot";
     public const string PublicationName = "outbox_pub";
     
-    public async Task ExecuteAsync(Func<OutboxMessageDto, CancellationToken, ValueTask> messageHandler, 
+    public async Task ExecuteAsync(Func<OutboxMessage, CancellationToken, ValueTask> messageHandler, 
         CancellationToken cancellationToken)
     {
         await using var connection = new LogicalReplicationConnection(connectionString);
@@ -33,7 +33,7 @@ public class PgOutboxMessageDispatcher(string connectionString, ILogger<PgOutbox
     }
     
      private async Task HandleMessageAsync(InsertMessage message, 
-         Func<OutboxMessageDto, CancellationToken, ValueTask> messageHandler, CancellationToken cancellationToken)
+         Func<OutboxMessage, CancellationToken, ValueTask> messageHandler, CancellationToken cancellationToken)
      {
          const string idColumn = "id";
          const string discriminatorColumn = "discriminator";
@@ -62,7 +62,7 @@ public class PgOutboxMessageDispatcher(string connectionString, ILogger<PgOutbox
          
          try
          {
-             var outboxMessage = new OutboxMessageDto(id, payload, discriminator);
+             var outboxMessage = new OutboxMessage(id, payload, discriminator);
              await messageHandler(outboxMessage, cancellationToken);
          }
          catch (Exception e)

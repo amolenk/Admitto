@@ -1,4 +1,3 @@
-using Amolenk.Admitto.Application.Common.DTOs;
 using Amolenk.Admitto.Application.Common.ReadModels;
 using Amolenk.Admitto.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -11,7 +10,7 @@ public interface IApplicationContext
 
     DbSet<AttendeeRegistration> AttendeeRegistrations { get; }
 
-    DbSet<OutboxMessageDto> Outbox { get; }
+    DbSet<OutboxMessage> Outbox { get; }
 
     DbSet<TicketedEvent> TicketedEvents { get; }
 

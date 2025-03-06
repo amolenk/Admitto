@@ -1,6 +1,5 @@
 using System.Reflection;
 using Amolenk.Admitto.Application.Common.Abstractions;
-using Amolenk.Admitto.Application.Common.DTOs;
 using Amolenk.Admitto.Application.Common.ReadModels;
 using Amolenk.Admitto.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
@@ -13,7 +12,7 @@ public class ApplicationContext : DbContext, IApplicationContext
 
     public DbSet<AttendeeRegistration> AttendeeRegistrations { get; set; } = null!;
     
-    public DbSet<OutboxMessageDto> Outbox { get; set; } = null!;
+    public DbSet<OutboxMessage> Outbox { get; set; } = null!;
 
     public DbSet<TicketedEvent> TicketedEvents { get; set; } = null!;
 
@@ -35,7 +34,7 @@ public class ApplicationContext : DbContext, IApplicationContext
             
             foreach (var domainEvent in aggregate.GetDomainEvents())
             {
-                Outbox.Add(OutboxMessageDto.FromDomainEvent(domainEvent));
+                Outbox.Add(OutboxMessage.FromDomainEvent(domainEvent));
             }
                 
             aggregate.ClearDomainEvents();

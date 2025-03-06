@@ -1,6 +1,5 @@
 using System.Text.Json;
 using Amolenk.Admitto.Application.Common.Abstractions;
-using Amolenk.Admitto.Application.Common.DTOs;
 using Amolenk.Admitto.Domain.DomainEvents;
 using Amolenk.Admitto.Infrastructure.Persistence;
 
@@ -17,7 +16,7 @@ public class MessageOutboxWorker(PgOutboxMessageDispatcher outboxMessageDispatch
         return outboxMessageDispatcher.ExecuteAsync(HandleMessageAsync, stoppingToken);
     }
 
-    private async ValueTask HandleMessageAsync(OutboxMessageDto message, CancellationToken cancellationToken)
+    private async ValueTask HandleMessageAsync(OutboxMessage message, CancellationToken cancellationToken)
     {
         using var scope = serviceProvider.CreateScope();
         

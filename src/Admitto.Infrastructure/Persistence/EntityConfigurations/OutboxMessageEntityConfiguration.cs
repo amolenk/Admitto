@@ -1,12 +1,12 @@
-using Amolenk.Admitto.Application.Common.DTOs;
+using Amolenk.Admitto.Application.Common.Abstractions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Amolenk.Admitto.Infrastructure.Persistence.EntityConfigurations;
 
-public class OutboxMessageEntityConfiguration : IEntityTypeConfiguration<OutboxMessageDto>
+public class OutboxMessageEntityConfiguration : IEntityTypeConfiguration<OutboxMessage>
 {
-    public void Configure(EntityTypeBuilder<OutboxMessageDto> builder)
+    public void Configure(EntityTypeBuilder<OutboxMessage> builder)
     {
         builder.ToTable("outbox");
         builder.HasKey(e => e.Id);

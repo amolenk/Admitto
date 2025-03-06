@@ -1,9 +1,9 @@
 using System.Text.Json;
 using Amolenk.Admitto.Domain.DomainEvents;
 
-namespace Amolenk.Admitto.Application.Common.DTOs;
+namespace Amolenk.Admitto.Application.Common.Abstractions;
 
-public class OutboxMessageDto(Guid id, JsonDocument payload, string discriminator)
+public class OutboxMessage(Guid id, JsonDocument payload, string discriminator)
 {
     public Guid Id { get; private set; } = id;
 
@@ -11,14 +11,14 @@ public class OutboxMessageDto(Guid id, JsonDocument payload, string discriminato
 
     public string Discriminator { get; private set; } = discriminator;
 
-    public static OutboxMessageDto FromDomainEvent(IDomainEvent domainEvent)
+    public static OutboxMessage FromDomainEvent(IDomainEvent domainEvent)
     {
-        return new OutboxMessageDto(domainEvent.DomainEventId, SerializePayload(domainEvent), GetDiscriminator(domainEvent.GetType()));
+        return new OutboxMessage(domainEvent.DomainEventId, SerializePayload(domainEvent), GetDiscriminator(domainEvent.GetType()));
     }
 
-    public static OutboxMessageDto FromCommand(ICommand command)
+    public static OutboxMessage FromCommand(ICommand command)
     {
-        return new OutboxMessageDto(command.CommandId, SerializePayload(command), GetDiscriminator(command.GetType()));
+        return new OutboxMessage(command.CommandId, SerializePayload(command), GetDiscriminator(command.GetType()));
     }
 
     private static JsonDocument SerializePayload(object payload)
