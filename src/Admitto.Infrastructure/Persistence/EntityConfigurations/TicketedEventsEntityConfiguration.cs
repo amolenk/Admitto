@@ -8,7 +8,7 @@ public class TicketedEventsEntityConfiguration : IEntityTypeConfiguration<Ticket
 {
     public void Configure(EntityTypeBuilder<TicketedEvent> builder)
     {
-        builder.ToTable("events");
+        builder.ToTable("ticketed_events");
         builder.HasKey(e => e.Id);
         
         builder.Property(e => e.Id)
@@ -36,8 +36,10 @@ public class TicketedEventsEntityConfiguration : IEntityTypeConfiguration<Ticket
             .HasColumnName("sales_end_date_time")
             .IsRequired();
         
-        builder.HasMany(e => e.TicketTypes)
-            .WithOne()
-            .HasForeignKey("event_id");
+        builder
+            .OwnsMany(e => e.TicketTypes, b =>
+            {
+                b.ToJson("ticket_types");
+            });
     }
 }

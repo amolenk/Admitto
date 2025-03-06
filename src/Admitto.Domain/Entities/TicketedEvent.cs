@@ -14,12 +14,12 @@ public class TicketedEvent : AggregateRoot
 
     private TicketedEvent()
     {
-        
+        _ticketTypes = [];
     }
     
-    private TicketedEvent(Guid id, string name, DateOnly startDay, DateOnly endDay,
+    private TicketedEvent(TicketedEventId id, string name, DateOnly startDay, DateOnly endDay,
         DateTime salesStartDateTime, DateTime salesEndDateTime)
-        : base(id)
+        : base(id.Value)
     {
         Name = name;
         StartDay = startDay;
@@ -29,7 +29,7 @@ public class TicketedEvent : AggregateRoot
         _ticketTypes = [];
     }
 
-    public string Name { get; private set; }
+    public string Name { get; private set; } = null!;
     public DateOnly StartDay { get; private set; }
     public DateOnly EndDay { get; private set; }
     public DateTime SalesStartDateTime { get; private set; }
@@ -50,8 +50,10 @@ public class TicketedEvent : AggregateRoot
 
         if (salesEndDateTime > startDay.ToDateTime(TimeOnly.MinValue))
             throw new ValidationException("Sales must close before the event starts.");
+
+        var id = TicketedEventId.FromEventName(name);
         
-        return new TicketedEvent(GetId(name), name, startDay, endDay, salesStartDateTime, salesEndDateTime);
+        return new TicketedEvent(id, name, startDay, endDay, salesStartDateTime, salesEndDateTime);
     }
     
     public void AddTicketType(TicketType ticketType)
@@ -61,8 +63,8 @@ public class TicketedEvent : AggregateRoot
             throw new ValidationException("Ticket type already exists.");
         }
         
-        if (ticketType.SessionStartDateTime < StartDay.ToDateTime(TimeOnly.MinValue) ||
-            ticketType.SessionEndDateTime > EndDay.ToDateTime(TimeOnly.MaxValue))
+        if (ticketType.StartDateTime < StartDay.ToDateTime(TimeOnly.MinValue) ||
+            ticketType.EndDateTime > EndDay.ToDateTime(TimeOnly.MaxValue))
         {
             throw new ValidationException("Ticket type session must be within the event duration.");
         }
@@ -112,10 +114,5 @@ public class TicketedEvent : AggregateRoot
             var ticketType = _ticketTypes.FirstOrDefault(tt => tt.Id == ticketTypeId);
             ticketType?.CancelTicket();
         }
-    }
-
-    private static Guid GetId(string name)
-    {
-        return DeterministicGuidGenerator.Generate(name);
     }
 }

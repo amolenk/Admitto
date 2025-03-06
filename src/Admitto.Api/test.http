@@ -1,3 +1,7 @@
+@ticketedEventId = f02fd7d4-7c12-a18a-a31d-e9448d62c433
+@ticketTypeId = 705e564e-be64-77a2-b552-2fcb19506385
+
+###
 
 POST http://localhost:5100/events
 Content-Type: application/json
@@ -20,8 +24,9 @@ Content-Type: application/json
 
 ###
 
-@ticketedEventId = f02fd7d4-7c12-a18a-a31d-e9448d62c433
-@ticketTypeId = 705e564e-be64-77a2-b552-2fcb19506385
+GET http://localhost:5100/events/{{ticketedEventId}}
+
+###
 
 POST http://localhost:5100/registrations
 Content-Type: application/json

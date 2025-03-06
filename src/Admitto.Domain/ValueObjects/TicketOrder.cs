@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using System.Text.Json.Serialization;
 
 namespace Amolenk.Admitto.Domain.ValueObjects;
 
@@ -10,15 +9,14 @@ public class TicketOrder
 {
     private readonly List<Guid> _ticketTypeIds;
     
+    private TicketOrder()
+    {
+        _ticketTypeIds = [];
+    }
+
     private TicketOrder(List<Guid> ticketTypeIds)
     {
         _ticketTypeIds = ticketTypeIds;
-    }
-
-    [JsonConstructor]
-    private TicketOrder(IReadOnlyCollection<Guid> ticketTypeIds)
-    {
-        _ticketTypeIds = ticketTypeIds.ToList();
     }
     
     public IReadOnlyCollection<Guid> TicketTypeIds => _ticketTypeIds.AsReadOnly();

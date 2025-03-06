@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk.Worker">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <Nullable>enable</Nullable>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <UserSecretsId>dotnet-Admitto.OutboxProcessor-0fd4fbbd-1e6b-468d-bd24-71befec8fb71</UserSecretsId>
+        <RootNamespace>Admitto.OutboxProcessor</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.0"/>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Admitto.Infrastructure\Admitto.Infrastructure.csproj" />
+      <ProjectReference Include="..\Admitto.ServiceDefaults\Admitto.ServiceDefaults.csproj" />
+    </ItemGroup>
+</Project>

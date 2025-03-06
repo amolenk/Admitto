@@ -21,6 +21,10 @@ public static class DependencyInjection
             // Domain event handlers
             .AddClasses(classes => classes.AssignableTo<IDomainEventHandler>())
             .AsSelfWithInterfaces()
+            .WithScopedLifetime()
+            // Query handlers
+            .AddClasses(classes => classes.AssignableTo<IQueryHandler>())
+            .AsSelfWithInterfaces()
             .WithScopedLifetime());
     }
 }

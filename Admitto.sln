@@ -5,7 +5,7 @@ VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{4BA9B65C-5341-4641-B9C9-2B19E3A17933}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Admitto.Application.Tests", "tests\Admitto.Application.Tests\Admitto.Application.Tests.csproj", "{4D82FFF9-23A3-41C8-9387-7F57B1EEDBB9}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Admitto.Api.Tests", "tests\Admitto.Api.Tests\Admitto.Api.Tests.csproj", "{4D82FFF9-23A3-41C8-9387-7F57B1EEDBB9}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{BF963B15-CA98-4252-B5F5-294C9B8F7CE8}"
 EndProject
@@ -23,7 +23,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Admitto.AppHost", "src\Admi
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Admitto.Domain.Tests", "tests\Admitto.Domain.Tests\Admitto.Domain.Tests.csproj", "{65F3BB07-956C-4240-8CE6-E5F1B813C9B8}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Admitto.OutboxProcessor", "src\Admitto.OutboxProcessor\Admitto.OutboxProcessor.csproj", "{22DD7229-402C-4E27-8B48-6081067702B3}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Admitto.Worker", "src\Admitto.Worker\Admitto.Worker.csproj", "{22DD7229-402C-4E27-8B48-6081067702B3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
