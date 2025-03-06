@@ -1,7 +1,6 @@
-using System.Text.Json;
-using Amolenk.Admitto.Application.Abstractions;
+using System.Configuration;
+using Amolenk.Admitto.Application.Common.Abstractions;
 using Amolenk.Admitto.Infrastructure.Persistence;
-using Amolenk.Admitto.Infrastructure.Persistence.Repositories;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -15,21 +14,11 @@ public static class DependencyInjection
     {
         ArgumentNullException.ThrowIfNull(builder);
 
-        builder.AddAzureCosmosClient("cosmos-db", configureClientOptions: options =>
-        {
-            options.UseSystemTextJsonSerializerWithOptions = JsonSerializerOptions.Web;
-        });
-        
-        builder.AddNpgsqlDbContext<ApplicationDbContext>(connectionName: "postgresdb");
-        
-
-        builder.Services
-            .AddScoped<IApplicationDbContext, ApplicationDbContext>();
+        builder.AddNpgsqlDbContext<ApplicationContext>(connectionName: "postgresdb");
         
         builder.Services
-            .AddScoped<IAttendeeRegistrationRepository, CosmosAttendeeRegistrationRepository>()
-            .AddScoped<ITicketedEventRepository, CosmosTicketedEventRepository>();
-
+            .AddScoped<IApplicationContext, ApplicationContext>();
+        
         var connectionString = builder.Configuration.GetConnectionString("postgresdb")!;
         
         builder.Services

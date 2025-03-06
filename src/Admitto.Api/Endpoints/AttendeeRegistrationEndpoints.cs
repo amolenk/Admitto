@@ -1,4 +1,4 @@
-using Amolenk.Admitto.Application.Features.Attendees.RegisterAttendee;
+using Amolenk.Admitto.Application.UseCases.Attendees.RegisterAttendee;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace Amolenk.Admitto.ApiService.Endpoints;

@@ -20,9 +20,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Features\TicketedEvents\AddTicketType\" />
-      <Folder Include="Features\TicketedEvents\RemoveTicketType\" />
-      <Folder Include="Features\TicketedEvents\Shared\" />
+      <Folder Include="Common\" />
     </ItemGroup>
 
 </Project>

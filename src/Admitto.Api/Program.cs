@@ -38,10 +38,10 @@ app.MapAttendeeRegistrationEndpoints();
 app.MapTicketedEventEndpoints();
 
 // Temporary workaround to ensure the database is created and updated
-using (var scope = app.Services.CreateScope())
-{
-    var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-    dbContext.Database.Migrate(); // Ensures the database is created and updated
-}
+// using (var scope = app.Services.CreateScope())
+// {
+//     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+//     dbContext.Database.Migrate(); // Ensures the database is created and updated
+// }
 
 app.Run();

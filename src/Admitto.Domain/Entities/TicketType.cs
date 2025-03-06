@@ -7,37 +7,35 @@ namespace Amolenk.Admitto.Domain.Entities;
 public class TicketType : Entity
 {
     [JsonConstructor]
-    private TicketType(Guid id, string sessionName, DateTime sessionStartDateTime, DateTime sessionEndDateTime, 
-        int maxCapacity) : base(id)
+    private TicketType(Guid id, string name, DateTime startDateTime, DateTime endDateTime, int maxCapacity) : base(id)
     {
-        SessionName = sessionName;
-        SessionStartDateTime = sessionStartDateTime;
-        SessionEndDateTime = sessionEndDateTime;
+        Name = name;
+        StartDateTime = startDateTime;
+        EndDateTime = endDateTime;
         MaxCapacity = maxCapacity;
         RemainingCapacity = maxCapacity;
     }
 
-    public string SessionName { get; private set; }
-    public DateTime SessionStartDateTime { get; private set; }
-    public DateTime SessionEndDateTime { get; private set; }
+    public string Name { get; private set; }
+    public DateTime StartDateTime { get; private set; }
+    public DateTime EndDateTime { get; private set; }
     public int MaxCapacity { get; private set; }
     public int RemainingCapacity { get; private set; }
 
-    public static TicketType Create(string sessionName, DateTime sessionStartDateTime, DateTime sessionEndDateTime, 
-        int maxCapacity)
+    public static TicketType Create(string name, DateTime startDateTime, DateTime endDateTime, int maxCapacity)
     {
-        if (string.IsNullOrWhiteSpace(sessionName))
-            throw new ValidationException("Session name cannot be empty.");
+        if (string.IsNullOrWhiteSpace(name))
+            throw new ValidationException("Name cannot be empty.");
         
-        if (sessionEndDateTime < sessionStartDateTime)
-            throw new ValidationException("Session end date/time should be greater than start date/time.");
+        if (endDateTime < startDateTime)
+            throw new ValidationException("End date/time should be greater than start date/time.");
 
         if (maxCapacity <= 0)
             throw new ValidationException("Max capacity should be greater than 0.");
 
-        var id = DeterministicGuidGenerator.Generate(sessionName);
+        var id = DeterministicGuidGenerator.Generate(name);
         
-        return new TicketType(id, sessionName, sessionStartDateTime, sessionEndDateTime, maxCapacity);
+        return new TicketType(id, name, startDateTime, endDateTime, maxCapacity);
     }
 
     public bool HasAvailableCapacity()
