@@ -20,7 +20,7 @@ public static class TeamEndpoints
 
         group.MapGet("/", GetTeams)
             .WithName(nameof(GetTeams))
-            .Produces<GetTeamsResult>(StatusCodes.Status200OK);
+            .Produces<GetTeamsResult>();
 
         group.MapPost("/", AddTeam)
             .WithName(nameof(AddTeam))
