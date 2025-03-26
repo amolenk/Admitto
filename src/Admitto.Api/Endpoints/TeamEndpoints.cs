@@ -1,5 +1,5 @@
+using Amolenk.Admitto.Application.UseCases.Teams.AddTeam;
 using Amolenk.Admitto.Application.UseCases.Teams.AddTeamMember;
-using Amolenk.Admitto.Application.UseCases.Teams.CreateOrganizingTeam;
 using Amolenk.Admitto.Application.UseCases.Teams.GetTeams;
 using Amolenk.Admitto.Domain.Entities;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -22,9 +22,9 @@ public static class TeamEndpoints
             .WithName(nameof(GetTeams))
             .Produces<GetTeamsResult>(StatusCodes.Status200OK);
 
-        group.MapPost("/", CreateTeam)
-            .WithName(nameof(CreateTeam))
-            .Produces(StatusCodes.Status201Created)
+        group.MapPost("/", AddTeam)
+            .WithName(nameof(AddTeam))
+            .Produces<AddTeamResult>(StatusCodes.Status201Created)
             .ProducesValidationProblem();
 
         group.MapPost("/{teamId:guid}/members", AddTeamMember)
@@ -41,8 +41,8 @@ public static class TeamEndpoints
         return TypedResults.Ok(result);
     }
     
-    private static async Task<Results<Created<CreateOrganizingTeamResult>, ValidationProblem>> CreateTeam(
-        [FromBody] CreateOrganizingTeamCommand command, [FromServices] CreateOrganizingTeamHandler handler)
+    private static async Task<Results<Created<AddTeamResult>, ValidationProblem>> AddTeam(
+        [FromBody] AddTeamCommand command, [FromServices] AddTeamHandler handler)
     {
         var result = await handler.HandleAsync(command, CancellationToken.None);
 
