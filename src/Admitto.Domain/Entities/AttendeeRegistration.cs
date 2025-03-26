@@ -38,7 +38,7 @@ public class AttendeeRegistration : AggregateRoot
     public static AttendeeRegistration Create(TicketedEventId ticketedEventId, string email, string firstName,
         string lastName, string organizationName, TicketOrder ticketOrder)
     {
-        var attendeeId = AttendeeId.Create(email);
+        var attendeeId = AttendeeId.FromEmail(email);
         var attendeeRegistrationId = AttendeeRegistrationId.FromAttendeeAndEvent(attendeeId, ticketedEventId);
         
         return new AttendeeRegistration(attendeeRegistrationId, ticketedEventId, email, firstName,

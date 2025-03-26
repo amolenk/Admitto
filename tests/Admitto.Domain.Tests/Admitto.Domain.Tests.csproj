@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="MSTest.Sdk/3.8.2">
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
@@ -7,10 +7,6 @@
         <Nullable>enable</Nullable>
         <RootNamespace>Amolenk.Admitto.Domain.Tests</RootNamespace>
     </PropertyGroup>
-
-    <ItemGroup>
-      <PackageReference Include="TUnit" Version="0.6.14" />
-    </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\..\src\Admitto.Domain\Admitto.Domain.csproj" />

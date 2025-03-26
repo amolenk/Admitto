@@ -10,6 +10,8 @@ public static class DependencyInjection
     public static void AddApplicationServices(this IServiceCollection services)
     {
         services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
+
+        services.AddTransient<IEmailProvider, ConsoleEmailProvider>();
         
         // Register all command and domain event handlers
         services.Scan(scan => scan

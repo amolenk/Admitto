@@ -3,7 +3,7 @@ namespace Amolenk.Admitto.Application.UseCases.TicketedEvents.GetTicketedEvent;
 /// <summary>
 /// Gets a ticketed event.
 /// </summary>
-public class GetTicketedEventHandler(IApplicationContext context) 
+public class GetTicketedEventHandler(IDomainContext context) 
     : IQueryHandler<GetTicketedEventQuery, GetTicketedEventResult?>
 {
     public async ValueTask<GetTicketedEventResult?> HandleAsync(GetTicketedEventQuery query, 

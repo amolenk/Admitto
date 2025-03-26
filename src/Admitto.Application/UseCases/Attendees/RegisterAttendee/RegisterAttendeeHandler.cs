@@ -11,7 +11,8 @@ namespace Amolenk.Admitto.Application.UseCases.Attendees.RegisterAttendee;
 /// executing the registration flow. Therefore, an asynchronous ReserveTicketsCommand
 /// is published to check event capacity and finalize ticket reservations.
 /// </summary>
-public class RegisterAttendeeHandler(IApplicationContext context) : ICommandHandler<RegisterAttendeeCommand>
+public class RegisterAttendeeHandler(IDomainContext context, IMessageOutbox messageOutbox)
+    : ICommandHandler<RegisterAttendeeCommand>
 {
     public async ValueTask HandleAsync(RegisterAttendeeCommand command, CancellationToken cancellationToken)
     {
@@ -32,15 +33,6 @@ public class RegisterAttendeeHandler(IApplicationContext context) : ICommandHand
         
         // Add a command to the outbox to reserve the tickets asynchronously.
         // At this point, everything looks ok, but we can't be 100% sure the event isn't full.
-        context.Outbox.Add(OutboxMessage.FromCommand(new ReserveTicketsCommand(registration.Id)));
-        
-        try
-        {
-            await context.SaveChangesAsync(cancellationToken);
-        }
-        catch (ConcurrencyException e)
-        {
-            throw new RegistrationAlreadyExistsException(e);
-        }
+        messageOutbox.EnqueueCommand(new ReserveTicketsCommand(registration.Id));
     }
 }

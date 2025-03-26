@@ -3,7 +3,7 @@ namespace Amolenk.Admitto.Application.UseCases.Attendees.RegisterAttendee;
 /// <summary>
 /// Accept or reject the pending registration for a ticketed event.
 /// </summary>
-public class ResolvePendingRegistrationHandler(IApplicationContext context)
+public class ResolvePendingRegistrationHandler(IDomainContext context)
     : ICommandHandler<ResolvePendingRegistrationCommand>
 {
     public async ValueTask HandleAsync(ResolvePendingRegistrationCommand command, CancellationToken cancellationToken)
@@ -20,7 +20,5 @@ public class ResolvePendingRegistrationHandler(IApplicationContext context)
         {
             context.AttendeeRegistrations.Remove(registration);
         }
-
-        await context.SaveChangesAsync(cancellationToken);
     }
 }

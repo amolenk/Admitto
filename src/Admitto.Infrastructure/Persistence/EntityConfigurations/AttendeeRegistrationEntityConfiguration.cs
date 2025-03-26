@@ -19,7 +19,7 @@ public class AttendeeRegistrationEntityConfiguration : IEntityTypeConfiguration<
         builder.Property(e => e.Email)
             .HasColumnName("email")
             .IsRequired()
-            .HasMaxLength(100);
+            .HasMaxLength(50);
 
         builder.Property(e => e.FirstName)
             .HasColumnName("first_name")

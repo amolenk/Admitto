@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Amolenk.Admitto.ApiService.Endpoints;
-using Amolenk.Admitto.ApiService.Handlers;
+using Amolenk.Admitto.ApiService.Middleware;
 using Amolenk.Admitto.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -17,6 +17,12 @@ builder.Services.AddProblemDetails();
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
+builder.Services.ConfigureHttpJsonOptions(options =>
+{
+    var converter = new JsonStringEnumConverter();
+    options.SerializerOptions.Converters.Add(converter);
+});
+
 builder.Services.AddApplicationServices();
 builder.AddInfrastructureServices();
 
@@ -28,6 +34,9 @@ app.UseExceptionHandler(new ExceptionHandlerOptions
     ExceptionHandler = new CustomExceptionHandler().HandleAsync
 });
 
+// Automatically commit unit of work at the end of the request.
+app.UseMiddleware<UnitOfWorkMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -35,13 +44,8 @@ if (app.Environment.IsDevelopment())
 
 app.MapDefaultEndpoints();
 app.MapAttendeeRegistrationEndpoints();
+app.MapAuthEndpoints();
+app.MapTeamEndpoints();
 app.MapTicketedEventEndpoints();
-
-// Temporary workaround to ensure the database is created and updated
-// using (var scope = app.Services.CreateScope())
-// {
-//     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
-//     dbContext.Database.Migrate(); // Ensures the database is created and updated
-// }
 
 app.Run();
