@@ -1,55 +1,57 @@
-using System.Text.Json;
 using Amolenk.Admitto.Application.Common.Abstractions;
-using Amolenk.Admitto.Domain.DomainEvents;
 using Amolenk.Admitto.Infrastructure.Persistence;
+using Azure.Messaging;
+using Azure.Storage.Queues;
+using Polly;
+using Polly.Retry;
+using Polly.Telemetry;
 
-namespace Admitto.OutboxProcessor;
+namespace Amolenk.Admitto.Worker;
 
 /// <summary>
-/// Receives messages from the outbox and dispatches them to the appropriate handlers.
+/// Receives messages from the PostgreSQL outbox using logical replication and publishes them as cloud events on Azure
+/// Storage Queues.
 /// </summary>
-public class MessageOutboxWorker(PgOutboxMessageDispatcher outboxMessageDispatcher, IServiceProvider serviceProvider)
+public class MessageOutboxWorker(
+    PgOutboxMessageProcessor outboxMessageProcessor,
+    [FromKeyedServices("queues")] QueueServiceClient queueServiceClient,
+    ILoggerFactory loggerFactory)
     : BackgroundService
 {
-    protected override Task ExecuteAsync(CancellationToken stoppingToken)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        return outboxMessageDispatcher.ExecuteAsync(HandleMessageAsync, stoppingToken);
+        await CreateRetryStrategy().ExecuteAsync(
+            ct => outboxMessageProcessor.ProcessMessagesAsync(HandleMessageAsync, ct), stoppingToken);
     }
 
     private async ValueTask HandleMessageAsync(OutboxMessage message, CancellationToken cancellationToken)
     {
-        using var scope = serviceProvider.CreateScope();
-        
-        var bodyType = Type.GetType(message.Discriminator, true)!;
-        
-        var body = message.Payload.Deserialize(bodyType, JsonSerializerOptions.Web);
-        
-        switch (body)
+        var cloudEvent = new CloudEvent(nameof(Admitto), message.Type, new BinaryData(message.Data),
+            "application/json")
         {
-            case ICommand command:
-                await HandleCommandAsync(command, scope.ServiceProvider, cancellationToken);
-                break;
-            case IDomainEvent domainEvent:
-                await HandleDomainEventAsync(domainEvent, scope.ServiceProvider, cancellationToken);
-                break;
-            default:
-                throw new InvalidOperationException($"Cannot handle outbox message of type: {message.Discriminator}");
-        }
+            Id = message.Id.ToString()
+        };
+        
+        var queueClient = queueServiceClient.GetQueueClient(message.Priority ? "queue-prio" : "queue");
+        
+        await queueClient.SendMessageAsync(new BinaryData(cloudEvent), cancellationToken: cancellationToken);
     }
     
-    private static ValueTask HandleCommandAsync(ICommand command, IServiceProvider serviceProvider, CancellationToken cancellationToken)
+    private ResiliencePipeline CreateRetryStrategy()
     {
-        var handlerType = typeof(ICommandHandler<>).MakeGenericType(command.GetType());
-        dynamic handler = serviceProvider.GetRequiredService(handlerType);
-
-        return handler.HandleAsync((dynamic)command, cancellationToken);
-    }
-    
-    private static ValueTask HandleDomainEventAsync(IDomainEvent domainEvent, IServiceProvider serviceProvider, CancellationToken cancellationToken)
-    {
-        var handlerType = typeof(IDomainEventHandler<>).MakeGenericType(domainEvent.GetType());
-        dynamic handler = serviceProvider.GetRequiredService(handlerType);
-
-        return handler.HandleAsync((dynamic)domainEvent, cancellationToken);
+        var telemetryOptions = new TelemetryOptions
+        {
+            LoggerFactory = loggerFactory
+        };
+        
+        return new ResiliencePipelineBuilder { Name = "MessageOutboxWorker", InstanceName = "Default"}
+            .AddRetry(new RetryStrategyOptions
+            {
+                BackoffType = DelayBackoffType.Exponential,
+                MaxDelay = TimeSpan.FromSeconds(30),
+                MaxRetryAttempts = int.MaxValue
+            })
+            .ConfigureTelemetry(telemetryOptions)
+            .Build();
     }
 }

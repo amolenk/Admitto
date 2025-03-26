@@ -7,7 +7,7 @@ namespace Amolenk.Admitto.Domain.ValueObjects;
 /// </summary>
 public record AttendeeId(Guid Value)
 {
-    public static AttendeeId Create(string email)
+    public static AttendeeId FromEmail(string email)
     {
         return new AttendeeId(DeterministicGuidGenerator.Generate(email));
     }

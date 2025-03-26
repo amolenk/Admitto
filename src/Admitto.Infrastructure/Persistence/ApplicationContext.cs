@@ -1,43 +1,60 @@
 using System.Reflection;
 using Amolenk.Admitto.Application.Common.Abstractions;
-using Amolenk.Admitto.Application.Common.ReadModels;
+using Amolenk.Admitto.Application.ReadModel.Views;
+using Amolenk.Admitto.Application.UseCases.Auth;
+using Amolenk.Admitto.Application.UseCases.Email;
+using Amolenk.Admitto.Application.UseCases.Email.SendEmail;
 using Amolenk.Admitto.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Amolenk.Admitto.Infrastructure.Persistence;
 
-public class ApplicationContext : DbContext, IApplicationContext
+public class ApplicationContext(DbContextOptions options) : DbContext(options), IDomainContext, IReadModelContext,
+    IAuthContext, IEmailContext, IEmailOutbox, IMessageOutbox, IUnitOfWork
 {
-    public DbSet<AttendeeActivityReadModel> AttendeeActivities { get; set; } = null!;
-
+    // IDomainContext sets
     public DbSet<AttendeeRegistration> AttendeeRegistrations { get; set; } = null!;
-    
-    public DbSet<OutboxMessage> Outbox { get; set; } = null!;
-
+    public DbSet<OrganizingTeam> OrganizingTeams { get; set; } = null!;
     public DbSet<TicketedEvent> TicketedEvents { get; set; } = null!;
-
-    public ApplicationContext(DbContextOptions<ApplicationContext> options) : base(options)
-    {
-        SavingChanges += PublishDomainEventsToOutbox;
-    }
-
+    
+    // IReadModelContext sets
+    public DbSet<AttendeeActivityView> AttendeeActivities { get; set; } = null!;
+    public DbSet<TeamMembersView> TeamMembers { get; set; } = null!;
+    
+    // IAuthContext sets
+    public DbSet<AuthorizationCode> AuthorizationCodes { get; set; } = null!;
+    public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
+    
+    // IEmailContext sets
+    public DbSet<EmailMessage> EmailMessages { get; set; } = null!;
+    
+    // Other sets
+    public DbSet<OutboxMessage> Outbox { get; set; } = null!;
+    
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
     }
-    
-    private void PublishDomainEventsToOutbox(object? sender, SavingChangesEventArgs args)
+
+    public void EnqueueEmail(string recipientEmail, string templateId, Dictionary<string, string> templateParameters, 
+        bool priority)
     {
-        foreach (var entry in ChangeTracker.Entries())
+        var email = new EmailMessage
         {
-            if (entry.Entity is not AggregateRoot aggregate) continue;
-            
-            foreach (var domainEvent in aggregate.GetDomainEvents())
-            {
-                Outbox.Add(OutboxMessage.FromDomainEvent(domainEvent));
-            }
-                
-            aggregate.ClearDomainEvents();
-        }
+            RecipientEmail = recipientEmail,
+            TemplateId = templateId,
+            TemplateParameters = [..templateParameters.Select(kv => new EmailTemplateParameter(kv.Key, kv.Value))],
+            Priority = priority
+        };
+        
+        EmailMessages.Add(email);
+        
+        // Add a command to the outbox to deliver the e-mail to the user.
+        EnqueueCommand(new SendEmailCommand(email.Id), priority);
+    }
+
+    public void EnqueueCommand(ICommand command, bool priority)
+    {
+        Outbox.Add(OutboxMessage.FromCommand(command, priority));
     }
 }

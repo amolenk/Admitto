@@ -5,10 +5,10 @@ namespace Amolenk.Admitto.Application.UseCases.TicketedEvents.CreateTicketedEven
 /// <summary>
 /// Create a new ticketed event.
 /// </summary>
-public class CreateTicketedEventHandler(IApplicationContext context) 
+public class CreateTicketedEventHandler(IDomainContext context) 
     : ICommandHandler<CreateTicketedEventCommand, CreateTicketedEventResult>
 {
-    public async ValueTask<CreateTicketedEventResult> HandleAsync(CreateTicketedEventCommand command, 
+    public ValueTask<CreateTicketedEventResult> HandleAsync(CreateTicketedEventCommand command, 
         CancellationToken cancellationToken)
     {
         var ticketedEvent = TicketedEvent.Create(command.Name, command.StartDay, command.EndDay,
@@ -23,9 +23,7 @@ public class CreateTicketedEventHandler(IApplicationContext context)
         }
         
         context.TicketedEvents.Add(ticketedEvent);
-
-        await context.SaveChangesAsync(cancellationToken);
         
-        return new CreateTicketedEventResult(ticketedEvent.Id);
+        return ValueTask.FromResult(new CreateTicketedEventResult(ticketedEvent.Id));
     }
 }

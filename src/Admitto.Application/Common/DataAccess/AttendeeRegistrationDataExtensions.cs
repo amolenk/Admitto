@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Domain.Entities;
-using Microsoft.EntityFrameworkCore;
 
 namespace Amolenk.Admitto.Application.Common.DataAccess;
 

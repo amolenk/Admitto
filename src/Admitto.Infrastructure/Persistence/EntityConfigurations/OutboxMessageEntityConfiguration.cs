@@ -15,14 +15,18 @@ public class OutboxMessageEntityConfiguration : IEntityTypeConfiguration<OutboxM
             .HasColumnName("id")
             .ValueGeneratedNever();
         
-        builder.Property(e => e.Discriminator)
-            .HasColumnName("discriminator")
+        builder.Property(e => e.Type)
+            .HasColumnName("type")
             .IsRequired()
             .HasMaxLength(255);
         
-        builder.Property(e => e.Payload)
-            .HasColumnName("payload")
+        builder.Property(e => e.Data)
+            .HasColumnName("data")
             .HasColumnType("jsonb")
+            .IsRequired();
+
+        builder.Property(e => e.Priority)
+            .HasColumnName("priority")
             .IsRequired();
     }
 }

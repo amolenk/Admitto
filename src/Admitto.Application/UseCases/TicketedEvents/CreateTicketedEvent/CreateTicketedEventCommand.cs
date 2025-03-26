@@ -8,7 +8,7 @@ public record CreateTicketedEventCommand(
     DateTime SalesEndDateTime,
     IEnumerable<TicketTypeDto>? TicketTypes) : ICommand
 {
-    public Guid CommandId { get; } = Guid.NewGuid();
+    public Guid Id { get; } = Guid.NewGuid();
 }
 
 public record CreateTicketedEventResult(Guid Id);

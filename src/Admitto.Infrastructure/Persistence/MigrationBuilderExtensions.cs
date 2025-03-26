@@ -11,13 +11,14 @@ public static class MigrationBuilderExtensions
         // Create a publication for the outbox table.
         // A publication is essentially a group of tables whose data changes are intended to be replicated through
         // logical replication.
-        migrationBuilder.Sql($"CREATE PUBLICATION {PgOutboxMessageDispatcher.PublicationName} FOR TABLE outbox;",
+        migrationBuilder.Sql($"CREATE PUBLICATION {PgOutboxMessageProcessor.PublicationName} FOR TABLE outbox;",
             suppressTransaction: true);
 
         // Create a replication slot, which will hold the state of the replication stream.
         // When Admitto goes down, the slot persistently records the last data streamed to it, and allows resuming the
         // application at the point where it left off.
-        migrationBuilder.Sql($"SELECT * FROM pg_create_logical_replication_slot('{PgOutboxMessageDispatcher.SlotName}', 'pgoutput');",
+        migrationBuilder.Sql(
+            $"SELECT * FROM pg_create_logical_replication_slot('{PgOutboxMessageProcessor.SlotName}', 'pgoutput');",
             suppressTransaction: true);
     }
 }

@@ -4,7 +4,8 @@ namespace Amolenk.Admitto.Application.UseCases.Attendees.RegisterAttendee;
 /// Reserves the tickets required to confirm a registration.
 /// We track the processed commands to guarantee exactly-once processing.
 /// </summary>
-public class ReserveTicketsHandler(IApplicationContext context) : ICommandHandler<ReserveTicketsCommand>
+public class ReserveTicketsHandler(IDomainContext context, IMessageOutbox messageOutbox)
+    : ICommandHandler<ReserveTicketsCommand>
 {
     public async ValueTask HandleAsync(ReserveTicketsCommand command, CancellationToken cancellationToken)
     {
@@ -17,10 +18,8 @@ public class ReserveTicketsHandler(IApplicationContext context) : ICommandHandle
         context.TicketedEvents.Update(ticketedEvent);
         
         // Also add a command to the outbox to resolve the pending registration.
-        context.Outbox.Add(OutboxMessage.FromCommand(
-            new ResolvePendingRegistrationCommand(command.RegistrationId, succes)));
+        messageOutbox.EnqueueCommand(new ResolvePendingRegistrationCommand(command.RegistrationId, succes));
 
         // TODO Use some kind of inbox pattern to ensure exactly-once processing
-        await context.SaveChangesAsync(cancellationToken);
     }
 }
