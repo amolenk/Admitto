@@ -1,5 +1,3 @@
-using Amolenk.Admitto.Domain.Entities;
-
 namespace Amolenk.Admitto.Application.UseCases.Teams.GetTeams;
 
 /// <summary>
@@ -10,11 +8,7 @@ public class GetTeamsHandler(IDomainContext context)
 {
     public async ValueTask<GetTeamsResult> HandleAsync(GetTeamsQuery query, CancellationToken cancellationToken)
     {
-        IEnumerable<OrganizingTeam> teams = [];
-        //     OrganizingTeam.Create("Dutch IT Events"),
-        //     OrganizingTeam.Create("Microsoft Community")
-        // ];
-//        var teams = await context.OrganizingTeams.ToListAsync(cancellationToken);
+        var teams = await context.OrganizingTeams.ToListAsync(cancellationToken);
 
         return GetTeamsResult.FromTeams(teams);
     }

@@ -12,10 +12,10 @@ public record GetTeamsResult(IEnumerable<TeamDto> Teams)
     }
 }
 
-public record TeamDto(string Name)
+public record TeamDto(Guid Id, string Name)
 {
     public static TeamDto FromTeam(OrganizingTeam team)
     {
-        return new TeamDto(team.Name);
+        return new TeamDto(team.Id, team.Name);
     }
 }
