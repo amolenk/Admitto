@@ -13,11 +13,12 @@ public class AttendeeRegistration : AggregateRoot
     {
     }
 
-    private AttendeeRegistration(AttendeeRegistrationId id, TicketedEventId ticketedEventId, string email,
-        string firstName, string lastName, string organizationName, TicketOrder ticketOrder,
+    private AttendeeRegistration(AttendeeRegistrationId id, TeamId teamId, TicketedEventId ticketedEventId, 
+        string email, string firstName, string lastName, string organizationName, TicketOrder ticketOrder,
         AttendeeRegistrationStatus status)
         : base(id.Value)
     {
+        TeamId = teamId;
         TicketedEventId = ticketedEventId;
         Email = email;
         FirstName = firstName;
@@ -27,6 +28,7 @@ public class AttendeeRegistration : AggregateRoot
         Status = status;
     }
 
+    public TeamId TeamId { get; private set; } = null!;
     public TicketedEventId TicketedEventId { get; private set; } = null!;
     public string Email { get; private set; } = null!;
     public string FirstName { get; private set; } = null!;
@@ -35,13 +37,13 @@ public class AttendeeRegistration : AggregateRoot
     public TicketOrder TicketOrder { get; private set; } = null!;
     public AttendeeRegistrationStatus Status { get; private set; }
 
-    public static AttendeeRegistration Create(TicketedEventId ticketedEventId, string email, string firstName,
-        string lastName, string organizationName, TicketOrder ticketOrder)
+    public static AttendeeRegistration Create(TeamId teamId, TicketedEventId ticketedEventId, string email, 
+        string firstName, string lastName, string organizationName, TicketOrder ticketOrder)
     {
         var attendeeId = AttendeeId.FromEmail(email);
         var attendeeRegistrationId = AttendeeRegistrationId.FromAttendeeAndEvent(attendeeId, ticketedEventId);
         
-        return new AttendeeRegistration(attendeeRegistrationId, ticketedEventId, email, firstName,
+        return new AttendeeRegistration(attendeeRegistrationId, teamId, ticketedEventId, email, firstName,
             lastName, organizationName, ticketOrder, AttendeeRegistrationStatus.Pending);
     }
 

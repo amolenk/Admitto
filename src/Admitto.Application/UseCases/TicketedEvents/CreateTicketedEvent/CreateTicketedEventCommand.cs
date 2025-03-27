@@ -1,6 +1,7 @@
 namespace Amolenk.Admitto.Application.UseCases.TicketedEvents.CreateTicketedEvent;
 
 public record CreateTicketedEventCommand(
+    Guid TeamId,
     string Name,
     DateOnly StartDay,
     DateOnly EndDay,

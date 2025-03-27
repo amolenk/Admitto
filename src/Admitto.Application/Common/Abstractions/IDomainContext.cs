@@ -6,7 +6,7 @@ public interface IDomainContext
 {
     DbSet<AttendeeRegistration> AttendeeRegistrations { get; }
 
-    DbSet<TicketedEvent> TicketedEvents { get; }
+//    DbSet<TicketedEvent> TicketedEvents { get; }
     
     DbSet<Team> Teams { get; }
 }

@@ -9,8 +9,9 @@ public class GetTicketedEventHandler(IDomainContext context)
     public async ValueTask<GetTicketedEventResult?> HandleAsync(GetTicketedEventQuery query, 
         CancellationToken cancellationToken)
     {
-        var ticketedEvent = await context.TicketedEvents.FindAsync([query.Id],
-            cancellationToken: cancellationToken);
+        var team = await context.Teams.GetByIdAsync(query.TeamId, cancellationToken);
+
+        var ticketedEvent = team.ActiveEvents.FirstOrDefault(e => e.Id == query.TicketedEventId);
 
         return ticketedEvent is not null ? GetTicketedEventResult.FromTicketedEvent(ticketedEvent) : null;
     }

@@ -1,6 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using System.Text.Json.Serialization;
-using Amolenk.Admitto.Domain.Utilities;
 using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Domain.Entities;
@@ -8,7 +6,7 @@ namespace Amolenk.Admitto.Domain.Entities;
 /// <summary>
 /// Represents an event for which attendees can register.
 /// </summary>
-public class TicketedEvent : AggregateRoot
+public class TicketedEvent : Entity
 {
     private readonly List<TicketType> _ticketTypes;
 

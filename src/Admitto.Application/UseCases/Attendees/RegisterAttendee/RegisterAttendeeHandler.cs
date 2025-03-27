@@ -16,17 +16,24 @@ public class RegisterAttendeeHandler(IDomainContext context, IMessageOutbox mess
 {
     public async ValueTask HandleAsync(RegisterAttendeeCommand command, CancellationToken cancellationToken)
     {
+        var team = await context.Teams.GetByIdAsync(command.TeamId, cancellationToken);
+        
         var ticketOrder = TicketOrder.Create(command.TicketTypes);
         
         // Early exit: If there's not enough capacity, reject immediately.
-        var ticketedEvent = await context.TicketedEvents.GetByIdAsync(command.TicketedEventId, cancellationToken);
+        var ticketedEvent = team.ActiveEvents.FirstOrDefault(e => e.Id == command.TicketedEventId);
+        if (ticketedEvent is null)
+        {
+            throw new TicketedEventNotFoundException(command.TeamId, command.TicketedEventId);
+        }
+        
         if (!ticketedEvent.HasAvailableCapacity(ticketOrder))
         {
             throw new InsufficientCapacityException();
         }
 
         // Optimistically add a new registration.
-        var registration = AttendeeRegistration.Create(command.TicketedEventId, command.Email,
+        var registration = AttendeeRegistration.Create( command.TeamId,command.TicketedEventId, command.Email,
             command.FirstName, command.LastName, command.OrganizationName, ticketOrder);
         //
         context.AttendeeRegistrations.Add(registration);

@@ -2,7 +2,7 @@ using Amolenk.Admitto.Domain.Entities;
 
 namespace Amolenk.Admitto.Application.UseCases.TicketedEvents.GetTicketedEvent;
 
-public record GetTicketedEventQuery(Guid Id);
+public record GetTicketedEventQuery(Guid TeamId, Guid TicketedEventId);
 
 public record GetTicketedEventResult(
     Guid Id,
