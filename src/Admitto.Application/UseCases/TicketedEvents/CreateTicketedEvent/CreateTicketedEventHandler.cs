@@ -8,10 +8,12 @@ namespace Amolenk.Admitto.Application.UseCases.TicketedEvents.CreateTicketedEven
 public class CreateTicketedEventHandler(IDomainContext context) 
     : ICommandHandler<CreateTicketedEventCommand, CreateTicketedEventResult>
 {
-    public ValueTask<CreateTicketedEventResult> HandleAsync(CreateTicketedEventCommand command, 
+    public async ValueTask<CreateTicketedEventResult> HandleAsync(CreateTicketedEventCommand command, 
         CancellationToken cancellationToken)
     {
-        var ticketedEvent = TicketedEvent.Create(command.Name, command.StartDay, command.EndDay,
+        var team = await context.Teams.GetByIdAsync(command.TeamId, cancellationToken);
+        
+        var newEvent = TicketedEvent.Create(command.Name, command.StartDay, command.EndDay,
             command.SalesStartDateTime, command.SalesEndDateTime);
         
         foreach (var ticketTypeDto in command.TicketTypes ?? [])
@@ -19,11 +21,11 @@ public class CreateTicketedEventHandler(IDomainContext context)
             var ticketType = TicketType.Create(ticketTypeDto.Name, ticketTypeDto.StartDateTime,
                 ticketTypeDto.EndDateTime, ticketTypeDto.MaxCapacity);
             
-            ticketedEvent.AddTicketType(ticketType);
+            newEvent.AddTicketType(ticketType);
         }
+
+        team.AddActiveEvent(newEvent);
         
-        context.TicketedEvents.Add(ticketedEvent);
-        
-        return ValueTask.FromResult(new CreateTicketedEventResult(ticketedEvent.Id));
+        return new CreateTicketedEventResult(newEvent.Id);
     }
 }

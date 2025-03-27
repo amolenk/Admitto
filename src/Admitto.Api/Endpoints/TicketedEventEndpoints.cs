@@ -22,9 +22,9 @@ public static class TicketedEventEndpoints
     }
 
     private static async Task<IResult> GetEvent(
-        Guid id, GetTicketedEventHandler handler)
+        Guid teamId, Guid ticketedEventId, GetTicketedEventHandler handler)
     {
-        var query = new GetTicketedEventQuery(id);
+        var query = new GetTicketedEventQuery(teamId, ticketedEventId);
         
         var result = await handler.HandleAsync(query, CancellationToken.None);
         return result is not null ? Results.Ok(result) : Results.NotFound();

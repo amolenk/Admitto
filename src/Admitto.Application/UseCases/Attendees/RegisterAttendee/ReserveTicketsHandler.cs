@@ -10,12 +10,19 @@ public class ReserveTicketsHandler(IDomainContext context, IMessageOutbox messag
     public async ValueTask HandleAsync(ReserveTicketsCommand command, CancellationToken cancellationToken)
     {
         var registration = await context.AttendeeRegistrations.GetByIdAsync(command.RegistrationId, cancellationToken);
-        var ticketedEvent = await context.TicketedEvents.GetByIdAsync(registration.TicketedEventId, cancellationToken);
+     
+        var team = await context.Teams.GetByIdAsync(registration.TeamId, cancellationToken);
+
+        var ticketedEvent = team.ActiveEvents.FirstOrDefault(e => e.Id == registration.TicketedEventId.Value);
+        if (ticketedEvent is null)
+        {
+            throw new TicketedEventNotFoundException(registration.TeamId, registration.TicketedEventId);
+        }
         
         // Try to reserve the required tickets for the event.
         var succes = ticketedEvent.TryReserveTickets(registration.TicketOrder);
         
-        context.TicketedEvents.Update(ticketedEvent);
+        context.Teams.Update(team);
         
         // Also add a command to the outbox to resolve the pending registration.
         messageOutbox.EnqueueCommand(new ResolvePendingRegistrationCommand(command.RegistrationId, succes));
