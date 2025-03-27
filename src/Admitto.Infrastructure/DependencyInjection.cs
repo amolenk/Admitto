@@ -30,7 +30,6 @@ public static class DependencyInjection
         builder.Services
             .AddScoped<IDomainContext>(sp => sp.GetRequiredService<ApplicationContext>())
             .AddScoped<IReadModelContext>(sp => sp.GetRequiredService<ApplicationContext>())
-            .AddScoped<IAuthContext>(sp => sp.GetRequiredService<ApplicationContext>())
             .AddScoped<IEmailContext>(sp => sp.GetRequiredService<ApplicationContext>())
             .AddScoped<IEmailOutbox>(sp => sp.GetRequiredService<ApplicationContext>())
             .AddScoped<IMessageOutbox>(sp => sp.GetRequiredService<ApplicationContext>())
