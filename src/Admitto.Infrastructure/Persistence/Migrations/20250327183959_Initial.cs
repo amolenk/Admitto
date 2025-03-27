@@ -31,6 +31,7 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
+                    team_id = table.Column<Guid>(type: "uuid", nullable: false),
                     event_id = table.Column<Guid>(type: "uuid", nullable: false),
                     email = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     first_name = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
@@ -42,20 +43,6 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_attendee_registrations", x => x.id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "authorization_codes",
-                columns: table => new
-                {
-                    code = table.Column<Guid>(type: "uuid", nullable: false),
-                    user_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    code_challenge = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
-                    expires = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_authorization_codes", x => x.code);
                 });
 
             migrationBuilder.CreateTable(
@@ -75,19 +62,6 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "organizing_teams",
-                columns: table => new
-                {
-                    id = table.Column<Guid>(type: "uuid", nullable: false),
-                    name = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    members = table.Column<string>(type: "jsonb", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_organizing_teams", x => x.id);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "outbox",
                 columns: table => new
                 {
@@ -99,17 +73,6 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_outbox", x => x.id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "refresh_tokens",
-                columns: table => new
-                {
-                    token = table.Column<Guid>(type: "uuid", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_refresh_tokens", x => x.token);
                 });
 
             migrationBuilder.CreateTable(
@@ -127,20 +90,17 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "ticketed_events",
+                name: "teams",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
-                    name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    start_day = table.Column<DateOnly>(type: "date", nullable: false),
-                    end_day = table.Column<DateOnly>(type: "date", nullable: false),
-                    sales_start_date_time = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    sales_end_date_time = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
-                    ticket_types = table.Column<string>(type: "jsonb", nullable: true)
+                    name = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    active_events = table.Column<string>(type: "jsonb", nullable: true),
+                    members = table.Column<string>(type: "jsonb", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ticketed_events", x => x.id);
+                    table.PrimaryKey("PK_teams", x => x.id);
                 });
             
             migrationBuilder.AddOutboxReplication();
@@ -156,25 +116,16 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                 name: "attendee_registrations");
 
             migrationBuilder.DropTable(
-                name: "authorization_codes");
-
-            migrationBuilder.DropTable(
                 name: "email_messages");
-
-            migrationBuilder.DropTable(
-                name: "organizing_teams");
 
             migrationBuilder.DropTable(
                 name: "outbox");
 
             migrationBuilder.DropTable(
-                name: "refresh_tokens");
-
-            migrationBuilder.DropTable(
                 name: "team_members");
 
             migrationBuilder.DropTable(
-                name: "ticketed_events");
+                name: "teams");
         }
     }
 }

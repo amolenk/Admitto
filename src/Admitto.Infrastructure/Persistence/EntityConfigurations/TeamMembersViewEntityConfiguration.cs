@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Amolenk.Admitto.Infrastructure.Persistence.EntityConfigurations;
 
-public class UserEntityConfiguration : IEntityTypeConfiguration<TeamMembersView>
+public class TeamMembersViewEntityConfiguration : IEntityTypeConfiguration<TeamMembersView>
 {
     public void Configure(EntityTypeBuilder<TeamMembersView> builder)
     {

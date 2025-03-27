@@ -13,7 +13,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationContext))]
-    [Migration("20250311094210_Initial")]
+    [Migration("20250327183959_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -74,42 +74,6 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                     b.HasKey("TeamId", "UserId");
 
                     b.ToTable("team_members", (string)null);
-                });
-
-            modelBuilder.Entity("Amolenk.Admitto.Application.UseCases.Auth.AuthorizationCode", b =>
-                {
-                    b.Property<Guid>("Code")
-                        .HasColumnType("uuid")
-                        .HasColumnName("code");
-
-                    b.Property<string>("CodeChallenge")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)")
-                        .HasColumnName("code_challenge");
-
-                    b.Property<DateTime>("Expires")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("expires");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("user_id");
-
-                    b.HasKey("Code");
-
-                    b.ToTable("authorization_codes", (string)null);
-                });
-
-            modelBuilder.Entity("Amolenk.Admitto.Application.UseCases.Auth.RefreshToken", b =>
-                {
-                    b.Property<Guid>("Token")
-                        .HasColumnType("uuid")
-                        .HasColumnName("token");
-
-                    b.HasKey("Token");
-
-                    b.ToTable("refresh_tokens", (string)null);
                 });
 
             modelBuilder.Entity("Amolenk.Admitto.Application.UseCases.Email.EmailMessage", b =>
@@ -176,6 +140,10 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("status");
 
+                    b.Property<Guid>("TeamId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("team_id");
+
                     b.Property<Guid>("TicketedEventId")
                         .HasColumnType("uuid")
                         .HasColumnName("event_id");
@@ -185,7 +153,7 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                     b.ToTable("attendee_registrations", (string)null);
                 });
 
-            modelBuilder.Entity("Amolenk.Admitto.Domain.Entities.OrganizingTeam", b =>
+            modelBuilder.Entity("Amolenk.Admitto.Domain.Entities.Team", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
@@ -199,40 +167,7 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("organizing_teams", (string)null);
-                });
-
-            modelBuilder.Entity("Amolenk.Admitto.Domain.Entities.TicketedEvent", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<DateOnly>("EndDay")
-                        .HasColumnType("date")
-                        .HasColumnName("end_day");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("name");
-
-                    b.Property<DateTime>("SalesEndDateTime")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("sales_end_date_time");
-
-                    b.Property<DateTime>("SalesStartDateTime")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("sales_start_date_time");
-
-                    b.Property<DateOnly>("StartDay")
-                        .HasColumnType("date")
-                        .HasColumnName("start_day");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("ticketed_events", (string)null);
+                    b.ToTable("teams", (string)null);
                 });
 
             modelBuilder.Entity("Amolenk.Admitto.Infrastructure.Persistence.OutboxMessage", b =>
@@ -314,11 +249,90 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("Amolenk.Admitto.Domain.Entities.OrganizingTeam", b =>
+            modelBuilder.Entity("Amolenk.Admitto.Domain.Entities.Team", b =>
                 {
+                    b.OwnsMany("Amolenk.Admitto.Domain.Entities.TicketedEvent", "ActiveEvents", b1 =>
+                        {
+                            b1.Property<Guid>("TeamId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<int>("__synthesizedOrdinal")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer");
+
+                            b1.Property<DateOnly>("EndDay")
+                                .HasColumnType("date");
+
+                            b1.Property<Guid>("Id")
+                                .HasColumnType("uuid");
+
+                            b1.Property<string>("Name")
+                                .IsRequired()
+                                .HasColumnType("text");
+
+                            b1.Property<DateTime>("SalesEndDateTime")
+                                .HasColumnType("timestamp with time zone");
+
+                            b1.Property<DateTime>("SalesStartDateTime")
+                                .HasColumnType("timestamp with time zone");
+
+                            b1.Property<DateOnly>("StartDay")
+                                .HasColumnType("date");
+
+                            b1.HasKey("TeamId", "__synthesizedOrdinal");
+
+                            b1.ToTable("teams");
+
+                            b1.ToJson("active_events");
+
+                            b1.WithOwner()
+                                .HasForeignKey("TeamId");
+
+                            b1.OwnsMany("Amolenk.Admitto.Domain.Entities.TicketType", "TicketTypes", b2 =>
+                                {
+                                    b2.Property<Guid>("TicketedEventTeamId")
+                                        .HasColumnType("uuid");
+
+                                    b2.Property<int>("TicketedEvent__synthesizedOrdinal")
+                                        .HasColumnType("integer");
+
+                                    b2.Property<int>("__synthesizedOrdinal")
+                                        .ValueGeneratedOnAdd()
+                                        .HasColumnType("integer");
+
+                                    b2.Property<DateTime>("EndDateTime")
+                                        .HasColumnType("timestamp with time zone");
+
+                                    b2.Property<Guid>("Id")
+                                        .HasColumnType("uuid");
+
+                                    b2.Property<int>("MaxCapacity")
+                                        .HasColumnType("integer");
+
+                                    b2.Property<string>("Name")
+                                        .IsRequired()
+                                        .HasColumnType("text");
+
+                                    b2.Property<int>("RemainingCapacity")
+                                        .HasColumnType("integer");
+
+                                    b2.Property<DateTime>("StartDateTime")
+                                        .HasColumnType("timestamp with time zone");
+
+                                    b2.HasKey("TicketedEventTeamId", "TicketedEvent__synthesizedOrdinal", "__synthesizedOrdinal");
+
+                                    b2.ToTable("teams");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("TicketedEventTeamId", "TicketedEvent__synthesizedOrdinal");
+                                });
+
+                            b1.Navigation("TicketTypes");
+                        });
+
                     b.OwnsMany("Amolenk.Admitto.Domain.Entities.User", "Members", b1 =>
                         {
-                            b1.Property<Guid>("OrganizingTeamId")
+                            b1.Property<Guid>("TeamId")
                                 .HasColumnType("uuid");
 
                             b1.Property<int>("__synthesizedOrdinal")
@@ -335,60 +349,19 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                             b1.Property<int>("Role")
                                 .HasColumnType("integer");
 
-                            b1.HasKey("OrganizingTeamId", "__synthesizedOrdinal");
+                            b1.HasKey("TeamId", "__synthesizedOrdinal");
 
-                            b1.ToTable("organizing_teams");
+                            b1.ToTable("teams");
 
                             b1.ToJson("members");
 
                             b1.WithOwner()
-                                .HasForeignKey("OrganizingTeamId");
+                                .HasForeignKey("TeamId");
                         });
+
+                    b.Navigation("ActiveEvents");
 
                     b.Navigation("Members");
-                });
-
-            modelBuilder.Entity("Amolenk.Admitto.Domain.Entities.TicketedEvent", b =>
-                {
-                    b.OwnsMany("Amolenk.Admitto.Domain.Entities.TicketType", "TicketTypes", b1 =>
-                        {
-                            b1.Property<Guid>("TicketedEventId")
-                                .HasColumnType("uuid");
-
-                            b1.Property<int>("__synthesizedOrdinal")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("integer");
-
-                            b1.Property<DateTime>("EndDateTime")
-                                .HasColumnType("timestamp with time zone");
-
-                            b1.Property<Guid>("Id")
-                                .HasColumnType("uuid");
-
-                            b1.Property<int>("MaxCapacity")
-                                .HasColumnType("integer");
-
-                            b1.Property<string>("Name")
-                                .IsRequired()
-                                .HasColumnType("text");
-
-                            b1.Property<int>("RemainingCapacity")
-                                .HasColumnType("integer");
-
-                            b1.Property<DateTime>("StartDateTime")
-                                .HasColumnType("timestamp with time zone");
-
-                            b1.HasKey("TicketedEventId", "__synthesizedOrdinal");
-
-                            b1.ToTable("ticketed_events");
-
-                            b1.ToJson("ticket_types");
-
-                            b1.WithOwner()
-                                .HasForeignKey("TicketedEventId");
-                        });
-
-                    b.Navigation("TicketTypes");
                 });
 #pragma warning restore 612, 618
         }

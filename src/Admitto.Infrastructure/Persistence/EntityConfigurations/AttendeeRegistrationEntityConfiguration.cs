@@ -36,6 +36,11 @@ public class AttendeeRegistrationEntityConfiguration : IEntityTypeConfiguration<
             .IsRequired()
             .HasMaxLength(32);
 
+        builder.Property(e => e.TeamId)
+            .HasColumnName("team_id")
+            .HasConversion(p => p.Value, p => new TeamId(p))
+            .IsRequired();
+
         builder.Property(e => e.TicketedEventId)
             .HasColumnName("event_id")
             .HasConversion(p => p.Value, p => new TicketedEventId(p))

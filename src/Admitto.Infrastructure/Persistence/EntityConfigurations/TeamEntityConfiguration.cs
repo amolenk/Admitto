@@ -20,14 +20,17 @@ public class TeamEntityConfiguration : IEntityTypeConfiguration<Team>
             .IsRequired()
             .HasMaxLength(50);
         
-        // builder.Property(e => e.Members)
-        //     .HasColumnName("members")
-        //     .HasColumnType("jsonb")
-        //     .IsRequired();
-        
         builder.OwnsMany(e => e.Members, b =>
         {
             b.ToJson("members");
+        });
+
+        builder.OwnsMany(e => e.ActiveEvents, b =>
+        {
+            b.ToJson("active_events");
+            
+            // Even though it's all JSON, EF Core still needs to know the structure of the data
+            b.OwnsMany(t => t.TicketTypes);
         });
     }
 }
