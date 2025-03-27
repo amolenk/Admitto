@@ -8,7 +8,7 @@ public class GetTeamsHandler(IDomainContext context)
 {
     public async ValueTask<GetTeamsResult> HandleAsync(GetTeamsQuery query, CancellationToken cancellationToken)
     {
-        var teams = await context.OrganizingTeams.ToListAsync(cancellationToken);
+        var teams = await context.Teams.ToListAsync(cancellationToken);
 
         return GetTeamsResult.FromTeams(teams);
     }

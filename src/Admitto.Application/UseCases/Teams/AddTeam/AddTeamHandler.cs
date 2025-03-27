@@ -9,9 +9,9 @@ public class AddTeamHandler(IDomainContext context) : ICommandHandler<AddTeamCom
 {
     public ValueTask<AddTeamResult> HandleAsync(AddTeamCommand command, CancellationToken cancellationToken)
     {
-        var team = OrganizingTeam.Create(command.Name);
+        var team = Team.Create(command.Name);
         
-        context.OrganizingTeams.Add(team);
+        context.Teams.Add(team);
 
         return ValueTask.FromResult(new AddTeamResult(team.Id));
     }

@@ -14,7 +14,7 @@ public class ApplicationContext(DbContextOptions options) : DbContext(options), 
 {
     // IDomainContext sets
     public DbSet<AttendeeRegistration> AttendeeRegistrations { get; set; } = null!;
-    public DbSet<OrganizingTeam> OrganizingTeams { get; set; } = null!;
+    public DbSet<Team> Teams { get; set; } = null!;
     public DbSet<TicketedEvent> TicketedEvents { get; set; } = null!;
     
     // IReadModelContext sets

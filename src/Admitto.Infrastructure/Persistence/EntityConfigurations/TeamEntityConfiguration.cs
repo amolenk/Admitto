@@ -4,11 +4,11 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Amolenk.Admitto.Infrastructure.Persistence.EntityConfigurations;
 
-public class OrganizingTeamEntityConfiguration : IEntityTypeConfiguration<OrganizingTeam>
+public class TeamEntityConfiguration : IEntityTypeConfiguration<Team>
 {
-    public void Configure(EntityTypeBuilder<OrganizingTeam> builder)
+    public void Configure(EntityTypeBuilder<Team> builder)
     {
-        builder.ToTable("organizing_teams");
+        builder.ToTable("teams");
         builder.HasKey(e => e.Id);
         
         builder.Property(e => e.Id)

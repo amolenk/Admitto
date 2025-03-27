@@ -8,5 +8,5 @@ public interface IDomainContext
 
     DbSet<TicketedEvent> TicketedEvents { get; }
     
-    DbSet<OrganizingTeam> OrganizingTeams { get; }
+    DbSet<Team> Teams { get; }
 }
