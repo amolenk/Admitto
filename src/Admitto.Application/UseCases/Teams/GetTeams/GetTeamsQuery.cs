@@ -6,7 +6,7 @@ public record GetTeamsQuery;
 
 public record GetTeamsResult(IEnumerable<TeamDto> Teams)
 {
-    public static GetTeamsResult FromTeams(IEnumerable<OrganizingTeam> teams)
+    public static GetTeamsResult FromTeams(IEnumerable<Team> teams)
     {
         return new GetTeamsResult(teams.Select(TeamDto.FromTeam));
     }
@@ -14,7 +14,7 @@ public record GetTeamsResult(IEnumerable<TeamDto> Teams)
 
 public record TeamDto(Guid Id, string Name)
 {
-    public static TeamDto FromTeam(OrganizingTeam team)
+    public static TeamDto FromTeam(Team team)
     {
         return new TeamDto(team.Id, team.Name);
     }

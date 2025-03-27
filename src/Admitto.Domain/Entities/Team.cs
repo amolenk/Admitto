@@ -6,17 +6,17 @@ namespace Amolenk.Admitto.Domain.Entities;
 /// <summary>
 /// Represents an organizing team in the system.
 /// </summary>
-public class OrganizingTeam : AggregateRoot
+public class Team : AggregateRoot
 {
     private readonly List<User> _members;
 
     // EF Core constructor
-    private OrganizingTeam()
+    private Team()
     {
         _members = [];
     }
     
-    private OrganizingTeam(OrganizingTeamId id, string name) : base(id)
+    private Team(OrganizingTeamId id, string name) : base(id)
     {
         Id = id.Value;
         Name = name;
@@ -26,11 +26,11 @@ public class OrganizingTeam : AggregateRoot
     public string Name { get; private set; } = null!;
     public IReadOnlyCollection<User> Members => _members.AsReadOnly();
     
-    public static OrganizingTeam Create(string name)
+    public static Team Create(string name)
     {
         var id = OrganizingTeamId.FromName(name);
         
-        return new OrganizingTeam(id, name);
+        return new Team(id, name);
     }
     
     public void AddMember(User user)

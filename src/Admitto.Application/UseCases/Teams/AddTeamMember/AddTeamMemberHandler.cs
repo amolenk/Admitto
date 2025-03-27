@@ -9,7 +9,7 @@ public class AddTeamMemberHandler(IDomainContext context) : ICommandHandler<AddT
 {
     public async ValueTask HandleAsync(AddTeamMemberCommand command, CancellationToken cancellationToken)
     {
-        var team = await context.OrganizingTeams.GetByIdAsync(command.OrganizingTeamId, cancellationToken);
+        var team = await context.Teams.GetByIdAsync(command.OrganizingTeamId, cancellationToken);
         
         team.AddMember(User.Create(command.Email, command.Role));
     }
