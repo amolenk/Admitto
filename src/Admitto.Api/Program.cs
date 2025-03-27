@@ -44,7 +44,6 @@ if (app.Environment.IsDevelopment())
 
 app.MapDefaultEndpoints();
 app.MapAttendeeRegistrationEndpoints();
-app.MapAuthEndpoints();
 app.MapTeamEndpoints();
 app.MapTicketedEventEndpoints();
 
