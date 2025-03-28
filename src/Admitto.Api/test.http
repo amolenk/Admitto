@@ -22,28 +22,7 @@ Content-Type: application/json
 
 ###
 
-@codeVerifier = foo
-@codeChallenge = LCa0a2j_xo_5m0U8HTBBNBNCLXBkg7-g-YpeiGJm564
-
-POST http://localhost:5100/authorize
-Content-Type: application/json
-
-{
-  "email": "a.molenkamp@gmail.com",
-  "codeChallenge": "{{codeChallenge}}"
-}
-
-###
-
-@authorizationCode = ???
-
-POST http://localhost:5100/token
-Content-Type: application/json
-
-{
-  "code": "{{authorizationCode}}",
-  "codeVerifier": "{{codeVerifier}}"
-}
+GET http://localhost:5100/teams/{{teamId}}/events/{{ticketedEventId}}
 
 ###
 

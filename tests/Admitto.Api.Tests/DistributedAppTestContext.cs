@@ -12,22 +12,27 @@ public static class DistributedAppTestContext
 {
     private static DistributedApplication _app = null!;
     private static DbContextOptions<ApplicationContext> _dbContextOptions = null!;
-    
+
     [AssemblyInitialize]
     public static async ValueTask AssemblyInitialize(TestContext testContext)
     {
         // Start the distributed app.
-        var appBuilder = await DistributedApplicationTestingBuilder.CreateAsync<Projects.Admitto_AppHost>();
+        var appBuilder = await DistributedApplicationTestingBuilder.CreateAsync<Projects.Admitto_AppHost>(
+        [
+            "--environment Testing"
+        ]);
+
         _app = await appBuilder.BuildAsync();
-        //
+
         await _app.StartAsync();
 
         // Get the connection string for the Postgres database.
-        if (appBuilder.Resources.FirstOrDefault(r => r.Name == "postgresdb") 
+        if (appBuilder.Resources.FirstOrDefault(r => r.Name == "postgresdb")
             is not PostgresDatabaseResource postgres)
         {
             throw new InvalidOperationException("Postgres database resource not found");
         }
+
         //
         var connectionString = await postgres.ConnectionStringExpression.GetValueAsync(CancellationToken.None);
 
@@ -48,8 +53,7 @@ public static class DistributedAppTestContext
         await _app.DisposeAsync();
     }
 
-    public static ApplicationContext CreateApplicationContext() => new (_dbContextOptions);
+    public static ApplicationContext CreateApplicationContext() => new(_dbContextOptions);
 
     public static HttpClient CreateApiClient() => _app.CreateHttpClient("api");
 }
-
