@@ -1,4 +1,6 @@
 using Admitto.AppHost.Extensions.AzureStorage;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
@@ -18,8 +20,8 @@ var storage = builder.AddAzureStorage("storage")
     .RunAsEmulator(azurite =>
     {
         azurite
-            .WithQueuePort(10001)
-            .WithLifetime(ContainerLifetime.Persistent);
+            .WithQueuePort(10001);
+//            .WithLifetime(ContainerLifetime.Persistent);
     });
     
 var queues = storage.AddQueues("queues")
@@ -32,8 +34,8 @@ var keycloakAdminPassword = builder.AddParameter("KeycloakAdminPassword", secret
 var keycloak = builder.AddKeycloak("keycloak", 8080, 
     adminPassword: keycloakAdminPassword)
     .WithDataVolume("admitto-keycloak-data")
-    .WithRealmImport("./Realms/Admitto.json")
-    .WithLifetime(ContainerLifetime.Persistent);
+    .WithRealmImport("./Realms/Admitto.json");
+    // .WithLifetime(ContainerLifetime.Persistent);
 
 var apiService = builder.AddProject<Projects.Admitto_Api>("api")
     .WithReference(postgresdb)
@@ -54,14 +56,18 @@ var authClientId = builder.AddParameter("AuthClientId");
 var authClientSecret = builder.AddParameter("AuthClientSecret", true);
 var authIssuer = builder.AddParameter("AuthIssuer");
 
-builder.AddPnpmApp("admin-ui", "../Admitto.UI.Admin", "dev")
-    .WithEnvironment("AUTH_SECRET", authSecret)
-    .WithEnvironment("AUTH_KEYCLOAK_ID", authClientId)
-    .WithEnvironment("AUTH_KEYCLOAK_SECRET", authClientSecret)
-    .WithEnvironment("AUTH_KEYCLOAK_ISSUER", authIssuer)
-    .WithHttpEndpoint(3000, isProxied: false) // Use a static port number for OAuth redirect URIs
-    .WithExternalHttpEndpoints()
-    .WithReference(keycloak)
-    .PublishAsDockerFile();
+var hostEnvironment = builder.Services.BuildServiceProvider().GetRequiredService<IHostEnvironment>();
+if (!hostEnvironment.IsEnvironment("Testing"))
+{
+    builder.AddPnpmApp("admin-ui", "../Admitto.UI.Admin", "dev")
+        .WithEnvironment("AUTH_SECRET", authSecret)
+        .WithEnvironment("AUTH_KEYCLOAK_ID", authClientId)
+        .WithEnvironment("AUTH_KEYCLOAK_SECRET", authClientSecret)
+        .WithEnvironment("AUTH_KEYCLOAK_ISSUER", authIssuer)
+        .WithHttpEndpoint(3000, isProxied: false) // Use a static port number for OAuth redirect URIs
+        .WithExternalHttpEndpoints()
+        .WithReference(keycloak)
+        .PublishAsDockerFile();
+}
 
 builder.Build().Run();

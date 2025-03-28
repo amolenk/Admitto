@@ -8,9 +8,9 @@ public static class TicketedEventEndpoints
 {
     public static void MapTicketedEventEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/events").WithTags("Events");
+        var group = app.MapGroup("/teams/{teamId:guid}/events").WithTags("Events");
 
-        group.MapGet("/{id:guid}", GetEvent)
+        group.MapGet("/{ticketedEventId:guid}", GetEvent)
             .WithName(nameof(GetEvent))
             .Produces(StatusCodes.Status200OK)
             .Produces(StatusCodes.Status404NotFound);
