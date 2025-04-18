@@ -30,11 +30,11 @@ public static class TicketedEventEndpoints
         return result is not null ? Results.Ok(result) : Results.NotFound();
     }
 
-    private static async Task<Results<Created<CreateTicketedEventResult>, ValidationProblem>> CreateEvent(
+    private static async Task<Results<Created<Guid>, ValidationProblem>> CreateEvent(
         CreateTicketedEventCommand command, CreateTicketedEventHandler handler)
     {
         var result = await handler.HandleAsync(command, CancellationToken.None);
 
-        return TypedResults.Created($"/events/{result.Id}", result);
+        return TypedResults.Created($"/events/{result.Value}", result.Value);
     }
 }

@@ -5,14 +5,14 @@ namespace Amolenk.Admitto.Application.UseCases.Teams.AddTeam;
 /// <summary>
 /// Add a team for organizing events.
 /// </summary>
-public class AddTeamHandler(IDomainContext context) : ICommandHandler<AddTeamCommand, AddTeamResult>
+public class AddTeamHandler(IDomainContext context) : ICommandHandler<AddTeamCommand, Guid>
 {
-    public ValueTask<AddTeamResult> HandleAsync(AddTeamCommand command, CancellationToken cancellationToken)
+    public ValueTask<Result<Guid>> HandleAsync(AddTeamCommand command, CancellationToken cancellationToken)
     {
         var team = Team.Create(command.Name);
         
         context.Teams.Add(team);
 
-        return ValueTask.FromResult(new AddTeamResult(team.Id));
+        return ValueTask.FromResult(Result<Guid>.Success(team.Id));
     }
 }

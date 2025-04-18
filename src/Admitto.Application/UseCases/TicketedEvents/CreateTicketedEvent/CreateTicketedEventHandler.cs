@@ -6,12 +6,16 @@ namespace Amolenk.Admitto.Application.UseCases.TicketedEvents.CreateTicketedEven
 /// Create a new ticketed event.
 /// </summary>
 public class CreateTicketedEventHandler(IDomainContext context) 
-    : ICommandHandler<CreateTicketedEventCommand, CreateTicketedEventResult>
+    : ICommandHandler<CreateTicketedEventCommand, Guid>
 {
-    public async ValueTask<CreateTicketedEventResult> HandleAsync(CreateTicketedEventCommand command, 
+    public async ValueTask<Result<Guid>> HandleAsync(CreateTicketedEventCommand command, 
         CancellationToken cancellationToken)
     {
-        var team = await context.Teams.GetByIdAsync(command.TeamId, cancellationToken);
+        var team = await context.Teams.FindAsync([command.TeamId], cancellationToken);
+        if (team is null)
+        {
+            return Result<Guid>.Failure("Team not found.");
+        }
         
         var newEvent = TicketedEvent.Create(command.Name, command.StartDay, command.EndDay,
             command.SalesStartDateTime, command.SalesEndDateTime);
@@ -26,6 +30,6 @@ public class CreateTicketedEventHandler(IDomainContext context)
 
         team.AddActiveEvent(newEvent);
         
-        return new CreateTicketedEventResult(newEvent.Id);
+        return Result<Guid>.Success(newEvent.Id);
     }
 }

@@ -12,6 +12,4 @@ public record CreateTicketedEventCommand(
     public Guid Id { get; } = Guid.NewGuid();
 }
 
-public record CreateTicketedEventResult(Guid Id);
-
 public record TicketTypeDto(string Name, DateTime StartDateTime, DateTime EndDateTime, int MaxCapacity);

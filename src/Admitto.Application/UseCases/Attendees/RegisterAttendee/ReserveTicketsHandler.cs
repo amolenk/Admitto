@@ -9,14 +9,22 @@ public class ReserveTicketsHandler(IDomainContext context, IMessageOutbox messag
 {
     public async ValueTask HandleAsync(ReserveTicketsCommand command, CancellationToken cancellationToken)
     {
-        var registration = await context.AttendeeRegistrations.GetByIdAsync(command.RegistrationId, cancellationToken);
-     
-        var team = await context.Teams.GetByIdAsync(registration.TeamId, cancellationToken);
-
+        var registration = await context.AttendeeRegistrations.FindAsync([command.RegistrationId], cancellationToken);
+        if (registration is null)
+        {
+            throw new ValidationException("Attendee registration not found.");
+        }
+        
+        var team = await context.Teams.FindAsync([registration.TeamId], cancellationToken);
+        if (team is null)
+        {
+            throw new ValidationException("Team not found.");
+        }
+        
         var ticketedEvent = team.ActiveEvents.FirstOrDefault(e => e.Id == registration.TicketedEventId.Value);
         if (ticketedEvent is null)
         {
-            throw new TicketedEventNotFoundException(registration.TeamId, registration.TicketedEventId);
+            throw new ValidationException("Ticketed event not found.");
         }
         
         // Try to reserve the required tickets for the event.
