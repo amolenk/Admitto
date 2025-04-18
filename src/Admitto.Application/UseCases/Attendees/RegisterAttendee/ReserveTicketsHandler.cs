@@ -1,3 +1,5 @@
+using Amolenk.Admitto.Application.Common;
+
 namespace Amolenk.Admitto.Application.UseCases.Attendees.RegisterAttendee;
 
 /// <summary>
@@ -12,19 +14,19 @@ public class ReserveTicketsHandler(IDomainContext context, IMessageOutbox messag
         var registration = await context.AttendeeRegistrations.FindAsync([command.RegistrationId], cancellationToken);
         if (registration is null)
         {
-            throw new ValidationException("Attendee registration not found.");
+            throw new ValidationException(Error.AttendeeRegistrationNotFound(command.RegistrationId));
         }
         
         var team = await context.Teams.FindAsync([registration.TeamId], cancellationToken);
         if (team is null)
         {
-            throw new ValidationException("Team not found.");
+            throw new ValidationException(Error.TeamNotFound(registration.TeamId));
         }
         
         var ticketedEvent = team.ActiveEvents.FirstOrDefault(e => e.Id == registration.TicketedEventId.Value);
         if (ticketedEvent is null)
         {
-            throw new ValidationException("Ticketed event not found.");
+            throw new ValidationException(Error.TicketedEventNotFound(registration.TicketedEventId));
         }
         
         // Try to reserve the required tickets for the event.
