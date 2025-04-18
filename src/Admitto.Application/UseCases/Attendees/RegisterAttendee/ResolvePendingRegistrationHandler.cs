@@ -1,3 +1,5 @@
+using Amolenk.Admitto.Application.Common;
+
 namespace Amolenk.Admitto.Application.UseCases.Attendees.RegisterAttendee;
 
 /// <summary>
@@ -11,7 +13,7 @@ public class ResolvePendingRegistrationHandler(IDomainContext context)
         var registration = await context.AttendeeRegistrations.FindAsync([command.RegistrationId], cancellationToken);
         if (registration is null)
         {
-            throw new ValidationException("Attendee registration not found.");
+            throw new ValidationException(Error.AttendeeRegistrationNotFound(command.RegistrationId));
         }
         
         if (command.TicketsReserved)
