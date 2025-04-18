@@ -10,8 +10,8 @@ public interface ICommandHandler<in TCommand> : ICommandHandler
     ValueTask HandleAsync(TCommand command, CancellationToken cancellationToken);
 }
 
-public interface ICommandHandler<in TCommand, TResult> : ICommandHandler
+public interface ICommandHandler<in TCommand, TResultValue> : ICommandHandler
     where TCommand : ICommand
 {
-    ValueTask<TResult> HandleAsync(TCommand command, CancellationToken cancellationToken);
+    ValueTask<Result<TResultValue>> HandleAsync(TCommand command, CancellationToken cancellationToken);
 }

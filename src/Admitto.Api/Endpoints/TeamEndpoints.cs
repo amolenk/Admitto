@@ -19,12 +19,11 @@ public static class TeamEndpoints
         var group = app.MapGroup("/teams").WithTags("Teams");
 
         group.MapGet("/", GetTeams)
-            .WithName(nameof(GetTeams))
-            .Produces<GetTeamsResult>();
+            .WithName(nameof(GetTeams));
 
         group.MapPost("/", AddTeam)
             .WithName(nameof(AddTeam))
-            .Produces<AddTeamResult>(StatusCodes.Status201Created)
+            .Produces(StatusCodes.Status201Created)
             .ProducesValidationProblem();
 
         group.MapPost("/{teamId:guid}/members", AddTeamMember)
@@ -33,20 +32,20 @@ public static class TeamEndpoints
             .ProducesValidationProblem();
     }
 
-    private static async Task<Ok<GetTeamsResult>> GetTeams(GetTeamsHandler handler)
+    private static async Task<Ok<IEnumerable<TeamDto>>> GetTeams(GetTeamsHandler handler)
     {
         var query = new GetTeamsQuery();
         
         var result = await handler.HandleAsync(query, CancellationToken.None);
-        return TypedResults.Ok(result);
+        return TypedResults.Ok(result.Value);
     }
     
-    private static async Task<Results<Created<AddTeamResult>, ValidationProblem>> AddTeam(
+    private static async Task<Results<Created<Guid>, ValidationProblem>> AddTeam(
         [FromBody] AddTeamCommand command, [FromServices] AddTeamHandler handler)
     {
         var result = await handler.HandleAsync(command, CancellationToken.None);
 
-        return TypedResults.Created($"/teams/{result.Id}", result);
+        return TypedResults.Created($"/teams/{result.Value}", result.Value);
     }
     
     private static async Task<Results<Created, ValidationProblem>> AddTeamMember(Guid teamId,

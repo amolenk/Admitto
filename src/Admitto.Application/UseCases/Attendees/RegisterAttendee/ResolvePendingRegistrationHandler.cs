@@ -8,8 +8,12 @@ public class ResolvePendingRegistrationHandler(IDomainContext context)
 {
     public async ValueTask HandleAsync(ResolvePendingRegistrationCommand command, CancellationToken cancellationToken)
     {
-        var registration = await context.AttendeeRegistrations.GetByIdAsync(command.RegistrationId, cancellationToken);
-
+        var registration = await context.AttendeeRegistrations.FindAsync([command.RegistrationId], cancellationToken);
+        if (registration is null)
+        {
+            throw new ValidationException("Attendee registration not found.");
+        }
+        
         if (command.TicketsReserved)
         {
             registration.Accept();

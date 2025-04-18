@@ -4,8 +4,8 @@ public interface IQueryHandler
 {
 }
 
-public interface IQueryHandler<in TQuery, TResult> : IQueryHandler
+public interface IQueryHandler<in TQuery, TResultValue> : IQueryHandler
 {
-    ValueTask<TResult> HandleAsync(TQuery query, CancellationToken cancellationToken);
+    ValueTask<Result<TResultValue>> HandleAsync(TQuery query, CancellationToken cancellationToken);
 }
 

@@ -39,7 +39,7 @@ public class TicketedEventEndpointsTests : DistributedAppTestBase
         // Assert
         Assert.AreEqual(HttpStatusCode.OK, response.StatusCode);
     
-        var result = (await response.Content.ReadFromJsonAsync<GetTicketedEventResult>())!;
+        var result = (await response.Content.ReadFromJsonAsync<TicketedEventDto>())!;
     
         result.ShouldSatisfyAllConditions(
             r => r.Name.ShouldBe(ticketedEvent.Name),

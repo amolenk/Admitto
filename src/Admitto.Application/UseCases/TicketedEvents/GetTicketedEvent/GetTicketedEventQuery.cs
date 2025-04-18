@@ -4,7 +4,7 @@ namespace Amolenk.Admitto.Application.UseCases.TicketedEvents.GetTicketedEvent;
 
 public record GetTicketedEventQuery(Guid TeamId, Guid TicketedEventId);
 
-public record GetTicketedEventResult(
+public record TicketedEventDto(
     Guid Id,
     string Name,
     DateOnly StartDay,
@@ -13,9 +13,9 @@ public record GetTicketedEventResult(
     DateTime SalesEndDateTime,
     IEnumerable<TicketTypeDto> TicketTypes)
 {
-    public static GetTicketedEventResult FromTicketedEvent(TicketedEvent ticketedEvent)
+    public static TicketedEventDto FromTicketedEvent(TicketedEvent ticketedEvent)
     {
-        return new GetTicketedEventResult(
+        return new TicketedEventDto(
             ticketedEvent.Id,
             ticketedEvent.Name,
             ticketedEvent.StartDay,

@@ -16,7 +16,11 @@ public class RegisterAttendeeHandler(IDomainContext context, IMessageOutbox mess
 {
     public async ValueTask HandleAsync(RegisterAttendeeCommand command, CancellationToken cancellationToken)
     {
-        var team = await context.Teams.GetByIdAsync(command.TeamId, cancellationToken);
+        var team = await context.Teams.FindAsync([command.TeamId], cancellationToken);
+        if (team is null)
+        {
+            throw new ValidationException("Team not found.");
+        }
         
         var ticketOrder = TicketOrder.Create(command.TicketTypes);
         

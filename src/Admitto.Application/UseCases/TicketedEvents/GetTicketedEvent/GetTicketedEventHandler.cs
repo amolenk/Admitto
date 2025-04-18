@@ -4,15 +4,21 @@ namespace Amolenk.Admitto.Application.UseCases.TicketedEvents.GetTicketedEvent;
 /// Gets a ticketed event.
 /// </summary>
 public class GetTicketedEventHandler(IDomainContext context) 
-    : IQueryHandler<GetTicketedEventQuery, GetTicketedEventResult?>
+    : IQueryHandler<GetTicketedEventQuery, TicketedEventDto>
 {
-    public async ValueTask<GetTicketedEventResult?> HandleAsync(GetTicketedEventQuery query, 
+    public async ValueTask<Result<TicketedEventDto>> HandleAsync(GetTicketedEventQuery query, 
         CancellationToken cancellationToken)
     {
-        var team = await context.Teams.GetByIdAsync(query.TeamId, cancellationToken);
-
+        var team = await context.Teams.FindAsync([query.TeamId], cancellationToken);
+        if (team is null)
+        {
+            return Result<TicketedEventDto>.Failure("Team not found.");
+        }
+        
         var ticketedEvent = team.ActiveEvents.FirstOrDefault(e => e.Id == query.TicketedEventId);
 
-        return ticketedEvent is not null ? GetTicketedEventResult.FromTicketedEvent(ticketedEvent) : null;
+        return ticketedEvent is not null 
+            ? Result<TicketedEventDto>.Success(TicketedEventDto.FromTicketedEvent(ticketedEvent))
+            : Result<TicketedEventDto>.NotFound();
     }
 }
