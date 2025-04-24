@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Amolenk.Admitto.Domain.Exceptions;
 using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
@@ -21,13 +22,17 @@ public class CustomExceptionHandler : IExceptionHandler
         var exceptionHandlerFeature = context.Features.Get<IExceptionHandlerFeature>();
         var exception = exceptionHandlerFeature?.Error;
 
-        if (exception is ValidationException validationException)
+        switch (exception)
         {
-            await HandleValidationExceptionAsync(context, validationException);
-        }
-        else
-        {
-            await HandleGenericExceptionAsync(context, exception);
+            case ValidationException validationException:
+                await HandleValidationExceptionAsync(context, validationException);
+                break;
+            case DomainException domainException:
+                await HandleDomainExceptionAsync(context, domainException);
+                break;
+            default:
+                await HandleGenericExceptionAsync(context, exception);
+                break;
         }
     }
 
@@ -46,8 +51,27 @@ public class CustomExceptionHandler : IExceptionHandler
         var problemDetails = new ValidationProblemDetails(errors)
         {
             Status = StatusCodes.Status400BadRequest,
-            Title = "Validation Failed",
+            Title = "Validation failed.",
             Detail = "One or more validation errors occurred.",
+            Instance = context.Request.Path
+        };
+
+        return context.Response.WriteAsync(JsonSerializer.Serialize(problemDetails, new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        }));
+    }
+    
+    private static Task HandleDomainExceptionAsync(HttpContext context, DomainException ex)
+    {
+        context.Response.StatusCode = StatusCodes.Status400BadRequest;
+        context.Response.ContentType = "application/json";
+
+        var problemDetails = new ValidationProblemDetails
+        {
+            Status = StatusCodes.Status400BadRequest,
+            Title = "A domain error occured.",
+            Detail = ex.Message,
             Instance = context.Request.Path
         };
 
@@ -65,7 +89,7 @@ public class CustomExceptionHandler : IExceptionHandler
         var problemDetails = new ProblemDetails
         {
             Status = StatusCodes.Status500InternalServerError,
-            Title = "Internal Server Error",
+            Title = "Internal server error.",
             Detail = exception?.Message ?? "An unexpected error occurred.",
             Instance = context.Request.Path
         };

@@ -18,7 +18,7 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.2")
+                .HasAnnotation("ProductVersion", "9.0.4")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -257,8 +257,8 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                                 .ValueGeneratedOnAdd()
                                 .HasColumnType("integer");
 
-                            b1.Property<DateOnly>("EndDay")
-                                .HasColumnType("date");
+                            b1.Property<DateTimeOffset>("EndDateTime")
+                                .HasColumnType("timestamp with time zone");
 
                             b1.Property<Guid>("Id")
                                 .HasColumnType("uuid");
@@ -267,14 +267,14 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                                 .IsRequired()
                                 .HasColumnType("text");
 
-                            b1.Property<DateTime>("SalesEndDateTime")
+                            b1.Property<DateTimeOffset>("RegistrationEndDateTime")
                                 .HasColumnType("timestamp with time zone");
 
-                            b1.Property<DateTime>("SalesStartDateTime")
+                            b1.Property<DateTimeOffset>("RegistrationStartDateTime")
                                 .HasColumnType("timestamp with time zone");
 
-                            b1.Property<DateOnly>("StartDay")
-                                .HasColumnType("date");
+                            b1.Property<DateTimeOffset>("StartDateTime")
+                                .HasColumnType("timestamp with time zone");
 
                             b1.HasKey("TeamId", "__synthesizedOrdinal");
 
@@ -297,9 +297,6 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                                         .ValueGeneratedOnAdd()
                                         .HasColumnType("integer");
 
-                                    b2.Property<DateTime>("EndDateTime")
-                                        .HasColumnType("timestamp with time zone");
-
                                     b2.Property<Guid>("Id")
                                         .HasColumnType("uuid");
 
@@ -313,8 +310,9 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                                     b2.Property<int>("RemainingCapacity")
                                         .HasColumnType("integer");
 
-                                    b2.Property<DateTime>("StartDateTime")
-                                        .HasColumnType("timestamp with time zone");
+                                    b2.Property<string>("SlotName")
+                                        .IsRequired()
+                                        .HasColumnType("text");
 
                                     b2.HasKey("TicketedEventTeamId", "TicketedEvent__synthesizedOrdinal", "__synthesizedOrdinal");
 
