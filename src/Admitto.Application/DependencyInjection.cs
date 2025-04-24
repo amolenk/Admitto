@@ -1,6 +1,5 @@
 using System.Reflection;
 using Amolenk.Admitto.Application;
-using FluentValidation;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection;

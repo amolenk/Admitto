@@ -64,3 +64,11 @@ Content-Type: application/json
     "{{ticketTypeId}}"
   ]
 }
+
+###
+
+POST http://localhost:5100/teams/{{teamId}}/events/
+Content-Type: application/json
+
+{
+}

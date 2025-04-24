@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Application.Common;
+using ValidationException = System.ComponentModel.DataAnnotations.ValidationException;
 
 namespace Amolenk.Admitto.Application.UseCases.Attendees.RegisterAttendee;
 

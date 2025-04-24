@@ -17,10 +17,11 @@ public static class DistributedAppTestContext
     public static async ValueTask AssemblyInitialize(TestContext testContext)
     {
         // Start the distributed app.
-        var appBuilder = await DistributedApplicationTestingBuilder.CreateAsync<Projects.Admitto_AppHost>(
-        [
-            "--environment Testing"
-        ]);
+        var appBuilder = await DistributedApplicationTestingBuilder.CreateAsync<Projects.Admitto_AppHost>();
+        appBuilder.Environment.EnvironmentName = "Testing"; // TODO Validate and rename to Test
+        // [
+        //     "--environment Testing"
+        // ]);
 
         _app = await appBuilder.BuildAsync();
 
@@ -32,8 +33,7 @@ public static class DistributedAppTestContext
         {
             throw new InvalidOperationException("Postgres database resource not found");
         }
-
-        //
+        
         var connectionString = await postgres.ConnectionStringExpression.GetValueAsync(CancellationToken.None);
 
         // Create the DbContextOptions for the database.

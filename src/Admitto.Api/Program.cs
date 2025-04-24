@@ -23,6 +23,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(converter);
 });
 
+// TODO
 builder.Services.AddApplicationServices();
 builder.AddInfrastructureServices();
 
