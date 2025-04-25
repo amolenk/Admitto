@@ -8,7 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Amolenk.Admitto.Application.Tests;
 
 [TestClass]
-public static class DistributedAppTestContext
+public static class DistributedAppRunner
 {
     private static DistributedApplication _app = null!;
     private static DbContextOptions<ApplicationContext> _dbContextOptions = null!;
@@ -17,11 +17,10 @@ public static class DistributedAppTestContext
     public static async ValueTask AssemblyInitialize(TestContext testContext)
     {
         // Start the distributed app.
-        var appBuilder = await DistributedApplicationTestingBuilder.CreateAsync<Projects.Admitto_AppHost>();
-        appBuilder.Environment.EnvironmentName = "Testing"; // TODO Validate and rename to Test
-        // [
-        //     "--environment Testing"
-        // ]);
+        var appBuilder = await DistributedApplicationTestingBuilder.CreateAsync<Projects.Admitto_AppHost>(
+        [
+            "--environment Testing"
+        ]);
 
         _app = await appBuilder.BuildAsync();
 
