@@ -102,6 +102,8 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                 {
                     table.PrimaryKey("PK_teams", x => x.id);
                 });
+            
+            migrationBuilder.AddOutboxReplication();
         }
 
         /// <inheritdoc />

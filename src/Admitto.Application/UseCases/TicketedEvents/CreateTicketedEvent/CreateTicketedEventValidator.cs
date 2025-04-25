@@ -2,17 +2,15 @@ namespace Amolenk.Admitto.Application.UseCases.TicketedEvents.CreateTicketedEven
 
 public class CreateTicketedEventValidator : AbstractValidator<CreateTicketedEventRequest>
 {
-    // TODO Add UnitTests. Maybe instantiate the Endpoint and use it to test the validator.
-    
     public CreateTicketedEventValidator()
     {
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("Event name is required.")
-            .MaximumLength(100).WithMessage("Event name must be less than 100 characters.");
+            .MaximumLength(100).WithMessage("Event name must be 100 characters or less.");
 
-        // RuleFor(x => x.StartDay)
-        //     .NotEmpty().WithMessage("Start date is required.");
-        //
+        RuleFor(x => x.StartDateTime)
+            .NotEmpty().WithMessage("Start date is required.");
+        
         // RuleFor(x => x.EndDay)
         //     .NotEmpty().WithMessage("End date is required.");
         //

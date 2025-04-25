@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 var builder = DistributedApplication.CreateBuilder(args);
+var hostEnvironment = builder.Services.BuildServiceProvider().GetRequiredService<IHostEnvironment>();
 
 var postgres = builder.AddPostgres("postgres")
         .WithArgs("-c", "wal_level=logical") // Outbox depends on logical replication
@@ -13,6 +14,15 @@ var postgres = builder.AddPostgres("postgres")
     // .WithDataVolume("admitto-postgres-data")
     // .WithLifetime(ContainerLifetime.Persistent);
     ;
+
+if (hostEnvironment.IsEnvironment("Testing") || true)
+{
+    postgres = postgres.WithPgWeb(pgweb =>
+    {
+        pgweb.WithHostPort(8081);
+    });
+}
+
     
 var postgresdb = postgres.AddDatabase("postgresdb");
 
@@ -58,7 +68,6 @@ var authClientId = builder.AddParameter("AuthClientId");
 var authClientSecret = builder.AddParameter("AuthClientSecret", true);
 var authIssuer = builder.AddParameter("AuthIssuer");
 
-var hostEnvironment = builder.Services.BuildServiceProvider().GetRequiredService<IHostEnvironment>();
 if (!hostEnvironment.IsEnvironment("Testing"))
 {
     builder.AddPnpmApp("admin-ui", "../Admitto.UI.Admin", "dev")
