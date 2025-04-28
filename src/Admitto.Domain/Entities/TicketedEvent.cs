@@ -16,7 +16,8 @@ public class TicketedEvent : Entity
     }
     
     private TicketedEvent(TicketedEventId id, string name, DateTimeOffset startDateTime, DateTimeOffset endDateTime,
-        DateTimeOffset registrationStartDateTime, DateTimeOffset registrationEndDateTime)
+        DateTimeOffset registrationStartDateTime, DateTimeOffset registrationEndDateTime, 
+        IEnumerable<TicketType> ticketTypes)
         : base(id.Value)
     {
         Name = name;
@@ -24,7 +25,7 @@ public class TicketedEvent : Entity
         EndDateTime = endDateTime;
         RegistrationStartDateTime = registrationStartDateTime;
         RegistrationEndDateTime = registrationEndDateTime;
-        _ticketTypes = [];
+        _ticketTypes = ticketTypes.ToList();
     }
 
     public string Name { get; private set; } = null!;
@@ -35,7 +36,8 @@ public class TicketedEvent : Entity
     public IReadOnlyCollection<TicketType> TicketTypes => _ticketTypes.AsReadOnly();
 
     public static TicketedEvent Create(string name, DateTimeOffset startDateTime, DateTimeOffset endDateTime,
-        DateTimeOffset registrationStartDateTime, DateTimeOffset registrationEndDateTime)
+        DateTimeOffset registrationStartDateTime, DateTimeOffset registrationEndDateTime, 
+        IEnumerable<TicketType> ticketTypes)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new DomainException("Name cannot be empty.");
@@ -47,11 +49,12 @@ public class TicketedEvent : Entity
             throw new DomainException("Sales start time must be before sales end time.");
 
         if (registrationEndDateTime > startDateTime)
-            throw new DomainException("Sales must close before the event starts.");
+            throw new DomainException("Registration must close before the event starts.");
 
         var id = TicketedEventId.FromEventName(name);
         
-        return new TicketedEvent(id, name, startDateTime, endDateTime, registrationStartDateTime, registrationEndDateTime);
+        return new TicketedEvent(id, name, startDateTime, endDateTime, registrationStartDateTime, 
+            registrationEndDateTime, ticketTypes);
     }
     
     public void AddTicketType(TicketType ticketType)

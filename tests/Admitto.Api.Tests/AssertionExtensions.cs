@@ -4,11 +4,22 @@ namespace Amolenk.Admitto.Application.Tests;
 
 public static class AssertionExtensions
 {
-    public static async Task ShouldHaveProblemDetail(this HttpResponseMessage response, string errorKey)
+    [Obsolete("Use ShouldHaveProblemDetail instead.")]
+    public static Task ShouldHaveProblemDetail(this HttpResponseMessage response, string errorKey)
+    {
+        return response.ShouldHaveProblemDetail(pd => pd.Errors.ShouldContainKey(errorKey));
+    }
+    
+    public static async Task ShouldHaveProblemDetail(this HttpResponseMessage response, 
+        params Action<ValidationProblemDetails>[] assertProblemDetails)
     {
         var validationProblem = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>();
 
         validationProblem.ShouldNotBeNull();
-        validationProblem.Errors.ShouldContainKey(errorKey);
+
+        foreach (var assertion in assertProblemDetails)
+        {
+            assertion(validationProblem);
+        }
     }
 }

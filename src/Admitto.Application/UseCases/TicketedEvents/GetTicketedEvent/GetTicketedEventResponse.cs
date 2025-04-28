@@ -24,10 +24,11 @@ public record GetTicketedEventResponse(
     }
 }
 
-public record TicketTypeDto(string Name, int MaxCapacity, int RemainingCapacity)
+public record TicketTypeDto(string Name, string SlotName, int MaxCapacity, int RemainingCapacity)
 {
     public static TicketTypeDto FromTicketType(TicketType ticketType)
     {
-        return new TicketTypeDto(ticketType.Name, ticketType.MaxCapacity, ticketType.RemainingCapacity);
+        return new TicketTypeDto(ticketType.Name, ticketType.SlotName, ticketType.MaxCapacity, 
+            ticketType.RemainingCapacity);
     }
 }

@@ -12,7 +12,7 @@ public class CreateTicketedEventTests : DistributedAppTestBase
         var request = CreateRequest(name: string.Empty);
 
         // Act
-        var response = await Api.PostAsJsonAsync($"/teams/{TestData.DefaultTeamId}/events/", request);
+        var response = await Api.PostAsJsonAsync($"/teams/{Guid.Empty}/events/", request);
         
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -26,7 +26,7 @@ public class CreateTicketedEventTests : DistributedAppTestBase
         var request = CreateRequest(name: "F".PadRight(101, 'o'));
 
         // Act
-        var response = await Api.PostAsJsonAsync($"/teams/{TestData.DefaultTeamId}/events/", request);
+        var response = await Api.PostAsJsonAsync($"/teams/{Guid.Empty}/events/", request);
         
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -40,7 +40,7 @@ public class CreateTicketedEventTests : DistributedAppTestBase
         var request = CreateRequest(startDateTime: DateTimeOffset.MinValue);
 
         // Act
-        var response = await Api.PostAsJsonAsync($"/teams/{TestData.DefaultTeamId}/events/", request);
+        var response = await Api.PostAsJsonAsync($"/teams/{Guid.Empty}/events/", request);
         
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);

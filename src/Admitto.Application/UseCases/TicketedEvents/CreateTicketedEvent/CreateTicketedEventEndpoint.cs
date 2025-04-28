@@ -25,28 +25,13 @@ public static class CreateTicketedEventEndpoint
         {
             return TypedResults.BadRequest(Error.TeamNotFound(teamId));
         }
-        
-        var newEvent = CreateTicketedEventFromRequest(request);
 
+        var newEvent = request.ToTicketedEvent();
+        
         team.AddActiveEvent(newEvent);
 
         var response = CreateTicketedEventResponse.FromTicketedEvent(newEvent);
         
         return TypedResults.Created($"/teams/{teamId}/events/{newEvent.Id}", response);
-    }
-
-    private static TicketedEvent CreateTicketedEventFromRequest(CreateTicketedEventRequest request)
-    {
-        var newEvent = TicketedEvent.Create(request.Name, request.StartDateTime, request.EndDateTime,
-            request.RegistrationStartDateTime, request.RegistrationEndDateTime);
-
-        foreach (var ticketTypeDto in request.TicketTypes ?? [])
-        {
-            var ticketType = TicketType.Create(ticketTypeDto.Name, ticketTypeDto.SlotName, ticketTypeDto.MaxCapacity);
-            
-            newEvent.AddTicketType(ticketType);
-        }
-
-        return newEvent;
     }
 }

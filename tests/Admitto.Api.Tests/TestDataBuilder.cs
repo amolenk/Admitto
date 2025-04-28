@@ -13,7 +13,7 @@ public static class TestDataBuilder
 
     public static TicketedEvent CreateTicketedEvent(string? name = null, DateTimeOffset? startDateTime = null,
         DateTimeOffset? endDateTime = null, DateTimeOffset? registrationStartDateTime = null,
-        DateTimeOffset? registrationEndDateTime = null)
+        DateTimeOffset? registrationEndDateTime = null, IEnumerable<TicketType>? ticketTypes = null)
     {
         var nextYear = DateTime.Today.Year + 1;
         var offset = TimeSpan.Zero;
@@ -23,9 +23,10 @@ public static class TestDataBuilder
         endDateTime ??= new DateTimeOffset(nextYear, 1, 25, 16, 0, 0, offset);
         registrationStartDateTime ??= DateTimeOffset.UtcNow;
         registrationEndDateTime ??= new DateTimeOffset(nextYear, 1, 23, 18, 0, 0, offset);
+        ticketTypes ??= [CreateTicketType()];
         
         return TicketedEvent.Create(name, startDateTime.Value, endDateTime.Value, 
-            registrationStartDateTime.Value, registrationEndDateTime.Value);
+            registrationStartDateTime.Value, registrationEndDateTime.Value, ticketTypes);
     }
     
     public static TicketType CreateTicketType(string? name = null, string? slotName = null, int? quantity = null)
