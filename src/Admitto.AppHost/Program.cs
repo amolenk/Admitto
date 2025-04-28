@@ -4,25 +4,21 @@ using Microsoft.Extensions.Hosting;
 
 var builder = DistributedApplication.CreateBuilder(args);
 var hostEnvironment = builder.Services.BuildServiceProvider().GetRequiredService<IHostEnvironment>();
+var isTestingEnvironment = hostEnvironment.IsEnvironment("Testing");
+
 
 var postgres = builder.AddPostgres("postgres")
-        .WithArgs("-c", "wal_level=logical") // Outbox depends on logical replication
-    // .WithPgWeb(pgweb =>
-    //     {
-    //         pgweb.WithHostPort(8081);
-    //     })
-    // .WithDataVolume("admitto-postgres-data")
-    // .WithLifetime(ContainerLifetime.Persistent);
-    ;
-
-if (hostEnvironment.IsEnvironment("Testing") || true)
-{
-    postgres = postgres.WithPgWeb(pgweb =>
+    .WithArgs("-c", "wal_level=logical") // Outbox depends on logical replication
+    .WithPgWeb(pgweb =>
     {
         pgweb.WithHostPort(8081);
-    });
+    })
+   .WithLifetime(ContainerLifetime.Persistent);
+    
+if (!isTestingEnvironment)
+{
+    // postgres = postgres.WithDataVolume("admitto-postgres-data");
 }
-
     
 var postgresdb = postgres.AddDatabase("postgresdb");
 
@@ -30,8 +26,8 @@ var storage = builder.AddAzureStorage("storage")
     .RunAsEmulator(azurite =>
     {
         azurite
-            .WithQueuePort(10001);
-//            .WithLifetime(ContainerLifetime.Persistent);
+            .WithQueuePort(10001)
+            .WithLifetime(ContainerLifetime.Persistent);
     });
     
 var queues = storage.AddQueues("queues")
@@ -41,20 +37,23 @@ var queues = storage.AddQueues("queues")
 var keycloakAdminPassword = builder.AddParameter("KeycloakAdminPassword", secret: true);
 
 // For local development use a stable port for the Keycloak resource (8080 in the preceding example). It can be any port, but it should be stable to avoid issues with browser cookies that will persist OIDC tokens (which include the authority URL, with port) beyond the lifetime of the app host.
-// var keycloak = builder.AddKeycloak("keycloak", 8080, 
-//     adminPassword: keycloakAdminPassword)
-//     .WithDataVolume("admitto-keycloak-data")
-//     .WithRealmImport("./Realms/Admitto.json");
-//     // .WithLifetime(ContainerLifetime.Persistent);
+var keycloak = builder.AddKeycloak("keycloak", 8080, 
+    adminPassword: keycloakAdminPassword)
+    .WithRealmImport("./Realms/Admitto.json")
+    .WithLifetime(ContainerLifetime.Persistent);
+
+if (!isTestingEnvironment)
+{
+    keycloak = keycloak.WithDataVolume("admitto-keycloak-data");
+}
 
 var apiService = builder.AddProject<Projects.Admitto_Api>("api")
         .WithReference(postgresdb)
         .WithReference(queues)
-        // .WithReference(keycloak)
+        .WithReference(keycloak)
         .WaitFor(postgresdb)
         .WaitFor(queues)
-    // .WaitFor(keycloak);
-    ;
+        .WaitFor(keycloak);
 
 // TODO Only re-enable when migrations are configurable (for testing)
 // var worker = builder.AddProject<Projects.Admitto_Worker>("worker")

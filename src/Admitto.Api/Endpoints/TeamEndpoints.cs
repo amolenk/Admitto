@@ -1,5 +1,5 @@
-using Amolenk.Admitto.Application.UseCases.Teams.AddTeam;
 using Amolenk.Admitto.Application.UseCases.Teams.AddTeamMember;
+using Amolenk.Admitto.Application.UseCases.Teams.CreateTeam;
 using Amolenk.Admitto.Application.UseCases.Teams.GetTeams;
 using Amolenk.Admitto.Domain.Entities;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -14,7 +14,7 @@ public static class TeamEndpoints
         var group = app.MapGroup("/teams").WithTags("Teams");
 
         group
-            .MapAddTeam()
+            .MapCreateTeam()
             .MapAddTeamMember()
             .MapGetTeams();
     }

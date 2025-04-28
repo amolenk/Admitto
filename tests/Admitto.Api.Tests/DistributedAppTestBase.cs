@@ -27,6 +27,8 @@ public abstract class DistributedAppTestBase
             });
         });
         _logger = loggerFactory.CreateLogger<DistributedAppTestBase>();
+
+        TestData = new DefaultTestData(Guid.Empty, Guid.Empty);
     }
 
     [SuppressMessage("ReSharper", "MemberCanBePrivate.Global", Justification = "Set by the test framework.")] 

@@ -23,20 +23,17 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(converter);
 });
 
+builder.Services.AddExceptionHandler<DbExceptionHandler>();
+builder.Services.AddExceptionHandler<DomainExceptionHandler>();
+builder.Services.AddExceptionHandler<ValidationExceptionHandler>();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
 // TODO
 builder.Services.AddApplicationServices();
 builder.AddInfrastructureServices();
 
 var app = builder.Build();
-
-// Add exception handling middleware
-app.UseExceptionHandler(new ExceptionHandlerOptions
-{
-    ExceptionHandler = new CustomExceptionHandler().HandleAsync
-});
-
-// Automatically commit unit of work at the end of the request.
-app.UseMiddleware<UnitOfWorkMiddleware>();
+app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())
 {

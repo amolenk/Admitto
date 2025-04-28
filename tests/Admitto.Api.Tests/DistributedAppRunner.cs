@@ -17,10 +17,11 @@ public static class DistributedAppRunner
     public static async ValueTask AssemblyInitialize(TestContext testContext)
     {
         // Start the distributed app.
-        var appBuilder = await DistributedApplicationTestingBuilder.CreateAsync<Projects.Admitto_AppHost>(
-        [
-            "--environment Testing"
-        ]);
+        var appBuilder = await DistributedApplicationTestingBuilder
+            .CreateAsync<Projects.Admitto_AppHost>(
+            [
+                "--environment=Testing"
+            ]);
 
         _app = await appBuilder.BuildAsync();
 
