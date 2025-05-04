@@ -1,6 +1,7 @@
 using Amolenk.Admitto.Infrastructure.Persistence;
 using Amolenk.Admitto.Worker;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -9,6 +10,12 @@ builder.AddServiceDefaults();
 
 builder.Services.AddHostedService<MessageOutboxWorker>();
 builder.Services.AddHostedService<MessageQueuesWorker>();
+
+// var databaseMigrationCompleted = false;
+// builder.Services.AddHealthChecks()
+//     .AddCheck("Database Migration", () => databaseMigrationCompleted
+//         ? HealthCheckResult.Healthy("Database is up-to-date.")
+//         : HealthCheckResult.Unhealthy("Database migrations are pending."));
 
 // TODO Move to ServiceDefaults
 builder.Services.AddApplicationServices();
@@ -23,5 +30,7 @@ if (builder.Environment.IsDevelopment())
     var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
     dbContext.Database.Migrate();
 }
+
+// databaseMigrationCompleted = true;
 
 host.Run();
