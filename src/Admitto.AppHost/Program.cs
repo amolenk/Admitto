@@ -4,22 +4,18 @@ using Microsoft.Extensions.Hosting;
 
 var builder = DistributedApplication.CreateBuilder(args);
 var hostEnvironment = builder.Services.BuildServiceProvider().GetRequiredService<IHostEnvironment>();
-var isTestingEnvironment = hostEnvironment.IsEnvironment("Testing");
+var isTestingEnvironment = false;//hostEnvironment.IsEnvironment("Testing");
 
 
 var postgres = builder.AddPostgres("postgres")
     .WithArgs("-c", "wal_level=logical") // Outbox depends on logical replication
     .WithPgWeb(pgweb =>
     {
-        pgweb.WithHostPort(8081);
+        pgweb.WithHostPort(8081).WithLifetime(ContainerLifetime.Persistent);
     })
-   .WithLifetime(ContainerLifetime.Persistent);
-    
-if (!isTestingEnvironment)
-{
-    // postgres = postgres.WithDataVolume("admitto-postgres-data");
-}
-    
+    .WithDataVolume("admitto-postgres-data")
+    .WithLifetime(ContainerLifetime.Persistent);
+
 var postgresdb = postgres.AddDatabase("postgresdb");
 
 var storage = builder.AddAzureStorage("storage")
@@ -40,27 +36,21 @@ var keycloakAdminPassword = builder.AddParameter("KeycloakAdminPassword", secret
 var keycloak = builder.AddKeycloak("keycloak", 8080, 
     adminPassword: keycloakAdminPassword)
     .WithRealmImport("./Realms/Admitto.json")
+    .WithDataVolume("admitto-keycloak-data")
     .WithLifetime(ContainerLifetime.Persistent);
 
-if (!isTestingEnvironment)
-{
-    keycloak = keycloak.WithDataVolume("admitto-keycloak-data");
-}
+var worker = builder.AddProject<Projects.Admitto_Worker>("worker")
+    .WithReference(postgresdb)
+    .WithReference(queues)
+    .WaitFor(postgresdb)
+    .WaitFor(queues);
 
 var apiService = builder.AddProject<Projects.Admitto_Api>("api")
         .WithReference(postgresdb)
         .WithReference(queues)
         .WithReference(keycloak)
-        .WaitFor(postgresdb)
-        .WaitFor(queues)
+        .WaitFor(worker)
         .WaitFor(keycloak);
-
-// TODO Only re-enable when migrations are configurable (for testing)
-// var worker = builder.AddProject<Projects.Admitto_Worker>("worker")
-//     .WithReference(postgresdb)
-//     .WithReference(queues)
-//     .WaitFor(postgresdb)
-//     .WaitFor(queues);
 
 var authSecret = builder.AddParameter("AuthSecret", true);
 var authClientId = builder.AddParameter("AuthClientId");

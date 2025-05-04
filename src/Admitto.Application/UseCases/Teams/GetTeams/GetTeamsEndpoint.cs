@@ -7,7 +7,7 @@ public static class GetTeamsEndpoint
 {
     public static RouteGroupBuilder MapGetTeams(this RouteGroupBuilder group)
     {
-        group.MapGet("/teams", GetTeams);
+        group.MapGet("/teams", GetTeams).WithName(nameof(GetTeams));
 
         return group;
     }

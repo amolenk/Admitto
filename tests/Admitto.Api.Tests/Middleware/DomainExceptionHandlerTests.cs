@@ -1,16 +1,34 @@
+using Amolenk.Admitto.Application.Tests.Infrastructure;
 using Amolenk.Admitto.Application.UseCases.TicketedEvents.CreateTicketedEvent;
+using Amolenk.Admitto.Domain.Entities;
 
 namespace Amolenk.Admitto.Application.Tests.Middleware;
 
-[TestClass]
-public class DomainExceptionHandlerTests : DistributedAppTestBase
+[TestClass, DoNotParallelize]
+public class DomainExceptionHandlerTests
 {
-    [TestMethod, DoNotParallelize]
+    private Team _team = null!;
+
+    [TestInitialize]
+    public async Task TestInitialize()
+    {
+        var databaseFixture = await GlobalAppHostFixture.GetDatabaseFixtureAsync();
+        await databaseFixture.ResetAsync();
+        await databaseFixture.SeedDataAsync(context =>
+        {
+            _team = TestDataBuilder.CreateTeam(name: "Default Team");
+            context.Teams.Add(_team);
+        });
+    }
+    
+    [TestMethod]
     public async Task DomainException_ReturnsProblemDetails()
     {
         // Arrange
         var nextYear = DateTime.Today.Year + 1;
         var offset = TimeSpan.Zero;
+        
+        var httpClient = GlobalAppHostFixture.Application.CreateHttpClient("api");
         
         // Create a request with the registration period ending after the start date. This will trigger
         // a domain exception.
@@ -21,11 +39,12 @@ public class DomainExceptionHandlerTests : DistributedAppTestBase
             registrationEndDateTime: new DateTimeOffset(nextYear, 1, 24, 18, 0, 0, offset));
 
         // Act
-        var response = await Api.PostAsJsonAsync($"/teams/{TestData.DefaultTeamId}/events/", request);
+        var response = await httpClient.PostAsJsonAsync($"/teams/{_team.Id}/events/", request);
                
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-        await response.ShouldHaveProblemDetail(pd => pd.Title.ShouldBe("A domain error occured."));
+        await response.ShouldHaveProblemDetail(
+            pd => pd.Title.ShouldBe("A domain error occured."));
     }
     
     private static CreateTicketedEventRequest CreateTicketedEventRequest(string? name = null, DateTimeOffset? startDateTime = null,
