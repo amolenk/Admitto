@@ -3,7 +3,7 @@ using Amolenk.Admitto.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Amolenk.Admitto.Infrastructure.Persistence.EntityConfigurations;
+namespace Amolenk.Admitto.Infrastructure.Persistence.EntityConfigurations.Domain;
 
 public class AttendeeRegistrationEntityConfiguration : IEntityTypeConfiguration<AttendeeRegistration>
 {

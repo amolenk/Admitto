@@ -1,6 +1,4 @@
-using Amolenk.Admitto.Domain.ValueObjects;
-
-namespace Amolenk.Admitto.Application.UseCases.Email;
+namespace Amolenk.Admitto.Domain.ValueObjects;
 
 public class EmailMessage
 {
@@ -9,6 +7,6 @@ public class EmailMessage
     public required string Subject { get; init; }
     public required string Body { get; init; }
     public required TeamId TeamId { get; init; }
-    public required TicketedEventId? TicketedEventId { get; init; }
-    public required AttendeeId? AttendeeId { get; init; }
+    public TicketedEventId? TicketedEventId { get; init; }
+    public AttendeeId? AttendeeId { get; init; }
 }

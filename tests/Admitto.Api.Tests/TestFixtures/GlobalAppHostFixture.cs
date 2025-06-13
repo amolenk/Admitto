@@ -63,13 +63,10 @@ public static class GlobalAppHostFixture
         return await DatabaseFixture.CreateAsync(_appHost, _respawner);
     }
 
-    public static EmailSettings GetDefaultEmailSettings()
-    {
-        return new EmailSettings(
-            "test@example.com",
-            _appHost.Application.GetEndpoint("maildev", "http").Host,
-            _appHost.Application.GetEndpoint("maildev", "http").Port);
-    }
+    public static EmailSettings GetDefaultEmailSettings() => new EmailSettings(
+        "test@example.com",
+        _appHost.Application.GetEndpoint("maildev", "http").Host,
+        _appHost.Application.GetEndpoint("maildev", "http").Port);
 
     public static IdentityFixture GetIdentityFixture()
     {

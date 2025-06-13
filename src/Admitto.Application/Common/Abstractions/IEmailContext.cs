@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Application.UseCases.Email;
+using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Application.Common.Abstractions;
 
