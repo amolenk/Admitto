@@ -1,12 +1,13 @@
 using Amolenk.Admitto.Application.UseCases.Teams.CreateTeam;
 using Amolenk.Admitto.Domain.Entities;
 using Amolenk.Admitto.Domain.ValueObjects;
+using Google.Protobuf.WellKnownTypes;
 using Should = Amolenk.Admitto.Application.Tests.TestHelpers.Should;
 
 namespace Amolenk.Admitto.Application.Tests.Endpoints.Teams;
 
 [TestClass]
-public class CreateTeamTests
+public class CreateTeamTests : BasicApiTestsBase
 {
     [TestMethod]
     public async Task NameIsTooShort_ReturnsBadRequest()
@@ -41,50 +42,16 @@ public class CreateTeamTests
     }
 
     [TestClass]
-    [DoNotParallelize]
-    public class SequentialTests
+    public class FullStackTests : FullStackApiTestsBase
     {
-        private static DatabaseFixture _databaseFixture = null!;
-        private static IdentityFixture _identityFixture = null!;
-        private static AuthorizationFixture _authorizationFixture = null!;
-        private static QueueStorageFixture _queueStorageFixture = null!;
-
-        private Team _defaultTeam = null!;
-        
-        [TestInitialize]
-        public async Task TestInitialize()
-        {
-            _databaseFixture = await GlobalAppHostFixture.GetDatabaseFixtureAsync();
-            _identityFixture = GlobalAppHostFixture.GetIdentityFixture();
-            _authorizationFixture = GlobalAppHostFixture.GetAuthorizationFixture();
-            _queueStorageFixture = await GlobalAppHostFixture.GetQueueStorageFixtureAsync();
-
-            await Task.WhenAll(
-                _databaseFixture.ResetAsync(context =>
-                {
-                    _defaultTeam = TeamDataFactory.CreateTeam(name: "Default Team");
-                    context.Teams.Add(_defaultTeam);
-                }),
-                _identityFixture.ResetAsync(),
-                _authorizationFixture.ResetAsync(),
-                _queueStorageFixture.ResetAsync());
-        }
-
-        [TestMethod]
-        public async Task TestMail()
-        {
-            
-        }
-        
         [TestMethod]
         public async Task ValidTeam_CreatesTeam()
         {
             // Arrange
             var request = CreateRequest();
-            var httpClient = GlobalAppHostFixture.GetApiClient();
 
             // Act
-            var response = await httpClient.PostAsJsonAsync($"/teams/", request);
+            var response = await ApiClient.PostAsJsonAsync($"/teams/", request);
 
             // Assert
             response.StatusCode.ShouldBe(HttpStatusCode.Created);
@@ -98,16 +65,15 @@ public class CreateTeamTests
         public async Task TeamAlreadyExists_ReturnsConflict()
         {
             // Arrange
-            var request = CreateRequest(name: _defaultTeam.Name);
-            var httpClient = GlobalAppHostFixture.GetApiClient();
+            var request = CreateRequest(name: DefaultTeam.Name);
 
             // Act
-            var response = await httpClient.PostAsJsonAsync($"/teams/", request);
+            var response = await ApiClient.PostAsJsonAsync($"/teams/", request);
         
             // Assert
             response.StatusCode.ShouldBe(HttpStatusCode.Conflict);
             await response.ShouldHaveProblemDetail(
-                pd => pd.Detail.ShouldBe($"A team with the name '{_defaultTeam.Name}' already exists."),
+                pd => pd.Detail.ShouldBe($"A team with the name '{DefaultTeam.Name}' already exists."),
                 pd => pd.Errors.ShouldContainKey("name"));
         }
 
@@ -117,10 +83,9 @@ public class CreateTeamTests
             // Arrange
             const string email = "bob@example.com";
             var request = CreateRequest(members: [new TeamMemberDto(email, TeamMemberRole.Manager)]);
-            var httpClient = GlobalAppHostFixture.GetApiClient();
 
             // Act
-            var response = await httpClient.PostAsJsonAsync($"/teams/", request);
+            var response = await ApiClient.PostAsJsonAsync($"/teams/", request);
 
             // Assert
             response.StatusCode.ShouldBe(HttpStatusCode.Created);
@@ -128,7 +93,7 @@ public class CreateTeamTests
             // Check if the user was created
             await Should.Eventually(async () =>
                 {
-                    var user = await _identityFixture.IdentityService.GetUserByEmailAsync(email);
+                    var user = await IdentityFixture.IdentityService.GetUserByEmailAsync(email);
                     user.ShouldNotBeNull().Email.ShouldBe(email);
                 },
                 TimeSpan.FromSeconds(3));
@@ -140,13 +105,12 @@ public class CreateTeamTests
             // Arrange
             const string email = "bob@example.com";
             var request = CreateRequest(members: [new TeamMemberDto(email, TeamMemberRole.Manager)]);
-            var httpClient = GlobalAppHostFixture.GetApiClient();
 
             // Ensure the user already exists.
-            await _identityFixture.IdentityService.AddUserAsync(email);
+            await IdentityFixture.IdentityService.AddUserAsync(email);
 
             // Act
-            var response = await httpClient.PostAsJsonAsync($"/teams/", request);
+            var response = await ApiClient.PostAsJsonAsync($"/teams/", request);
 
             // Assert
             response.StatusCode.ShouldBe(HttpStatusCode.Created);
@@ -154,7 +118,7 @@ public class CreateTeamTests
             // Check that no extra user was created
             await Should.Eventually(async () =>
                 {
-                    var users = await _identityFixture.IdentityService.GetUsersAsync();
+                    var users = await IdentityFixture.IdentityService.GetUsersAsync();
                     users.Count().ShouldBe(2, "Only Alice and Bob should be returned.");
                 },
                 TimeSpan.FromSeconds(3));
