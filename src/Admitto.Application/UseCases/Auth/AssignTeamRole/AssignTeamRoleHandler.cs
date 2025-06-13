@@ -3,14 +3,11 @@ namespace Amolenk.Admitto.Application.UseCases.Auth.AssignTeamRole;
 /// <summary>
 /// Assigns a team role to a user.
 /// </summary>
-public class AssignTeamRoleHandler()
+public class AssignTeamRoleHandler(IRebacAuthorizationService authorizationService)
     : ICommandHandler<AssignTeamRoleCommand>
 {
-    public ValueTask HandleAsync(AssignTeamRoleCommand command, CancellationToken cancellationToken)
+    public async ValueTask HandleAsync(AssignTeamRoleCommand command, CancellationToken cancellationToken)
     {
-        // TODO
-        Console.WriteLine($"Assign team role {command.Role} to user {command.UserId} in team {command.TeamId}");
-        
-        return ValueTask.CompletedTask;
+        await authorizationService.AddTeamRoleAsync(command.UserId, command.TeamId, command.Role, cancellationToken);
     }
 }

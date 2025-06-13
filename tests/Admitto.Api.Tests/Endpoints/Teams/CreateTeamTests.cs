@@ -84,9 +84,9 @@ public class CreateTeamTests : BasicApiTestsBase
             // Assert
             response.StatusCode.ShouldBe(HttpStatusCode.Created);
 
-            var result = (await response.Content.ReadFromJsonAsync<CreateTeamResponse>())!;
+            var result = await response.Content.ReadFromJsonAsync<CreateTeamResponse>();
 
-            result.ShouldSatisfyAllConditions(r => ((Guid?)r.Id).ShouldNotBeNull());
+            (result?.Id).ShouldNotBeNull();
         }
         
         [TestMethod]
