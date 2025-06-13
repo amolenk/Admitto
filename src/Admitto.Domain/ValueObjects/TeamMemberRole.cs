@@ -8,9 +8,11 @@ public record TeamMemberRole
     public const string Manager = "manager";
     public const string Organizer = "organizer";
     
+    public static readonly string[] ValidRoles = [ Manager, Organizer ];
+    
     public TeamMemberRole(string value)
     {
-        if (value != Manager && value != Organizer)
+        if (!IsValid(value))
         {
             throw new ArgumentException($"'{value}' is not a valid team member role.");
         }
@@ -23,4 +25,6 @@ public record TeamMemberRole
     public static implicit operator TeamMemberRole(string value) => new(value);
     
     public static implicit operator string(TeamMemberRole role) => role.Value;
+
+    public static bool IsValid(string value) => ValidRoles.Contains(value);
 }
