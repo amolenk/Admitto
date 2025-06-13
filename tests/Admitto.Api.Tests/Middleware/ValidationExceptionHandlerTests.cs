@@ -1,4 +1,3 @@
-using Amolenk.Admitto.Application.Tests.Infrastructure;
 using Amolenk.Admitto.Application.UseCases.Teams.CreateTeam;
 
 namespace Amolenk.Admitto.Application.Tests.Middleware;
@@ -11,7 +10,7 @@ public class ValidationExceptionHandlerTests
     {
         // Arrange
         var request = CreateRequest(name: string.Empty);
-        var httpClient = GlobalAppHostFixture.Application.CreateHttpClient("api");
+        var httpClient = GlobalAppHostFixture.GetApiClient();
     
         // Act
         var response = await httpClient.PostAsJsonAsync($"/teams/", request);
@@ -26,6 +25,9 @@ public class ValidationExceptionHandlerTests
     {
         name ??= "Test Team";
         
-        return new CreateTeamRequest(name);
+        return new CreateTeamRequest(
+            name, 
+            EmailSettingsDto.FromEmailSettings(GlobalAppHostFixture.GetDefaultEmailSettings()),
+            []);
     }
 }

@@ -1,11 +1,26 @@
 @ticketedEventId = f02fd7d4-7c12-a18a-a31d-e9448d62c433
 @ticketTypeId = 705e564e-be64-77a2-b552-2fcb19506385
 
+### Get Keycloak token
+
+POST http://localhost:8080/realms/admitto/protocol/openid-connect/token
+Content-Type: application/x-www-form-urlencoded
+
+grant_type=password&client_id=admitto-test-runner&username=alice&password=alice
+
+> {% client.global.set("accessToken", response.body.access_token); %}
+
+### Create a new team
+
 POST http://localhost:5100/teams
 Content-Type: application/json
+Authorization: Bearer {{accessToken}}
 
 {
-  "name": "Azure Fest"
+  "name": "Azure Fest 7",
+  "members": [
+    { "email": "mail2@sandermolenkamp.com", "role": "manager" }
+  ]
 }
 
 ###
@@ -72,3 +87,4 @@ Content-Type: application/json
 
 {
 }
+

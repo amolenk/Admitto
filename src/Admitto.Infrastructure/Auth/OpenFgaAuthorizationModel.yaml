@@ -1,0 +1,122 @@
+name: Admitto
+model_file: ./OpenFgaAuthorizationModel.fga
+tuples:
+
+  - user: system:system
+    relation: system
+    object: team:team1
+
+  - user: system:system
+    relation: system
+    object: team:team2
+
+  - user: team:team1
+    relation: team
+    object: event:eventA
+
+  - user: team:team1
+    relation: team
+    object: event:eventB
+
+  - user: team:team2
+    relation: team
+    object: event:eventC
+
+  - user: team:team2
+    relation: team
+    object: event:eventD
+
+  - user: user:alice
+    relation: admin
+    object: system:system
+
+  - user: user:bob
+    relation: manager
+    object: team:team1
+
+  - user: user:bob
+    relation: organizer
+    object: team:team2
+
+  - user: user:chuck
+    relation: reader
+    object: event:eventA
+
+  - user: user:dina
+    relation: organizer
+    object: event:eventC
+
+tests:
+
+  - name: alice-can-manage-all-teams
+    list_objects:
+      - user: user:alice
+        type: team
+        assertions:
+          manager:
+            - team:team1
+            - team:team2
+          organizer:
+            - team:team1
+            - team:team2
+
+  - name: alice-can-organize-all-events
+    list_objects:
+      - user: user:alice
+        type: event
+        assertions:
+          organizer:
+            - event:eventA
+            - event:eventB
+            - event:eventC
+            - event:eventD
+          reader:
+            - event:eventA
+            - event:eventB
+            - event:eventC
+            - event:eventD
+
+  - name: bob-can-manage-team1-and-organize-team2
+    list_objects:
+      - user: user:bob
+        type: team
+        assertions:
+          manager:
+            - team:team1
+          organizer:
+            - team:team1
+            - team:team2
+
+  - name: bob-can-organize-all-events
+    list_objects:
+      - user: user:bob
+        type: event
+        assertions:
+          organizer:
+            - event:eventA
+            - event:eventB
+            - event:eventC
+            - event:eventD
+          reader:
+            - event:eventA
+            - event:eventB
+            - event:eventC
+            - event:eventD
+
+  - name: chuck-can-only-read-eventA
+    list_objects:
+      - user: user:chuck
+        type: event
+        assertions:
+          reader:
+            - event:eventA
+
+  - name: dina-can-only-organize-eventC
+    list_objects:
+      - user: user:dina
+        type: event
+        assertions:
+          organizer:
+            - event:eventC
+          reader:
+            - event:eventC

@@ -1,10 +1,17 @@
 using System.Diagnostics;
+using Amolenk.Admitto.Application.Common.Abstractions;
+using Amolenk.Admitto.Application.Common.Authorization;
+using Amolenk.Admitto.Infrastructure.Auth;
+using Amolenk.Admitto.ServiceDefaults;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.ServiceDiscovery;
+using OpenFga.Sdk.Client;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
@@ -103,6 +110,41 @@ public static class Extensions
         return builder;
     }
 
+    public static TBuilder AddDefaultAuthentication<TBuilder>(this TBuilder builder)
+        where TBuilder : IHostApplicationBuilder
+    {
+        builder.Services.AddOptions<AuthenticationOptions>()
+            .Bind(builder.Configuration.GetSection("Authentication"))
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+        
+        var authOptions = builder.Configuration.GetSection("Authentication").Get<AuthenticationOptions>()!;
+
+        builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.Authority = authOptions.Authority;
+                options.Audience = authOptions.Audience;
+                options.RequireHttpsMetadata = authOptions.RequireHttpsMetadata;
+            });
+
+        return builder;
+    }
+    
+    public static WebApplicationBuilder AddDefaultAuthorization(this WebApplicationBuilder builder)
+    {
+        builder.Services
+            .AddHttpContextAccessor() // TODO Move?
+            .AddSingleton<IAuthorizationHandler, RebacAuthorizationHandler>() // TODO Move?
+            .AddAuthorization();
+        
+        return builder;
+    }
+    
     public static WebApplication MapDefaultEndpoints(this WebApplication app)
     {
         // Adding health checks endpoints to applications in non-development environments has security implications.

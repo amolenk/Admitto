@@ -6,25 +6,45 @@ namespace Microsoft.Extensions.DependencyInjection;
 
 public static class DependencyInjection
 {
-    public static void AddApplicationServices(this IServiceCollection services)
+    // TODO Split up further
+    public static void AddDefaultApplicationServices(this IServiceCollection services)
     {
         services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
-        services.AddTransient<IEmailProvider, ConsoleEmailProvider>();
-        
         // Register all command and domain event handlers
         services.Scan(scan => scan
             .FromAssemblyOf<ApplicationAssemblyLocator>()
-            // Command handlers
-            .AddClasses(classes => classes.AssignableTo<ICommandHandler>())
-            .AsSelfWithInterfaces()
-            .WithScopedLifetime()
-            // Domain event handlers
-            .AddClasses(classes => classes.AssignableTo<IDomainEventHandler>())
-            .AsSelfWithInterfaces()
-            .WithScopedLifetime()
             // Query handlers
             .AddClasses(classes => classes.AssignableTo<IQueryHandler>())
+            .AsSelfWithInterfaces()
+            .WithScopedLifetime());
+        
+        AddTransactionalDomainEventHandlers(services);
+    }
+    
+    public static void AddCommandHandlers(this IServiceCollection services)
+    {
+        services.Scan(scan => scan
+            .FromAssemblyOf<ApplicationAssemblyLocator>()
+            .AddClasses(classes => classes.AssignableTo<ICommandHandler>())
+            .AsSelfWithInterfaces()
+            .WithScopedLifetime());
+    }
+
+    public static void AddTransactionalDomainEventHandlers(this IServiceCollection services)
+    {
+        services.Scan(scan => scan
+            .FromAssemblyOf<ApplicationAssemblyLocator>()
+            .AddClasses(classes => classes.AssignableTo<ITransactionalDomainEventHandler>())
+            .AsSelfWithInterfaces()
+            .WithScopedLifetime());
+    }
+
+    public static void AddEventualDomainEventHandlers(this IServiceCollection services)
+    {
+        services.Scan(scan => scan
+            .FromAssemblyOf<ApplicationAssemblyLocator>()
+            .AddClasses(classes => classes.AssignableTo<IEventualDomainEventHandler>())
             .AsSelfWithInterfaces()
             .WithScopedLifetime());
     }

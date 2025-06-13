@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Domain.Entities;
+using Amolenk.Admitto.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -23,6 +24,13 @@ public class TeamEntityConfiguration : IEntityTypeConfiguration<Team>
         builder.OwnsMany(e => e.Members, b =>
         {
             b.ToJson("members");
+
+            b.Property(m => m.Id).HasColumnName("id");
+            b.Property(m => m.Email).HasColumnName("email");
+            b.Property(m => m.Role).HasColumnName("role")
+                .HasConversion(
+                    r => r.Value,
+                    v => new TeamMemberRole(v));
         });
 
         builder.OwnsMany(e => e.ActiveEvents, b =>

@@ -36,7 +36,7 @@ public class ReserveTicketsHandler(IDomainContext context, IMessageOutbox messag
         context.Teams.Update(team);
         
         // Also add a command to the outbox to resolve the pending registration.
-        messageOutbox.EnqueueCommand(new ResolvePendingRegistrationCommand(command.RegistrationId, succes));
+        messageOutbox.Enqueue(new ResolvePendingRegistrationCommand(command.RegistrationId, succes));
 
         // TODO Use some kind of inbox pattern to ensure exactly-once processing
     }

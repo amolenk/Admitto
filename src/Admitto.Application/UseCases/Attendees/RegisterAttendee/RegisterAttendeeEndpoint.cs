@@ -54,7 +54,7 @@ public static class RegisterAttendeeEndpoint
         
         // Add a command to the outbox to reserve the tickets asynchronously.
         // At this point, everything looks ok, but we can't be 100% sure the event isn't full.
-        messageOutbox.EnqueueCommand(new ReserveTicketsCommand(registration.Id));
+        messageOutbox.Enqueue(new ReserveTicketsCommand(registration.Id));
 
         return TypedResults.Created($"/teams/{teamId}/events/{ticketedEventId}/registrations/{registration.Id}",
             RegisterAttendeeResponse.FromAttendeeRegistration(registration));

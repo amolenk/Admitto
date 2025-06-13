@@ -18,7 +18,7 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "9.0.4")
+                .HasAnnotation("ProductVersion", "9.0.5")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -48,40 +48,21 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                     b.ToTable("attendee_activities", (string)null);
                 });
 
-            modelBuilder.Entity("Amolenk.Admitto.Application.ReadModel.Views.TeamMembersView", b =>
-                {
-                    b.Property<Guid>("TeamId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("team_id");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("user_id");
-
-                    b.Property<int>("Role")
-                        .HasColumnType("integer")
-                        .HasColumnName("role");
-
-                    b.Property<string>("UserEmail")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("email");
-
-                    b.HasKey("TeamId", "UserId");
-
-                    b.ToTable("team_members", (string)null);
-                });
-
             modelBuilder.Entity("Amolenk.Admitto.Application.UseCases.Email.EmailMessage", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<bool>("Priority")
-                        .HasColumnType("boolean")
-                        .HasColumnName("priority");
+                    b.Property<Guid>("AttendeeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("attendee_id");
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("character varying(2000)")
+                        .HasColumnName("body");
 
                     b.Property<string>("RecipientEmail")
                         .IsRequired()
@@ -89,12 +70,13 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(50)")
                         .HasColumnName("recipient_email");
 
-                    b.Property<string>("TemplateId")
+                    b.Property<string>("Subject")
                         .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("template_id");
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("subject");
 
-                    b.Property<Guid?>("TicketedEventId")
+                    b.Property<Guid>("TicketedEventId")
                         .HasColumnType("uuid")
                         .HasColumnName("ticketed_event_id");
 
@@ -167,7 +149,7 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                     b.ToTable("teams", (string)null);
                 });
 
-            modelBuilder.Entity("Amolenk.Admitto.Infrastructure.Persistence.OutboxMessage", b =>
+            modelBuilder.Entity("Amolenk.Admitto.Infrastructure.Messaging.OutboxMessage", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
@@ -193,38 +175,6 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                     b.ToTable("outbox", (string)null);
                 });
 
-            modelBuilder.Entity("Amolenk.Admitto.Application.UseCases.Email.EmailMessage", b =>
-                {
-                    b.OwnsMany("Amolenk.Admitto.Application.UseCases.Email.EmailTemplateParameter", "TemplateParameters", b1 =>
-                        {
-                            b1.Property<Guid>("EmailMessageId")
-                                .HasColumnType("uuid");
-
-                            b1.Property<int>("__synthesizedOrdinal")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("integer");
-
-                            b1.Property<string>("Name")
-                                .IsRequired()
-                                .HasColumnType("text");
-
-                            b1.Property<string>("Value")
-                                .IsRequired()
-                                .HasColumnType("text");
-
-                            b1.HasKey("EmailMessageId", "__synthesizedOrdinal");
-
-                            b1.ToTable("email_messages");
-
-                            b1.ToJson("template_parameters");
-
-                            b1.WithOwner()
-                                .HasForeignKey("EmailMessageId");
-                        });
-
-                    b.Navigation("TemplateParameters");
-                });
-
             modelBuilder.Entity("Amolenk.Admitto.Domain.Entities.AttendeeRegistration", b =>
                 {
                     b.OwnsOne("Amolenk.Admitto.Domain.ValueObjects.TicketOrder", "TicketOrder", b1 =>
@@ -248,6 +198,40 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Amolenk.Admitto.Domain.Entities.Team", b =>
                 {
+                    b.OwnsMany("Amolenk.Admitto.Domain.Entities.TeamMember", "Members", b1 =>
+                        {
+                            b1.Property<Guid>("TeamId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<int>("__synthesizedOrdinal")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer");
+
+                            b1.Property<string>("Email")
+                                .IsRequired()
+                                .HasColumnType("text")
+                                .HasColumnName("email");
+
+                            b1.Property<Guid>("Id")
+                                .ValueGeneratedOnUpdateSometimes()
+                                .HasColumnType("uuid")
+                                .HasColumnName("id");
+
+                            b1.Property<string>("Role")
+                                .IsRequired()
+                                .HasColumnType("text")
+                                .HasColumnName("role");
+
+                            b1.HasKey("TeamId", "__synthesizedOrdinal");
+
+                            b1.ToTable("teams");
+
+                            b1.ToJson("members");
+
+                            b1.WithOwner()
+                                .HasForeignKey("TeamId");
+                        });
+
                     b.OwnsMany("Amolenk.Admitto.Domain.Entities.TicketedEvent", "ActiveEvents", b1 =>
                         {
                             b1.Property<Guid>("TeamId")
@@ -323,35 +307,6 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                                 });
 
                             b1.Navigation("TicketTypes");
-                        });
-
-                    b.OwnsMany("Amolenk.Admitto.Domain.Entities.User", "Members", b1 =>
-                        {
-                            b1.Property<Guid>("TeamId")
-                                .HasColumnType("uuid");
-
-                            b1.Property<int>("__synthesizedOrdinal")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("integer");
-
-                            b1.Property<string>("Email")
-                                .IsRequired()
-                                .HasColumnType("text");
-
-                            b1.Property<Guid>("Id")
-                                .HasColumnType("uuid");
-
-                            b1.Property<int>("Role")
-                                .HasColumnType("integer");
-
-                            b1.HasKey("TeamId", "__synthesizedOrdinal");
-
-                            b1.ToTable("teams");
-
-                            b1.ToJson("members");
-
-                            b1.WithOwner()
-                                .HasForeignKey("TeamId");
                         });
 
                     b.Navigation("ActiveEvents");

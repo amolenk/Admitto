@@ -1,0 +1,22 @@
+model
+  schema 1.1
+
+type user
+
+type system
+  relations
+    define admin: [user]
+    define can_manage_teams: admin
+
+type team
+  relations
+    define system: [system]
+    define manager: [user] or admin from system
+    define organizer: [user] or manager
+    define can_manage_team: manager
+
+type event
+  relations
+    define team: [team]
+    define organizer: [user] or organizer from team
+    define reader: [user] or organizer

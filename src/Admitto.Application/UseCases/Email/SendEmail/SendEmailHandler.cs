@@ -3,7 +3,7 @@ namespace Amolenk.Admitto.Application.UseCases.Email.SendEmail;
 /// <summary>
 /// Sends an e-mail.
 /// </summary>
-public class SendEmailHandler(IEmailContext context, IEmailProvider emailProvider)
+public class SendEmailHandler(IEmailContext context, IEmailSender emailProvider)
     : ICommandHandler<SendEmailCommand>
 {
     public async ValueTask HandleAsync(SendEmailCommand command, CancellationToken cancellationToken)
@@ -15,7 +15,9 @@ public class SendEmailHandler(IEmailContext context, IEmailProvider emailProvide
             throw new Exception("Email not found.");
         }
 
-        await emailProvider.SendEmailAsync(email.TicketedEventId ?? Guid.Empty, email.RecipientEmail, "Magic",
-            "body");
+        await emailProvider.SendEmailAsync(email.RecipientEmail, email.Subject, email.Body, email.TeamId,
+            email.TicketedEventId, email.AttendeeId);
+        
+        // TODO After succesfully sending the e-mail, we should mark it as sent in the database.
     }
 }
