@@ -7,7 +7,7 @@ namespace Amolenk.Admitto.Application.ReadModel.Projections;
 /// Write to the activity log when a registration is confirmed.
 /// </summary>
 public class AttendeeActivityProjectionHandler(IReadModelContext context) 
-    : IDomainEventHandler<RegistrationAcceptedDomainEvent>
+    : IEventualDomainEventHandler<RegistrationAcceptedDomainEvent>
 {
     public async ValueTask HandleAsync(RegistrationAcceptedDomainEvent domainEvent, CancellationToken cancellationToken)
     {

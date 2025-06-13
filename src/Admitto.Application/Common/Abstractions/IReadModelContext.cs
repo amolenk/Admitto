@@ -6,5 +6,5 @@ public interface IReadModelContext
 {
     DbSet<AttendeeActivityView> AttendeeActivities { get; }
 
-    DbSet<TeamMembersView> TeamMembers { get; }
+    // DbSet<TeamMembersView> TeamMembers { get; }
 }

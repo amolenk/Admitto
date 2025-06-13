@@ -16,26 +16,27 @@ public class EmailMessageEntityConfiguration : IEntityTypeConfiguration<EmailMes
             .HasColumnName("id")
             .ValueGeneratedNever();
         
+        builder.Property(e => e.TicketedEventId)
+            .HasColumnName("ticketed_event_id")
+            .HasConversion(p => p.Value, p => new TicketedEventId(p));
+
+        builder.Property(e => e.AttendeeId)
+            .HasColumnName("attendee_id")
+            .HasConversion(p => p.Value, p => new AttendeeId(p));
+
         builder.Property(e => e.RecipientEmail)
             .HasColumnName("recipient_email")
             .IsRequired()
             .HasMaxLength(50);
-
-        builder.Property(e => e.TicketedEventId)
-            .HasColumnName("ticketed_event_id")
-            .HasConversion(p => p!.Value, p =>  new TicketedEventId(p));
-
-        builder.Property(e => e.TemplateId)
-            .HasColumnName("template_id")
-            .IsRequired();
-
-        builder.OwnsMany(e => e.TemplateParameters, b =>
-        {
-            b.ToJson("template_parameters");
-        });
         
-        builder.Property(e => e.Priority)
-            .HasColumnName("priority")
-            .IsRequired();
+        builder.Property(e => e.Subject)
+            .HasColumnName("subject")
+            .IsRequired()
+            .HasMaxLength(50); // TODO Large enough?
+
+        builder.Property(e => e.Body)
+            .HasColumnName("body")
+            .IsRequired()
+            .HasMaxLength(2000); // TODO Large enough?
     }
 }

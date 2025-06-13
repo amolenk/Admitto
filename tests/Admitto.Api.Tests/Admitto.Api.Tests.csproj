@@ -1,17 +1,28 @@
-﻿<Project Sdk="MSTest.Sdk/3.8.2">
+﻿<Project Sdk="MSTest.Sdk/3.8.3">
 
     <PropertyGroup>
         <RootNamespace>Amolenk.Admitto.Application.Tests</RootNamespace>
-  </PropertyGroup>
+    </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Aspire.Hosting.Testing" Version="9.2.0" />
+      <PackageReference Include="Aspire.Hosting.Testing" Version="9.3.1" />
+      <PackageReference Include="Respawn" Version="6.2.1" />
       <PackageReference Include="Shouldly" Version="4.3.0" />
+      <PackageReference Update="Microsoft.Testing.Extensions.CodeCoverage" Version="17.14.2" />
+      <PackageReference Update="Microsoft.Testing.Extensions.TrxReport" Version="1.6.3" />
+      <PackageReference Update="MSTest.TestAdapter" Version="3.8.3" />
+      <PackageReference Update="MSTest.TestFramework" Version="3.8.3" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\..\src\Admitto.Api\Admitto.Api.csproj" />
       <ProjectReference Include="..\..\src\Admitto.AppHost\Admitto.AppHost.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="appsettings.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
 </Project>

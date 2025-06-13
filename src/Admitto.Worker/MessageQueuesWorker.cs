@@ -4,6 +4,7 @@ using Amolenk.Admitto.Domain.DomainEvents;
 using Amolenk.Admitto.Infrastructure.Messaging;
 using Azure.Messaging;
 using Azure.Storage.Queues;
+using Microsoft.Extensions.Options;
 using Polly;
 using Polly.Retry;
 using Polly.Telemetry;
@@ -16,16 +17,17 @@ namespace Amolenk.Admitto.Worker;
 public class MessageQueuesWorker(
     [FromKeyedServices("queues")] QueueServiceClient queueServiceClient,
     IServiceProvider serviceProvider,
+    IOptions<MessageQueuesWorkerOptions> options,
     ILoggerFactory loggerFactory,
     ILogger<MessageQueuesWorker> logger)
     : BackgroundService
 {
     private readonly AzureStorageQueueProcessor _queueProcessor = new(
-        queueServiceClient.GetQueueClient("queue"), TimeSpan.FromSeconds(30), logger);
+        queueServiceClient.GetQueueClient("queue"), options.Value.MaxPollDelay, logger);
     
     private readonly AzureStorageQueueProcessor _prioQueueProcessor = new(
-        queueServiceClient.GetQueueClient("queue-prio"), TimeSpan.FromSeconds(3), logger);
-
+        queueServiceClient.GetQueueClient("queue-prio"), options.Value.MaxPrioPollDelay, logger);
+    
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var queueTask = CreateRetryStrategy("Queue").ExecuteAsync(
@@ -88,7 +90,7 @@ public class MessageQueuesWorker(
     
     private static ValueTask HandleDomainEventAsync(IDomainEvent domainEvent, IServiceProvider serviceProvider, CancellationToken cancellationToken)
     {
-        var handlerType = typeof(IDomainEventHandler<>).MakeGenericType(domainEvent.GetType());
+        var handlerType = typeof(IEventualDomainEventHandler<>).MakeGenericType(domainEvent.GetType());
         dynamic handler = serviceProvider.GetRequiredService(handlerType);
 
         return handler.HandleAsync((dynamic)domainEvent, cancellationToken);
@@ -100,13 +102,15 @@ public class MessageQueuesWorker(
         {
             LoggerFactory = loggerFactory
         };
+
+        var workerOptions = options.Value;
         
-        return new ResiliencePipelineBuilder { Name = "MessageQueuesWorker", InstanceName = instanceName}
+        return new ResiliencePipelineBuilder { Name = nameof(MessageQueuesWorker), InstanceName = instanceName}
             .AddRetry(new RetryStrategyOptions
             {
-                BackoffType = DelayBackoffType.Exponential,
-                MaxDelay = TimeSpan.FromSeconds(30),
-                MaxRetryAttempts = int.MaxValue
+                BackoffType = workerOptions.RetryBackoffType,
+                MaxDelay = workerOptions.MaxRetryDelay,
+                MaxRetryAttempts = workerOptions.MaxRetryAttempts
             })
             .ConfigureTelemetry(telemetryOptions)
             .Build();

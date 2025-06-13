@@ -8,12 +8,23 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="Aspire.Azure.Storage.Queues" Version="9.2.0" />
-      <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.2.0" />
+      <PackageReference Include="Aspire.Azure.Storage.Queues" Version="9.3.1" />
+      <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.3.1" />
+      <PackageReference Include="MailKit" Version="4.12.1" />
+      <PackageReference Include="OpenFga.Sdk" Version="0.5.1" />
+      <PackageReference Include="Scriban" Version="6.2.1" />
     </ItemGroup>
 
     <ItemGroup>
       <ProjectReference Include="..\Admitto.Application\Admitto.Application.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Include="Auth\OpenFgaAuthorizationModel.json" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Persistence\Migrations\" />
     </ItemGroup>
 
 </Project>

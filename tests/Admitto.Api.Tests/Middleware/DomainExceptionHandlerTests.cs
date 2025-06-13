@@ -1,4 +1,3 @@
-using Amolenk.Admitto.Application.Tests.Infrastructure;
 using Amolenk.Admitto.Application.UseCases.TicketedEvents.CreateTicketedEvent;
 using Amolenk.Admitto.Domain.Entities;
 
@@ -13,10 +12,9 @@ public class DomainExceptionHandlerTests
     public async Task TestInitialize()
     {
         var databaseFixture = await GlobalAppHostFixture.GetDatabaseFixtureAsync();
-        await databaseFixture.ResetAsync();
-        await databaseFixture.SeedDataAsync(context =>
+        await databaseFixture.ResetAsync(context =>
         {
-            _team = TestDataBuilder.CreateTeam(name: "Default Team");
+            _team = TeamDataFactory.CreateTeam(name: "Default Team");
             context.Teams.Add(_team);
         });
     }
@@ -28,7 +26,7 @@ public class DomainExceptionHandlerTests
         var nextYear = DateTime.Today.Year + 1;
         var offset = TimeSpan.Zero;
         
-        var httpClient = GlobalAppHostFixture.Application.CreateHttpClient("api");
+        var httpClient = GlobalAppHostFixture.GetApiClient();
         
         // Create a request with the registration period ending after the start date. This will trigger
         // a domain exception.

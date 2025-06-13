@@ -1,0 +1,171 @@
+{
+  "schema_version": "1.1",
+  "type_definitions": [
+    {
+      "type": "user"
+    },
+    {
+      "metadata": {
+        "relations": {
+          "admin": {
+            "directly_related_user_types": [
+              {
+                "type": "user"
+              }
+            ]
+          },
+          "can_manage_teams": {}
+        }
+      },
+      "relations": {
+        "admin": {
+          "this": {}
+        },
+        "can_manage_teams": {
+          "computedUserset": {
+            "relation": "admin"
+          }
+        }
+      },
+      "type": "system"
+    },
+    {
+      "metadata": {
+        "relations": {
+          "can_manage_team": {},
+          "manager": {
+            "directly_related_user_types": [
+              {
+                "type": "user"
+              }
+            ]
+          },
+          "organizer": {
+            "directly_related_user_types": [
+              {
+                "type": "user"
+              }
+            ]
+          },
+          "system": {
+            "directly_related_user_types": [
+              {
+                "type": "system"
+              }
+            ]
+          }
+        }
+      },
+      "relations": {
+        "can_manage_team": {
+          "computedUserset": {
+            "relation": "manager"
+          }
+        },
+        "manager": {
+          "union": {
+            "child": [
+              {
+                "this": {}
+              },
+              {
+                "tupleToUserset": {
+                  "computedUserset": {
+                    "relation": "admin"
+                  },
+                  "tupleset": {
+                    "relation": "system"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "organizer": {
+          "union": {
+            "child": [
+              {
+                "this": {}
+              },
+              {
+                "computedUserset": {
+                  "relation": "manager"
+                }
+              }
+            ]
+          }
+        },
+        "system": {
+          "this": {}
+        }
+      },
+      "type": "team"
+    },
+    {
+      "metadata": {
+        "relations": {
+          "organizer": {
+            "directly_related_user_types": [
+              {
+                "type": "user"
+              }
+            ]
+          },
+          "reader": {
+            "directly_related_user_types": [
+              {
+                "type": "user"
+              }
+            ]
+          },
+          "team": {
+            "directly_related_user_types": [
+              {
+                "type": "team"
+              }
+            ]
+          }
+        }
+      },
+      "relations": {
+        "organizer": {
+          "union": {
+            "child": [
+              {
+                "this": {}
+              },
+              {
+                "tupleToUserset": {
+                  "computedUserset": {
+                    "relation": "organizer"
+                  },
+                  "tupleset": {
+                    "relation": "team"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "reader": {
+          "union": {
+            "child": [
+              {
+                "this": {}
+              },
+              {
+                "computedUserset": {
+                  "relation": "organizer"
+                }
+              }
+            ]
+          }
+        },
+        "team": {
+          "this": {}
+        }
+      },
+      "type": "event"
+    }
+  ]
+}

@@ -1,11 +1,6 @@
-using System.Text.Json;
 using System.Text.Json.Serialization;
 using Amolenk.Admitto.ApiService.Endpoints;
 using Amolenk.Admitto.ApiService.Middleware;
-using Amolenk.Admitto.Infrastructure.Persistence;
-using FluentValidation;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,16 +19,21 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(converter);
 });
 
-builder.Services.AddExceptionHandler<DbExceptionHandler>();
 builder.Services.AddExceptionHandler<DomainExceptionHandler>();
 builder.Services.AddExceptionHandler<ValidationExceptionHandler>();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 // TODO
-builder.Services.AddApplicationServices();
-builder.AddInfrastructureServices();
+builder.Services.AddDefaultApplicationServices();
+builder.AddDefaultInfrastructureServices();
+
+builder.AddDefaultAuthentication();
+builder.AddDefaultAuthorization();
 
 var app = builder.Build();
+
+app.UseAuthentication();
+app.UseAuthorization();
 app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())
@@ -45,5 +45,8 @@ app.MapDefaultEndpoints();
 app.MapAttendeeRegistrationEndpoints();
 app.MapTeamEndpoints();
 app.MapTicketedEventEndpoints();
+
+var logger = app.Services.GetRequiredService<ILogger<AppDomain>>();
+logger.LogInformation("Starting application...");
 
 app.Run();

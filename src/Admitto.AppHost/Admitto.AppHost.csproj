@@ -8,19 +8,21 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <IsAspireHost>true</IsAspireHost>
-        <UserSecretsId>00189f0b-12d6-4cf9-9ddb-e07b2d9ac05e</UserSecretsId>
+        <UserSecretsId>Admitto</UserSecretsId>
     </PropertyGroup>
 
     <ItemGroup>
         <ProjectReference Include="..\Admitto.Api\Admitto.Api.csproj" />
+        <ProjectReference Include="..\Admitto.Migration\Admitto.Migration.csproj" />
         <ProjectReference Include="..\Admitto.Worker\Admitto.Worker.csproj" />
+        <ProjectReference Include="..\Admitto.Infrastructure\Admitto.Infrastructure.csproj" IsAspireProjectResource="false" />
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Aspire.Hosting.AppHost" Version="9.2.0" />
-        <PackageReference Include="Aspire.Hosting.Azure.Storage" Version="9.2.0" />
+        <PackageReference Include="Aspire.Hosting.AppHost" Version="9.3.1" />
+        <PackageReference Include="Aspire.Hosting.Azure.Storage" Version="9.3.1" />
         <PackageReference Include="Aspire.Hosting.Keycloak" Version="9.1.0-preview.1.25121.10" />
-        <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="9.2.0" />
+        <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="9.3.1" />
         <PackageReference Include="Azure.Storage.Queues" Version="12.22.0" />
         <PackageReference Include="CommunityToolkit.Aspire.Hosting.NodeJS.Extensions" Version="9.4.0" />
     </ItemGroup>
