@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Application.Common.Abstractions;
+using Amolenk.Admitto.Domain.ValueObjects;
 using OpenFga.Sdk.Client.Model;
 
 namespace Amolenk.Admitto.Infrastructure.Auth;
@@ -14,6 +15,25 @@ public class OpenFgaAuthorizationService(OpenFgaClientFactory clientFactory) : I
                     User = $"user:{userId}",
                     Relation = "admin",
                     Object = "system:system"
+                }
+            ],
+            []
+        );
+    
+        var client = await clientFactory.GetClientAsync();
+        await client.Write(request, cancellationToken: cancellationToken);
+    }
+
+    public async ValueTask AddTeamRoleAsync(Guid userId, TeamId teamId, TeamMemberRole role,
+        CancellationToken cancellationToken = default)
+    {
+        var request = new ClientWriteRequest(
+            [
+                new ClientTupleKey
+                {
+                    User = $"user:{userId}",
+                    Relation = role.Value.ToLowerInvariant(),
+                    Object = $"team:{teamId.Value}"
                 }
             ],
             []

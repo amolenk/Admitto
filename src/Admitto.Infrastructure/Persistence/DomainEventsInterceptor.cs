@@ -8,6 +8,22 @@ namespace Amolenk.Admitto.Infrastructure.Persistence;
 public class DomainEventsInterceptor(IServiceProvider serviceProvider)
     : SaveChangesInterceptor
 {
+    private static readonly HashSet<Type> OutboxDomainEventTypes = LoadOutboxDomainEventTypes();
+
+    private static HashSet<Type> LoadOutboxDomainEventTypes()
+    {
+        var applicationAssembly = typeof(IEventualDomainEventHandler<>).Assembly;
+        var domainEventTypes = applicationAssembly.GetTypes()
+            .Where(t => t is { IsAbstract: false, IsInterface: false })
+            .SelectMany(t => t.GetInterfaces()
+                .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEventualDomainEventHandler<>))
+                .Select(i => i.GetGenericArguments()[0]))
+            .Distinct()
+            .ToHashSet();
+
+        return domainEventTypes;
+    }
+
     public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(DbContextEventData eventData, 
         InterceptionResult<int> result, CancellationToken cancellationToken = new CancellationToken())
     {
@@ -34,10 +50,10 @@ public class DomainEventsInterceptor(IServiceProvider serviceProvider)
                 }
 
                 // Put the event in the outbox if there are any eventual domain event handlers.
-                var eventualHandlerType = typeof(IEventualDomainEventHandler<>).MakeGenericType(type);
-                if (!serviceProvider.GetServices(eventualHandlerType).Any(h => h is not null)) continue;
-                
-                messageOutbox.Enqueue(domainEvent);
+                if (OutboxDomainEventTypes.Contains(type))
+                {
+                    messageOutbox.Enqueue(domainEvent);
+                }
             }
                 
             aggregate.ClearDomainEvents();

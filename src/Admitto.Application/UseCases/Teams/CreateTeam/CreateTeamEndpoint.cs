@@ -37,7 +37,6 @@ public static class CreateTeamEndpoint
         {
             team.AddMember(member.Email, member.Role);
         }
-
         
         context.Teams.Add(team);
         

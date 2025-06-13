@@ -17,9 +17,14 @@ Content-Type: application/json
 Authorization: Bearer {{accessToken}}
 
 {
-  "name": "Azure Fest 7",
+  "name": "Azure Fest 10",
+  "emailSettings": {
+    "senderEmail": "team@azurefest.nl",
+    "smtpServer": "smtp.azurefest.nl",
+    "smtpPort": 587
+  },
   "members": [
-    { "email": "mail2@sandermolenkamp.com", "role": "manager" }
+    { "email": "mail@sandermolenkamp.com", "role": "manager" }
   ]
 }
 
