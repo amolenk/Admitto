@@ -25,8 +25,10 @@ public static class CreateTeamEndpoint
         IUnitOfWork unitOfWork, CancellationToken cancellationToken)
     {
         await validator.ValidateAndThrowAsync(request, cancellationToken);
-        
-        var emailSettings = new EmailSettings(request.EmailSettings.SenderEmail, request.EmailSettings.SmtpServer, 
+
+        var emailSettings = new EmailSettings(
+            request.EmailSettings.SenderEmail,
+            request.EmailSettings.SmtpServer,
             request.EmailSettings.SmtpPort);
         
         var team = Team.Create(request.Name, emailSettings);

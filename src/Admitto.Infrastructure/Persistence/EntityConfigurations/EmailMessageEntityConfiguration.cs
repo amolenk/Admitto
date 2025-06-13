@@ -1,4 +1,3 @@
-using Amolenk.Admitto.Application.UseCases.Email;
 using Amolenk.Admitto.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -15,14 +14,22 @@ public class EmailMessageEntityConfiguration : IEntityTypeConfiguration<EmailMes
         builder.Property(e => e.Id)
             .HasColumnName("id")
             .ValueGeneratedNever();
-        
+
+        builder.Property(e => e.TeamId)
+            .HasColumnName("team_id")
+            .HasConversion(p => p.Value, p => new TeamId(p));
+
         builder.Property(e => e.TicketedEventId)
             .HasColumnName("ticketed_event_id")
-            .HasConversion(p => p.Value, p => new TicketedEventId(p));
+            .HasConversion<Guid?>(
+                p => p == null ? null : p.Value, 
+                p => p == null ? null : new TicketedEventId(p.Value));
 
         builder.Property(e => e.AttendeeId)
             .HasColumnName("attendee_id")
-            .HasConversion(p => p.Value, p => new AttendeeId(p));
+            .HasConversion<Guid?>(
+                p => p == null ? null : p.Value, 
+                p => p == null ? null : new AttendeeId(p.Value));
 
         builder.Property(e => e.RecipientEmail)
             .HasColumnName("recipient_email")
