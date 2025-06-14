@@ -3,9 +3,9 @@ using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using Respawn;
 
-namespace Amolenk.Admitto.Application.Tests.TestFixtures;
+namespace Amolenk.Admitto.TestHelpers.TestFixtures;
 
-public class DatabaseFixture : IAsyncDisposable
+public class DatabaseTestFixture : IAsyncDisposable
 {
     private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(30);
 
@@ -14,7 +14,7 @@ public class DatabaseFixture : IAsyncDisposable
     
     public ApplicationContext Context { get; }
 
-    private DatabaseFixture(string connectionString, Respawner respawner)
+    private DatabaseTestFixture(string connectionString, Respawner respawner)
     {
         _connectionString = connectionString;
         _respawner = respawner;
@@ -24,7 +24,8 @@ public class DatabaseFixture : IAsyncDisposable
             .Options);
     }
     
-    public static async ValueTask<DatabaseFixture> CreateAsync(TestingAspireAppHost appHost, Respawner respawner)
+    public static async ValueTask<DatabaseTestFixture> CreateAsync(TestingAspireAppHost appHost, 
+        CancellationToken cancellationToken)
     {
         var connectionString = await appHost.GetConnectionString("admitto-db");
         if (connectionString is null)
@@ -33,7 +34,9 @@ public class DatabaseFixture : IAsyncDisposable
                 "Connection string for PostgreSQL database not found.");
         }
 
-        return new DatabaseFixture(connectionString, respawner);
+        var respawner = await CreateRespawnerAsync(appHost, cancellationToken);
+
+        return new DatabaseTestFixture(connectionString, respawner);
     }
 
     public async Task ResetAsync(Action<ApplicationContext>? seed = null,
@@ -55,4 +58,25 @@ public class DatabaseFixture : IAsyncDisposable
     }
     
     public async ValueTask DisposeAsync() => await Context.DisposeAsync();
+    
+    private static async Task<Respawner> CreateRespawnerAsync(TestingAspireAppHost appHost,
+        CancellationToken cancellationToken)
+    {
+        var connectionString = await appHost.GetConnectionString("admitto-db");
+        if (connectionString is null)
+        {
+            throw new InvalidOperationException(
+                "Connection string for PostgreSQL database not found.");
+        }
+
+        await using var connection = new NpgsqlConnection(connectionString);
+        await connection.OpenAsync(cancellationToken);
+
+        return await Respawner.CreateAsync(connection, new RespawnerOptions
+        {
+            SchemasToInclude = [ "public" ],
+            TablesToIgnore = [ "__EFMigrationsHistory" ],
+            DbAdapter = DbAdapter.Postgres
+        });
+    }
 }

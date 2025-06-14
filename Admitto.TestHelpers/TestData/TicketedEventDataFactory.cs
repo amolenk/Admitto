@@ -1,16 +1,9 @@
 using Amolenk.Admitto.Domain.Entities;
 
-namespace Amolenk.Admitto.Application.Tests.TestHelpers;
+namespace Amolenk.Admitto.TestHelpers.TestData;
 
-public static class TeamDataFactory
+public static class TicketedEventDataFactory
 {
-    public static Team CreateTeam(string? name = null)
-    {
-        name ??= "Test Team";
-        
-        return Team.Create(name, GlobalAppHostFixture.GetDefaultEmailSettings());
-    }
-
     public static TicketedEvent CreateTicketedEvent(string? name = null, DateTimeOffset? startDateTime = null,
         DateTimeOffset? endDateTime = null, DateTimeOffset? registrationStartDateTime = null,
         DateTimeOffset? registrationEndDateTime = null, IEnumerable<TicketType>? ticketTypes = null)

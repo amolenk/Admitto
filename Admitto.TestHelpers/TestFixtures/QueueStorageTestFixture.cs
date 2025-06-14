@@ -1,17 +1,17 @@
 using Amolenk.Admitto.Infrastructure;
 using Azure.Storage.Queues;
 
-namespace Amolenk.Admitto.Application.Tests.TestFixtures;
+namespace Amolenk.Admitto.TestHelpers.TestFixtures;
 
-public class QueueStorageFixture
+public class QueueStorageTestFixture
 {
-    private QueueStorageFixture(string connectionString)
+    private QueueStorageTestFixture(string connectionString)
     {
         MessageQueue = new QueueClient(connectionString, Constants.AzureQueueStorage.DefaultQueueName);
         PrioMessageQueue = new QueueClient(connectionString, Constants.AzureQueueStorage.PrioQueueName);
     }
     
-    public static async ValueTask<QueueStorageFixture> CreateAsync(TestingAspireAppHost appHost)
+    public static async ValueTask<QueueStorageTestFixture> CreateAsync(TestingAspireAppHost appHost)
     {
         var connectionString = await appHost.GetConnectionString(Constants.AzureQueueStorage.ResourceName);
         if (connectionString is null)
@@ -19,10 +19,10 @@ public class QueueStorageFixture
             throw new InvalidOperationException("Connection string for Azure Queue Storage not found.");
         }
 
-        return new QueueStorageFixture(connectionString);
+        return new QueueStorageTestFixture(connectionString);
     }
 
-    private QueueClient MessageQueue { get; }
+    public QueueClient MessageQueue { get; }
 
     private QueueClient PrioMessageQueue { get; }
 

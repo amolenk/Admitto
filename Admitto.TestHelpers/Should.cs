@@ -1,6 +1,7 @@
 using System.Diagnostics;
+using Shouldly;
 
-namespace Amolenk.Admitto.Application.Tests.TestHelpers;
+namespace Amolenk.Admitto.TestHelpers;
 
 public static class Should
 {   

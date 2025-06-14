@@ -1,11 +1,12 @@
 using Amolenk.Admitto.Infrastructure.Auth;
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
+using Aspire.Hosting.Testing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 
-namespace Amolenk.Admitto.Application.Tests.TestFixtures;
+namespace Amolenk.Admitto.TestHelpers;
 
 public class TestingAspireAppHost()
     : DistributedApplicationFactory(typeof(Projects.Admitto_AppHost), 
