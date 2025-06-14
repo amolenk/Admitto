@@ -1,15 +1,35 @@
 using Amolenk.Admitto.Application.Common.Abstractions;
+using Amolenk.Admitto.Infrastructure.Auth;
+using Aspire.Hosting.Testing;
+using Microsoft.Extensions.DependencyInjection;
 
-namespace Amolenk.Admitto.Application.Tests.TestFixtures;
+namespace Amolenk.Admitto.TestHelpers.TestFixtures;
 
-public class IdentityFixture(IIdentityService identityService)
+public class IdentityTestFixture
 {
-    private const string TestUserEmail = "alice@example.com";
-    
     // TODO Remove if not needed
     public static readonly Guid TestUserId = new ("236d597b-a4df-4e08-b90c-b4cb1808ec2d");
+
+    private const string TestUserEmail = "alice@example.com";
+
+    private IdentityTestFixture(IIdentityService identityService)
+    {
+        IdentityService = identityService;
+    }
     
-    public IIdentityService IdentityService { get; } = identityService;
+    public IIdentityService IdentityService { get; }
+    
+    public static IdentityTestFixture Create(TestingAspireAppHost appHost)
+    {
+        var httpClient = appHost.Application.Services.GetRequiredService<IHttpClientFactory>()
+            .CreateClient("KeycloakApi");
+        
+        httpClient.BaseAddress = appHost.Application.GetEndpoint("keycloak");
+
+        var identityService = new KeycloakIdentityService(httpClient);
+        
+        return new IdentityTestFixture(identityService);
+    }
     
     public async Task ResetAsync(Func<IIdentityService, ValueTask>? seed = null,
         CancellationToken cancellationToken = default)

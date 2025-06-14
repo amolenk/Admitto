@@ -1,0 +1,20 @@
+﻿<Project Sdk="MSTest.Sdk/3.8.3">
+
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>Amolenk.Admitto.TestHelpers</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Aspire.Hosting.Testing" Version="9.3.1" />
+      <PackageReference Include="Respawn" Version="6.2.1" />
+      <PackageReference Include="Shouldly" Version="4.3.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\src\Admitto.AppHost\Admitto.AppHost.csproj" />
+    </ItemGroup>
+
+</Project>

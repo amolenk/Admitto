@@ -1,19 +1,19 @@
 using Amolenk.Admitto.Application.UseCases.Teams.CreateTeam;
+using Amolenk.Admitto.TestHelpers;
 
-namespace Amolenk.Admitto.Application.Tests.Middleware;
+namespace Amolenk.Admitto.Api.Tests.Middleware;
 
 [TestClass]
-public class ValidationExceptionHandlerTests
+public class ValidationExceptionHandlerTests : ApiTestsBase
 {
     [TestMethod]
     public async Task ValidationException_ReturnsProblemDetails()
     {
         // Arrange
         var request = CreateRequest(name: string.Empty);
-        var httpClient = GlobalAppHostFixture.GetApiClient();
     
         // Act
-        var response = await httpClient.PostAsJsonAsync($"/teams/", request);
+        var response = await ApiClient.PostAsJsonAsync($"/teams/", request);
         
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -21,13 +21,13 @@ public class ValidationExceptionHandlerTests
             pd => pd.Errors.ShouldContainKey("name"));
     }
 
-    private static CreateTeamRequest CreateRequest(string? name = null)
+    private CreateTeamRequest CreateRequest(string? name = null)
     {
         name ??= "Test Team";
         
         return new CreateTeamRequest(
             name, 
-            EmailSettingsDto.FromEmailSettings(GlobalAppHostFixture.GetDefaultEmailSettings()),
+            EmailSettingsDto.FromEmailSettings(Email.DefaultEmailSettings),
             []);
     }
 }

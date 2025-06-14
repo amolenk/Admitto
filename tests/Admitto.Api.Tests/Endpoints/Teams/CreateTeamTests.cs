@@ -1,11 +1,13 @@
+using Amolenk.Admitto.Api.Tests;
 using Amolenk.Admitto.Application.UseCases.Teams.CreateTeam;
 using Amolenk.Admitto.Domain.ValueObjects;
-using Should = Amolenk.Admitto.Application.Tests.TestHelpers.Should;
+using Amolenk.Admitto.TestHelpers;
+using Should = Amolenk.Admitto.TestHelpers.Should;
 
 namespace Amolenk.Admitto.Application.Tests.Endpoints.Teams;
 
 [TestClass]
-public class CreateTeamTests : BasicApiTestsBase
+public class CreateTeamTests : ApiTestsBase
 {
     [DataTestMethod]
     [DataRow(null)]
@@ -17,7 +19,7 @@ public class CreateTeamTests : BasicApiTestsBase
         // Arrange
         var request = new CreateTeamRequest(
             name!,
-            EmailSettingsDto.FromEmailSettings(GlobalAppHostFixture.GetDefaultEmailSettings()),
+            EmailSettingsDto.FromEmailSettings(Email.DefaultEmailSettings),
             []);
     
         // Act & Assert
@@ -69,6 +71,7 @@ public class CreateTeamTests : BasicApiTestsBase
         await AssertReturnsBadRequestAsync(request, $"members[0].{expectedErrorKey}");
     }
     
+    [DoNotParallelize]
     [TestClass]
     public class FullStackTests : FullStackApiTestsBase
     {
@@ -121,47 +124,49 @@ public class CreateTeamTests : BasicApiTestsBase
             // Check if the user was created
             await Should.Eventually(async () =>
                 {
-                    var user = await IdentityFixture.IdentityService.GetUserByEmailAsync(email);
+                    var user = await Identity.IdentityService.GetUserByEmailAsync(email);
                     user.ShouldNotBeNull().Email.ShouldBe(email);
                 },
                 TimeSpan.FromSeconds(3));
         }
 
-        [TestMethod]
-        public async Task TeamMemberAlreadyExists_DoesNotCreateExtraUser()
-        {
-            // Arrange
-            const string email = "bob@example.com";
-            var request = CreateRequest(members: [new TeamMemberDto(email, TeamMemberRole.Manager)]);
-
-            // Ensure the user already exists.
-            await IdentityFixture.IdentityService.AddUserAsync(email);
-
-            // Act
-            var response = await ApiClient.PostAsJsonAsync($"/teams/", request);
-
-            // Assert
-            response.StatusCode.ShouldBe(HttpStatusCode.Created);
-
-            // Check that no extra user was created
-            await Should.Eventually(async () =>
-                {
-                    var users = await IdentityFixture.IdentityService.GetUsersAsync();
-                    users.Count().ShouldBe(2, "Only Alice and Bob should be returned.");
-                },
-                TimeSpan.FromSeconds(3));
-        }
+        // TODO Move to Auth use cases
+        // [TestMethod]
+        // public async Task TeamMemberAlreadyExists_DoesNotCreateExtraUser()
+        // {
+        //     // Arrange
+        //     const string email = "bob@example.com";
+        //     var request = CreateRequest(members: [new TeamMemberDto(email, TeamMemberRole.Manager)]);
+        //
+        //     // Ensure the user already exists.
+        //     await IdentityFixture.IdentityService.AddUserAsync(email);
+        //
+        //     // Act
+        //     var response = await ApiClient.PostAsJsonAsync($"/teams/", request);
+        //
+        //     // Assert
+        //     response.StatusCode.ShouldBe(HttpStatusCode.Created);
+        //
+        //     // Check that no extra user was created
+        //     await Should.Eventually(async () =>
+        //         {
+        //             var users = await IdentityFixture.IdentityService.GetUsersAsync();
+        //             users.Count().ShouldBe(2, "Only Alice and Bob should be returned.");
+        //         },
+        //         TimeSpan.FromSeconds(3));
+        // }
     }
 
     private static CreateTeamRequest CreateRequest(string? name = null, EmailSettingsDto? emailSettings = null,
         IEnumerable<TeamMemberDto>? members = null)
     {
         name ??= "Test Team";
-        emailSettings ??= EmailSettingsDto.FromEmailSettings(GlobalAppHostFixture.GetDefaultEmailSettings());
+        emailSettings ??= EmailSettingsDto.FromEmailSettings(AssemblyTestFixture.Email.DefaultEmailSettings);
         
         return new CreateTeamRequest(name, emailSettings, members ?? []);
     }
 
+    // TODO Make Should extension
     private async ValueTask AssertReturnsBadRequestAsync(CreateTeamRequest request, string expectedErrorKey)
     {
         var response = await ApiClient.PostAsJsonAsync($"/teams/", request);

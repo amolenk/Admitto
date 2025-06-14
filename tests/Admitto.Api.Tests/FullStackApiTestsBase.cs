@@ -1,34 +1,27 @@
 using Amolenk.Admitto.Domain.Entities;
+using Amolenk.Admitto.TestHelpers.TestData;
 
-namespace Amolenk.Admitto.Application.Tests;
+namespace Amolenk.Admitto.Api.Tests;
 
 [DoNotParallelize]
-public class FullStackApiTestsBase : BasicApiTestsBase
+public class FullStackApiTestsBase : ApiTestsBase
 {
-    protected AuthorizationFixture AuthorizationFixture { get; private set; } = null!;
-    protected DatabaseFixture DatabaseFixture { get; private set; } = null!;
-    protected IdentityFixture IdentityFixture { get; private set; } = null!;
-    protected QueueStorageFixture QueueStorageFixture { get; private set; } = null!;
-     
     protected Team DefaultTeam = null!;
-
+    
     [TestInitialize]
     public override async Task TestInitialize()
     {
-        AuthorizationFixture = GlobalAppHostFixture.GetAuthorizationFixture();
-        DatabaseFixture = await GlobalAppHostFixture.GetDatabaseFixtureAsync();
-        IdentityFixture = GlobalAppHostFixture.GetIdentityFixture();
-        QueueStorageFixture = await GlobalAppHostFixture.GetQueueStorageFixtureAsync();
-
         await Task.WhenAll(
-            AuthorizationFixture.ResetAsync(),
-            DatabaseFixture.ResetAsync(context =>
+            AssemblyTestFixture.Authorization.ResetAsync(),
+            AssemblyTestFixture.Database.ResetAsync(context =>
             {
-                DefaultTeam = TeamDataFactory.CreateTeam(name: "Default Team");
+                DefaultTeam = TeamDataFactory.CreateTeam(name: "Default Team",
+                    emailSettings: AssemblyTestFixture.Email.DefaultEmailSettings);
+
                 context.Teams.Add(DefaultTeam);
             }),
-            IdentityFixture.ResetAsync(),
-            QueueStorageFixture.ResetAsync());
+            AssemblyTestFixture.Identity.ResetAsync(),
+            AssemblyTestFixture.QueueStorage.ResetAsync());
 
         await base.TestInitialize();
     }

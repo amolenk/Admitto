@@ -1,7 +1,7 @@
 ﻿<Project Sdk="MSTest.Sdk/3.8.3">
 
     <PropertyGroup>
-        <RootNamespace>Amolenk.Admitto.Api.Tests</RootNamespace>
+        <RootNamespace>Amolenk.Admitto.Worker.Tests</RootNamespace>
     </PropertyGroup>
 
     <ItemGroup>

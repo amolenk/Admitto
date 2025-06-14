@@ -1,32 +1,20 @@
 using Amolenk.Admitto.Application.UseCases.TicketedEvents.CreateTicketedEvent;
 using Amolenk.Admitto.Domain.Entities;
+using Amolenk.Admitto.TestHelpers;
+using Amolenk.Admitto.TestHelpers.TestData;
+using OpenFga.Sdk.ApiClient;
 
-namespace Amolenk.Admitto.Application.Tests.Middleware;
+namespace Amolenk.Admitto.Api.Tests.Middleware;
 
-[TestClass, DoNotParallelize]
-public class DomainExceptionHandlerTests
+[TestClass]
+public class DomainExceptionHandlerTests : FullStackApiTestsBase
 {
-    private Team _team = null!;
-
-    [TestInitialize]
-    public async Task TestInitialize()
-    {
-        var databaseFixture = await GlobalAppHostFixture.GetDatabaseFixtureAsync();
-        await databaseFixture.ResetAsync(context =>
-        {
-            _team = TeamDataFactory.CreateTeam(name: "Default Team");
-            context.Teams.Add(_team);
-        });
-    }
-    
     [TestMethod]
     public async Task DomainException_ReturnsProblemDetails()
     {
         // Arrange
         var nextYear = DateTime.Today.Year + 1;
         var offset = TimeSpan.Zero;
-        
-        var httpClient = GlobalAppHostFixture.GetApiClient();
         
         // Create a request with the registration period ending after the start date. This will trigger
         // a domain exception.
@@ -37,7 +25,7 @@ public class DomainExceptionHandlerTests
             registrationEndDateTime: new DateTimeOffset(nextYear, 1, 24, 18, 0, 0, offset));
 
         // Act
-        var response = await httpClient.PostAsJsonAsync($"/teams/{_team.Id}/events/", request);
+        var response = await ApiClient.PostAsJsonAsync($"/teams/{DefaultTeam.Id}/events/", request);
                
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);

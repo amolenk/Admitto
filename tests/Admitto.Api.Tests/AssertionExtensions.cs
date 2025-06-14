@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 
-namespace Amolenk.Admitto.Application.Tests.TestHelpers;
+namespace Amolenk.Admitto.Api.Tests;
 
 public static class AssertionExtensions
 {
