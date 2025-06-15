@@ -1,13 +1,10 @@
 using Amolenk.Admitto.Application.UseCases.TicketedEvents.CreateTicketedEvent;
-using Amolenk.Admitto.Domain.Entities;
-using Amolenk.Admitto.TestHelpers;
-using Amolenk.Admitto.TestHelpers.TestData;
-using OpenFga.Sdk.ApiClient;
+using Amolenk.Admitto.IntegrationTests.TestHelpers;
 
-namespace Amolenk.Admitto.Api.Tests.Middleware;
+namespace Amolenk.Admitto.IntegrationTests.Middleware;
 
 [TestClass]
-public class DomainExceptionHandlerTests : FullStackApiTestsBase
+public class DomainExceptionHandlerTests : BaseForFullStackTests
 {
     [TestMethod]
     public async Task DomainException_ReturnsProblemDetails()

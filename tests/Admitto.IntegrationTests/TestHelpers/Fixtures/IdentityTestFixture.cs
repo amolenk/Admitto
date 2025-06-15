@@ -1,10 +1,7 @@
 using Amolenk.Admitto.Application.Common.Abstractions;
 using Amolenk.Admitto.Infrastructure.Auth;
-using Amolenk.Admitto.TestHelpers.TestData;
-using Aspire.Hosting.Testing;
-using Microsoft.Extensions.DependencyInjection;
 
-namespace Amolenk.Admitto.TestHelpers.TestFixtures;
+namespace Amolenk.Admitto.IntegrationTests.TestHelpers.Fixtures;
 
 public class IdentityTestFixture
 {

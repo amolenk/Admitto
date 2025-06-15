@@ -82,7 +82,10 @@ var apiService = builder.AddProject<Projects.Admitto_Api>("api")
     .WithReference(postgresdb)
     .WithReference(queues)
     .WithReference(keycloak)
-    .WaitFor(worker);
+    .WaitFor(postgresdb)
+    .WaitFor(queues)
+    .WaitFor(keycloak)
+    .WaitFor(openFga);
 
 if (migrate)
 {
