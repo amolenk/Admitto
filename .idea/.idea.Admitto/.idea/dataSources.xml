@@ -204,5 +204,12 @@
       <jdbc-url>jdbc:postgresql://localhost:54384/admitto-db?password=P%40ssw0rd&amp;user=postgres</jdbc-url>
       <working-dir>$ProjectFileDir$</working-dir>
     </data-source>
+    <data-source source="LOCAL" name="admitto-db" uuid="5d2e630a-dbc6-41c8-a64a-0b3ffc960f3d">
+      <driver-ref>postgresql</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.postgresql.Driver</jdbc-driver>
+      <jdbc-url>jdbc:postgresql://localhost:55425/admitto-db?password=P%40ssw0rd&amp;user=postgres</jdbc-url>
+      <working-dir>$ProjectFileDir$</working-dir>
+    </data-source>
   </component>
 </project>

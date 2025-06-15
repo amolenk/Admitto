@@ -1,10 +1,10 @@
 using Amolenk.Admitto.Application.UseCases.Teams.CreateTeam;
-using Amolenk.Admitto.TestHelpers;
+using Amolenk.Admitto.IntegrationTests.TestHelpers;
 
-namespace Amolenk.Admitto.Api.Tests.Middleware;
+namespace Amolenk.Admitto.IntegrationTests.Middleware;
 
 [TestClass]
-public class ValidationExceptionHandlerTests : ApiTestsBase
+public class ValidationExceptionHandlerTests : BaseForApiTests
 {
     [TestMethod]
     public async Task ValidationException_ReturnsProblemDetails()

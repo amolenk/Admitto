@@ -21,7 +21,8 @@ public class Team : AggregateRoot
     
     private Team(TeamId id, string name, EmailSettings emailSettings) : base(id)
     {
-        Id = id.Value;
+        // TODO Already set via base?
+        // Id = id.Value;
         Name = name;
         EmailSettings = emailSettings;
         _members = [];

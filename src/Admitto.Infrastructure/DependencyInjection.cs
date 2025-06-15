@@ -31,7 +31,7 @@ public static class DependencyInjection
         builder.EnrichNpgsqlDbContext<ApplicationContext>();
         
         builder.AddKeyedAzureQueueClient("queues");
-
+        
         builder.Services
             .AddScoped<IUnitOfWork, UnitOfWork>();
 
@@ -50,7 +50,7 @@ public static class DependencyInjection
         
         return builder;
     }
-
+    
     public static IHostApplicationBuilder AddSmtpEmailServices(this IHostApplicationBuilder builder)
     {
         builder.Services.AddTransient<IEmailSender, SmtpEmailSender>();
