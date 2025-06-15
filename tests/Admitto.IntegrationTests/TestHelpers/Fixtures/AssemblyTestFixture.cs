@@ -51,16 +51,19 @@ public static class AssemblyTestFixture
 
     private static async ValueTask<IHost> CreateWorkerHostAsync()
     {
+        var databaseConnectionString = await Application.GetConnectionStringAsync("admitto-db");
         var queuesConnectionString = await Application.GetConnectionStringAsync("queues");
-        var keycloakEndpoint = AssemblyTestFixture.Application.GetEndpoint("keycloak", "http")
-            .ToString();
+        var keycloakEndpoint = Application.GetEndpoint("keycloak", "http").ToString();
+        var openFgaEndpoint = Application.GetEndpoint("openfga", "http").ToString();
         
         var builder = Host.CreateApplicationBuilder();
 
         builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
         {
+            ["ConnectionStrings:admitto-db"] = databaseConnectionString,
             ["ConnectionStrings:queues"] = queuesConnectionString,
-            ["Services:keycloak:http:0"] = keycloakEndpoint
+            ["services:keycloak:http:0"] = keycloakEndpoint, 
+            ["services:openfga:http:0"] = openFgaEndpoint
         });
         
         builder.AddServiceDefaults();

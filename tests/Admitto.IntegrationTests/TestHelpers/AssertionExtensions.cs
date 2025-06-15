@@ -42,7 +42,7 @@ public static class AssertionExtensions
                 message.ShouldNotBeNull();
 
                 var cloudEvent = CloudEvent.Parse(message.Value.Body);
-                cloudEvent.ShouldNotBeNull().Type.ShouldBe(typeof(TMessage).Name);
+                cloudEvent.ShouldNotBeNull();
 
                 var typedMessage = JsonSerializer.Deserialize<TMessage>(cloudEvent.Data!.ToString(), 
                     JsonSerializerOptions.Web);

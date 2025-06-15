@@ -11,4 +11,7 @@ public interface IRebacAuthorizationService
 
     ValueTask<bool> CheckAsync(Guid userId, string relation, string objectType, string objectId,
         CancellationToken cancellationToken = default);
+
+    ValueTask<IEnumerable<TeamMemberRole>> GetTeamRolesAsync(Guid userId, TeamId teamId, 
+        CancellationToken cancellationToken = default);
 }
