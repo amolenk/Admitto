@@ -91,10 +91,12 @@ public static class DependencyInjection
 
         services.AddHttpClient<OpenFgaClientFactory>(client =>
         {
+            var openFgaEndpoint = builder.Configuration["services:openfga:http:0"];
+            
             // The OpenFGA SDK doesn't play nice with .NET Service Discovery, because we need to explicitly set the
             // API URL in the ClientConfiguration, even when providing a custom HttpClient.
             // We can still get the Service Discovery URL from the configuration ourselves and set it on the HttpClient.
-            client.BaseAddress = new Uri(builder.Configuration["services:openfga:http:0"]!);
+            client.BaseAddress = new Uri(openFgaEndpoint!);
 
             // TODO For production, read store and model ids from configuration
         });
