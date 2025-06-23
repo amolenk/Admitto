@@ -78,6 +78,12 @@ var worker = builder.AddProject<Projects.Admitto_Worker>("worker")
 
 var apiService = builder.AddProject<Projects.Admitto_Api>("api")
     .WithEnvironment("AUTHENTICATION__AUTHORITY", $"{keycloak.GetEndpoint("http")}/realms/admitto")
+    .WithUrlForEndpoint("http", ep => new()
+    {
+        Url            = "/scalar",
+        DisplayText    = "Scalar",
+        DisplayLocation = UrlDisplayLocation.SummaryAndDetails
+    })
     .WithReference(openFga.GetEndpoint("http"))
     .WithReference(postgresdb)
     .WithReference(queues)
@@ -86,6 +92,10 @@ var apiService = builder.AddProject<Projects.Admitto_Api>("api")
     .WaitFor(queues)
     .WaitFor(keycloak)
     .WaitFor(openFga);
+
+
+   
+
 
 if (migrate)
 {
@@ -98,6 +108,7 @@ if (migrate)
         .WaitFor(postgresdb);
 
     worker.WaitForCompletion(migration);
+    apiService.WaitForCompletion(migration);
 }
 
 var authSecret = builder.AddParameter("AuthSecret", true);

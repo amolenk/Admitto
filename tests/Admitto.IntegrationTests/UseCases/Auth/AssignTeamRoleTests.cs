@@ -4,13 +4,12 @@ using Amolenk.Admitto.Domain.ValueObjects;
 namespace Amolenk.Admitto.IntegrationTests.UseCases.Auth;
 
 [TestClass]
-public class AssignTeamRoleTests : BaseForWorkerTests
+public class AssignTeamRoleTests : FullStackTestsBase
 {
     [TestMethod]
     public async ValueTask UserDoesNotHaveRole_AddsRole()
     {
         // Arrange
-        var commandHandler = WorkerHostServiceProvider.GetRequiredService<AssignTeamRoleHandler>();     
         
         // Ensure user exists
         const string email = "bob@example.com";
@@ -19,7 +18,7 @@ public class AssignTeamRoleTests : BaseForWorkerTests
         var command = new AssignTeamRoleCommand(user.Id, DefaultTeam.Id, TeamMemberRole.Organizer);
 
         // Act
-        await commandHandler.HandleAsync(command, CancellationToken.None);
+        await HandleCommand<AssignTeamRoleCommand, AssignTeamRoleHandler>(command);
         
         // Assert
         var userRoles = (await Authorization.AuthorizationService.GetTeamRolesAsync(
@@ -33,7 +32,6 @@ public class AssignTeamRoleTests : BaseForWorkerTests
     public async ValueTask UserAlreadyHasRole_DoesNotAddDuplicateRole()
     {
         // Arrange
-        var commandHandler = WorkerHostServiceProvider.GetRequiredService<AssignTeamRoleHandler>();     
         
         // Ensure user exists
         const string email = "bob@example.com";
@@ -46,7 +44,7 @@ public class AssignTeamRoleTests : BaseForWorkerTests
         var command = new AssignTeamRoleCommand(user.Id, DefaultTeam.Id, TeamMemberRole.Organizer);
 
         // Act
-        await commandHandler.HandleAsync(command, CancellationToken.None);
+        await HandleCommand<AssignTeamRoleCommand, AssignTeamRoleHandler>(command);
         
         // Assert
         var userRoles = (await Authorization.AuthorizationService.GetTeamRolesAsync(

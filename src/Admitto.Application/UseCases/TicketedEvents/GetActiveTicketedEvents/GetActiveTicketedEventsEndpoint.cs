@@ -23,6 +23,8 @@ public static class GetActiveTicketedEventsEndpoint
             return TypedResults.BadRequest(Error.TeamNotFound(teamId));
         }
         
-        return TypedResults.Ok(GetActiveTicketedEventsResponse.FromTicketedEvents(team.ActiveEvents));
+        throw new NotImplementedException();
+
+        // return TypedResults.Ok(GetActiveTicketedEventsResponse.FromTicketedEvents(team.ActiveEvents));
     }
 }

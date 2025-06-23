@@ -17,20 +17,9 @@ public class EmailMessageEntityConfiguration : IEntityTypeConfiguration<EmailMes
 
         builder.Property(e => e.TeamId)
             .HasColumnName("team_id")
-            .HasConversion(p => p.Value, p => new TeamId(p));
-
-        builder.Property(e => e.TicketedEventId)
-            .HasColumnName("ticketed_event_id")
-            .HasConversion<Guid?>(
-                p => p == null ? null : p.Value, 
-                p => p == null ? null : new TicketedEventId(p.Value));
-
-        builder.Property(e => e.AttendeeId)
-            .HasColumnName("attendee_id")
-            .HasConversion<Guid?>(
-                p => p == null ? null : p.Value, 
-                p => p == null ? null : new AttendeeId(p.Value));
-
+            .HasConversion(p => p.Value, p => new TeamId(p))
+            .IsRequired();
+        
         builder.Property(e => e.RecipientEmail)
             .HasColumnName("recipient_email")
             .IsRequired()
@@ -45,5 +34,9 @@ public class EmailMessageEntityConfiguration : IEntityTypeConfiguration<EmailMes
             .HasColumnName("body")
             .IsRequired()
             .HasMaxLength(2000); // TODO Large enough?
+
+        builder.Property(e => e.IsSent)
+            .HasColumnName("is_sent")
+            .IsRequired();
     }
 }

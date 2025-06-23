@@ -7,7 +7,7 @@ public class CreateTeamValidator : AbstractValidator<CreateTeamRequest>
     public CreateTeamValidator()
     {
         RuleFor(x => x.Name)
-            .NotNull().WithMessage("Team name must be set.")
+            .NotNull().WithMessage("Team name is required.")
             .MinimumLength(2).WithMessage("Team name must be at least 2 characters long.")
             .MaximumLength(50).WithMessage("Team name must be 50 characters or less.")
             .OverridePropertyName("name");
@@ -16,7 +16,7 @@ public class CreateTeamValidator : AbstractValidator<CreateTeamRequest>
             .ChildRules(member =>
             {
                 member.RuleFor(m => m.Email)
-                    .NotNull().WithMessage("Member email must be set.")
+                    .NotNull().WithMessage("Member email is required.")
                     .EmailAddress().WithMessage("Member email must be a valid email address.")
                     .OverridePropertyName("email");
 
@@ -29,14 +29,14 @@ public class CreateTeamValidator : AbstractValidator<CreateTeamRequest>
 
         RuleFor(x => x.EmailSettings)
             .NotNull()
-            .WithMessage("Email settings must be set.")
+            .WithMessage("Email settings are required.")
             .OverridePropertyName("emailSettings");
 
         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
         When(x => x.EmailSettings is not null, () =>
         {
             RuleFor(x => x.EmailSettings.SenderEmail)
-                .NotNull().WithMessage("Sender email must be set.")
+                .NotNull().WithMessage("Sender email is required.")
                 .EmailAddress().WithMessage("Sender email must be a valid email address.")
                 .OverridePropertyName("senderEmail");
 

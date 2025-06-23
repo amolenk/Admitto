@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Application.Common.Abstractions;
-using Amolenk.Admitto.Application.UseCases.Email;
 using Amolenk.Admitto.Application.UseCases.Email.SendEmail;
 using Amolenk.Admitto.Domain.ValueObjects;
 using Scriban;
@@ -10,7 +9,7 @@ namespace Amolenk.Admitto.Infrastructure.Email;
 public class EmailOutbox(IEmailContext context, IMessageOutbox messageOutbox) : IEmailOutbox
 {
     public async ValueTask EnqueueEmailAsync(string recipientEmail, string subject, string templateId, 
-        Dictionary<string, string> templateParameters, TeamId teamId, TicketedEventId? ticketedEventId = null, 
+        Dictionary<string, string> templateParameters, TeamId teamId, TicketedEventId? ticketedEventId = null,
         AttendeeId? attendeeId = null, bool priority = false)
     {
         var email = new EmailMessage
@@ -18,9 +17,7 @@ public class EmailOutbox(IEmailContext context, IMessageOutbox messageOutbox) : 
             RecipientEmail = recipientEmail,
             Subject = subject,
             Body = await RenderBodyAsync(templateId, templateParameters),
-            TeamId = teamId,
-            TicketedEventId = ticketedEventId, 
-            AttendeeId = attendeeId
+            TeamId = teamId
         };
 
         // Persist the e-mail message to the database

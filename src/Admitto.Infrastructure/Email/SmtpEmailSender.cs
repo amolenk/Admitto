@@ -9,22 +9,14 @@ namespace Amolenk.Admitto.Infrastructure.Email;
 
 public class SmtpEmailSender(IDomainContext domainContext, ILogger<SmtpEmailSender> logger) : IEmailSender
 {
-    public async Task SendEmailAsync(string recipientEmail, string subject, string body, TeamId teamId, 
-        TicketedEventId? ticketedEventId = null, AttendeeId? attendeeId = null)
+    public async Task SendEmailAsync(string recipientEmail, string subject, string body, TeamId teamId)
     {
         var team = await domainContext.Teams.FirstOrDefaultAsync(t => t.Id == teamId.Value);
         if (team is null)
         {
-            logger.LogError("Cannot send e-mail for team {teamId}, because it doesn't exist.", teamId);
+            logger.LogError("Cannot send e-mail for team {teamId}, because it doesn't exist.", teamId.Value);
             return;
         }
-        
-        // var ticketedEvent = team.ActiveEvents.FirstOrDefault(e => e.Id == ticketedEventId);
-        // if (ticketedEvent is null)
-        // {
-        //     logger.LogError("Cannot send e-mail for event {eventId} because it's not an active event", ticketedEventId);
-        //     return;
-        // }
         
         var message = new MimeMessage();
         message.From.Add(new MailboxAddress(team.Name, team.EmailSettings.SenderEmail));

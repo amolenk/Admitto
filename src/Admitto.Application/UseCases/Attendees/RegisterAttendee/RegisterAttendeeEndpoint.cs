@@ -30,33 +30,35 @@ public static class RegisterAttendeeEndpoint
             return TypedResults.BadRequest(Error.TeamNotFound(teamId));
         }
 
-        var ticketedEvent = team.ActiveEvents.FirstOrDefault(e => e.Id == ticketedEventId);
-        if (ticketedEvent is null)
-        {
-            return TypedResults.BadRequest(Error.TicketedEventNotFound(ticketedEventId));
-        }
-        
-        var ticketOrder = TicketOrder.Create(request.TicketTypes);
-        
-        // Early exit: If there's not enough capacity, reject immediately.
-        if (!ticketedEvent.HasAvailableCapacity(ticketOrder))
-        {
-            return TypedResults.BadRequest(Error.InsufficientCapacity);
-        }
+        throw new NotImplementedException();
 
-        // Optimistically add a new registration.
-        var registration = AttendeeRegistration.Create(teamId,ticketedEventId, request.Email,
-            request.FirstName, request.LastName, request.OrganizationName, ticketOrder);
+        // var ticketedEvent = team.ActiveEvents.FirstOrDefault(e => e.Id == ticketedEventId);
+        // if (ticketedEvent is null)
+        // {
+        //     return TypedResults.BadRequest(Error.TicketedEventNotFound(ticketedEventId));
+        // }
         //
-        // TODO What happens if the registration already exists?
-        // TODO Maybe automatic Conflict error is OK?
-        context.AttendeeRegistrations.Add(registration);
-        
-        // Add a command to the outbox to reserve the tickets asynchronously.
-        // At this point, everything looks ok, but we can't be 100% sure the event isn't full.
-        messageOutbox.Enqueue(new ReserveTicketsCommand(registration.Id));
-
-        return TypedResults.Created($"/teams/{teamId}/events/{ticketedEventId}/registrations/{registration.Id}",
-            RegisterAttendeeResponse.FromAttendeeRegistration(registration));
+        // var ticketOrder = TicketOrder.Create(request.TicketTypes);
+        //
+        // // Early exit: If there's not enough capacity, reject immediately.
+        // if (!ticketedEvent.HasAvailableCapacity(ticketOrder))
+        // {
+        //     return TypedResults.BadRequest(Error.InsufficientCapacity);
+        // }
+        //
+        // // Optimistically add a new registration.
+        // var registration = AttendeeRegistration.Create(teamId,ticketedEventId, request.Email,
+        //     request.FirstName, request.LastName, request.OrganizationName, ticketOrder);
+        // //
+        // // TODO What happens if the registration already exists?
+        // // TODO Maybe automatic Conflict error is OK?
+        // context.AttendeeRegistrations.Add(registration);
+        //
+        // // Add a command to the outbox to reserve the tickets asynchronously.
+        // // At this point, everything looks ok, but we can't be 100% sure the event isn't full.
+        // messageOutbox.Enqueue(new ReserveTicketsCommand(registration.Id));
+        //
+        // return TypedResults.Created($"/teams/{teamId}/events/{ticketedEventId}/registrations/{registration.Id}",
+        //     RegisterAttendeeResponse.FromAttendeeRegistration(registration));
     }
 }

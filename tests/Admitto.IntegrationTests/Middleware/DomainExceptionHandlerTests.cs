@@ -4,7 +4,7 @@ using Amolenk.Admitto.IntegrationTests.TestHelpers;
 namespace Amolenk.Admitto.IntegrationTests.Middleware;
 
 [TestClass]
-public class DomainExceptionHandlerTests : BaseForFullStackTests
+public class DomainExceptionHandlerTests : FullStackTestsBase
 {
     [TestMethod]
     public async Task DomainException_ReturnsProblemDetails()
@@ -26,8 +26,8 @@ public class DomainExceptionHandlerTests : BaseForFullStackTests
                
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-        await response.ShouldHaveProblemDetail(
-            pd => pd.Title.ShouldBe("A domain error occured."));
+        await response.ShouldHaveProblemDetailAsync(
+            conditions: pd => pd.Title.ShouldBe("A domain error occured."));
     }
     
     private static CreateTicketedEventRequest CreateTicketedEventRequest(string? name = null, DateTimeOffset? startDateTime = null,
@@ -44,7 +44,7 @@ public class DomainExceptionHandlerTests : BaseForFullStackTests
         registrationEndDateTime ??= new DateTimeOffset(nextYear, 1, 23, 18, 0, 0, offset);
         ticketTypes ??= [CreateTicketTypeDto()];
         
-        return new CreateTicketedEventRequest(name, startDateTime.Value, endDateTime.Value, 
+        return new CreateTicketedEventRequest(name, Guid.Empty, startDateTime.Value, endDateTime.Value, 
             registrationStartDateTime.Value, registrationEndDateTime.Value, ticketTypes);
     }
     
