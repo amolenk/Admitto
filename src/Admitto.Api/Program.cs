@@ -1,6 +1,7 @@
 using System.Text.Json.Serialization;
 using Amolenk.Admitto.ApiService.Endpoints;
 using Amolenk.Admitto.ApiService.Middleware;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -39,6 +40,7 @@ app.UseExceptionHandler();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.MapScalarApiReference();
 }
 
 app.MapDefaultEndpoints();

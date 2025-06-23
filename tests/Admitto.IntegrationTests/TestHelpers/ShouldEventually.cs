@@ -2,9 +2,9 @@ using System.Diagnostics;
 
 namespace Amolenk.Admitto.IntegrationTests.TestHelpers;
 
-public static class Should
+public static class ShouldEventually
 {   
-    public static async ValueTask Eventually(Func<ValueTask> task, TimeSpan timeout, TimeSpan? retryEvery = null,
+    public static async ValueTask CompleteIn(Func<ValueTask> task, TimeSpan timeout, TimeSpan? retryEvery = null,
         string? customMessage = null)
     {
         retryEvery ??= TimeSpan.FromMilliseconds(200);

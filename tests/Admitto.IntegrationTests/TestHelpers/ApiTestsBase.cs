@@ -7,7 +7,7 @@ using QueueStorageTestFixture = Amolenk.Admitto.IntegrationTests.TestHelpers.Fix
 namespace Amolenk.Admitto.IntegrationTests.TestHelpers;
 
 [TestClass]
-public abstract class BaseForApiTests
+public abstract class ApiTestsBase
 {
     // Convenience properties for accessing test fixtures
     protected readonly AuthorizationTestFixture Authorization = AssemblyTestFixture.AuthorizationTestFixture;

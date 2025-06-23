@@ -1,6 +1,3 @@
-using Amolenk.Admitto.Application.Common;
-using Amolenk.Admitto.Domain.Entities;
-
 namespace Amolenk.Admitto.Application.UseCases.TicketedEvents.CreateTicketedEvent;
 
 /// <summary>
@@ -14,24 +11,36 @@ public static class CreateTicketedEventEndpoint
         return group;
     }
 
-    private static async ValueTask<Results<Created<CreateTicketedEventResponse>, BadRequest<string>>> CreateTicketedEvent(
-        Guid teamId, CreateTicketedEventRequest request, CreateTicketedEventValidator validator, IDomainContext context,
-        CancellationToken cancellationToken)
+    private static async ValueTask<Results<Created<CreateTicketedEventResponse>, ValidationProblem, Conflict<HttpValidationProblemDetails>>> CreateTicketedEvent(
+        CreateTicketedEventRequest request, CreateTicketedEventValidator validator, IDomainContext context,
+        IUnitOfWork unitOfWork, CancellationToken cancellationToken)
     {
         await validator.ValidateAndThrowAsync(request, cancellationToken);
         
-        var team = await context.Teams.FindAsync([teamId], cancellationToken);
-        if (team is null)
-        {
-            return TypedResults.BadRequest(Error.TeamNotFound(teamId));
-        }
-
         var newEvent = request.ToTicketedEvent();
-        
-        team.AddActiveEvent(newEvent);
 
-        var response = CreateTicketedEventResponse.FromTicketedEvent(newEvent);
+        context.TicketedEvents.Add(newEvent);
+
+        // TODO Check that Scalar also shows BadRequest in OpenAPI docs
         
-        return TypedResults.Created($"/teams/{teamId}/events/{newEvent.Id}", response);
+        try
+        {        
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException)
+        {
+            return TypedResults.Conflict(new HttpValidationProblemDetails
+            {
+                Title = "Conflict",
+                Detail = $"An event with the name '{request.Name}' already exists.",
+                Status = StatusCodes.Status409Conflict,
+                Errors = {
+                    ["name"] = ["Event name must be unique."]
+                }
+            });
+        }
+        
+        return TypedResults.Created($"/events/v1/{newEvent.Id}", 
+            CreateTicketedEventResponse.FromTicketedEvent(newEvent));
     }
 }

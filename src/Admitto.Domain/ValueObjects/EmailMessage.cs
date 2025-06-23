@@ -7,6 +7,5 @@ public class EmailMessage
     public required string Subject { get; init; }
     public required string Body { get; init; }
     public required TeamId TeamId { get; init; }
-    public TicketedEventId? TicketedEventId { get; init; }
-    public AttendeeId? AttendeeId { get; init; }
+    public bool IsSent { get; set; }
 }

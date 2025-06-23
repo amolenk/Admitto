@@ -8,7 +8,7 @@ public static class TicketedEventEndpoints
 {
     public static void MapTicketedEventEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/teams/{teamId:guid}/events").WithTags("Events");
+        var group = app.MapGroup("/events/v1").WithTags("Events");
 
         group
             .MapCreateTicketedEvent()

@@ -4,16 +4,16 @@ namespace Amolenk.Admitto.Application.UseCases.TicketedEvents.CreateTicketedEven
 
 public record CreateTicketedEventRequest(
     string Name,
-    DateTimeOffset StartDateTime,
-    DateTimeOffset EndDateTime,
-    DateTimeOffset RegistrationStartDateTime,
-    DateTimeOffset RegistrationEndDateTime,
+    Guid TeamId,
+    DateTimeOffset StartTime,
+    DateTimeOffset EndTime,
+    DateTimeOffset RegistrationStartTime,
+    DateTimeOffset RegistrationEndTime,
     IEnumerable<TicketTypeDto> TicketTypes)
 {
     public TicketedEvent ToTicketedEvent()
     {
-        return TicketedEvent.Create(Name, StartDateTime, EndDateTime, RegistrationStartDateTime,
-            RegistrationEndDateTime, TicketTypes.Select(tt => tt.ToTicketType()));
+        return TicketedEvent.Create(TeamId, Name, StartTime, EndTime, RegistrationStartTime, RegistrationEndTime);
     }
 }
 

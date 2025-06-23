@@ -10,29 +10,23 @@ namespace Amolenk.Admitto.Domain.Entities;
 public class Team : AggregateRoot
 {
     private readonly List<TeamMember> _members;
-    private readonly List<TicketedEvent> _activeEvents;
 
     // EF Core constructor
     private Team()
     {
         _members = [];
-        _activeEvents = [];
     }
     
     private Team(TeamId id, string name, EmailSettings emailSettings) : base(id)
     {
-        // TODO Already set via base?
-        // Id = id.Value;
         Name = name;
         EmailSettings = emailSettings;
         _members = [];
-        _activeEvents = [];
     }
 
     public string Name { get; private set; } = null!;
     public EmailSettings EmailSettings { get; private set; } = null!;
     public IReadOnlyCollection<TeamMember> Members => _members.AsReadOnly();
-    public IReadOnlyCollection<TicketedEvent> ActiveEvents => _activeEvents.AsReadOnly();
 
     public static Team Create(string name, EmailSettings emailSettings)
     {
@@ -71,11 +65,4 @@ public class Team : AggregateRoot
     //     
     //     AddDomainEvent(new TeamMemberAddedDomainEvent(Id, user.Id, user.Email, user.Role));
     // }
-
-    public void AddActiveEvent(TicketedEvent ticketedEvent)
-    {
-        // TODO Validate
-        
-        _activeEvents.Add(ticketedEvent);
-    }
 }

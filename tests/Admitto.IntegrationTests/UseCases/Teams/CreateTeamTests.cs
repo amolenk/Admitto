@@ -1,17 +1,11 @@
-using System.Net;
-using System.Net.Http.Json;
 using Amolenk.Admitto.Application.UseCases.Teams.CreateTeam;
 using Amolenk.Admitto.Domain.DomainEvents;
-using Amolenk.Admitto.Domain.Utilities;
 using Amolenk.Admitto.Domain.ValueObjects;
-using Amolenk.Admitto.IntegrationTests.TestHelpers;
-using Azure.Messaging;
-using Should = Amolenk.Admitto.IntegrationTests.TestHelpers.Should;
 
 namespace Amolenk.Admitto.IntegrationTests.UseCases.Teams;
 
 [TestClass]
-public class CreateTeamTests : BaseForApiTests
+public class CreateTeamTests : ApiTestsBase
 {
     [DataTestMethod]
     [DataRow(null)]
@@ -26,8 +20,12 @@ public class CreateTeamTests : BaseForApiTests
             EmailSettingsDto.FromEmailSettings(Email.DefaultEmailSettings),
             []);
     
-        // Act & Assert
-        await AssertReturnsBadRequestAsync(request, "name");
+        // Act
+        var response = await ApiClient.PostAsJsonAsync($"/teams/", request);
+
+        // Assert
+        await response.ShouldHaveProblemDetailAsync(
+            conditions: pd => pd.Errors.ShouldContainKey("name"));
     }
     
     [TestMethod]
@@ -36,8 +34,12 @@ public class CreateTeamTests : BaseForApiTests
         // Arrange
         var request = new CreateTeamRequest("test", null!, []);
         
-        // Act & Assert
-        await AssertReturnsBadRequestAsync(request, "emailSettings");
+        // Act
+        var response = await ApiClient.PostAsJsonAsync($"/teams/", request);
+
+        // Assert
+        await response.ShouldHaveProblemDetailAsync(
+            conditions: pd => pd.Errors.ShouldContainKey("emailSettings"));
     }
 
     [DataTestMethod]
@@ -55,8 +57,12 @@ public class CreateTeamTests : BaseForApiTests
         var emailSettings = new EmailSettingsDto(senderEmail!, smtpServer!, smtpPort);
         var request = CreateRequest(emailSettings: emailSettings);
         
-        // Act & Assert
-        await AssertReturnsBadRequestAsync(request, expectedErrorKey);
+        // Act
+        var response = await ApiClient.PostAsJsonAsync($"/teams/", request);
+
+        // Assert
+        await response.ShouldHaveProblemDetailAsync(
+            conditions: pd => pd.Errors.ShouldContainKey(expectedErrorKey));
     }
     
     [DataTestMethod]
@@ -70,14 +76,18 @@ public class CreateTeamTests : BaseForApiTests
         // Arrange
         var teamMember = new TeamMemberDto(email, role);
         var request = CreateRequest(members: [teamMember]);
-        
-        // Act & Assert
-        await AssertReturnsBadRequestAsync(request, $"members[0].{expectedErrorKey}");
+
+        // Act
+        var response = await ApiClient.PostAsJsonAsync($"/teams/", request);
+
+        // Assert
+        await response.ShouldHaveProblemDetailAsync(
+            conditions: pd => pd.Errors.ShouldContainKey($"members[0].{expectedErrorKey}"));
     }
     
     [DoNotParallelize]
     [TestClass]
-    public class FullStackTests : BaseForFullStackTests
+    public class FullStackTests : FullStackTestsBase
     {
         [TestMethod]
         public async Task ValidTeam_CreatesTeam()
@@ -92,8 +102,11 @@ public class CreateTeamTests : BaseForApiTests
             response.StatusCode.ShouldBe(HttpStatusCode.Created);
 
             var result = await response.Content.ReadFromJsonAsync<CreateTeamResponse>();
-
             (result?.Id).ShouldNotBeNull();
+            
+            var createdTeam = await Database.Context.Teams.FindAsync(result.Id);
+            createdTeam.ShouldNotBeNull();
+
         }
         
         [TestMethod]
@@ -107,7 +120,7 @@ public class CreateTeamTests : BaseForApiTests
         
             // Assert
             response.StatusCode.ShouldBe(HttpStatusCode.Conflict);
-            await response.ShouldHaveProblemDetail(
+            await response.ShouldHaveProblemDetailAsync(HttpStatusCode.Conflict,
                 pd => pd.Detail.ShouldBe($"A team with the name '{DefaultTeam.Name}' already exists."),
                 pd => pd.Errors.ShouldContainKey("name"));
         }
@@ -144,15 +157,5 @@ public class CreateTeamTests : BaseForApiTests
         emailSettings ??= EmailSettingsDto.FromEmailSettings(AssemblyTestFixture.EmailTestFixture.DefaultEmailSettings);
         
         return new CreateTeamRequest(name, emailSettings, members ?? []);
-    }
-
-    // TODO Make Should extension
-    private async ValueTask AssertReturnsBadRequestAsync(CreateTeamRequest request, string expectedErrorKey)
-    {
-        var response = await ApiClient.PostAsJsonAsync($"/teams/", request);
-        
-        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-        await response.ShouldHaveProblemDetail(
-            pd => pd.Errors.ShouldContainKey(expectedErrorKey));
     }
 }

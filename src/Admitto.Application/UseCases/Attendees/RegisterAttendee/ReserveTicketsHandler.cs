@@ -24,20 +24,22 @@ public class ReserveTicketsHandler(IDomainContext context, IMessageOutbox messag
             throw new ValidationException(Error.TeamNotFound(registration.TeamId));
         }
         
-        var ticketedEvent = team.ActiveEvents.FirstOrDefault(e => e.Id == registration.TicketedEventId.Value);
-        if (ticketedEvent is null)
-        {
-            throw new ValidationException(Error.TicketedEventNotFound(registration.TicketedEventId));
-        }
-        
-        // Try to reserve the required tickets for the event.
-        var succes = ticketedEvent.TryReserveTickets(registration.TicketOrder);
-        
-        context.Teams.Update(team);
-        
-        // Also add a command to the outbox to resolve the pending registration.
-        messageOutbox.Enqueue(new ResolvePendingRegistrationCommand(command.RegistrationId, succes));
+        throw new NotImplementedException();
 
-        // TODO Use some kind of inbox pattern to ensure exactly-once processing
+        // var ticketedEvent = team.ActiveEvents.FirstOrDefault(e => e.Id == registration.TicketedEventId.Value);
+        // if (ticketedEvent is null)
+        // {
+        //     throw new ValidationException(Error.TicketedEventNotFound(registration.TicketedEventId));
+        // }
+        //
+        // // Try to reserve the required tickets for the event.
+        // var succes = ticketedEvent.TryReserveTickets(registration.TicketOrder);
+        //
+        // context.Teams.Update(team);
+        //
+        // // Also add a command to the outbox to resolve the pending registration.
+        // messageOutbox.Enqueue(new ResolvePendingRegistrationCommand(command.RegistrationId, succes));
+        //
+        // // TODO Use some kind of inbox pattern to ensure exactly-once processing
     }
 }

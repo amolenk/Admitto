@@ -7,7 +7,7 @@ public static class TeamEndpoints
 {
     public static void MapTeamEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/teams")
+        var group = app.MapGroup("/teams/v1")
             .WithTags("Teams")
             .RequireAuthorization();
 

@@ -6,55 +6,60 @@ namespace Amolenk.Admitto.Domain.Entities;
 /// <summary>
 /// Represents an event for which attendees can register.
 /// </summary>
-public class TicketedEvent : Entity
+public class TicketedEvent : AggregateRoot
 {
     private readonly List<TicketType> _ticketTypes;
+    private readonly List<EmailTemplate> _emailTemplates;
 
+    // EF Core constructor
     private TicketedEvent()
     {
         _ticketTypes = [];
+        _emailTemplates = [];
     }
     
-    private TicketedEvent(TicketedEventId id, string name, DateTimeOffset startDateTime, DateTimeOffset endDateTime,
-        DateTimeOffset registrationStartDateTime, DateTimeOffset registrationEndDateTime, 
-        IEnumerable<TicketType> ticketTypes)
-        : base(id.Value)
+    private TicketedEvent(TicketedEventId id, TeamId teamId, string name, DateTimeOffset startTime,
+        DateTimeOffset endTime, DateTimeOffset registrationStartTime, DateTimeOffset registrationEndTime)
+        : base(id)
     {
+        TeamId = teamId;
         Name = name;
-        StartDateTime = startDateTime;
-        EndDateTime = endDateTime;
-        RegistrationStartDateTime = registrationStartDateTime;
-        RegistrationEndDateTime = registrationEndDateTime;
-        _ticketTypes = ticketTypes.ToList();
+        StartTime = startTime;
+        EndTime = endTime;
+        RegistrationStartTime = registrationStartTime;
+        RegistrationEndTime = registrationEndTime;
+        _ticketTypes = [];
+        _emailTemplates = [];
     }
 
+    public Guid TeamId { get; private set; }
     public string Name { get; private set; } = null!;
-    public DateTimeOffset StartDateTime { get; private set; }
-    public DateTimeOffset EndDateTime { get; private set; }
-    public DateTimeOffset RegistrationStartDateTime { get; private set; }
-    public DateTimeOffset RegistrationEndDateTime { get; private set; }
+    public DateTimeOffset StartTime { get; private set; }
+    public DateTimeOffset EndTime { get; private set; }
+    public DateTimeOffset RegistrationStartTime { get; private set; }
+    public DateTimeOffset RegistrationEndTime { get; private set; }
     public IReadOnlyCollection<TicketType> TicketTypes => _ticketTypes.AsReadOnly();
 
-    public static TicketedEvent Create(string name, DateTimeOffset startDateTime, DateTimeOffset endDateTime,
-        DateTimeOffset registrationStartDateTime, DateTimeOffset registrationEndDateTime, 
-        IEnumerable<TicketType> ticketTypes)
+    public IReadOnlyCollection<EmailTemplate> EmailTemplates => _emailTemplates.AsReadOnly();
+
+    public static TicketedEvent Create(TeamId teamId, string name, DateTimeOffset startTime, DateTimeOffset endTime,
+        DateTimeOffset registrationStartTime, DateTimeOffset registrationEndTime)
     {
         if (string.IsNullOrWhiteSpace(name))
             throw new DomainException("Name cannot be empty.");
 
-        if (endDateTime < startDateTime)
+        if (endTime < startTime)
             throw new DomainException("End day should be greater than start day.");
 
-        if (registrationStartDateTime >= registrationEndDateTime)
+        if (registrationStartTime >= registrationEndTime)
             throw new DomainException("Sales start time must be before sales end time.");
 
-        if (registrationEndDateTime > startDateTime)
+        if (registrationEndTime > startTime)
             throw new DomainException("Registration must close before the event starts.");
 
         var id = TicketedEventId.FromEventName(name);
         
-        return new TicketedEvent(id, name, startDateTime, endDateTime, registrationStartDateTime, 
-            registrationEndDateTime, ticketTypes);
+        return new TicketedEvent(id, teamId, name, startTime, endTime, registrationStartTime, registrationEndTime);
     }
     
     public void AddTicketType(TicketType ticketType)
@@ -71,6 +76,10 @@ public class TicketedEvent : Entity
         // }
 
         _ticketTypes.Add(ticketType);
+    }
+
+    public void SetEmailTemplate(EmailTemplateId templateId, EmailTemplate template)
+    {
     }
 
     public void RemoveTicketType(Guid ticketTypeId)

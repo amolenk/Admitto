@@ -16,10 +16,10 @@ public record GetTicketedEventResponse(
         return new GetTicketedEventResponse(
             ticketedEvent.Id,
             ticketedEvent.Name,
-            ticketedEvent.StartDateTime,
-            ticketedEvent.EndDateTime,
-            ticketedEvent.RegistrationStartDateTime,
-            ticketedEvent.RegistrationEndDateTime,
+            ticketedEvent.StartTime,
+            ticketedEvent.EndTime,
+            ticketedEvent.RegistrationStartTime,
+            ticketedEvent.RegistrationEndTime,
             ticketedEvent.TicketTypes.Select(TicketTypeDto.FromTicketType));
     }
 }

@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Application.Common.Authorization;
-using Amolenk.Admitto.Application.UseCases.Email.SendEmail;
 using Amolenk.Admitto.Domain.Entities;
 using Amolenk.Admitto.Domain.ValueObjects;
 

@@ -1,5 +1,5 @@
-@ticketedEventId = f02fd7d4-7c12-a18a-a31d-e9448d62c433
-@ticketTypeId = 705e564e-be64-77a2-b552-2fcb19506385
+#@ticketedEventId = f02fd7d4-7c12-a18a-a31d-e9448d62c433
+#@ticketTypeId = 705e564e-be64-77a2-b552-2fcb19506385
 
 ### Get Keycloak token
 
@@ -12,27 +12,52 @@ grant_type=password&client_id=admitto-test-runner&username=alice&password=alice
 
 ### Create a new team
 
-POST http://localhost:5100/teams
+POST http://localhost:5100/teams/v1
 Content-Type: application/json
 Authorization: Bearer {{accessToken}}
 
 {
-  "name": "Azure Fest 16",
+  "name": "Acme",
   "emailSettings": {
-    "senderEmail": "team@azurefest.nl",
-    "smtpServer": "smtp.azurefest.nl",
+    "senderEmail": "no-reply@example.com",
+    "smtpServer": "smtp.example.com",
     "smtpPort": 587
   },
   "members": [
-    { "email": "mail44@sandermolenkamp.com", "role": "manager" }
+    { "email": "bob@example.com", "role": "manager" }
   ]
 }
 
+### Create a new event
+
+@teamId = d86c0337-74f9-336d-5038-eca92f8a73ae
+
+POST http://localhost:5100/events/v1
+Content-Type: application/json
+
+{
+  "name": "AwesomeCon",
+  "startTime": "2050-01-24T09:00:00Z",
+  "endDay": "2050-01-25T16:00:00Z",
+  "salesStartTime": "2049-09-01T00:00:00Z",
+  "salesEndTime": "2050-01-23T18:00:00Z",
+  "ticketTypes": [
+    {
+      "name": "General Admission",
+      "slotName": "Default",
+      "maxCapacity": 100
+    }
+  ]
+}
+
+
+
+
 ###
 
-@teamId = e8ad4949-1d2a-ae04-c763-336dea584a5f
+#@teamId = e8ad4949-1d2a-ae04-c763-336dea584a5f
 
-POST http://localhost:5100/teams/{{teamId}}/members
+POST http://localhost:5100/events/v1/{{teamId}}/members
 Content-Type: application/json
 
 {
@@ -44,26 +69,7 @@ Content-Type: application/json
 
 GET http://localhost:5100/teams/{{teamId}}/events/{{ticketedEventId}}
 
-###
 
-POST http://localhost:5100/events
-Content-Type: application/json
-
-{
-  "name": "Bitbash",
-  "startDay": "2026-01-24",
-  "endDay": "2026-01-25",
-  "salesStartDateTime": "2025-09-01T00:00:00Z",
-  "salesEndDateTime": "2026-01-23T00:00:00Z",
-  "ticketTypes": [
-    {
-      "name": "Conference",
-      "startDateTime": "2026-01-25T09:00:00Z",
-      "endDateTime": "2026-01-25T16:00:00Z",
-      "maxCapacity": 200
-    }
-  ]
-}
 
 ###
 

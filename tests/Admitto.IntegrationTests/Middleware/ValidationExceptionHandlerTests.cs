@@ -4,7 +4,7 @@ using Amolenk.Admitto.IntegrationTests.TestHelpers;
 namespace Amolenk.Admitto.IntegrationTests.Middleware;
 
 [TestClass]
-public class ValidationExceptionHandlerTests : BaseForApiTests
+public class ValidationExceptionHandlerTests : ApiTestsBase
 {
     [TestMethod]
     public async Task ValidationException_ReturnsProblemDetails()
@@ -17,8 +17,8 @@ public class ValidationExceptionHandlerTests : BaseForApiTests
         
         // Assert
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
-        await response.ShouldHaveProblemDetail(
-            pd => pd.Errors.ShouldContainKey("name"));
+        await response.ShouldHaveProblemDetailAsync(
+            conditions: pd => pd.Errors.ShouldContainKey("name"));
     }
 
     private CreateTeamRequest CreateRequest(string? name = null)

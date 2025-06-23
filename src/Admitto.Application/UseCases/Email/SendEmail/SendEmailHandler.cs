@@ -3,7 +3,7 @@ namespace Amolenk.Admitto.Application.UseCases.Email.SendEmail;
 /// <summary>
 /// Sends an e-mail.
 /// </summary>
-public class SendEmailHandler(IEmailContext context, IEmailSender emailProvider)
+public class SendEmailHandler(IEmailContext context, IEmailSender emailProvider, ILogger<SendEmailHandler> logger)
     : ICommandHandler<SendEmailCommand>
 {
     public async ValueTask HandleAsync(SendEmailCommand command, CancellationToken cancellationToken)
@@ -11,13 +11,16 @@ public class SendEmailHandler(IEmailContext context, IEmailSender emailProvider)
         var email = await context.EmailMessages.FindAsync([command.EmailId], cancellationToken);
         if (email is null)
         {
-            // TODO
-            throw new Exception("Email not found.");
+            logger.LogError("Cannot send e-mail with ID {EmailId}, because it doesn't exist.", command.EmailId);
+            return;
         }
 
-        await emailProvider.SendEmailAsync(email.RecipientEmail, email.Subject, email.Body, email.TeamId,
-            email.TicketedEventId, email.AttendeeId);
-        
-        // TODO After succesfully sending the e-mail, we should mark it as sent in the database.
+        if (!email.IsSent)
+        {
+            await emailProvider.SendEmailAsync(email.RecipientEmail, email.Subject, email.Body, email.TeamId);
+
+            // Mark the e-mail as sent to prevent it from being sent again.
+            email.IsSent = true;
+        }
     }
 }

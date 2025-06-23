@@ -22,11 +22,13 @@ public static class GetTicketedEventEndpoint
         {
             return TypedResults.BadRequest(Error.TeamNotFound(teamId));
         }
-        
-        var ticketedEvent = team.ActiveEvents.FirstOrDefault(e => e.Id == ticketedEventId);
 
-        return ticketedEvent is not null 
-            ? TypedResults.Ok(GetTicketedEventResponse.FromTicketedEvent(ticketedEvent))
-            : TypedResults.NotFound(Error.TicketedEventNotFound(ticketedEventId));
+        throw new NotImplementedException();
+
+        // var ticketedEvent = team.ActiveEvents.FirstOrDefault(e => e.Id == ticketedEventId);
+        //
+        // return ticketedEvent is not null 
+        //     ? TypedResults.Ok(GetTicketedEventResponse.FromTicketedEvent(ticketedEvent))
+        //     : TypedResults.NotFound(Error.TicketedEventNotFound(ticketedEventId));
     }
 }
