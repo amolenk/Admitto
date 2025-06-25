@@ -46,13 +46,16 @@ public class MessageQueuesWorker(
 
         using var scope = serviceProvider.CreateScope();
         
+        // Parse the message ID from the CloudEvent
+        var messageId = Guid.Parse(cloudEvent.Id);
+        
         switch (message)
         {
             case ICommand command:
-                await HandleCommandAsync(command, scope.ServiceProvider, cancellationToken);
+                await HandleCommandAsync(command, messageId, scope.ServiceProvider, cancellationToken);
                 break;
             case IDomainEvent domainEvent:
-                await HandleDomainEventAsync(domainEvent, scope.ServiceProvider, cancellationToken);
+                await HandleDomainEventAsync(domainEvent, messageId, scope.ServiceProvider, cancellationToken);
                 break;
             default:
                 throw new InvalidOperationException($"Cannot handle outbox message of type: {cloudEvent.Type}");
@@ -80,20 +83,46 @@ public class MessageQueuesWorker(
         throw new ArgumentException($"Unknown message type '{typeName}'", nameof(typeName));
     }
     
-    private static ValueTask HandleCommandAsync(ICommand command, IServiceProvider serviceProvider, CancellationToken cancellationToken)
+    private static async ValueTask HandleCommandAsync(ICommand command, Guid messageId, IServiceProvider serviceProvider, CancellationToken cancellationToken)
     {
         var handlerType = typeof(ICommandHandler<>).MakeGenericType(command.GetType());
         dynamic handler = serviceProvider.GetRequiredService(handlerType);
 
-        return handler.HandleAsync((dynamic)command, cancellationToken);
+        // Check if the handler implements exactly-once processing
+        if (handler is IProcessMessagesExactlyOnce)
+        {
+            var exactlyOnceProcessor = serviceProvider.GetRequiredService<IExactlyOnceProcessor>();
+            var shouldProcess = await exactlyOnceProcessor.TryMarkAsProcessedAsync(messageId, cancellationToken);
+            
+            if (!shouldProcess)
+            {
+                // Message was already processed, skip execution
+                return;
+            }
+        }
+
+        await handler.HandleAsync((dynamic)command, cancellationToken);
     }
     
-    private static ValueTask HandleDomainEventAsync(IDomainEvent domainEvent, IServiceProvider serviceProvider, CancellationToken cancellationToken)
+    private static async ValueTask HandleDomainEventAsync(IDomainEvent domainEvent, Guid messageId, IServiceProvider serviceProvider, CancellationToken cancellationToken)
     {
         var handlerType = typeof(IEventualDomainEventHandler<>).MakeGenericType(domainEvent.GetType());
         dynamic handler = serviceProvider.GetRequiredService(handlerType);
 
-        return handler.HandleAsync((dynamic)domainEvent, cancellationToken);
+        // Check if the handler implements exactly-once processing
+        if (handler is IProcessMessagesExactlyOnce)
+        {
+            var exactlyOnceProcessor = serviceProvider.GetRequiredService<IExactlyOnceProcessor>();
+            var shouldProcess = await exactlyOnceProcessor.TryMarkAsProcessedAsync(messageId, cancellationToken);
+            
+            if (!shouldProcess)
+            {
+                // Message was already processed, skip execution
+                return;
+            }
+        }
+
+        await handler.HandleAsync((dynamic)domainEvent, cancellationToken);
     }
     
     private ResiliencePipeline CreateRetryStrategy(string instanceName)
