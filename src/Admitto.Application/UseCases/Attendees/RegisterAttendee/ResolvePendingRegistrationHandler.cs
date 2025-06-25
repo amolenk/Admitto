@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Application.Common;
+using Amolenk.Admitto.Application.Common.Abstractions;
 using ValidationException = System.ComponentModel.DataAnnotations.ValidationException;
 
 namespace Amolenk.Admitto.Application.UseCases.Attendees.RegisterAttendee;
@@ -7,7 +8,7 @@ namespace Amolenk.Admitto.Application.UseCases.Attendees.RegisterAttendee;
 /// Accept or reject the pending registration for a ticketed event.
 /// </summary>
 public class ResolvePendingRegistrationHandler(IDomainContext context)
-    : ICommandHandler<ResolvePendingRegistrationCommand>
+    : ICommandHandler<ResolvePendingRegistrationCommand>, IProcessMessagesExactlyOnce
 {
     public async ValueTask HandleAsync(ResolvePendingRegistrationCommand command, CancellationToken cancellationToken)
     {

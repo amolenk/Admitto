@@ -38,13 +38,16 @@ public static class DependencyInjection
         builder.Services
             .AddScoped<IDomainContext>(sp => sp.GetRequiredService<ApplicationContext>())
             .AddScoped<IReadModelContext>(sp => sp.GetRequiredService<ApplicationContext>())
-            .AddScoped<IEmailContext>(sp => sp.GetRequiredService<ApplicationContext>());
+            .AddScoped<IEmailContext>(sp => sp.GetRequiredService<ApplicationContext>())
+            .AddScoped<IProcessedMessageContext>(sp => sp.GetRequiredService<ApplicationContext>());
         
         builder.Services
             .AddScoped<MessageOutbox>()
             .AddScoped<IMessageOutbox>(sp => sp.GetRequiredService<MessageOutbox>());
 
         builder.Services.AddScoped<IEmailOutbox, EmailOutbox>();
+        
+        builder.Services.AddScoped<IExactlyOnceProcessor, ExactlyOnceProcessor>();
         
         builder.AddAuthServices();
         

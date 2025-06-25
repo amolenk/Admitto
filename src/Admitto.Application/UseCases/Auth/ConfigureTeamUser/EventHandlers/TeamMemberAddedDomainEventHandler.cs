@@ -1,9 +1,10 @@
+using Amolenk.Admitto.Application.Common.Abstractions;
 using Amolenk.Admitto.Domain.DomainEvents;
 
 namespace Amolenk.Admitto.Application.UseCases.Auth.ConfigureTeamUser.EventHandlers;
 
 public class TeamMemberAddedDomainEventHandler(ConfigureTeamUserHandler configureTeamUserHandler)
-    : IEventualDomainEventHandler<TeamMemberAddedDomainEvent>
+    : IEventualDomainEventHandler<TeamMemberAddedDomainEvent>, IProcessMessagesExactlyOnce
 {
     public ValueTask HandleAsync(TeamMemberAddedDomainEvent domainEvent, CancellationToken cancellationToken)
     {

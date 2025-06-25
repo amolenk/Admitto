@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Application.Common;
+using Amolenk.Admitto.Application.Common.Abstractions;
 using ValidationException = System.ComponentModel.DataAnnotations.ValidationException;
 
 namespace Amolenk.Admitto.Application.UseCases.Attendees.RegisterAttendee;
@@ -8,7 +9,7 @@ namespace Amolenk.Admitto.Application.UseCases.Attendees.RegisterAttendee;
 /// We track the processed commands to guarantee exactly-once processing.
 /// </summary>
 public class ReserveTicketsHandler(IDomainContext context, IMessageOutbox messageOutbox)
-    : ICommandHandler<ReserveTicketsCommand>
+    : ICommandHandler<ReserveTicketsCommand>, IProcessMessagesExactlyOnce
 {
     public async ValueTask HandleAsync(ReserveTicketsCommand command, CancellationToken cancellationToken)
     {
@@ -38,6 +39,6 @@ public class ReserveTicketsHandler(IDomainContext context, IMessageOutbox messag
         // Also add a command to the outbox to resolve the pending registration.
         messageOutbox.Enqueue(new ResolvePendingRegistrationCommand(command.RegistrationId, succes));
 
-        // TODO Use some kind of inbox pattern to ensure exactly-once processing
+        // Exactly-once processing is now handled automatically by the message processing infrastructure
     }
 }
