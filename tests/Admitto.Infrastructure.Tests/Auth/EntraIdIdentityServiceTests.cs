@@ -1,21 +1,21 @@
 using Amolenk.Admitto.Infrastructure.Auth;
 using Microsoft.Graph;
 using Microsoft.Graph.Models;
-using Moq;
+using NSubstitute;
 
 namespace Amolenk.Admitto.Infrastructure.Tests.Auth;
 
 [TestClass]
 public class EntraIdIdentityServiceTests
 {
-    private Mock<GraphServiceClient> _mockGraphServiceClient = null!;
+    private GraphServiceClient _mockGraphServiceClient = null!;
     private EntraIdIdentityService _service = null!;
 
     [TestInitialize]
     public void Setup()
     {
-        _mockGraphServiceClient = new Mock<GraphServiceClient>();
-        _service = new EntraIdIdentityService(_mockGraphServiceClient.Object);
+        _mockGraphServiceClient = Substitute.For<GraphServiceClient>();
+        _service = new EntraIdIdentityService(_mockGraphServiceClient);
     }
 
     [TestMethod]
@@ -35,9 +35,9 @@ public class EntraIdIdentityServiceTests
             Value = new List<Microsoft.Graph.Models.User> { mockUser }
         };
 
-        _mockGraphServiceClient
-            .Setup(x => x.Users.GetAsync(It.IsAny<Action<UsersRequestBuilder.UsersRequestBuilderGetRequestConfiguration>>(), default))
-            .ReturnsAsync(mockResponse);
+        _mockGraphServiceClient.Users
+            .GetAsync(Arg.Any<Action<UsersRequestBuilder.UsersRequestBuilderGetRequestConfiguration>>(), default)
+            .Returns(mockResponse);
 
         // Act
         var result = await _service.GetUserByEmailAsync(email);
@@ -58,9 +58,9 @@ public class EntraIdIdentityServiceTests
             Value = new List<Microsoft.Graph.Models.User>()
         };
 
-        _mockGraphServiceClient
-            .Setup(x => x.Users.GetAsync(It.IsAny<Action<UsersRequestBuilder.UsersRequestBuilderGetRequestConfiguration>>(), default))
-            .ReturnsAsync(mockResponse);
+        _mockGraphServiceClient.Users
+            .GetAsync(Arg.Any<Action<UsersRequestBuilder.UsersRequestBuilderGetRequestConfiguration>>(), default)
+            .Returns(mockResponse);
 
         // Act
         var result = await _service.GetUserByEmailAsync(email);
@@ -81,9 +81,9 @@ public class EntraIdIdentityServiceTests
 
         var mockResponse = new UserCollectionResponse { Value = users };
 
-        _mockGraphServiceClient
-            .Setup(x => x.Users.GetAsync(It.IsAny<Action<UsersRequestBuilder.UsersRequestBuilderGetRequestConfiguration>>(), default))
-            .ReturnsAsync(mockResponse);
+        _mockGraphServiceClient.Users
+            .GetAsync(Arg.Any<Action<UsersRequestBuilder.UsersRequestBuilderGetRequestConfiguration>>(), default)
+            .Returns(mockResponse);
 
         // Act
         var result = await _service.GetUsersAsync();
@@ -93,20 +93,23 @@ public class EntraIdIdentityServiceTests
     }
 
     [TestMethod]
-    public async Task AddUserAsync_CreatesUser_ReturnsUser()
+    public async Task AddUserAsync_InvitesGuestUser_ReturnsUser()
     {
         // Arrange
         var email = "newuser@example.com";
         var userId = Guid.NewGuid().ToString();
-        var createdUser = new Microsoft.Graph.Models.User
+        var createdInvitation = new Invitation
         {
-            Id = userId,
-            Mail = email
+            InvitedUser = new Microsoft.Graph.Models.User
+            {
+                Id = userId,
+                Mail = email
+            }
         };
 
-        _mockGraphServiceClient
-            .Setup(x => x.Users.PostAsync(It.IsAny<Microsoft.Graph.Models.User>(), default))
-            .ReturnsAsync(createdUser);
+        _mockGraphServiceClient.Invitations
+            .PostAsync(Arg.Any<Invitation>(), default)
+            .Returns(createdInvitation);
 
         // Act
         var result = await _service.AddUserAsync(email);
@@ -127,8 +130,6 @@ public class EntraIdIdentityServiceTests
         await _service.DeleteUserAsync(userId);
 
         // Assert
-        _mockGraphServiceClient.Verify(
-            x => x.Users[userId.ToString()].DeleteAsync(default),
-            Times.Once);
+        await _mockGraphServiceClient.Users[userId.ToString()].Received(1).DeleteAsync(default);
     }
 }

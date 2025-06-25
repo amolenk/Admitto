@@ -46,32 +46,23 @@ public class EntraIdIdentityService(GraphServiceClient graphServiceClient) : IId
 
     public async ValueTask<User> AddUserAsync(string email, CancellationToken cancellationToken = default)
     {
-        // Extract display name from email for better user experience
-        var displayName = email.Split('@')[0];
-        var userPrincipalName = email;
-
-        var newUser = new Microsoft.Graph.Models.User
+        // For Entra ID, we invite guest users instead of creating actual users
+        var invitation = new Invitation
         {
-            DisplayName = displayName,
-            Mail = email,
-            UserPrincipalName = userPrincipalName,
-            AccountEnabled = true,
-            // For Entra ID, we don't set a password - user will be invited or password will be set via other means
-            PasswordProfile = new PasswordProfile
-            {
-                ForceChangePasswordNextSignIn = true,
-                Password = Guid.NewGuid().ToString("N")[..8] + "Temp!"
-            }
+            InvitedUserEmailAddress = email,
+            InviteRedirectUrl = "https://myapps.microsoft.com",
+            SendInvitationMessage = true,
+            InvitedUserDisplayName = email.Split('@')[0]
         };
 
-        var createdUser = await graphServiceClient.Users.PostAsync(newUser, cancellationToken);
+        var createdInvitation = await graphServiceClient.Invitations.PostAsync(invitation, cancellationToken);
         
-        if (createdUser?.Id == null)
+        if (createdInvitation?.InvitedUser?.Id == null)
         {
-            throw new InvalidOperationException("User was created but the ID is missing");
+            throw new InvalidOperationException("Guest invitation was sent but user ID is missing");
         }
 
-        return new User(Guid.Parse(createdUser.Id), email);
+        return new User(Guid.Parse(createdInvitation.InvitedUser.Id), email);
     }
 
     public async ValueTask DeleteUserAsync(Guid userId, CancellationToken cancellationToken = default)
