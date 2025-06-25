@@ -14,12 +14,16 @@ public class EntraIdIdentityService(GraphServiceClient graphServiceClient) : IId
             var users = await graphServiceClient.Users
                 .GetAsync(requestConfiguration =>
                 {
-                    requestConfiguration.QueryParameters.Filter = $"mail eq '{email}'";
-                    requestConfiguration.QueryParameters.Select = new[] { "id", "mail" };
+                    requestConfiguration.QueryParameters.Filter = $"mail eq '{email}' or userPrincipalName eq '{email}'";
+                    requestConfiguration.QueryParameters.Select = new[] { "id", "mail", "userPrincipalName" };
                 }, cancellationToken);
 
             var user = users?.Value?.FirstOrDefault();
-            return user != null ? new User(Guid.Parse(user.Id!), user.Mail!) : null;
+            if (user?.Id == null) return null;
+            
+            // Use mail if available, otherwise fall back to userPrincipalName
+            var userEmail = user.Mail ?? user.UserPrincipalName;
+            return !string.IsNullOrEmpty(userEmail) ? new User(Guid.Parse(user.Id), userEmail) : null;
         }
         catch (ServiceException ex) when (ex.ResponseStatusCode == 404)
         {
@@ -32,12 +36,12 @@ public class EntraIdIdentityService(GraphServiceClient graphServiceClient) : IId
         var users = await graphServiceClient.Users
             .GetAsync(requestConfiguration =>
             {
-                requestConfiguration.QueryParameters.Select = new[] { "id", "mail" };
+                requestConfiguration.QueryParameters.Select = new[] { "id", "mail", "userPrincipalName" };
                 requestConfiguration.QueryParameters.Filter = "accountEnabled eq true";
             }, cancellationToken);
 
-        return users?.Value?.Where(u => !string.IsNullOrEmpty(u.Mail))
-            .Select(u => new User(Guid.Parse(u.Id!), u.Mail!)) ?? Enumerable.Empty<User>();
+        return users?.Value?.Where(u => !string.IsNullOrEmpty(u.Mail) || !string.IsNullOrEmpty(u.UserPrincipalName))
+            .Select(u => new User(Guid.Parse(u.Id!), u.Mail ?? u.UserPrincipalName!)) ?? Enumerable.Empty<User>();
     }
 
     public async ValueTask<User> AddUserAsync(string email, CancellationToken cancellationToken = default)
