@@ -49,21 +49,30 @@ public class MessageQueuesWorker(
         // Parse the message ID from the CloudEvent
         var messageId = Guid.Parse(cloudEvent.Id);
         
-        switch (message)
+        try
         {
-            case ICommand command:
-                await HandleCommandAsync(command, messageId, scope.ServiceProvider, cancellationToken);
-                break;
-            case IDomainEvent domainEvent:
-                await HandleDomainEventAsync(domainEvent, messageId, scope.ServiceProvider, cancellationToken);
-                break;
-            default:
-                throw new InvalidOperationException($"Cannot handle outbox message of type: {cloudEvent.Type}");
-        }
+            switch (message)
+            {
+                case ICommand command:
+                    await HandleCommandAsync(command, messageId, scope.ServiceProvider, cancellationToken);
+                    break;
+                case IDomainEvent domainEvent:
+                    await HandleDomainEventAsync(domainEvent, messageId, scope.ServiceProvider, cancellationToken);
+                    break;
+                default:
+                    throw new InvalidOperationException($"Cannot handle outbox message of type: {cloudEvent.Type}");
+            }
 
-        // Commit the unit of work for this message
-        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-        await unitOfWork.SaveChangesAsync(cancellationToken);
+            // Commit the unit of work for this message
+            var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+        }
+        catch (ProcessedMessageDuplicateException)
+        {
+            // Message was already processed by another instance, this is expected for exactly-once processing
+            // Log at debug level and continue
+            logger.LogDebug("Message {MessageId} was already processed, skipping", messageId);
+        }
     }
 
     private static Type GetType(string typeName)

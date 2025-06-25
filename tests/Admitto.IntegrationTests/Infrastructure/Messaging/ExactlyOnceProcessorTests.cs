@@ -45,9 +45,9 @@ public class ExactlyOnceProcessorTests
         // Assert
         Assert.IsTrue(result);
         
-        // Verify the message was recorded
-        var processedMessage = await _processedMessageContext.ProcessedMessages
-            .FirstOrDefaultAsync(pm => pm.MessageId == messageId);
+        // Verify the message was added to context (but not yet saved)
+        var processedMessage = _processedMessageContext.ProcessedMessages.Local
+            .FirstOrDefault(pm => pm.MessageId == messageId);
         Assert.IsNotNull(processedMessage);
         Assert.AreEqual(messageId, processedMessage.MessageId);
     }
@@ -58,20 +58,15 @@ public class ExactlyOnceProcessorTests
         // Arrange
         var messageId = Guid.NewGuid();
         
-        // First processing attempt
+        // Add and save the first message
         await _processor.TryMarkAsProcessedAsync(messageId);
+        await _context.SaveChangesAsync();
 
         // Act - Second processing attempt
         var result = await _processor.TryMarkAsProcessedAsync(messageId);
 
         // Assert
         Assert.IsFalse(result);
-        
-        // Verify only one record exists
-        var processedMessages = await _processedMessageContext.ProcessedMessages
-            .Where(pm => pm.MessageId == messageId)
-            .ToListAsync();
-        Assert.AreEqual(1, processedMessages.Count);
     }
 
     [TestMethod]
@@ -89,11 +84,11 @@ public class ExactlyOnceProcessorTests
         Assert.IsTrue(result1);
         Assert.IsTrue(result2);
         
-        // Verify both messages were recorded
-        var allProcessedMessages = await _processedMessageContext.ProcessedMessages.ToListAsync();
-        Assert.AreEqual(2, allProcessedMessages.Count);
-        Assert.IsTrue(allProcessedMessages.Any(pm => pm.MessageId == messageId1));
-        Assert.IsTrue(allProcessedMessages.Any(pm => pm.MessageId == messageId2));
+        // Verify both messages were added to context
+        var localMessages = _processedMessageContext.ProcessedMessages.Local.ToList();
+        Assert.AreEqual(2, localMessages.Count);
+        Assert.IsTrue(localMessages.Any(pm => pm.MessageId == messageId1));
+        Assert.IsTrue(localMessages.Any(pm => pm.MessageId == messageId2));
     }
 }
 
