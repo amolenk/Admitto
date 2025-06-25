@@ -5,9 +5,12 @@ using Amolenk.Admitto.Infrastructure.Auth;
 using Amolenk.Admitto.Infrastructure.Email;
 using Amolenk.Admitto.Infrastructure.Messaging;
 using Amolenk.Admitto.Infrastructure.Persistence;
+using Azure.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
+using Microsoft.Graph;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection;
@@ -60,8 +63,50 @@ public static class DependencyInjection
 
     private static void AddAuthServices(this IHostApplicationBuilder builder)
     {
-        builder.AddKeycloakServices();
+        // Configure identity provider selection
+        builder.Services.Configure<IdentityProviderOptions>(builder.Configuration.GetSection("IdentityProvider"));
+        
+        var identityProvider = builder.Configuration.GetSection("IdentityProvider")["Provider"] ?? IdentityProviders.Keycloak;
+        
+        switch (identityProvider)
+        {
+            case IdentityProviders.Keycloak:
+                builder.AddKeycloakServices();
+                break;
+            case IdentityProviders.EntraId:
+                builder.AddEntraIdServices();
+                break;
+            default:
+                throw new InvalidOperationException($"Unsupported identity provider: {identityProvider}");
+        }
+        
         builder.AddOpenFgaServices();
+    }
+
+    private static void AddEntraIdServices(this IHostApplicationBuilder builder)
+    {
+        var services = builder.Services;
+        
+        services.Configure<EntraIdOptions>(builder.Configuration.GetSection("EntraId"));
+        services.AddOptions<EntraIdOptions>()
+            .ValidateDataAnnotations()
+            .ValidateOnStart();
+
+        // Register Graph Service Client with client credentials authentication
+        services.AddScoped<GraphServiceClient>(serviceProvider =>
+        {
+            var options = serviceProvider.GetRequiredService<IOptions<EntraIdOptions>>().Value;
+            
+            var credential = new ClientSecretCredential(
+                options.TenantId,
+                options.ClientId,
+                options.ClientSecret);
+
+            return new GraphServiceClient(credential);
+        });
+
+        // Register EntraId as the identity service
+        services.AddScoped<IIdentityService, EntraIdIdentityService>();
     }
 
     private static void AddKeycloakServices(this IHostApplicationBuilder builder)

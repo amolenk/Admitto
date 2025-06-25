@@ -10,7 +10,9 @@
     <ItemGroup>
       <PackageReference Include="Aspire.Azure.Storage.Queues" Version="9.3.1" />
       <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.3.1" />
+      <PackageReference Include="Azure.Identity" Version="1.12.1" />
       <PackageReference Include="MailKit" Version="4.12.1" />
+      <PackageReference Include="Microsoft.Graph" Version="5.90.0" />
       <PackageReference Include="OpenFga.Sdk" Version="0.5.1" />
       <PackageReference Include="Scriban" Version="6.2.1" />
     </ItemGroup>
