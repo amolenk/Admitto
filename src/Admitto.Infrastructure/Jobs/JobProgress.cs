@@ -4,13 +4,13 @@ using Microsoft.Extensions.Logging;
 
 namespace Amolenk.Admitto.Infrastructure.Jobs;
 
-public class JobProgress(Job job, IJobContext jobContext, ILogger logger) : IJobProgress
+public class JobProgress(Job job, IUnitOfWork unitOfWork, ILogger logger) : IJobProgress
 {
     public async ValueTask ReportProgressAsync(string message, int? percentComplete = null, CancellationToken cancellationToken = default)
     {
         job.UpdateProgress(message, percentComplete);
         
-        await jobContext.SaveChangesAsync(cancellationToken);
+        await unitOfWork.SaveChangesAsync(cancellationToken);
         
         logger.LogInformation("Job {JobId} progress: {Message} ({Percent}%)", 
             job.Id, message, percentComplete);
