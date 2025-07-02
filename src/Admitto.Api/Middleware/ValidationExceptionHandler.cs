@@ -1,4 +1,6 @@
 using System.Text.Json;
+using Amolenk.Admitto.Application.Common;
+using Amolenk.Admitto.Domain;
 using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
@@ -21,7 +23,7 @@ public class ValidationExceptionHandler : IExceptionHandler
         var problemDetails = new ValidationProblemDetails(errors)
         {
             Status = StatusCodes.Status400BadRequest,
-            Title = "Validation failed.",
+            Title = "Validation failed",
             Detail = exception.Message,
             Instance = httpContext.Request.Path
         };

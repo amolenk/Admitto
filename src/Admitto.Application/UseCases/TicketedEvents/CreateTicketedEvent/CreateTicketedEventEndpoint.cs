@@ -7,21 +7,29 @@ public static class CreateTicketedEventEndpoint
 {
     public static RouteGroupBuilder MapCreateTicketedEvent(this RouteGroupBuilder group)
     {
-        group.MapPost("/", CreateTicketedEvent);
+        group
+            .MapPost("/", CreateTicketedEvent)
+            .Produces<Created<CreateTicketedEventResponse>>()
+            .ProducesValidationProblem();
+        
         return group;
     }
 
-    private static async ValueTask<Results<Created<CreateTicketedEventResponse>, ValidationProblem, Conflict<HttpValidationProblemDetails>>> CreateTicketedEvent(
-        CreateTicketedEventRequest request, CreateTicketedEventValidator validator, IDomainContext context,
-        IUnitOfWork unitOfWork, CancellationToken cancellationToken)
+    private static async ValueTask<IResult> CreateTicketedEvent(CreateTicketedEventRequest request,
+        CreateTicketedEventValidator validator, IDomainContext context, IUnitOfWork unitOfWork,
+        CancellationToken cancellationToken)
     {
         await validator.ValidateAndThrowAsync(request, cancellationToken);
-        
+
+        var team = await context.Teams.FindAsync([request.TeamId], cancellationToken);
+        if (team is null)
+        {
+            throw ValidationError.Team.NotFound(request.TeamId);
+        }
+
         var newEvent = request.ToTicketedEvent();
-
+        
         context.TicketedEvents.Add(newEvent);
-
-        // TODO Check that Scalar also shows BadRequest in OpenAPI docs
         
         try
         {        
@@ -29,15 +37,7 @@ public static class CreateTicketedEventEndpoint
         }
         catch (DbUpdateException)
         {
-            return TypedResults.Conflict(new HttpValidationProblemDetails
-            {
-                Title = "Conflict",
-                Detail = $"An event with the name '{request.Name}' already exists.",
-                Status = StatusCodes.Status409Conflict,
-                Errors = {
-                    ["name"] = ["Event name must be unique."]
-                }
-            });
+            throw ValidationError.TicketedEvent.AlreadyExists(nameof(request.Name));
         }
         
         return TypedResults.Created($"/events/v1/{newEvent.Id}", 

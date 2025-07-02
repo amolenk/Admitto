@@ -13,14 +13,16 @@ public record CreateTicketedEventRequest(
 {
     public TicketedEvent ToTicketedEvent()
     {
-        return TicketedEvent.Create(TeamId, Name, StartTime, EndTime, RegistrationStartTime, RegistrationEndTime);
+        var ticketedEvent = TicketedEvent.Create(TeamId, Name, StartTime, EndTime, RegistrationStartTime,
+            RegistrationEndTime);
+
+        foreach (var ticketType in TicketTypes)
+        {
+            ticketedEvent.AddTicketType(ticketType.Name, ticketType.SlotName, ticketType.MaxCapacity);
+        }
+        
+        return ticketedEvent;
     }
 }
 
-public record TicketTypeDto(string Name, string SlotName, int MaxCapacity)
-{
-    public TicketType ToTicketType()
-    {
-        return TicketType.Create(Name, SlotName, MaxCapacity);
-    }
-}
+public record TicketTypeDto(string Name, string SlotName, int MaxCapacity);

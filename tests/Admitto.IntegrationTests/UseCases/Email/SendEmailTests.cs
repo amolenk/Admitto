@@ -1,11 +1,31 @@
 using Amolenk.Admitto.Application.UseCases.Email.SendEmail;
+using Amolenk.Admitto.Domain.Entities;
 using Amolenk.Admitto.Domain.ValueObjects;
+using Amolenk.Admitto.IntegrationTests.TestHelpers.Builders;
+using Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel;
 
 namespace Amolenk.Admitto.IntegrationTests.UseCases.Email;
 
 [TestClass]
 public class SendEmailTests : FullStackTestsBase
 {
+    private Team _testTeam = null!;
+        
+    [TestInitialize]
+    public override async Task TestInitialize()
+    {
+        await base.TestInitialize();
+
+        await SeedDatabaseAsync(context =>
+        {
+            _testTeam = new TeamBuilder()
+                .WithEmailSettings(Email.DefaultEmailSettings)
+                .Build();
+
+            context.Teams.Add(_testTeam);
+        });
+    }
+    
     [TestMethod]
     public async ValueTask EmailIsReadyToSend_SendsEmail()
     {
@@ -15,7 +35,7 @@ public class SendEmailTests : FullStackTestsBase
             RecipientEmail = "attendee@example.com",
             Subject = "Test",
             Body = "Hello, world!",
-            TeamId = DefaultTeam.Id
+            TeamId = _testTeam.Id
         };
 
         await SeedDatabaseAsync(context =>
@@ -44,7 +64,7 @@ public class SendEmailTests : FullStackTestsBase
             RecipientEmail = "attendee@example.com",
             Subject = "Test",
             Body = "Hello, world!",
-            TeamId = DefaultTeam.Id
+            TeamId = _testTeam.Id
         };
 
         await SeedDatabaseAsync(context =>
@@ -89,7 +109,7 @@ public class SendEmailTests : FullStackTestsBase
             RecipientEmail = "attendee@example.com",
             Subject = "Test",
             Body = "Hello, world!",
-            TeamId = DefaultTeam.Id
+            TeamId = _testTeam.Id
         };
 
         await SeedDatabaseAsync(context =>

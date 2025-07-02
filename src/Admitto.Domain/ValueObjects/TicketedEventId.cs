@@ -7,9 +7,9 @@ namespace Amolenk.Admitto.Domain.ValueObjects;
 /// </summary>
 public record TicketedEventId(Guid Value)
 {
-    public static TicketedEventId FromEventName(string name)
+    public static TicketedEventId FromTeamIdAndName(TeamId teamId, string name)
     {
-        return new TicketedEventId(DeterministicGuidGenerator.Generate(name));
+        return new TicketedEventId(DeterministicGuidGenerator.Generate($"{teamId.Value}:{name}"));
     }
     
     public static implicit operator TicketedEventId(Guid value) => new(value);

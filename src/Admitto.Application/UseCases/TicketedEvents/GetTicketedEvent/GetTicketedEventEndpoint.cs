@@ -1,5 +1,3 @@
-using Amolenk.Admitto.Application.Common;
-
 namespace Amolenk.Admitto.Application.UseCases.TicketedEvents.GetTicketedEvent;
 
 /// <summary>
@@ -9,26 +7,21 @@ public static class GetTicketedEventEndpoint
 {
     public static RouteGroupBuilder MapGetTicketedEvent(this RouteGroupBuilder group)
     {
-        group.MapGet("/{ticketedEventId:guid}", GetTicketedEvent);
+        group
+            .MapGet("/{ticketedEventId:guid}", GetTicketedEvent)
+            .Produces<Ok<GetTicketedEventResponse>>()
+            .Produces<NotFound>();
 
         return group;
     }
     
-    private static async ValueTask<Results<Ok<GetTicketedEventResponse>, BadRequest<string>, NotFound<string>>> GetTicketedEvent(
-        Guid teamId, Guid ticketedEventId, IDomainContext context, CancellationToken cancellationToken)
+    private static async ValueTask<IResult> GetTicketedEvent(Guid ticketedEventId, IDomainContext context,
+        CancellationToken cancellationToken)
     {
-        var team = await context.Teams.FindAsync([teamId], cancellationToken);
-        if (team is null)
-        {
-            return TypedResults.BadRequest(Error.TeamNotFound(teamId));
-        }
+        var ticketedEvent = await context.TicketedEvents.FindAsync([ticketedEventId], cancellationToken);
 
-        throw new NotImplementedException();
-
-        // var ticketedEvent = team.ActiveEvents.FirstOrDefault(e => e.Id == ticketedEventId);
-        //
-        // return ticketedEvent is not null 
-        //     ? TypedResults.Ok(GetTicketedEventResponse.FromTicketedEvent(ticketedEvent))
-        //     : TypedResults.NotFound(Error.TicketedEventNotFound(ticketedEventId));
+        return ticketedEvent is not null 
+            ? TypedResults.Ok(GetTicketedEventResponse.FromTicketedEvent(ticketedEvent))
+            : TypedResults.NotFound();
     }
 }

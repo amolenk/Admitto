@@ -5,8 +5,8 @@ namespace Amolenk.Admitto.IntegrationTests.TestHelpers.Builders;
 
 public class TeamBuilder
 {
-    public const string DefaultName = "Default Team";
-    public static readonly TeamId DefaultId = TeamId.FromName(DefaultName);
+    private const string DefaultName = "Default Team";
+    private static readonly TeamId DefaultId = TeamId.FromName(DefaultName);
 
     private string _name = DefaultName;
     private EmailSettings _emailSettings = new EmailSettingsBuilder().Build();

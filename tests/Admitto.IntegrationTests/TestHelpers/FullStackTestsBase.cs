@@ -10,21 +10,12 @@ namespace Amolenk.Admitto.IntegrationTests.TestHelpers;
 [DoNotParallelize]
 public abstract class FullStackTestsBase : ApiTestsBase
 {
-    protected Team DefaultTeam = null!;
-    
     [TestInitialize]
     public override async Task TestInitialize()
     {
         await Task.WhenAll(
             Authorization.ResetAsync(),
-            Database.ResetAsync(context =>
-            {
-                DefaultTeam = new TeamBuilder()
-                    .WithEmailSettings(Email.DefaultEmailSettings)
-                    .Build();
-
-                context.Teams.Add(DefaultTeam);
-            }),
+            Database.ResetAsync(),
             Email.ResetAsync(),
             Identity.ResetAsync(),
             QueueStorage.ResetAsync());
@@ -41,7 +32,17 @@ public abstract class FullStackTestsBase : ApiTestsBase
         // Reset the database context to ensure no stale data is present.
         Database.Context.ChangeTracker.Clear();
     }
+
+    protected async ValueTask SeedDatabaseAsync(Func<ApplicationContext, Task> seed)
+    {
+        await seed(Database.Context);
     
+        await Database.Context.SaveChangesAsync();
+
+        // Reset the database context to ensure no stale data is present.
+        Database.Context.ChangeTracker.Clear();
+    }
+
     protected async ValueTask HandleCommand<TCommand, THandler>(TCommand command)
         where THandler : ICommandHandler<TCommand>
         where TCommand : ICommand

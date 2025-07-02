@@ -1,4 +1,4 @@
-using Amolenk.Admitto.Application.Common;
+using Amolenk.Admitto.Domain;
 
 namespace Amolenk.Admitto.Application.UseCases.TicketedEvents.GetActiveTicketedEvents;
 
@@ -20,7 +20,7 @@ public static class GetActiveTicketedEventsEndpoint
         var team = await context.Teams.FindAsync([teamId], cancellationToken);
         if (team is null)
         {
-            return TypedResults.BadRequest(Error.TeamNotFound(teamId));
+            throw ValidationError.Team.NotFound(teamId);
         }
         
         throw new NotImplementedException();

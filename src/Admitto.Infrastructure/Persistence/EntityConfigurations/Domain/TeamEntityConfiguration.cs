@@ -31,10 +31,8 @@ public class TeamEntityConfiguration : IEntityTypeConfiguration<Team>
         builder.OwnsMany(e => e.Members, b =>
         {
             b.ToJson("members");
-        
-            b.Property(m => m.Id).HasColumnName("id");
-            b.Property(m => m.Email).HasColumnName("email");
-            b.Property(m => m.Role).HasColumnName("role")
+            
+            b.Property(m => m.Role)
                 .HasConversion(
                     r => r.Value,
                     v => new TeamMemberRole(v));

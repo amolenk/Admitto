@@ -9,19 +9,17 @@ namespace Amolenk.Admitto.Domain.Entities;
 /// </summary>
 public class Team : AggregateRoot
 {
-    private readonly List<TeamMember> _members;
+    private readonly List<TeamMember> _members = [];
 
     // EF Core constructor
     private Team()
     {
-        _members = [];
     }
     
     private Team(TeamId id, string name, EmailSettings emailSettings) : base(id)
     {
         Name = name;
         EmailSettings = emailSettings;
-        _members = [];
     }
 
     public string Name { get; private set; } = null!;

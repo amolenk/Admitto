@@ -35,21 +35,21 @@ public class CreateTicketedEventValidator : AbstractValidator<CreateTicketedEven
             .OverridePropertyName("registrationEndTime");
         
         RuleForEach(x => x.TicketTypes)
-            .ChildRules(member =>
+            .ChildRules(ticketType =>
             {
-                member.RuleFor(t => t.Name)
+                ticketType.RuleFor(t => t.Name)
                     .NotNull().WithMessage("Ticket type name is required.")
                     .MinimumLength(2).WithMessage("Ticket type name must be at least 2 characters long.")
                     .MaximumLength(50).WithMessage("Ticket type name must be 50 characters or less.")
                     .OverridePropertyName("name");
 
-                member.RuleFor(t => t.SlotName)
+                ticketType.RuleFor(t => t.SlotName)
                     .NotNull().WithMessage("Slot name is required.")
                     .MinimumLength(2).WithMessage("Slot name must be at least 2 characters long.")
                     .MaximumLength(50).WithMessage("Slot name must be 50 characters or less.")
                     .OverridePropertyName("slotName");
 
-                member.RuleFor(t => t.MaxCapacity)
+                ticketType.RuleFor(t => t.MaxCapacity)
                     .NotEmpty().WithMessage("Max capacity is required.")
                     .OverridePropertyName("maxCapacity");
             })

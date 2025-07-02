@@ -7,7 +7,7 @@ namespace Amolenk.Admitto.IntegrationTests.UseCases.TicketedEvents;
 public class CreateTicketedEventRequestBuilder
 {
     private string _name = "Test Event";
-    private TeamId? _teamId = TeamBuilder.DefaultId;
+    private TeamId? _teamId = Guid.NewGuid();
     private DateTimeOffset? _registrationStartTime = DateTimeOffset.UtcNow.AddDays(1);
     private DateTimeOffset? _registrationEndTime = DateTimeOffset.UtcNow.AddDays(6);
     private DateTimeOffset? _startTime = DateTimeOffset.UtcNow.AddDays(7);

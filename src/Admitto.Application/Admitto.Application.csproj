@@ -23,4 +23,11 @@
       <ProjectReference Include="..\Admitto.Domain\Admitto.Domain.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="UseCases\Attendees\RequestReconfirmation\" />
+      <Folder Include="UseCases\Attendees\SendCancellationEmail\" />
+      <Folder Include="UseCases\Registrations\CancelRegistration\" />
+      <Folder Include="UseCases\Registrations\ReconfirmRegistration\" />
+    </ItemGroup>
+
 </Project>
