@@ -20,13 +20,15 @@ public class JobsWorker(
     private readonly JobsWorkerOptions _options = options.Value;
     private readonly ConcurrentDictionary<Guid, Task> _runningJobs = new();
     private readonly SemaphoreSlim _jobExecutionSemaphore = new(options.Value.MaxConcurrentJobs, options.Value.MaxConcurrentJobs);
+    private readonly ConcurrentQueue<Guid> _pendingJobs = new();
+    private readonly ManualResetEventSlim _jobAvailableSignal = new(false);
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         logger.LogInformation("Jobs worker starting with max {MaxConcurrentJobs} concurrent jobs", _options.MaxConcurrentJobs);
 
-        // Reload running jobs state on startup
-        await ReloadRunningJobsAsync(stoppingToken);
+        // Reload running jobs state and populate pending jobs queue on startup
+        await ReloadJobsStateAsync(stoppingToken);
         
         // Schedule the orphaned jobs cleanup as a recurring job
         await ScheduleOrphanedJobsCleanupAsync(stoppingToken);
@@ -60,15 +62,44 @@ public class JobsWorker(
         {
             try
             {
-                await CheckPendingJobsAsync(stoppingToken);
+                // Wait for either a job to be available or cancellation
+                await Task.Run(() => _jobAvailableSignal.Wait(stoppingToken), stoppingToken);
+                
+                // Process all available jobs
+                while (_pendingJobs.TryDequeue(out var jobId) && !stoppingToken.IsCancellationRequested)
+                {
+                    var executed = await TryExecuteJob(jobId, stoppingToken);
+                    if (!executed)
+                    {
+                        // If we couldn't execute (no capacity), put it back and wait
+                        _pendingJobs.Enqueue(jobId);
+                        break;
+                    }
+                }
+                
+                // Reset the signal if no more jobs are pending
+                if (_pendingJobs.IsEmpty)
+                {
+                    _jobAvailableSignal.Reset();
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                break;
             }
             catch (Exception ex)
             {
                 logger.LogError(ex, "Error processing pending jobs");
+                await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
             }
-
-            await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
         }
+    }
+
+    public void EnqueueJob(Guid jobId)
+    {
+        _pendingJobs.Enqueue(jobId);
+        _jobAvailableSignal.Set();
+        logger.LogDebug("Job {JobId} enqueued for execution", jobId);
     }
 
     public async ValueTask<bool> TryExecuteJob(Guid jobId, CancellationToken cancellationToken = default)
@@ -119,26 +150,6 @@ public class JobsWorker(
         {
             _jobExecutionSemaphore.Release();
             throw;
-        }
-    }
-
-    private async Task CheckPendingJobsAsync(CancellationToken cancellationToken)
-    {
-        using var scope = serviceProvider.CreateScope();
-        var jobContext = scope.ServiceProvider.GetRequiredService<IJobContext>();
-
-        var pendingJobs = await jobContext.Jobs
-            .Where(j => j.Status == JobStatus.Pending)
-            .OrderBy(j => j.CreatedAt)
-            .Take(10) // Process up to 10 pending jobs at a time
-            .ToListAsync(cancellationToken);
-
-        foreach (var job in pendingJobs)
-        {
-            if (cancellationToken.IsCancellationRequested)
-                break;
-
-            await TryExecuteJob(job.Id, cancellationToken);
         }
     }
 
@@ -326,16 +337,35 @@ public class JobsWorker(
         }
     }
 
-    private async Task ReloadRunningJobsAsync(CancellationToken cancellationToken)
+    private async Task ReloadJobsStateAsync(CancellationToken cancellationToken)
     {
         using var scope = serviceProvider.CreateScope();
         var jobContext = scope.ServiceProvider.GetRequiredService<IJobContext>();
 
-        var runningJobs = await jobContext.Jobs
+        // Count running jobs for monitoring
+        var runningJobsCount = await jobContext.Jobs
             .Where(j => j.Status == JobStatus.Running)
             .CountAsync(cancellationToken);
 
-        logger.LogInformation("Found {RunningJobsCount} running jobs to monitor", runningJobs);
+        // Load pending jobs into the in-memory queue
+        var pendingJobIds = await jobContext.Jobs
+            .Where(j => j.Status == JobStatus.Pending)
+            .OrderBy(j => j.CreatedAt)
+            .Select(j => j.Id)
+            .ToListAsync(cancellationToken);
+
+        foreach (var jobId in pendingJobIds)
+        {
+            _pendingJobs.Enqueue(jobId);
+        }
+
+        if (pendingJobIds.Any())
+        {
+            _jobAvailableSignal.Set();
+        }
+
+        logger.LogInformation("Found {RunningJobsCount} running jobs to monitor and {PendingJobsCount} pending jobs to process", 
+            runningJobsCount, pendingJobIds.Count);
     }
 }
 
