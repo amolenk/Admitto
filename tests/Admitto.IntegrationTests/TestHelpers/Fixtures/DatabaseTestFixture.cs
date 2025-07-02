@@ -39,22 +39,11 @@ public class DatabaseTestFixture : IAsyncDisposable
         return new DatabaseTestFixture(connectionString, respawner);
     }
 
-    public async Task ResetAsync(Action<ApplicationContext>? seed = null,
-        CancellationToken cancellationToken = default)
+    public async Task ResetAsync(CancellationToken cancellationToken = default)
     {
-        await using (var connection = new NpgsqlConnection(_connectionString))
-        {
-            await connection.OpenAsync(cancellationToken).WaitAsync(DefaultTimeout, cancellationToken);
-            await _respawner.ResetAsync(connection);
-        }
-
-        if (seed is not null)
-        {
-            seed(Context);
-        
-            await Context.SaveChangesAsync(cancellationToken);
-            Context.ChangeTracker.Clear();
-        }
+        await using var connection = new NpgsqlConnection(_connectionString);
+        await connection.OpenAsync(cancellationToken).WaitAsync(DefaultTimeout, cancellationToken);
+        await _respawner.ResetAsync(connection);
     }
     
     public async ValueTask DisposeAsync() => await Context.DisposeAsync();

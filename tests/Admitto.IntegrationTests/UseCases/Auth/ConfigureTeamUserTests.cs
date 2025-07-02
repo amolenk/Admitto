@@ -4,6 +4,7 @@ using Amolenk.Admitto.Application.UseCases.Auth.ConfigureTeamUser.EventHandlers;
 using Amolenk.Admitto.Domain.DomainEvents;
 using Amolenk.Admitto.Domain.Entities;
 using Amolenk.Admitto.Domain.ValueObjects;
+using Amolenk.Admitto.IntegrationTests.TestHelpers.Builders;
 using UserDataFactory = Amolenk.Admitto.IntegrationTests.TestHelpers.Data.UserDataFactory;
 
 namespace Amolenk.Admitto.IntegrationTests.UseCases.Auth;
@@ -11,12 +12,26 @@ namespace Amolenk.Admitto.IntegrationTests.UseCases.Auth;
 [TestClass]
 public class ConfigureTeamUserTests : FullStackTestsBase
 {
+    private Team _testTeam = null!;
+
+    [TestInitialize]
+    public override async Task TestInitialize()
+    {
+        await base.TestInitialize();
+
+        await SeedDatabaseAsync(context =>
+        {
+            _testTeam = new TeamBuilder().Build();
+            context.Teams.Add(_testTeam);
+        });
+    }
+
     [TestMethod]
     public async ValueTask TeamMemberAddedDomainEvent_ConfiguresTeamUser()
     {
         // Arrange
         var teamMember = UserDataFactory.CreateTeamMember();
-        var domainEvent = new TeamMemberAddedDomainEvent(DefaultTeam.Id, teamMember);
+        var domainEvent = new TeamMemberAddedDomainEvent(_testTeam.Id, teamMember);
 
         // Act
         await HandleEvent<TeamMemberAddedDomainEvent, TeamMemberAddedDomainEventHandler>(domainEvent);
@@ -31,7 +46,7 @@ public class ConfigureTeamUserTests : FullStackTestsBase
     {
         // Arrange
         var teamMember = UserDataFactory.CreateTeamMember();
-        var command = new ConfigureTeamUserCommand(DefaultTeam.Id, teamMember.Email, teamMember.Role);
+        var command = new ConfigureTeamUserCommand(_testTeam.Id, teamMember.Email, teamMember.Role);
 
         // Act
         await HandleCommand<ConfigureTeamUserCommand, ConfigureTeamUserHandler>(command);
@@ -48,7 +63,7 @@ public class ConfigureTeamUserTests : FullStackTestsBase
     {
         // Arrange
         var teamMember = TeamMember.Create(UserDataFactory.TestUserEmail, TeamMemberRole.Manager);
-        var command = new ConfigureTeamUserCommand(DefaultTeam.Id, teamMember.Email, teamMember.Role);
+        var command = new ConfigureTeamUserCommand(_testTeam.Id, teamMember.Email, teamMember.Role);
 
         // Act
         await HandleCommand<ConfigureTeamUserCommand, ConfigureTeamUserHandler>(command);
@@ -62,7 +77,7 @@ public class ConfigureTeamUserTests : FullStackTestsBase
     {
         // Arrange
         var teamMember = TeamMember.Create(UserDataFactory.TestUserEmail, TeamMemberRole.Manager);
-        var command = new ConfigureTeamUserCommand(DefaultTeam.Id, teamMember.Email, teamMember.Role);
+        var command = new ConfigureTeamUserCommand(_testTeam.Id, teamMember.Email, teamMember.Role);
 
         // Act
         await HandleCommand<ConfigureTeamUserCommand, ConfigureTeamUserHandler>(command);

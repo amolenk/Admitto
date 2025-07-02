@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Application.Common.Authorization;
+using Amolenk.Admitto.Domain;
 using Amolenk.Admitto.Domain.Entities;
 using Amolenk.Admitto.Domain.ValueObjects;
 
@@ -14,7 +15,7 @@ public static class CreateTeamEndpoint
         group
             .MapPost("/", CreateTeam)
             .WithName(nameof(CreateTeam))
-            .RequireAuthorization(policy => policy.RequireRebacCheck("can_manage_teams"));
+            .RequireAuthorization(policy => policy.RequireRebacCheck(Permission.CanManageTeams));
         
         return group;
     }
@@ -47,11 +48,10 @@ public static class CreateTeamEndpoint
         {
             return TypedResults.Conflict(new HttpValidationProblemDetails
             {
-                Title = "Conflict",
-                Detail = $"A team with the name '{request.Name}' already exists.",
+                Detail = ErrorMessage.Team.AlreadyExists,
                 Status = StatusCodes.Status409Conflict,
                 Errors = {
-                    ["name"] = ["Team name must be unique."]
+                    [nameof(request.Name)] = [ErrorMessage.Team.Name.MustBeUnique]
                 }
             });
         }

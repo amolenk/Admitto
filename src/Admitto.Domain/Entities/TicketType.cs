@@ -34,17 +34,17 @@ public class TicketType : Entity
         return new TicketType(id, name, slotName, maxCapacity);
     }
 
-    public bool HasAvailableCapacity()
+    public bool HasAvailableCapacity(int quantity)
     {
-        return RemainingCapacity > 0;
+        return RemainingCapacity >= quantity;
     }
     
-    public void ReserveTicket()
+    public void ReserveTickets(int quantity)
     {
-        if (RemainingCapacity == 0)
+        if (RemainingCapacity < quantity)
             throw new ValidationException($"No tickets available.");
         
-        RemainingCapacity -= 1;
+        RemainingCapacity -= quantity;
     }
 
     public void CancelTicket()

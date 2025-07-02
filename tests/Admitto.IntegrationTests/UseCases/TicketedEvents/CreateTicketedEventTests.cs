@@ -1,11 +1,16 @@
 using Amolenk.Admitto.Application.UseCases.TicketedEvents.CreateTicketedEvent;
+using Amolenk.Admitto.Domain;
+using Amolenk.Admitto.Domain.Entities;
 using Amolenk.Admitto.Domain.ValueObjects;
+using Amolenk.Admitto.IntegrationTests.TestHelpers.Builders;
 
 namespace Amolenk.Admitto.IntegrationTests.UseCases.TicketedEvents;
 
 [TestClass]
 public class CreateTicketedEventTests : ApiTestsBase
 {
+    private const string RequestUri = "/events/v1";
+    
     [DataTestMethod]
     [DataRow(null)]
     public async Task TeamIdIsInvalid_ReturnsBadRequest(Guid? value)
@@ -18,7 +23,7 @@ public class CreateTicketedEventTests : ApiTestsBase
             .Build();
     
         // Act
-        var response = await ApiClient.PostAsJsonAsync($"/events/v1", request);
+        var response = await ApiClient.PostAsJsonAsync(RequestUri, request);
 
         // Assert
         await response.ShouldHaveProblemDetailAsync(
@@ -38,7 +43,7 @@ public class CreateTicketedEventTests : ApiTestsBase
             .Build();
     
         // Act
-        var response = await ApiClient.PostAsJsonAsync($"/events/v1", request);
+        var response = await ApiClient.PostAsJsonAsync(RequestUri, request);
 
         // Assert
         await response.ShouldHaveProblemDetailAsync(
@@ -55,7 +60,7 @@ public class CreateTicketedEventTests : ApiTestsBase
             .Build();
     
         // Act
-        var response = await ApiClient.PostAsJsonAsync($"/events/v1", request);
+        var response = await ApiClient.PostAsJsonAsync(RequestUri, request);
 
         // Assert
         await response.ShouldHaveProblemDetailAsync(
@@ -72,7 +77,7 @@ public class CreateTicketedEventTests : ApiTestsBase
             .Build();
     
         // Act
-        var response = await ApiClient.PostAsJsonAsync($"/events/v1", request);
+        var response = await ApiClient.PostAsJsonAsync(RequestUri, request);
 
         // Assert
         await response.ShouldHaveProblemDetailAsync(
@@ -89,7 +94,7 @@ public class CreateTicketedEventTests : ApiTestsBase
             .Build();
     
         // Act
-        var response = await ApiClient.PostAsJsonAsync($"/events/v1", request);
+        var response = await ApiClient.PostAsJsonAsync(RequestUri, request);
 
         // Assert
         await response.ShouldHaveProblemDetailAsync(
@@ -106,7 +111,7 @@ public class CreateTicketedEventTests : ApiTestsBase
             .Build();
     
         // Act
-        var response = await ApiClient.PostAsJsonAsync($"/events/v1", request);
+        var response = await ApiClient.PostAsJsonAsync(RequestUri, request);
 
         // Assert
         await response.ShouldHaveProblemDetailAsync(
@@ -147,7 +152,7 @@ public class CreateTicketedEventTests : ApiTestsBase
             .Build();
     
         // Act
-        var response = await ApiClient.PostAsJsonAsync($"/events/v1", request);
+        var response = await ApiClient.PostAsJsonAsync(RequestUri, request);
 
         // Assert
         await response.ShouldHaveProblemDetailAsync(
@@ -186,7 +191,7 @@ public class CreateTicketedEventTests : ApiTestsBase
             .Build();
     
         // Act
-        var response = await ApiClient.PostAsJsonAsync($"/events/v1", request);
+        var response = await ApiClient.PostAsJsonAsync(RequestUri, request);
 
         // Assert
         await response.ShouldHaveProblemDetailAsync(
@@ -198,14 +203,34 @@ public class CreateTicketedEventTests : ApiTestsBase
     [TestClass]
     public class FullStackTests : FullStackTestsBase
     {
+        // TODO Not used?
+        private Team _testTeam = null!;
+        
+        [TestInitialize]
+        public override async Task TestInitialize()
+        {
+            await base.TestInitialize();
+
+            await SeedDatabaseAsync(context =>
+            {
+                _testTeam = new TeamBuilder()
+                    .WithEmailSettings(Email.DefaultEmailSettings)
+                    .Build();
+
+                context.Teams.Add(_testTeam);
+            });
+        }
+        
         [TestMethod]
         public async Task ValidEvent_CreatesEvent()
         {
             // Arrange
-            var request = new CreateTicketedEventRequestBuilder().Build();
+            var request = new CreateTicketedEventRequestBuilder()
+                .WithTeamId(_testTeam.Id)
+                .Build();
 
             // Act
-            var response = await ApiClient.PostAsJsonAsync($"/events/v1", request);
+            var response = await ApiClient.PostAsJsonAsync(RequestUri, request);
                
             // Assert
             response.StatusCode.ShouldBe(HttpStatusCode.Created);
@@ -215,6 +240,47 @@ public class CreateTicketedEventTests : ApiTestsBase
 
             var createdEvent = await Database.Context.TicketedEvents.FindAsync(result.Id);
             createdEvent.ShouldNotBeNull();
+            createdEvent.TicketTypes.Count.ShouldBe(1);
+        }
+        
+        [TestMethod]
+        public async Task TeamDoesNotExist_ReturnsBadRequest()
+        {
+            // Arrange
+            var teamId = Guid.NewGuid();
+            var request = new CreateTicketedEventRequestBuilder()
+                .WithTeamId(teamId)
+                .Build();
+
+            // Act
+            var response = await ApiClient.PostAsJsonAsync(RequestUri, request);
+
+            // Assert
+            await response.ShouldBeBadRequestAsync(ErrorMessage.Team.NotFound(teamId));
+        }
+        
+        [TestMethod]
+        public async Task EventAlreadyExists_ReturnsBadRequest()
+        {
+            // Arrange
+            var request = new CreateTicketedEventRequestBuilder()
+                .WithTeamId(_testTeam.Id)
+                .Build();
+
+            // Ensure the event already exists
+            await ApiClient.PostAsJsonAsync(RequestUri, request);
+                
+            // Act
+            var response = await ApiClient.PostAsJsonAsync(RequestUri, request);
+        
+            // Assert
+            response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+            
+            await response.ShouldHaveProblemDetailAsync(
+                HttpStatusCode.BadRequest,
+                ErrorMessage.TicketedEvent.AlreadyExists,
+                conditions: pd => pd.ShouldContainError(
+                    nameof(request.Name), ErrorMessage.TicketedEvent.Name.MustBeUnique));
         }
         
         // TODO Verify that e-mail templates are set.

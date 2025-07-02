@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using Amolenk.Admitto.Domain.DomainEvents;
 using Amolenk.Admitto.Domain.Exceptions;
 using Amolenk.Admitto.Domain.ValueObjects;
 
@@ -8,14 +10,12 @@ namespace Amolenk.Admitto.Domain.Entities;
 /// </summary>
 public class TicketedEvent : AggregateRoot
 {
-    private readonly List<TicketType> _ticketTypes;
-    private readonly List<EmailTemplate> _emailTemplates;
+    private readonly List<TicketType> _ticketTypes = [];
+    private readonly List<EmailTemplate> _emailTemplates = [];
 
     // EF Core constructor
     private TicketedEvent()
     {
-        _ticketTypes = [];
-        _emailTemplates = [];
     }
     
     private TicketedEvent(TicketedEventId id, TeamId teamId, string name, DateTimeOffset startTime,
@@ -28,8 +28,6 @@ public class TicketedEvent : AggregateRoot
         EndTime = endTime;
         RegistrationStartTime = registrationStartTime;
         RegistrationEndTime = registrationEndTime;
-        _ticketTypes = [];
-        _emailTemplates = [];
     }
 
     public Guid TeamId { get; private set; }
@@ -57,24 +55,20 @@ public class TicketedEvent : AggregateRoot
         if (registrationEndTime > startTime)
             throw new DomainException("Registration must close before the event starts.");
 
-        var id = TicketedEventId.FromEventName(name);
+        var id = TicketedEventId.FromTeamIdAndName(teamId, name);
         
         return new TicketedEvent(id, teamId, name, startTime, endTime, registrationStartTime, registrationEndTime);
     }
     
-    public void AddTicketType(TicketType ticketType)
+    public void AddTicketType(string name, string slotName, int maxCapacity)
     {
-        if (_ticketTypes.Any(existingTicketType => existingTicketType.Id == ticketType.Id))
+        var ticketType = TicketType.Create(name, slotName, maxCapacity);
+
+        if (_ticketTypes.Contains(ticketType))
         {
-            throw new DomainException("Ticket type already exists.");
+            throw DomainError.TicketedEvent.TicketTypeAlreadyExists();
         }
         
-        // if (ticketType.StartDateTime < StartDay.ToDateTime(TimeOnly.MinValue) ||
-        //     ticketType.EndDateTime > EndDay.ToDateTime(TimeOnly.MaxValue))
-        // {
-        //     throw new DomainException("Ticket type session must be within the event duration.");
-        // }
-
         _ticketTypes.Add(ticketType);
     }
 
@@ -95,34 +89,67 @@ public class TicketedEvent : AggregateRoot
         _ticketTypes.Remove(ticketType);
     }
     
-    public bool HasAvailableCapacity(TicketOrder ticketOrder)
+    public bool HasAvailableCapacity(IEnumerable<TicketQuantity> tickets)
     {
-        return ticketOrder.TicketTypeIds.All(ticketTypeId => 
-            _ticketTypes.Any(t => t.Id == ticketTypeId && t.HasAvailableCapacity()));
+        return tickets.All(tq => 
+            _ticketTypes.Any(tt => tt.Id == tq.TicketTypeId.Value && tt.HasAvailableCapacity(tq.Quantity)));
+    }
+
+    public void ReserveTickets(AttendeeRegistrationId registrationId, IEnumerable<TicketQuantity> tickets)
+    {
+    }
+
+    public void HoldTickets(AttendeeRegistrationId registrationId, IEnumerable<TicketQuantity> tickets)
+    {
+        var ticketList = tickets.ToList();
+        
+        // If there's no capacity, reject the reservation
+        if (!HasAvailableCapacity(ticketList))
+        {
+            AddDomainEvent(new TicketsReservationRejectedDomainEvent(Id, registrationId));
+            return;
+        }
+
+        foreach (var ticketQuantity in ticketList)
+        {
+            var ticketType = _ticketTypes.FirstOrDefault(tt => tt.Id == ticketQuantity.TicketTypeId.Value);
+            if (ticketType is null)
+            {
+                // TODO
+                // throw DomainError.TicketedEvent.TicketTypeNotFound(ticketQuantity.TicketTypeId);
+            }
+            
+            ticketType.ReserveTickets(ticketQuantity.Quantity);
+        }
+
+        var confirmationCode = GenerateConfirmationCode();
+        
+        // AddDomainEvent(new TicketsReservedDomainEvent(Id, registrationId, confirmationCode));
+    }
+
+    public void ConfirmTickets(AttendeeRegistrationId registrationId, string confirmationCode)
+    {
+        
     }
     
-    public bool TryReserveTickets(TicketOrder ticketOrder)
+    public void CancelTickets(IEnumerable<TicketQuantity> tickets)
     {
-        if (!HasAvailableCapacity(ticketOrder))
-        {
-            return false;
-        }
-        
-        foreach (var ticketTypeId in ticketOrder.TicketTypeIds)
-        {
-            var ticketType = _ticketTypes.First(tt => tt.Id == ticketTypeId);
-            ticketType.ReserveTicket();
-        }
-
-        return true;
+        // foreach (var ticketTypeId in ticketOrder.TicketTypeIds)
+        // {
+        //     var ticketType = _ticketTypes.FirstOrDefault(tt => tt.Id == ticketTypeId);
+        //     ticketType?.CancelTicket(); // TODO Quantity
+        // }
     }
 
-    public void CancelTickets(TicketOrder ticketOrder)
+    private static string GenerateConfirmationCode()
     {
-        foreach (var ticketTypeId in ticketOrder.TicketTypeIds)
-        {
-            var ticketType = _ticketTypes.FirstOrDefault(tt => tt.Id == ticketTypeId);
-            ticketType?.CancelTicket();
-        }
+        // Generates a random 6-digit code (000000-999999)
+        var bytes = new byte[4];
+        RandomNumberGenerator.Fill(bytes);
+        
+        var value = BitConverter.ToInt32(bytes, 0) & 0x7FFFFFFF; // Ensure non-negative
+        var code = value % 1_000_000;
+        
+        return code.ToString("D6");
     }
 }

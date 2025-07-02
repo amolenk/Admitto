@@ -15,5 +15,4 @@ public record TeamMemberId(Guid Value)
     public static implicit operator TeamMemberId(Guid value) => new(value);
     
     public static implicit operator Guid(TeamMemberId userId) => userId.Value;
-
 }

@@ -1,4 +1,6 @@
+using Admitto.AppHost.Extensions.AzureServiceBus;
 using Admitto.AppHost.Extensions.AzureStorage;
+using Admitto.AppHost.Extensions.Postgres;
 using Amolenk.Admitto.Infrastructure;
 
 var builder = DistributedApplication.CreateBuilder(args);
@@ -21,6 +23,15 @@ var postgresdb = postgres.AddDatabase("admitto-db");
 
 var openfgadb = postgres.AddDatabase("openfga-db");
 
+var serviceBus = builder.AddAzureServiceBus("messaging")
+    .RunAsEmulator(configure =>
+    {
+        configure.WithLifetime(ContainerLifetime.Persistent);
+    })
+    .ReplaceEmulatorDatabase();
+
+var queue = serviceBus.AddServiceBusQueue("admitto");
+
 var storage = builder.AddAzureStorage("storage")
     .RunAsEmulator(azurite =>
     {
@@ -36,14 +47,14 @@ var queues = storage.AddQueues(Constants.AzureQueueStorage.ResourceName)
 var initOpenFga = builder.AddContainer("openfga-init", "openfga/openfga:latest")
     .WithArgs("migrate")
     .WithEnvironment("OPENFGA_DATASTORE_ENGINE", "postgres")
-    .WithEnvironment("OPENFGA_DATASTORE_URI", GetOpenFgaDatabaseConnectionString)
+    .WithEnvironment("OPENFGA_DATASTORE_URI", openfgadb.GetConnectionString())
     .WithLifetime(ContainerLifetime.Persistent)
     .WaitFor(openfgadb);
 
 var openFga = builder.AddContainer("openfga", "openfga/openfga:latest")
     .WithArgs("run")
     .WithEnvironment("OPENFGA_DATASTORE_ENGINE", "postgres")
-    .WithEnvironment("OPENFGA_DATASTORE_URI", GetOpenFgaDatabaseConnectionString)
+    .WithEnvironment("OPENFGA_DATASTORE_URI", openfgadb.GetConnectionString())
     .WithHttpEndpoint(port: 8000, targetPort: 8080)
     .WithLifetime(ContainerLifetime.Persistent)
     .WaitForCompletion(initOpenFga);
@@ -59,7 +70,8 @@ var keycloak = builder.AddKeycloak("keycloak", 8080,
 
 var maildev = builder.AddContainer("maildev", "maildev/maildev:latest")
     .WithHttpEndpoint(targetPort: 1080)
-    .WithEndpoint(name: "smtp", scheme: "smtp", targetPort: 1025, isExternal: true);
+    .WithEndpoint(name: "smtp", scheme: "smtp", targetPort: 1025, isExternal: true)
+    .WithLifetime(ContainerLifetime.Persistent);
 
 var worker = builder.AddProject<Projects.Admitto_Worker>("worker")
     .WithReference(openFga.GetEndpoint("http"))
@@ -128,16 +140,5 @@ builder.AddPnpmApp("admin-ui", "../Admitto.UI.Admin", "dev")
     // .PublishAsDockerFile(); // For deployment
 
 builder.Build().Run();
-return;
 
-string GetOpenFgaDatabaseConnectionString()
-{
-    var username = postgres.Resource.UserNameParameter?.Value ?? "postgres";
-    var password = postgres.Resource.PasswordParameter.Value;
-    var host = postgres.Resource.Name;
-    var port = postgres.Resource.PrimaryEndpoint.TargetPort;
-    var database = openfgadb.Resource.DatabaseName;
-
-    return $"postgres://{username}:{password}@{host}:{port}/{database}?sslmode=disable";
-}
 

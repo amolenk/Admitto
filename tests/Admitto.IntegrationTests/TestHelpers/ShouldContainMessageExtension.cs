@@ -26,6 +26,7 @@ public static class ShouldContainMessageExtension
 
                 assert(typedMessage);
             },
-            timeout.Value);
+            timeout.Value,
+            customMessage: $"Expected {typeof(TMessage).Name} message not found within {timeout}");
     }
 }
