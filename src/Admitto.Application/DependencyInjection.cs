@@ -31,6 +31,15 @@ public static class DependencyInjection
             .WithScopedLifetime());
     }
 
+    public static void AddJobHandlers(this IServiceCollection services)
+    {
+        services.Scan(scan => scan
+            .FromAssemblyOf<ApplicationAssemblyLocator>()
+            .AddClasses(classes => classes.AssignableTo<IJobHandler>())
+            .AsSelfWithInterfaces()
+            .WithScopedLifetime());
+    }
+
     public static void AddTransactionalDomainEventHandlers(this IServiceCollection services)
     {
         services.Scan(scan => scan
