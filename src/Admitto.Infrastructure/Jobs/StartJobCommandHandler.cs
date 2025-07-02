@@ -9,15 +9,9 @@ public class StartJobCommandHandler(
 {
     public async ValueTask HandleAsync(StartJobCommand command, CancellationToken cancellationToken)
     {
-        var executed = await jobsWorker.TryExecuteJob(command.JobId, cancellationToken);
+        // Simply enqueue the job for execution - the JobsWorker will handle it
+        jobsWorker.EnqueueJob(command.JobId);
         
-        if (executed)
-        {
-            logger.LogDebug("Job {JobId} handed off to JobsWorker for execution", command.JobId);
-        }
-        else
-        {
-            logger.LogDebug("Job {JobId} could not be executed now - will be retried later", command.JobId);
-        }
+        logger.LogDebug("Job {JobId} enqueued for execution", command.JobId);
     }
 }
