@@ -3,6 +3,7 @@ using Amolenk.Admitto.Application.UseCases.Email;
 using Amolenk.Admitto.Infrastructure;
 using Amolenk.Admitto.Infrastructure.Auth;
 using Amolenk.Admitto.Infrastructure.Email;
+using Amolenk.Admitto.Infrastructure.Jobs;
 using Amolenk.Admitto.Infrastructure.Messaging;
 using Amolenk.Admitto.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -38,13 +39,19 @@ public static class DependencyInjection
         builder.Services
             .AddScoped<IDomainContext>(sp => sp.GetRequiredService<ApplicationContext>())
             .AddScoped<IReadModelContext>(sp => sp.GetRequiredService<ApplicationContext>())
-            .AddScoped<IEmailContext>(sp => sp.GetRequiredService<ApplicationContext>());
+            .AddScoped<IEmailContext>(sp => sp.GetRequiredService<ApplicationContext>())
+            .AddScoped<IJobContext>(sp => sp.GetRequiredService<ApplicationContext>());
         
         builder.Services
             .AddScoped<MessageOutbox>()
             .AddScoped<IMessageOutbox>(sp => sp.GetRequiredService<MessageOutbox>());
 
         builder.Services.AddScoped<IEmailOutbox, EmailOutbox>();
+        
+        builder.Services.AddScoped<IJobRunner, JobRunner>();
+        
+        // Register job-related command handlers
+        builder.Services.AddScoped<ICommandHandler<StartJobCommand>, StartJobCommandHandler>();
         
         builder.AddAuthServices();
         

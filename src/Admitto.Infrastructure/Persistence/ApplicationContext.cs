@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Amolenk.Admitto.Infrastructure.Persistence;
 
 public class ApplicationContext(DbContextOptions options) : DbContext(options), IDomainContext, IReadModelContext,
-    IEmailContext
+    IEmailContext, IJobContext
 {
     // IDomainContext sets
     public DbSet<AttendeeRegistration> AttendeeRegistrations { get; set; } = null!;
@@ -22,6 +22,10 @@ public class ApplicationContext(DbContextOptions options) : DbContext(options), 
     
     // IEmailContext sets
     public DbSet<EmailMessage> EmailMessages { get; set; } = null!;
+    
+    // IJobContext sets
+    public DbSet<Job> Jobs { get; set; } = null!;
+    public DbSet<ScheduledJob> ScheduledJobs { get; set; } = null!;
     
     // Other sets
     public DbSet<OutboxMessage> Outbox { get; set; } = null!;
