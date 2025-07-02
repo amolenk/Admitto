@@ -27,12 +27,14 @@ public class JobsWorker(
 
         // Reload running jobs state on startup
         await ReloadRunningJobsAsync(stoppingToken);
+        
+        // Schedule the orphaned jobs cleanup as a recurring job
+        await ScheduleOrphanedJobsCleanupAsync(stoppingToken);
 
         var scheduledJobsTask = ProcessScheduledJobsAsync(stoppingToken);
-        var orphanedJobsTask = ProcessOrphanedJobsAsync(stoppingToken);
         var pendingJobsTask = ProcessPendingJobsAsync(stoppingToken);
 
-        await Task.WhenAll(scheduledJobsTask, orphanedJobsTask, pendingJobsTask);
+        await Task.WhenAll(scheduledJobsTask, pendingJobsTask);
     }
 
     private async Task ProcessScheduledJobsAsync(CancellationToken stoppingToken)
@@ -240,20 +242,26 @@ public class JobsWorker(
         }
     }
 
-    private async Task ProcessOrphanedJobsAsync(CancellationToken stoppingToken)
+    private async Task ScheduleOrphanedJobsCleanupAsync(CancellationToken stoppingToken)
     {
-        while (!stoppingToken.IsCancellationRequested)
+        try
         {
-            try
-            {
-                await CheckOrphanedJobsAsync(stoppingToken);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error processing orphaned jobs");
-            }
-
-            await Task.Delay(_options.OrphanedJobsCheckInterval, stoppingToken);
+            using var scope = serviceProvider.CreateScope();
+            var jobRunner = scope.ServiceProvider.GetRequiredService<IJobRunner>();
+            
+            var cleanupJob = new CleanupOrphanedJobsJob();
+            
+            // Schedule to run every 5 minutes based on OrphanedJobsCheckInterval
+            var intervalMinutes = (int)_options.OrphanedJobsCheckInterval.TotalMinutes;
+            var cronExpression = $"*/{intervalMinutes} * * * *";
+            
+            await jobRunner.AddOrUpdateScheduledJob(cleanupJob, cronExpression, stoppingToken);
+            
+            logger.LogInformation("Scheduled orphaned jobs cleanup to run every {Interval} minutes", intervalMinutes);
+        }
+        catch (Exception ex)
+        {
+            logger.LogError(ex, "Failed to schedule orphaned jobs cleanup");
         }
     }
 
@@ -315,34 +323,6 @@ public class JobsWorker(
                 logger.LogError(ex, "Error starting scheduled job {JobId}: {Error}", 
                     scheduledJob.Id, ex.Message);
             }
-        }
-    }
-
-    private async Task CheckOrphanedJobsAsync(CancellationToken cancellationToken)
-    {
-        using var scope = serviceProvider.CreateScope();
-        var jobContext = scope.ServiceProvider.GetRequiredService<IJobContext>();
-        var messageOutbox = scope.ServiceProvider.GetRequiredService<IMessageOutbox>();
-        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-
-        var cutoffTime = DateTimeOffset.UtcNow.Subtract(_options.OrphanedJobThreshold);
-        
-        var orphanedJobs = await jobContext.Jobs
-            .Where(j => j.Status == JobStatus.Running && j.StartedAt < cutoffTime)
-            .ToListAsync(cancellationToken);
-
-        foreach (var orphanedJob in orphanedJobs)
-        {
-            logger.LogWarning("Found orphaned job {JobId}, restarting", orphanedJob.Id);
-            
-            // Re-enqueue the job for execution
-            var jobStartCommand = new StartJobCommand(orphanedJob.Id);
-            messageOutbox.Enqueue(jobStartCommand, priority: true);
-        }
-
-        if (orphanedJobs.Count > 0)
-        {
-            await unitOfWork.SaveChangesAsync(cancellationToken);
         }
     }
 
