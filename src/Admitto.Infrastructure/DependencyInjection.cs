@@ -53,6 +53,9 @@ public static class DependencyInjection
         // Register job-related command handlers
         builder.Services.AddScoped<ICommandHandler<StartJobCommand>, StartJobCommandHandler>();
         
+        // Register job handlers
+        builder.Services.AddScoped<IJobHandler<CleanupOrphanedJobsJob>, CleanupOrphanedJobsJobHandler>();
+        
         builder.AddAuthServices();
         
         return builder;
