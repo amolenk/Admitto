@@ -9,7 +9,6 @@ public class PurgeExpiredRegistrationsJob : IJob
 }
 
 public class PurgeExpiredRegistrationsJobHandler(
-    IDomainContext domainContext,
     ILogger<PurgeExpiredRegistrationsJobHandler> logger) : IJobHandler<PurgeExpiredRegistrationsJob>
 {
     public async ValueTask Handle(PurgeExpiredRegistrationsJob job, IJobProgress jobProgress, CancellationToken cancellationToken = default)
