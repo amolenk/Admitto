@@ -30,6 +30,10 @@ public class OutboxMessage(Guid id, JsonDocument data, string type, bool priorit
 
     private static JsonDocument SerializeData(object data)
     {
-        return JsonSerializer.SerializeToDocument(data, JsonSerializerOptions.Web);
+        var options = new JsonSerializerOptions 
+        { 
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase 
+        };
+        return JsonSerializer.SerializeToDocument(data, options);
     }
 }

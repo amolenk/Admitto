@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Worker">
 
     <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
+        <TargetFramework>net8.0</TargetFramework>
         <Nullable>enable</Nullable>
         <ImplicitUsings>enable</ImplicitUsings>
         <UserSecretsId>dotnet-Admitto.OutboxProcessor-0fd4fbbd-1e6b-468d-bd24-71befec8fb71</UserSecretsId>
@@ -9,7 +9,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.5" />
+        <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.0.10" />
         <PackageReference Include="Polly.Core" Version="8.5.2" />
         <PackageReference Include="Polly.Extensions" Version="8.5.2" />
     </ItemGroup>
