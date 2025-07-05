@@ -15,6 +15,7 @@
       <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.5" />
       <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.5" />
       <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.10.0" />
+      <PackageReference Include="Scriban" Version="6.2.1" />
       <PackageReference Include="Scrutor" Version="6.0.1" />
       <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.10.0" />
     </ItemGroup>
@@ -24,8 +25,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="UseCases\Attendees\RequestReconfirmation\" />
-      <Folder Include="UseCases\Attendees\SendCancellationEmail\" />
       <Folder Include="UseCases\Registrations\CancelRegistration\" />
       <Folder Include="UseCases\Registrations\ReconfirmRegistration\" />
     </ItemGroup>

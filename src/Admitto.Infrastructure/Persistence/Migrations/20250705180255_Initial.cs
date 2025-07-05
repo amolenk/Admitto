@@ -45,19 +45,24 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "email_messages",
+                name: "jobs",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
-                    recipient_email = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    subject = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    body = table.Column<string>(type: "character varying(2000)", maxLength: 2000, nullable: false),
-                    team_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    is_sent = table.Column<bool>(type: "boolean", nullable: false)
+                    job_type = table.Column<string>(type: "character varying(250)", maxLength: 250, nullable: false),
+                    job_data = table.Column<JsonDocument>(type: "jsonb", nullable: false),
+                    status = table.Column<string>(type: "text", nullable: false),
+                    created_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    started_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    completed_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    error_message = table.Column<string>(type: "character varying(1000)", maxLength: 1000, nullable: true),
+                    progress_message = table.Column<string>(type: "character varying(500)", maxLength: 500, nullable: true),
+                    progress_percent = table.Column<int>(type: "integer", nullable: true),
+                    progress_state = table.Column<JsonDocument>(type: "jsonb", nullable: true)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_email_messages", x => x.id);
+                    table.PrimaryKey("PK_jobs", x => x.id);
                 });
 
             migrationBuilder.CreateTable(
@@ -72,6 +77,23 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_outbox", x => x.id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "scheduled_jobs",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    job_type = table.Column<string>(type: "character varying(250)", maxLength: 250, nullable: false),
+                    job_data = table.Column<JsonDocument>(type: "jsonb", nullable: false),
+                    cron_expression = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    next_run_time = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    last_run_time = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    is_enabled = table.Column<bool>(type: "boolean", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_scheduled_jobs", x => x.id);
                 });
 
             migrationBuilder.CreateTable(
@@ -114,6 +136,36 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_jobs_created_at",
+                table: "jobs",
+                column: "created_at");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_jobs_job_type",
+                table: "jobs",
+                column: "job_type");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_jobs_status",
+                table: "jobs",
+                column: "status");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_scheduled_jobs_is_enabled",
+                table: "scheduled_jobs",
+                column: "is_enabled");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_scheduled_jobs_job_type",
+                table: "scheduled_jobs",
+                column: "job_type");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_scheduled_jobs_next_run_time",
+                table: "scheduled_jobs",
+                column: "next_run_time");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_ticketed_events_team_id",
                 table: "ticketed_events",
                 column: "team_id");
@@ -129,10 +181,13 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                 name: "attendee_registrations");
 
             migrationBuilder.DropTable(
-                name: "email_messages");
+                name: "jobs");
 
             migrationBuilder.DropTable(
                 name: "outbox");
+
+            migrationBuilder.DropTable(
+                name: "scheduled_jobs");
 
             migrationBuilder.DropTable(
                 name: "ticketed_events");

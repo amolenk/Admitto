@@ -1,8 +1,8 @@
 using Amolenk.Admitto.Application.Common.Abstractions;
-using Amolenk.Admitto.Application.UseCases.Email;
 using Amolenk.Admitto.Infrastructure;
 using Amolenk.Admitto.Infrastructure.Auth;
 using Amolenk.Admitto.Infrastructure.Email;
+using Amolenk.Admitto.Infrastructure.Jobs;
 using Amolenk.Admitto.Infrastructure.Messaging;
 using Amolenk.Admitto.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -37,15 +37,12 @@ public static class DependencyInjection
 
         builder.Services
             .AddScoped<IDomainContext>(sp => sp.GetRequiredService<ApplicationContext>())
-            .AddScoped<IReadModelContext>(sp => sp.GetRequiredService<ApplicationContext>())
-            .AddScoped<IEmailContext>(sp => sp.GetRequiredService<ApplicationContext>());
+            .AddScoped<IReadModelContext>(sp => sp.GetRequiredService<ApplicationContext>());
         
         builder.Services
             .AddScoped<MessageOutbox>()
             .AddScoped<IMessageOutbox>(sp => sp.GetRequiredService<MessageOutbox>());
 
-        builder.Services.AddScoped<IEmailOutbox, EmailOutbox>();
-        
         builder.AddAuthServices();
         
         return builder;
