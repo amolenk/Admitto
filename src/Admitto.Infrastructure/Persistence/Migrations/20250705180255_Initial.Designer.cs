@@ -13,7 +13,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationContext))]
-    [Migration("20250624070630_Initial")]
+    [Migration("20250705180255_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -88,6 +88,115 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                     b.ToTable("attendee_registrations", (string)null);
                 });
 
+            modelBuilder.Entity("Amolenk.Admitto.Domain.Entities.Job", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("completed_at");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasMaxLength(1000)
+                        .HasColumnType("character varying(1000)")
+                        .HasColumnName("error_message");
+
+                    b.Property<JsonDocument>("JobData")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("job_data");
+
+                    b.Property<string>("JobType")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)")
+                        .HasColumnName("job_type");
+
+                    b.Property<string>("ProgressMessage")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("progress_message");
+
+                    b.Property<int?>("ProgressPercent")
+                        .HasColumnType("integer")
+                        .HasColumnName("progress_percent");
+
+                    b.Property<JsonDocument>("ProgressState")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("progress_state");
+
+                    b.Property<DateTimeOffset?>("StartedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("status");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt");
+
+                    b.HasIndex("JobType");
+
+                    b.HasIndex("Status");
+
+                    b.ToTable("jobs", (string)null);
+                });
+
+            modelBuilder.Entity("Amolenk.Admitto.Domain.Entities.ScheduledJob", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("CronExpression")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("cron_expression");
+
+                    b.Property<bool>("IsEnabled")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_enabled");
+
+                    b.Property<JsonDocument>("JobData")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("job_data");
+
+                    b.Property<string>("JobType")
+                        .IsRequired()
+                        .HasMaxLength(250)
+                        .HasColumnType("character varying(250)")
+                        .HasColumnName("job_type");
+
+                    b.Property<DateTimeOffset?>("LastRunTime")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_run_time");
+
+                    b.Property<DateTimeOffset>("NextRunTime")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("next_run_time");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IsEnabled");
+
+                    b.HasIndex("JobType");
+
+                    b.HasIndex("NextRunTime");
+
+                    b.ToTable("scheduled_jobs", (string)null);
+                });
+
             modelBuilder.Entity("Amolenk.Admitto.Domain.Entities.Team", b =>
                 {
                     b.Property<Guid>("Id")
@@ -142,43 +251,6 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                     b.HasIndex("TeamId");
 
                     b.ToTable("ticketed_events", (string)null);
-                });
-
-            modelBuilder.Entity("Amolenk.Admitto.Domain.ValueObjects.EmailMessage", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<string>("Body")
-                        .IsRequired()
-                        .HasMaxLength(2000)
-                        .HasColumnType("character varying(2000)")
-                        .HasColumnName("body");
-
-                    b.Property<bool>("IsSent")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_sent");
-
-                    b.Property<string>("RecipientEmail")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("recipient_email");
-
-                    b.Property<string>("Subject")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("subject");
-
-                    b.Property<Guid>("TeamId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("team_id");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("email_messages", (string)null);
                 });
 
             modelBuilder.Entity("Amolenk.Admitto.Infrastructure.Messaging.OutboxMessage", b =>

@@ -1,6 +1,6 @@
 namespace Amolenk.Admitto.Domain.DomainEvents;
 
-public class RegistrationCompletedDomainEvent : IDomainEvent
+public record RegistrationCompletedDomainEvent(Guid RegistrationId) : IDomainEvent
 {
     public Guid Id { get; init; } = Guid.NewGuid();
 

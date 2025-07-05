@@ -6,6 +6,10 @@ public interface IDomainContext
 {
     DbSet<AttendeeRegistration> AttendeeRegistrations { get; }
     
+    DbSet<Job> Jobs { get; }
+    
+    DbSet<ScheduledJob> ScheduledJobs { get; }
+    
     DbSet<Team> Teams { get; }
 
     DbSet<TicketedEvent> TicketedEvents { get; }
