@@ -6,17 +6,28 @@ namespace Amolenk.Admitto.Infrastructure;
 
 public class UnitOfWork(ApplicationContext context, MessageOutbox outbox) : IUnitOfWork
 {
-    public async ValueTask<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-    {
-        var result = await context.SaveChangesAsync(cancellationToken);
+    private readonly List<Func<ValueTask>> _afterSaveCallbacks = [];
 
-        // Flush the outbox after saving changes to the database.
+    public async ValueTask SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        await context.SaveChangesAsync(cancellationToken);
+
+        // Execute and clear callbacks after changes are saved.
+        foreach (var callback in _afterSaveCallbacks)
+        {
+            await callback();
+        }
+        _afterSaveCallbacks.Clear();
+        
+        // Flush the outbox to ensure all messages are sent.
         if (await outbox.FlushAsync(cancellationToken))
         {
-            // Save changes again to remove the processed outbox messages.
             await context.SaveChangesAsync(cancellationToken);
         }
-        
-        return result;
+    }
+
+    public void RegisterAfterSaveCallback(Func<ValueTask> callback)
+    {
+        _afterSaveCallbacks.Add(callback);
     }
 }
