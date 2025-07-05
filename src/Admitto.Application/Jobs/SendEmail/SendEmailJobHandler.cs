@@ -1,38 +1,48 @@
-using Amolenk.Admitto.Application.Common;
-using Amolenk.Admitto.Application.Common.Abstractions;
-using Amolenk.Admitto.Application.UseCases.Email.SendEmail;
 using Amolenk.Admitto.Domain.ValueObjects;
-using Microsoft.EntityFrameworkCore;
 using Scriban;
 using Scriban.Runtime;
 
-namespace Amolenk.Admitto.Infrastructure.Email;
+namespace Amolenk.Admitto.Application.Jobs.SendEmail;
 
-public class EmailOutbox(IDomainContext domainContext, IEmailContext context, IMessageOutbox messageOutbox)
-    : IEmailOutbox
+public class SendEmailJobHandler(IDomainContext domainContext, IEmailSender emailSender, ILogger<SendEmailJobHandler> logger) : IJobHandler<SendEmailJobData>
 {
-    public async ValueTask EnqueueEmailAsync(string recipientEmail, EmailTemplateId templateId, 
-        Dictionary<string, string> templateParameters, TicketedEventId ticketedEventId, bool priority = false,
-        CancellationToken cancellationToken = default)
+    public async ValueTask HandleAsync(SendEmailJobData jobData, IJobExecutionContext executionContext, CancellationToken cancellationToken = default)
     {
-        var ticketedEventInfo = await GetTicketedEventInfoAsync(ticketedEventId, cancellationToken);
-        
-        // Enrich the template parameters with additional information
-        templateParameters["event_name"] = ticketedEventInfo.Name;
-        
-        var email = new EmailMessage
-        {
-            RecipientEmail = recipientEmail,
-            Subject = "TODO Get from template",
-            Body = await RenderBodyAsync(templateId, templateParameters),
-            TeamId = ticketedEventInfo.TeamId
-        };
+        throw new NotImplementedException();
 
-        // Persist the e-mail message to the database
-        context.EmailMessages.Add(email);
-        
-        // And add a command to send the e-mail to the recipient
-        messageOutbox.Enqueue(new SendEmailCommand(email.Id), priority);
+        // TODO Check that we haven't send yet
+
+        // await executionContext.ReportProgressAsync("Starting email send", 0, cancellationToken);
+
+        // var ticketedEventInfo = await GetTicketedEventInfoAsync(jobData.TicketedEventId, cancellationToken);
+
+
+        // return registration.Details.ToDictionary(
+        //         x => $"attendee_detail_{x.Name}", x => x.Value)
+        //     .Concat(new Dictionary<string, string>
+        //     {
+        //         ["attendee_first_name"] = registration.FirstName,
+        //         ["attendee_last_name"] = registration.LastName
+        //     })
+        //     .ToDictionary(kvp => kvp.Key, kvp => kvp.Value);
+
+
+
+        //
+        // // Enrich the template parameters with additional information
+        // var templateParameters = jobData.TemplateParameters;
+        // templateParameters["event_name"] = ticketedEventInfo.Name;
+        //
+        // var subject = "TODO Get subject from template"; // TODO: Get subject from template
+        // var body = await RenderBodyAsync(jobData.TemplateId, templateParameters);
+        //
+        // await emailSender.SendEmailAsync(
+        //     jobData.RecipientEmail,
+        //     subject,
+        //     body,
+        //     ticketedEventInfo.TeamId);
+
+        // TODO Report progress after sending the email
     }
 
     private static async ValueTask<string> RenderBodyAsync(EmailTemplateId templateId, 

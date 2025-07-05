@@ -51,6 +51,9 @@ public class JobEntityConfiguration : IEntityTypeConfiguration<Job>
         builder.Property(e => e.ProgressPercent)
             .HasColumnName("progress_percent");
 
+        builder.Property(e => e.ProgressState)
+            .HasColumnName("progress_state");
+
         builder.HasIndex(e => e.Status);
         builder.HasIndex(e => e.JobType);
         builder.HasIndex(e => e.CreatedAt);

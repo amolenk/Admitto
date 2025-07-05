@@ -1,16 +1,17 @@
+using Amolenk.Admitto.Application.Jobs.SendEmail;
 using Amolenk.Admitto.Application.UseCases.Attendees.RegisterAttendee;
-using Amolenk.Admitto.Application.UseCases.Attendees.RequestConfirmation;
 using Amolenk.Admitto.Application.UseCases.Registrations.CompleteRegistration;
 using Amolenk.Admitto.Application.UseCases.TicketedEvents.ReserveTickets;
 using Amolenk.Admitto.Domain.DomainEvents;
 using Amolenk.Admitto.Domain.Utilities;
+using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Application.UseCases.Registrations;
 
 /// <summary>
 /// Represents a saga that orchestrates the entire registration process for an attendee.
 /// </summary>
-public class RegisterAttendeeSaga(ICommandSender commandSender)
+public class RegisterAttendeeSaga(ICommandSender commandSender, IJobScheduler jobScheduler)
     : IEventualDomainEventHandler<RegistrationReceivedDomainEvent>
     , IEventualDomainEventHandler<UserConfirmedRegistrationDomainEvent>
     , IEventualDomainEventHandler<TicketsReservedDomainEvent>
@@ -18,22 +19,21 @@ public class RegisterAttendeeSaga(ICommandSender commandSender)
     , IEventualDomainEventHandler<TicketsReservationRejectedDomainEvent>
     , IEventualDomainEventHandler<RegistrationRejectedDomainEvent>
 {
-    public ValueTask HandleAsync(RegistrationReceivedDomainEvent domainEvent, CancellationToken cancellationToken)
+    public async ValueTask HandleAsync(RegistrationReceivedDomainEvent domainEvent, CancellationToken cancellationToken)
     {
         // Anyone can start a new registration for a ticketed event. To guard against misuse, we'll first ask the
         // user to confirm via email. During this time, we will not reserve any tickets yet.
-        var command = new RequestUserConfirmationCommand(domainEvent.TicketedEventId, domainEvent.RegistrationId)
-        {
-            Id = DeterministicGuidGenerator.Generate($"{domainEvent.Id}:{nameof(RequestUserConfirmationCommand)}")
-        };
+        var jobId = DeterministicGuidGenerator.Generate($"{domainEvent.Id}:{nameof(SendEmailJobData)}");
+        var emailJobData = new SendEmailJobData(jobId, domainEvent.RegistrationId, EmailTemplateId.ConfirmRegistration);
 
-        return commandSender.SendAsync(command);
+        await jobScheduler.AddJobAsync(emailJobData, cancellationToken);
     }
     
     public ValueTask HandleAsync(UserConfirmedRegistrationDomainEvent domainEvent, CancellationToken cancellationToken)
     {
         // Once the user has confirmed the registration, we need to reserve the actual tickets.
-        var command = new ReserveTicketsCommand(domainEvent.TicketedEventId, domainEvent.RegistrationId, domainEvent.Tickets)
+        var command = new ReserveTicketsCommand(domainEvent.TicketedEventId, domainEvent.RegistrationId, 
+            domainEvent.Tickets)
         {
             Id = DeterministicGuidGenerator.Generate($"{domainEvent.Id}:{nameof(ReserveTicketsCommand)}")
         };
@@ -52,15 +52,13 @@ public class RegisterAttendeeSaga(ICommandSender commandSender)
         return commandSender.SendAsync(command);
     }
 
-    public ValueTask HandleAsync(RegistrationCompletedDomainEvent domainEvent, CancellationToken cancellationToken)
+    public async ValueTask HandleAsync(RegistrationCompletedDomainEvent domainEvent, CancellationToken cancellationToken)
     {
         // Once the registration is completed, we need to send the ticket email to the user.
-        var command = new SendTicketEmailCommand(domainEvent.Id)
-        {
-            Id = DeterministicGuidGenerator.Generate($"{domainEvent.Id}:{nameof(SendTicketEmailCommand)}")
-        };
+        var jobId = DeterministicGuidGenerator.Generate($"{domainEvent.Id}:{nameof(SendEmailJobData)}");
+        var emailJobData = new SendEmailJobData(jobId, domainEvent.RegistrationId, EmailTemplateId.Ticket);
 
-        return commandSender.SendAsync(command);
+        await jobScheduler.AddJobAsync(emailJobData, cancellationToken);
     }
 
     public ValueTask HandleAsync(TicketsReservationRejectedDomainEvent domainEvent, CancellationToken cancellationToken)
@@ -74,15 +72,12 @@ public class RegisterAttendeeSaga(ICommandSender commandSender)
         return commandSender.SendAsync(command);
     }
     
-    
-    public ValueTask HandleAsync(RegistrationRejectedDomainEvent domainEvent, CancellationToken cancellationToken)
+    public async ValueTask HandleAsync(RegistrationRejectedDomainEvent domainEvent, CancellationToken cancellationToken)
     {
         // If the registration is rejected, we need to send a rejection email to the user.
-        var command = new SendRejectionEmailCommand(domainEvent.RegistrationId)
-        {
-            Id = DeterministicGuidGenerator.Generate($"{domainEvent.Id}:{nameof(SendRejectionEmailCommand)}")
-        };
+        var jobId = DeterministicGuidGenerator.Generate($"{domainEvent.Id}:{nameof(SendEmailJobData)}");
+        var emailJobData = new SendEmailJobData(jobId, domainEvent.RegistrationId, EmailTemplateId.RegistrationRejected);
 
-        return commandSender.SendAsync(command);
+        await jobScheduler.AddJobAsync(emailJobData, cancellationToken);
     }
 }

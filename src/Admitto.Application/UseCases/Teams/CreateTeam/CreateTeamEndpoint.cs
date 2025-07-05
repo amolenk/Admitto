@@ -21,8 +21,8 @@ public static class CreateTeamEndpoint
     }
 
     private static async Task<Results<Created<CreateTeamResponse>, ValidationProblem, Conflict<HttpValidationProblemDetails>>> CreateTeam(
-        CreateTeamRequest request, CreateTeamValidator validator, IDomainContext context, IEmailOutbox emailOutbox,
-        IUnitOfWork unitOfWork, CancellationToken cancellationToken)
+        CreateTeamRequest request, CreateTeamValidator validator, IDomainContext context, IUnitOfWork unitOfWork, 
+        CancellationToken cancellationToken)
     {
         await validator.ValidateAndThrowAsync(request, cancellationToken);
 

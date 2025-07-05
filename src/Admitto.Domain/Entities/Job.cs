@@ -13,6 +13,7 @@ public class Job : Entity
     public string? ErrorMessage { get; private set; }
     public string? ProgressMessage { get; private set; }
     public int? ProgressPercent { get; private set; }
+    public JsonDocument? ProgressState { get; private set; }
 
     protected Job() { }
 
@@ -24,8 +25,22 @@ public class Job : Entity
         CreatedAt = DateTimeOffset.UtcNow;
     }
 
+    
+    public static Job Create<T>(T jobData)
+    {
+        var jobType = typeof(T).FullName ?? throw new InvalidOperationException("Job type cannot be null");
+        var serializedData = JsonSerializer.SerializeToDocument(jobData, new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+        });
+
+        return new Job(Guid.NewGuid(), jobType, serializedData);
+    }
+    
     public void Start()
     {
+        // TODO Consider recovering from a previous state
+        
         if (Status != JobStatus.Pending)
             throw new InvalidOperationException($"Cannot start job in status {Status}");
 

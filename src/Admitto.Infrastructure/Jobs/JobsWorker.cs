@@ -1,9 +1,7 @@
-using System.Collections.Concurrent;
-using System.Reflection;
 using System.Text.Json;
+using System.Threading.Channels;
 using Amolenk.Admitto.Application.Common.Abstractions;
 using Amolenk.Admitto.Domain.Entities;
-using Cronos;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -12,201 +10,106 @@ using Microsoft.Extensions.Options;
 
 namespace Amolenk.Admitto.Infrastructure.Jobs;
 
-public class JobsWorker(
-    IServiceProvider serviceProvider,
-    IOptions<JobsWorkerOptions> options,
-    ILogger<JobsWorker> logger) : BackgroundService
+public class JobsWorker(IServiceProvider serviceProvider, IOptions<JobsOptions> options, ILogger<JobsWorker> logger)
+    : BackgroundService
 {
-    private readonly JobsWorkerOptions _options = options.Value;
-    private readonly ConcurrentDictionary<Guid, Task> _runningJobs = new();
-    private readonly SemaphoreSlim _jobExecutionSemaphore = new(options.Value.MaxConcurrentJobs, options.Value.MaxConcurrentJobs);
-    private readonly ConcurrentQueue<Guid> _pendingJobs = new();
-    private readonly ManualResetEventSlim _jobAvailableSignal = new(false);
-
+    private readonly JobsOptions _options = options.Value;
+    private readonly Channel<Guid> _jobChannel = Channel.CreateUnbounded<Guid>();
+    
+    public async ValueTask EnqueueJobAsync(Guid jobId, CancellationToken cancellationToken = default)
+    {
+        await _jobChannel.Writer.WriteAsync(jobId, cancellationToken);
+        logger.LogDebug("Job {JobId} enqueued for execution", jobId);
+    }
+    
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        logger.LogInformation("Jobs worker starting with max {MaxConcurrentJobs} concurrent jobs", _options.MaxConcurrentJobs);
+        logger.LogInformation("Jobs worker starting with max {MaxConcurrentJobs} concurrent jobs", 
+            _options.MaxConcurrentJobs);
 
         // Reload running jobs state and populate pending jobs queue on startup
         await ReloadJobsStateAsync(stoppingToken);
-        
-        // Schedule the orphaned jobs cleanup as a recurring job
-        await ScheduleOrphanedJobsCleanupAsync(stoppingToken);
 
-        var scheduledJobsTask = ProcessScheduledJobsAsync(stoppingToken);
-        var pendingJobsTask = ProcessPendingJobsAsync(stoppingToken);
-
-        await Task.WhenAll(scheduledJobsTask, pendingJobsTask);
+        // Keep processing jobs until stopped
+        await ProcessPendingJobsAsync(stoppingToken);
     }
 
-    private async Task ProcessScheduledJobsAsync(CancellationToken stoppingToken)
+    private async Task ReloadJobsStateAsync(CancellationToken cancellationToken)
     {
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            try
-            {
-                await CheckScheduledJobsAsync(stoppingToken);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error processing scheduled jobs");
-            }
+        using var scope = serviceProvider.CreateScope();
+        var domainContext = scope.ServiceProvider.GetRequiredService<IDomainContext>();
 
-            await Task.Delay(_options.ScheduledJobsCheckInterval, stoppingToken);
+        // Load pending jobs into the in-memory queue
+        var pendingJobIds = await domainContext.Jobs
+            .Where(j => j.Status == JobStatus.Pending)
+            .OrderBy(j => j.CreatedAt)
+            .Select(j => j.Id)
+            .ToListAsync(cancellationToken);
+
+        foreach (var jobId in pendingJobIds)
+        {
+            await EnqueueJobAsync(jobId, cancellationToken);
         }
     }
-
+    
     private async Task ProcessPendingJobsAsync(CancellationToken stoppingToken)
     {
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            try
+        await Parallel.ForEachAsync(
+            _jobChannel.Reader.ReadAllAsync(stoppingToken),
+            new ParallelOptions { MaxDegreeOfParallelism = _options.MaxConcurrentJobs, CancellationToken = stoppingToken },
+            async (jobId, ct) =>
             {
-                // Wait for either a job to be available or cancellation
-                await Task.Run(() => _jobAvailableSignal.Wait(stoppingToken), stoppingToken);
-                
-                // Process all available jobs
-                while (_pendingJobs.TryDequeue(out var jobId) && !stoppingToken.IsCancellationRequested)
+                try
                 {
-                    var executed = await TryExecuteJob(jobId, stoppingToken);
-                    if (!executed)
-                    {
-                        // If we couldn't execute (no capacity), put it back and wait
-                        _pendingJobs.Enqueue(jobId);
-                        break;
-                    }
+                    await StartJobAsync(jobId, ct);
                 }
-                
-                // Reset the signal if no more jobs are pending
-                if (_pendingJobs.IsEmpty)
+                catch (Exception ex)
                 {
-                    _jobAvailableSignal.Reset();
+                    logger.LogError(ex, "Unexpected error starting job {JobId}: {Error}", jobId, ex.Message);
                 }
-            }
-            catch (OperationCanceledException)
-            {
-                break;
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error processing pending jobs");
-                await Task.Delay(TimeSpan.FromSeconds(5), stoppingToken);
-            }
-        }
+            });
     }
 
-    public void EnqueueJob(Guid jobId)
+    
+    private async Task StartJobAsync(Guid jobId, CancellationToken cancellationToken)
     {
-        _pendingJobs.Enqueue(jobId);
-        _jobAvailableSignal.Set();
-        logger.LogDebug("Job {JobId} enqueued for execution", jobId);
-    }
+        using var scope = serviceProvider.CreateScope();
+        var domainContext = scope.ServiceProvider.GetRequiredService<IDomainContext>();
+        var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
-    public async ValueTask<bool> TryExecuteJob(Guid jobId, CancellationToken cancellationToken = default)
-    {
-        // Check if we have capacity
-        if (!await _jobExecutionSemaphore.WaitAsync(0, cancellationToken))
+        var job = await domainContext.Jobs.FindAsync([jobId], cancellationToken);
+
+        if (job == null)
         {
-            logger.LogDebug("Cannot execute job {JobId} - max concurrent jobs reached", jobId);
-            return false;
+            logger.LogWarning("Job {JobId} not found during execution", jobId);
+            return;
         }
 
         try
         {
-            using var scope = serviceProvider.CreateScope();
-            var jobContext = scope.ServiceProvider.GetRequiredService<IJobContext>();
-            var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
+            logger.LogInformation("Starting job {JobId} of type {JobType}", job.Id, job.JobType);
 
-            var job = await jobContext.Jobs
-                .FirstOrDefaultAsync(j => j.Id == jobId, cancellationToken);
+            job.Start();
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+            
+            await ExecuteJobAsync(job, scope.ServiceProvider, cancellationToken);
 
-            if (job == null)
-            {
-                logger.LogWarning("Job {JobId} not found", jobId);
-                return false;
-            }
+            job.Complete();
+            await unitOfWork.SaveChangesAsync(cancellationToken);
 
-            if (job.Status != JobStatus.Pending)
-            {
-                logger.LogWarning("Job {JobId} is not in pending status (current: {Status})", 
-                    jobId, job.Status);
-                return false;
-            }
-
-            // Start the job execution in background
-            var executionTask = ExecuteJobInBackgroundAsync(jobId);
-            _runningJobs[jobId] = executionTask;
-
-            // Clean up completed task
-            _ = executionTask.ContinueWith(t =>
-            {
-                _runningJobs.TryRemove(jobId, out _);
-                _jobExecutionSemaphore.Release();
-            }, TaskScheduler.Default);
-
-            return true;
-        }
-        catch
-        {
-            _jobExecutionSemaphore.Release();
-            throw;
-        }
-    }
-
-    private async Task ExecuteJobInBackgroundAsync(Guid jobId)
-    {
-        try
-        {
-            using var scope = serviceProvider.CreateScope();
-            var jobContext = scope.ServiceProvider.GetRequiredService<IJobContext>();
-            var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
-
-            var job = await jobContext.Jobs
-                .FirstOrDefaultAsync(j => j.Id == jobId);
-
-            if (job == null)
-            {
-                logger.LogWarning("Job {JobId} not found during execution", jobId);
-                return;
-            }
-
-            if (job.Status != JobStatus.Pending)
-            {
-                logger.LogWarning("Job {JobId} is not in pending status during execution (current: {Status})", 
-                    jobId, job.Status);
-                return;
-            }
-
-            try
-            {
-                job.Start();
-                await unitOfWork.SaveChangesAsync();
-
-                logger.LogInformation("Starting job {JobId} of type {JobType}", job.Id, job.JobType);
-
-                // Deserialize and execute the job
-                await ExecuteJobAsync(job, scope.ServiceProvider);
-
-                job.Complete();
-                await unitOfWork.SaveChangesAsync();
-
-                logger.LogInformation("Job {JobId} completed successfully", job.Id);
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Job {JobId} failed with error: {Error}", job.Id, ex.Message);
-
-                job.Fail(ex.Message);
-                await unitOfWork.SaveChangesAsync();
-            }
+            logger.LogInformation("Job {JobId} completed successfully", job.Id);
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Unexpected error executing job {JobId}: {Error}", jobId, ex.Message);
+            job.Fail(ex.Message);
+            logger.LogError(ex, "Job {JobId} failed with error: {Error}", job.Id, ex.Message);
+
+            await unitOfWork.SaveChangesAsync(cancellationToken);
         }
     }
 
-    private async ValueTask ExecuteJobAsync(Job jobEntity, IServiceProvider scopedServiceProvider)
+    private async ValueTask ExecuteJobAsync(Job jobEntity, IServiceProvider scopedServiceProvider,
+        CancellationToken cancellationToken)
     {
         // Get the job type
         var jobType = Type.GetType(jobEntity.JobType);
@@ -216,165 +119,23 @@ public class JobsWorker(
         }
 
         // Deserialize the job data
-        var jobInstance = JsonSerializer.Deserialize(jobEntity.JobData, jobType, new JsonSerializerOptions
+        var jobInstance = jobEntity.JobData.Deserialize(jobType, new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase
         });
 
-        if (jobInstance is not IJob job)
+        if (jobInstance is not IJobData job)
         {
             throw new InvalidOperationException($"Job type {jobEntity.JobType} does not implement IJob");
         }
-
-        // Find the handler type
-        var handlerType = typeof(IJobHandler<>).MakeGenericType(jobType);
-        var handler = scopedServiceProvider.GetRequiredService(handlerType);
-
+        
         // Create job progress tracker
         var unitOfWork = scopedServiceProvider.GetRequiredService<IUnitOfWork>();
-        var jobProgress = new JobProgress(jobEntity, unitOfWork, logger);
-
-        // Get the Handle method and invoke it
-        var handleMethod = handlerType.GetMethod("Handle");
-        if (handleMethod == null)
-        {
-            throw new InvalidOperationException($"Handle method not found on {handlerType.Name}");
-        }
-
-        var result = handleMethod.Invoke(handler, [job, jobProgress, CancellationToken.None]);
+        var executionContext = new JobExecutionContext(jobEntity, unitOfWork, logger);
         
-        if (result is ValueTask valueTask)
-        {
-            await valueTask;
-        }
-        else if (result is Task task)
-        {
-            await task;
-        }
+        // Find and execute the handler
+        var handlerType = typeof(IJobHandler<>).MakeGenericType(jobType);
+        dynamic handler = scopedServiceProvider.GetRequiredService(handlerType);
+        await handler.HandleAsync(jobInstance, executionContext, cancellationToken);
     }
-
-    private async Task ScheduleOrphanedJobsCleanupAsync(CancellationToken stoppingToken)
-    {
-        try
-        {
-            using var scope = serviceProvider.CreateScope();
-            var jobRunner = scope.ServiceProvider.GetRequiredService<IJobRunner>();
-            
-            var cleanupJob = new CleanupOrphanedJobsJob();
-            
-            // Schedule to run every 5 minutes based on OrphanedJobsCheckInterval
-            var intervalMinutes = (int)_options.OrphanedJobsCheckInterval.TotalMinutes;
-            var cronExpression = $"*/{intervalMinutes} * * * *";
-            
-            await jobRunner.AddOrUpdateScheduledJob(cleanupJob, cronExpression, stoppingToken);
-            
-            logger.LogInformation("Scheduled orphaned jobs cleanup to run every {Interval} minutes", intervalMinutes);
-        }
-        catch (Exception ex)
-        {
-            logger.LogError(ex, "Failed to schedule orphaned jobs cleanup");
-        }
-    }
-
-    private async Task CheckScheduledJobsAsync(CancellationToken cancellationToken)
-    {
-        using var scope = serviceProvider.CreateScope();
-        var jobContext = scope.ServiceProvider.GetRequiredService<IJobContext>();
-        var jobRunner = scope.ServiceProvider.GetRequiredService<IJobRunner>();
-
-        var now = DateTimeOffset.UtcNow;
-        var dueJobs = await jobContext.ScheduledJobs
-            .Where(sj => sj.IsEnabled && sj.NextRunTime <= now)
-            .ToListAsync(cancellationToken);
-
-        foreach (var scheduledJob in dueJobs)
-        {
-            try
-            {
-                logger.LogInformation("Starting scheduled job {JobId} of type {JobType}", 
-                    scheduledJob.Id, scheduledJob.JobType);
-
-                // Deserialize and start the job
-                var jobType = Type.GetType(scheduledJob.JobType);
-                if (jobType == null)
-                {
-                    logger.LogError("Job type {JobType} not found for scheduled job {JobId}", 
-                        scheduledJob.JobType, scheduledJob.Id);
-                    continue;
-                }
-
-                var jobInstance = System.Text.Json.JsonSerializer.Deserialize(
-                    scheduledJob.JobData, jobType, new System.Text.Json.JsonSerializerOptions
-                    {
-                        PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
-                    });
-
-                if (jobInstance is IJob job)
-                {
-                    await jobRunner.StartJob(job, cancellationToken);
-
-                    // Update next run time
-                    var cronSchedule = CronExpression.Parse(scheduledJob.CronExpression);
-                    var nextRunTime = cronSchedule.GetNextOccurrence(now.DateTime, TimeZoneInfo.Utc);
-                    if (nextRunTime.HasValue)
-                    {
-                        var nextRunTimeOffset = new DateTimeOffset(nextRunTime.Value, TimeSpan.Zero);
-                        scheduledJob.UpdateNextRunTime(nextRunTimeOffset);
-                        await jobContext.SaveChangesAsync(cancellationToken);
-                    }
-                    else
-                    {
-                        logger.LogWarning("Could not calculate next run time for scheduled job {JobId}", 
-                            scheduledJob.Id);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                logger.LogError(ex, "Error starting scheduled job {JobId}: {Error}", 
-                    scheduledJob.Id, ex.Message);
-            }
-        }
-    }
-
-    private async Task ReloadJobsStateAsync(CancellationToken cancellationToken)
-    {
-        using var scope = serviceProvider.CreateScope();
-        var jobContext = scope.ServiceProvider.GetRequiredService<IJobContext>();
-
-        // Count running jobs for monitoring
-        var runningJobsCount = await jobContext.Jobs
-            .Where(j => j.Status == JobStatus.Running)
-            .CountAsync(cancellationToken);
-
-        // Load pending jobs into the in-memory queue
-        var pendingJobIds = await jobContext.Jobs
-            .Where(j => j.Status == JobStatus.Pending)
-            .OrderBy(j => j.CreatedAt)
-            .Select(j => j.Id)
-            .ToListAsync(cancellationToken);
-
-        foreach (var jobId in pendingJobIds)
-        {
-            _pendingJobs.Enqueue(jobId);
-        }
-
-        if (pendingJobIds.Any())
-        {
-            _jobAvailableSignal.Set();
-        }
-
-        logger.LogInformation("Found {RunningJobsCount} running jobs to monitor and {PendingJobsCount} pending jobs to process", 
-            runningJobsCount, pendingJobIds.Count);
-    }
-}
-
-public class JobsWorkerOptions
-{
-    public const string SectionName = nameof(JobsWorker);
-
-    public TimeSpan ScheduledJobsCheckInterval { get; init; } = TimeSpan.FromMinutes(1);
-    public TimeSpan OrphanedJobsCheckInterval { get; init; } = TimeSpan.FromMinutes(5);
-    public TimeSpan OrphanedJobThreshold { get; init; } = TimeSpan.FromMinutes(30);
-    public int MaxConcurrentJobs { get; init; } = 5;
 }
