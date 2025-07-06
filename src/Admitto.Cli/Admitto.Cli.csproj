@@ -16,6 +16,7 @@
       <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="9.0.0" />
       <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
       <PackageReference Include="System.Text.Json" Version="9.0.0" />
+      <PackageReference Include="Microsoft.Identity.Client" Version="4.66.2" />
     </ItemGroup>
 
     <ItemGroup>

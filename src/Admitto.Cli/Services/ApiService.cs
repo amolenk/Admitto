@@ -11,12 +11,14 @@ public class ApiService
 {
     private readonly HttpClient _httpClient;
     private readonly IConfiguration _configuration;
+    private readonly IAuthService _authService;
     private readonly JsonSerializerOptions _jsonOptions;
 
-    public ApiService(HttpClient httpClient, IConfiguration configuration)
+    public ApiService(HttpClient httpClient, IConfiguration configuration, IAuthService authService)
     {
         _httpClient = httpClient;
         _configuration = configuration;
+        _authService = authService;
         _jsonOptions = new JsonSerializerOptions
         {
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -28,10 +30,18 @@ public class ApiService
     {
         try
         {
-            var token = _configuration["Auth:Token"];
+            var token = await _authService.GetAccessTokenAsync();
             if (!string.IsNullOrEmpty(token))
             {
                 _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+            else
+            {
+                return new ApiResponse<T> 
+                { 
+                    Success = false, 
+                    Error = "Authentication required. Please login first." 
+                };
             }
 
             // Ensure we have a base address set
@@ -73,62 +83,6 @@ public class ApiService
             };
         }
     }
-
-    public async Task<bool> LoginAsync(string username, string password)
-    {
-        try
-        {
-            var keycloakUrl = _configuration["Auth:KeycloakUrl"] ?? "https://localhost:8080";
-            var clientId = _configuration["Auth:ClientId"] ?? "admitto-api";
-            var clientSecret = _configuration["Auth:ClientSecret"] ?? "LxcFeR1EVHUMScJn3ij6dO7NR8ZSnYzp";
-
-            var tokenUrl = $"{keycloakUrl}/realms/admitto/protocol/openid-connect/token";
-
-            var tokenRequest = new FormUrlEncodedContent(new Dictionary<string, string>
-            {
-                {"grant_type", "password"},
-                {"client_id", clientId},
-                {"client_secret", clientSecret},
-                {"username", username},
-                {"password", password}
-            });
-
-            var response = await _httpClient.PostAsync(tokenUrl, tokenRequest);
-            var responseContent = await response.Content.ReadAsStringAsync();
-
-            if (response.IsSuccessStatusCode)
-            {
-                var tokenResponse = JsonSerializer.Deserialize<TokenResponse>(responseContent, _jsonOptions);
-                if (tokenResponse?.AccessToken != null)
-                {
-                    // Store the token in user secrets for future use
-                    await StoreTokenAsync(tokenResponse.AccessToken);
-                    return true;
-                }
-            }
-            else
-            {
-                AnsiConsole.MarkupLine($"[red]Authentication failed: {responseContent}[/]");
-            }
-
-            return false;
-        }
-        catch (Exception ex)
-        {
-            AnsiConsole.MarkupLine($"[red]Login error: {ex.Message}[/]");
-            return false;
-        }
-    }
-
-    private async Task StoreTokenAsync(string token)
-    {
-        // In a real-world scenario, we would store this securely
-        // For now, we'll just show it would be stored
-        AnsiConsole.MarkupLine($"[dim]Token stored successfully[/]");
-        
-        // TODO: Store in user secrets or secure storage
-        // This is a simplified implementation
-    }
 }
 
 public class ApiResponse<T>
@@ -146,16 +100,4 @@ public class ProblemDetails
     public string? Detail { get; set; }
     public int Status { get; set; }
     public Dictionary<string, string[]>? Errors { get; set; }
-}
-
-public class TokenResponse
-{
-    [JsonPropertyName("access_token")]
-    public string? AccessToken { get; set; }
-    
-    [JsonPropertyName("expires_in")]
-    public int ExpiresIn { get; set; }
-    
-    [JsonPropertyName("refresh_token")]
-    public string? RefreshToken { get; set; }
 }

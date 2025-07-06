@@ -25,6 +25,7 @@ services.AddHttpClient<ApiService>(client =>
 });
 
 // Register services
+services.AddSingleton<IAuthService, AuthService>();
 services.AddSingleton<ApiService>();
 
 // Set up the CLI app
@@ -35,6 +36,9 @@ app.Configure(config =>
 {
     config.AddCommand<LoginCommand>("login")
         .WithDescription("Login to the Admitto API");
+
+    config.AddCommand<LogoutCommand>("logout")
+        .WithDescription("Logout from the Admitto API");
 
     config.AddBranch("team", team =>
     {

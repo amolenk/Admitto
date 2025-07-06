@@ -29,7 +29,10 @@ public sealed class ApiServiceTests
             BaseAddress = new Uri("https://localhost:5001/api/")
         };
 
-        _apiService = new ApiService(_httpClient, _mockConfiguration.Object);
+        var mockAuthService = new Mock<IAuthService>();
+        mockAuthService.Setup(x => x.GetAccessTokenAsync()).ReturnsAsync("mock-access-token");
+
+        _apiService = new ApiService(_httpClient, _mockConfiguration.Object, mockAuthService.Object);
     }
 
     [TestMethod]

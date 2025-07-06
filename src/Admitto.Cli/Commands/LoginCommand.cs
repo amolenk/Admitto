@@ -8,23 +8,19 @@ namespace Amolenk.Admitto.Cli.Commands;
 
 public class LoginSettings : CommandSettings
 {
-    [CommandOption("-u|--username")]
-    [Description("Username for authentication")]
-    public string? Username { get; set; }
-
-    [CommandOption("-p|--password")]
-    [Description("Password for authentication")]
-    public string? Password { get; set; }
+    [CommandOption("-i|--interactive")]
+    [Description("Force interactive login (opens browser)")]
+    public bool Interactive { get; set; }
 }
 
 public class LoginCommand : AsyncCommand<LoginSettings>
 {
-    private readonly ApiService _apiService;
+    private readonly IAuthService _authService;
     private readonly IConfiguration _configuration;
 
-    public LoginCommand(ApiService apiService, IConfiguration configuration)
+    public LoginCommand(IAuthService authService, IConfiguration configuration)
     {
-        _apiService = apiService;
+        _authService = authService;
         _configuration = configuration;
     }
 
@@ -33,38 +29,22 @@ public class LoginCommand : AsyncCommand<LoginSettings>
         AnsiConsole.MarkupLine("[bold blue]Admitto CLI Login[/]");
         AnsiConsole.WriteLine();
 
-        // Get username if not provided
-        var username = settings.Username;
-        if (string.IsNullOrEmpty(username))
-        {
-            username = AnsiConsole.Ask<string>("Enter your [green]username[/]:");
-        }
-
-        // Get password if not provided
-        var password = settings.Password;
-        if (string.IsNullOrEmpty(password))
-        {
-            password = AnsiConsole.Prompt(
-                new TextPrompt<string>("Enter your [green]password[/]:")
-                    .Secret());
-        }
-
-        // Attempt login
+        // Attempt login using OAuth2 authorization code flow with PKCE
         var loginResult = await AnsiConsole.Status()
-            .StartAsync("Logging in...", async ctx =>
+            .StartAsync("Authenticating...", async ctx =>
             {
                 ctx.Spinner(Spinner.Known.Star);
-                return await _apiService.LoginAsync(username, password);
+                return await _authService.LoginAsync();
             });
 
-        if (loginResult)
+        if (!string.IsNullOrEmpty(loginResult))
         {
-            AnsiConsole.MarkupLine("[green]✓ Successfully logged in![/]");
+            AnsiConsole.MarkupLine("[green]✓ Successfully authenticated![/]");
             return 0;
         }
         else
         {
-            AnsiConsole.MarkupLine("[red]✗ Login failed. Please check your credentials.[/]");
+            AnsiConsole.MarkupLine("[red]✗ Authentication failed.[/]");
             return 1;
         }
     }
