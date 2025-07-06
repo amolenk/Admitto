@@ -65,9 +65,9 @@ public class CreateTeamCommand : AsyncCommand<CreateTeamSettings>
             smtpServer = AnsiConsole.Ask<string>("Enter the [green]SMTP server[/]:");
         }
 
-        // Get SMTP port if not provided or default
+        // Get SMTP port if not provided or if it's the default
         var smtpPort = settings.SmtpPort;
-        if (smtpPort == 587)
+        if (smtpPort == 587 && string.IsNullOrEmpty(settings.SmtpServer))
         {
             smtpPort = AnsiConsole.Ask("Enter the [green]SMTP port[/]:", 587);
         }

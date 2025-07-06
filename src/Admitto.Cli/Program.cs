@@ -21,6 +21,7 @@ services.AddHttpClient<ApiService>(client =>
 {
     var baseUrl = configuration["Api:BaseUrl"] ?? "https://localhost:5001/api/";
     client.BaseAddress = new Uri(baseUrl);
+    client.Timeout = TimeSpan.FromSeconds(30);
 });
 
 // Register services

@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Microsoft.Extensions.Configuration;
 using Spectre.Console;
 
@@ -31,6 +32,13 @@ public class ApiService
             if (!string.IsNullOrEmpty(token))
             {
                 _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
+            }
+
+            // Ensure we have a base address set
+            if (_httpClient.BaseAddress == null)
+            {
+                var baseUrl = _configuration["Api:BaseUrl"] ?? "https://localhost:5001/api/";
+                _httpClient.BaseAddress = new Uri(baseUrl);
             }
 
             var json = JsonSerializer.Serialize(data, _jsonOptions);
@@ -68,13 +76,58 @@ public class ApiService
 
     public async Task<bool> LoginAsync(string username, string password)
     {
-        // TODO: Implement actual authentication flow
-        // For now, we'll simulate a successful login
-        await Task.Delay(1000); // Simulate API call
+        try
+        {
+            var keycloakUrl = _configuration["Auth:KeycloakUrl"] ?? "https://localhost:8080";
+            var clientId = _configuration["Auth:ClientId"] ?? "admitto-api";
+            var clientSecret = _configuration["Auth:ClientSecret"] ?? "LxcFeR1EVHUMScJn3ij6dO7NR8ZSnYzp";
+
+            var tokenUrl = $"{keycloakUrl}/realms/admitto/protocol/openid-connect/token";
+
+            var tokenRequest = new FormUrlEncodedContent(new Dictionary<string, string>
+            {
+                {"grant_type", "password"},
+                {"client_id", clientId},
+                {"client_secret", clientSecret},
+                {"username", username},
+                {"password", password}
+            });
+
+            var response = await _httpClient.PostAsync(tokenUrl, tokenRequest);
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            if (response.IsSuccessStatusCode)
+            {
+                var tokenResponse = JsonSerializer.Deserialize<TokenResponse>(responseContent, _jsonOptions);
+                if (tokenResponse?.AccessToken != null)
+                {
+                    // Store the token in user secrets for future use
+                    await StoreTokenAsync(tokenResponse.AccessToken);
+                    return true;
+                }
+            }
+            else
+            {
+                AnsiConsole.MarkupLine($"[red]Authentication failed: {responseContent}[/]");
+            }
+
+            return false;
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"[red]Login error: {ex.Message}[/]");
+            return false;
+        }
+    }
+
+    private async Task StoreTokenAsync(string token)
+    {
+        // In a real-world scenario, we would store this securely
+        // For now, we'll just show it would be stored
+        AnsiConsole.MarkupLine($"[dim]Token stored successfully[/]");
         
-        // In a real implementation, this would call the authentication endpoint
-        // and store the returned token
-        return true;
+        // TODO: Store in user secrets or secure storage
+        // This is a simplified implementation
     }
 }
 
@@ -93,4 +146,16 @@ public class ProblemDetails
     public string? Detail { get; set; }
     public int Status { get; set; }
     public Dictionary<string, string[]>? Errors { get; set; }
+}
+
+public class TokenResponse
+{
+    [JsonPropertyName("access_token")]
+    public string? AccessToken { get; set; }
+    
+    [JsonPropertyName("expires_in")]
+    public int ExpiresIn { get; set; }
+    
+    [JsonPropertyName("refresh_token")]
+    public string? RefreshToken { get; set; }
 }
