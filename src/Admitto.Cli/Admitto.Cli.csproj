@@ -10,6 +10,18 @@
 
     <ItemGroup>
       <PackageReference Include="Spectre.Console.Cli" Version="0.50.0" />
+      <PackageReference Include="Microsoft.Extensions.Http" Version="9.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.0" />
+      <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="9.0.0" />
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
+      <PackageReference Include="System.Text.Json" Version="9.0.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Update="appsettings.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
     </ItemGroup>
 
 </Project>
