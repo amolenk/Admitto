@@ -28,9 +28,6 @@ builder.Services.AddHostedService(provider => provider.GetRequiredService<JobsWo
 
 builder.Services.AddScoped<IJobScheduler, JobScheduler>();
 
-// TODO Maybe also used in the API?
-builder.Services.AddScoped<ICommandSender, CommandSender>();
-
 
 // TODO Move to ServiceDefaults
 // builder.Services.AddDefaultApplicationServices();

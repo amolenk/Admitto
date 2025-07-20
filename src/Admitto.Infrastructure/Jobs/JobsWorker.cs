@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Threading.Channels;
 using Amolenk.Admitto.Application.Common.Abstractions;
 using Amolenk.Admitto.Domain.Entities;
+using Amolenk.Admitto.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -9,6 +10,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Amolenk.Admitto.Infrastructure.Jobs;
+
+// TODO Move to worker?
 
 public class JobsWorker(IServiceProvider serviceProvider, IOptions<JobsOptions> options, ILogger<JobsWorker> logger)
     : BackgroundService
@@ -112,30 +115,35 @@ public class JobsWorker(IServiceProvider serviceProvider, IOptions<JobsOptions> 
         CancellationToken cancellationToken)
     {
         // Get the job type
-        var jobType = Type.GetType(jobEntity.JobType);
+        var jobType = Type.GetType($"{jobEntity.JobType}, Admitto.Application");
         if (jobType == null)
         {
             throw new InvalidOperationException($"Job type {jobEntity.JobType} not found");
         }
 
         // Deserialize the job data
-        var jobInstance = jobEntity.JobData.Deserialize(jobType, new JsonSerializerOptions
+        var jobData = jobEntity.JobData.Deserialize(jobType);
+        if (jobData is not IJobData)
         {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        });
-
-        if (jobInstance is not IJobData job)
-        {
-            throw new InvalidOperationException($"Job type {jobEntity.JobType} does not implement IJob");
+            throw new InvalidOperationException($"Job type {jobEntity.JobType} does not implement IJobData");
         }
         
         // Create job progress tracker
         var unitOfWork = scopedServiceProvider.GetRequiredService<IUnitOfWork>();
         var executionContext = new JobExecutionContext(jobEntity, unitOfWork, logger);
-        
+
         // Find and execute the handler
+        await InvokeJobHandlerAsync(jobData, executionContext, jobType, scopedServiceProvider, cancellationToken);
+    }
+    
+    private static async Task InvokeJobHandlerAsync(object jobData, IJobExecutionContext executionContext, Type jobType,
+        IServiceProvider serviceProvider, CancellationToken cancellationToken)
+    {
         var handlerType = typeof(IJobHandler<>).MakeGenericType(jobType);
-        dynamic handler = scopedServiceProvider.GetRequiredService(handlerType);
-        await handler.HandleAsync(jobInstance, executionContext, cancellationToken);
+        var handler = serviceProvider.GetRequiredService(handlerType);
+        var method = handlerType.GetMethod("HandleAsync");
+        if (method == null) throw new InvalidOperationException("HandleAsync method not found on job handler");
+
+        await (ValueTask)method.Invoke(handler, [jobData, executionContext, cancellationToken])!;
     }
 }

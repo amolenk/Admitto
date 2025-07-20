@@ -10,12 +10,13 @@ public class TicketedEventEntityConfiguration : IEntityTypeConfiguration<Tickete
     public void Configure(EntityTypeBuilder<TicketedEvent> builder)
     {
         builder.ToTable("ticketed_events");
-        
         builder.HasKey(e => e.Id);
+        
         builder.Property(e => e.Id)
             .HasColumnName("id")
             .ValueGeneratedNever();
         
+        // TODO Consider using this pattern for all entities
         builder
             .HasOne<Team>() // no navigation
             .WithMany()
@@ -25,7 +26,12 @@ public class TicketedEventEntityConfiguration : IEntityTypeConfiguration<Tickete
         builder.Property(e => e.TeamId)
             .HasColumnName("team_id")
             .IsRequired();
-        
+
+        builder.Property(e => e.Slug)
+            .HasColumnName("slug")
+            .IsRequired()
+            .HasMaxLength(32);
+
         builder.Property(e => e.Name)
             .HasColumnName("name")
             .IsRequired()
@@ -47,14 +53,13 @@ public class TicketedEventEntityConfiguration : IEntityTypeConfiguration<Tickete
             .HasColumnName("registration_end_time")
             .IsRequired();
 
-        builder.OwnsMany(e => e.EmailTemplates, b =>
-        {
-            b.ToJson("email_templates");
-        });
-        
         builder.OwnsMany(e => e.TicketTypes, b =>
         {
             b.ToJson("ticket_types");
         });
+        
+        builder
+            .HasIndex(e => new { e.TeamId, e.Slug })
+            .IsUnique();
     }
 }

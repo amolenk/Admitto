@@ -4,10 +4,17 @@ namespace Amolenk.Admitto.IntegrationTests.UseCases.Teams;
 
 public class CreateTeamRequestBuilder
 {
+    private string _slug = "default-team";
     private string _name = "Default Team";
     private EmailSettingsDto _emailSettings = EmailSettingsDto.FromEmailSettings(
         AssemblyTestFixture.EmailTestFixture.DefaultEmailSettings);
     private List<TeamMemberDto> _members = [];
+
+    public CreateTeamRequestBuilder WithSlug(string slug)
+    {
+        _slug = slug;
+        return this;
+    }
 
     public CreateTeamRequestBuilder WithName(string name)
     {
@@ -29,6 +36,6 @@ public class CreateTeamRequestBuilder
 
     public CreateTeamRequest Build()
     {
-        return new CreateTeamRequest(_name, _emailSettings, _members);
+        return new CreateTeamRequest(_slug, _name, _emailSettings, _members);
     }
 }

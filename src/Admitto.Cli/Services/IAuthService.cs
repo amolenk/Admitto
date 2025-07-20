@@ -2,7 +2,7 @@ namespace Amolenk.Admitto.Cli.Services;
 
 public interface IAuthService
 {
-    Task<string?> LoginAsync();
-    Task<bool> LogoutAsync();
+    ValueTask<bool> LoginAsync();
+    void Logout();
     Task<string?> GetAccessTokenAsync();
 }

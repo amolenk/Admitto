@@ -1,7 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
-using Spectre.Console.Cli;
-using Amolenk.Admitto.Cli.Services;
 
 namespace Amolenk.Admitto.Cli.Infrastructure;
 

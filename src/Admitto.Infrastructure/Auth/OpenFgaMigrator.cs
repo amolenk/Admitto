@@ -20,7 +20,7 @@ public class OpenFgaMigrator(OpenFgaClientFactory clientFactory)
         var modelId = await client.TryGetAuthorizationModelIdAsync();
         if (modelId is null)
         {
-            modelId = await WriteAuthorizationModelAsync(client);
+            await WriteAuthorizationModelAsync(client);
          
             // Configure global admin user.
             if (adminUserId is not null)

@@ -1,4 +1,3 @@
-using Amolenk.Admitto.Application.UseCases.Attendees.RegisterAttendee;
 using Amolenk.Admitto.Application.UseCases.Registrations.StartRegistration;
 
 namespace Amolenk.Admitto.IntegrationTests.UseCases.Attendees.RegisterAttendee;

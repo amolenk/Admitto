@@ -1,6 +1,4 @@
-using System.Text.Json;
-using Amolenk.Admitto.Application.Common;
-using Amolenk.Admitto.Domain;
+using Amolenk.Admitto.Domain.Exceptions;
 using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
@@ -9,32 +7,21 @@ namespace Amolenk.Admitto.ApiService.Middleware;
 
 public class ValidationExceptionHandler : IExceptionHandler
 {
-    public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
+    public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, 
+        CancellationToken cancellationToken)
     {
-        if (exception is not ValidationException validationException) return false;
-        
-        var errors = validationException.Errors
-            .GroupBy(e => e.PropertyName)
-            .ToDictionary(
-                group => group.Key,
-                group => group.Select(e => e.ErrorMessage).ToArray()
-            );
+        if (exception is not ValidationException) return false;
 
-        var problemDetails = new ValidationProblemDetails(errors)
+        var problemDetails = new ValidationProblemDetails
         {
             Status = StatusCodes.Status400BadRequest,
-            Title = "Validation failed",
+            Title = "A validation error occured.",
             Detail = exception.Message,
             Instance = httpContext.Request.Path
         };
 
-        httpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
-        httpContext.Response.ContentType = "application/json";
-
-        await httpContext.Response.WriteAsync(JsonSerializer.Serialize(problemDetails, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        }), cancellationToken);
+        var result = Results.Problem(problemDetails);
+        await result.ExecuteAsync(httpContext);
 
         return true;
     }

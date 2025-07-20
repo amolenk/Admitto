@@ -4,12 +4,10 @@ public class CompleteRegistrationHandler(IDomainContext context) : ICommandHandl
 {
     public async ValueTask HandleAsync(CompleteRegistrationCommand command, CancellationToken cancellationToken)
     {
-        var registration = await context.AttendeeRegistrations.FindAsync([command.RegistrationId], cancellationToken);
-        if (registration is null)
-        {
-            throw ValidationError.AttendeeRegistration.NotFound(command.RegistrationId);
-        }
+        throw new NotImplementedException();
 
-        registration.Complete();
+        // var registration = await context.Registrations.GetRegistrationAsync(command.RegistrationId, cancellationToken);
+        //
+        // registration.Complete();
     }
 }

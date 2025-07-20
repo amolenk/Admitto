@@ -1,139 +1,152 @@
-using Microsoft.Identity.Client;
-using Microsoft.Extensions.Configuration;
-using Spectre.Console;
 using System.Diagnostics;
-using System.Net;
-using System.Net.Sockets;
-using System.Text;
+using Duende.IdentityModel.Client;
 
 namespace Amolenk.Admitto.Cli.Services;
 
-public class AuthService : IAuthService
+public class AuthService(ITokenCache tokenCache, IHttpClientFactory clientFactory) : IAuthService
 {
-    private readonly IConfiguration _configuration;
-    private readonly IPublicClientApplication _app;
-    private readonly string[] _scopes;
+    private const string Authority = "http://localhost:8080/realms/admitto";
+    private const string ClientId = "admitto-admin-cli";
 
-    public AuthService(IConfiguration configuration)
+    public async ValueTask<bool> LoginAsync()
     {
-        _configuration = configuration;
-        
-        var keycloakUrl = _configuration["Auth:KeycloakUrl"] ?? "https://localhost:8080";
-        var clientId = _configuration["Auth:ClientId"] ?? "admitto-cli";
-        var tenantId = _configuration["Auth:TenantId"] ?? "admitto";
-        
-        _scopes = new[] { "openid", "profile", "email" };
-        
-        // Configure MSAL for Keycloak
-        var authority = $"{keycloakUrl}/realms/{tenantId}";
-        
-        _app = PublicClientApplicationBuilder
-            .Create(clientId)
-            .WithAuthority(authority)
-            .WithDefaultRedirectUri()
-            .Build();
-    }
+        var client = clientFactory.CreateClient();
+        var disco = await GetDiscoveryDocumentAsync(client);
+        if (disco is null) return false;
 
-    public async Task<string?> LoginAsync()
-    {
-        try
+        var deviceResponse = await client.RequestDeviceAuthorizationAsync(new DeviceAuthorizationRequest
         {
-            // First, try to get a token silently from the cache
-            var accounts = await _app.GetAccountsAsync();
-            if (accounts.Any())
-            {
-                try
-                {
-                    var result = await _app.AcquireTokenSilent(_scopes, accounts.First())
-                        .ExecuteAsync();
-                    return result.AccessToken;
-                }
-                catch (MsalUiRequiredException)
-                {
-                    // Silent token acquisition failed, fall through to interactive
-                }
-            }
+            Address = disco.DeviceAuthorizationEndpoint,
+            ClientId = ClientId,
+            Scope = "api.admin offline_access",
+        });
 
-            // If we don't have a cached token, use interactive authentication
-            return await LoginInteractiveAsync();
-        }
-        catch (Exception ex)
+        if (deviceResponse.IsError)
         {
-            AnsiConsole.MarkupLine($"[red]Authentication error: {ex.Message}[/]");
-            return null;
-        }
-    }
-
-    private async Task<string?> LoginInteractiveAsync()
-    {
-        AnsiConsole.MarkupLine($"[blue]Opening browser for authentication...[/]");
-        AnsiConsole.MarkupLine($"[dim]If the browser doesn't open automatically, please navigate to the authentication URL manually.[/]");
-        
-        try
-        {
-            var result = await _app.AcquireTokenInteractive(_scopes)
-                .WithPrompt(Prompt.SelectAccount)
-                .ExecuteAsync();
-
-            AnsiConsole.MarkupLine($"[green]✓ Authentication successful![/]");
-            AnsiConsole.MarkupLine($"[dim]Welcome, {result.Account.Username}[/]");
-            
-            return result.AccessToken;
-        }
-        catch (Exception ex)
-        {
-            AnsiConsole.MarkupLine($"[red]Interactive authentication failed: {ex.Message}[/]");
-            return null;
-        }
-    }
-
-    public async Task<bool> LogoutAsync()
-    {
-        try
-        {
-            var accounts = await _app.GetAccountsAsync();
-            if (accounts.Any())
-            {
-                await _app.RemoveAsync(accounts.First());
-                AnsiConsole.MarkupLine($"[green]✓ Logged out successfully[/]");
-                return true;
-            }
-            else
-            {
-                AnsiConsole.MarkupLine($"[yellow]No active session found[/]");
-                return true;
-            }
-        }
-        catch (Exception ex)
-        {
-            AnsiConsole.MarkupLine($"[red]Logout error: {ex.Message}[/]");
+            AnsiConsole.WriteLine($"❌ Device code request failed: {deviceResponse.Error}");
             return false;
         }
+
+        AnsiConsole.WriteLine($"🌍 Opening browser for login...");
+        AnsiConsole.WriteLine($"🔗 If the browser does not open, visit: {deviceResponse.VerificationUriComplete}");
+        AnsiConsole.WriteLine();
+        AnsiConsole.WriteLine("⏳ Waiting for login...");
+
+        Process.Start(new ProcessStartInfo
+        {
+            FileName = deviceResponse.VerificationUriComplete,
+            UseShellExecute = true
+        });
+
+        var expiration = DateTime.UtcNow.AddSeconds(deviceResponse.ExpiresIn ?? 120);
+        var interval = TimeSpan.FromSeconds(deviceResponse.Interval);
+
+        TokenResponse? tokenResponse = null;
+
+        while (DateTime.UtcNow < expiration)
+        {
+            await Task.Delay(interval);
+
+            tokenResponse = await client.RequestDeviceTokenAsync(new DeviceTokenRequest
+            {
+                Address = disco.TokenEndpoint,
+                ClientId = ClientId,
+                DeviceCode = deviceResponse.DeviceCode!
+            });
+
+            if (tokenResponse.IsError)
+            {
+                switch (tokenResponse.Error)
+                {
+                    case "authorization_pending":
+                        continue;
+                    case "slow_down":
+                        interval += TimeSpan.FromSeconds(5);
+                        continue;
+                    default:
+                        AnsiConsole.WriteLine($"Token request error: {tokenResponse.Error}");
+                        return false;
+                }
+            }
+
+            break;
+        }
+
+        if (tokenResponse == null || tokenResponse.IsError)
+        {
+            AnsiConsole.WriteLine("Authorization timed out or failed.");
+            return false;
+        }
+
+        CacheToken(tokenResponse);
+
+        return true;
     }
+
+    public void Logout() => tokenCache.Clear();
 
     public async Task<string?> GetAccessTokenAsync()
     {
-        try
+        var cachedToken = tokenCache.Load();
+        if (cachedToken is null) return null;
+
+        if (cachedToken.ExpiresAt > DateTime.UtcNow.AddMinutes(5))
         {
-            var accounts = await _app.GetAccountsAsync();
-            if (accounts.Any())
-            {
-                var result = await _app.AcquireTokenSilent(_scopes, accounts.First())
-                    .ExecuteAsync();
-                return result.AccessToken;
-            }
+            return cachedToken.AccessToken;
         }
-        catch (MsalUiRequiredException)
+
+        if (string.IsNullOrEmpty(cachedToken.RefreshToken)) return null;
+
+        var client = clientFactory.CreateClient();
+        var disco = await GetDiscoveryDocumentAsync(client);
+        if (disco is null) return null;
+
+        var tokenResponse = await client.RequestRefreshTokenAsync(new RefreshTokenRequest
         {
-            // Token expired or doesn't exist, need to re-authenticate
-            AnsiConsole.MarkupLine($"[yellow]Session expired. Please login again.[/]");
-        }
-        catch (Exception ex)
+            Address = disco.TokenEndpoint,
+            ClientId = ClientId,
+            RefreshToken = cachedToken.RefreshToken
+        });
+
+        if (tokenResponse.IsError)
         {
-            AnsiConsole.MarkupLine($"[red]Error getting access token: {ex.Message}[/]");
+            AnsiConsole.WriteLine($"❌ Refreshing token failed: {tokenResponse.Error}");
+            return null;
         }
-        
-        return null;
+
+        CacheToken(tokenResponse);
+
+        return tokenResponse.AccessToken;
     }
 
+    private async Task<DiscoveryDocumentResponse?> GetDiscoveryDocumentAsync(HttpClient client)
+    {
+        var disco = await client.GetDiscoveryDocumentAsync(new DiscoveryDocumentRequest
+        {
+            Address = Authority,
+            Policy = new DiscoveryPolicy
+            {
+                RequireHttps = false,
+                ValidateIssuerName = false
+            }
+        });
+
+        if (disco.IsError)
+        {
+            AnsiConsole.WriteLine($"❌ Discovery failed: {disco.Error}");
+            return null;
+        }
+
+        return disco;
+    }
+
+    private void CacheToken(TokenResponse tokenResponse)
+    {
+        tokenCache.Save(new CachedToken
+        {
+            AccessToken = tokenResponse.AccessToken!,
+            RefreshToken = tokenResponse.RefreshToken,
+            ExpiresAt = DateTime.UtcNow.AddSeconds(tokenResponse.ExpiresIn)
+        });
+    }
 }

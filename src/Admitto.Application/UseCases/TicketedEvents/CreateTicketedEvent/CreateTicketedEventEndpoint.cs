@@ -1,3 +1,7 @@
+using Amolenk.Admitto.Application.Common.Authorization;
+using Amolenk.Admitto.Application.Common.Data;
+using Amolenk.Admitto.Domain.Entities;
+
 namespace Amolenk.Admitto.Application.UseCases.TicketedEvents.CreateTicketedEvent;
 
 /// <summary>
@@ -9,38 +13,23 @@ public static class CreateTicketedEventEndpoint
     {
         group
             .MapPost("/", CreateTicketedEvent)
-            .Produces<Created<CreateTicketedEventResponse>>()
-            .ProducesValidationProblem();
+            .WithName(nameof(CreateTicketedEvent))
+            .RequireAuthorization(policy => policy.RequireCanCreateEvent());
         
         return group;
     }
 
-    private static async ValueTask<IResult> CreateTicketedEvent(CreateTicketedEventRequest request,
-        CreateTicketedEventValidator validator, IDomainContext context, IUnitOfWork unitOfWork,
-        CancellationToken cancellationToken)
+    private static async ValueTask<Created> CreateTicketedEvent(string teamSlug, CreateTicketedEventRequest request, 
+        IDomainContext context, CancellationToken cancellationToken)
     {
-        await validator.ValidateAndThrowAsync(request, cancellationToken);
-
-        var team = await context.Teams.FindAsync([request.TeamId], cancellationToken);
-        if (team is null)
-        {
-            throw ValidationError.Team.NotFound(request.TeamId);
-        }
-
-        var newEvent = request.ToTicketedEvent();
+        var teamId = await context.Teams.GetTeamIdAsync(teamSlug, cancellationToken);
         
+        var newEvent = TicketedEvent.Create(teamId, request.Slug, request.Name, request.StartTime.ToUniversalTime(), 
+            request.EndTime.ToUniversalTime(), request.RegistrationStartTime.ToUniversalTime(), 
+            request.RegistrationEndTime.ToUniversalTime());
+
         context.TicketedEvents.Add(newEvent);
         
-        try
-        {        
-            await unitOfWork.SaveChangesAsync(cancellationToken);
-        }
-        catch (DbUpdateException)
-        {
-            throw ValidationError.TicketedEvent.AlreadyExists(nameof(request.Name));
-        }
-        
-        return TypedResults.Created($"/events/v1/{newEvent.Id}", 
-            CreateTicketedEventResponse.FromTicketedEvent(newEvent));
+        return TypedResults.Created($"/teams/{teamSlug}/events/{newEvent.Slug}");
     }
 }

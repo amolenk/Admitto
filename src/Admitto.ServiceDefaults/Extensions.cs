@@ -1,4 +1,6 @@
 using System.Diagnostics;
+using System.Net;
+using System.Text.Json;
 using Amolenk.Admitto.Application.Common.Abstractions;
 using Amolenk.Admitto.Application.Common.Authorization;
 using Amolenk.Admitto.Infrastructure.Auth;
@@ -7,6 +9,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
@@ -130,6 +134,38 @@ public static class Extensions
                 options.Authority = authOptions.Authority;
                 options.Audience = authOptions.Audience;
                 options.RequireHttpsMetadata = authOptions.RequireHttpsMetadata;
+                options.Events = new JwtBearerEvents
+                {
+                    OnChallenge = context =>
+                    {
+                        context.HandleResponse();
+                        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                        context.Response.ContentType = "application/problem+json";
+
+                        var problem = new ProblemDetails
+                        {
+                            Status = StatusCodes.Status401Unauthorized,
+                            Title = "Unauthorized",
+                            Detail = "You are not authorized to access this resource."
+                        };
+
+                        return context.Response.WriteAsJsonAsync(problem);
+                    },
+                    OnForbidden = context =>
+                    {
+                        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                        context.Response.ContentType = "application/problem+json";
+
+                        var problem = new ProblemDetails
+                        {
+                            Status = StatusCodes.Status403Forbidden,
+                            Title = "Forbidden",
+                            Detail = "You do not have permission to access this resource."
+                        };
+
+                        return context.Response.WriteAsJsonAsync(problem);
+                    }
+                };
             });
 
         return builder;
@@ -139,7 +175,7 @@ public static class Extensions
     {
         builder.Services
             .AddHttpContextAccessor() // TODO Move?
-            .AddSingleton<IAuthorizationHandler, RebacAuthorizationHandler>() // TODO Move?
+            .AddSingleton<IAuthorizationHandler, AuthorizationHandler>() // TODO Move?
             .AddAuthorization();
         
         return builder;

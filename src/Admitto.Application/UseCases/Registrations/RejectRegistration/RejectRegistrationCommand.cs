@@ -1,6 +1,3 @@
-namespace Amolenk.Admitto.Application.UseCases.Attendees.RegisterAttendee;
+namespace Amolenk.Admitto.Application.UseCases.Registrations.RejectRegistration;
 
-public class RejectRegistrationCommand : ICommand
-{
-    public Guid Id { get; init; } = Guid.NewGuid();
-}
+public record RejectRegistrationCommand(Guid RegistrationId) : Command;

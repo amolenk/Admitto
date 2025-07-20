@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Application.Common.Validation;
 using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Application.UseCases.TicketedEvents.ReserveTickets;
@@ -5,7 +6,8 @@ namespace Amolenk.Admitto.Application.UseCases.TicketedEvents.ReserveTickets;
 /// <summary>
 /// Reserves the required tickets for a registration.
 /// </summary>
-public class ReserveTicketsHandler(IDomainContext context) : ICommandHandler<ReserveTicketsCommand>
+public class ReserveTicketsHandler(IDomainContext context, IUnitOfWork unitOfWork) 
+    : ICommandHandler<ReserveTicketsCommand>
 {
     public async ValueTask HandleAsync(ReserveTicketsCommand command, CancellationToken cancellationToken)
     {
@@ -14,10 +16,9 @@ public class ReserveTicketsHandler(IDomainContext context) : ICommandHandler<Res
         {
             throw ValidationError.TicketedEvent.NotFound(command.TicketedEventId);
         }
+
+        var ignoreMaxCapacity = command.RegistrationType == RegistrationType.Internal;
         
-        var ticketQuantities = command.Tickets
-            .Select(t => new TicketQuantity(t.Key, t.Value));
-        
-        ticketedEvent.ReserveTickets(command.RegistrationId, ticketQuantities);
+        ticketedEvent.TryReserveTickets(command.RegistrationId, command.Tickets, ignoreMaxCapacity);
     }
 }

@@ -1,4 +1,3 @@
-using System.Text.Json;
 using Amolenk.Admitto.Domain.Exceptions;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
@@ -7,9 +6,10 @@ namespace Amolenk.Admitto.ApiService.Middleware;
 
 public class DomainExceptionHandler : IExceptionHandler
 {
-    public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
+    public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, 
+        CancellationToken cancellationToken)
     {
-        if (exception is not DomainException) return false;
+        if (exception is not BusinessRuleException) return false;
 
         var problemDetails = new ValidationProblemDetails
         {
@@ -19,13 +19,8 @@ public class DomainExceptionHandler : IExceptionHandler
             Instance = httpContext.Request.Path
         };
 
-        httpContext.Response.StatusCode = StatusCodes.Status400BadRequest;
-        httpContext.Response.ContentType = "application/json";
-
-        await httpContext.Response.WriteAsync(JsonSerializer.Serialize(problemDetails, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        }), cancellationToken);
+        var result = Results.Problem(problemDetails);
+        await result.ExecuteAsync(httpContext);
 
         return true;
     }

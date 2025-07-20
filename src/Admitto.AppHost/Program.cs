@@ -70,7 +70,7 @@ var keycloak = builder.AddKeycloak("keycloak", 8080,
 
 var maildev = builder.AddContainer("maildev", "maildev/maildev:latest")
     .WithHttpEndpoint(targetPort: 1080)
-    .WithEndpoint(name: "smtp", scheme: "smtp", targetPort: 1025, isExternal: true)
+    .WithEndpoint(name: "smtp", scheme: "smtp", targetPort: 1025, isExternal: true, port: 1025)
     .WithLifetime(ContainerLifetime.Persistent);
 
 var worker = builder.AddProject<Projects.Admitto_Worker>("worker")

@@ -23,32 +23,42 @@ public class MessageQueuesWorker(
     : BackgroundService
 {
     private readonly AzureStorageQueueProcessor _queueProcessor = new(
-        queueServiceClient.GetQueueClient("queue"), options.Value.MaxPollDelay, logger);
-    
+        queueServiceClient.GetQueueClient("queue"),
+        options.Value.MaxPollDelay,
+        logger);
+
     private readonly AzureStorageQueueProcessor _prioQueueProcessor = new(
-        queueServiceClient.GetQueueClient("queue-prio"), options.Value.MaxPrioPollDelay, logger);
-    
+        queueServiceClient.GetQueueClient("queue-prio"),
+        options.Value.MaxPrioPollDelay,
+        logger);
+
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
         var queueTask = CreateRetryStrategy("Queue").ExecuteAsync(
-            ct => _queueProcessor.ProcessMessagesAsync(HandleMessageAsync, ct), stoppingToken).AsTask();
+            ct => _queueProcessor.ProcessMessagesAsync(HandleMessageAsync, ct),
+            stoppingToken).AsTask();
 
         var prioQueueTask = CreateRetryStrategy("PrioQueue").ExecuteAsync(
-            ct => _prioQueueProcessor.ProcessMessagesAsync(HandleMessageAsync, ct), stoppingToken).AsTask();
+            ct => _prioQueueProcessor.ProcessMessagesAsync(HandleMessageAsync, ct),
+            stoppingToken).AsTask();
 
         return Task.WhenAll(queueTask, prioQueueTask);
     }
 
     private async ValueTask HandleMessageAsync(CloudEvent cloudEvent, CancellationToken cancellationToken)
     {
-        var message = JsonSerializer.Deserialize(cloudEvent.Data!.ToString(), GetType(cloudEvent.Type),
+        logger.LogDebug("Received message from queue: {MessageType}", cloudEvent.Type);
+
+        var message = JsonSerializer.Deserialize(
+            cloudEvent.Data!.ToString(),
+            GetType(cloudEvent.Type),
             JsonSerializerOptions.Web);
 
         using var scope = serviceProvider.CreateScope();
-        
+
         switch (message)
         {
-            case ICommand command:
+            case Command command:
                 await HandleCommandAsync(command, scope.ServiceProvider, cancellationToken);
                 break;
             case IDomainEvent domainEvent:
@@ -67,35 +77,56 @@ public class MessageQueuesWorker(
     {
         if (typeName.EndsWith("Command"))
         {
-            return Type.GetType($"Amolenk.Admitto.Application.UseCases.{typeName}, Admitto.Application", 
+            return Type.GetType(
+                $"Amolenk.Admitto.Application.UseCases.{typeName}, Admitto.Application",
                 true)!;
         }
-        
+
         if (typeName.EndsWith("DomainEvent"))
         {
-            return Type.GetType($"Amolenk.Admitto.Domain.DomainEvents.{typeName}, Admitto.Domain", 
+            return Type.GetType(
+                $"Amolenk.Admitto.Domain.DomainEvents.{typeName}, Admitto.Domain",
                 true)!;
         }
 
         throw new ArgumentException($"Unknown message type '{typeName}'", nameof(typeName));
     }
-    
-    private static ValueTask HandleCommandAsync(ICommand command, IServiceProvider serviceProvider, CancellationToken cancellationToken)
+
+    private async ValueTask HandleCommandAsync(
+        Command command,
+        IServiceProvider scopedServiceProvider,
+        CancellationToken cancellationToken)
     {
         var handlerType = typeof(ICommandHandler<>).MakeGenericType(command.GetType());
-        dynamic handler = serviceProvider.GetRequiredService(handlerType);
+        var handler = scopedServiceProvider.GetRequiredService(handlerType);
 
-        return handler.HandleAsync((dynamic)command, cancellationToken);
+        logger.LogDebug(
+            "Handling command {EventType} with handler {HandlerType}",
+            command.GetType().Name,
+            handler!.GetType().Name);
+
+        await ((dynamic)handler).HandleAsync((dynamic)command, cancellationToken);
     }
-    
-    private static ValueTask HandleDomainEventAsync(IDomainEvent domainEvent, IServiceProvider serviceProvider, CancellationToken cancellationToken)
+
+    private async ValueTask HandleDomainEventAsync(
+        IDomainEvent domainEvent,
+        IServiceProvider scopedServiceProvider,
+        CancellationToken cancellationToken)
     {
         var handlerType = typeof(IEventualDomainEventHandler<>).MakeGenericType(domainEvent.GetType());
-        dynamic handler = serviceProvider.GetRequiredService(handlerType);
+        var handlers = scopedServiceProvider.GetServices(handlerType);
 
-        return handler.HandleAsync((dynamic)domainEvent, cancellationToken);
+        foreach (var handler in handlers)
+        {
+            logger.LogDebug(
+                "Handling domain event {EventType} with handler {HandlerType}",
+                domainEvent.GetType().Name,
+                handler!.GetType().Name);
+
+            await ((dynamic)handler).HandleAsync((dynamic)domainEvent, cancellationToken);
+        }
     }
-    
+
     private ResiliencePipeline CreateRetryStrategy(string instanceName)
     {
         var telemetryOptions = new TelemetryOptions
@@ -104,14 +135,15 @@ public class MessageQueuesWorker(
         };
 
         var workerOptions = options.Value;
-        
-        return new ResiliencePipelineBuilder { Name = nameof(MessageQueuesWorker), InstanceName = instanceName}
-            .AddRetry(new RetryStrategyOptions
-            {
-                BackoffType = workerOptions.RetryBackoffType,
-                MaxDelay = workerOptions.MaxRetryDelay,
-                MaxRetryAttempts = workerOptions.MaxRetryAttempts
-            })
+
+        return new ResiliencePipelineBuilder { Name = nameof(MessageQueuesWorker), InstanceName = instanceName }
+            .AddRetry(
+                new RetryStrategyOptions
+                {
+                    BackoffType = workerOptions.RetryBackoffType,
+                    MaxDelay = workerOptions.MaxRetryDelay,
+                    MaxRetryAttempts = workerOptions.MaxRetryAttempts
+                })
             .ConfigureTelemetry(telemetryOptions)
             .Build();
     }

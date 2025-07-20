@@ -8,30 +8,34 @@ namespace Amolenk.Admitto.Domain.Entities;
 public class TicketType : Entity
 {
     [JsonConstructor]
-    private TicketType(Guid id, string name, string slotName, int maxCapacity) : base(id)
+    private TicketType(Guid id, string slug, string name, string slotName, int maxCapacity) : base(id)
     {
+        Slug = slug;
         Name = name;
         SlotName = slotName;
         MaxCapacity = maxCapacity;
-        RemainingCapacity = maxCapacity;
+        UsedCapacity = 0;
     }
 
+    public string Slug { get; private set; }
     public string Name { get; private set; }
     public string SlotName { get; private set; }
     public int MaxCapacity { get; private set; }
-    public int RemainingCapacity { get; private set; }
+    public int UsedCapacity { get; private set; }
+    
+    private int RemainingCapacity => MaxCapacity - UsedCapacity;
 
-    public static TicketType Create(string name, string slotName, int maxCapacity)
+    public static TicketType Create(string slug, string name, string slotName, int maxCapacity)
     {
         if (string.IsNullOrWhiteSpace(name))
-            throw new DomainException("Name cannot be empty.");
+            throw new BusinessRuleException("Name cannot be empty.");
         
         if (maxCapacity <= 0)
-            throw new DomainException("Max capacity should be greater than 0.");
+            throw new BusinessRuleException("Max capacity should be greater than 0.");
 
-        var id = DeterministicGuidGenerator.Generate(name);
+        var id = DeterministicGuid.Create(name);
         
-        return new TicketType(id, name, slotName, maxCapacity);
+        return new TicketType(id, slug, name, slotName, maxCapacity);
     }
 
     public bool HasAvailableCapacity(int quantity)
@@ -42,18 +46,8 @@ public class TicketType : Entity
     public void ReserveTickets(int quantity)
     {
         if (RemainingCapacity < quantity)
-            throw new ValidationException($"No tickets available.");
+            throw new ValidationException("No tickets available.");
         
-        RemainingCapacity -= quantity;
-    }
-
-    public void CancelTicket()
-    {
-        RemainingCapacity += 1;
-    }
-
-    public bool HasTicketsReserved()
-    {
-        return RemainingCapacity < MaxCapacity;
+        UsedCapacity += quantity;
     }
 }

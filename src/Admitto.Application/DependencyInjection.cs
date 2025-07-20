@@ -1,5 +1,6 @@
 using System.Reflection;
 using Amolenk.Admitto.Application;
+using Amolenk.Admitto.Application.UseCases.Email;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection;
@@ -33,6 +34,9 @@ public static class DependencyInjection
 
     public static void AddJobHandlers(this IServiceCollection services)
     {
+        // TODO If we add caching, we maybe get into issues with scoped lifetime
+        services.AddScoped<IEmailTemplateService, EmailTemplateService>();
+
         services.Scan(scan => scan
             .FromAssemblyOf<ApplicationAssemblyLocator>()
             .AddClasses(classes => classes.AssignableTo<IJobHandler>())

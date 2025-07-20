@@ -8,7 +8,7 @@ public class TeamMemberAddedDomainEventHandler(ConfigureTeamUserHandler configur
     public ValueTask HandleAsync(TeamMemberAddedDomainEvent domainEvent, CancellationToken cancellationToken)
     {
         var member = domainEvent.Member;
-        var command = new ConfigureTeamUserCommand(domainEvent.TeamId, member.Email, member.Role);
+        var command = new ConfigureTeamUserCommand(domainEvent.TeamId, domainEvent.TeamSlug, member.Email, member.Role);
 
         return configureTeamUserHandler.HandleAsync(command, cancellationToken);
     }

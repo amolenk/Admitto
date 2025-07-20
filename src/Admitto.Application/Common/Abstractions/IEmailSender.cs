@@ -4,5 +4,5 @@ namespace Amolenk.Admitto.Application.Common.Abstractions;
 
 public interface IEmailSender
 {
-    Task SendEmailAsync(string recipientEmail, string subject, string body, TeamId teamId);
+    Task SendEmailAsync(string recipientEmail, string subject, string body, Guid teamId);
 }

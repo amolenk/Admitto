@@ -1,0 +1,3 @@
+namespace Amolenk.Admitto.Application.UseCases.PendingRegistrations.VerifyRegistrationRequest;
+
+public record VerifyPendingRegistrationRequest(string Code);

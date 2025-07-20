@@ -12,9 +12,18 @@ public class TeamEntityConfiguration : IEntityTypeConfiguration<Team>
         builder.ToTable("teams");
         
         builder.HasKey(e => e.Id);
+        
+        builder.HasIndex(e => e.Slug)
+            .IsUnique();
+        
         builder.Property(e => e.Id)
             .HasColumnName("id")
             .ValueGeneratedNever();
+
+        builder.Property(e => e.Slug)
+            .HasColumnName("slug")
+            .IsRequired()
+            .HasMaxLength(32);
 
         builder.Property(e => e.Name)
             .HasColumnName("name")

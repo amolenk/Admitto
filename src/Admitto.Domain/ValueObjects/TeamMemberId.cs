@@ -9,7 +9,7 @@ public record TeamMemberId(Guid Value)
 {
     public static TeamMemberId FromEmail(string email)
     {
-        return new TeamMemberId(DeterministicGuidGenerator.Generate(email));
+        return new TeamMemberId(DeterministicGuid.Create(email));
     }
     
     public static implicit operator TeamMemberId(Guid value) => new(value);

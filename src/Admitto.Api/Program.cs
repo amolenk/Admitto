@@ -1,6 +1,14 @@
+using System.Text;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Amolenk.Admitto.ApiService.Endpoints;
 using Amolenk.Admitto.ApiService.Middleware;
+using Amolenk.Admitto.Application.Common.Abstractions;
+using Amolenk.Admitto.Infrastructure.Messaging;
+using FluentValidation;
+using FluentValidation.Internal;
+using Humanizer;
+using Microsoft.AspNetCore.Mvc;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,8 +24,7 @@ builder.Services.AddOpenApi();
 
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
-    var converter = new JsonStringEnumConverter();
-    options.SerializerOptions.Converters.Add(converter);
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
 });
 
 builder.Services.AddExceptionHandler<DomainExceptionHandler>();
@@ -30,6 +37,29 @@ builder.AddDefaultInfrastructureServices();
 
 builder.AddDefaultAuthentication();
 builder.AddDefaultAuthorization();
+
+// Use camel case for FluentValidation property names
+ValidatorOptions.Global.DisplayNameResolver = (_, member, _) => member?.Name.Humanize();
+ValidatorOptions.Global.PropertyNameResolver = (_, memberInfo, expression) =>
+{
+    if (expression != null)
+    {
+        var chain = PropertyChain.FromExpression(expression);
+        if (chain.Count > 0)
+        {
+            var propertyNames = chain.ToString().Split(ValidatorOptions.Global.PropertyChainSeparator);
+            if (propertyNames.Length == 1)
+            {
+                return propertyNames[0].Camelize();
+            }
+
+            return string.Join(ValidatorOptions.Global.PropertyChainSeparator, 
+                propertyNames.Select(n => n.Camelize()));
+        }
+    }
+
+    return memberInfo?.Name.Camelize();
+};
 
 var app = builder.Build();
 
@@ -44,7 +74,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.MapDefaultEndpoints();
-app.MapAttendeeRegistrationEndpoints();
+app.MapPendingRegistrationEndpoints();
+app.MapEmailTemplateEndpoints();
 app.MapTeamEndpoints();
 app.MapTicketedEventEndpoints();
 

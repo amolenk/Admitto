@@ -16,37 +16,41 @@ public class Team : AggregateRoot
     {
     }
     
-    private Team(TeamId id, string name, EmailSettings emailSettings) : base(id)
+    private Team(TeamId id, string slug, string name, EmailSettings emailSettings) : base(id)
     {
+        Slug = slug;
         Name = name;
         EmailSettings = emailSettings;
+        
+        AddDomainEvent(new TeamCreatedDomainEvent(Id, slug));
     }
 
+    public string Slug { get; private set; } = null!;
     public string Name { get; private set; } = null!;
     public EmailSettings EmailSettings { get; private set; } = null!;
     public IReadOnlyCollection<TeamMember> Members => _members.AsReadOnly();
-
-    public static Team Create(string name, EmailSettings emailSettings)
+    
+    public static Team Create(string slug, string name, EmailSettings emailSettings)
     {
         var id = TeamId.FromName(name);
         
-        return new Team(id, name, emailSettings);
+        return new Team(id, slug, name, emailSettings);
     }
     
     public void AddMember(string email, TeamMemberRole role)
     {
-        if (string.IsNullOrWhiteSpace(email)) throw new DomainException("Email cannot be empty.");
+        if (string.IsNullOrWhiteSpace(email)) throw new BusinessRuleException("Email cannot be empty.");
         
         var member = TeamMember.Create(email, role);
 
         if (_members.Any(m => m.Id == member.Id))
         {
-            throw new DomainException("Member already exists.");
+            throw new BusinessRuleException("Member already exists.");
         }
         
         _members.Add(member);
         
-        AddDomainEvent(new TeamMemberAddedDomainEvent(Id, member));
+        AddDomainEvent(new TeamMemberAddedDomainEvent(Id, Slug, member));
     }
 
     // public void UpdateMember(string email, TeamMemberRole role)

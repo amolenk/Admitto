@@ -76,7 +76,7 @@ public static class ErrorMessage
 
     public static class Team
     {
-        public static string NotFound(Guid teamId) => $"Team {teamId} not found.";
+        public static string NotFound(string teamSlug) => $"Team {teamSlug} not found.";
         public const string AlreadyExists = "A team with this name already exists.";
 
         public static class Name

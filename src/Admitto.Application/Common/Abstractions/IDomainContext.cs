@@ -4,12 +4,20 @@ namespace Amolenk.Admitto.Application.Common.Abstractions;
 
 public interface IDomainContext
 {
-    DbSet<AttendeeRegistration> AttendeeRegistrations { get; }
-    
+    DbSet<Attendee> Attendees { get; }
+
+    DbSet<CrewMember> CrewMembers { get; }
+
+    DbSet<EmailTemplate> EmailTemplates { get; }
+
     DbSet<Job> Jobs { get; }
     
+    DbSet<PendingRegistration> PendingRegistrations { get; }
+
     DbSet<ScheduledJob> ScheduledJobs { get; }
-    
+
+    DbSet<Speaker> Speakers { get; }
+
     DbSet<Team> Teams { get; }
 
     DbSet<TicketedEvent> TicketedEvents { get; }

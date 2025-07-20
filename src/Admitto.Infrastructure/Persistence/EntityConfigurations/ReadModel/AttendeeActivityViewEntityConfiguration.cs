@@ -1,10 +1,8 @@
 using Amolenk.Admitto.Application.ReadModel.Views;
-using Amolenk.Admitto.Domain.Entities;
-using Amolenk.Admitto.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Amolenk.Admitto.Infrastructure.Persistence.EntityConfigurations;
+namespace Amolenk.Admitto.Infrastructure.Persistence.EntityConfigurations.ReadModel;
 
 public class AttendeeActivityViewEntityConfiguration : IEntityTypeConfiguration<AttendeeActivityView>
 {
@@ -19,17 +17,20 @@ public class AttendeeActivityViewEntityConfiguration : IEntityTypeConfiguration<
             .ValueGeneratedNever()
             .IsRequired();
 
-        builder.Property(e => e.AttendeeId)
-            .HasColumnName("attendee_id")
-            .IsRequired();
-
-        builder.Property(e => e.Timestamp)
-            .HasColumnName("timestamp")
-            .IsRequired();
+        builder.Property(e => e.Email)
+            .HasColumnName("email")
+            .IsRequired()
+            .HasMaxLength(50);
 
         builder.Property(e => e.Activity)
             .HasColumnName("activity")
             .IsRequired()
             .HasMaxLength(255);
+
+        builder.Property(e => e.Timestamp)
+            .HasColumnName("timestamp")
+            .IsRequired();
+
+        builder.HasIndex(e => e.Email);
     }
 }

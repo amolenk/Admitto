@@ -1,10 +1,11 @@
+using System.Security.Claims;
 using Amolenk.Admitto.Application.Common.Abstractions;
 using Amolenk.Admitto.Infrastructure;
 using Amolenk.Admitto.Infrastructure.Auth;
 using Amolenk.Admitto.Infrastructure.Email;
-using Amolenk.Admitto.Infrastructure.Jobs;
 using Amolenk.Admitto.Infrastructure.Messaging;
 using Amolenk.Admitto.Infrastructure.Persistence;
+using Amolenk.Admitto.Infrastructure.Persistence.Interceptors;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -25,7 +26,9 @@ public static class DependencyInjection
         builder.Services.AddDbContext<ApplicationContext>((sp, options) =>
         {
             options.UseNpgsql(connectionString);
-            options.AddInterceptors(new DomainEventsInterceptor(sp));
+            options.AddInterceptors(
+                new AuditInterceptor(sp.GetService<ClaimsPrincipal>()),
+                new DomainEventsInterceptor(sp));
         });
         
         builder.EnrichNpgsqlDbContext<ApplicationContext>();
@@ -40,8 +43,11 @@ public static class DependencyInjection
             .AddScoped<IReadModelContext>(sp => sp.GetRequiredService<ApplicationContext>());
         
         builder.Services
+            .AddScoped<IMessageSender, MessageSender>()
             .AddScoped<MessageOutbox>()
             .AddScoped<IMessageOutbox>(sp => sp.GetRequiredService<MessageOutbox>());
+
+
 
         builder.AddAuthServices();
         
@@ -99,6 +105,6 @@ public static class DependencyInjection
         });
         
         services.AddTransient<OpenFgaMigrator>();
-        services.AddTransient<IRebacAuthorizationService, OpenFgaAuthorizationService>();
+        services.AddTransient<IAuthorizationService, OpenFgaAuthorizationService>();
     }
 }

@@ -6,25 +6,25 @@ public static class DomainError
 {
     public static class AttendeeRegistration
     {
-        public static DomainException TicketTypeAlreadyExists()
+        public static BusinessRuleException TicketTypeAlreadyExists()
         {
-            return new DomainException(ErrorMessage.AttendeeRegistration.Tickets.TicketType.AlreadyExists);
+            return new BusinessRuleException(ErrorMessage.AttendeeRegistration.Tickets.TicketType.AlreadyExists);
         }
     }
 
     public static class TicketedEvent
     {
-        public static DomainException TicketTypeAlreadyExists()
+        public static BusinessRuleException TicketTypeAlreadyExists()
         {
-            return new DomainException(ErrorMessage.TicketedEvent.TicketType.AlreadyExists);
+            return new BusinessRuleException(ErrorMessage.TicketedEvent.TicketType.AlreadyExists);
         }
     }
 
     public static class TicketType
     {
-        public static DomainException QuantityMustBeGreaterThanZero()
+        public static BusinessRuleException QuantityMustBeGreaterThanZero()
         {
-            return new DomainException(ErrorMessage.Ticket.Quantity.MustBeGreaterThanZero);
+            return new BusinessRuleException(ErrorMessage.Ticket.Quantity.MustBeGreaterThanZero);
         }
     }
 }

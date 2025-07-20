@@ -21,6 +21,6 @@ public class ConfigureTeamUserHandler(IIdentityService identityService, IMessage
         }
         
         // Add a command to the outbox to assign the role.
-        messageOutbox.Enqueue(new AssignTeamRoleCommand(user.Id, command.TeamId, command.Role));
+        messageOutbox.Enqueue(new AssignTeamRoleCommand(user.Id, command.TeamId, command.TeamSlug, command.Role));
     }
 }

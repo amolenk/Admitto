@@ -1,6 +1,8 @@
 namespace Amolenk.Admitto.Application.Common.Abstractions;
 
-public interface ICommand
+public record Command
 {
-    Guid Id { get; }
+    public Guid CommandId { get; set; } = Guid.NewGuid();
+    
+    public Guid? SagaId { get; set; }
 }
