@@ -155,14 +155,18 @@ app.Configure(config =>
                         "team",
                         team =>
                         {
+                            team.AddCommand<ClearTeamEmailTemplateCommand>("clear");
                             team.AddCommand<ListTeamEmailTemplatesCommand>("list");
+                            team.AddCommand<SetTeamEmailTemplateCommand>("set");
                         });
 
                     template.AddBranch(
                         "event",
                         ticketedEvent =>
                         {
+                            ticketedEvent.AddCommand<ClearEventEmailTemplateCommand>("clear");
                             ticketedEvent.AddCommand<ListEventEmailTemplatesCommand>("list");
+                            ticketedEvent.AddCommand<SetEventEmailTemplateCommand>("set");
                         });
                 });
         });
