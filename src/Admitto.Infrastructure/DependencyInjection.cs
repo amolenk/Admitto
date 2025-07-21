@@ -33,7 +33,9 @@ public static class DependencyInjection
         
         builder.EnrichNpgsqlDbContext<ApplicationContext>();
         
-        builder.AddKeyedAzureQueueClient("queues");
+        // builder.AddKeyedAzureQueueClient("queues");
+        
+        builder.AddAzureServiceBusClient(connectionName: "messaging");
         
         builder.Services
             .AddScoped<IUnitOfWork, UnitOfWork>();

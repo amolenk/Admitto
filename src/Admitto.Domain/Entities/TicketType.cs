@@ -43,11 +43,14 @@ public class TicketType : Entity
         return RemainingCapacity >= quantity;
     }
     
-    public void ReserveTickets(int quantity)
+    public bool TryReserveTickets(int quantity, bool ignoreAvailability)
     {
-        if (RemainingCapacity < quantity)
-            throw new ValidationException("No tickets available.");
+        if (!ignoreAvailability && RemainingCapacity < quantity)
+        {
+            return false;
+        }
         
         UsedCapacity += quantity;
+        return true;
     }
 }

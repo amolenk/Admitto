@@ -10,8 +10,8 @@ public class SendEmailHandler(IJobScheduler jobScheduler) : ICommandHandler<Send
             JobId: command.CommandId,
             command.TeamId,
             command.TicketedEventId,
-            command.EmailType,
             command.DataEntityId,
+            command.EmailType,
             command.RecipientEmail);
 
         await jobScheduler.AddJobAsync(emailJobData, cancellationToken);

@@ -28,6 +28,20 @@ public class AttendeeEntityConfiguration : IEntityTypeConfiguration<Attendee>
             .IsRequired()
             .HasMaxLength(50);
 
+        // TODO Maybe we can set this to null after verification?
+        builder.OwnsOne(e => e.EmailVerification, b =>
+        {
+            b.Property(x => x.Code)
+                .HasColumnName("email_verification_code")
+                .HasMaxLength(6)
+                .IsFixedLength()
+                .IsRequired();
+
+            b.Property(x => x.ExpirationTime)
+                .HasColumnName("email_verification_expiration")
+                .IsRequired();
+        });
+        
         builder.Property(e => e.FirstName)
             .HasColumnName("first_name")
             .IsRequired()

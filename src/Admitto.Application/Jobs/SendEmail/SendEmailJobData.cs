@@ -7,8 +7,8 @@ public record SendEmailJobData(
     Guid JobId,
     Guid TeamId,
     Guid TicketedEventId,
-    EmailType EmailType,
     Guid DataEntityId,
+    EmailType EmailType,
     string? RecipientEmail = null)
     : IJobData;
     

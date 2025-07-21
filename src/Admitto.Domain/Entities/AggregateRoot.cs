@@ -5,7 +5,7 @@ namespace Amolenk.Admitto.Domain.Entities;
 
 public abstract class AggregateRoot : Entity, IAuditable, IHasConcurrencyToken
 {
-    private readonly List<IDomainEvent> _domainEvents = [];
+    private readonly List<DomainEvent> _domainEvents = [];
 
     protected AggregateRoot()
     {
@@ -24,9 +24,9 @@ public abstract class AggregateRoot : Entity, IAuditable, IHasConcurrencyToken
     [Timestamp]
     public uint Version { get; set; }
 
-    public IReadOnlyCollection<IDomainEvent> GetDomainEvents() => _domainEvents.AsReadOnly();
+    public IReadOnlyCollection<DomainEvent> GetDomainEvents() => _domainEvents.AsReadOnly();
 
-    protected void AddDomainEvent(IDomainEvent domainEvent)
+    protected void AddDomainEvent(DomainEvent domainEvent)
     {
         _domainEvents.Add(domainEvent);
     }

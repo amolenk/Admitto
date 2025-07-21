@@ -41,7 +41,7 @@ public class SendEmailJobHandler(
         switch (emailType)
         {
             case EmailType.VerifyRegistration:
-                return GetRegistrationTemplateParametersAsync(dataEntityId, cancellationToken);
+                return GetAttendeeTemplateParametersAsync(dataEntityId, cancellationToken);
             case EmailType.Ticket:
             case EmailType.RegistrationRejected:
             default:
@@ -49,27 +49,28 @@ public class SendEmailJobHandler(
         }
     }
     
-    private async ValueTask<Dictionary<string, string>> GetRegistrationTemplateParametersAsync(
-        Guid pendingRegistrationId,
+    private async ValueTask<Dictionary<string, string>> GetAttendeeTemplateParametersAsync(
+        Guid attendeeId,
         CancellationToken cancellationToken)
     {
-        var info = await context.PendingRegistrations
+        var info = await context.Attendees
             .AsNoTracking()
             .Join(
                 context.TicketedEvents,
-                r => r.TicketedEventId,
+                a => a.TicketedEventId,
                 e => e.Id,
-                (r, e) => new { Registration = r, Event = e })
-            .Where(joined => joined.Registration.Id == pendingRegistrationId)
+                (a, e) => new { Attendee = a, Event = e })
+            .Where(joined => joined.Attendee.Id == attendeeId)
             .Select(joined => new
             {
                 joined.Event.Name,
                 joined.Event.TicketTypes,
-                joined.Registration.Email,
-                joined.Registration.FirstName,
-                joined.Registration.LastName,
-                joined.Registration.AdditionalDetails,
-                joined.Registration.Tickets
+                joined.Attendee.Email,
+                joined.Attendee.EmailVerification.Code,
+                joined.Attendee.FirstName,
+                joined.Attendee.LastName,
+                joined.Attendee.AdditionalDetails,
+                joined.Attendee.Tickets
             })
             .FirstOrDefaultAsync(cancellationToken: cancellationToken);
 
@@ -83,6 +84,7 @@ public class SendEmailJobHandler(
         {
             ["event_name"] = info.Name,
             ["email"] = info.Email,
+            ["verification_code"] = info.Code,
             ["first_name"] = info.FirstName,
             ["last_name"] = info.LastName
         };

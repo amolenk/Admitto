@@ -4,7 +4,7 @@ namespace Amolenk.Admitto.Application.UseCases.TicketedEvents.ReserveTickets;
 
 public record ReserveTicketsCommand(
     Guid TicketedEventId,
-    Guid RegistrationId,
-    RegistrationType RegistrationType,
-    IDictionary<string, int> Tickets)
+    Guid AttendeeId,
+    List<TicketSelection> Tickets,
+    bool IgnoreAvailability = false)
     : Command;

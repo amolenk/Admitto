@@ -1,13 +1,11 @@
 ﻿using Amolenk.Admitto.Cli.Commands;
+using Amolenk.Admitto.Cli.Commands.Attendees;
 using Amolenk.Admitto.Cli.Commands.Config;
-using Amolenk.Admitto.Cli.Commands.Email;
-using Amolenk.Admitto.Cli.Commands.Email.Send;
-using Amolenk.Admitto.Cli.Commands.Email.Template;
+using Amolenk.Admitto.Cli.Commands.Development;
 using Amolenk.Admitto.Cli.Commands.Email.Template.Event;
 using Amolenk.Admitto.Cli.Commands.Email.Template.Team;
 using Amolenk.Admitto.Cli.Commands.Email.Test;
 using Amolenk.Admitto.Cli.Commands.Events;
-using Amolenk.Admitto.Cli.Commands.PendingRegistrations;
 using Amolenk.Admitto.Cli.Commands.Teams;
 using Amolenk.Admitto.Cli.Infrastructure;
 using Microsoft.Extensions.Configuration;
@@ -52,6 +50,16 @@ var app = new CommandApp(registrar);
 app.Configure(config =>
 {
     config.AddBranch(
+        "attendee",
+        attendee =>
+        {
+            attendee.SetDescription("Manage attendees.");
+
+            attendee.AddCommand<InviteAttendeeCommand>("invite");
+            attendee.AddCommand<ListAttendeesCommand>("list");
+        });
+
+    config.AddBranch(
         "config",
         config =>
         {
@@ -60,6 +68,16 @@ app.Configure(config =>
             config.AddCommand<ClearConfigCommand>("clear").WithDescription("Clear configuration values");
             config.AddCommand<GetConfigCommand>("list").WithDescription("Get configuration values");
             config.AddCommand<SetConfigCommand>("set").WithDescription("Set configuration values");
+        });
+    
+    config.AddBranch(
+        "development",
+        dev =>
+        {
+            dev.SetDescription("Development commands.");
+
+            dev.AddCommand<CreateAttendeeCommand>("createAttendee");
+            dev.AddCommand<VerifyAttendeeCommand>("verifyAttendee");
         });
     
     config.AddCommand<LoginCommand>("login")
@@ -98,42 +116,31 @@ app.Configure(config =>
                     ticketType.AddCommand<AddTicketTypeCommand>("add").WithDescription("Add a ticket type to an event");
                 });
         });
-
-    config.AddBranch(
-        "registration",
-        request =>
-        {
-            request.SetDescription("Manage pending registrations.");
-
-            request.AddCommand<StartRegistrationCommand>("start");
-            request.AddCommand<ListPendingRegistrationsCommand>("list");
-            request.AddCommand<VerifyPendingRegistrationCommand>("verify");
-        });
     
     config.AddBranch(
         "email",
         email =>
         {
-            email.AddBranch(
-                "send",
-                sendEmail =>
-                {
-                    sendEmail.SetDescription("Manage registration email templates.");
-
-                    sendEmail.AddBranch(
-                        "attendee",
-                        attendeeEmail =>
-                        {
-                            attendeeEmail.AddCommand<SendRegistrationVerifyEmailCommand>("ticket");
-                        });
-
-                    sendEmail.AddBranch(
-                        "registration",
-                        registrationEmail =>
-                        {
-                            registrationEmail.AddCommand<SendRegistrationVerifyEmailCommand>("verify");
-                        });
-                });
+            // email.AddBranch(
+            //     "send",
+            //     sendEmail =>
+            //     {
+            //         sendEmail.SetDescription("Manage registration email templates.");
+            //
+            //         sendEmail.AddBranch(
+            //             "attendee",
+            //             attendeeEmail =>
+            //             {
+            //                 attendeeEmail.AddCommand<SendRegistrationVerifyEmailCommand>("ticket");
+            //             });
+            //
+            //         sendEmail.AddBranch(
+            //             "registration",
+            //             registrationEmail =>
+            //             {
+            //                 registrationEmail.AddCommand<SendRegistrationVerifyEmailCommand>("verify");
+            //             });
+            //     });
             
             email.AddBranch(
                 "test",

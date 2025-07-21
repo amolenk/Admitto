@@ -1,6 +1,5 @@
 using System.Linq.Expressions;
 using Amolenk.Admitto.Application.Common.Abstractions;
-using Amolenk.Admitto.Application.UseCases.Registrations.CompleteRegistration;
 using Amolenk.Admitto.Domain.Entities;
 using Amolenk.Admitto.Infrastructure.Messaging;
 using Amolenk.Admitto.Infrastructure.Persistence;

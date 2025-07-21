@@ -57,4 +57,26 @@ public static class TicketEventQueryExtensions
 
         return ticketedEvent;
     }
+    
+    public static async ValueTask<TicketedEvent> GetTicketedEventAsync(
+        this IQueryable<TicketedEvent> ticketedEvents,
+        Guid ticketedEventId,
+        bool noTracking = false,
+        CancellationToken cancellationToken = default)
+    {
+        if (noTracking)
+        {
+            ticketedEvents = ticketedEvents.AsNoTracking();
+        }
+
+        var ticketedEvent = await ticketedEvents
+            .FirstOrDefaultAsync(t => t.Id == ticketedEventId, cancellationToken);
+
+        if (ticketedEvent is null)
+        {
+            throw ValidationError.TicketedEvent.NotFound(ticketedEventId);
+        }
+
+        return ticketedEvent;
+    }
 }

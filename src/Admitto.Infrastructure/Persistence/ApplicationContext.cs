@@ -17,7 +17,6 @@ public class ApplicationContext(DbContextOptions options) : DbContext(options), 
     public DbSet<CrewMember> CrewMembers { get; set; } = null!;
     public DbSet<Job> Jobs { get; set; } = null!;
     public DbSet<EmailTemplate> EmailTemplates { get; set; } = null!;
-    public DbSet<PendingRegistration> PendingRegistrations { get; set; } = null!;
     public DbSet<ScheduledJob> ScheduledJobs { get; set; } = null!;
     public DbSet<Speaker> Speakers { get; set; } = null!;
     public DbSet<Team> Teams { get; set; } = null!;

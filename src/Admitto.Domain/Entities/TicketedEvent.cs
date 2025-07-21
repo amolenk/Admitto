@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using Amolenk.Admitto.Domain.DomainEvents;
 using Amolenk.Admitto.Domain.Exceptions;
 using Amolenk.Admitto.Domain.ValueObjects;
@@ -108,27 +107,24 @@ public class TicketedEvent : AggregateRoot
             _ticketTypes.Any(tt => tt.Slug == t.Key && tt.HasAvailableCapacity(t.Value)));
     }
 
-    public bool TryReserveTickets(Guid registrationId, IDictionary<string, int> tickets, bool ignoreMaxCapacity = false)
+    public bool ReserveTickets(Guid attendeeId, IList<TicketSelection> tickets, bool ignoreAvailability = false)
     {
         if (tickets.Count == 0)
         {
             throw new BusinessRuleException("No tickets provided for reservation.");
         }
 
-        // If ignoreMaxCapacity is false, check if the tickets can be reserved
-        if (!ignoreMaxCapacity && !HasAvailableCapacity(tickets))
+        foreach (var ticketSelection in tickets)
         {
-            AddDomainEvent(new TicketsReservationRejectedDomainEvent(Id, registrationId));
-            return false;
-        }
-        
-        foreach (var (slug, quantity) in tickets)
-        {
-            var ticketType = _ticketTypes.First(tt => tt.Slug == slug);
-            ticketType.ReserveTickets(quantity);
+            var ticketType = _ticketTypes.First(tt => tt.Slug == ticketSelection.TicketTypeSlug);
+            if (!ticketType.TryReserveTickets(ticketSelection.Quantity, ignoreAvailability))
+            {
+                AddDomainEvent(new TicketsUnavailableDomainEvent(attendeeId));
+                return false;
+            }
         }
 
-        AddDomainEvent(new TicketsReservedDomainEvent(registrationId));
+        AddDomainEvent(new TicketsReservedDomainEvent(attendeeId));
         return true;
     }
 }

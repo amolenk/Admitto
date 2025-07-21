@@ -6,14 +6,14 @@ namespace Amolenk.Admitto.Infrastructure.Messaging;
 
 public class MessageOutbox(ApplicationContext context, IMessageSender messageSender) : IMessageOutbox
 {
-    public void Enqueue(Command command, bool priority)
+    public void Enqueue(Command command)
     {
-        context.Outbox.Add(Message.FromCommand(command, priority));
+        context.Outbox.Add(Message.FromCommand(command));
     }
-
-    public void Enqueue(IDomainEvent domainEvent, bool priority = false)
+    
+    public void Enqueue(DomainEvent domainEvent)
     {
-        context.Outbox.Add(Message.FromDomainEvent(domainEvent, priority));
+        context.Outbox.Add(Message.FromDomainEvent(domainEvent));
     }
 
     public async ValueTask<bool> FlushAsync(CancellationToken cancellationToken = default)

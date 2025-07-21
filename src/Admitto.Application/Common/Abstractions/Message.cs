@@ -3,7 +3,7 @@ using Amolenk.Admitto.Domain.DomainEvents;
 
 namespace Amolenk.Admitto.Application.Common.Abstractions;
 
-public class Message(Guid id, JsonDocument data, string type, bool priority)
+public class Message(Guid id, JsonDocument data, string type)
 {
     public Guid Id { get; private set; } = id;
 
@@ -11,20 +11,18 @@ public class Message(Guid id, JsonDocument data, string type, bool priority)
 
     public string Type { get; private set; } = type;
 
-    public bool Priority { get; private set; } = priority;
-
-    public static Message FromDomainEvent(IDomainEvent domainEvent, bool priority = false)
+    public static Message FromDomainEvent(DomainEvent domainEvent)
     {
         var type = domainEvent.GetType().FullName!["Amolenk.Admitto.Domain.DomainEvents.".Length..];
 
-        return new Message(domainEvent.Id, SerializeData(domainEvent), type, priority);
+        return new Message(domainEvent.DomainEventId, SerializeData(domainEvent), type);
     }
 
-    public static Message FromCommand(Command command, bool priority = false)
+    public static Message FromCommand(Command command)
     {
         var type = command.GetType().FullName!["Amolenk.Admitto.Application.UseCases.".Length..];
         
-        return new Message(command.CommandId, SerializeData(command), type, priority);
+        return new Message(command.CommandId, SerializeData(command), type);
     }
 
     private static JsonDocument SerializeData(object data)

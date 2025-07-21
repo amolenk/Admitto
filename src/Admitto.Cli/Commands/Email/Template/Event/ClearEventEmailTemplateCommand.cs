@@ -19,9 +19,9 @@ public class ClearEventEmailTemplateSettings : TeamEventSettings
 }
 
 public class ClearEventEmailTemplateCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration)
-    : ApiCommand<SetEventEmailTemplateSettings>(accessTokenProvider, configuration)
+    : ApiCommand<ClearEventEmailTemplateSettings>(accessTokenProvider, configuration)
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, SetEventEmailTemplateSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, ClearEventEmailTemplateSettings settings)
     {
         var teamSlug = GetTeamSlug(settings.TeamSlug);
         var eventSlug = GetEventSlug(settings.EventSlug);

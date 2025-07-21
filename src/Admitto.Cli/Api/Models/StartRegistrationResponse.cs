@@ -14,8 +14,8 @@ namespace Amolenk.Admitto.Cli.Api.Models
     {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
-        /// <summary>The registrationRequestId property</summary>
-        public Guid? RegistrationRequestId { get; set; }
+        /// <summary>The attendeeId property</summary>
+        public Guid? AttendeeId { get; set; }
         /// <summary>
         /// Instantiates a new <see cref="global::Amolenk.Admitto.Cli.Api.Models.StartRegistrationResponse"/> and sets the default values.
         /// </summary>
@@ -41,7 +41,7 @@ namespace Amolenk.Admitto.Cli.Api.Models
         {
             return new Dictionary<string, Action<IParseNode>>
             {
-                { "registrationRequestId", n => { RegistrationRequestId = n.GetGuidValue(); } },
+                { "attendeeId", n => { AttendeeId = n.GetGuidValue(); } },
             };
         }
         /// <summary>
@@ -51,7 +51,7 @@ namespace Amolenk.Admitto.Cli.Api.Models
         public virtual void Serialize(ISerializationWriter writer)
         {
             _ = writer ?? throw new ArgumentNullException(nameof(writer));
-            writer.WriteGuidValue("registrationRequestId", RegistrationRequestId);
+            writer.WriteGuidValue("attendeeId", AttendeeId);
             writer.WriteAdditionalData(AdditionalData);
         }
     }

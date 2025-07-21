@@ -61,7 +61,7 @@ public abstract class FullStackTestsBase : ApiTestsBase
     
     protected async Task HandleEvent<TEvent, THandler>(TEvent domainEvent)
         where THandler : IEventualDomainEventHandler<TEvent>
-        where TEvent : IDomainEvent
+        where TEvent : DomainEvent
     {
         using var serviceScope = AssemblyTestFixture.WorkerHost.Services.CreateScope();
 

@@ -1,3 +1,0 @@
-namespace Amolenk.Admitto.Application.UseCases.PendingRegistrations.StartRegistration;
-
-public record StartRegistrationResponse(Guid RegistrationRequestId);

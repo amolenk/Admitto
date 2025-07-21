@@ -1,62 +1,131 @@
-// using Amolenk.Admitto.Application.Jobs.SendEmail;
-// using Amolenk.Admitto.Application.UseCases.Attendees.RegisterAttendee;
-// using Amolenk.Admitto.Application.UseCases.Registrations.CompleteRegistration;
-// using Amolenk.Admitto.Application.UseCases.Registrations.RejectRegistration;
-// using Amolenk.Admitto.Application.UseCases.TicketedEvents.ReserveTickets;
-// using Amolenk.Admitto.Domain.DomainEvents;
-// using Amolenk.Admitto.Domain.Utilities;
-// using Amolenk.Admitto.Domain.ValueObjects;
-//
-// namespace Amolenk.Admitto.Application.UseCases.Attendees;
-//
-// /// <summary>
-// /// Represents a flow that orchestrates the entire registration process for an attendee.
-// /// </summary>
-// public class RegisterAttendeeFlow(IMessageSender messageSender, IJobScheduler jobScheduler)
-//     : IEventualDomainEventHandler<RegistrationRequestAcceptedDomainEvent>
-//         , IEventualDomainEventHandler<AttendeeRegisteredDomainEvent>
-//         , IEventualDomainEventHandler<RegistrationRequestRejectedDomainEvent>
-// {
-//     /// <summary>
-//     /// If the registration request was accepted, register the attendee.
-//     /// </summary>
-//     public ValueTask HandleAsync(
-//         RegistrationRequestAcceptedDomainEvent domainEvent,
-//         CancellationToken cancellationToken)
-//     {
-//         // Once the tickets have been reserved, we can complete the registration.
-//         var command = new RegisterAttendeeCommand(domainEvent.RegistrationId)
-//         {
-//             CommandId = DeterministicGuid.Create($"{domainEvent.Id}:{nameof(CompleteRegistrationCommand)}")
-//         };
-//
-//         return messageSender.SendAsync(Message.FromCommand(command), cancellationToken);
-//     }
-//
-//     /// <summary>
-//     /// If the registration was rejected, send a decline email.
-//     /// </summary>
-//     public async ValueTask HandleAsync(
-//         RegistrationRequestRejectedDomainEvent domainEvent,
-//         CancellationToken cancellationToken)
-//     {
-//         var jobId = DeterministicGuid.Create($"{domainEvent.Id}:{nameof(SendEmailJobData)}");
-//         var emailJobData = new SendEmailJobData(
-//             jobId,
-//             domainEvent.RegistrationRequestId,
-//             EmailTemplateId.RegistrationRejected);
-//
-//         await jobScheduler.AddJobAsync(emailJobData, cancellationToken);
-//     }
-//
-//     /// <summary>
-//     /// When the attendee is fully registered, send the ticket email.
-//     /// </summary>
-//     public async ValueTask HandleAsync(AttendeeRegisteredDomainEvent domainEvent, CancellationToken cancellationToken)
-//     {
-//         var jobId = DeterministicGuid.Create($"{domainEvent.Id}:{nameof(SendEmailJobData)}");
-//         var emailJobData = new SendEmailJobData(jobId, domainEvent.AttendeeId, EmailTemplateId.Ticket);
-//
-//         await jobScheduler.AddJobAsync(emailJobData, cancellationToken);
-//     }
-// }
+using Amolenk.Admitto.Application.Jobs.SendEmail;
+using Amolenk.Admitto.Application.UseCases.Attendees.CompleteRegistration;
+using Amolenk.Admitto.Application.UseCases.Attendees.RejectRegistration;
+using Amolenk.Admitto.Application.UseCases.TicketedEvents.ReserveTickets;
+using Amolenk.Admitto.Domain.DomainEvents;
+using Amolenk.Admitto.Domain.Utilities;
+using Amolenk.Admitto.Domain.ValueObjects;
+
+namespace Amolenk.Admitto.Application.UseCases.Attendees;
+
+/// <summary>
+/// Represents a flow that orchestrates the entire registration process for an attendee.
+/// </summary>
+public class RegisterAttendeeFlow(IMessageSender messageSender, IJobScheduler jobScheduler)
+    : IEventualDomainEventHandler<AttendeeSignedUpDomainEvent>
+        , IEventualDomainEventHandler<AttendeeVerifiedDomainEvent>
+        , IEventualDomainEventHandler<AttendeeInvitedDomainEvent>
+        , IEventualDomainEventHandler<TicketsReservedDomainEvent>
+        , IEventualDomainEventHandler<TicketsUnavailableDomainEvent>
+        , IEventualDomainEventHandler<RegistrationCompletedDomainEvent>
+        , IEventualDomainEventHandler<RegistrationRejectedDomainEvent>
+{
+    /// <summary>
+    /// Anyone can start a public registration for a ticketed event. To guard against misuse, we'll first ask the
+    /// attendee to confirm via email. During this time, we will not reserve any tickets yet.
+    /// </summary>
+    public async ValueTask HandleAsync(AttendeeSignedUpDomainEvent domainEvent, CancellationToken cancellationToken)
+    {
+        var jobId = DeterministicGuid.Create($"{domainEvent.DomainEventId}:{nameof(SendEmailJobData)}");
+        var emailJobData = new SendEmailJobData(
+            jobId,
+            domainEvent.TeamId,
+            domainEvent.TicketedEventId,
+            domainEvent.AttendeeId,
+            EmailType.VerifyRegistration);
+
+        await jobScheduler.AddJobAsync(emailJobData, cancellationToken);
+    }
+
+    /// <summary>
+    /// Once the attendee has been verified, we need to reserve the actual tickets.
+    /// Invited attendees are not required to verify their email, and we ignore ticket availability in that case.
+    /// </summary>
+    public ValueTask HandleAsync(AttendeeVerifiedDomainEvent domainEvent, CancellationToken cancellationToken)
+    {
+        var command = new ReserveTicketsCommand(
+            domainEvent.TicketedEventId,
+            domainEvent.AttendeeId,
+            domainEvent.Tickets)
+        {
+            CommandId = DeterministicGuid.Create($"{domainEvent.DomainEventId}:{nameof(ReserveTicketsCommand)}")
+        };
+
+        return messageSender.SendAsync(Message.FromCommand(command), cancellationToken);
+    }
+    
+    /// <summary>
+    /// Invited attendees are not required to verify their email, and we ignore ticket availability in that case.
+    /// </summary>
+    public ValueTask HandleAsync(AttendeeInvitedDomainEvent domainEvent, CancellationToken cancellationToken)
+    {
+        var command = new ReserveTicketsCommand(
+            domainEvent.TicketedEventId,
+            domainEvent.AttendeeId,
+            domainEvent.Tickets,
+            IgnoreAvailability: true)
+        {
+            CommandId = DeterministicGuid.Create($"{domainEvent.DomainEventId}:{nameof(ReserveTicketsCommand)}")
+        };
+
+        return messageSender.SendAsync(Message.FromCommand(command), cancellationToken);
+    }
+
+    /// <summary>
+    /// Once the tickets have been reserved, we can complete the registration.
+    /// </summary>
+    public ValueTask HandleAsync(TicketsReservedDomainEvent domainEvent, CancellationToken cancellationToken)
+    {
+        var command = new CompleteRegistrationCommand(domainEvent.AttendeeId)
+        {
+            CommandId = DeterministicGuid.Create($"{domainEvent.DomainEventId}:{nameof(CompleteRegistrationCommand)}")
+        };
+
+        return messageSender.SendAsync(Message.FromCommand(command), cancellationToken);
+    }
+
+    /// <summary>
+    /// If the tickets could not be reserved, we need to reject the registration.
+    /// </summary>
+    public ValueTask HandleAsync(TicketsUnavailableDomainEvent domainEvent, CancellationToken cancellationToken)
+    {
+        var command = new RejectRegistrationCommand(domainEvent.AttendeeId)
+        {
+            CommandId = DeterministicGuid.Create($"{domainEvent.DomainEventId}:{nameof(RejectRegistrationCommand)}")
+        };
+
+        return messageSender.SendAsync(Message.FromCommand(command), cancellationToken);
+    }
+
+    /// <summary>
+    /// If the registration was successful, send the tickets email.
+    /// </summary>
+    public async ValueTask HandleAsync(RegistrationCompletedDomainEvent domainEvent, CancellationToken cancellationToken)
+    {
+        var jobId = DeterministicGuid.Create($"{domainEvent.DomainEventId}:{nameof(SendEmailJobData)}");
+        var emailJobData = new SendEmailJobData(
+            jobId,
+            domainEvent.TeamId,
+            domainEvent.TicketedEventId,
+            domainEvent.AttendeeId,
+            EmailType.Ticket);
+
+        await jobScheduler.AddJobAsync(emailJobData, cancellationToken);
+    }
+    
+    /// <summary>
+    /// If the registration was rejected, send a decline email.
+    /// </summary>
+    public async ValueTask HandleAsync(RegistrationRejectedDomainEvent domainEvent, CancellationToken cancellationToken)
+    {
+        var jobId = DeterministicGuid.Create($"{domainEvent.DomainEventId}:{nameof(SendEmailJobData)}");
+        var emailJobData = new SendEmailJobData(
+            jobId,
+            domainEvent.TeamId,
+            domainEvent.TicketedEventId,
+            domainEvent.AttendeeId,
+            EmailType.RegistrationRejected);
+
+        await jobScheduler.AddJobAsync(emailJobData, cancellationToken);
+    }
+}

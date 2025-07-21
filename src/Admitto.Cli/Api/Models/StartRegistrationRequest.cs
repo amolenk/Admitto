@@ -38,6 +38,8 @@ namespace Amolenk.Admitto.Cli.Api.Models
 #else
         public string FirstName { get; set; }
 #endif
+        /// <summary>The isInvited property</summary>
+        public bool? IsInvited { get; set; }
         /// <summary>The lastName property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
@@ -82,6 +84,7 @@ namespace Amolenk.Admitto.Cli.Api.Models
                 { "additionalDetails", n => { AdditionalDetails = n.GetCollectionOfObjectValues<global::Amolenk.Admitto.Cli.Api.Models.AdditionalDetail>(global::Amolenk.Admitto.Cli.Api.Models.AdditionalDetail.CreateFromDiscriminatorValue)?.AsList(); } },
                 { "email", n => { Email = n.GetStringValue(); } },
                 { "firstName", n => { FirstName = n.GetStringValue(); } },
+                { "isInvited", n => { IsInvited = n.GetBoolValue(); } },
                 { "lastName", n => { LastName = n.GetStringValue(); } },
                 { "tickets", n => { Tickets = n.GetCollectionOfObjectValues<global::Amolenk.Admitto.Cli.Api.Models.TicketSelection>(global::Amolenk.Admitto.Cli.Api.Models.TicketSelection.CreateFromDiscriminatorValue)?.AsList(); } },
             };
@@ -96,6 +99,7 @@ namespace Amolenk.Admitto.Cli.Api.Models
             writer.WriteCollectionOfObjectValues<global::Amolenk.Admitto.Cli.Api.Models.AdditionalDetail>("additionalDetails", AdditionalDetails);
             writer.WriteStringValue("email", Email);
             writer.WriteStringValue("firstName", FirstName);
+            writer.WriteBoolValue("isInvited", IsInvited);
             writer.WriteStringValue("lastName", LastName);
             writer.WriteCollectionOfObjectValues<global::Amolenk.Admitto.Cli.Api.Models.TicketSelection>("tickets", Tickets);
             writer.WriteAdditionalData(AdditionalData);

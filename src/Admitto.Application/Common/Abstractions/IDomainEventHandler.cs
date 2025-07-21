@@ -7,7 +7,7 @@ namespace Amolenk.Admitto.Application.Common.Abstractions;
 /// Handler runs after the domain aggregate transaction is completed.
 /// </summary>
 public interface IEventualDomainEventHandler<in TDomainEvent> : IEventualDomainEventHandler
-    where TDomainEvent : IDomainEvent
+    where TDomainEvent : DomainEvent
 {
     ValueTask HandleAsync(TDomainEvent domainEvent, CancellationToken cancellationToken);
 }
@@ -23,7 +23,7 @@ public interface IEventualDomainEventHandler;
 /// Handler runs within the same transaction as the domain aggregate.
 /// </summary>
 public interface ITransactionalDomainEventHandler<in TDomainEvent> : ITransactionalDomainEventHandler
-    where TDomainEvent : IDomainEvent
+    where TDomainEvent : DomainEvent
 {
     ValueTask HandleAsync(TDomainEvent domainEvent, CancellationToken cancellationToken);
 }

@@ -30,7 +30,7 @@ var serviceBus = builder.AddAzureServiceBus("messaging")
     })
     .ReplaceEmulatorDatabase();
 
-var queue = serviceBus.AddServiceBusQueue("admitto");
+var queue = serviceBus.AddServiceBusQueue("queue");
 
 var storage = builder.AddAzureStorage("storage")
     .RunAsEmulator(azurite =>
@@ -40,10 +40,6 @@ var storage = builder.AddAzureStorage("storage")
             .WithLifetime(ContainerLifetime.Persistent);
     });
     
-var queues = storage.AddQueues(Constants.AzureQueueStorage.ResourceName)
-    .AddQueue(Constants.AzureQueueStorage.DefaultQueueName)
-    .AddQueue(Constants.AzureQueueStorage.PrioQueueName);
-
 var initOpenFga = builder.AddContainer("openfga-init", "openfga/openfga:latest")
     .WithArgs("migrate")
     .WithEnvironment("OPENFGA_DATASTORE_ENGINE", "postgres")
@@ -76,11 +72,11 @@ var maildev = builder.AddContainer("maildev", "maildev/maildev:latest")
 var worker = builder.AddProject<Projects.Admitto_Worker>("worker")
     .WithReference(openFga.GetEndpoint("http"))
     .WithReference(postgresdb)
-    .WithReference(queues)
+    .WithReference(serviceBus)
     .WithReference(keycloak)
     // .WithReference(maildev.GetEndpoint("http"))
     .WaitFor(postgresdb)
-    .WaitFor(queues)
+    .WaitFor(serviceBus)
     .WaitFor(keycloak)
     .WaitFor(openFga)
     .WaitFor(maildev)
@@ -98,10 +94,10 @@ var apiService = builder.AddProject<Projects.Admitto_Api>("api")
     })
     .WithReference(openFga.GetEndpoint("http"))
     .WithReference(postgresdb)
-    .WithReference(queues)
+    .WithReference(serviceBus)
     .WithReference(keycloak)
     .WaitFor(postgresdb)
-    .WaitFor(queues)
+    .WaitFor(serviceBus)
     .WaitFor(keycloak)
     .WaitFor(openFga);
 

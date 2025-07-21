@@ -3,7 +3,7 @@ using Amolenk.Admitto.Application.Common.Abstractions;
 using Amolenk.Admitto.Domain.DomainEvents;
 using Amolenk.Admitto.Infrastructure.Messaging;
 using Azure.Messaging;
-using Azure.Storage.Queues;
+using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Options;
 using Polly;
 using Polly.Retry;
@@ -15,34 +15,23 @@ namespace Amolenk.Admitto.Worker;
 /// Receives cloud events from the Azure Storage queues and dispatches them to the appropriate handlers.
 /// </summary>
 public class MessageQueuesWorker(
-    [FromKeyedServices("queues")] QueueServiceClient queueServiceClient,
+    ServiceBusClient serviceBusClient,
     IServiceProvider serviceProvider,
     IOptions<MessageQueuesWorkerOptions> options,
     ILoggerFactory loggerFactory,
     ILogger<MessageQueuesWorker> logger)
     : BackgroundService
 {
-    private readonly AzureStorageQueueProcessor _queueProcessor = new(
-        queueServiceClient.GetQueueClient("queue"),
-        options.Value.MaxPollDelay,
-        logger);
-
-    private readonly AzureStorageQueueProcessor _prioQueueProcessor = new(
-        queueServiceClient.GetQueueClient("queue-prio"),
-        options.Value.MaxPrioPollDelay,
+    private readonly AzureServiceBusQueueProcessor _queueProcessor = new(
+        serviceBusClient,
+        "queue",
         logger);
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        var queueTask = CreateRetryStrategy("Queue").ExecuteAsync(
-            ct => _queueProcessor.ProcessMessagesAsync(HandleMessageAsync, ct),
+        return CreateRetryStrategy("Queue").ExecuteAsync(
+            ct => _queueProcessor.RunAsync(HandleMessageAsync, ct),
             stoppingToken).AsTask();
-
-        var prioQueueTask = CreateRetryStrategy("PrioQueue").ExecuteAsync(
-            ct => _prioQueueProcessor.ProcessMessagesAsync(HandleMessageAsync, ct),
-            stoppingToken).AsTask();
-
-        return Task.WhenAll(queueTask, prioQueueTask);
     }
 
     private async ValueTask HandleMessageAsync(CloudEvent cloudEvent, CancellationToken cancellationToken)
@@ -61,7 +50,7 @@ public class MessageQueuesWorker(
             case Command command:
                 await HandleCommandAsync(command, scope.ServiceProvider, cancellationToken);
                 break;
-            case IDomainEvent domainEvent:
+            case DomainEvent domainEvent:
                 await HandleDomainEventAsync(domainEvent, scope.ServiceProvider, cancellationToken);
                 break;
             default:
@@ -109,7 +98,7 @@ public class MessageQueuesWorker(
     }
 
     private async ValueTask HandleDomainEventAsync(
-        IDomainEvent domainEvent,
+        DomainEvent domainEvent,
         IServiceProvider scopedServiceProvider,
         CancellationToken cancellationToken)
     {

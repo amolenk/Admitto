@@ -8,8 +8,11 @@ public class SetTeamEmailTemplateSettings : TeamSettings
     public EmailType? EmailType { get; set; }
 
     [CommandOption("--subject")]
-    public string Subject { get; set; } = "Default Subject";
-
+    public required string Subject { get; set; }
+    
+    [CommandOption("--bodyPath")]
+    public required string BodyPath { get; set; }
+    
     public override ValidationResult Validate()
     {
         if (EmailType is null)
@@ -20,6 +23,11 @@ public class SetTeamEmailTemplateSettings : TeamSettings
         if (string.IsNullOrWhiteSpace(Subject))
         {
             return ValidationResult.Error("Subject cannot be empty.");
+        }
+
+        if (string.IsNullOrWhiteSpace(BodyPath) || !File.Exists(BodyPath))
+        {
+            return ValidationResult.Error("Body path is required and must point to an existing file.");
         }
         
         return base.Validate();
@@ -35,8 +43,8 @@ public class SetTeamEmailTemplateCommand(IAccessTokenProvider accessTokenProvide
 
         var request = new ConfigureTeamEmailTemplateRequest
         {
-            Subject = "Subject",
-            Body = "Body"
+            Subject = settings.Subject,
+            Body = await File.ReadAllTextAsync(settings.BodyPath)
         };
 
         var response = await CallApiAsync(async client =>

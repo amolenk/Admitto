@@ -24,9 +24,5 @@ public class MessageEntityConfiguration : IEntityTypeConfiguration<Message>
             .HasColumnName("data")
             .HasColumnType("jsonb")
             .IsRequired();
-
-        builder.Property(e => e.Priority)
-            .HasColumnName("priority")
-            .IsRequired();
     }
 }

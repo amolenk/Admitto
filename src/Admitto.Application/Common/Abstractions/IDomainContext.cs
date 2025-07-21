@@ -12,8 +12,6 @@ public interface IDomainContext
 
     DbSet<Job> Jobs { get; }
     
-    DbSet<PendingRegistration> PendingRegistrations { get; }
-
     DbSet<ScheduledJob> ScheduledJobs { get; }
 
     DbSet<Speaker> Speakers { get; }
