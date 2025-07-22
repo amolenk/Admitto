@@ -4,6 +4,8 @@ using Npgsql;
 
 namespace Amolenk.Admitto.ApiService.Middleware;
 
+// TODO Use BusinessRuleError to get code and message instead of hardcoding them
+
 public class UnitOfWorkFilter(ILogger<UnitOfWorkFilter> logger) : IEndpointFilter
 {
     private const string PostgresUniqueViolation = "23505";

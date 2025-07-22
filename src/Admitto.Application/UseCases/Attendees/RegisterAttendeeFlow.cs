@@ -1,6 +1,6 @@
 using Amolenk.Admitto.Application.Jobs.SendEmail;
 using Amolenk.Admitto.Application.UseCases.Attendees.CompleteRegistration;
-using Amolenk.Admitto.Application.UseCases.Attendees.RejectRegistration;
+using Amolenk.Admitto.Application.UseCases.Attendees.FailRegistration;
 using Amolenk.Admitto.Application.UseCases.TicketedEvents.ReserveTickets;
 using Amolenk.Admitto.Domain.DomainEvents;
 using Amolenk.Admitto.Domain.Entities;
@@ -90,9 +90,9 @@ public class RegisterAttendeeFlow(IMessageSender messageSender, IJobScheduler jo
     /// </summary>
     public ValueTask HandleAsync(TicketsUnavailableDomainEvent domainEvent, CancellationToken cancellationToken)
     {
-        var command = new RejectRegistrationCommand(domainEvent.AttendeeId)
+        var command = new FailRegistrationCommand(domainEvent.AttendeeId)
         {
-            CommandId = DeterministicGuid.Create($"{domainEvent.DomainEventId}:{nameof(RejectRegistrationCommand)}")
+            CommandId = DeterministicGuid.Create($"{domainEvent.DomainEventId}:{nameof(FailRegistrationCommand)}")
         };
 
         return messageSender.SendAsync(Message.FromCommand(command), cancellationToken);

@@ -3,8 +3,8 @@ using Amolenk.Admitto.Domain.DomainEvents;
 namespace Amolenk.Admitto.Application.Projections.Attendance;
 
 public class AttendanceHandler(IApplicationContext context)
-    : IEventualDomainEventHandler<AttendeeCanceledDomainEvent>,
-        IEventualDomainEventHandler<AttendeeCheckedInDomainEvent>,
+    : IEventualDomainEventHandler<AttendeeCheckedInDomainEvent>,
+        IEventualDomainEventHandler<AttendeeCanceledDomainEvent>,
         IEventualDomainEventHandler<AttendeeNoShowDomainEvent>
 {
     public async ValueTask HandleAsync(AttendeeCheckedInDomainEvent domainEvent, CancellationToken cancellationToken)
