@@ -15,9 +15,9 @@ public abstract class AggregateRoot : Entity, IAuditable, IHasConcurrencyToken
     {
     }
 
-    public DateTime CreatedAt { get; set; }
+    public DateTimeOffset CreatedAt { get; set; }
 
-    public DateTime LastChangedAt { get; set; }
+    public DateTimeOffset LastChangedAt { get; set; }
     
     public string? LastChangedBy { get; set; }
 

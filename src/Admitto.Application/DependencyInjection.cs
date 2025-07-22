@@ -12,14 +12,6 @@ public static class DependencyInjection
     {
         services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
 
-        // Register all command and domain event handlers
-        services.Scan(scan => scan
-            .FromAssemblyOf<ApplicationAssemblyLocator>()
-            // Query handlers
-            .AddClasses(classes => classes.AssignableTo<IQueryHandler>())
-            .AsSelfWithInterfaces()
-            .WithScopedLifetime());
-        
         AddTransactionalDomainEventHandlers(services);
     }
     

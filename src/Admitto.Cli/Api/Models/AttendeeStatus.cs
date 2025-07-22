@@ -8,45 +8,29 @@ namespace Amolenk.Admitto.Cli.Api.Models
     public enum AttendeeStatus
     #pragma warning restore CS1591
     {
-        [EnumMember(Value = "unverified")]
+        [EnumMember(Value = "pendingVerification")]
         #pragma warning disable CS1591
-        Unverified,
-        #pragma warning restore CS1591
-        [EnumMember(Value = "verified")]
-        #pragma warning disable CS1591
-        Verified,
+        PendingVerification,
         #pragma warning restore CS1591
         [EnumMember(Value = "verificationFailed")]
         #pragma warning disable CS1591
         VerificationFailed,
         #pragma warning restore CS1591
+        [EnumMember(Value = "pendingTickets")]
+        #pragma warning disable CS1591
+        PendingTickets,
+        #pragma warning restore CS1591
         [EnumMember(Value = "registered")]
         #pragma warning disable CS1591
         Registered,
         #pragma warning restore CS1591
-        [EnumMember(Value = "rejected")]
+        [EnumMember(Value = "registrationFailed")]
         #pragma warning disable CS1591
-        Rejected,
+        RegistrationFailed,
         #pragma warning restore CS1591
-        [EnumMember(Value = "reconfirmed")]
+        [EnumMember(Value = "canceled")]
         #pragma warning disable CS1591
-        Reconfirmed,
-        #pragma warning restore CS1591
-        [EnumMember(Value = "attendedEvent")]
-        #pragma warning disable CS1591
-        AttendedEvent,
-        #pragma warning restore CS1591
-        [EnumMember(Value = "canceledOnTime")]
-        #pragma warning disable CS1591
-        CanceledOnTime,
-        #pragma warning restore CS1591
-        [EnumMember(Value = "canceledLastMinute")]
-        #pragma warning disable CS1591
-        CanceledLastMinute,
-        #pragma warning restore CS1591
-        [EnumMember(Value = "skippedEvent")]
-        #pragma warning disable CS1591
-        SkippedEvent,
+        Canceled,
         #pragma warning restore CS1591
     }
 }

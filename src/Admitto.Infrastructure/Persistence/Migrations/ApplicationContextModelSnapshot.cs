@@ -45,39 +45,32 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                     b.ToTable("outbox", (string)null);
                 });
 
-            modelBuilder.Entity("Amolenk.Admitto.Application.ReadModel.Views.AttendeeActivityView", b =>
+            modelBuilder.Entity("Amolenk.Admitto.Application.Projections.Attendance.AttendanceView", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<string>("Activity")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("activity");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("email");
-
-                    b.Property<Guid>("EventId")
-                        .HasColumnType("uuid");
-
                     b.Property<Guid>("TeamId")
-                        .HasColumnType("uuid");
+                        .HasColumnType("uuid")
+                        .HasColumnName("team_id");
 
-                    b.Property<DateTime>("Timestamp")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("timestamp");
+                    b.Property<Guid>("TicketedEventId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("event_id");
 
-                    b.HasKey("Id");
+                    b.Property<Guid>("AttendeeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("attendee_id");
 
-                    b.HasIndex("Email");
+                    b.Property<string>("AttendanceType")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("attendance_type");
 
-                    b.ToTable("attendee_activities", (string)null);
+                    b.Property<long>("AttendeeVersion")
+                        .HasColumnType("bigint")
+                        .HasColumnName("attendee_version");
+
+                    b.HasKey("TeamId", "TicketedEventId", "AttendeeId");
+
+                    b.ToTable("attendance_view", (string)null);
                 });
 
             modelBuilder.Entity("Amolenk.Admitto.Domain.Entities.Attendee", b =>
@@ -86,7 +79,15 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<DateTime>("CreatedAt")
+                    b.Property<DateTimeOffset?>("CanceledAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("canceled_at");
+
+                    b.Property<DateTimeOffset?>("CheckedInAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("checked_in_at");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
@@ -102,7 +103,7 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(50)")
                         .HasColumnName("first_name");
 
-                    b.Property<DateTime>("LastChangedAt")
+                    b.Property<DateTimeOffset>("LastChangedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("last_changed_at");
 
@@ -116,6 +117,14 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)")
                         .HasColumnName("last_name");
+
+                    b.Property<string>("Participation")
+                        .HasColumnType("text")
+                        .HasColumnName("participation");
+
+                    b.Property<DateTimeOffset?>("ReconfirmedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("reconfirmed_at");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -147,7 +156,7 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<DateTime>("CreatedAt")
+                    b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
@@ -163,7 +172,7 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(50)")
                         .HasColumnName("first_name");
 
-                    b.Property<DateTime>("LastChangedAt")
+                    b.Property<DateTimeOffset>("LastChangedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("last_changed_at");
 
@@ -208,11 +217,11 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                         .HasColumnType("text")
                         .HasColumnName("body");
 
-                    b.Property<DateTime>("CreatedAt")
+                    b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
-                    b.Property<DateTime>("LastChangedAt")
+                    b.Property<DateTimeOffset>("LastChangedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("last_changed_at");
 
@@ -369,7 +378,7 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<DateTime>("CreatedAt")
+                    b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
@@ -385,7 +394,7 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(50)")
                         .HasColumnName("first_name");
 
-                    b.Property<DateTime>("LastChangedAt")
+                    b.Property<DateTimeOffset>("LastChangedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("last_changed_at");
 
@@ -425,11 +434,11 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<DateTime>("CreatedAt")
+                    b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
-                    b.Property<DateTime>("LastChangedAt")
+                    b.Property<DateTimeOffset>("LastChangedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("last_changed_at");
 
@@ -470,7 +479,7 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<DateTime>("CreatedAt")
+                    b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
@@ -478,7 +487,7 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("end_time");
 
-                    b.Property<DateTime>("LastChangedAt")
+                    b.Property<DateTimeOffset>("LastChangedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("last_changed_at");
 
@@ -610,8 +619,7 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
 
                     b.Navigation("AdditionalDetails");
 
-                    b.Navigation("EmailVerification")
-                        .IsRequired();
+                    b.Navigation("EmailVerification");
 
                     b.Navigation("Tickets");
                 });

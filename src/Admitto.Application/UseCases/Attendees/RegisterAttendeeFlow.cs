@@ -3,6 +3,7 @@ using Amolenk.Admitto.Application.UseCases.Attendees.CompleteRegistration;
 using Amolenk.Admitto.Application.UseCases.Attendees.RejectRegistration;
 using Amolenk.Admitto.Application.UseCases.TicketedEvents.ReserveTickets;
 using Amolenk.Admitto.Domain.DomainEvents;
+using Amolenk.Admitto.Domain.Entities;
 using Amolenk.Admitto.Domain.Utilities;
 using Amolenk.Admitto.Domain.ValueObjects;
 
@@ -18,7 +19,7 @@ public class RegisterAttendeeFlow(IMessageSender messageSender, IJobScheduler jo
         , IEventualDomainEventHandler<TicketsReservedDomainEvent>
         , IEventualDomainEventHandler<TicketsUnavailableDomainEvent>
         , IEventualDomainEventHandler<RegistrationCompletedDomainEvent>
-        , IEventualDomainEventHandler<RegistrationRejectedDomainEvent>
+        , IEventualDomainEventHandler<RegistrationFailedDomainEvent>
 {
     /// <summary>
     /// Anyone can start a public registration for a ticketed event. To guard against misuse, we'll first ask the
@@ -32,7 +33,7 @@ public class RegisterAttendeeFlow(IMessageSender messageSender, IJobScheduler jo
             domainEvent.TeamId,
             domainEvent.TicketedEventId,
             domainEvent.AttendeeId,
-            EmailType.VerifyRegistration);
+            EmailType.VerifyEmail);
 
         await jobScheduler.AddJobAsync(emailJobData, cancellationToken);
     }
@@ -114,9 +115,9 @@ public class RegisterAttendeeFlow(IMessageSender messageSender, IJobScheduler jo
     }
     
     /// <summary>
-    /// If the registration was rejected, send a decline email.
+    /// If the registration failed, send a decline email.
     /// </summary>
-    public async ValueTask HandleAsync(RegistrationRejectedDomainEvent domainEvent, CancellationToken cancellationToken)
+    public async ValueTask HandleAsync(RegistrationFailedDomainEvent domainEvent, CancellationToken cancellationToken)
     {
         var jobId = DeterministicGuid.Create($"{domainEvent.DomainEventId}:{nameof(SendEmailJobData)}");
         var emailJobData = new SendEmailJobData(
@@ -124,7 +125,7 @@ public class RegisterAttendeeFlow(IMessageSender messageSender, IJobScheduler jo
             domainEvent.TeamId,
             domainEvent.TicketedEventId,
             domainEvent.AttendeeId,
-            EmailType.RegistrationRejected);
+            EmailType.RegistrationFailed);
 
         await jobScheduler.AddJobAsync(emailJobData, cancellationToken);
     }

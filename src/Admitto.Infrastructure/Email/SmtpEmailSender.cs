@@ -7,11 +7,11 @@ using MimeKit;
 
 namespace Amolenk.Admitto.Infrastructure.Email;
 
-public class SmtpEmailSender(IDomainContext domainContext, ILogger<SmtpEmailSender> logger) : IEmailSender
+public class SmtpEmailSender(IApplicationContext applicationContext, ILogger<SmtpEmailSender> logger) : IEmailSender
 {
     public async Task SendEmailAsync(string recipientEmail, string subject, string body, Guid teamId)
     {
-        var team = await domainContext.Teams.FirstOrDefaultAsync(t => t.Id == teamId);
+        var team = await applicationContext.Teams.FirstOrDefaultAsync(t => t.Id == teamId);
         if (team is null)
         {
             logger.LogError("Cannot send e-mail for team {teamId}, because it doesn't exist.", teamId);

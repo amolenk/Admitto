@@ -1,6 +1,6 @@
 namespace Amolenk.Admitto.Application.UseCases.Attendees.CompleteRegistration;
 
-public class CompleteRegistrationHandler(IDomainContext context) : ICommandHandler<CompleteRegistrationCommand>
+public class CompleteRegistrationHandler(IApplicationContext context) : ICommandHandler<CompleteRegistrationCommand>
 {
     public async ValueTask HandleAsync(CompleteRegistrationCommand command, CancellationToken cancellationToken)
     {

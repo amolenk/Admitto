@@ -19,7 +19,7 @@ public static class CreateTeamEndpoint
         return group;
     }
 
-    private static Created CreateTeam(CreateTeamRequest request, IDomainContext context, 
+    private static Created CreateTeam(CreateTeamRequest request, IApplicationContext context, 
         CancellationToken cancellationToken)
     {
         var emailSettings = new EmailSettings(

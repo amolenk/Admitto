@@ -20,15 +20,17 @@ public static class SendEmailEndpoint
         string teamSlug,
         string eventSlug,
         SendEmailRequest request,
-        IDomainContext context,
+        ISlugResolver slugResolver,
+        IApplicationContext context,
         IMessageOutbox messageOutbox,
         CancellationToken cancellationToken)
     {
-        var ids = await context.GetTicketedEventIdsAsync(teamSlug, eventSlug, cancellationToken);
+        var (teamId, eventId) =
+            await slugResolver.GetTeamAndTicketedEventsIdsAsync(teamSlug, eventSlug, cancellationToken);
         
         var command = new SendEmailCommand(
-            ids.TeamId,
-            ids.TicketedEventId,
+            teamId,
+            eventId,
             request.EmailType,
             request.DataEntityId,
             request.RecipientEmail);

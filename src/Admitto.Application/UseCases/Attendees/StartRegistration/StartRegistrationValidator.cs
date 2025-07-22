@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Application.Common.Validation;
 using Amolenk.Admitto.Domain;
 
 namespace Amolenk.Admitto.Application.UseCases.Attendees.StartRegistration;
@@ -7,49 +8,46 @@ public class StartRegistrationValidator : AbstractValidator<StartRegistrationReq
     public StartRegistrationValidator()
     {
         RuleFor(x => x.Email)
-            .NotNull().WithMessage(ErrorMessage.Attendee.Email.IsRequired)
-            .EmailAddress().WithMessage(ErrorMessage.Attendee.Email.MustBeValid);
+            .NotNull()
+            .EmailAddress();
 
         RuleFor(x => x.FirstName)
-            .NotNull().WithMessage(ErrorMessage.Attendee.FirstName.IsRequired)
-            .MinimumLength(2).WithMessage(ErrorMessage.Attendee.FirstName.MustBeMin2Length)
-            .MaximumLength(50).WithMessage(ErrorMessage.Attendee.FirstName.MustBeMax50Length);
+            .NotNull()
+            .MinimumLength(2)
+            .MaximumLength(50);
 
         RuleFor(x => x.LastName)
-            .NotNull().WithMessage(ErrorMessage.Attendee.LastName.IsRequired)
-            .MinimumLength(2).WithMessage(ErrorMessage.Attendee.LastName.MustBeMin2Length)
-            .MaximumLength(50).WithMessage(ErrorMessage.Attendee.LastName.MustBeMax50Length);
+            .NotNull()
+            .MinimumLength(2)
+            .MaximumLength(50);
 
-        // RuleFor(x => x.Details)
-        //     .NotNull().WithMessage(ErrorMessage.Attendee.Details.AreRequired);
-        
         RuleForEach(x => x.AdditionalDetails)
             .ChildRules(detail =>
             {
                 detail.RuleFor(x => x.Name)
-                    .NotNull().WithMessage(ErrorMessage.Attendee.Details.Key.IsRequired)
-                    .NotEmpty().WithMessage(ErrorMessage.Attendee.Details.Key.MustNotBeEmpty)
-                    .MaximumLength(50).WithMessage(ErrorMessage.Attendee.Details.Key.MustBeMax50Length);
+                    .NotNull()
+                    .NotEmpty()
+                    .MaximumLength(50);
 
                 detail.RuleFor(x => x.Value)
-                    .NotNull().WithMessage(ErrorMessage.Attendee.Details.Value.IsRequired)
-                    .MaximumLength(50).WithMessage(ErrorMessage.Attendee.Details.Value.MustBeMax50Length);
+                    .NotNull()
+                    .MaximumLength(50);
             });
 
         RuleFor(x => x.Tickets)
-            .NotNull().WithMessage(ErrorMessage.AttendeeRegistration.Tickets.AreRequired)
-            .NotEmpty().WithMessage(ErrorMessage.AttendeeRegistration.Tickets.MustNotBeEmpty);
+            .NotNull()
+            .NotEmpty();
         
         RuleForEach(x => x.Tickets)
             .ChildRules(ticketType =>
             {
                 ticketType.RuleFor(x => x.TicketTypeSlug)
-                    .NotEmpty().WithMessage(ErrorMessage.AttendeeRegistration.Tickets.TicketType.MustNotBeEmpty);
+                    .NotEmpty()
+                    .Slug();
 
                 ticketType.RuleFor(x => x.Quantity)
-                    .NotEmpty().WithMessage(ErrorMessage.AttendeeRegistration.Tickets.Quantity.MustNotBeEmpty)
-                    .GreaterThan(0)
-                    .WithMessage(ErrorMessage.AttendeeRegistration.Tickets.Quantity.MustBeGreaterThanZero);
+                    .NotEmpty()
+                    .GreaterThan(0);
             });
     }
 }

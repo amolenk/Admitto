@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Application.Common.Abstractions;
-using Amolenk.Admitto.Domain.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
@@ -21,13 +20,19 @@ public class UnitOfWorkFilter(ILogger<UnitOfWorkFilter> logger) : IEndpointFilte
         }
         catch (DbUpdateException e) when (e.InnerException is PostgresException { SqlState: PostgresUniqueViolation })
         {
-            return Results.Problem("The item that you tried to create already exists.", 
-                statusCode: StatusCodes.Status409Conflict);
+            return Results.Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Conflict",
+                detail: "The item that you tried to create already exists.", 
+                instance: context.HttpContext.Request.Path);
         }
         catch (DbUpdateConcurrencyException)
         {
-            return Results.Problem("The item you tried to update was changed by another user.",
-                statusCode: StatusCodes.Status409Conflict);
+            return Results.Problem(
+                statusCode: StatusCodes.Status409Conflict,
+                title: "Conflict",
+                detail: "The item you tried to update was changed by another user.",
+                instance: context.HttpContext.Request.Path);
         }
     }
 }

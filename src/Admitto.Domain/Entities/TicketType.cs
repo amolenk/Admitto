@@ -1,6 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
-using Amolenk.Admitto.Domain.Exceptions;
 using Amolenk.Admitto.Domain.Utilities;
 
 namespace Amolenk.Admitto.Domain.Entities;
@@ -28,10 +27,10 @@ public class TicketType : Entity
     public static TicketType Create(string slug, string name, string slotName, int maxCapacity)
     {
         if (string.IsNullOrWhiteSpace(name))
-            throw new BusinessRuleException("Name cannot be empty.");
+            throw new BusinessRuleException(BusinessRuleError.TicketType.NameIsRequired);
         
         if (maxCapacity <= 0)
-            throw new BusinessRuleException("Max capacity should be greater than 0.");
+            throw new BusinessRuleException(BusinessRuleError.TicketType.MaxCapacityMustBeGreaterThan(0));
 
         var id = DeterministicGuid.Create(name);
         

@@ -23,22 +23,23 @@ public static class ConfigureEventEmailTemplateEndpoint
         string eventSlug,
         EmailType emailType,
         ConfigureEventEmailTemplateRequest request,
-        IDomainContext context,
+        ISlugResolver slugResolver,
+        IApplicationContext context,
         CancellationToken cancellationToken)
     {
-        var ids = await context.GetTicketedEventIdsAsync(teamSlug, eventSlug, cancellationToken);
+        var (teamId, eventId) =
+            await slugResolver.GetTeamAndTicketedEventsIdsAsync(teamSlug, eventSlug, cancellationToken);
 
         var emailTemplate = EmailTemplate.Create(
             emailType,
             request.Subject,
             request.Body,
-            ids.TeamId,
-            ids.TicketedEventId);
+            teamId,
+            eventId);
 
         var existingTemplate = await context.EmailTemplates
             .FirstOrDefaultAsync(
-                et => et.TeamId == ids.TeamId && et.TicketedEventId == ids.TicketedEventId &&
-                      et.Type == emailType,
+                et => et.TeamId == teamId && et.TicketedEventId == eventId && et.Type == emailType,
                 cancellationToken: cancellationToken);
 
         if (existingTemplate is not null)

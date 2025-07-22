@@ -16,31 +16,34 @@ public static class GetTicketedEventEndpoint
 
         return group;
     }
-    
-    private static async ValueTask<Results<Ok<GetTicketedEventResponse>, NotFound>> GetTicketedEvent(string teamSlug, 
-        string eventSlug, IDomainContext context, CancellationToken cancellationToken)
-    {
-        var ticketedEvent = await context.TicketedEvents
-            .AsNoTracking()
-            .Join(context.Teams,
-                e => e.TeamId,
-                t => t.Id,
-                (e, t) => new { Event = e, Team = t })
-            .Where(joined => joined.Event.Slug == eventSlug && joined.Team.Slug == teamSlug)
-            .Select(joined => joined.Event)
-            .FirstOrDefaultAsync(cancellationToken: cancellationToken);
 
-        if (ticketedEvent is null)
-        {
-            return TypedResults.NotFound();
-        }
-        
+    private static async ValueTask<Ok<GetTicketedEventResponse>> GetTicketedEvent(
+        string teamSlug,
+        string eventSlug,
+        ISlugResolver slugResolver,
+        IApplicationContext context,
+        CancellationToken cancellationToken)
+    {
+        var (_, eventId) = 
+            await slugResolver.GetTeamAndTicketedEventsIdsAsync(teamSlug, eventSlug, cancellationToken);
+
+        var ticketedEvent = await context.TicketedEvents.GetEntityAsync(eventId, true, cancellationToken);
+
         var ticketTypes = ticketedEvent.TicketTypes.Select(t => new TicketTypeDto(
-            t.Slug, t.Name, t.SlotName, t.MaxCapacity, t.UsedCapacity));
-        
-        var response = new GetTicketedEventResponse(ticketedEvent.Slug, ticketedEvent.Name,
-            ticketedEvent.StartTime, ticketedEvent.EndTime, ticketedEvent.RegistrationStartTime, 
-            ticketedEvent.RegistrationEndTime, ticketTypes);
+            t.Slug,
+            t.Name,
+            t.SlotName,
+            t.MaxCapacity,
+            t.UsedCapacity));
+
+        var response = new GetTicketedEventResponse(
+            ticketedEvent.Slug,
+            ticketedEvent.Name,
+            ticketedEvent.StartTime,
+            ticketedEvent.EndTime,
+            ticketedEvent.RegistrationStartTime,
+            ticketedEvent.RegistrationEndTime,
+            ticketTypes);
 
         return TypedResults.Ok(response);
     }

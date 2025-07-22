@@ -32,8 +32,13 @@ public static class DependencyInjection
         });
         
         builder.EnrichNpgsqlDbContext<ApplicationContext>();
+
+        builder.Services.AddMemoryCache(options =>
+        {
+            // TODO Optimize cache size and expiration
+        });
         
-        // builder.AddKeyedAzureQueueClient("queues");
+        builder.Services.AddScoped<ISlugResolver, SlugResolver>();
         
         builder.AddAzureServiceBusClient(connectionName: "messaging");
         
@@ -41,8 +46,7 @@ public static class DependencyInjection
             .AddScoped<IUnitOfWork, UnitOfWork>();
 
         builder.Services
-            .AddScoped<IDomainContext>(sp => sp.GetRequiredService<ApplicationContext>())
-            .AddScoped<IReadModelContext>(sp => sp.GetRequiredService<ApplicationContext>());
+            .AddScoped<IApplicationContext>(sp => sp.GetRequiredService<ApplicationContext>());
         
         builder.Services
             .AddScoped<IMessageSender, MessageSender>()

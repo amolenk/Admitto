@@ -17,7 +17,7 @@ public interface IEmailTemplateService
         CancellationToken cancellationToken = default);
 }
 
-public class EmailTemplateService(IDomainContext context) : IEmailTemplateService
+public class EmailTemplateService(IApplicationContext context) : IEmailTemplateService
 {
     public async ValueTask<(string Subject, string Body)> RenderTemplateAsync(
         EmailType type,
@@ -71,7 +71,7 @@ public class EmailTemplateService(IDomainContext context) : IEmailTemplateServic
 
         return type switch
         {
-            EmailType.VerifyRegistration => GetDefaultVerifyRegistrationTemplate(teamId),
+            EmailType.VerifyEmail => GetDefaultVerifyRegistrationTemplate(teamId),
             _ => throw new NotSupportedException($"Email type '{type}' is not supported.")
         };
     }
@@ -79,7 +79,7 @@ public class EmailTemplateService(IDomainContext context) : IEmailTemplateServic
     private static EmailTemplate GetDefaultVerifyRegistrationTemplate(Guid teamId)
     {
         return EmailTemplate.Create(
-            EmailType.VerifyRegistration,
+            EmailType.VerifyEmail,
             "Verify Your Email to Complete Registration",
             """
             <!DOCTYPE html>

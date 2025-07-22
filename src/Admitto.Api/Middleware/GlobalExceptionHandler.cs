@@ -14,7 +14,7 @@ public class GlobalExceptionHandler(IHostEnvironment environment, ILogger<Global
         var problemDetails = new ProblemDetails
         {
             Status = StatusCodes.Status500InternalServerError,
-            Title = "Internal server error.",
+            Title = "Internal Server Error",
             Detail = environment.IsDevelopment()
                 ? exception.ToString()
                 : "An unexpected error occurred. Please try again later.",

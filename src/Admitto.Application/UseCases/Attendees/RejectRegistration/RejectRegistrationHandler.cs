@@ -1,6 +1,6 @@
 namespace Amolenk.Admitto.Application.UseCases.Attendees.RejectRegistration;
 
-public class RejectRegistrationHandler(IDomainContext context) : ICommandHandler<RejectRegistrationCommand>
+public class RejectRegistrationHandler(IApplicationContext context) : ICommandHandler<RejectRegistrationCommand>
 {
     public async ValueTask HandleAsync(RejectRegistrationCommand command, CancellationToken cancellationToken)
     {
@@ -8,6 +8,6 @@ public class RejectRegistrationHandler(IDomainContext context) : ICommandHandler
             command.AttendeeId,
             cancellationToken: cancellationToken);
         
-        attendee.RejectRegistration();
+        attendee.FailRegistration();
     }
 }

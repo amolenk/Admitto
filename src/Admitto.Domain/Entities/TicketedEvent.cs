@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Domain.DomainEvents;
-using Amolenk.Admitto.Domain.Exceptions;
 using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Domain.Entities;
@@ -57,16 +56,16 @@ public class TicketedEvent : AggregateRoot
         DateTimeOffset registrationEndTime)
     {
         if (string.IsNullOrWhiteSpace(name))
-            throw new BusinessRuleException("Name cannot be empty.");
+            throw new BusinessRuleException(BusinessRuleError.TicketedEvent.NameIsRequired);
 
         if (endTime < startTime)
-            throw new BusinessRuleException("End day should be greater than start day.");
+            throw new BusinessRuleException(BusinessRuleError.TicketedEvent.EndTimeMustBeAfterStartTime);
 
         if (registrationStartTime >= registrationEndTime)
-            throw new BusinessRuleException("Sales start time must be before sales end time.");
+            throw new BusinessRuleException(BusinessRuleError.TicketedEvent.RegistrationEndTimeMustBeAfterRegistrationStartTime);
 
         if (registrationEndTime > startTime)
-            throw new BusinessRuleException("Registration must close before the event starts.");
+            throw new BusinessRuleException(BusinessRuleError.TicketedEvent.RegistrationMustCloseBeforeEvent);
 
         return new TicketedEvent(
             Guid.NewGuid(),
@@ -83,7 +82,7 @@ public class TicketedEvent : AggregateRoot
     {
         if (_ticketTypes.Any(t => t.Slug == slug))
         {
-            throw DomainError.TicketedEvent.TicketTypeAlreadyExists();
+            throw new BusinessRuleException(BusinessRuleError.TicketedEvent.TicketTypeAlreadyExists);
         }
 
         var ticketType = TicketType.Create(slug, name, slotName, maxCapacity);
@@ -111,7 +110,7 @@ public class TicketedEvent : AggregateRoot
     {
         if (tickets.Count == 0)
         {
-            throw new BusinessRuleException("No tickets provided for reservation.");
+            throw new BusinessRuleException(BusinessRuleError.TicketedEvent.TicketsAreRequired);
         }
 
         foreach (var ticketSelection in tickets)

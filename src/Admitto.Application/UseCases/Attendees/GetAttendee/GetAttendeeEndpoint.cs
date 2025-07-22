@@ -18,7 +18,7 @@ public static class GetAttendeeEndpoint
         string teamSlug,
         string eventSlug,
         Guid attendeeId,
-        IDomainContext context,
+        IApplicationContext context,
         CancellationToken cancellationToken)
     {
         var attendee = await context.Attendees.GetEntityAsync(

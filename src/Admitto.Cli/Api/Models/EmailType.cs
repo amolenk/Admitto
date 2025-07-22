@@ -16,9 +16,9 @@ namespace Amolenk.Admitto.Cli.Api.Models
         #pragma warning disable CS1591
         Ticket,
         #pragma warning restore CS1591
-        [EnumMember(Value = "registrationRejected")]
+        [EnumMember(Value = "registrationFailed")]
         #pragma warning disable CS1591
-        RegistrationRejected,
+        RegistrationFailed,
         #pragma warning restore CS1591
     }
 }

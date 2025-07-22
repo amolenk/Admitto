@@ -17,13 +17,12 @@ public static class GetEventEmailTemplatesEndpoint
     private static async ValueTask<Ok<GetEventEmailTemplatesResponse>> GetEventEmailTemplates(
         string teamSlug,
         string eventSlug,
-        IDomainContext context,
+        ISlugResolver slugResolver,
+        IApplicationContext context,
         CancellationToken cancellationToken)
     {
-        var (teamId, eventId) = await context.GetTicketedEventIdsAsync(
-            teamSlug,
-            eventSlug,
-            cancellationToken: cancellationToken);
+        var (teamId, eventId) =
+            await slugResolver.GetTeamAndTicketedEventsIdsAsync(teamSlug, eventSlug, cancellationToken);
 
         var emailTemplates = await context.EmailTemplates
             .Where(t => t.TeamId == teamId && (t.TicketedEventId == eventId || t.TicketedEventId == null))

@@ -10,4 +10,4 @@ public record AttendeeDto(
     string FirstName,
     string LastName,
     AttendeeStatus Status,
-    DateTime LastChangedAt);
+    DateTimeOffset LastChangedAt);

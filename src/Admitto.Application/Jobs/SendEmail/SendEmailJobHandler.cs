@@ -1,10 +1,11 @@
 using Amolenk.Admitto.Application.UseCases.Email;
+using Amolenk.Admitto.Domain;
 using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Application.Jobs.SendEmail;
 
 public class SendEmailJobHandler(
-    IDomainContext context,
+    IApplicationContext context,
     IEmailTemplateService emailTemplateService,
     IEmailSender emailSender)
     : IJobHandler<SendEmailJobData>
@@ -40,10 +41,10 @@ public class SendEmailJobHandler(
     {
         switch (emailType)
         {
-            case EmailType.VerifyRegistration:
-                return GetAttendeeTemplateParametersAsync(dataEntityId, cancellationToken);
+            case EmailType.VerifyEmail:
             case EmailType.Ticket:
-            case EmailType.RegistrationRejected:
+            case EmailType.RegistrationFailed:
+                return GetAttendeeTemplateParametersAsync(dataEntityId, cancellationToken);
             default:
                 throw new ArgumentOutOfRangeException(nameof(emailType), emailType, null);
         }
@@ -66,7 +67,7 @@ public class SendEmailJobHandler(
                 joined.Event.Name,
                 joined.Event.TicketTypes,
                 joined.Attendee.Email,
-                joined.Attendee.EmailVerification.Code,
+                joined.Attendee.EmailVerification,
                 joined.Attendee.FirstName,
                 joined.Attendee.LastName,
                 joined.Attendee.AdditionalDetails,
@@ -76,15 +77,14 @@ public class SendEmailJobHandler(
 
         if (info is null)
         {
-            // TODO
-            throw new Exception("Registration not found");
+            throw new BusinessRuleException(BusinessRuleError.Attendee.NotFound(attendeeId));
         }
 
         var templateParameters = new Dictionary<string, string>
         {
             ["event_name"] = info.Name,
             ["email"] = info.Email,
-            ["verification_code"] = info.Code,
+            ["verification_code"] = info.EmailVerification?.Code ?? string.Empty,
             ["first_name"] = info.FirstName,
             ["last_name"] = info.LastName
         };

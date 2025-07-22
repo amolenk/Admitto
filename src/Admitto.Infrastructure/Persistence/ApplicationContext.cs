@@ -1,18 +1,14 @@
-using System.Collections.ObjectModel;
 using System.Reflection;
 using Amolenk.Admitto.Application.Common.Abstractions;
-using Amolenk.Admitto.Application.ReadModel.Views;
+using Amolenk.Admitto.Application.Projections.Attendance;
 using Amolenk.Admitto.Domain.Entities;
 using Amolenk.Admitto.Domain.ValueObjects;
-using Amolenk.Admitto.Infrastructure.Messaging;
 using Microsoft.EntityFrameworkCore;
 
 namespace Amolenk.Admitto.Infrastructure.Persistence;
 
-public class ApplicationContext(DbContextOptions options) : DbContext(options), IDomainContext, IReadModelContext
+public class ApplicationContext(DbContextOptions options) : DbContext(options), IApplicationContext
 {
-    // IDomainContext sets
-    // public DbSet<Registration> Registrations { get; set; } = null!;
     public DbSet<Attendee> Attendees { get; set; } = null!;
     public DbSet<CrewMember> CrewMembers { get; set; } = null!;
     public DbSet<Job> Jobs { get; set; } = null!;
@@ -22,10 +18,8 @@ public class ApplicationContext(DbContextOptions options) : DbContext(options), 
     public DbSet<Team> Teams { get; set; } = null!;
     public DbSet<TicketedEvent> TicketedEvents { get; set; } = null!;
 
-    // IReadModelContext sets
-    public DbSet<AttendeeActivityView> AttendeeActivities { get; set; } = null!;
-    
-    // Other sets
+    public DbSet<AttendanceView> AttendanceView { get; set; } = null!;
+
     public DbSet<Message> Outbox { get; set; } = null!;
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)

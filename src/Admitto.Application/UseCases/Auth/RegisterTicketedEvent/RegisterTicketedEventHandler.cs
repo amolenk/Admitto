@@ -1,6 +1,6 @@
 namespace Amolenk.Admitto.Application.UseCases.Auth.RegisterTicketedEvent;
 
-public class RegisterTicketedEventHandler(IDomainContext context, IAuthorizationService authorizationService) 
+public class RegisterTicketedEventHandler(IApplicationContext context, IAuthorizationService authorizationService) 
     : ICommandHandler<RegisterTicketedEventCommand>
 {
     public async ValueTask HandleAsync(RegisterTicketedEventCommand command, CancellationToken cancellationToken)

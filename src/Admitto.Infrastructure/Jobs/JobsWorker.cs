@@ -40,7 +40,7 @@ public class JobsWorker(IServiceProvider serviceProvider, IOptions<JobsOptions> 
     private async Task ReloadJobsStateAsync(CancellationToken cancellationToken)
     {
         using var scope = serviceProvider.CreateScope();
-        var domainContext = scope.ServiceProvider.GetRequiredService<IDomainContext>();
+        var domainContext = scope.ServiceProvider.GetRequiredService<IApplicationContext>();
 
         // Load pending jobs into the in-memory queue
         var pendingJobIds = await domainContext.Jobs
@@ -77,7 +77,7 @@ public class JobsWorker(IServiceProvider serviceProvider, IOptions<JobsOptions> 
     private async Task StartJobAsync(Guid jobId, CancellationToken cancellationToken)
     {
         using var scope = serviceProvider.CreateScope();
-        var domainContext = scope.ServiceProvider.GetRequiredService<IDomainContext>();
+        var domainContext = scope.ServiceProvider.GetRequiredService<IApplicationContext>();
         var unitOfWork = scope.ServiceProvider.GetRequiredService<IUnitOfWork>();
 
         var job = await domainContext.Jobs.FindAsync([jobId], cancellationToken);

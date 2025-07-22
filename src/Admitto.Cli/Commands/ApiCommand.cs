@@ -163,27 +163,23 @@ public abstract class ApiCommand<TSettings>(IAccessTokenProvider accessTokenProv
 
     private static void WriteException(Exception ex)
     {
-        AnsiConsole.MarkupLine($"[red]✗ {ex.Message.EscapeMarkup()}[/]");
+        AnsiConsole.MarkupLine($"[red]{ex.Message.EscapeMarkup()}[/]");
     }
     
     private static void WriteException(ProblemDetails ex)
     {
-        AnsiConsole.MarkupLine($"[red]✗ {ex.Title.EscapeMarkup()}[/]");
-
-        if (!string.IsNullOrEmpty(ex.Detail))
-        {
-            AnsiConsole.MarkupLine($"[yellow]{ex.Detail.EscapeMarkup()}[/]");
-        }
+        AnsiConsole.MarkupLine(
+            !string.IsNullOrWhiteSpace(ex.Detail)
+                ? $"[red]{ex.Title.EscapeMarkup()}:[/] {ex.Detail.EscapeMarkup()}"
+                : $"[red]{ex.Title.EscapeMarkup()}[/]");
     }
     
     private static void WriteException(HttpValidationProblemDetails ex)
     {
-        AnsiConsole.MarkupLine($"[red]✗ {ex.Title.EscapeMarkup()}[/]");
-
-        if (!string.IsNullOrEmpty(ex.Detail))
-        {
-            AnsiConsole.MarkupLine($"[yellow]{ex.Detail.EscapeMarkup()}[/]");
-        }
+        AnsiConsole.MarkupLine(
+            !string.IsNullOrWhiteSpace(ex.Detail)
+                ? $"[red]{ex.Title.EscapeMarkup()}:[/] {ex.Detail.EscapeMarkup()}"
+                : $"[red]Error: {ex.Title.EscapeMarkup()}[/]");
 
         if (ex.Errors is null) return;
         
@@ -192,8 +188,8 @@ public abstract class ApiCommand<TSettings>(IAccessTokenProvider accessTokenProv
         {
             foreach (var errorValue in ((UntypedArray)error.Value).GetValue())
             {
-                AnsiConsole.MarkupLine(
-                    $"[yellow]- {error.Key.EscapeMarkup()}: {((UntypedString)errorValue).GetValue().EscapeMarkup()}[/]");
+                AnsiConsole.WriteLine(
+                    $"- {((UntypedString)errorValue).GetValue().EscapeMarkup()}");
             }
         }
     }

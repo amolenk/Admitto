@@ -1,5 +1,5 @@
 using Amolenk.Admitto.Application.Common.Authorization;
-using Amolenk.Admitto.Application.Common.Validation;
+using Amolenk.Admitto.Domain;
 using Amolenk.Admitto.Domain.Entities;
 
 namespace Amolenk.Admitto.Application.UseCases.Attendees.StartRegistration;
@@ -20,13 +20,15 @@ public static class StartRegistrationEndpoint
         string teamSlug,
         string eventSlug,
         StartRegistrationRequest request,
-        IDomainContext context,
+        ISlugResolver slugResolver,
+        IApplicationContext context,
         CancellationToken cancellationToken)
     {
-        var teamId = await context.Teams.GetTeamIdAsync(teamSlug, cancellationToken);
-        var ticketedEvent = await context.TicketedEvents.GetTicketedEventAsync(
-            teamId,
-            eventSlug,
+        var teamId = await slugResolver.GetTeamIdAsync(teamSlug, cancellationToken);
+        var eventId = await slugResolver.GetTicketedEventIdAsync(teamId, eventSlug, cancellationToken);
+
+        var ticketedEvent = await context.TicketedEvents.GetEntityAsync(
+            eventId,
             noTracking: true,
             cancellationToken);
 
@@ -34,7 +36,7 @@ public static class StartRegistrationEndpoint
         // Invited attendees always get a spot, so we don't check capacity for them.
         if (!request.IsInvited && !ticketedEvent.HasAvailableCapacity(request.Tickets))
         {
-            throw ValidationError.TicketedEvent.SoldOut();
+            throw new BusinessRuleException(BusinessRuleError.TicketedEvent.InsufficientCapacity);
         }
         
         // TODO Check that there isn't already a registration request for this event with the same email.

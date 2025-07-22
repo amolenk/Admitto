@@ -19,14 +19,16 @@ public static class ClearEventEmailTemplateEndpoint
         string teamSlug,
         string eventSlug,
         EmailType emailType,
-        IDomainContext context,
+        ISlugResolver slugResolver,
+        IApplicationContext context,
         CancellationToken cancellationToken)
     {
-        var ids = await context.GetTicketedEventIdsAsync(teamSlug, eventSlug, cancellationToken);
+        var (teamId, eventId) =
+            await slugResolver.GetTeamAndTicketedEventsIdsAsync(teamSlug, eventSlug, cancellationToken);
 
         await context.EmailTemplates
-            .Where(t => t.TeamId == ids.TeamId && t.TicketedEventId == ids.TicketedEventId
-                && t.Type == emailType)
+            .Where(t => t.TeamId == teamId && t.TicketedEventId == eventId
+                                           && t.Type == emailType)
             .ExecuteDeleteAsync(cancellationToken);
 
         return TypedResults.Ok();

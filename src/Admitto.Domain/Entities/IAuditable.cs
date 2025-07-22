@@ -2,9 +2,9 @@ namespace Amolenk.Admitto.Domain.Entities;
 
 public interface IAuditable
 {
-    DateTime CreatedAt { get; set; }
+    DateTimeOffset CreatedAt { get; set; }
     
-    DateTime LastChangedAt { get;set; }
+    DateTimeOffset LastChangedAt { get;set; }
     
     string? LastChangedBy { get; set; }
 }

@@ -19,10 +19,11 @@ public static class ClearTeamEmailTemplateEndpoint
     private static async ValueTask<Ok> ClearTeamEmailTemplate(
         string teamSlug,
         EmailType emailType,
-        IDomainContext context,
+        ISlugResolver slugResolver,
+        IApplicationContext context,
         CancellationToken cancellationToken)
     {
-        var teamId = await context.Teams.GetTeamIdAsync(teamSlug, cancellationToken);
+        var teamId = await slugResolver.GetTeamIdAsync(teamSlug, cancellationToken);
 
         await context.EmailTemplates
             .Where(t => t.TeamId == teamId && t.TicketedEventId == null

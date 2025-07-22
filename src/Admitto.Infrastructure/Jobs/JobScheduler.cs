@@ -3,7 +3,7 @@ using Amolenk.Admitto.Domain.Entities;
 
 namespace Amolenk.Admitto.Infrastructure.Jobs;
 
-public class JobScheduler(IDomainContext domainContext, JobsWorker jobsWorker, IUnitOfWork unitOfWork) : IJobScheduler
+public class JobScheduler(IApplicationContext applicationContext, JobsWorker jobsWorker, IUnitOfWork unitOfWork) : IJobScheduler
 {
     // TODO Could also be part of unit of work... or use this same pattern for the message outbox as well.
     public async ValueTask AddJobAsync<TJobData>(TJobData jobData, CancellationToken cancellationToken = default) 
@@ -11,10 +11,10 @@ public class JobScheduler(IDomainContext domainContext, JobsWorker jobsWorker, I
     {
         var job = Job.Create(jobData);
         
-        var existingJob = await domainContext.Jobs.FindAsync([job.Id], cancellationToken);
+        var existingJob = await applicationContext.Jobs.FindAsync([job.Id], cancellationToken);
         if (existingJob is null)
         {
-            domainContext.Jobs.Add(job);
+            applicationContext.Jobs.Add(job);
         }
         else
         {

@@ -43,7 +43,12 @@ public class ValidationFilter : IEndpointFilter
                     g => g.Key,
                     g => g.Select(e => e.ErrorMessage).ToArray());
 
-            return Results.ValidationProblem(errors);
+            return Results.ValidationProblem(
+                title: "Validation Failed",
+                detail: "One or more validation errors occurred.",
+                errors: errors,
+                instance: context.HttpContext.Request.Path,
+                extensions: [new KeyValuePair<string, object?>("errorCode", "validation")]);
         }
 
         return await next(context);

@@ -17,15 +17,16 @@ public static class GetAttendeesEndpoint
     private static async ValueTask<Ok<GetAttendeesResponse>> GetAttendees(
         string teamSlug,
         string eventSlug,
-        IDomainContext context,
+        ISlugResolver slugResolver,
+        IApplicationContext context,
         CancellationToken cancellationToken)
     {
-        // TODO Introduce slug resolver
-        var ids = await context.GetTicketedEventIdsAsync(teamSlug, eventSlug, cancellationToken);
+        var teamId = await slugResolver.GetTeamIdAsync(teamSlug, cancellationToken);
+        var eventId = await slugResolver.GetTicketedEventIdAsync(teamId, eventSlug, cancellationToken);
         
         var attendees = await context.Attendees
             .AsNoTracking()
-            .Where(a => a.TeamId == ids.TeamId && a.TicketedEventId == ids.TicketedEventId)
+            .Where(a => a.TeamId == teamId && a.TicketedEventId == eventId)
             .Select(a => new
             {
                 a.Id,

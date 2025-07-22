@@ -20,10 +20,11 @@ public static class ConfigureTeamEmailTemplateEndpoint
         string teamSlug,
         EmailType emailType,
         ConfigureTeamEmailTemplateRequest request,
-        IDomainContext context,
+        ISlugResolver slugResolver,
+        IApplicationContext context,
         CancellationToken cancellationToken)
     {
-        var teamId = await context.Teams.GetTeamIdAsync(teamSlug, cancellationToken);
+        var teamId = await slugResolver.GetTeamIdAsync(teamSlug, cancellationToken);
 
         var emailTemplate = EmailTemplate.Create(
             emailType,

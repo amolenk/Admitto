@@ -32,6 +32,16 @@ namespace Amolenk.Admitto.Cli.Api.Models
 #else
         public string SlotName { get; set; }
 #endif
+        /// <summary>The slug property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public string? Slug { get; set; }
+#nullable restore
+#else
+        public string Slug { get; set; }
+#endif
+        /// <summary>The usedCapacity property</summary>
+        public int? UsedCapacity { get; set; }
         /// <summary>
         /// Instantiates a new <see cref="global::Amolenk.Admitto.Cli.Api.Models.TicketTypeDto"/> and sets the default values.
         /// </summary>
@@ -60,6 +70,8 @@ namespace Amolenk.Admitto.Cli.Api.Models
                 { "maxCapacity", n => { MaxCapacity = n.GetIntValue(); } },
                 { "name", n => { Name = n.GetStringValue(); } },
                 { "slotName", n => { SlotName = n.GetStringValue(); } },
+                { "slug", n => { Slug = n.GetStringValue(); } },
+                { "usedCapacity", n => { UsedCapacity = n.GetIntValue(); } },
             };
         }
         /// <summary>
@@ -72,6 +84,8 @@ namespace Amolenk.Admitto.Cli.Api.Models
             writer.WriteIntValue("maxCapacity", MaxCapacity);
             writer.WriteStringValue("name", Name);
             writer.WriteStringValue("slotName", SlotName);
+            writer.WriteStringValue("slug", Slug);
+            writer.WriteIntValue("usedCapacity", UsedCapacity);
             writer.WriteAdditionalData(AdditionalData);
         }
     }

@@ -13,12 +13,14 @@ public static class GetTeamsEndpoint
         group
             .MapGet("/", GetTeams)
             .WithName(nameof(GetTeams));
-        
+
         return group;
     }
-    
+
     private static async ValueTask<Results<Ok<GetTeamsResponse>, UnauthorizedHttpResult>> GetTeams(
-        IDomainContext context, ClaimsPrincipal principal, IAuthorizationService authorizationService,
+        IApplicationContext context,
+        ClaimsPrincipal principal,
+        IAuthorizationService authorizationService,
         CancellationToken cancellationToken)
     {
         var userId = principal.GetUserId();
@@ -30,20 +32,21 @@ public static class GetTeamsEndpoint
         var authorizedTeams = (
                 await authorizationService.GetTeamsAsync(userId.Value, cancellationToken))
             .ToList();
-        
+
         if (authorizedTeams.Count == 0)
         {
             return TypedResults.Ok(new GetTeamsResponse([]));
         }
-        
+
         var teams = await context.Teams
             .Where(t => authorizedTeams.Contains(t.Slug))
             .ToListAsync(cancellationToken);
 
-        var response = new GetTeamsResponse(teams
-            .Select(t => new TeamDto(t.Slug, t.Name, t.EmailSettings.SenderEmail))
-            .ToArray());
-        
+        var response = new GetTeamsResponse(
+            teams
+                .Select(t => new TeamDto(t.Slug, t.Name, t.EmailSettings.SenderEmail))
+                .ToArray());
+
         return TypedResults.Ok(response);
     }
 }

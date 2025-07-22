@@ -1,5 +1,5 @@
+using System.Diagnostics;
 using Amolenk.Admitto.Domain.DomainEvents;
-using Amolenk.Admitto.Domain.Exceptions;
 using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Domain.Entities;
@@ -31,7 +31,6 @@ public class Attendee : AggregateRoot, IHasAdditionalDetails
         TeamId = teamId;
         TicketedEventId = ticketedEventId;
         Email = email;
-        EmailVerification = EmailVerification.Generate();
         FirstName = firstName;
         LastName = lastName;
 
@@ -40,25 +39,29 @@ public class Attendee : AggregateRoot, IHasAdditionalDetails
 
         if (isInvited)
         {
-            // TODO Don't need to set verification properties if the attendee is invited.
-         
             AddDomainEvent(new AttendeeInvitedDomainEvent(TicketedEventId, Id, _tickets));
-            Status = AttendeeStatus.Verified;
+            Status = AttendeeStatus.PendingTickets;
         }
         else
         {
             AddDomainEvent(new AttendeeSignedUpDomainEvent(TeamId, TicketedEventId, Id));
-            Status = AttendeeStatus.Unverified;
+
+            EmailVerification = EmailVerification.Generate();
+            Status = AttendeeStatus.PendingVerification;
         }
     }
 
     public Guid TeamId { get; private set; }
     public Guid TicketedEventId { get; private set; }
     public string Email { get; private set; } = null!;
-    public EmailVerification EmailVerification { get; private set; } = null!;
+    public EmailVerification? EmailVerification { get; private set; } = null!;
     public string FirstName { get; private set; } = null!;
     public string LastName { get; private set; } = null!;
     public AttendeeStatus Status { get; private set; }
+    public AttendeeParticipation? Participation { get; private set; }
+    public DateTimeOffset? ReconfirmedAt { get; private set; }
+    public DateTimeOffset? CheckedInAt { get; private set; }
+    public DateTimeOffset? CanceledAt { get; private set; }
 
     public IReadOnlyCollection<AdditionalDetail> AdditionalDetails => _additionalDetails.AsReadOnly();
     public IReadOnlyCollection<TicketSelection> Tickets => _tickets.AsReadOnly();
@@ -87,39 +90,121 @@ public class Attendee : AggregateRoot, IHasAdditionalDetails
     
     public bool Verify(string code)
     {
-        if (Status == AttendeeStatus.Unverified
+        if (Status == AttendeeStatus.PendingVerification
+            && EmailVerification is not null
             && !EmailVerification.IsExpired
             && EmailVerification.Code == code)
         {
             // Mark the registration as verified.
             AddDomainEvent(new AttendeeVerifiedDomainEvent(TicketedEventId, Id, _tickets));
-            Status = AttendeeStatus.Verified;
+            Status = AttendeeStatus.PendingTickets;
             return true;
         }
 
         Status = AttendeeStatus.VerificationFailed;
         return false;
     }
-
+    
     public void CompleteRegistration()
     {
-        if (Status != AttendeeStatus.Verified)
-        {
-            throw new BusinessRuleException("Cannot complete a registration that is not verified.");
-        }
-        
+        EnsureTransitionsFromPendingTickets();
         AddDomainEvent(new RegistrationCompletedDomainEvent(TeamId, TicketedEventId, Id));
         Status = AttendeeStatus.Registered;
     }
 
-    public void RejectRegistration()
+    public void FailRegistration()
     {
-        if (Status != AttendeeStatus.Verified)
+        EnsureTransitionsFromPendingTickets();
+        AddDomainEvent(new RegistrationFailedDomainEvent(TeamId, TicketedEventId, Id));
+        Status = AttendeeStatus.RegistrationFailed;
+    }
+
+    // public void CancelRegistration(DateTimeOffset maxCancellationTime, DateTimeOffset? canceledAt = null)
+    // {
+    //     if (Status != AttendeeStatus.Registered)
+    //     {
+    //         throw new BusinessRuleException(BusinessRuleError.Registration.MustBeCompletedBeforeCancellation);
+    //     }
+    //
+    //     if (Participation is not null)
+    //     {
+    //         throw new BusinessRuleException(BusinessRuleError.Registration.CannotCancelAfterParticipation);
+    //     }
+    //     
+    //     Status = AttendeeStatus.Canceled;
+    //     CanceledAt = canceledAt ?? DateTimeOffset.UtcNow;
+    //     
+    //     AddDomainEvent(new AttendeeCanceledDomainEvent(
+    //         TeamId,
+    //         TicketedEventId,
+    //         Id,
+    //         LateCancellation: CanceledAt > maxCancellationTime,
+    //         Version));
+    // }
+
+    // public void ReconfirmRegistration(DateTimeOffset? reconfirmedAt = null)
+    // {
+    //     if (Status != AttendeeStatus.Registered)
+    //     {
+    //         throw new BusinessRuleException(BusinessRuleError.Registration.MustBeCompletedBeforeReconfirming);
+    //     }
+    //
+    //     if (Participation is not null)
+    //     {
+    //         throw new BusinessRuleException(BusinessRuleError.Registration.CannotReconfirmAfterParticipation);
+    //     }
+    //
+    //     reconfirmedAt ??= DateTimeOffset.UtcNow;
+    //     if (ReconfirmedAt is null || ReconfirmedAt < reconfirmedAt)
+    //     {
+    //         ReconfirmedAt = reconfirmedAt;
+    //     }
+    // }
+    
+    // TODO Allow ignore event start time when checking in.
+    // public void CheckIn(DateTimeOffset? checkedInAt = null)
+    // {
+    //     if (Status != AttendeeStatus.Registered)
+    //     {
+    //         throw new BusinessRuleException(BusinessRuleError.Registration.MustBeCompletedBeforeCheckIn);
+    //     }
+    //
+    //     Participation = AttendeeParticipation.CheckedIn;
+    //     if (CheckedInAt is null)
+    //     {
+    //         checkedInAt = checkedInAt ?? DateTimeOffset.UtcNow;
+    //     }
+    //     
+    //     AddDomainEvent(new AttendeeCheckedInDomainEvent(
+    //         TeamId,
+    //         TicketedEventId,
+    //         Id,
+    //         Version));
+    // }
+
+    // public void MarkAsNoShow()
+    // {
+    //     if (Status != AttendeeStatus.Registered)
+    //     {
+    //         throw new BusinessRuleException(BusinessRuleError.Registration.MustBeCompletedBeforeCheckIn);
+    //     }
+    //
+    //     Participation = AttendeeParticipation.NoShow;
+    //     CheckedInAt = null;
+    //
+    //     AddDomainEvent(new AttendeeNoShowDomainEvent(
+    //         TeamId,
+    //         TicketedEventId,
+    //         Id,
+    //         Version));
+    // }
+    
+    private void EnsureTransitionsFromPendingTickets()
+    {
+        if (Status != AttendeeStatus.PendingTickets)
         {
-            throw new BusinessRuleException("Cannot reject a registration that is not verified.");
+            throw new BusinessRuleException(BusinessRuleError.Attendee.StatusMismatch(
+                AttendeeStatus.PendingTickets, Status));
         }
-        
-        AddDomainEvent(new RegistrationRejectedDomainEvent(TeamId, TicketedEventId, Id));
-        Status = AttendeeStatus.Rejected;
     }
 }

@@ -25,15 +25,12 @@ public static class FormatExtensions
     {
         return status switch
         {
-            AttendeeStatus.Unverified => "yellow",
-            AttendeeStatus.Verified => "yellow",
+            AttendeeStatus.PendingVerification => "yellow",
             AttendeeStatus.VerificationFailed => "red",
+            AttendeeStatus.PendingTickets => "yellow",
             AttendeeStatus.Registered => "green",
-            AttendeeStatus.Rejected => "grey",
-            AttendeeStatus.Reconfirmed => "green",
-            AttendeeStatus.CanceledOnTime => "grey",
-            AttendeeStatus.CanceledLastMinute => "red",
-            AttendeeStatus.SkippedEvent => "red",
+            AttendeeStatus.RegistrationFailed => "red",
+            AttendeeStatus.Canceled => "red",
             _ => "white"
         };
     }

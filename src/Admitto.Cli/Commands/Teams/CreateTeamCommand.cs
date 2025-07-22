@@ -19,6 +19,26 @@ public class CreateTeamSettings : CommandSettings
     [CommandOption("--smtpPort")]
     [DefaultValue(587)]
     public int SmtpPort { get; set; }
+
+    public override ValidationResult Validate()
+    {
+        if (string.IsNullOrWhiteSpace(Name))
+        {
+            return ValidationResult.Error("Name is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(SenderEmail))
+        {
+            return ValidationResult.Error("Sender e-mail is required.");
+        }
+
+        if (string.IsNullOrWhiteSpace(SmtpServer))
+        {
+            return ValidationResult.Error("SMTP server is required.");
+        }
+
+        return base.Validate();
+    }
 }
 
 public class CreateTeamCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration)

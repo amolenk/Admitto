@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Domain.DomainEvents;
-using Amolenk.Admitto.Domain.Exceptions;
 using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Domain.Entities;
@@ -39,13 +38,13 @@ public class Team : AggregateRoot
     
     public void AddMember(string email, TeamMemberRole role)
     {
-        if (string.IsNullOrWhiteSpace(email)) throw new BusinessRuleException("Email cannot be empty.");
+        if (string.IsNullOrWhiteSpace(email)) throw new BusinessRuleException(BusinessRuleError.Team.EmailIsRequired);
         
         var member = TeamMember.Create(email, role);
 
         if (_members.Any(m => m.Id == member.Id))
         {
-            throw new BusinessRuleException("Member already exists.");
+            throw new BusinessRuleException(BusinessRuleError.Team.MemberAlreadyExists);
         }
         
         _members.Add(member);

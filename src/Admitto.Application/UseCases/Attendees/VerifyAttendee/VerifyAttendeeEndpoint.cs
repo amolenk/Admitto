@@ -19,7 +19,7 @@ public static class VerifyAttendeeEndpoint
         string eventSlug,
         Guid attendeeId,
         VerifyAttendeeRequest request,
-        IDomainContext context,
+        IApplicationContext context,
         CancellationToken cancellationToken)
     {
         var attendee = await context.Attendees.GetEntityAsync(

@@ -2,14 +2,10 @@ namespace Amolenk.Admitto.Domain.ValueObjects;
 
 public enum AttendeeStatus
 {
-    Unverified = 0,
-    Verified = 1,
-    VerificationFailed = 2,
+    PendingVerification = 0,
+    VerificationFailed = 1,
+    PendingTickets = 2, // Invited attendees go directly to this status
     Registered = 3,
-    Rejected = 4,
-    Reconfirmed = 5,
-    AttendedEvent = 6,
-    CanceledOnTime = 7,
-    CanceledLastMinute = 8,
-    SkippedEvent = 9
+    RegistrationFailed = 4,
+    Canceled = 5,
 }
