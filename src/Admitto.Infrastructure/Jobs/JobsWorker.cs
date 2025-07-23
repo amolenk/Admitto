@@ -14,12 +14,12 @@ namespace Amolenk.Admitto.Infrastructure.Jobs;
 // TODO Move to worker?
 
 public class JobsWorker(IServiceProvider serviceProvider, IOptions<JobsOptions> options, ILogger<JobsWorker> logger)
-    : BackgroundService
+    : BackgroundService, IJobsWorker
 {
     private readonly JobsOptions _options = options.Value;
     private readonly Channel<Guid> _jobChannel = Channel.CreateUnbounded<Guid>();
     
-    public async ValueTask EnqueueJobAsync(Guid jobId, CancellationToken cancellationToken = default)
+    public async ValueTask RunJobAsync(Guid jobId, CancellationToken cancellationToken = default)
     {
         await _jobChannel.Writer.WriteAsync(jobId, cancellationToken);
         logger.LogDebug("Job {JobId} enqueued for execution", jobId);
@@ -51,7 +51,7 @@ public class JobsWorker(IServiceProvider serviceProvider, IOptions<JobsOptions> 
 
         foreach (var jobId in pendingJobIds)
         {
-            await EnqueueJobAsync(jobId, cancellationToken);
+            await RunJobAsync(jobId, cancellationToken);
         }
     }
     

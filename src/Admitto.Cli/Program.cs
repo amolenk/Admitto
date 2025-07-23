@@ -69,16 +69,18 @@ app.Configure(config =>
             config.AddCommand<GetConfigCommand>("list").WithDescription("Get configuration values");
             config.AddCommand<SetConfigCommand>("set").WithDescription("Set configuration values");
         });
-    
-    config.AddBranch(
-        "development",
-        dev =>
-        {
-            dev.SetDescription("Development commands.");
 
-            dev.AddCommand<CreateAttendeeCommand>("createAttendee");
-            dev.AddCommand<VerifyAttendeeCommand>("verifyAttendee");
+    #if DEBUG
+    config.AddBranch(
+        "debug",
+        debug =>
+        {
+            debug.SetDescription("Development commands.");
+
+            debug.AddCommand<CreateAttendeeCommand>("createAttendee");
+            debug.AddCommand<VerifyAttendeeCommand>("verifyAttendee");
         });
+    #endif
     
     config.AddCommand<LoginCommand>("login")
         .WithDescription("Login to the Admitto API");

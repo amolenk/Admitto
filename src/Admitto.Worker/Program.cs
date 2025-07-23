@@ -25,6 +25,7 @@ builder.Services.AddHostedService<MessageQueuesWorker>();
 
 builder.Services.AddSingleton<JobsWorker>();
 builder.Services.AddHostedService(provider => provider.GetRequiredService<JobsWorker>());
+builder.Services.AddSingleton<IJobsWorker>(sp => sp.GetRequiredService<JobsWorker>());
 
 builder.Services.AddScoped<IJobScheduler, JobScheduler>();
 

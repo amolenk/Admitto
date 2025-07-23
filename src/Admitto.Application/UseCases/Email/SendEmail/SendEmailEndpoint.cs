@@ -31,8 +31,8 @@ public static class SendEmailEndpoint
         var command = new SendEmailCommand(
             teamId,
             eventId,
-            request.EmailType,
             request.DataEntityId,
+            request.EmailType,
             request.RecipientEmail);
         
         messageOutbox.Enqueue(command);

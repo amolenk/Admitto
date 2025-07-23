@@ -31,7 +31,7 @@ public class VerifyAttendeeCommand(IAccessTokenProvider accessTokenProvider, ICo
         if (response is null) return 1;
 
         AnsiConsole.MarkupLine(
-            $"[green]✓ Successfully verified attendee.[/]");
+            $"[green]✓ Successfully submitted code for verification.[/]");
         return 0;
     }
 }
