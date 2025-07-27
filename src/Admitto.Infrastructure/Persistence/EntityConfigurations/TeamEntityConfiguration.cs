@@ -29,22 +29,20 @@ public class TeamEntityConfiguration : IEntityTypeConfiguration<Team>
             .HasColumnName("name")
             .IsRequired()
             .HasMaxLength(50);
-        
-        builder.OwnsOne(e => e.EmailSettings, b =>
-        {
-            // Initially wanted to store EmailSettings as an owned type with separate columns.
-            // However, that doesn't work because this entity already uses OwnsMany with JSON columns. 
-            b.ToJson("email_settings");
-        });
+
+        builder.Property(e => e.Email)
+            .HasColumnName("email")
+            .IsRequired()
+            .HasMaxLength(50);
+
+        builder.Property(e => e.EmailServiceConnectionString)
+            .HasColumnName("email_service")
+            .HasColumnType("text") // Use text to allow larger encrypted strings
+            .IsRequired();
         
         builder.OwnsMany(e => e.Members, b =>
         {
             b.ToJson("members");
-            
-            b.Property(m => m.Role)
-                .HasConversion(
-                    r => r.Value,
-                    v => new TeamMemberRole(v));
         });
     }
 }

@@ -11,8 +11,9 @@
       <PackageReference Include="Aspire.Azure.Messaging.ServiceBus" Version="9.3.1" />
       <PackageReference Include="Aspire.Azure.Storage.Queues" Version="9.3.1" />
       <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.3.1" />
-      <PackageReference Include="Cronos" Version="0.8.4" />
-      <PackageReference Include="MailKit" Version="4.12.1" />
+      <PackageReference Include="Cronos" Version="0.11.0" />
+      <PackageReference Include="MailKit" Version="4.13.0" />
+      <PackageReference Include="Microsoft.Graph" Version="5.87.0" />
       <PackageReference Include="OpenFga.Sdk" Version="0.5.1" />
     </ItemGroup>
 
@@ -22,6 +23,10 @@
 
     <ItemGroup>
       <EmbeddedResource Include="Auth\OpenFgaAuthorizationModel.json" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="UserManagement\" />
     </ItemGroup>
 
 </Project>

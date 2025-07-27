@@ -6,24 +6,36 @@ public static class AuthorizationExtensions
 {
     public static Guid? GetUserId(this ClaimsPrincipal user)
     {
-        // TODO Do role mapping to sub or something like that.
-        // TODO This is only tested with local Keycloak
-        // var userId = context.User.FindFirst("http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier")?.Value;
+        // Entra
+        var objectIdentifierClaim = user.FindFirst("http://schemas.microsoft.com/identity/claims/objectidentifier");
+        if (objectIdentifierClaim is not null) return Guid.Parse(objectIdentifierClaim.Value);
 
-        var userIdClaim = user.FindFirst(ClaimTypes.NameIdentifier);
-        if (userIdClaim is not null) return Guid.Parse(userIdClaim.Value);
-
-        return null;
-    }
-    
-    public static string GetRouteValue2(this HttpContext context, string key)
-    {
-        var value = context.GetRouteValue(key);
-        if (value is not string routeString)
+        // Keycloak
+        var nameClaim = user.FindFirst(ClaimTypes.NameIdentifier);
+        if (nameClaim is not null && Guid.TryParse(nameClaim.Value, out var userId))
         {
-            throw new ArgumentException($"{key} not found in route values.");
+            return userId;
         }
 
-        return routeString;
+        throw new ArgumentException(
+            "Cannot find user ID in principal. Ensure the user is authenticated and has the correct claims.");
+    }
+
+    public static string? GetUserEmail(this ClaimsPrincipal user)
+    {
+        var claim = user.FindFirst(ClaimTypes.Email);
+        if (claim is not null) return claim.Value;
+
+        throw new ArgumentException(
+            "Cannot find user email in principal. Ensure the user is authenticated and has the correct claims.");
+    }
+
+    public static string? GetUserName(this ClaimsPrincipal user)
+    {
+        var claim = user.FindFirst("name");
+        if (claim is not null) return claim.Value;
+
+        throw new ArgumentException(
+            "Cannot find user name in principal. Ensure the user is authenticated and has the correct claims.");
     }
 }

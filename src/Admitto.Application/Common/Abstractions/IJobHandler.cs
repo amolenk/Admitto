@@ -6,7 +6,7 @@ public interface IJobHandler
 {
 }
 
-public interface IJobHandler<TJobData> : IJobHandler where TJobData : IJobData
+public interface IJobHandler<in TJobData> : IJobHandler where TJobData : JobData
 {
     ValueTask HandleAsync(TJobData job, IJobExecutionContext executionContext, 
         CancellationToken cancellationToken = default);

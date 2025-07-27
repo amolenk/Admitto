@@ -4,51 +4,56 @@ namespace Amolenk.Admitto.Cli.Commands.Email.Test;
 
 public class TestEmailSettings : TeamEventSettings
 {
+    [CommandOption("--type")]
+    public required EmailType EmailType { get; init; }
+
     [CommandOption("--recipient")]
-    public required string RecipientEmail { get; init; }
+    public required string Recipient { get; init; }
+    
+    [CommandOption("--additionalDetail")]
+    public string[]? AdditionalDetails { get; set; } = null!;
+
+    [CommandOption("--ticket")]
+    public string[]? Tickets { get; set; }
 }
 
-public abstract class TestEmailCommand<TSettings>(
-    EmailType emailType,
+public class TestEmailCommand(
     IAccessTokenProvider accessTokenProvider,
     IConfiguration configuration)
-    : ApiCommand<TSettings>(accessTokenProvider, configuration)
-    where TSettings : TestEmailSettings
+    : ApiCommand<TestEmailSettings>(accessTokenProvider, configuration)
 {
-    public sealed override async Task<int> ExecuteAsync(CommandContext context, TSettings settings)
+    public sealed override async Task<int> ExecuteAsync(CommandContext context, TestEmailSettings settings)
     {
         var teamSlug = GetTeamSlug(settings.TeamSlug);
         var eventSlug = GetEventSlug(settings.EventSlug);
 
-        var recipientEmail = string.IsNullOrWhiteSpace(settings.RecipientEmail)
-            ? await GetTeamRecipientEmail(teamSlug)
-            : settings.RecipientEmail;
-        
-        var request = new SendEmailRequest
+        var request = new TestEmailRequest
         {
-            EmailType = emailType,
-            DataEntityId = GetDataEntityId(settings),
-            RecipientEmail = recipientEmail
+            Recipient = settings.Recipient,
+            AdditionalDetails = Parse<AdditionalDetailDto>(
+                settings.AdditionalDetails,
+                (name, value) => new AdditionalDetailDto
+                {
+                    Name = name,
+                    Value = value
+                }),
+            Tickets = Parse<TicketSelectionDto, int>(
+                settings.Tickets,
+                (ticketTypeSlug, quantity) => new TicketSelectionDto
+                {
+                    TicketTypeSlug = ticketTypeSlug,
+                    Quantity = quantity
+                })
         };
 
-        var succes = await CallApiAsync(async client =>
-            await client.Teams[teamSlug].Events[eventSlug].Email.PostAsync(request));
-        if (!succes) return 1;
-        
-        AnsiConsole.MarkupLine($"[green]✓ Successfully enqueued test e-mail for {recipientEmail}.[/]");
+        var success = await CallApiAsync(async client =>
+            await client.Teams[teamSlug].Events[eventSlug].Emails[settings.EmailType.ToString()].Test.PostAsync(request));
+
+        // TODO we get back a stream, not ideal.
+//        if (!success) return 1;
+
+        AnsiConsole.MarkupLine(
+            $"[green]✓ Successfully requested '{settings.EmailType}' test mail for '{settings.Recipient}'.[/]");
         return 0;
-    }
-    
-    protected abstract Guid GetDataEntityId(TSettings settings);
-
-    private async ValueTask<string> GetTeamRecipientEmail(string teamSlug)
-    {
-        var response = await CallApiAsync(async client => await client.Teams[teamSlug].GetAsync());
-        if (response is null)
-        {
-            throw new InvalidOperationException("Failed to retrieve team information.");
-        }
-
-        return response.EmailSettings!.SenderEmail!;
     }
 }

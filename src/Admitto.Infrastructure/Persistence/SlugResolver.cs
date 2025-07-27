@@ -20,7 +20,7 @@ public class SlugResolver(IApplicationContext applicationContext, IMemoryCache m
 
         if (team is null)
         {
-            throw new BusinessRuleException(BusinessRuleError.Team.NotFound(teamSlug));
+            throw new DomainRuleException(DomainRuleError.Team.NotFound(teamSlug));
         }
 
         memoryCache.CreateEntry(teamSlug).Value = team.Id;
@@ -45,7 +45,7 @@ public class SlugResolver(IApplicationContext applicationContext, IMemoryCache m
 
         if (ticketedEvent is null)
         {
-            throw new BusinessRuleException(BusinessRuleError.TicketedEvent.NotFound(eventSlug));
+            throw new DomainRuleException(DomainRuleError.TicketedEvent.NotFound(eventSlug));
         }
 
         memoryCache.CreateEntry(cacheKey).Value = ticketedEvent.Id;

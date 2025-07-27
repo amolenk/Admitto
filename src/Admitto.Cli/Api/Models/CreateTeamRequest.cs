@@ -14,13 +14,21 @@ namespace Amolenk.Admitto.Cli.Api.Models
     {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
-        /// <summary>The emailSettings property</summary>
+        /// <summary>The email property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public global::Amolenk.Admitto.Cli.Api.Models.EmailSettingsDto? EmailSettings { get; set; }
+        public string? Email { get; set; }
 #nullable restore
 #else
-        public global::Amolenk.Admitto.Cli.Api.Models.EmailSettingsDto EmailSettings { get; set; }
+        public string Email { get; set; }
+#endif
+        /// <summary>The emailServiceConnectionString property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public string? EmailServiceConnectionString { get; set; }
+#nullable restore
+#else
+        public string EmailServiceConnectionString { get; set; }
 #endif
         /// <summary>The name property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
@@ -63,7 +71,8 @@ namespace Amolenk.Admitto.Cli.Api.Models
         {
             return new Dictionary<string, Action<IParseNode>>
             {
-                { "emailSettings", n => { EmailSettings = n.GetObjectValue<global::Amolenk.Admitto.Cli.Api.Models.EmailSettingsDto>(global::Amolenk.Admitto.Cli.Api.Models.EmailSettingsDto.CreateFromDiscriminatorValue); } },
+                { "email", n => { Email = n.GetStringValue(); } },
+                { "emailServiceConnectionString", n => { EmailServiceConnectionString = n.GetStringValue(); } },
                 { "name", n => { Name = n.GetStringValue(); } },
                 { "slug", n => { Slug = n.GetStringValue(); } },
             };
@@ -75,7 +84,8 @@ namespace Amolenk.Admitto.Cli.Api.Models
         public virtual void Serialize(ISerializationWriter writer)
         {
             _ = writer ?? throw new ArgumentNullException(nameof(writer));
-            writer.WriteObjectValue<global::Amolenk.Admitto.Cli.Api.Models.EmailSettingsDto>("emailSettings", EmailSettings);
+            writer.WriteStringValue("email", Email);
+            writer.WriteStringValue("emailServiceConnectionString", EmailServiceConnectionString);
             writer.WriteStringValue("name", Name);
             writer.WriteStringValue("slug", Slug);
             writer.WriteAdditionalData(AdditionalData);

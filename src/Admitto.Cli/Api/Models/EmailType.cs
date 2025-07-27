@@ -8,9 +8,9 @@ namespace Amolenk.Admitto.Cli.Api.Models
     public enum EmailType
     #pragma warning restore CS1591
     {
-        [EnumMember(Value = "verifyRegistration")]
+        [EnumMember(Value = "verifyEmail")]
         #pragma warning disable CS1591
-        VerifyRegistration,
+        VerifyEmail,
         #pragma warning restore CS1591
         [EnumMember(Value = "ticket")]
         #pragma warning disable CS1591
@@ -19,6 +19,10 @@ namespace Amolenk.Admitto.Cli.Api.Models
         [EnumMember(Value = "registrationFailed")]
         #pragma warning disable CS1591
         RegistrationFailed,
+        #pragma warning restore CS1591
+        [EnumMember(Value = "reconfirm")]
+        #pragma warning disable CS1591
+        Reconfirm,
         #pragma warning restore CS1591
     }
 }

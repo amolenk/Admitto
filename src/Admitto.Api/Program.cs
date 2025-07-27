@@ -27,11 +27,14 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
 });
 
-builder.Services.AddExceptionHandler<BusinessRuleExceptionHandler>();
+builder.Services.AddExceptionHandler<DomainRuleExceptionHandler>();
+builder.Services.AddExceptionHandler<ApplicationRuleExceptionHandler>();
 builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 // TODO
 builder.Services.AddDefaultApplicationServices();
+builder.Services.AddEmailServices();
+
 builder.AddDefaultInfrastructureServices();
 
 builder.AddDefaultAuthentication();
@@ -73,7 +76,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.MapDefaultEndpoints();
+app.MapEmailVerificationEndpoints();
 app.MapPendingRegistrationEndpoints();
+app.MapEmailEndpoints();
 app.MapEmailTemplateEndpoints();
 app.MapTeamEndpoints();
 app.MapTicketedEventEndpoints();

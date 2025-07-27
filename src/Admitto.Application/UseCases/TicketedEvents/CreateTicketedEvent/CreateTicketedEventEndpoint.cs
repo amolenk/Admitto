@@ -32,10 +32,12 @@ public static class CreateTicketedEventEndpoint
             teamId,
             request.Slug,
             request.Name,
+            request.Website,
             request.StartTime.ToUniversalTime(),
             request.EndTime.ToUniversalTime(),
             request.RegistrationStartTime.ToUniversalTime(),
-            request.RegistrationEndTime.ToUniversalTime());
+            request.RegistrationEndTime.ToUniversalTime(),
+            request.BaseUrl);
 
         context.TicketedEvents.Add(newEvent);
 

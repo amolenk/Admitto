@@ -16,21 +16,19 @@ public static class FormatExtensions
         return localTime.ToString("f");
     }
 
-    public static string Format(this AttendeeStatus status)
+    public static string Format(this RegistrationStatus status)
     {
         return $"[{GetStatusColor(status)}]{status.Humanize()}[/]";
     }
     
-    private static string GetStatusColor(AttendeeStatus status)
+    private static string GetStatusColor(RegistrationStatus status)
     {
         return status switch
         {
-            AttendeeStatus.PendingVerification => "yellow",
-            AttendeeStatus.VerificationFailed => "red",
-            AttendeeStatus.PendingTickets => "yellow",
-            AttendeeStatus.Registered => "green",
-            AttendeeStatus.RegistrationFailed => "red",
-            AttendeeStatus.Canceled => "red",
+            RegistrationStatus.Reconfirmed => "green",
+            RegistrationStatus.CheckedIn => "green",
+            RegistrationStatus.Canceled => "red",
+            RegistrationStatus.NoShow => "red",
             _ => "white"
         };
     }

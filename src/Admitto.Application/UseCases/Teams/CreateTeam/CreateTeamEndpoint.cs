@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Application.Common.Authorization;
+using Amolenk.Admitto.Application.Common.Cryptography;
 using Amolenk.Admitto.Domain.Entities;
 using Amolenk.Admitto.Domain.ValueObjects;
 
@@ -19,15 +20,15 @@ public static class CreateTeamEndpoint
         return group;
     }
 
-    private static Created CreateTeam(CreateTeamRequest request, IApplicationContext context, 
+    private static Created CreateTeam(
+        CreateTeamRequest request,
+        IApplicationContext context,
+        ITeamConfigEncryptionService encryptionService,
         CancellationToken cancellationToken)
     {
-        var emailSettings = new EmailSettings(
-            request.EmailSettings.SenderEmail,
-            request.EmailSettings.SmtpServer,
-            request.EmailSettings.SmtpPort);
+        var encryptedEmailServiceConnectionString = encryptionService.Encrypt(request.EmailServiceConnectionString);
         
-        var team = Team.Create(request.Slug, request.Name, emailSettings);
+        var team = Team.Create(request.Slug, request.Name, request.Email, encryptedEmailServiceConnectionString);
         
         context.Teams.Add(team);
 

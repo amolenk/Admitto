@@ -14,6 +14,14 @@ namespace Amolenk.Admitto.Cli.Api.Models
     {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
+        /// <summary>The baseUrl property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public string? BaseUrl { get; set; }
+#nullable restore
+#else
+        public string BaseUrl { get; set; }
+#endif
         /// <summary>The endDateTime property</summary>
         public DateTimeOffset? EndDateTime { get; set; }
         /// <summary>The name property</summary>
@@ -71,6 +79,7 @@ namespace Amolenk.Admitto.Cli.Api.Models
         {
             return new Dictionary<string, Action<IParseNode>>
             {
+                { "baseUrl", n => { BaseUrl = n.GetStringValue(); } },
                 { "endDateTime", n => { EndDateTime = n.GetDateTimeOffsetValue(); } },
                 { "name", n => { Name = n.GetStringValue(); } },
                 { "registrationEndDateTime", n => { RegistrationEndDateTime = n.GetDateTimeOffsetValue(); } },
@@ -87,6 +96,7 @@ namespace Amolenk.Admitto.Cli.Api.Models
         public virtual void Serialize(ISerializationWriter writer)
         {
             _ = writer ?? throw new ArgumentNullException(nameof(writer));
+            writer.WriteStringValue("baseUrl", BaseUrl);
             writer.WriteDateTimeOffsetValue("endDateTime", EndDateTime);
             writer.WriteStringValue("name", Name);
             writer.WriteDateTimeOffsetValue("registrationEndDateTime", RegistrationEndDateTime);

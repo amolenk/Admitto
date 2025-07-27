@@ -123,7 +123,7 @@ public class JobsWorker(IServiceProvider serviceProvider, IOptions<JobsOptions> 
 
         // Deserialize the job data
         var jobData = jobEntity.JobData.Deserialize(jobType);
-        if (jobData is not IJobData)
+        if (jobData is not JobData)
         {
             throw new InvalidOperationException($"Job type {jobEntity.JobType} does not implement IJobData");
         }

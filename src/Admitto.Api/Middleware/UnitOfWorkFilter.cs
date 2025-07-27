@@ -24,7 +24,7 @@ public class UnitOfWorkFilter(ILogger<UnitOfWorkFilter> logger) : IEndpointFilte
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status409Conflict,
-                title: "Conflict",
+                title: "Conflict occured",
                 detail: "The item that you tried to create already exists.", 
                 instance: context.HttpContext.Request.Path);
         }
@@ -32,7 +32,7 @@ public class UnitOfWorkFilter(ILogger<UnitOfWorkFilter> logger) : IEndpointFilte
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status409Conflict,
-                title: "Conflict",
+                title: "Conflict occured",
                 detail: "The item you tried to update was changed by another user.",
                 instance: context.HttpContext.Request.Path);
         }

@@ -32,7 +32,7 @@ public class AddTicketTypeCommand(IAccessTokenProvider accessTokenProvider, ICon
         {
             Slug = settings.Slug,
             Name = settings.Name,
-            SlotName = string.Join(";", settings.SlotName),
+            SlotName = string.Join(";", settings.SlotName!),
             MaxCapacity = settings.MaxCapacity
         };
         

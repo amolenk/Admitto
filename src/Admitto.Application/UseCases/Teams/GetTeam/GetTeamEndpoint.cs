@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Application.Common.Authorization;
+using Amolenk.Admitto.Application.Common.Cryptography;
 
 namespace Amolenk.Admitto.Application.UseCases.Teams.GetTeam;
 
@@ -21,6 +22,7 @@ public static class GetTeamEndpoint
         string teamSlug,
         ISlugResolver slugResolver,
         IApplicationContext context,
+        ITeamConfigEncryptionService encryptionService,
         CancellationToken cancellationToken)
     {
         var teamId = await slugResolver.GetTeamIdAsync(teamSlug, cancellationToken);
@@ -30,10 +32,8 @@ public static class GetTeamEndpoint
         var response = new GetTeamResponse(
             team.Slug,
             team.Name,
-            new EmailSettingsDto(
-                team.EmailSettings.SenderEmail,
-                team.EmailSettings.SmtpServer,
-                team.EmailSettings.SmtpPort));
+            team.Email,
+            encryptionService.Decrypt(team.EmailServiceConnectionString));
 
         return TypedResults.Ok(response);
     }

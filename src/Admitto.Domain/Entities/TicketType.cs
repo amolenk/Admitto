@@ -27,10 +27,10 @@ public class TicketType : Entity
     public static TicketType Create(string slug, string name, string slotName, int maxCapacity)
     {
         if (string.IsNullOrWhiteSpace(name))
-            throw new BusinessRuleException(BusinessRuleError.TicketType.NameIsRequired);
+            throw new DomainRuleException(DomainRuleError.TicketType.NameIsRequired);
         
         if (maxCapacity <= 0)
-            throw new BusinessRuleException(BusinessRuleError.TicketType.MaxCapacityMustBeGreaterThan(0));
+            throw new DomainRuleException(DomainRuleError.TicketType.MaxCapacityMustBeGreaterThan(0));
 
         var id = DeterministicGuid.Create(name);
         
@@ -42,14 +42,13 @@ public class TicketType : Entity
         return RemainingCapacity >= quantity;
     }
     
-    public bool TryReserveTickets(int quantity, bool ignoreAvailability)
+    public void AllocateTickets(int quantity, bool ignoreAvailability)
     {
         if (!ignoreAvailability && RemainingCapacity < quantity)
         {
-            return false;
+            throw new DomainRuleException(DomainRuleError.TicketedEvent.CapacityExceeded(Slug));
         }
-        
+
         UsedCapacity += quantity;
-        return true;
     }
 }

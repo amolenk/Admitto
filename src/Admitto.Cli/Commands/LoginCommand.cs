@@ -1,5 +1,3 @@
-using Spectre.Console;
-
 namespace Amolenk.Admitto.Cli.Commands;
 
 public class LoginSettings : CommandSettings

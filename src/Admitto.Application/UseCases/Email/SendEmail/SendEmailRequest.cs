@@ -2,4 +2,7 @@ using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Application.UseCases.Email.SendEmail;
 
-public record SendEmailRequest(EmailType EmailType, Guid DataEntityId, string? RecipientEmail = null);
+/// <summary>
+/// Represents a request to send a single email.
+/// </summary>
+public record SendEmailRequest(EmailType EmailType, Guid DataEntityId);

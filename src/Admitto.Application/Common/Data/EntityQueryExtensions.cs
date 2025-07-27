@@ -22,7 +22,7 @@ public static class EntityQueryExtensions
 
         if (entity is null)
         {
-            throw new BusinessRuleException(BusinessRuleError.Entity.NotFound<TEntity>());
+            throw new DomainRuleException(DomainRuleError.Entity.NotFound<TEntity>());
         }
 
         return entity;

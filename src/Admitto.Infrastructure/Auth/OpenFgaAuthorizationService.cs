@@ -43,7 +43,7 @@ public class OpenFgaAuthorizationService(OpenFgaClientFactory clientFactory) : I
 
     public ValueTask AddTeamRoleAsync(Guid userId, string teamSlug, TeamMemberRole role, 
         CancellationToken cancellationToken = default) =>
-        AddTupleAsync($"user:{userId}", role.Value.ToLowerInvariant(), $"team:{teamSlug}", 
+        AddTupleAsync($"user:{userId}", role.ToString().ToLowerInvariant(), $"team:{teamSlug}", 
             cancellationToken);
 
     public ValueTask<IEnumerable<string>> GetTeamsAsync(Guid userId, CancellationToken cancellationToken = default) =>

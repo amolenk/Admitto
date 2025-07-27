@@ -1,11 +1,12 @@
-using System.Security.Claims;
+using Amolenk.Admitto.Application.Common.Authorization;
 using Amolenk.Admitto.Domain.Entities;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace Amolenk.Admitto.Infrastructure.Persistence.Interceptors;
 
-public class AuditInterceptor(ClaimsPrincipal? principal) : SaveChangesInterceptor
+public class AuditInterceptor(IHttpContextAccessor contextAccessor) : SaveChangesInterceptor
 {
     public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
         DbContextEventData eventData,
@@ -17,13 +18,6 @@ public class AuditInterceptor(ClaimsPrincipal? principal) : SaveChangesIntercept
 
         var now = DateTime.UtcNow;
 
-        // TODO Probably still doesn't work
-        var username = principal?.Identity?.Name;
-        if (string.IsNullOrWhiteSpace(username))
-        {
-            username = "unknown";
-        }
-
         foreach (var entry in context.ChangeTracker.Entries<IAuditable>())
         {
             if (entry.State == EntityState.Added)
@@ -32,7 +26,7 @@ public class AuditInterceptor(ClaimsPrincipal? principal) : SaveChangesIntercept
             }
             
             entry.Entity.LastChangedAt = now;
-            entry.Entity.LastChangedBy = username;
+            entry.Entity.LastChangedBy = contextAccessor?.HttpContext?.User.GetUserEmail() ?? "system";
         }
 
         return base.SavingChangesAsync(eventData, result, cancellationToken);

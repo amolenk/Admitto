@@ -1,11 +1,12 @@
 ﻿using Amolenk.Admitto.Cli.Commands;
-using Amolenk.Admitto.Cli.Commands.Attendees;
 using Amolenk.Admitto.Cli.Commands.Config;
-using Amolenk.Admitto.Cli.Commands.Development;
 using Amolenk.Admitto.Cli.Commands.Email.Template.Event;
 using Amolenk.Admitto.Cli.Commands.Email.Template.Team;
 using Amolenk.Admitto.Cli.Commands.Email.Test;
+using Amolenk.Admitto.Cli.Commands.Email.Verification;
 using Amolenk.Admitto.Cli.Commands.Events;
+using Amolenk.Admitto.Cli.Commands.Registrations;
+using Amolenk.Admitto.Cli.Commands.Team.Member;
 using Amolenk.Admitto.Cli.Commands.Teams;
 using Amolenk.Admitto.Cli.Infrastructure;
 using Microsoft.Extensions.Configuration;
@@ -17,10 +18,18 @@ var configuration = new ConfigurationBuilder()
     .AddUserSecrets<Program>()
     .Build();
 
+
+
+
 var services = new ServiceCollection();
+
+
+services.Configure<CliAuthOptions>(configuration.GetSection("Authentication"));
+
 
 // Register configuration
 services.AddSingleton<IConfiguration>(configuration);
+
 
 
 // Register services
@@ -50,13 +59,13 @@ var app = new CommandApp(registrar);
 app.Configure(config =>
 {
     config.AddBranch(
-        "attendee",
+        "registration",
         attendee =>
         {
-            attendee.SetDescription("Manage attendees.");
+            attendee.SetDescription("Manage registrations.");
 
-            attendee.AddCommand<InviteAttendeeCommand>("invite");
-            attendee.AddCommand<ListAttendeesCommand>("list");
+            attendee.AddCommand<RegisterCommand>("create");
+            attendee.AddCommand<ListRegistrationsCommand>("list");
         });
 
     config.AddBranch(
@@ -72,13 +81,11 @@ app.Configure(config =>
 
     #if DEBUG
     config.AddBranch(
-        "debug",
+        "emailVerification",
         debug =>
         {
-            debug.SetDescription("Development commands.");
-
-            debug.AddCommand<CreateAttendeeCommand>("createAttendee");
-            debug.AddCommand<VerifyAttendeeCommand>("verifyAttendee");
+            debug.AddCommand<RequestOtpCodeCommand>("request");
+            debug.AddCommand<VerifyOtpCodeCommand>("verify");
         });
     #endif
     
@@ -97,6 +104,13 @@ app.Configure(config =>
             team.AddCommand<CreateTeamCommand>("create").WithDescription("Create a new team");
             team.AddCommand<ListTeamsCommand>("list").WithDescription("List teams");
             team.AddCommand<ShowTeamCommand>("show").WithDescription("Show the details of a team");
+
+            team.AddBranch(
+                "member",
+                member =>
+                {
+                    member.AddCommand<AddTeamMemberCommand>("add");
+                });
         });
 
     config.AddBranch(
@@ -144,17 +158,8 @@ app.Configure(config =>
             //             });
             //     });
             
-            email.AddBranch(
-                "test",
-                testEmail =>
-                {
-                    testEmail.AddBranch(
-                        "registration",
-                        registrationEmail =>
-                        {
-                            registrationEmail.AddCommand<TestRegistrationVerifyEmailCommand>("verify");
-                        });
-                });
+            email.AddCommand<TestEmailCommand>("test");
+            email.AddCommand<PreviewEmailCommand>("preview");
             
             email.AddBranch(
                 "template",

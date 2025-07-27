@@ -30,15 +30,19 @@ var serviceBus = builder.AddAzureServiceBus("messaging")
     })
     .ReplaceEmulatorDatabase();
 
-var queue = serviceBus.AddServiceBusQueue("queue");
+serviceBus.AddServiceBusQueue("queue");
 
 var storage = builder.AddAzureStorage("storage")
     .RunAsEmulator(azurite =>
     {
         azurite
             .WithQueuePort(10001) // TODO Must be something else for test
-            .WithLifetime(ContainerLifetime.Persistent);
+            .WithLifetime(ContainerLifetime.Persistent)
+            .WithDataVolume("admitto-azurite-data");
     });
+
+var blobs = storage.AddBlobs("blobs");
+blobs.AddBlobContainer("data-protection");
     
 var initOpenFga = builder.AddContainer("openfga-init", "openfga/openfga:latest")
     .WithArgs("migrate")
@@ -74,18 +78,17 @@ var worker = builder.AddProject<Projects.Admitto_Worker>("worker")
     .WithReference(postgresdb)
     .WithReference(serviceBus)
     .WithReference(keycloak)
-    // .WithReference(maildev.GetEndpoint("http"))
+    .WithReference(blobs)
     .WaitFor(postgresdb)
     .WaitFor(serviceBus)
     .WaitFor(keycloak)
     .WaitFor(openFga)
     .WaitFor(maildev)
-    // .WithEnvironment("EMAIL__SMTPSERVER", () => maildev.GetEndpoint("smtp").Host)
-    // .WithEnvironment("EMAIL__SMTPPORT", () => maildev.GetEndpoint("smtp").Port.ToString())
-    ;
+    .WaitFor(blobs);
 
 var apiService = builder.AddProject<Projects.Admitto_Api>("api")
     .WithEnvironment("AUTHENTICATION__AUTHORITY", $"{keycloak.GetEndpoint("http")}/realms/admitto")
+    .WithEnvironment("AUTHENTICATION__VALIDISSUERS__0", $"{keycloak.GetEndpoint("http")}/realms/admitto")
     .WithUrlForEndpoint("http", ep => new()
     {
         Url            = "/scalar",
@@ -96,10 +99,12 @@ var apiService = builder.AddProject<Projects.Admitto_Api>("api")
     .WithReference(postgresdb)
     .WithReference(serviceBus)
     .WithReference(keycloak)
+    .WithReference(blobs)
     .WaitFor(postgresdb)
     .WaitFor(serviceBus)
     .WaitFor(keycloak)
-    .WaitFor(openFga);
+    .WaitFor(openFga)
+    .WaitFor(blobs);
 
 
    
@@ -112,8 +117,10 @@ if (migrate)
 //        .WithEnvironment("DOTNET_ENVIRONMENT", builder.Environment.EnvironmentName)
         .WithReference(openFga.GetEndpoint("http"))
         .WithReference(postgresdb)
+        .WithReference(blobs)
         .WaitFor(openFga)
-        .WaitFor(postgresdb);
+        .WaitFor(postgresdb)
+        .WaitFor(blobs);
 
     worker.WaitForCompletion(migration);
     apiService.WaitForCompletion(migration);

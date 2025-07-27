@@ -33,23 +33,25 @@ public class CreateTeamValidator : AbstractValidator<CreateTeamRequest>
         //             .WithMessage($"Member role must be one of {string.Join(", ", TeamMemberRole.ValidRoles)}.");
         //     });
 
-        RuleFor(x => x.EmailSettings)
-            .NotNull();
-//            .WithMessage("Email settings are required.");
-
-        // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
-        When(x => x.EmailSettings is not null, () =>
-        {
-            RuleFor(x => x.EmailSettings.SenderEmail)
-                .NotNull()//.WithMessage("Sender email is required.")
-                .EmailAddress();//.WithMessage("Sender email must be a valid email address.");
-
-            RuleFor(x => x.EmailSettings.SmtpServer)
-                .NotEmpty()//.WithMessage("SMTP server must not be empty.")
-                .MaximumLength(20);//.WithMessage("SMTP server must be 50 characters or less.");
-
-            RuleFor(x => x.EmailSettings.SmtpPort)
-                .InclusiveBetween(1, 65535).WithMessage("SMTP port must be between 1 and 65535.");
-        });
+        // TODO Fix validation
+        //
+//         RuleFor(x => x.EmailSettings)
+//             .NotNull();
+// //            .WithMessage("Email settings are required.");
+//
+//         // ReSharper disable once ConditionIsAlwaysTrueOrFalseAccordingToNullableAPIContract
+//         When(x => x.EmailSettings is not null, () =>
+//         {
+//             RuleFor(x => x.EmailSettings.SenderEmail)
+//                 .NotNull()//.WithMessage("Sender email is required.")
+//                 .EmailAddress();//.WithMessage("Sender email must be a valid email address.");
+//
+//             RuleFor(x => x.EmailSettings.SmtpServer)
+//                 .NotEmpty()//.WithMessage("SMTP server must not be empty.")
+//                 .MaximumLength(20);//.WithMessage("SMTP server must be 50 characters or less.");
+//
+//             RuleFor(x => x.EmailSettings.SmtpPort)
+//                 .InclusiveBetween(1, 65535).WithMessage("SMTP port must be between 1 and 65535.");
+//         });
     }
 }

@@ -7,6 +7,7 @@ public record GetTicketedEventResponse(
     DateTimeOffset EndDateTime,
     DateTimeOffset RegistrationStartDateTime,
     DateTimeOffset RegistrationEndDateTime,
+    string BaseUrl,
     IEnumerable<TicketTypeDto> TicketTypes);
 
 public record TicketTypeDto(string Slug, string Name, string SlotName, int MaxCapacity, int UsedCapacity);

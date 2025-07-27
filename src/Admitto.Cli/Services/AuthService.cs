@@ -1,42 +1,56 @@
 using System.Diagnostics;
 using Duende.IdentityModel.Client;
+using Microsoft.Extensions.Options;
 
 namespace Amolenk.Admitto.Cli.Services;
 
-public class AuthService(ITokenCache tokenCache, IHttpClientFactory clientFactory) : IAuthService
+public class AuthService(ITokenCache tokenCache, IHttpClientFactory clientFactory, IOptions<CliAuthOptions> options) : IAuthService
 {
-    private const string Authority = "http://localhost:8080/realms/admitto";
-    private const string ClientId = "admitto-admin-cli";
-
+    private readonly CliAuthOptions _options = options.Value;
+    
     public async ValueTask<bool> LoginAsync()
     {
         var client = clientFactory.CreateClient();
         var disco = await GetDiscoveryDocumentAsync(client);
         if (disco is null) return false;
 
+        AnsiConsole.WriteLine(_options.ClientId);
+        
         var deviceResponse = await client.RequestDeviceAuthorizationAsync(new DeviceAuthorizationRequest
         {
             Address = disco.DeviceAuthorizationEndpoint,
-            ClientId = ClientId,
-            Scope = "api.admin offline_access",
+            ClientId = _options.ClientId,
+            ClientCredentialStyle = ClientCredentialStyle.PostBody, // For Entra
+            Scope = _options.Scope,
         });
 
         if (deviceResponse.IsError)
         {
             AnsiConsole.WriteLine($"❌ Device code request failed: {deviceResponse.Error}");
+            AnsiConsole.WriteLine(deviceResponse.Raw); // ← this gives more details
             return false;
         }
 
-        AnsiConsole.WriteLine($"🌍 Opening browser for login...");
-        AnsiConsole.WriteLine($"🔗 If the browser does not open, visit: {deviceResponse.VerificationUriComplete}");
-        AnsiConsole.WriteLine();
-        AnsiConsole.WriteLine("⏳ Waiting for login...");
-
-        Process.Start(new ProcessStartInfo
+        if (!string.IsNullOrWhiteSpace(deviceResponse.VerificationUriComplete))
         {
-            FileName = deviceResponse.VerificationUriComplete,
-            UseShellExecute = true
-        });
+            AnsiConsole.WriteLine($"🌍 Opening browser for login...");
+            AnsiConsole.WriteLine($"🔗 If the browser does not open, visit: {deviceResponse.VerificationUriComplete}");
+            AnsiConsole.WriteLine();
+            AnsiConsole.WriteLine("⏳ Waiting for login...");
+
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = deviceResponse.VerificationUriComplete,
+                UseShellExecute = true
+            });
+        }
+        else
+        {
+            AnsiConsole.MarkupLine($"To sign in, use a web browser to open the page [link={deviceResponse.VerificationUri}]{deviceResponse.VerificationUri}[/] and enter the code {deviceResponse.UserCode} to authenticate.");
+            AnsiConsole.WriteLine();
+            AnsiConsole.WriteLine("⏳ Waiting for login...");
+        }
+        
 
         var expiration = DateTime.UtcNow.AddSeconds(deviceResponse.ExpiresIn ?? 120);
         var interval = TimeSpan.FromSeconds(deviceResponse.Interval);
@@ -50,7 +64,8 @@ public class AuthService(ITokenCache tokenCache, IHttpClientFactory clientFactor
             tokenResponse = await client.RequestDeviceTokenAsync(new DeviceTokenRequest
             {
                 Address = disco.TokenEndpoint,
-                ClientId = ClientId,
+                ClientId = _options.ClientId,
+                ClientCredentialStyle = ClientCredentialStyle.PostBody,
                 DeviceCode = deviceResponse.DeviceCode!
             });
 
@@ -65,6 +80,7 @@ public class AuthService(ITokenCache tokenCache, IHttpClientFactory clientFactor
                         continue;
                     default:
                         AnsiConsole.WriteLine($"Token request error: {tokenResponse.Error}");
+                        AnsiConsole.WriteLine(tokenResponse.Raw);
                         return false;
                 }
             }
@@ -100,11 +116,14 @@ public class AuthService(ITokenCache tokenCache, IHttpClientFactory clientFactor
         var client = clientFactory.CreateClient();
         var disco = await GetDiscoveryDocumentAsync(client);
         if (disco is null) return null;
+        
+        AnsiConsole.WriteLine("🔄 Refreshing access token...");
 
         var tokenResponse = await client.RequestRefreshTokenAsync(new RefreshTokenRequest
         {
             Address = disco.TokenEndpoint,
-            ClientId = ClientId,
+            ClientId = _options.ClientId,
+            ClientCredentialStyle = ClientCredentialStyle.PostBody,
             RefreshToken = cachedToken.RefreshToken
         });
 
@@ -121,13 +140,22 @@ public class AuthService(ITokenCache tokenCache, IHttpClientFactory clientFactor
 
     private async Task<DiscoveryDocumentResponse?> GetDiscoveryDocumentAsync(HttpClient client)
     {
+        // TODO Didn't need this for Keycloak, so check that Keycloak still works or needs other config
+        // var discoveryAddress = $"{_options.Authority}/.well-known/openid-configuration";
+        // AnsiConsole.WriteLine($"🔎 Fetching discovery document from: {discoveryAddress}");
+        
         var disco = await client.GetDiscoveryDocumentAsync(new DiscoveryDocumentRequest
         {
-            Address = Authority,
+            Address = _options.Authority,
             Policy = new DiscoveryPolicy
             {
-                RequireHttps = false,
-                ValidateIssuerName = false
+                RequireHttps = _options.RequireHttps,
+                // TODO document
+                // Microsoft token endpoint is https://login.microsoftonline.com/{tenant-id}/oauth2/v2.0/token
+                // But authority is https://login.microsoftonline.com/{tenant-id}/v2.0
+                // These look similar, but their base path segments differ, so Duende considers this invalid unless ValidateEndpoints = false.
+                ValidateEndpoints = false,
+                ValidateIssuerName = true // TODO Or false during development?
             }
         });
 
@@ -136,6 +164,9 @@ public class AuthService(ITokenCache tokenCache, IHttpClientFactory clientFactor
             AnsiConsole.WriteLine($"❌ Discovery failed: {disco.Error}");
             return null;
         }
+        
+        AnsiConsole.WriteLine($"✅ Token endpoint: {disco.TokenEndpoint}");
+        AnsiConsole.WriteLine($"✅ Device auth endpoint: {disco.DeviceAuthorizationEndpoint}");
 
         return disco;
     }

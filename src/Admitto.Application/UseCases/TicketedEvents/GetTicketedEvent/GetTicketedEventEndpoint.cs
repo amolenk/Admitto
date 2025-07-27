@@ -43,6 +43,7 @@ public static class GetTicketedEventEndpoint
             ticketedEvent.EndTime,
             ticketedEvent.RegistrationStartTime,
             ticketedEvent.RegistrationEndTime,
+            ticketedEvent.BaseUrl,
             ticketTypes);
 
         return TypedResults.Ok(response);

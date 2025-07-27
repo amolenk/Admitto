@@ -10,6 +10,9 @@ public class CreateEventSettings : EventSettings
     [CommandOption("-n|--name")]
     public string Name { get; set; } = null!;
 
+    [CommandOption("--website")]
+    public string Website { get; set; } = null!;
+
     [CommandOption("--start")]
     public DateTimeOffset? StartTime { get; set; }
 
@@ -21,6 +24,9 @@ public class CreateEventSettings : EventSettings
 
     [CommandOption("--registrationEnd")]
     public DateTimeOffset? RegistrationEndTime { get; set; }
+
+    [CommandOption("--baseUrl")]
+    public string BaseUrl { get; set; } = null!;
 }
 
 public class CreateEventCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration)
@@ -35,10 +41,12 @@ public class CreateEventCommand(IAccessTokenProvider accessTokenProvider, IConfi
         {
             Slug = eventSlug,
             Name = settings.Name,
+            Website = settings.Website,
             StartTime = settings.StartTime,
             EndTime = settings.EndTime,
             RegistrationStartTime = settings.RegistrationStartTime,
-            RegistrationEndTime = settings.RegistrationEndTime
+            RegistrationEndTime = settings.RegistrationEndTime,
+            BaseUrl = settings.BaseUrl,
         };
         
         var succes = await CallApiAsync(async client => await client.Teams[teamSlug].Events.PostAsync(request));

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace Amolenk.Admitto.Application.Common.Authorization;
 
+// TODO Consider modeling email permissions separately.
 public static class AuthorizationPolicyBuilderExtensions
 {
     public static AuthorizationPolicyBuilder RequireCanCreateTeam(this AuthorizationPolicyBuilder builder)

@@ -20,19 +20,23 @@ public class TicketedEvent : AggregateRoot
         Guid teamId,
         string slug,
         string name,
+        string website,
         DateTimeOffset startTime,
         DateTimeOffset endTime,
         DateTimeOffset registrationStartTime,
-        DateTimeOffset registrationEndTime)
+        DateTimeOffset registrationEndTime,
+        string baseUrl)
         : base(id)
     {
         TeamId = teamId;
         Slug = slug;
         Name = name;
+        Website = website;
         StartTime = startTime;
         EndTime = endTime;
         RegistrationStartTime = registrationStartTime;
         RegistrationEndTime = registrationEndTime;
+        BaseUrl = baseUrl;
 
         AddDomainEvent(new TicketedEventCreatedDomainEvent(teamId, slug));
     }
@@ -40,57 +44,62 @@ public class TicketedEvent : AggregateRoot
     public Guid TeamId { get; private set; }
     public string Slug { get; private set; } = null!;
     public string Name { get; private set; } = null!;
+    public string Website { get; private set; } = null!;
     public DateTimeOffset StartTime { get; private set; }
     public DateTimeOffset EndTime { get; private set; }
     public DateTimeOffset RegistrationStartTime { get; private set; }
     public DateTimeOffset RegistrationEndTime { get; private set; }
+    public string BaseUrl { get; private set; }
     public IReadOnlyCollection<TicketType> TicketTypes => _ticketTypes.AsReadOnly();
 
     public static TicketedEvent Create(
         Guid teamId,
         string slug,
         string name,
+        string website,
         DateTimeOffset startTime,
         DateTimeOffset endTime,
         DateTimeOffset registrationStartTime,
-        DateTimeOffset registrationEndTime)
+        DateTimeOffset registrationEndTime,
+        string baseUrl)
     {
+        // TODO Additional validations
+
         if (string.IsNullOrWhiteSpace(name))
-            throw new BusinessRuleException(BusinessRuleError.TicketedEvent.NameIsRequired);
+            throw new DomainRuleException(DomainRuleError.TicketedEvent.NameIsRequired);
 
         if (endTime < startTime)
-            throw new BusinessRuleException(BusinessRuleError.TicketedEvent.EndTimeMustBeAfterStartTime);
+            throw new DomainRuleException(DomainRuleError.TicketedEvent.EndTimeMustBeAfterStartTime);
 
         if (registrationStartTime >= registrationEndTime)
-            throw new BusinessRuleException(BusinessRuleError.TicketedEvent.RegistrationEndTimeMustBeAfterRegistrationStartTime);
+            throw new DomainRuleException(
+                DomainRuleError.TicketedEvent.RegistrationEndTimeMustBeAfterRegistrationStartTime);
 
         if (registrationEndTime > startTime)
-            throw new BusinessRuleException(BusinessRuleError.TicketedEvent.RegistrationMustCloseBeforeEvent);
+            throw new DomainRuleException(DomainRuleError.TicketedEvent.RegistrationMustCloseBeforeEvent);
 
         return new TicketedEvent(
             Guid.NewGuid(),
             teamId,
             slug,
             name,
+            website,
             startTime,
             endTime,
             registrationStartTime,
-            registrationEndTime);
+            registrationEndTime,
+            baseUrl);
     }
 
     public void AddTicketType(string slug, string name, string slotName, int maxCapacity)
     {
         if (_ticketTypes.Any(t => t.Slug == slug))
         {
-            throw new BusinessRuleException(BusinessRuleError.TicketedEvent.TicketTypeAlreadyExists);
+            throw new DomainRuleException(DomainRuleError.TicketedEvent.TicketTypeAlreadyExists);
         }
 
         var ticketType = TicketType.Create(slug, name, slotName, maxCapacity);
         _ticketTypes.Add(ticketType);
-    }
-
-    public void SetEmailTemplate(EmailType type, EmailTemplate template)
-    {
     }
 
     public bool HasAvailableCapacity(IEnumerable<TicketSelection> tickets)
@@ -106,24 +115,43 @@ public class TicketedEvent : AggregateRoot
             _ticketTypes.Any(tt => tt.Slug == t.Key && tt.HasAvailableCapacity(t.Value)));
     }
 
-    public bool ReserveTickets(Guid attendeeId, IList<TicketSelection> tickets, bool ignoreAvailability = false)
+    public Guid Register(
+        string email,
+        string firstName,
+        string lastName,
+        IList<AdditionalDetail> additionalDetails,
+        IList<TicketSelection> tickets,
+        bool isInvited = false)
     {
         if (tickets.Count == 0)
         {
-            throw new BusinessRuleException(BusinessRuleError.TicketedEvent.TicketsAreRequired);
+            throw new DomainRuleException(DomainRuleError.TicketedEvent.TicketsAreRequired);
         }
 
         foreach (var ticketSelection in tickets)
         {
-            var ticketType = _ticketTypes.First(tt => tt.Slug == ticketSelection.TicketTypeSlug);
-            if (!ticketType.TryReserveTickets(ticketSelection.Quantity, ignoreAvailability))
+            var ticketType = _ticketTypes.FirstOrDefault(tt => tt.Slug == ticketSelection.TicketTypeSlug);
+            if (ticketType is null)
             {
-                AddDomainEvent(new TicketsUnavailableDomainEvent(attendeeId));
-                return false;
+                throw new DomainRuleException(
+                    DomainRuleError.TicketedEvent.InvalidTicketType(ticketSelection.TicketTypeSlug));
             }
+            
+            ticketType.AllocateTickets(ticketSelection.Quantity, isInvited);
         }
 
-        AddDomainEvent(new TicketsReservedDomainEvent(attendeeId));
-        return true;
+        var reservationId = Guid.NewGuid(); // Also used as registration ID
+        
+        AddDomainEvent(new AttendeeRegisteredDomainEvent(
+            TeamId,
+            Id,
+            reservationId,
+            email,
+            firstName,
+            lastName,
+            additionalDetails,
+            tickets));
+
+        return reservationId;
     }
 }

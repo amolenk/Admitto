@@ -67,14 +67,21 @@ public class MessageQueuesWorker(
         if (typeName.EndsWith("Command"))
         {
             return Type.GetType(
-                $"Amolenk.Admitto.Application.UseCases.{typeName}, Admitto.Application",
+                $"Amolenk.Admitto.Application.{typeName}, Admitto.Application",
                 true)!;
         }
 
         if (typeName.EndsWith("DomainEvent"))
         {
             return Type.GetType(
-                $"Amolenk.Admitto.Domain.DomainEvents.{typeName}, Admitto.Domain",
+                $"Amolenk.Admitto.Domain.{typeName}, Admitto.Domain",
+                true)!;
+        }
+
+        if (typeName.EndsWith("ApplicationEvent"))
+        {
+            return Type.GetType(
+                $"Amolenk.Admitto.Application.{typeName}, Admitto.Application",
                 true)!;
         }
 

@@ -3,10 +3,9 @@ namespace Amolenk.Admitto.Application.UseCases.TicketedEvents.CreateTicketedEven
 public record CreateTicketedEventRequest(
     string Slug,
     string Name,
+    string Website,
     DateTimeOffset StartTime,
     DateTimeOffset EndTime,
     DateTimeOffset RegistrationStartTime,
-    DateTimeOffset RegistrationEndTime);
-
-// TODO Cleanup
-// public record TicketTypeDto(string Name, string SlotName, int MaxCapacity);
+    DateTimeOffset RegistrationEndTime,
+    string BaseUrl);

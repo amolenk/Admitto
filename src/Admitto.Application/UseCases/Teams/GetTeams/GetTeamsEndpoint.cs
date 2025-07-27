@@ -44,7 +44,7 @@ public static class GetTeamsEndpoint
 
         var response = new GetTeamsResponse(
             teams
-                .Select(t => new TeamDto(t.Slug, t.Name, t.EmailSettings.SenderEmail))
+                .Select(t => new TeamDto(t.Slug, t.Name, t.Email))
                 .ToArray());
 
         return TypedResults.Ok(response);

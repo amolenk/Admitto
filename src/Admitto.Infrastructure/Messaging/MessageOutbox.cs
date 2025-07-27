@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Application.Common.Abstractions;
+using Amolenk.Admitto.Application.Common.Core;
 using Amolenk.Admitto.Domain.DomainEvents;
 using Amolenk.Admitto.Infrastructure.Persistence;
 
@@ -14,6 +15,11 @@ public class MessageOutbox(ApplicationContext context, IMessageSender messageSen
     public void Enqueue(DomainEvent domainEvent)
     {
         context.Outbox.Add(Message.FromDomainEvent(domainEvent));
+    }
+
+    public void Enqueue(ApplicationEvent applicationEvent)
+    {
+        context.Outbox.Add(Message.FromApplicationEvent(applicationEvent));
     }
 
     public async ValueTask<bool> FlushAsync(CancellationToken cancellationToken = default)

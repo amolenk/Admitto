@@ -3,6 +3,7 @@
 using Amolenk.Admitto.Cli.Api.Models;
 using Amolenk.Admitto.Cli.Api.Teams.Item.Email;
 using Amolenk.Admitto.Cli.Api.Teams.Item.Events;
+using Amolenk.Admitto.Cli.Api.Teams.Item.Members;
 using Microsoft.Kiota.Abstractions.Extensions;
 using Microsoft.Kiota.Abstractions.Serialization;
 using Microsoft.Kiota.Abstractions;
@@ -28,6 +29,11 @@ namespace Amolenk.Admitto.Cli.Api.Teams.Item
         public global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.EventsRequestBuilder Events
         {
             get => new global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.EventsRequestBuilder(PathParameters, RequestAdapter);
+        }
+        /// <summary>The members property</summary>
+        public global::Amolenk.Admitto.Cli.Api.Teams.Item.Members.MembersRequestBuilder Members
+        {
+            get => new global::Amolenk.Admitto.Cli.Api.Teams.Item.Members.MembersRequestBuilder(PathParameters, RequestAdapter);
         }
         /// <summary>
         /// Instantiates a new <see cref="global::Amolenk.Admitto.Cli.Api.Teams.Item.WithTeamSlugItemRequestBuilder"/> and sets the default values.

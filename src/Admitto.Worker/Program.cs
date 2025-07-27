@@ -35,9 +35,10 @@ builder.Services.AddScoped<IJobScheduler, JobScheduler>();
 builder.Services.AddCommandHandlers();
 builder.Services.AddJobHandlers();
 builder.Services.AddEventualDomainEventHandlers();
-    
+builder.Services.AddApplicationEventHandlers();
+builder.Services.AddEmailServices();
+
 builder.AddDefaultInfrastructureServices();
-builder.AddSmtpEmailServices();
 
 var host = builder.Build();
 host.Run();

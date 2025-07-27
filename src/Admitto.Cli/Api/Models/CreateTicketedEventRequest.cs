@@ -14,6 +14,14 @@ namespace Amolenk.Admitto.Cli.Api.Models
     {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
+        /// <summary>The baseUrl property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public string? BaseUrl { get; set; }
+#nullable restore
+#else
+        public string BaseUrl { get; set; }
+#endif
         /// <summary>The endTime property</summary>
         public DateTimeOffset? EndTime { get; set; }
         /// <summary>The name property</summary>
@@ -38,6 +46,14 @@ namespace Amolenk.Admitto.Cli.Api.Models
 #endif
         /// <summary>The startTime property</summary>
         public DateTimeOffset? StartTime { get; set; }
+        /// <summary>The website property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public string? Website { get; set; }
+#nullable restore
+#else
+        public string Website { get; set; }
+#endif
         /// <summary>
         /// Instantiates a new <see cref="global::Amolenk.Admitto.Cli.Api.Models.CreateTicketedEventRequest"/> and sets the default values.
         /// </summary>
@@ -63,12 +79,14 @@ namespace Amolenk.Admitto.Cli.Api.Models
         {
             return new Dictionary<string, Action<IParseNode>>
             {
+                { "baseUrl", n => { BaseUrl = n.GetStringValue(); } },
                 { "endTime", n => { EndTime = n.GetDateTimeOffsetValue(); } },
                 { "name", n => { Name = n.GetStringValue(); } },
                 { "registrationEndTime", n => { RegistrationEndTime = n.GetDateTimeOffsetValue(); } },
                 { "registrationStartTime", n => { RegistrationStartTime = n.GetDateTimeOffsetValue(); } },
                 { "slug", n => { Slug = n.GetStringValue(); } },
                 { "startTime", n => { StartTime = n.GetDateTimeOffsetValue(); } },
+                { "website", n => { Website = n.GetStringValue(); } },
             };
         }
         /// <summary>
@@ -78,12 +96,14 @@ namespace Amolenk.Admitto.Cli.Api.Models
         public virtual void Serialize(ISerializationWriter writer)
         {
             _ = writer ?? throw new ArgumentNullException(nameof(writer));
+            writer.WriteStringValue("baseUrl", BaseUrl);
             writer.WriteDateTimeOffsetValue("endTime", EndTime);
             writer.WriteStringValue("name", Name);
             writer.WriteDateTimeOffsetValue("registrationEndTime", RegistrationEndTime);
             writer.WriteDateTimeOffsetValue("registrationStartTime", RegistrationStartTime);
             writer.WriteStringValue("slug", Slug);
             writer.WriteDateTimeOffsetValue("startTime", StartTime);
+            writer.WriteStringValue("website", Website);
             writer.WriteAdditionalData(AdditionalData);
         }
     }

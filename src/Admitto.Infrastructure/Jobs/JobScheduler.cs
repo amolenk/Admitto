@@ -4,11 +4,11 @@ using Amolenk.Admitto.Domain.Entities;
 
 namespace Amolenk.Admitto.Infrastructure.Jobs;
 
-public class JobScheduler(IApplicationContext applicationContext, IMessageOutbox messageOutbox, IUnitOfWork unitOfWork)
+public class JobScheduler(IApplicationContext applicationContext, IMessageOutbox messageOutbox)
     : IJobScheduler
 {
     public async ValueTask AddJobAsync<TJobData>(TJobData jobData, CancellationToken cancellationToken = default)
-        where TJobData : IJobData
+        where TJobData : JobData
     {
         var job = Job.Create(jobData);
 
@@ -24,8 +24,8 @@ public class JobScheduler(IApplicationContext applicationContext, IMessageOutbox
         }
     }
 
-    public async ValueTask AddOrUpdateRecurringJobAsync(
-        IJobData jobData,
+    public ValueTask AddOrUpdateRecurringJobAsync(
+        JobData jobData,
         string cronExpression,
         CancellationToken cancellationToken = default)
     {
