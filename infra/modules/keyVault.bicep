@@ -1,5 +1,4 @@
 param location string = resourceGroup().location
-param principalType string
 param principalId string
 
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
