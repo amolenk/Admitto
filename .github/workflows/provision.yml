@@ -32,13 +32,10 @@ jobs:
           azcliversion: latest
           inlineScript: |
             az account show
-            
-            
-            
-          
-#      - name: Deploy Bicep
-#        run: |
-#          az deployment sub create \
-#            --location westeurope \
-#            --template-file infra/main.bicep \
-#            --parameters environment=prod
+
+      - name: Deploy Bicep
+        run: |
+          az deployment group create \
+            --location westeurope \
+            --template-file infra/main.bicep \
+            --parameters location=westeurope
