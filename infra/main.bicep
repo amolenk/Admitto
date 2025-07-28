@@ -39,21 +39,23 @@ module resources 'resources.bicep' = {
   }
 }
 
-// module keyVault 'keyVault/keyVault.module.bicep' = {
-//   name: 'keyVault'
-//   params: {
-//     location: location
-//   }
-// }
-// module keyVault_roles 'keyVault-roles/keyVault-roles.module.bicep' = {
-//   name: 'keyVault-roles'
-//   params: {
-//     keyvault_outputs_name: keyVault.outputs.name
-//     location: location
-//     principalId: resources.outputs.MANAGED_IDENTITY_PRINCIPAL_ID
-//     principalType: 'ServicePrincipal'
-//   }
-// }
+module keyVault 'keyVault/keyVault.module.bicep' = {
+  name: 'keyVault'
+  params: {
+    location: location
+  }
+}
+
+module keyVault_roles 'keyVault-roles/keyVault-roles.module.bicep' = {
+  name: 'keyVault-roles'
+  params: {
+    keyvault_outputs_name: keyVault.outputs.name
+    location: location
+    principalId: resources.outputs.MANAGED_IDENTITY_PRINCIPAL_ID
+    principalType: 'ServicePrincipal'
+  }
+}
+
 // module messaging 'messaging/messaging.module.bicep' = {
 //   name: 'messaging'
 //   params: {
