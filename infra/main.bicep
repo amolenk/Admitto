@@ -57,8 +57,6 @@ param location string
 //   }
 // }
 
-var resourceToken = uniqueString(resourceGroup().id)
-
 module managedIdentity 'modules/managedIdentity.bicep' = {
   name: 'managedIdentity'
   params: {
@@ -68,13 +66,6 @@ module managedIdentity 'modules/managedIdentity.bicep' = {
 
 module containerRegistry 'modules/containerRegistry.bicep' = {
   name: 'containerRegistry'
-  params: {
-    location: location
-  }
-}
-
-module logAnalytics 'modules/logAnalytics.bicep' = {
-  name: 'logAnalytics'
   params: {
     location: location
   }
@@ -93,9 +84,7 @@ module containerAppEnvironment 'modules/containerAppEnvironment.bicep' = {
   params: {
     location: location
     keyVaultName: keyVault.outputs.name
-    logAnalyticsCustomerId: logAnalytics.outputs.customerId
-    logAnalyticsSharedKey: logAnalytics.outputs.primarySharedKey
-    containerRegistryId: containerRegistry.outputs.id
+    containerRegistryName: containerRegistry.outputs.name
     principalId: managedIdentity.outputs.principalId
   }
 }
