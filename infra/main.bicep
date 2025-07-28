@@ -59,21 +59,21 @@ param location string
 
 var resourceToken = uniqueString(resourceGroup().id)
 
-module managedIdentity 'managedIdentity.bicep' = {
+module managedIdentity 'modules/managedIdentity.bicep' = {
   name: 'managedIdentity'
   params: {
     location: location
   }
 }
 
-module containerRegistry 'containerRegistry.bicep' = {
+module containerRegistry 'modules/containerRegistry.bicep' = {
   name: 'containerRegistry'
   params: {
     location: location
   }
 }
 
-module logAnalytics 'logAnalytics.bicep' = {
+module logAnalytics 'modules/logAnalytics.bicep' = {
   name: 'logAnalytics'
   params: {
     location: location
@@ -88,7 +88,7 @@ module keyVault 'modules/keyVault.bicep' = {
   }
 }
 
-module containerAppEnvironment 'containerAppEnvironment.bicep' = {
+module containerAppEnvironment 'modules/containerAppEnvironment.bicep' = {
   name: 'containerAppEnvironment'
   params: {
     location: location
