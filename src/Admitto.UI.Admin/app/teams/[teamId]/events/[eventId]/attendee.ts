@@ -1,0 +1,193 @@
+export type Attendee = {
+    id: string
+    name: string
+    email: string
+    ticketTypes: string[]
+    status: "pending" | "registered" | "confirmed" | "attended" | "cancelled" | "no-show"
+}
+
+export const attendees: Attendee[] = [
+    {
+        id: "728ed52f",
+        name: "John Doe",
+        email: "john@example.com",
+        ticketTypes: ["Friday Afternoon Workshop", "Saturday"],
+        status: "registered",
+    },
+    {
+        id: "489e1d42",
+        name: "Jane Doe",
+        email: "jane@example.com",
+        ticketTypes: ["Saturday"],
+        status: "confirmed",
+    },
+    {
+        id: "728ed52f",
+        name: "John Doe",
+        email: "john@example.com",
+        ticketTypes: ["Friday Morning Workshop", "Saturday"],
+        status: "registered",
+    },
+    {
+        id: "489e1d42",
+        name: "Jane Doe",
+        email: "jane@example.com",
+        ticketTypes: ["Saturday"],
+        status: "confirmed",
+    },
+    {
+        id: "728ed52f",
+        name: "John Doe",
+        email: "john@example.com",
+        ticketTypes: ["Friday Afternoon Workshop", "Saturday"],
+        status: "registered",
+    },
+    {
+        id: "489e1d42",
+        name: "Jane Doe",
+        email: "jane@example.com",
+        ticketTypes: ["Saturday"],
+        status: "confirmed",
+    },
+    {
+        id: "728ed52f",
+        name: "John Doe",
+        email: "john@example.com",
+        ticketTypes: ["Friday Afternoon Workshop", "Saturday"],
+        status: "registered",
+    },
+    {
+        id: "489e1d42",
+        name: "Jane Doe",
+        email: "jane@example.com",
+        ticketTypes: ["Saturday"],
+        status: "confirmed",
+    },
+    {
+        id: "728ed52f",
+        name: "John Doe",
+        email: "john@example.com",
+        ticketTypes: ["Friday Afternoon Workshop", "Saturday"],
+        status: "registered",
+    },
+    {
+        id: "489e1d42",
+        name: "Jane Doe",
+        email: "jane@example.com",
+        ticketTypes: ["Saturday"],
+        status: "confirmed",
+    },
+    {
+        id: "728ed52f",
+        name: "John Doe",
+        email: "john@example.com",
+        ticketTypes: ["Friday Afternoon Workshop", "Saturday"],
+        status: "registered",
+    },
+    {
+        id: "489e1d42",
+        name: "Jane Doe",
+        email: "jane@example.com",
+        ticketTypes: ["Saturday"],
+        status: "confirmed",
+    },
+    {
+        id: "728ed52f",
+        name: "John Doe",
+        email: "john@example.com",
+        ticketTypes: ["Friday Morning Workshop", "Saturday"],
+        status: "registered",
+    },
+    {
+        id: "489e1d42",
+        name: "Jane Doe",
+        email: "jane@example.com",
+        ticketTypes: ["Saturday"],
+        status: "confirmed",
+    },
+    {
+        id: "728ed52f",
+        name: "John Doe",
+        email: "john@example.com",
+        ticketTypes: ["Friday Afternoon Workshop", "Saturday"],
+        status: "registered",
+    },
+    {
+        id: "489e1d42",
+        name: "Jane Doe",
+        email: "jane@example.com",
+        ticketTypes: ["Saturday"],
+        status: "confirmed",
+    },
+    {
+        id: "728ed52f",
+        name: "John Doe",
+        email: "john@example.com",
+        ticketTypes: ["Friday Afternoon Workshop", "Saturday"],
+        status: "registered",
+    },
+    {
+        id: "489e1d42",
+        name: "Jane Doe",
+        email: "jane@example.com",
+        ticketTypes: ["Saturday"],
+        status: "confirmed",
+    },
+    {
+        id: "728ed52f",
+        name: "John Doe",
+        email: "john@example.com",
+        ticketTypes: ["Friday Afternoon Workshop", "Friday Morning Workshop", "Saturday"],
+        status: "registered",
+    },
+    {
+        id: "489e1d42",
+        name: "Jane Doe",
+        email: "jane@example.com",
+        ticketTypes: ["Saturday"],
+        status: "confirmed",
+    },
+    {
+        id: "728ed52f",
+        name: "John Doe",
+        email: "john@example.com",
+        ticketTypes: ["Friday Afternoon Workshop", "Saturday"],
+        status: "registered",
+    },
+    {
+        id: "489e1d42",
+        name: "Jane Doe",
+        email: "jane@example.com",
+        ticketTypes: ["Saturday"],
+        status: "confirmed",
+    },
+    {
+        id: "728ed52f",
+        name: "John Doe",
+        email: "john@example.com",
+        ticketTypes: ["Friday Afternoon Workshop", "Saturday"],
+        status: "registered",
+    },
+    {
+        id: "489e1d42",
+        name: "Jane Doe",
+        email: "jane@example.com",
+        ticketTypes: ["Saturday"],
+        status: "confirmed",
+    },
+    {
+        id: "728ed52f",
+        name: "John Doe",
+        email: "john@example.com",
+        ticketTypes: ["Friday Afternoon Workshop", "Friday Morning Workshop"],
+        status: "registered",
+    },
+    {
+        id: "489e1d42",
+        name: "Jane Doe",
+        email: "jane@example.com",
+        ticketTypes: ["Saturday"],
+        status: "confirmed",
+    },
+    // ...
+]
