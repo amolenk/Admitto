@@ -36,6 +36,6 @@ jobs:
       - name: Deploy Bicep
         run: |
           az deployment group create \
-            --location westeurope \
+            --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} \
             --template-file infra/main.bicep \
             --parameters location=westeurope
