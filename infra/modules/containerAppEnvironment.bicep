@@ -1,14 +1,26 @@
 param location string
 param keyVaultName string
-param logAnalyticsCustomerId string
-param logAnalyticsSharedKey string
-param containerRegistryId string
+param containerRegistryName string
 param principalId string
 
 var resourceToken = uniqueString(resourceGroup().id)
 
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
   name: keyVaultName
+}
+
+resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-07-01' existing = {
+  name: containerRegistryName
+}
+
+resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
+  name: 'law-${resourceToken}'
+  location: location
+  properties: {
+    sku: {
+      name: 'PerGB2018'
+    }
+  }
 }
 
 resource containerAppEnvironment 'Microsoft.App/managedEnvironments@2024-02-02-preview' = {
@@ -22,13 +34,13 @@ resource containerAppEnvironment 'Microsoft.App/managedEnvironments@2024-02-02-p
     appLogsConfiguration: {
       destination: 'log-analytics'
       logAnalyticsConfiguration: {
-        customerId: logAnalyticsCustomerId
-        sharedKey: logAnalyticsSharedKey
+        customerId: logAnalyticsWorkspace.properties.customerId
+        sharedKey: logAnalyticsWorkspace.listKeys().primarySharedKey
       }
     }
   }
 
-  resource keyVaultReference 'Microsoft.App/managedEnvironments/keyVaultReferences@2024-02-02-preview' = {
+  resource keyVaultReference 'keyVaultReferences' = {
     name: 'keyvault'
     properties: {
       keyVaultArmId: keyVault.id
@@ -46,7 +58,7 @@ resource containerAppEnvironment 'Microsoft.App/managedEnvironments@2024-02-02-p
 
 resource caeMiRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
   name: guid(containerAppEnvironment.id, principalId, subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d'))
-  scope: containerRegistryId
+  scope: containerRegistry.id
   properties: {
     principalId: principalId
     principalType: 'ServicePrincipal'
