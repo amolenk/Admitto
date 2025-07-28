@@ -52,7 +52,7 @@ public class Team : AggregateRoot
         
         _members.Add(member);
         
-        AddDomainEvent(new TeamMemberAddedDomainEvent(Id, Slug, member));
+        AddDomainEvent(new TeamMemberAddedDomainEvent(Slug, member));
     }
 
     // public void UpdateMember(string email, TeamMemberRole role)
