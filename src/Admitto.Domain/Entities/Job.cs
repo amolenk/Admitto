@@ -29,10 +29,7 @@ public class Job : Entity
     public static Job Create<T>(T jobData)
     {
         var jobType = typeof(T).FullName ?? throw new InvalidOperationException("Job type cannot be null");
-        var serializedData = JsonSerializer.SerializeToDocument(jobData, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        });
+        var serializedData = JsonSerializer.SerializeToDocument(jobData);
 
         return new Job(Guid.NewGuid(), jobType, serializedData);
     }

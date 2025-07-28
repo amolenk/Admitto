@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Amolenk.Admitto.Domain.Entities;
 
 public abstract class Entity

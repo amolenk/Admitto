@@ -41,8 +41,8 @@ public class AttendeeRegistrationBuilder
         return this;
     }
 
-    public AttendeeRegistration Build()
+    public Registration Build()
     {
-        return AttendeeRegistration.Create(_ticketedEventId, _email, _firstName, _lastName, _tickets);
+        return Registration.Create(_ticketedEventId, _email, _firstName, _lastName, _tickets);
     }
 }

@@ -1,4 +1,3 @@
-using Amolenk.Admitto.Application.UseCases.Attendees.RegisterAttendee;
 using Amolenk.Admitto.Application.UseCases.Registrations.StartRegistration;
 using Amolenk.Admitto.Domain;
 using Amolenk.Admitto.Domain.Entities;
@@ -60,7 +59,7 @@ public class RegisterAttendeeTests : FullStackTestsBase
         var ticketType = _testEvent.TicketTypes.First();
         var tickets = new Dictionary<Guid, int>()
         {
-            [ticketType.Id] = ticketType.RemainingCapacity + 1 // Request more tickets than available
+            [ticketType.Id] = ticketType.UsedCapacity + 1 // Request more tickets than available
         };
         
         var request = new RegisterAttendeeRequestBuilder()
@@ -100,7 +99,7 @@ public class RegisterAttendeeTests : FullStackTestsBase
         var result = await response.Content.ReadFromJsonAsync<RegisterAttendeeResponse>();
         (result?.Id).ShouldNotBeNull();
     
-        var createdRegistration = await Database.Context.AttendeeRegistrations.FindAsync(result.Id);
+        var createdRegistration = await Database.Context.Registrations.FindAsync(result.Id);
         createdRegistration.ShouldSatisfyAllConditions(registration =>
         {
             registration.ShouldNotBeNull();

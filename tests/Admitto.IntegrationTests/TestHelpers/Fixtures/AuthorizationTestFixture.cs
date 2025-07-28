@@ -5,12 +5,12 @@ namespace Amolenk.Admitto.IntegrationTests.TestHelpers.Fixtures;
 
 public class AuthorizationTestFixture
 {
-    private AuthorizationTestFixture(IRebacAuthorizationService authorizationService)
+    private AuthorizationTestFixture(IAuthorizationService authorizationService)
     {
         AuthorizationService = authorizationService;
     }
  
-    public IRebacAuthorizationService AuthorizationService { get; }
+    public IAuthorizationService AuthorizationService { get; }
 
     public static AuthorizationTestFixture Create(TestingAspireAppHost appHost)
     {
@@ -22,7 +22,7 @@ public class AuthorizationTestFixture
         return new AuthorizationTestFixture(authorizationService);
     }
     
-    public async Task ResetAsync(Func<IRebacAuthorizationService, ValueTask>? seed = null)
+    public async Task ResetAsync(Func<IAuthorizationService, ValueTask>? seed = null)
     {
         try
         {

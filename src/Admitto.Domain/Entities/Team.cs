@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Domain.DomainEvents;
-using Amolenk.Admitto.Domain.Exceptions;
 using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Domain.Entities;
@@ -16,37 +15,44 @@ public class Team : AggregateRoot
     {
     }
     
-    private Team(TeamId id, string name, EmailSettings emailSettings) : base(id)
+    private Team(TeamId id, string slug, string name, string email, string emailServiceConnectionString) : base(id)
     {
+        Slug = slug;
         Name = name;
-        EmailSettings = emailSettings;
+        Email = email;
+        EmailServiceConnectionString = emailServiceConnectionString;
+        
+        AddDomainEvent(new TeamCreatedDomainEvent(Id, slug));
     }
 
+    public string Slug { get; private set; } = null!;
     public string Name { get; private set; } = null!;
-    public EmailSettings EmailSettings { get; private set; } = null!;
+    public string Email { get; private set; } = null!;
+    public string EmailServiceConnectionString { get; private set; } = null!;
     public IReadOnlyCollection<TeamMember> Members => _members.AsReadOnly();
-
-    public static Team Create(string name, EmailSettings emailSettings)
+    
+    public static Team Create(string slug, string name, string email, string emailServiceConnectionString)
     {
         var id = TeamId.FromName(name);
         
-        return new Team(id, name, emailSettings);
+        return new Team(id, slug, name, email, emailServiceConnectionString);
     }
     
     public void AddMember(string email, TeamMemberRole role)
     {
-        if (string.IsNullOrWhiteSpace(email)) throw new DomainException("Email cannot be empty.");
+        if (string.IsNullOrWhiteSpace(email)) throw new DomainRuleException(DomainRuleError.Team.EmailIsRequired);
         
         var member = TeamMember.Create(email, role);
 
         if (_members.Any(m => m.Id == member.Id))
         {
-            throw new DomainException("Member already exists.");
+            throw new DomainRuleException(DomainRuleError.Team.MemberAlreadyExists);
         }
+        
         
         _members.Add(member);
         
-        AddDomainEvent(new TeamMemberAddedDomainEvent(Id, member));
+        AddDomainEvent(new TeamMemberAddedDomainEvent(Id, Slug, member));
     }
 
     // public void UpdateMember(string email, TeamMemberRole role)

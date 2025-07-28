@@ -31,7 +31,7 @@ tuples:
     object: system:system
 
   - user: user:bob
-    relation: manager
+    relation: owner
     object: team:team1
 
   - user: user:bob
@@ -39,84 +39,99 @@ tuples:
     object: team:team2
 
   - user: user:chuck
-    relation: reader
-    object: event:eventA
+    relation: organizer
+    object: team:team1
 
-  - user: user:dina
+  - user: user:chuck
     relation: organizer
     object: event:eventC
 
+  - user: user:chuck
+    relation: viewer
+    object: event:eventD
+
 tests:
 
-  - name: alice-can-manage-all-teams
+  - name: alice-system
+    list_objects:
+      - user: user:alice
+        type: system
+        assertions:
+          can_create_team:
+            - system:system
+
+  - name: alice-teams
     list_objects:
       - user: user:alice
         type: team
         assertions:
-          manager:
+          can_update_team:
             - team:team1
             - team:team2
-          organizer:
+          can_view_team:
+            - team:team1
+            - team:team2
+          can_create_event:
             - team:team1
             - team:team2
 
-  - name: alice-can-organize-all-events
+  - name: alice-events
     list_objects:
       - user: user:alice
         type: event
         assertions:
-          organizer:
+          can_update_event:
             - event:eventA
             - event:eventB
             - event:eventC
             - event:eventD
-          reader:
+          can_view_event:
             - event:eventA
             - event:eventB
             - event:eventC
             - event:eventD
-
-  - name: bob-can-manage-team1-and-organize-team2
+  
+  - name: bob-teams
     list_objects:
       - user: user:bob
         type: team
         assertions:
-          manager:
+          can_update_team:
             - team:team1
-          organizer:
+          can_view_team:
+            - team:team1
+            - team:team2
+          can_create_event:
             - team:team1
             - team:team2
 
-  - name: bob-can-organize-all-events
+  - name: bob-events
     list_objects:
       - user: user:bob
         type: event
         assertions:
-          organizer:
+          can_update_event:
             - event:eventA
             - event:eventB
             - event:eventC
             - event:eventD
-          reader:
+          can_view_event:
             - event:eventA
             - event:eventB
             - event:eventC
             - event:eventD
-
-  - name: chuck-can-only-read-eventA
+              
+  - name: chuck-events
     list_objects:
       - user: user:chuck
         type: event
         assertions:
-          reader:
+          can_update_event:
             - event:eventA
-
-  - name: dina-can-only-organize-eventC
-    list_objects:
-      - user: user:dina
-        type: event
-        assertions:
-          organizer:
+            - event:eventB
             - event:eventC
-          reader:
+          can_view_event:
+            - event:eventA
+            - event:eventB
             - event:eventC
+            - event:eventD

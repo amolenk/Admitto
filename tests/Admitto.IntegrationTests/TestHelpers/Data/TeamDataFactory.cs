@@ -5,13 +5,13 @@ namespace Amolenk.Admitto.IntegrationTests.TestHelpers.Data;
 
 public static class TeamDataFactory
 {
-    public static Team CreateTeam(string? name = null, EmailSettings? emailSettings = null)
-    {
-        name ??= "Test Team";
-        emailSettings ??= new EmailSettings("admin@example.com", "smtp.example.com", 25);
-        
-        return Team.Create(name, emailSettings);
-    }
+    // public static Team CreateTeam(string? name = null, EmailSettings? emailSettings = null)
+    // {
+    //     name ??= "Test Team";
+    //     emailSettings ??= new EmailSettings("admin@example.com", "smtp.example.com", 25);
+    //     
+    //     return Team.Create(name, emailSettings);
+    // }
 
     // public static TicketedEvent CreateTicketedEvent(string? name = null, DateTimeOffset? startDateTime = null,
     //     DateTimeOffset? endDateTime = null, DateTimeOffset? registrationStartDateTime = null,

@@ -11,8 +11,4 @@ public class MessageQueuesWorkerOptions
     public required TimeSpan MaxRetryDelay { get; init; } = TimeSpan.FromSeconds(30);
 
     public required int MaxRetryAttempts { get; init; } = int.MaxValue;
-    
-    public required TimeSpan MaxPollDelay { get; init; } = TimeSpan.FromSeconds(30);
-
-    public required TimeSpan MaxPrioPollDelay { get; init; } = TimeSpan.FromSeconds(3);
 }

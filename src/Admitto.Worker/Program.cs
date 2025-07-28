@@ -25,11 +25,9 @@ builder.Services.AddHostedService<MessageQueuesWorker>();
 
 builder.Services.AddSingleton<JobsWorker>();
 builder.Services.AddHostedService(provider => provider.GetRequiredService<JobsWorker>());
+builder.Services.AddSingleton<IJobsWorker>(sp => sp.GetRequiredService<JobsWorker>());
 
 builder.Services.AddScoped<IJobScheduler, JobScheduler>();
-
-// TODO Maybe also used in the API?
-builder.Services.AddScoped<ICommandSender, CommandSender>();
 
 
 // TODO Move to ServiceDefaults
@@ -37,9 +35,10 @@ builder.Services.AddScoped<ICommandSender, CommandSender>();
 builder.Services.AddCommandHandlers();
 builder.Services.AddJobHandlers();
 builder.Services.AddEventualDomainEventHandlers();
-    
+builder.Services.AddApplicationEventHandlers();
+builder.Services.AddEmailServices();
+
 builder.AddDefaultInfrastructureServices();
-builder.AddSmtpEmailServices();
 
 var host = builder.Build();
 host.Run();

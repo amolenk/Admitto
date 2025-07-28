@@ -1,10 +1,11 @@
-﻿using Amolenk.Admitto.Infrastructure.Auth;
+﻿using System.Text.Json;
+using Amolenk.Admitto.Infrastructure.Auth;
 using Amolenk.Admitto.Infrastructure.Persistence;
+using Amolenk.Admitto.Migration;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using static System.Guid;
 
 var builder = Host.CreateApplicationBuilder();
 
@@ -36,10 +37,8 @@ async Task MigrateDatabaseAsync()
 
 async Task MigrateOpenFgaAsync(IConfiguration configuration)
 {
-#pragma warning disable CA1806
-    TryParse(configuration["OpenFga:AdminUserId"], out var adminUserId);
-#pragma warning restore CA1806
+    var openFgaOptions = configuration.GetSection("OpenFGA").Get<OpenFgaOptions>();
     
     var openFgaMigrator = host.Services.GetRequiredService<OpenFgaMigrator>();
-    await openFgaMigrator.MigrateAsync(adminUserId);
+    await openFgaMigrator.MigrateAsync(openFgaOptions?.AdminUserIds ?? []);
 }

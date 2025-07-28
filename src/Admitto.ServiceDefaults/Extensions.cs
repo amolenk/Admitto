@@ -1,16 +1,25 @@
 using System.Diagnostics;
+using System.Net;
+using System.Text.Json;
 using Amolenk.Admitto.Application.Common.Abstractions;
 using Amolenk.Admitto.Application.Common.Authorization;
+using Amolenk.Admitto.Application.Common.Cryptography;
 using Amolenk.Admitto.Infrastructure.Auth;
 using Amolenk.Admitto.ServiceDefaults;
+using Azure.Storage;
+using Azure.Storage.Blobs;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 using OpenFga.Sdk.Client;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
@@ -45,6 +54,11 @@ public static class Extensions
         // {
         //     options.AllowedSchemes = ["https"];
         // });
+
+        builder.AddDataProtection();
+
+        builder.Services.AddSingleton<ISigningService, SigningService>();
+        builder.Services.AddHttpContextAccessor();
 
         return builder;
     }
@@ -130,6 +144,40 @@ public static class Extensions
                 options.Authority = authOptions.Authority;
                 options.Audience = authOptions.Audience;
                 options.RequireHttpsMetadata = authOptions.RequireHttpsMetadata;
+                options.TokenValidationParameters.ValidIssuers = authOptions.ValidIssuers;
+
+                options.Events = new JwtBearerEvents
+                {
+                    OnChallenge = context =>
+                    {
+                        context.HandleResponse();
+                        context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                        context.Response.ContentType = "application/problem+json";
+
+                        var problem = new ProblemDetails
+                        {
+                            Status = StatusCodes.Status401Unauthorized,
+                            Title = "Unauthorized",
+                            Detail = "You are not authorized to access this resource."
+                        };
+
+                        return context.Response.WriteAsJsonAsync(problem);
+                    },
+                    OnForbidden = context =>
+                    {
+                        context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                        context.Response.ContentType = "application/problem+json";
+
+                        var problem = new ProblemDetails
+                        {
+                            Status = StatusCodes.Status403Forbidden,
+                            Title = "Forbidden",
+                            Detail = "You do not have permission to access this resource."
+                        };
+
+                        return context.Response.WriteAsJsonAsync(problem);
+                    }
+                };
             });
 
         return builder;
@@ -138,10 +186,29 @@ public static class Extensions
     public static WebApplicationBuilder AddDefaultAuthorization(this WebApplicationBuilder builder)
     {
         builder.Services
-            .AddHttpContextAccessor() // TODO Move?
-            .AddSingleton<IAuthorizationHandler, RebacAuthorizationHandler>() // TODO Move?
+            .AddSingleton<IAuthorizationHandler, AuthorizationHandler>() // TODO Move?
             .AddAuthorization();
         
+        return builder;
+    }
+
+    public static TBuilder AddDataProtection<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
+    {
+        // TODO Remove is this works locally. In prod, there keys are now managed automatically.
+        
+        // var connectionString = builder.Configuration.GetConnectionString("blobs");
+        // if (!string.IsNullOrEmpty(connectionString))
+        // {
+        //     var blobClient = new BlobContainerClient(connectionString, "data-protection")
+        //         .GetBlobClient("keys.xml");
+        //
+        builder.Services.AddDataProtection();
+        //         .PersistKeysToAzureBlobStorage(blobClient)
+        //         .SetApplicationName("Admitto");
+
+            builder.Services.AddScoped<ITeamConfigEncryptionService, TeamConfigEncryptionService>();
+        // }
+
         return builder;
     }
     

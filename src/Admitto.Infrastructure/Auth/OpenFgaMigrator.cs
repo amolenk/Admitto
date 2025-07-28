@@ -6,7 +6,7 @@ namespace Amolenk.Admitto.Infrastructure.Auth;
 
 public class OpenFgaMigrator(OpenFgaClientFactory clientFactory)
 {
-    public async ValueTask MigrateAsync(Guid? adminUserId = null)
+    public async ValueTask MigrateAsync(List<Guid> adminUserIds)
     {
         var client = await clientFactory.GetClientAsync();
         
@@ -20,13 +20,13 @@ public class OpenFgaMigrator(OpenFgaClientFactory clientFactory)
         var modelId = await client.TryGetAuthorizationModelIdAsync();
         if (modelId is null)
         {
-            modelId = await WriteAuthorizationModelAsync(client);
+            await WriteAuthorizationModelAsync(client);
          
             // Configure global admin user.
-            if (adminUserId is not null)
+            foreach (var adminUserId in adminUserIds)
             {
                 var authorizationService = new OpenFgaAuthorizationService(clientFactory);
-                await authorizationService.AddGlobalAdminAsync(adminUserId.Value);
+                await authorizationService.AddGlobalAdminAsync(adminUserId);
             }
         }
     }
