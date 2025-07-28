@@ -1,36 +1,37 @@
 using Amolenk.Admitto.Application.Common.Abstractions;
+using Amolenk.Admitto.Application.UseCases.Jobs;
 using Amolenk.Admitto.Domain.Entities;
 
 namespace Amolenk.Admitto.Infrastructure.Jobs;
 
-public class JobScheduler(IDomainContext domainContext, JobsWorker jobsWorker, IUnitOfWork unitOfWork) : IJobScheduler
+public class JobScheduler(IApplicationContext applicationContext, IMessageOutbox messageOutbox)
+    : IJobScheduler
 {
-    public async ValueTask AddJobAsync<TJobData>(TJobData jobData, CancellationToken cancellationToken = default) 
-        where TJobData : IJobData
+    public async ValueTask AddJobAsync<TJobData>(TJobData jobData, CancellationToken cancellationToken = default)
+        where TJobData : JobData
     {
         var job = Job.Create(jobData);
-        
-        var existingJob = await domainContext.Jobs.FindAsync([job.Id], cancellationToken);
-        if (existingJob is not null)
+
+        var existingJob = await applicationContext.Jobs.FindAsync([job.Id], cancellationToken);
+        if (existingJob is null)
         {
-            domainContext.Jobs.Add(job);
+            applicationContext.Jobs.Add(job);
+            messageOutbox.Enqueue(new StartJobCommand(job.Id));
         }
         else
         {
             // TODO Log
         }
-
-        // Enqueue the job for processing. To be sure, do this even if the job was already found in the database.
-        // The JobsWorker will not restart a completed job.
-        unitOfWork.RegisterAfterSaveCallback(() => jobsWorker.EnqueueJobAsync(job.Id, cancellationToken));
     }
-    
-    public async ValueTask AddOrUpdateRecurringJobAsync(IJobData jobData, string cronExpression, 
+
+    public ValueTask AddOrUpdateRecurringJobAsync(
+        JobData jobData,
+        string cronExpression,
         CancellationToken cancellationToken = default)
     {
         // TODO
         throw new NotImplementedException();
-        
+
         // // Validate cron expression
         // var cronSchedule = CronExpression.Parse(cronExpression);
         // var nextRunTime = cronSchedule.GetNextOccurrence(DateTimeOffset.UtcNow.DateTime, TimeZoneInfo.Utc);

@@ -1,28 +1,28 @@
-using System.Text.Json;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Amolenk.Admitto.ApiService.Middleware;
 
-public class GlobalExceptionHandler : IExceptionHandler
+public class GlobalExceptionHandler(IHostEnvironment environment, ILogger<GlobalExceptionHandler> logger)
+    : IExceptionHandler
 {
-    public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
+    public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, 
+        CancellationToken cancellationToken)
     {
+        logger.LogError(exception, "An unhandled exception occurred.");
+
         var problemDetails = new ProblemDetails
         {
             Status = StatusCodes.Status500InternalServerError,
-            Title = "Internal server error.",
-            Detail = exception.Message,
+            Title = "Internal Server Error",
+            Detail = environment.IsDevelopment()
+                ? exception.ToString()
+                : "An unexpected error occurred. Please try again later.",
             Instance = httpContext.Request.Path
         };
 
-        httpContext.Response.StatusCode = StatusCodes.Status500InternalServerError;
-        httpContext.Response.ContentType = "application/json";
-        
-        await httpContext.Response.WriteAsync(JsonSerializer.Serialize(problemDetails, new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-        }), cancellationToken);
+        var result = Results.Problem(problemDetails);
+        await result.ExecuteAsync(httpContext);
 
         return true;
     }

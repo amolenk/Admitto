@@ -1,144 +1,200 @@
+using System.Data.Common;
+using System.Net;
 using Admitto.AppHost.Extensions.AzureServiceBus;
-using Admitto.AppHost.Extensions.AzureStorage;
-using Admitto.AppHost.Extensions.Postgres;
-using Amolenk.Admitto.Infrastructure;
+using Aspire.Hosting.Azure;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
-const bool migrate = true;
+var postgres = builder.ConfigurePostgres();
+var postgresDb = postgres.AddDatabase("admitto-db");
+var openFgaDb = postgres.AddDatabase("openfga-db");
 
-// Use a consistent password to prevent authentication failures when the container is recreated while the data volume
-// persists.
-var postgresPassword = builder.AddParameter("PostgresPassword", true);
+var serviceBus = builder.ConfigureServiceBus();
+serviceBus.AddServiceBusQueue("queue");
 
-var postgres = builder.AddPostgres("postgres", password: postgresPassword)
-    .WithPgWeb(pgweb =>
-    {
-        pgweb.WithLifetime(ContainerLifetime.Persistent);
-    })
-    .WithDataVolume("admitto-postgres-data")
-    .WithLifetime(ContainerLifetime.Persistent);
-
-var postgresdb = postgres.AddDatabase("admitto-db");
-
-var openfgadb = postgres.AddDatabase("openfga-db");
-
-var serviceBus = builder.AddAzureServiceBus("messaging")
-    .RunAsEmulator(configure =>
-    {
-        configure.WithLifetime(ContainerLifetime.Persistent);
-    })
-    .ReplaceEmulatorDatabase();
-
-var queue = serviceBus.AddServiceBusQueue("admitto");
-
-var storage = builder.AddAzureStorage("storage")
-    .RunAsEmulator(azurite =>
-    {
-        azurite
-            .WithQueuePort(10001) // TODO Must be something else for test
-            .WithLifetime(ContainerLifetime.Persistent);
-    });
-    
-var queues = storage.AddQueues(Constants.AzureQueueStorage.ResourceName)
-    .AddQueue(Constants.AzureQueueStorage.DefaultQueueName)
-    .AddQueue(Constants.AzureQueueStorage.PrioQueueName);
-
-var initOpenFga = builder.AddContainer("openfga-init", "openfga/openfga:latest")
-    .WithArgs("migrate")
-    .WithEnvironment("OPENFGA_DATASTORE_ENGINE", "postgres")
-    .WithEnvironment("OPENFGA_DATASTORE_URI", openfgadb.GetConnectionString())
-    .WithLifetime(ContainerLifetime.Persistent)
-    .WaitFor(openfgadb);
-
-var openFga = builder.AddContainer("openfga", "openfga/openfga:latest")
-    .WithArgs("run")
-    .WithEnvironment("OPENFGA_DATASTORE_ENGINE", "postgres")
-    .WithEnvironment("OPENFGA_DATASTORE_URI", openfgadb.GetConnectionString())
-    .WithHttpEndpoint(port: 8000, targetPort: 8080)
-    .WithLifetime(ContainerLifetime.Persistent)
-    .WaitForCompletion(initOpenFga);
-
-var keycloakAdminPassword = builder.AddParameter("KeycloakAdminPassword", secret: true);
-
-// For local development use a stable port for the Keycloak resource (8080 in the preceding example). It can be any port, but it should be stable to avoid issues with browser cookies that will persist OIDC tokens (which include the authority URL, with port) beyond the lifetime of the app host.
-var keycloak = builder.AddKeycloak("keycloak", 8080,
-    adminPassword: keycloakAdminPassword)
-    .WithRealmImport("./KeycloakConfiguration/AdmittoRealm.json")
-    .WithDataVolume("admitto-keycloak-data")
-    .WithLifetime(ContainerLifetime.Persistent);
-
-var maildev = builder.AddContainer("maildev", "maildev/maildev:latest")
-    .WithHttpEndpoint(targetPort: 1080)
-    .WithEndpoint(name: "smtp", scheme: "smtp", targetPort: 1025, isExternal: true)
-    .WithLifetime(ContainerLifetime.Persistent);
-
-var worker = builder.AddProject<Projects.Admitto_Worker>("worker")
-    .WithReference(openFga.GetEndpoint("http"))
-    .WithReference(postgresdb)
-    .WithReference(queues)
-    .WithReference(keycloak)
-    // .WithReference(maildev.GetEndpoint("http"))
-    .WaitFor(postgresdb)
-    .WaitFor(queues)
-    .WaitFor(keycloak)
-    .WaitFor(openFga)
-    .WaitFor(maildev)
-    // .WithEnvironment("EMAIL__SMTPSERVER", () => maildev.GetEndpoint("smtp").Host)
-    // .WithEnvironment("EMAIL__SMTPPORT", () => maildev.GetEndpoint("smtp").Port.ToString())
-    ;
+var openFga = builder.ConfigureOpenFga(openFgaDb);
 
 var apiService = builder.AddProject<Projects.Admitto_Api>("api")
-    .WithEnvironment("AUTHENTICATION__AUTHORITY", $"{keycloak.GetEndpoint("http")}/realms/admitto")
-    .WithUrlForEndpoint("http", ep => new()
-    {
-        Url            = "/scalar",
-        DisplayText    = "Scalar",
-        DisplayLocation = UrlDisplayLocation.SummaryAndDetails
-    })
-    .WithReference(openFga.GetEndpoint("http"))
-    .WithReference(postgresdb)
-    .WithReference(queues)
-    .WithReference(keycloak)
-    .WaitFor(postgresdb)
-    .WaitFor(queues)
-    .WaitFor(keycloak)
-    .WaitFor(openFga);
+    .WithReference(openFga.GetEndpoint("http")).WaitFor(openFga)
+    .WithReference(postgresDb).WaitFor(postgresDb)
+    .WithReference(serviceBus).WaitFor(serviceBus);
 
+var worker = builder.AddProject<Projects.Admitto_Worker>("worker")
+    .WithReference(openFga.GetEndpoint("http")).WaitFor(openFga)
+    .WithReference(postgresDb).WaitFor(postgresDb)
+    .WithReference(serviceBus).WaitFor(serviceBus);
 
-   
-
-
-if (migrate)
+if (builder.ExecutionContext.IsRunMode)
 {
+    var mailDev = builder.ConfigureMailDev();
+    var keycloak = builder.ConfigureKeycloak();
+    
     var migration = builder.AddProject<Projects.Admitto_Migration>("migrate")
         .WithArgs("run")
-//        .WithEnvironment("DOTNET_ENVIRONMENT", builder.Environment.EnvironmentName)
-        .WithReference(openFga.GetEndpoint("http"))
-        .WithReference(postgresdb)
-        .WaitFor(openFga)
-        .WaitFor(postgresdb);
+        .WithReference(openFga.GetEndpoint("http")).WaitFor(openFga)
+        .WithReference(postgresDb).WaitFor(postgresDb);
 
-    worker.WaitForCompletion(migration);
-    apiService.WaitForCompletion(migration);
+    apiService
+        .WithEnvironment("AUTHENTICATION__AUTHORITY", $"{keycloak.GetEndpoint("http")}/realms/admitto")
+        .WithEnvironment("AUTHENTICATION__VALIDISSUERS__0", $"{keycloak.GetEndpoint("http")}/realms/admitto")
+        .WithUrlForEndpoint(
+            "http",
+            ep => new ResourceUrlAnnotation
+            {
+                Url = "/scalar",
+                DisplayText = "Scalar",
+                DisplayLocation = UrlDisplayLocation.SummaryAndDetails
+            })
+        .WaitForCompletion(migration);
+    
+    worker
+        .WithReference(keycloak).WaitFor(keycloak)
+        .WaitFor(mailDev)
+        .WaitForCompletion(migration);
+
+    var adminApp = builder.ConfigureAdminApp();
+    adminApp.WithReference(apiService).WaitFor(apiService);
 }
 
-var authSecret = builder.AddParameter("AuthSecret", true);
-var authClientId = builder.AddParameter("AuthClientId");
-var authClientSecret = builder.AddParameter("AuthClientSecret", true);
-var authIssuer = builder.AddParameter("AuthIssuer");
-
-builder.AddPnpmApp("admin-ui", "../Admitto.UI.Admin", "dev")
-    .WithEnvironment("AUTH_SECRET", authSecret)
-    .WithEnvironment("AUTH_KEYCLOAK_ID", authClientId)
-    .WithEnvironment("AUTH_KEYCLOAK_SECRET", authClientSecret)
-    .WithEnvironment("AUTH_KEYCLOAK_ISSUER", authIssuer)
-    .WithHttpEndpoint(3000, isProxied: false) // Use a static port number for OAuth redirect URIs
-    .WithExternalHttpEndpoints()
-    .WithReference(apiService)
-    .WaitFor(apiService);
-    // .PublishAsDockerFile(); // For deployment
-
 builder.Build().Run();
+return;
 
+internal static class Extensions
+{
+    public static IResourceBuilder<AzurePostgresFlexibleServerResource> ConfigurePostgres(
+        this IDistributedApplicationBuilder builder)
+    {
+        var keyVault = builder.AddAzureKeyVault("keyVault");
+        
+        var postgres = builder.AddAzurePostgresFlexibleServer("postgres")
+            .WithPasswordAuthentication(keyVault)
+            .RunAsContainer(container =>
+            {
+                container
+                    // .WithPassword(postgresPassword)
+                    .WithDataVolume("admitto-postgres-data")
+                    .WithLifetime(ContainerLifetime.Persistent)
+                    .WithPgWeb(pgWeb =>
+                    {
+                        pgWeb.WithLifetime(ContainerLifetime.Persistent);
+                    });
+            });
 
+        return postgres;
+    }
+
+    public static IResourceBuilder<AzureServiceBusResource> ConfigureServiceBus(
+        this IDistributedApplicationBuilder builder)
+    {
+        var serviceBus = builder.AddAzureServiceBus("messaging")
+            .RunAsEmulator(configure =>
+            {
+                configure.WithLifetime(ContainerLifetime.Persistent);
+            })
+            .ReplaceEmulatorDatabase();
+
+        return serviceBus;
+    }
+    
+    public static IResourceBuilder<ContainerResource> ConfigureOpenFga(
+        this IDistributedApplicationBuilder builder,
+        IResourceBuilder<AzurePostgresFlexibleServerDatabaseResource> openFgaDb)
+    {
+        // TODO Figure out a way to get the connection string in Key Vault
+        
+        var openFga = builder.AddContainer("openfga", "openfga/openfga:latest")
+            .WithArgs("run")
+            .WithEnvironment("OPENFGA_DATASTORE_ENGINE", "postgres")
+            .WithHttpEndpoint(port: builder.ExecutionContext.IsRunMode ? 8000 : 80, targetPort: 8080)
+            .WithLifetime(ContainerLifetime.Persistent);
+
+        if (builder.ExecutionContext.IsPublishMode)
+        {
+            return openFga;
+        }
+        
+        var initOpenFga = builder.AddContainer("openfga-init", "openfga/openfga:latest")
+            .WithArgs("migrate")
+            .WithEnvironment("OPENFGA_DATASTORE_ENGINE", "postgres")
+            .WithPostgresUriEnvironment("OPENFGA_DATASTORE_URI", openFgaDb.Resource)
+            .WithLifetime(ContainerLifetime.Persistent)
+            .WaitFor(openFgaDb);
+
+        openFga
+            .WithPostgresUriEnvironment("OPENFGA_DATASTORE_URI", openFgaDb.Resource)
+            .WaitForCompletion(initOpenFga);
+
+        return openFga;
+    }
+    
+    public static IResourceBuilder<ContainerResource> ConfigureMailDev(this IDistributedApplicationBuilder builder)
+    {
+        var mailDev = builder.AddContainer("maildev", "maildev/maildev:latest")
+            .WithHttpEndpoint(targetPort: 1080)
+            .WithEndpoint(name: "smtp", scheme: "smtp", targetPort: 1025, isExternal: true, port: 1025)
+            .WithLifetime(ContainerLifetime.Persistent);
+
+        return mailDev;
+    }
+    
+    public static IResourceBuilder<KeycloakResource> ConfigureKeycloak(this IDistributedApplicationBuilder builder)
+    {
+        var keycloakAdminPassword = builder.AddParameter("KeycloakAdminPassword", secret: true);
+
+        // For local development use a stable port for the Keycloak resource (8080 in the preceding example).
+        // It can be any port, but it should be stable to avoid issues with browser cookies that will persist OIDC
+        // tokens (which include the authority URL, with port) beyond the lifetime of the app host.
+        var keycloak = builder.AddKeycloak(
+                "keycloak",
+                8080,
+                adminPassword: keycloakAdminPassword)
+            .WithRealmImport("./KeycloakConfiguration/AdmittoRealm.json")
+            .WithDataVolume("admitto-keycloak-data")
+            .WithLifetime(ContainerLifetime.Persistent);
+
+        return keycloak;
+    }
+
+    public static IResourceBuilder<NodeAppResource> ConfigureAdminApp(this IDistributedApplicationBuilder builder)
+    {
+        var authSecret = builder.AddParameter("AuthSecret", true);
+        var authClientId = builder.AddParameter("AuthClientId");
+        var authClientSecret = builder.AddParameter("AuthClientSecret", true);
+        var authIssuer = builder.AddParameter("AuthIssuer");
+
+        var app = builder.AddPnpmApp("admin-ui", "../Admitto.UI.Admin", "dev")
+            .WithEnvironment("AUTH_SECRET", authSecret)
+            .WithEnvironment("AUTH_KEYCLOAK_ID", authClientId)
+            .WithEnvironment("AUTH_KEYCLOAK_SECRET", authClientSecret)
+            .WithEnvironment("AUTH_KEYCLOAK_ISSUER", authIssuer)
+            .WithHttpEndpoint(3000, isProxied: false) // Use a static port number for OAuth redirect URIs
+            .WithExternalHttpEndpoints();
+        // .PublishAsDockerFile(); // For deployment
+
+        return app;
+    }
+    
+    private static IResourceBuilder<T> WithPostgresUriEnvironment<T>(
+        this IResourceBuilder<T> builder,
+        string name, 
+        AzurePostgresFlexibleServerDatabaseResource resource)
+        where T : IResourceWithEnvironment
+    {
+        return builder.WithEnvironment(async (context) =>
+        {
+            var adoConnectionString = await resource.ConnectionStringExpression.GetValueAsync(CancellationToken.None);
+        
+            var connectionBuilder = new DbConnectionStringBuilder { ConnectionString = adoConnectionString };
+
+            const string host = "host.docker.internal";
+            var port = connectionBuilder["Port"];
+            var username = connectionBuilder["Username"];
+            var password = WebUtility.UrlEncode(connectionBuilder["Password"].ToString());
+            var database = connectionBuilder["Database"];
+        
+            var connectionString = $"postgres://{username}:{password}@{host}:{port}/{database}?sslmode=disable";
+            
+            context.EnvironmentVariables[name] = connectionString;
+        });
+    }
+}

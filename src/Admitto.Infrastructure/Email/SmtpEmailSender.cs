@@ -1,38 +1,66 @@
-using Amolenk.Admitto.Application.Common.Abstractions;
+using Amolenk.Admitto.Application.Common.Email;
+using Amolenk.Admitto.Application.Common.Email.Sending;
 using Amolenk.Admitto.Domain.ValueObjects;
 using MailKit.Net.Smtp;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
+using MailKit.Security;
 using MimeKit;
 
 namespace Amolenk.Admitto.Infrastructure.Email;
 
-public class SmtpEmailSender(IDomainContext domainContext, ILogger<SmtpEmailSender> logger) : IEmailSender
+public record SmtpSettings
 {
-    public async Task SendEmailAsync(string recipientEmail, string subject, string body, TeamId teamId)
+    public string Host { get; init; } = null!;
+    public int Port { get; init; }
+    public string? Username { get; init; }
+    public string? Password { get; init; }
+    public string FromName { get; init; } = null!;
+    public string FromEmail { get; init; } = null!;
+    public SecureSocketOptions SecureSocketOptions { get; init; }
+}
+
+public class SmtpEmailSender : IEmailSender
+{
+    private readonly MailboxAddress _from;
+    private readonly SmtpClient _client;
+    
+    private SmtpEmailSender(MailboxAddress from, SmtpClient client)
     {
-        var team = await domainContext.Teams.FirstOrDefaultAsync(t => t.Id == teamId.Value);
-        if (team is null)
+        _from = from;
+        _client = client;
+    }
+
+    public static async ValueTask<SmtpEmailSender> ConnectAsync(SmtpSettings settings)
+    {
+        var client = new SmtpClient();
+        await client.ConnectAsync(settings.Host, settings.Port, settings.SecureSocketOptions);
+
+        if (!string.IsNullOrWhiteSpace(settings.Username))
         {
-            logger.LogError("Cannot send e-mail for team {teamId}, because it doesn't exist.", teamId.Value);
-            return;
+            await client.AuthenticateAsync(settings.Username, settings.Password);
         }
-        
-        var message = new MimeMessage();
-        message.From.Add(new MailboxAddress(team.Name, team.EmailSettings.SenderEmail));
-        message.To.Add(new MailboxAddress(recipientEmail, recipientEmail));
-        message.Subject = subject;
 
-        message.Body = new TextPart("html")
+        var from = new MailboxAddress(settings.FromName, settings.FromEmail);
+        
+        return new SmtpEmailSender(from, client);
+    }
+    
+    public async ValueTask SendEmailAsync(EmailMessage emailMessage)
+    {
+        var message = new MimeMessage
         {
-            Text = body
+            Subject = emailMessage.Subject,
+            Body = new TextPart("html") { Text = emailMessage.Body }
         };
-        
-        using var client = new SmtpClient();
 
-        await client.ConnectAsync(team.EmailSettings.SmtpServer, team.EmailSettings.SmtpPort);//, MailKit.Security.SecureSocketOptions.StartTls);
-//        await client.AuthenticateAsync("smtp-username", "smtp-password");
-        await client.SendAsync(message);
-        await client.DisconnectAsync(true);
+        message.From.Add(_from);
+        message.To.Add(MailboxAddress.Parse(emailMessage.Recipient));
+        
+        await _client.SendAsync(message);
+    }
+    
+    public void Dispose()
+    {
+        _client.Disconnect(true);
+        _client.Dispose();
     }
 }

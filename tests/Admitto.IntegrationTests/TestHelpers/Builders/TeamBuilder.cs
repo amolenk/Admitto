@@ -5,11 +5,19 @@ namespace Amolenk.Admitto.IntegrationTests.TestHelpers.Builders;
 
 public class TeamBuilder
 {
+    private const string DefaultSlug = "default-slug";
     private const string DefaultName = "Default Team";
     private static readonly TeamId DefaultId = TeamId.FromName(DefaultName);
 
+    private string _slug = DefaultSlug;
     private string _name = DefaultName;
     private EmailSettings _emailSettings = new EmailSettingsBuilder().Build();
+
+    public TeamBuilder WithSlug(string slug)
+    {
+        _slug = slug;
+        return this;
+    }
 
     public TeamBuilder WithName(string name)
     {
@@ -25,6 +33,6 @@ public class TeamBuilder
 
     public Team Build()
     {
-        return Team.Create(_name, _emailSettings);
+        return Team.Create(_slug, _name, _emailSettings);
     }
 }

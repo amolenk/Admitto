@@ -1,15 +1,26 @@
+using Amolenk.Admitto.Domain.Entities;
+
 namespace Amolenk.Admitto.Application.UseCases.Registrations.CompleteRegistration;
 
-public class CompleteRegistrationHandler(IDomainContext context) : ICommandHandler<CompleteRegistrationCommand>
+/// <summary>
+/// Represents a command handler that processes the completion of an attendee's registration for a ticketed event.
+/// </summary>
+public class CompleteRegistrationHandler(IApplicationContext context) : ICommandHandler<CompleteRegistrationCommand>
 {
-    public async ValueTask HandleAsync(CompleteRegistrationCommand command, CancellationToken cancellationToken)
+    public ValueTask HandleAsync(CompleteRegistrationCommand command, CancellationToken cancellationToken)
     {
-        var registration = await context.AttendeeRegistrations.FindAsync([command.RegistrationId], cancellationToken);
-        if (registration is null)
-        {
-            throw ValidationError.AttendeeRegistration.NotFound(command.RegistrationId);
-        }
+        var attendee = Registration.Create(
+            command.TeamId,
+            command.TicketedEventId,
+            command.RegistrationId,
+            command.Email,
+            command.FirstName,
+            command.LastName,
+            command.AdditionalDetails,
+            command.Tickets);
 
-        registration.Complete();
+        context.Registrations.Add(attendee);
+
+        return ValueTask.CompletedTask;
     }
 }

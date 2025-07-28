@@ -13,16 +13,21 @@ public static class AzureServiceBusBuilderExtensions
         where T : AzureServiceBusResource
     {
         var applicationBuilder = builder.ApplicationBuilder;
-        
+
+        var sqlEdgeResourceName = $"{builder.Resource.Name}-sqledge";
         var sqlEdgeResource = applicationBuilder.Resources
-            .First(r => r is ContainerResource { Name: "messaging-sqledge" });
+            .FirstOrDefault(r => r is ContainerResource resource && resource.Name == sqlEdgeResourceName);
+
+        if (sqlEdgeResource is null) return builder;
         
         applicationBuilder.Resources.Remove(sqlEdgeResource);
 
         var passwordAnnotation = sqlEdgeResource.Annotations.Last(a => a is EnvironmentCallbackAnnotation);
 
         applicationBuilder
-            .AddContainer($"{builder.Resource.Name}-sqledge", image: "mcr.microsoft.com/mssql/server",
+            .AddContainer(
+                sqlEdgeResourceName,
+                image: "mcr.microsoft.com/mssql/server",
                 tag: "2019-latest")
             .WithEndpoint(targetPort: 1433, name: "tcp")
             .WithEnvironment("ACCEPT_EULA", "Y")

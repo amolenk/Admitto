@@ -5,8 +5,8 @@ namespace Amolenk.Admitto.Application.Common.Abstractions;
 public interface IJobScheduler
 {
     ValueTask AddJobAsync<TJobData>(TJobData jobData, CancellationToken cancellationToken = default)
-        where TJobData : IJobData;
+        where TJobData : JobData;
     
-    ValueTask AddOrUpdateRecurringJobAsync(IJobData job, string cronSchedule,
+    ValueTask AddOrUpdateRecurringJobAsync(JobData job, string cronSchedule,
         CancellationToken cancellationToken = default);
 }
