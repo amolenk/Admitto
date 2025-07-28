@@ -33,4 +33,10 @@ public sealed class ApplicationRuleError
         public static readonly ApplicationRuleError VerificationCodeParameterMissing =
             new("verification_request.code_parameter_missing", "Verification code must be passed as an additional parameter.");
     }
+    
+    public static class Team
+    {
+        public static ApplicationRuleError NotFound(Guid id) =>
+            new("team.not_found", $"Team with ID '{id}' does not exist.");
+    }
 }

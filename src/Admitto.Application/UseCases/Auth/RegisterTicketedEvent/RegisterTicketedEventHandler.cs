@@ -1,6 +1,14 @@
+using Amolenk.Admitto.Application.Common;
+
 namespace Amolenk.Admitto.Application.UseCases.Auth.RegisterTicketedEvent;
 
-public class RegisterTicketedEventHandler(IApplicationContext context, IAuthorizationService authorizationService) 
+/// <summary>
+/// Registers a ticketed event with the authorization service.
+/// </summary>
+public class RegisterTicketedEventHandler(
+    IApplicationContext context,
+    IAuthorizationService authorizationService,
+    ILogger<RegisterTicketedEventHandler> logger)
     : ICommandHandler<RegisterTicketedEventCommand>
 {
     public async ValueTask HandleAsync(RegisterTicketedEventCommand command, CancellationToken cancellationToken)
@@ -13,10 +21,14 @@ public class RegisterTicketedEventHandler(IApplicationContext context, IAuthoriz
 
         if (teamSlug is null)
         {
-            // TODO Log
-            return;
+            throw new ApplicationRuleException(ApplicationRuleError.Team.NotFound(command.TeamId));
         }
+
+        await authorizationService.AddTicketedEventAsync(teamSlug, command.TicketedEventSlug, cancellationToken);
         
-        await authorizationService.AddTicketedEventAsync(teamSlug, command.EventSlug, cancellationToken); 
+        logger.LogInformation(
+            "Registered ticketed event '{ticketedEvent}' for team '{team}' with the authorization service.",
+            command.TicketedEventSlug,
+            teamSlug);
     }
 }
