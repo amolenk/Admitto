@@ -49,8 +49,7 @@ module keyVault 'keyVault/keyVault.module.bicep' = {
 module keyVault_roles 'keyVault-roles/keyVault-roles.module.bicep' = {
   name: 'keyVault-roles'
   params: {
-    keyvault_outputs_name: keyVault.outputs.name
-    location: location
+    keyvault_name: keyVault.outputs.name
     principalId: resources.outputs.MANAGED_IDENTITY_PRINCIPAL_ID
     principalType: 'ServicePrincipal'
   }
