@@ -7,7 +7,7 @@ public class TicketedEventCreatedDomainEventHandler(RegisterTicketedEventHandler
 {
     public ValueTask HandleAsync(TicketedEventCreatedDomainEvent domainEvent, CancellationToken cancellationToken)
     {
-        var command = new RegisterTicketedEventCommand(domainEvent.TeamId, domainEvent.EventSlug);
+        var command = new RegisterTicketedEventCommand(domainEvent.TeamId, domainEvent.TicketedEventSlug);
 
         return registerTicketedEventHandler.HandleAsync(command, cancellationToken);
     }
