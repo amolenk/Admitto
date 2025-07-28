@@ -194,18 +194,20 @@ public static class Extensions
 
     public static TBuilder AddDataProtection<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
     {
-        var connectionString = builder.Configuration.GetConnectionString("blobs");
-        if (!string.IsNullOrEmpty(connectionString))
-        {
-            var blobClient = new BlobContainerClient(connectionString, "data-protection")
-                .GetBlobClient("keys.xml");
-
-            builder.Services.AddDataProtection()
-                .PersistKeysToAzureBlobStorage(blobClient)
-                .SetApplicationName("Admitto");
+        // TODO Remove is this works locally. In prod, there keys are now managed automatically.
+        
+        // var connectionString = builder.Configuration.GetConnectionString("blobs");
+        // if (!string.IsNullOrEmpty(connectionString))
+        // {
+        //     var blobClient = new BlobContainerClient(connectionString, "data-protection")
+        //         .GetBlobClient("keys.xml");
+        //
+        builder.Services.AddDataProtection();
+        //         .PersistKeysToAzureBlobStorage(blobClient)
+        //         .SetApplicationName("Admitto");
 
             builder.Services.AddScoped<ITeamConfigEncryptionService, TeamConfigEncryptionService>();
-        }
+        // }
 
         return builder;
     }
