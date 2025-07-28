@@ -31,29 +31,6 @@ param location string
 //   'azd-env-name': environmentName
 // }
 
-module resources 'resources.bicep' = {
-  name: 'resources'
-  params: {
-    location: location
-//     principalId: principalId
-  }
-}
-
-module keyVault 'keyVault/keyVault.module.bicep' = {
-  name: 'keyVault'
-  params: {
-    location: location
-  }
-}
-
-module keyVault_roles 'keyVault-roles/keyVault-roles.module.bicep' = {
-  name: 'keyVault-roles'
-  params: {
-    keyvault_name: keyVault.outputs.name
-    principalId: resources.outputs.MANAGED_IDENTITY_PRINCIPAL_ID
-    principalType: 'ServicePrincipal'
-  }
-}
 
 // module messaging 'messaging/messaging.module.bicep' = {
 //   name: 'messaging'
@@ -79,15 +56,58 @@ module keyVault_roles 'keyVault-roles/keyVault-roles.module.bicep' = {
 //     location: location
 //   }
 // }
-// 
-// output MANAGED_IDENTITY_CLIENT_ID string = resources.outputs.MANAGED_IDENTITY_CLIENT_ID
-// output MANAGED_IDENTITY_NAME string = resources.outputs.MANAGED_IDENTITY_NAME
-// output AZURE_LOG_ANALYTICS_WORKSPACE_NAME string = resources.outputs.AZURE_LOG_ANALYTICS_WORKSPACE_NAME
-// output AZURE_CONTAINER_REGISTRY_ENDPOINT string = resources.outputs.AZURE_CONTAINER_REGISTRY_ENDPOINT
-// output AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID string = resources.outputs.AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID
-// output AZURE_CONTAINER_REGISTRY_NAME string = resources.outputs.AZURE_CONTAINER_REGISTRY_NAME
-// output AZURE_CONTAINER_APPS_ENVIRONMENT_NAME string = resources.outputs.AZURE_CONTAINER_APPS_ENVIRONMENT_NAME
-// output AZURE_CONTAINER_APPS_ENVIRONMENT_ID string = resources.outputs.AZURE_CONTAINER_APPS_ENVIRONMENT_ID
-// output AZURE_CONTAINER_APPS_ENVIRONMENT_DEFAULT_DOMAIN string = resources.outputs.AZURE_CONTAINER_APPS_ENVIRONMENT_DEFAULT_DOMAIN
-// output KEYVAULT_VAULTURI string = keyVault.outputs.vaultUri
-// output MESSAGING_SERVICEBUSENDPOINT string = messaging.outputs.serviceBusEndpoint
+
+var resourceToken = uniqueString(resourceGroup().id)
+
+module managedIdentity 'managedIdentity.bicep' = {
+  name: 'managedIdentity'
+  params: {
+    location: location
+  }
+}
+
+module containerRegistry 'containerRegistry.bicep' = {
+  name: 'containerRegistry'
+  params: {
+    location: location
+  }
+}
+
+module logAnalytics 'logAnalytics.bicep' = {
+  name: 'logAnalytics'
+  params: {
+    location: location
+  }
+}
+
+module keyVault 'modules/keyVault.bicep' = {
+  name: 'keyVault'
+  params: {
+    location: location
+    principalId: managedIdentity.outputs.principalId
+  }
+}
+
+module containerAppEnvironment 'containerAppEnvironment.bicep' = {
+  name: 'containerAppEnvironment'
+  params: {
+    location: location
+    keyVaultName: keyVault.outputs.name
+    logAnalyticsCustomerId: logAnalytics.outputs.customerId
+    logAnalyticsSharedKey: logAnalytics.outputs.primarySharedKey
+    containerRegistryId: containerRegistry.outputs.id
+    principalId: managedIdentity.outputs.principalId
+  }
+}
+
+// output MANAGED_IDENTITY_CLIENT_ID string = managedIdentity.outputs.clientId
+// output MANAGED_IDENTITY_NAME string = managedIdentity.outputs.name
+// output MANAGED_IDENTITY_PRINCIPAL_ID string = managedIdentity.outputs.principalId
+// output AZURE_LOG_ANALYTICS_WORKSPACE_NAME string = logAnalytics.outputs.name
+// output AZURE_LOG_ANALYTICS_WORKSPACE_ID string = logAnalytics.outputs.id
+// output AZURE_CONTAINER_REGISTRY_ENDPOINT string = containerRegistry.outputs.loginServer
+// output AZURE_CONTAINER_REGISTRY_MANAGED_IDENTITY_ID string = managedIdentity.outputs.id
+// output AZURE_CONTAINER_REGISTRY_NAME string = containerRegistry.outputs.name
+// output AZURE_CONTAINER_APPS_ENVIRONMENT_NAME string = containerAppEnvironment.outputs.name
+// output AZURE_CONTAINER_APPS_ENVIRONMENT_ID string = containerAppEnvironment.outputs.id
+// output AZURE_CONTAINER_APPS_ENVIRONMENT_DEFAULT_DOMAIN string = containerAppEnvironment.outputs.defaultDomain
