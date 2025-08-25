@@ -19,6 +19,9 @@ public class RegistrationEmailComposer(
         Dictionary<string, string> additionalParameters,
         CancellationToken cancellationToken)
     {
+        // For clarity.
+        var registrationId = entityId;
+        
         var info = await context.Registrations
             .AsNoTracking()
             .Join(
@@ -26,7 +29,7 @@ public class RegistrationEmailComposer(
                 r => r.TicketedEventId,
                 e => e.Id,
                 (r, e) => new { Registration = r, Event = e })
-            .Where(joined => joined.Registration.Id == entityId)
+            .Where(joined => joined.Registration.Id == registrationId)
             .Select(joined => new
             {
                 joined.Event.Name,
@@ -43,7 +46,7 @@ public class RegistrationEmailComposer(
 
         if (info is null)
         {
-            throw new ApplicationRuleException(ApplicationRuleError.Attendee.NotFound(entityId));
+            throw new ApplicationRuleException(ApplicationRuleError.Attendee.NotFound(registrationId));
         }
 
         return new RegistrationEmailParameters(
@@ -58,9 +61,9 @@ public class RegistrationEmailComposer(
                     info.TicketTypes.First(tt => tt.Slug == t.TicketTypeSlug).Name,
                     t.Quantity))
                 .ToList(),
-            $"{info.BaseUrl}/tickets/qrcode/{entityId}/{signingService.Sign(entityId)}",
-            $"{info.BaseUrl}/tickets/reconfirm/{entityId}/{signingService.Sign(entityId)}",
-            $"{info.BaseUrl}/tickets/cancel/{entityId}/{signingService.Sign(entityId)}");
+            $"{info.BaseUrl}/tickets/qrcode/{registrationId}/{signingService.Sign(registrationId)}",
+            $"{info.BaseUrl}/tickets/reconfirm/{registrationId}/{signingService.Sign(registrationId)}",
+            $"{info.BaseUrl}/tickets/cancel/{registrationId}/{signingService.Sign(registrationId)}");
     }
 
     protected override IEmailParameters GetTestTemplateParameters(
