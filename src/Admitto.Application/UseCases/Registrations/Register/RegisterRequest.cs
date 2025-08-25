@@ -6,7 +6,7 @@ public record RegisterRequest(
     string LastName,
     List<AdditionalDetailDto> AdditionalDetails,
     List<TicketSelectionDto> Tickets,
-    bool IsInvited = false);
+    string VerificationToken);
 
 public record AdditionalDetailDto(string Name, string Value);
 

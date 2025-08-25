@@ -5,29 +5,35 @@ namespace Amolenk.Admitto.Cli.Commands.Email.Template.Team;
 public class SetTeamEmailTemplateSettings : TeamSettings
 {
     [CommandOption("--emailType")]
-    public EmailType? EmailType { get; set; }
+    [EmailTypeDescription]
+    public EmailType? EmailType { get; init; }
 
     [CommandOption("--subject")]
-    public required string Subject { get; set; }
+    public required string Subject { get; init; }
     
     [CommandOption("--bodyPath")]
-    public required string BodyPath { get; set; }
+    public required string BodyPath { get; init; }
     
     public override ValidationResult Validate()
     {
         if (EmailType is null)
         {
-            return ValidationResult.Error("Email type is required.");
+            return ValidationErrors.EmailTypeMissing;
         }
 
         if (string.IsNullOrWhiteSpace(Subject))
         {
-            return ValidationResult.Error("Subject cannot be empty.");
+            return ValidationErrors.EmailSubjectMissing;
         }
 
-        if (string.IsNullOrWhiteSpace(BodyPath) || !File.Exists(BodyPath))
+        if (string.IsNullOrWhiteSpace(BodyPath))
         {
-            return ValidationResult.Error("Body path is required and must point to an existing file.");
+            return ValidationErrors.EmailBodyPathMissing;
+        }
+        
+        if (!File.Exists(BodyPath))
+        {
+            return ValidationErrors.EmailBodyPathDoesNotExist;
         }
         
         return base.Validate();
@@ -41,14 +47,14 @@ public class SetTeamEmailTemplateCommand(IAccessTokenProvider accessTokenProvide
     {
         var teamSlug = GetTeamSlug(settings.TeamSlug);
 
-        var request = new ConfigureTeamEmailTemplateRequest
+        var request = new SetTeamEmailTemplateRequest
         {
             Subject = settings.Subject,
             Body = await File.ReadAllTextAsync(settings.BodyPath)
         };
 
         var response = await CallApiAsync(async client =>
-            await client.Teams[teamSlug].Email.Templates[settings.EmailType.ToString()] .PutAsync(request));
+            await client.Teams[teamSlug].EmailTemplates[settings.EmailType.ToString()] .PutAsync(request));
         if (response is null) return 1;
 
         AnsiConsole.MarkupLine($"[green]✓ Successfully set team-level template for '{settings.EmailType}' emails.[/]");

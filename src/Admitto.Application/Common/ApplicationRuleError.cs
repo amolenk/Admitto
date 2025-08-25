@@ -24,7 +24,7 @@ public sealed class ApplicationRuleError
 
     public static class EmailVerificationRequest
     {
-        public static ApplicationRuleError Invalid =
+        public static ApplicationRuleError Invalid =>
             new("verification_request.invalid", "Email verification request is invalid or expired.");
 
         public static ApplicationRuleError NotFound(Guid id) =>
@@ -32,6 +32,15 @@ public sealed class ApplicationRuleError
         
         public static readonly ApplicationRuleError VerificationCodeParameterMissing =
             new("verification_request.code_parameter_missing", "Verification code must be passed as an additional parameter.");
+    }
+    
+    public static class Registration
+    {
+        public static ApplicationRuleError InvalidVerificationToken =>
+            new("registration.invalid_token", "Verification token is invalid or expired.");
+        
+        public static ApplicationRuleError InvalidSignature =>
+            new("registration.invalid_signature", "Signature is invalid.");
     }
     
     public static class Team

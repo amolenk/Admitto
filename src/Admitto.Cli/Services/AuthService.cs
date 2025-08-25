@@ -27,7 +27,11 @@ public class AuthService(ITokenCache tokenCache, IHttpClientFactory clientFactor
         if (deviceResponse.IsError)
         {
             AnsiConsole.WriteLine($"❌ Device code request failed: {deviceResponse.Error}");
-            AnsiConsole.WriteLine(deviceResponse.Raw); // ← this gives more details
+            if (deviceResponse.Raw is not null)
+            {
+                AnsiConsole.WriteLine(deviceResponse.Raw);
+            }
+
             return false;
         }
 
@@ -80,7 +84,10 @@ public class AuthService(ITokenCache tokenCache, IHttpClientFactory clientFactor
                         continue;
                     default:
                         AnsiConsole.WriteLine($"Token request error: {tokenResponse.Error}");
-                        AnsiConsole.WriteLine(tokenResponse.Raw);
+                        if (deviceResponse.Raw is not null)
+                        {
+                            AnsiConsole.WriteLine(deviceResponse.Raw);
+                        }
                         return false;
                 }
             }
@@ -106,7 +113,7 @@ public class AuthService(ITokenCache tokenCache, IHttpClientFactory clientFactor
         var cachedToken = tokenCache.Load();
         if (cachedToken is null) return null;
 
-        if (cachedToken.ExpiresAt > DateTime.UtcNow.AddMinutes(5))
+        if (cachedToken.ExpiresAt > DateTime.UtcNow.AddMinutes(1))
         {
             return cachedToken.AccessToken;
         }
@@ -117,8 +124,10 @@ public class AuthService(ITokenCache tokenCache, IHttpClientFactory clientFactor
         var disco = await GetDiscoveryDocumentAsync(client);
         if (disco is null) return null;
         
+        #if DEBUG
         AnsiConsole.WriteLine("🔄 Refreshing access token...");
-
+        #endif 
+        
         var tokenResponse = await client.RequestRefreshTokenAsync(new RefreshTokenRequest
         {
             Address = disco.TokenEndpoint,
@@ -140,7 +149,7 @@ public class AuthService(ITokenCache tokenCache, IHttpClientFactory clientFactor
 
     private async Task<DiscoveryDocumentResponse?> GetDiscoveryDocumentAsync(HttpClient client)
     {
-        // TODO Didn't need this for Keycloak, so check that Keycloak still works or needs other config
+        // TODO Didn't need this for Entra, so check that Keycloak still works or needs other config
         // var discoveryAddress = $"{_options.Authority}/.well-known/openid-configuration";
         // AnsiConsole.WriteLine($"🔎 Fetching discovery document from: {discoveryAddress}");
         
@@ -165,9 +174,11 @@ public class AuthService(ITokenCache tokenCache, IHttpClientFactory clientFactor
             return null;
         }
         
+        #if DEBUG
         AnsiConsole.WriteLine($"✅ Token endpoint: {disco.TokenEndpoint}");
         AnsiConsole.WriteLine($"✅ Device auth endpoint: {disco.DeviceAuthorizationEndpoint}");
-
+        #endif
+        
         return disco;
     }
 

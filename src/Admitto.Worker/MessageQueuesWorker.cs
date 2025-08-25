@@ -45,6 +45,7 @@ public class MessageQueuesWorker(
 
         using var scope = serviceProvider.CreateScope();
 
+        // TODO Add support for application events
         switch (message)
         {
             case Command command:

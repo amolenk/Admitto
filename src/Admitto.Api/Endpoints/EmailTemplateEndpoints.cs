@@ -1,10 +1,10 @@
 using Amolenk.Admitto.ApiService.Middleware;
-using Amolenk.Admitto.Application.UseCases.Email.ClearEventEmailTemplate;
-using Amolenk.Admitto.Application.UseCases.Email.ClearTeamEmailTemplate;
-using Amolenk.Admitto.Application.UseCases.Email.ConfigureEventEmailTemplate;
-using Amolenk.Admitto.Application.UseCases.Email.ConfigureTeamEmailTemplate;
-using Amolenk.Admitto.Application.UseCases.Email.GetEventEmailTemplates;
-using Amolenk.Admitto.Application.UseCases.Email.GetTeamEmailTemplates;
+using Amolenk.Admitto.Application.UseCases.EmailTemplates.ClearEventEmailTemplate;
+using Amolenk.Admitto.Application.UseCases.EmailTemplates.ClearTeamEmailTemplate;
+using Amolenk.Admitto.Application.UseCases.EmailTemplates.GetEventEmailTemplates;
+using Amolenk.Admitto.Application.UseCases.EmailTemplates.GetTeamEmailTemplates;
+using Amolenk.Admitto.Application.UseCases.EmailTemplates.SetEventEmailTemplate;
+using Amolenk.Admitto.Application.UseCases.EmailTemplates.SetTeamEmailTemplate;
 
 namespace Amolenk.Admitto.ApiService.Endpoints;
 
@@ -26,8 +26,8 @@ public static class EmailTemplateEndpoints
         group
             .MapClearEventEmailTemplate()
             .MapClearTeamEmailTemplate()
-            .MapConfigureEventEmailTemplate()
-            .MapConfigureTeamEmailTemplate()
+            .MapSetEventEmailTemplate()
+            .MapSetTeamEmailTemplate()
             .MapGetEventEmailTemplates()
             .MapGetTeamEmailTemplates();
     }

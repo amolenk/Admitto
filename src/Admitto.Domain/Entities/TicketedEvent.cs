@@ -120,8 +120,7 @@ public class TicketedEvent : AggregateRoot
         string firstName,
         string lastName,
         IList<AdditionalDetail> additionalDetails,
-        IList<TicketSelection> tickets,
-        bool isInvited = false)
+        IList<TicketSelection> tickets)
     {
         if (tickets.Count == 0)
         {
@@ -137,21 +136,53 @@ public class TicketedEvent : AggregateRoot
                     DomainRuleError.TicketedEvent.InvalidTicketType(ticketSelection.TicketTypeSlug));
             }
             
-            ticketType.AllocateTickets(ticketSelection.Quantity, isInvited);
+            ticketType.AllocateTickets(ticketSelection.Quantity);
         }
 
-        var reservationId = Guid.NewGuid(); // Also used as registration ID
+        return AddAttendeeRegisteredDomainEvent(email, firstName, lastName, additionalDetails, tickets);
+    }
+    
+    public Guid Invite(
+        string email,
+        string firstName,
+        string lastName,
+        IList<AdditionalDetail> additionalDetails,
+        IList<TicketSelection> tickets)
+    {
+        foreach (var ticketSelection in tickets)
+        {
+            var ticketType = _ticketTypes.FirstOrDefault(tt => tt.Slug == ticketSelection.TicketTypeSlug);
+            if (ticketType is null)
+            {
+                throw new DomainRuleException(
+                    DomainRuleError.TicketedEvent.InvalidTicketType(ticketSelection.TicketTypeSlug));
+            }
+            
+            ticketType.AllocateTickets(ticketSelection.Quantity, ignoreAvailability: true);
+        }
+        
+        return AddAttendeeRegisteredDomainEvent(email, firstName, lastName, additionalDetails, tickets);
+    }
+    
+    private Guid AddAttendeeRegisteredDomainEvent(
+        string email,
+        string firstName,
+        string lastName,
+        IList<AdditionalDetail> additionalDetails,
+        IList<TicketSelection> tickets)
+    {
+        var registrationId = Guid.NewGuid();
         
         AddDomainEvent(new AttendeeRegisteredDomainEvent(
             TeamId,
             Id,
-            reservationId,
+            registrationId,
             email,
             firstName,
             lastName,
             additionalDetails,
             tickets));
 
-        return reservationId;
+        return registrationId;
     }
 }

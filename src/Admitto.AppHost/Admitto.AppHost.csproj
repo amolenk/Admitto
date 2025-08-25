@@ -19,14 +19,14 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Aspire.Hosting.AppHost" Version="9.3.1" />
-        <PackageReference Include="Aspire.Hosting.Azure.PostgreSQL" Version="9.3.1" />
-        <PackageReference Include="Aspire.Hosting.Azure.ServiceBus" Version="9.3.1" />
-        <PackageReference Include="Aspire.Hosting.Azure.Storage" Version="9.3.1" />
+        <PackageReference Include="Aspire.Hosting.AppHost" Version="9.4.1" />
+        <PackageReference Include="Aspire.Hosting.Azure.PostgreSQL" Version="9.4.1" />
+        <PackageReference Include="Aspire.Hosting.Azure.ServiceBus" Version="9.4.1" />
+        <PackageReference Include="Aspire.Hosting.Azure.Storage" Version="9.4.1" />
         <PackageReference Include="Aspire.Hosting.Keycloak" Version="9.1.0-preview.1.25121.10" />
-        <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="9.3.1" />
+        <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="9.4.1" />
         <PackageReference Include="Azure.Storage.Queues" Version="12.23.0" />
-        <PackageReference Include="CommunityToolkit.Aspire.Hosting.NodeJS.Extensions" Version="9.6.0" />
+        <PackageReference Include="CommunityToolkit.Aspire.Hosting.NodeJS.Extensions" Version="9.7.0" />
     </ItemGroup>
 
 </Project>

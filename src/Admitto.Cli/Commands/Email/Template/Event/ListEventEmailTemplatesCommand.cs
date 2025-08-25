@@ -11,7 +11,7 @@ public class ListEventEmailTemplatesCommand(IAccessTokenProvider accessTokenProv
         var eventSlug = GetEventSlug(settings.EventSlug);
         
         var response = await CallApiAsync(async client =>
-            await client.Teams[teamSlug].Events[eventSlug].Email.Templates.GetAsync());
+            await client.Teams[teamSlug].Events[eventSlug].EmailTemplates.GetAsync());
         if (response is null) return 1;
 
         var table = new Table();

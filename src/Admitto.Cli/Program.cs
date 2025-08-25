@@ -1,10 +1,12 @@
 ﻿using Amolenk.Admitto.Cli.Commands;
 using Amolenk.Admitto.Cli.Commands.Config;
+using Amolenk.Admitto.Cli.Commands.Email;
 using Amolenk.Admitto.Cli.Commands.Email.Template.Event;
 using Amolenk.Admitto.Cli.Commands.Email.Template.Team;
-using Amolenk.Admitto.Cli.Commands.Email.Test;
 using Amolenk.Admitto.Cli.Commands.Email.Verification;
 using Amolenk.Admitto.Cli.Commands.Events;
+using Amolenk.Admitto.Cli.Commands.Events.TicketType;
+using Amolenk.Admitto.Cli.Commands.Registration;
 using Amolenk.Admitto.Cli.Commands.Registrations;
 using Amolenk.Admitto.Cli.Commands.Team.Member;
 using Amolenk.Admitto.Cli.Commands.Teams;
@@ -64,30 +66,26 @@ app.Configure(config =>
         {
             attendee.SetDescription("Manage registrations.");
 
+            #if DEBUG
             attendee.AddCommand<RegisterCommand>("create");
+            #endif
+            
+            attendee.AddCommand<InviteCommand>("invite");
             attendee.AddCommand<ListRegistrationsCommand>("list");
+            attendee.AddCommand<GetRegistrationCommand>("show");
+
         });
 
     config.AddBranch(
         "config",
-        config =>
+        cfg =>
         {
-            config.SetDescription("Manage configuration.");
+            cfg.SetDescription("Manage configuration.");
 
-            config.AddCommand<ClearConfigCommand>("clear").WithDescription("Clear configuration values");
-            config.AddCommand<GetConfigCommand>("list").WithDescription("Get configuration values");
-            config.AddCommand<SetConfigCommand>("set").WithDescription("Set configuration values");
+            cfg.AddCommand<ClearConfigCommand>("clear").WithDescription("Clear configuration values");
+            cfg.AddCommand<GetConfigCommand>("list").WithDescription("Get configuration values");
+            cfg.AddCommand<SetConfigCommand>("set").WithDescription("Set configuration values");
         });
-
-    #if DEBUG
-    config.AddBranch(
-        "emailVerification",
-        debug =>
-        {
-            debug.AddCommand<RequestOtpCodeCommand>("request");
-            debug.AddCommand<VerifyOtpCodeCommand>("verify");
-        });
-    #endif
     
     config.AddCommand<LoginCommand>("login")
         .WithDescription("Login to the Admitto API");
@@ -183,6 +181,17 @@ app.Configure(config =>
                             ticketedEvent.AddCommand<SetEventEmailTemplateCommand>("set");
                         });
                 });
+            
+            #if DEBUG
+            email.AddBranch(
+                "verification",
+                verification =>
+                {
+                    verification.AddCommand<RequestOtpCodeCommand>("request");
+                    verification.AddCommand<VerifyOtpCodeCommand>("verify");
+                });
+            #endif
+
         });
 });
 

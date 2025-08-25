@@ -28,6 +28,9 @@ public static class CreateTeamEndpoint
     {
         var encryptedEmailServiceConnectionString = encryptionService.Encrypt(request.EmailServiceConnectionString);
         
+        Console.WriteLine(request.EmailServiceConnectionString);
+        Console.WriteLine(encryptedEmailServiceConnectionString);
+        
         var team = Team.Create(request.Slug, request.Name, request.Email, encryptedEmailServiceConnectionString);
         
         context.Teams.Add(team);

@@ -12,12 +12,13 @@
       <PackageReference Include="FluentValidation" Version="12.0.0" />
       <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.0.0" />
       <PackageReference Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.0" />
-      <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.7" />
-      <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.7" />
-      <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.13.0" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.8" />
+      <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.8" />
+      <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.14.0" />
+      <PackageReference Include="QRCoder" Version="1.6.0" />
       <PackageReference Include="Scriban" Version="6.2.1" />
       <PackageReference Include="Scrutor" Version="6.1.0" />
-      <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.13.0" />
+      <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.14.0" />
     </ItemGroup>
 
     <ItemGroup>
@@ -28,6 +29,8 @@
       <Folder Include="Common\Jobs\" />
       <Folder Include="Common\Messaging\" />
       <Folder Include="Common\Security\" />
+      <Folder Include="UseCases\EmailTemplates\" />
+      <Folder Include="UseCases\EmailVerification\" />
     </ItemGroup>
 
 </Project>

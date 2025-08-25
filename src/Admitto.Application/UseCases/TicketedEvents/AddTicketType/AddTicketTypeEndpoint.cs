@@ -10,7 +10,7 @@ public static class AddTicketTypeEndpoint
     public static RouteGroupBuilder MapAddTicketType(this RouteGroupBuilder group)
     {
         group
-            .MapPost("/{eventSlug}/ticketTypes", AddTicketType)
+            .MapPost("/{eventSlug}/ticket-types", AddTicketType)
             .WithName(nameof(AddTicketType))
             .RequireAuthorization(policy => policy.RequireCanUpdateEvent());
 

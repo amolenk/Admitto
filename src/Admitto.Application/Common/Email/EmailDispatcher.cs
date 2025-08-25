@@ -13,27 +13,27 @@ public interface IEmailDispatcher
         EmailMessage emailMessage,
         Guid teamId,
         Guid ticketedEventId,
-        Guid dispatchId,
+        Guid idempotencyKey,
         CancellationToken cancellationToken = default);
 
     ValueTask DispatchEmailsAsync(
         IAsyncEnumerable<EmailMessage> emailMessages,
         Guid teamId,
         Guid ticketedEventId,
-        Guid dispatchId,
+        Guid idempotencyKey,
         CancellationToken cancellationToken);
 }
 
 /// <summary>
 /// Dispatches emails to recipients.
 /// Dispatching consists of:
-/// 1. Checking if the email has already been sent for a given dispatch ID.
+/// 1. Checking if the email has already been sent for a given idempotency key.
 /// 2. If not sent, sending the email.
 /// 3. Logging the email in the database.
 /// 4. Raising an EmailSent application event.
 /// </summary>
 /// <remarks>
-/// The dispatch ID is used to ensure that an email is sent only once for a specific context (e.g. a registration).
+/// The idempotency key is used to ensure that an email is sent only once for a specific context (e.g. a registration).
 /// </remarks>
 public class EmailDispatcher(
     ITeamConfigEncryptionService encryptionService,
@@ -44,31 +44,31 @@ public class EmailDispatcher(
     ILogger<EmailDispatcher> logger) : IEmailDispatcher
 {
     public static readonly Guid TestMessageDispatchId = Guid.Empty;
-    
+
     public async ValueTask DispatchEmailAsync(
         EmailMessage emailMessage,
         Guid teamId,
         Guid ticketedEventId,
-        Guid dispatchId,
+        Guid idempotencyKey,
         CancellationToken cancellationToken = default)
     {
         using var emailSender = await GetEmailSenderAsync(teamId);
 
-        await SendEmailInternalAsync(emailMessage, emailSender, ticketedEventId, dispatchId, cancellationToken);
+        await SendEmailInternalAsync(emailMessage, emailSender, ticketedEventId, idempotencyKey, cancellationToken);
     }
 
     public async ValueTask DispatchEmailsAsync(
         IAsyncEnumerable<EmailMessage> emailMessages,
         Guid teamId,
         Guid ticketedEventId,
-        Guid dispatchId,
+        Guid idempotencyKey,
         CancellationToken cancellationToken)
     {
         using var emailSender = await GetEmailSenderAsync(teamId);
 
         await foreach (var emailMessage in emailMessages.WithCancellation(cancellationToken))
         {
-            await SendEmailInternalAsync(emailMessage, emailSender, ticketedEventId, dispatchId, cancellationToken);
+            await SendEmailInternalAsync(emailMessage, emailSender, ticketedEventId, idempotencyKey, cancellationToken);
 
             // Commit after each email to avoid losing progress in case of an error
             await unitOfWork.SaveChangesAsync(cancellationToken);
@@ -98,43 +98,49 @@ public class EmailDispatcher(
         EmailMessage emailMessage,
         IEmailSender emailSender,
         Guid ticketedEventId,
-        Guid dispatchId,
+        Guid idempotencyKey,
         CancellationToken cancellationToken = default)
     {
         // If this is a test email message, send it without checking for duplicates or logging the result.
-        if (dispatchId == TestMessageDispatchId)
+        if (idempotencyKey == TestMessageDispatchId)
         {
             await emailSender.SendEmailAsync(emailMessage);
             return;
         }
-        
+
         var sentEmailLog = await context.SentEmailLogs.FirstOrDefaultAsync(
-            l => l.Email == emailMessage.Recipient && l.DispatchId == dispatchId,
+            l => l.TicketedEventId == ticketedEventId && l.Email == emailMessage.Recipient &&
+                 l.IdempotencyKey == idempotencyKey,
             cancellationToken);
 
         if (sentEmailLog is not null)
         {
             logger.LogInformation(
-                "Skipping already sent email with subject '{Subject}' to '{Recipient}' for dispatch ID '{DispatchId}'.",
+                "Skipping already sent email with subject '{Subject}' to '{Recipient}' for idempotency key '{IdempotencyKey}'.",
                 emailMessage.Subject,
                 emailMessage.Recipient,
-                dispatchId);
-            
+                idempotencyKey);
+
             return;
         }
 
         await emailSender.SendEmailAsync(emailMessage);
 
-            logger.LogInformation(
-                "Sent email with subject '{Subject}' to '{Recipient}' for dispatch ID '{DispatchId}'.",
-                emailMessage.Subject,
-                emailMessage.Recipient,
-                dispatchId);
+        logger.LogInformation(
+            "Sent email with subject '{Subject}' to '{Recipient}' for dispatch ID '{DispatchId}'.",
+            emailMessage.Subject,
+            emailMessage.Recipient,
+            idempotencyKey);
 
         // Directly log the email in the database for strong consistency.
         context.SentEmailLogs.Add(
-            new SentEmailLog(Guid.NewGuid(), ticketedEventId, dispatchId, emailMessage.Recipient));
-        
+            new SentEmailLog(
+                Guid.NewGuid(),
+                ticketedEventId,
+                idempotencyKey,
+                emailMessage.Recipient,
+                DateTimeOffset.UtcNow));
+
         // Raise an application event to notify other parts of the system.
         messageOutbox.Enqueue(
             new EmailSentApplicationEvent(ticketedEventId, emailMessage.Recipient, emailMessage.EmailType));
