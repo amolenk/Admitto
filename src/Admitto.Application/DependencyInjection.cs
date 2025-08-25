@@ -4,6 +4,7 @@ using Amolenk.Admitto.Application.Common.Core;
 using Amolenk.Admitto.Application.Common.Email;
 using Amolenk.Admitto.Application.Common.Email.Composing;
 using Amolenk.Admitto.Application.Common.Email.Templating;
+using Amolenk.Admitto.Application.Common.QRCodes;
 using Amolenk.Admitto.Domain.ValueObjects;
 
 // ReSharper disable once CheckNamespace
@@ -18,6 +19,7 @@ public static class DependencyInjection
 
         AddTransactionalDomainEventHandlers(services);
         
+        services.AddSingleton<QRCodeGenerator>();
     }
     
     public static void AddCommandHandlers(this IServiceCollection services)

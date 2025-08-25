@@ -1,6 +1,7 @@
 using Amolenk.Admitto.Application.Common;
 using Amolenk.Admitto.Application.Common.Authorization;
 using Amolenk.Admitto.Application.Common.Cryptography;
+using Amolenk.Admitto.Application.Common.Email;
 using Amolenk.Admitto.Application.Common.Identity;
 
 namespace Amolenk.Admitto.Application.UseCases.EmailVerification.VerifyOtpCode;
@@ -21,40 +22,34 @@ public static class VerifyOtpCodeEndpoint
         return group;
     }
 
-    private static async ValueTask<Results<Ok<VerifyOtpCodeResponse>, ProblemHttpResult>> VerifyOtpCode(
+    private static async ValueTask<Ok<VerifyOtpCodeResponse>> VerifyOtpCode(
         string teamSlug,
         string eventSlug,
         VerifyOtpCodeRequest request,
         ISigningService signingService,
-        ISlugResolver slugResolver,
         IApplicationContext context,
-        HttpContext httpContext,
         CancellationToken cancellationToken)
     {
+        var email = request.Email.NormalizeEmail();
+        
         var verificationRequest = await context.EmailVerificationRequests
             .FirstOrDefaultAsync(
-                r => r.Email == request.Email.ToLowerInvariant().Trim(),
+                r => r.Email == email,
                 cancellationToken: cancellationToken);
 
-        if (verificationRequest is not null)
-        {
-            // Remove the verification request regardless of its validity to prevent reuse.
-            context.EmailVerificationRequests.Remove(verificationRequest);
-        }
-        
         var isValid = verificationRequest?.ExpiresAt > DateTime.UtcNow
                       && verificationRequest.Verify(request.Code, signingService);
 
-        if (isValid)
+        if (!isValid)
         {
-            var token = new EmailVerifiedToken(request.Email, DateTime.UtcNow);
-            var response = new VerifyOtpCodeResponse(token.Encode(signingService));
-            return TypedResults.Ok(response);
-
+            throw new ApplicationRuleException(ApplicationRuleError.EmailVerificationRequest.Invalid);
         }
+        
+        // Remove the verification request to prevent reuse.
+        context.EmailVerificationRequests.Remove(verificationRequest!);
 
-        var exception = new ApplicationRuleException(ApplicationRuleError.EmailVerificationRequest.Invalid);
-        var problemDetails = exception.ToProblemDetails(httpContext);
-        return TypedResults.Problem(problemDetails);
+        var token = new EmailVerifiedToken(email, DateTime.UtcNow);
+        var response = new VerifyOtpCodeResponse(token.Encode(signingService));
+        return TypedResults.Ok(response);
     }
 }

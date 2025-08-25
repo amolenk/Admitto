@@ -18,7 +18,7 @@ public abstract class ApiCommand<TSettings>(IAccessTokenProvider accessTokenProv
 
         if (string.IsNullOrWhiteSpace(value))
         {
-            throw new ArgumentException("Team slug is required.");
+            throw new ArgumentException("Team slug must be specified.");
         }
 
         return value;
@@ -33,7 +33,7 @@ public abstract class ApiCommand<TSettings>(IAccessTokenProvider accessTokenProv
 
         if (string.IsNullOrWhiteSpace(value))
         {
-            throw new ArgumentException("Event slug is required.");
+            throw new ArgumentException("Event slug must be specified.");
         }
 
         return value;

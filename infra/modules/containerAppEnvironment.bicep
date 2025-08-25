@@ -1,17 +1,6 @@
 param location string
-param keyVaultName string
-param containerRegistryName string
-param principalId string
 
 var resourceToken = uniqueString(resourceGroup().id)
-
-resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
-  name: keyVaultName
-}
-
-resource containerRegistry 'Microsoft.ContainerRegistry/registries@2023-07-01' existing = {
-  name: containerRegistryName
-}
 
 resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
   name: 'law-${resourceToken}'
@@ -23,7 +12,7 @@ resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10
   }
 }
 
-resource containerAppEnvironment 'Microsoft.App/managedEnvironments@2024-02-02-preview' = {
+resource containerAppEnvironment 'Microsoft.App/managedEnvironments@2025-02-02-preview' = {
   name: 'cae-${resourceToken}'
   location: location
   properties: {
@@ -40,29 +29,11 @@ resource containerAppEnvironment 'Microsoft.App/managedEnvironments@2024-02-02-p
     }
   }
 
-  resource keyVaultReference 'keyVaultReferences' = {
-    name: 'keyvault'
-    properties: {
-      keyVaultArmId: keyVault.id
-    }
-  }
-
   resource aspireDashboard 'dotNetComponents' = {
     name: 'aspire-dashboard'
     properties: {
       componentType: 'AspireDashboard'
     }
-  }
-
-}
-
-resource caeMiRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
-  name: guid(containerAppEnvironment.id, principalId, subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d'))
-  scope: containerRegistry
-  properties: {
-    principalId: principalId
-    principalType: 'ServicePrincipal'
-    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', '7f951dda-4ed3-4680-a7ca-43fe172d538d')
   }
 }
 

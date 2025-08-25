@@ -9,7 +9,7 @@ public class ListTeamEmailTemplatesCommand(IAccessTokenProvider accessTokenProvi
     {
         var teamSlug = GetTeamSlug(settings.TeamSlug);
         
-        var response = await CallApiAsync(async client => await client.Teams[teamSlug].Email.Templates.GetAsync());
+        var response = await CallApiAsync(async client => await client.Teams[teamSlug].EmailTemplates.GetAsync());
         if (response is null) return 1;
 
         var table = new Table();

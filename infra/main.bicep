@@ -68,6 +68,7 @@ module containerRegistry 'modules/containerRegistry.bicep' = {
   name: 'containerRegistry'
   params: {
     location: location
+    principalId: managedIdentity.outputs.principalId
   }
 }
 
@@ -83,9 +84,6 @@ module containerAppEnvironment 'modules/containerAppEnvironment.bicep' = {
   name: 'containerAppEnvironment'
   params: {
     location: location
-    keyVaultName: keyVault.outputs.name
-    containerRegistryName: containerRegistry.outputs.name
-    principalId: managedIdentity.outputs.principalId
   }
 }
 

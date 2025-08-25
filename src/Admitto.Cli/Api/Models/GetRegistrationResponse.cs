@@ -22,6 +22,14 @@ namespace Amolenk.Admitto.Cli.Api.Models
 #else
         public string Email { get; set; }
 #endif
+        /// <summary>The signature property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public string? Signature { get; set; }
+#nullable restore
+#else
+        public string Signature { get; set; }
+#endif
         /// <summary>The status property</summary>
         public global::Amolenk.Admitto.Cli.Api.Models.RegistrationStatus? Status { get; set; }
         /// <summary>
@@ -50,6 +58,7 @@ namespace Amolenk.Admitto.Cli.Api.Models
             return new Dictionary<string, Action<IParseNode>>
             {
                 { "email", n => { Email = n.GetStringValue(); } },
+                { "signature", n => { Signature = n.GetStringValue(); } },
                 { "status", n => { Status = n.GetEnumValue<global::Amolenk.Admitto.Cli.Api.Models.RegistrationStatus>(); } },
             };
         }
@@ -61,6 +70,7 @@ namespace Amolenk.Admitto.Cli.Api.Models
         {
             _ = writer ?? throw new ArgumentNullException(nameof(writer));
             writer.WriteStringValue("email", Email);
+            writer.WriteStringValue("signature", Signature);
             writer.WriteEnumValue<global::Amolenk.Admitto.Cli.Api.Models.RegistrationStatus>("status", Status);
             writer.WriteAdditionalData(AdditionalData);
         }

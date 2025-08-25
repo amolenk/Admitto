@@ -1,5 +1,6 @@
 using Amolenk.Admitto.Application.Common.Authorization;
 using Amolenk.Admitto.Application.Common.Cryptography;
+using Amolenk.Admitto.Application.Common.Email;
 using Amolenk.Admitto.Application.Common.Email.Composing;
 using Amolenk.Admitto.Application.Common.Identity;
 using Amolenk.Admitto.Application.UseCases.Email.SendEmail;
@@ -35,8 +36,10 @@ public static class RequestOtpCodeEndpoint
         var (teamId, eventId) =
             await slugResolver.GetTeamAndTicketedEventsIdsAsync(teamSlug, eventSlug, cancellationToken);
 
+        var email = request.Email.NormalizeEmail();
+        
         var existingRequests = await context.EmailVerificationRequests
-            .Where(r => r.Email == request.Email.ToLowerInvariant().Trim())
+            .Where(r => r.Email == email)
             .ToListAsync(cancellationToken: cancellationToken);
 
         // Remove all existing requests for the same email address.
@@ -46,7 +49,8 @@ public static class RequestOtpCodeEndpoint
         }
         
         var verificationRequest = EmailVerificationRequest.Create(
-            request.Email.ToLowerInvariant().Trim(),
+            eventId,
+            email,
             signingService,
             out var code);
 

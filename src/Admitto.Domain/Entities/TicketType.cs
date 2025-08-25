@@ -42,7 +42,7 @@ public class TicketType : Entity
         return RemainingCapacity >= quantity;
     }
     
-    public void AllocateTickets(int quantity, bool ignoreAvailability)
+    public void AllocateTickets(int quantity, bool ignoreAvailability = false)
     {
         if (!ignoreAvailability && RemainingCapacity < quantity)
         {

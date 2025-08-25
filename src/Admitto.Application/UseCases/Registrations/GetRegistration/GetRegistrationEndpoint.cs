@@ -1,6 +1,7 @@
 using Amolenk.Admitto.Application.Common.Authorization;
+using Amolenk.Admitto.Application.Common.Cryptography;
 
-namespace Amolenk.Admitto.Application.UseCases.Registrations.GetRegistrations;
+namespace Amolenk.Admitto.Application.UseCases.Registrations.GetRegistration;
 
 public static class GetRegistrationEndpoint
 {
@@ -19,13 +20,16 @@ public static class GetRegistrationEndpoint
         string eventSlug,
         Guid registrationId,
         IApplicationContext context,
+        ISigningService signingService,
         CancellationToken cancellationToken)
     {
         var registration = await context.Registrations.GetEntityAsync(
             registrationId,
             cancellationToken: cancellationToken);
 
-        var response = new GetRegistrationResponse(registration.Email, registration.Status);
+        var signature = signingService.Sign(registrationId);
+        
+        var response = new GetRegistrationResponse(registration.Email, registration.Status, signature);
         
         return TypedResults.Ok(response);
     }

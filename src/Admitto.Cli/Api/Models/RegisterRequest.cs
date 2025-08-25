@@ -38,8 +38,6 @@ namespace Amolenk.Admitto.Cli.Api.Models
 #else
         public string FirstName { get; set; }
 #endif
-        /// <summary>The isInvited property</summary>
-        public bool? IsInvited { get; set; }
         /// <summary>The lastName property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
@@ -55,6 +53,14 @@ namespace Amolenk.Admitto.Cli.Api.Models
 #nullable restore
 #else
         public List<global::Amolenk.Admitto.Cli.Api.Models.TicketSelectionDto> Tickets { get; set; }
+#endif
+        /// <summary>The verificationToken property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public string? VerificationToken { get; set; }
+#nullable restore
+#else
+        public string VerificationToken { get; set; }
 #endif
         /// <summary>
         /// Instantiates a new <see cref="global::Amolenk.Admitto.Cli.Api.Models.RegisterRequest"/> and sets the default values.
@@ -84,9 +90,9 @@ namespace Amolenk.Admitto.Cli.Api.Models
                 { "additionalDetails", n => { AdditionalDetails = n.GetCollectionOfObjectValues<global::Amolenk.Admitto.Cli.Api.Models.AdditionalDetailDto>(global::Amolenk.Admitto.Cli.Api.Models.AdditionalDetailDto.CreateFromDiscriminatorValue)?.AsList(); } },
                 { "email", n => { Email = n.GetStringValue(); } },
                 { "firstName", n => { FirstName = n.GetStringValue(); } },
-                { "isInvited", n => { IsInvited = n.GetBoolValue(); } },
                 { "lastName", n => { LastName = n.GetStringValue(); } },
                 { "tickets", n => { Tickets = n.GetCollectionOfObjectValues<global::Amolenk.Admitto.Cli.Api.Models.TicketSelectionDto>(global::Amolenk.Admitto.Cli.Api.Models.TicketSelectionDto.CreateFromDiscriminatorValue)?.AsList(); } },
+                { "verificationToken", n => { VerificationToken = n.GetStringValue(); } },
             };
         }
         /// <summary>
@@ -99,9 +105,9 @@ namespace Amolenk.Admitto.Cli.Api.Models
             writer.WriteCollectionOfObjectValues<global::Amolenk.Admitto.Cli.Api.Models.AdditionalDetailDto>("additionalDetails", AdditionalDetails);
             writer.WriteStringValue("email", Email);
             writer.WriteStringValue("firstName", FirstName);
-            writer.WriteBoolValue("isInvited", IsInvited);
             writer.WriteStringValue("lastName", LastName);
             writer.WriteCollectionOfObjectValues<global::Amolenk.Admitto.Cli.Api.Models.TicketSelectionDto>("tickets", Tickets);
+            writer.WriteStringValue("verificationToken", VerificationToken);
             writer.WriteAdditionalData(AdditionalData);
         }
     }

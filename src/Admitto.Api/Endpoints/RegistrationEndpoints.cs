@@ -1,5 +1,8 @@
 using Amolenk.Admitto.ApiService.Middleware;
+using Amolenk.Admitto.Application.UseCases.Registrations.GetQRCode;
+using Amolenk.Admitto.Application.UseCases.Registrations.GetRegistration;
 using Amolenk.Admitto.Application.UseCases.Registrations.GetRegistrations;
+using Amolenk.Admitto.Application.UseCases.Registrations.Invite;
 using Amolenk.Admitto.Application.UseCases.Registrations.Register;
 
 namespace Amolenk.Admitto.ApiService.Endpoints;
@@ -21,6 +24,8 @@ public static class RegistrationEndpoints
         group
             .MapGetRegistration()
             .MapGetRegistrations()
+            .MapInvite()
+            .MapGetQRCode()
             .MapRegister();
     }
 }

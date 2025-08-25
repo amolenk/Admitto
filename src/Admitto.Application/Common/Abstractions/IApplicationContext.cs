@@ -1,4 +1,3 @@
-using Amolenk.Admitto.Application.Common.Email;
 using Amolenk.Admitto.Application.Common.Email.Sending;
 using Amolenk.Admitto.Application.Common.Identity;
 using Amolenk.Admitto.Application.Projections.Attendance;

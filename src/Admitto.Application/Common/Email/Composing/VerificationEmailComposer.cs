@@ -26,10 +26,17 @@ public class VerificationEmailComposer(
 
         var info = await context.EmailVerificationRequests
             .AsNoTracking()
-            .Where(r => r.Id == entityId)
+            .Join(
+                context.TicketedEvents,
+                r => r.TicketedEventId,
+                e => e.Id,
+                (r, e) => new { Request = r, Event = e })
+            .Where(x => x.Request.Id == entityId)
             .Select(r => new
             {
-                r.Email
+                r.Request.Email,
+                r.Event.Name,
+                r.Event.Website
             })
             .FirstOrDefaultAsync(cancellationToken: cancellationToken);
 
@@ -38,7 +45,11 @@ public class VerificationEmailComposer(
             throw new ApplicationRuleException(ApplicationRuleError.EmailVerificationRequest.NotFound(entityId));
         }
 
-        return new VerificationEmailParameters(verificationCode, info.Email);
+        return new VerificationEmailParameters(
+            info.Name,
+            info.Website,
+            info.Email,
+            verificationCode);
     }
 
     protected override IEmailParameters GetTestTemplateParameters(
@@ -46,6 +57,10 @@ public class VerificationEmailComposer(
         List<AdditionalDetail> additionalDetails,
         List<TicketSelection> tickets)
     {
-        return new VerificationEmailParameters("123456", recipient);
+        return new VerificationEmailParameters(
+            "Test Event",
+            "www.example.com",
+            recipient,
+            "123456");
     }
 }

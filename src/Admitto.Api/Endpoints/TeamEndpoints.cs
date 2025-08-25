@@ -1,5 +1,4 @@
 using Amolenk.Admitto.ApiService.Middleware;
-using Amolenk.Admitto.Application.UseCases.Email.ConfigureTeamEmailTemplate;
 using Amolenk.Admitto.Application.UseCases.Teams.AddTeamMember;
 using Amolenk.Admitto.Application.UseCases.Teams.CreateTeam;
 using Amolenk.Admitto.Application.UseCases.Teams.GetTeam;

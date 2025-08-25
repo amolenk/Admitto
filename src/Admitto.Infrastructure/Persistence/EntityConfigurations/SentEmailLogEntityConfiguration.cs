@@ -22,7 +22,7 @@ public class SentEmailLogEntityConfiguration : IEntityTypeConfiguration<SentEmai
             .HasColumnName("event_id")
             .IsRequired();
 
-        builder.Property(e => e.DispatchId)
+        builder.Property(e => e.IdempotencyKey)
             .HasColumnName("dispatch_id")
             .IsRequired();
 
@@ -30,5 +30,13 @@ public class SentEmailLogEntityConfiguration : IEntityTypeConfiguration<SentEmai
             .HasColumnName("email")
             .IsRequired()
             .HasMaxLength(50);
+
+        builder.Property(e => e.CreatedAt)
+            .HasColumnName("created_at")
+            .IsRequired();
+        
+        builder
+            .HasIndex(e => new { e.TicketedEventId, DispatchId = e.IdempotencyKey, e.Email })
+            .IsUnique();
     }
 }
