@@ -156,10 +156,24 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "participant_activity_view",
+                columns: table => new
+                {
+                    event_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    email = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
+                    source_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    activity = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
+                    occured_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_participant_activity_view", x => new { x.event_id, x.email, x.source_id });
+                });
+
+            migrationBuilder.CreateTable(
                 name: "participation_view",
                 columns: table => new
                 {
-                    team_id = table.Column<Guid>(type: "uuid", nullable: false),
                     event_id = table.Column<Guid>(type: "uuid", nullable: false),
                     email = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
                     attendee_registration_id = table.Column<Guid>(type: "uuid", nullable: true),
@@ -174,7 +188,7 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_participation_view", x => new { x.team_id, x.event_id, x.email });
+                    table.PrimaryKey("PK_participation_view", x => new { x.event_id, x.email });
                 });
 
             migrationBuilder.CreateTable(
@@ -301,6 +315,11 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                 column: "status");
 
             migrationBuilder.CreateIndex(
+                name: "IX_participant_activity_view_event_id_email_occured_at",
+                table: "participant_activity_view",
+                columns: new[] { "event_id", "email", "occured_at" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_scheduled_jobs_is_enabled",
                 table: "scheduled_jobs",
                 column: "is_enabled");
@@ -354,6 +373,9 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "outbox");
+
+            migrationBuilder.DropTable(
+                name: "participant_activity_view");
 
             migrationBuilder.DropTable(
                 name: "participation_view");

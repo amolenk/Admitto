@@ -4,8 +4,6 @@ namespace Amolenk.Admitto.Application.Projections.Participation;
 
 public class ParticipationView : IHasConcurrencyToken
 {
-    public required Guid TeamId { get; init; }
-    
     public required Guid TicketedEventId { get; init; }
 
     public required string Email { get; init; }

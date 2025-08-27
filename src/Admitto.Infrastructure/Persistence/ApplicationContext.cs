@@ -2,6 +2,7 @@ using System.Reflection;
 using Amolenk.Admitto.Application.Common.Abstractions;
 using Amolenk.Admitto.Application.Common.Email.Sending;
 using Amolenk.Admitto.Application.Common.Identity;
+using Amolenk.Admitto.Application.Projections.ParticipantActivity;
 using Amolenk.Admitto.Application.Projections.Participation;
 using Amolenk.Admitto.Domain.Contracts;
 using Amolenk.Admitto.Domain.Entities;
@@ -23,6 +24,7 @@ public class ApplicationContext(DbContextOptions options) : DbContext(options), 
     public DbSet<TicketedEvent> TicketedEvents { get; set; } = null!;
 
     public DbSet<ParticipationView> ParticipationView { get; set; } = null!;
+    public DbSet<ParticipantActivityView> ParticipantActivityView { get; set; } = null!;
 
     public DbSet<Message> Outbox { get; set; } = null!;
     public DbSet<MessageLog> MessageLogs { get; set; } = null!;

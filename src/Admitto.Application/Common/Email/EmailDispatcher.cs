@@ -143,6 +143,9 @@ public class EmailDispatcher(
 
         // Raise an application event to notify other parts of the system.
         messageOutbox.Enqueue(
-            new EmailSentApplicationEvent(ticketedEventId, emailMessage.Recipient, emailMessage.EmailType));
+            new EmailSentApplicationEvent(
+                ticketedEventId,
+                emailMessage.Recipient,
+                emailMessage.Subject));
     }
 }
