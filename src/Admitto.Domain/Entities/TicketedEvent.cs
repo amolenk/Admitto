@@ -9,7 +9,8 @@ namespace Amolenk.Admitto.Domain.Entities;
 public class TicketedEvent : AggregateRoot
 {
     private readonly List<TicketType> _ticketTypes = [];
-
+    private readonly List<string> _attendees = [];
+    
     // EF Core constructor
     private TicketedEvent()
     {
@@ -37,6 +38,7 @@ public class TicketedEvent : AggregateRoot
         RegistrationStartTime = registrationStartTime;
         RegistrationEndTime = registrationEndTime;
         BaseUrl = baseUrl;
+        ConfiguredPolicies = new TicketedEventPolicies();
 
         AddDomainEvent(new TicketedEventCreatedDomainEvent(teamId, slug));
     }
@@ -50,8 +52,12 @@ public class TicketedEvent : AggregateRoot
     public DateTimeOffset RegistrationStartTime { get; private set; }
     public DateTimeOffset RegistrationEndTime { get; private set; }
     public string BaseUrl { get; private set; }
+    public TicketedEventPolicies ConfiguredPolicies { get; private set; }
     public IReadOnlyCollection<TicketType> TicketTypes => _ticketTypes.AsReadOnly();
+    public IList<string> Attendees => _attendees; // Has to be a list for EF Core
 
+    public CancellationPolicy CancellationPolicy => ConfiguredPolicies.CancellationPolicy ?? CancellationPolicy.Default;
+    
     public static TicketedEvent Create(
         Guid teamId,
         string slug,
@@ -115,18 +121,49 @@ public class TicketedEvent : AggregateRoot
             _ticketTypes.Any(tt => tt.Slug == t.Key && tt.HasAvailableCapacity(t.Value)));
     }
 
-    public Guid Register(
+    public Guid RegisterAttendee(
         string email,
         string firstName,
         string lastName,
         IList<AdditionalDetail> additionalDetails,
         IList<TicketSelection> tickets)
     {
+        // Ensure that there's enough capacity for the requested tickets.
+        foreach (var ticketSelection in tickets)
+        {
+            var ticketType = _ticketTypes.FirstOrDefault(tt => tt.Slug == ticketSelection.TicketTypeSlug);
+            if (ticketType is null)
+            {
+                throw new DomainRuleException(
+                    DomainRuleError.TicketedEvent.InvalidTicketType(ticketSelection.TicketTypeSlug));
+            }
+            
+            if (!ticketType.HasAvailableCapacity(ticketSelection.Quantity))
+            {
+                throw new DomainRuleException(DomainRuleError.TicketedEvent.CapacityExceeded(ticketType.Slug));
+            }
+        }
+
+        return InviteAttendee(email, firstName, lastName, additionalDetails, tickets);
+    }
+    
+    public Guid InviteAttendee(
+        string email,
+        string firstName,
+        string lastName,
+        IList<AdditionalDetail> additionalDetails,
+        IList<TicketSelection> tickets)
+    {
+        if (_attendees.Contains(email))
+        {
+            throw new DomainRuleException(DomainRuleError.TicketedEvent.AttendeeAlreadyRegistered);
+        }
+        
         if (tickets.Count == 0)
         {
             throw new DomainRuleException(DomainRuleError.TicketedEvent.TicketsAreRequired);
         }
-
+        
         foreach (var ticketSelection in tickets)
         {
             var ticketType = _ticketTypes.FirstOrDefault(tt => tt.Slug == ticketSelection.TicketTypeSlug);
@@ -138,29 +175,9 @@ public class TicketedEvent : AggregateRoot
             
             ticketType.AllocateTickets(ticketSelection.Quantity);
         }
-
-        return AddAttendeeRegisteredDomainEvent(email, firstName, lastName, additionalDetails, tickets);
-    }
-    
-    public Guid Invite(
-        string email,
-        string firstName,
-        string lastName,
-        IList<AdditionalDetail> additionalDetails,
-        IList<TicketSelection> tickets)
-    {
-        foreach (var ticketSelection in tickets)
-        {
-            var ticketType = _ticketTypes.FirstOrDefault(tt => tt.Slug == ticketSelection.TicketTypeSlug);
-            if (ticketType is null)
-            {
-                throw new DomainRuleException(
-                    DomainRuleError.TicketedEvent.InvalidTicketType(ticketSelection.TicketTypeSlug));
-            }
-            
-            ticketType.AllocateTickets(ticketSelection.Quantity, ignoreAvailability: true);
-        }
         
+        _attendees.Add(email);
+
         return AddAttendeeRegisteredDomainEvent(email, firstName, lastName, additionalDetails, tickets);
     }
     
@@ -181,8 +198,20 @@ public class TicketedEvent : AggregateRoot
             firstName,
             lastName,
             additionalDetails,
-            tickets));
+            tickets,
+            Version));
 
         return registrationId;
+    }
+
+    public void RemoveAttendee(string email, IList<TicketSelection> tickets)
+    {
+        _attendees.Remove(email);
+        
+        foreach (var ticketSelection in tickets)
+        {
+            var ticketType = _ticketTypes.FirstOrDefault(tt => tt.Slug == ticketSelection.TicketTypeSlug);
+            ticketType!.ReleaseTickets(ticketSelection.Quantity);
+        }
     }
 }

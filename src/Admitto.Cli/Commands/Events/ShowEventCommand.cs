@@ -2,15 +2,10 @@ using Microsoft.Extensions.Configuration;
 
 namespace Amolenk.Admitto.Cli.Commands.Events;
 
-public class ShowEventSettings : EventSettings
-{
-    [CommandOption("-s|--slug")] public string? EventSlug { get; set; }
-}
-
 public class ShowEventCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration)
-    : EventCommandBase<ShowEventSettings>(accessTokenProvider, configuration)
+    : EventCommandBase<TeamEventSettings>(accessTokenProvider, configuration)
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, ShowEventSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, TeamEventSettings settings)
     {
         var teamSlug = GetTeamSlug(settings.TeamSlug);
         var eventSlug = GetEventSlug(settings.EventSlug);

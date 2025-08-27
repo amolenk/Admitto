@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Application.Common.Authorization;
+using Amolenk.Admitto.Domain.Contracts;
 using Amolenk.Admitto.Domain.Entities;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -18,7 +19,7 @@ public class AuditInterceptor(IHttpContextAccessor contextAccessor) : SaveChange
 
         var now = DateTime.UtcNow;
 
-        foreach (var entry in context.ChangeTracker.Entries<IAuditable>())
+        foreach (var entry in context.ChangeTracker.Entries<IIsAuditable>())
         {
             if (entry.State == EntityState.Added)
             {

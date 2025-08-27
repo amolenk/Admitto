@@ -1,9 +1,10 @@
 using System.ComponentModel.DataAnnotations;
+using Amolenk.Admitto.Domain.Contracts;
 using Amolenk.Admitto.Domain.DomainEvents;
 
 namespace Amolenk.Admitto.Domain.Entities;
 
-public abstract class AggregateRoot : Entity, IAuditable, IHasConcurrencyToken
+public abstract class AggregateRoot : Entity, IIsAuditable, IHasConcurrencyToken
 {
     private readonly List<DomainEvent> _domainEvents = [];
 

@@ -22,6 +22,7 @@ public static class EntityQueryExtensions
 
         if (entity is null)
         {
+            // TODO Application rule 
             throw new DomainRuleException(DomainRuleError.Entity.NotFound<TEntity>());
         }
 

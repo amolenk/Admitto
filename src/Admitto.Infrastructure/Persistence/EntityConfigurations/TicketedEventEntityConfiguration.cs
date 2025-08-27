@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Domain.Entities;
+using Amolenk.Admitto.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -56,16 +57,29 @@ public class TicketedEventEntityConfiguration : IEntityTypeConfiguration<Tickete
         builder.Property(e => e.RegistrationEndTime)
             .HasColumnName("registration_end_time")
             .IsRequired();
-        
+
         builder.Property(e => e.BaseUrl)
             .HasColumnName("base_url")
-            .IsRequired()
-            .HasMaxLength(50);
+            .IsRequired();
         
+        builder.OwnsOne<TicketedEventPolicies>(e => e.ConfiguredPolicies, b =>
+            {
+                b.ToJson("policies");
+                
+                b.OwnsOne<CancellationPolicy>(b => b.CancellationPolicy, cpb =>
+                {
+                    cpb.ToJson();
+                });
+            });
+
         builder.OwnsMany(e => e.TicketTypes, b =>
         {
             b.ToJson("ticket_types");
         });
+
+        builder.Property(e => e.Attendees)
+            .HasColumnName("attendees")
+            .IsRequired();
         
         builder
             .HasIndex(e => new { e.TeamId, e.Slug })

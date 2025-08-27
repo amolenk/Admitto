@@ -2,7 +2,9 @@ namespace Amolenk.Admitto.Domain.DomainEvents;
 
 public record DomainEvent
 {
-    public Guid DomainEventId { get; } = Guid.NewGuid();
+    // Properties must be init-settable for deserialization.
+    
+    public Guid DomainEventId { get; init; } = Guid.NewGuid();
 
-    public DateTime OccurredOn { get; } = DateTime.Now;
+    public DateTimeOffset OccurredOn { get; init;  } = DateTimeOffset.UtcNow;
 }

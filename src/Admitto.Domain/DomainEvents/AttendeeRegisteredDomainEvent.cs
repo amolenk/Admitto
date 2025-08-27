@@ -13,5 +13,6 @@ public record AttendeeRegisteredDomainEvent(
     string FirstName,
     string LastName,
     IList<AdditionalDetail> AdditionalDetails,
-    IList<TicketSelection> Tickets)
+    IList<TicketSelection> Tickets,
+    uint RegistrationVersion)
     : DomainEvent;

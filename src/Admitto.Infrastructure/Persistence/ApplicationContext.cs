@@ -2,30 +2,33 @@ using System.Reflection;
 using Amolenk.Admitto.Application.Common.Abstractions;
 using Amolenk.Admitto.Application.Common.Email.Sending;
 using Amolenk.Admitto.Application.Common.Identity;
-using Amolenk.Admitto.Application.Projections.Attendance;
+using Amolenk.Admitto.Application.Projections.Participation;
+using Amolenk.Admitto.Domain.Contracts;
 using Amolenk.Admitto.Domain.Entities;
 using Amolenk.Admitto.Domain.ValueObjects;
+using Amolenk.Admitto.Infrastructure.Messaging;
 using Microsoft.EntityFrameworkCore;
 
 namespace Amolenk.Admitto.Infrastructure.Persistence;
 
 public class ApplicationContext(DbContextOptions options) : DbContext(options), IApplicationContext
 {
-    public DbSet<CrewMember> CrewMembers { get; set; } = null!;
+    public DbSet<CrewAssignment> CrewAssignments { get; set; } = null!;
     public DbSet<Job> Jobs { get; set; } = null!;
     public DbSet<EmailTemplate> EmailTemplates { get; set; } = null!;
-    public DbSet<Registration> Registrations { get; set; } = null!;
+    public DbSet<AttendeeRegistration> AttendeeRegistrations { get; set; } = null!;
     public DbSet<ScheduledJob> ScheduledJobs { get; set; } = null!;
-    public DbSet<Speaker> Speakers { get; set; } = null!;
+    public DbSet<SpeakerEngagement> SpeakerEngagements { get; set; } = null!;
     public DbSet<Team> Teams { get; set; } = null!;
     public DbSet<TicketedEvent> TicketedEvents { get; set; } = null!;
 
-    public DbSet<AttendanceView> AttendanceView { get; set; } = null!;
+    public DbSet<ParticipationView> ParticipationView { get; set; } = null!;
 
     public DbSet<Message> Outbox { get; set; } = null!;
+    public DbSet<MessageLog> MessageLogs { get; set; } = null!;
     
     public DbSet<EmailVerificationRequest> EmailVerificationRequests { get; set; } = null!;
-    public DbSet<SentEmailLog> SentEmailLogs { get; set; } = null!;
+    public DbSet<EmailLog> EmailLog { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -49,20 +52,20 @@ public class ApplicationContext(DbContextOptions options) : DbContext(options), 
                     .IsRowVersion();
             }
             
-            if (typeof(IAuditable).IsAssignableFrom(entityType.ClrType))
+            if (typeof(IIsAuditable).IsAssignableFrom(entityType.ClrType))
             {
                 modelBuilder.Entity(entityType.ClrType)
-                    .Property(nameof(IAuditable.CreatedAt))
+                    .Property(nameof(IIsAuditable.CreatedAt))
                     .HasColumnName("created_at")
                     .IsRequired();
             
                 modelBuilder.Entity(entityType.ClrType)
-                    .Property(nameof(IAuditable.LastChangedAt))
+                    .Property(nameof(IIsAuditable.LastChangedAt))
                     .HasColumnName("last_changed_at")
                     .IsRequired();
             
                 modelBuilder.Entity(entityType.ClrType)
-                    .Property(nameof(IAuditable.LastChangedBy))
+                    .Property(nameof(IIsAuditable.LastChangedBy))
                     .HasColumnName("last_changed_by")
                     .HasMaxLength(50);
             }

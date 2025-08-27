@@ -14,17 +14,19 @@ public class SlugResolver(IApplicationContext applicationContext, IMemoryCache m
             return teamId;
         }
 
-        var team = await applicationContext.Teams
+        teamId = await applicationContext.Teams
             .AsNoTracking()
-            .FirstOrDefaultAsync(t => t.Slug == teamSlug, cancellationToken);
+            .Where(t => t.Slug == teamSlug)
+            .Select(t => t.Id)
+            .FirstOrDefaultAsync(cancellationToken);
 
-        if (team is null)
+        if (teamId == Guid.Empty)
         {
             throw new DomainRuleException(DomainRuleError.Team.NotFound(teamSlug));
         }
 
-        memoryCache.CreateEntry(teamSlug).Value = team.Id;
-        return team.Id;
+        memoryCache.Set(teamSlug, teamId);
+        return teamId;
     }
     
     public async ValueTask<Guid> GetTicketedEventIdAsync(
@@ -39,17 +41,19 @@ public class SlugResolver(IApplicationContext applicationContext, IMemoryCache m
             return eventId;
         }
 
-        var ticketedEvent = await applicationContext.TicketedEvents
+        var ticketedEventId = await applicationContext.TicketedEvents
             .AsNoTracking()
-            .FirstOrDefaultAsync(t => t.TeamId == teamId && t.Slug == eventSlug, cancellationToken);
-
-        if (ticketedEvent is null)
+            .Where(e => e.TeamId == teamId && e.Slug == eventSlug)
+            .Select(e => e.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+            
+        if (ticketedEventId == Guid.Empty)
         {
             throw new DomainRuleException(DomainRuleError.TicketedEvent.NotFound(eventSlug));
         }
 
-        memoryCache.CreateEntry(cacheKey).Value = ticketedEvent.Id;
-        return ticketedEvent.Id;
+        memoryCache.Set(cacheKey, ticketedEventId);
+        return ticketedEventId;
     }
 
     public async ValueTask<(Guid TeamId, Guid TicketedEventId)> GetTeamAndTicketedEventsIdsAsync(

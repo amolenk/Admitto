@@ -3,9 +3,9 @@ using Microsoft.Extensions.Configuration;
 namespace Amolenk.Admitto.Cli.Commands.Events;
 
 public class ListEventsCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration)
-    : EventCommandBase<EventSettings>(accessTokenProvider, configuration)
+    : EventCommandBase<TeamSettings>(accessTokenProvider, configuration)
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, EventSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, TeamSettings settings)
     {
         var teamSlug = GetTeamSlug(settings.TeamSlug);
         

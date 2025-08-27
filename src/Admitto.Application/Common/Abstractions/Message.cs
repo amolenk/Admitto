@@ -16,7 +16,7 @@ public class Message(Guid id, JsonDocument data, string type)
     {
         var type = applicationEvent.GetType().FullName!["Amolenk.Admitto.Application.".Length..];
 
-        return new Message(applicationEvent.DomainEventId, SerializeData(applicationEvent), type);
+        return new Message(applicationEvent.ApplicationEventId, SerializeData(applicationEvent), type);
     }
 
     public static Message FromDomainEvent(DomainEvent domainEvent)
