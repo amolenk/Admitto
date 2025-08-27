@@ -36,7 +36,7 @@ public class EmailLogEntityConfiguration : IEntityTypeConfiguration<EmailLog>
             .IsRequired();
         
         builder
-            .HasIndex(e => new { e.TicketedEventId, DispatchId = e.IdempotencyKey, e.Email })
+            .HasIndex(e => new { e.TicketedEventId, e.IdempotencyKey, e.Email })
             .IsUnique();
     }
 }

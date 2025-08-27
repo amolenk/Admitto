@@ -12,7 +12,6 @@ public class ParticipationHandler(IApplicationContext context)
     public async ValueTask HandleAsync(AttendeeRegisteredDomainEvent domainEvent, CancellationToken cancellationToken)
     {
         await UpsertAttendeeRegistrationAsync(
-            domainEvent.TeamId,
             domainEvent.TicketedEventId,
             domainEvent.Email,
             domainEvent.RegistrationId,
@@ -25,7 +24,6 @@ public class ParticipationHandler(IApplicationContext context)
     public async ValueTask HandleAsync(AttendeeCanceledDomainEvent domainEvent, CancellationToken cancellationToken)
     {
         await UpsertAttendeeRegistrationAsync(
-            domainEvent.TeamId,
             domainEvent.TicketedEventId,
             domainEvent.Email,
             domainEvent.RegistrationId,
@@ -38,7 +36,6 @@ public class ParticipationHandler(IApplicationContext context)
     public async ValueTask HandleAsync(AttendeeCanceledLateDomainEvent domainEvent, CancellationToken cancellationToken)
     {
         await UpsertAttendeeRegistrationAsync(
-            domainEvent.TeamId,
             domainEvent.TicketedEventId,
             domainEvent.Email,
             domainEvent.RegistrationId,
@@ -51,7 +48,6 @@ public class ParticipationHandler(IApplicationContext context)
     public async ValueTask HandleAsync(SpeakerEngagementAddedDomainEvent domainEvent, CancellationToken cancellationToken)
     {
         await UpsertSpeakerEngagementAsync(
-            domainEvent.TeamId,
             domainEvent.TicketedEventId,
             domainEvent.Email,
             domainEvent.EngagementId,
@@ -63,7 +59,6 @@ public class ParticipationHandler(IApplicationContext context)
     public async ValueTask HandleAsync(CrewAssignmentAddedDomainEvent domainEvent, CancellationToken cancellationToken)
     {
         await UpsertCrewAssignmentAsync(
-            domainEvent.TeamId,
             domainEvent.TicketedEventId,
             domainEvent.Email,
             domainEvent.AssignmentId,
@@ -73,7 +68,6 @@ public class ParticipationHandler(IApplicationContext context)
     }
     
     private async ValueTask UpsertAttendeeRegistrationAsync(
-        Guid teamId,
         Guid ticketedEventId,
         string email,
         Guid registrationId,
@@ -82,7 +76,7 @@ public class ParticipationHandler(IApplicationContext context)
         DateTimeOffset lastModifiedAt,
         CancellationToken cancellationToken)
     {
-        var record = await GetOrCreateRecordAsync(teamId, ticketedEventId, email, cancellationToken);
+        var record = await GetOrCreateRecordAsync(ticketedEventId, email, cancellationToken);
 
         if (lastModifiedAt > record.LastModifiedAt || registrationVersion > record.AttendeeRegistrationVersion)
         {
@@ -94,7 +88,6 @@ public class ParticipationHandler(IApplicationContext context)
     }
 
     private async ValueTask UpsertSpeakerEngagementAsync(
-        Guid teamId,
         Guid ticketedEventId,
         string email,
         Guid engagementId,
@@ -102,7 +95,7 @@ public class ParticipationHandler(IApplicationContext context)
         DateTimeOffset lastModifiedAt,
         CancellationToken cancellationToken)
     {
-        var record = await GetOrCreateRecordAsync(teamId, ticketedEventId, email, cancellationToken);
+        var record = await GetOrCreateRecordAsync(ticketedEventId, email, cancellationToken);
 
         if (lastModifiedAt > record.LastModifiedAt || engagementVersion > record.SpeakerEngagementVersion)
         {
@@ -113,7 +106,6 @@ public class ParticipationHandler(IApplicationContext context)
     }
     
     private async ValueTask UpsertCrewAssignmentAsync(
-        Guid teamId,
         Guid ticketedEventId,
         string email,
         Guid assignmentId,
@@ -121,7 +113,7 @@ public class ParticipationHandler(IApplicationContext context)
         DateTimeOffset lastModifiedAt,
         CancellationToken cancellationToken)
     {
-        var record = await GetOrCreateRecordAsync(teamId, ticketedEventId, email, cancellationToken);
+        var record = await GetOrCreateRecordAsync(ticketedEventId, email, cancellationToken);
 
         if (lastModifiedAt > record.LastModifiedAt || assignmentVersion > record.CrewAssignmentVersion)
         {
@@ -132,20 +124,18 @@ public class ParticipationHandler(IApplicationContext context)
     }
     
     private async ValueTask<ParticipationView> GetOrCreateRecordAsync(
-        Guid teamId,
         Guid ticketedEventId,
         string email,
         CancellationToken cancellationToken)
     {
         var record = await context.ParticipationView.FindAsync(
-            [teamId, ticketedEventId, email],
+            [ticketedEventId, email],
             cancellationToken);
             
         if (record is null)
         {
             record = new ParticipationView
             {
-                TeamId = teamId,
                 TicketedEventId = ticketedEventId,
                 Email = email
             };

@@ -113,12 +113,40 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                     b.ToTable("email_verification_requests", (string)null);
                 });
 
+            modelBuilder.Entity("Amolenk.Admitto.Application.Projections.ParticipantActivity.ParticipantActivityView", b =>
+                {
+                    b.Property<Guid>("TicketedEventId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("event_id");
+
+                    b.Property<string>("Email")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("email");
+
+                    b.Property<Guid>("SourceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_id");
+
+                    b.Property<string>("Activity")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("activity");
+
+                    b.Property<DateTimeOffset>("OccuredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occured_at");
+
+                    b.HasKey("TicketedEventId", "Email", "SourceId");
+
+                    b.HasIndex("TicketedEventId", "Email", "OccuredAt");
+
+                    b.ToTable("participant_activity_view", (string)null);
+                });
+
             modelBuilder.Entity("Amolenk.Admitto.Application.Projections.Participation.ParticipationView", b =>
                 {
-                    b.Property<Guid>("TeamId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("team_id");
-
                     b.Property<Guid>("TicketedEventId")
                         .HasColumnType("uuid")
                         .HasColumnName("event_id");
@@ -166,7 +194,7 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                         .HasColumnType("xid")
                         .HasColumnName("xmin");
 
-                    b.HasKey("TeamId", "TicketedEventId", "Email");
+                    b.HasKey("TicketedEventId", "Email");
 
                     b.ToTable("participation_view", (string)null);
                 });

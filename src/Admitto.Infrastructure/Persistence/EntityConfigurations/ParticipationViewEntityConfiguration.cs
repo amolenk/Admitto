@@ -10,11 +10,7 @@ public class ParticipationViewEntityConfiguration : IEntityTypeConfiguration<Par
     {
         builder.ToTable("participation_view");
         
-        builder.HasKey(e => new { e.TeamId, e.TicketedEventId, e.Email });
-
-        builder.Property(e => e.TeamId)
-            .HasColumnName("team_id")
-            .IsRequired();
+        builder.HasKey(e => new { e.TicketedEventId, e.Email });
 
         builder.Property(e => e.TicketedEventId)
             .HasColumnName("event_id")
