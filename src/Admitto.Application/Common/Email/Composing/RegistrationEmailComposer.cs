@@ -22,7 +22,7 @@ public class RegistrationEmailComposer(
         // For clarity.
         var registrationId = entityId;
         
-        var info = await context.Registrations
+        var info = await context.AttendeeRegistrations
             .AsNoTracking()
             .Join(
                 context.TicketedEvents,

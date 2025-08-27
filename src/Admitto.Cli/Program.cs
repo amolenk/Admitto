@@ -1,4 +1,5 @@
 ﻿using Amolenk.Admitto.Cli.Commands;
+using Amolenk.Admitto.Cli.Commands.Attendee;
 using Amolenk.Admitto.Cli.Commands.Config;
 using Amolenk.Admitto.Cli.Commands.Email;
 using Amolenk.Admitto.Cli.Commands.Email.Template.Event;
@@ -6,21 +7,18 @@ using Amolenk.Admitto.Cli.Commands.Email.Template.Team;
 using Amolenk.Admitto.Cli.Commands.Email.Verification;
 using Amolenk.Admitto.Cli.Commands.Events;
 using Amolenk.Admitto.Cli.Commands.Events.TicketType;
-using Amolenk.Admitto.Cli.Commands.Registration;
-using Amolenk.Admitto.Cli.Commands.Registrations;
 using Amolenk.Admitto.Cli.Commands.Team.Member;
 using Amolenk.Admitto.Cli.Commands.Teams;
 using Amolenk.Admitto.Cli.Infrastructure;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Commands = Amolenk.Admitto.Cli.Commands;
 
 var configuration = new ConfigurationBuilder()
     .AddJsonFile("appsettings.json", optional: true)
     .AddJsonFile(ConfigSettings.GetConfigPath(), optional: true)
     .AddUserSecrets<Program>()
     .Build();
-
-
 
 
 var services = new ServiceCollection();
@@ -31,7 +29,6 @@ services.Configure<CliAuthOptions>(configuration.GetSection("Authentication"));
 
 // Register configuration
 services.AddSingleton<IConfiguration>(configuration);
-
 
 
 // Register services
@@ -61,80 +58,136 @@ var app = new CommandApp(registrar);
 app.Configure(config =>
 {
     config.AddBranch(
-        "registration",
+        "attendee",
         attendee =>
         {
-            attendee.SetDescription("Manage registrations.");
+            attendee.SetDescription("Manage attendee registrations");
 
-            #if DEBUG
-            attendee.AddCommand<RegisterCommand>("create");
-            #endif
+            attendee.AddCommand<CancelCommand>("cancel")
+                .WithDescription("Cancel an attendee registration");
             
-            attendee.AddCommand<InviteCommand>("invite");
-            attendee.AddCommand<ListRegistrationsCommand>("list");
-            attendee.AddCommand<GetRegistrationCommand>("show");
-
+            attendee.AddCommand<InviteCommand>("invite")
+                .WithDescription("Invite a person to register as an attendee");
+            
+            attendee.AddCommand<ListCommand>("list")
+                .WithDescription("List all attendee registrations");
+#if DEBUG
+            attendee.AddCommand<RegisterCommand>("register")
+                .WithDescription("Register a new attendee (debug only)");
+#endif
+            attendee.AddCommand<ShowCommand>("show")
+                .WithDescription("Show the details of an attendee registration");
         });
 
+    config.AddBranch(
+        "auth",
+        auth =>
+        {
+            auth.SetDescription("Manage authentication");
+            
+            auth.AddCommand<LoginCommand>("login")
+                .WithDescription("Login to the Admitto API");
+
+            auth.AddCommand<LogoutCommand>("logout")
+                .WithDescription("Logout from the Admitto API");
+        });
+    
     config.AddBranch(
         "config",
         cfg =>
         {
-            cfg.SetDescription("Manage configuration.");
+            cfg.SetDescription("Manage configuration");
 
-            cfg.AddCommand<ClearConfigCommand>("clear").WithDescription("Clear configuration values");
-            cfg.AddCommand<GetConfigCommand>("list").WithDescription("Get configuration values");
-            cfg.AddCommand<SetConfigCommand>("set").WithDescription("Set configuration values");
+            cfg.AddCommand<ClearConfigCommand>("clear")
+                .WithDescription("Clear configuration values");
+            
+            cfg.AddCommand<GetConfigCommand>("list")
+                .WithDescription("List all configuration values");
+            
+            cfg.AddCommand<SetConfigCommand>("set")
+                .WithDescription("Set configuration values");
         });
-    
-    config.AddCommand<LoginCommand>("login")
-        .WithDescription("Login to the Admitto API");
-
-    config.AddCommand<LogoutCommand>("logout")
-        .WithDescription("Logout from the Admitto API");
 
     config.AddBranch(
-        "team",
-        team =>
+        "crew",
+        attendee =>
         {
-            team.SetDescription("Manage teams.");
+            attendee.SetDescription("Manage crew assignments");
 
-            team.AddCommand<CreateTeamCommand>("create").WithDescription("Create a new team");
-            team.AddCommand<ListTeamsCommand>("list").WithDescription("List teams");
-            team.AddCommand<ShowTeamCommand>("show").WithDescription("Show the details of a team");
-
-            team.AddBranch(
-                "member",
-                member =>
-                {
-                    member.AddCommand<AddTeamMemberCommand>("add");
-                });
+            attendee.AddCommand<Commands.Crew.AddCommand>("add")
+                .WithDescription("Add a crew assignment");
         });
 
     config.AddBranch(
         "event",
         ticketedEvent =>
         {
-            ticketedEvent.SetDescription("Manage events.");
+            ticketedEvent.SetDescription("Manage events");
+            
+            ticketedEvent.AddCommand<CreateEventCommand>("create")
+                .WithDescription("Create a new event");
 
-            ticketedEvent.AddCommand<CreateEventCommand>("create").WithDescription("Create a new event");
-            ticketedEvent.AddCommand<ListEventsCommand>("list").WithDescription("List teams");
-            ticketedEvent.AddCommand<ShowEventCommand>("show").WithDescription("Show the details of an event");
+            ticketedEvent.AddCommand<ListEventsCommand>("list")
+                .WithDescription("List all events for a team");
+            
+            ticketedEvent.AddCommand<ShowEventCommand>("show")
+                .WithDescription("Show the details of an event");
 
             ticketedEvent.AddBranch(
                 "ticketType",
                 ticketType =>
                 {
-                    ticketType.SetDescription("Manage event ticket types.");
+                    ticketType.SetDescription("Manage ticket types");
 
-                    ticketType.AddCommand<AddTicketTypeCommand>("add").WithDescription("Add a ticket type to an event");
+                    ticketType.AddCommand<AddTicketTypeCommand>("add")
+                        .WithDescription("Add a ticket type");
                 });
         });
-    
+
+    config.AddBranch(
+        "speaker",
+        attendee =>
+        {
+            attendee.SetDescription("Manage speaker engagements");
+
+            attendee.AddCommand<Commands.Speaker.AddCommand>("add")
+                .WithDescription("Add a speaker engagement");
+        });
+
+    config.AddBranch(
+        "team",
+        team =>
+        {
+            team.SetDescription("Manage teams");
+
+            team.AddCommand<CreateTeamCommand>("create")
+                .WithDescription("Create a new team");
+            
+            team.AddCommand<ListTeamsCommand>("list")
+                .WithDescription("List all teams");
+            
+            team.AddBranch(
+                "member",
+                member =>
+                {
+                    member.SetDescription("Manage team members");
+                    
+                    member.AddCommand<AddTeamMemberCommand>("add")
+                        .WithDescription("Add a team member");
+                });
+            
+            team.AddCommand<ShowTeamCommand>("show")
+                .WithDescription("Show the details of a team");
+        });
+
+
+
     config.AddBranch(
         "email",
         email =>
         {
+            email.SetDescription("Manage emails");
+            
             // email.AddBranch(
             //     "send",
             //     sendEmail =>
@@ -155,43 +208,65 @@ app.Configure(config =>
             //                 registrationEmail.AddCommand<SendRegistrationVerifyEmailCommand>("verify");
             //             });
             //     });
-            
-            email.AddCommand<TestEmailCommand>("test");
-            email.AddCommand<PreviewEmailCommand>("preview");
+
+            email.AddCommand<PreviewEmailCommand>("preview")
+                .WithDescription("Preview an email");
             
             email.AddBranch(
                 "template",
                 template =>
                 {
+                    template.SetDescription("Manage email templates");
+                    
                     template.AddBranch(
                         "team",
                         team =>
                         {
-                            team.AddCommand<ClearTeamEmailTemplateCommand>("clear");
-                            team.AddCommand<ListTeamEmailTemplatesCommand>("list");
-                            team.AddCommand<SetTeamEmailTemplateCommand>("set");
+                            template.SetDescription("Manage team templates");
+                            
+                            team.AddCommand<ClearTeamEmailTemplateCommand>("clear")
+                                .WithDescription("Clear a team email template");
+                            
+                            team.AddCommand<ListTeamEmailTemplatesCommand>("list")
+                                .WithDescription("List all team email templates");
+                            
+                            team.AddCommand<SetTeamEmailTemplateCommand>("set")
+                                .WithDescription("Set a team email template");
                         });
 
                     template.AddBranch(
                         "event",
                         ticketedEvent =>
                         {
-                            ticketedEvent.AddCommand<ClearEventEmailTemplateCommand>("clear");
-                            ticketedEvent.AddCommand<ListEventEmailTemplatesCommand>("list");
-                            ticketedEvent.AddCommand<SetEventEmailTemplateCommand>("set");
+                            template.SetDescription("Manage team templates");
+
+                            ticketedEvent.AddCommand<ClearEventEmailTemplateCommand>("clear")
+                                .WithDescription("Clear an event email template");
+                            
+                            ticketedEvent.AddCommand<ListEventEmailTemplatesCommand>("list")
+                                .WithDescription("List all event email templates");
+                            
+                            ticketedEvent.AddCommand<SetEventEmailTemplateCommand>("set")
+                                .WithDescription("Set an event email template");
                         });
                 });
             
-            #if DEBUG
+            email.AddCommand<TestEmailCommand>("test")
+                .WithDescription("Send a test email");
+#if DEBUG
             email.AddBranch(
                 "verification",
                 verification =>
                 {
-                    verification.AddCommand<RequestOtpCodeCommand>("request");
-                    verification.AddCommand<VerifyOtpCodeCommand>("verify");
+                    verification.SetDescription("Manage email verification (debug only)");
+                    
+                    verification.AddCommand<RequestOtpCodeCommand>("request")
+                        .WithDescription("Request a one-time verification code");
+                    
+                    verification.AddCommand<VerifyOtpCodeCommand>("verify")
+                        .WithDescription("Verify a one-time verification code");
                 });
-            #endif
-
+#endif
         });
 });
 

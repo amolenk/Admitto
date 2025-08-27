@@ -108,7 +108,7 @@ public class EmailDispatcher(
             return;
         }
 
-        var sentEmailLog = await context.SentEmailLogs.FirstOrDefaultAsync(
+        var sentEmailLog = await context.EmailLog.FirstOrDefaultAsync(
             l => l.TicketedEventId == ticketedEventId && l.Email == emailMessage.Recipient &&
                  l.IdempotencyKey == idempotencyKey,
             cancellationToken);
@@ -133,8 +133,8 @@ public class EmailDispatcher(
             idempotencyKey);
 
         // Directly log the email in the database for strong consistency.
-        context.SentEmailLogs.Add(
-            new SentEmailLog(
+        context.EmailLog.Add(
+            new EmailLog(
                 Guid.NewGuid(),
                 ticketedEventId,
                 idempotencyKey,

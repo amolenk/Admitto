@@ -1,4 +1,3 @@
-using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 using Amolenk.Admitto.Domain.Utilities;
 
@@ -42,13 +41,13 @@ public class TicketType : Entity
         return RemainingCapacity >= quantity;
     }
     
-    public void AllocateTickets(int quantity, bool ignoreAvailability = false)
+    public void AllocateTickets(int quantity)
     {
-        if (!ignoreAvailability && RemainingCapacity < quantity)
-        {
-            throw new DomainRuleException(DomainRuleError.TicketedEvent.CapacityExceeded(Slug));
-        }
-
         UsedCapacity += quantity;
+    }
+    
+    public void ReleaseTickets(int quantity)
+    {
+        UsedCapacity -= quantity;
     }
 }

@@ -16,4 +16,9 @@ public class UnitOfWork(ApplicationContext context, MessageOutbox outbox) : IUni
             await context.SaveChangesAsync(cancellationToken);
         }
     }
+
+    public void Clear()
+    {
+        context.ChangeTracker.Clear();
+    }
 }

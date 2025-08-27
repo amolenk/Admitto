@@ -3,17 +3,11 @@ using Microsoft.Extensions.Configuration;
 
 namespace Amolenk.Admitto.Cli.Commands.Events;
 
-public class EventSettings : CommandSettings
-{
-    [CommandOption("-t|--team")]
-    public string? TeamSlug { get; set; }
-}
-
 public abstract class EventCommandBase<TSettings>(
     IAccessTokenProvider accessTokenProvider,
     IConfiguration configuration)
     : ApiCommand<TSettings>(accessTokenProvider, configuration)
-    where TSettings : EventSettings
+    where TSettings : TeamSettings
 {
     protected static string GetStatusString(DateTimeOffset registrationStartTime, DateTimeOffset registrationEndTime, 
         DateTimeOffset startTime, DateTimeOffset endTime)

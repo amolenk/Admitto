@@ -2,11 +2,8 @@ using Microsoft.Extensions.Configuration;
 
 namespace Amolenk.Admitto.Cli.Commands.Events.TicketType;
 
-public class AddTicketTypeSettings : EventSettings
+public class AddTicketTypeSettings : TeamEventSettings
 {
-    [CommandOption("-e|--event")]
-    public string? EventSlug { get; set; }
-    
     [CommandOption("-s|--slug")]
     public string? Slug { get; set; }
     

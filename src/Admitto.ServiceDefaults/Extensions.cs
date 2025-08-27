@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Net;
 using System.Text.Json;
+using Amolenk.Admitto.Application.Common;
 using Amolenk.Admitto.Application.Common.Abstractions;
 using Amolenk.Admitto.Application.Common.Authorization;
 using Amolenk.Admitto.Application.Common.Cryptography;
@@ -71,7 +72,8 @@ public static class Extensions
             logging.IncludeScopes = true;
         });
 
-        var activitySource = new ActivitySource("Polly");
+        // Enable ActivitySource support for experimental Azure SDKs like Azure.Messaging.ServiceBus.
+        AppContext.SetSwitch("Azure.Experimental.EnableActivitySource", true);
         
         builder.Services.AddOpenTelemetry()
             .WithMetrics(metrics =>
@@ -88,9 +90,10 @@ public static class Extensions
                     // Uncomment the following line to enable gRPC instrumentation (requires the OpenTelemetry.Instrumentation.GrpcNetClient package)
                     //.AddGrpcClientInstrumentation()
                     .AddHttpClientInstrumentation()
-                    .AddSource("Polly");
+                    .AddSource("Polly")
+                    .AddSource(AdmittoActivitySource.Name);
             });
-
+        
         builder.AddOpenTelemetryExporters();
 
         return builder;

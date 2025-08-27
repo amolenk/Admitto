@@ -76,10 +76,12 @@ if (app.Environment.IsDevelopment())
 }
 
 app.MapDefaultEndpoints();
-app.MapEmailVerificationEndpoints();
-app.MapPendingRegistrationEndpoints();
+app.MapAttendeeRegistrationEndpoints();
+app.MapCrewAssignmentEndpoints();
 app.MapEmailEndpoints();
 app.MapEmailTemplateEndpoints();
+app.MapEmailVerificationEndpoints();
+app.MapSpeakerEngagementEndpoints();
 app.MapTeamEndpoints();
 app.MapTicketedEventEndpoints();
 

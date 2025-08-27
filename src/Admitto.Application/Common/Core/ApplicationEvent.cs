@@ -5,7 +5,9 @@ namespace Amolenk.Admitto.Application.Common.Core;
 /// </summary>
 public abstract record ApplicationEvent
 {
-    public Guid DomainEventId { get; } = Guid.NewGuid();
+    // Properties must be init-settable for deserialization.
 
-    public DateTime OccurredOn { get; } = DateTime.Now;
+    public Guid ApplicationEventId { get; init;  } = Guid.NewGuid();
+
+    public DateTimeOffset OccurredOn { get; init;  } = DateTimeOffset.UtcNow;
 }

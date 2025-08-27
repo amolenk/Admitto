@@ -2,7 +2,7 @@ using Microsoft.Extensions.Configuration;
 
 namespace Amolenk.Admitto.Cli.Commands.Events;
 
-public class CreateEventSettings : EventSettings
+public class CreateEventSettings : TeamSettings
 {
     [CommandOption("-s|--slug")]
     public string? EventSlug { get; set; }
