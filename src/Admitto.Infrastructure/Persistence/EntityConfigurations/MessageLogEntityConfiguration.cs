@@ -22,10 +22,15 @@ public class MessageLogEntityConfiguration : IEntityTypeConfiguration<MessageLog
             .HasColumnName("message_id")
             .IsRequired();
 
+        builder.Property(e => e.MessageType)
+            .HasColumnName("message_type")
+            .IsRequired()
+            .HasMaxLength(100);
+
         builder.Property(e => e.HandlerType)
             .HasColumnName("handler_type")
             .IsRequired()
-            .HasMaxLength(50);
+            .HasMaxLength(100);
 
         builder.Property(e => e.ProcessedAt)
             .HasColumnName("processed_at")

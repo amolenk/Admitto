@@ -30,17 +30,17 @@ public class TicketedEventEntityConfiguration : IEntityTypeConfiguration<Tickete
         builder.Property(e => e.Slug)
             .HasColumnName("slug")
             .IsRequired()
-            .HasMaxLength(32);
+            .HasMaxLength(ColumnMaxLength.Slug);
 
         builder.Property(e => e.Name)
             .HasColumnName("name")
             .IsRequired()
-            .HasMaxLength(50);
+            .HasMaxLength(ColumnMaxLength.TicketedEventName);
 
         builder.Property(e => e.Website)
             .HasColumnName("website")
             .IsRequired()
-            .HasMaxLength(20);
+            .HasMaxLength(ColumnMaxLength.Url);
 
         builder.Property(e => e.StartTime)
             .HasColumnName("start_time")
@@ -60,7 +60,8 @@ public class TicketedEventEntityConfiguration : IEntityTypeConfiguration<Tickete
 
         builder.Property(e => e.BaseUrl)
             .HasColumnName("base_url")
-            .IsRequired();
+            .IsRequired()
+            .HasMaxLength(ColumnMaxLength.Url);
         
         builder.OwnsOne<TicketedEventPolicies>(e => e.ConfiguredPolicies, b =>
             {

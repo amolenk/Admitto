@@ -11,6 +11,8 @@ public class ParticipantActivityView
     public required Guid SourceId { get; init; }
     
     public required string Activity { get; init; }
-    
+
+    public Guid? EmailLogId { get; init; }
+
     public required DateTimeOffset OccuredAt { get; init; }
 }

@@ -121,16 +121,16 @@ public class MessageQueuesWorker(
         {
             var messageType = message.GetType().Name;
             var actualHandlerType = handler!.GetType().Name;
-            
+
             var messageLogId = DeterministicGuid.Create($"{messageId}:{actualHandlerType}");
-            
+
             // ReSharper disable once ExplicitCallerInfoArgument
             using var activity = AdmittoActivitySource.ActivitySource.StartActivity("handle message");
             activity?.SetTag("admitto.message.id", messageId);
             activity?.SetTag("admitto.message.type", messageType);
             activity?.SetTag("admitto.handler.type", actualHandlerType);
             activity?.SetTag("admitto.message_log.id", messageLogId);
-            
+
             var context = scopedServiceProvider.GetRequiredService<ApplicationContext>();
             var messageProcessed = await context.MessageLogs.AsNoTracking().AnyAsync(
                 l => l.Id == messageLogId,
@@ -153,7 +153,8 @@ public class MessageQueuesWorker(
 
             await ((dynamic)handler).HandleAsync((dynamic)message, cancellationToken);
 
-            context.MessageLogs.Add(new MessageLog(messageLogId, messageId, actualHandlerType, DateTimeOffset.UtcNow));
+            context.MessageLogs.Add(
+                new MessageLog(messageLogId, messageId, messageType, actualHandlerType, DateTimeOffset.UtcNow));
 
             // Commit the unit of work for this message.
             var unitOfWork = scopedServiceProvider.GetRequiredService<IUnitOfWork>();

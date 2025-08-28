@@ -23,7 +23,7 @@ public class EmailTemplateEntityConfiguration : IEntityTypeConfiguration<EmailTe
         builder.Property(e => e.Subject)
             .HasColumnName("subject")
             .IsRequired()
-            .HasMaxLength(100);
+            .HasMaxLength(ColumnMaxLength.EmailSubject);
 
         builder.Property(e => e.Body)
             .HasColumnName("body")

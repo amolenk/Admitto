@@ -27,7 +27,10 @@ public static class DependencyInjection
         services.Scan(scan => scan
             .FromAssemblyOf<ApplicationAssemblyLocator>()
             .AddClasses(classes => classes.AssignableTo<ICommandHandler>())
-            .AsSelfWithInterfaces()
+            .AsSelf()
+            .As(t => t.GetInterfaces()
+                .Where(i => i.IsGenericType &&
+                            i.GetGenericTypeDefinition() == typeof(ICommandHandler<>)))
             .WithScopedLifetime());
     }
 
@@ -48,7 +51,10 @@ public static class DependencyInjection
         services.Scan(scan => scan
             .FromAssemblyOf<ApplicationAssemblyLocator>()
             .AddClasses(classes => classes.AssignableTo<ITransactionalDomainEventHandler>())
-            .AsSelfWithInterfaces()
+            .AsSelf()
+            .As(t => t.GetInterfaces()
+                .Where(i => i.IsGenericType &&
+                            i.GetGenericTypeDefinition() == typeof(ITransactionalDomainEventHandler<>)))
             .WithScopedLifetime());
     }
 
@@ -57,7 +63,10 @@ public static class DependencyInjection
         services.Scan(scan => scan
             .FromAssemblyOf<ApplicationAssemblyLocator>()
             .AddClasses(classes => classes.AssignableTo<IEventualDomainEventHandler>())
-            .AsSelfWithInterfaces()
+            .AsSelf()
+            .As(t => t.GetInterfaces()
+                .Where(i => i.IsGenericType &&
+                            i.GetGenericTypeDefinition() == typeof(IEventualDomainEventHandler<>)))
             .WithScopedLifetime());
     }
 
@@ -66,7 +75,15 @@ public static class DependencyInjection
         services.Scan(scan => scan
             .FromAssemblyOf<ApplicationAssemblyLocator>()
             .AddClasses(classes => classes.AssignableTo<IApplicationEventHandler>())
-            .AsSelfWithInterfaces()
+            .AsSelf()
+            .As(t => t.GetInterfaces()
+                .Where(i =>
+                {
+                    Console.WriteLine(i.FullName);
+                    
+                    return i.IsGenericType &&
+                           i.GetGenericTypeDefinition() == typeof(IApplicationEventHandler<>);
+                }))
             .WithScopedLifetime());
     }
 
