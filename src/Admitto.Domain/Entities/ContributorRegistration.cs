@@ -5,24 +5,25 @@ using Amolenk.Admitto.Domain.ValueObjects;
 namespace Amolenk.Admitto.Domain.Entities;
 
 /// <summary>
-/// Represents a speaker for an event.
+/// Represents a contributor to an event (e.g. speaker, sponsor).
 /// </summary>
-public class SpeakerEngagement : AggregateRoot, IHasAdditionalDetails
+public class ContributorRegistration : AggregateRoot, IHasAdditionalDetails
 {
     private readonly List<AdditionalDetail> _additionalDetails = [];
 
-    private SpeakerEngagement()
+    private ContributorRegistration()
     {
     }
 
-    private SpeakerEngagement(
+    private ContributorRegistration(
         Guid id,
         Guid teamId,
         Guid ticketedEventId,
         string email,
         string firstName,
         string lastName,
-        List<AdditionalDetail> additionalDetails)
+        List<AdditionalDetail> additionalDetails,
+        ContributorRole role)
         : base(id)
     {
         TeamId = teamId;
@@ -30,10 +31,11 @@ public class SpeakerEngagement : AggregateRoot, IHasAdditionalDetails
         Email = email;
         FirstName = firstName;
         LastName = lastName;
+        Role = role;
 
         _additionalDetails = additionalDetails;
 
-        AddDomainEvent(new SpeakerEngagementAddedDomainEvent(TeamId, TicketedEventId, Id, Version, Email));
+        AddDomainEvent(new ContributorRegisteredDomainEvent(teamId, ticketedEventId, id, email, role));
     }
 
     public Guid TeamId { get; }
@@ -41,24 +43,27 @@ public class SpeakerEngagement : AggregateRoot, IHasAdditionalDetails
     public string Email { get; private set; } = null!;
     public string FirstName { get; private set; } = null!;
     public string LastName { get; private set; } = null!;
+    public ContributorRole Role { get; private set; }
 
     public IReadOnlyCollection<AdditionalDetail> AdditionalDetails => _additionalDetails.AsReadOnly();
 
-    public static SpeakerEngagement Create(
+    public static ContributorRegistration Create(
         Guid teamId,
         Guid ticketedEventId,
         string email,
         string firstName,
         string lastName,
-        IEnumerable<AdditionalDetail> additionalDetails)
+        IEnumerable<AdditionalDetail> additionalDetails,
+        ContributorRole role)
     {
-        return new SpeakerEngagement(
+        return new ContributorRegistration(
             Guid.NewGuid(),
             teamId,
             ticketedEventId,
             email,
             firstName,
             lastName,
-            additionalDetails.ToList());
+            additionalDetails.ToList(),
+            role);
     }
 }

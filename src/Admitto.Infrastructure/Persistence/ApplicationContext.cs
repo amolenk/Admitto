@@ -14,12 +14,11 @@ namespace Amolenk.Admitto.Infrastructure.Persistence;
 
 public class ApplicationContext(DbContextOptions options) : DbContext(options), IApplicationContext
 {
-    public DbSet<CrewAssignment> CrewAssignments { get; set; } = null!;
     public DbSet<Job> Jobs { get; set; } = null!;
     public DbSet<EmailTemplate> EmailTemplates { get; set; } = null!;
     public DbSet<AttendeeRegistration> AttendeeRegistrations { get; set; } = null!;
     public DbSet<ScheduledJob> ScheduledJobs { get; set; } = null!;
-    public DbSet<SpeakerEngagement> SpeakerEngagements { get; set; } = null!;
+    public DbSet<ContributorRegistration> ContributorRegistrations { get; set; } = null!;
     public DbSet<Team> Teams { get; set; } = null!;
     public DbSet<TicketedEvent> TicketedEvents { get; set; } = null!;
 

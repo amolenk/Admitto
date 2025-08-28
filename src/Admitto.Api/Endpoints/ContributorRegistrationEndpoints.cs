@@ -1,14 +1,14 @@
 using Amolenk.Admitto.ApiService.Middleware;
-using Amolenk.Admitto.Application.UseCases.CrewAssignments.AddCrewAssignment;
+using Amolenk.Admitto.Application.UseCases.Contributors.AddContributor;
 
 namespace Amolenk.Admitto.ApiService.Endpoints;
 
-public static class CrewAssignmentEndpoints
+public static class ContributorRegistrationEndpoints
 {
-    public static void MapCrewAssignmentEndpoints(this IEndpointRouteBuilder app)
+    public static void MapContributorRegistrationEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/teams/{teamSlug}/events/{eventSlug}/crew-assignments")
-            .WithTags("Crew Assignments")
+        var group = app.MapGroup("/teams/{teamSlug}/events/{eventSlug}/contributor-registrations")
+            .WithTags("Contributor Registrations")
             .AddEndpointFilter<ValidationFilter>()
             .AddEndpointFilter<UnitOfWorkFilter>()
             .ProducesValidationProblem()
@@ -18,6 +18,6 @@ public static class CrewAssignmentEndpoints
             .ProducesProblem(StatusCodes.Status500InternalServerError);
 
         group
-            .MapAddCrewAssignment();
+            .MapAddContributorRegistration();
     }
 }

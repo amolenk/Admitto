@@ -10,8 +10,7 @@ public class ParticipantActivityHandler(IApplicationContext context)
     : IEventualDomainEventHandler<AttendeeRegisteredDomainEvent>,
         IEventualDomainEventHandler<AttendeeCanceledDomainEvent>,
         IEventualDomainEventHandler<AttendeeCanceledLateDomainEvent>,
-        IEventualDomainEventHandler<SpeakerEngagementAddedDomainEvent>,
-        IEventualDomainEventHandler<CrewAssignmentAddedDomainEvent>,
+        IEventualDomainEventHandler<ContributorRegisteredDomainEvent>,
         IApplicationEventHandler<EmailSentApplicationEvent>
 {
     public async ValueTask HandleAsync(AttendeeRegisteredDomainEvent domainEvent, CancellationToken cancellationToken)
@@ -59,35 +58,26 @@ public class ParticipantActivityHandler(IApplicationContext context)
             domainEvent.OccurredOn);
     }
 
-    public async ValueTask HandleAsync(
-        SpeakerEngagementAddedDomainEvent domainEvent,
-        CancellationToken cancellationToken)
+    public async ValueTask HandleAsync(ContributorRegisteredDomainEvent domainEvent, CancellationToken cancellationToken)
     {
         var eventName = await GetEventNameAsync(
             domainEvent.TeamId,
             domainEvent.TicketedEventId,
             cancellationToken);
 
+        var activity = domainEvent.Role switch
+        {
+            ContributorRole.Crew => $"👷️ Crew registration for {eventName}",
+            ContributorRole.Speaker => $"🎤 Speaker registration for {eventName}",
+            ContributorRole.Sponsor => $"💰️ Sponsor registration for {eventName}",
+            _ => $"❤️ Contributor registration for {eventName}"
+        };
+        
         AddActivityAsync(
             domainEvent.TicketedEventId,
             domainEvent.Email,
             domainEvent.DomainEventId,
-            $"🎤 Speaker engagement for {eventName}",
-            domainEvent.OccurredOn);
-    }
-
-    public async ValueTask HandleAsync(CrewAssignmentAddedDomainEvent domainEvent, CancellationToken cancellationToken)
-    {
-        var eventName = await GetEventNameAsync(
-            domainEvent.TeamId,
-            domainEvent.TicketedEventId,
-            cancellationToken);
-
-        AddActivityAsync(
-            domainEvent.TicketedEventId,
-            domainEvent.Email,
-            domainEvent.DomainEventId,
-            $"👷 Crew assignment for {eventName}",
+            activity,
             domainEvent.OccurredOn);
     }
 

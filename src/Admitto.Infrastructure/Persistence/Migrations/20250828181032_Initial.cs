@@ -36,7 +36,7 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "crew_assignments",
+                name: "contributor_registrations",
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -45,6 +45,7 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                     email = table.Column<string>(type: "character varying(254)", maxLength: 254, nullable: false),
                     first_name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     last_name = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false),
+                    role = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
                     created_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     last_changed_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     last_changed_by = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
@@ -53,7 +54,7 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_crew_assignments", x => x.id);
+                    table.PrimaryKey("PK_contributor_registrations", x => x.id);
                 });
 
             migrationBuilder.CreateTable(
@@ -184,20 +185,16 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                 columns: table => new
                 {
                     event_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    registration_id = table.Column<Guid>(type: "uuid", nullable: false),
                     email = table.Column<string>(type: "character varying(254)", maxLength: 254, nullable: false),
-                    attendee_registration_id = table.Column<Guid>(type: "uuid", nullable: true),
-                    attendee_registration_status = table.Column<string>(type: "text", nullable: true),
-                    attendee_registration_version = table.Column<long>(type: "bigint", nullable: true),
-                    speaker_engagement_id = table.Column<Guid>(type: "uuid", nullable: true),
-                    speaker_engagement_version = table.Column<long>(type: "bigint", nullable: true),
-                    crew_assignment_id = table.Column<Guid>(type: "uuid", nullable: true),
-                    crew_assignment_version = table.Column<long>(type: "bigint", nullable: true),
+                    attendee_status = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: true),
+                    contributor_role = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: true),
                     last_modified_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_participation_view", x => new { x.event_id, x.email });
+                    table.PrimaryKey("PK_participation_view", x => new { x.event_id, x.registration_id });
                 });
 
             migrationBuilder.CreateTable(
@@ -215,27 +212,6 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_scheduled_jobs", x => x.id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "speaker_engagements",
-                columns: table => new
-                {
-                    id = table.Column<Guid>(type: "uuid", nullable: false),
-                    team_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    event_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    email = table.Column<string>(type: "character varying(254)", maxLength: 254, nullable: false),
-                    first_name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
-                    last_name = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false),
-                    created_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    last_changed_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    last_changed_by = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
-                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
-                    additional_details = table.Column<string>(type: "jsonb", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_speaker_engagements", x => x.id);
                 });
 
             migrationBuilder.CreateTable(
@@ -363,7 +339,7 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                 name: "attendee_registrations");
 
             migrationBuilder.DropTable(
-                name: "crew_assignments");
+                name: "contributor_registrations");
 
             migrationBuilder.DropTable(
                 name: "email_log");
@@ -391,9 +367,6 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
 
             migrationBuilder.DropTable(
                 name: "scheduled_jobs");
-
-            migrationBuilder.DropTable(
-                name: "speaker_engagements");
 
             migrationBuilder.DropTable(
                 name: "ticketed_events");

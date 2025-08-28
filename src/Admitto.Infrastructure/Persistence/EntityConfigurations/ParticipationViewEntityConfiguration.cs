@@ -10,10 +10,14 @@ public class ParticipationViewEntityConfiguration : IEntityTypeConfiguration<Par
     {
         builder.ToTable("participation_view");
         
-        builder.HasKey(e => new { e.TicketedEventId, e.Email });
+        builder.HasKey(e => new { e.TicketedEventId, e.RegistrationId });
 
         builder.Property(e => e.TicketedEventId)
             .HasColumnName("event_id")
+            .IsRequired();
+
+        builder.Property(e => e.RegistrationId)
+            .HasColumnName("registration_id")
             .IsRequired();
 
         builder.Property(e => e.Email)
@@ -21,27 +25,15 @@ public class ParticipationViewEntityConfiguration : IEntityTypeConfiguration<Par
             .HasMaxLength(ColumnMaxLength.EmailAddress)
             .IsRequired();
         
-        builder.Property(e => e.AttendeeRegistrationId)
-            .HasColumnName("attendee_registration_id");
+        builder.Property(e => e.AttendeeStatus)
+            .HasColumnName("attendee_status")
+            .HasConversion<string>()
+            .HasMaxLength(32);
 
-        builder.Property(e => e.AttendeeRegistrationStatus)
-            .HasColumnName("attendee_registration_status")
-            .HasConversion<string>();
-
-        builder.Property(e => e.AttendeeRegistrationVersion)
-            .HasColumnName("attendee_registration_version");
-        
-        builder.Property(e => e.SpeakerEngagementId)
-            .HasColumnName("speaker_engagement_id");
-
-        builder.Property(e => e.SpeakerEngagementVersion)
-            .HasColumnName("speaker_engagement_version");
-        
-        builder.Property(e => e.CrewAssignmentId)
-            .HasColumnName("crew_assignment_id");
-
-        builder.Property(e => e.CrewAssignmentVersion)
-            .HasColumnName("crew_assignment_version");
+        builder.Property(e => e.ContributorRole)
+            .HasColumnName("contributor_role")
+            .HasConversion<string>()
+            .HasMaxLength(32);
         
         builder.Property(e => e.LastModifiedAt)
             .HasColumnName("last_modified_at")
