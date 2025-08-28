@@ -4,11 +4,11 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Amolenk.Admitto.Infrastructure.Persistence.EntityConfigurations;
 
-public class CrewAssignmentEntityConfiguration : IEntityTypeConfiguration<CrewAssignment>
+public class ContributorRegistrationEntityConfiguration : IEntityTypeConfiguration<ContributorRegistration>
 {
-    public void Configure(EntityTypeBuilder<CrewAssignment> builder)
+    public void Configure(EntityTypeBuilder<ContributorRegistration> builder)
     {
-        builder.ToTable("crew_assignments");
+        builder.ToTable("contributor_registrations");
         builder.HasKey(e => e.Id);
         
         builder.Property(e => e.Id)
@@ -37,5 +37,11 @@ public class CrewAssignmentEntityConfiguration : IEntityTypeConfiguration<CrewAs
             .HasColumnName("last_name")
             .IsRequired()
             .HasMaxLength(ColumnMaxLength.LastName);
+
+        builder.Property(e => e.Role)
+            .HasColumnName("role")
+            .IsRequired()
+            .HasConversion<string>()
+            .HasMaxLength(32);
     }
 }

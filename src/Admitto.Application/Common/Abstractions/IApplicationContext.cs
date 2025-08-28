@@ -8,27 +8,25 @@ namespace Amolenk.Admitto.Application.Common.Abstractions;
 
 public interface IApplicationContext
 {
-    DbSet<CrewAssignment> CrewAssignments { get; }
-
-    DbSet<EmailTemplate> EmailTemplates { get; }
-
-    DbSet<Job> Jobs { get; }
- 
     DbSet<AttendeeRegistration> AttendeeRegistrations { get; }
 
-    DbSet<ScheduledJob> ScheduledJobs { get; }
+    DbSet<ContributorRegistration> ContributorRegistrations { get; }
+    
+    DbSet<EmailLog> EmailLog { get; }
+    
+    DbSet<EmailTemplate> EmailTemplates { get; }
 
-    DbSet<SpeakerEngagement> SpeakerEngagements { get; }
-
-    DbSet<Team> Teams { get; }
-
-    DbSet<TicketedEvent> TicketedEvents { get; }
+    DbSet<EmailVerificationRequest> EmailVerificationRequests { get; }
+    
+    DbSet<Job> Jobs { get; }
 
     DbSet<ParticipantActivityView> ParticipantActivityView { get; }
     
     DbSet<ParticipationView> ParticipationView { get; }
     
-    DbSet<EmailVerificationRequest> EmailVerificationRequests { get; }
-    
-    DbSet<EmailLog> EmailLog { get; }
+    DbSet<ScheduledJob> ScheduledJobs { get; }
+
+    DbSet<Team> Teams { get; }
+
+    DbSet<TicketedEvent> TicketedEvents { get; }
 }

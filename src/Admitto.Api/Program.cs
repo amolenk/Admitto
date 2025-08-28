@@ -77,11 +77,10 @@ if (app.Environment.IsDevelopment())
 
 app.MapDefaultEndpoints();
 app.MapAttendeeRegistrationEndpoints();
-app.MapCrewAssignmentEndpoints();
+app.MapContributorRegistrationEndpoints();
 app.MapEmailEndpoints();
 app.MapEmailTemplateEndpoints();
 app.MapEmailVerificationEndpoints();
-app.MapSpeakerEngagementEndpoints();
 app.MapTeamEndpoints();
 app.MapTicketedEventEndpoints();
 
