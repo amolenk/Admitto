@@ -23,17 +23,17 @@ public class TeamEntityConfiguration : IEntityTypeConfiguration<Team>
         builder.Property(e => e.Slug)
             .HasColumnName("slug")
             .IsRequired()
-            .HasMaxLength(32);
+            .HasMaxLength(ColumnMaxLength.Slug);
 
         builder.Property(e => e.Name)
             .HasColumnName("name")
             .IsRequired()
-            .HasMaxLength(50);
+            .HasMaxLength(ColumnMaxLength.TeamName);
 
         builder.Property(e => e.Email)
             .HasColumnName("email")
             .IsRequired()
-            .HasMaxLength(50);
+            .HasMaxLength(ColumnMaxLength.EmailAddress);
 
         builder.Property(e => e.EmailServiceConnectionString)
             .HasColumnName("email_service")

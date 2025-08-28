@@ -13,7 +13,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationContext))]
-    [Migration("20250827094740_Initial")]
+    [Migration("20250827131225_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -51,22 +51,60 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
             modelBuilder.Entity("Amolenk.Admitto.Application.Common.Email.Sending.EmailLog", b =>
                 {
                     b.Property<Guid>("Id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
 
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<string>("Email")
+                    b.Property<string>("EmailType")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)")
-                        .HasColumnName("email");
+                        .HasColumnName("email_type");
 
                     b.Property<Guid>("IdempotencyKey")
                         .HasColumnType("uuid")
-                        .HasColumnName("dispatch_id");
+                        .HasColumnName("idempotency_key");
+
+                    b.Property<string>("LastError")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("last_error");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("provider");
+
+                    b.Property<string>("ProviderMessageId")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("provider_message_id");
+
+                    b.Property<string>("Recipient")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)")
+                        .HasColumnName("recipient");
+
+                    b.Property<DateTimeOffset>("SentAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("sent_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(10)
+                        .HasColumnType("character varying(10)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTimeOffset>("StatusUpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("status_updated_at");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("subject");
 
                     b.Property<Guid>("TicketedEventId")
                         .HasColumnType("uuid")
@@ -74,7 +112,7 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("TicketedEventId", "IdempotencyKey", "Email")
+                    b.HasIndex("TicketedEventId", "IdempotencyKey", "Recipient")
                         .IsUnique();
 
                     b.ToTable("email_log", (string)null);
@@ -88,8 +126,8 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)")
                         .HasColumnName("email");
 
                     b.Property<DateTimeOffset>("ExpiresAt")
@@ -123,8 +161,8 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                         .HasColumnName("event_id");
 
                     b.Property<string>("Email")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)")
                         .HasColumnName("email");
 
                     b.Property<Guid>("SourceId")
@@ -133,9 +171,13 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Activity")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
                         .HasColumnName("activity");
+
+                    b.Property<Guid?>("EmailLogId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("email_log_id");
 
                     b.Property<DateTimeOffset>("OccuredAt")
                         .HasColumnType("timestamp with time zone")
@@ -155,8 +197,8 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                         .HasColumnName("event_id");
 
                     b.Property<string>("Email")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)")
                         .HasColumnName("email");
 
                     b.Property<Guid?>("AttendeeRegistrationId")
@@ -214,14 +256,14 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)")
                         .HasColumnName("email");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("first_name");
 
                     b.Property<DateTimeOffset>("LastChangedAt")
@@ -235,8 +277,8 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("LastName")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
                         .HasColumnName("last_name");
 
                     b.Property<string>("Status")
@@ -275,14 +317,14 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)")
                         .HasColumnName("email");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("first_name");
 
                     b.Property<DateTimeOffset>("LastChangedAt")
@@ -296,8 +338,8 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("LastName")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
                         .HasColumnName("last_name");
 
                     b.Property<Guid>("TeamId")
@@ -345,8 +387,8 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Subject")
                         .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
                         .HasColumnName("subject");
 
                     b.Property<Guid>("TeamId")
@@ -497,14 +539,14 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)")
                         .HasColumnName("email");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("first_name");
 
                     b.Property<DateTimeOffset>("LastChangedAt")
@@ -518,8 +560,8 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("LastName")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)")
                         .HasColumnName("last_name");
 
                     b.Property<Guid>("TeamId")
@@ -553,8 +595,8 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Email")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)")
                         .HasColumnName("email");
 
                     b.Property<string>("EmailServiceConnectionString")
@@ -579,8 +621,8 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Slug")
                         .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
                         .HasColumnName("slug");
 
                     b.Property<uint>("Version")
@@ -610,7 +652,8 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("BaseUrl")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
                         .HasColumnName("base_url");
 
                     b.Property<DateTimeOffset>("CreatedAt")
@@ -646,8 +689,8 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Slug")
                         .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
                         .HasColumnName("slug");
 
                     b.Property<DateTimeOffset>("StartTime")
@@ -666,8 +709,8 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("Website")
                         .IsRequired()
-                        .HasMaxLength(20)
-                        .HasColumnType("character varying(20)")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
                         .HasColumnName("website");
 
                     b.HasKey("Id");
@@ -686,13 +729,19 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
 
                     b.Property<string>("HandlerType")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
                         .HasColumnName("handler_type");
 
                     b.Property<Guid>("MessageId")
                         .HasColumnType("uuid")
                         .HasColumnName("message_id");
+
+                    b.Property<string>("MessageType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("message_type");
 
                     b.Property<DateTimeOffset>("ProcessedAt")
                         .HasColumnType("timestamp with time zone")

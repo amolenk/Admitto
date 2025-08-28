@@ -26,16 +26,16 @@ public class SpeakerEngagementEntityConfiguration : IEntityTypeConfiguration<Spe
         builder.Property(e => e.Email)
             .HasColumnName("email")
             .IsRequired()
-            .HasMaxLength(50);
+            .HasMaxLength(ColumnMaxLength.EmailAddress);
 
         builder.Property(e => e.FirstName)
             .HasColumnName("first_name")
             .IsRequired()
-            .HasMaxLength(50);
+            .HasMaxLength(ColumnMaxLength.FirstName);
 
         builder.Property(e => e.LastName)
             .HasColumnName("last_name")
             .IsRequired()
-            .HasMaxLength(50);
+            .HasMaxLength(ColumnMaxLength.LastName);
     }
 }

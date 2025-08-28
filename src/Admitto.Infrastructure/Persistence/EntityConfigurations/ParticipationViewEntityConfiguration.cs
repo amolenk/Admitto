@@ -18,7 +18,7 @@ public class ParticipationViewEntityConfiguration : IEntityTypeConfiguration<Par
 
         builder.Property(e => e.Email)
             .HasColumnName("email")
-            .HasMaxLength(50)
+            .HasMaxLength(ColumnMaxLength.EmailAddress)
             .IsRequired();
         
         builder.Property(e => e.AttendeeRegistrationId)

@@ -34,6 +34,8 @@ public interface IEmailDispatcher
 /// </summary>
 /// <remarks>
 /// The idempotency key is used to ensure that an email is sent only once for a specific context (e.g. a registration).
+/// Note that this class is not thread-safe. Multiple concurrent calls with the same idempotency key may result in
+/// duplicate emails.
 /// </remarks>
 public class EmailDispatcher(
     ITeamConfigEncryptionService encryptionService,
@@ -101,19 +103,20 @@ public class EmailDispatcher(
         Guid idempotencyKey,
         CancellationToken cancellationToken = default)
     {
+        // TODO Re-enable test email bypass
         // If this is a test email message, send it without checking for duplicates or logging the result.
-        if (idempotencyKey == TestMessageDispatchId)
-        {
-            await emailSender.SendEmailAsync(emailMessage);
-            return;
-        }
+        // if (idempotencyKey == TestMessageDispatchId)
+        // {
+        //     await emailSender.SendEmailAsync(emailMessage);
+        //     return;
+        // }
+        
+        var emailSent = await context.EmailLog
+            .Where(l => l.TicketedEventId == ticketedEventId && l.Recipient == emailMessage.Recipient &&
+                 l.IdempotencyKey == idempotencyKey)
+            .AnyAsync(cancellationToken);
 
-        var sentEmailLog = await context.EmailLog.FirstOrDefaultAsync(
-            l => l.TicketedEventId == ticketedEventId && l.Email == emailMessage.Recipient &&
-                 l.IdempotencyKey == idempotencyKey,
-            cancellationToken);
-
-        if (sentEmailLog is not null)
+        if (emailSent)
         {
             logger.LogInformation(
                 "Skipping already sent email with subject '{Subject}' to '{Recipient}' for idempotency key '{IdempotencyKey}'.",
@@ -127,25 +130,34 @@ public class EmailDispatcher(
         await emailSender.SendEmailAsync(emailMessage);
 
         logger.LogInformation(
-            "Sent email with subject '{Subject}' to '{Recipient}' for dispatch ID '{DispatchId}'.",
+            "Sent email with subject '{Subject}' to '{Recipient}' for idempotency key '{IdempotencyKey}'.",
             emailMessage.Subject,
             emailMessage.Recipient,
             idempotencyKey);
 
         // Directly log the email in the database for strong consistency.
-        context.EmailLog.Add(
-            new EmailLog(
-                Guid.NewGuid(),
-                ticketedEventId,
-                idempotencyKey,
-                emailMessage.Recipient,
-                DateTimeOffset.UtcNow));
+        var now = DateTimeOffset.UtcNow;
+        var emailLog = new EmailLog(
+            Guid.NewGuid(),
+            ticketedEventId,
+            idempotencyKey,
+            emailMessage.Recipient,
+            emailMessage.EmailType.ToString(),
+            emailMessage.Subject,
+            emailSender.GetType().Name, // TODO Let IEmailSender provide its name
+            ProviderMessageId: null,
+            EmailStatus.Sent,
+            SentAt: now,
+            StatusUpdatedAt: now,
+            LastError: null);
+        context.EmailLog.Add(emailLog);
 
         // Raise an application event to notify other parts of the system.
         messageOutbox.Enqueue(
             new EmailSentApplicationEvent(
                 ticketedEventId,
                 emailMessage.Recipient,
-                emailMessage.Subject));
+                emailMessage.Subject,
+                emailLog.Id));
     }
 }

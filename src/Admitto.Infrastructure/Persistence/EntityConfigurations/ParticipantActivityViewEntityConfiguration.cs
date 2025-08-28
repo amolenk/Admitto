@@ -18,7 +18,7 @@ public class ParticipantActivityViewEntityConfiguration : IEntityTypeConfigurati
 
         builder.Property(e => e.Email)
             .HasColumnName("email")
-            .HasMaxLength(50)
+            .HasMaxLength(ColumnMaxLength.EmailAddress)
             .IsRequired();
 
         builder.Property(e => e.SourceId)
@@ -27,9 +27,12 @@ public class ParticipantActivityViewEntityConfiguration : IEntityTypeConfigurati
 
         builder.Property(e => e.Activity)
             .HasColumnName("activity")
-            .HasMaxLength(100)
+            .HasMaxLength(255)
             .IsRequired();
-        
+
+        builder.Property(e => e.EmailLogId)
+            .HasColumnName("email_log_id");
+
         builder.Property(e => e.OccuredAt)
             .HasColumnName("occured_at")
             .IsRequired();

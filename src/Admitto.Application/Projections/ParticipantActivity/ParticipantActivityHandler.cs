@@ -96,8 +96,9 @@ public class ParticipantActivityHandler(IApplicationContext context)
             applicationEvent.TicketedEventId,
             applicationEvent.Recipient,
             applicationEvent.ApplicationEventId,
-            $"📧 Email: {applicationEvent.Subject}",
-            applicationEvent.OccurredOn);
+            $"📧 {applicationEvent.Subject}",
+            applicationEvent.OccurredOn,
+            applicationEvent.EmailLogId);
 
         return ValueTask.CompletedTask;
     }
@@ -107,14 +108,16 @@ public class ParticipantActivityHandler(IApplicationContext context)
         string email,
         Guid sourceId,
         string activity,
-        DateTimeOffset occurredAt)
+        DateTimeOffset occurredAt,
+        Guid? emailLogId = null)
     {
         var record = new ParticipantActivityView
         {
             TicketedEventId = ticketedEventId,
             Email = email,
             SourceId = sourceId,
-            Activity = activity.Truncate(100),
+            Activity = activity.Truncate(255),
+            EmailLogId = emailLogId,
             OccuredAt = occurredAt
         };
 

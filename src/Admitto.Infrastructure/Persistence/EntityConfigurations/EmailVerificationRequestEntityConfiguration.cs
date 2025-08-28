@@ -22,7 +22,7 @@ public class EmailVerificationRequestEntityConfiguration : IEntityTypeConfigurat
         builder.Property(e => e.Email)
             .HasColumnName("email")
             .IsRequired()
-            .HasMaxLength(50);
+            .HasMaxLength(ColumnMaxLength.EmailAddress);
 
         builder.Property(e => e.HashedCode)
             .HasColumnName("code")
