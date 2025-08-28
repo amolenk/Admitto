@@ -10,5 +10,6 @@ public record EmailSentApplicationEvent(
     Guid TicketedEventId,
     string Recipient,
     string Subject,
+    EmailType EmailType,
     Guid EmailLogId)
     : ApplicationEvent;
