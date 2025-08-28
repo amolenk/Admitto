@@ -1,6 +1,7 @@
 using Amolenk.Admitto.Application.Common.Core;
 using Amolenk.Admitto.Application.Common.Email.Sending;
 using Amolenk.Admitto.Domain.DomainEvents;
+using Amolenk.Admitto.Domain.ValueObjects;
 using Humanizer;
 
 namespace Amolenk.Admitto.Application.Projections.ParticipantActivity;
@@ -92,6 +93,12 @@ public class ParticipantActivityHandler(IApplicationContext context)
 
     public ValueTask HandleAsync(EmailSentApplicationEvent applicationEvent, CancellationToken cancellationToken)
     {
+        // Don't log verification emails to avoid clutter.
+        if (applicationEvent.EmailType == EmailType.VerifyEmail)
+        {
+            return ValueTask.CompletedTask;
+        }
+        
         AddActivityAsync(
             applicationEvent.TicketedEventId,
             applicationEvent.Recipient,

@@ -158,6 +158,7 @@ public class EmailDispatcher(
                 ticketedEventId,
                 emailMessage.Recipient,
                 emailMessage.Subject,
+                emailMessage.EmailType,
                 emailLog.Id));
     }
 }
