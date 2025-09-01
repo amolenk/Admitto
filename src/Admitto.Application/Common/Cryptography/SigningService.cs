@@ -1,39 +1,71 @@
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace Amolenk.Admitto.Application.Common.Cryptography;
 
 public interface ISigningService
 {
-    string Sign(Guid value);
-    string Sign(string value);
-    bool IsValid(Guid value, string signature);
-    bool IsValid(string value, string signature);
+    ValueTask<string> SignAsync(Guid value, Guid ticketedEventId, CancellationToken cancellationToken = default);
+    ValueTask<string> SignAsync(string value, Guid ticketedEventId, CancellationToken cancellationToken = default);
+
+    ValueTask<bool> IsValidAsync(
+        Guid value,
+        string signature,
+        Guid ticketedEventId,
+        CancellationToken cancellationToken = default);
+
+    ValueTask<bool> IsValidAsync(
+        string value,
+        string signature,
+        Guid ticketedEventId,
+        CancellationToken cancellationToken = default);
 }
 
-public class SigningService(IConfiguration configuration) : ISigningService
+public class SigningService(
+    IApplicationContext applicationContext,
+    IMemoryCache memoryCache)
+    : ISigningService
 {
-    private readonly string _secretKey =
-        configuration["Signing:SecretKey"] ?? throw new ArgumentException("Signing key not configured");
+    public ValueTask<string> SignAsync(
+        Guid value,
+        Guid ticketedEventId,
+        CancellationToken cancellationToken = default) =>
+        SignAsync(value.ToString(), ticketedEventId, cancellationToken);
 
-    public string Sign(Guid value) => Sign(value.ToString());
-
-    public string Sign(string value)
+    public async ValueTask<string> SignAsync(
+        string value,
+        Guid ticketedEventId,
+        CancellationToken cancellationToken = default)
     {
-        using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(_secretKey));
+        var signingKey = await GetSigningKeyAsync(ticketedEventId, cancellationToken);
+
+        using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(signingKey));
         var hash = hmac.ComputeHash(Encoding.UTF8.GetBytes(value));
         // Ensure the signature is URL-safe
         return Convert.ToBase64String(hash).Replace("+", "-").Replace("/", "_").Replace("=", "");
     }
 
-    public bool IsValid(Guid value, string signature) => IsValid(value.ToString(), signature);
-    
-    public bool IsValid(string value, string signature)
+    public ValueTask<bool> IsValidAsync(
+        Guid value,
+        string signature,
+        Guid ticketedEventId,
+        CancellationToken cancellationToken = default)
+        => IsValidAsync(value.ToString(), signature, ticketedEventId, cancellationToken);
+
+
+    public async ValueTask<bool> IsValidAsync(
+        string value,
+        string signature,
+        Guid ticketedEventId,
+        CancellationToken cancellationToken = default)
     {
-        var expectedSignature = Sign(value);
+        var signingKey = await GetSigningKeyAsync(ticketedEventId, cancellationToken);
+
+        var expectedSignature = await SignAsync(value, ticketedEventId, cancellationToken);
         return TimingSafeEquals(expectedSignature, signature);
     }
-    
+
     /// <summary>
     /// Prevents timing attacks by comparing two strings in constant time.
     /// </summary>
@@ -42,7 +74,31 @@ public class SigningService(IConfiguration configuration) : ISigningService
         var aBytes = Encoding.UTF8.GetBytes(a);
         var bBytes = Encoding.UTF8.GetBytes(b);
 
-        return aBytes.Length == bBytes.Length 
+        return aBytes.Length == bBytes.Length
                && CryptographicOperations.FixedTimeEquals(aBytes, bBytes);
+    }
+
+    private async ValueTask<string> GetSigningKeyAsync(Guid eventId, CancellationToken cancellationToken)
+    {
+        var cacheKey = $"skey:{eventId}";
+
+        if (memoryCache.TryGetValue(cacheKey, out string? key))
+        {
+            return key!;
+        }
+
+        var signingKey = await applicationContext.TicketedEvents
+            .AsNoTracking()
+            .Where(e => e.Id == eventId)
+            .Select(e => e.SigningKey)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (signingKey is null)
+        {
+            throw new ApplicationRuleException(ApplicationRuleError.TicketedEvent.NotFound);
+        }
+
+        memoryCache.Set(cacheKey, signingKey);
+        return signingKey;
     }
 }

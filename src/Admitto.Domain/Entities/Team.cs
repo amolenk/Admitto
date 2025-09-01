@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Domain.Contracts;
 using Amolenk.Admitto.Domain.DomainEvents;
 using Amolenk.Admitto.Domain.ValueObjects;
 
@@ -6,7 +7,7 @@ namespace Amolenk.Admitto.Domain.Entities;
 /// <summary>
 /// Represents an organizing team in the system.
 /// </summary>
-public class Team : AggregateRoot
+public class Team : Aggregate
 {
     private readonly List<TeamMember> _members = [];
 

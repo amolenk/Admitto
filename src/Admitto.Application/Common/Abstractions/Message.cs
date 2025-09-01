@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Amolenk.Admitto.Application.Common.Core;
+using Amolenk.Admitto.Domain.Contracts;
 using Amolenk.Admitto.Domain.DomainEvents;
 
 namespace Amolenk.Admitto.Application.Common.Abstractions;

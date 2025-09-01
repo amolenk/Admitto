@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Application.Common;
-using Amolenk.Admitto.Application.Common.Authorization;
 using Amolenk.Admitto.Application.Common.Cryptography;
 using Amolenk.Admitto.Application.Common.Email;
 using Amolenk.Admitto.Application.Common.Identity;
@@ -26,19 +25,21 @@ public static class VerifyOtpCodeEndpoint
         string teamSlug,
         string eventSlug,
         VerifyOtpCodeRequest request,
+        ISlugResolver slugResolver,
         ISigningService signingService,
         IApplicationContext context,
         CancellationToken cancellationToken)
     {
+        var eventId = await slugResolver.ResolveTicketedEventIdAsync(teamSlug, eventSlug, cancellationToken);
         var email = request.Email.NormalizeEmail();
         
         var verificationRequest = await context.EmailVerificationRequests
             .FirstOrDefaultAsync(
-                r => r.Email == email,
+                evr => evr.TicketedEventId == eventId && evr.Email == email,
                 cancellationToken: cancellationToken);
 
         var isValid = verificationRequest?.ExpiresAt > DateTime.UtcNow
-                      && verificationRequest.Verify(request.Code, signingService);
+                      && await verificationRequest.VerifyAsync(request.Code, eventId, signingService, cancellationToken);
 
         if (!isValid)
         {
@@ -49,7 +50,8 @@ public static class VerifyOtpCodeEndpoint
         context.EmailVerificationRequests.Remove(verificationRequest!);
 
         var token = new EmailVerifiedToken(email, DateTime.UtcNow);
-        var response = new VerifyOtpCodeResponse(token.Encode(signingService));
+        var signedToken = await token.EncodeAsync(signingService, eventId, cancellationToken);
+        var response = new VerifyOtpCodeResponse(signedToken);
         return TypedResults.Ok(response);
     }
 }

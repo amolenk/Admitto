@@ -41,7 +41,7 @@ public class TicketType : Entity
         return RemainingCapacity >= quantity;
     }
     
-    public void AllocateTickets(int quantity)
+    public void ClaimTickets(int quantity)
     {
         UsedCapacity += quantity;
     }

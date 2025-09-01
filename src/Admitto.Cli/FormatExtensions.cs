@@ -16,11 +16,22 @@ public static class FormatExtensions
         return localTime.ToString("f");
     }
 
+    public static string FormatContributorRole(this string role)
+    {
+        return role switch
+        {
+            "crew" => "👷️ Crew",
+            "speaker" => "🎤 Speaker",
+            "sponsor" => "💰️ Sponsor",
+            _ => "❤️ Contributor"
+        };
+    }
+
     public static string Format(this RegistrationStatus status)
     {
         return $"[{GetStatusColor(status)}]{status.Humanize()}[/]";
     }
-    
+
     private static string GetStatusColor(RegistrationStatus status)
     {
         return status switch

@@ -61,20 +61,17 @@ app.Configure(config =>
         "attendee",
         attendee =>
         {
-            attendee.SetDescription("Manage attendee registrations");
+            attendee.SetDescription("Manage attendees");
 
             attendee.AddCommand<CancelCommand>("cancel")
                 .WithDescription("Cancel an attendee registration");
             
-            attendee.AddCommand<InviteCommand>("invite")
-                .WithDescription("Invite a person to register as an attendee");
-            
             attendee.AddCommand<ListCommand>("list")
                 .WithDescription("List all attendee registrations");
-#if DEBUG
+
             attendee.AddCommand<RegisterCommand>("register")
-                .WithDescription("Register a new attendee (debug only)");
-#endif
+                .WithDescription("Register a new attendee");
+
             attendee.AddCommand<ShowCommand>("show")
                 .WithDescription("Show the details of an attendee registration");
         });
@@ -109,79 +106,21 @@ app.Configure(config =>
         });
 
     config.AddBranch(
-        "crew",
-        attendee =>
+        "contributor",
+        contributor =>
         {
-            attendee.SetDescription("Manage crew assignments");
-
-            attendee.AddCommand<Commands.Crew.AddCommand>("add")
-                .WithDescription("Add a crew assignment");
-        });
-
-    config.AddBranch(
-        "event",
-        ticketedEvent =>
-        {
-            ticketedEvent.SetDescription("Manage events");
-            
-            ticketedEvent.AddCommand<CreateEventCommand>("create")
-                .WithDescription("Create a new event");
-
-            ticketedEvent.AddCommand<ListEventsCommand>("list")
-                .WithDescription("List all events for a team");
-            
-            ticketedEvent.AddCommand<ShowEventCommand>("show")
-                .WithDescription("Show the details of an event");
-
-            ticketedEvent.AddBranch(
-                "ticketType",
-                ticketType =>
-                {
-                    ticketType.SetDescription("Manage ticket types");
-
-                    ticketType.AddCommand<AddTicketTypeCommand>("add")
-                        .WithDescription("Add a ticket type");
-                });
-        });
-
-    config.AddBranch(
-        "speaker",
-        attendee =>
-        {
-            attendee.SetDescription("Manage speaker engagements");
-
-            attendee.AddCommand<Commands.Speaker.AddCommand>("add")
-                .WithDescription("Add a speaker engagement");
-        });
-
-    config.AddBranch(
-        "team",
-        team =>
-        {
-            team.SetDescription("Manage teams");
-
-            team.AddCommand<CreateTeamCommand>("create")
-                .WithDescription("Create a new team");
-            
-            team.AddCommand<ListTeamsCommand>("list")
-                .WithDescription("List all teams");
-            
-            team.AddBranch(
-                "member",
-                member =>
-                {
-                    member.SetDescription("Manage team members");
+            contributor.SetDescription("Manage contributors");
+    
+            contributor.AddCommand<Commands.Contributor.AddCommand>("add")
+                .WithDescription("Add a contributor");
                     
-                    member.AddCommand<AddTeamMemberCommand>("add")
-                        .WithDescription("Add a team member");
-                });
-            
-            team.AddCommand<ShowTeamCommand>("show")
-                .WithDescription("Show the details of a team");
+            contributor.AddCommand<Commands.Contributor.ListCommand>("list")
+                .WithDescription("List all contributors of an event");
+
+            contributor.AddCommand<Commands.Contributor.RemoveCommand>("remove")
+                .WithDescription("Remove a contributor");
         });
-
-
-
+    
     config.AddBranch(
         "email",
         email =>
@@ -267,6 +206,59 @@ app.Configure(config =>
                         .WithDescription("Verify a one-time verification code");
                 });
 #endif
+        });
+    
+    
+    config.AddBranch(
+        "event",
+        ticketedEvent =>
+        {
+            ticketedEvent.SetDescription("Manage events");
+            
+            ticketedEvent.AddCommand<CreateEventCommand>("create")
+                .WithDescription("Create a new event");
+
+            ticketedEvent.AddCommand<ListEventsCommand>("list")
+                .WithDescription("List all events for a team");
+            
+            ticketedEvent.AddCommand<ShowEventCommand>("show")
+                .WithDescription("Show the details of an event");
+
+            ticketedEvent.AddBranch(
+                "ticketType",
+                ticketType =>
+                {
+                    ticketType.SetDescription("Manage ticket types");
+
+                    ticketType.AddCommand<AddTicketTypeCommand>("add")
+                        .WithDescription("Add a ticket type");
+                });
+        });
+    
+    config.AddBranch(
+        "team",
+        team =>
+        {
+            team.SetDescription("Manage teams");
+
+            team.AddCommand<CreateTeamCommand>("create")
+                .WithDescription("Create a new team");
+            
+            team.AddCommand<ListTeamsCommand>("list")
+                .WithDescription("List all teams");
+            
+            team.AddBranch(
+                "member",
+                member =>
+                {
+                    member.SetDescription("Manage team members");
+                    
+                    member.AddCommand<AddTeamMemberCommand>("add")
+                        .WithDescription("Add a team member");
+                });
+            
+            team.AddCommand<ShowTeamCommand>("show")
+                .WithDescription("Show the details of a team");
         });
 });
 

@@ -19,12 +19,6 @@ public class CreateEventSettings : TeamSettings
     [CommandOption("--end")]
     public DateTimeOffset? EndTime { get; set; }
     
-    [CommandOption("--registrationStart")]
-    public DateTimeOffset? RegistrationStartTime { get; set; }
-
-    [CommandOption("--registrationEnd")]
-    public DateTimeOffset? RegistrationEndTime { get; set; }
-
     [CommandOption("--baseUrl")]
     public string BaseUrl { get; set; } = null!;
 }
@@ -44,8 +38,6 @@ public class CreateEventCommand(IAccessTokenProvider accessTokenProvider, IConfi
             Website = settings.Website,
             StartTime = settings.StartTime,
             EndTime = settings.EndTime,
-            RegistrationStartTime = settings.RegistrationStartTime,
-            RegistrationEndTime = settings.RegistrationEndTime,
             BaseUrl = settings.BaseUrl,
         };
         

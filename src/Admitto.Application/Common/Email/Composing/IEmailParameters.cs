@@ -1,3 +1,5 @@
+using Amolenk.Admitto.Domain.ValueObjects;
+
 namespace Amolenk.Admitto.Application.Common.Email.Composing;
 
 /// <summary>
@@ -5,5 +7,7 @@ namespace Amolenk.Admitto.Application.Common.Email.Composing;
 /// </summary>
 public interface IEmailParameters
 {
-    string Email { get; }
+    string Recipient { get; }
+    
+    EmailRecipientType RecipientType { get; }
 }

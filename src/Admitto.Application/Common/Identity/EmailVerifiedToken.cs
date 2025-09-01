@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Text;
 using System.Text.Json;
 using Amolenk.Admitto.Application.Common.Cryptography;
@@ -9,53 +8,52 @@ public record EmailVerifiedToken(string Email, DateTimeOffset VerifiedAtUtc)
 {
     private const int ExpirationMinutes = 30;
 
-    public string Encode(ISigningService signingService)
+    public async ValueTask<string> EncodeAsync(
+        ISigningService signingService,
+        Guid ticketedEventId,
+        CancellationToken cancellationToken = default)
     {
         var payloadJson = JsonSerializer.Serialize(this);
-        var signature = signingService.Sign(payloadJson);
+        var signature = await signingService.SignAsync(payloadJson, ticketedEventId, cancellationToken);
         return Convert.ToBase64String(Encoding.UTF8.GetBytes(payloadJson)) + "." + signature;
     }
 
-    public static bool TryDecodeAndValidate(
+    public static async ValueTask<EmailVerifiedToken?> TryDecodeAndValidateAsync(
         string encodedToken,
+        Guid ticketedEventId,
         ISigningService signingService,
-        [MaybeNullWhen(false)] out EmailVerifiedToken token)
+        CancellationToken cancellationToken = default)
     {
-        token = null;
+        EmailVerifiedToken? token = null;
 
         var parts = encodedToken.Split('.', 2);
         if (parts.Length != 2)
         {
-            return false;
+            return token;
         }
 
         var payloadJson = Encoding.UTF8.GetString(Convert.FromBase64String(parts[0]));
         var signature = parts[1];
 
-        if (!signingService.IsValid(payloadJson, signature))
+        if (!await signingService.IsValidAsync(payloadJson, signature, ticketedEventId, cancellationToken))
         {
-            return false;
+            return token;
         }
-
+        
         try
         {
             token = JsonSerializer.Deserialize<EmailVerifiedToken>(payloadJson);
-            if (token == null)
+            if (token is null)
             {
-                return false;
+                return null;
             }
         }
         catch
         {
-            return false;
+            return null;
         }
 
         // Check if token has expired
-        if (DateTimeOffset.UtcNow - token.VerifiedAtUtc > TimeSpan.FromMinutes(ExpirationMinutes))
-        {
-            return false;
-        }
-
-        return true;
+        return DateTimeOffset.UtcNow - token.VerifiedAtUtc > TimeSpan.FromMinutes(ExpirationMinutes) ? null : token;
     }
 }

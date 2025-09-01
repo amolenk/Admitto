@@ -32,27 +32,33 @@ public class EmailVerificationRequest
     public DateTimeOffset RequestedAt { get; private set; }
     public DateTimeOffset ExpiresAt { get; private set; }
 
-    public static EmailVerificationRequest Create(
+    public static async ValueTask<(EmailVerificationRequest Request, string Code)> CreateAsync(
         Guid ticketedEventId,
         string email,
         ISigningService signingService,
-        out string code)
+        CancellationToken cancellationToken = default)
     {
-        code = GenerateCode();
-        var hashedCode = signingService.Sign(code);
+        var code = GenerateCode();
+        var hashedCode = await signingService.SignAsync(code, ticketedEventId, cancellationToken);
 
-        return new EmailVerificationRequest(
+        var request = new EmailVerificationRequest(
             Guid.NewGuid(),
             ticketedEventId,
             email,
             hashedCode,
             DateTimeOffset.UtcNow,
             DateTimeOffset.UtcNow.AddMinutes(15));
+
+        return (request, code);
     }
 
-    public bool Verify(string code, ISigningService signingService)
+    public ValueTask<bool> VerifyAsync(
+        string code,
+        Guid ticketedEventId,
+        ISigningService signingService,
+        CancellationToken cancellationToken = default)
     {
-        return signingService.IsValid(code, HashedCode);
+        return signingService.IsValidAsync(code, HashedCode, ticketedEventId, cancellationToken);
     }
 
     private static string GenerateCode()

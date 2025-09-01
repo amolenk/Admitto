@@ -13,8 +13,9 @@ public class MessageEntityConfiguration : IEntityTypeConfiguration<Message>
         
         builder.Property(e => e.Id)
             .HasColumnName("id")
+            .IsRequired()
             .ValueGeneratedNever();
-        
+
         builder.Property(e => e.Type)
             .HasColumnName("type")
             .IsRequired()

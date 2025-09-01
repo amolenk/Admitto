@@ -11,7 +11,7 @@ public class ListCommand(IAccessTokenProvider accessTokenProvider, IConfiguratio
         var eventSlug = GetEventSlug(settings.EventSlug);
 
         var response = await CallApiAsync(async client => 
-            await client.Teams[teamSlug].Events[eventSlug].AttendeeRegistrations.GetAsync());
+            await client.Teams[teamSlug].Events[eventSlug].Attendees.GetAsync());
         if (response is null) return 1;
 
         var table = new Table();
@@ -21,15 +21,15 @@ public class ListCommand(IAccessTokenProvider accessTokenProvider, IConfiguratio
         table.AddColumn("Status");
         table.AddColumn("Last updated");
 
-        foreach (var registration in response.Registrations!
+        foreach (var attendee in response.Attendees!
                      .OrderByDescending(r => r.LastChangedAt!.Value))
         {
             table.AddRow(
-                $"[grey]{registration.RegistrationId}[/]",
-                registration.Email!,
-                $"{registration.FirstName} {registration.LastName}",
-                registration.Status!.Value.Format(),
-                registration.LastChangedAt!.Value.Format());
+                $"[grey]{attendee.AttendeeId}[/]",
+                attendee.Email!,
+                $"{attendee.FirstName} {attendee.LastName}",
+                attendee.Status!.Value.Format(),
+                attendee.LastChangedAt!.Value.Format());
         }
 
         AnsiConsole.Write(table);

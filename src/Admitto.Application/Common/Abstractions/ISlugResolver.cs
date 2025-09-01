@@ -2,14 +2,14 @@ namespace Amolenk.Admitto.Application.Common.Abstractions;
 
 public interface ISlugResolver
 {
-    ValueTask<Guid> GetTeamIdAsync(string teamSlug, CancellationToken cancellationToken = default);
-
-    ValueTask<Guid> GetTicketedEventIdAsync(
-        Guid teamId,
+    ValueTask<Guid> ResolveTeamIdAsync(string teamSlug, CancellationToken cancellationToken = default);
+    
+    ValueTask<Guid> ResolveTicketedEventIdAsync(
+        string teamSlug,
         string eventSlug,
         CancellationToken cancellationToken = default);
 
-    ValueTask<(Guid TeamId, Guid TicketedEventId)> GetTeamAndTicketedEventsIdsAsync(
+    ValueTask<(Guid TeamId, Guid TicketedEventId)> ResolveTeamAndTicketedEventIdsAsync(
         string teamSlug,
         string eventSlug,
         CancellationToken cancellationToken = default);

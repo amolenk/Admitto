@@ -1,3 +1,5 @@
+using Amolenk.Admitto.Domain.ValueObjects;
+
 namespace Amolenk.Admitto.Application.Common.Email.Composing;
 
 /// <summary>
@@ -6,6 +8,7 @@ namespace Amolenk.Admitto.Application.Common.Email.Composing;
 public record VerificationEmailParameters(
     string EventName,
     string EventWebsite,
-    string Email,
+    string Recipient,
+    EmailRecipientType RecipientType,
     string VerificationCode)
     : IEmailParameters;

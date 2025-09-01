@@ -14,6 +14,15 @@ public class EmailLogEntityConfiguration : IEntityTypeConfiguration<EmailLog>
         builder.ToTable("email_log");
         builder.HasKey(e => e.Id);
         
+        builder.Property(e => e.Id)
+            .HasColumnName("id")
+            .IsRequired()
+            .ValueGeneratedNever();
+
+        builder.Property(e => e.TeamId)
+            .HasColumnName("team_id")
+            .IsRequired();
+
         builder.Property(e => e.TicketedEventId)
             .HasColumnName("event_id")
             .IsRequired();
@@ -26,6 +35,12 @@ public class EmailLogEntityConfiguration : IEntityTypeConfiguration<EmailLog>
             .HasColumnName("recipient")
             .IsRequired()
             .HasMaxLength(ColumnMaxLength.EmailAddress);
+
+        builder.Property(e => e.RecipientType)
+            .HasColumnName("recipient_type")
+            .HasConversion<string>()
+            .IsRequired()
+            .HasMaxLength(32);
 
         builder.Property(e => e.EmailType)
             .HasColumnName("email_type")

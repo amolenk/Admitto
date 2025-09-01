@@ -16,6 +16,7 @@ public class MessageLogEntityConfiguration : IEntityTypeConfiguration<MessageLog
         
         builder.Property(e => e.Id)
             .HasColumnName("id")
+            .IsRequired()
             .ValueGeneratedNever();
 
         builder.Property(e => e.MessageId)

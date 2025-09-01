@@ -20,9 +20,6 @@ public class RegisterSettings : TeamEventSettings
     [CommandOption("--ticket")]
     public string[]? Tickets { get; set; }
     
-    [CommandOption("--verificationToken")]
-    public string? VerificationToken { get; set; } = null!;
-    
     public override ValidationResult Validate()
     {
         if (Email is null)
@@ -43,11 +40,6 @@ public class RegisterSettings : TeamEventSettings
         if (Tickets is null)
         {
             return ValidationErrors.TicketsMissing;
-        }
-
-        if (VerificationToken is null)
-        {
-            return ValidationErrors.VerificationTokenMissing;
         }
 
         return base.Validate();
@@ -81,15 +73,15 @@ public class RegisterCommand(IAccessTokenProvider accessTokenProvider, IConfigur
                     TicketTypeSlug = ticketTypeSlug,
                     Quantity = quantity
                 }),
-            VerificationToken = settings.VerificationToken
+            OnBehalfOf = true
         };
 
         var response = await CallApiAsync(async client =>
-            await client.Teams[teamSlug].Events[eventSlug].AttendeeRegistrations.PostAsync(request));
-        if (response is null) return 1;
+            await client.Teams[teamSlug].Events[eventSlug].Attendees.PostAsync(request));
+        if (!response) return 1;
 
         AnsiConsole.MarkupLine(
-            $"[green]✓ Successfully registered attendee (ID = '{response.RegistrationId}').[/]");
+            $"[green]✓ Successfully submitted attendee registration.[/]");
         return 0;
     }
 }

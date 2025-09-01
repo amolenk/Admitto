@@ -1,5 +1,3 @@
-using Amolenk.Admitto.Application.Common.Authorization;
-using Amolenk.Admitto.Application.Common.Data;
 using Amolenk.Admitto.Domain.Entities;
 
 namespace Amolenk.Admitto.Application.UseCases.TicketedEvents.CreateTicketedEvent;
@@ -26,7 +24,7 @@ public static class CreateTicketedEventEndpoint
         IApplicationContext context,
         CancellationToken cancellationToken)
     {
-        var teamId = await slugResolver.GetTeamIdAsync(teamSlug, cancellationToken);
+        var teamId = await slugResolver.ResolveTeamIdAsync(teamSlug, cancellationToken);
 
         var newEvent = TicketedEvent.Create(
             teamId,
@@ -35,12 +33,24 @@ public static class CreateTicketedEventEndpoint
             request.Website,
             request.StartTime.ToUniversalTime(),
             request.EndTime.ToUniversalTime(),
-            request.RegistrationStartTime.ToUniversalTime(),
-            request.RegistrationEndTime.ToUniversalTime(),
             request.BaseUrl);
 
         context.TicketedEvents.Add(newEvent);
 
-        return TypedResults.Created($"/teams/{teamSlug}/events/{newEvent.Slug}");
+        var registrationPolicy = newEvent.RegistrationPolicy;
+
+        // Create a separate availability entity based on the registration policy.
+        // This gives us a small aggregate to manage availability (hot path).
+        // An alternative to creating the availability aggregate here would be to raise a domain event,
+        // but that would complicate the flow without much benefit.
+        var newEventAvailability = TicketedEventAvailability.Create(
+            newEvent.Id,
+            newEvent.StartTime - registrationPolicy.OpensBeforeEvent,
+            newEvent.StartTime - registrationPolicy.ClosesBeforeEvent,
+            registrationPolicy.EmailDomainName);
+
+        context.TicketedEventAvailability.Add(newEventAvailability);
+        
+        return TypedResults.Created();
     }
 }

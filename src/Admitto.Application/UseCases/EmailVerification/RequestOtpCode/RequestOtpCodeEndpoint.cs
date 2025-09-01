@@ -1,4 +1,3 @@
-using Amolenk.Admitto.Application.Common.Authorization;
 using Amolenk.Admitto.Application.Common.Cryptography;
 using Amolenk.Admitto.Application.Common.Email;
 using Amolenk.Admitto.Application.Common.Email.Composing;
@@ -33,34 +32,36 @@ public static class RequestOtpCodeEndpoint
         IMessageOutbox messageOutbox,
         CancellationToken cancellationToken)
     {
-        var (teamId, eventId) =
-            await slugResolver.GetTeamAndTicketedEventsIdsAsync(teamSlug, eventSlug, cancellationToken);
+        var (teamId, eventId) = await slugResolver.ResolveTeamAndTicketedEventIdsAsync(
+            teamSlug,
+            eventSlug,
+            cancellationToken);
 
         var email = request.Email.NormalizeEmail();
-        
+
         var existingRequests = await context.EmailVerificationRequests
-            .Where(r => r.Email == email)
-            .ToListAsync(cancellationToken: cancellationToken);
+            .Where(evr => evr.TicketedEventId == eventId && evr.Email == email)
+            .ToListAsync(cancellationToken);
 
         // Remove all existing requests for the same email address.
         foreach (var existingRequest in existingRequests)
         {
             context.EmailVerificationRequests.Remove(existingRequest);
         }
-        
-        var verificationRequest = EmailVerificationRequest.Create(
+
+        var (verificationRequest, code) = await EmailVerificationRequest.CreateAsync(
             eventId,
             email,
             signingService,
-            out var code);
+            cancellationToken);
 
         context.EmailVerificationRequests.Add(verificationRequest);
 
         var sendEmailCommand = new SendEmailCommand(
-            teamId,
             eventId,
             verificationRequest.Id,
             EmailType.VerifyEmail,
+            teamId,
             new Dictionary<string, string>
             {
                 { VerificationEmailComposer.VerificationCodeParameterName, code }

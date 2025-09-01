@@ -7,8 +7,10 @@ namespace Amolenk.Admitto.Application.Common.Email.Sending;
 /// Represents an event that is triggered when an email has been sent.
 /// </summary>
 public record EmailSentApplicationEvent(
+    Guid TeamId,
     Guid TicketedEventId,
     string Recipient,
+    EmailRecipientType RecipientType,
     string Subject,
     EmailType EmailType,
     Guid EmailLogId)

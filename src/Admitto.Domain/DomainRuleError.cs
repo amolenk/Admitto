@@ -16,6 +16,12 @@ public sealed class DomainRuleError
 
     public override string ToString() => $"{Code}: {MessageText}";
 
+    public static class Contributor
+    {
+        public static DomainRuleError UnsupportedRole(string role) =>
+            new("contributor.unsupported_role", $"The specified contributor role '{role}' is not supported.");
+    }
+    
     public static class Email
     {
         public static DomainRuleError UnsupportedType(EmailType emailType) =>
@@ -65,9 +71,6 @@ public sealed class DomainRuleError
 
     public static class TicketedEvent
     {
-        public static DomainRuleError AttendeeAlreadyRegistered =>
-            new("ticketed_event.attendee_already_exists", "An attendee with the same email is already registered.");
-
         public static DomainRuleError EndTimeMustBeAfterStartTime =>
             new("ticketed_event.end_time_must_be_after_start_time", "Event end time must be after start time.");
 

@@ -5,11 +5,15 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace Amolenk.Admitto.Infrastructure.Persistence;
 
+// TODO Can be done smarter
+
 public class SlugResolver(IApplicationContext applicationContext, IMemoryCache memoryCache) : ISlugResolver
 {
-    public async ValueTask<Guid> GetTeamIdAsync(string teamSlug, CancellationToken cancellationToken = default)
+    public async ValueTask<Guid> ResolveTeamIdAsync(string teamSlug, CancellationToken cancellationToken = default)
     {
-        if (memoryCache.TryGetValue(teamSlug, out Guid teamId))
+        var cacheKey = $"slug:{teamSlug}";
+        
+        if (memoryCache.TryGetValue(cacheKey, out Guid teamId))
         {
             return teamId;
         }
@@ -25,17 +29,35 @@ public class SlugResolver(IApplicationContext applicationContext, IMemoryCache m
             throw new DomainRuleException(DomainRuleError.Team.NotFound(teamSlug));
         }
 
-        memoryCache.Set(teamSlug, teamId);
+        memoryCache.Set(cacheKey, teamId);
         return teamId;
     }
     
-    public async ValueTask<Guid> GetTicketedEventIdAsync(
+    public async ValueTask<Guid> ResolveTicketedEventIdAsync(string teamSlug, string eventSlug, CancellationToken cancellationToken = default)
+    {
+        var (_, eventId) = await ResolveTeamAndTicketedEventIdsAsync(teamSlug, eventSlug, cancellationToken);
+
+        return eventId;
+    }
+
+    public async ValueTask<(Guid TeamId, Guid TicketedEventId)> ResolveTeamAndTicketedEventIdsAsync(
+        string teamSlug,
+        string eventSlug,
+        CancellationToken cancellationToken = default)
+    {
+        var teamId = await ResolveTeamIdAsync(teamSlug, cancellationToken);
+        var eventId = await GetTicketedEventIdAsync(teamId, eventSlug, cancellationToken);
+        
+        return (teamId, eventId);
+    }
+    
+    private async ValueTask<Guid> GetTicketedEventIdAsync(
         Guid teamId,
         string eventSlug,
         CancellationToken cancellationToken = default)
     {
-        var cacheKey = $"{teamId}:{eventSlug}";
-
+        var cacheKey = $"slug:{teamId}:{eventSlug}";
+        
         if (memoryCache.TryGetValue(cacheKey, out Guid eventId))
         {
             return eventId;
@@ -54,16 +76,5 @@ public class SlugResolver(IApplicationContext applicationContext, IMemoryCache m
 
         memoryCache.Set(cacheKey, ticketedEventId);
         return ticketedEventId;
-    }
-
-    public async ValueTask<(Guid TeamId, Guid TicketedEventId)> GetTeamAndTicketedEventsIdsAsync(
-        string teamSlug,
-        string eventSlug,
-        CancellationToken cancellationToken = default)
-    {
-        var teamId = await GetTeamIdAsync(teamSlug, cancellationToken);
-        var eventId = await GetTicketedEventIdAsync(teamId, eventSlug, cancellationToken);
-        
-        return (teamId, eventId);
     }
 }

@@ -32,9 +32,12 @@ public static class ValidationErrors
     public static readonly ValidationResult LastNameMissing = 
         ValidationResult.Error("Last name must be specified.");
     
-    public static readonly ValidationResult RegistrationIdMissing = 
-        ValidationResult.Error("Registration ID must be specified.");
-
+    public static readonly ValidationResult IdMissing = 
+        ValidationResult.Error("ID must be specified.");
+    
+    public static readonly ValidationResult RoleMissing = 
+        ValidationResult.Error("Role must be specified.");
+    
     public static readonly ValidationResult TicketsMissing = 
         ValidationResult.Error("Tickets must be specified.");
     

@@ -154,11 +154,18 @@ public class MessageQueuesWorker(
             await ((dynamic)handler).HandleAsync((dynamic)message, cancellationToken);
 
             context.MessageLogs.Add(
-                new MessageLog(messageLogId, messageId, messageType, actualHandlerType, DateTimeOffset.UtcNow));
+                new MessageLog
+                {
+                    Id = messageLogId,
+                    MessageId = messageId,
+                    MessageType = messageType,
+                    HandlerType = actualHandlerType,
+                    ProcessedAt = DateTimeOffset.UtcNow
+                });
 
             // Commit the unit of work for this message.
             var unitOfWork = scopedServiceProvider.GetRequiredService<IUnitOfWork>();
-            await unitOfWork.SaveChangesAsync(cancellationToken);
+            await unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
 
             // Clear the unit of work to avoid side effects between handlers of the same message.
             unitOfWork.Clear();

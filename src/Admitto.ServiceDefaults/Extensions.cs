@@ -58,7 +58,7 @@ public static class Extensions
 
         builder.AddDataProtection();
 
-        builder.Services.AddSingleton<ISigningService, SigningService>();
+        builder.Services.AddScoped<ISigningService, SigningService>();
         builder.Services.AddHttpContextAccessor();
 
         return builder;
@@ -199,8 +199,6 @@ public static class Extensions
     {
         builder.Services.AddDataProtection()
             .SetApplicationName("Admitto");
-
-        builder.Services.AddScoped<ITeamConfigEncryptionService, TeamConfigEncryptionService>();
 
         return builder;
     }

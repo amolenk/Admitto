@@ -6,9 +6,9 @@ namespace Amolenk.Admitto.Application.UseCases.Email.SendEmail;
 /// Represents a command to send a single email.
 /// </summary>
 public record SendEmailCommand(
-    Guid TeamId,
     Guid TicketedEventId,
     Guid DataEntityId,
     EmailType EmailType,
+    Guid? TeamId = null,
     Dictionary<string, string>? AdditionalParameters = null)
     : Command;

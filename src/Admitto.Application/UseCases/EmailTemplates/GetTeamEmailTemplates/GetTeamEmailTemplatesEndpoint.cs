@@ -1,5 +1,3 @@
-using Amolenk.Admitto.Application.Common.Authorization;
-
 namespace Amolenk.Admitto.Application.UseCases.EmailTemplates.GetTeamEmailTemplates;
 
 /// <summary>
@@ -23,7 +21,7 @@ public static class GetTeamEmailTemplatesEndpoint
         IApplicationContext context,
         CancellationToken cancellationToken)
     {
-        var teamId = await slugResolver.GetTeamIdAsync(teamSlug, cancellationToken);
+        var teamId = await slugResolver.ResolveTeamIdAsync(teamSlug, cancellationToken);
 
         var emailTemplates = await context.EmailTemplates
             .Where(t => t.TeamId == teamId && t.TicketedEventId == null)
