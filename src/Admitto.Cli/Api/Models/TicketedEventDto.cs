@@ -24,10 +24,10 @@ namespace Amolenk.Admitto.Cli.Api.Models
 #else
         public string Name { get; set; }
 #endif
-        /// <summary>The registrationEndTime property</summary>
-        public DateTimeOffset? RegistrationEndTime { get; set; }
-        /// <summary>The registrationStartTime property</summary>
-        public DateTimeOffset? RegistrationStartTime { get; set; }
+        /// <summary>The registrationEndDateTime property</summary>
+        public DateTimeOffset? RegistrationEndDateTime { get; set; }
+        /// <summary>The registrationStartDateTime property</summary>
+        public DateTimeOffset? RegistrationStartDateTime { get; set; }
         /// <summary>The slug property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
@@ -65,8 +65,8 @@ namespace Amolenk.Admitto.Cli.Api.Models
             {
                 { "endTime", n => { EndTime = n.GetDateTimeOffsetValue(); } },
                 { "name", n => { Name = n.GetStringValue(); } },
-                { "registrationEndTime", n => { RegistrationEndTime = n.GetDateTimeOffsetValue(); } },
-                { "registrationStartTime", n => { RegistrationStartTime = n.GetDateTimeOffsetValue(); } },
+                { "registrationEndDateTime", n => { RegistrationEndDateTime = n.GetDateTimeOffsetValue(); } },
+                { "registrationStartDateTime", n => { RegistrationStartDateTime = n.GetDateTimeOffsetValue(); } },
                 { "slug", n => { Slug = n.GetStringValue(); } },
                 { "startTime", n => { StartTime = n.GetDateTimeOffsetValue(); } },
             };
@@ -80,8 +80,8 @@ namespace Amolenk.Admitto.Cli.Api.Models
             _ = writer ?? throw new ArgumentNullException(nameof(writer));
             writer.WriteDateTimeOffsetValue("endTime", EndTime);
             writer.WriteStringValue("name", Name);
-            writer.WriteDateTimeOffsetValue("registrationEndTime", RegistrationEndTime);
-            writer.WriteDateTimeOffsetValue("registrationStartTime", RegistrationStartTime);
+            writer.WriteDateTimeOffsetValue("registrationEndDateTime", RegistrationEndDateTime);
+            writer.WriteDateTimeOffsetValue("registrationStartDateTime", RegistrationStartDateTime);
             writer.WriteStringValue("slug", Slug);
             writer.WriteDateTimeOffsetValue("startTime", StartTime);
             writer.WriteAdditionalData(AdditionalData);

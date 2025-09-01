@@ -1,4 +1,4 @@
-using Amolenk.Admitto.Application.Common.Authorization;
+using Amolenk.Admitto.Application.Common;
 using Amolenk.Admitto.Application.Common.Cryptography;
 
 namespace Amolenk.Admitto.Application.UseCases.Teams.GetTeam;
@@ -22,18 +22,21 @@ public static class GetTeamEndpoint
         string teamSlug,
         ISlugResolver slugResolver,
         IApplicationContext context,
-        ITeamConfigEncryptionService encryptionService,
         CancellationToken cancellationToken)
     {
-        var teamId = await slugResolver.GetTeamIdAsync(teamSlug, cancellationToken);
+        var teamId = await slugResolver.ResolveTeamIdAsync(teamSlug, cancellationToken);
         
-        var team = await context.Teams.GetEntityAsync(teamId, true, cancellationToken);
+        var team = await context.Teams.FindAsync([teamId], cancellationToken);
+        if (team is null)
+        {
+            throw new ApplicationRuleException(ApplicationRuleError.Team.NotFound);
+        }
 
         var response = new GetTeamResponse(
             team.Slug,
             team.Name,
             team.Email,
-            encryptionService.Decrypt(team.EmailServiceConnectionString));
+            team.EmailServiceConnectionString);
 
         return TypedResults.Ok(response);
     }

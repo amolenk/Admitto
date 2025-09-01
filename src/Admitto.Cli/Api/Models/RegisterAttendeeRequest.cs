@@ -46,6 +46,8 @@ namespace Amolenk.Admitto.Cli.Api.Models
 #else
         public string LastName { get; set; }
 #endif
+        /// <summary>The onBehalfOf property</summary>
+        public bool? OnBehalfOf { get; set; }
         /// <summary>The tickets property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
@@ -91,6 +93,7 @@ namespace Amolenk.Admitto.Cli.Api.Models
                 { "email", n => { Email = n.GetStringValue(); } },
                 { "firstName", n => { FirstName = n.GetStringValue(); } },
                 { "lastName", n => { LastName = n.GetStringValue(); } },
+                { "onBehalfOf", n => { OnBehalfOf = n.GetBoolValue(); } },
                 { "tickets", n => { Tickets = n.GetCollectionOfObjectValues<global::Amolenk.Admitto.Cli.Api.Models.TicketSelectionDto>(global::Amolenk.Admitto.Cli.Api.Models.TicketSelectionDto.CreateFromDiscriminatorValue)?.AsList(); } },
                 { "verificationToken", n => { VerificationToken = n.GetStringValue(); } },
             };
@@ -106,6 +109,7 @@ namespace Amolenk.Admitto.Cli.Api.Models
             writer.WriteStringValue("email", Email);
             writer.WriteStringValue("firstName", FirstName);
             writer.WriteStringValue("lastName", LastName);
+            writer.WriteBoolValue("onBehalfOf", OnBehalfOf);
             writer.WriteCollectionOfObjectValues<global::Amolenk.Admitto.Cli.Api.Models.TicketSelectionDto>("tickets", Tickets);
             writer.WriteStringValue("verificationToken", VerificationToken);
             writer.WriteAdditionalData(AdditionalData);

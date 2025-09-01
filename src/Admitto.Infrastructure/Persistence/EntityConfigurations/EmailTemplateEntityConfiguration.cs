@@ -13,7 +13,16 @@ public class EmailTemplateEntityConfiguration : IEntityTypeConfiguration<EmailTe
         
         builder.Property(e => e.Id)
             .HasColumnName("id")
+            .IsRequired()
             .ValueGeneratedNever();
+
+        builder.Property(e => e.TeamId)
+            .HasColumnName("team_id")
+            .IsRequired();
+
+        builder.Property(e => e.TicketedEventId)
+            .HasColumnName("event_id")
+            .IsRequired();
 
         builder.Property(e => e.Type)
             .HasColumnName("type")
@@ -27,10 +36,6 @@ public class EmailTemplateEntityConfiguration : IEntityTypeConfiguration<EmailTe
 
         builder.Property(e => e.Body)
             .HasColumnName("body")
-            .IsRequired();
-
-        builder.Property(e => e.TeamId)
-            .HasColumnName("team_id")
             .IsRequired();
 
         builder.Property(e => e.TicketedEventId)

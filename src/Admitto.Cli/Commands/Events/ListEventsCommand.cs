@@ -17,12 +17,12 @@ public class ListEventsCommand(IAccessTokenProvider accessTokenProvider, IConfig
         table.AddColumn("Name");
         table.AddColumn("Status");
 
-        foreach (var team in response.TicketedEvents ?? [])
+        foreach (var ticketedEvent in response.TicketedEvents ?? [])
         {
-            var status = GetStatusString(team.RegistrationStartTime!.Value,
-                team.RegistrationEndTime!.Value, team.StartTime!.Value, team.EndTime!.Value);
+            var status = GetStatusString(ticketedEvent.RegistrationStartDateTime!.Value,
+                ticketedEvent.RegistrationEndDateTime!.Value, ticketedEvent.StartTime!.Value, ticketedEvent.EndTime!.Value);
 
-            table.AddRow(team.Slug!, team.Name!, status);
+            table.AddRow(ticketedEvent.Slug!, ticketedEvent.Name!, status);
         }
 
         AnsiConsole.Write(table);

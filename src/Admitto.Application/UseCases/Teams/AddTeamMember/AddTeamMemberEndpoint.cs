@@ -1,4 +1,4 @@
-using Amolenk.Admitto.Application.Common.Authorization;
+using Amolenk.Admitto.Application.Common;
 
 namespace Amolenk.Admitto.Application.UseCases.Teams.AddTeamMember;
 
@@ -24,8 +24,13 @@ public static class AddTeamMemberEndpoint
         IApplicationContext context,
         CancellationToken cancellationToken)
     {
-        var teamId = await slugResolver.GetTeamIdAsync(teamSlug, cancellationToken);
-        var team = await context.Teams.GetEntityAsync(teamId, cancellationToken: cancellationToken);
+        var teamId = await slugResolver.ResolveTeamIdAsync(teamSlug, cancellationToken);
+        
+        var team = await context.Teams.FindAsync([teamId], cancellationToken);
+        if (team is null)
+        {
+            throw new ApplicationRuleException(ApplicationRuleError.Team.NotFound);
+        }
         
         team.AddMember(request.Email, request.Role);
 

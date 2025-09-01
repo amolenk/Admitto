@@ -14,6 +14,7 @@ public class VerificationEmailComposer(
     public const string VerificationCodeParameterName = "verification_code";
 
     protected override async ValueTask<IEmailParameters> GetTemplateParametersAsync(
+        Guid ticketedEventId,
         Guid entityId,
         Dictionary<string, string> additionalParameters,
         CancellationToken cancellationToken)
@@ -49,6 +50,7 @@ public class VerificationEmailComposer(
             info.Name,
             info.Website,
             info.Email,
+            EmailRecipientType.Other,
             verificationCode);
     }
 
@@ -61,6 +63,7 @@ public class VerificationEmailComposer(
             "Test Event",
             "www.example.com",
             recipient,
+            EmailRecipientType.Other,
             "123456");
     }
 }

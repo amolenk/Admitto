@@ -6,6 +6,4 @@ public record CreateTicketedEventRequest(
     string Website,
     DateTimeOffset StartTime,
     DateTimeOffset EndTime,
-    DateTimeOffset RegistrationStartTime,
-    DateTimeOffset RegistrationEndTime,
     string BaseUrl);

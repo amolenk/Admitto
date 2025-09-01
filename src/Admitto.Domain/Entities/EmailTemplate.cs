@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Domain.Contracts;
 using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Domain.Entities;
@@ -5,7 +6,7 @@ namespace Amolenk.Admitto.Domain.Entities;
 /// <summary>
 /// Represents a template for an email message.
 /// </summary>
-public class EmailTemplate : AggregateRoot
+public class EmailTemplate : Aggregate
 {
     private EmailTemplate()
     {

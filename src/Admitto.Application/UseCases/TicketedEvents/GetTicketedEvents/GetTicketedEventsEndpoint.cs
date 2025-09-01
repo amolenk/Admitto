@@ -1,6 +1,4 @@
 using System.Security.Claims;
-using Amolenk.Admitto.Application.Common.Authorization;
-using Amolenk.Admitto.Application.Common.Data;
 
 namespace Amolenk.Admitto.Application.UseCases.TicketedEvents.GetTicketedEvents;
 
@@ -41,25 +39,25 @@ public static class GetTicketedEventsEndpoint
             return TypedResults.Ok(new GetTicketedEventsResponse([]));
         }
 
-        var teamId = await slugResolver.GetTeamIdAsync(teamSlug, cancellationToken);
+        var teamId = await slugResolver.ResolveTeamIdAsync(teamSlug, cancellationToken);
 
-        // TODO Only select required fields to improve performance
         var ticketedEvents = await context.TicketedEvents
             .AsNoTracking()
-            .Where(e => e.TeamId == teamId && authorizedEvents.Contains(e.Slug))
-            .ToListAsync(cancellationToken);
-
-        var response = new GetTicketedEventsResponse(
-            ticketedEvents
-                .Select(e => new TicketedEventDto(
-                    e.Slug,
-                    e.Name,
-                    e.StartTime,
-                    e.EndTime,
-                    e.RegistrationStartTime,
-                    e.RegistrationEndTime))
-                .ToArray());
-
-        return TypedResults.Ok(response);
+            .Join(
+                context.TicketedEventAvailability,
+                te => te.Id,
+                tea => tea.TicketedEventId,
+                (te, tea) => new { Event = te, Availability = tea })
+            .Where(x => x.Event.TeamId == teamId && authorizedEvents.Contains(x.Event.Slug))
+            .Select(x => new TicketedEventDto(
+                x.Event.Slug,
+                x.Event.Name,
+                x.Event.StartTime,
+                x.Event.EndTime,
+                x.Availability.RegistrationStartTime,
+                x.Availability.RegistrationEndTime))
+            .ToArrayAsync(cancellationToken);
+        
+        return TypedResults.Ok(new GetTicketedEventsResponse(ticketedEvents));
     }
 }

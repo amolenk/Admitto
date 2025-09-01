@@ -2,50 +2,59 @@ using System.Reflection;
 using Amolenk.Admitto.Application.Common.Abstractions;
 using Amolenk.Admitto.Application.Common.Email.Sending;
 using Amolenk.Admitto.Application.Common.Identity;
-using Amolenk.Admitto.Application.Projections.ParticipantActivity;
-using Amolenk.Admitto.Application.Projections.Participation;
+using Amolenk.Admitto.Application.Projections.Admission;
+using Amolenk.Admitto.Application.Projections.ParticipantHistory;
 using Amolenk.Admitto.Domain.Contracts;
 using Amolenk.Admitto.Domain.Entities;
-using Amolenk.Admitto.Domain.ValueObjects;
 using Amolenk.Admitto.Infrastructure.Messaging;
+using Amolenk.Admitto.Infrastructure.Persistence.EntityConfigurations;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 
 namespace Amolenk.Admitto.Infrastructure.Persistence;
 
-public class ApplicationContext(DbContextOptions options) : DbContext(options), IApplicationContext
+public class ApplicationContext(DbContextOptions options, IDataProtectionProvider dataProtectionProvider)
+    : DbContext(options), IApplicationContext
 {
-    public DbSet<Job> Jobs { get; set; } = null!;
+    public DbSet<AdmissionView> AdmissionView { get; set; } = null!;
+    public DbSet<ParticipantHistoryView> AttendeeActivityView { get; set; } = null!;
+    public DbSet<Attendee> Attendees { get; set; } = null!;
+    public DbSet<Contributor> Contributors { get; set; } = null!;
+    public DbSet<EmailLog> EmailLog { get; set; } = null!;
     public DbSet<EmailTemplate> EmailTemplates { get; set; } = null!;
-    public DbSet<AttendeeRegistration> AttendeeRegistrations { get; set; } = null!;
-    public DbSet<ScheduledJob> ScheduledJobs { get; set; } = null!;
-    public DbSet<ContributorRegistration> ContributorRegistrations { get; set; } = null!;
-    public DbSet<Team> Teams { get; set; } = null!;
-    public DbSet<TicketedEvent> TicketedEvents { get; set; } = null!;
-
-    public DbSet<ParticipationView> ParticipationView { get; set; } = null!;
-    public DbSet<ParticipantActivityView> ParticipantActivityView { get; set; } = null!;
-
+    public DbSet<EmailVerificationRequest> EmailVerificationRequests { get; set; } = null!;
+    public DbSet<Job> Jobs { get; set; } = null!;
     public DbSet<Message> Outbox { get; set; } = null!;
     public DbSet<MessageLog> MessageLogs { get; set; } = null!;
+    public DbSet<Participant> Participants { get; set; } = null!;
+    public DbSet<ScheduledJob> ScheduledJobs { get; set; } = null!;
+    public DbSet<Team> Teams { get; set; } = null!;
+    public DbSet<TicketedEvent> TicketedEvents { get; set; } = null!;
+    public DbSet<TicketedEventAvailability> TicketedEventAvailability { get; set; } = null!;
     
-    public DbSet<EmailVerificationRequest> EmailVerificationRequests { get; set; } = null!;
-    public DbSet<EmailLog> EmailLog { get; set; } = null!;
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
-        modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
-
+        // Apply entity configurations using explicit instances.
+        // We don't use modelBuilder.ApplyConfigurationsFromAssembly here because some configurations
+        // require DI parameters (e.g. IDataProtectionProvider).
+        modelBuilder.ApplyConfiguration(new AdmissionViewEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new ParticipantHistoryViewEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new AttendeeEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new ContributorEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new EmailLogEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new EmailTemplateEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new EmailVerificationRequestEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new JobEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new MessageEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new MessageLogEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new ParticipantEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new ScheduledJobEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new TeamEntityConfiguration(dataProtectionProvider));
+        modelBuilder.ApplyConfiguration(new TicketedEventAvailabilityEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new TicketedEventEntityConfiguration(dataProtectionProvider));
+        
         foreach (var entityType in modelBuilder.Model.GetEntityTypes().ToList())
         {
-            if (typeof(IHasAdditionalDetails).IsAssignableFrom(entityType.ClrType))
-            {
-                modelBuilder.Entity(entityType.ClrType)
-                    .OwnsMany(typeof(AdditionalDetail), nameof(IHasAdditionalDetails.AdditionalDetails), b =>
-                    {
-                        b.ToJson("additional_details");
-                    });
-            }
-            
             if (typeof(IHasConcurrencyToken).IsAssignableFrom(entityType.ClrType))
             {
                 modelBuilder.Entity(entityType.ClrType)

@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using Amolenk.Admitto.Application.Common.Authorization;
 
 namespace Amolenk.Admitto.Application.UseCases.Teams.GetTeams;
 
@@ -40,13 +39,12 @@ public static class GetTeamsEndpoint
 
         var teams = await context.Teams
             .Where(t => authorizedTeams.Contains(t.Slug))
-            .ToListAsync(cancellationToken);
+            .Select(t => new TeamDto(
+                t.Slug,
+                t.Name,
+                t.Email))
+            .ToArrayAsync(cancellationToken);
 
-        var response = new GetTeamsResponse(
-            teams
-                .Select(t => new TeamDto(t.Slug, t.Name, t.Email))
-                .ToArray());
-
-        return TypedResults.Ok(response);
+        return TypedResults.Ok(new GetTeamsResponse(teams));
     }
 }

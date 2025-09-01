@@ -15,44 +15,59 @@ public class RegistrationEmailComposer(
     : EmailComposer(templateService)
 {
     protected override async ValueTask<IEmailParameters> GetTemplateParametersAsync(
+        Guid ticketedEventId,
         Guid entityId,
         Dictionary<string, string> additionalParameters,
         CancellationToken cancellationToken)
     {
         // For clarity.
-        var registrationId = entityId;
-        
-        var info = await context.AttendeeRegistrations
+        var attendeeId = entityId;
+
+        var info = await context.Attendees
             .AsNoTracking()
             .Join(
                 context.TicketedEvents,
-                r => r.TicketedEventId,
-                e => e.Id,
-                (r, e) => new { Registration = r, Event = e })
-            .Where(joined => joined.Registration.Id == registrationId)
-            .Select(joined => new
+                a => a.TicketedEventId,
+                te => te.Id,
+                (a, te) => new { Attendee = a, Event = te })
+            .Join(
+                context.TicketedEventAvailability,
+                x => x.Event.Id,
+                tea => tea.TicketedEventId,
+                (x, tea) => new { x.Attendee, x.Event, Availability = tea })
+            .Join(
+                context.Participants,
+                x => x.Attendee.ParticipantId,
+                p => p.Id,
+                (x, p) => new { x.Attendee, x.Event, x.Availability, Participant = p })
+            .Where(x => x.Attendee.Id == attendeeId)
+            .Select(x => new
             {
-                joined.Event.Name,
-                joined.Event.Website,
-                joined.Event.TicketTypes,
-                joined.Event.BaseUrl,
-                joined.Registration.Email,
-                joined.Registration.FirstName,
-                joined.Registration.LastName,
-                joined.Registration.AdditionalDetails,
-                joined.Registration.Tickets
+                x.Event.Name,
+                x.Event.Website,
+                x.Event.BaseUrl,
+                x.Availability.TicketTypes,
+                x.Attendee.Email,
+                x.Attendee.FirstName,
+                x.Attendee.LastName,
+                x.Attendee.AdditionalDetails,
+                x.Attendee.Tickets,
+                x.Participant.PublicId,
             })
-            .FirstOrDefaultAsync(cancellationToken: cancellationToken);
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (info is null)
         {
-            throw new ApplicationRuleException(ApplicationRuleError.Attendee.NotFound(registrationId));
+            throw new ApplicationRuleException(ApplicationRuleError.Attendee.NotFound);
         }
 
+        var signature = await signingService.SignAsync(info.PublicId, ticketedEventId, cancellationToken);
+        
         return new RegistrationEmailParameters(
             info.Name,
             info.Website,
             info.Email,
+            EmailRecipientType.Attendee,
             info.FirstName,
             info.LastName,
             info.AdditionalDetails.Select(ad => new DetailEmailParameter(ad.Name, ad.Value)).ToList(),
@@ -61,9 +76,9 @@ public class RegistrationEmailComposer(
                     info.TicketTypes.First(tt => tt.Slug == t.TicketTypeSlug).Name,
                     t.Quantity))
                 .ToList(),
-            $"{info.BaseUrl}/tickets/qrcode/{registrationId}/{signingService.Sign(registrationId)}",
-            $"{info.BaseUrl}/tickets/reconfirm/{registrationId}/{signingService.Sign(registrationId)}",
-            $"{info.BaseUrl}/tickets/cancel/{registrationId}/{signingService.Sign(registrationId)}");
+            $"{info.BaseUrl}/tickets/qrcode/{info.PublicId}/{signature}",
+            $"{info.BaseUrl}/tickets/reconfirm/{info.PublicId}/{signature}",
+            $"{info.BaseUrl}/tickets/cancel/{info.PublicId}/{signature}");
     }
 
     protected override IEmailParameters GetTestTemplateParameters(
@@ -75,9 +90,10 @@ public class RegistrationEmailComposer(
             "Test Event",
             "www.example.com",
             recipient,
+            EmailRecipientType.Other,
             "Alice",
             "Doe",
-            additionalDetails .Select(ad => new DetailEmailParameter(ad.Name, ad.Value)).ToList(),
+            additionalDetails.Select(ad => new DetailEmailParameter(ad.Name, ad.Value)).ToList(),
             tickets
                 .Select(t => new TicketEmailParameter(t.TicketTypeSlug.Humanize(), t.Quantity))
                 .ToList(),

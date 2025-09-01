@@ -13,6 +13,7 @@ public class EmailVerificationRequestEntityConfiguration : IEntityTypeConfigurat
         
         builder.Property(e => e.Id)
             .HasColumnName("id")
+            .IsRequired()
             .ValueGeneratedNever();
 
         builder.Property(e => e.TicketedEventId)
@@ -36,7 +37,5 @@ public class EmailVerificationRequestEntityConfiguration : IEntityTypeConfigurat
         builder.Property(e => e.ExpiresAt)
             .HasColumnName("expires_at")
             .IsRequired();
-
-        builder.HasIndex(e => e.TicketedEventId);
     }
 }

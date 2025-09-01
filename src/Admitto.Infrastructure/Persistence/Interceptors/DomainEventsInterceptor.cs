@@ -19,7 +19,7 @@ public class DomainEventsInterceptor(IServiceProvider serviceProvider)
 
         foreach (var entry in context.ChangeTracker.Entries().ToList())
         {
-            if (entry.Entity is not AggregateRoot aggregate) continue;
+            if (entry.Entity is not Aggregate aggregate) continue;
             
             foreach (var domainEvent in aggregate.GetDomainEvents())
             {

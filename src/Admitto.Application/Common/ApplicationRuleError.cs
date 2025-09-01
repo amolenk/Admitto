@@ -18,10 +18,38 @@ public sealed class ApplicationRuleError
 
     public static class Attendee
     {
-        public static ApplicationRuleError NotFound(Guid id) =>
-            new("attendee.not_found", $"Attendee with ID '{id}' does not exist.");
-    }
+        public static ApplicationRuleError AlreadyRegistered =>
+            new("attendee.already_registered", "A registration for this attendee already exists.");
 
+        public static ApplicationRuleError InvalidVerificationToken =>
+            new("attendee.invalid_token", "Verification token is invalid or expired.");
+        
+        public static ApplicationRuleError InvalidSignature =>
+            new("attendee.invalid_signature", "Signature is invalid.");
+        
+        public static ApplicationRuleError NotFound =>
+            new("attendee.not_found", $"Registration not found.");
+    }
+    
+    public static class Signing
+    {
+        public static ApplicationRuleError InvalidVerificationToken =>
+            new("attendee.invalid_token", "Verification token is invalid or expired.");
+        
+        public static ApplicationRuleError InvalidSignature =>
+            new("attendee.invalid_signature", "Signature is invalid.");
+    }
+    
+    
+    public static class Contributor
+    {
+        public static ApplicationRuleError AlreadyExists =>
+            new("contributor.already_exists", "A registration for this contributor role already exists.");
+
+        public static ApplicationRuleError NotFound =>
+            new("contributor.not_found", "Contributor not found.");
+    }
+    
     public static class EmailVerificationRequest
     {
         public static ApplicationRuleError Invalid =>
@@ -34,18 +62,37 @@ public sealed class ApplicationRuleError
             new("verification_request.code_parameter_missing", "Verification code must be passed as an additional parameter.");
     }
     
-    public static class Registration
+    public static class General
     {
-        public static ApplicationRuleError InvalidVerificationToken =>
-            new("registration.invalid_token", "Verification token is invalid or expired.");
+        public static ApplicationRuleError AlreadyExists =>
+            new("general.already_exists", "The item that you tried to create already exists.");
+    }
+    
+    public static class Participant
+    {
+        public static ApplicationRuleError NotFound =>
+            new("participant.not_found", $"Participant not found.");
+    }
+    
+    public static class ContributorRegistration
+    {
+        public static ApplicationRuleError AlreadyExists =>
+            new("contributor.already_exists", "A registration for this attendee already exists.");
         
-        public static ApplicationRuleError InvalidSignature =>
-            new("registration.invalid_signature", "Signature is invalid.");
+        public static ApplicationRuleError NotFound =>
+            new("contributor.not_found", $"Registration not found.");
     }
     
     public static class Team
     {
-        public static ApplicationRuleError NotFound(Guid id) =>
-            new("team.not_found", $"Team with ID '{id}' does not exist.");
+        public static ApplicationRuleError NotFound =>
+            new("team.not_found", "Team does not exist.");
     }
+    
+    public static class TicketedEvent
+    {
+        public static ApplicationRuleError NotFound =>
+            new("event.not_found", $"Ticketed event does not exist.");
+    }
+    
 }

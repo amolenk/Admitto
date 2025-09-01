@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using Amolenk.Admitto.Domain.DomainEvents;
 using Amolenk.Admitto.Domain.ValueObjects;
 
@@ -6,11 +7,8 @@ namespace Amolenk.Admitto.Domain.Entities;
 /// <summary>
 /// Represents an event for which attendees can register.
 /// </summary>
-public class TicketedEvent : AggregateRoot
+public class TicketedEvent : Aggregate
 {
-    private readonly List<TicketType> _ticketTypes = [];
-    private readonly List<string> _attendees = [];
-    
     // EF Core constructor
     private TicketedEvent()
     {
@@ -24,8 +22,6 @@ public class TicketedEvent : AggregateRoot
         string website,
         DateTimeOffset startTime,
         DateTimeOffset endTime,
-        DateTimeOffset registrationStartTime,
-        DateTimeOffset registrationEndTime,
         string baseUrl)
         : base(id)
     {
@@ -35,10 +31,10 @@ public class TicketedEvent : AggregateRoot
         Website = website;
         StartTime = startTime;
         EndTime = endTime;
-        RegistrationStartTime = registrationStartTime;
-        RegistrationEndTime = registrationEndTime;
         BaseUrl = baseUrl;
         ConfiguredPolicies = new TicketedEventPolicies();
+        SigningKey = GenerateHmacKey(32);
+        
 
         AddDomainEvent(new TicketedEventCreatedDomainEvent(teamId, slug));
     }
@@ -49,15 +45,13 @@ public class TicketedEvent : AggregateRoot
     public string Website { get; private set; } = null!;
     public DateTimeOffset StartTime { get; private set; }
     public DateTimeOffset EndTime { get; private set; }
-    public DateTimeOffset RegistrationStartTime { get; private set; }
-    public DateTimeOffset RegistrationEndTime { get; private set; }
-    public string BaseUrl { get; private set; }
-    public TicketedEventPolicies ConfiguredPolicies { get; private set; }
-    public IReadOnlyCollection<TicketType> TicketTypes => _ticketTypes.AsReadOnly();
-    public IList<string> Attendees => _attendees; // Has to be a list for EF Core
-
-    public CancellationPolicy CancellationPolicy => ConfiguredPolicies.CancellationPolicy ?? CancellationPolicy.Default;
+    public string BaseUrl { get; private set; } = null!;
+    public TicketedEventPolicies ConfiguredPolicies { get; private set; } = null!;
+    public string SigningKey { get; private set; } = null!;
     
+    public RegistrationPolicy RegistrationPolicy => ConfiguredPolicies.RegistrationPolicy ?? RegistrationPolicy.Default;
+    public CancellationPolicy CancellationPolicy => ConfiguredPolicies.CancellationPolicy ?? CancellationPolicy.Default;
+
     public static TicketedEvent Create(
         Guid teamId,
         string slug,
@@ -65,8 +59,6 @@ public class TicketedEvent : AggregateRoot
         string website,
         DateTimeOffset startTime,
         DateTimeOffset endTime,
-        DateTimeOffset registrationStartTime,
-        DateTimeOffset registrationEndTime,
         string baseUrl)
     {
         // TODO Additional validations
@@ -77,13 +69,6 @@ public class TicketedEvent : AggregateRoot
         if (endTime < startTime)
             throw new DomainRuleException(DomainRuleError.TicketedEvent.EndTimeMustBeAfterStartTime);
 
-        if (registrationStartTime >= registrationEndTime)
-            throw new DomainRuleException(
-                DomainRuleError.TicketedEvent.RegistrationEndTimeMustBeAfterRegistrationStartTime);
-
-        if (registrationEndTime > startTime)
-            throw new DomainRuleException(DomainRuleError.TicketedEvent.RegistrationMustCloseBeforeEvent);
-
         return new TicketedEvent(
             Guid.NewGuid(),
             teamId,
@@ -92,126 +77,13 @@ public class TicketedEvent : AggregateRoot
             website,
             startTime,
             endTime,
-            registrationStartTime,
-            registrationEndTime,
             baseUrl);
     }
-
-    public void AddTicketType(string slug, string name, string slotName, int maxCapacity)
-    {
-        if (_ticketTypes.Any(t => t.Slug == slug))
-        {
-            throw new DomainRuleException(DomainRuleError.TicketedEvent.TicketTypeAlreadyExists);
-        }
-
-        var ticketType = TicketType.Create(slug, name, slotName, maxCapacity);
-        _ticketTypes.Add(ticketType);
-    }
-
-    public bool HasAvailableCapacity(IEnumerable<TicketSelection> tickets)
-    {
-        return tickets.All(t =>
-            _ticketTypes.Any(tt => tt.Slug == t.TicketTypeSlug && tt.HasAvailableCapacity(t.Quantity)));
-    }
-
-    [Obsolete]
-    public bool HasAvailableCapacity(IDictionary<string, int> tickets)
-    {
-        return tickets.All(t =>
-            _ticketTypes.Any(tt => tt.Slug == t.Key && tt.HasAvailableCapacity(t.Value)));
-    }
-
-    public Guid RegisterAttendee(
-        string email,
-        string firstName,
-        string lastName,
-        IList<AdditionalDetail> additionalDetails,
-        IList<TicketSelection> tickets)
-    {
-        // Ensure that there's enough capacity for the requested tickets.
-        foreach (var ticketSelection in tickets)
-        {
-            var ticketType = _ticketTypes.FirstOrDefault(tt => tt.Slug == ticketSelection.TicketTypeSlug);
-            if (ticketType is null)
-            {
-                throw new DomainRuleException(
-                    DomainRuleError.TicketedEvent.InvalidTicketType(ticketSelection.TicketTypeSlug));
-            }
-            
-            if (!ticketType.HasAvailableCapacity(ticketSelection.Quantity))
-            {
-                throw new DomainRuleException(DomainRuleError.TicketedEvent.CapacityExceeded(ticketType.Slug));
-            }
-        }
-
-        return InviteAttendee(email, firstName, lastName, additionalDetails, tickets);
-    }
     
-    public Guid InviteAttendee(
-        string email,
-        string firstName,
-        string lastName,
-        IList<AdditionalDetail> additionalDetails,
-        IList<TicketSelection> tickets)
+    private static string GenerateHmacKey(int sizeInBytes = 32)
     {
-        if (_attendees.Contains(email))
-        {
-            throw new DomainRuleException(DomainRuleError.TicketedEvent.AttendeeAlreadyRegistered);
-        }
-        
-        if (tickets.Count == 0)
-        {
-            throw new DomainRuleException(DomainRuleError.TicketedEvent.TicketsAreRequired);
-        }
-        
-        foreach (var ticketSelection in tickets)
-        {
-            var ticketType = _ticketTypes.FirstOrDefault(tt => tt.Slug == ticketSelection.TicketTypeSlug);
-            if (ticketType is null)
-            {
-                throw new DomainRuleException(
-                    DomainRuleError.TicketedEvent.InvalidTicketType(ticketSelection.TicketTypeSlug));
-            }
-            
-            ticketType.AllocateTickets(ticketSelection.Quantity);
-        }
-        
-        _attendees.Add(email);
-
-        return AddAttendeeRegisteredDomainEvent(email, firstName, lastName, additionalDetails, tickets);
-    }
-    
-    private Guid AddAttendeeRegisteredDomainEvent(
-        string email,
-        string firstName,
-        string lastName,
-        IList<AdditionalDetail> additionalDetails,
-        IList<TicketSelection> tickets)
-    {
-        var registrationId = Guid.NewGuid();
-        
-        AddDomainEvent(new AttendeeRegisteredDomainEvent(
-            TeamId,
-            Id,
-            registrationId,
-            email,
-            firstName,
-            lastName,
-            additionalDetails,
-            tickets,
-            Version));
-
-        return registrationId;
-    }
-
-    public void RemoveAttendee(string email, IList<TicketSelection> tickets)
-    {
-        _attendees.Remove(email);
-        
-        foreach (var ticketSelection in tickets)
-        {
-            var ticketType = _ticketTypes.FirstOrDefault(tt => tt.Slug == ticketSelection.TicketTypeSlug);
-            ticketType!.ReleaseTickets(ticketSelection.Quantity);
-        }
+        var key = new byte[sizeInBytes]; // 32 bytes = 256-bit key
+        RandomNumberGenerator.Fill(key);
+        return Convert.ToBase64String(key);
     }
 }

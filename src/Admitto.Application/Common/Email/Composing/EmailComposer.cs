@@ -42,6 +42,7 @@ public abstract class EmailComposer(IEmailTemplateService templateService) : IEm
         CancellationToken cancellationToken = default)
     {
         var templateParameters = await GetTemplateParametersAsync(
+            ticketedEventId,
             entityId,
             additionalParameters ?? [],
             cancellationToken);
@@ -64,6 +65,7 @@ public abstract class EmailComposer(IEmailTemplateService templateService) : IEm
     }
 
     protected abstract ValueTask<IEmailParameters> GetTemplateParametersAsync(
+        Guid ticketedEventId,
         Guid entityId,
         Dictionary<string, string> customParameters,
         CancellationToken cancellationToken);
@@ -95,7 +97,12 @@ public abstract class EmailComposer(IEmailTemplateService templateService) : IEm
         var subject = await RenderTemplateAsync(emailTemplate.Subject, templateContext);
         var body = await RenderTemplateAsync(emailTemplate.Body, templateContext);
 
-        return new EmailMessage(templateParameters.Email, subject, body, emailType);
+        return new EmailMessage(
+            templateParameters.Recipient,
+            templateParameters.RecipientType,
+            subject,
+            body,
+            emailType);
     }
 
     private static async ValueTask<string> RenderTemplateAsync(string templateContent, TemplateContext templateContext)

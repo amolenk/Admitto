@@ -1,5 +1,3 @@
-using Amolenk.Admitto.Application.Common.Authorization;
-
 namespace Amolenk.Admitto.Application.UseCases.Email.SendEmail;
 
 /// <summary>
@@ -26,13 +24,13 @@ public static class SendEmailEndpoint
         CancellationToken cancellationToken)
     {
         var (teamId, eventId) =
-            await slugResolver.GetTeamAndTicketedEventsIdsAsync(teamSlug, eventSlug, cancellationToken);
-        
+            await slugResolver.ResolveTeamAndTicketedEventIdsAsync(teamSlug, eventSlug, cancellationToken);
+
         var command = new SendEmailCommand(
-            teamId,
             eventId,
             request.DataEntityId,
-            request.EmailType);
+            request.EmailType,
+            teamId);
         
         messageOutbox.Enqueue(command);
 

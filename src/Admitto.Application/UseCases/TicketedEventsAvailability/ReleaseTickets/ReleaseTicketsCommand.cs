@@ -1,0 +1,8 @@
+using Amolenk.Admitto.Domain.ValueObjects;
+
+namespace Amolenk.Admitto.Application.UseCases.TicketedEventsAvailability.ReleaseTickets;
+
+/// <summary>
+/// Represents a command to release previously claimed tickets from a ticketed event.
+/// </summary>
+public record ReleaseTicketsCommand(Guid TicketedEventId, IList<TicketSelection> Tickets) : Command;

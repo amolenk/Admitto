@@ -1,4 +1,3 @@
-using Amolenk.Admitto.Application.Common.Authorization;
 using Amolenk.Admitto.Domain.Entities;
 using Amolenk.Admitto.Domain.ValueObjects;
 
@@ -31,7 +30,7 @@ public static class SetEventEmailTemplateEndpoint
         CancellationToken cancellationToken)
     {
         var (teamId, eventId) =
-            await slugResolver.GetTeamAndTicketedEventsIdsAsync(teamSlug, eventSlug, cancellationToken);
+            await slugResolver.ResolveTeamAndTicketedEventIdsAsync(teamSlug, eventSlug, cancellationToken);
 
         var emailTemplate = EmailTemplate.Create(
             emailType,

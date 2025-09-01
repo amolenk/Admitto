@@ -21,7 +21,7 @@ public class RegisterTicketedEventHandler(
 
         if (teamSlug is null)
         {
-            throw new ApplicationRuleException(ApplicationRuleError.Team.NotFound(command.TeamId));
+            throw new ApplicationRuleException(ApplicationRuleError.Team.NotFound);
         }
 
         await authorizationService.AddTicketedEventAsync(teamSlug, command.TicketedEventSlug, cancellationToken);

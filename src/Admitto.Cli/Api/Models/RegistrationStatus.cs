@@ -8,6 +8,10 @@ namespace Amolenk.Admitto.Cli.Api.Models
     public enum RegistrationStatus
     #pragma warning restore CS1591
     {
+        [EnumMember(Value = "none")]
+        #pragma warning disable CS1591
+        None,
+        #pragma warning restore CS1591
         [EnumMember(Value = "registered")]
         #pragma warning disable CS1591
         Registered,

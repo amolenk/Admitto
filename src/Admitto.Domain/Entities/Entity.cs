@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+using Amolenk.Admitto.Domain.Contracts;
 
 namespace Amolenk.Admitto.Domain.Entities;
 

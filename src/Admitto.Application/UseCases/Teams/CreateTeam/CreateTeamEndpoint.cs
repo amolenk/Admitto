@@ -1,4 +1,3 @@
-using Amolenk.Admitto.Application.Common.Authorization;
 using Amolenk.Admitto.Application.Common.Cryptography;
 using Amolenk.Admitto.Domain.Entities;
 using Amolenk.Admitto.Domain.ValueObjects;
@@ -23,18 +22,12 @@ public static class CreateTeamEndpoint
     private static Created CreateTeam(
         CreateTeamRequest request,
         IApplicationContext context,
-        ITeamConfigEncryptionService encryptionService,
         CancellationToken cancellationToken)
     {
-        var encryptedEmailServiceConnectionString = encryptionService.Encrypt(request.EmailServiceConnectionString);
-        
-        Console.WriteLine(request.EmailServiceConnectionString);
-        Console.WriteLine(encryptedEmailServiceConnectionString);
-        
-        var team = Team.Create(request.Slug, request.Name, request.Email, encryptedEmailServiceConnectionString);
+        var team = Team.Create(request.Slug, request.Name, request.Email, request.EmailServiceConnectionString);
         
         context.Teams.Add(team);
 
-        return TypedResults.Created($"/teams/{team.Slug}");
+        return TypedResults.Created();
     }
 }

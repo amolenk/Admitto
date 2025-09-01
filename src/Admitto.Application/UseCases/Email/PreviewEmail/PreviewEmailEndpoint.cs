@@ -1,4 +1,3 @@
-using Amolenk.Admitto.Application.Common.Authorization;
 using Amolenk.Admitto.Application.Common.Email;
 using Amolenk.Admitto.Application.Common.Email.Composing;
 using Amolenk.Admitto.Domain.ValueObjects;
@@ -31,7 +30,7 @@ public static class PreviewEmailEndpoint
         CancellationToken cancellationToken)
     {
         var (teamId, ticketedEventId) =
-            await slugResolver.GetTeamAndTicketedEventsIdsAsync(teamSlug, eventSlug, cancellationToken);
+            await slugResolver.ResolveTeamAndTicketedEventIdsAsync(teamSlug, eventSlug, cancellationToken);
 
         var emailComposer = emailComposerRegistry.GetEmailComposer(emailType);
         

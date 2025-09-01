@@ -24,15 +24,6 @@ public class CreateTicketedEventValidator : AbstractValidator<CreateTicketedEven
             .NotEmpty()
             .GreaterThan(x => x.StartTime);
 
-        RuleFor(x => x.RegistrationStartTime)
-            .NotEmpty()
-            .LessThan(x => x.StartTime);
-
-        RuleFor(x => x.RegistrationEndTime)
-            .NotEmpty()
-            .GreaterThan(x => x.RegistrationStartTime)
-            .LessThan(x => x.StartTime);
-
         // RuleForEach(x => x.TicketTypes)
         //     .ChildRules(ticketType =>
         //     {

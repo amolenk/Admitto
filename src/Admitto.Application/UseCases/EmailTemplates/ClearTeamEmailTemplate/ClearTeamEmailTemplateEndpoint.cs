@@ -1,4 +1,3 @@
-using Amolenk.Admitto.Application.Common.Authorization;
 using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Application.UseCases.EmailTemplates.ClearTeamEmailTemplate;
@@ -25,7 +24,7 @@ public static class ClearTeamEmailTemplateEndpoint
         IApplicationContext context,
         CancellationToken cancellationToken)
     {
-        var teamId = await slugResolver.GetTeamIdAsync(teamSlug, cancellationToken);
+        var teamId = await slugResolver.ResolveTeamIdAsync(teamSlug, cancellationToken);
 
         await context.EmailTemplates
             .Where(t => t.TeamId == teamId && t.TicketedEventId == null

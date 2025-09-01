@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Application.Common;
 using Amolenk.Admitto.Application.Common.Email;
 using Amolenk.Admitto.Application.Common.Email.Composing;
 
@@ -5,16 +6,19 @@ namespace Amolenk.Admitto.Application.UseCases.Email.SendEmail;
 
 public class SendEmailHandler(
     IEmailComposerRegistry emailComposerRegistry,
-    IEmailDispatcher emailDispatcher)
+    IEmailDispatcher emailDispatcher,
+    IApplicationContext context)
     : ICommandHandler<SendEmailCommand>
 {
     public async ValueTask HandleAsync(SendEmailCommand command, CancellationToken cancellationToken)
     {
+        var teamId = command.TeamId ?? await GetTeamIdAsync(command.TicketedEventId, cancellationToken);
+        
         var emailComposer = emailComposerRegistry.GetEmailComposer(command.EmailType);
 
         var emailMessage = await emailComposer.ComposeMessageAsync(
             command.EmailType,
-            command.TeamId,
+            teamId,
             command.TicketedEventId,
             command.DataEntityId,
             command.AdditionalParameters,
@@ -22,9 +26,25 @@ public class SendEmailHandler(
 
         await emailDispatcher.DispatchEmailAsync(
             emailMessage,
-            command.TeamId,
+            teamId,
             command.TicketedEventId,
             command.CommandId,
             cancellationToken: cancellationToken);
+    }
+
+    private async ValueTask<Guid> GetTeamIdAsync(Guid ticketedEventId, CancellationToken cancellationToken)
+    {
+        var teamId = await context.TicketedEvents
+            .AsNoTracking()
+            .Where(te => te.Id == ticketedEventId)
+            .Select(te => te.TeamId)
+            .FirstOrDefaultAsync(cancellationToken);
+        
+        if (teamId == Guid.Empty)
+        {
+            throw new ApplicationRuleException(ApplicationRuleError.TicketedEvent.NotFound);
+        }
+        
+        return teamId;
     }
 }
