@@ -10,7 +10,7 @@ public static class GetEventEmailTemplatesEndpoint
     public static RouteGroupBuilder MapGetEventEmailTemplates(this RouteGroupBuilder group)
     {
         group
-            .MapGet("/teams/{teamSlug}/events/{eventSlug}/email-templates", GetEventEmailTemplates)
+            .MapGet("/events/{eventSlug}/email-templates", GetEventEmailTemplates)
             .WithName(nameof(GetEventEmailTemplates))
             .RequireAuthorization(policy => policy.RequireCanViewEvent());
 

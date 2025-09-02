@@ -52,8 +52,8 @@ public class TicketEmailComposer(
                 x.Attendee.LastName,
                 x.Attendee.AdditionalDetails,
                 x.Attendee.Tickets,
+                x.Attendee.ParticipantId,
                 x.Participant.PublicId,
-                ParticipantId = x.Participant.Id
             })
             .FirstOrDefaultAsync(cancellationToken);
 

@@ -28,18 +28,25 @@ public class BulkEmailWorkItemEntityConfiguration : IEntityTypeConfiguration<Bul
             .IsRequired()
             .HasMaxLength(ColumnMaxLength.EmailType);
 
-        builder.Property(e => e.EarliestSendTime)
-            .HasColumnName("earliest_send_time")
-            .IsRequired();
-
-        builder.Property(e => e.LatestSendTime)
-            .HasColumnName("latest_send_time")
-            .IsRequired();
+        builder.OwnsOne(
+            e => e.Repeat,
+            b =>
+            {
+                b.ToJson("repeat");
+            });
 
         builder.Property(e => e.Status)
             .HasColumnName("status")
             .HasConversion<string>()
             .HasMaxLength(32)
             .IsRequired();
+
+        builder.Property(e => e.Error)
+            .HasColumnName("error")
+            .HasMaxLength(255)
+            .IsRequired(false);
+
+        builder.Property(e => e.LastRunAt)
+            .HasColumnName("last_run_at");
     }
 }

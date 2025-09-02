@@ -1,3 +1,4 @@
 namespace Amolenk.Admitto.Domain.DomainEvents;
 
-public record TicketedEventCreatedDomainEvent(Guid TeamId, string TicketedEventSlug) : DomainEvent;
+public record TicketedEventCreatedDomainEvent(Guid TeamId, Guid TicketedEventId, string TicketedEventSlug)
+    : DomainEvent;

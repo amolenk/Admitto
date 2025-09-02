@@ -15,7 +15,7 @@ public static class TestEmailEndpoint
     public static RouteGroupBuilder MapTestEmail(this RouteGroupBuilder group)
     {
         group
-            .MapPost("/teams/{teamSlug}/events/{eventSlug}/emails/{emailType}/test", TestEmail)
+            .MapPost("/{emailType}/test", TestEmail)
             .WithName(nameof(TestEmail))
             .RequireAuthorization(policy => policy.RequireCanUpdateEvent());
 

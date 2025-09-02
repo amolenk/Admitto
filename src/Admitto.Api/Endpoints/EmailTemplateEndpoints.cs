@@ -12,7 +12,7 @@ public static class EmailTemplateEndpoints
 {
     public static void MapEmailTemplateEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/")
+        var group = app.MapGroup("/teams/{teamSlug}")
             .WithTags("Email Templates")
             .AddEndpointFilter<ValidationFilter>()
             .AddEndpointFilter<UnitOfWorkFilter>()

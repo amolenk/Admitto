@@ -10,7 +10,7 @@ public static class ClearEventEmailTemplateEndpoint
     public static RouteGroupBuilder MapClearEventEmailTemplate(this RouteGroupBuilder group)
     {
         group
-            .MapDelete("/teams/{teamSlug}/events/{eventSlug}/email-templates/{emailType}", ClearEventEmailTemplate)
+            .MapDelete("/events/{eventSlug}/email-templates/{emailType}", ClearEventEmailTemplate)
             .WithName(nameof(ClearEventEmailTemplate))
             .RequireAuthorization(policy => policy.RequireCanUpdateEvent());
 

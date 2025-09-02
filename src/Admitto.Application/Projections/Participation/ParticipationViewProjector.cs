@@ -157,6 +157,7 @@ public class ParticipationViewProjector(IApplicationContext context)
             {
                 ParticipantId = participantId,
                 PublicId = participant.PublicId,
+                TeamId = participant.TeamId,
                 TicketedEventId = eventId
             };
 

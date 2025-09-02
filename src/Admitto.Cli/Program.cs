@@ -66,7 +66,7 @@ app.Configure(config =>
             attendee.AddCommand<CancelCommand>("cancel")
                 .WithDescription("Cancel an attendee registration");
             
-            attendee.AddCommand<ListCommand>("list")
+            attendee.AddCommand<Commands.Attendee.ListCommand>("list")
                 .WithDescription("List all attendee registrations");
 
             attendee.AddCommand<ReconfirmCommand>("reconfirm")
@@ -130,6 +130,22 @@ app.Configure(config =>
         {
             email.SetDescription("Manage emails");
             
+            email.AddBranch(
+                "bulk",
+                bulk =>
+                {
+                    bulk.SetDescription("Manage bulk emails");
+
+                    bulk.AddCommand<Commands.Email.Bulk.ListCommand>("list")
+                        .WithDescription("List all bulk emails");
+
+                    bulk.AddCommand<Commands.Email.Bulk.RemoveCommand>("remove")
+                        .WithDescription("Removes a scheduled bulk email");
+
+                    bulk.AddCommand<Commands.Email.Bulk.ScheduleCommand>("schedule")
+                        .WithDescription("Schedule a bulk email");
+                });
+            
             // email.AddBranch(
             //     "send",
             //     sendEmail =>
@@ -151,8 +167,6 @@ app.Configure(config =>
             //             });
             //     });
 
-            email.AddCommand<ScheduleBulkEmailCommand>("bulk")
-                .WithDescription("Schedule a bulk email");
             
             email.AddBranch(
                 "template",
@@ -235,6 +249,26 @@ app.Configure(config =>
 
                     ticketType.AddCommand<AddTicketTypeCommand>("add")
                         .WithDescription("Add a ticket type");
+                });
+            
+            ticketedEvent.AddBranch(
+                "policy",
+                policy =>
+                {
+                    policy.SetDescription("Manage event policies");
+
+                    policy.AddBranch(
+                        "reconfirm",
+                        reconfirm =>
+                        {
+                            reconfirm.SetDescription("Manage reconfirm policy");
+
+                            reconfirm.AddCommand<Commands.Events.Policy.Reconfirm.ClearCommand>("clear")
+                                .WithDescription("Clear the reconfirm policy");
+                            
+                            reconfirm.AddCommand<Commands.Events.Policy.Reconfirm.SetCommand>("set")
+                                .WithDescription("Set the reconfirm policy");
+                        });
                 });
         });
     

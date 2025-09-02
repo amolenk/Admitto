@@ -248,6 +248,10 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("public_id");
 
+                    b.Property<Guid>("TeamId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("team_id");
+
                     b.Property<Guid>("TicketedEventId")
                         .HasColumnType("uuid")
                         .HasColumnName("event_id");
@@ -334,15 +338,16 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
-                    b.Property<DateTimeOffset>("EarliestSendTime")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("earliest_send_time");
-
                     b.Property<string>("EmailType")
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)")
                         .HasColumnName("email_type");
+
+                    b.Property<string>("Error")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("error");
 
                     b.Property<DateTimeOffset>("LastChangedAt")
                         .HasColumnType("timestamp with time zone")
@@ -353,9 +358,9 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(50)")
                         .HasColumnName("last_changed_by");
 
-                    b.Property<DateTimeOffset>("LatestSendTime")
+                    b.Property<DateTimeOffset?>("LastRunAt")
                         .HasColumnType("timestamp with time zone")
-                        .HasColumnName("latest_send_time");
+                        .HasColumnName("last_run_at");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -527,6 +532,10 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("PublicId")
                         .HasColumnType("uuid")
                         .HasColumnName("public_id");
+
+                    b.Property<Guid>("TeamId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("team_id");
 
                     b.Property<Guid>("TicketedEventId")
                         .HasColumnType("uuid")
@@ -817,6 +826,32 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                     b.Navigation("Tickets");
                 });
 
+            modelBuilder.Entity("Amolenk.Admitto.Domain.Entities.BulkEmailWorkItem", b =>
+                {
+                    b.OwnsOne("Amolenk.Admitto.Domain.ValueObjects.BulkEmailWorkItemRepeat", "Repeat", b1 =>
+                        {
+                            b1.Property<Guid>("BulkEmailWorkItemId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<DateTimeOffset>("WindowEnd")
+                                .HasColumnType("timestamp with time zone");
+
+                            b1.Property<DateTimeOffset>("WindowStart")
+                                .HasColumnType("timestamp with time zone");
+
+                            b1.HasKey("BulkEmailWorkItemId");
+
+                            b1.ToTable("bulk_email_work_items");
+
+                            b1.ToJson("repeat");
+
+                            b1.WithOwner()
+                                .HasForeignKey("BulkEmailWorkItemId");
+                        });
+
+                    b.Navigation("Repeat");
+                });
+
             modelBuilder.Entity("Amolenk.Admitto.Domain.Entities.Contributor", b =>
                 {
                     b.OwnsMany("Amolenk.Admitto.Domain.ValueObjects.AdditionalDetail", "AdditionalDetails", b1 =>
@@ -910,98 +945,102 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
 
             modelBuilder.Entity("Amolenk.Admitto.Domain.Entities.TicketedEvent", b =>
                 {
-                    b.OwnsOne("Amolenk.Admitto.Domain.ValueObjects.TicketedEventPolicies", "ConfiguredPolicies", b1 =>
+                    b.OwnsOne("Amolenk.Admitto.Domain.ValueObjects.CancellationPolicy", "CancellationPolicy", b1 =>
                         {
                             b1.Property<Guid>("TicketedEventId")
                                 .HasColumnType("uuid");
+
+                            b1.Property<TimeSpan>("CutoffBeforeEvent")
+                                .HasColumnType("interval");
 
                             b1.HasKey("TicketedEventId");
 
                             b1.ToTable("ticketed_events");
 
-                            b1.ToJson("policies");
+                            b1.ToJson("cancellation_policy");
 
                             b1.WithOwner()
                                 .HasForeignKey("TicketedEventId");
-
-                            b1.OwnsOne("Amolenk.Admitto.Domain.ValueObjects.CancellationPolicy", "CancellationPolicy", b2 =>
-                                {
-                                    b2.Property<Guid>("TicketedEventPoliciesTicketedEventId")
-                                        .HasColumnType("uuid");
-
-                                    b2.Property<TimeSpan>("LateCancellationTime")
-                                        .HasColumnType("interval");
-
-                                    b2.HasKey("TicketedEventPoliciesTicketedEventId");
-
-                                    b2.ToTable("ticketed_events");
-
-                                    b2.ToJson("CancellationPolicy");
-
-                                    b2.WithOwner()
-                                        .HasForeignKey("TicketedEventPoliciesTicketedEventId");
-                                });
-
-                            b1.OwnsOne("Amolenk.Admitto.Domain.ValueObjects.ReconfirmPolicy", "ReconfirmPolicy", b2 =>
-                                {
-                                    b2.Property<Guid>("TicketedEventPoliciesTicketedEventId")
-                                        .HasColumnType("uuid");
-
-                                    b2.Property<TimeSpan>("Frequency")
-                                        .HasColumnType("interval");
-
-                                    b2.Property<TimeSpan>("InitialDelay")
-                                        .HasColumnType("interval");
-
-                                    b2.Property<TimeSpan>("WindowEnd")
-                                        .HasColumnType("interval");
-
-                                    b2.Property<TimeSpan>("WindowStart")
-                                        .HasColumnType("interval");
-
-                                    b2.HasKey("TicketedEventPoliciesTicketedEventId");
-
-                                    b2.ToTable("ticketed_events");
-
-                                    b2.ToJson("ReconfirmPolicy");
-
-                                    b2.WithOwner()
-                                        .HasForeignKey("TicketedEventPoliciesTicketedEventId");
-                                });
-
-                            b1.OwnsOne("Amolenk.Admitto.Domain.ValueObjects.RegistrationPolicy", "RegistrationPolicy", b2 =>
-                                {
-                                    b2.Property<Guid>("TicketedEventPoliciesTicketedEventId")
-                                        .HasColumnType("uuid");
-
-                                    b2.Property<TimeSpan>("ClosesBeforeEvent")
-                                        .HasColumnType("interval");
-
-                                    b2.Property<string>("EmailDomainName")
-                                        .HasColumnType("text");
-
-                                    b2.Property<TimeSpan>("OpensBeforeEvent")
-                                        .HasColumnType("interval");
-
-                                    b2.HasKey("TicketedEventPoliciesTicketedEventId");
-
-                                    b2.ToTable("ticketed_events");
-
-                                    b2.ToJson("RegistrationPolicy");
-
-                                    b2.WithOwner()
-                                        .HasForeignKey("TicketedEventPoliciesTicketedEventId");
-                                });
-
-                            b1.Navigation("CancellationPolicy");
-
-                            b1.Navigation("ReconfirmPolicy");
-
-                            b1.Navigation("RegistrationPolicy");
                         });
 
-                    b.Navigation("ConfiguredPolicies")
+                    b.OwnsOne("Amolenk.Admitto.Domain.ValueObjects.ReconfirmPolicy", "ReconfirmPolicy", b1 =>
+                        {
+                            b1.Property<Guid>("TicketedEventId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<TimeSpan>("InitialDelayAfterRegistration")
+                                .HasColumnType("interval");
+
+                            b1.Property<TimeSpan>("ReminderInterval")
+                                .HasColumnType("interval");
+
+                            b1.Property<TimeSpan>("WindowEndBeforeEvent")
+                                .HasColumnType("interval");
+
+                            b1.Property<TimeSpan>("WindowStartBeforeEvent")
+                                .HasColumnType("interval");
+
+                            b1.HasKey("TicketedEventId");
+
+                            b1.ToTable("ticketed_events");
+
+                            b1.ToJson("reconfirm_policy");
+
+                            b1.WithOwner()
+                                .HasForeignKey("TicketedEventId");
+                        });
+
+                    b.OwnsOne("Amolenk.Admitto.Domain.ValueObjects.RegistrationPolicy", "RegistrationPolicy", b1 =>
+                        {
+                            b1.Property<Guid>("TicketedEventId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<TimeSpan>("ClosesBeforeEvent")
+                                .HasColumnType("interval");
+
+                            b1.Property<string>("EmailDomainName")
+                                .HasColumnType("text");
+
+                            b1.Property<TimeSpan>("OpensBeforeEvent")
+                                .HasColumnType("interval");
+
+                            b1.HasKey("TicketedEventId");
+
+                            b1.ToTable("ticketed_events");
+
+                            b1.ToJson("registration_policy");
+
+                            b1.WithOwner()
+                                .HasForeignKey("TicketedEventId");
+                        });
+
+                    b.OwnsOne("Amolenk.Admitto.Domain.ValueObjects.ReminderPolicy", "ReminderPolicy", b1 =>
+                        {
+                            b1.Property<Guid>("TicketedEventId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<TimeSpan>("LeadTime")
+                                .HasColumnType("interval");
+
+                            b1.HasKey("TicketedEventId");
+
+                            b1.ToTable("ticketed_events");
+
+                            b1.ToJson("reminder_policy");
+
+                            b1.WithOwner()
+                                .HasForeignKey("TicketedEventId");
+                        });
+
+                    b.Navigation("CancellationPolicy")
                         .IsRequired();
+
+                    b.Navigation("ReconfirmPolicy");
+
+                    b.Navigation("RegistrationPolicy")
+                        .IsRequired();
+
+                    b.Navigation("ReminderPolicy");
                 });
 
             modelBuilder.Entity("Amolenk.Admitto.Domain.Entities.TicketedEventAvailability", b =>

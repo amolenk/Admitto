@@ -13,7 +13,6 @@ public interface IEmailDispatcher
         Guid teamId,
         Guid ticketedEventId,
         Guid idempotencyKey,
-        Guid? participantId = null,
         CancellationToken cancellationToken = default);
 
     ValueTask DispatchEmailsAsync(
@@ -21,7 +20,6 @@ public interface IEmailDispatcher
         Guid teamId,
         Guid ticketedEventId,
         Guid idempotencyKey,
-        Guid? participantId = null,
         CancellationToken cancellationToken = default);
 }
 
@@ -52,7 +50,6 @@ public class EmailDispatcher(
         Guid teamId,
         Guid ticketedEventId,
         Guid idempotencyKey,
-        Guid? participantId = null,
         CancellationToken cancellationToken = default)
     {
         using var emailSender = await GetEmailSenderAsync(teamId);
@@ -63,7 +60,6 @@ public class EmailDispatcher(
             teamId,
             ticketedEventId,
             idempotencyKey,
-            participantId,
             cancellationToken);
     }
 
@@ -72,7 +68,6 @@ public class EmailDispatcher(
         Guid teamId,
         Guid ticketedEventId,
         Guid idempotencyKey,
-        Guid? participantId = null,
         CancellationToken cancellationToken = default)
     {
         using var emailSender = await GetEmailSenderAsync(teamId);
@@ -85,7 +80,6 @@ public class EmailDispatcher(
                 teamId,
                 ticketedEventId,
                 idempotencyKey,
-                participantId,
                 cancellationToken);
 
             // Commit after each email to avoid losing progress in case of an error
@@ -121,7 +115,6 @@ public class EmailDispatcher(
         Guid teamId,
         Guid ticketedEventId,
         Guid idempotencyKey,
-        Guid? participantId = null,
         CancellationToken cancellationToken = default)
     {
         // If this is a test email message, send it without checking for duplicates or logging the result.
@@ -174,13 +167,13 @@ public class EmailDispatcher(
         context.EmailLog.Add(emailLog);
         
         // If the email is for an existing participant, raise an application event to notify other parts of the system.
-        if (participantId is not null)
+        if (emailMessage.ParticipantId is not null)
         {
             messageOutbox.Enqueue(
                 new EmailSentApplicationEvent(
                     teamId,
                     ticketedEventId,
-                    participantId.Value,
+                    emailMessage.ParticipantId.Value,
                     emailMessage.Recipient,
                     emailMessage.Subject,
                     emailMessage.EmailType,

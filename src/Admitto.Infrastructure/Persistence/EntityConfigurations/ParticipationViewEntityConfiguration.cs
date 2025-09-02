@@ -20,6 +20,10 @@ public class ParticipationViewEntityConfiguration : IEntityTypeConfiguration<Par
             .HasColumnName("public_id")
             .IsRequired();
 
+        builder.Property(e => e.TeamId)
+            .HasColumnName("team_id")
+            .IsRequired();
+
         builder.Property(e => e.TicketedEventId)
             .HasColumnName("event_id")
             .IsRequired();

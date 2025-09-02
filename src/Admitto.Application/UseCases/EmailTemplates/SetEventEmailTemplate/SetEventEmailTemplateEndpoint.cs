@@ -12,7 +12,7 @@ public static class SetEventEmailTemplateEndpoint
     {
         group
             .MapPut(
-                "/teams/{teamSlug}/events/{eventSlug}/email-templates/{emailType}",
+                "/events/{eventSlug}/email-templates/{emailType}",
                 SetEventEmailTemplate)
             .WithName(nameof(SetEventEmailTemplate))
             .RequireAuthorization(policy => policy.RequireCanUpdateEvent());

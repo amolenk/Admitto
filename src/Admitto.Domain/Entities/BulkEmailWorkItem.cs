@@ -17,66 +17,80 @@ public class BulkEmailWorkItem : Aggregate
         Guid teamId,
         Guid eventId,
         string emailType,
-        DateTimeOffset earliestSendTime,
-        DateTimeOffset latestSendTime)
+        BulkEmailWorkItemRepeat? repeat)
         : base(id)
     {
         TeamId = teamId;
         TicketedEventId = eventId;
         EmailType = emailType;
-        EarliestSendTime = earliestSendTime;
-        LatestSendTime = latestSendTime;
+        Repeat = repeat;
         Status = BulkEmailWorkItemStatus.Pending;
     }
 
     public Guid TeamId { get; private set; }
     public Guid TicketedEventId { get; private set; }
     public string EmailType { get; private set; } = null!;
-    public DateTimeOffset EarliestSendTime { get; private set; }
-    public DateTimeOffset LatestSendTime { get; private set; }
+    public BulkEmailWorkItemRepeat? Repeat { get; private set; }
     public BulkEmailWorkItemStatus Status { get; private set; }
+    public DateTimeOffset? LastRunAt { get; private set; }
+    public string? Error { get; private set; }
 
     public static BulkEmailWorkItem Create(
         Guid teamId,
         Guid eventId,
         string emailType,
-        DateTimeOffset earliestSendTime,
-        DateTimeOffset latestSendTime)
+        BulkEmailWorkItemRepeat? repeat)
     {
         return new BulkEmailWorkItem(
             Guid.NewGuid(),
             teamId,
             eventId,
             emailType,
-            earliestSendTime,
-            latestSendTime);
+            repeat);
     }
 
-    public bool TryStart()
+    public bool TryStart(DateTimeOffset now)
     {
-        if (Status is BulkEmailWorkItemStatus.Completed or BulkEmailWorkItemStatus.TimedOut)
-        {
-            return false;
-        }
-        
-        if (LatestSendTime < DateTimeOffset.UtcNow)
-        {
-            // We're too late, mark as timed out.
-            Status = BulkEmailWorkItemStatus.TimedOut;
-            return false;
-        }
-
-        if (EarliestSendTime >= DateTimeOffset.UtcNow)
+        if (Status is BulkEmailWorkItemStatus.Completed)
         {
             return false;
         }
 
+        if (Repeat is not null && Status == BulkEmailWorkItemStatus.PendingRepeat)
+        {
+            if (now < Repeat.WindowStart)
+            {
+                return false;
+            }
+
+            if (now > Repeat.WindowEnd)
+            {
+                if (LastRunAt is null)
+                {
+                    Status = BulkEmailWorkItemStatus.Error;
+                    Error = "The job could not be started within the scheduled window.";
+                }
+                else
+                {
+                    Status = BulkEmailWorkItemStatus.Completed;
+                }
+                return false;
+            }
+        }
+
+        LastRunAt = now;
         Status = BulkEmailWorkItemStatus.Running;
         return true;
     }
     
-    public void MarkAsCompleted()
+    public void Complete()
     {
-        Status = BulkEmailWorkItemStatus.Completed;
+        Status = Repeat is not null ? BulkEmailWorkItemStatus.PendingRepeat : BulkEmailWorkItemStatus.Completed;
+    }
+
+    public void Fail(Exception exception)
+    {
+        Error = exception.Message;
+        Status = BulkEmailWorkItemStatus.Error;
     }
 }

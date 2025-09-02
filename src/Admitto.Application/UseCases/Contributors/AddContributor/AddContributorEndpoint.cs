@@ -29,17 +29,19 @@ public static class AddContributorEndpoint
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
-        var eventId = await slugResolver.ResolveTicketedEventIdAsync(teamSlug, eventSlug, cancellationToken);
-        
+        var (teamId, eventId) =
+            await slugResolver.ResolveTeamAndTicketedEventIdsAsync(teamSlug, eventSlug, cancellationToken);
+
         // First get or create a participant. A participant may already exist if the same person is also
         // an attendee of the event.
         var participant = await GetOrCreateParticipantAsync(
+            teamId,
             eventId,
             request.Email,
             context,
             unitOfWork,
             cancellationToken);
-        
+
         var contributor = Contributor.Create(
             eventId,
             participant.Id,
@@ -50,14 +52,15 @@ public static class AddContributorEndpoint
             request.Roles.Select(dto => ContributorRole.Parse(dto.Name)));
 
         context.Contributors.Add(contributor);
-        
+
         // Set a more detailed error for unique violation.
         unitOfWork.UniqueViolationError = ApplicationRuleError.Contributor.AlreadyExists;
 
         return TypedResults.Ok(new AddContributorResponse(contributor.Id));
     }
-    
+
     private static async ValueTask<Participant> GetOrCreateParticipantAsync(
+        Guid teamId,
         Guid eventId,
         string email,
         IApplicationContext context,
@@ -65,14 +68,14 @@ public static class AddContributorEndpoint
         CancellationToken cancellationToken)
     {
         var emailNormalized = email.NormalizeEmail();
-        
+
         var participant = await context.Participants.SingleOrDefaultAsync(
             p => p.TicketedEventId == eventId && p.Email == emailNormalized,
             cancellationToken);
-        
+
         if (participant is not null) return participant;
 
-        participant = Participant.Create(eventId, emailNormalized);
+        participant = Participant.Create(teamId, eventId, emailNormalized);
 
         context.Participants.Add(participant);
 

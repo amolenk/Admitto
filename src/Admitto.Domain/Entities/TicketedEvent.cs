@@ -32,11 +32,11 @@ public class TicketedEvent : Aggregate
         StartTime = startTime;
         EndTime = endTime;
         BaseUrl = baseUrl;
-        ConfiguredPolicies = new TicketedEventPolicies();
+        CancellationPolicy = CancellationPolicy.Default;
+        RegistrationPolicy = RegistrationPolicy.Default;
         SigningKey = GenerateHmacKey(32);
-        
 
-        AddDomainEvent(new TicketedEventCreatedDomainEvent(teamId, slug));
+        AddDomainEvent(new TicketedEventCreatedDomainEvent(teamId, Id, slug));
     }
 
     public Guid TeamId { get; private set; }
@@ -46,12 +46,11 @@ public class TicketedEvent : Aggregate
     public DateTimeOffset StartTime { get; private set; }
     public DateTimeOffset EndTime { get; private set; }
     public string BaseUrl { get; private set; } = null!;
-    public TicketedEventPolicies ConfiguredPolicies { get; private set; } = null!;
+    public CancellationPolicy CancellationPolicy { get; private set; } = null!;
+    public ReconfirmPolicy? ReconfirmPolicy { get; private set; }
+    public RegistrationPolicy RegistrationPolicy { get; private set; } = null!;
+    public ReminderPolicy? ReminderPolicy { get; private set; }
     public string SigningKey { get; private set; } = null!;
-
-    public CancellationPolicy CancellationPolicy => ConfiguredPolicies.CancellationPolicy ?? CancellationPolicy.Default;
-    public ReconfirmPolicy ReconfirmPolicy => ConfiguredPolicies.ReconfirmPolicy ?? ReconfirmPolicy.Default;
-    public RegistrationPolicy RegistrationPolicy => ConfiguredPolicies.RegistrationPolicy ?? RegistrationPolicy.Default;
 
     public static TicketedEvent Create(
         Guid teamId,
@@ -80,7 +79,27 @@ public class TicketedEvent : Aggregate
             endTime,
             baseUrl);
     }
-    
+
+    public void SetCancellationPolicy(CancellationPolicy policy)
+    {
+        CancellationPolicy = policy;
+    }
+
+    public void SetReconfirmPolicy(ReconfirmPolicy? policy)
+    {
+        ReconfirmPolicy = policy;
+    }
+
+    public void SetRegistrationPolicy(RegistrationPolicy policy)
+    {
+        RegistrationPolicy = policy;
+    }
+
+    public void SetReminderPolicy(ReminderPolicy? policy)
+    {
+        ReminderPolicy = policy;
+    }
+
     private static string GenerateHmacKey(int sizeInBytes = 32)
     {
         var key = new byte[sizeInBytes]; // 32 bytes = 256-bit key

@@ -9,7 +9,7 @@ namespace Amolenk.Admitto.Application.Common.Abstractions;
 public interface IApplicationContext
 {
     DbSet<Attendee> Attendees { get; }
-    DbSet<BulkEmailWorkItem> BulkEmailJobs { get; }
+    DbSet<BulkEmailWorkItem> BulkEmailWorkItems { get; }
     DbSet<Contributor> Contributors { get; }
     DbSet<EmailLog> EmailLog { get; }
     DbSet<EmailTemplate> EmailTemplates { get; }

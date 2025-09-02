@@ -4,6 +4,8 @@ public class ParticipationView
 {
     public required Guid ParticipantId { get; init; }
     
+    public required Guid TeamId { get; init; }
+    
     public required Guid TicketedEventId { get; init; }
 
     public required Guid PublicId { get; init; }

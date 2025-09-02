@@ -1,6 +1,6 @@
 using Amolenk.Admitto.Domain.Entities;
 
-namespace Amolenk.Admitto.Application.UseCases.Email.ScheduleBulkEmail;
+namespace Amolenk.Admitto.Application.UseCases.BulkEmail.ScheduleBulkEmail;
 
 public class ScheduleBulkEmailHandler(IApplicationContext context) : ICommandHandler<ScheduleBulkEmailCommand>
 {
@@ -10,10 +10,9 @@ public class ScheduleBulkEmailHandler(IApplicationContext context) : ICommandHan
             command.TeamId,
             command.TicketedEventId,
             command.EmailType,
-            command.EarliestSendTime,
-            command.LatestSendTime);
+            command.Repeat);
 
-        context.BulkEmailJobs.Add(bulkEmailJob);
+        context.BulkEmailWorkItems.Add(bulkEmailJob);
 
         return ValueTask.CompletedTask;
     }

@@ -13,6 +13,7 @@ builder.AddDefaultInfrastructureServices();
 
 var app = builder.Build();
 
+// TODO Only support this in Debug mode
 app.MapPost("/jobs/{jobType}/run", (string jobType, IServiceProvider services) =>
 {
     _ = Task.Run(() => RunJobAsync(jobType, services, CancellationToken.None));

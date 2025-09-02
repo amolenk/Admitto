@@ -78,6 +78,7 @@ if (app.Environment.IsDevelopment())
 
 app.MapDefaultEndpoints();
 app.MapAttendeeEndpoints();
+app.MapBulkEmailEndpoints();
 app.MapContributorEndpoints();
 app.MapEmailEndpoints();
 app.MapEmailTemplateEndpoints();
