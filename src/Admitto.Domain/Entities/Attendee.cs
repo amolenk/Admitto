@@ -103,8 +103,10 @@ public class Attendee : Aggregate
             throw new DomainRuleException(DomainRuleError.Attendee.CannotReconfirmInStatus(RegistrationStatus));
         }
 
-        RegistrationStatus = RegistrationStatus.Reconfirmed;
+        if (RegistrationStatus == RegistrationStatus.Reconfirmed) return;
         
+        RegistrationStatus = RegistrationStatus.Reconfirmed;
+
         AddDomainEvent(new AttendeeReconfirmedDomainEvent(TicketedEventId, ParticipantId, Id));
     }
 
