@@ -14,8 +14,6 @@ namespace Amolenk.Admitto.Cli.Api.Models
     {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
-        /// <summary>The earliestSendTime property</summary>
-        public DateTimeOffset? EarliestSendTime { get; set; }
         /// <summary>The emailType property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
@@ -24,8 +22,14 @@ namespace Amolenk.Admitto.Cli.Api.Models
 #else
         public string EmailType { get; set; }
 #endif
-        /// <summary>The latestSendTime property</summary>
-        public DateTimeOffset? LatestSendTime { get; set; }
+        /// <summary>The repeat property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public global::Amolenk.Admitto.Cli.Api.Models.RepeatDto? Repeat { get; set; }
+#nullable restore
+#else
+        public global::Amolenk.Admitto.Cli.Api.Models.RepeatDto Repeat { get; set; }
+#endif
         /// <summary>
         /// Instantiates a new <see cref="global::Amolenk.Admitto.Cli.Api.Models.ScheduleBulkEmailRequest"/> and sets the default values.
         /// </summary>
@@ -51,9 +55,8 @@ namespace Amolenk.Admitto.Cli.Api.Models
         {
             return new Dictionary<string, Action<IParseNode>>
             {
-                { "earliestSendTime", n => { EarliestSendTime = n.GetDateTimeOffsetValue(); } },
                 { "emailType", n => { EmailType = n.GetStringValue(); } },
-                { "latestSendTime", n => { LatestSendTime = n.GetDateTimeOffsetValue(); } },
+                { "repeat", n => { Repeat = n.GetObjectValue<global::Amolenk.Admitto.Cli.Api.Models.RepeatDto>(global::Amolenk.Admitto.Cli.Api.Models.RepeatDto.CreateFromDiscriminatorValue); } },
             };
         }
         /// <summary>
@@ -63,9 +66,8 @@ namespace Amolenk.Admitto.Cli.Api.Models
         public virtual void Serialize(ISerializationWriter writer)
         {
             _ = writer ?? throw new ArgumentNullException(nameof(writer));
-            writer.WriteDateTimeOffsetValue("earliestSendTime", EarliestSendTime);
             writer.WriteStringValue("emailType", EmailType);
-            writer.WriteDateTimeOffsetValue("latestSendTime", LatestSendTime);
+            writer.WriteObjectValue<global::Amolenk.Admitto.Cli.Api.Models.RepeatDto>("repeat", Repeat);
             writer.WriteAdditionalData(AdditionalData);
         }
     }

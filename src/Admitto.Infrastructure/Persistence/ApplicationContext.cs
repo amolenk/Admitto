@@ -15,7 +15,7 @@ namespace Amolenk.Admitto.Infrastructure.Persistence;
 public class ApplicationContext(DbContextOptions options, IDataProtectionProvider dataProtectionProvider)
     : DbContext(options), IApplicationContext
 {
-    public DbSet<BulkEmailWorkItem> BulkEmailJobs { get; set; } = null!;
+    public DbSet<BulkEmailWorkItem> BulkEmailWorkItems { get; set; } = null!;
     public DbSet<Attendee> Attendees { get; set; } = null!;
     public DbSet<Contributor> Contributors { get; set; } = null!;
     public DbSet<EmailLog> EmailLog { get; set; } = null!;

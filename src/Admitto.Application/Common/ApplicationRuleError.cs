@@ -1,3 +1,5 @@
+using Amolenk.Admitto.Domain.ValueObjects;
+
 namespace Amolenk.Admitto.Application.Common;
 
 /// <summary>
@@ -28,7 +30,17 @@ public sealed class ApplicationRuleError
             new("attendee.invalid_signature", "Signature is invalid.");
         
         public static ApplicationRuleError NotFound =>
-            new("attendee.not_found", $"Registration not found.");
+            new("attendee.not_found", "Attendee not found.");
+    }
+    
+    public static class BulkEmail
+    {
+        public static ApplicationRuleError WorkItemNotFound =>
+            new("bulk_email.work_item_not_found", "Bulk email work item not found.");
+        
+        public static ApplicationRuleError CannotRemoveWorkItemInStatus(BulkEmailWorkItemStatus status) => new(
+            "bulk_email.cannot_remove_work_item_in_status",
+            $"Cannot remove bulk email work item with status '{status}'.");
     }
     
     public static class Signing
@@ -99,6 +111,10 @@ public sealed class ApplicationRuleError
     {
         public static ApplicationRuleError NotFound =>
             new("event.not_found", $"Ticketed event does not exist.");
+        
+        public static ApplicationRuleError ReconfirmPolicyNotSet =>
+            new("event.reconfirm_policy_not_set", $"Reconfirm policy not set.");
+
     }
     
 }

@@ -1,6 +1,7 @@
 using System.Data.Common;
 using System.Net;
 using Admitto.AppHost.Extensions.AzureServiceBus;
+using Amolenk.Admitto.Application.Jobs;
 using Aspire.Hosting.Azure;
 
 var builder = DistributedApplication.CreateBuilder(args);
@@ -28,7 +29,7 @@ var jobRunner = builder.AddProject<Projects.Admitto_JobRunner>("job-runner")
     .WithReference(postgresDb).WaitFor(postgresDb)
     .WithReference(serviceBus).WaitFor(serviceBus)
     .WithHttpCommand(
-        path: "/jobs/send-bulk-email/run",
+        path: $"/jobs/{WellKnownJob.SendBulkEmails}/run",
         displayName: "Send bulk emails",
         commandOptions: new HttpCommandOptions()
         {

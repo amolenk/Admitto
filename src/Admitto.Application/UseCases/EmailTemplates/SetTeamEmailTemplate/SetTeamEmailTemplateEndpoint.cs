@@ -11,7 +11,7 @@ public static class SetTeamEmailTemplateEndpoint
     public static RouteGroupBuilder MapSetTeamEmailTemplate(this RouteGroupBuilder group)
     {
         group
-            .MapPut("/teams/{teamSlug}/email-templates/{emailType}", SetTeamEmailTemplate)
+            .MapPut("/email-templates/{emailType}", SetTeamEmailTemplate)
             .WithName(nameof(SetTeamEmailTemplate))
             .RequireAuthorization(policy => policy.RequireCanUpdateTeam());
 

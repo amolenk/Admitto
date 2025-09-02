@@ -8,7 +8,7 @@ public static class SendEmailEndpoint
     public static RouteGroupBuilder MapSendEmail(this RouteGroupBuilder group)
     {
         group
-            .MapPost("/teams/{teamSlug}/events/{eventSlug}/emails", SendEmail)
+            .MapPost("/{emailType}", SendEmail)
             .WithName(nameof(SendEmail))
             .RequireAuthorization(policy => policy.RequireCanUpdateEvent());
 
@@ -18,6 +18,7 @@ public static class SendEmailEndpoint
     private static async ValueTask<Accepted> SendEmail(
         string teamSlug,
         string eventSlug,
+        string emailType,
         SendEmailRequest request,
         ISlugResolver slugResolver,
         IMessageOutbox messageOutbox,
@@ -29,7 +30,7 @@ public static class SendEmailEndpoint
         var command = new SendEmailCommand(
             eventId,
             request.DataEntityId,
-            request.EmailType,
+            emailType,
             teamId);
         
         messageOutbox.Enqueue(command);

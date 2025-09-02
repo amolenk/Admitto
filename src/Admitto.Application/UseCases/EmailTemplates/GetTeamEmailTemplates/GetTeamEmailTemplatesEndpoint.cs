@@ -10,7 +10,7 @@ public static class GetTeamEmailTemplatesEndpoint
     public static RouteGroupBuilder MapGetTeamEmailTemplates(this RouteGroupBuilder group)
     {
         group
-            .MapGet("/teams/{teamSlug}/email-templates", GetTeamEmailTemplates)
+            .MapGet("/email-templates", GetTeamEmailTemplates)
             .WithName(nameof(GetTeamEmailTemplates))
             .RequireAuthorization(policy => policy.RequireCanViewTeam());
 

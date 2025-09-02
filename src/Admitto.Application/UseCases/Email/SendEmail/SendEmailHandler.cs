@@ -29,7 +29,6 @@ public class SendEmailHandler(
             teamId,
             command.TicketedEventId,
             command.CommandId,
-            emailMessage.ParticipantId,
             cancellationToken: cancellationToken);
     }
 

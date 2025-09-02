@@ -43,13 +43,14 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                     team_id = table.Column<Guid>(type: "uuid", nullable: false),
                     event_id = table.Column<Guid>(type: "uuid", nullable: false),
                     email_type = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: false),
-                    earliest_send_time = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
-                    latest_send_time = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     status = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
+                    last_run_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: true),
+                    error = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: true),
                     created_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     last_changed_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     last_changed_by = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
-                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false)
+                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
+                    repeat = table.Column<string>(type: "jsonb", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -171,6 +172,7 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                 {
                     id = table.Column<Guid>(type: "uuid", nullable: false),
                     public_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    team_id = table.Column<Guid>(type: "uuid", nullable: false),
                     event_id = table.Column<Guid>(type: "uuid", nullable: false),
                     email = table.Column<string>(type: "character varying(254)", maxLength: 254, nullable: false),
                     created_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
@@ -240,7 +242,10 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                     last_changed_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     last_changed_by = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
                     xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
-                    policies = table.Column<string>(type: "jsonb", nullable: false)
+                    cancellation_policy = table.Column<string>(type: "jsonb", nullable: false),
+                    reconfirm_policy = table.Column<string>(type: "jsonb", nullable: true),
+                    registration_policy = table.Column<string>(type: "jsonb", nullable: false),
+                    reminder_policy = table.Column<string>(type: "jsonb", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -270,6 +275,7 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                 columns: table => new
                 {
                     participant_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    team_id = table.Column<Guid>(type: "uuid", nullable: false),
                     event_id = table.Column<Guid>(type: "uuid", nullable: false),
                     public_id = table.Column<Guid>(type: "uuid", nullable: false),
                     email = table.Column<string>(type: "character varying(254)", maxLength: 254, nullable: false),

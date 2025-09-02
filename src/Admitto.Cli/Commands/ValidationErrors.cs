@@ -40,4 +40,26 @@ public static class ValidationErrors
     
     public static readonly ValidationResult VerificationTokenMissing = 
         ValidationResult.Error("Verification token must be specified.");
+
+    public static readonly ValidationResult RepeatWindowStartMissing = 
+        ValidationResult.Error("Repeat window start must be specified.");
+
+    public static readonly ValidationResult RepeatWindowEndMissing = 
+        ValidationResult.Error("Repeat window end must be specified.");
+
+    public static readonly ValidationResult RepeatIntervalMissing = 
+        ValidationResult.Error("Repeat interval must be specified.");
+    
+    public static readonly ValidationResult ReconfirmWindowStartMissing = 
+        ValidationResult.Error("Window start must be specified.");
+
+    public static readonly ValidationResult ReconfirmWindowEndMissing = 
+        ValidationResult.Error("Window end must be specified.");
+
+    public static readonly ValidationResult ReconfirmInitialDelayMissing = 
+        ValidationResult.Error("Initial delay after registration must be specified.");
+
+    public static readonly ValidationResult ReconfirmReminderIntervalDelayMissing = 
+        ValidationResult.Error("Reminder interval must be specified.");
+    
 }

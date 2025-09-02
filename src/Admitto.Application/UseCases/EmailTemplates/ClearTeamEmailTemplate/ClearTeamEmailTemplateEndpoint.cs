@@ -10,7 +10,7 @@ public static class ClearTeamEmailTemplateEndpoint
     public static RouteGroupBuilder MapClearTeamEmailTemplate(this RouteGroupBuilder group)
     {
         group
-            .MapDelete("/teams/{teamSlug}/email-templates/{emailType}", ClearTeamEmailTemplate)
+            .MapDelete("/email-templates/{emailType}", ClearTeamEmailTemplate)
             .WithName(nameof(ClearTeamEmailTemplate))
             .RequireAuthorization(policy => policy.RequireCanUpdateTeam());
 

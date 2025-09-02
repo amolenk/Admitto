@@ -16,6 +16,10 @@ public class ParticipantEntityConfiguration : IEntityTypeConfiguration<Participa
             .IsRequired()
             .ValueGeneratedNever();
 
+        builder.Property(e => e.TeamId)
+            .HasColumnName("team_id")
+            .IsRequired();
+
         builder.Property(e => e.TicketedEventId)
             .HasColumnName("event_id")
             .IsRequired();

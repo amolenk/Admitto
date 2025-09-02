@@ -89,7 +89,7 @@ public class Attendee : Aggregate
 
         RegistrationStatus = RegistrationStatus.Canceled;
 
-        DomainEvent domainEvent = eventStartTime - now < policy.LateCancellationTime
+        DomainEvent domainEvent = eventStartTime - now < policy.CutoffBeforeEvent
             ? new AttendeeCanceledLateDomainEvent(TicketedEventId, ParticipantId, Id, Email, _tickets)
             : new AttendeeCanceledDomainEvent(TicketedEventId,ParticipantId, Id, Email, _tickets);
         

@@ -32,13 +32,15 @@ public static class RegisterAttendeeEndpoint
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
-        var eventId = await slugResolver.ResolveTicketedEventIdAsync(teamSlug, eventSlug, cancellationToken);
+        var (teamId, eventId) =
+            await slugResolver.ResolveTeamAndTicketedEventIdsAsync(teamSlug, eventSlug, cancellationToken);
 
         await EnsureValidRequestAsync(request, eventId, signingService, cancellationToken);
-        
+
         // First get or create a participant. A participant may already exist if the same person is also
         // a contributor to the event.
         var (participant, created) = await GetOrCreateParticipantAsync(
+            teamId,
             eventId,
             request.Email,
             context,
@@ -97,6 +99,7 @@ public static class RegisterAttendeeEndpoint
     }
 
     private static async ValueTask<(Participant Participant, bool Created)> GetOrCreateParticipantAsync(
+        Guid teamId,
         Guid eventId,
         string email,
         IApplicationContext context,
@@ -111,7 +114,7 @@ public static class RegisterAttendeeEndpoint
 
         if (participant is not null) return (participant, false);
 
-        participant = Participant.Create(eventId, emailNormalized);
+        participant = Participant.Create(teamId, eventId, emailNormalized);
         var created = true;
 
         context.Participants.Add(participant);

@@ -1,5 +1,4 @@
 using Amolenk.Admitto.ApiService.Middleware;
-using Amolenk.Admitto.Application.UseCases.Email.ScheduleBulkEmail;
 using Amolenk.Admitto.Application.UseCases.Email.SendEmail;
 using Amolenk.Admitto.Application.UseCases.Email.TestEmail;
 
@@ -9,7 +8,7 @@ public static class EmailEndpoints
 {
     public static void MapEmailEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/")
+        var group = app.MapGroup("/teams/{teamSlug}/events/{eventSlug}/emails")
             .WithTags("Email")
             .AddEndpointFilter<ValidationFilter>()
             .AddEndpointFilter<UnitOfWorkFilter>()
@@ -21,7 +20,6 @@ public static class EmailEndpoints
             .RequireAuthorization();
 
         group
-            .MapScheduleBulkEmail()
             .MapSendEmail()
             .MapTestEmail();
     }

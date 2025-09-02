@@ -54,25 +54,25 @@ public class TicketedEventEntityConfiguration(IDataProtectionProvider dataProtec
             .IsRequired()
             .HasMaxLength(ColumnMaxLength.Url);
         
-        builder.OwnsOne<TicketedEventPolicies>(e => e.ConfiguredPolicies, b =>
+        builder.OwnsOne<CancellationPolicy>(e => e.CancellationPolicy, b =>
             {
-                b.ToJson("policies");
-
-                b.OwnsOne<CancellationPolicy>(p => p.CancellationPolicy, pb =>
-                {
-                    pb.ToJson();
-                });
-
-                b.OwnsOne<ReconfirmPolicy>(p => p.ReconfirmPolicy, pb =>
-                {
-                    pb.ToJson();
-                });
-
-                b.OwnsOne<RegistrationPolicy>(p => p.RegistrationPolicy, pb =>
-                {
-                    pb.ToJson();
-                });
+                b.ToJson("cancellation_policy");
             });
+
+        builder.OwnsOne<ReconfirmPolicy>(e => e.ReconfirmPolicy, b =>
+        {
+            b.ToJson("reconfirm_policy");
+        });
+
+        builder.OwnsOne<RegistrationPolicy>(e => e.RegistrationPolicy, b =>
+        {
+            b.ToJson("registration_policy");
+        });
+
+        builder.OwnsOne<ReminderPolicy>(e => e.ReminderPolicy, b =>
+        {
+            b.ToJson("reminder_policy");
+        });
 
         builder.Property(e => e.SigningKey)
             .HasColumnName("signing_key")

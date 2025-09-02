@@ -30,7 +30,6 @@
       <Folder Include="Common\Security\" />
       <Folder Include="UseCases\EmailTemplates\" />
       <Folder Include="UseCases\EmailVerification\" />
-      <Folder Include="UseCases\Email\SendCustomEmail\" />
       <Folder Include="UseCases\TicketedEventsAvailability\" />
     </ItemGroup>
 

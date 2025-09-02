@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Domain.Utilities;
-using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Domain.Entities;
 
@@ -19,29 +18,31 @@ public class Participant : Aggregate
     private Participant(
         Guid id,
         Guid publicId,
+        Guid teamId,
         Guid ticketedEventId,
         string email)
         : base(id)
     {
         PublicId = publicId;
+        TeamId = teamId;
         TicketedEventId = ticketedEventId;
         Email = email;
     }
 
     public Guid PublicId { get; private set; }
+    public Guid TeamId { get; private set; }
     public Guid TicketedEventId { get; private set; }
     public string Email { get; private set; } = null!;
     
-    public static Participant Create(
-        Guid eventId,
-        string email)
+    public static Participant Create(Guid teamId, Guid eventId, string email)
     {
         var privateId = Guid.NewGuid();
         var publicId = DeterministicGuid.Create(privateId.ToString(), eventId);
         
         return new Participant(
             privateId,
-            publicId,            
+            publicId,
+            teamId,
             eventId,
             email);
     }

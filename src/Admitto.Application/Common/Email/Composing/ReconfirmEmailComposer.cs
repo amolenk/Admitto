@@ -52,8 +52,8 @@ public class ReconfirmEmailComposer(
                 x.Attendee.LastName,
                 x.Attendee.AdditionalDetails,
                 x.Attendee.Tickets,
-                x.Participant.PublicId,
-                ParticipantId = x.Participant.Id
+                x.Attendee.ParticipantId,
+                x.Participant.PublicId
             })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -78,7 +78,7 @@ public class ReconfirmEmailComposer(
                 .ToList(),
             $"{item.BaseUrl}/tickets/reconfirm/{item.PublicId}/{signature}",
             $"{item.BaseUrl}/tickets/cancel/{item.PublicId}/{signature}");
-        
+
         return (parameters, item.ParticipantId);
     }
 
@@ -110,9 +110,9 @@ public class ReconfirmEmailComposer(
         {
             throw new ApplicationRuleException(ApplicationRuleError.TicketedEvent.NotFound);
         }
-        
+
         // TODO Check if we can reduce the number of columns fetched.
-        
+
         // Query and join
         var items = await context.Attendees
             .AsNoTracking()
@@ -132,9 +132,15 @@ public class ReconfirmEmailComposer(
                 SentReconfirmEmails = x.EmailLogs
             })
             .ToListAsync(cancellationToken);
-        
+
         var reconfirmPolicy = ticketedEvent.ReconfirmPolicy;
-        
+        if (reconfirmPolicy is null)
+        {
+            throw new ApplicationRuleException(ApplicationRuleError.TicketedEvent.ReconfirmPolicyNotSet);
+        }
+
+        var now = DateTimeOffset.UtcNow;
+
         // Now filter in memory
         return items
             .Select(x => new
@@ -145,8 +151,11 @@ public class ReconfirmEmailComposer(
                     .OrderByDescending(e => e.SentAt)
                     .FirstOrDefault()
             })
-            .Where(x =>
-                reconfirmPolicy.ShouldSendReconfirmEmail(x.AttendeeRegisteredAt, x.LatestReconfirmEmail?.SentAt))
+            .Where(x => reconfirmPolicy.NextSendAt(
+                now,
+                ticketedEvent.StartTime,
+                x.AttendeeRegisteredAt,
+                x.LatestReconfirmEmail?.SentAt) <= now)
             .Select(x => x.AttendeeId)
             .ToList();
     }

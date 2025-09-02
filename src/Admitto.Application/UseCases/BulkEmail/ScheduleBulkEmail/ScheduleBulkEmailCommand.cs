@@ -1,4 +1,6 @@
-namespace Amolenk.Admitto.Application.UseCases.Email.ScheduleBulkEmail;
+using Amolenk.Admitto.Domain.ValueObjects;
+
+namespace Amolenk.Admitto.Application.UseCases.BulkEmail.ScheduleBulkEmail;
 
 /// <summary>
 /// Represents a command to schedule a bulk email job.
@@ -7,6 +9,5 @@ public record ScheduleBulkEmailCommand(
     Guid TeamId,
     Guid TicketedEventId,
     string EmailType,
-    DateTimeOffset EarliestSendTime,
-    DateTimeOffset LatestSendTime)
+    BulkEmailWorkItemRepeat? Repeat)
     : Command;
