@@ -27,7 +27,7 @@ public interface IEmailComposer
         List<AdditionalDetail> additionalDetails,
         List<TicketSelection> tickets,
         CancellationToken cancellationToken = default);
-    
+
     IAsyncEnumerable<EmailMessage> ComposeBulkMessagesAsync(
         string emailType,
         Guid teamId,
@@ -48,13 +48,19 @@ public abstract class EmailComposer(IEmailTemplateService templateService) : IEm
         Dictionary<string, string>? additionalParameters = null,
         CancellationToken cancellationToken = default)
     {
-        var templateParameters = await GetTemplateParametersAsync(
+        var (templateParameters, participantId) = await GetTemplateParametersAsync(
             ticketedEventId,
             entityId,
             additionalParameters ?? [],
             cancellationToken);
 
-        return await BuildEmailMessageAsync(emailType, teamId, ticketedEventId, templateParameters, cancellationToken);
+        return await BuildEmailMessageAsync(
+            emailType,
+            teamId,
+            ticketedEventId,
+            templateParameters,
+            participantId,
+            cancellationToken);
     }
 
     public async ValueTask<EmailMessage> ComposeTestMessageAsync(
@@ -68,9 +74,14 @@ public abstract class EmailComposer(IEmailTemplateService templateService) : IEm
     {
         var templateParameters = GetTestTemplateParameters(recipient, additionalDetails, tickets);
 
-        return await BuildEmailMessageAsync(emailType, teamId, ticketedEventId, templateParameters, cancellationToken);
+        return await BuildEmailMessageAsync(
+            emailType,
+            teamId,
+            ticketedEventId,
+            templateParameters,
+            cancellationToken: cancellationToken);
     }
-    
+
     public async IAsyncEnumerable<EmailMessage> ComposeBulkMessagesAsync(
         string emailType,
         Guid teamId,
@@ -78,10 +89,10 @@ public abstract class EmailComposer(IEmailTemplateService templateService) : IEm
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         var entityIds = await GetEntityIdsForBulkAsync(ticketedEventId, cancellationToken);
-        
+
         foreach (var entityId in entityIds)
         {
-            var templateParameters = await GetTemplateParametersAsync(
+            var (templateParameters, participantId) = await GetTemplateParametersAsync(
                 ticketedEventId,
                 entityId,
                 [],
@@ -92,11 +103,12 @@ public abstract class EmailComposer(IEmailTemplateService templateService) : IEm
                 teamId,
                 ticketedEventId,
                 templateParameters,
+                participantId,
                 cancellationToken);
         }
     }
-    
-    protected abstract ValueTask<IEmailParameters> GetTemplateParametersAsync(
+
+    protected abstract ValueTask<(IEmailParameters Parameters, Guid? ParticipantId)> GetTemplateParametersAsync(
         Guid ticketedEventId,
         Guid entityId,
         Dictionary<string, string> customParameters,
@@ -119,6 +131,7 @@ public abstract class EmailComposer(IEmailTemplateService templateService) : IEm
         Guid teamId,
         Guid ticketedEventId,
         IEmailParameters templateParameters,
+        Guid? participantId = null,
         CancellationToken cancellationToken = default)
     {
         var scriptObject = new ScriptObject();
@@ -140,7 +153,8 @@ public abstract class EmailComposer(IEmailTemplateService templateService) : IEm
             templateParameters.Recipient,
             subject,
             body,
-            emailType);
+            emailType,
+            participantId);
     }
 
     private static async ValueTask<string> RenderTemplateAsync(string templateContent, TemplateContext templateContext)
