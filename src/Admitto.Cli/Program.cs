@@ -69,6 +69,9 @@ app.Configure(config =>
             attendee.AddCommand<ListCommand>("list")
                 .WithDescription("List all attendee registrations");
 
+            attendee.AddCommand<ReconfirmCommand>("reconfirm")
+                .WithDescription("Reconfirms an attendee registration");
+
             attendee.AddCommand<RegisterCommand>("register")
                 .WithDescription("Register a new attendee");
 
@@ -148,8 +151,8 @@ app.Configure(config =>
             //             });
             //     });
 
-            email.AddCommand<PreviewEmailCommand>("preview")
-                .WithDescription("Preview an email");
+            email.AddCommand<ScheduleBulkEmailCommand>("bulk")
+                .WithDescription("Schedule a bulk email");
             
             email.AddBranch(
                 "template",

@@ -1,5 +1,3 @@
-using Amolenk.Admitto.Domain.ValueObjects;
-
 namespace Amolenk.Admitto.Application.UseCases.Email.SendEmail;
 
 /// <summary>
@@ -8,7 +6,7 @@ namespace Amolenk.Admitto.Application.UseCases.Email.SendEmail;
 public record SendEmailCommand(
     Guid TicketedEventId,
     Guid DataEntityId,
-    EmailType EmailType,
+    string EmailType,
     Guid? TeamId = null,
     Dictionary<string, string>? AdditionalParameters = null)
     : Command;

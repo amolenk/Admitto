@@ -1,4 +1,3 @@
-using Amolenk.Admitto.Application.Common.Cryptography;
 using Amolenk.Admitto.Application.Common.Email.Sending;
 using Amolenk.Admitto.Domain.ValueObjects;
 
@@ -14,6 +13,7 @@ public interface IEmailDispatcher
         Guid teamId,
         Guid ticketedEventId,
         Guid idempotencyKey,
+        Guid? participantId = null,
         CancellationToken cancellationToken = default);
 
     ValueTask DispatchEmailsAsync(
@@ -21,7 +21,8 @@ public interface IEmailDispatcher
         Guid teamId,
         Guid ticketedEventId,
         Guid idempotencyKey,
-        CancellationToken cancellationToken);
+        Guid? participantId = null,
+        CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -51,6 +52,7 @@ public class EmailDispatcher(
         Guid teamId,
         Guid ticketedEventId,
         Guid idempotencyKey,
+        Guid? participantId = null,
         CancellationToken cancellationToken = default)
     {
         using var emailSender = await GetEmailSenderAsync(teamId);
@@ -61,6 +63,7 @@ public class EmailDispatcher(
             teamId,
             ticketedEventId,
             idempotencyKey,
+            participantId,
             cancellationToken);
     }
 
@@ -69,7 +72,8 @@ public class EmailDispatcher(
         Guid teamId,
         Guid ticketedEventId,
         Guid idempotencyKey,
-        CancellationToken cancellationToken)
+        Guid? participantId = null,
+        CancellationToken cancellationToken = default)
     {
         using var emailSender = await GetEmailSenderAsync(teamId);
 
@@ -81,10 +85,14 @@ public class EmailDispatcher(
                 teamId,
                 ticketedEventId,
                 idempotencyKey,
+                participantId,
                 cancellationToken);
 
             // Commit after each email to avoid losing progress in case of an error
             await unitOfWork.SaveChangesAsync(cancellationToken: cancellationToken);
+
+            // Throttle to lower performance impact on the system and external email service
+            await Task.Delay(500, cancellationToken);
         }
     }
 
@@ -113,6 +121,7 @@ public class EmailDispatcher(
         Guid teamId,
         Guid ticketedEventId,
         Guid idempotencyKey,
+        Guid? participantId = null,
         CancellationToken cancellationToken = default)
     {
         // If this is a test email message, send it without checking for duplicates or logging the result.
@@ -155,7 +164,6 @@ public class EmailDispatcher(
             TicketedEventId = ticketedEventId,
             IdempotencyKey = idempotencyKey,
             Recipient = emailMessage.Recipient,
-            RecipientType = emailMessage.RecipientType,
             EmailType = emailMessage.EmailType,
             Subject = emailMessage.Subject,
             Provider = emailSender.GetType().Name, // TODO Let IEmailSender provide its name
@@ -165,15 +173,18 @@ public class EmailDispatcher(
         };
         context.EmailLog.Add(emailLog);
         
-        // Raise an application event to notify other parts of the system.
-        messageOutbox.Enqueue(
-            new EmailSentApplicationEvent(
-                teamId,
-                ticketedEventId,
-                emailMessage.Recipient,
-                emailMessage.RecipientType,
-                emailMessage.Subject,
-                emailMessage.EmailType,
-                emailLog.Id));
+        // If the email is for an existing participant, raise an application event to notify other parts of the system.
+        if (participantId is not null)
+        {
+            messageOutbox.Enqueue(
+                new EmailSentApplicationEvent(
+                    teamId,
+                    ticketedEventId,
+                    participantId.Value,
+                    emailMessage.Recipient,
+                    emailMessage.Subject,
+                    emailMessage.EmailType,
+                    emailLog.Id));
+        }
     }
 }

@@ -23,7 +23,7 @@ public static class FormatExtensions
             "crew" => "👷️ Crew",
             "speaker" => "🎤 Speaker",
             "sponsor" => "💰️ Sponsor",
-            _ => "❤️ Contributor"
+            _ => $"❤️ {role.Humanize()}"
         };
     }
 
@@ -37,7 +37,7 @@ public static class FormatExtensions
         return status switch
         {
             RegistrationStatus.Reconfirmed => "green",
-            RegistrationStatus.CheckedIn => "green",
+            RegistrationStatus.Attended => "green",
             RegistrationStatus.Canceled => "red",
             RegistrationStatus.NoShow => "red",
             _ => "white"

@@ -10,46 +10,60 @@ public class ParticipantHistoryHandler(IApplicationContext context)
     : IEventualDomainEventHandler<AttendeeRegisteredDomainEvent>,
     IEventualDomainEventHandler<AttendeeCanceledDomainEvent>,
     IEventualDomainEventHandler<AttendeeCanceledLateDomainEvent>,
+    IEventualDomainEventHandler<AttendeeReconfirmedDomainEvent>,
     IApplicationEventHandler<EmailSentApplicationEvent>
 {
-    public async ValueTask HandleAsync(AttendeeRegisteredDomainEvent domainEvent, CancellationToken cancellationToken)
+    public ValueTask HandleAsync(AttendeeRegisteredDomainEvent domainEvent, CancellationToken cancellationToken)
     {
-        LogActivityAsync(
+        LogActivity(
             domainEvent.TicketedEventId,
             domainEvent.ParticipantId,
             domainEvent.DomainEventId,
             $"✅ Registered",
             domainEvent.OccurredOn);
+        
+        return ValueTask.CompletedTask;
     }
     
-    public async ValueTask HandleAsync(AttendeeCanceledDomainEvent domainEvent, CancellationToken cancellationToken)
+    public ValueTask HandleAsync(AttendeeCanceledDomainEvent domainEvent, CancellationToken cancellationToken)
     {
-        LogActivityAsync(
+        LogActivity(
             domainEvent.TicketedEventId,
             domainEvent.ParticipantId,
             domainEvent.DomainEventId,
             $"❌ Canceled registration (on time)",
             domainEvent.OccurredOn);
+        
+        return ValueTask.CompletedTask;
     }
     
-    public async ValueTask HandleAsync(AttendeeCanceledLateDomainEvent domainEvent, CancellationToken cancellationToken)
+    public ValueTask HandleAsync(AttendeeCanceledLateDomainEvent domainEvent, CancellationToken cancellationToken)
     {
-        LogActivityAsync(
+        LogActivity(
             domainEvent.TicketedEventId,
             domainEvent.ParticipantId,
             domainEvent.DomainEventId,
             $"🚨 Canceled registration (late)",
             domainEvent.OccurredOn);
+        
+        return ValueTask.CompletedTask;
     }
 
+    public ValueTask HandleAsync(AttendeeReconfirmedDomainEvent domainEvent, CancellationToken cancellationToken)
+    {
+        LogActivity(
+            domainEvent.TicketedEventId,
+            domainEvent.ParticipantId,
+            domainEvent.DomainEventId,
+            $"🔄 Reconfirmed registration",
+            domainEvent.OccurredOn);
+        
+        return ValueTask.CompletedTask;
+    }
+    
     public ValueTask HandleAsync(EmailSentApplicationEvent applicationEvent, CancellationToken cancellationToken)
     {
-        if (applicationEvent.RecipientType != EmailRecipientType.Attendee)
-        {
-            return ValueTask.CompletedTask;
-        }
-        
-        LogActivityAsync(
+        LogActivity(
             applicationEvent.TicketedEventId,
             applicationEvent.ParticipantId,
             applicationEvent.ApplicationEventId,
@@ -61,7 +75,7 @@ public class ParticipantHistoryHandler(IApplicationContext context)
         return ValueTask.CompletedTask;
     }
     
-    private void LogActivityAsync(
+    private void LogActivity(
         Guid ticketedEventId,
         Guid participantId,
         Guid sourceId,

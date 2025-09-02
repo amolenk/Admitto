@@ -1,3 +1,5 @@
+using Amolenk.Admitto.Application.Common.Email;
+
 namespace Amolenk.Admitto.Application.UseCases.EmailTemplates.GetTeamEmailTemplates;
 
 /// <summary>
@@ -23,15 +25,21 @@ public static class GetTeamEmailTemplatesEndpoint
     {
         var teamId = await slugResolver.ResolveTeamIdAsync(teamSlug, cancellationToken);
 
-        var emailTemplates = await context.EmailTemplates
+        var customTemplates = await context.EmailTemplates
             .Where(t => t.TeamId == teamId && t.TicketedEventId == null)
+            .Select(t => new TeamEmailTemplateDto(t.Type, true))
             .ToListAsync(cancellationToken);
         
-        var response = new GetTeamEmailTemplatesResponse(
-            emailTemplates
-                .Select(t => new TeamEmailTemplateDto(t.Type))
-                .ToArray());
+        var customizedTypes = customTemplates.Select(t => t.Type).ToHashSet();
         
-        return TypedResults.Ok(response);
+        var nonCustomTemplates = WellKnownEmailType.All
+            .Where(t => !customizedTypes.Contains(t))
+            .Select(t => new TeamEmailTemplateDto(t, false));
+
+        var allTemplates = nonCustomTemplates.Concat(customTemplates)
+            .OrderBy(t => t.Type)
+            .ToArray();
+
+        return TypedResults.Ok(new GetTeamEmailTemplatesResponse(allTemplates));
     }
 }

@@ -42,14 +42,6 @@ namespace Amolenk.Admitto.Cli.Api.Models
 #endif
         /// <summary>The registrationStatus property</summary>
         public global::Amolenk.Admitto.Cli.Api.Models.RegistrationStatus? RegistrationStatus { get; set; }
-        /// <summary>The signature property</summary>
-#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
-#nullable enable
-        public string? Signature { get; set; }
-#nullable restore
-#else
-        public string Signature { get; set; }
-#endif
         /// <summary>
         /// Instantiates a new <see cref="global::Amolenk.Admitto.Cli.Api.Models.GetAttendeeResponse"/> and sets the default values.
         /// </summary>
@@ -80,7 +72,6 @@ namespace Amolenk.Admitto.Cli.Api.Models
                 { "id", n => { Id = n.GetGuidValue(); } },
                 { "lastName", n => { LastName = n.GetStringValue(); } },
                 { "registrationStatus", n => { RegistrationStatus = n.GetEnumValue<global::Amolenk.Admitto.Cli.Api.Models.RegistrationStatus>(); } },
-                { "signature", n => { Signature = n.GetStringValue(); } },
             };
         }
         /// <summary>
@@ -95,7 +86,6 @@ namespace Amolenk.Admitto.Cli.Api.Models
             writer.WriteGuidValue("id", Id);
             writer.WriteStringValue("lastName", LastName);
             writer.WriteEnumValue<global::Amolenk.Admitto.Cli.Api.Models.RegistrationStatus>("registrationStatus", RegistrationStatus);
-            writer.WriteStringValue("signature", Signature);
             writer.WriteAdditionalData(AdditionalData);
         }
     }

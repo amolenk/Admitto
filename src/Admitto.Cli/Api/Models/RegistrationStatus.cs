@@ -20,17 +20,17 @@ namespace Amolenk.Admitto.Cli.Api.Models
         #pragma warning disable CS1591
         Reconfirmed,
         #pragma warning restore CS1591
-        [EnumMember(Value = "checkedIn")]
+        [EnumMember(Value = "attended")]
         #pragma warning disable CS1591
-        CheckedIn,
-        #pragma warning restore CS1591
-        [EnumMember(Value = "canceled")]
-        #pragma warning disable CS1591
-        Canceled,
+        Attended,
         #pragma warning restore CS1591
         [EnumMember(Value = "noShow")]
         #pragma warning disable CS1591
         NoShow,
+        #pragma warning restore CS1591
+        [EnumMember(Value = "canceled")]
+        #pragma warning disable CS1591
+        Canceled,
         #pragma warning restore CS1591
     }
 }

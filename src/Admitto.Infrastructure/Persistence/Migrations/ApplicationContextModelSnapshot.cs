@@ -51,9 +51,10 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.Property<int>("EmailType")
+                    b.Property<string>("EmailType")
+                        .IsRequired()
                         .HasMaxLength(50)
-                        .HasColumnType("integer")
+                        .HasColumnType("character varying(50)")
                         .HasColumnName("email_type");
 
                     b.Property<Guid>("IdempotencyKey")
@@ -81,12 +82,6 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                         .HasMaxLength(254)
                         .HasColumnType("character varying(254)")
                         .HasColumnName("recipient");
-
-                    b.Property<string>("RecipientType")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)")
-                        .HasColumnName("recipient_type");
 
                     b.Property<DateTimeOffset>("SentAt")
                         .HasColumnType("timestamp with time zone")
@@ -158,7 +153,52 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                     b.ToTable("email_verification_requests", (string)null);
                 });
 
-            modelBuilder.Entity("Amolenk.Admitto.Application.Projections.Admission.AdmissionView", b =>
+            modelBuilder.Entity("Amolenk.Admitto.Application.Projections.ParticipantHistory.ParticipantHistoryView", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Activity")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("activity");
+
+                    b.Property<Guid?>("EmailLogId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("email_log_id");
+
+                    b.Property<string>("EmailType")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("email_type");
+
+                    b.Property<DateTimeOffset>("OccuredAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occured_at");
+
+                    b.Property<Guid>("ParticipantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("participant_id");
+
+                    b.Property<Guid>("SourceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_id");
+
+                    b.Property<Guid>("TicketedEventId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("event_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TicketedEventId", "ParticipantId", "SourceId")
+                        .IsUnique();
+
+                    b.ToTable("vw_participant_history", (string)null);
+                });
+
+            modelBuilder.Entity("Amolenk.Admitto.Application.Projections.Participation.ParticipationView", b =>
                 {
                     b.Property<Guid>("ParticipantId")
                         .HasColumnType("uuid")
@@ -217,49 +257,7 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                     b.HasIndex("TicketedEventId", "PublicId")
                         .IsUnique();
 
-                    b.ToTable("vw_check_in", (string)null);
-                });
-
-            modelBuilder.Entity("Amolenk.Admitto.Application.Projections.AttendeeActivity.AttendeeActivityView", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<string>("Activity")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("activity");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(254)
-                        .HasColumnType("character varying(254)")
-                        .HasColumnName("email");
-
-                    b.Property<Guid?>("EmailLogId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("email_log_id");
-
-                    b.Property<DateTimeOffset>("OccuredAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("occured_at");
-
-                    b.Property<Guid>("SourceId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("source_id");
-
-                    b.Property<Guid>("TicketedEventId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("event_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TicketedEventId", "Email", "SourceId")
-                        .IsUnique();
-
-                    b.ToTable("vw_attendee_activity", (string)null);
+                    b.ToTable("vw_participation", (string)null);
                 });
 
             modelBuilder.Entity("Amolenk.Admitto.Domain.Entities.Attendee", b =>
@@ -324,6 +322,64 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("attendees", (string)null);
+                });
+
+            modelBuilder.Entity("Amolenk.Admitto.Domain.Entities.BulkEmailWorkItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset>("EarliestSendTime")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("earliest_send_time");
+
+                    b.Property<string>("EmailType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("email_type");
+
+                    b.Property<DateTimeOffset>("LastChangedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_changed_at");
+
+                    b.Property<string>("LastChangedBy")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
+                        .HasColumnName("last_changed_by");
+
+                    b.Property<DateTimeOffset>("LatestSendTime")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("latest_send_time");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("TeamId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("team_id");
+
+                    b.Property<Guid>("TicketedEventId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("event_id");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("bulk_email_work_items", (string)null);
                 });
 
             modelBuilder.Entity("Amolenk.Admitto.Domain.Entities.Contributor", b =>
@@ -419,13 +475,14 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("team_id");
 
-                    b.Property<Guid>("TicketedEventId")
+                    b.Property<Guid?>("TicketedEventId")
                         .HasColumnType("uuid")
                         .HasColumnName("event_id");
 
                     b.Property<string>("Type")
                         .IsRequired()
-                        .HasColumnType("text")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)")
                         .HasColumnName("type");
 
                     b.Property<uint>("Version")
@@ -440,69 +497,6 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("email_templates", (string)null);
-                });
-
-            modelBuilder.Entity("Amolenk.Admitto.Domain.Entities.Job", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<DateTimeOffset?>("CompletedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("completed_at");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<string>("ErrorMessage")
-                        .HasMaxLength(1000)
-                        .HasColumnType("character varying(1000)")
-                        .HasColumnName("error_message");
-
-                    b.Property<JsonDocument>("JobData")
-                        .IsRequired()
-                        .HasColumnType("jsonb")
-                        .HasColumnName("job_data");
-
-                    b.Property<string>("JobType")
-                        .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("character varying(250)")
-                        .HasColumnName("job_type");
-
-                    b.Property<string>("ProgressMessage")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("progress_message");
-
-                    b.Property<int?>("ProgressPercent")
-                        .HasColumnType("integer")
-                        .HasColumnName("progress_percent");
-
-                    b.Property<JsonDocument>("ProgressState")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("progress_state");
-
-                    b.Property<DateTimeOffset?>("StartedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("started_at");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("status");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedAt");
-
-                    b.HasIndex("JobType");
-
-                    b.HasIndex("Status");
-
-                    b.ToTable("jobs", (string)null);
                 });
 
             modelBuilder.Entity("Amolenk.Admitto.Domain.Entities.Participant", b =>
@@ -550,52 +544,6 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                         .IsUnique();
 
                     b.ToTable("participants", (string)null);
-                });
-
-            modelBuilder.Entity("Amolenk.Admitto.Domain.Entities.ScheduledJob", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<string>("CronExpression")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("cron_expression");
-
-                    b.Property<bool>("IsEnabled")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_enabled");
-
-                    b.Property<JsonDocument>("JobData")
-                        .IsRequired()
-                        .HasColumnType("jsonb")
-                        .HasColumnName("job_data");
-
-                    b.Property<string>("JobType")
-                        .IsRequired()
-                        .HasMaxLength(250)
-                        .HasColumnType("character varying(250)")
-                        .HasColumnName("job_type");
-
-                    b.Property<DateTimeOffset?>("LastRunTime")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("last_run_time");
-
-                    b.Property<DateTimeOffset>("NextRunTime")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("next_run_time");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("IsEnabled");
-
-                    b.HasIndex("JobType");
-
-                    b.HasIndex("NextRunTime");
-
-                    b.ToTable("scheduled_jobs", (string)null);
                 });
 
             modelBuilder.Entity("Amolenk.Admitto.Domain.Entities.Team", b =>
@@ -994,6 +942,33 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                                         .HasForeignKey("TicketedEventPoliciesTicketedEventId");
                                 });
 
+                            b1.OwnsOne("Amolenk.Admitto.Domain.ValueObjects.ReconfirmPolicy", "ReconfirmPolicy", b2 =>
+                                {
+                                    b2.Property<Guid>("TicketedEventPoliciesTicketedEventId")
+                                        .HasColumnType("uuid");
+
+                                    b2.Property<TimeSpan>("Frequency")
+                                        .HasColumnType("interval");
+
+                                    b2.Property<TimeSpan>("InitialDelay")
+                                        .HasColumnType("interval");
+
+                                    b2.Property<TimeSpan>("WindowEnd")
+                                        .HasColumnType("interval");
+
+                                    b2.Property<TimeSpan>("WindowStart")
+                                        .HasColumnType("interval");
+
+                                    b2.HasKey("TicketedEventPoliciesTicketedEventId");
+
+                                    b2.ToTable("ticketed_events");
+
+                                    b2.ToJson("ReconfirmPolicy");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("TicketedEventPoliciesTicketedEventId");
+                                });
+
                             b1.OwnsOne("Amolenk.Admitto.Domain.ValueObjects.RegistrationPolicy", "RegistrationPolicy", b2 =>
                                 {
                                     b2.Property<Guid>("TicketedEventPoliciesTicketedEventId")
@@ -1019,6 +994,8 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                                 });
 
                             b1.Navigation("CancellationPolicy");
+
+                            b1.Navigation("ReconfirmPolicy");
 
                             b1.Navigation("RegistrationPolicy");
                         });

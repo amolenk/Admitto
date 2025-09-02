@@ -1,5 +1,5 @@
 using Amolenk.Admitto.ApiService.Middleware;
-using Amolenk.Admitto.Application.UseCases.Email.PreviewEmail;
+using Amolenk.Admitto.Application.UseCases.Email.ScheduleBulkEmail;
 using Amolenk.Admitto.Application.UseCases.Email.SendEmail;
 using Amolenk.Admitto.Application.UseCases.Email.TestEmail;
 
@@ -21,7 +21,7 @@ public static class EmailEndpoints
             .RequireAuthorization();
 
         group
-            .MapPreviewEmail()
+            .MapScheduleBulkEmail()
             .MapSendEmail()
             .MapTestEmail();
     }

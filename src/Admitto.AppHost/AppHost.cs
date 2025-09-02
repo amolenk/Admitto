@@ -24,11 +24,24 @@ var worker = builder.AddProject<Projects.Admitto_Worker>("worker")
     .WithReference(postgresDb).WaitFor(postgresDb)
     .WithReference(serviceBus).WaitFor(serviceBus);
 
+var jobRunner = builder.AddProject<Projects.Admitto_JobRunner>("job-runner")
+    .WithReference(postgresDb).WaitFor(postgresDb)
+    .WithReference(serviceBus).WaitFor(serviceBus)
+    .WithHttpCommand(
+        path: "/jobs/send-bulk-email/run",
+        displayName: "Send bulk emails",
+        commandOptions: new HttpCommandOptions()
+        {
+            Description = "Starts a job for sending scheduled bulk emails.",
+            IconName = "Send",
+            IsHighlighted = true
+        });
+
 if (builder.ExecutionContext.IsRunMode)
 {
     var mailDev = builder.ConfigureMailDev();
     var keycloak = builder.ConfigureKeycloak();
-    
+
     var migration = builder.AddProject<Projects.Admitto_Migration>("migrate")
         .WithArgs("run")
         .WithReference(openFga.GetEndpoint("http")).WaitFor(openFga)
@@ -46,7 +59,7 @@ if (builder.ExecutionContext.IsRunMode)
                 DisplayLocation = UrlDisplayLocation.SummaryAndDetails
             })
         .WaitForCompletion(migration);
-    
+
     worker
         .WithReference(keycloak).WaitFor(keycloak)
         .WaitFor(mailDev)
@@ -70,9 +83,12 @@ internal static class Extensions
                 container
                     .WithDataVolume("admitto-postgres-data")
                     .WithLifetime(ContainerLifetime.Persistent)
+                    .WithHostPort(8011)
                     .WithPgWeb(pgWeb =>
                     {
-                        pgWeb.WithLifetime(ContainerLifetime.Persistent);
+                        pgWeb
+                            .WithHostPort(8010)
+                            .WithLifetime(ContainerLifetime.Persistent);
                     });
             });
 
@@ -83,21 +99,18 @@ internal static class Extensions
         this IDistributedApplicationBuilder builder)
     {
         var serviceBus = builder.AddAzureServiceBus("messaging")
-            .RunAsEmulator(configure =>
-            {
-                configure.WithLifetime(ContainerLifetime.Persistent);
-            })
+            .RunAsEmulator(configure => { configure.WithLifetime(ContainerLifetime.Persistent); })
             .ReplaceEmulatorDatabase();
 
         return serviceBus;
     }
-    
+
     public static IResourceBuilder<ContainerResource> ConfigureOpenFga(
         this IDistributedApplicationBuilder builder,
         IResourceBuilder<AzurePostgresFlexibleServerDatabaseResource> openFgaDb)
     {
         // TODO Figure out a way to get the connection string in Key Vault
-        
+
         var openFga = builder.AddContainer("openfga", "openfga/openfga:latest")
             .WithArgs("run")
             .WithEnvironment("OPENFGA_DATASTORE_ENGINE", "postgres")
@@ -108,7 +121,7 @@ internal static class Extensions
         {
             return openFga;
         }
-        
+
         var initOpenFga = builder.AddContainer("openfga-init", "openfga/openfga:latest")
             .WithArgs("migrate")
             .WithEnvironment("OPENFGA_DATASTORE_ENGINE", "postgres")
@@ -122,7 +135,7 @@ internal static class Extensions
 
         return openFga;
     }
-    
+
     public static IResourceBuilder<ContainerResource> ConfigureMailDev(this IDistributedApplicationBuilder builder)
     {
         var mailDev = builder.AddContainer("maildev", "maildev/maildev:latest")
@@ -132,7 +145,7 @@ internal static class Extensions
 
         return mailDev;
     }
-    
+
     public static IResourceBuilder<KeycloakResource> ConfigureKeycloak(this IDistributedApplicationBuilder builder)
     {
         var keycloakAdminPassword = builder.AddParameter("KeycloakAdminPassword", secret: true);
@@ -168,10 +181,10 @@ internal static class Extensions
 
         return app;
     }
-    
+
     private static IResourceBuilder<T> WithPostgresUriEnvironment<T>(
         this IResourceBuilder<T> builder,
-        string name, 
+        string name,
         AzurePostgresFlexibleServerDatabaseResource resource)
         where T : IResourceWithEnvironment
     {

@@ -23,7 +23,7 @@ public static class SetEventEmailTemplateEndpoint
     private static async ValueTask<Ok> SetEventEmailTemplate(
         string teamSlug,
         string eventSlug,
-        EmailType emailType,
+        string emailType,
         SetEventEmailTemplateRequest request,
         ISlugResolver slugResolver,
         IApplicationContext context,

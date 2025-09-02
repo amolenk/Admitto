@@ -2,6 +2,7 @@ using Amolenk.Admitto.ApiService.Middleware;
 using Amolenk.Admitto.Application.UseCases.Attendees.CancelRegistration;
 using Amolenk.Admitto.Application.UseCases.Attendees.GetAttendee;
 using Amolenk.Admitto.Application.UseCases.Attendees.GetAttendees;
+using Amolenk.Admitto.Application.UseCases.Attendees.ReconfirmRegistration;
 using Amolenk.Admitto.Application.UseCases.Attendees.RegisterAttendee;
 
 namespace Amolenk.Admitto.ApiService.Endpoints;
@@ -24,6 +25,7 @@ public static class AttendeeEndpoints
             .MapCancelRegistration()
             .MapGetAttendee()
             .MapGetAttendees()
+            .MapReconfirmRegistration()
             .MapRegisterAttendee();
     }
 }

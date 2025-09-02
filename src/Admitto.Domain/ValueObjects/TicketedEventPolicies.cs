@@ -6,7 +6,7 @@ public class TicketedEventPolicies
 
     public CancellationPolicy? CancellationPolicy { get; set; }
     
-    // public ReconfirmationPolicy? ReconfirmationPolicy { get; set; }
+    public ReconfirmPolicy? ReconfirmPolicy { get; set; }
     //
     // public ReminderPolicy? ReminderPolicy { get; set; }
     

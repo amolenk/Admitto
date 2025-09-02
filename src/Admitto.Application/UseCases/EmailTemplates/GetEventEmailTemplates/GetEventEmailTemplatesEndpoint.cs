@@ -1,3 +1,5 @@
+using Amolenk.Admitto.Application.Common.Email;
+
 namespace Amolenk.Admitto.Application.UseCases.EmailTemplates.GetEventEmailTemplates;
 
 /// <summary>
@@ -25,15 +27,21 @@ public static class GetEventEmailTemplatesEndpoint
         var (teamId, eventId) =
             await slugResolver.ResolveTeamAndTicketedEventIdsAsync(teamSlug, eventSlug, cancellationToken);
 
-        var emailTemplates = await context.EmailTemplates
+        var customTemplates = await context.EmailTemplates
             .Where(t => t.TeamId == teamId && (t.TicketedEventId == eventId || t.TicketedEventId == null))
+            .Select(t => new EventEmailTemplateDto(t.Type, t.TicketedEventId, true))
             .ToListAsync(cancellationToken);
 
-        var response = new GetEventEmailTemplatesResponse(
-            emailTemplates
-                .Select(t => new EventEmailTemplateDto(t.Type, t.TicketedEventId))
-                .ToArray());
+        var customizedTypes = customTemplates.Select(t => t.Type).ToHashSet();
 
-        return TypedResults.Ok(response);
+        var nonCustomTemplates = WellKnownEmailType.All
+            .Where(t => !customizedTypes.Contains(t))
+            .Select(t => new EventEmailTemplateDto(t, null, false));
+
+        var allTemplates = nonCustomTemplates.Concat(customTemplates)
+            .OrderBy(t => t.Type)
+            .ToArray();
+
+        return TypedResults.Ok(new GetEventEmailTemplatesResponse(allTemplates));
     }
 }

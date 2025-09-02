@@ -26,13 +26,11 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Common\Jobs\" />
       <Folder Include="Common\Messaging\" />
       <Folder Include="Common\Security\" />
-      <Folder Include="UseCases\Attendees\GetActivities\" />
       <Folder Include="UseCases\EmailTemplates\" />
       <Folder Include="UseCases\EmailVerification\" />
-      <Folder Include="UseCases\Participants\" />
+      <Folder Include="UseCases\Email\SendCustomEmail\" />
       <Folder Include="UseCases\TicketedEventsAvailability\" />
     </ItemGroup>
 

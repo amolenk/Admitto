@@ -1,6 +1,3 @@
-using Amolenk.Admitto.Domain.Contracts;
-using Amolenk.Admitto.Domain.ValueObjects;
-
 namespace Amolenk.Admitto.Domain.Entities;
 
 /// <summary>
@@ -14,7 +11,7 @@ public class EmailTemplate : Aggregate
 
     private EmailTemplate(
         Guid id,
-        EmailType type,
+        string type,
         string subject,
         string body,
         Guid teamId,
@@ -28,14 +25,14 @@ public class EmailTemplate : Aggregate
         TicketedEventId = ticketedEventId;
     }
 
-    public EmailType Type { get; private set; }
+    public string Type { get; private set; } = null!;
     public string Subject { get; private set; } = null!;
     public string Body { get; private set; } = null!;
     public Guid TeamId { get; private set; }
     public Guid? TicketedEventId { get; private set; }
 
     public static EmailTemplate Create(
-        EmailType type,
+        string type,
         string subject,
         string body,
         Guid teamId,

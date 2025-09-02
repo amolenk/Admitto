@@ -61,7 +61,13 @@ public sealed class ApplicationRuleError
         public static readonly ApplicationRuleError VerificationCodeParameterMissing =
             new("verification_request.code_parameter_missing", "Verification code must be passed as an additional parameter.");
     }
-    
+
+    public static class Email
+    {
+        public static ApplicationRuleError BulkNotSupported =>
+            new("email.bulk_not_supported", "Bulk sending is not supported for this email type.");
+    }
+
     public static class General
     {
         public static ApplicationRuleError AlreadyExists =>

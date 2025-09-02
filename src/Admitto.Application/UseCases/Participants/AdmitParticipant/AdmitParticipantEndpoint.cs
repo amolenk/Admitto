@@ -6,17 +6,17 @@ namespace Amolenk.Admitto.Application.UseCases.Participants.AdmitParticipant;
 
 public static class AdmitParticipantEndpoint
 {
-    public static RouteGroupBuilder MapAdmitParticipant(this RouteGroupBuilder group)
+    public static RouteGroupBuilder MapAdmit(this RouteGroupBuilder group)
     {
         group
-            .MapPost("/{publicId:guid}/admit", AdmitParticipant)
-            .WithName(nameof(AdmitParticipant))
+            .MapPost("/{publicId:guid}/admit", Admit)
+            .WithName(nameof(Admit))
             .RequireAuthorization(policy => policy.RequireCanUpdateEvent());
 
         return group;
     }
 
-    private static async ValueTask<Ok<AdmitParticipantResponse>> AdmitParticipant(
+    private static async ValueTask<Ok<AdmitParticipantResponse>> Admit(
         string teamSlug,
         string eventSlug,
         Guid publicId,

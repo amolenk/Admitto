@@ -96,24 +96,17 @@ public class Attendee : Aggregate
         AddDomainEvent(domainEvent);
     }
 
-    // public void ReconfirmRegistration(DateTimeOffset? reconfirmedAt = null)
-    // {
-    //     if (Status != AttendeeStatus.Registered)
-    //     {
-    //         throw new BusinessRuleException(BusinessRuleError.Registration.MustBeCompletedBeforeReconfirming);
-    //     }
-    //
-    //     if (Participation is not null)
-    //     {
-    //         throw new BusinessRuleException(BusinessRuleError.Registration.CannotReconfirmAfterParticipation);
-    //     }
-    //
-    //     reconfirmedAt ??= DateTimeOffset.UtcNow;
-    //     if (ReconfirmedAt is null || ReconfirmedAt < reconfirmedAt)
-    //     {
-    //         ReconfirmedAt = reconfirmedAt;
-    //     }
-    // }
+    public void ReconfirmRegistration()
+    {
+        if (RegistrationStatus != RegistrationStatus.Registered && RegistrationStatus != RegistrationStatus.Reconfirmed)
+        {
+            throw new DomainRuleException(DomainRuleError.Attendee.CannotReconfirmInStatus(RegistrationStatus));
+        }
+
+        RegistrationStatus = RegistrationStatus.Reconfirmed;
+        
+        AddDomainEvent(new AttendeeReconfirmedDomainEvent(TicketedEventId, ParticipantId, Id));
+    }
 
     public void MarkAsAttended()
     {

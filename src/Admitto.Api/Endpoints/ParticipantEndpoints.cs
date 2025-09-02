@@ -1,6 +1,8 @@
 using Amolenk.Admitto.ApiService.Middleware;
 using Amolenk.Admitto.Application.UseCases.Participants.AdmitParticipant;
+using Amolenk.Admitto.Application.UseCases.Participants.CancelParticipation;
 using Amolenk.Admitto.Application.UseCases.Participants.GetQRCode;
+using Amolenk.Admitto.Application.UseCases.Participants.ReconfirmParticipation;
 
 namespace Amolenk.Admitto.ApiService.Endpoints;
 
@@ -20,7 +22,9 @@ public static class ParticipantEndpoints
             .RequireAuthorization();
 
         group
-            .MapAdmitParticipant()
-            .MapGetQRCode();
+            .MapAdmit()
+            .MapCancelParticipation()
+            .MapGetQRCode()
+            .MapReconfirmParticipation();
     }
 }

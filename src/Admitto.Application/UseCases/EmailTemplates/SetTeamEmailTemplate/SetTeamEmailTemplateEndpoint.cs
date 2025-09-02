@@ -20,7 +20,7 @@ public static class SetTeamEmailTemplateEndpoint
 
     private static async ValueTask<Ok> SetTeamEmailTemplate(
         string teamSlug,
-        EmailType emailType,
+        string emailType,
         SetTeamEmailTemplateRequest request,
         ISlugResolver slugResolver,
         IApplicationContext context,

@@ -36,12 +36,6 @@ public class EmailLogEntityConfiguration : IEntityTypeConfiguration<EmailLog>
             .IsRequired()
             .HasMaxLength(ColumnMaxLength.EmailAddress);
 
-        builder.Property(e => e.RecipientType)
-            .HasColumnName("recipient_type")
-            .HasConversion<string>()
-            .IsRequired()
-            .HasMaxLength(32);
-
         builder.Property(e => e.EmailType)
             .HasColumnName("email_type")
             .IsRequired()

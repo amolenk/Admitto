@@ -25,7 +25,7 @@ public class VerificationEmailComposer(
                 ApplicationRuleError.EmailVerificationRequest.VerificationCodeParameterMissing);
         }
 
-        var info = await context.EmailVerificationRequests
+        var item = await context.EmailVerificationRequests
             .AsNoTracking()
             .Join(
                 context.TicketedEvents,
@@ -41,16 +41,15 @@ public class VerificationEmailComposer(
             })
             .FirstOrDefaultAsync(cancellationToken: cancellationToken);
 
-        if (info is null)
+        if (item is null)
         {
             throw new ApplicationRuleException(ApplicationRuleError.EmailVerificationRequest.NotFound(entityId));
         }
 
         return new VerificationEmailParameters(
-            info.Name,
-            info.Website,
-            info.Email,
-            EmailRecipientType.Other,
+            item.Name,
+            item.Website,
+            item.Email,
             verificationCode);
     }
 
@@ -63,7 +62,6 @@ public class VerificationEmailComposer(
             "Test Event",
             "www.example.com",
             recipient,
-            EmailRecipientType.Other,
             "123456");
     }
 }

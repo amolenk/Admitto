@@ -16,6 +16,12 @@ public sealed class DomainRuleError
 
     public override string ToString() => $"{Code}: {MessageText}";
 
+    public static class Attendee
+    {
+        public static DomainRuleError CannotReconfirmInStatus(RegistrationStatus status) =>
+            new("attendee.cannot_reconfirm", $"Cannot reconfirm attendance when registration is in status '{status}'.");
+    }
+    
     public static class Contributor
     {
         public static DomainRuleError UnsupportedRole(string role) =>
@@ -24,8 +30,8 @@ public sealed class DomainRuleError
     
     public static class Email
     {
-        public static DomainRuleError UnsupportedType(EmailType emailType) =>
-            new("email.unsupported_type", $"The specified email type '{emailType}' is not supported.");
+        public static DomainRuleError UnsupportedType =>
+            new("email.unsupported_type", "The specified email type is not supported.");
     }
 
     public static class Entity

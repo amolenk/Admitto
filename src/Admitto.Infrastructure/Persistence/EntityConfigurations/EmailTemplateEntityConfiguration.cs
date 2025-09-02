@@ -21,13 +21,12 @@ public class EmailTemplateEntityConfiguration : IEntityTypeConfiguration<EmailTe
             .IsRequired();
 
         builder.Property(e => e.TicketedEventId)
-            .HasColumnName("event_id")
-            .IsRequired();
+            .HasColumnName("event_id");
 
         builder.Property(e => e.Type)
             .HasColumnName("type")
-            .HasConversion<string>()
-            .IsRequired();
+            .IsRequired()
+            .HasMaxLength(ColumnMaxLength.EmailType);
 
         builder.Property(e => e.Subject)
             .HasColumnName("subject")
@@ -42,7 +41,7 @@ public class EmailTemplateEntityConfiguration : IEntityTypeConfiguration<EmailTe
             .HasColumnName("event_id");
         
         builder
-            .HasIndex(e => new { e.TeamId, e.TicketedEventId, TemplateType = e.Type })
+            .HasIndex(e => new { e.TeamId, e.TicketedEventId, e.Type })
             .IsUnique();
     }
 }

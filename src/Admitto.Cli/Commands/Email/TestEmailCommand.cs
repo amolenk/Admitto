@@ -5,8 +5,7 @@ namespace Amolenk.Admitto.Cli.Commands.Email;
 public class TestEmailSettings : TeamEventSettings
 {
     [CommandOption("--emailType")]
-    [EmailTypeDescription]
-    public EmailType? EmailType { get; init; }
+    public string? EmailType { get; init; }
 
     [CommandOption("--recipient")]
     public required string Recipient { get; init; }
@@ -63,7 +62,7 @@ public class TestEmailCommand(
         };
 
         var response = await CallApiAsync(async client =>
-            await client.Teams[teamSlug].Events[eventSlug].Emails[settings.EmailType.ToString()].Test.PostAsync(request));
+            await client.Teams[teamSlug].Events[eventSlug].Emails[settings.EmailType].Test.PostAsync(request));
         if (response is null) return 1;
 
         AnsiConsole.MarkupLine(
