@@ -17,10 +17,8 @@ public class EmailLog
     public required Guid IdempotencyKey { get; init; }
     
     public required string Recipient { get; init; }
-
-    public required EmailRecipientType RecipientType { get; init; }
     
-    public required EmailType EmailType { get; init; }
+    public required string EmailType { get; init; }
     
     public required string Subject { get; init; }
     

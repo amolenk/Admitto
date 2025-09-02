@@ -4,9 +4,8 @@ namespace Amolenk.Admitto.Cli.Commands.Email.Template.Team;
 
 public class ClearTeamEmailTemplateSettings : TeamSettings
 {
-    [CommandOption("--emailType")]
-    [EmailTypeDescription]
-    public EmailType? EmailType { get; init; }
+    [CommandOption("--type")]
+    public string? EmailType { get; init; }
 
     public override ValidationResult Validate()
     {
@@ -27,7 +26,7 @@ public class ClearTeamEmailTemplateCommand(IAccessTokenProvider accessTokenProvi
         var teamSlug = GetTeamSlug(settings.TeamSlug);
         
         var response = await CallApiAsync(async client =>
-            await client.Teams[teamSlug].EmailTemplates[settings.EmailType.ToString()] .DeleteAsync());
+            await client.Teams[teamSlug].EmailTemplates[settings.EmailType] .DeleteAsync());
         if (response is null) return 1;
 
         AnsiConsole.MarkupLine(

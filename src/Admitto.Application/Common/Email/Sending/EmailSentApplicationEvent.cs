@@ -9,9 +9,9 @@ namespace Amolenk.Admitto.Application.Common.Email.Sending;
 public record EmailSentApplicationEvent(
     Guid TeamId,
     Guid TicketedEventId,
+    Guid ParticipantId,
     string Recipient,
-    EmailRecipientType RecipientType,
     string Subject,
-    EmailType EmailType,
+    string EmailType,
     Guid EmailLogId)
     : ApplicationEvent;

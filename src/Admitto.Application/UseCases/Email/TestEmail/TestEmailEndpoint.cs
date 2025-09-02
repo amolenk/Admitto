@@ -25,7 +25,7 @@ public static class TestEmailEndpoint
     private static async ValueTask<Ok> TestEmail(
         string teamSlug,
         string eventSlug,
-        EmailType emailType,
+        string emailType,
         TestEmailRequest request,
         ISlugResolver slugResolver,
         IEmailComposerRegistry emailComposerRegistry,

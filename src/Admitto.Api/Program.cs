@@ -34,6 +34,7 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 // TODO
 builder.Services.AddDefaultApplicationServices();
 builder.Services.AddEmailServices();
+builder.Services.AddCommandHandlers();
 
 builder.AddDefaultInfrastructureServices();
 

@@ -16,15 +16,11 @@ public class ListTeamEmailTemplatesCommand(IAccessTokenProvider accessTokenProvi
         table.AddColumn("Email type");
         table.AddColumn("Status");
 
-        foreach (var typeName in Enum.GetNames<EmailType>().OrderBy(x => x))
+        foreach (var emailTemplate in response.EmailTemplates ?? [])
         {
-            var type = Enum.Parse<EmailType>(typeName);
+            var status = emailTemplate.IsCustom ?? false ? "Custom" : "[grey]Default[/]"; 
             
-            var emailTemplate = response.EmailTemplates!.FirstOrDefault(t => t.Type == type);
-
-            var status = emailTemplate is null ? "[grey]Default[/]" : "Customized"; 
-            
-            table.AddRow(typeName, status);
+            table.AddRow(emailTemplate.Type!, status);
         }
         
         AnsiConsole.Write(table);

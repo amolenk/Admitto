@@ -32,10 +32,6 @@ namespace Amolenk.Admitto.Cli.Api.Models
 #else
         public string Name { get; set; }
 #endif
-        /// <summary>The registrationEndTime property</summary>
-        public DateTimeOffset? RegistrationEndTime { get; set; }
-        /// <summary>The registrationStartTime property</summary>
-        public DateTimeOffset? RegistrationStartTime { get; set; }
         /// <summary>The slug property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
@@ -82,8 +78,6 @@ namespace Amolenk.Admitto.Cli.Api.Models
                 { "baseUrl", n => { BaseUrl = n.GetStringValue(); } },
                 { "endTime", n => { EndTime = n.GetDateTimeOffsetValue(); } },
                 { "name", n => { Name = n.GetStringValue(); } },
-                { "registrationEndTime", n => { RegistrationEndTime = n.GetDateTimeOffsetValue(); } },
-                { "registrationStartTime", n => { RegistrationStartTime = n.GetDateTimeOffsetValue(); } },
                 { "slug", n => { Slug = n.GetStringValue(); } },
                 { "startTime", n => { StartTime = n.GetDateTimeOffsetValue(); } },
                 { "website", n => { Website = n.GetStringValue(); } },
@@ -99,8 +93,6 @@ namespace Amolenk.Admitto.Cli.Api.Models
             writer.WriteStringValue("baseUrl", BaseUrl);
             writer.WriteDateTimeOffsetValue("endTime", EndTime);
             writer.WriteStringValue("name", Name);
-            writer.WriteDateTimeOffsetValue("registrationEndTime", RegistrationEndTime);
-            writer.WriteDateTimeOffsetValue("registrationStartTime", RegistrationStartTime);
             writer.WriteStringValue("slug", Slug);
             writer.WriteDateTimeOffsetValue("startTime", StartTime);
             writer.WriteStringValue("website", Website);

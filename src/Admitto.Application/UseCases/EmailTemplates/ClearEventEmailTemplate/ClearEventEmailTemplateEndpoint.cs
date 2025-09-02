@@ -20,7 +20,7 @@ public static class ClearEventEmailTemplateEndpoint
     private static async ValueTask<Ok> ClearEventEmailTemplate(
         string teamSlug,
         string eventSlug,
-        EmailType emailType,
+        string emailType,
         ISlugResolver slugResolver,
         IApplicationContext context,
         CancellationToken cancellationToken)

@@ -48,9 +48,10 @@ public class TicketedEvent : Aggregate
     public string BaseUrl { get; private set; } = null!;
     public TicketedEventPolicies ConfiguredPolicies { get; private set; } = null!;
     public string SigningKey { get; private set; } = null!;
-    
-    public RegistrationPolicy RegistrationPolicy => ConfiguredPolicies.RegistrationPolicy ?? RegistrationPolicy.Default;
+
     public CancellationPolicy CancellationPolicy => ConfiguredPolicies.CancellationPolicy ?? CancellationPolicy.Default;
+    public ReconfirmPolicy ReconfirmPolicy => ConfiguredPolicies.ReconfirmPolicy ?? ReconfirmPolicy.Default;
+    public RegistrationPolicy RegistrationPolicy => ConfiguredPolicies.RegistrationPolicy ?? RegistrationPolicy.Default;
 
     public static TicketedEvent Create(
         Guid teamId,

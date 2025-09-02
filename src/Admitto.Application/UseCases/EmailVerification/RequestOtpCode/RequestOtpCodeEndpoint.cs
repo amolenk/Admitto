@@ -60,7 +60,7 @@ public static class RequestOtpCodeEndpoint
         var sendEmailCommand = new SendEmailCommand(
             eventId,
             verificationRequest.Id,
-            EmailType.VerifyEmail,
+            WellKnownEmailType.VerifyEmail,
             teamId,
             new Dictionary<string, string>
             {

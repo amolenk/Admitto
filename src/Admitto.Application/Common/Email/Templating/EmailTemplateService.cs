@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Domain.Entities;
-using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Application.Common.Email.Templating;
 
@@ -10,7 +9,7 @@ namespace Amolenk.Admitto.Application.Common.Email.Templating;
 public interface IEmailTemplateService
 {
     ValueTask<EmailTemplate> LoadEmailTemplateAsync(
-        EmailType type,
+        string type,
         Guid teamId,
         Guid ticketedEventId,
         CancellationToken cancellationToken);
@@ -24,7 +23,7 @@ public class EmailTemplateService(IApplicationContext context) : IEmailTemplateS
 {
     // TODO - consider caching templates
     public async ValueTask<EmailTemplate> LoadEmailTemplateAsync(
-        EmailType type,
+      string type,
         Guid teamId,
         Guid ticketedEventId,
         CancellationToken cancellationToken)
@@ -39,8 +38,8 @@ public class EmailTemplateService(IApplicationContext context) : IEmailTemplateS
 
         return type switch
         {
-            EmailType.VerifyEmail => GetDefaultVerifyEmailTemplate(teamId),
-            EmailType.Ticket => GetDefaultTicketTemplate(teamId),
+            WellKnownEmailType.VerifyEmail => GetDefaultVerifyEmailTemplate(teamId),
+            WellKnownEmailType.Ticket => GetDefaultTicketTemplate(teamId),
             _ => throw new NotSupportedException($"Email type '{type}' is not supported.")
         };
     }
@@ -48,7 +47,7 @@ public class EmailTemplateService(IApplicationContext context) : IEmailTemplateS
     private static EmailTemplate GetDefaultVerifyEmailTemplate(Guid teamId)
     {
         return EmailTemplate.Create(
-            EmailType.VerifyEmail,
+            WellKnownEmailType.VerifyEmail,
             "Verify Your Email",
             """
             <!DOCTYPE html>
@@ -95,7 +94,7 @@ public class EmailTemplateService(IApplicationContext context) : IEmailTemplateS
     private static EmailTemplate GetDefaultTicketTemplate(Guid teamId)
     {
         return EmailTemplate.Create(
-            EmailType.Ticket,
+            WellKnownEmailType.Ticket,
             "Your {{ event_name }} Ticket",
             """
             <!DOCTYPE html>

@@ -17,7 +17,13 @@ namespace Amolenk.Admitto.Cli.Api.Models
         /// <summary>The dataEntityId property</summary>
         public Guid? DataEntityId { get; set; }
         /// <summary>The emailType property</summary>
-        public global::Amolenk.Admitto.Cli.Api.Models.EmailType? EmailType { get; set; }
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public string? EmailType { get; set; }
+#nullable restore
+#else
+        public string EmailType { get; set; }
+#endif
         /// <summary>
         /// Instantiates a new <see cref="global::Amolenk.Admitto.Cli.Api.Models.SendEmailRequest"/> and sets the default values.
         /// </summary>
@@ -44,7 +50,7 @@ namespace Amolenk.Admitto.Cli.Api.Models
             return new Dictionary<string, Action<IParseNode>>
             {
                 { "dataEntityId", n => { DataEntityId = n.GetGuidValue(); } },
-                { "emailType", n => { EmailType = n.GetEnumValue<global::Amolenk.Admitto.Cli.Api.Models.EmailType>(); } },
+                { "emailType", n => { EmailType = n.GetStringValue(); } },
             };
         }
         /// <summary>
@@ -55,7 +61,7 @@ namespace Amolenk.Admitto.Cli.Api.Models
         {
             _ = writer ?? throw new ArgumentNullException(nameof(writer));
             writer.WriteGuidValue("dataEntityId", DataEntityId);
-            writer.WriteEnumValue<global::Amolenk.Admitto.Cli.Api.Models.EmailType>("emailType", EmailType);
+            writer.WriteStringValue("emailType", EmailType);
             writer.WriteAdditionalData(AdditionalData);
         }
     }

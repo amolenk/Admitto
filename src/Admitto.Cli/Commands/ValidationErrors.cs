@@ -5,17 +5,14 @@ public static class ValidationErrors
     public static readonly ValidationResult DataTypeEntityMissing =
         ValidationResult.Error("Data type entity must be specified.");
     
-    public static readonly ValidationResult EmailBodyPathDoesNotExist = 
-        ValidationResult.Error("Email body path does not exist. Please provide a valid path to the email body template file.");
+    public static readonly ValidationResult EmailTemplateFolderPathDoesNotExist = 
+        ValidationResult.Error("Email template folder path does not exist. Please provide a valid path to the email template file.");
 
-    public static readonly ValidationResult EmailBodyPathMissing = 
-        ValidationResult.Error("Email body path must be specified.");
+    public static readonly ValidationResult EmailTemplateFolderPathMissing = 
+        ValidationResult.Error("Email template folder path must be specified.");
     
     public static readonly ValidationResult EmailMissing = 
         ValidationResult.Error("Email must be specified.");
-
-    public static readonly ValidationResult EmailSubjectMissing = 
-        ValidationResult.Error("Email subject must be specified.");
 
     public static readonly ValidationResult EmailRecipientMissing =
         ValidationResult.Error("Email recipient must be specified.");

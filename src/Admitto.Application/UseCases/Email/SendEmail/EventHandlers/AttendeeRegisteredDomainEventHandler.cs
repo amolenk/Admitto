@@ -1,6 +1,6 @@
+using Amolenk.Admitto.Application.Common.Email;
 using Amolenk.Admitto.Domain.DomainEvents;
 using Amolenk.Admitto.Domain.Utilities;
-using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Application.UseCases.Email.SendEmail.EventHandlers;
 
@@ -15,7 +15,7 @@ public class AttendeeRegisteredDomainEventHandler(SendEmailHandler sendEmailHand
         var command = new SendEmailCommand(
             domainEvent.TicketedEventId,
             domainEvent.AttendeeId,
-            EmailType.Ticket)
+            WellKnownEmailType.Ticket)
         {
             CommandId = DeterministicGuid.Create($"{domainEvent.DomainEventId}:{nameof(SendEmailCommand)}")
         };

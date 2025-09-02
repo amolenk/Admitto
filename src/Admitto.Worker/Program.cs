@@ -31,7 +31,6 @@ builder.Services.AddHostedService<MessageQueuesWorker>();
 // TODO Move to ServiceDefaults
 // builder.Services.AddDefaultApplicationServices();
 builder.Services.AddCommandHandlers();
-builder.Services.AddJobHandlers();
 builder.Services.AddEventualDomainEventHandlers();
 builder.Services.AddApplicationEventHandlers();
 builder.Services.AddEmailServices();

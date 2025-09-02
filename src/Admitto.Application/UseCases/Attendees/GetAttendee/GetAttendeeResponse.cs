@@ -7,5 +7,4 @@ public record GetAttendeeResponse(
     string Email,
     string FirstName,
     string LastName,
-    RegistrationStatus RegistrationStatus,
-    string Signature);
+    RegistrationStatus RegistrationStatus);

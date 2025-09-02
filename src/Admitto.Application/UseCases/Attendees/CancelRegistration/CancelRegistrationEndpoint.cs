@@ -1,10 +1,9 @@
-using Amolenk.Admitto.Application.Common;
-using Amolenk.Admitto.Application.Common.Cryptography;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Amolenk.Admitto.Application.UseCases.Attendees.CancelRegistration;
 
 /// <summary>
-/// Represents the endpoint for cancelling an existing registration for a ticketed event.
+/// Represents the endpoint for cancelling an existing registration for a ticketed eve.
 /// </summary>
 public static class CancelRegistrationEndpoint
 {
@@ -22,30 +21,13 @@ public static class CancelRegistrationEndpoint
         string teamSlug,
         string eventSlug,
         Guid attendeeId,
-        string signature,
-        ISigningService signingService,
         ISlugResolver slugResolver,
-        IApplicationContext context,
+        [FromServices] CancelRegistrationHandler handler,
         CancellationToken cancellationToken)
     {
         var eventId= await slugResolver.ResolveTicketedEventIdAsync(teamSlug, eventSlug, cancellationToken);
 
-        if (!await signingService.IsValidAsync(attendeeId, signature, eventId, cancellationToken))
-        {
-            throw new ApplicationRuleException(ApplicationRuleError.Signing.InvalidSignature);
-        }
-        
-        var attendee = await context.Attendees.FindAsync([attendeeId], cancellationToken);
-        if (attendee is null || attendee.TicketedEventId != eventId)
-        {
-            throw new ApplicationRuleException(ApplicationRuleError.Attendee.NotFound);
-        }        
-        
-        var ticketedEvent = await context.TicketedEvents.FindAsync([eventId], cancellationToken);
-        
-        attendee.CancelRegistration(ticketedEvent!.CancellationPolicy, ticketedEvent.StartTime);
-
-        context.Attendees.Remove(attendee);
+        await handler.HandleAsync(new CancelRegistrationCommand(eventId, attendeeId), cancellationToken);
         
         return TypedResults.Ok();
     }

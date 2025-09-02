@@ -4,15 +4,11 @@ namespace Amolenk.Admitto.Cli.Commands.Email.Template.Event;
 
 public class SetEventEmailTemplateSettings : TeamEventSettings
 {
-    [CommandOption("--emailType")]
-    [EmailTypeDescription]
-    public EmailType? EmailType { get; init; }
+    [CommandOption("--type")]
+    public string? EmailType { get; init; }
 
-    [CommandOption("--subject")]
-    public required string Subject { get; init; }
-    
-    [CommandOption("--bodyPath")]
-    public required string BodyPath { get; init; }
+    [CommandOption("--path")]
+    public required string TemplateFolderPath { get; init; }
     
     public override ValidationResult Validate()
     {
@@ -21,19 +17,14 @@ public class SetEventEmailTemplateSettings : TeamEventSettings
             return ValidationErrors.EmailTypeMissing;
         }
 
-        if (string.IsNullOrWhiteSpace(Subject))
+        if (string.IsNullOrWhiteSpace(TemplateFolderPath))
         {
-            return ValidationErrors.EmailSubjectMissing;
-        }
-
-        if (string.IsNullOrWhiteSpace(BodyPath))
-        {
-            return ValidationErrors.EmailBodyPathMissing;
+            return ValidationErrors.EmailTemplateFolderPathMissing;
         }
         
-        if (!File.Exists(BodyPath))
+        if (!Directory.Exists(TemplateFolderPath))
         {
-            return ValidationErrors.EmailBodyPathDoesNotExist;
+            return ValidationErrors.EmailTemplateFolderPathDoesNotExist;
         }
         
         return base.Validate();
@@ -48,14 +39,16 @@ public class SetEventEmailTemplateCommand(IAccessTokenProvider accessTokenProvid
         var teamSlug = GetTeamSlug(settings.TeamSlug);
         var eventSlug = GetEventSlug(settings.EventSlug);
 
+        var template = EmailTemplate.Load(settings.TemplateFolderPath);
+        
         var request = new SetEventEmailTemplateRequest
         {
-            Subject = settings.Subject,
-            Body = await File.ReadAllTextAsync(settings.BodyPath)
+            Subject = template.SubjectTemplate,
+            Body = template.BodyTemplate
         };
-
+        
         var response = await CallApiAsync(async client =>
-            await client.Teams[teamSlug].Events[eventSlug].EmailTemplates[settings.EmailType.ToString()]
+            await client.Teams[teamSlug].Events[eventSlug].EmailTemplates[settings.EmailType]
                 .PutAsync(request));
         if (response is null) return 1;
 

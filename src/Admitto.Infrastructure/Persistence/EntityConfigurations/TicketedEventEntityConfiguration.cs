@@ -58,16 +58,20 @@ public class TicketedEventEntityConfiguration(IDataProtectionProvider dataProtec
             {
                 b.ToJson("policies");
 
-                b.OwnsOne<CancellationPolicy>(p => p.CancellationPolicy, cpb =>
+                b.OwnsOne<CancellationPolicy>(p => p.CancellationPolicy, pb =>
                 {
-                    cpb.ToJson();
-                });
-                
-                b.OwnsOne<RegistrationPolicy>(p => p.RegistrationPolicy, rpb =>
-                {
-                    rpb.ToJson();
+                    pb.ToJson();
                 });
 
+                b.OwnsOne<ReconfirmPolicy>(p => p.ReconfirmPolicy, pb =>
+                {
+                    pb.ToJson();
+                });
+
+                b.OwnsOne<RegistrationPolicy>(p => p.RegistrationPolicy, pb =>
+                {
+                    pb.ToJson();
+                });
             });
 
         builder.Property(e => e.SigningKey)

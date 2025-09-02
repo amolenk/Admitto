@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Application.Common;
-using Amolenk.Admitto.Application.Common.Cryptography;
 
 namespace Amolenk.Admitto.Application.UseCases.Attendees.GetAttendee;
 
@@ -21,7 +20,6 @@ public static class GetAttendeeEndpoint
         Guid attendeeId,
         ISlugResolver slugResolver,
         IApplicationContext context,
-        ISigningService signingService,
         CancellationToken cancellationToken)
     {
         var eventId = await slugResolver.ResolveTicketedEventIdAsync(teamSlug, eventSlug, cancellationToken);
@@ -32,15 +30,12 @@ public static class GetAttendeeEndpoint
             throw new ApplicationRuleException(ApplicationRuleError.Attendee.NotFound);
         }
 
-        var signature = await signingService.SignAsync(attendeeId, eventId, cancellationToken);
-        
         var response = new GetAttendeeResponse(
             attendee.Id,
             attendee.Email,
             attendee.FirstName,
             attendee.LastName,
-            attendee.RegistrationStatus, 
-            signature);
+            attendee.RegistrationStatus);
         
         return TypedResults.Ok(response);
     }

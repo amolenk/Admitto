@@ -8,6 +8,4 @@ namespace Amolenk.Admitto.Application.Common.Email.Composing;
 public interface IEmailParameters
 {
     string Recipient { get; }
-    
-    EmailRecipientType RecipientType { get; }
 }

@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Amolenk.Admitto.Application.Common.Email.Templating;
 using Amolenk.Admitto.Domain.ValueObjects;
 using Scriban;
@@ -11,7 +12,7 @@ namespace Amolenk.Admitto.Application.Common.Email.Composing;
 public interface IEmailComposer
 {
     ValueTask<EmailMessage> ComposeMessageAsync(
-        EmailType emailType,
+        string emailType,
         Guid teamId,
         Guid ticketedEventId,
         Guid entityId,
@@ -19,12 +20,18 @@ public interface IEmailComposer
         CancellationToken cancellationToken = default);
 
     ValueTask<EmailMessage> ComposeTestMessageAsync(
-        EmailType emailType,
+        string emailType,
         Guid teamId,
         Guid ticketedEventId,
         string recipient,
         List<AdditionalDetail> additionalDetails,
         List<TicketSelection> tickets,
+        CancellationToken cancellationToken = default);
+    
+    IAsyncEnumerable<EmailMessage> ComposeBulkMessagesAsync(
+        string emailType,
+        Guid teamId,
+        Guid ticketedEventId,
         CancellationToken cancellationToken = default);
 }
 
@@ -34,7 +41,7 @@ public interface IEmailComposer
 public abstract class EmailComposer(IEmailTemplateService templateService) : IEmailComposer
 {
     public async ValueTask<EmailMessage> ComposeMessageAsync(
-        EmailType emailType,
+        string emailType,
         Guid teamId,
         Guid ticketedEventId,
         Guid entityId,
@@ -51,7 +58,7 @@ public abstract class EmailComposer(IEmailTemplateService templateService) : IEm
     }
 
     public async ValueTask<EmailMessage> ComposeTestMessageAsync(
-        EmailType emailType,
+        string emailType,
         Guid teamId,
         Guid ticketedEventId,
         string recipient,
@@ -63,7 +70,32 @@ public abstract class EmailComposer(IEmailTemplateService templateService) : IEm
 
         return await BuildEmailMessageAsync(emailType, teamId, ticketedEventId, templateParameters, cancellationToken);
     }
+    
+    public async IAsyncEnumerable<EmailMessage> ComposeBulkMessagesAsync(
+        string emailType,
+        Guid teamId,
+        Guid ticketedEventId,
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        var entityIds = await GetEntityIdsForBulkAsync(ticketedEventId, cancellationToken);
+        
+        foreach (var entityId in entityIds)
+        {
+            var templateParameters = await GetTemplateParametersAsync(
+                ticketedEventId,
+                entityId,
+                [],
+                cancellationToken);
 
+            yield return await BuildEmailMessageAsync(
+                emailType,
+                teamId,
+                ticketedEventId,
+                templateParameters,
+                cancellationToken);
+        }
+    }
+    
     protected abstract ValueTask<IEmailParameters> GetTemplateParametersAsync(
         Guid ticketedEventId,
         Guid entityId,
@@ -75,8 +107,15 @@ public abstract class EmailComposer(IEmailTemplateService templateService) : IEm
         List<AdditionalDetail> additionalDetails,
         List<TicketSelection> tickets);
 
+    protected virtual ValueTask<IEnumerable<Guid>> GetEntityIdsForBulkAsync(
+        Guid ticketedEventId,
+        CancellationToken cancellationToken)
+    {
+        throw new ApplicationRuleException(ApplicationRuleError.Email.BulkNotSupported);
+    }
+
     private async ValueTask<EmailMessage> BuildEmailMessageAsync(
-        EmailType emailType,
+        string emailType,
         Guid teamId,
         Guid ticketedEventId,
         IEmailParameters templateParameters,
@@ -99,7 +138,6 @@ public abstract class EmailComposer(IEmailTemplateService templateService) : IEm
 
         return new EmailMessage(
             templateParameters.Recipient,
-            templateParameters.RecipientType,
             subject,
             body,
             emailType);
