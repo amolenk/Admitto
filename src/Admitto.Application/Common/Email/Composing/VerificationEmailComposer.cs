@@ -13,7 +13,7 @@ public class VerificationEmailComposer(
 {
     public const string VerificationCodeParameterName = "verification_code";
 
-    protected override async ValueTask<IEmailParameters> GetTemplateParametersAsync(
+    protected override async ValueTask<(IEmailParameters Parameters, Guid? ParticipantId)> GetTemplateParametersAsync(
         Guid ticketedEventId,
         Guid entityId,
         Dictionary<string, string> additionalParameters,
@@ -46,11 +46,13 @@ public class VerificationEmailComposer(
             throw new ApplicationRuleException(ApplicationRuleError.EmailVerificationRequest.NotFound(entityId));
         }
 
-        return new VerificationEmailParameters(
+        var parameters = new VerificationEmailParameters(
             item.Name,
             item.Website,
             item.Email,
             verificationCode);
+        
+        return (parameters, null);
     }
 
     protected override IEmailParameters GetTestTemplateParameters(

@@ -14,7 +14,7 @@ public class ReconfirmEmailComposer(
     IEmailTemplateService templateService)
     : EmailComposer(templateService)
 {
-    protected override async ValueTask<IEmailParameters> GetTemplateParametersAsync(
+    protected override async ValueTask<(IEmailParameters Parameters, Guid? ParticipantId)> GetTemplateParametersAsync(
         Guid ticketedEventId,
         Guid entityId,
         Dictionary<string, string> additionalParameters,
@@ -53,6 +53,7 @@ public class ReconfirmEmailComposer(
                 x.Attendee.AdditionalDetails,
                 x.Attendee.Tickets,
                 x.Participant.PublicId,
+                ParticipantId = x.Participant.Id
             })
             .FirstOrDefaultAsync(cancellationToken);
 
@@ -63,7 +64,7 @@ public class ReconfirmEmailComposer(
 
         var signature = await signingService.SignAsync(item.PublicId, ticketedEventId, cancellationToken);
 
-        return new ReconfirmEmailParameters(
+        var parameters = new ReconfirmEmailParameters(
             item.Email,
             item.Name,
             item.Website,
@@ -77,6 +78,8 @@ public class ReconfirmEmailComposer(
                 .ToList(),
             $"{item.BaseUrl}/tickets/reconfirm/{item.PublicId}/{signature}",
             $"{item.BaseUrl}/tickets/cancel/{item.PublicId}/{signature}");
+        
+        return (parameters, item.ParticipantId);
     }
 
     protected override IEmailParameters GetTestTemplateParameters(
