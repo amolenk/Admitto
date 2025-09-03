@@ -2,12 +2,6 @@ name: Provision Infrastructure
 
 on:
   workflow_dispatch: {}
-  push:
-    branches:
-      - main
-    paths:
-      - 'infra/**'
-      - '.github/workflows/provision.yml'
 
 permissions:
   id-token: write

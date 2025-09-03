@@ -4,7 +4,7 @@ param principalId string
 var resourceToken = uniqueString(resourceGroup().id)
 
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
-  name: take('keyVault-${resourceToken}', 24)
+  name: take('kv-${resourceToken}', 24)
   location: location
   properties: {
     tenantId: tenant().tenantId

@@ -9,6 +9,12 @@ targetScope = 'resourceGroup'
 @description('The location used for all deployed resources')
 param location string
 
+
+@minLength(16)
+@description('The password for the PostgreSQL database')
+@secure()
+param postgresPassword string
+
 // @description('Id of the user or app to assign application roles')
 // param principalId string = ''
 // 
@@ -32,12 +38,7 @@ param location string
 // }
 
 
-// module messaging 'messaging/messaging.module.bicep' = {
-//   name: 'messaging'
-//   params: {
-//     location: location
-//   }
-// }
+
 // module messaging_roles 'messaging-roles/messaging-roles.module.bicep' = {
 //   name: 'messaging-roles'
 //   params: {
@@ -84,6 +85,37 @@ module containerAppEnvironment 'modules/containerAppEnvironment.bicep' = {
   name: 'containerAppEnvironment'
   params: {
     location: location
+    managedIdentityId: managedIdentity.outputs.id
+  }
+}
+
+// module serviceBus 'modules/serviceBus.bicep' = {
+//   name: 'serviceBus'
+//   params: {
+//     location: location
+//     principalId: managedIdentity.outputs.principalId
+//     containerAppsOutboundIp: containerAppEnvironment.outputs.natEgressIp
+//   }
+// }
+
+// module postgres 'modules/postgres.bicep' = {
+//   name: 'postgres'
+//   params: {
+//     administratorLoginPassword: postgresPassword
+//     containerAppsOutboundIp: containerAppEnvironment.outputs.natEgressIp
+//     keyVaultName: keyVault.outputs.name
+//     location: location
+//   }
+// }
+
+module openfga 'modules/openFgaApp.bicep' = {
+  name: 'openfga-app'
+  params: {
+    containerAppEnvironmentId: containerAppEnvironment.outputs.id
+    keyVaultName: keyVault.outputs.name
+    location: location
+    managedIdentityId: managedIdentity.outputs.id
+    acrLoginServer: containerRegistry.outputs.loginServer
   }
 }
 
