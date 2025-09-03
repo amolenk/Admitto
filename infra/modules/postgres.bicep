@@ -1,50 +1,52 @@
-@description('The location for the resource(s) to be deployed.')
 param location string = resourceGroup().location
-
-param administratorLogin string
+param containerAppsOutboundIp string
+param administratorLogin string = 'admitto_admin'
 
 @secure()
 param administratorLoginPassword string
 
 param keyVaultName string
 
-resource postgres 'Microsoft.DBforPostgreSQL/flexibleServers@2024-08-01' = {
-  name: take('postgres-${uniqueString(resourceGroup().id)}', 63)
+resource postgres 'Microsoft.DBforPostgreSQL/flexibleServers@2025-06-01-preview' = {
+  name: take('pg-${uniqueString(resourceGroup().id)}', 63)
   location: location
   properties: {
     administratorLogin: administratorLogin
     administratorLoginPassword: administratorLoginPassword
     authConfig: {
-      activeDirectoryAuth: 'Disabled'
+      activeDirectoryAuth: 'Enabled'
       passwordAuth: 'Enabled'
     }
     availabilityZone: '1'
     backup: {
-      backupRetentionDays: 7
+      backupRetentionDays: 30
       geoRedundantBackup: 'Disabled'
     }
     highAvailability: {
       mode: 'Disabled'
     }
-    storage: {
-      storageSizeGB: 32
+    network: {
+      publicNetworkAccess: 'Enabled'
     }
-    version: '16'
+    storage: {
+      autoGrow: 'Enabled'
+      storageSizeGB: 64
+      tier: 'P6'
+      type: 'Premium_LRS'
+    }
+    version: '17'
   }
   sku: {
-    name: 'Standard_B1ms'
-    tier: 'Burstable'
-  }
-  tags: {
-    'aspire-resource-name': 'postgres'
+    name: 'Standard_D2ds_v5'
+    tier: 'GeneralPurpose'
   }
 }
 
-resource postgreSqlFirewallRule_AllowAllAzureIps 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2024-08-01' = {
-  name: 'AllowAllAzureIps'
+resource postgreSqlFirewallRule_AllowContainerApps 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2025-06-01-preview' = {
+  name: 'AllowContainerApps'
   properties: {
-    endIpAddress: '0.0.0.0'
-    startIpAddress: '0.0.0.0'
+    endIpAddress: containerAppsOutboundIp
+    startIpAddress: containerAppsOutboundIp
   }
   parent: postgres
 }
@@ -63,13 +65,13 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
   name: keyVaultName
 }
 
-resource connectionString 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
-  name: 'connectionstrings--postgres'
-  properties: {
-    value: 'Host=${postgres.properties.fullyQualifiedDomainName};Username=${administratorLogin};Password=${administratorLoginPassword}'
-  }
-  parent: keyVault
-}
+// resource connectionString 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+//   name: 'connectionstrings--postgres'
+//   properties: {
+//     value: 'Host=${postgres.properties.fullyQualifiedDomainName};Username=${administratorLogin};Password=${administratorLoginPassword}'
+//   }
+//   parent: keyVault
+// }
 
 resource admitto_db_connectionString 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
   name: 'connectionstrings--admitto-db'
@@ -82,7 +84,7 @@ resource admitto_db_connectionString 'Microsoft.KeyVault/vaults/secrets@2023-07-
 resource openfga_db_connectionString 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
   name: 'connectionstrings--openfga-db'
   properties: {
-    value: 'Host=${postgres.properties.fullyQualifiedDomainName};Username=${administratorLogin};Password=${administratorLoginPassword};Database=openfga-db'
+    value: 'postgres://${administratorLogin}:${administratorLoginPassword}@${postgres.properties.fullyQualifiedDomainName}:5432/openfga-db?sslmode=disable'
   }
   parent: keyVault
 }
