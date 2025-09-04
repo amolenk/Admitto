@@ -21,6 +21,7 @@ on:
       - 'src/Admitto.Domain/**'
       - 'src/Admitto.Infrastructure/**'
       - 'src/Admitto.ServiceDefaults/**'
+  workflow_dispatch: {}
 
 permissions:
   id-token: write
