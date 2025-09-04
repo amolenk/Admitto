@@ -84,7 +84,7 @@ resource admitto_db_connectionString 'Microsoft.KeyVault/vaults/secrets@2023-07-
 resource openfga_db_connectionString 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
   name: 'connectionstrings--openfga-db'
   properties: {
-    value: 'postgres://${administratorLogin}:${administratorLoginPassword}@${postgres.properties.fullyQualifiedDomainName}:5432/openfga-db?sslmode=disable'
+    value: 'postgres://${administratorLogin}:${administratorLoginPassword}@${postgres.properties.fullyQualifiedDomainName}:5432/openfga-db?sslmode=require'
   }
   parent: keyVault
 }
