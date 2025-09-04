@@ -98,15 +98,15 @@ module containerAppEnvironment 'modules/containerAppEnvironment.bicep' = {
 //   }
 // }
 
-// module postgres 'modules/postgres.bicep' = {
-//   name: 'postgres'
-//   params: {
-//     administratorLoginPassword: postgresPassword
-//     containerAppsOutboundIp: containerAppEnvironment.outputs.natEgressIp
-//     keyVaultName: keyVault.outputs.name
-//     location: location
-//   }
-// }
+module postgres 'modules/postgres.bicep' = {
+  name: 'postgres'
+  params: {
+    administratorLoginPassword: postgresPassword
+    containerAppsOutboundIp: containerAppEnvironment.outputs.natEgressIp
+    keyVaultName: keyVault.outputs.name
+    location: location
+  }
+}
 
 module openfga 'modules/openFgaApp.bicep' = {
   name: 'openfga-app'

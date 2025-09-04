@@ -85,12 +85,13 @@ resource subnet 'Microsoft.Network/virtualNetworks/subnets@2024-07-01' existing 
 resource containerAppEnvironment 'Microsoft.App/managedEnvironments@2025-02-02-preview' = {
   name: 'cae-${resourceToken}'
   location: location
-  identity: {
-    type: 'UserAssigned'
-    userAssignedIdentities: {
-      '${managedIdentityId}': {}
-    }
-  }
+  // Don't need this, ACR auth is done through app
+//   identity: {
+//     type: 'UserAssigned'
+//     userAssignedIdentities: {
+//       '${managedIdentityId}': {}
+//     }
+//   }
   properties: {
     workloadProfiles: [{
       workloadProfileType: 'Consumption'

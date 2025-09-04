@@ -4,8 +4,10 @@ param containerAppEnvironmentId string
 param keyVaultName string
 param managedIdentityId string
 
+var resourceToken = uniqueString(resourceGroup().id)
+
 resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
-  name: 'openfga'
+  name: 'app-openfga-${resourceToken}'
   location: location
   identity: {
     type: 'UserAssigned'
@@ -23,33 +25,51 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
       registries: [
         {
           identity: managedIdentityId
-          server: '${acrLoginServer}.azurecr.io'
+          server: acrLoginServer
         }
       ]
-//       secrets: [
-//         {
-//           name: 'openfga-db-connection-string'
-//           keyVaultUrl: 'https://${keyVaultName}.vault.azure.net/secrets/connectionstrings--openfga-db'
-//         }
-//       ]
-//       environmentVariables: [
-//         {
-//           name: 'OPENFGA_DATASTORE_ENGINE'
-//           value: 'postgres'
-//         }
-//         {
-//           name: 'OPENFGA_DATASTORE_URI'
-//           secretRef: 'openfga-db-connection-string'
-//         }
-//       ]
+      secrets: [
+        {
+          name: 'openfga-db-connection-string'
+          keyVaultUrl: 'https://${keyVaultName}.vault.azure.net/secrets/connectionstrings--openfga-db'
+          identity: managedIdentityId
+        }
+      ]
     }
     environmentId: containerAppEnvironmentId
     template: {
+      initContainers: [
+        {
+          image: '${acrLoginServer}/openfga:v1.9.5'
+          name: 'openfga-migrate'
+          command: ['/openfga', 'migrate']
+          env: [
+            {
+              name: 'OPENFGA_DATASTORE_ENGINE'
+              value: 'postgres'
+            }
+            {
+              name: 'OPENFGA_DATASTORE_URI'
+              secretRef: 'openfga-db-connection-string'
+            }
+          ]
+        }
+      ]
       containers: [
         {
           image: '${acrLoginServer}/openfga:v1.9.5'
           name: 'openfga'
-          command: ['run']
+          command: ['/openfga', 'run']
+          env: [
+            {
+              name: 'OPENFGA_DATASTORE_ENGINE'
+              value: 'postgres'
+            }
+            {
+              name: 'OPENFGA_DATASTORE_URI'
+              secretRef: 'openfga-db-connection-string'
+            }
+          ]
         }
       ]
       scale: {
