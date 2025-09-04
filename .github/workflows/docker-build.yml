@@ -52,9 +52,15 @@ jobs:
         subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
         tenant-id: ${{ secrets.AZURE_TENANT_ID }}
 
+    - name: Get ACR name
+      id: get_acr_name
+      run: |
+        ACR_NAME=$(az acr list --resource-group ${{ vars.AZURE_RESOURCE_GROUP }} --query '[0].name' -o tsv)
+        echo "acr_name=$ACR_NAME" >> $GITHUB_OUTPUT
+
     - name: Login to ACR
       run: |
-        az acr login --name ${{ vars.AZURE_CONTAINER_REGISTRY_NAME }}
+        az acr login --name ${{ steps.get_acr_name.outputs.acr_name }}
 
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
