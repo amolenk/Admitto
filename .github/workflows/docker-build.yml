@@ -69,7 +69,7 @@ jobs:
       id: meta
       uses: docker/metadata-action@v5
       with:
-        images: ${{ env.REGISTRY }}/admitto-${{ matrix.project.name }}
+        images: ${{ steps.get_acr_name.outputs.acr_name }}.azurecr.io/admitto-${{ matrix.project.name }}
         tags: |
           type=ref,event=branch
           type=ref,event=pr
