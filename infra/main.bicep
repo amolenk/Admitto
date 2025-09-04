@@ -119,6 +119,39 @@ module openfga 'modules/openFgaApp.bicep' = {
   }
 }
 
+module admittoApi 'modules/admittoApiApp.bicep' = {
+  name: 'admitto-api-app'
+  params: {
+    containerAppEnvironmentId: containerAppEnvironment.outputs.id
+    keyVaultName: keyVault.outputs.name
+    location: location
+    managedIdentityId: managedIdentity.outputs.id
+    acrLoginServer: containerRegistry.outputs.loginServer
+  }
+}
+
+module admittoWorker 'modules/admittoWorkerApp.bicep' = {
+  name: 'admitto-worker-app'
+  params: {
+    containerAppEnvironmentId: containerAppEnvironment.outputs.id
+    keyVaultName: keyVault.outputs.name
+    location: location
+    managedIdentityId: managedIdentity.outputs.id
+    acrLoginServer: containerRegistry.outputs.loginServer
+  }
+}
+
+module admittoJobRunner 'modules/admittoJobRunnerApp.bicep' = {
+  name: 'admitto-jobrunner-app'
+  params: {
+    containerAppEnvironmentId: containerAppEnvironment.outputs.id
+    keyVaultName: keyVault.outputs.name
+    location: location
+    managedIdentityId: managedIdentity.outputs.id
+    acrLoginServer: containerRegistry.outputs.loginServer
+  }
+}
+
 // output MANAGED_IDENTITY_CLIENT_ID string = managedIdentity.outputs.clientId
 // output MANAGED_IDENTITY_NAME string = managedIdentity.outputs.name
 // output MANAGED_IDENTITY_PRINCIPAL_ID string = managedIdentity.outputs.principalId
@@ -130,3 +163,9 @@ module openfga 'modules/openFgaApp.bicep' = {
 // output AZURE_CONTAINER_APPS_ENVIRONMENT_NAME string = containerAppEnvironment.outputs.name
 // output AZURE_CONTAINER_APPS_ENVIRONMENT_ID string = containerAppEnvironment.outputs.id
 // output AZURE_CONTAINER_APPS_ENVIRONMENT_DEFAULT_DOMAIN string = containerAppEnvironment.outputs.defaultDomain
+
+output ADMITTO_API_URL string = admittoApi.outputs.url
+output ADMITTO_API_NAME string = admittoApi.outputs.name
+output ADMITTO_WORKER_NAME string = admittoWorker.outputs.name
+output ADMITTO_JOBRUNNER_NAME string = admittoJobRunner.outputs.name
+output CONTAINER_REGISTRY_LOGIN_SERVER string = containerRegistry.outputs.loginServer

@@ -1,0 +1,81 @@
+name: Build and Push Docker Images
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/Admitto.Api/**'
+      - 'src/Admitto.Worker/**'
+      - 'src/Admitto.JobRunner/**'
+      - 'src/Admitto.Application/**'
+      - 'src/Admitto.Domain/**'
+      - 'src/Admitto.Infrastructure/**'
+      - 'src/Admitto.ServiceDefaults/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'src/Admitto.Api/**'
+      - 'src/Admitto.Worker/**'
+      - 'src/Admitto.JobRunner/**'
+      - 'src/Admitto.Application/**'
+      - 'src/Admitto.Domain/**'
+      - 'src/Admitto.Infrastructure/**'
+      - 'src/Admitto.ServiceDefaults/**'
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  REGISTRY: ${{ vars.AZURE_CONTAINER_REGISTRY_NAME }}.azurecr.io
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        project: [
+          { name: 'api', path: 'src/Admitto.Api' },
+          { name: 'worker', path: 'src/Admitto.Worker' },
+          { name: 'jobrunner', path: 'src/Admitto.JobRunner' }
+        ]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Login to Azure
+      uses: azure/login@v2
+      with:
+        client-id: ${{ secrets.AZURE_CLIENT_ID }}
+        subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+        tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+
+    - name: Login to ACR
+      run: |
+        az acr login --name ${{ vars.AZURE_CONTAINER_REGISTRY_NAME }}
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/admitto-${{ matrix.project.name }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=raw,value=latest,enable={{is_default_branch}}
+          type=raw,value=${{ github.run_number }}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ${{ matrix.project.path }}/Dockerfile
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max

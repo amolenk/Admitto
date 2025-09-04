@@ -57,6 +57,9 @@ var app = new CommandApp(registrar);
 
 app.Configure(config =>
 {
+    config.AddCommand<VersionCommand>("version")
+        .WithDescription("Show version information");
+    
     config.AddBranch(
         "attendee",
         attendee =>
