@@ -1,0 +1,133 @@
+name: Build and Release CLI
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/Admitto.Cli/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'src/Admitto.Cli/**'
+
+permissions:
+  contents: write
+
+jobs:
+  build-cli:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        runtime: [
+          { name: 'win-x64', os: 'windows' },
+          { name: 'osx-arm64', os: 'macos' }
+        ]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '9.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore src/Admitto.Cli/Admitto.Cli.csproj
+
+    - name: Build and publish
+      run: |
+        dotnet publish src/Admitto.Cli/Admitto.Cli.csproj \
+          -c Release \
+          -r ${{ matrix.runtime.name }} \
+          --self-contained true \
+          -p:PublishSingleFile=true \
+          -p:PublishTrimmed=true \
+          -p:AssemblyVersion=1.0.${{ github.run_number }}.0 \
+          -p:FileVersion=1.0.${{ github.run_number }}.0 \
+          -p:InformationalVersion=1.0.${{ github.run_number }}-${{ github.sha }} \
+          -o ./publish/${{ matrix.runtime.name }}
+
+    - name: Create archive (Windows)
+      if: matrix.runtime.os == 'windows'
+      run: |
+        cd ./publish/${{ matrix.runtime.name }}
+        zip -r ../../admitto-cli-${{ matrix.runtime.name }}.zip .
+
+    - name: Create archive (Unix)
+      if: matrix.runtime.os != 'windows'
+      run: |
+        cd ./publish/${{ matrix.runtime.name }}
+        tar -czf ../../admitto-cli-${{ matrix.runtime.name }}.tar.gz .
+
+    - name: Upload artifacts (Windows)
+      if: matrix.runtime.os == 'windows'
+      uses: actions/upload-artifact@v4
+      with:
+        name: admitto-cli-${{ matrix.runtime.name }}
+        path: admitto-cli-${{ matrix.runtime.name }}.zip
+
+    - name: Upload artifacts (Unix)
+      if: matrix.runtime.os != 'windows'
+      uses: actions/upload-artifact@v4
+      with:
+        name: admitto-cli-${{ matrix.runtime.name }}
+        path: admitto-cli-${{ matrix.runtime.name }}.tar.gz
+
+  release:
+    runs-on: ubuntu-latest
+    needs: build-cli
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: ./artifacts
+
+    - name: Generate release tag
+      id: tag
+      run: |
+        TAG="cli-v$(date +'%Y%m%d')-${{ github.run_number }}"
+        echo "tag=$TAG" >> $GITHUB_OUTPUT
+        echo "Generated tag: $TAG"
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.tag.outputs.tag }}
+        release_name: Admitto CLI ${{ steps.tag.outputs.tag }}
+        body: |
+          Admitto CLI Release
+          
+          Download the appropriate version for your platform:
+          - Windows: `admitto-cli-win-x64.zip`
+          - macOS Apple Silicon: `admitto-cli-osx-arm64.tar.gz`
+        draft: false
+        prerelease: false
+
+    - name: Upload Windows Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./artifacts/admitto-cli-win-x64/admitto-cli-win-x64.zip
+        asset_name: admitto-cli-win-x64.zip
+        asset_content_type: application/zip
+
+    - name: Upload macOS ARM Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./artifacts/admitto-cli-osx-arm64/admitto-cli-osx-arm64.tar.gz
+        asset_name: admitto-cli-osx-arm64.tar.gz
+        asset_content_type: application/gzip
