@@ -20,9 +20,7 @@ jobs:
       matrix:
         runtime: [
           { name: 'win-x64', os: 'windows' },
-          { name: 'osx-x64', os: 'macos' },
-          { name: 'osx-arm64', os: 'macos' },
-          { name: 'linux-x64', os: 'linux' }
+          { name: 'osx-arm64', os: 'macos' }
         ]
     
     steps:
@@ -45,6 +43,9 @@ jobs:
           --self-contained true \
           -p:PublishSingleFile=true \
           -p:PublishTrimmed=true \
+          -p:AssemblyVersion=1.0.${{ github.run_number }}.0 \
+          -p:FileVersion=1.0.${{ github.run_number }}.0 \
+          -p:InformationalVersion=1.0.${{ github.run_number }}-${{ github.sha }} \
           -o ./publish/${{ matrix.runtime.name }}
 
     - name: Create archive (Windows)
@@ -107,9 +108,7 @@ jobs:
           
           Download the appropriate version for your platform:
           - Windows: `admitto-cli-win-x64.zip`
-          - macOS Intel: `admitto-cli-osx-x64.tar.gz`
           - macOS Apple Silicon: `admitto-cli-osx-arm64.tar.gz`
-          - Linux: `admitto-cli-linux-x64.tar.gz`
         draft: false
         prerelease: false
 
@@ -123,16 +122,6 @@ jobs:
         asset_name: admitto-cli-win-x64.zip
         asset_content_type: application/zip
 
-    - name: Upload macOS Intel Release Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./artifacts/admitto-cli-osx-x64/admitto-cli-osx-x64.tar.gz
-        asset_name: admitto-cli-osx-x64.tar.gz
-        asset_content_type: application/gzip
-
     - name: Upload macOS ARM Release Asset
       uses: actions/upload-release-asset@v1
       env:
@@ -141,14 +130,4 @@ jobs:
         upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: ./artifacts/admitto-cli-osx-arm64/admitto-cli-osx-arm64.tar.gz
         asset_name: admitto-cli-osx-arm64.tar.gz
-        asset_content_type: application/gzip
-
-    - name: Upload Linux Release Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }}
-        asset_path: ./artifacts/admitto-cli-linux-x64/admitto-cli-linux-x64.tar.gz
-        asset_name: admitto-cli-linux-x64.tar.gz
         asset_content_type: application/gzip

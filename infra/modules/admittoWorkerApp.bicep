@@ -40,6 +40,10 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
         maxReplicas: 5
       }
     }
+    workloadProfileName: 'Consumption'
+    dataProtection: {
+      enabled: true
+    }
   }
 }
 

@@ -4,8 +4,8 @@ param containerAppEnvironmentId string
 param keyVaultName string
 param managedIdentityId string
 
-resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
-  name: 'admitto-jobrunner'
+resource containerJob 'Microsoft.App/jobs@2025-02-02-preview' = {
+  name: 'admitto-send-bulk-emails'
   location: location
   identity: {
     type: 'UserAssigned'
@@ -15,12 +15,11 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
   }
   properties: {
     configuration: {
-      activeRevisionsMode: 'Single'
-      ingress: {
-        external: false
-        targetPort: 8080
-        allowInsecure: true
+      manualTriggerConfig: {
+        replicaCompletionCount: 1
+        parallelism: 1
       }
+      triggerType: 'Manual'
       registries: [
         {
           identity: managedIdentityId
@@ -33,19 +32,20 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
       containers: [
         {
           image: '${acrLoginServer}/admitto-jobrunner:latest'
-          name: 'admitto-jobrunner'
+          name: 'admitto-send-bulk-emails'
+          args: ['send-bulk-emails']
           resources: {
             cpu: json('0.25')
             memory: '0.5Gi'
           }
         }
       ]
-      scale: {
-        minReplicas: 1
-        maxReplicas: 3
-      }
+    }
+    workloadProfileName: 'Consumption'
+    dataProtection: {
+      enabled: true
     }
   }
 }
 
-output name string = containerApp.name
+output name string = containerJob.name
