@@ -20,6 +20,7 @@ resource containerJob 'Microsoft.App/jobs@2025-02-02-preview' = {
         parallelism: 1
       }
       triggerType: 'Manual'
+      replicaTimeout: 3600
       registries: [
         {
           identity: managedIdentityId
@@ -40,10 +41,6 @@ resource containerJob 'Microsoft.App/jobs@2025-02-02-preview' = {
           }
         }
       ]
-    }
-    workloadProfileName: 'Consumption'
-    dataProtection: {
-      enabled: true
     }
   }
 }

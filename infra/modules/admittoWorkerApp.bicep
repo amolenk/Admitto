@@ -22,6 +22,11 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
           server: acrLoginServer
         }
       ]
+      runtime: {
+        dotnet: {
+          autoConfigureDataProtection: true
+        }
+      }
     }
     environmentId: containerAppEnvironmentId
     template: {
@@ -39,10 +44,6 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
         minReplicas: 1
         maxReplicas: 5
       }
-    }
-    workloadProfileName: 'Consumption'
-    dataProtection: {
-      enabled: true
     }
   }
 }

@@ -33,6 +33,11 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
           server: acrLoginServer
         }
       ]
+      runtime: {
+        dotnet: {
+          autoConfigureDataProtection: true
+        }
+      }
     }
     environmentId: containerAppEnvironmentId
     template: {
@@ -60,10 +65,6 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
           }
         ]
       }
-    }
-    workloadProfileName: 'Consumption'
-    dataProtection: {
-      enabled: true
     }
   }
 }
