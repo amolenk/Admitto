@@ -70,6 +70,10 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
               secretRef: 'openfga-db-connection-string'
             }
           ]
+          resources: {
+            cpu: json('0.5')
+            memory: '1Gi'
+          }
         }
       ]
       scale: {
