@@ -20,12 +20,6 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
         external: true
         targetPort: 8080
         allowInsecure: false
-        traffic: [
-          {
-            weight: 100
-            latestRevision: true
-          }
-        ]
       }
       registries: [
         {
@@ -43,7 +37,8 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
     template: {
       containers: [
         {
-          image: '${acrLoginServer}/admitto-api:latest'
+          // Use a placeholder image until the real one is built and pushed
+          image: 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
           name: 'admitto-api'
           resources: {
             cpu: json('0.5')
@@ -53,17 +48,7 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
       ]
       scale: {
         minReplicas: 1
-        maxReplicas: 10
-        rules: [
-          {
-            name: 'http-scaling'
-            http: {
-              metadata: {
-                concurrentRequests: '10'
-              }
-            }
-          }
-        ]
+        maxReplicas: 1
       }
     }
   }
