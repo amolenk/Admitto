@@ -37,9 +37,9 @@ jobs:
     strategy:
       matrix:
         project: [
-          { name: 'api', path: 'src/Admitto.Api' },
+#          { name: 'api', path: 'src/Admitto.Api' },
           { name: 'worker', path: 'src/Admitto.Worker' },
-          { name: 'jobrunner', path: 'src/Admitto.JobRunner' }
+#          { name: 'jobrunner', path: 'src/Admitto.JobRunner' }
         ]
     
     steps:
