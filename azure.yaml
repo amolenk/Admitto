@@ -1,8 +1,0 @@
-# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
-
-name: admitto
-services:  
-  app:
-    language: dotnet
-    project: ./src/Admitto.AppHost/Admitto.AppHost.csproj
-    host: containerapp
