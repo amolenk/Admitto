@@ -85,12 +85,19 @@ jobs:
         
     - name: Compose immutable image reference
       id: imm
-      run: echo "IMMUTABLE=${{ env.REGISTRY }}/admitto-${{ matrix.project.name }}@${{ steps.build.outputs.digest }}" >> $GITHUB_ENV
+      run: echo "IMMUTABLE_IMAGE=${{ env.REGISTRY }}/admitto-${{ matrix.project.name }}@${{ steps.build.outputs.digest }}" >> $GITHUB_ENV
 
     - name: Deploy new revision to ACA (pinned by digest)
-      uses: azure/container-apps-deploy-action@v2
-      with:
-        resourceGroup: ${{ vars.AZURE_RESOURCE_GROUP }}
-        containerAppName: app-admitto-${{ matrix.project.name }}-${{ vars.AZURE_RESOURCE_SUFFIX }}
-        imageToDeploy: ${{ env.IMMUTABLE }}
-        revisionSuffix: ${{ env.BUILD_TAG }}
+      run: |
+        az containerapp update \
+          -g ${{ vars.AZURE_RESOURCE_GROUP }} \
+          -n app-admitto-${{ matrix.project.name }}-${{ vars.AZURE_RESOURCE_SUFFIX }} \
+          --image ${{ env.IMMUTABLE_IMAGE }} \
+          --revision-suffix ${{ github.run_number }}
+#      
+#      uses: azure/container-apps-deploy-action@v2
+#      with:
+#        resourceGroup: ${{ vars.AZURE_RESOURCE_GROUP }}
+#        containerAppName: app-admitto-${{ matrix.project.name }}-${{ vars.AZURE_RESOURCE_SUFFIX }}
+#        imageToDeploy: ${{ env.IMMUTABLE }}
+#        revisionSuffix: ${{ env.BUILD_TAG }}
