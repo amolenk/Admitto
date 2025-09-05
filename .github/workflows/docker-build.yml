@@ -77,6 +77,7 @@ jobs:
           type=raw,value=${{ github.run_number }}
 
     - name: Build and push Docker image
+      id: build
       uses: docker/build-push-action@v5
       with:
         context: .
@@ -86,3 +87,15 @@ jobs:
         labels: ${{ steps.meta.outputs.labels }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
+        
+    - name: Compose immutable image reference
+      id: imm
+      run: echo "IMMUTABLE=${{ steps.get_acr_name.outputs.acr_name }}.azurecr.io/admitto-${{ matrix.project.name }}@${{ steps.build.outputs.digest }}" >> $GITHUB_ENV
+
+    - name: Deploy new revision to ACA (pinned by digest)
+      uses: azure/container-apps-deploy-action@v2
+      with:
+        resourceGroup: rg-admitto
+        containerAppName: admitto-api
+        imageToDeploy: ${{ env.IMMUTABLE }}
+        revisionSuffix: ${{ env.BUILD_TAG }}
