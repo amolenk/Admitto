@@ -1,0 +1,180 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.37.4.10188",
+      "templateHash": "6073851406817513961"
+    }
+  },
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]"
+    },
+    "privateEndpointSubnetId": {
+      "type": "string"
+    },
+    "vnetId": {
+      "type": "string"
+    },
+    "administratorLogin": {
+      "type": "string",
+      "defaultValue": "admitto_admin"
+    },
+    "administratorLoginPassword": {
+      "type": "securestring"
+    },
+    "keyVaultName": {
+      "type": "string"
+    }
+  },
+  "resources": [
+    {
+      "type": "Microsoft.DBforPostgreSQL/flexibleServers",
+      "apiVersion": "2025-06-01-preview",
+      "name": "[take(format('pg-{0}', uniqueString(resourceGroup().id)), 63)]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "administratorLogin": "[parameters('administratorLogin')]",
+        "administratorLoginPassword": "[parameters('administratorLoginPassword')]",
+        "authConfig": {
+          "activeDirectoryAuth": "Disabled",
+          "passwordAuth": "Enabled"
+        },
+        "availabilityZone": "1",
+        "backup": {
+          "backupRetentionDays": 30,
+          "geoRedundantBackup": "Disabled"
+        },
+        "highAvailability": {
+          "mode": "Disabled"
+        },
+        "network": {
+          "publicNetworkAccess": "Disabled"
+        },
+        "storage": {
+          "autoGrow": "Enabled",
+          "storageSizeGB": 64,
+          "tier": "P6",
+          "type": "Premium_LRS"
+        },
+        "version": "17"
+      },
+      "sku": {
+        "name": "Standard_D2ds_v5",
+        "tier": "GeneralPurpose"
+      }
+    },
+    {
+      "type": "Microsoft.Network/privateEndpoints",
+      "apiVersion": "2024-07-01",
+      "name": "[format('pe-{0}', take(format('pg-{0}', uniqueString(resourceGroup().id)), 63))]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "subnet": {
+          "id": "[parameters('privateEndpointSubnetId')]"
+        },
+        "privateLinkServiceConnections": [
+          {
+            "name": "postgres-connection",
+            "properties": {
+              "privateLinkServiceId": "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', take(format('pg-{0}', uniqueString(resourceGroup().id)), 63))]",
+              "groupIds": [
+                "postgresqlServer"
+              ]
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', take(format('pg-{0}', uniqueString(resourceGroup().id)), 63))]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/privateDnsZones",
+      "apiVersion": "2020-06-01",
+      "name": "privatelink.postgres.database.azure.com",
+      "location": "global"
+    },
+    {
+      "type": "Microsoft.Network/privateDnsZones/virtualNetworkLinks",
+      "apiVersion": "2020-06-01",
+      "name": "[format('{0}/{1}', 'privatelink.postgres.database.azure.com', 'postgres-dns-vnet-link')]",
+      "location": "global",
+      "properties": {
+        "registrationEnabled": false,
+        "virtualNetwork": {
+          "id": "[parameters('vnetId')]"
+        }
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/privateDnsZones', 'privatelink.postgres.database.azure.com')]"
+      ]
+    },
+    {
+      "type": "Microsoft.Network/privateEndpoints/privateDnsZoneGroups",
+      "apiVersion": "2024-07-01",
+      "name": "[format('{0}/{1}', format('pe-{0}', take(format('pg-{0}', uniqueString(resourceGroup().id)), 63)), 'postgres-dns-group')]",
+      "properties": {
+        "privateDnsZoneConfigs": [
+          {
+            "name": "postgres-config",
+            "properties": {
+              "privateDnsZoneId": "[resourceId('Microsoft.Network/privateDnsZones', 'privatelink.postgres.database.azure.com')]"
+            }
+          }
+        ]
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.Network/privateDnsZones', 'privatelink.postgres.database.azure.com')]",
+        "[resourceId('Microsoft.Network/privateEndpoints', format('pe-{0}', take(format('pg-{0}', uniqueString(resourceGroup().id)), 63)))]"
+      ]
+    },
+    {
+      "type": "Microsoft.DBforPostgreSQL/flexibleServers/databases",
+      "apiVersion": "2024-08-01",
+      "name": "[format('{0}/{1}', take(format('pg-{0}', uniqueString(resourceGroup().id)), 63), 'admitto-db')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', take(format('pg-{0}', uniqueString(resourceGroup().id)), 63))]"
+      ]
+    },
+    {
+      "type": "Microsoft.DBforPostgreSQL/flexibleServers/databases",
+      "apiVersion": "2024-08-01",
+      "name": "[format('{0}/{1}', take(format('pg-{0}', uniqueString(resourceGroup().id)), 63), 'openfga-db')]",
+      "dependsOn": [
+        "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', take(format('pg-{0}', uniqueString(resourceGroup().id)), 63))]"
+      ]
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults/secrets",
+      "apiVersion": "2023-07-01",
+      "name": "[format('{0}/{1}', parameters('keyVaultName'), 'connectionstrings--admitto-db')]",
+      "properties": {
+        "value": "[format('Host={0};Username={1};Password={2};Database=admitto-db', reference(resourceId('Microsoft.DBforPostgreSQL/flexibleServers', take(format('pg-{0}', uniqueString(resourceGroup().id)), 63)), '2025-06-01-preview').fullyQualifiedDomainName, parameters('administratorLogin'), parameters('administratorLoginPassword'))]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', take(format('pg-{0}', uniqueString(resourceGroup().id)), 63))]"
+      ]
+    },
+    {
+      "type": "Microsoft.KeyVault/vaults/secrets",
+      "apiVersion": "2023-07-01",
+      "name": "[format('{0}/{1}', parameters('keyVaultName'), 'connectionstrings--openfga-db')]",
+      "properties": {
+        "value": "[format('postgres://{0}:{1}@{2}:5432/openfga-db?sslmode=require', parameters('administratorLogin'), parameters('administratorLoginPassword'), reference(resourceId('Microsoft.DBforPostgreSQL/flexibleServers', take(format('pg-{0}', uniqueString(resourceGroup().id)), 63)), '2025-06-01-preview').fullyQualifiedDomainName)]"
+      },
+      "dependsOn": [
+        "[resourceId('Microsoft.DBforPostgreSQL/flexibleServers', take(format('pg-{0}', uniqueString(resourceGroup().id)), 63))]"
+      ]
+    }
+  ],
+  "outputs": {
+    "name": {
+      "type": "string",
+      "value": "[take(format('pg-{0}', uniqueString(resourceGroup().id)), 63)]"
+    }
+  }
+}

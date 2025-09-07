@@ -1,0 +1,122 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "metadata": {
+    "_generator": {
+      "name": "bicep",
+      "version": "0.37.4.10188",
+      "templateHash": "4042172080688153326"
+    }
+  },
+  "parameters": {
+    "acrLoginServer": {
+      "type": "string"
+    },
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]"
+    },
+    "containerAppEnvironmentDomain": {
+      "type": "string"
+    },
+    "containerAppEnvironmentId": {
+      "type": "string"
+    },
+    "keyVaultName": {
+      "type": "string"
+    },
+    "managedIdentityId": {
+      "type": "string"
+    },
+    "managedIdentityClientId": {
+      "type": "string"
+    },
+    "serviceBusEndpoint": {
+      "type": "string"
+    },
+    "openFgaAppName": {
+      "type": "string"
+    }
+  },
+  "variables": {
+    "resourceToken": "[uniqueString(resourceGroup().id)]"
+  },
+  "resources": [
+    {
+      "type": "Microsoft.App/containerApps",
+      "apiVersion": "2025-02-02-preview",
+      "name": "[format('app-admitto-worker-{0}', variables('resourceToken'))]",
+      "location": "[parameters('location')]",
+      "identity": {
+        "type": "UserAssigned",
+        "userAssignedIdentities": {
+          "[format('{0}', parameters('managedIdentityId'))]": {}
+        }
+      },
+      "properties": {
+        "configuration": {
+          "activeRevisionsMode": "Single",
+          "registries": [
+            {
+              "identity": "[parameters('managedIdentityId')]",
+              "server": "[parameters('acrLoginServer')]"
+            }
+          ],
+          "runtime": {
+            "dotnet": {
+              "autoConfigureDataProtection": true
+            }
+          },
+          "secrets": [
+            {
+              "name": "admitto-db-connection-string",
+              "keyVaultUrl": "[format('https://{0}.vault.azure.net/secrets/connectionstrings--admitto-db', parameters('keyVaultName'))]",
+              "identity": "[parameters('managedIdentityId')]"
+            }
+          ]
+        },
+        "environmentId": "[parameters('containerAppEnvironmentId')]",
+        "template": {
+          "containers": [
+            {
+              "image": "mcr.microsoft.com/azuredocs/containerapps-helloworld:latest",
+              "name": "admitto-worker",
+              "env": [
+                {
+                  "name": "AZURE_CLIENT_ID",
+                  "secretRef": "[parameters('managedIdentityClientId')]"
+                },
+                {
+                  "name": "ConnectionStrings__admitto-db",
+                  "secretRef": "admitto-db-connection-string"
+                },
+                {
+                  "name": "ConnectionStrings__messaging",
+                  "value": "[parameters('serviceBusEndpoint')]"
+                },
+                {
+                  "name": "services__openfga__http__0",
+                  "value": "[format('http://{0}.internal.{1}:8080', parameters('openFgaAppName'), parameters('containerAppEnvironmentDomain'))]"
+                }
+              ],
+              "resources": {
+                "cpu": "[json('0.5')]",
+                "memory": "1Gi"
+              }
+            }
+          ],
+          "scale": {
+            "minReplicas": 1,
+            "maxReplicas": 1
+          }
+        }
+      }
+    }
+  ],
+  "outputs": {
+    "name": {
+      "type": "string",
+      "value": "[format('app-admitto-worker-{0}', variables('resourceToken'))]"
+    }
+  }
+}
