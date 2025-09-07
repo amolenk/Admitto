@@ -1,6 +1,6 @@
-namespace Amolenk.Admitto.Application.UseCases.Participants.AdmitParticipant;
+namespace Amolenk.Admitto.Application.UseCases.Participants.CheckInParticipant;
 
-public record AdmitParticipantResponse(
+public record CheckInParticipantResponse(
     string Email,
     string FirstName,
     string LastName,

@@ -1,14 +1,14 @@
-using Amolenk.Admitto.Application.Projections.Participation;
+using Amolenk.Admitto.Application.Projections.Admission;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Amolenk.Admitto.Infrastructure.Persistence.EntityConfigurations;
 
-public class ParticipationViewEntityConfiguration : IEntityTypeConfiguration<ParticipationView>
+public class AdmissionViewEntityConfiguration : IEntityTypeConfiguration<AdmissionView>
 {
-    public void Configure(EntityTypeBuilder<ParticipationView> builder)
+    public void Configure(EntityTypeBuilder<AdmissionView> builder)
     {
-        builder.ToTable("vw_participation");
+        builder.ToTable("vw_admission");
         builder.HasKey(e => e.ParticipantId);
         
         builder.Property(e => e.ParticipantId)

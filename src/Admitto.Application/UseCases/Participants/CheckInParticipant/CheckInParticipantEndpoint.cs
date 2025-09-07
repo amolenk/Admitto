@@ -2,21 +2,21 @@ using Amolenk.Admitto.Application.Common;
 using Amolenk.Admitto.Application.Common.Cryptography;
 using Amolenk.Admitto.Application.UseCases.Attendees.RecordAttendance;
 
-namespace Amolenk.Admitto.Application.UseCases.Participants.AdmitParticipant;
+namespace Amolenk.Admitto.Application.UseCases.Participants.CheckInParticipant;
 
-public static class AdmitParticipantEndpoint
+public static class CheckInParticipantEndpoint
 {
     public static RouteGroupBuilder MapAdmit(this RouteGroupBuilder group)
     {
         group
-            .MapPost("/{publicId:guid}/admit", Admit)
+            .MapPost("/{publicId:guid}/check-in", Admit)
             .WithName(nameof(Admit))
             .RequireAuthorization(policy => policy.RequireCanUpdateEvent());
 
         return group;
     }
 
-    private static async ValueTask<Ok<AdmitParticipantResponse>> Admit(
+    private static async ValueTask<Ok<CheckInParticipantResponse>> Admit(
         string teamSlug,
         string eventSlug,
         Guid publicId,
@@ -46,10 +46,10 @@ public static class AdmitParticipantEndpoint
         // Publish a message to record the attendance.        
         if (admissionRecord.AttendeeId is not null && admissionRecord.AttendeeId != Guid.Empty)
         {
-            outbox.Enqueue(new RecordAttendanceCommand(admissionRecord.AttendeeId.Value));
+            outbox.Enqueue(new RecordAttendanceCommand(admissionRecord.AttendeeId.Value, Attended: true));
         }
 
-        var response = new AdmitParticipantResponse(
+        var response = new CheckInParticipantResponse(
             admissionRecord.Email,
             admissionRecord.FirstName,
             admissionRecord.LastName,

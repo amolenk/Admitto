@@ -29,7 +29,7 @@ public static class GetContributorsEndpoint
                 cr.Email,
                 cr.FirstName,
                 cr.LastName,
-                cr.Roles.Select(r => new ContributorRoleDto(r)).ToArray(),
+                cr.Roles.ToArray(),
                 cr.LastChangedAt))
             .ToArrayAsync(cancellationToken);
 

@@ -14,14 +14,6 @@ namespace Amolenk.Admitto.Cli.Api.Models
     {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
-        /// <summary>The interval property</summary>
-#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
-#nullable enable
-        public string? Interval { get; set; }
-#nullable restore
-#else
-        public string Interval { get; set; }
-#endif
         /// <summary>The windowEnd property</summary>
         public DateTimeOffset? WindowEnd { get; set; }
         /// <summary>The windowStart property</summary>
@@ -51,7 +43,6 @@ namespace Amolenk.Admitto.Cli.Api.Models
         {
             return new Dictionary<string, Action<IParseNode>>
             {
-                { "interval", n => { Interval = n.GetStringValue(); } },
                 { "windowEnd", n => { WindowEnd = n.GetDateTimeOffsetValue(); } },
                 { "windowStart", n => { WindowStart = n.GetDateTimeOffsetValue(); } },
             };
@@ -63,7 +54,6 @@ namespace Amolenk.Admitto.Cli.Api.Models
         public virtual void Serialize(ISerializationWriter writer)
         {
             _ = writer ?? throw new ArgumentNullException(nameof(writer));
-            writer.WriteStringValue("interval", Interval);
             writer.WriteDateTimeOffsetValue("windowEnd", WindowEnd);
             writer.WriteDateTimeOffsetValue("windowStart", WindowStart);
             writer.WriteAdditionalData(AdditionalData);

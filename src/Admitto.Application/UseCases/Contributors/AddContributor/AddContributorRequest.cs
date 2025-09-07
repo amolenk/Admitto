@@ -7,8 +7,6 @@ public record AddContributorRequest(
     string FirstName,
     string LastName,
     List<AdditionalDetailDto> AdditionalDetails,
-    List<ContributorRoleDto> Roles);
+    List<ContributorRole> Roles);
 
 public record AdditionalDetailDto(string Name, string Value);
-
-public record ContributorRoleDto(string Name);

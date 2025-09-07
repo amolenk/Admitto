@@ -1,5 +1,7 @@
 using Amolenk.Admitto.Domain.Entities;
+using Amolenk.Admitto.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Amolenk.Admitto.Infrastructure.Persistence.EntityConfigurations;
@@ -10,7 +12,7 @@ public class ContributorEntityConfiguration : IEntityTypeConfiguration<Contribut
     {
         builder.ToTable("contributors");
         builder.HasKey(e => e.Id);
-        
+
         builder.Property(e => e.Id)
             .HasColumnName("id")
             .IsRequired()
@@ -39,15 +41,28 @@ public class ContributorEntityConfiguration : IEntityTypeConfiguration<Contribut
             .IsRequired()
             .HasMaxLength(ColumnMaxLength.LastName);
 
-        builder.OwnsMany(e => e.AdditionalDetails, b =>
-        {
-            b.ToJson("additional_details");
-        });
+        builder.OwnsMany(e => e.AdditionalDetails,
+            b =>
+            {
+                b.ToJson("additional_details");
+            });
 
-        builder.OwnsMany(e => e.Roles, b =>
-        {
-            b.ToJson("roles");
-        });
+        builder.Property(e => e.Roles)
+            .HasColumnName("roles")
+            .HasConversion(
+                cr => cr.Select(r => r.ToString()).ToArray(),
+                v => v.Select(Enum.Parse<ContributorRole>).ToList()
+            )
+            .Metadata.SetValueComparer(
+                new ValueComparer<IReadOnlyCollection<ContributorRole>>(
+                    (cr1, cr2) =>
+                        cr1 == cr2 ||
+                        (cr1 != null && cr2 != null && cr1.Count == cr2.Count && !cr1.Except(cr2).Any()),
+                    cr => cr.OrderBy(x => x)
+                        .Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+                    cr => cr.ToList()
+                )
+            );
 
         builder.HasIndex(e => new { e.TicketedEventId, e.Email })
             .IsUnique();

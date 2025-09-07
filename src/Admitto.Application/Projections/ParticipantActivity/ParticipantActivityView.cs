@@ -1,6 +1,6 @@
-namespace Amolenk.Admitto.Application.Projections.ParticipantHistory;
+namespace Amolenk.Admitto.Application.Projections.ParticipantActivity;
 
-public class ParticipantHistoryView 
+public class ParticipantActivityView 
 {
     public required Guid Id { get; init; }
     
@@ -10,11 +10,9 @@ public class ParticipantHistoryView
     
     public required Guid SourceId { get; init; }
     
-    public required string Activity { get; init; }
-
-    public string? EmailType { get; init; }
+    public required ParticipantActivity Activity { get; init; }
     
     public Guid? EmailLogId { get; init; }
 
-    public required DateTimeOffset OccuredAt { get; init; }
+    public required DateTimeOffset OccuredOn { get; init; }
 }

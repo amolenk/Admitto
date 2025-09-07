@@ -16,6 +16,13 @@ public class RecordAttendanceHandler(IApplicationContext context)
             throw new ApplicationRuleException(ApplicationRuleError.Attendee.NotFound);
         }
 
-        attendee.MarkAsAttended();
+        if (command.Attended)
+        {
+            attendee.MarkAsCheckedIn();
+        }
+        else
+        {
+            attendee.MarkAsNoShow();
+        }
     }
 }

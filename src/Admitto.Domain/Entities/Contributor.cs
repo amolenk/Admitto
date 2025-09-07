@@ -76,6 +76,8 @@ public class Contributor : Aggregate
         IEnumerable<AdditionalDetail> additionalDetails,
         IEnumerable<ContributorRole> roles)
     {
+        // TODO Specific events for email and name changes?
+        
         if (email is not null)
         {
             Email = email;
@@ -105,23 +107,24 @@ public class Contributor : Aggregate
         var roleList = roles.ToList();
         if (roleList.Count > 0)
         {
+            var previousRoles = _roles.ToList();
+            
+            // Replace all roles if any are provided.
             _roles.Clear();
             _roles.AddRange(roleList.Distinct());
-        }
 
-        AddDomainEvent(
-            new ContributorUpdatedDomainEvent(
-                TicketedEventId,
-                ParticipantId,
-                Id,
-                email,
-                firstName,
-                lastName,
-                roleList.Count > 0 ? roleList : null));
+            AddDomainEvent(
+                new ContributorRolesChangedDomainEvent(
+                    TicketedEventId,
+                    ParticipantId,
+                    Id,
+                    previousRoles,
+                    _roles));
+        }
     }
 
     public void MarkAsRemoved()
     {
-        AddDomainEvent(new ContributorRemovedDomainEvent(TicketedEventId, ParticipantId, Id, Email));
+        AddDomainEvent(new ContributorRemovedDomainEvent(TicketedEventId, ParticipantId, Id, Email, _roles));
     }
 }

@@ -125,6 +125,9 @@ app.Configure(config =>
 
             contributor.AddCommand<Commands.Contributor.RemoveCommand>("remove")
                 .WithDescription("Remove a contributor");
+            
+            contributor.AddCommand<Commands.Contributor.UpdateCommand>("update")
+                .WithDescription("Updates a contributor");
         });
     
     config.AddBranch(
