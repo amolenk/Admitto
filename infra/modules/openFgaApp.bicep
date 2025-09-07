@@ -83,3 +83,5 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
     }
   }
 }
+
+output name string = containerApp.name

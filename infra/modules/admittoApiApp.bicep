@@ -4,8 +4,10 @@ param containerAppEnvironmentId string
 param keyVaultName string
 param managedIdentityId string
 
+var resourceToken = uniqueString(resourceGroup().id)
+
 resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
-  name: 'admitto-api'
+  name: 'app-admitto-api-${resourceToken}'
   location: location
   identity: {
     type: 'UserAssigned'

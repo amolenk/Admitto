@@ -1,11 +1,17 @@
 param acrLoginServer string
 param location string = resourceGroup().location
+param containerAppEnvironmentDomain string
 param containerAppEnvironmentId string
 param keyVaultName string
 param managedIdentityId string
+param managedIdentityClientId string
+param serviceBusEndpoint string
+param openFgaAppName string
+
+var resourceToken = uniqueString(resourceGroup().id)
 
 resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
-  name: 'admitto-worker'
+  name: 'app-admitto-worker-${resourceToken}'
   location: location
   identity: {
     type: 'UserAssigned'
@@ -27,6 +33,13 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
           autoConfigureDataProtection: true
         }
       }
+      secrets: [
+        {
+          name: 'admitto-db-connection-string'
+          keyVaultUrl: 'https://${keyVaultName}.vault.azure.net/secrets/connectionstrings--admitto-db'
+          identity: managedIdentityId
+        }
+      ]    
     }
     environmentId: containerAppEnvironmentId
     template: {
@@ -34,6 +47,25 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
         {
           // Use a placeholder image until the real one is built and pushed
           image: 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
+          name: 'admitto-worker'
+          env: [
+            {
+              name: 'AZURE_CLIENT_ID'
+              secretRef: managedIdentityClientId
+            }
+            {
+              name: 'ConnectionStrings__admitto-db'
+              secretRef: 'admitto-db-connection-string'
+            }
+            {
+              name: 'ConnectionStrings__messaging'
+              value: serviceBusEndpoint
+            }
+            {
+              name: 'services__openfga__http__0'
+              value: 'http://${openFgaAppName}.internal.${containerAppEnvironmentDomain}:8080'
+            }
+          ]
           resources: {
             cpu: json('0.5')
             memory: '1Gi'
