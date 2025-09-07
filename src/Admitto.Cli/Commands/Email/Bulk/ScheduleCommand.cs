@@ -65,8 +65,7 @@ public class ScheduleCommand(
             repeat = new RepeatDto
             {
                 WindowStart = settings.RepeatWindowStart!.Value,
-                WindowEnd = settings.RepeatWindowEnd!.Value,
-                Interval = settings.RepeatInterval!.Value.ToString()
+                WindowEnd = settings.RepeatWindowEnd!.Value
             };
         }
         

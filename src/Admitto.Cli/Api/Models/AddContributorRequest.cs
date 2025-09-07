@@ -49,10 +49,10 @@ namespace Amolenk.Admitto.Cli.Api.Models
         /// <summary>The roles property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public List<global::Amolenk.Admitto.Cli.Api.Models.ContributorRoleDto>? Roles { get; set; }
+        public List<global::Amolenk.Admitto.Cli.Api.Models.ContributorRole?>? Roles { get; set; }
 #nullable restore
 #else
-        public List<global::Amolenk.Admitto.Cli.Api.Models.ContributorRoleDto> Roles { get; set; }
+        public List<global::Amolenk.Admitto.Cli.Api.Models.ContributorRole?> Roles { get; set; }
 #endif
         /// <summary>
         /// Instantiates a new <see cref="global::Amolenk.Admitto.Cli.Api.Models.AddContributorRequest"/> and sets the default values.
@@ -83,7 +83,7 @@ namespace Amolenk.Admitto.Cli.Api.Models
                 { "email", n => { Email = n.GetStringValue(); } },
                 { "firstName", n => { FirstName = n.GetStringValue(); } },
                 { "lastName", n => { LastName = n.GetStringValue(); } },
-                { "roles", n => { Roles = n.GetCollectionOfObjectValues<global::Amolenk.Admitto.Cli.Api.Models.ContributorRoleDto>(global::Amolenk.Admitto.Cli.Api.Models.ContributorRoleDto.CreateFromDiscriminatorValue)?.AsList(); } },
+                { "roles", n => { Roles = n.GetCollectionOfEnumValues<global::Amolenk.Admitto.Cli.Api.Models.ContributorRole>()?.AsList(); } },
             };
         }
         /// <summary>
@@ -97,7 +97,7 @@ namespace Amolenk.Admitto.Cli.Api.Models
             writer.WriteStringValue("email", Email);
             writer.WriteStringValue("firstName", FirstName);
             writer.WriteStringValue("lastName", LastName);
-            writer.WriteCollectionOfObjectValues<global::Amolenk.Admitto.Cli.Api.Models.ContributorRoleDto>("roles", Roles);
+            writer.WriteCollectionOfEnumValues<global::Amolenk.Admitto.Cli.Api.Models.ContributorRole>("roles", Roles);
             writer.WriteAdditionalData(AdditionalData);
         }
     }

@@ -9,7 +9,5 @@ public record ContributorDto(
     string Email,
     string FirstName,
     string LastName,
-    ContributorRoleDto[] Roles,
+    ContributorRole[] Roles,
     DateTimeOffset LastChangedAt);
-
-public record ContributorRoleDto(string Name);

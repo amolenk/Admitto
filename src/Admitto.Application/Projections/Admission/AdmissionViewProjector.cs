@@ -1,15 +1,14 @@
 using Amolenk.Admitto.Application.Common;
 using Amolenk.Admitto.Domain.DomainEvents;
-using Humanizer;
 
-namespace Amolenk.Admitto.Application.Projections.Participation;
+namespace Amolenk.Admitto.Application.Projections.Admission;
 
-public class ParticipationViewProjector(IApplicationContext context)
+public class AdmissionViewProjector(IApplicationContext context)
     : IEventualDomainEventHandler<AttendeeRegisteredDomainEvent>,
         IEventualDomainEventHandler<AttendeeCanceledDomainEvent>,
         IEventualDomainEventHandler<AttendeeCanceledLateDomainEvent>,
         IEventualDomainEventHandler<ContributorAddedDomainEvent>,
-        IEventualDomainEventHandler<ContributorUpdatedDomainEvent>,
+        IEventualDomainEventHandler<ContributorRolesChangedDomainEvent>,
         IEventualDomainEventHandler<ContributorRemovedDomainEvent>
 {
     public async ValueTask HandleAsync(AttendeeRegisteredDomainEvent domainEvent, CancellationToken cancellationToken)
@@ -77,13 +76,13 @@ public class ParticipationViewProjector(IApplicationContext context)
                 record.LastName = domainEvent.LastName;
             }
 
-            record.ContributorStatus = string.Join(", ", domainEvent.Roles.Select(r => r.Name.Humanize()));
+            record.ContributorStatus = string.Join(", ", domainEvent.Roles.Select(r => r.ToString()));
             record.ContributorId = domainEvent.ContributorId;
             record.LastModifiedAt = domainEvent.OccurredOn;
         }
     }
 
-    public async ValueTask HandleAsync(ContributorUpdatedDomainEvent domainEvent, CancellationToken cancellationToken)
+    public async ValueTask HandleAsync(ContributorRolesChangedDomainEvent domainEvent, CancellationToken cancellationToken)
     {
         var record = await GetOrCreateRecordAsync(
             domainEvent.ParticipantId,
@@ -92,30 +91,7 @@ public class ParticipationViewProjector(IApplicationContext context)
 
         if (domainEvent.OccurredOn > record.LastModifiedAt)
         {
-            // If the personal details are not set yet, set them now.
-            if (string.IsNullOrWhiteSpace(record.Email))
-            {
-                if (domainEvent.Email is not null)
-                {
-                    record.Email = domainEvent.Email;
-                }
-
-                if (domainEvent.FirstName is not null)
-                {
-                    record.FirstName = domainEvent.FirstName;
-                }
-
-                if (domainEvent.LastName is not null)
-                {
-                    record.LastName = domainEvent.LastName;
-                }
-            }
-
-            if (domainEvent.Roles is not null)
-            {
-                record.ContributorStatus = string.Join(", ", domainEvent.Roles.Select(r => r.Name.Humanize()));
-            }
-            
+            record.ContributorStatus = string.Join(", ", domainEvent.CurrentRoles.Select(r => r.ToString()));
             record.ContributorId = domainEvent.ContributorId;
             record.LastModifiedAt = domainEvent.OccurredOn;
         }
@@ -136,7 +112,7 @@ public class ParticipationViewProjector(IApplicationContext context)
         }
     }
 
-    private async ValueTask<ParticipationView> GetOrCreateRecordAsync(
+    private async ValueTask<AdmissionView> GetOrCreateRecordAsync(
         Guid participantId,
         Guid eventId,
         CancellationToken cancellationToken)
@@ -153,7 +129,7 @@ public class ParticipationViewProjector(IApplicationContext context)
                 throw new ApplicationRuleException(ApplicationRuleError.Participant.NotFound);
             }
         
-            record = new ParticipationView
+            record = new AdmissionView
             {
                 ParticipantId = participantId,
                 PublicId = participant.PublicId,

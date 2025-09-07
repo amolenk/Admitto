@@ -67,12 +67,12 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                     email = table.Column<string>(type: "character varying(254)", maxLength: 254, nullable: false),
                     first_name = table.Column<string>(type: "character varying(100)", maxLength: 100, nullable: false),
                     last_name = table.Column<string>(type: "character varying(150)", maxLength: 150, nullable: false),
+                    roles = table.Column<string[]>(type: "text[]", nullable: false),
                     created_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     last_changed_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
                     last_changed_by = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
                     xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false),
-                    additional_details = table.Column<string>(type: "jsonb", nullable: true),
-                    roles = table.Column<string>(type: "jsonb", nullable: true)
+                    additional_details = table.Column<string>(type: "jsonb", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -253,25 +253,7 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "vw_participant_history",
-                columns: table => new
-                {
-                    id = table.Column<Guid>(type: "uuid", nullable: false),
-                    event_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    participant_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    source_id = table.Column<Guid>(type: "uuid", nullable: false),
-                    activity = table.Column<string>(type: "character varying(255)", maxLength: 255, nullable: false),
-                    email_type = table.Column<string>(type: "character varying(50)", maxLength: 50, nullable: true),
-                    email_log_id = table.Column<Guid>(type: "uuid", nullable: true),
-                    occured_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_vw_participant_history", x => x.id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "vw_participation",
+                name: "vw_admission",
                 columns: table => new
                 {
                     participant_id = table.Column<Guid>(type: "uuid", nullable: false),
@@ -289,7 +271,24 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_vw_participation", x => x.participant_id);
+                    table.PrimaryKey("PK_vw_admission", x => x.participant_id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "vw_participant_activities",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    event_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    participant_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    source_id = table.Column<Guid>(type: "uuid", nullable: false),
+                    activity = table.Column<string>(type: "character varying(32)", maxLength: 32, nullable: false),
+                    email_log_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    occured_on = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_vw_participant_activities", x => x.id);
                 });
 
             migrationBuilder.CreateIndex(
@@ -341,15 +340,15 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_vw_participant_history_event_id_participant_id_source_id",
-                table: "vw_participant_history",
-                columns: new[] { "event_id", "participant_id", "source_id" },
+                name: "IX_vw_admission_event_id_public_id",
+                table: "vw_admission",
+                columns: new[] { "event_id", "public_id" },
                 unique: true);
 
             migrationBuilder.CreateIndex(
-                name: "IX_vw_participation_event_id_public_id",
-                table: "vw_participation",
-                columns: new[] { "event_id", "public_id" },
+                name: "IX_vw_participant_activities_event_id_participant_id_source_id~",
+                table: "vw_participant_activities",
+                columns: new[] { "event_id", "participant_id", "source_id", "activity" },
                 unique: true);
         }
 
@@ -393,10 +392,10 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                 name: "ticketed_events");
 
             migrationBuilder.DropTable(
-                name: "vw_participant_history");
+                name: "vw_admission");
 
             migrationBuilder.DropTable(
-                name: "vw_participation");
+                name: "vw_participant_activities");
         }
     }
 }

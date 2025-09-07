@@ -29,8 +29,7 @@ public class ListCommand(IAccessTokenProvider accessTokenProvider, IConfiguratio
                 contributor.Email!,
                 $"{contributor.FirstName} {contributor.LastName}",
                 string.Join(", ", contributor.Roles!
-                    .OrderBy(r => r.Name)
-                    .Select(r => r.Name!.FormatContributorRole())),
+                    .Select(r => r.FormatContributorRole())),
                 contributor.LastChangedAt!.Value.Format());
         }
 

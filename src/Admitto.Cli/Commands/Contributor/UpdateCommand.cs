@@ -3,10 +3,10 @@ using Microsoft.Extensions.Configuration;
 
 namespace Amolenk.Admitto.Cli.Commands.Contributor;
 
-public class AddSettings : TeamEventSettings
+public class UpdateSettings : TeamEventSettings
 {
-    [CommandOption("--email")]
-    public string? Email { get; set; }
+    [CommandOption("--id")] 
+    public Guid? Id { get; set; }
 
     [CommandOption("--firstName")]
     public string? FirstName { get; set; } = null!;
@@ -22,43 +22,28 @@ public class AddSettings : TeamEventSettings
 
     public override ValidationResult Validate()
     {
-        if (Email is null)
+        if (Id is null)
         {
-            return ValidationErrors.EmailMissing;
+            return ValidationErrors.IdMissing;
         }
 
-        if (FirstName is null)
-        {
-            return ValidationErrors.FirstNameMissing;
-        }
-
-        if (LastName is null)
-        {
-            return ValidationErrors.LastNameMissing;
-        }
-
-        if (Roles is null || Roles.Length == 0)
-        {
-            return ValidationErrors.RoleMissing;
-        }
-        
         return base.Validate();
     }
 }
 
-public class AddCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration)
-    : EventCommandBase<AddSettings>(accessTokenProvider, configuration)
+public class UpdateCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration)
+    : EventCommandBase<UpdateSettings>(accessTokenProvider, configuration)
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, AddSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, UpdateSettings settings)
     {
         var teamSlug = GetTeamSlug(settings.TeamSlug);
         var eventSlug = GetEventSlug(settings.EventSlug);
 
-        var request = new AddContributorRequest
+        var request = new UpdateContributorRequest
         {
-            Email = settings.Email,
             FirstName = settings.FirstName,
             LastName = settings.LastName,
+            // TODO Test
             AdditionalDetails = Parse<AdditionalDetailDto>(
                 settings.AdditionalDetails,
                 (name, value) => new AdditionalDetailDto
@@ -66,15 +51,15 @@ public class AddCommand(IAccessTokenProvider accessTokenProvider, IConfiguration
                     Name = name,
                     Value = value
                 }),
-            Roles = settings.Roles!.ToList()
+            Roles = settings.Roles?.ToList()
         };
 
         var response = await CallApiAsync(async client =>
-            await client.Teams[teamSlug].Events[eventSlug].Contributors.PostAsync(request));
+            await client.Teams[teamSlug].Events[eventSlug].Contributors[settings.Id!.Value].PatchAsync(request));
         if (response is null) return 1;
 
         AnsiConsole.MarkupLine(
-            $"[green]✓ Successfully added contributor (registration ID = '{response.RegistrationId}').[/]");
+            $"[green]✓ Successfully updated contributor.[/]");
         return 0;
     }
 }

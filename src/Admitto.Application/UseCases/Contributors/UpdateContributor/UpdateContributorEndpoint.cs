@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Application.Common;
+using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Application.UseCases.Contributors.UpdateContributor;
 
@@ -40,8 +41,8 @@ public static class UpdateContributorEndpoint
             request.FirstName,
             request.LastName,
             (request.AdditionalDetails ?? []).Select(dto =>
-                new Domain.ValueObjects.AdditionalDetail(dto.Name, dto.Value)),
-            (request.Roles ?? []).Select(dto => Domain.ValueObjects.ContributorRole.Parse(dto.Name)));
+                new AdditionalDetail(dto.Name, dto.Value)),
+            request.Roles ?? []);
 
         return TypedResults.Ok();
     }

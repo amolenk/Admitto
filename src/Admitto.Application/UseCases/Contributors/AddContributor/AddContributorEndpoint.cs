@@ -49,7 +49,7 @@ public static class AddContributorEndpoint
             request.FirstName,
             request.LastName,
             request.AdditionalDetails.Select(dto => new AdditionalDetail(dto.Name, dto.Value)),
-            request.Roles.Select(dto => ContributorRole.Parse(dto.Name)));
+            request.Roles);
 
         context.Contributors.Add(contributor);
 

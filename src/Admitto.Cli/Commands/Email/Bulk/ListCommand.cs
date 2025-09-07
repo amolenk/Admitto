@@ -43,5 +43,5 @@ public class ListCommand(IAccessTokenProvider accessTokenProvider, IConfiguratio
     private string FormatRepeat(BulkEmailWorkItemRepeatDto? repeat) =>
         repeat is null
             ? "-"
-            : $"Every {repeat.Interval} between {repeat.WindowStart} and {repeat.WindowEnd}";
+            : $"Between {repeat.WindowStart} and {repeat.WindowEnd}";
 }

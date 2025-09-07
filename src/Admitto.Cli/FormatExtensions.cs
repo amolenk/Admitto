@@ -16,13 +16,13 @@ public static class FormatExtensions
         return localTime.ToString("f");
     }
 
-    public static string FormatContributorRole(this string role)
+    public static string FormatContributorRole(this ContributorRole? role)
     {
         return role switch
         {
-            "crew" => "👷️ Crew",
-            "speaker" => "🎤 Speaker",
-            "sponsor" => "💰️ Sponsor",
+            ContributorRole.Crew => "👷️ Crew",
+            ContributorRole.Speaker => "🎤 Speaker",
+            ContributorRole.Sponsor => "💰️ Sponsor",
             _ => $"❤️ {role.Humanize()}"
         };
     }
@@ -37,7 +37,7 @@ public static class FormatExtensions
         return status switch
         {
             RegistrationStatus.Reconfirmed => "green",
-            RegistrationStatus.Attended => "green",
+            RegistrationStatus.CheckedIn => "green",
             RegistrationStatus.Canceled => "red",
             RegistrationStatus.NoShow => "red",
             _ => "white"

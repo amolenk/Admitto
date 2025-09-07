@@ -9,31 +9,31 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Threading;
 using System;
-namespace Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Participants.Item.Admit
+namespace Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Participants.Item.CheckIn
 {
     /// <summary>
-    /// Builds and executes requests for operations under \teams\{teamSlug}\events\{eventSlug}\participants\{publicId}\admit
+    /// Builds and executes requests for operations under \teams\{teamSlug}\events\{eventSlug}\participants\{publicId}\check-in
     /// </summary>
     [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
-    public partial class AdmitRequestBuilder : BaseRequestBuilder
+    public partial class CheckInRequestBuilder : BaseRequestBuilder
     {
         /// <summary>
-        /// Instantiates a new <see cref="global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Participants.Item.Admit.AdmitRequestBuilder"/> and sets the default values.
+        /// Instantiates a new <see cref="global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Participants.Item.CheckIn.CheckInRequestBuilder"/> and sets the default values.
         /// </summary>
         /// <param name="pathParameters">Path parameters for the request</param>
         /// <param name="requestAdapter">The request adapter to use to execute the requests.</param>
-        public AdmitRequestBuilder(Dictionary<string, object> pathParameters, IRequestAdapter requestAdapter) : base(requestAdapter, "{+baseurl}/teams/{teamSlug}/events/{eventSlug}/participants/{publicId}/admit?signature={signature}", pathParameters)
+        public CheckInRequestBuilder(Dictionary<string, object> pathParameters, IRequestAdapter requestAdapter) : base(requestAdapter, "{+baseurl}/teams/{teamSlug}/events/{eventSlug}/participants/{publicId}/check-in?signature={signature}", pathParameters)
         {
         }
         /// <summary>
-        /// Instantiates a new <see cref="global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Participants.Item.Admit.AdmitRequestBuilder"/> and sets the default values.
+        /// Instantiates a new <see cref="global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Participants.Item.CheckIn.CheckInRequestBuilder"/> and sets the default values.
         /// </summary>
         /// <param name="rawUrl">The raw URL to use for the request builder.</param>
         /// <param name="requestAdapter">The request adapter to use to execute the requests.</param>
-        public AdmitRequestBuilder(string rawUrl, IRequestAdapter requestAdapter) : base(requestAdapter, "{+baseurl}/teams/{teamSlug}/events/{eventSlug}/participants/{publicId}/admit?signature={signature}", rawUrl)
+        public CheckInRequestBuilder(string rawUrl, IRequestAdapter requestAdapter) : base(requestAdapter, "{+baseurl}/teams/{teamSlug}/events/{eventSlug}/participants/{publicId}/check-in?signature={signature}", rawUrl)
         {
         }
-        /// <returns>A <see cref="global::Amolenk.Admitto.Cli.Api.Models.AdmitParticipantResponse"/></returns>
+        /// <returns>A <see cref="global::Amolenk.Admitto.Cli.Api.Models.CheckInParticipantResponse"/></returns>
         /// <param name="cancellationToken">Cancellation token to use when cancelling requests</param>
         /// <param name="requestConfiguration">Configuration for the request such as headers, query parameters, and middleware options.</param>
         /// <exception cref="global::Amolenk.Admitto.Cli.Api.Models.HttpValidationProblemDetails">When receiving a 400 status code</exception>
@@ -43,11 +43,11 @@ namespace Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Participants.Item.Admit
         /// <exception cref="global::Amolenk.Admitto.Cli.Api.Models.ProblemDetails">When receiving a 500 status code</exception>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public async Task<global::Amolenk.Admitto.Cli.Api.Models.AdmitParticipantResponse?> PostAsync(Action<RequestConfiguration<global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Participants.Item.Admit.AdmitRequestBuilder.AdmitRequestBuilderPostQueryParameters>>? requestConfiguration = default, CancellationToken cancellationToken = default)
+        public async Task<global::Amolenk.Admitto.Cli.Api.Models.CheckInParticipantResponse?> PostAsync(Action<RequestConfiguration<global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Participants.Item.CheckIn.CheckInRequestBuilder.CheckInRequestBuilderPostQueryParameters>>? requestConfiguration = default, CancellationToken cancellationToken = default)
         {
 #nullable restore
 #else
-        public async Task<global::Amolenk.Admitto.Cli.Api.Models.AdmitParticipantResponse> PostAsync(Action<RequestConfiguration<global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Participants.Item.Admit.AdmitRequestBuilder.AdmitRequestBuilderPostQueryParameters>> requestConfiguration = default, CancellationToken cancellationToken = default)
+        public async Task<global::Amolenk.Admitto.Cli.Api.Models.CheckInParticipantResponse> PostAsync(Action<RequestConfiguration<global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Participants.Item.CheckIn.CheckInRequestBuilder.CheckInRequestBuilderPostQueryParameters>> requestConfiguration = default, CancellationToken cancellationToken = default)
         {
 #endif
             var requestInfo = ToPostRequestInformation(requestConfiguration);
@@ -59,17 +59,17 @@ namespace Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Participants.Item.Admit
                 { "409", global::Amolenk.Admitto.Cli.Api.Models.ProblemDetails.CreateFromDiscriminatorValue },
                 { "500", global::Amolenk.Admitto.Cli.Api.Models.ProblemDetails.CreateFromDiscriminatorValue },
             };
-            return await RequestAdapter.SendAsync<global::Amolenk.Admitto.Cli.Api.Models.AdmitParticipantResponse>(requestInfo, global::Amolenk.Admitto.Cli.Api.Models.AdmitParticipantResponse.CreateFromDiscriminatorValue, errorMapping, cancellationToken).ConfigureAwait(false);
+            return await RequestAdapter.SendAsync<global::Amolenk.Admitto.Cli.Api.Models.CheckInParticipantResponse>(requestInfo, global::Amolenk.Admitto.Cli.Api.Models.CheckInParticipantResponse.CreateFromDiscriminatorValue, errorMapping, cancellationToken).ConfigureAwait(false);
         }
         /// <returns>A <see cref="RequestInformation"/></returns>
         /// <param name="requestConfiguration">Configuration for the request such as headers, query parameters, and middleware options.</param>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public RequestInformation ToPostRequestInformation(Action<RequestConfiguration<global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Participants.Item.Admit.AdmitRequestBuilder.AdmitRequestBuilderPostQueryParameters>>? requestConfiguration = default)
+        public RequestInformation ToPostRequestInformation(Action<RequestConfiguration<global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Participants.Item.CheckIn.CheckInRequestBuilder.CheckInRequestBuilderPostQueryParameters>>? requestConfiguration = default)
         {
 #nullable restore
 #else
-        public RequestInformation ToPostRequestInformation(Action<RequestConfiguration<global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Participants.Item.Admit.AdmitRequestBuilder.AdmitRequestBuilderPostQueryParameters>> requestConfiguration = default)
+        public RequestInformation ToPostRequestInformation(Action<RequestConfiguration<global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Participants.Item.CheckIn.CheckInRequestBuilder.CheckInRequestBuilderPostQueryParameters>> requestConfiguration = default)
         {
 #endif
             var requestInfo = new RequestInformation(Method.POST, UrlTemplate, PathParameters);
@@ -80,15 +80,15 @@ namespace Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Participants.Item.Admit
         /// <summary>
         /// Returns a request builder with the provided arbitrary URL. Using this method means any other path or query parameters are ignored.
         /// </summary>
-        /// <returns>A <see cref="global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Participants.Item.Admit.AdmitRequestBuilder"/></returns>
+        /// <returns>A <see cref="global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Participants.Item.CheckIn.CheckInRequestBuilder"/></returns>
         /// <param name="rawUrl">The raw URL to use for the request builder.</param>
-        public global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Participants.Item.Admit.AdmitRequestBuilder WithUrl(string rawUrl)
+        public global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Participants.Item.CheckIn.CheckInRequestBuilder WithUrl(string rawUrl)
         {
-            return new global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Participants.Item.Admit.AdmitRequestBuilder(rawUrl, RequestAdapter);
+            return new global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Participants.Item.CheckIn.CheckInRequestBuilder(rawUrl, RequestAdapter);
         }
         [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
         #pragma warning disable CS1591
-        public partial class AdmitRequestBuilderPostQueryParameters 
+        public partial class CheckInRequestBuilderPostQueryParameters 
         #pragma warning restore CS1591
         {
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
@@ -106,7 +106,7 @@ namespace Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Participants.Item.Admit
         /// </summary>
         [Obsolete("This class is deprecated. Please use the generic RequestConfiguration class generated by the generator.")]
         [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
-        public partial class AdmitRequestBuilderPostRequestConfiguration : RequestConfiguration<global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Participants.Item.Admit.AdmitRequestBuilder.AdmitRequestBuilderPostQueryParameters>
+        public partial class CheckInRequestBuilderPostRequestConfiguration : RequestConfiguration<global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Participants.Item.CheckIn.CheckInRequestBuilder.CheckInRequestBuilderPostQueryParameters>
         {
         }
     }

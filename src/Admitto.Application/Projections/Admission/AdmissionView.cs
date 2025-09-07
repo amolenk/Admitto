@@ -1,6 +1,6 @@
-namespace Amolenk.Admitto.Application.Projections.Participation;
+namespace Amolenk.Admitto.Application.Projections.Admission;
 
-public class ParticipationView 
+public class AdmissionView 
 {
     public required Guid ParticipantId { get; init; }
     

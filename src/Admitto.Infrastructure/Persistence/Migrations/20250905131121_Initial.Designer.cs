@@ -13,7 +13,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationContext))]
-    [Migration("20250902140030_Initial")]
+    [Migration("20250905131121_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -156,52 +156,7 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                     b.ToTable("email_verification_requests", (string)null);
                 });
 
-            modelBuilder.Entity("Amolenk.Admitto.Application.Projections.ParticipantHistory.ParticipantHistoryView", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<string>("Activity")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("activity");
-
-                    b.Property<Guid?>("EmailLogId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("email_log_id");
-
-                    b.Property<string>("EmailType")
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)")
-                        .HasColumnName("email_type");
-
-                    b.Property<DateTimeOffset>("OccuredAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("occured_at");
-
-                    b.Property<Guid>("ParticipantId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("participant_id");
-
-                    b.Property<Guid>("SourceId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("source_id");
-
-                    b.Property<Guid>("TicketedEventId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("event_id");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TicketedEventId", "ParticipantId", "SourceId")
-                        .IsUnique();
-
-                    b.ToTable("vw_participant_history", (string)null);
-                });
-
-            modelBuilder.Entity("Amolenk.Admitto.Application.Projections.Participation.ParticipationView", b =>
+            modelBuilder.Entity("Amolenk.Admitto.Application.Projections.Admission.AdmissionView", b =>
                 {
                     b.Property<Guid>("ParticipantId")
                         .HasColumnType("uuid")
@@ -264,7 +219,47 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                     b.HasIndex("TicketedEventId", "PublicId")
                         .IsUnique();
 
-                    b.ToTable("vw_participation", (string)null);
+                    b.ToTable("vw_admission", (string)null);
+                });
+
+            modelBuilder.Entity("Amolenk.Admitto.Application.Projections.ParticipantActivity.ParticipantActivityView", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Activity")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("activity");
+
+                    b.Property<Guid?>("EmailLogId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("email_log_id");
+
+                    b.Property<DateTimeOffset>("OccuredOn")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("occured_on");
+
+                    b.Property<Guid>("ParticipantId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("participant_id");
+
+                    b.Property<Guid>("SourceId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("source_id");
+
+                    b.Property<Guid>("TicketedEventId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("event_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TicketedEventId", "ParticipantId", "SourceId", "Activity")
+                        .IsUnique();
+
+                    b.ToTable("vw_participant_activities", (string)null);
                 });
 
             modelBuilder.Entity("Amolenk.Admitto.Domain.Entities.Attendee", b =>
@@ -430,6 +425,11 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("ParticipantId")
                         .HasColumnType("uuid")
                         .HasColumnName("participant_id");
+
+                    b.Property<string[]>("Roles")
+                        .IsRequired()
+                        .HasColumnType("text[]")
+                        .HasColumnName("roles");
 
                     b.Property<Guid>("TicketedEventId")
                         .HasColumnType("uuid")
@@ -884,32 +884,7 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                                 .HasForeignKey("ContributorId");
                         });
 
-                    b.OwnsMany("Amolenk.Admitto.Domain.ValueObjects.ContributorRole", "Roles", b1 =>
-                        {
-                            b1.Property<Guid>("ContributorId")
-                                .HasColumnType("uuid");
-
-                            b1.Property<int>("__synthesizedOrdinal")
-                                .ValueGeneratedOnAdd()
-                                .HasColumnType("integer");
-
-                            b1.Property<string>("Name")
-                                .IsRequired()
-                                .HasColumnType("text");
-
-                            b1.HasKey("ContributorId", "__synthesizedOrdinal");
-
-                            b1.ToTable("contributors");
-
-                            b1.ToJson("roles");
-
-                            b1.WithOwner()
-                                .HasForeignKey("ContributorId");
-                        });
-
                     b.Navigation("AdditionalDetails");
-
-                    b.Navigation("Roles");
                 });
 
             modelBuilder.Entity("Amolenk.Admitto.Domain.Entities.Team", b =>

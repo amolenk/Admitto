@@ -110,9 +110,9 @@ public class Attendee : Aggregate
         AddDomainEvent(new AttendeeReconfirmedDomainEvent(TicketedEventId, ParticipantId, Id));
     }
 
-    public void MarkAsAttended()
+    public void MarkAsCheckedIn()
     {
-        RegistrationStatus = RegistrationStatus.Attended;
+        RegistrationStatus = RegistrationStatus.CheckedIn;
     }
     
     public void MarkAsNoShow()

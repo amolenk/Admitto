@@ -1,8 +1,8 @@
 using Amolenk.Admitto.Application.Common.Abstractions;
 using Amolenk.Admitto.Application.Common.Email.Sending;
 using Amolenk.Admitto.Application.Common.Identity;
-using Amolenk.Admitto.Application.Projections.ParticipantHistory;
-using Amolenk.Admitto.Application.Projections.Participation;
+using Amolenk.Admitto.Application.Projections.Admission;
+using Amolenk.Admitto.Application.Projections.ParticipantActivity;
 using Amolenk.Admitto.Domain.Contracts;
 using Amolenk.Admitto.Domain.Entities;
 using Amolenk.Admitto.Infrastructure.Messaging;
@@ -24,8 +24,8 @@ public class ApplicationContext(DbContextOptions options, IDataProtectionProvide
     public DbSet<Message> Outbox { get; set; } = null!;
     public DbSet<MessageLog> MessageLogs { get; set; } = null!;
     public DbSet<Participant> Participants { get; set; } = null!;
-    public DbSet<ParticipantHistoryView> AttendeeActivityView { get; set; } = null!;
-    public DbSet<ParticipationView> AdmissionView { get; set; } = null!;
+    public DbSet<ParticipantActivityView> AttendeeActivityView { get; set; } = null!;
+    public DbSet<AdmissionView> AdmissionView { get; set; } = null!;
     public DbSet<Team> Teams { get; set; } = null!;
     public DbSet<TicketedEvent> TicketedEvents { get; set; } = null!;
     public DbSet<TicketedEventAvailability> TicketedEventAvailability { get; set; } = null!;
@@ -35,6 +35,7 @@ public class ApplicationContext(DbContextOptions options, IDataProtectionProvide
         // Apply entity configurations using explicit instances.
         // We don't use modelBuilder.ApplyConfigurationsFromAssembly here because some configurations
         // require DI parameters (e.g. IDataProtectionProvider).
+        modelBuilder.ApplyConfiguration(new AdmissionViewEntityConfiguration());
         modelBuilder.ApplyConfiguration(new AttendeeEntityConfiguration());
         modelBuilder.ApplyConfiguration(new BulkEmailWorkItemEntityConfiguration());
         modelBuilder.ApplyConfiguration(new ContributorEntityConfiguration());
@@ -43,9 +44,8 @@ public class ApplicationContext(DbContextOptions options, IDataProtectionProvide
         modelBuilder.ApplyConfiguration(new EmailVerificationRequestEntityConfiguration());
         modelBuilder.ApplyConfiguration(new MessageEntityConfiguration());
         modelBuilder.ApplyConfiguration(new MessageLogEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new ParticipantActivityViewEntityConfiguration());
         modelBuilder.ApplyConfiguration(new ParticipantEntityConfiguration());
-        modelBuilder.ApplyConfiguration(new ParticipantHistoryViewEntityConfiguration());
-        modelBuilder.ApplyConfiguration(new ParticipationViewEntityConfiguration());
         modelBuilder.ApplyConfiguration(new TeamEntityConfiguration(dataProtectionProvider));
         modelBuilder.ApplyConfiguration(new TicketedEventAvailabilityEntityConfiguration());
         modelBuilder.ApplyConfiguration(new TicketedEventEntityConfiguration(dataProtectionProvider));

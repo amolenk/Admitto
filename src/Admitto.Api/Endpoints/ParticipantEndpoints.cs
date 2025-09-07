@@ -1,6 +1,6 @@
 using Amolenk.Admitto.ApiService.Middleware;
-using Amolenk.Admitto.Application.UseCases.Participants.AdmitParticipant;
 using Amolenk.Admitto.Application.UseCases.Participants.CancelParticipation;
+using Amolenk.Admitto.Application.UseCases.Participants.CheckInParticipant;
 using Amolenk.Admitto.Application.UseCases.Participants.GetQRCode;
 using Amolenk.Admitto.Application.UseCases.Participants.ReconfirmParticipation;
 

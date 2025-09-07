@@ -1,14 +1,14 @@
-using Amolenk.Admitto.Application.Projections.ParticipantHistory;
+using Amolenk.Admitto.Application.Projections.ParticipantActivity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Amolenk.Admitto.Infrastructure.Persistence.EntityConfigurations;
 
-public class ParticipantHistoryViewEntityConfiguration : IEntityTypeConfiguration<ParticipantHistoryView>
+public class ParticipantActivityViewEntityConfiguration : IEntityTypeConfiguration<ParticipantActivityView>
 {
-    public void Configure(EntityTypeBuilder<ParticipantHistoryView> builder)
+    public void Configure(EntityTypeBuilder<ParticipantActivityView> builder)
     {
-        builder.ToTable("vw_participant_history");
+        builder.ToTable("vw_participant_activities");
         builder.HasKey(e => e.Id);
         
         builder.Property(e => e.Id)
@@ -30,23 +30,19 @@ public class ParticipantHistoryViewEntityConfiguration : IEntityTypeConfiguratio
 
         builder.Property(e => e.Activity)
             .HasColumnName("activity")
-            .HasMaxLength(255)
+            .HasConversion<string>()
+            .HasMaxLength(32)
             .IsRequired();
-
-        builder.Property(e => e.EmailType)
-            .HasColumnName("email_type")
-            .HasMaxLength(ColumnMaxLength.EmailType)
-            .IsRequired(false);
 
         builder.Property(e => e.EmailLogId)
             .HasColumnName("email_log_id");
 
-        builder.Property(e => e.OccuredAt)
-            .HasColumnName("occured_at")
+        builder.Property(e => e.OccuredOn)
+            .HasColumnName("occured_on")
             .IsRequired();
         
         builder
-            .HasIndex(e => new { e.TicketedEventId, e.ParticipantId, e.SourceId })
+            .HasIndex(e => new { e.TicketedEventId, e.ParticipantId, e.SourceId, e.Activity })
             .IsUnique();
     }
 }
