@@ -1,5 +1,6 @@
 param location string = resourceGroup().location
-param containerAppsOutboundIp string
+param privateEndpointSubnetId string
+param vnetId string
 param administratorLogin string = 'admitto_admin'
 
 @secure()
@@ -14,7 +15,7 @@ resource postgres 'Microsoft.DBforPostgreSQL/flexibleServers@2025-06-01-preview'
     administratorLogin: administratorLogin
     administratorLoginPassword: administratorLoginPassword
     authConfig: {
-      activeDirectoryAuth: 'Enabled'
+      activeDirectoryAuth: 'Disabled'
       passwordAuth: 'Enabled'
     }
     availabilityZone: '1'
@@ -26,7 +27,7 @@ resource postgres 'Microsoft.DBforPostgreSQL/flexibleServers@2025-06-01-preview'
       mode: 'Disabled'
     }
     network: {
-      publicNetworkAccess: 'Enabled'
+      publicNetworkAccess: 'Disabled'
     }
     storage: {
       autoGrow: 'Enabled'
@@ -42,13 +43,59 @@ resource postgres 'Microsoft.DBforPostgreSQL/flexibleServers@2025-06-01-preview'
   }
 }
 
-resource postgreSqlFirewallRule_AllowContainerApps 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2025-06-01-preview' = {
-  name: 'AllowContainerApps'
+// Private endpoint for PostgreSQL
+resource postgresPrivateEndpoint 'Microsoft.Network/privateEndpoints@2024-07-01' = {
+  name: 'pe-${postgres.name}'
+  location: location
   properties: {
-    endIpAddress: containerAppsOutboundIp
-    startIpAddress: containerAppsOutboundIp
+    subnet: {
+      id: privateEndpointSubnetId
+    }
+    privateLinkServiceConnections: [
+      {
+        name: 'postgres-connection'
+        properties: {
+          privateLinkServiceId: postgres.id
+          groupIds: ['postgresqlServer']
+        }
+      }
+    ]
   }
-  parent: postgres
+}
+
+// Private DNS zone for PostgreSQL
+resource postgresDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' = {
+  name: 'privatelink.postgres.database.azure.com'
+  location: 'global'
+}
+
+// Link private DNS zone to VNet
+resource postgresDnsZoneVnetLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
+  name: 'postgres-dns-vnet-link'
+  location: 'global'
+  parent: postgresDnsZone
+  properties: {
+    registrationEnabled: false
+    virtualNetwork: {
+      id: vnetId
+    }
+  }
+}
+
+// Private DNS zone group for private endpoint
+resource postgresPrivateEndpointDnsGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2024-07-01' = {
+  name: 'postgres-dns-group'
+  parent: postgresPrivateEndpoint
+  properties: {
+    privateDnsZoneConfigs: [
+      {
+        name: 'postgres-config'
+        properties: {
+          privateDnsZoneId: postgresDnsZone.id
+        }
+      }
+    ]
+  }
 }
 
 resource admitto_db 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2024-08-01' = {
