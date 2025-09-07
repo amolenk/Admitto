@@ -30,7 +30,7 @@ resource containerAppEnvironment 'Microsoft.App/managedEnvironments@2025-02-02-p
     }
     vnetConfiguration: {
       infrastructureSubnetId: acaSubnetId
-      internal: true // make environment internal for better security; only API app will have external ingress
+      internal: false // keep environment routable for public ingress; app ingress controlled per app
     }
   }
 
