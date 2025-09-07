@@ -65,6 +65,13 @@ module managedIdentity 'modules/managedIdentity.bicep' = {
   }
 }
 
+module network 'modules/network.bicep' = {
+  name: 'network'
+  params: {
+    location: location
+  }
+}
+
 module containerRegistry 'modules/containerRegistry.bicep' = {
   name: 'containerRegistry'
   params: {
@@ -85,7 +92,7 @@ module containerAppEnvironment 'modules/containerAppEnvironment.bicep' = {
   name: 'containerAppEnvironment'
   params: {
     location: location
-    managedIdentityId: managedIdentity.outputs.id
+    acaSubnetId: network.outputs.acaSubnetId
   }
 }
 
@@ -94,7 +101,8 @@ module serviceBus 'modules/serviceBus.bicep' = {
   params: {
     location: location
     principalId: managedIdentity.outputs.principalId
-    containerAppsOutboundIp: containerAppEnvironment.outputs.natEgressIp
+    privateEndpointSubnetId: network.outputs.privateEndpointSubnetId
+    vnetId: network.outputs.vnetId
   }
 }
 
@@ -102,7 +110,8 @@ module postgres 'modules/postgres.bicep' = {
   name: 'postgres'
   params: {
     administratorLoginPassword: postgresPassword
-    containerAppsOutboundIp: containerAppEnvironment.outputs.natEgressIp
+    privateEndpointSubnetId: network.outputs.privateEndpointSubnetId
+    vnetId: network.outputs.vnetId
     keyVaultName: keyVault.outputs.name
     location: location
   }

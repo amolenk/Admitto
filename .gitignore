@@ -398,3 +398,6 @@ FodyWeavers.xsd
 *.sln.iml
 .azure
 .idea/
+
+# Bicep compiled ARM templates
+*.json
