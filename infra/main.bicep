@@ -89,14 +89,14 @@ module containerAppEnvironment 'modules/containerAppEnvironment.bicep' = {
   }
 }
 
-// module serviceBus 'modules/serviceBus.bicep' = {
-//   name: 'serviceBus'
-//   params: {
-//     location: location
-//     principalId: managedIdentity.outputs.principalId
-//     containerAppsOutboundIp: containerAppEnvironment.outputs.natEgressIp
-//   }
-// }
+module serviceBus 'modules/serviceBus.bicep' = {
+  name: 'serviceBus'
+  params: {
+    location: location
+    principalId: managedIdentity.outputs.principalId
+    containerAppsOutboundIp: containerAppEnvironment.outputs.natEgressIp
+  }
+}
 
 module postgres 'modules/postgres.bicep' = {
   name: 'postgres'
@@ -134,23 +134,27 @@ module admittoWorker 'modules/admittoWorkerApp.bicep' = {
   name: 'admitto-worker-app'
   params: {
     containerAppEnvironmentId: containerAppEnvironment.outputs.id
+    containerAppEnvironmentDomain: containerAppEnvironment.outputs.defaultDomain
     keyVaultName: keyVault.outputs.name
     location: location
     managedIdentityId: managedIdentity.outputs.id
+    managedIdentityClientId: managedIdentity.outputs.clientId
     acrLoginServer: containerRegistry.outputs.loginServer
+    openFgaAppName: openfga.outputs.name
+    serviceBusEndpoint: serviceBus.outputs.serviceBusEndpoint
   }
 }
 
-module admittoJobRunner 'modules/admittoJobRunnerApp.bicep' = {
-  name: 'admitto-jobrunner-app'
-  params: {
-    containerAppEnvironmentId: containerAppEnvironment.outputs.id
-    keyVaultName: keyVault.outputs.name
-    location: location
-    managedIdentityId: managedIdentity.outputs.id
-    acrLoginServer: containerRegistry.outputs.loginServer
-  }
-}
+// module admittoJobRunner 'modules/admittoJobRunnerApp.bicep' = {
+//   name: 'admitto-jobrunner-app'
+//   params: {
+//     containerAppEnvironmentId: containerAppEnvironment.outputs.id
+//     keyVaultName: keyVault.outputs.name
+//     location: location
+//     managedIdentityId: managedIdentity.outputs.id
+//     acrLoginServer: containerRegistry.outputs.loginServer
+//   }
+// }
 
 // output MANAGED_IDENTITY_CLIENT_ID string = managedIdentity.outputs.clientId
 // output MANAGED_IDENTITY_NAME string = managedIdentity.outputs.name
@@ -167,5 +171,5 @@ module admittoJobRunner 'modules/admittoJobRunnerApp.bicep' = {
 output ADMITTO_API_URL string = admittoApi.outputs.url
 output ADMITTO_API_NAME string = admittoApi.outputs.name
 output ADMITTO_WORKER_NAME string = admittoWorker.outputs.name
-output ADMITTO_JOBRUNNER_NAME string = admittoJobRunner.outputs.name
+// output ADMITTO_JOBRUNNER_NAME string = admittoJobRunner.outputs.name
 output CONTAINER_REGISTRY_LOGIN_SERVER string = containerRegistry.outputs.loginServer
