@@ -7,6 +7,7 @@ using Amolenk.Admitto.Cli.Commands.Email.Template.Team;
 using Amolenk.Admitto.Cli.Commands.Email.Verification;
 using Amolenk.Admitto.Cli.Commands.Events;
 using Amolenk.Admitto.Cli.Commands.Events.TicketType;
+using Amolenk.Admitto.Cli.Commands.Team;
 using Amolenk.Admitto.Cli.Commands.Team.Member;
 using Amolenk.Admitto.Cli.Commands.Teams;
 using Amolenk.Admitto.Cli.Infrastructure;
@@ -51,15 +52,15 @@ services.AddSingleton<ConfigProvider>(_ =>
             "admitto-cli",
             "config.json")));
 
+
+services.AddTransient<IApiService, ApiService>();
+
 // Set up the CLI app
 var registrar = new TypeRegistrar(services);
 var app = new CommandApp(registrar);
 
 app.Configure(config =>
 {
-    config.AddCommand<VersionCommand>("version")
-        .WithDescription("Show version information");
-    
     config.AddBranch(
         "attendee",
         attendee =>
@@ -303,6 +304,9 @@ app.Configure(config =>
             team.AddCommand<ShowTeamCommand>("show")
                 .WithDescription("Show the details of a team");
         });
+    
+    config.AddCommand<VersionCommand>("version")
+        .WithDescription("Show version information");
 });
 
 return app.Run(args);
