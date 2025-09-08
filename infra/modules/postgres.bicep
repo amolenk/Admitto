@@ -1,12 +1,11 @@
 param location string = resourceGroup().location
-param privateEndpointSubnetId string
-param vnetId string
 param administratorLogin string = 'admitto_admin'
+
+param acaEgressIp string
+param keyVaultName string
 
 @secure()
 param administratorLoginPassword string
-
-param keyVaultName string
 
 resource postgres 'Microsoft.DBforPostgreSQL/flexibleServers@2025-06-01-preview' = {
   name: take('pg-${uniqueString(resourceGroup().id)}', 63)
@@ -27,7 +26,7 @@ resource postgres 'Microsoft.DBforPostgreSQL/flexibleServers@2025-06-01-preview'
       mode: 'Disabled'
     }
     network: {
-      publicNetworkAccess: 'Disabled'
+      publicNetworkAccess: 'Enabled'
     }
     storage: {
       autoGrow: 'Enabled'
@@ -43,59 +42,13 @@ resource postgres 'Microsoft.DBforPostgreSQL/flexibleServers@2025-06-01-preview'
   }
 }
 
-// Private endpoint for PostgreSQL
-resource postgresPrivateEndpoint 'Microsoft.Network/privateEndpoints@2024-07-01' = {
-  name: 'pe-${postgres.name}'
-  location: location
+resource postgreSqlFirewallRule_AllowContainerApps 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2025-06-01-preview' = {
+  name: 'AllowContainerApps'
   properties: {
-    subnet: {
-      id: privateEndpointSubnetId
-    }
-    privateLinkServiceConnections: [
-      {
-        name: 'postgres-connection'
-        properties: {
-          privateLinkServiceId: postgres.id
-          groupIds: ['postgresqlServer']
-        }
-      }
-    ]
+    endIpAddress: acaEgressIp
+    startIpAddress: acaEgressIp
   }
-}
-
-// Private DNS zone for PostgreSQL
-resource postgresDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' = {
-  name: 'privatelink.postgres.database.azure.com'
-  location: 'global'
-}
-
-// Link private DNS zone to VNet
-resource postgresDnsZoneVnetLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
-  name: 'postgres-dns-vnet-link'
-  location: 'global'
-  parent: postgresDnsZone
-  properties: {
-    registrationEnabled: false
-    virtualNetwork: {
-      id: vnetId
-    }
-  }
-}
-
-// Private DNS zone group for private endpoint
-resource postgresPrivateEndpointDnsGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2024-07-01' = {
-  name: 'postgres-dns-group'
-  parent: postgresPrivateEndpoint
-  properties: {
-    privateDnsZoneConfigs: [
-      {
-        name: 'postgres-config'
-        properties: {
-          privateDnsZoneId: postgresDnsZone.id
-        }
-      }
-    ]
-  }
+  parent: postgres
 }
 
 resource admitto_db 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2024-08-01' = {
@@ -111,14 +64,6 @@ resource openfga_db 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2024-08
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
   name: keyVaultName
 }
-
-// resource connectionString 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
-//   name: 'connectionstrings--postgres'
-//   properties: {
-//     value: 'Host=${postgres.properties.fullyQualifiedDomainName};Username=${administratorLogin};Password=${administratorLoginPassword}'
-//   }
-//   parent: keyVault
-// }
 
 resource admitto_db_connectionString 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
   name: 'connectionstrings--admitto-db'

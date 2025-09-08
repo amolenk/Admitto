@@ -33,15 +33,8 @@ resource containerAppEnvironment 'Microsoft.App/managedEnvironments@2025-02-02-p
       internal: false // keep environment routable for public ingress; app ingress controlled per app
     }
   }
-
-//   resource aspireDashboard 'dotNetComponents' = {
-//     name: 'aspire-dashboard'
-//     properties: {
-//       componentType: 'AspireDashboard'
-//     }
-//   }
 }
 
-output name string = containerAppEnvironment.name
 output id string = containerAppEnvironment.id
+output name string = containerAppEnvironment.name
 output defaultDomain string = containerAppEnvironment.properties.defaultDomain

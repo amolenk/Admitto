@@ -1,12 +1,13 @@
-param acrLoginServer string
 param location string = resourceGroup().location
-param containerAppEnvironmentDomain string
-param containerAppEnvironmentId string
+
+param acaEnvironmentDomain string
+param acaEnvironmentId string
+param acrLoginServer string
 param keyVaultName string
-param managedIdentityId string
 param managedIdentityClientId string
-param serviceBusEndpoint string
+param managedIdentityId string
 param openFgaAppName string
+param serviceBusEndpoint string
 
 var resourceToken = uniqueString(resourceGroup().id)
 
@@ -41,7 +42,7 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
         }
       ]    
     }
-    environmentId: containerAppEnvironmentId
+    environmentId: acaEnvironmentId
     template: {
       containers: [
         {
@@ -51,7 +52,7 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
           env: [
             {
               name: 'AZURE_CLIENT_ID'
-              secretRef: managedIdentityClientId
+              value: managedIdentityClientId
             }
             {
               name: 'ConnectionStrings__admitto-db'
@@ -63,7 +64,7 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
             }
             {
               name: 'services__openfga__http__0'
-              value: 'http://${openFgaAppName}.internal.${containerAppEnvironmentDomain}:8080'
+              value: 'http://${openFgaAppName}.internal.${acaEnvironmentDomain}:8080'
             }
           ]
           resources: {

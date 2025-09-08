@@ -1,6 +1,6 @@
-param acrLoginServer string
 param location string = resourceGroup().location
-param containerAppEnvironmentId string
+
+param acaEnvironmentId string
 param keyVaultName string
 param managedIdentityId string
 
@@ -22,12 +22,6 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
         allowInsecure: true
         targetPort: 8080
       }
-      registries: [
-        {
-          identity: managedIdentityId
-          server: acrLoginServer
-        }
-      ]
       secrets: [
         {
           name: 'openfga-db-connection-string'
@@ -36,11 +30,11 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
         }
       ]
     }
-    environmentId: containerAppEnvironmentId
+    environmentId: acaEnvironmentId
     template: {
       initContainers: [
         {
-          image: '${acrLoginServer}/openfga:v1.9.5'
+          image: 'openfga/openfga:v1.9.5'
           name: 'openfga-migrate'
           command: ['/openfga', 'migrate']
           env: [
@@ -57,7 +51,7 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
       ]
       containers: [
         {
-          image: '${acrLoginServer}/openfga:v1.9.5'
+          image: 'openfga/openfga:v1.9.5'
           name: 'openfga'
           command: ['/openfga', 'run']
           env: [

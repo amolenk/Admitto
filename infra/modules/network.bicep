@@ -2,7 +2,36 @@ param location string = resourceGroup().location
 
 var resourceToken = uniqueString(resourceGroup().id)
 
-// Virtual Network with subnets for Container Apps and private endpoints
+// Static IP for the NAT Gateway (egress)
+resource natPublicIp 'Microsoft.Network/publicIPAddresses@2018-06-01' = {
+  name: 'ip-${resourceToken}'
+  location: location
+  sku: {
+    name: 'Standard'
+  }
+  properties: {
+    publicIPAllocationMethod: 'Static'
+  }
+}
+
+// NAT Gateway for outbound connectivity
+resource natGateway 'Microsoft.Network/natGateways@2024-07-01' = {
+  name: 'ng-${resourceToken}'
+  location: location
+  sku: {
+    name: 'Standard'
+  }
+  properties: {
+    publicIpAddresses: [
+      {
+        id: natPublicIp.id
+      }
+    ]
+  }
+}
+
+// Virtual Network with a subnet delegated to Container Apps managed environments.
+// The subnet is associated with the NAT Gateway to provide stable egress IP.
 resource vnet 'Microsoft.Network/virtualNetworks@2024-07-01' = {
   name: 'vnet-${resourceToken}'
   location: location
@@ -26,16 +55,9 @@ resource vnet 'Microsoft.Network/virtualNetworks@2024-07-01' = {
               }
             }
           ]
-          privateEndpointNetworkPolicies: 'Disabled'
-          privateLinkServiceNetworkPolicies: 'Enabled'
-        }
-      }
-      {
-        name: 'snet-private-endpoints'
-        properties: {
-          addressPrefix: '10.20.2.0/24'
-          privateEndpointNetworkPolicies: 'Disabled'
-          privateLinkServiceNetworkPolicies: 'Enabled'
+          natGateway: {
+            id: natGateway.id
+          }
         }
       }
     ]
@@ -48,12 +70,7 @@ resource acaSubnet 'Microsoft.Network/virtualNetworks/subnets@2024-07-01' existi
   name: 'snet-aca'
 }
 
-resource privateEndpointSubnet 'Microsoft.Network/virtualNetworks/subnets@2024-07-01' existing = {
-  parent: vnet
-  name: 'snet-private-endpoints'
-}
-
 output vnetId string = vnet.id
 output vnetName string = vnet.name
+output acaEgressIp string = natPublicIp.properties.ipAddress
 output acaSubnetId string = acaSubnet.id
-output privateEndpointSubnetId string = privateEndpointSubnet.id

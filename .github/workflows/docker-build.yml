@@ -39,7 +39,7 @@ jobs:
         project: [
 #          { name: 'api', path: 'src/Admitto.Api' },
           { name: 'worker', path: 'src/Admitto.Worker' },
-          { name: 'jobrunner', path: 'src/Admitto.JobRunner' }
+#          { name: 'jobrunner', path: 'src/Admitto.JobRunner' }
         ]
     outputs:
       jobrunner_digest: ${{ steps.jobrunner_digest.outputs.digest }}

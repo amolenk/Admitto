@@ -1,4 +1,4 @@
-param location string
+param location string = resourceGroup().location
 
 var resourceToken = uniqueString(resourceGroup().id)
 
