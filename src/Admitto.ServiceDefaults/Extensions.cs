@@ -189,7 +189,7 @@ public static class Extensions
     public static WebApplicationBuilder AddDefaultAuthorization(this WebApplicationBuilder builder)
     {
         builder.Services
-            .AddSingleton<IAuthorizationHandler, AuthorizationHandler>() // TODO Move?
+            .AddScoped<IAuthorizationHandler, AuthorizationHandler>() // TODO Move?
             .AddAuthorization();
         
         return builder;

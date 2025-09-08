@@ -7,6 +7,7 @@ using Amolenk.Admitto.Cli.Commands.Email.Template.Team;
 using Amolenk.Admitto.Cli.Commands.Email.Verification;
 using Amolenk.Admitto.Cli.Commands.Events;
 using Amolenk.Admitto.Cli.Commands.Events.TicketType;
+using Amolenk.Admitto.Cli.Commands.Migration;
 using Amolenk.Admitto.Cli.Commands.Team;
 using Amolenk.Admitto.Cli.Commands.Team.Member;
 using Amolenk.Admitto.Cli.Commands.Teams;
@@ -277,6 +278,19 @@ app.Configure(config =>
                                 .WithDescription("Set the reconfirm policy");
                         });
                 });
+        });
+    
+    config.AddBranch(
+        "migration",
+        migration =>
+        {
+            migration.SetDescription("Manage migrations");
+
+            migration.AddCommand<ListMigrationsCommand>("list")
+                .WithDescription("List all migration");
+
+            migration.AddCommand<RunMigrationCommand>("run")
+                .WithDescription("Run a migration");
         });
     
     config.AddBranch(

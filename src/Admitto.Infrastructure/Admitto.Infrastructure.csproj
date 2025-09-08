@@ -22,11 +22,11 @@
     </ItemGroup>
 
     <ItemGroup>
-      <EmbeddedResource Include="Auth\OpenFgaAuthorizationModel.json" />
+      <Folder Include="UserManagement\" />
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="UserManagement\" />
+      <EmbeddedResource Include="Auth\OpenFga\OpenFgaAuthorizationModel.json" />
     </ItemGroup>
 
 </Project>

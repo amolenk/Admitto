@@ -1,29 +1,24 @@
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using OpenFga.Sdk.Client;
 
-namespace Amolenk.Admitto.Infrastructure.Auth;
+namespace Amolenk.Admitto.Infrastructure.Auth.OpenFga;
 
 /// <summary>
-/// Creates an OpenFgaClient. Tries to use the store ID and authorization model ID from the configuration.
-/// If they are not set, it will try to retrieve them from the OpenFGA server.
+/// Creates an OpenFgaClient. Tries to use the latest store ID and authorization model ID from the OpenFGA server.
 /// </summary>
 /// <remarks>
-/// In the production scenario, we get the store ID and authorization model ID from configuration.
-/// For dev/test, the migration project will create the store and authorization model if they do not exist. That
-/// will result in new store and authorization model IDs, which are non-deterministic. To allow for a smooth
-/// development experience, we implemented 'auto-discovery' (using the OpenFGA SDK to retrieve the store ID by name and
-/// the authorization model ID of the latest model).
-///
 /// We use the injected HttpClient, so there's no need to Dispose of the OpenFgaClient.
 /// </remarks>
-public class OpenFgaClientFactory(HttpClient httpClient, string? storeId = null, string? authorizationModelId = null)
+public class OpenFgaClientFactory(HttpClient httpClient, IConfiguration configuration, ILogger<OpenFgaClientFactory> logger)
 {
     public const string StoreName = "Admitto";
 
     private readonly ClientConfiguration _configuration = new()
     {
         ApiUrl = httpClient.BaseAddress!.ToString().TrimEnd('/'),
-        StoreId = storeId,
-        AuthorizationModelId = authorizationModelId
+        StoreId = configuration["OpenFGA:StoreId"],
+        AuthorizationModelId = configuration["OpenFGA:AuthorizationModelId"]
     };
     
     private readonly SemaphoreSlim _semaphore = new(1, 1);
@@ -45,13 +40,14 @@ public class OpenFgaClientFactory(HttpClient httpClient, string? storeId = null,
 
             if (string.IsNullOrEmpty(_configuration.StoreId))
             {
+                logger.LogWarning("Store ID not configured. Attempting to retrieve from OpenFGA server.");
+
                 _configuration.StoreId = await client.TryGetStoreIdAsync();
             }
 
-            if (string.IsNullOrEmpty(_configuration.AuthorizationModelId)
-                && !string.IsNullOrEmpty(_configuration.StoreId))
+            if (string.IsNullOrEmpty(_configuration.AuthorizationModelId))
             {
-                _configuration.AuthorizationModelId = await client.TryGetAuthorizationModelIdAsync();
+                logger.LogWarning("Authorization Model ID not configured. Performance is better when the Authorization Model ID is configured.");
             }
 
             _client = client;

@@ -8,7 +8,8 @@ public class RegisterTeamHandler(IAuthorizationService authorizationService, ILo
 {
     public async ValueTask HandleAsync(RegisterTeamCommand command, CancellationToken cancellationToken)
     {
-        await authorizationService.AddTeamAsync(command.TeamSlug, cancellationToken);
+        // TODO Not needed anymore
+        //await authorizationService.AddTeamAsync(command.TeamSlug, cancellationToken);
         
         logger.LogInformation(
             "Registered team '{team}' with the authorization service.",

@@ -4,8 +4,11 @@ using Amolenk.Admitto.Application.Common.Email;
 using Amolenk.Admitto.Application.Common.Email.Sending;
 using Amolenk.Admitto.Infrastructure;
 using Amolenk.Admitto.Infrastructure.Auth;
+using Amolenk.Admitto.Infrastructure.Auth.AdminOverride;
+using Amolenk.Admitto.Infrastructure.Auth.OpenFga;
 using Amolenk.Admitto.Infrastructure.Email;
 using Amolenk.Admitto.Infrastructure.Messaging;
+using Amolenk.Admitto.Infrastructure.Migrators;
 using Amolenk.Admitto.Infrastructure.Persistence;
 using Amolenk.Admitto.Infrastructure.Persistence.Interceptors;
 using Amolenk.Admitto.Infrastructure.UserManagement.Keycloak;
@@ -46,6 +49,8 @@ public static class DependencyInjection
             // TODO Optimize cache size and expiration
         });
         
+        builder.Services.AddTransient<DatabaseMigrator>();
+        
         builder.Services.AddScoped<ISlugResolver, SlugResolver>();
         
         builder.AddAzureServiceBusClient(connectionName: "messaging");
@@ -64,6 +69,9 @@ public static class DependencyInjection
         builder.Services.AddTransient<IEmailSenderFactory, SmtpEmailSenderFactory>();
 
         builder.AddAuthServices();
+        
+        builder.Services.AddTransient<Amolenk.Admitto.Infrastructure.Migrators.OpenFgaMigrator>();
+        builder.Services.AddTransient<IMigrationService, MigrationService>();
         
         return builder;
     }
@@ -146,6 +154,12 @@ public static class DependencyInjection
         });
         
         services.AddTransient<OpenFgaMigrator>();
-        services.AddTransient<IAuthorizationService, OpenFgaAuthorizationService>();
+        
+        services.AddKeyedScoped<IAuthorizationService, OpenFgaAuthorizationService>("OpenFga");
+        
+        // TODO Not actually part of OpenFGA, but here is as good a place as any
+        services.AddScoped<IAuthorizationService>(sp => new AdminOverrideAuthorizationService(
+            sp.GetRequiredKeyedService<IAuthorizationService>("OpenFga"),
+            sp.GetRequiredService<IConfiguration>()));
     }
 }
