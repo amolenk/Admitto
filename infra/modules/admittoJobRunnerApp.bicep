@@ -1,6 +1,7 @@
-param acrLoginServer string
 param location string = resourceGroup().location
-param containerAppEnvironmentId string
+
+param acaEnvironmentId string
+param acrLoginServer string
 param keyVaultName string
 param managedIdentityId string
 
@@ -28,7 +29,7 @@ resource containerJob 'Microsoft.App/jobs@2025-02-02-preview' = {
         }
       ]
     }
-    environmentId: containerAppEnvironmentId
+    environmentId: acaEnvironmentId
     template: {
       containers: [
         {
