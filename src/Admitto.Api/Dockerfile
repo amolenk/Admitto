@@ -4,14 +4,14 @@ EXPOSE 8080
 
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
-COPY ["src/Admitto.Api/Admitto.Api.csproj", "src/Admitto.Api/"]
-COPY ["src/Admitto.Application/Admitto.Application.csproj", "src/Admitto.Application/"]
-COPY ["src/Admitto.Domain/Admitto.Domain.csproj", "src/Admitto.Domain/"]
-COPY ["src/Admitto.Infrastructure/Admitto.Infrastructure.csproj", "src/Admitto.Infrastructure/"]
-COPY ["src/Admitto.ServiceDefaults/Admitto.ServiceDefaults.csproj", "src/Admitto.ServiceDefaults/"]
-RUN dotnet restore "src/Admitto.Api/Admitto.Api.csproj"
+COPY ["Admitto.Api/Admitto.Api.csproj", "Admitto.Api/"]
+COPY ["Admitto.Application/Admitto.Application.csproj", "Admitto.Application/"]
+COPY ["Admitto.Domain/Admitto.Domain.csproj", "Admitto.Domain/"]
+COPY ["Admitto.Infrastructure/Admitto.Infrastructure.csproj", "Admitto.Infrastructure/"]
+COPY ["Admitto.ServiceDefaults/Admitto.ServiceDefaults.csproj", "Admitto.ServiceDefaults/"]
+RUN dotnet restore "Admitto.Api/Admitto.Api.csproj"
 COPY . .
-WORKDIR "/src/src/Admitto.Api"
+WORKDIR "/src/Admitto.Api"
 RUN dotnet build "Admitto.Api.csproj" -c Release -o /app/build
 
 FROM build AS publish

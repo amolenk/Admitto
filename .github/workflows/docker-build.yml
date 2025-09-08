@@ -38,7 +38,7 @@ jobs:
       matrix:
         project: [
           { name: 'api', path: 'src/Admitto.Api' },
-          { name: 'worker', path: 'src/Admitto.Worker' },
+#          { name: 'worker', path: 'src/Admitto.Worker' },
 #          { name: 'jobrunner', path: 'src/Admitto.JobRunner' }
         ]
 #    outputs:
@@ -77,7 +77,7 @@ jobs:
       id: build
       uses: docker/build-push-action@v5
       with:
-        context: .
+        context: ./src
         file: ${{ matrix.project.path }}/Dockerfile
         push: true
         tags: ${{ steps.meta.outputs.tags }}
