@@ -14,7 +14,6 @@
     <ItemGroup>
         <ProjectReference Include="..\Admitto.Api\Admitto.Api.csproj" />
         <ProjectReference Include="..\Admitto.JobRunner\Admitto.JobRunner.csproj" />
-        <ProjectReference Include="..\Admitto.Migration\Admitto.Migration.csproj" />
         <ProjectReference Include="..\Admitto.Worker\Admitto.Worker.csproj" />
         <ProjectReference Include="..\Admitto.Infrastructure\Admitto.Infrastructure.csproj" IsAspireProjectResource="false" />
     </ItemGroup>

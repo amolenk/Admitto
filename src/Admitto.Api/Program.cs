@@ -83,6 +83,7 @@ app.MapContributorEndpoints();
 app.MapEmailEndpoints();
 app.MapEmailTemplateEndpoints();
 app.MapEmailVerificationEndpoints();
+app.MapMigrationEndpoints();
 app.MapParticipantEndpoints();
 app.MapTeamEndpoints();
 app.MapTicketedEventEndpoints();

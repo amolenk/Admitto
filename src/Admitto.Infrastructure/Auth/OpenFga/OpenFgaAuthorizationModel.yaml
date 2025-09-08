@@ -2,14 +2,6 @@ name: Admitto
 model_file: ./OpenFgaAuthorizationModel.fga
 tuples:
 
-  - user: system:system
-    relation: system
-    object: team:team1
-
-  - user: system:system
-    relation: system
-    object: team:team2
-
   - user: team:team1
     relation: team
     object: event:eventA
@@ -27,10 +19,6 @@ tuples:
     object: event:eventD
 
   - user: user:alice
-    relation: admin
-    object: system:system
-
-  - user: user:bob
     relation: owner
     object: team:team1
 
@@ -52,14 +40,6 @@ tuples:
 
 tests:
 
-  - name: alice-system
-    list_objects:
-      - user: user:alice
-        type: system
-        assertions:
-          can_create_team:
-            - system:system
-
   - name: alice-teams
     list_objects:
       - user: user:alice
@@ -67,13 +47,10 @@ tests:
         assertions:
           can_update_team:
             - team:team1
-            - team:team2
           can_view_team:
             - team:team1
-            - team:team2
           can_create_event:
             - team:team1
-            - team:team2
 
   - name: alice-events
     list_objects:
@@ -83,13 +60,9 @@ tests:
           can_update_event:
             - event:eventA
             - event:eventB
-            - event:eventC
-            - event:eventD
           can_view_event:
             - event:eventA
             - event:eventB
-            - event:eventC
-            - event:eventD
   
   - name: bob-teams
     list_objects:
@@ -97,12 +70,9 @@ tests:
         type: team
         assertions:
           can_update_team:
-            - team:team1
           can_view_team:
-            - team:team1
             - team:team2
           can_create_event:
-            - team:team1
             - team:team2
 
   - name: bob-events
@@ -111,13 +81,9 @@ tests:
         type: event
         assertions:
           can_update_event:
-            - event:eventA
-            - event:eventB
             - event:eventC
             - event:eventD
           can_view_event:
-            - event:eventA
-            - event:eventB
             - event:eventC
             - event:eventD
               

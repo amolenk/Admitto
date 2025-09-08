@@ -1,3 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Amolenk.Admitto.Cli.Services;
 
 public static class InputService
@@ -14,6 +16,14 @@ public static class InputService
         return AnsiConsole.Prompt(prompt);
     }
 
+    public static string GetStringFromList(string text, IEnumerable<string> choices)
+    {
+        return AnsiConsole.Prompt(
+            new SelectionPrompt<string>()
+                .Title($"{text}:")
+                .AddChoices(choices));
+    }
+    
     public static string? GetString(
         string text,
         string? defaultValue = null,

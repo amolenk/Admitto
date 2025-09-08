@@ -43,10 +43,10 @@ if (builder.ExecutionContext.IsRunMode)
     var mailDev = builder.ConfigureMailDev();
     var keycloak = builder.ConfigureKeycloak();
 
-    var migration = builder.AddProject<Projects.Admitto_Migration>("migrate")
-        .WithArgs("run")
-        .WithReference(openFga.GetEndpoint("http")).WaitFor(openFga)
-        .WithReference(postgresDb).WaitFor(postgresDb);
+    // var migration = builder.AddProject<Projects.Admitto_Migration>("migrate")
+    //     .WithArgs("run")
+    //     .WithReference(openFga.GetEndpoint("http")).WaitFor(openFga)
+    //     .WithReference(postgresDb).WaitFor(postgresDb);
 
     apiService
         .WithEnvironment("AUTHENTICATION__AUTHORITY", $"{keycloak.GetEndpoint("http")}/realms/admitto")
@@ -58,13 +58,13 @@ if (builder.ExecutionContext.IsRunMode)
                 Url = "/scalar",
                 DisplayText = "Scalar",
                 DisplayLocation = UrlDisplayLocation.SummaryAndDetails
-            })
-        .WaitForCompletion(migration);
+            });
+        // .WaitForCompletion(migration);
 
-    worker
-        .WithReference(keycloak).WaitFor(keycloak)
-        .WaitFor(mailDev)
-        .WaitForCompletion(migration);
+        worker
+            .WithReference(keycloak).WaitFor(keycloak)
+            .WaitFor(mailDev);
+        // .WaitForCompletion(migration);
 
     var adminApp = builder.ConfigureAdminApp();
     adminApp.WithReference(apiService).WaitFor(apiService);

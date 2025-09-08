@@ -4,7 +4,7 @@ namespace Amolenk.Admitto.Application.Common.Abstractions;
 
 public interface IAuthorizationService
 {
-    ValueTask<bool> CanCreateTeamAsync(Guid userId, CancellationToken cancellationToken = default);
+    ValueTask<bool> IsAdminAsync(Guid userId, CancellationToken cancellationToken = default);
 
     ValueTask<bool> CanUpdateTeamAsync(Guid userId, string teamSlug, CancellationToken cancellationToken = default);
     
@@ -18,8 +18,6 @@ public interface IAuthorizationService
     ValueTask<bool> CanViewEventAsync(Guid userId, string teamSlug, string eventSlug,
         CancellationToken cancellationToken = default);
     
-    ValueTask AddTeamAsync(string teamSlug, CancellationToken cancellationToken = default);
-
     ValueTask AddTicketedEventAsync(string teamSlug, string eventSlug, CancellationToken cancellationToken = default);
 
     ValueTask AddTeamRoleAsync(Guid userId, string teamSlug, TeamMemberRole role, 

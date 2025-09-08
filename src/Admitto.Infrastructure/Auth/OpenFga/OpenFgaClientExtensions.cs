@@ -1,6 +1,6 @@
 using OpenFga.Sdk.Client;
 
-namespace Amolenk.Admitto.Infrastructure.Auth;
+namespace Amolenk.Admitto.Infrastructure.Auth.OpenFga;
 
 public static class OpenFgaClientExtensions
 {

@@ -5,12 +5,12 @@ namespace Amolenk.Admitto.Application.Common.Authorization;
 // TODO Consider modeling email permissions separately.
 public static class AuthorizationPolicyBuilderExtensions
 {
-    public static AuthorizationPolicyBuilder RequireCanCreateTeam(this AuthorizationPolicyBuilder builder)
+    public static AuthorizationPolicyBuilder RequireAdmin(this AuthorizationPolicyBuilder builder)
     {
         builder.Requirements.Add(new AuthorizationRequirement((authService, context) =>
         {
             var userId = context.GetUserIdOrThrow();
-            return authService.CanCreateTeamAsync(userId);
+            return authService.IsAdminAsync(userId);
         }));
         
         return builder;

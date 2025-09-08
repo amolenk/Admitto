@@ -14,7 +14,7 @@ public static class CreateTeamEndpoint
         group
             .MapPost("/", CreateTeam)
             .WithName(nameof(CreateTeam))
-            .RequireAuthorization(policy => policy.RequireCanCreateTeam());
+            .RequireAuthorization(policy => policy.RequireAdmin());
         
         return group;
     }

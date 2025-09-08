@@ -1,15 +1,17 @@
+using System.Text.Json;
 using Amolenk.Admitto.Application.Common.Abstractions;
 using Amolenk.Admitto.Domain.ValueObjects;
+using Microsoft.Extensions.Logging;
+using OpenFga.Sdk.Client;
 using OpenFga.Sdk.Client.Model;
 
-namespace Amolenk.Admitto.Infrastructure.Auth;
+namespace Amolenk.Admitto.Infrastructure.Auth.OpenFga;
 
-public class OpenFgaAuthorizationService(OpenFgaClientFactory clientFactory) : IAuthorizationService
+public class OpenFgaAuthorizationService(OpenFgaClientFactory clientFactory, ILogger<OpenFgaAuthorizationService> logger)
+    : IAuthorizationService
 {
-    private const string SystemObject = "system:system";
-
-    public ValueTask<bool> CanCreateTeamAsync(Guid userId, CancellationToken cancellationToken = default) =>
-        CheckAsync(userId, "can_create_team", SystemObject, cancellationToken);
+    public ValueTask<bool> IsAdminAsync(Guid userId, CancellationToken cancellationToken = default) =>
+        ValueTask.FromResult(false);
 
     public ValueTask<bool> CanUpdateTeamAsync(Guid userId, string teamSlug, 
         CancellationToken cancellationToken = default) =>
@@ -30,12 +32,6 @@ public class OpenFgaAuthorizationService(OpenFgaClientFactory clientFactory) : I
     public ValueTask<bool> CanViewEventAsync(Guid userId, string teamSlug, string eventSlug, 
         CancellationToken cancellationToken = default) =>
         CheckAsync(userId, "can_view_event", $"event:{teamSlug}_{eventSlug}", cancellationToken);
-
-    public ValueTask AddGlobalAdminAsync(Guid userId, CancellationToken cancellationToken = default) =>
-        AddTupleAsync($"user:{userId}", "admin", SystemObject, cancellationToken);
-
-    public ValueTask AddTeamAsync(string teamSlug, CancellationToken cancellationToken = default) =>
-        AddTupleAsync(SystemObject, "system", $"team:{teamSlug}", cancellationToken);
 
     public ValueTask AddTicketedEventAsync(string teamSlug, string eventSlug, 
         CancellationToken cancellationToken = default) =>
@@ -58,6 +54,57 @@ public class OpenFgaAuthorizationService(OpenFgaClientFactory clientFactory) : I
         return objectIds
             .Where(o => o.StartsWith(teamSlug))
             .Select(o => o[(teamSlug.Length + 1)..]); // Skip the team slug prefix
+    }
+    
+    public async ValueTask MigrateAsync()
+    {
+        var client = await clientFactory.GetClientAsync();
+        
+        // Ensure the store exists and retrieve its ID
+        var storeId = await client.TryGetStoreIdAsync() ?? await CreateStoreAsync(client);
+        
+        // Get a new client with the updated store ID
+        client = await clientFactory.UpdateStoreIdAsync(storeId);
+        
+        // Ensure the authorization model exists
+        var modelId = await client.TryGetAuthorizationModelIdAsync();
+        if (modelId is null)
+        {
+            await WriteAuthorizationModelAsync(client);
+        }
+        
+        logger.LogInformation("OpenFGA migration completed. Store ID: {StoreId}, Authorization Model ID: {ModelId}",
+            storeId, modelId);
+    }
+
+    private static async ValueTask<string> CreateStoreAsync(OpenFgaClient client)
+    {
+        var response = await client.CreateStore(
+            new ClientCreateStoreRequest { Name = OpenFgaClientFactory.StoreName });
+
+        return response.Id;
+    }
+    
+    private static async ValueTask<string> WriteAuthorizationModelAsync(OpenFgaClient client)
+    {
+        var modelJson = await LoadAuthorizationModelJsonAsync();
+        var body = JsonSerializer.Deserialize<ClientWriteAuthorizationModelRequest>(modelJson)!;
+    
+        var response = await client.WriteAuthorizationModel(body);
+
+        return response.AuthorizationModelId;
+    }
+    
+    private static async ValueTask<string> LoadAuthorizationModelJsonAsync()
+    {
+        var assembly = typeof(OpenFgaAuthorizationService).Assembly;
+        const string resourceName = "Amolenk.Admitto.Infrastructure.Auth.OpenFga.OpenFgaAuthorizationModel.json";
+
+        await using var stream = assembly.GetManifestResourceStream(resourceName)
+                                 ?? throw new InvalidOperationException($"Resource '{resourceName}' not found.");
+
+        using var reader = new StreamReader(stream);
+        return await reader.ReadToEndAsync();
     }
     
     private async ValueTask<bool> CheckAsync(Guid userId, string relation, string obj,

@@ -3,15 +3,9 @@ model
 
 type user
 
-type system
-  relations
-    define admin: [user]
-    define can_create_team: admin
-
 type team
   relations
-    define system: [system]
-    define owner: [user] or admin from system
+    define owner: [user]
     define organizer: [user] or owner
     define can_update_team: owner
     define can_view_team: organizer
