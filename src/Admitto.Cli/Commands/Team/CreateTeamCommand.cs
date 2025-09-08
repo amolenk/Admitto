@@ -1,61 +1,63 @@
-using Microsoft.Extensions.Configuration;
-
-namespace Amolenk.Admitto.Cli.Commands.Teams;
+namespace Amolenk.Admitto.Cli.Commands.Team;
 
 public class CreateTeamSettings : CommandSettings
 {
     [CommandOption("-s|--slug")]
-    public required string TeamSlug { get; set; }
-    
+    [Description("The team ID (e.g. my-cool-event)")]
+    public string? TeamSlug { get; init; }
+
     [CommandOption("-n|--name")]
-    public required string Name { get; set; } = null!;
+    [Description("The name of the team")]
+    public string? Name { get; init; }
 
     [CommandOption("--email")]
-    public required string Email { get; set; } = null!;
+    [Description("The email address of the team")]
+    public string? Email { get; init; }
 
     [CommandOption("--emailServiceConnectionString")]
-    public required string EmailServiceConnectionString { get; set; } = null!;
-
-    public override ValidationResult Validate()
-    {
-        if (string.IsNullOrWhiteSpace(Name))
-        {
-            return ValidationResult.Error("Name is required.");
-        }
-
-        if (string.IsNullOrWhiteSpace(Email))
-        {
-            return ValidationResult.Error("Email is required.");
-        }
-
-        if (string.IsNullOrWhiteSpace(EmailServiceConnectionString))
-        {
-            return ValidationResult.Error("Email service connection string is required.");
-        }
-
-        return base.Validate();
-    }
+    [Description("The connection string of the SMTP service to use for sending emails")]
+    public string? EmailServiceConnectionString { get; init; }
 }
 
-public class CreateTeamCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration)
-    : ApiCommand<CreateTeamSettings>(accessTokenProvider, configuration)
+public class CreateTeamCommand(IApiService apiService) : AsyncCommand<CreateTeamSettings>
 {
     public override async Task<int> ExecuteAsync(CommandContext context, CreateTeamSettings settings)
     {
-        var teamSlug = GetTeamSlug(settings.TeamSlug);
-        
-        var request = new CreateTeamRequest()
-        {
-            Slug = teamSlug,
-            Name = settings.Name,
-            Email = settings.Email,
-            EmailServiceConnectionString = settings.EmailServiceConnectionString
-        };
+        var request = CreateRequest(settings);
 
-        var succes = await CallApiAsync(async client => await client.Teams.PostAsync(request));
+        var succes = await apiService.CallApiAsync(async client => await client.Teams.PostAsync(request));
         if (!succes) return 1;
-        
-        AnsiConsole.MarkupLine($"[green]✓ Successfully created team {request.Name}.[/]");
+
+        OutputService.WriteSuccesMessage($"Successfully created team {request.Name}.");
         return 0;
+    }
+
+    private static CreateTeamRequest CreateRequest(CreateTeamSettings settings)
+    {
+        var name = settings.Name ?? InputService.GetString("Team name");
+        var slug = settings.TeamSlug?.Kebaberize() ??
+                   InputService.GetString("Team slug", name.Kebaberize(), kebaberize: true);
+        var email = settings.Email ?? InputService.GetString("Team email");
+        var emailServiceConnectionString = settings.EmailServiceConnectionString ?? GetEmailServiceConnectionString();
+
+        return new CreateTeamRequest()
+        {
+            Name = name,
+            Slug = slug,
+            Email = email,
+            EmailServiceConnectionString = emailServiceConnectionString
+        };
+    }
+
+    private static string GetEmailServiceConnectionString()
+    {
+        var host = InputService.GetString("SMTP host");
+        var port = InputService.GetPort("SMTP port", 587);
+        var username = InputService.GetString("SMTP username", allowEmpty: true);
+        var password = InputService.GetString("SMTP password", allowEmpty: true, isSecret: true);
+
+        return username is not null
+            ? $"host={host};port={port};username={username};password={password}"
+            : $"host={host};port={port}";
     }
 }
