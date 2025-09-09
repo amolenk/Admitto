@@ -144,6 +144,12 @@ public static class Extensions
             })
             .AddJwtBearer(options =>
             {
+                Console.WriteLine("AddJwtBearer:");
+                Console.WriteLine(" Authority: " + authOptions.Authority);
+                Console.WriteLine(" Audience: " + authOptions.Audience);
+                Console.WriteLine(" RequireHttpsMetadata: " + authOptions.RequireHttpsMetadata);
+                Console.WriteLine(" ValidIssuers: " + string.Join(", ", authOptions.ValidIssuers));
+                
                 options.Authority = authOptions.Authority;
                 options.Audience = authOptions.Audience;
                 options.RequireHttpsMetadata = authOptions.RequireHttpsMetadata;
