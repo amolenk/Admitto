@@ -86,6 +86,8 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference();
 }
 
+app.UseCors();
+
 app.MapDefaultEndpoints();
 app.MapAttendeeEndpoints();
 app.MapBulkEmailEndpoints();
