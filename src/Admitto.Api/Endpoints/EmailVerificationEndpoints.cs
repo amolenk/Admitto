@@ -8,6 +8,8 @@ namespace Amolenk.Admitto.ApiService.Endpoints;
 
 public static class EmailVerificationEndpoints
 {
+    // TODO Merge with Public (Participant)
+    
     public static void MapEmailVerificationEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/teams/{teamSlug}/events/{eventSlug}/email-verification")
@@ -18,8 +20,7 @@ public static class EmailVerificationEndpoints
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status409Conflict)
-            .ProducesProblem(StatusCodes.Status500InternalServerError)
-            .RequireAuthorization();
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
 
         group
             .MapRequestOtp()

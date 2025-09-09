@@ -8,18 +8,19 @@ namespace Amolenk.Admitto.ApiService.Endpoints;
 
 public static class ParticipantEndpoints
 {
+    // TODO Naming
+    
     public static void MapParticipantEndpoints(this IEndpointRouteBuilder app)
     {
-        var group = app.MapGroup("/teams/{teamSlug}/events/{eventSlug}/participants")
-            .WithTags("Participants")
+        var group = app.MapGroup("/teams/{teamSlug}/events/{eventSlug}/public")
+            .WithTags("Public")
             .AddEndpointFilter<ValidationFilter>()
             .AddEndpointFilter<UnitOfWorkFilter>()
             .ProducesValidationProblem()
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status409Conflict)
-            .ProducesProblem(StatusCodes.Status500InternalServerError)
-            .RequireAuthorization();
+            .ProducesProblem(StatusCodes.Status500InternalServerError);
 
         group
             .MapAdmit()

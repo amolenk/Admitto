@@ -16,8 +16,7 @@ public static class RequestOtpCodeEndpoint
     {
         group
             .MapPost("/requests", RequestOtp)
-            .WithName(nameof(RequestOtp))
-            .RequireAuthorization(policy => policy.RequireCanUpdateEvent());
+            .WithName(nameof(RequestOtp));
 
         return group;
     }
