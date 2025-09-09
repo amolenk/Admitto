@@ -1,3 +1,11 @@
+####
+#### TODO FIX
+
+
+### Test HTTP requests for Admitto API
+
+GET https://app-admitto-api-utzwls7ov7ne2.wittysand-e7b3762f.swedencentral.azurecontainerapps.io/teams
+
 ### Get Keycloak token
 
 POST http://localhost:8080/realms/admitto/protocol/openid-connect/token
