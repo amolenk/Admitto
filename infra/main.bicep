@@ -4,6 +4,13 @@ targetScope = 'resourceGroup'
 @description('The location used for all deployed resources')
 param location string
 
+@minLength(1)
+@description('The ID of the Entra ID tenant to use for authentication')
+param authTenantId string
+
+@minLength(1)
+@description('The ID of the Entra ID application representing the Admitto API')
+param authAudience string
 
 @minLength(16)
 @description('The password for the PostgreSQL database')
@@ -79,11 +86,17 @@ module openfga 'modules/openFgaApp.bicep' = {
 module admittoApi 'modules/admittoApiApp.bicep' = {
   name: 'admitto-api-app'
   params: {
+    acaEnvironmentDomain: containerAppEnvironment.outputs.defaultDomain
     acaEnvironmentId: containerAppEnvironment.outputs.id
     acrLoginServer: containerRegistry.outputs.loginServer
+    authTenantId: authTenantId
+    authAudience: authAudience
     keyVaultName: keyVault.outputs.name
     location: location
+    managedIdentityClientId: managedIdentity.outputs.clientId
     managedIdentityId: managedIdentity.outputs.id
+    openFgaAppName: openfga.outputs.name
+    serviceBusEndpoint: serviceBus.outputs.serviceBusEndpoint
   }
 }
 

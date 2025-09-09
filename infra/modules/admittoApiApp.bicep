@@ -1,9 +1,15 @@
 param location string = resourceGroup().location
 
+param acaEnvironmentDomain string
 param acaEnvironmentId string
 param acrLoginServer string
+param authAudience string
+param authTenantId string
 param keyVaultName string
+param managedIdentityClientId string
 param managedIdentityId string
+param openFgaAppName string
+param serviceBusEndpoint string
 
 var resourceToken = uniqueString(resourceGroup().id)
 
@@ -21,7 +27,7 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
       activeRevisionsMode: 'Single'
       ingress: {
         external: true
-        targetPort: 8080
+        targetPort: 80
         allowInsecure: false
       }
       registries: [
@@ -35,6 +41,13 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
           autoConfigureDataProtection: true
         }
       }
+      secrets: [
+        {
+          name: 'admitto-db-connection-string'
+          keyVaultUrl: 'https://${keyVaultName}${environment().suffixes.keyvaultDns}/secrets/connectionstrings--admitto-db'
+          identity: managedIdentityId
+        }
+      ]  
     }
     environmentId: acaEnvironmentId
     template: {
@@ -43,6 +56,42 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
           // Use a placeholder image until the real one is built and pushed
           image: 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
           name: 'admitto-api'
+          env: [
+            {
+              name: 'AUTHENTICATION__AUTHORITY'
+              value: '${environment().authentication.loginEndpoint}${authTenantId}/v2.0'
+            }
+            {
+              name: 'AUTHENTICATION__AUDIENCE'
+              value: authAudience
+            }
+            // Personal Microsoft accounts use v1 tokens.
+            {
+              name: 'AUTHENTICATION__VALIDISSUERS__0'
+              value: 'https://sts.windows.net/${authTenantId}/'
+            }
+            // Work or school Microsoft accounts use v2 tokens.
+            {
+              name: 'AUTHENTICATION__VALIDISSUERS__1'
+              value: '${environment().authentication.loginEndpoint}${authTenantId}/v2.0'
+            }
+            {
+              name: 'AZURE_CLIENT_ID'
+              value: managedIdentityClientId
+            }
+            {
+              name: 'ConnectionStrings__admitto-db'
+              secretRef: 'admitto-db-connection-string'
+            }
+            {
+              name: 'ConnectionStrings__messaging'
+              value: serviceBusEndpoint
+            }
+            {
+              name: 'services__openfga__http__0'
+              value: 'http://${openFgaAppName}.internal.${acaEnvironmentDomain}:8080'
+            }
+          ]
           resources: {
             cpu: json('0.5')
             memory: '1Gi'
@@ -57,5 +106,3 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
   }
 }
 
-output url string = 'https://${containerApp.properties.configuration.ingress.fqdn}'
-output name string = containerApp.name

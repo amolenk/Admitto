@@ -37,7 +37,7 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
       secrets: [
         {
           name: 'admitto-db-connection-string'
-          keyVaultUrl: 'https://${keyVaultName}.vault.azure.net/secrets/connectionstrings--admitto-db'
+          keyVaultUrl: 'https://${keyVaultName}${environment().suffixes.keyvaultDns}/secrets/connectionstrings--admitto-db'
           identity: managedIdentityId
         }
       ]    
@@ -80,5 +80,3 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
     }
   }
 }
-
-output name string = containerApp.name

@@ -104,7 +104,6 @@ jobs:
           -n app-admitto-${{ matrix.project.name }}-${{ vars.AZURE_RESOURCE_SUFFIX }} \
           --image ${{ env.IMMUTABLE_IMAGE }} \
           --revision-suffix build-${{ github.run_number }}
-          --target-port 8080
 
 #  deploy-jobrunner-instances:
 #    runs-on: ubuntu-latest
