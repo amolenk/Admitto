@@ -12,6 +12,10 @@ param authTenantId string
 @description('The ID of the Entra ID application representing the Admitto API')
 param authAudience string
 
+@minLength(1)
+@description('The ID(s) of the admin users separated by commas')
+param authAdminUserIds string
+
 @minLength(16)
 @description('The password for the PostgreSQL database')
 @secure()
@@ -89,6 +93,7 @@ module admittoApi 'modules/admittoApiApp.bicep' = {
     acaEnvironmentDomain: containerAppEnvironment.outputs.defaultDomain
     acaEnvironmentId: containerAppEnvironment.outputs.id
     acrLoginServer: containerRegistry.outputs.loginServer
+    authAdminUserIds: authAdminUserIds
     authTenantId: authTenantId
     authAudience: authAudience
     keyVaultName: keyVault.outputs.name
