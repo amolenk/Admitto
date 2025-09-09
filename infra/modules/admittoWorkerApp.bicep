@@ -64,7 +64,7 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
             }
             {
               name: 'services__openfga__http__0'
-              value: 'http://${openFgaAppName}.internal.${acaEnvironmentDomain}:8080'
+              value: 'https://${openFgaAppName}.internal.${acaEnvironmentDomain}'
             }
           ]
           resources: {

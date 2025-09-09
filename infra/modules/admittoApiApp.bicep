@@ -3,6 +3,7 @@ param location string = resourceGroup().location
 param acaEnvironmentDomain string
 param acaEnvironmentId string
 param acrLoginServer string
+param authAdminUserIds string
 param authAudience string
 param authTenantId string
 param keyVaultName string
@@ -80,6 +81,10 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
               value: managedIdentityClientId
             }
             {
+              name: 'AdminUserIds'
+              value: authAdminUserIds
+            }
+            {
               name: 'ConnectionStrings__admitto-db'
               secretRef: 'admitto-db-connection-string'
             }
@@ -89,7 +94,7 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
             }
             {
               name: 'services__openfga__http__0'
-              value: 'http://${openFgaAppName}.internal.${acaEnvironmentDomain}:8080'
+              value: 'https://${openFgaAppName}.internal.${acaEnvironmentDomain}'
             }
           ]
           resources: {
