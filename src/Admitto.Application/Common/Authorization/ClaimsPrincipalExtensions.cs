@@ -32,6 +32,9 @@ public static class AuthorizationExtensions
         var claim = user.FindFirst(ClaimTypes.Email);
         if (claim is not null) return claim.Value;
 
+        claim = user.FindFirst("preferred_username");
+        if (claim is not null) return claim.Value;
+
         throw new ArgumentException(
             "Cannot find user email in principal. Ensure the user is authenticated and has the correct claims.");
     }
