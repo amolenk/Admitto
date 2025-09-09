@@ -1,14 +1,10 @@
-using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Amolenk.Admitto.ApiService.Endpoints;
 using Amolenk.Admitto.ApiService.Middleware;
-using Amolenk.Admitto.Application.Common.Abstractions;
-using Amolenk.Admitto.Infrastructure.Messaging;
 using FluentValidation;
 using FluentValidation.Internal;
 using Humanizer;
-using Microsoft.AspNetCore.Mvc;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -41,6 +37,19 @@ builder.AddDefaultInfrastructureServices();
 builder.AddDefaultAuthentication();
 builder.AddDefaultAuthorization();
 
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(
+        "AllowAll",
+        policy =>
+        {
+            // TODO Can we tighten this (headers? methods?)
+            policy.AllowAnyOrigin()
+                .AllowAnyMethod()
+                .AllowAnyHeader();
+        });
+});
+
 // Use camel case for FluentValidation property names
 ValidatorOptions.Global.DisplayNameResolver = (_, member, _) => member?.Name.Humanize();
 ValidatorOptions.Global.PropertyNameResolver = (_, memberInfo, expression) =>
@@ -56,7 +65,8 @@ ValidatorOptions.Global.PropertyNameResolver = (_, memberInfo, expression) =>
                 return propertyNames[0].Camelize();
             }
 
-            return string.Join(ValidatorOptions.Global.PropertyChainSeparator, 
+            return string.Join(
+                ValidatorOptions.Global.PropertyChainSeparator,
                 propertyNames.Select(n => n.Camelize()));
         }
     }
@@ -82,9 +92,8 @@ app.MapBulkEmailEndpoints();
 app.MapContributorEndpoints();
 app.MapEmailEndpoints();
 app.MapEmailTemplateEndpoints();
-app.MapEmailVerificationEndpoints();
 app.MapMigrationEndpoints();
-app.MapParticipantEndpoints();
+app.MapPublicEndpoints();
 app.MapTeamEndpoints();
 app.MapTicketedEventEndpoints();
 
