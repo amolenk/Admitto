@@ -6,6 +6,12 @@ public static class AuthorizationExtensions
 {
     public static Guid? GetUserId(this ClaimsPrincipal user)
     {
+        Console.WriteLine("Here come the claims:");
+        foreach (var claim in user.Claims)
+        {
+            Console.WriteLine(claim.Type + ": " + claim.Value);
+        }
+        
         // Entra
         var objectIdentifierClaim = user.FindFirst("http://schemas.microsoft.com/identity/claims/objectidentifier");
         if (objectIdentifierClaim is not null) return Guid.Parse(objectIdentifierClaim.Value);
