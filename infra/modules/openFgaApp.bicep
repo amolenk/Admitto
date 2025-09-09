@@ -25,7 +25,7 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
       secrets: [
         {
           name: 'openfga-db-connection-string'
-          keyVaultUrl: 'https://${keyVaultName}.vault.azure.net/secrets/connectionstrings--openfga-db'
+          keyVaultUrl: 'https://${keyVaultName}${environment().suffixes.keyvaultDns}/secrets/connectionstrings--openfga-db'
           identity: managedIdentityId
         }
       ]
