@@ -1,10 +1,11 @@
 using Amolenk.Admitto.Application.Common.Email;
 using Amolenk.Admitto.Application.Common.Email.Sending;
 using MailKit.Security;
+using Microsoft.Extensions.Logging;
 
 namespace Amolenk.Admitto.Infrastructure.Email;
 
-public class SmtpEmailSenderFactory : IEmailSenderFactory
+public class SmtpEmailSenderFactory(ILoggerFactory loggerFactory) : IEmailSenderFactory
 {
     public async ValueTask<IEmailSender> GetEmailSenderAsync(
         string fromName,
@@ -13,7 +14,7 @@ public class SmtpEmailSenderFactory : IEmailSenderFactory
     {
         var settings = CreateSmtpSettings(fromName, fromEmail, connectionString);
         
-        return await SmtpEmailSender.ConnectAsync(settings);
+        return await SmtpEmailSender.ConnectAsync(settings, loggerFactory);
     }
     
     private static SmtpSettings CreateSmtpSettings(string fromName, string fromEmail, string connectionString)
