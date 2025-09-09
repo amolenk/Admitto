@@ -157,6 +157,16 @@ public static class Extensions
 
                 options.Events = new JwtBearerEvents
                 {
+                    OnMessageReceived = ctx =>
+                    {
+                        Console.WriteLine("Authorization header: " + ctx.Request.Headers.Authorization);
+                        return Task.CompletedTask;
+                    },
+                    OnAuthenticationFailed = ctx =>
+                    {
+                        Console.WriteLine("JWT failed: " + ctx.Exception);
+                        return Task.CompletedTask;
+                    },
                     OnChallenge = context =>
                     {
                         context.HandleResponse();
