@@ -1,4 +1,6 @@
 using Amolenk.Admitto.ApiService.Middleware;
+using Amolenk.Admitto.Application.UseCases.EmailVerification.RequestOtpCode;
+using Amolenk.Admitto.Application.UseCases.EmailVerification.VerifyOtpCode;
 using Amolenk.Admitto.Application.UseCases.Participants.CancelParticipation;
 using Amolenk.Admitto.Application.UseCases.Participants.CheckInParticipant;
 using Amolenk.Admitto.Application.UseCases.Participants.GetQRCode;
@@ -6,11 +8,9 @@ using Amolenk.Admitto.Application.UseCases.Participants.ReconfirmParticipation;
 
 namespace Amolenk.Admitto.ApiService.Endpoints;
 
-public static class ParticipantEndpoints
+public static class PublicEndpoints
 {
-    // TODO Naming
-    
-    public static void MapParticipantEndpoints(this IEndpointRouteBuilder app)
+    public static void MapPublicEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/teams/{teamSlug}/events/{eventSlug}/public")
             .WithTags("Public")
@@ -20,12 +20,15 @@ public static class ParticipantEndpoints
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status409Conflict)
-            .ProducesProblem(StatusCodes.Status500InternalServerError);
+            .ProducesProblem(StatusCodes.Status500InternalServerError)
+            .RequireCors("AllowAll");
 
         group
             .MapAdmit()
             .MapCancelParticipation()
             .MapGetQRCode()
-            .MapReconfirmParticipation();
+            .MapReconfirmParticipation()
+            .MapRequestOtp()
+            .MapVerifyOtpCode();
     }
 }

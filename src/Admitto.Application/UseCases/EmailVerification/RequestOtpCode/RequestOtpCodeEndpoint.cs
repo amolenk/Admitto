@@ -15,7 +15,7 @@ public static class RequestOtpCodeEndpoint
     public static RouteGroupBuilder MapRequestOtp(this RouteGroupBuilder group)
     {
         group
-            .MapPost("/requests", RequestOtp)
+            .MapPost("/otp", RequestOtp)
             .WithName(nameof(RequestOtp));
 
         return group;
