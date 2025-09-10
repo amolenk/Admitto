@@ -15,13 +15,13 @@ public static class RegisterEndpoint
     public static RouteGroupBuilder MapRegister(this RouteGroupBuilder group)
     {
         group
-            .MapPost("/", RegisterAttendee)
-            .WithName(nameof(RegisterAttendee));
+            .MapPost("/", Register)
+            .WithName(nameof(Register));
 
         return group;
     }
 
-    private static async ValueTask<Created> RegisterAttendee(
+    private static async ValueTask<Created> Register(
         string teamSlug,
         string eventSlug,
         RegisterRequest request,
