@@ -47,9 +47,9 @@ public class VerificationEmailComposer(
         }
 
         var parameters = new VerificationEmailParameters(
+            item.Email,
             item.Name,
             item.Website,
-            item.Email,
             verificationCode);
         
         return (parameters, null);
@@ -61,9 +61,9 @@ public class VerificationEmailComposer(
         List<TicketSelection> tickets)
     {
         return new VerificationEmailParameters(
+            recipient,
             "Test Event",
             "www.example.com",
-            recipient,
             "123456");
     }
 }
