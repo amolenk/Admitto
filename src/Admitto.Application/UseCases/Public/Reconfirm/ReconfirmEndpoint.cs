@@ -3,24 +3,23 @@ using Amolenk.Admitto.Application.Common.Cryptography;
 using Amolenk.Admitto.Application.UseCases.Attendees.ReconfirmRegistration;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Amolenk.Admitto.Application.UseCases.Participants.ReconfirmParticipation;
+namespace Amolenk.Admitto.Application.UseCases.Public.Reconfirm;
 
 /// <summary>
 /// Represents the endpoint for reconfirming an existing registration using the public identifier and a signature.
 /// </summary>
-public static class ReconfirmParticipationEndpoint
+public static class ReconfirmEndpoint
 {
-    public static RouteGroupBuilder MapReconfirmParticipation(this RouteGroupBuilder group)
+    public static RouteGroupBuilder MapReconfirm(this RouteGroupBuilder group)
     {
         group
-            .MapPost("/{publicId:guid}/reconfirm", ReconfirmParticipation)
-            .WithName(nameof(ReconfirmParticipation))
-            .RequireAuthorization(policy => policy.RequireCanUpdateEvent());
+            .MapPost("/{publicId:guid}/reconfirm", Reconfirm)
+            .WithName(nameof(Reconfirm));
 
         return group;
     }
 
-    private static async ValueTask<Ok> ReconfirmParticipation(
+    private static async ValueTask<Ok> Reconfirm(
         string teamSlug,
         string eventSlug,
         Guid publicId,

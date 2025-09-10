@@ -3,7 +3,7 @@ using Amolenk.Admitto.Application.Common.Cryptography;
 using Amolenk.Admitto.Application.Common.Email;
 using Amolenk.Admitto.Application.Common.Identity;
 
-namespace Amolenk.Admitto.Application.UseCases.EmailVerification.VerifyOtpCode;
+namespace Amolenk.Admitto.Application.UseCases.Public.VerifyOtpCode;
 
 /// <summary>
 /// Represents the endpoint for verifying an OTP code sent to an email address.
@@ -15,8 +15,7 @@ public static class VerifyOtpCodeEndpoint
     {
         group
             .MapPost("/verify", VerifyOtpCode)
-            .WithName(nameof(VerifyOtpCode))
-            .RequireAuthorization(policy => policy.RequireCanUpdateEvent());
+            .WithName(nameof(VerifyOtpCode));
 
         return group;
     }

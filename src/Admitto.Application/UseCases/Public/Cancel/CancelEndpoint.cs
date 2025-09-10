@@ -3,24 +3,23 @@ using Amolenk.Admitto.Application.Common.Cryptography;
 using Amolenk.Admitto.Application.UseCases.Attendees.CancelRegistration;
 using Microsoft.AspNetCore.Mvc;
 
-namespace Amolenk.Admitto.Application.UseCases.Participants.CancelParticipation;
+namespace Amolenk.Admitto.Application.UseCases.Public.Cancel;
 
 /// <summary>
 /// Represents the endpoint for cancelling an existing registration using the public identifier and a signature.
 /// </summary>
-public static class CancelParticipationEndpoint
+public static class CancelEndpoint
 {
-    public static RouteGroupBuilder MapCancelParticipation(this RouteGroupBuilder group)
+    public static RouteGroupBuilder MapCancel(this RouteGroupBuilder group)
     {
         group
-            .MapDelete("/{publicId:guid}", CancelParticipation)
-            .WithName(nameof(CancelParticipation))
-            .RequireAuthorization(policy => policy.RequireCanUpdateEvent());
+            .MapDelete("/{publicId:guid}", Cancel)
+            .WithName(nameof(Cancel));
 
         return group;
     }
 
-    private static async ValueTask<Ok> CancelParticipation(
+    private static async ValueTask<Ok> Cancel(
         string teamSlug,
         string eventSlug,
         Guid publicId,

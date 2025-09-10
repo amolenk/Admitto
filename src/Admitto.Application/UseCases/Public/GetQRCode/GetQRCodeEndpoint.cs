@@ -2,7 +2,7 @@ using Amolenk.Admitto.Application.Common;
 using Amolenk.Admitto.Application.Common.Cryptography;
 using QRCoder;
 
-namespace Amolenk.Admitto.Application.UseCases.Participants.GetQRCode;
+namespace Amolenk.Admitto.Application.UseCases.Public.GetQRCode;
 
 public static class GetQRCodeEndpoint
 {
@@ -10,8 +10,7 @@ public static class GetQRCodeEndpoint
     {
         group
             .MapGet("/{publicId:guid}/qr-code", GetQRCode)
-            .WithName(nameof(GetQRCode))
-            .RequireAuthorization(policy => policy.RequireCanViewEvent());
+            .WithName(nameof(GetQRCode));
 
         return group;
     }
