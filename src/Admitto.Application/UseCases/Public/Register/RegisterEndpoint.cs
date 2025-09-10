@@ -15,7 +15,7 @@ public static class RegisterEndpoint
     public static RouteGroupBuilder MapRegister(this RouteGroupBuilder group)
     {
         group
-            .MapPost("/", Register)
+            .MapPost("/register", Register)
             .WithName(nameof(Register));
 
         return group;

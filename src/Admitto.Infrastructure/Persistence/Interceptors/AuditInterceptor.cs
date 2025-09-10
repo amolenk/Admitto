@@ -27,7 +27,7 @@ public class AuditInterceptor(IHttpContextAccessor contextAccessor) : SaveChange
             }
             
             entry.Entity.LastChangedAt = now;
-            entry.Entity.LastChangedBy = contextAccessor?.HttpContext?.User.GetUserEmail() ?? "system";
+//            entry.Entity.LastChangedBy = contextAccessor?.HttpContext?.User.GetUserEmail() ?? "system";
         }
 
         return base.SavingChangesAsync(eventData, result, cancellationToken);
