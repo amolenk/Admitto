@@ -29,7 +29,7 @@
       <Folder Include="Common\Messaging\" />
       <Folder Include="Common\Security\" />
       <Folder Include="UseCases\EmailTemplates\" />
-      <Folder Include="UseCases\EmailVerification\" />
+      <Folder Include="UseCases\Public\GetAvailability\" />
       <Folder Include="UseCases\TicketedEventsAvailability\" />
     </ItemGroup>
 

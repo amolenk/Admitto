@@ -3,9 +3,8 @@ using Amolenk.Admitto.Application.Common.Email;
 using Amolenk.Admitto.Application.Common.Email.Composing;
 using Amolenk.Admitto.Application.Common.Identity;
 using Amolenk.Admitto.Application.UseCases.Email.SendEmail;
-using Amolenk.Admitto.Domain.ValueObjects;
 
-namespace Amolenk.Admitto.Application.UseCases.EmailVerification.RequestOtpCode;
+namespace Amolenk.Admitto.Application.UseCases.Public.RequestOtpCode;
 
 /// <summary>
 /// Represents an endpoint for requesting an OTP code to be sent to an email address for verification.

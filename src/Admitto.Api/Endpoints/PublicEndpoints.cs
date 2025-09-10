@@ -1,10 +1,11 @@
 using Amolenk.Admitto.ApiService.Middleware;
-using Amolenk.Admitto.Application.UseCases.EmailVerification.RequestOtpCode;
-using Amolenk.Admitto.Application.UseCases.EmailVerification.VerifyOtpCode;
-using Amolenk.Admitto.Application.UseCases.Participants.CancelParticipation;
-using Amolenk.Admitto.Application.UseCases.Participants.CheckInParticipant;
-using Amolenk.Admitto.Application.UseCases.Participants.GetQRCode;
-using Amolenk.Admitto.Application.UseCases.Participants.ReconfirmParticipation;
+using Amolenk.Admitto.Application.UseCases.Public.Cancel;
+using Amolenk.Admitto.Application.UseCases.Public.CheckIn;
+using Amolenk.Admitto.Application.UseCases.Public.GetQRCode;
+using Amolenk.Admitto.Application.UseCases.Public.Reconfirm;
+using Amolenk.Admitto.Application.UseCases.Public.Register;
+using Amolenk.Admitto.Application.UseCases.Public.RequestOtpCode;
+using Amolenk.Admitto.Application.UseCases.Public.VerifyOtpCode;
 
 namespace Amolenk.Admitto.ApiService.Endpoints;
 
@@ -24,10 +25,11 @@ public static class PublicEndpoints
             .RequireCors("AllowAll");
 
         group
-            .MapAdmit()
-            .MapCancelParticipation()
+            .MapCheckIn()
+            .MapCancel()
             .MapGetQRCode()
-            .MapReconfirmParticipation()
+            .MapReconfirm()
+            .MapRegister()
             .MapRequestOtp()
             .MapVerifyOtpCode();
     }

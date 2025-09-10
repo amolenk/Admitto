@@ -1,4 +1,4 @@
-namespace Amolenk.Admitto.Application.UseCases.EmailVerification.VerifyOtpCode;
+namespace Amolenk.Admitto.Application.UseCases.Public.VerifyOtpCode;
 
 /// <summary>
 /// Represents a request to verify an OTP code sent to an email address.
