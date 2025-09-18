@@ -11,6 +11,7 @@ param managedIdentityClientId string
 param managedIdentityId string
 param openFgaAppName string
 param storageAccountName string
+param frontDoorServiceTag string
 
 var resourceToken = uniqueString(resourceGroup().id)
 
@@ -30,6 +31,13 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
         external: true
         targetPort: 80
         allowInsecure: false
+        ipSecurityRestrictions: [
+          {
+            name: 'Allow-FrontDoor'
+            ipAddressRange: frontDoorServiceTag
+            action: 'Allow'
+          }
+        ]
       }
       registries: [
         {
@@ -110,4 +118,6 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
     }
   }
 }
+
+output fqdn string = containerApp.properties.configuration.ingress.fqdn
 

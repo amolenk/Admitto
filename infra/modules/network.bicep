@@ -60,6 +60,12 @@ resource vnet 'Microsoft.Network/virtualNetworks@2024-07-01' = {
           }
         }
       }
+      {
+        name: 'GatewaySubnet'
+        properties: {
+          addressPrefix: '10.20.2.0/24'
+        }
+      }
     ]
   }
 }
@@ -70,7 +76,13 @@ resource acaSubnet 'Microsoft.Network/virtualNetworks/subnets@2024-07-01' existi
   name: 'snet-aca'
 }
 
+resource gatewaySubnet 'Microsoft.Network/virtualNetworks/subnets@2024-07-01' existing = {
+  parent: vnet
+  name: 'GatewaySubnet'
+}
+
 output vnetId string = vnet.id
 output vnetName string = vnet.name
 output acaEgressIp string = natPublicIp.properties.ipAddress
 output acaSubnetId string = acaSubnet.id
+output gatewaySubnetId string = gatewaySubnet.id

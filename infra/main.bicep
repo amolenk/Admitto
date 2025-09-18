@@ -105,6 +105,22 @@ module admittoApi 'modules/admittoApiApp.bicep' = {
     managedIdentityId: managedIdentity.outputs.id
     openFgaAppName: openfga.outputs.name
     storageAccountName: storageAccount.outputs.storageAccountName
+    frontDoorServiceTag: 'AzureFrontDoor.Backend'
+  }
+}
+
+module frontDoor 'modules/frontDoor.bicep' = {
+  name: 'front-door'
+  params: {
+    apiAppDomain: admittoApi.outputs.fqdn
+  }
+}
+
+module vpnGateway 'modules/vpnGateway.bicep' = {
+  name: 'vpn-gateway'
+  params: {
+    location: location
+    gatewaySubnetId: network.outputs.gatewaySubnetId
   }
 }
 
