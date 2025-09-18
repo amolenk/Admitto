@@ -1,12 +1,12 @@
 using Amolenk.Admitto.Application.Common.Abstractions;
 using Azure.Messaging;
-using Azure.Messaging.ServiceBus;
+using Azure.Storage.Queues;
 using Microsoft.Extensions.Logging;
 
 namespace Amolenk.Admitto.Infrastructure.Messaging;
 
 public class MessageSender(
-    ServiceBusClient serviceBusClient,
+    QueueClient queueClient,
     ILogger<MessageSender> logger) : IMessageSender
 {
     public async ValueTask SendAsync(Message message, CancellationToken cancellationToken = default)
@@ -20,10 +20,8 @@ public class MessageSender(
             Id = message.Id.ToString()
         };
 
-        var sender = serviceBusClient.CreateSender("queue");
-        
         logger.LogInformation("Sending message to queue: {MessageType}", message.Type);
 
-        await sender.SendMessageAsync(new ServiceBusMessage(new BinaryData(cloudEvent)), cancellationToken);
+        await queueClient.SendMessageAsync(System.Text.Json.JsonSerializer.Serialize(cloudEvent), cancellationToken);
     }
 }

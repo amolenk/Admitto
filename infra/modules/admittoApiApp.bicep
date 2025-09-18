@@ -10,7 +10,7 @@ param keyVaultName string
 param managedIdentityClientId string
 param managedIdentityId string
 param openFgaAppName string
-param serviceBusEndpoint string
+param storageAccountName string
 
 var resourceToken = uniqueString(resourceGroup().id)
 
@@ -89,8 +89,8 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
               secretRef: 'admitto-db-connection-string'
             }
             {
-              name: 'ConnectionStrings__messaging'
-              value: serviceBusEndpoint
+              name: 'ConnectionStrings__queues'
+              value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};EndpointSuffix=core.windows.net'
             }
             {
               name: 'services__openfga__http__0'

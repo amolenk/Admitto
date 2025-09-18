@@ -59,11 +59,13 @@ module containerAppEnvironment 'modules/containerAppEnvironment.bicep' = {
   }
 }
 
-module serviceBus 'modules/serviceBus.bicep' = {
-  name: 'serviceBus'
+module storageAccount 'modules/storageAccount.bicep' = {
+  name: 'storageAccount'
   params: {
     location: location
     principalId: managedIdentity.outputs.principalId
+    vnetId: network.outputs.vnetId
+    subnetId: network.outputs.acaSubnetId
   }
 }
 
@@ -73,7 +75,8 @@ module postgres 'modules/postgres.bicep' = {
     administratorLoginPassword: postgresPassword
     keyVaultName: keyVault.outputs.name
     location: location
-    acaEgressIp: network.outputs.acaEgressIp
+    vnetId: network.outputs.vnetId
+    subnetId: network.outputs.acaSubnetId
   }
 }
 
@@ -101,7 +104,7 @@ module admittoApi 'modules/admittoApiApp.bicep' = {
     managedIdentityClientId: managedIdentity.outputs.clientId
     managedIdentityId: managedIdentity.outputs.id
     openFgaAppName: openfga.outputs.name
-    serviceBusEndpoint: serviceBus.outputs.serviceBusEndpoint
+    storageAccountName: storageAccount.outputs.storageAccountName
   }
 }
 
@@ -116,7 +119,7 @@ module admittoWorker 'modules/admittoWorkerApp.bicep' = {
     managedIdentityClientId: managedIdentity.outputs.clientId
     managedIdentityId: managedIdentity.outputs.id
     openFgaAppName: openfga.outputs.name
-    serviceBusEndpoint: serviceBus.outputs.serviceBusEndpoint
+    storageAccountName: storageAccount.outputs.storageAccountName
   }
 }
 

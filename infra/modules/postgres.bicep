@@ -1,7 +1,8 @@
 param location string = resourceGroup().location
 param administratorLogin string = 'admitto_admin'
 
-param acaEgressIp string
+param vnetId string
+param subnetId string
 param keyVaultName string
 
 @secure()
@@ -26,7 +27,7 @@ resource postgres 'Microsoft.DBforPostgreSQL/flexibleServers@2025-06-01-preview'
       mode: 'Disabled'
     }
     network: {
-      publicNetworkAccess: 'Enabled'
+      publicNetworkAccess: 'Disabled'
     }
     storage: {
       autoGrow: 'Enabled'
@@ -42,13 +43,59 @@ resource postgres 'Microsoft.DBforPostgreSQL/flexibleServers@2025-06-01-preview'
   }
 }
 
-resource postgreSqlFirewallRule_AllowContainerApps 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2025-06-01-preview' = {
-  name: 'AllowContainerApps'
+// Private endpoint for PostgreSQL
+resource privateEndpoint 'Microsoft.Network/privateEndpoints@2024-07-01' = {
+  name: 'pe-${postgres.name}'
+  location: location
   properties: {
-    endIpAddress: acaEgressIp
-    startIpAddress: acaEgressIp
+    subnet: {
+      id: subnetId
+    }
+    privateLinkServiceConnections: [
+      {
+        name: 'postgres-connection'
+        properties: {
+          privateLinkServiceId: postgres.id
+          groupIds: [
+            'postgresqlServer'
+          ]
+        }
+      }
+    ]
   }
-  parent: postgres
+}
+
+// Private DNS zone for PostgreSQL
+resource privateDnsZone 'Microsoft.Network/privateDnsZones@2024-07-01' = {
+  name: 'privatelink.postgres.database.azure.com'
+  location: 'global'
+}
+
+resource privateDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-07-01' = {
+  name: 'postgres-link'
+  parent: privateDnsZone
+  location: 'global'
+  properties: {
+    registrationEnabled: false
+    virtualNetwork: {
+      id: vnetId
+    }
+  }
+}
+
+resource privateDnsZoneGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2024-07-01' = {
+  name: 'postgres-dns-group'
+  parent: privateEndpoint
+  properties: {
+    privateDnsZoneConfigs: [
+      {
+        name: 'postgres-config'
+        properties: {
+          privateDnsZoneId: privateDnsZone.id
+        }
+      }
+    ]
+  }
 }
 
 resource admitto_db 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2024-08-01' = {

@@ -14,6 +14,7 @@ using Amolenk.Admitto.Infrastructure.Persistence.Interceptors;
 using Amolenk.Admitto.Infrastructure.UserManagement.Keycloak;
 using Amolenk.Admitto.Infrastructure.UserManagement.MicrosoftGraph;
 using Azure.Identity;
+using Azure.Storage.Queues;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -53,7 +54,13 @@ public static class DependencyInjection
         
         builder.Services.AddScoped<ISlugResolver, SlugResolver>();
         
-        builder.AddAzureServiceBusClient(connectionName: "messaging");
+        builder.AddAzureQueueServiceClient(connectionName: "queues");
+        
+        builder.Services.AddSingleton<QueueClient>(serviceProvider =>
+        {
+            var queueServiceClient = serviceProvider.GetRequiredService<QueueServiceClient>();
+            return queueServiceClient.GetQueueClient(Amolenk.Admitto.Infrastructure.Constants.AzureQueueStorage.DefaultQueueName);
+        });
         
         builder.Services
             .AddScoped<IUnitOfWork, UnitOfWork>();
