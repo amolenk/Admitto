@@ -3,7 +3,7 @@ namespace Amolenk.Admitto.Cli.Commands.Team;
 public class CreateTeamSettings : CommandSettings
 {
     [CommandOption("-s|--slug")]
-    [Description("The team ID (e.g. my-cool-event)")]
+    [Description("Slug of the team to create (e.g. 'awesome-team')")]
     public string? TeamSlug { get; init; }
 
     [CommandOption("-n|--name")]
@@ -19,7 +19,8 @@ public class CreateTeamSettings : CommandSettings
     public string? EmailServiceConnectionString { get; init; }
 }
 
-public class CreateTeamCommand(IApiService apiService) : AsyncCommand<CreateTeamSettings>
+public class CreateTeamCommand(InputService inputService, OutputService outputService, IApiService apiService) 
+    : AsyncCommand<CreateTeamSettings>
 {
     public override async Task<int> ExecuteAsync(CommandContext context, CreateTeamSettings settings)
     {
@@ -28,16 +29,16 @@ public class CreateTeamCommand(IApiService apiService) : AsyncCommand<CreateTeam
         var succes = await apiService.CallApiAsync(async client => await client.Teams.PostAsync(request));
         if (!succes) return 1;
 
-        OutputService.WriteSuccesMessage($"Successfully created team {request.Name}.");
+        outputService.WriteSuccesMessage($"Successfully created team {request.Name}.");
         return 0;
     }
 
-    private static CreateTeamRequest CreateRequest(CreateTeamSettings settings)
+    private CreateTeamRequest CreateRequest(CreateTeamSettings settings)
     {
-        var name = settings.Name ?? InputService.GetString("Team name");
+        var name = settings.Name ?? inputService.GetString("Team name");
         var slug = settings.TeamSlug?.Kebaberize() ??
-                   InputService.GetString("Team slug", name.Kebaberize(), kebaberize: true);
-        var email = settings.Email ?? InputService.GetString("Team email");
+                   inputService.GetString("Team slug", name.Kebaberize(), kebaberize: true);
+        var email = settings.Email ?? inputService.GetString("Team email");
         var emailServiceConnectionString = settings.EmailServiceConnectionString ?? GetEmailServiceConnectionString();
 
         return new CreateTeamRequest()
@@ -49,12 +50,12 @@ public class CreateTeamCommand(IApiService apiService) : AsyncCommand<CreateTeam
         };
     }
 
-    private static string GetEmailServiceConnectionString()
+    private string GetEmailServiceConnectionString()
     {
-        var host = InputService.GetString("SMTP host");
-        var port = InputService.GetPort("SMTP port", 587);
-        var username = InputService.GetString("SMTP username", allowEmpty: true);
-        var password = InputService.GetString("SMTP password", allowEmpty: true, isSecret: true);
+        var host = inputService.GetString("SMTP host");
+        var port = inputService.GetPort("SMTP port", 587);
+        var username = inputService.GetString("SMTP username", allowEmpty: true);
+        var password = inputService.GetString("SMTP password", allowEmpty: true, isSecret: true);
 
         return username is not null
             ? $"host={host};port={port};username={username};password={password}"

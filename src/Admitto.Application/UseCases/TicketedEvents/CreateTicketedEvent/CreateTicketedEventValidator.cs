@@ -17,12 +17,12 @@ public class CreateTicketedEventValidator : AbstractValidator<CreateTicketedEven
             .MinimumLength(2)
             .MaximumLength(50);
 
-        RuleFor(x => x.StartTime)
+        RuleFor(x => x.StartsAt)
             .NotEmpty();
 
-        RuleFor(x => x.EndTime)
+        RuleFor(x => x.EndsAt)
             .NotEmpty()
-            .GreaterThan(x => x.StartTime);
+            .GreaterThan(x => x.StartsAt);
 
         // RuleForEach(x => x.TicketTypes)
         //     .ChildRules(ticketType =>

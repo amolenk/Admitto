@@ -41,11 +41,11 @@ public class TicketedEventEntityConfiguration(IDataProtectionProvider dataProtec
             .IsRequired()
             .HasMaxLength(ColumnMaxLength.Url);
 
-        builder.Property(e => e.StartTime)
+        builder.Property(e => e.StartsAt)
             .HasColumnName("start_time")
             .IsRequired();
 
-        builder.Property(e => e.EndTime)
+        builder.Property(e => e.EndsAt)
             .HasColumnName("end_time")
             .IsRequired();
 
@@ -53,6 +53,16 @@ public class TicketedEventEntityConfiguration(IDataProtectionProvider dataProtec
             .HasColumnName("base_url")
             .IsRequired()
             .HasMaxLength(ColumnMaxLength.Url);
+        
+        builder.OwnsMany(e => e.AdditionalDetailSchemas, b =>
+        {
+            b.ToJson("additional_detail_schemas");
+        });
+        
+        builder.OwnsMany(e => e.TicketTypes, b =>
+        {
+            b.ToJson("ticket_types");
+        });
         
         builder.OwnsOne<CancellationPolicy>(e => e.CancellationPolicy, b =>
             {

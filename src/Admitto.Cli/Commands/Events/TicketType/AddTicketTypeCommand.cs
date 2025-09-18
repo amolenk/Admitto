@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Configuration;
-
 namespace Amolenk.Admitto.Cli.Commands.Events.TicketType;
 
 public class AddTicketTypeSettings : TeamEventSettings

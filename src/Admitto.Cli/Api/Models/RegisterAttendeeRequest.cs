@@ -22,6 +22,14 @@ namespace Amolenk.Admitto.Cli.Api.Models
 #else
         public List<global::Amolenk.Admitto.Cli.Api.Models.AdditionalDetailDto> AdditionalDetails { get; set; }
 #endif
+        /// <summary>The assignedTickets property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public List<global::Amolenk.Admitto.Cli.Api.Models.TicketSelectionDto>? AssignedTickets { get; set; }
+#nullable restore
+#else
+        public List<global::Amolenk.Admitto.Cli.Api.Models.TicketSelectionDto> AssignedTickets { get; set; }
+#endif
         /// <summary>The email property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
@@ -45,24 +53,6 @@ namespace Amolenk.Admitto.Cli.Api.Models
 #nullable restore
 #else
         public string LastName { get; set; }
-#endif
-        /// <summary>The onBehalfOf property</summary>
-        public bool? OnBehalfOf { get; set; }
-        /// <summary>The tickets property</summary>
-#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
-#nullable enable
-        public List<global::Amolenk.Admitto.Cli.Api.Models.TicketSelectionDto>? Tickets { get; set; }
-#nullable restore
-#else
-        public List<global::Amolenk.Admitto.Cli.Api.Models.TicketSelectionDto> Tickets { get; set; }
-#endif
-        /// <summary>The verificationToken property</summary>
-#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
-#nullable enable
-        public string? VerificationToken { get; set; }
-#nullable restore
-#else
-        public string VerificationToken { get; set; }
 #endif
         /// <summary>
         /// Instantiates a new <see cref="global::Amolenk.Admitto.Cli.Api.Models.RegisterAttendeeRequest"/> and sets the default values.
@@ -90,12 +80,10 @@ namespace Amolenk.Admitto.Cli.Api.Models
             return new Dictionary<string, Action<IParseNode>>
             {
                 { "additionalDetails", n => { AdditionalDetails = n.GetCollectionOfObjectValues<global::Amolenk.Admitto.Cli.Api.Models.AdditionalDetailDto>(global::Amolenk.Admitto.Cli.Api.Models.AdditionalDetailDto.CreateFromDiscriminatorValue)?.AsList(); } },
+                { "assignedTickets", n => { AssignedTickets = n.GetCollectionOfObjectValues<global::Amolenk.Admitto.Cli.Api.Models.TicketSelectionDto>(global::Amolenk.Admitto.Cli.Api.Models.TicketSelectionDto.CreateFromDiscriminatorValue)?.AsList(); } },
                 { "email", n => { Email = n.GetStringValue(); } },
                 { "firstName", n => { FirstName = n.GetStringValue(); } },
                 { "lastName", n => { LastName = n.GetStringValue(); } },
-                { "onBehalfOf", n => { OnBehalfOf = n.GetBoolValue(); } },
-                { "tickets", n => { Tickets = n.GetCollectionOfObjectValues<global::Amolenk.Admitto.Cli.Api.Models.TicketSelectionDto>(global::Amolenk.Admitto.Cli.Api.Models.TicketSelectionDto.CreateFromDiscriminatorValue)?.AsList(); } },
-                { "verificationToken", n => { VerificationToken = n.GetStringValue(); } },
             };
         }
         /// <summary>
@@ -106,12 +94,10 @@ namespace Amolenk.Admitto.Cli.Api.Models
         {
             _ = writer ?? throw new ArgumentNullException(nameof(writer));
             writer.WriteCollectionOfObjectValues<global::Amolenk.Admitto.Cli.Api.Models.AdditionalDetailDto>("additionalDetails", AdditionalDetails);
+            writer.WriteCollectionOfObjectValues<global::Amolenk.Admitto.Cli.Api.Models.TicketSelectionDto>("assignedTickets", AssignedTickets);
             writer.WriteStringValue("email", Email);
             writer.WriteStringValue("firstName", FirstName);
             writer.WriteStringValue("lastName", LastName);
-            writer.WriteBoolValue("onBehalfOf", OnBehalfOf);
-            writer.WriteCollectionOfObjectValues<global::Amolenk.Admitto.Cli.Api.Models.TicketSelectionDto>("tickets", Tickets);
-            writer.WriteStringValue("verificationToken", VerificationToken);
             writer.WriteAdditionalData(AdditionalData);
         }
     }

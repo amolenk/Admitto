@@ -8,4 +8,8 @@
       <ProjectReference Include="..\..\src\Admitto.Domain\Admitto.Domain.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <PackageReference Include="Shouldly" Version="4.3.0" />
+    </ItemGroup>
+
 </Project>

@@ -1,0 +1,24 @@
+using Amolenk.Admitto.Domain.DomainEvents;
+using Amolenk.Admitto.Domain.Utilities;
+
+namespace Amolenk.Admitto.Application.UseCases.TicketedEvents.ReleaseTickets.EventHandlers;
+
+/// <summary>
+/// When a registration is canceled, the tickets that were reserved for that registration should be released back to
+/// the pool of available tickets.
+/// </summary>
+public class RegistrationCanceledLateDomainEventHandler(ReleaseTicketsHandler releaseTicketsHandler)
+    : IEventualDomainEventHandler<AttendeeCanceledLateDomainEvent>
+{
+    public async ValueTask HandleAsync(
+        AttendeeCanceledLateDomainEvent domainEvent,
+        CancellationToken cancellationToken)
+    {
+        var command = new ReleaseTicketsCommand(domainEvent.TicketedEventId, domainEvent.Tickets)
+        {
+            CommandId = DeterministicGuid.Create($"{domainEvent.DomainEventId}:{nameof(ReleaseTicketsCommand)}")
+        };
+
+        await releaseTicketsHandler.HandleAsync(command, cancellationToken);
+    }
+}

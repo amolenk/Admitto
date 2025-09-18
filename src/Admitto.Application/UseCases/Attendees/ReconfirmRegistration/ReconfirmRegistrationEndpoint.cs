@@ -1,5 +1,3 @@
-using Microsoft.AspNetCore.Mvc;
-
 namespace Amolenk.Admitto.Application.UseCases.Attendees.ReconfirmRegistration;
 
 /// <summary>

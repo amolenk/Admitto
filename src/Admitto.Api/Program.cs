@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Amolenk.Admitto.ApiService.Endpoints;
 using Amolenk.Admitto.ApiService.Middleware;
+using Amolenk.Admitto.Application.Common.Abstractions;
 using FluentValidation;
 using FluentValidation.Internal;
 using Humanizer;
@@ -75,6 +76,13 @@ ValidatorOptions.Global.PropertyNameResolver = (_, memberInfo, expression) =>
 };
 
 var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    using var migrationScope = app.Services.CreateScope();
+    var migrationService = migrationScope.ServiceProvider.GetRequiredService<IMigrationService>();
+    await migrationService.MigrateAllAsync();
+}
 
 app.UseAuthentication();
 app.UseAuthorization();

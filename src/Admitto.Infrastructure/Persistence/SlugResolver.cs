@@ -5,15 +5,12 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace Amolenk.Admitto.Infrastructure.Persistence;
 
-// TODO Can be done smarter
-
-public class SlugResolver(IApplicationContext applicationContext, IMemoryCache memoryCache) : ISlugResolver
+public class SlugResolver(IApplicationContext applicationContext, IMemoryCache cache)
+    : ISlugResolver
 {
     public async ValueTask<Guid> ResolveTeamIdAsync(string teamSlug, CancellationToken cancellationToken = default)
     {
-        var cacheKey = $"slug:{teamSlug}";
-        
-        if (memoryCache.TryGetValue(cacheKey, out Guid teamId))
+        if (TryGetCachedTeamId(teamSlug, out var teamId))
         {
             return teamId;
         }
@@ -29,12 +26,20 @@ public class SlugResolver(IApplicationContext applicationContext, IMemoryCache m
             throw new DomainRuleException(DomainRuleError.Team.NotFound(teamSlug));
         }
 
-        memoryCache.Set(cacheKey, teamId);
+        CacheTeamId(teamSlug, teamId);
         return teamId;
     }
     
-    public async ValueTask<Guid> ResolveTicketedEventIdAsync(string teamSlug, string eventSlug, CancellationToken cancellationToken = default)
+    public async ValueTask<Guid> ResolveTicketedEventIdAsync(
+        string teamSlug,
+        string eventSlug,
+        CancellationToken cancellationToken = default)
     {
+        if (TryGetCachedTicketedEventId(teamSlug, eventSlug, out var cachedEventId))
+        {
+            return cachedEventId;
+        }
+        
         var (_, eventId) = await ResolveTeamAndTicketedEventIdsAsync(teamSlug, eventSlug, cancellationToken);
 
         return eventId;
@@ -46,35 +51,41 @@ public class SlugResolver(IApplicationContext applicationContext, IMemoryCache m
         CancellationToken cancellationToken = default)
     {
         var teamId = await ResolveTeamIdAsync(teamSlug, cancellationToken);
-        var eventId = await GetTicketedEventIdAsync(teamId, eventSlug, cancellationToken);
-        
-        return (teamId, eventId);
-    }
-    
-    private async ValueTask<Guid> GetTicketedEventIdAsync(
-        Guid teamId,
-        string eventSlug,
-        CancellationToken cancellationToken = default)
-    {
-        var cacheKey = $"slug:{teamId}:{eventSlug}";
-        
-        if (memoryCache.TryGetValue(cacheKey, out Guid eventId))
+
+        if (TryGetCachedTicketedEventId(teamSlug, eventSlug, out var eventId))
         {
-            return eventId;
+            return (teamId, eventId);
         }
 
-        var ticketedEventId = await applicationContext.TicketedEvents
+        eventId = await applicationContext.TicketedEvents
             .AsNoTracking()
-            .Where(e => e.TeamId == teamId && e.Slug == eventSlug)
-            .Select(e => e.Id)
+            .Where(t => t.TeamId == teamId && t.Slug == eventSlug)
+            .Select(t => t.Id)
             .FirstOrDefaultAsync(cancellationToken);
-            
-        if (ticketedEventId == Guid.Empty)
+
+        if (eventId == Guid.Empty)
         {
             throw new DomainRuleException(DomainRuleError.TicketedEvent.NotFound(eventSlug));
         }
 
-        memoryCache.Set(cacheKey, ticketedEventId);
-        return ticketedEventId;
+        CacheTicketedEventId(teamSlug, eventSlug, eventId);
+
+        return (teamId, eventId);
     }
+
+    private bool TryGetCachedTeamId(string teamSlug, out Guid teamId)
+        => cache.TryGetValue(GetCacheKey(teamSlug), out teamId);
+
+    private bool TryGetCachedTicketedEventId(string teamSlug, string eventSlug, out Guid eventId)
+        => cache.TryGetValue(GetCacheKey(teamSlug, eventSlug), out eventId);
+
+    private void CacheTeamId(string teamSlug, Guid teamId)
+        => cache.Set(GetCacheKey(teamSlug), teamId);
+
+    private void CacheTicketedEventId(string teamSlug, string eventSlug, Guid eventId)
+        => cache.Set(GetCacheKey(teamSlug, eventSlug), eventId);
+
+    private static string GetCacheKey(string teamSlug) => $"team:{teamSlug}";
+
+    private static string GetCacheKey(string teamSlug, string eventSlug) => $"{teamSlug}:{eventSlug}";
 }

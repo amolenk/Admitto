@@ -2,19 +2,19 @@ using Microsoft.Kiota.Abstractions.Serialization;
 
 namespace Amolenk.Admitto.Cli.Services;
 
-public static class OutputService
+public class OutputService
 {
-    public static void WriteSuccesMessage(string message)
+    public void WriteSuccesMessage(string message)
     {
         AnsiConsole.MarkupLine($"[green]✓ {message}[/]");
     }
     
-    public static void WriteException(Exception ex)
+    public void WriteException(Exception ex)
     {
         AnsiConsole.MarkupLine($"[red]{ex.Message.EscapeMarkup()}[/]");
     }
     
-    public static void WriteException(ProblemDetails ex)
+    public void WriteException(ProblemDetails ex)
     {
         AnsiConsole.MarkupLine(
             !string.IsNullOrWhiteSpace(ex.Detail)
@@ -22,7 +22,7 @@ public static class OutputService
                 : $"[red]{ex.Title.EscapeMarkup()}[/]");
     }
     
-    public static void WriteException(HttpValidationProblemDetails ex)
+    public void WriteException(HttpValidationProblemDetails ex)
     {
         AnsiConsole.MarkupLine(
             !string.IsNullOrWhiteSpace(ex.Detail)

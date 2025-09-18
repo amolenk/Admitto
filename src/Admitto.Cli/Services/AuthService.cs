@@ -14,7 +14,8 @@ public class AuthService(ITokenCache tokenCache, IHttpClientFactory clientFactor
         var disco = await GetDiscoveryDocumentAsync(client);
         if (disco is null) return false;
 
-        AnsiConsole.WriteLine(_options.ClientId);
+        AnsiConsole.WriteLine($"Client ID: {_options.ClientId}");
+        AnsiConsole.WriteLine($"Scope: {_options.Scope}");
         
         var deviceResponse = await client.RequestDeviceAuthorizationAsync(new DeviceAuthorizationRequest
         {

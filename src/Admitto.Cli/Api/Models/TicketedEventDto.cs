@@ -14,8 +14,8 @@ namespace Amolenk.Admitto.Cli.Api.Models
     {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
-        /// <summary>The endTime property</summary>
-        public DateTimeOffset? EndTime { get; set; }
+        /// <summary>The endsAt property</summary>
+        public DateTimeOffset? EndsAt { get; set; }
         /// <summary>The name property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
@@ -24,10 +24,10 @@ namespace Amolenk.Admitto.Cli.Api.Models
 #else
         public string Name { get; set; }
 #endif
-        /// <summary>The registrationEndDateTime property</summary>
-        public DateTimeOffset? RegistrationEndDateTime { get; set; }
-        /// <summary>The registrationStartDateTime property</summary>
-        public DateTimeOffset? RegistrationStartDateTime { get; set; }
+        /// <summary>The registrationClosesAt property</summary>
+        public DateTimeOffset? RegistrationClosesAt { get; set; }
+        /// <summary>The registrationOpensAt property</summary>
+        public DateTimeOffset? RegistrationOpensAt { get; set; }
         /// <summary>The slug property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
@@ -36,8 +36,8 @@ namespace Amolenk.Admitto.Cli.Api.Models
 #else
         public string Slug { get; set; }
 #endif
-        /// <summary>The startTime property</summary>
-        public DateTimeOffset? StartTime { get; set; }
+        /// <summary>The startsAt property</summary>
+        public DateTimeOffset? StartsAt { get; set; }
         /// <summary>
         /// Instantiates a new <see cref="global::Amolenk.Admitto.Cli.Api.Models.TicketedEventDto"/> and sets the default values.
         /// </summary>
@@ -63,12 +63,12 @@ namespace Amolenk.Admitto.Cli.Api.Models
         {
             return new Dictionary<string, Action<IParseNode>>
             {
-                { "endTime", n => { EndTime = n.GetDateTimeOffsetValue(); } },
+                { "endsAt", n => { EndsAt = n.GetDateTimeOffsetValue(); } },
                 { "name", n => { Name = n.GetStringValue(); } },
-                { "registrationEndDateTime", n => { RegistrationEndDateTime = n.GetDateTimeOffsetValue(); } },
-                { "registrationStartDateTime", n => { RegistrationStartDateTime = n.GetDateTimeOffsetValue(); } },
+                { "registrationClosesAt", n => { RegistrationClosesAt = n.GetDateTimeOffsetValue(); } },
+                { "registrationOpensAt", n => { RegistrationOpensAt = n.GetDateTimeOffsetValue(); } },
                 { "slug", n => { Slug = n.GetStringValue(); } },
-                { "startTime", n => { StartTime = n.GetDateTimeOffsetValue(); } },
+                { "startsAt", n => { StartsAt = n.GetDateTimeOffsetValue(); } },
             };
         }
         /// <summary>
@@ -78,12 +78,12 @@ namespace Amolenk.Admitto.Cli.Api.Models
         public virtual void Serialize(ISerializationWriter writer)
         {
             _ = writer ?? throw new ArgumentNullException(nameof(writer));
-            writer.WriteDateTimeOffsetValue("endTime", EndTime);
+            writer.WriteDateTimeOffsetValue("endsAt", EndsAt);
             writer.WriteStringValue("name", Name);
-            writer.WriteDateTimeOffsetValue("registrationEndDateTime", RegistrationEndDateTime);
-            writer.WriteDateTimeOffsetValue("registrationStartDateTime", RegistrationStartDateTime);
+            writer.WriteDateTimeOffsetValue("registrationClosesAt", RegistrationClosesAt);
+            writer.WriteDateTimeOffsetValue("registrationOpensAt", RegistrationOpensAt);
             writer.WriteStringValue("slug", Slug);
-            writer.WriteDateTimeOffsetValue("startTime", StartTime);
+            writer.WriteDateTimeOffsetValue("startsAt", StartsAt);
             writer.WriteAdditionalData(AdditionalData);
         }
     }

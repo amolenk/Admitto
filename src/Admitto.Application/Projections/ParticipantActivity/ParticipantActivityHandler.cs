@@ -198,7 +198,7 @@ public class ParticipantActivityHandler(IApplicationContext context)
             OccuredOn = occurredAt
         };
     
-        context.AttendeeActivityView.Add(record);
+        context.ParticipantActivityView.Add(record);
     }
 
 

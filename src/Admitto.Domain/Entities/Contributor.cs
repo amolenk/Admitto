@@ -50,6 +50,7 @@ public class Contributor : Aggregate
     public IReadOnlyCollection<ContributorRole> Roles => _roles.AsReadOnly();
 
     public static Contributor Create(
+        Guid id,
         Guid ticketedEventId,
         Guid participantId,
         string email,
@@ -59,7 +60,7 @@ public class Contributor : Aggregate
         IEnumerable<ContributorRole> roles)
     {
         return new Contributor(
-            Guid.NewGuid(),
+            id,
             ticketedEventId,
             participantId,
             email,

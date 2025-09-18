@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Configuration;
-
 namespace Amolenk.Admitto.Cli.Commands.Events;
 
 public class ListEventsCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration)
@@ -19,8 +17,11 @@ public class ListEventsCommand(IAccessTokenProvider accessTokenProvider, IConfig
 
         foreach (var ticketedEvent in response.TicketedEvents ?? [])
         {
-            var status = GetStatusString(ticketedEvent.RegistrationStartDateTime!.Value,
-                ticketedEvent.RegistrationEndDateTime!.Value, ticketedEvent.StartTime!.Value, ticketedEvent.EndTime!.Value);
+            var status = GetStatusString(
+                ticketedEvent.RegistrationOpensAt!.Value,
+                ticketedEvent.RegistrationClosesAt!.Value,
+                ticketedEvent.StartsAt!.Value,
+                ticketedEvent.EndsAt!.Value);
 
             table.AddRow(ticketedEvent.Slug!, ticketedEvent.Name!, status);
         }

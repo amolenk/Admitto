@@ -43,19 +43,14 @@ public static class GetTicketedEventsEndpoint
 
         var ticketedEvents = await context.TicketedEvents
             .AsNoTracking()
-            .Join(
-                context.TicketedEventAvailability,
-                te => te.Id,
-                tea => tea.TicketedEventId,
-                (te, tea) => new { Event = te, Availability = tea })
-            .Where(x => x.Event.TeamId == teamId && authorizedEvents.Contains(x.Event.Slug))
-            .Select(x => new TicketedEventDto(
-                x.Event.Slug,
-                x.Event.Name,
-                x.Event.StartTime,
-                x.Event.EndTime,
-                x.Availability.RegistrationStartTime,
-                x.Availability.RegistrationEndTime))
+            .Where(te => te.TeamId == teamId && authorizedEvents.Contains(te.Slug))
+            .Select(te => new TicketedEventDto(
+                te.Slug,
+                te.Name,
+                te.StartsAt,
+                te.EndsAt,
+                te.RegistrationOpensAt,
+                te.RegistrationClosesAt))
             .ToArrayAsync(cancellationToken);
         
         return TypedResults.Ok(new GetTicketedEventsResponse(ticketedEvents));

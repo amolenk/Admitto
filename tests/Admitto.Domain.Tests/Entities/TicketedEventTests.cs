@@ -1,85 +1,64 @@
-// using Amolenk.Admitto.Domain.Entities;
-// using Amolenk.Admitto.Domain.Exceptions;
-//
-// namespace Amolenk.Admitto.Domain.Tests.Entities;
-//
-// public class TicketedEventTests
-// {
-//     private static readonly Guid AttendeeId = Guid.NewGuid();
-//     
-//     [Test]
-//     public async Task ClaimTickets_TicketsAvailable_ReducesAvailability()
-//     {
-//         // Arrange
-//         const int maxCapacity = 1;
-//         var ticketedEvent = CreateTicketedEventAggregate(maxCapacity);
-//         
-//         // Act
-//         ticketedEvent.ClaimTickets(AttendeeId);
-//         
-//         // Assert
-//         await Assert.That(ticketedEvent.AvailableCapacity).IsEqualTo(maxCapacity - 1);
-//     }
-//
-//     [Test]
-//     public async Task ClaimTickets_TicketsAvailable_AddsClaimWithExpiration()
-//     {
-//         // Arrange
-//         var ticketedEvent = CreateTicketedEventAggregate();
-//         
-//         // Act
-//         var ticketClaim = ticketedEvent.ClaimTickets(AttendeeId);
-//
-//         // Assert
-//         await Assert.That(ticketedEvent.TicketClaims).HasSingleItem().And.Contains(ticketClaim);
-//
-//         // Verify that expiration is approximately 15 minutes in the future.
-//         var expirationLowerBound = DateTime.Now.AddMinutes(15).AddSeconds(-5);
-//         var expirationUpperBound = expirationLowerBound.AddSeconds(10);
-//         //
-//         await Assert.That(ticketClaim.ExpirationTime)
-//             .IsGreaterThanOrEqualTo(expirationLowerBound)
-//             .And
-//             .IsLessThanOrEqualTo(expirationUpperBound);
-//     }
-//
-//     [Test]
-//     public async Task ClaimTickets_DuplicateClaim_ResetsExpiration()
-//     {
-//         // Arrange
-//         
-//         // Set max capacity to 1 to verify that we don't get a TicketsUnavailableException.
-//         var ticketedEvent = CreateTicketedEventAggregate(maxCapacity: 1);
-//         
-//         // Act
-//         var ticketClaim = ticketedEvent.ClaimTickets(AttendeeId);
-//         var originalExpirationTime = ticketClaim.ExpirationTime;
-//         var originalAvailability = ticketedEvent.AvailableCapacity;
-//
-//         ticketClaim = ticketedEvent.ClaimTickets(AttendeeId);
-//
-//         // Assert
-//         await Assert.That(ticketedEvent.TicketClaims).HasSingleItem().And.Contains(ticketClaim);
-//
-//         // Verify that expiration is reset.
-//         await Assert.That(ticketClaim.ExpirationTime).IsGreaterThan(originalExpirationTime);
-//         
-//         // Available capacity should stay the same.
-//         await Assert.That(ticketedEvent.AvailableCapacity).IsEqualTo(originalAvailability);
-//     }
-//
-//     [Test]
-//     public void ClaimTickets_TicketsUnavailable_ThrowsException()
-//     {
-//         // Arrange
-//         var ticketedEvent = CreateTicketedEventAggregate(maxCapacity: 0);
-//         
-//         // Act & Assert
-//         Assert.Throws<TicketsUnavailableException>(() => ticketedEvent.ClaimTickets(AttendeeId));
-//     }
-//
-//     private static TicketedEvent CreateTicketedEventAggregate(int maxCapacity = 100)
-//     {
-//         return TicketedEvent.Create("Ticketed Event", DateTime.Today.AddMonths(1), maxCapacity);
-//     }
-// }
+using Amolenk.Admitto.Domain.Entities;
+using Amolenk.Admitto.Domain.Tests.TestHelpers.Builders;
+using Amolenk.Admitto.Domain.ValueObjects;
+using Shouldly;
+
+namespace Amolenk.Admitto.Domain.Tests.Entities;
+
+[TestClass]
+public class TicketedEventTests
+{
+    [TestMethod]
+    public void ClaimTickets_HasAvailability_ReducesAvailability()
+    {
+        // Arrange
+        const int maxCapacity = 1;
+        var ticketedEvent = new TicketedEventBuilder().Build();
+        var ticketType = AddTicketType(ticketedEvent, builder => builder.WithMaxCapacity(maxCapacity));
+
+        const string email = "alice@example.com";
+        var registrationDateTime = DateTime.UtcNow;
+        var ticketSelection = new TicketSelection(ticketType.Slug, 1);
+
+        // Act
+        ticketedEvent.ClaimTickets(email, registrationDateTime, [ticketSelection]);
+
+        // Assert
+        ticketType.UsedCapacity.ShouldBe(1);
+        ticketType.HasAvailableCapacity().ShouldBe(false);
+    }
+
+    [TestMethod]
+    public void ClaimTickets_TicketsUnavailable_ThrowsException()
+    {
+        // Arrange
+        var ticketedEvent = new TicketedEventBuilder().Build();
+        var ticketType = AddTicketType(ticketedEvent, builder => builder.WithMaxCapacity(0));
+
+        const string email = "alice@example.com";
+        var registrationDateTime = DateTime.UtcNow;
+        var ticketSelection = new TicketSelection(ticketType.Slug, 1);
+
+        // Act & Assert
+        // TODO Check error code
+        Should.Throw<DomainRuleException>(() => ticketedEvent.ClaimTickets(
+            email,
+            registrationDateTime,
+            [ticketSelection]));
+    }
+
+    private static TicketType AddTicketType(TicketedEvent ticketedEvent, Action<TicketTypeBuilder>? configure = null)
+    {
+        var builder = new TicketTypeBuilder();
+        configure?.Invoke(builder);
+
+        // Build the ticket type to get the parameter values
+        var ticketType = builder.Build();
+
+        // Add the ticket type to the event
+        ticketedEvent.AddTicketType(ticketType.Slug, ticketType.Name, ticketType.SlotName, ticketType.MaxCapacity);
+
+        // Return the added ticket type from the event's collection
+        return ticketedEvent.TicketTypes.First(tt => tt.Slug == ticketType.Slug);
+    }
+}

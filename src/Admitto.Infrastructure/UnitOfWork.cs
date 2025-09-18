@@ -11,11 +11,9 @@ public class UnitOfWork(ApplicationContext context, MessageOutbox outbox) : IUni
 {
     private const string PostgresUniqueViolation = "23505";
 
-    public ApplicationRuleError? UniqueViolationError { get; set; }
-
-    public async ValueTask SaveChangesAsync(
-        Func<ValueTask>? onUniqueViolation = null,
-        CancellationToken cancellationToken = default)
+    public Action<UniqueViolationArgs>? OnUniqueViolation { get; set; }
+    
+    public async ValueTask SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         int result;
         
@@ -25,16 +23,22 @@ public class UnitOfWork(ApplicationContext context, MessageOutbox outbox) : IUni
             
             result = await context.SaveChangesAsync(cancellationToken);
         }
-        catch (DbUpdateException e) when (e.InnerException is PostgresException { SqlState: PostgresUniqueViolation })
+        catch (DbUpdateException e) when (e.InnerException is PostgresException pge && pge.SqlState == PostgresUniqueViolation)
         {
-            if (onUniqueViolation is null)
+            var args = new UniqueViolationArgs
             {
-                var error = UniqueViolationError ?? ApplicationRuleError.General.AlreadyExists;
-                throw new ApplicationRuleException(error);
+                Error = GetSpecificUniqueViolationError(pge)
+            };
+            
+            // Give the caller a chance to handle the unique violation.
+            OnUniqueViolation?.Invoke(args);
+            
+            if (args.Retry)
+            {
+                // TODO
             }
             
-            await onUniqueViolation();
-            return;
+            throw new ApplicationRuleException(args.Error);
         }
 
         // Flush the outbox to ensure all messages are sent.
@@ -47,5 +51,16 @@ public class UnitOfWork(ApplicationContext context, MessageOutbox outbox) : IUni
     public void Clear()
     {
         context.ChangeTracker.Clear();
+    }
+    
+    private static ApplicationRuleError GetSpecificUniqueViolationError(PostgresException ex)
+    {
+        return ex.TableName switch
+        {
+            "attendees" => ApplicationRuleError.Attendee.AlreadyRegistered,
+            "contributors" => ApplicationRuleError.Contributor.AlreadyExists,
+            "participants" => ApplicationRuleError.Participant.AlreadyExists,
+            _ => ApplicationRuleError.General.AlreadyExists
+        };
     }
 }

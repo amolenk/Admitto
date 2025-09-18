@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Configuration;
-
 namespace Amolenk.Admitto.Cli.Commands.Team.Member;
 
 public class AddTeamMemberSettings : TeamSettings

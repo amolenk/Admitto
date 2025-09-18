@@ -5,9 +5,7 @@ public record RegisterAttendeeRequest(
     string FirstName,
     string LastName,
     List<AdditionalDetailDto> AdditionalDetails,
-    List<TicketSelectionDto> Tickets,
-    bool OnBehalfOf = false,
-    string? VerificationToken = null);
+    List<TicketSelectionDto> AssignedTickets);
 
 public record AdditionalDetailDto(string Name, string Value);
 

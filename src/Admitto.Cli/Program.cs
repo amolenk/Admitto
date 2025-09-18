@@ -1,6 +1,5 @@
 ﻿using Amolenk.Admitto.Cli.Commands;
 using Amolenk.Admitto.Cli.Commands.Attendee;
-using Amolenk.Admitto.Cli.Commands.Config;
 using Amolenk.Admitto.Cli.Commands.Email;
 using Amolenk.Admitto.Cli.Commands.Email.Template.Event;
 using Amolenk.Admitto.Cli.Commands.Email.Template.Team;
@@ -12,7 +11,6 @@ using Amolenk.Admitto.Cli.Commands.Team;
 using Amolenk.Admitto.Cli.Commands.Team.Member;
 using Amolenk.Admitto.Cli.Commands.Teams;
 using Amolenk.Admitto.Cli.Infrastructure;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Commands = Amolenk.Admitto.Cli.Commands;
 
@@ -31,6 +29,9 @@ services.Configure<CliAuthOptions>(configuration.GetSection("Authentication"));
 
 // Register configuration
 services.AddSingleton<IConfiguration>(configuration);
+services.AddSingleton<InputService>();
+services.AddSingleton<OutputService>();
+
 
 
 // Register services
@@ -77,7 +78,7 @@ app.Configure(config =>
             attendee.AddCommand<ReconfirmCommand>("reconfirm")
                 .WithDescription("Reconfirms an attendee registration");
 
-            attendee.AddCommand<RegisterCommand>("register")
+            attendee.AddCommand<RegisterAttendeeCommand>("register")
                 .WithDescription("Register a new attendee");
 
             attendee.AddCommand<ShowCommand>("show")

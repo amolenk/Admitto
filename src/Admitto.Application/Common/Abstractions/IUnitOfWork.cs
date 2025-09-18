@@ -2,11 +2,15 @@ namespace Amolenk.Admitto.Application.Common.Abstractions;
 
 public interface IUnitOfWork
 {
-    ApplicationRuleError? UniqueViolationError { get; set; }
-
-    ValueTask SaveChangesAsync(
-        Func<ValueTask>? onUniqueViolation = null,
-        CancellationToken cancellationToken = default);
+    Action<UniqueViolationArgs>? OnUniqueViolation { get; set; }
+    
+    ValueTask SaveChangesAsync(CancellationToken cancellationToken = default);
     
     void Clear();
 }
+
+public class UniqueViolationArgs
+{
+    public required ApplicationRuleError Error { get; set; }
+    public bool Retry { get; set; }
+};

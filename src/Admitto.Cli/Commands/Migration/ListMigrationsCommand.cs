@@ -1,6 +1,6 @@
 namespace Amolenk.Admitto.Cli.Commands.Migration;
 
-public class ListMigrationsCommand(IApiService apiService) : AsyncCommand
+public class ListMigrationsCommand(OutputService outputService, IApiService apiService) : AsyncCommand
 {
     public override async Task<int> ExecuteAsync(CommandContext context)
     {
@@ -10,7 +10,7 @@ public class ListMigrationsCommand(IApiService apiService) : AsyncCommand
         // TODO
         foreach (var migration in result.Migrations ?? [])
         {
-            OutputService.WriteSuccesMessage(migration);
+            outputService.WriteSuccesMessage(migration);
         }
 
         return 0;

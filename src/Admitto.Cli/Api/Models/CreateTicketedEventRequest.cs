@@ -14,6 +14,14 @@ namespace Amolenk.Admitto.Cli.Api.Models
     {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
+        /// <summary>The additionalDetailSchemas property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public List<global::Amolenk.Admitto.Cli.Api.Models.AdditionalDetailSchemaDto>? AdditionalDetailSchemas { get; set; }
+#nullable restore
+#else
+        public List<global::Amolenk.Admitto.Cli.Api.Models.AdditionalDetailSchemaDto> AdditionalDetailSchemas { get; set; }
+#endif
         /// <summary>The baseUrl property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
@@ -22,8 +30,8 @@ namespace Amolenk.Admitto.Cli.Api.Models
 #else
         public string BaseUrl { get; set; }
 #endif
-        /// <summary>The endTime property</summary>
-        public DateTimeOffset? EndTime { get; set; }
+        /// <summary>The endsAt property</summary>
+        public DateTimeOffset? EndsAt { get; set; }
         /// <summary>The name property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
@@ -40,8 +48,8 @@ namespace Amolenk.Admitto.Cli.Api.Models
 #else
         public string Slug { get; set; }
 #endif
-        /// <summary>The startTime property</summary>
-        public DateTimeOffset? StartTime { get; set; }
+        /// <summary>The startsAt property</summary>
+        public DateTimeOffset? StartsAt { get; set; }
         /// <summary>The website property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
@@ -75,11 +83,12 @@ namespace Amolenk.Admitto.Cli.Api.Models
         {
             return new Dictionary<string, Action<IParseNode>>
             {
+                { "additionalDetailSchemas", n => { AdditionalDetailSchemas = n.GetCollectionOfObjectValues<global::Amolenk.Admitto.Cli.Api.Models.AdditionalDetailSchemaDto>(global::Amolenk.Admitto.Cli.Api.Models.AdditionalDetailSchemaDto.CreateFromDiscriminatorValue)?.AsList(); } },
                 { "baseUrl", n => { BaseUrl = n.GetStringValue(); } },
-                { "endTime", n => { EndTime = n.GetDateTimeOffsetValue(); } },
+                { "endsAt", n => { EndsAt = n.GetDateTimeOffsetValue(); } },
                 { "name", n => { Name = n.GetStringValue(); } },
                 { "slug", n => { Slug = n.GetStringValue(); } },
-                { "startTime", n => { StartTime = n.GetDateTimeOffsetValue(); } },
+                { "startsAt", n => { StartsAt = n.GetDateTimeOffsetValue(); } },
                 { "website", n => { Website = n.GetStringValue(); } },
             };
         }
@@ -90,11 +99,12 @@ namespace Amolenk.Admitto.Cli.Api.Models
         public virtual void Serialize(ISerializationWriter writer)
         {
             _ = writer ?? throw new ArgumentNullException(nameof(writer));
+            writer.WriteCollectionOfObjectValues<global::Amolenk.Admitto.Cli.Api.Models.AdditionalDetailSchemaDto>("additionalDetailSchemas", AdditionalDetailSchemas);
             writer.WriteStringValue("baseUrl", BaseUrl);
-            writer.WriteDateTimeOffsetValue("endTime", EndTime);
+            writer.WriteDateTimeOffsetValue("endsAt", EndsAt);
             writer.WriteStringValue("name", Name);
             writer.WriteStringValue("slug", Slug);
-            writer.WriteDateTimeOffsetValue("startTime", StartTime);
+            writer.WriteDateTimeOffsetValue("startsAt", StartsAt);
             writer.WriteStringValue("website", Website);
             writer.WriteAdditionalData(AdditionalData);
         }

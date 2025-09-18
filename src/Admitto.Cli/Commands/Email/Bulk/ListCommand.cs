@@ -1,5 +1,4 @@
 using Humanizer;
-using Microsoft.Extensions.Configuration;
 
 namespace Amolenk.Admitto.Cli.Commands.Email.Bulk;
 

@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Configuration;
-
 namespace Amolenk.Admitto.Cli.Commands.Contributor;
 
 public class ListCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration)

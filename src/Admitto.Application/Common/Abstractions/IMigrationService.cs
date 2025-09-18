@@ -4,5 +4,7 @@ public interface IMigrationService
 {
     IEnumerable<string> GetSupportedMigrations();
     
-    ValueTask MigrateAsync(string migrationName, CancellationToken cancellationToken);
+    Task MigrateAsync(string migrationName, CancellationToken cancellationToken = default);
+
+    Task MigrateAllAsync(CancellationToken cancellationToken = default);
 }

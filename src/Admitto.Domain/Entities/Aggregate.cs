@@ -19,8 +19,6 @@ public abstract class Aggregate : Entity, IIsAuditable, IHasConcurrencyToken
     public DateTimeOffset CreatedAt { get; set; }
 
     public DateTimeOffset LastChangedAt { get; set; }
-    
-    public string? LastChangedBy { get; set; }
 
     [Timestamp]
     public uint Version { get; set; }
