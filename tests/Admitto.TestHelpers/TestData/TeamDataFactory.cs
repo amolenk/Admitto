@@ -37,6 +37,6 @@ public static class TeamDataFactory
         slotName ??= "Default";
         quantity ??= 100;
         
-        return TicketType.Create(name, slotName, quantity.Value);
+        return TicketType.Create("test-ticket", name, slotName, quantity.Value);
     }
 }

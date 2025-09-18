@@ -7,6 +7,7 @@ public class TicketTypeBuilder
     private string _slug = "general-admission";
     private string _name = "General Admission";
     private string _slotName = "default";
+    private List<string>? _slotNames;
     private int _maxCapacity = 100;
 
     public TicketTypeBuilder WithSlug(string slug)
@@ -26,6 +27,12 @@ public class TicketTypeBuilder
         _slotName = slotName;
         return this;
     }
+
+    public TicketTypeBuilder WithSlotNames(List<string> slotNames)
+    {
+        _slotNames = slotNames;
+        return this;
+    }
     
     public TicketTypeBuilder WithMaxCapacity(int maxCapacity)
     {
@@ -33,5 +40,7 @@ public class TicketTypeBuilder
         return this;
     }
 
-    public TicketType Build() => TicketType.Create(_slug, _name, _slotName, _maxCapacity);
+    public TicketType Build() => _slotNames != null 
+        ? TicketType.Create(_slug, _name, _slotNames, _maxCapacity)
+        : TicketType.Create(_slug, _name, _slotName, _maxCapacity);
 }
