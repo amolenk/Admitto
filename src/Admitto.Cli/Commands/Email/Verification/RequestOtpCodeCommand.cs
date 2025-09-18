@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Configuration;
-
 namespace Amolenk.Admitto.Cli.Commands.Email.Verification;
 
 public class RequestOtpCodeSettings : TeamEventSettings
@@ -32,7 +30,7 @@ public class RequestOtpCodeCommand(IAccessTokenProvider accessTokenProvider, ICo
         };
 
         var success = await CallApiAsync(async client =>
-            await client.Teams[teamSlug].Events[eventSlug].EmailVerification.Requests.PostAsync(request));
+            await client.Teams[teamSlug].Events[eventSlug].Public.Otp.PostAsync(request));
         if (!success) return 1;
 
         AnsiConsole.MarkupLine($"[green]✓ Successfully requested OTP code for '{settings.Email}'.[/]");

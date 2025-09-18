@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Configuration;
-
 namespace Amolenk.Admitto.Cli.Commands.Events;
 
 public abstract class EventCommandBase<TSettings>(
@@ -8,29 +6,29 @@ public abstract class EventCommandBase<TSettings>(
     : ApiCommand<TSettings>(accessTokenProvider, configuration)
     where TSettings : TeamSettings
 {
-    protected static string GetStatusString(DateTimeOffset registrationStartTime, DateTimeOffset registrationEndTime, 
-        DateTimeOffset startTime, DateTimeOffset endTime)
+    protected static string GetStatusString(DateTimeOffset registrationOpensAt, DateTimeOffset registrationEndsAt, 
+        DateTimeOffset startsAt, DateTimeOffset endsAt)
     {
-        if (DateTimeOffset.UtcNow < registrationStartTime)
+        if (DateTimeOffset.UtcNow < registrationOpensAt)
         {
-            return $"Upcoming (registration opens {registrationStartTime.Humanize()})";
+            return $"Upcoming (registration opens {registrationOpensAt.Humanize()})";
         }
         
-        if (DateTimeOffset.UtcNow < registrationEndTime)
+        if (DateTimeOffset.UtcNow < registrationEndsAt)
         {
-            return $"[green]Registration Open (registration closes {registrationEndTime.Humanize()})[/]";
+            return $"[green]Registration Open (registration closes {registrationEndsAt.Humanize()})[/]";
         }
         
-        if (DateTimeOffset.UtcNow < startTime)
+        if (DateTimeOffset.UtcNow < startsAt)
         {
-            return "Registration Closed (event starts {startTime.Humanize()})";
+            return $"Registration Closed (event starts {startsAt.Humanize()})";
         }
         
-        if (DateTimeOffset.UtcNow < endTime)
+        if (DateTimeOffset.UtcNow < endsAt)
         {
-            return "[blue]Ongoing (event ends {endTime.Humanize()})[/]";
+            return $"[blue]Ongoing (event ends {endsAt.Humanize()})[/]";
         }
         
-        return "[red]Past (event ended {endTime.Humanize()})[/]";
+        return $"[red]Past (event ended {endsAt.Humanize()})[/]";
     }
 }

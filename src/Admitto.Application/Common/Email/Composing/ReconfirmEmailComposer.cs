@@ -31,22 +31,17 @@ public class ReconfirmEmailComposer(
                 te => te.Id,
                 (a, te) => new { Attendee = a, Event = te })
             .Join(
-                context.TicketedEventAvailability,
-                x => x.Event.Id,
-                tea => tea.TicketedEventId,
-                (x, tea) => new { x.Attendee, x.Event, Availability = tea })
-            .Join(
                 context.Participants,
                 x => x.Attendee.ParticipantId,
                 p => p.Id,
-                (x, p) => new { x.Attendee, x.Event, x.Availability, Participant = p })
+                (x, p) => new { x.Attendee, x.Event, Participant = p })
             .Where(x => x.Event.Id == ticketedEventId && x.Attendee.Id == attendeeId)
             .Select(x => new
             {
                 x.Event.Name,
                 x.Event.Website,
                 x.Event.BaseUrl,
-                x.Availability.TicketTypes,
+                x.Event.TicketTypes,
                 x.Attendee.Email,
                 x.Attendee.FirstName,
                 x.Attendee.LastName,
@@ -153,7 +148,7 @@ public class ReconfirmEmailComposer(
             })
             .Where(x => reconfirmPolicy.NextSendAt(
                 now,
-                ticketedEvent.StartTime,
+                ticketedEvent.StartsAt,
                 x.AttendeeRegisteredAt,
                 x.LatestReconfirmEmail?.SentAt) <= now)
             .Select(x => x.AttendeeId)

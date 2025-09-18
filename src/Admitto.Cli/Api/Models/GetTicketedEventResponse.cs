@@ -14,6 +14,14 @@ namespace Amolenk.Admitto.Cli.Api.Models
     {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
+        /// <summary>The additionalDetailSchemas property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public List<global::Amolenk.Admitto.Cli.Api.Models.AdditionalDetailSchemaDto2>? AdditionalDetailSchemas { get; set; }
+#nullable restore
+#else
+        public List<global::Amolenk.Admitto.Cli.Api.Models.AdditionalDetailSchemaDto2> AdditionalDetailSchemas { get; set; }
+#endif
         /// <summary>The baseUrl property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
@@ -22,8 +30,8 @@ namespace Amolenk.Admitto.Cli.Api.Models
 #else
         public string BaseUrl { get; set; }
 #endif
-        /// <summary>The endDateTime property</summary>
-        public DateTimeOffset? EndDateTime { get; set; }
+        /// <summary>The endsAt property</summary>
+        public DateTimeOffset? EndsAt { get; set; }
         /// <summary>The name property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
@@ -32,10 +40,10 @@ namespace Amolenk.Admitto.Cli.Api.Models
 #else
         public string Name { get; set; }
 #endif
-        /// <summary>The registrationEndDateTime property</summary>
-        public DateTimeOffset? RegistrationEndDateTime { get; set; }
-        /// <summary>The registrationStartDateTime property</summary>
-        public DateTimeOffset? RegistrationStartDateTime { get; set; }
+        /// <summary>The registrationClosesAt property</summary>
+        public DateTimeOffset? RegistrationClosesAt { get; set; }
+        /// <summary>The registrationOpensAt property</summary>
+        public DateTimeOffset? RegistrationOpensAt { get; set; }
         /// <summary>The slug property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
@@ -44,8 +52,8 @@ namespace Amolenk.Admitto.Cli.Api.Models
 #else
         public string Slug { get; set; }
 #endif
-        /// <summary>The startDateTime property</summary>
-        public DateTimeOffset? StartDateTime { get; set; }
+        /// <summary>The startsAt property</summary>
+        public DateTimeOffset? StartsAt { get; set; }
         /// <summary>The ticketTypes property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
@@ -79,13 +87,14 @@ namespace Amolenk.Admitto.Cli.Api.Models
         {
             return new Dictionary<string, Action<IParseNode>>
             {
+                { "additionalDetailSchemas", n => { AdditionalDetailSchemas = n.GetCollectionOfObjectValues<global::Amolenk.Admitto.Cli.Api.Models.AdditionalDetailSchemaDto2>(global::Amolenk.Admitto.Cli.Api.Models.AdditionalDetailSchemaDto2.CreateFromDiscriminatorValue)?.AsList(); } },
                 { "baseUrl", n => { BaseUrl = n.GetStringValue(); } },
-                { "endDateTime", n => { EndDateTime = n.GetDateTimeOffsetValue(); } },
+                { "endsAt", n => { EndsAt = n.GetDateTimeOffsetValue(); } },
                 { "name", n => { Name = n.GetStringValue(); } },
-                { "registrationEndDateTime", n => { RegistrationEndDateTime = n.GetDateTimeOffsetValue(); } },
-                { "registrationStartDateTime", n => { RegistrationStartDateTime = n.GetDateTimeOffsetValue(); } },
+                { "registrationClosesAt", n => { RegistrationClosesAt = n.GetDateTimeOffsetValue(); } },
+                { "registrationOpensAt", n => { RegistrationOpensAt = n.GetDateTimeOffsetValue(); } },
                 { "slug", n => { Slug = n.GetStringValue(); } },
-                { "startDateTime", n => { StartDateTime = n.GetDateTimeOffsetValue(); } },
+                { "startsAt", n => { StartsAt = n.GetDateTimeOffsetValue(); } },
                 { "ticketTypes", n => { TicketTypes = n.GetCollectionOfObjectValues<global::Amolenk.Admitto.Cli.Api.Models.TicketTypeDto>(global::Amolenk.Admitto.Cli.Api.Models.TicketTypeDto.CreateFromDiscriminatorValue)?.AsList(); } },
             };
         }
@@ -96,13 +105,14 @@ namespace Amolenk.Admitto.Cli.Api.Models
         public virtual void Serialize(ISerializationWriter writer)
         {
             _ = writer ?? throw new ArgumentNullException(nameof(writer));
+            writer.WriteCollectionOfObjectValues<global::Amolenk.Admitto.Cli.Api.Models.AdditionalDetailSchemaDto2>("additionalDetailSchemas", AdditionalDetailSchemas);
             writer.WriteStringValue("baseUrl", BaseUrl);
-            writer.WriteDateTimeOffsetValue("endDateTime", EndDateTime);
+            writer.WriteDateTimeOffsetValue("endsAt", EndsAt);
             writer.WriteStringValue("name", Name);
-            writer.WriteDateTimeOffsetValue("registrationEndDateTime", RegistrationEndDateTime);
-            writer.WriteDateTimeOffsetValue("registrationStartDateTime", RegistrationStartDateTime);
+            writer.WriteDateTimeOffsetValue("registrationClosesAt", RegistrationClosesAt);
+            writer.WriteDateTimeOffsetValue("registrationOpensAt", RegistrationOpensAt);
             writer.WriteStringValue("slug", Slug);
-            writer.WriteDateTimeOffsetValue("startDateTime", StartDateTime);
+            writer.WriteDateTimeOffsetValue("startsAt", StartsAt);
             writer.WriteCollectionOfObjectValues<global::Amolenk.Admitto.Cli.Api.Models.TicketTypeDto>("ticketTypes", TicketTypes);
             writer.WriteAdditionalData(AdditionalData);
         }

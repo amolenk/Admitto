@@ -4,10 +4,9 @@ using Amolenk.Admitto.Cli.Api.Models;
 using Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Attendees;
 using Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Contributors;
 using Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.EmailTemplates;
-using Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.EmailVerification;
 using Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Emails;
-using Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Participants;
 using Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Policies;
+using Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Public;
 using Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.TicketTypes;
 using Microsoft.Kiota.Abstractions.Extensions;
 using Microsoft.Kiota.Abstractions.Serialization;
@@ -45,20 +44,15 @@ namespace Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item
         {
             get => new global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.EmailTemplates.EmailTemplatesRequestBuilder(PathParameters, RequestAdapter);
         }
-        /// <summary>The emailVerification property</summary>
-        public global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.EmailVerification.EmailVerificationRequestBuilder EmailVerification
-        {
-            get => new global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.EmailVerification.EmailVerificationRequestBuilder(PathParameters, RequestAdapter);
-        }
-        /// <summary>The participants property</summary>
-        public global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Participants.ParticipantsRequestBuilder Participants
-        {
-            get => new global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Participants.ParticipantsRequestBuilder(PathParameters, RequestAdapter);
-        }
         /// <summary>The policies property</summary>
         public global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Policies.PoliciesRequestBuilder Policies
         {
             get => new global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Policies.PoliciesRequestBuilder(PathParameters, RequestAdapter);
+        }
+        /// <summary>The public property</summary>
+        public global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Public.PublicRequestBuilder Public
+        {
+            get => new global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Public.PublicRequestBuilder(PathParameters, RequestAdapter);
         }
         /// <summary>The ticketTypes property</summary>
         public global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.TicketTypes.TicketTypesRequestBuilder TicketTypes

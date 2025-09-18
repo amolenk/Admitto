@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace Amolenk.Admitto.Infrastructure.Persistence.Interceptors;
 
-public class AuditInterceptor(IHttpContextAccessor contextAccessor) : SaveChangesInterceptor
+public class AuditInterceptor : SaveChangesInterceptor
 {
     public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
         DbContextEventData eventData,
@@ -27,7 +27,6 @@ public class AuditInterceptor(IHttpContextAccessor contextAccessor) : SaveChange
             }
             
             entry.Entity.LastChangedAt = now;
-//            entry.Entity.LastChangedBy = contextAccessor?.HttpContext?.User.GetUserEmail() ?? "system";
         }
 
         return base.SavingChangesAsync(eventData, result, cancellationToken);

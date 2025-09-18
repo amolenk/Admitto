@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Configuration;
-
 namespace Amolenk.Admitto.Cli.Commands.Email.Verification;
 
 public class VerifyOtpCodeSettings : TeamEventSettings
@@ -41,7 +39,7 @@ public class VerifyOtpCodeCommand(IAccessTokenProvider accessTokenProvider, ICon
         };
 
         var response = await CallApiAsync(async client =>
-            await client.Teams[teamSlug].Events[eventSlug].EmailVerification.Verify.PostAsync(request));
+            await client.Teams[teamSlug].Events[eventSlug].Public.Verify.PostAsync(request));
         if (response is null) return 1;
         
         AnsiConsole.MarkupLine("[green]✓ Successfully verified email address.[/]");

@@ -5,7 +5,7 @@ public record GetTicketedEventsResponse(TicketedEventDto[] TicketedEvents);
 public record TicketedEventDto(
     string Slug,
     string Name,
-    DateTimeOffset StartTime,
-    DateTimeOffset EndTime,
-    DateTimeOffset RegistrationStartDateTime,
-    DateTimeOffset RegistrationEndDateTime);
+    DateTimeOffset StartsAt,
+    DateTimeOffset EndsAt,
+    DateTimeOffset RegistrationOpensAt,
+    DateTimeOffset RegistrationClosesAt);

@@ -88,6 +88,9 @@ public sealed class ApplicationRuleError
     
     public static class Participant
     {
+        public static ApplicationRuleError AlreadyExists =>
+            new("participant.already_exists", $"Participant already exists.");
+
         public static ApplicationRuleError NotFound =>
             new("participant.not_found", $"Participant not found.");
     }

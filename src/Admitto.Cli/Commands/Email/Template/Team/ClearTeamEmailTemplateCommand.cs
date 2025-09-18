@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Configuration;
-
 namespace Amolenk.Admitto.Cli.Commands.Email.Template.Team;
 
 public class ClearTeamEmailTemplateSettings : TeamSettings

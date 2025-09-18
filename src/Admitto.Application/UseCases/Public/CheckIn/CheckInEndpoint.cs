@@ -34,7 +34,7 @@ public static class CheckInEndpoint
             throw new ApplicationRuleException(ApplicationRuleError.Signing.InvalidSignature);
         }
 
-        var admissionRecord = await context.AdmissionView
+        var admissionRecord = await context.ParticipationView
             .Where(a => a.TicketedEventId == eventId && a.PublicId == publicId)
             .FirstOrDefaultAsync(cancellationToken);
         

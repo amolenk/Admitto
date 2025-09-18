@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Configuration;
-
 namespace Amolenk.Admitto.Cli.Commands.Events.Policy.Reconfirm;
 
 public class SetSettings : TeamEventSettings

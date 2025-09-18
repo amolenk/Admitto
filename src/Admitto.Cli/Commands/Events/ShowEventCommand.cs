@@ -1,5 +1,3 @@
-using Microsoft.Extensions.Configuration;
-
 namespace Amolenk.Admitto.Cli.Commands.Events;
 
 public class ShowEventCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration)
@@ -22,14 +20,14 @@ public class ShowEventCommand(IAccessTokenProvider accessTokenProvider, IConfigu
         grid.AddRow(
             "Status:",
             GetStatusString(
-                response.RegistrationStartDateTime!.Value,
-                response.RegistrationEndDateTime!.Value,
-                response.StartDateTime!.Value,
-                response.EndDateTime!.Value));
-        grid.AddRow("Registration opens:", response.RegistrationStartDateTime!.Value.Format(true));
-        grid.AddRow("Registration closes:", response.RegistrationEndDateTime!.Value.Format(true));
-        grid.AddRow("Event starts:", response.StartDateTime!.Value.Format(true));
-        grid.AddRow("Event ends:", response.EndDateTime!.Value.Format(true));
+                response.RegistrationOpensAt!.Value,
+                response.RegistrationClosesAt!.Value,
+                response.StartsAt!.Value,
+                response.EndsAt!.Value));
+        grid.AddRow("Registration opens:", response.RegistrationOpensAt!.Value.Format(true));
+        grid.AddRow("Registration closes:", response.RegistrationClosesAt!.Value.Format(true));
+        grid.AddRow("Event starts:", response.StartsAt!.Value.Format(true));
+        grid.AddRow("Event ends:", response.EndsAt!.Value.Format(true));
 
         AnsiConsole.Write(grid);
 

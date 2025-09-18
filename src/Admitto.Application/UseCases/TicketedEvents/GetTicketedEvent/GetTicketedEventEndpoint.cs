@@ -27,35 +27,39 @@ public static class GetTicketedEventEndpoint
         var eventId = await slugResolver.ResolveTicketedEventIdAsync(teamSlug, eventSlug, cancellationToken);
 
         var ticketedEvent = await context.TicketedEvents
-            .Join(
-                context.TicketedEventAvailability, // .Include(tea => tea.TicketTypes), TODO Don't need it?
-                te => te.Id,
-                tea => tea.TicketedEventId,
-                (te, tea) => new { Event = te, Availability = tea })
-            .Where(te => te.Event.Id == eventId)
-            .FirstOrDefaultAsync(cancellationToken);
-        
+            .AsNoTracking()
+            .FirstOrDefaultAsync(te => te.Id == eventId, cancellationToken);
         if (ticketedEvent is null)
         {
             throw new ApplicationRuleException(ApplicationRuleError.TicketedEvent.NotFound);
         }
 
-        var ticketTypes = ticketedEvent.Availability.TicketTypes.Select(tt => new TicketTypeDto(
-            tt.Slug,
-            tt.Name,
-            tt.SlotName,
-            tt.MaxCapacity,
-            tt.UsedCapacity));
+        var ticketTypes = ticketedEvent.TicketTypes
+            .Select(tt => new TicketTypeDto(
+                tt.Slug,
+                tt.Name,
+                tt.SlotName,
+                tt.MaxCapacity,
+                tt.UsedCapacity))
+            .ToList();
+
+        var additionalDetailSchemas = ticketedEvent.AdditionalDetailSchemas
+            .Select(ads => new AdditionalDetailSchemaDto(
+                ads.Name,
+                ads.MaxLength.ToString(),
+                ads.IsRequired))
+            .ToList();
 
         var response = new GetTicketedEventResponse(
-            ticketedEvent.Event.Slug,
-            ticketedEvent.Event.Name,
-            ticketedEvent.Event.StartTime,
-            ticketedEvent.Event.EndTime,
-            ticketedEvent.Availability.RegistrationStartTime,
-            ticketedEvent.Availability.RegistrationEndTime,
-            ticketedEvent.Event.BaseUrl,
-            ticketTypes);
+            ticketedEvent.Slug,
+            ticketedEvent.Name,
+            ticketedEvent.StartsAt,
+            ticketedEvent.EndsAt,
+            ticketedEvent.RegistrationOpensAt,
+            ticketedEvent.RegistrationClosesAt,
+            ticketedEvent.BaseUrl,
+            ticketTypes,
+            additionalDetailSchemas);
 
         return TypedResults.Ok(response);
     }

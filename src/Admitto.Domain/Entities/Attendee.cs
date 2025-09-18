@@ -56,8 +56,14 @@ public class Attendee : Aggregate
         string firstName,
         string lastName,
         IEnumerable<AdditionalDetail> additionalDetails,
-        IEnumerable<TicketSelection> tickets)
+        IEnumerable<TicketSelection> tickets,
+        IEnumerable<AdditionalDetailSchema> additionalDetailSchemas)
     {
+        var additionalDetailsList = additionalDetails.ToList();
+        var additionalDetailSchemaList = additionalDetailSchemas.ToList();
+
+        EnsureValidAdditionalDetails(additionalDetailsList, additionalDetailSchemaList);
+            
         return new Attendee(
             Guid.NewGuid(),
             ticketedEventId,
@@ -65,14 +71,14 @@ public class Attendee : Aggregate
             email,
             firstName,
             lastName,
-            additionalDetails.ToList(),
+            additionalDetailsList,
             tickets.ToList());
     }
     
-    public void CancelRegistration(CancellationPolicy policy, DateTimeOffset eventStartTime)
+    public void CancelRegistration(CancellationPolicy policy, DateTimeOffset eventStartsAt)
     {
         var now = DateTimeOffset.UtcNow;
-        if (now >= eventStartTime)
+        if (now >= eventStartsAt)
         {
             throw new DomainRuleException(DomainRuleError.Registration.CannotCancelAfterEventStart);
         }
@@ -89,7 +95,7 @@ public class Attendee : Aggregate
 
         RegistrationStatus = RegistrationStatus.Canceled;
 
-        DomainEvent domainEvent = eventStartTime - now < policy.CutoffBeforeEvent
+        DomainEvent domainEvent = eventStartsAt - now < policy.CutoffBeforeEvent
             ? new AttendeeCanceledLateDomainEvent(TicketedEventId, ParticipantId, Id, Email, _tickets)
             : new AttendeeCanceledDomainEvent(TicketedEventId,ParticipantId, Id, Email, _tickets);
         
@@ -118,5 +124,42 @@ public class Attendee : Aggregate
     public void MarkAsNoShow()
     {
         RegistrationStatus = RegistrationStatus.NoShow;
+    }
+    
+    private static void EnsureValidAdditionalDetails(
+        List<AdditionalDetail> additionalDetails,
+        List<AdditionalDetailSchema> additionalDetailSchemas)
+    {
+        // Reject any additional details that do not have a schema
+        var schemaNames = additionalDetailSchemas.Select(s => s.Name)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        //
+        foreach (var detail in additionalDetails)
+        {
+            if (!schemaNames.Contains(detail.Name))
+            {
+                throw new DomainRuleException(
+                    DomainRuleError.Attendee.UnexpectedAdditionalDetail(detail.Name));
+            }
+        }
+
+        foreach (var schema in additionalDetailSchemas)
+        {
+            var detail = additionalDetails.FirstOrDefault(ad => ad.Name == schema.Name);
+            if (detail is null)
+            {
+                if (!schema.IsRequired) continue;
+                
+                throw new DomainRuleException(
+                    DomainRuleError.Attendee.MissingAdditionalDetail(schema.Name));
+            }
+
+            // Check that the detail is valid
+            if (!schema.IsValid(detail.Value))
+            {
+                throw new DomainRuleException(
+                    DomainRuleError.Attendee.InvalidAdditionalDetail(schema.Name));
+            }
+        }
     }
 }

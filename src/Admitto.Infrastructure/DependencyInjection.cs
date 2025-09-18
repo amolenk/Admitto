@@ -38,7 +38,7 @@ public static class DependencyInjection
         {
             options.UseNpgsql(connectionString);
             options.AddInterceptors(
-                new AuditInterceptor(sp.GetRequiredService<IHttpContextAccessor>()),
+                new AuditInterceptor(),
                 new DomainEventsInterceptor(sp));
         });
         

@@ -25,18 +25,18 @@ public class TicketType : Entity
 
     public static TicketType Create(string slug, string name, string slotName, int maxCapacity)
     {
+        // Note: we do allow ticket types with maxCapacity of 0, which means no tickets can be sold.
+        // This may be useful in some scenarios where registrations are only allowed at some later time.
         if (string.IsNullOrWhiteSpace(name))
             throw new DomainRuleException(DomainRuleError.TicketType.NameIsRequired);
         
-        if (maxCapacity <= 0)
-            throw new DomainRuleException(DomainRuleError.TicketType.MaxCapacityMustBeGreaterThan(0));
-
+ 
         var id = DeterministicGuid.Create(name);
         
         return new TicketType(id, slug, name, slotName, maxCapacity);
     }
 
-    public bool HasAvailableCapacity(int quantity)
+    public bool HasAvailableCapacity(int quantity = 1)
     {
         return RemainingCapacity >= quantity;
     }

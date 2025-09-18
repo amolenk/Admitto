@@ -20,6 +20,16 @@ public sealed class DomainRuleError
     {
         public static DomainRuleError CannotReconfirmInStatus(RegistrationStatus status) =>
             new("attendee.cannot_reconfirm", $"Cannot reconfirm attendance when registration is in status '{status}'.");
+        
+        public static DomainRuleError UnexpectedAdditionalDetail(string name) =>
+            new("attendee.unexpected_detail", $"Attendee detail '{name}' is unexpected.");
+
+        public static DomainRuleError MissingAdditionalDetail(string name) =>
+            new("attendee.missing_detail", $"Attendee detail '{name}' is missing.");
+
+        public static DomainRuleError InvalidAdditionalDetail(string name) =>
+            new("attendee.invalid_detail", $"Attendee detail '{name}' is invalid.");
+
     }
     
     public static class Contributor
@@ -86,6 +96,9 @@ public sealed class DomainRuleError
         public static DomainRuleError NameIsRequired =>
             new("ticketed_event.name_is_required", "Event name is required.");
 
+        public static DomainRuleError RegistrationClosed =>
+            new DomainRuleError("ticketed_event.registration_closed", "Registration for this event is currently closed.");
+
         public static DomainRuleError NotFound(string slug) =>
             new("ticketed_event.not_found", $"Ticketed event with slug '{slug}' does not exist.");
 
@@ -117,9 +130,6 @@ public sealed class DomainRuleError
 
     public static class TicketType
     {
-        public static DomainRuleError MaxCapacityMustBeGreaterThan(int value) =>
-            new("ticket_type.max_capacity_must_be_greater_than", $"Maximum capacity must be greater than {value}.");
-
         public static DomainRuleError NameIsRequired =>
             new("ticket_type.name_is_required", "Ticket type name is required.");
     }

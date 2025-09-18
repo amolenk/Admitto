@@ -1,6 +1,4 @@
 using Amolenk.Admitto.Cli.Api;
-using Amolenk.Admitto.Cli.Commands.Config;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Kiota.Abstractions.Serialization;
 using Microsoft.Kiota.Http.HttpClientLibrary;
 

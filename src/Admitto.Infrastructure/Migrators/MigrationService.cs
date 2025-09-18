@@ -10,10 +10,18 @@ public class MigrationService(IServiceProvider serviceProvider) : IMigrationServ
         return ["database", "openfga"];
     }
 
-    public async ValueTask MigrateAsync(string migrationName, CancellationToken cancellationToken)
+    public async Task MigrateAsync(string migrationName, CancellationToken cancellationToken)
     {
         var migrator = GetMigrator(migrationName);
         await migrator.RunAsync(cancellationToken);
+    }
+    
+    public async Task MigrateAllAsync(CancellationToken cancellationToken)
+    {
+        var migrationTasks = GetSupportedMigrations()
+            .Select(migrationName => MigrateAsync(migrationName, cancellationToken));
+        
+        await Task.WhenAll(migrationTasks);
     }
     
     private IMigrator GetMigrator(string migrationName) =>

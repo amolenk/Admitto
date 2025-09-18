@@ -17,11 +17,15 @@ public class CancelRegistrationHandler(IApplicationContext context)
         }
         
         var attendee = await context.Attendees.FindAsync([command.AttendeeId], cancellationToken);
-        if (attendee is null)
+
+        // TODO Double check this everywhere. We need to make sure that underlying entities belong to the correct parent.
+        if (attendee is null || attendee.TicketedEventId != command.TicketedEventId)
         {
             throw new ApplicationRuleException(ApplicationRuleError.Attendee.NotFound);
         }
         
-        attendee.CancelRegistration(ticketedEvent.CancellationPolicy, ticketedEvent.StartTime);
+        attendee.CancelRegistration(ticketedEvent.CancellationPolicy, ticketedEvent.StartsAt);
+
+        context.Attendees.Remove(attendee);
     }
 }

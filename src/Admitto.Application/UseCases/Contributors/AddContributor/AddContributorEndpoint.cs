@@ -1,5 +1,5 @@
 using Amolenk.Admitto.Application.Common;
-using Amolenk.Admitto.Application.Common.Email;
+using Amolenk.Admitto.Application.Projections.Participation;
 using Amolenk.Admitto.Domain.Entities;
 using Amolenk.Admitto.Domain.ValueObjects;
 
@@ -20,13 +20,14 @@ public static class AddContributorEndpoint
         return group;
     }
 
+    // TODO Use specific From* attributes for parameters everywhere
     private static async ValueTask<Ok<AddContributorResponse>> AddContributor(
-        string teamSlug,
-        string eventSlug,
-        AddContributorRequest request,
-        ISlugResolver slugResolver,
-        IApplicationContext context,
-        IUnitOfWork unitOfWork,
+        [FromRoute] string teamSlug,
+        [FromRoute] string eventSlug,
+        [FromBody] AddContributorRequest request,
+        [FromServices] ISlugResolver slugResolver,
+        [FromServices] IApplicationContext context,
+        [FromServices] IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
         var (teamId, eventId) =
@@ -34,17 +35,76 @@ public static class AddContributorEndpoint
 
         // First get or create a participant. A participant may already exist if the same person is also
         // an attendee of the event.
-        var participant = await GetOrCreateParticipantAsync(
-            teamId,
-            eventId,
-            request.Email,
-            context,
-            unitOfWork,
-            cancellationToken);
+        var participantId = await GetOrCreateParticipant(teamId, eventId, request, context, cancellationToken);
+
+        var contributorId = CreateContributor(eventId, participantId, request, context);
+
+        // Handle unique violations that may occur due to concurrent requests.
+        unitOfWork.OnUniqueViolation = args =>
+        {
+            // If we fail because some other thread created the participant first, we should consider that an
+            // optimistic concurrency failure and retry the entire operation.
+            if (args.Error == ApplicationRuleError.Participant.AlreadyExists)
+            {
+                args.Retry = true;
+            }
+        };
+
+        return TypedResults.Ok(new AddContributorResponse(contributorId));
+    }
+
+    private static async ValueTask<Guid> GetOrCreateParticipant(
+        Guid teamId,
+        Guid eventId,
+        AddContributorRequest request,
+        IApplicationContext context,
+        CancellationToken cancellationToken)
+    {
+        // First check if the participant already exists. The contributor could already be an attendee of the event.
+        var existingParticipant = await context.ParticipationView
+            .Where(p => p.TicketedEventId == eventId && p.Email == request.Email)
+            .Select(p => new
+            {
+                p.ParticipantId,
+                p.ContributorStatus
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        Guid participantId;
+        if (existingParticipant is not null)
+        {
+            // If the participant is already an active contributor, we can stop here.
+            if (existingParticipant.ContributorStatus == ParticipationContributorStatus.Active)
+            {
+                throw new ApplicationRuleException(ApplicationRuleError.Contributor.AlreadyExists);
+            }
+
+            participantId = existingParticipant.ParticipantId;
+        }
+        else
+        {
+            // Create a new participant.
+            var newParticipant = Participant.Create(teamId, eventId, request.Email);
+            context.Participants.Add(newParticipant);
+
+            participantId = newParticipant.Id;
+        }
+
+        return participantId;
+    }
+
+    private static Guid CreateContributor(
+        Guid eventId,
+        Guid participantId,
+        AddContributorRequest request,
+        IApplicationContext context)
+    {
+        var id = Guid.NewGuid();
 
         var contributor = Contributor.Create(
+            id,
             eventId,
-            participant.Id,
+            participantId,
             request.Email,
             request.FirstName,
             request.LastName,
@@ -53,42 +113,6 @@ public static class AddContributorEndpoint
 
         context.Contributors.Add(contributor);
 
-        // Set a more detailed error for unique violation.
-        unitOfWork.UniqueViolationError = ApplicationRuleError.Contributor.AlreadyExists;
-
-        return TypedResults.Ok(new AddContributorResponse(contributor.Id));
-    }
-
-    private static async ValueTask<Participant> GetOrCreateParticipantAsync(
-        Guid teamId,
-        Guid eventId,
-        string email,
-        IApplicationContext context,
-        IUnitOfWork unitOfWork,
-        CancellationToken cancellationToken)
-    {
-        var emailNormalized = email.NormalizeEmail();
-
-        var participant = await context.Participants.SingleOrDefaultAsync(
-            p => p.TicketedEventId == eventId && p.Email == emailNormalized,
-            cancellationToken);
-
-        if (participant is not null) return participant;
-
-        participant = Participant.Create(teamId, eventId, emailNormalized);
-
-        context.Participants.Add(participant);
-
-        await unitOfWork.SaveChangesAsync(
-            async () =>
-            {
-                // Another thread created it first: fetch the existing one.
-                participant = await context.Participants.SingleAsync(
-                    p => p.TicketedEventId == eventId && p.Email == emailNormalized,
-                    cancellationToken);
-            },
-            cancellationToken);
-
-        return participant;
+        return id;
     }
 }
