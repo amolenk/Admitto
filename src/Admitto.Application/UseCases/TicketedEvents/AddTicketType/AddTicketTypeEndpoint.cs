@@ -34,7 +34,12 @@ public static class AddTicketTypeEndpoint
             throw new ApplicationRuleException(ApplicationRuleError.TicketedEvent.NotFound);
         }
 
-        ticketedEvent.AddTicketType(request.Slug, request.Name, request.SlotName, request.MaxCapacity);
+        // Split semicolon-separated slot names to support multiple slots
+        var slotNames = request.SlotName.Split(';', StringSplitOptions.RemoveEmptyEntries)
+            .Select(s => s.Trim())
+            .ToList();
+        
+        ticketedEvent.AddTicketType(request.Slug, request.Name, slotNames, request.MaxCapacity);
 
         return TypedResults.Created();
     }
