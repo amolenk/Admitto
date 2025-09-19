@@ -5,8 +5,8 @@ public record GetTicketedEventResponse(
     string Name,
     DateTimeOffset StartsAt,
     DateTimeOffset EndsAt,
-    DateTimeOffset RegistrationOpensAt,
-    DateTimeOffset RegistrationClosesAt,
+    DateTimeOffset? RegistrationOpensAt,
+    DateTimeOffset? RegistrationClosesAt,
     string BaseUrl,
     List<TicketTypeDto> TicketTypes,
     List<AdditionalDetailSchemaDto>? AdditionalDetailSchemas);

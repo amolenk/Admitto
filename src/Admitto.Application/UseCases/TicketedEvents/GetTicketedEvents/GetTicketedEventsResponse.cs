@@ -7,5 +7,5 @@ public record TicketedEventDto(
     string Name,
     DateTimeOffset StartsAt,
     DateTimeOffset EndsAt,
-    DateTimeOffset RegistrationOpensAt,
-    DateTimeOffset RegistrationClosesAt);
+    DateTimeOffset? RegistrationOpensAt,
+    DateTimeOffset? RegistrationClosesAt);

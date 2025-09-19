@@ -1,6 +1,7 @@
 using System.Data.Common;
 using System.Net;
 using Admitto.AppHost.Extensions.AzureServiceBus;
+using Admitto.AppHost.Extensions.AzureStorage;
 using Amolenk.Admitto.Application.Jobs;
 using Aspire.Hosting.Azure;
 
@@ -10,11 +11,10 @@ var postgres = builder.ConfigurePostgres();
 var postgresDb = postgres.AddDatabase("admitto-db");
 var openFgaDb = postgres.AddDatabase("openfga-db");
 
-var serviceBus = builder.ConfigureServiceBus();
-serviceBus.AddServiceBusQueue("queue");
+// var serviceBus = builder.ConfigureServiceBus();
+// serviceBus.AddServiceBusQueue("queue");
 
-var storage = builder.ConfigureQueues();
-var queues = storage.AddQueues("queues");
+var queues = builder.ConfigureStorageQueues();
 
 var openFga = builder.ConfigureOpenFga(openFgaDb);
 
@@ -109,13 +109,16 @@ internal static class Extensions
         return serviceBus;
     }
 
-    public static IResourceBuilder<AzureStorageResource> ConfigureQueues(
+    public static IResourceBuilder<AzureQueueStorageResource> ConfigureStorageQueues(
         this IDistributedApplicationBuilder builder)
     {
-        var storage = builder.AddAzureStorage("queues")
+        var storage = builder.AddAzureStorage("storage")
             .RunAsEmulator(configure => { configure.WithLifetime(ContainerLifetime.Persistent); });
+        
+        var queues = storage.AddQueues("queues")
+            .CreateQueue("queue");
 
-        return storage;
+        return queues;
     }
 
     public static IResourceBuilder<ContainerResource> ConfigureOpenFga(
