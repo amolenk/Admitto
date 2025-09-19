@@ -96,12 +96,17 @@ public class TicketedEvent : Aggregate
 
     public void AddTicketType(string slug, string name, string slotName, int maxCapacity)
     {
+        AddTicketType(slug, name, new List<string> { slotName }, maxCapacity);
+    }
+
+    public void AddTicketType(string slug, string name, List<string> slotNames, int maxCapacity)
+    {
         if (_ticketTypes.Any(t => t.Slug == slug))
         {
             throw new DomainRuleException(DomainRuleError.TicketedEvent.TicketTypeAlreadyExists);
         }
 
-        var ticketType = TicketType.Create(slug, name, slotName, maxCapacity);
+        var ticketType = TicketType.Create(slug, name, slotNames, maxCapacity);
         _ticketTypes.Add(ticketType);
     }
 
@@ -126,7 +131,8 @@ public class TicketedEvent : Aggregate
             throw new DomainRuleException(DomainRuleError.TicketedEvent.RegistrationClosed);
         }
         
-        // TODO Check ticket overlaps
+        // Check for slot overlaps across all selected tickets
+        var allSelectedSlots = new List<string>();
         foreach (var ticketSelection in tickets)
         {
             var ticketType = _ticketTypes.FirstOrDefault(tt => tt.Slug == ticketSelection.TicketTypeSlug);
@@ -136,13 +142,32 @@ public class TicketedEvent : Aggregate
                     DomainRuleError.TicketedEvent.InvalidTicketType(ticketSelection.TicketTypeSlug));
             }
 
+            // Add all slots for this ticket type (considering quantity)
+            for (int i = 0; i < ticketSelection.Quantity; i++)
+            {
+                foreach (var slotName in ticketType.SlotNames)
+                {
+                    if (allSelectedSlots.Contains(slotName))
+                    {
+                        throw new DomainRuleException(DomainRuleError.TicketedEvent.OverlappingSlots());
+                    }
+                    allSelectedSlots.Add(slotName);
+                }
+            }
+        }
+
+        foreach (var ticketSelection in tickets)
+        {
+            var ticketType = _ticketTypes.FirstOrDefault(tt => tt.Slug == ticketSelection.TicketTypeSlug);
+            // Ticket type validation already done above, so ticketType should not be null here
+
             // Ensure that there's enough capacity for the requested tickets.
-            if (!ignoreCapacity && !ticketType.HasAvailableCapacity(ticketSelection.Quantity))
+            if (!ignoreCapacity && !ticketType!.HasAvailableCapacity(ticketSelection.Quantity))
             {
                 throw new DomainRuleException(DomainRuleError.TicketedEvent.CapacityExceeded(ticketType.Slug));
             }
 
-            ticketType.ClaimTickets(ticketSelection.Quantity);
+            ticketType!.ClaimTickets(ticketSelection.Quantity);
         }
     }
 

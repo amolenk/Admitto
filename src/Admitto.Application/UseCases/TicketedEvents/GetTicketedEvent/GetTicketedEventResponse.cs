@@ -11,6 +11,6 @@ public record GetTicketedEventResponse(
     List<TicketTypeDto> TicketTypes,
     List<AdditionalDetailSchemaDto>? AdditionalDetailSchemas);
 
-public record TicketTypeDto(string Slug, string Name, string SlotName, int MaxCapacity, int UsedCapacity);
+public record TicketTypeDto(string Slug, string Name, List<string> SlotNames, int MaxCapacity, int UsedCapacity);
 
 public record AdditionalDetailSchemaDto(string Name, string MaxLength, bool IsRequired);
