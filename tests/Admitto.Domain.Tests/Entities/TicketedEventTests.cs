@@ -47,6 +47,137 @@ public class TicketedEventTests
             [ticketSelection]));
     }
 
+    [TestMethod]
+    public void ClaimTickets_NoSlotOverlap_Succeeds()
+    {
+        // Arrange
+        var ticketedEvent = new TicketedEventBuilder().Build();
+        var ticketType1 = AddTicketType(ticketedEvent, builder => 
+            builder.WithSlug("morning").WithName("Morning Session").WithSlotName("morning"));
+        var ticketType2 = AddTicketType(ticketedEvent, builder => 
+            builder.WithSlug("afternoon").WithName("Afternoon Session").WithSlotName("afternoon"));
+
+        const string email = "alice@example.com";
+        var registrationDateTime = DateTime.UtcNow;
+        var ticketSelections = new List<TicketSelection>
+        {
+            new(ticketType1.Slug, 1),
+            new(ticketType2.Slug, 1)
+        };
+
+        // Act
+        ticketedEvent.ClaimTickets(email, registrationDateTime, ticketSelections);
+
+        // Assert
+        ticketType1.UsedCapacity.ShouldBe(1);
+        ticketType2.UsedCapacity.ShouldBe(1);
+    }
+
+    [TestMethod]
+    public void ClaimTickets_SameSlotMultipleTimes_ThrowsOverlapException()
+    {
+        // Arrange
+        var ticketedEvent = new TicketedEventBuilder().Build();
+        var ticketType1 = AddTicketType(ticketedEvent, builder => 
+            builder.WithSlug("morning1").WithName("Morning Workshop A").WithSlotName("morning"));
+        var ticketType2 = AddTicketType(ticketedEvent, builder => 
+            builder.WithSlug("morning2").WithName("Morning Workshop B").WithSlotName("morning"));
+
+        const string email = "alice@example.com";
+        var registrationDateTime = DateTime.UtcNow;
+        var ticketSelections = new List<TicketSelection>
+        {
+            new(ticketType1.Slug, 1),
+            new(ticketType2.Slug, 1)
+        };
+
+        // Act & Assert
+        var exception = Should.Throw<DomainRuleException>(() => ticketedEvent.ClaimTickets(
+            email,
+            registrationDateTime,
+            ticketSelections));
+        
+        exception.ErrorCode.ShouldBe("ticketed_event.overlapping_slots");
+        exception.Message.ShouldContain("overlapping time slots");
+    }
+
+    [TestMethod]
+    public void ClaimTickets_MultipleQuantitySameTicket_ThrowsOverlapException()
+    {
+        // Arrange
+        var ticketedEvent = new TicketedEventBuilder().Build();
+        var ticketType = AddTicketType(ticketedEvent, builder => 
+            builder.WithSlug("workshop").WithName("Workshop").WithSlotName("morning").WithMaxCapacity(5));
+
+        const string email = "alice@example.com";
+        var registrationDateTime = DateTime.UtcNow;
+        var ticketSelection = new TicketSelection(ticketType.Slug, 2); // Trying to claim 2 tickets
+
+        // Act & Assert
+        var exception = Should.Throw<DomainRuleException>(() => ticketedEvent.ClaimTickets(
+            email,
+            registrationDateTime,
+            [ticketSelection]));
+        
+        exception.ErrorCode.ShouldBe("ticketed_event.overlapping_slots");
+        exception.Message.ShouldContain("overlapping time slots");
+    }
+    [TestMethod]
+    public void ClaimTickets_MultiSlotTicketType_WithOverlap_ThrowsOverlapException()
+    {
+        // Arrange
+        var ticketedEvent = new TicketedEventBuilder().Build();
+        var fullDayTicket = AddTicketType(ticketedEvent, builder => 
+            builder.WithSlug("full-day").WithName("Full Day Workshop")
+                   .WithSlotNames(new List<string> { "morning", "afternoon" }));
+        var morningTicket = AddTicketType(ticketedEvent, builder => 
+            builder.WithSlug("morning").WithName("Morning Session").WithSlotName("morning"));
+
+        const string email = "alice@example.com";
+        var registrationDateTime = DateTime.UtcNow;
+        var ticketSelections = new List<TicketSelection>
+        {
+            new(fullDayTicket.Slug, 1),
+            new(morningTicket.Slug, 1)
+        };
+
+        // Act & Assert
+        var exception = Should.Throw<DomainRuleException>(() => ticketedEvent.ClaimTickets(
+            email,
+            registrationDateTime,
+            ticketSelections));
+        
+        exception.ErrorCode.ShouldBe("ticketed_event.overlapping_slots");
+        exception.Message.ShouldContain("overlapping time slots");
+    }
+
+    [TestMethod]
+    public void ClaimTickets_MultiSlotTicketType_NoOverlap_Succeeds()
+    {
+        // Arrange
+        var ticketedEvent = new TicketedEventBuilder().Build();
+        var fullDayTicket = AddTicketType(ticketedEvent, builder => 
+            builder.WithSlug("full-day").WithName("Full Day Workshop")
+                   .WithSlotNames(new List<string> { "morning", "afternoon" }));
+        var eveningTicket = AddTicketType(ticketedEvent, builder => 
+            builder.WithSlug("evening").WithName("Evening Session").WithSlotName("evening"));
+
+        const string email = "alice@example.com";
+        var registrationDateTime = DateTime.UtcNow;
+        var ticketSelections = new List<TicketSelection>
+        {
+            new(fullDayTicket.Slug, 1),
+            new(eveningTicket.Slug, 1)
+        };
+
+        // Act
+        ticketedEvent.ClaimTickets(email, registrationDateTime, ticketSelections);
+
+        // Assert
+        fullDayTicket.UsedCapacity.ShouldBe(1);
+        eveningTicket.UsedCapacity.ShouldBe(1);
+    }
+
     private static TicketType AddTicketType(TicketedEvent ticketedEvent, Action<TicketTypeBuilder>? configure = null)
     {
         var builder = new TicketTypeBuilder();
@@ -55,8 +186,8 @@ public class TicketedEventTests
         // Build the ticket type to get the parameter values
         var ticketType = builder.Build();
 
-        // Add the ticket type to the event
-        ticketedEvent.AddTicketType(ticketType.Slug, ticketType.Name, ticketType.SlotName, ticketType.MaxCapacity);
+        // Add the ticket type to the event using the list overload
+        ticketedEvent.AddTicketType(ticketType.Slug, ticketType.Name, ticketType.SlotNames, ticketType.MaxCapacity);
 
         // Return the added ticket type from the event's collection
         return ticketedEvent.TicketTypes.First(tt => tt.Slug == ticketType.Slug);

@@ -9,7 +9,12 @@ public class AddTicketTypeValidator : AbstractValidator<AddTicketTypeRequest>
             .MinimumLength(2)
             .MaximumLength(50);
 
-        RuleFor(x => x.SlotName)
+        RuleFor(x => x.SlotNames)
+            .NotNull()
+            .NotEmpty()
+            .WithMessage("At least one slot name is required.");
+
+        RuleForEach(x => x.SlotNames)
             .NotNull()
             .MinimumLength(2)
             .MaximumLength(50);

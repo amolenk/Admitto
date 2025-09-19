@@ -126,11 +126,17 @@ public sealed class DomainRuleError
 
         public static DomainRuleError InvalidTicketType(string slug) =>
             new("ticketed_event.invalid_ticket_type", $"The ticket type '{slug}' is invalid.");
+
+        public static DomainRuleError OverlappingSlots() =>
+            new("ticketed_event.overlapping_slots", "Cannot register for tickets that have overlapping time slots. Please select tickets for different time periods.");
     }
 
     public static class TicketType
     {
         public static DomainRuleError NameIsRequired =>
             new("ticket_type.name_is_required", "Ticket type name is required.");
+
+        public static DomainRuleError SlotNamesAreRequired =>
+            new("ticket_type.slot_names_are_required", "Ticket type must have at least one slot.");
     }
 }

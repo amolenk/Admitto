@@ -34,7 +34,7 @@ public static class AddTicketTypeEndpoint
             throw new ApplicationRuleException(ApplicationRuleError.TicketedEvent.NotFound);
         }
 
-        ticketedEvent.AddTicketType(request.Slug, request.Name, request.SlotName, request.MaxCapacity);
+        ticketedEvent.AddTicketType(request.Slug, request.Name, request.SlotNames, request.MaxCapacity);
 
         return TypedResults.Created();
     }
