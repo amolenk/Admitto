@@ -149,7 +149,7 @@ public class TicketedEvent : Aggregate
                 {
                     if (allSelectedSlots.Contains(slotName))
                     {
-                        throw new DomainRuleException(DomainRuleError.TicketedEvent.OverlappingSlots(slotName));
+                        throw new DomainRuleException(DomainRuleError.TicketedEvent.OverlappingSlots());
                     }
                     allSelectedSlots.Add(slotName);
                 }

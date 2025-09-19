@@ -38,7 +38,7 @@ public static class GetTicketedEventEndpoint
             .Select(tt => new TicketTypeDto(
                 tt.Slug,
                 tt.Name,
-                string.Join(";", tt.SlotNames),
+                tt.SlotNames,
                 tt.MaxCapacity,
                 tt.UsedCapacity))
             .ToList();

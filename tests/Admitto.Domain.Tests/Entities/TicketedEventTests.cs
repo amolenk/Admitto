@@ -98,7 +98,7 @@ public class TicketedEventTests
             ticketSelections));
         
         exception.ErrorCode.ShouldBe("ticketed_event.overlapping_slots");
-        exception.Message.ShouldContain("morning");
+        exception.Message.ShouldContain("overlapping time slots");
     }
 
     [TestMethod]
@@ -120,7 +120,7 @@ public class TicketedEventTests
             [ticketSelection]));
         
         exception.ErrorCode.ShouldBe("ticketed_event.overlapping_slots");
-        exception.Message.ShouldContain("morning");
+        exception.Message.ShouldContain("overlapping time slots");
     }
     [TestMethod]
     public void ClaimTickets_MultiSlotTicketType_WithOverlap_ThrowsOverlapException()
@@ -148,7 +148,7 @@ public class TicketedEventTests
             ticketSelections));
         
         exception.ErrorCode.ShouldBe("ticketed_event.overlapping_slots");
-        exception.Message.ShouldContain("morning");
+        exception.Message.ShouldContain("overlapping time slots");
     }
 
     [TestMethod]
@@ -186,15 +186,8 @@ public class TicketedEventTests
         // Build the ticket type to get the parameter values
         var ticketType = builder.Build();
 
-        // Add the ticket type to the event using the appropriate method
-        if (ticketType.SlotNames.Count == 1)
-        {
-            ticketedEvent.AddTicketType(ticketType.Slug, ticketType.Name, ticketType.SlotNames[0], ticketType.MaxCapacity);
-        }
-        else
-        {
-            ticketedEvent.AddTicketType(ticketType.Slug, ticketType.Name, ticketType.SlotNames, ticketType.MaxCapacity);
-        }
+        // Add the ticket type to the event using the list overload
+        ticketedEvent.AddTicketType(ticketType.Slug, ticketType.Name, ticketType.SlotNames, ticketType.MaxCapacity);
 
         // Return the added ticket type from the event's collection
         return ticketedEvent.TicketTypes.First(tt => tt.Slug == ticketType.Slug);

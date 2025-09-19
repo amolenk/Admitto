@@ -127,8 +127,8 @@ public sealed class DomainRuleError
         public static DomainRuleError InvalidTicketType(string slug) =>
             new("ticketed_event.invalid_ticket_type", $"The ticket type '{slug}' is invalid.");
 
-        public static DomainRuleError OverlappingSlots(string slotName) =>
-            new("ticketed_event.overlapping_slots", $"Cannot register for overlapping slot '{slotName}'.");
+        public static DomainRuleError OverlappingSlots() =>
+            new("ticketed_event.overlapping_slots", "Cannot register for tickets that have overlapping time slots. Please select tickets for different time periods.");
     }
 
     public static class TicketType
