@@ -9,13 +9,8 @@ resource applicationInsights 'Microsoft.Insights/components@2020-02-02' = {
   kind: 'web'
   properties: {
     Application_Type: 'web'
+    publicNetworkAccessForIngestion: 'False'
     WorkspaceResourceId: logAnalyticsWorkspaceId
-    // Cost control: Use basic sampling and reasonable retention
-    SamplingPercentage: 10  // Sample 10% of telemetry to control costs
-    RetentionInDays: 30     // Keep data for 30 days (minimum for free tier)
-    // Disable some expensive features for cost control
-    DisableIpMasking: false
-    DisableLocalAuth: false
   }
 }
 

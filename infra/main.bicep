@@ -104,6 +104,7 @@ module admittoApi 'modules/admittoApiApp.bicep' = {
     acaEnvironmentDomain: containerAppEnvironment.outputs.defaultDomain
     acaEnvironmentId: containerAppEnvironment.outputs.id
     acrLoginServer: containerRegistry.outputs.loginServer
+    applicationInsightsConnectionString: applicationInsights.outputs.connectionString
     authAdminUserIds: authAdminUserIds
     authTenantId: authTenantId
     authAudience: authAudience
@@ -114,7 +115,6 @@ module admittoApi 'modules/admittoApiApp.bicep' = {
     managedIdentityId: managedIdentity.outputs.id
     openFgaAppName: openfga.outputs.name
     storageAccountName: storageAccount.outputs.storageAccountName
-    applicationInsightsConnectionString: applicationInsights.outputs.connectionString
   }
 }
 
@@ -138,6 +138,7 @@ module admittoWorker 'modules/admittoWorkerApp.bicep' = {
   params: {
     acaEnvironmentDomain: containerAppEnvironment.outputs.defaultDomain
     acaEnvironmentId: containerAppEnvironment.outputs.id
+    applicationInsightsConnectionString: applicationInsights.outputs.connectionString
     acrLoginServer: containerRegistry.outputs.loginServer
     keyVaultName: keyVault.outputs.name
     location: location
@@ -145,7 +146,6 @@ module admittoWorker 'modules/admittoWorkerApp.bicep' = {
     managedIdentityId: managedIdentity.outputs.id
     openFgaAppName: openfga.outputs.name
     storageAccountName: storageAccount.outputs.storageAccountName
-    applicationInsightsConnectionString: applicationInsights.outputs.connectionString
   }
 }
 

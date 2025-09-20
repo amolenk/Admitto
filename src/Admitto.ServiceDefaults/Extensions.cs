@@ -73,9 +73,6 @@ public static class Extensions
             logging.IncludeScopes = true;
         });
 
-        // Enable ActivitySource support for experimental Azure SDKs like Azure.Messaging.ServiceBus.
-        AppContext.SetSwitch("Azure.Experimental.EnableActivitySource", true);
-        
         builder.Services.AddOpenTelemetry()
             .WithMetrics(metrics =>
             {
@@ -115,10 +112,8 @@ public static class Extensions
             builder.Services.AddOpenTelemetry()
                .UseAzureMonitor(options =>
                {
-                   // Cost control: Configure sampling to reduce data volume
-                   options.SamplingRatio = 0.1f;  // Sample 10% of telemetry
-                   // Additional cost controls
                    options.ConnectionString = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
+                   options.SamplingRatio = 0.1f;  // Sample 10% of telemetry
                });
         }
 

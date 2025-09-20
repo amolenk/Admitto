@@ -3,12 +3,12 @@ param location string = resourceGroup().location
 param acaEnvironmentDomain string
 param acaEnvironmentId string
 param acrLoginServer string
+param applicationInsightsConnectionString string
 param keyVaultName string
 param managedIdentityClientId string
 param managedIdentityId string
 param openFgaAppName string
 param storageAccountName string
-param applicationInsightsConnectionString string
 
 var resourceToken = uniqueString(resourceGroup().id)
 
