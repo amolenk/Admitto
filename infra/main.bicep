@@ -59,11 +59,13 @@ module containerAppEnvironment 'modules/containerAppEnvironment.bicep' = {
   }
 }
 
-module serviceBus 'modules/serviceBus.bicep' = {
-  name: 'serviceBus'
+module storageAccount 'modules/storageAccount.bicep' = {
+  name: 'storageAccount'
   params: {
     location: location
     principalId: managedIdentity.outputs.principalId
+    vnetId: network.outputs.vnetId
+    subnetId: network.outputs.privateEndpointSubnetId
   }
 }
 
@@ -73,7 +75,8 @@ module postgres 'modules/postgres.bicep' = {
     administratorLoginPassword: postgresPassword
     keyVaultName: keyVault.outputs.name
     location: location
-    acaEgressIp: network.outputs.acaEgressIp
+    vnetId: network.outputs.vnetId
+    subnetId: network.outputs.privateEndpointSubnetId
   }
 }
 
@@ -96,12 +99,28 @@ module admittoApi 'modules/admittoApiApp.bicep' = {
     authAdminUserIds: authAdminUserIds
     authTenantId: authTenantId
     authAudience: authAudience
+    frontDoorId: frontDoor.outputs.frontDoorId
     keyVaultName: keyVault.outputs.name
     location: location
     managedIdentityClientId: managedIdentity.outputs.clientId
     managedIdentityId: managedIdentity.outputs.id
     openFgaAppName: openfga.outputs.name
-    serviceBusEndpoint: serviceBus.outputs.serviceBusEndpoint
+    storageAccountName: storageAccount.outputs.storageAccountName
+  }
+}
+
+module frontDoor 'modules/frontDoor.bicep' = {
+  name: 'front-door'
+  params: {
+    acaEnvironmentDomain: containerAppEnvironment.outputs.defaultDomain
+  }
+}
+
+module vpnGateway 'modules/vpnGateway.bicep' = {
+  name: 'vpn-gateway'
+  params: {
+    location: location
+    gatewaySubnetId: network.outputs.gatewaySubnetId
   }
 }
 
@@ -116,7 +135,7 @@ module admittoWorker 'modules/admittoWorkerApp.bicep' = {
     managedIdentityClientId: managedIdentity.outputs.clientId
     managedIdentityId: managedIdentity.outputs.id
     openFgaAppName: openfga.outputs.name
-    serviceBusEndpoint: serviceBus.outputs.serviceBusEndpoint
+    storageAccountName: storageAccount.outputs.storageAccountName
   }
 }
 

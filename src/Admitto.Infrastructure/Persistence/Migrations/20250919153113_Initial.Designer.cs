@@ -13,7 +13,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(ApplicationContext))]
-    [Migration("20250912134642_Initial")]
+    [Migration("20250919153113_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -1001,8 +1001,7 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
 
                     b.Navigation("ReconfirmPolicy");
 
-                    b.Navigation("RegistrationPolicy")
-                        .IsRequired();
+                    b.Navigation("RegistrationPolicy");
 
                     b.Navigation("ReminderPolicy");
 

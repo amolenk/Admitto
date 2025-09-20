@@ -218,7 +218,7 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                     additional_detail_schemas = table.Column<string>(type: "jsonb", nullable: true),
                     cancellation_policy = table.Column<string>(type: "jsonb", nullable: false),
                     reconfirm_policy = table.Column<string>(type: "jsonb", nullable: true),
-                    registration_policy = table.Column<string>(type: "jsonb", nullable: false),
+                    registration_policy = table.Column<string>(type: "jsonb", nullable: true),
                     reminder_policy = table.Column<string>(type: "jsonb", nullable: true),
                     ticket_types = table.Column<string>(type: "jsonb", nullable: true)
                 },

@@ -2,36 +2,7 @@ param location string = resourceGroup().location
 
 var resourceToken = uniqueString(resourceGroup().id)
 
-// Static IP for the NAT Gateway (egress)
-resource natPublicIp 'Microsoft.Network/publicIPAddresses@2018-06-01' = {
-  name: 'ip-${resourceToken}'
-  location: location
-  sku: {
-    name: 'Standard'
-  }
-  properties: {
-    publicIPAllocationMethod: 'Static'
-  }
-}
-
-// NAT Gateway for outbound connectivity
-resource natGateway 'Microsoft.Network/natGateways@2024-07-01' = {
-  name: 'ng-${resourceToken}'
-  location: location
-  sku: {
-    name: 'Standard'
-  }
-  properties: {
-    publicIpAddresses: [
-      {
-        id: natPublicIp.id
-      }
-    ]
-  }
-}
-
 // Virtual Network with a subnet delegated to Container Apps managed environments.
-// The subnet is associated with the NAT Gateway to provide stable egress IP.
 resource vnet 'Microsoft.Network/virtualNetworks@2024-07-01' = {
   name: 'vnet-${resourceToken}'
   location: location
@@ -55,9 +26,18 @@ resource vnet 'Microsoft.Network/virtualNetworks@2024-07-01' = {
               }
             }
           ]
-          natGateway: {
-            id: natGateway.id
-          }
+        }
+      }
+      {
+        name: 'GatewaySubnet'
+        properties: {
+          addressPrefix: '10.20.2.0/24'
+        }
+      }
+      {
+        name: 'snet-private-endpoints'
+        properties: {
+          addressPrefix: '10.20.3.0/24'
         }
       }
     ]
@@ -70,7 +50,18 @@ resource acaSubnet 'Microsoft.Network/virtualNetworks/subnets@2024-07-01' existi
   name: 'snet-aca'
 }
 
+resource gatewaySubnet 'Microsoft.Network/virtualNetworks/subnets@2024-07-01' existing = {
+  parent: vnet
+  name: 'GatewaySubnet'
+}
+
+resource privateEndpointSubnet 'Microsoft.Network/virtualNetworks/subnets@2024-07-01' existing = {
+  parent: vnet
+  name: 'snet-private-endpoints'
+}
+
 output vnetId string = vnet.id
 output vnetName string = vnet.name
-output acaEgressIp string = natPublicIp.properties.ipAddress
 output acaSubnetId string = acaSubnet.id
+output gatewaySubnetId string = gatewaySubnet.id
+output privateEndpointSubnetId string = privateEndpointSubnet.id
