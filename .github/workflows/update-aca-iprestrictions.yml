@@ -87,15 +87,11 @@ jobs:
             }
           }' > aca-body.json
           
-          echo "Body content created and written to aca-body.json"
+#          echo "Body content created and written to aca-body.json"
 
       - name: Update ACA IP restrictions
         if: steps.should-update.outputs.update_required == 'true'
         run: |
-          # Show content of the body file
-          echo "Using body file:"
-          cat aca-body.json
-          
           az rest -m PATCH \
             -u "/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/${{ vars.AZURE_RESOURCE_GROUP }}/providers/Microsoft.App/containerapps/app-admitto-api-${{ vars.AZURE_RESOURCE_SUFFIX }}?api-version=2023-05-01" \
             --body "@aca-body.json"
