@@ -7,6 +7,7 @@ using Amolenk.Admitto.Application.Common.Authorization;
 using Amolenk.Admitto.Application.Common.Cryptography;
 using Amolenk.Admitto.Infrastructure.Auth;
 using Amolenk.Admitto.ServiceDefaults;
+using Azure.Monitor.OpenTelemetry.AspNetCore;
 using Azure.Storage;
 using Azure.Storage.Blobs;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -72,9 +73,6 @@ public static class Extensions
             logging.IncludeScopes = true;
         });
 
-        // Enable ActivitySource support for experimental Azure SDKs like Azure.Messaging.ServiceBus.
-        AppContext.SetSwitch("Azure.Experimental.EnableActivitySource", true);
-        
         builder.Services.AddOpenTelemetry()
             .WithMetrics(metrics =>
             {
@@ -108,12 +106,16 @@ public static class Extensions
             builder.Services.AddOpenTelemetry().UseOtlpExporter();
         }
 
-        // Uncomment the following lines to enable the Azure Monitor exporter (requires the Azure.Monitor.OpenTelemetry.AspNetCore package)
-        //if (!string.IsNullOrEmpty(builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]))
-        //{
-        //    builder.Services.AddOpenTelemetry()
-        //       .UseAzureMonitor();
-        //}
+        // Enable Azure Monitor exporter for Application Insights
+        if (!string.IsNullOrEmpty(builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]))
+        {
+            builder.Services.AddOpenTelemetry()
+               .UseAzureMonitor(options =>
+               {
+                   options.ConnectionString = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
+                   options.SamplingRatio = 0.1f;  // Sample 10% of telemetry
+               });
+        }
 
         return builder;
     }

@@ -38,3 +38,4 @@ resource containerAppEnvironment 'Microsoft.App/managedEnvironments@2025-02-02-p
 output id string = containerAppEnvironment.id
 output name string = containerAppEnvironment.name
 output defaultDomain string = containerAppEnvironment.properties.defaultDomain
+output logAnalyticsWorkspaceId string = logAnalyticsWorkspace.id
