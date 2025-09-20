@@ -1,4 +1,4 @@
-param apiAppDomain string
+param acaEnvironmentDomain string
 
 var resourceToken = uniqueString(resourceGroup().id)
 
@@ -32,7 +32,7 @@ resource originGroup 'Microsoft.Cdn/profiles/originGroups@2024-02-01' = {
     healthProbeSettings: {
       probePath: '/health'
       probeRequestType: 'GET'
-      probeProtocol: 'Https'
+      probeProtocol: 'Http'
       probeIntervalInSeconds: 100
     }
   }
@@ -42,10 +42,9 @@ resource origin 'Microsoft.Cdn/profiles/originGroups/origins@2024-02-01' = {
   name: 'admitto-api-origin'
   parent: originGroup
   properties: {
-    hostName: apiAppDomain
+    hostName: 'app-admitto-api-${resourceToken}.${acaEnvironmentDomain}'
     httpPort: 80
-    httpsPort: 443
-    originHostHeader: apiAppDomain
+    originHostHeader: 'app-admitto-api-${resourceToken}.${acaEnvironmentDomain}'
     priority: 1
     weight: 1000
     enabledState: 'Enabled'
@@ -57,7 +56,7 @@ resource route 'Microsoft.Cdn/profiles/afdEndpoints/routes@2024-02-01' = {
   name: 'default-route'
   parent: endpoint
   dependsOn: [
-    origin // This explicit dependency is required to ensure that the origin is created before the route
+    origin
   ]
   properties: {
     originGroup: {
@@ -70,12 +69,11 @@ resource route 'Microsoft.Cdn/profiles/afdEndpoints/routes@2024-02-01' = {
     patternsToMatch: [
       '/*'
     ]
-    forwardingProtocol: 'HttpsOnly'
+    forwardingProtocol: 'HttpOnly' // Let AFD do the HTTPS termination
     linkToDefaultDomain: 'Enabled'
     httpsRedirect: 'Enabled'
   }
 }
 
 output frontDoorEndpointHostName string = endpoint.properties.hostName
-output frontDoorId string = frontDoor.id
-output frontDoorServiceTag string = 'AzureFrontDoor.Backend'
+output frontDoorId string = frontDoor.properties.frontDoorId

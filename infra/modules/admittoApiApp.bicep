@@ -6,12 +6,12 @@ param acrLoginServer string
 param authAdminUserIds string
 param authAudience string
 param authTenantId string
+param frontDoorId string
 param keyVaultName string
 param managedIdentityClientId string
 param managedIdentityId string
 param openFgaAppName string
 param storageAccountName string
-param frontDoorServiceTag string
 
 var resourceToken = uniqueString(resourceGroup().id)
 
@@ -28,16 +28,9 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
     configuration: {
       activeRevisionsMode: 'Single'
       ingress: {
+        allowInsecure: true
         external: true
-        targetPort: 80
-        allowInsecure: false
-        ipSecurityRestrictions: [
-          {
-            name: 'Allow-FrontDoor'
-            ipAddressRange: frontDoorServiceTag
-            action: 'Allow'
-          }
-        ]
+        targetPort: 8080
       }
       registries: [
         {
@@ -63,7 +56,7 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
       containers: [
         {
           // Use a placeholder image until the real one is built and pushed
-          image: 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
+          image: 'mendhak/http-https-echo:37'
           name: 'admitto-api'
           env: [
             {
@@ -99,6 +92,10 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
             {
               name: 'ConnectionStrings__queues'
               value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};EndpointSuffix=core.windows.net'
+            }
+            {
+              name: 'FrontDoor__Id'
+              value: frontDoorId
             }
             {
               name: 'services__openfga__http__0'

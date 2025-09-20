@@ -47,7 +47,7 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
       containers: [
         {
           // Use a placeholder image until the real one is built and pushed
-          image: 'mcr.microsoft.com/azuredocs/containerapps-helloworld:latest'
+          image: 'mendhak/http-https-echo:37'
           name: 'admitto-worker'
           env: [
             {

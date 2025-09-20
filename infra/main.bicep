@@ -65,7 +65,7 @@ module storageAccount 'modules/storageAccount.bicep' = {
     location: location
     principalId: managedIdentity.outputs.principalId
     vnetId: network.outputs.vnetId
-    subnetId: network.outputs.acaSubnetId
+    subnetId: network.outputs.privateEndpointSubnetId
   }
 }
 
@@ -76,7 +76,7 @@ module postgres 'modules/postgres.bicep' = {
     keyVaultName: keyVault.outputs.name
     location: location
     vnetId: network.outputs.vnetId
-    subnetId: network.outputs.acaSubnetId
+    subnetId: network.outputs.privateEndpointSubnetId
   }
 }
 
@@ -99,20 +99,20 @@ module admittoApi 'modules/admittoApiApp.bicep' = {
     authAdminUserIds: authAdminUserIds
     authTenantId: authTenantId
     authAudience: authAudience
+    frontDoorId: frontDoor.outputs.frontDoorId
     keyVaultName: keyVault.outputs.name
     location: location
     managedIdentityClientId: managedIdentity.outputs.clientId
     managedIdentityId: managedIdentity.outputs.id
     openFgaAppName: openfga.outputs.name
     storageAccountName: storageAccount.outputs.storageAccountName
-    frontDoorServiceTag: 'AzureFrontDoor.Backend'
   }
 }
 
 module frontDoor 'modules/frontDoor.bicep' = {
   name: 'front-door'
   params: {
-    apiAppDomain: admittoApi.outputs.fqdn
+    acaEnvironmentDomain: containerAppEnvironment.outputs.defaultDomain
   }
 }
 

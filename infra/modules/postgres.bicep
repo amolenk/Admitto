@@ -66,12 +66,12 @@ resource privateEndpoint 'Microsoft.Network/privateEndpoints@2024-07-01' = {
 }
 
 // Private DNS zone for PostgreSQL
-resource privateDnsZone 'Microsoft.Network/privateDnsZones@2024-07-01' = {
+resource privateDnsZone 'Microsoft.Network/privateDnsZones@2024-06-01' = {
   name: 'privatelink.postgres.database.azure.com'
   location: 'global'
 }
 
-resource privateDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-07-01' = {
+resource privateDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = {
   name: 'postgres-link'
   parent: privateDnsZone
   location: 'global'
