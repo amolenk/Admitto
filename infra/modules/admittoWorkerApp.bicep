@@ -3,6 +3,7 @@ param location string = resourceGroup().location
 param acaEnvironmentDomain string
 param acaEnvironmentId string
 param acrLoginServer string
+param applicationInsightsConnectionString string
 param keyVaultName string
 param managedIdentityClientId string
 param managedIdentityId string
@@ -65,6 +66,10 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
             {
               name: 'services__openfga__http__0'
               value: 'https://${openFgaAppName}.internal.${acaEnvironmentDomain}'
+            }
+            {
+              name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+              value: applicationInsightsConnectionString
             }
           ]
           resources: {

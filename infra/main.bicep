@@ -59,6 +59,14 @@ module containerAppEnvironment 'modules/containerAppEnvironment.bicep' = {
   }
 }
 
+module applicationInsights 'modules/applicationInsights.bicep' = {
+  name: 'applicationInsights'
+  params: {
+    location: location
+    logAnalyticsWorkspaceId: containerAppEnvironment.outputs.logAnalyticsWorkspaceId
+  }
+}
+
 module storageAccount 'modules/storageAccount.bicep' = {
   name: 'storageAccount'
   params: {
@@ -96,6 +104,7 @@ module admittoApi 'modules/admittoApiApp.bicep' = {
     acaEnvironmentDomain: containerAppEnvironment.outputs.defaultDomain
     acaEnvironmentId: containerAppEnvironment.outputs.id
     acrLoginServer: containerRegistry.outputs.loginServer
+    applicationInsightsConnectionString: applicationInsights.outputs.connectionString
     authAdminUserIds: authAdminUserIds
     authTenantId: authTenantId
     authAudience: authAudience
@@ -129,6 +138,7 @@ module admittoWorker 'modules/admittoWorkerApp.bicep' = {
   params: {
     acaEnvironmentDomain: containerAppEnvironment.outputs.defaultDomain
     acaEnvironmentId: containerAppEnvironment.outputs.id
+    applicationInsightsConnectionString: applicationInsights.outputs.connectionString
     acrLoginServer: containerRegistry.outputs.loginServer
     keyVaultName: keyVault.outputs.name
     location: location
