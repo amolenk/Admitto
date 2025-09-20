@@ -37,7 +37,7 @@ public class TicketedEvent : Aggregate
         EndsAt = endsAt;
         BaseUrl = baseUrl;
         CancellationPolicy = CancellationPolicy.Default;
-        RegistrationPolicy = RegistrationPolicy.Default;
+        RegistrationPolicy = RegistrationPolicy.Default; // TODO Remove
         SigningKey = GenerateSigningKey(32);
 
         _additionalDetailSchemas = additionalDetailSchemas;
@@ -54,12 +54,12 @@ public class TicketedEvent : Aggregate
     public string BaseUrl { get; private set; } = null!;
     public CancellationPolicy CancellationPolicy { get; private set; } = null!;
     public ReconfirmPolicy? ReconfirmPolicy { get; private set; }
-    public RegistrationPolicy RegistrationPolicy { get; private set; } = null!;
+    public RegistrationPolicy? RegistrationPolicy { get; private set; } = null!;
     public ReminderPolicy? ReminderPolicy { get; private set; }
     public string SigningKey { get; private set; } = null!;
     
-    public DateTimeOffset RegistrationOpensAt => StartsAt - RegistrationPolicy.OpensBeforeEvent;
-    public DateTimeOffset RegistrationClosesAt => StartsAt - RegistrationPolicy.ClosesBeforeEvent;
+    public DateTimeOffset? RegistrationOpensAt => StartsAt - RegistrationPolicy?.OpensBeforeEvent;
+    public DateTimeOffset? RegistrationClosesAt => StartsAt - RegistrationPolicy?.ClosesBeforeEvent;
     
     public IReadOnlyCollection<TicketType> TicketTypes => _ticketTypes.AsReadOnly();
     public IReadOnlyCollection<AdditionalDetailSchema> AdditionalDetailSchemas => _additionalDetailSchemas.AsReadOnly();
@@ -116,6 +116,13 @@ public class TicketedEvent : Aggregate
         IList<TicketSelection> tickets,
         bool ignoreCapacity = false)
     {
+        if (RegistrationPolicy is null 
+            || registrationDateTime < RegistrationOpensAt 
+            || registrationDateTime > RegistrationClosesAt)
+        {
+            throw new DomainRuleException(DomainRuleError.TicketedEvent.RegistrationClosed);
+        }
+        
         if (tickets.Count == 0)
         {
             throw new DomainRuleException(DomainRuleError.TicketedEvent.TicketsAreRequired);
@@ -124,11 +131,6 @@ public class TicketedEvent : Aggregate
         if (RegistrationPolicy.EmailDomainName is not null)
         {
             // TODO Implement email domain check
-        }
-
-        if (registrationDateTime < RegistrationOpensAt || registrationDateTime > RegistrationClosesAt)
-        {
-            throw new DomainRuleException(DomainRuleError.TicketedEvent.RegistrationClosed);
         }
         
         // Check for slot overlaps across all selected tickets

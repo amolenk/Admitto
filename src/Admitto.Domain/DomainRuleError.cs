@@ -99,6 +99,9 @@ public sealed class DomainRuleError
         public static DomainRuleError RegistrationClosed =>
             new DomainRuleError("ticketed_event.registration_closed", "Registration for this event is currently closed.");
 
+        public static DomainRuleError AtLeastOneTicketTypeIsRequired =>
+            new("ticketed_event.missing_ticket_types", "At least one ticket type is required to activate the event.");
+
         public static DomainRuleError NotFound(string slug) =>
             new("ticketed_event.not_found", $"Ticketed event with slug '{slug}' does not exist.");
 

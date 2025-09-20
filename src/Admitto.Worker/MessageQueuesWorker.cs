@@ -7,7 +7,7 @@ using Amolenk.Admitto.Domain.Utilities;
 using Amolenk.Admitto.Infrastructure.Messaging;
 using Amolenk.Admitto.Infrastructure.Persistence;
 using Azure.Messaging;
-using Azure.Messaging.ServiceBus;
+using Azure.Storage.Queues;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Polly;
@@ -20,22 +20,22 @@ namespace Amolenk.Admitto.Worker;
 /// Receives cloud events from the Azure Storage queues and dispatches them to the appropriate handlers.
 /// </summary>
 public class MessageQueuesWorker(
-    ServiceBusClient serviceBusClient,
+    QueueClient queueClient,
     IServiceProvider serviceProvider,
     IOptions<MessageQueuesWorkerOptions> options,
     ILoggerFactory loggerFactory,
     ILogger<MessageQueuesWorker> logger)
     : BackgroundService
 {
-    private readonly AzureServiceBusQueueProcessor _queueProcessor = new(
-        serviceBusClient,
-        "queue",
+    private readonly AzureStorageQueueProcessor _queueProcessor = new(
+        queueClient,
+        options.Value.PollingInterval,
         logger);
 
     protected override Task ExecuteAsync(CancellationToken stoppingToken)
     {
         return CreateRetryStrategy("Queue").ExecuteAsync(
-            ct => _queueProcessor.RunAsync(HandleMessageAsync, ct),
+            ct => _queueProcessor.ProcessMessagesAsync(HandleMessageAsync, ct),
             stoppingToken).AsTask();
     }
 

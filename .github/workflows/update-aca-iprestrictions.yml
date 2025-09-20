@@ -1,0 +1,111 @@
+name: Update ACA IP Restrictions (if changed)
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  update-ip-restrictions:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+
+      - name: Download Azure IP ranges JSON
+        run: |
+          curl -s -o serviceTags.json https://download.microsoft.com/download/7/1/d/71d86715-5596-4529-9b13-da13a5de5b63/ServiceTags_Public_20250908.json
+
+      - name: Extract IPs and compute hash
+        id: check
+        run: |
+          mkdir -p state
+
+          jq -r '.values[] | select(.name=="AzureFrontDoor.Backend") | .properties.addressPrefixes[]' serviceTags.json | sort > state/current-ips.txt
+
+          # Compute hash
+          HASH=$(sha256sum state/current-ips.txt | awk '{print $1}')
+          echo "current_hash=$HASH" >> $GITHUB_OUTPUT
+
+      - name: Download previous hash (if exists)
+        uses: actions/download-artifact@v4
+        with:
+          name: ip-hash
+          path: state
+        continue-on-error: true
+
+      - name: Load previous hash
+        id: previous
+        run: |
+          if [[ -f state/hash.txt ]]; then
+            echo "previous_hash=$(cat state/hash.txt)" >> $GITHUB_OUTPUT
+          else
+            echo "previous_hash=none" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Compare hashes and decide
+        id: should-update
+        run: |
+          echo "Previous: ${{ steps.previous.outputs.previous_hash }}"
+          echo "Current:  ${{ steps.check.outputs.current_hash }}"
+
+          if [[ "${{ steps.previous.outputs.previous_hash }}" == "${{ steps.check.outputs.current_hash }}" ]]; then
+            echo "No IP changes detected."
+            echo "update_required=false" >> $GITHUB_OUTPUT
+          else
+            echo "IP changes detected!"
+            echo "update_required=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Build az rest body
+        if: steps.should-update.outputs.update_required == 'true'
+        id: build-body
+        run: |
+          RULES_JSON=$(awk '{printf "{\"name\": \"afd_%d\", \"ipAddressRange\": \"%s\", \"action\": \"Allow\"},", NR, $1}' state/current-ips.txt | sed 's/,$//')
+
+          BODY=$(jq -n --argjson rules "[$RULES_JSON]" '{
+            properties: {
+              configuration: {
+                ingress: {
+                  ipSecurityRestrictions: $rules
+                }
+              }
+            }
+          }')
+
+          echo "body=$BODY" >> $GITHUB_OUTPUT
+
+      - name: Update ACA IP restrictions
+        if: steps.should-update.outputs.update_required == 'true'
+        run: |
+          az rest -m PATCH \
+            -u "/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/${{ vars.AZURE_RESOURCE_GROUP }}/providers/Microsoft.App/containerapps/app-admitto-api-${{ vars.AZURE_RESOURCE_SUFFIX }}?api-version=2023-05-01" \
+            --body '${{ steps.build-body.outputs.body }}'
+
+      - name: Save current hash
+        if: steps.should-update.outputs.update_required == 'true'
+        run: |
+          echo "${{ steps.check.outputs.current_hash }}" > state/hash.txt
+
+      - name: Upload hash artifact
+        if: steps.should-update.outputs.update_required == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ip-hash
+          path: state/hash.txt
+          overwrite: true

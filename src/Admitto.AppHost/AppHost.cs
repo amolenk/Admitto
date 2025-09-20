@@ -1,6 +1,7 @@
 using System.Data.Common;
 using System.Net;
 using Admitto.AppHost.Extensions.AzureServiceBus;
+using Admitto.AppHost.Extensions.AzureStorage;
 using Amolenk.Admitto.Application.Jobs;
 using Aspire.Hosting.Azure;
 
@@ -10,24 +11,26 @@ var postgres = builder.ConfigurePostgres();
 var postgresDb = postgres.AddDatabase("admitto-db");
 var openFgaDb = postgres.AddDatabase("openfga-db");
 
-var serviceBus = builder.ConfigureServiceBus();
-serviceBus.AddServiceBusQueue("queue");
+// var serviceBus = builder.ConfigureServiceBus();
+// serviceBus.AddServiceBusQueue("queue");
+
+var queues = builder.ConfigureStorageQueues();
 
 var openFga = builder.ConfigureOpenFga(openFgaDb);
 
 var apiService = builder.AddProject<Projects.Admitto_Api>("api")
     .WithReference(openFga.GetEndpoint("http")).WaitFor(openFga)
     .WithReference(postgresDb).WaitFor(postgresDb)
-    .WithReference(serviceBus).WaitFor(serviceBus);
+    .WithReference(queues).WaitFor(queues);
 
 var worker = builder.AddProject<Projects.Admitto_Worker>("worker")
     .WithReference(openFga.GetEndpoint("http")).WaitFor(openFga)
     .WithReference(postgresDb).WaitFor(postgresDb)
-    .WithReference(serviceBus).WaitFor(serviceBus);
+    .WithReference(queues).WaitFor(queues);
 
 var jobRunner = builder.AddProject<Projects.Admitto_JobRunner>("job-runner")
     .WithReference(postgresDb).WaitFor(postgresDb)
-    .WithReference(serviceBus).WaitFor(serviceBus)
+    .WithReference(queues).WaitFor(queues)
     .WithHttpCommand(
         path: $"/jobs/{WellKnownJob.SendBulkEmails}/run",
         displayName: "Send bulk emails",
@@ -104,6 +107,18 @@ internal static class Extensions
             .ReplaceEmulatorDatabase();
 
         return serviceBus;
+    }
+
+    public static IResourceBuilder<AzureQueueStorageResource> ConfigureStorageQueues(
+        this IDistributedApplicationBuilder builder)
+    {
+        var storage = builder.AddAzureStorage("storage")
+            .RunAsEmulator(configure => { configure.WithLifetime(ContainerLifetime.Persistent); });
+        
+        var queues = storage.AddQueues("queues")
+            .CreateQueue("queue");
+
+        return queues;
     }
 
     public static IResourceBuilder<ContainerResource> ConfigureOpenFga(

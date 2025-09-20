@@ -30,7 +30,6 @@
       <Folder Include="Common\Messaging\" />
       <Folder Include="Common\Security\" />
       <Folder Include="UseCases\EmailTemplates\" />
-      <Folder Include="UseCases\Public\GetAvailability\" />
     </ItemGroup>
 
 </Project>

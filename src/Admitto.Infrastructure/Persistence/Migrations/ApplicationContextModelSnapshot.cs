@@ -998,8 +998,7 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
 
                     b.Navigation("ReconfirmPolicy");
 
-                    b.Navigation("RegistrationPolicy")
-                        .IsRequired();
+                    b.Navigation("RegistrationPolicy");
 
                     b.Navigation("ReminderPolicy");
 
