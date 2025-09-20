@@ -36,7 +36,8 @@ jobs:
         run: |
           mkdir -p state
 
-          jq -r '.values[] | select(.name=="AzureFrontDoor.Backend") | .properties.addressPrefixes[]' serviceTags.json | sort > state/current-ips.txt
+          # Extract and filter out IPv6 addresses (ACA only supports IPv4 ranges)
+          jq -r '.values[] | select(.name=="AzureFrontDoor.Backend") | .properties.addressPrefixes[]' serviceTags.json | grep -v ":" > state/current-ips.txt
 
           # Compute hash
           HASH=$(sha256sum state/current-ips.txt | awk '{print $1}')
