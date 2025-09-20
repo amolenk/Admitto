@@ -8,6 +8,7 @@ param managedIdentityClientId string
 param managedIdentityId string
 param openFgaAppName string
 param storageAccountName string
+param applicationInsightsConnectionString string
 
 var resourceToken = uniqueString(resourceGroup().id)
 
@@ -65,6 +66,10 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
             {
               name: 'services__openfga__http__0'
               value: 'https://${openFgaAppName}.internal.${acaEnvironmentDomain}'
+            }
+            {
+              name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+              value: applicationInsightsConnectionString
             }
           ]
           resources: {

@@ -59,6 +59,14 @@ module containerAppEnvironment 'modules/containerAppEnvironment.bicep' = {
   }
 }
 
+module applicationInsights 'modules/applicationInsights.bicep' = {
+  name: 'applicationInsights'
+  params: {
+    location: location
+    logAnalyticsWorkspaceId: containerAppEnvironment.outputs.logAnalyticsWorkspaceId
+  }
+}
+
 module storageAccount 'modules/storageAccount.bicep' = {
   name: 'storageAccount'
   params: {
@@ -106,6 +114,7 @@ module admittoApi 'modules/admittoApiApp.bicep' = {
     managedIdentityId: managedIdentity.outputs.id
     openFgaAppName: openfga.outputs.name
     storageAccountName: storageAccount.outputs.storageAccountName
+    applicationInsightsConnectionString: applicationInsights.outputs.connectionString
   }
 }
 
@@ -136,6 +145,7 @@ module admittoWorker 'modules/admittoWorkerApp.bicep' = {
     managedIdentityId: managedIdentity.outputs.id
     openFgaAppName: openfga.outputs.name
     storageAccountName: storageAccount.outputs.storageAccountName
+    applicationInsightsConnectionString: applicationInsights.outputs.connectionString
   }
 }
 
