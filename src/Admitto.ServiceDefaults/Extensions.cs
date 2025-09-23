@@ -146,12 +146,6 @@ public static class Extensions
             })
             .AddJwtBearer(options =>
             {
-                Console.WriteLine("AddJwtBearer:");
-                Console.WriteLine(" Authority: " + authOptions.Authority);
-                Console.WriteLine(" Audience: " + authOptions.Audience);
-                Console.WriteLine(" RequireHttpsMetadata: " + authOptions.RequireHttpsMetadata);
-                Console.WriteLine(" ValidIssuers: " + string.Join(", ", authOptions.ValidIssuers));
-                
                 options.Authority = authOptions.Authority;
                 options.Audience = authOptions.Audience;
                 options.RequireHttpsMetadata = authOptions.RequireHttpsMetadata;
@@ -159,16 +153,6 @@ public static class Extensions
 
                 options.Events = new JwtBearerEvents
                 {
-                    OnMessageReceived = ctx =>
-                    {
-                        Console.WriteLine("Authorization header: " + ctx.Request.Headers.Authorization);
-                        return Task.CompletedTask;
-                    },
-                    OnAuthenticationFailed = ctx =>
-                    {
-                        Console.WriteLine("JWT failed: " + ctx.Exception);
-                        return Task.CompletedTask;
-                    },
                     OnChallenge = context =>
                     {
                         context.HandleResponse();

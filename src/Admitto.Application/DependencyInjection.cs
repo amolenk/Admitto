@@ -69,13 +69,8 @@ public static class DependencyInjection
             .AddClasses(classes => classes.AssignableTo<IApplicationEventHandler>())
             .AsSelf()
             .As(t => t.GetInterfaces()
-                .Where(i =>
-                {
-                    Console.WriteLine(i.FullName);
-                    
-                    return i.IsGenericType &&
-                           i.GetGenericTypeDefinition() == typeof(IApplicationEventHandler<>);
-                }))
+                .Where(i => i.IsGenericType &&
+                    i.GetGenericTypeDefinition() == typeof(IApplicationEventHandler<>)))
             .WithScopedLifetime());
     }
 
