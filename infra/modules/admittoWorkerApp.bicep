@@ -61,7 +61,7 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
             }
             {
               name: 'ConnectionStrings__queues'
-              value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};EndpointSuffix=core.windows.net'
+              value: 'https://${storageAccountName}.queue.${environment().suffixes.storage}'
             }
             {
               name: 'services__openfga__http__0'
