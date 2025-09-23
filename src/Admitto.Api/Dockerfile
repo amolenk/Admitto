@@ -1,6 +1,5 @@
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
 WORKDIR /app
-EXPOSE 80
 
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
@@ -20,4 +19,4 @@ RUN dotnet publish "Admitto.Api.csproj" -c Release -o /app/publish /p:UseAppHost
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
-ENTRYPOINT ["dotnet", "Admitto.Api.dll", "--urls", "http://0.0.0.0:80"]
+ENTRYPOINT ["dotnet", "Admitto.Api.dll"]
