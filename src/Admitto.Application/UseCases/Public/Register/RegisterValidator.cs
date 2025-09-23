@@ -13,7 +13,7 @@ public class RegisterValidator : AbstractValidator<RegisterRequest>
         RuleForEach(x => x.AdditionalDetails)
             .ChildRules(details => {
                 details.RuleFor(x => x.Name).NotEmpty().MaximumLength(50);
-                details.RuleFor(x => x.Value).NotEmpty().MaximumLength(50);
+                details.RuleFor(x => x.Value).MaximumLength(50);
             });
 
         RuleFor(x => x.RequestedTickets).NotNull();

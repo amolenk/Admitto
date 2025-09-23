@@ -42,6 +42,7 @@ public class SetEventEmailTemplateCommand(IAccessTokenProvider accessTokenProvid
         var request = new SetEventEmailTemplateRequest
         {
             Subject = template.SubjectTemplate,
+            TextBody = template.TextBodyTemplate,
             HtmlBody = template.HtmlBodyTemplate
         };
         

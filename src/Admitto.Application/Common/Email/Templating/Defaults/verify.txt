@@ -4,7 +4,7 @@ Hi,
 
 Thank you for your interest in attending {{ event_name }}!
 
-To continue your registration, please enter the 6-digit verification code below on our website:
+To continue your registration, please enter the 6-digit verification code below on our website to verify your email address:
 
 Verification Code: {{ verification_code }}
 
