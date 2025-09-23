@@ -278,6 +278,16 @@ app.Configure(config =>
                             reconfirm.AddCommand<Commands.Events.Policy.Reconfirm.SetCommand>("set")
                                 .WithDescription("Set the reconfirm policy");
                         });
+                    
+                    policy.AddBranch(
+                        "registration",
+                        registration =>
+                        {
+                            registration.SetDescription("Manage registration policy");
+                            
+                            registration.AddCommand<Commands.Events.Policy.Registration.SetCommand>("set")
+                                .WithDescription("Set the registration policy");
+                        });
                 });
         });
     
@@ -318,6 +328,9 @@ app.Configure(config =>
             
             team.AddCommand<ShowTeamCommand>("show")
                 .WithDescription("Show the details of a team");
+            
+            team.AddCommand<UpdateTeamCommand>("update")
+                .WithDescription("Updates details of an existing team");
         });
     
     config.AddCommand<VersionCommand>("version")

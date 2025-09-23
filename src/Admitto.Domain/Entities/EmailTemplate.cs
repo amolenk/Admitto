@@ -13,28 +13,32 @@ public class EmailTemplate : Aggregate
         Guid id,
         string type,
         string subject,
-        string body,
+        string textBody,
+        string htmlBody,
         Guid teamId,
         Guid? ticketedEventId)
         : base(id)
     {
         Type = type;
         Subject = subject;
-        Body = body;
+        TextBody = textBody;
+        HtmlBody = htmlBody;
         TeamId = teamId;
         TicketedEventId = ticketedEventId;
     }
 
     public string Type { get; private set; } = null!;
     public string Subject { get; private set; } = null!;
-    public string Body { get; private set; } = null!;
+    public string TextBody { get; private set; } = null!;
+    public string HtmlBody { get; private set; } = null!;
     public Guid TeamId { get; private set; }
     public Guid? TicketedEventId { get; private set; }
 
     public static EmailTemplate Create(
         string type,
         string subject,
-        string body,
+        string textBody,
+        string htmlBody,
         Guid teamId,
         Guid? ticketedEventId = null)
     {
@@ -42,7 +46,8 @@ public class EmailTemplate : Aggregate
             Guid.NewGuid(),
             type,
             subject,
-            body,
+            textBody,
+            htmlBody,
             teamId,
             ticketedEventId);
     }

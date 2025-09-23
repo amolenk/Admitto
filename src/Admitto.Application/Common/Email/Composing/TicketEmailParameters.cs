@@ -1,5 +1,3 @@
-using Amolenk.Admitto.Domain.ValueObjects;
-
 namespace Amolenk.Admitto.Application.Common.Email.Composing;
 
 public record TicketEmailParameters(
@@ -11,10 +9,10 @@ public record TicketEmailParameters(
     List<DetailEmailParameter>? Details,
     List<TicketEmailParameter>? Tickets,
     string QRCodeLink,
-    string ReconfirmLink,
+    string EditLink,
     string CancelLink)
     : IEmailParameters;
     
 public record DetailEmailParameter(string Name, string Value);
 
-public record TicketEmailParameter(string Name, int Quantity);
+public record TicketEmailParameter(string Slug, string Name, string[] SlotNames, int Quantity);

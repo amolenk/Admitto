@@ -14,8 +14,8 @@ namespace Amolenk.Admitto.Cli.Api.Models
     {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
-        /// <summary>The maxCapacity property</summary>
-        public int? MaxCapacity { get; set; }
+        /// <summary>The hasCapacity property</summary>
+        public bool? HasCapacity { get; set; }
         /// <summary>The name property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
@@ -24,13 +24,13 @@ namespace Amolenk.Admitto.Cli.Api.Models
 #else
         public string Name { get; set; }
 #endif
-        /// <summary>The slotName property</summary>
+        /// <summary>The slotNames property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? SlotName { get; set; }
+        public List<string>? SlotNames { get; set; }
 #nullable restore
 #else
-        public string SlotName { get; set; }
+        public List<string> SlotNames { get; set; }
 #endif
         /// <summary>The slug property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
@@ -40,8 +40,6 @@ namespace Amolenk.Admitto.Cli.Api.Models
 #else
         public string Slug { get; set; }
 #endif
-        /// <summary>The usedCapacity property</summary>
-        public int? UsedCapacity { get; set; }
         /// <summary>
         /// Instantiates a new <see cref="global::Amolenk.Admitto.Cli.Api.Models.TicketTypeDto"/> and sets the default values.
         /// </summary>
@@ -67,11 +65,10 @@ namespace Amolenk.Admitto.Cli.Api.Models
         {
             return new Dictionary<string, Action<IParseNode>>
             {
-                { "maxCapacity", n => { MaxCapacity = n.GetIntValue(); } },
+                { "hasCapacity", n => { HasCapacity = n.GetBoolValue(); } },
                 { "name", n => { Name = n.GetStringValue(); } },
-                { "slotName", n => { SlotName = n.GetStringValue(); } },
+                { "slotNames", n => { SlotNames = n.GetCollectionOfPrimitiveValues<string>()?.AsList(); } },
                 { "slug", n => { Slug = n.GetStringValue(); } },
-                { "usedCapacity", n => { UsedCapacity = n.GetIntValue(); } },
             };
         }
         /// <summary>
@@ -81,11 +78,10 @@ namespace Amolenk.Admitto.Cli.Api.Models
         public virtual void Serialize(ISerializationWriter writer)
         {
             _ = writer ?? throw new ArgumentNullException(nameof(writer));
-            writer.WriteIntValue("maxCapacity", MaxCapacity);
+            writer.WriteBoolValue("hasCapacity", HasCapacity);
             writer.WriteStringValue("name", Name);
-            writer.WriteStringValue("slotName", SlotName);
+            writer.WriteCollectionOfPrimitiveValues<string>("slotNames", SlotNames);
             writer.WriteStringValue("slug", Slug);
-            writer.WriteIntValue("usedCapacity", UsedCapacity);
             writer.WriteAdditionalData(AdditionalData);
         }
     }

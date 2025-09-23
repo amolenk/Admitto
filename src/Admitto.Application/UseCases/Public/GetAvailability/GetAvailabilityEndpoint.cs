@@ -44,7 +44,7 @@ public static class GetAvailabilityEndpoint
         var additionalDetailSchemas = ticketedEvent.AdditionalDetailSchemas
             .Select(ads => new AdditionalDetailSchemaDto(
                 ads.Name,
-                ads.MaxLength.ToString(),
+                ads.MaxLength,
                 ads.IsRequired))
             .ToList();
 

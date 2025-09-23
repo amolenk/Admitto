@@ -14,13 +14,13 @@ namespace Amolenk.Admitto.Cli.Api.Models
     {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
-        /// <summary>The body property</summary>
+        /// <summary>The htmlBody property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public string? Body { get; set; }
+        public string? HtmlBody { get; set; }
 #nullable restore
 #else
-        public string Body { get; set; }
+        public string HtmlBody { get; set; }
 #endif
         /// <summary>The subject property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
@@ -29,6 +29,14 @@ namespace Amolenk.Admitto.Cli.Api.Models
 #nullable restore
 #else
         public string Subject { get; set; }
+#endif
+        /// <summary>The textBody property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public string? TextBody { get; set; }
+#nullable restore
+#else
+        public string TextBody { get; set; }
 #endif
         /// <summary>
         /// Instantiates a new <see cref="global::Amolenk.Admitto.Cli.Api.Models.SetTeamEmailTemplateRequest"/> and sets the default values.
@@ -55,8 +63,9 @@ namespace Amolenk.Admitto.Cli.Api.Models
         {
             return new Dictionary<string, Action<IParseNode>>
             {
-                { "body", n => { Body = n.GetStringValue(); } },
+                { "htmlBody", n => { HtmlBody = n.GetStringValue(); } },
                 { "subject", n => { Subject = n.GetStringValue(); } },
+                { "textBody", n => { TextBody = n.GetStringValue(); } },
             };
         }
         /// <summary>
@@ -66,8 +75,9 @@ namespace Amolenk.Admitto.Cli.Api.Models
         public virtual void Serialize(ISerializationWriter writer)
         {
             _ = writer ?? throw new ArgumentNullException(nameof(writer));
-            writer.WriteStringValue("body", Body);
+            writer.WriteStringValue("htmlBody", HtmlBody);
             writer.WriteStringValue("subject", Subject);
+            writer.WriteStringValue("textBody", TextBody);
             writer.WriteAdditionalData(AdditionalData);
         }
     }

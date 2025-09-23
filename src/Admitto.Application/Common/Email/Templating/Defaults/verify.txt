@@ -1,0 +1,16 @@
+Verify Your Email for {{ event_name }}
+
+Hi,
+
+Thank you for your interest in attending {{ event_name }}!
+
+To continue your registration, please enter the 6-digit verification code below on our website:
+
+Verification Code: {{ verification_code }}
+
+This helps us confirm your email address.
+If you didn’t start registration, you can safely ignore this email.
+
+Thank you,
+The {{ event_name }} team
+

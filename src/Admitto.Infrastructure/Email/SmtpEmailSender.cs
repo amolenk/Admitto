@@ -56,10 +56,16 @@ public class SmtpEmailSender : IEmailSender
             emailMessage.Recipient,
             emailMessage.Subject);
 
+        var bodyBuilder = new BodyBuilder
+        {
+            TextBody = emailMessage.TextBody,
+            HtmlBody = emailMessage.HtmlBody
+        };
+        
         var message = new MimeMessage
         {
             Subject = emailMessage.Subject,
-            Body = new TextPart("html") { Text = emailMessage.Body }
+            Body = bodyBuilder.ToMessageBody()
         };
 
         message.From.Add(_from);

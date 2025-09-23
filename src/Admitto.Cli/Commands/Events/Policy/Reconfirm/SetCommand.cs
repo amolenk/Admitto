@@ -50,17 +50,18 @@ public class SetCommand(IAccessTokenProvider accessTokenProvider, IConfiguration
         var teamSlug = GetTeamSlug(settings.TeamSlug);
         var eventSlug = GetEventSlug(settings.EventSlug);
 
-        var request = new SetReconfirmPolicyRequest
-        {
-            WindowStartBeforeEvent = settings.WindowStartBeforeEvent!.Value.ToString(),
-            WindowEndBeforeEvent = settings.WindowEndBeforeEvent!.Value.ToString(),
-            InitialDelayAfterRegistration = settings.InitialDelayAfterRegistration!.Value.ToString(),
-            ReminderInterval = settings.ReminderInterval!.Value.ToString(),
-        };
-
-        var response = await CallApiAsync(async client =>
-            await client.Teams[teamSlug].Events[eventSlug].Policies.Reconfirm.PutAsync(request));
-        if (response is null) return 1;
+        throw new NotImplementedException("TODO");
+        // var request = new SetReconfirmPolicyRequest
+        // {
+        //     WindowStartBeforeEvent = settings.WindowStartBeforeEvent!.Value.ToString(),
+        //     WindowEndBeforeEvent = settings.WindowEndBeforeEvent!.Value.ToString(),
+        //     InitialDelayAfterRegistration = settings.InitialDelayAfterRegistration!.Value.ToString(),
+        //     ReminderInterval = settings.ReminderInterval!.Value.ToString(),
+        // };
+        //
+        // var response = await CallApiAsync(async client =>
+        //     await client.Teams[teamSlug].Events[eventSlug].Policies.Reconfirm.PutAsync(request));
+        // if (response is null) return 1;
 
         AnsiConsole.MarkupLine($"[green]✓ Successfully set reconfirm policy.[/]");
         return 0;

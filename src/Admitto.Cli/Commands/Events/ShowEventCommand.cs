@@ -43,7 +43,7 @@ public class ShowEventCommand(IAccessTokenProvider accessTokenProvider, IConfigu
             grid.AddColumn();
 
             grid.AddRow("Slug:", ticketType.Slug!);
-            grid.AddRow("Slot(s):", ticketType.SlotName!);
+            grid.AddRow("Slot(s):", string.Join(", ", ticketType.SlotNames ?? []));
             grid.AddRow(
                 new Text("Capacity"),
                 new BreakdownChart()

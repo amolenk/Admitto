@@ -50,24 +50,26 @@ public class Team : Aggregate
             throw new DomainRuleException(DomainRuleError.Team.MemberAlreadyExists);
         }
         
-        
         _members.Add(member);
         
         AddDomainEvent(new TeamMemberAddedDomainEvent(Slug, member));
     }
-
-    // public void UpdateMember(string email, TeamMemberRole role)
-    // {
-    //     if (string.IsNullOrWhiteSpace(email)) throw new DomainException("Email cannot be empty.");
-    //
-    //     var member = _members.FirstOrDefault(m => m.Email == email);
-    //     
-    //     var member = TeamMember.Create(email, role);
-    //     
-    //     // TODO Check if user is not already a member
-    //     
-    //     _members.Add(member);
-    //     
-    //     AddDomainEvent(new TeamMemberAddedDomainEvent(Id, user.Id, user.Email, user.Role));
-    // }
+    
+    public void UpdateDetails(string? requestName, string? requestEmail, string? requestEmailServiceConnectionString)
+    {
+        if (!string.IsNullOrWhiteSpace(requestName))
+        {
+            Name = requestName;
+        }
+        
+        if (!string.IsNullOrWhiteSpace(requestEmail))
+        {
+            Email = requestEmail;
+        }
+        
+        if (!string.IsNullOrWhiteSpace(requestEmailServiceConnectionString))
+        {
+            EmailServiceConnectionString = requestEmailServiceConnectionString;
+        }
+    }
 }

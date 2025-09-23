@@ -37,7 +37,6 @@ public class TicketedEvent : Aggregate
         EndsAt = endsAt;
         BaseUrl = baseUrl;
         CancellationPolicy = CancellationPolicy.Default;
-        RegistrationPolicy = RegistrationPolicy.Default; // TODO Remove
         SigningKey = GenerateSigningKey(32);
 
         _additionalDetailSchemas = additionalDetailSchemas;
@@ -57,10 +56,10 @@ public class TicketedEvent : Aggregate
     public RegistrationPolicy? RegistrationPolicy { get; private set; } = null!;
     public ReminderPolicy? ReminderPolicy { get; private set; }
     public string SigningKey { get; private set; } = null!;
-    
+
     public DateTimeOffset? RegistrationOpensAt => StartsAt - RegistrationPolicy?.OpensBeforeEvent;
     public DateTimeOffset? RegistrationClosesAt => StartsAt - RegistrationPolicy?.ClosesBeforeEvent;
-    
+
     public IReadOnlyCollection<TicketType> TicketTypes => _ticketTypes.AsReadOnly();
     public IReadOnlyCollection<AdditionalDetailSchema> AdditionalDetailSchemas => _additionalDetailSchemas.AsReadOnly();
 
@@ -116,13 +115,13 @@ public class TicketedEvent : Aggregate
         IList<TicketSelection> tickets,
         bool ignoreCapacity = false)
     {
-        if (RegistrationPolicy is null 
-            || registrationDateTime < RegistrationOpensAt 
+        if (RegistrationPolicy is null
+            || registrationDateTime < RegistrationOpensAt
             || registrationDateTime > RegistrationClosesAt)
         {
             throw new DomainRuleException(DomainRuleError.TicketedEvent.RegistrationClosed);
         }
-        
+
         if (tickets.Count == 0)
         {
             throw new DomainRuleException(DomainRuleError.TicketedEvent.TicketsAreRequired);
@@ -132,7 +131,7 @@ public class TicketedEvent : Aggregate
         {
             // TODO Implement email domain check
         }
-        
+
         // Check for slot overlaps across all selected tickets
         var allSelectedSlots = new List<string>();
         foreach (var ticketSelection in tickets)
@@ -153,6 +152,7 @@ public class TicketedEvent : Aggregate
                     {
                         throw new DomainRuleException(DomainRuleError.TicketedEvent.OverlappingSlots());
                     }
+
                     allSelectedSlots.Add(slotName);
                 }
             }
@@ -173,7 +173,7 @@ public class TicketedEvent : Aggregate
         }
     }
 
-    public void ReleaseTickets(IList<TicketSelection> tickets)
+    public void ReleaseTickets(IEnumerable<TicketSelection> tickets)
     {
         foreach (var ticketSelection in tickets)
         {
@@ -181,6 +181,52 @@ public class TicketedEvent : Aggregate
             ticketType!.ReleaseTickets(ticketSelection.Quantity);
         }
     }
+
+    public void UpdateDetails(
+        string? name,
+        string? website,
+        string? baseUrl,
+        DateTimeOffset? startsAt,
+        DateTimeOffset? endsAt)
+    {
+        if (name is not null)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+            {
+                throw new DomainRuleException(DomainRuleError.TicketedEvent.NameIsRequired);
+            }
+
+            Name = name;
+        }
+
+        if (website is not null)
+        {
+            Website = website;
+        }
+
+        if (baseUrl is not null)
+        {
+            BaseUrl = baseUrl;
+        }
+
+        if (startsAt is null && endsAt is null) return;
+
+        if (startsAt is not null)
+        {
+            StartsAt = startsAt.Value;
+        }
+
+        if (endsAt is not null)
+        {
+            EndsAt = endsAt.Value;
+        }
+
+        if (endsAt < startsAt)
+        {
+            throw new DomainRuleException(DomainRuleError.TicketedEvent.EndTimeMustBeAfterStartTime);
+        }
+    }
+
 
     public void SetCancellationPolicy(CancellationPolicy policy)
     {
@@ -201,7 +247,7 @@ public class TicketedEvent : Aggregate
     {
         ReminderPolicy = policy;
     }
-    
+
     private static string GenerateSigningKey(int sizeInBytes = 32)
     {
         var key = new byte[sizeInBytes]; // 32 bytes = 256-bit key

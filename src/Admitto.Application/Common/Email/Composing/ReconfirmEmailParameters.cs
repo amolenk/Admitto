@@ -9,5 +9,6 @@ public record ReconfirmEmailParameters(
     List<DetailEmailParameter>? Details,
     List<TicketEmailParameter>? Tickets,
     string ReconfirmLink,
+    string EditLink,
     string CancelLink)
     : IEmailParameters;

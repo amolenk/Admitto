@@ -75,6 +75,19 @@ public class Attendee : Aggregate
             tickets.ToList());
     }
     
+    public void UpdateTickets(IList<TicketSelection> newTickets)
+    {
+        if (RegistrationStatus != RegistrationStatus.Registered && RegistrationStatus != RegistrationStatus.Reconfirmed)
+        {
+            throw new DomainRuleException(DomainRuleError.Registration.CannotChangeTicketsInStatus(RegistrationStatus));
+        }
+        
+        _tickets.Clear();
+        _tickets.AddRange(newTickets);
+
+        AddDomainEvent(new AttendeeTicketsChangedDomainEvent(TicketedEventId, ParticipantId, Id));
+    }
+    
     public void CancelRegistration(CancellationPolicy policy, DateTimeOffset eventStartsAt)
     {
         var now = DateTimeOffset.UtcNow;

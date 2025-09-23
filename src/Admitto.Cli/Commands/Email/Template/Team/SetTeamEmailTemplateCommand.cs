@@ -42,7 +42,7 @@ public class SetTeamEmailTemplateCommand(IAccessTokenProvider accessTokenProvide
         var request = new SetTeamEmailTemplateRequest
         {
             Subject = template.SubjectTemplate,
-            Body = template.BodyTemplate
+            HtmlBody = template.HtmlBodyTemplate
         };
 
         var response = await CallApiAsync(async client =>

@@ -10,7 +10,6 @@ public class ReleaseTicketsHandler(IApplicationContext context) : ICommandHandle
     public async ValueTask HandleAsync(ReleaseTicketsCommand command, CancellationToken cancellationToken)
     {
         var ticketedEvent = await context.TicketedEvents
-            .AsNoTracking()
             .FirstOrDefaultAsync(te => te.Id == command.TicketedEventId, cancellationToken);
         if (ticketedEvent is null)
         {

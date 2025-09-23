@@ -57,10 +57,10 @@ namespace Amolenk.Admitto.Cli.Api.Models
         /// <summary>The ticketTypes property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public List<global::Amolenk.Admitto.Cli.Api.Models.TicketTypeDto>? TicketTypes { get; set; }
+        public List<global::Amolenk.Admitto.Cli.Api.Models.TicketTypeDto2>? TicketTypes { get; set; }
 #nullable restore
 #else
-        public List<global::Amolenk.Admitto.Cli.Api.Models.TicketTypeDto> TicketTypes { get; set; }
+        public List<global::Amolenk.Admitto.Cli.Api.Models.TicketTypeDto2> TicketTypes { get; set; }
 #endif
         /// <summary>
         /// Instantiates a new <see cref="global::Amolenk.Admitto.Cli.Api.Models.GetTicketedEventResponse"/> and sets the default values.
@@ -95,7 +95,7 @@ namespace Amolenk.Admitto.Cli.Api.Models
                 { "registrationOpensAt", n => { RegistrationOpensAt = n.GetDateTimeOffsetValue(); } },
                 { "slug", n => { Slug = n.GetStringValue(); } },
                 { "startsAt", n => { StartsAt = n.GetDateTimeOffsetValue(); } },
-                { "ticketTypes", n => { TicketTypes = n.GetCollectionOfObjectValues<global::Amolenk.Admitto.Cli.Api.Models.TicketTypeDto>(global::Amolenk.Admitto.Cli.Api.Models.TicketTypeDto.CreateFromDiscriminatorValue)?.AsList(); } },
+                { "ticketTypes", n => { TicketTypes = n.GetCollectionOfObjectValues<global::Amolenk.Admitto.Cli.Api.Models.TicketTypeDto2>(global::Amolenk.Admitto.Cli.Api.Models.TicketTypeDto2.CreateFromDiscriminatorValue)?.AsList(); } },
             };
         }
         /// <summary>
@@ -113,7 +113,7 @@ namespace Amolenk.Admitto.Cli.Api.Models
             writer.WriteDateTimeOffsetValue("registrationOpensAt", RegistrationOpensAt);
             writer.WriteStringValue("slug", Slug);
             writer.WriteDateTimeOffsetValue("startsAt", StartsAt);
-            writer.WriteCollectionOfObjectValues<global::Amolenk.Admitto.Cli.Api.Models.TicketTypeDto>("ticketTypes", TicketTypes);
+            writer.WriteCollectionOfObjectValues<global::Amolenk.Admitto.Cli.Api.Models.TicketTypeDto2>("ticketTypes", TicketTypes);
             writer.WriteAdditionalData(AdditionalData);
         }
     }

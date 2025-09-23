@@ -4,6 +4,7 @@ using Amolenk.Admitto.Cli.Api.Models;
 using Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Public.Item.CheckIn;
 using Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Public.Item.QrCode;
 using Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Public.Item.Reconfirm;
+using Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Public.Item.Tickets;
 using Microsoft.Kiota.Abstractions.Extensions;
 using Microsoft.Kiota.Abstractions.Serialization;
 using Microsoft.Kiota.Abstractions;
@@ -35,6 +36,11 @@ namespace Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Public.Item
         {
             get => new global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Public.Item.Reconfirm.ReconfirmRequestBuilder(PathParameters, RequestAdapter);
         }
+        /// <summary>The tickets property</summary>
+        public global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Public.Item.Tickets.TicketsRequestBuilder Tickets
+        {
+            get => new global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Public.Item.Tickets.TicketsRequestBuilder(PathParameters, RequestAdapter);
+        }
         /// <summary>
         /// Instantiates a new <see cref="global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Public.Item.WithPublicItemRequestBuilder"/> and sets the default values.
         /// </summary>
@@ -57,6 +63,7 @@ namespace Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Public.Item
         /// <exception cref="global::Amolenk.Admitto.Cli.Api.Models.HttpValidationProblemDetails">When receiving a 400 status code</exception>
         /// <exception cref="global::Amolenk.Admitto.Cli.Api.Models.ProblemDetails">When receiving a 401 status code</exception>
         /// <exception cref="global::Amolenk.Admitto.Cli.Api.Models.ProblemDetails">When receiving a 403 status code</exception>
+        /// <exception cref="global::Amolenk.Admitto.Cli.Api.Models.ProblemDetails">When receiving a 404 status code</exception>
         /// <exception cref="global::Amolenk.Admitto.Cli.Api.Models.ProblemDetails">When receiving a 409 status code</exception>
         /// <exception cref="global::Amolenk.Admitto.Cli.Api.Models.ProblemDetails">When receiving a 500 status code</exception>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
@@ -74,6 +81,7 @@ namespace Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Public.Item
                 { "400", global::Amolenk.Admitto.Cli.Api.Models.HttpValidationProblemDetails.CreateFromDiscriminatorValue },
                 { "401", global::Amolenk.Admitto.Cli.Api.Models.ProblemDetails.CreateFromDiscriminatorValue },
                 { "403", global::Amolenk.Admitto.Cli.Api.Models.ProblemDetails.CreateFromDiscriminatorValue },
+                { "404", global::Amolenk.Admitto.Cli.Api.Models.ProblemDetails.CreateFromDiscriminatorValue },
                 { "409", global::Amolenk.Admitto.Cli.Api.Models.ProblemDetails.CreateFromDiscriminatorValue },
                 { "500", global::Amolenk.Admitto.Cli.Api.Models.ProblemDetails.CreateFromDiscriminatorValue },
             };
