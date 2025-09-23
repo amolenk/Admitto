@@ -22,7 +22,7 @@ public static class ChangeTicketsEndpoint
     private static async ValueTask<Ok> ChangeTickets(
         [FromRoute] string teamSlug,
         [FromRoute] string eventSlug,
-        [FromQuery] Guid publicId,
+        [FromRoute] Guid publicId,
         [FromQuery] string signature,
         [FromBody] ChangeTicketsRequest request,
         [FromServices] ChangeTicketsHandler changeTicketsHandler,

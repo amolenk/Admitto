@@ -1,14 +1,5 @@
 <!DOCTYPE html>
 <html>
-
-{{func isConferenceTicket(ticket)
-ret ticket.slot_names[0] == "default"
-end}}
-
-{{func isWorkshopTicket(ticket)
-ret ticket.slot_names[0] != "default"
-end}}
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -16,10 +7,6 @@ end}}
 </head>
 
 <body style="margin: 0; padding: 0; background-color: #f9f9f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-
-<div style="display:none; max-height:0; overflow:hidden; opacity:0;">
-    Your registration has been confirmed. Here's your ticket for <strong>{{ event_name }}</strong>!</p>
-</div>
 
 <div style="width: 560px; line-height: 1.5; background-color: #ffffff; margin: 20px auto; padding: 20px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
 
