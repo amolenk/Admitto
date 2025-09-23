@@ -39,6 +39,7 @@ namespace Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Public.Register
         /// <exception cref="global::Amolenk.Admitto.Cli.Api.Models.HttpValidationProblemDetails">When receiving a 400 status code</exception>
         /// <exception cref="global::Amolenk.Admitto.Cli.Api.Models.ProblemDetails">When receiving a 401 status code</exception>
         /// <exception cref="global::Amolenk.Admitto.Cli.Api.Models.ProblemDetails">When receiving a 403 status code</exception>
+        /// <exception cref="global::Amolenk.Admitto.Cli.Api.Models.ProblemDetails">When receiving a 404 status code</exception>
         /// <exception cref="global::Amolenk.Admitto.Cli.Api.Models.ProblemDetails">When receiving a 409 status code</exception>
         /// <exception cref="global::Amolenk.Admitto.Cli.Api.Models.ProblemDetails">When receiving a 500 status code</exception>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
@@ -57,6 +58,7 @@ namespace Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Public.Register
                 { "400", global::Amolenk.Admitto.Cli.Api.Models.HttpValidationProblemDetails.CreateFromDiscriminatorValue },
                 { "401", global::Amolenk.Admitto.Cli.Api.Models.ProblemDetails.CreateFromDiscriminatorValue },
                 { "403", global::Amolenk.Admitto.Cli.Api.Models.ProblemDetails.CreateFromDiscriminatorValue },
+                { "404", global::Amolenk.Admitto.Cli.Api.Models.ProblemDetails.CreateFromDiscriminatorValue },
                 { "409", global::Amolenk.Admitto.Cli.Api.Models.ProblemDetails.CreateFromDiscriminatorValue },
                 { "500", global::Amolenk.Admitto.Cli.Api.Models.ProblemDetails.CreateFromDiscriminatorValue },
             };

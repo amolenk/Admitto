@@ -8,4 +8,4 @@ public record GetAvailabilityResponse(
 
 public record TicketTypeDto(string Slug, string Name, List<string> SlotNames, bool HasCapacity);
 
-public record AdditionalDetailSchemaDto(string Name, string MaxLength, bool IsRequired);
+public record AdditionalDetailSchemaDto(string Name, int MaxLength, bool IsRequired);

@@ -11,7 +11,7 @@ public static class SetRegistrationPolicyEndpoint
     public static RouteGroupBuilder MapSetRegistrationPolicy(this RouteGroupBuilder group)
     {
         group
-            .MapPut("/{eventSlug}/policies/reconfirm", SetRegistrationPolicy)
+            .MapPut("/{eventSlug}/policies/registration", SetRegistrationPolicy)
             .WithName(nameof(SetRegistrationPolicy))
             .RequireAuthorization(policy => policy.RequireCanUpdateEvent());
 

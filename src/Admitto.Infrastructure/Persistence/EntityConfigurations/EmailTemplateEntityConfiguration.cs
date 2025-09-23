@@ -33,8 +33,12 @@ public class EmailTemplateEntityConfiguration : IEntityTypeConfiguration<EmailTe
             .IsRequired()
             .HasMaxLength(ColumnMaxLength.EmailSubject);
 
-        builder.Property(e => e.Body)
-            .HasColumnName("body")
+        builder.Property(e => e.TextBody)
+            .HasColumnName("text_body")
+            .IsRequired();
+
+        builder.Property(e => e.HtmlBody)
+            .HasColumnName("html_body")
             .IsRequired();
 
         builder.Property(e => e.TicketedEventId)

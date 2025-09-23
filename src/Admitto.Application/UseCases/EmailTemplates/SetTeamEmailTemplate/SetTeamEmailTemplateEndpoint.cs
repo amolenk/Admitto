@@ -31,7 +31,8 @@ public static class SetTeamEmailTemplateEndpoint
         var emailTemplate = EmailTemplate.Create(
             emailType,
             request.Subject,
-            request.Body,
+            request.TextBody,
+            request.HtmlBody,
             teamId);
         
         var existingTemplate = await context.EmailTemplates

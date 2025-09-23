@@ -55,15 +55,32 @@ public class VerificationEmailComposer(
         return (parameters, null);
     }
 
-    protected override IEmailParameters GetTestTemplateParameters(
+    protected override async ValueTask<IEmailParameters> GetTestTemplateParametersAsync(
+        Guid ticketedEventId,
         string recipient,
         List<AdditionalDetail> additionalDetails,
-        List<TicketSelection> tickets)
+        List<TicketSelection> tickets, 
+        CancellationToken cancellationToken)
     {
+        var ticketedEvent = await context.TicketedEvents
+            .AsNoTracking()
+            .Where(x => x.Id == ticketedEventId)
+            .Select(x => new
+            {
+                x.Name,
+                x.Website
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (ticketedEvent is null)
+        {
+            throw new ApplicationRuleException(ApplicationRuleError.TicketedEvent.NotFound);
+        }
+        
         return new VerificationEmailParameters(
             recipient,
-            "Test Event",
-            "www.example.com",
+            ticketedEvent.Name,
+            ticketedEvent.Website,
             "123456");
     }
 }

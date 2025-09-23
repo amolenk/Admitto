@@ -3,6 +3,7 @@ using Amolenk.Admitto.Application.UseCases.Teams.AddTeamMember;
 using Amolenk.Admitto.Application.UseCases.Teams.CreateTeam;
 using Amolenk.Admitto.Application.UseCases.Teams.GetTeam;
 using Amolenk.Admitto.Application.UseCases.Teams.GetTeams;
+using Amolenk.Admitto.Application.UseCases.Teams.UpdateTeam;
 
 namespace Amolenk.Admitto.ApiService.Endpoints;
 
@@ -22,9 +23,10 @@ public static class TeamEndpoints
             .RequireAuthorization();
 
         group
+            .MapAddTeamMember()
             .MapCreateTeam()
             .MapGetTeam()
             .MapGetTeams()
-            .MapAddTeamMember();
+            .MapUpdateTeam();
     }
 }

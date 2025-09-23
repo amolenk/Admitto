@@ -68,6 +68,10 @@ public sealed class DomainRuleError
         public static DomainRuleError CannotCancelInStatus(RegistrationStatus status) => new(
             "registration.invalid_status_for_cancellation",
             $"Cannot cancel registration with status '{status}'.");
+
+        public static DomainRuleError CannotChangeTicketsInStatus(RegistrationStatus status) => new(
+            "registration.invalid_status_for_change",
+            $"Cannot change tickets for registration with status '{status}'.");
     }
 
     public static class Team

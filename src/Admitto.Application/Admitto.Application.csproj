@@ -32,4 +32,16 @@
       <Folder Include="UseCases\EmailTemplates\" />
     </ItemGroup>
 
+    <ItemGroup>
+      <EmbeddedResource Include="Common\Email\Templating\Defaults\canceled.html" />
+      <EmbeddedResource Include="Common\Email\Templating\Defaults\ticket.txt" />
+      <EmbeddedResource Include="Common\Email\Templating\Defaults\verify.html" />
+      <None Remove="Common\Email\Templating\Defaults\ticket.html" />
+      <EmbeddedResource Include="Common\Email\Templating\Defaults\ticket.html" />
+      <None Remove="Common\Email\Templating\Defaults\canceled.txt" />
+      <EmbeddedResource Include="Common\Email\Templating\Defaults\canceled.txt" />
+      <None Remove="Common\Email\Templating\Defaults\verify.txt" />
+      <EmbeddedResource Include="Common\Email\Templating\Defaults\verify.txt" />
+    </ItemGroup>
+
 </Project>

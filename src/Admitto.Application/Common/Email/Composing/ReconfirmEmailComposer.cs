@@ -67,33 +67,68 @@ public class ReconfirmEmailComposer(
             item.LastName,
             item.AdditionalDetails.Select(ad => new DetailEmailParameter(ad.Name, ad.Value)).ToList(),
             item.Tickets
-                .Select(t => new TicketEmailParameter(
-                    item.TicketTypes.First(tt => tt.Slug == t.TicketTypeSlug).Name,
-                    t.Quantity))
+                .Select(t =>
+                {
+                    var ticketType = item.TicketTypes.First(tt => tt.Slug == t.TicketTypeSlug);
+                    return new TicketEmailParameter(
+                        ticketType.Slug,
+                        ticketType.Name,
+                        ticketType.SlotNames.ToArray(),
+                        t.Quantity);
+                })
                 .ToList(),
             $"{item.BaseUrl}/tickets/reconfirm/{item.PublicId}/{signature}",
+            $"{item.BaseUrl}/tickets/edit/{item.PublicId}/{signature}",
             $"{item.BaseUrl}/tickets/cancel/{item.PublicId}/{signature}");
 
         return (parameters, item.ParticipantId);
     }
 
-    protected override IEmailParameters GetTestTemplateParameters(
+    protected override async ValueTask<IEmailParameters> GetTestTemplateParametersAsync(
+        Guid ticketedEventId,
         string recipient,
         List<AdditionalDetail> additionalDetails,
-        List<TicketSelection> tickets)
+        List<TicketSelection> tickets, 
+        CancellationToken cancellationToken)
     {
+        var ticketedEvent = await context.TicketedEvents
+            .AsNoTracking()
+            .Where(x => x.Id == ticketedEventId)
+            .Select(x => new
+            {
+                x.Name,
+                x.Website,
+                x.BaseUrl,
+                x.TicketTypes
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (ticketedEvent is null)
+        {
+            throw new ApplicationRuleException(ApplicationRuleError.TicketedEvent.NotFound);
+        }
+        
         return new ReconfirmEmailParameters(
             recipient,
-            "Test Event",
-            "www.example.com",
+            ticketedEvent.Name,
+            ticketedEvent.Website,
             "Alice",
             "Doe",
             additionalDetails.Select(ad => new DetailEmailParameter(ad.Name, ad.Value)).ToList(),
             tickets
-                .Select(t => new TicketEmailParameter(t.TicketTypeSlug.Humanize(), t.Quantity))
+                .Select(t =>
+                {
+                    var ticketType = ticketedEvent.TicketTypes.First(tt => tt.Slug == t.TicketTypeSlug);
+                    return new TicketEmailParameter(
+                        ticketType.Slug,
+                        ticketType.Name,
+                        ticketType.SlotNames.ToArray(),
+                        t.Quantity);
+                })
                 .ToList(),
-            "https://www.example.com/tickets/reconfirm/123/456",
-            "https://www.example.com/tickets/cancel/123/456");
+            $"{ticketedEvent.BaseUrl}/tickets/reconfirm/123/456",
+            $"{ticketedEvent.BaseUrl}/tickets/edit/123/456",
+            $"{ticketedEvent.BaseUrl}/tickets/cancel/123/456");
     }
 
     protected override async ValueTask<IEnumerable<Guid>> GetEntityIdsForBulkAsync(

@@ -42,7 +42,7 @@ public class SetEventEmailTemplateCommand(IAccessTokenProvider accessTokenProvid
         var request = new SetEventEmailTemplateRequest
         {
             Subject = template.SubjectTemplate,
-            Body = template.BodyTemplate
+            HtmlBody = template.HtmlBodyTemplate
         };
         
         var response = await CallApiAsync(async client =>

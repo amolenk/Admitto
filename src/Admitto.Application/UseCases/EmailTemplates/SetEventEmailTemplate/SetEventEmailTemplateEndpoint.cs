@@ -35,7 +35,8 @@ public static class SetEventEmailTemplateEndpoint
         var emailTemplate = EmailTemplate.Create(
             emailType,
             request.Subject,
-            request.Body,
+            request.TextBody,
+            request.HtmlBody,
             teamId,
             eventId);
 

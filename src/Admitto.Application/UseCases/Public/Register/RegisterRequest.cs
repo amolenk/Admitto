@@ -6,6 +6,6 @@ public record RegisterRequest(
     string LastName,
     List<AdditionalDetailDto> AdditionalDetails,
     List<string> RequestedTickets,
-    string? VerificationToken = null);
+    string VerificationToken);
 
 public record AdditionalDetailDto(string Name, string Value);
