@@ -51,13 +51,21 @@ module keyVault 'modules/keyVault.bicep' = {
   }
 }
 
+module logAnalytics 'modules/logAnalyticsWorkspace.bicep' = {
+  name: 'logAnalyticsWorkspace'
+  params: {
+    location: location
+    vnetId: network.outputs.vnetId
+//     subnetId: privateEndpointSubnetId
+  }
+}
+
 module containerAppEnvironment 'modules/containerAppEnvironment.bicep' = {
   name: 'containerAppEnvironment'
   params: {
     location: location
     acaSubnetId: network.outputs.acaSubnetId
-    privateEndpointSubnetId: network.outputs.privateEndpointSubnetId
-    vnetId: network.outputs.vnetId
+    logAnalyticsName: logAnalytics.outputs.name
   }
 }
 
@@ -65,9 +73,9 @@ module applicationInsights 'modules/applicationInsights.bicep' = {
   name: 'applicationInsights'
   params: {
     location: location
-    logAnalyticsWorkspaceId: containerAppEnvironment.outputs.logAnalyticsWorkspaceId
+    logAnalyticsWorkspaceId: logAnalytics.outputs.id
     vnetId: network.outputs.vnetId
-    subnetId: network.outputs.privateEndpointSubnetId
+//     subnetId: network.outputs.privateEndpointSubnetId
   }
 }
 

@@ -1,6 +1,6 @@
 param location string = resourceGroup().location
 param vnetId string
-param subnetId string
+// param subnetId string
 
 var resourceToken = uniqueString(resourceGroup().id)
 
@@ -57,20 +57,20 @@ resource logAnalyticsDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetwo
   }
 }
 
-resource logAnalyticsDnsZoneGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2023-04-01' = {
-  name: 'loganalytics-dns-group'
-  parent: logAnalyticsPrivateEndpoint
-  properties: {
-    privateDnsZoneConfigs: [
-      {
-        name: 'loganalytics-config'
-        properties: {
-          privateDnsZoneId: logAnalyticsDnsZone.id
-        }
-      }
-    ]
-  }
-}
+// resource logAnalyticsDnsZoneGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2023-04-01' = {
+//   name: 'loganalytics-dns-group'
+//   parent: logAnalyticsPrivateEndpoint
+//   properties: {
+//     privateDnsZoneConfigs: [
+//       {
+//         name: 'loganalytics-config'
+//         properties: {
+//           privateDnsZoneId: logAnalyticsDnsZone.id
+//         }
+//       }
+//     ]
+//   }
+// }
 
 // Private DNS zone for Log Analytics Query
 resource logAnalyticsQueryDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' = {
@@ -109,5 +109,4 @@ resource agentDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks
 }
 
 output id string = logAnalyticsWorkspace.id
-output customerId string = logAnalyticsWorkspace.properties.customerId
-output primarySharedKey string = logAnalyticsWorkspace.listKeys().primarySharedKey
+output name string = logAnalyticsWorkspace.name
