@@ -1,15 +1,16 @@
 param location string = resourceGroup().location
 param acaSubnetId string
+param privateEndpointSubnetId string
+param vnetId string
 
 var resourceToken = uniqueString(resourceGroup().id)
 
-resource logAnalyticsWorkspace 'Microsoft.OperationalInsights/workspaces@2022-10-01' = {
-  name: 'law-${resourceToken}'
-  location: location
-  properties: {
-    sku: {
-      name: 'PerGB2018'
-    }
+module logAnalytics 'logAnalyticsWorkspace.bicep' = {
+  name: 'logAnalyticsWorkspace'
+  params: {
+    location: location
+    vnetId: vnetId
+    subnetId: privateEndpointSubnetId
   }
 }
 
@@ -24,8 +25,8 @@ resource containerAppEnvironment 'Microsoft.App/managedEnvironments@2025-02-02-p
     appLogsConfiguration: {
       destination: 'log-analytics'
       logAnalyticsConfiguration: {
-        customerId: logAnalyticsWorkspace.properties.customerId
-        sharedKey: logAnalyticsWorkspace.listKeys().primarySharedKey
+        customerId: logAnalytics.outputs.customerId
+        sharedKey: logAnalytics.outputs.primarySharedKey
       }
     }
     vnetConfiguration: {
@@ -38,4 +39,4 @@ resource containerAppEnvironment 'Microsoft.App/managedEnvironments@2025-02-02-p
 output id string = containerAppEnvironment.id
 output name string = containerAppEnvironment.name
 output defaultDomain string = containerAppEnvironment.properties.defaultDomain
-output logAnalyticsWorkspaceId string = logAnalyticsWorkspace.id
+output logAnalyticsWorkspaceId string = logAnalytics.outputs.id
