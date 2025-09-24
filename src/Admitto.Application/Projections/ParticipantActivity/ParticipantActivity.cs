@@ -4,6 +4,7 @@ public enum ParticipantActivity
 {
     // Registration lifecycle
     Registered,
+    TicketSelectionChanged,
     CanceledOnTime,
     CanceledLate,
     Reconfirmed,

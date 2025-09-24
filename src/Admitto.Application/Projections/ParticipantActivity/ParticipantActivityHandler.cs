@@ -1,5 +1,6 @@
 using Amolenk.Admitto.Application.Common.Core;
 using Amolenk.Admitto.Application.Common.Email.Sending;
+using Amolenk.Admitto.Domain;
 using Amolenk.Admitto.Domain.DomainEvents;
 using Amolenk.Admitto.Domain.ValueObjects;
 
@@ -10,6 +11,7 @@ public class ParticipantActivityHandler(IApplicationContext context)
     IEventualDomainEventHandler<AttendeeCanceledDomainEvent>,
     IEventualDomainEventHandler<AttendeeCanceledLateDomainEvent>,
     IEventualDomainEventHandler<AttendeeReconfirmedDomainEvent>,
+    IEventualDomainEventHandler<AttendeeTicketsChangedDomainEvent>,
     IEventualDomainEventHandler<ContributorAddedDomainEvent>,
     IEventualDomainEventHandler<ContributorRolesChangedDomainEvent>,
     IEventualDomainEventHandler<ContributorRemovedDomainEvent>,
@@ -62,7 +64,19 @@ public class ParticipantActivityHandler(IApplicationContext context)
         
         return ValueTask.CompletedTask;
     }
-    
+
+    public ValueTask HandleAsync(AttendeeTicketsChangedDomainEvent domainEvent, CancellationToken cancellationToken)
+    {
+        LogActivity(
+            domainEvent.TicketedEventId,
+            domainEvent.ParticipantId,
+            domainEvent.DomainEventId,
+            ParticipantActivity.TicketSelectionChanged,
+            domainEvent.OccurredOn);
+        
+        return ValueTask.CompletedTask;
+    }
+
     public ValueTask HandleAsync(ContributorAddedDomainEvent domainEvent, CancellationToken cancellationToken)
     {
         foreach (var role in domainEvent.Roles)
