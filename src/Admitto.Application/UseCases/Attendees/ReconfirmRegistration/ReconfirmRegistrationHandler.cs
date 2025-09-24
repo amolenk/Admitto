@@ -10,6 +10,8 @@ public class ReconfirmRegistrationHandler(IApplicationContext context)
 {
     public async ValueTask HandleAsync(ReconfirmRegistrationCommand command, CancellationToken cancellationToken)
     {
+        // TODO TicketedEvent requires NoTracking; OR: just get the attendee and check if the event is correct.
+        
         var ticketedEvent = await context.TicketedEvents.FindAsync([command.TicketedEventId], cancellationToken);
         if (ticketedEvent is null)
         {

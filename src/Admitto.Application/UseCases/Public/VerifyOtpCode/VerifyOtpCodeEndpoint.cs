@@ -2,6 +2,7 @@ using Amolenk.Admitto.Application.Common;
 using Amolenk.Admitto.Application.Common.Cryptography;
 using Amolenk.Admitto.Application.Common.Email;
 using Amolenk.Admitto.Application.Common.Identity;
+using Amolenk.Admitto.Application.Projections.Participation;
 
 namespace Amolenk.Admitto.Application.UseCases.Public.VerifyOtpCode;
 
@@ -31,26 +32,52 @@ public static class VerifyOtpCodeEndpoint
     {
         var eventId = await slugResolver.ResolveTicketedEventIdAsync(teamSlug, eventSlug, cancellationToken);
         var email = request.Email.NormalizeEmail();
-        
+
         var verificationRequest = await context.EmailVerificationRequests
             .FirstOrDefaultAsync(
                 evr => evr.TicketedEventId == eventId && evr.Email == email,
                 cancellationToken: cancellationToken);
 
         var isValid = verificationRequest?.ExpiresAt > DateTime.UtcNow
-                      && await verificationRequest.VerifyAsync(request.Code, eventId, signingService, cancellationToken);
+                      && await verificationRequest.VerifyAsync(
+                          request.Code,
+                          eventId,
+                          signingService,
+                          cancellationToken);
 
         if (!isValid)
         {
             throw new ApplicationRuleException(ApplicationRuleError.EmailVerificationRequest.Invalid);
         }
-        
+
         // Remove the verification request to prevent reuse.
         context.EmailVerificationRequests.Remove(verificationRequest!);
 
         var token = new EmailVerifiedToken(email, DateTime.UtcNow);
         var signedToken = await token.EncodeAsync(signingService, eventId, cancellationToken);
         var response = new VerifyOtpCodeResponse(signedToken);
+
+        // Check if the user is already registered.
+        var participation = await context.ParticipationView
+            .AsNoTracking()
+            .Where(p => p.TicketedEventId == eventId && p.Email == email)
+            .Select(p => new
+            {
+                p.PublicId,
+                p.AttendeeStatus
+            })
+            .FirstOrDefaultAsync(cancellationToken);
+
+        // If they are, include their public ID and signature in the response.
+        if (participation?.AttendeeStatus == ParticipationAttendeeStatus.Registered)
+        {
+            response = response with
+            {
+                PublicId = participation.PublicId,
+                Signature = await signingService.SignAsync(participation.PublicId, eventId, cancellationToken)
+            };
+        }
+
         return TypedResults.Ok(response);
     }
 }

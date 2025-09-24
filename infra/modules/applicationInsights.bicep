@@ -1,7 +1,7 @@
 param location string = resourceGroup().location
 param logAnalyticsWorkspaceId string
 param vnetId string
-param subnetId string
+// param subnetId string
 
 var resourceToken = uniqueString(resourceGroup().id)
 
@@ -59,20 +59,20 @@ resource privateDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLin
   }
 }
 
-resource privateDnsZoneGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2023-04-01' = {
-  name: 'applicationinsights-dns-group'
-  parent: privateEndpoint
-  properties: {
-    privateDnsZoneConfigs: [
-      {
-        name: 'applicationinsights-config'
-        properties: {
-          privateDnsZoneId: privateDnsZone.id
-        }
-      }
-    ]
-  }
-}
+// resource privateDnsZoneGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2023-04-01' = {
+//   name: 'applicationinsights-dns-group'
+//   parent: privateEndpoint
+//   properties: {
+//     privateDnsZoneConfigs: [
+//       {
+//         name: 'applicationinsights-config'
+//         properties: {
+//           privateDnsZoneId: privateDnsZone.id
+//         }
+//       }
+//     ]
+//   }
+// }
 
 output name string = applicationInsights.name
 output connectionString string = applicationInsights.properties.ConnectionString

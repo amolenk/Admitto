@@ -24,7 +24,9 @@ public static class GetAttendeeEndpoint
     {
         var eventId = await slugResolver.ResolveTicketedEventIdAsync(teamSlug, eventSlug, cancellationToken);
 
-        var attendee = await context.Attendees.FindAsync([attendeeId], cancellationToken);
+        var attendee = await context.Attendees
+            .AsNoTracking()
+            .FirstOrDefaultAsync(a => a.Id == attendeeId, cancellationToken);
         if (attendee is null || attendee.TicketedEventId != eventId)
         {
             throw new ApplicationRuleException(ApplicationRuleError.Attendee.NotFound);
