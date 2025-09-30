@@ -10,7 +10,6 @@ namespace Amolenk.Admitto.Application.Common.Email.Composing;
 /// </summary>
 public class CanceledEmailComposer(
     IApplicationContext context,
-    ISigningService signingService,
     IEmailTemplateService templateService)
     : EmailComposer(templateService)
 {

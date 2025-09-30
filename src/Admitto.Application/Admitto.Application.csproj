@@ -26,9 +26,6 @@
     </ItemGroup>
 
     <ItemGroup>
-      <Folder Include="Common\Caching\" />
-      <Folder Include="Common\Messaging\" />
-      <Folder Include="Common\Security\" />
       <Folder Include="UseCases\EmailTemplates\" />
     </ItemGroup>
 

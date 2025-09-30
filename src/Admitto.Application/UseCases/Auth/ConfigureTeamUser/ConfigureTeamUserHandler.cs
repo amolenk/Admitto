@@ -21,10 +21,10 @@ public class ConfigureTeamUserHandler(
             logger.LogInformation(
                 "Added new user '{email}' to team '{team}'.",
                 command.Email,
-                command.TeamSlug);
+                command.TeamId);
         }
 
         // Add a command to the outbox to assign the role.
-        messageOutbox.Enqueue(new AssignTeamRoleCommand(user.Id, command.TeamSlug, command.Role));
+        messageOutbox.Enqueue(new AssignTeamRoleCommand(user.Id, command.TeamId, command.Role));
     }
 }

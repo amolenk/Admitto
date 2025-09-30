@@ -6,6 +6,7 @@ using Amolenk.Admitto.Application.Common.Abstractions;
 using FluentValidation;
 using FluentValidation.Internal;
 using Humanizer;
+using Microsoft.AspNetCore.Authorization;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -32,6 +33,8 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddDefaultApplicationServices();
 builder.Services.AddEmailServices();
 builder.Services.AddCommandHandlers();
+
+builder.Services.AddScoped<IAuthorizationHandler, AuthorizationHandler>();
 
 builder.AddDefaultInfrastructureServices();
 
