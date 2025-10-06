@@ -6,20 +6,13 @@ public class LogoutSettings : CommandSettings
 {
 }
 
-public class LogoutCommand : Command<LogoutSettings>
+public class LogoutCommand(IAuthService authService, OutputService outputService) : Command<LogoutSettings>
 {
-    private readonly IAuthService _authService;
-
-    public LogoutCommand(IAuthService authService)
-    {
-        _authService = authService;
-    }
-
     public override int Execute(CommandContext context, LogoutSettings settings)
     {
-        _authService.Logout();
+        authService.Logout();
         
-        AnsiConsole.MarkupLine("[green]✓ Successfully logged out.[/]");
+        outputService.WriteSuccesMessage("Successfully logged out.");
         return 0;
     }
 }

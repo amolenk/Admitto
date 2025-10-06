@@ -26,8 +26,8 @@ public class SetSettings : TeamEventSettings
     }
 }
 
-public class SetCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration)
-    : ApiCommand<SetSettings>(accessTokenProvider, configuration)
+public class SetCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration, OutputService outputService)
+    : ApiCommand<SetSettings>(accessTokenProvider, configuration, outputService)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, SetSettings settings)
     {
@@ -44,7 +44,7 @@ public class SetCommand(IAccessTokenProvider accessTokenProvider, IConfiguration
             await client.Teams[teamSlug].Events[eventSlug].Policies.Registration.PutAsync(request));
         if (response is null) return 1;
 
-        AnsiConsole.MarkupLine($"[green]✓ Successfully set registration policy.[/]");
+        OutputService.WriteSuccesMessage($"Successfully set registration policy.");
         return 0;
     }
 }

@@ -2,8 +2,8 @@ using Humanizer;
 
 namespace Amolenk.Admitto.Cli.Commands.Email.Bulk;
 
-public class ListCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration)
-    : ApiCommand<TeamEventSettings>(accessTokenProvider, configuration)
+public class ListCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration, OutputService outputService)
+    : ApiCommand<TeamEventSettings>(accessTokenProvider, configuration, outputService)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, TeamEventSettings settings)
     {

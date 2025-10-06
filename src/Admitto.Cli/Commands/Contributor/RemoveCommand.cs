@@ -17,8 +17,8 @@ public class RemoveSettings : TeamEventSettings
     }
 }
 
-public class RemoveCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration)
-    : EventCommandBase<RemoveSettings>(accessTokenProvider, configuration)
+public class RemoveCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration, OutputService outputService)
+    : EventCommandBase<RemoveSettings>(accessTokenProvider, configuration, outputService)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, RemoveSettings settings)
     {
@@ -30,8 +30,7 @@ public class RemoveCommand(IAccessTokenProvider accessTokenProvider, IConfigurat
                 .DeleteAsync());
         if (response is null) return 1;
 
-        AnsiConsole.MarkupLine(
-            $"[green]✓ Successfully removed contributor.[/]");
+        OutputService.WriteSuccesMessage($"Successfully removed contributor.");
         return 0;
     }
 }

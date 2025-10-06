@@ -17,8 +17,8 @@ public class RemoveSettings : TeamEventSettings
     }
 }
 
-public class RemoveCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration)
-    : EventCommandBase<RemoveSettings>(accessTokenProvider, configuration)
+public class RemoveCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration, OutputService outputService)
+    : EventCommandBase<RemoveSettings>(accessTokenProvider, configuration, outputService)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, RemoveSettings settings)
     {
@@ -29,8 +29,7 @@ public class RemoveCommand(IAccessTokenProvider accessTokenProvider, IConfigurat
             await client.Teams[teamSlug].Events[eventSlug].Emails.Bulk[settings.Id!.Value].DeleteAsync());
         if (response is null) return 1;
 
-        AnsiConsole.MarkupLine(
-            $"[green]✓ Successfully removed bulk email.[/]");
+        OutputService.WriteSuccesMessage($"Successfully removed bulk email.");
         return 0;
     }
 }

@@ -16,8 +16,8 @@ public class RequestOtpCodeSettings : TeamEventSettings
     }
 }
 
-public class RequestOtpCodeCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration)
-    : ApiCommand<RequestOtpCodeSettings>(accessTokenProvider, configuration)
+public class RequestOtpCodeCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration, OutputService outputService)
+    : ApiCommand<RequestOtpCodeSettings>(accessTokenProvider, configuration, outputService)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, RequestOtpCodeSettings settings)
     {
@@ -33,7 +33,7 @@ public class RequestOtpCodeCommand(IAccessTokenProvider accessTokenProvider, ICo
             await client.Teams[teamSlug].Events[eventSlug].Public.Otp.PostAsync(request));
         if (!success) return 1;
 
-        AnsiConsole.MarkupLine($"[green]✓ Successfully requested OTP code for '{settings.Email}'.[/]");
+        OutputService.WriteSuccesMessage($"Successfully requested OTP code for '{settings.Email}'.");
         return 0;
     }
 }

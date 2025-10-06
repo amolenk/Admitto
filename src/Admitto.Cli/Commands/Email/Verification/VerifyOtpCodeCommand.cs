@@ -24,8 +24,8 @@ public class VerifyOtpCodeSettings : TeamEventSettings
     }
 }
 
-public class VerifyOtpCodeCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration)
-    : ApiCommand<VerifyOtpCodeSettings>(accessTokenProvider, configuration)
+public class VerifyOtpCodeCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration, OutputService outputService)
+    : ApiCommand<VerifyOtpCodeSettings>(accessTokenProvider, configuration, outputService)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, VerifyOtpCodeSettings settings)
     {
@@ -42,7 +42,7 @@ public class VerifyOtpCodeCommand(IAccessTokenProvider accessTokenProvider, ICon
             await client.Teams[teamSlug].Events[eventSlug].Public.Verify.PostAsync(request));
         if (response is null) return 1;
         
-        AnsiConsole.MarkupLine("[green]✓ Successfully verified email address.[/]");
+        OutputService.WriteSuccesMessage("Successfully verified email address.");
         AnsiConsole.MarkupLine($"Token: {response.RegistrationToken}");
         return 0;
     }

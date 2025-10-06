@@ -6,12 +6,9 @@ public class ShowTeamSettings : CommandSettings
     public string? TeamSlug { get; set; }
 }
 
-public class ShowTeamCommand : ApiCommand<ShowTeamSettings>
+public class ShowTeamCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration, OutputService outputService) 
+    : ApiCommand<ShowTeamSettings>(accessTokenProvider, configuration, outputService)
 {
-    public ShowTeamCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration) 
-        : base(accessTokenProvider, configuration)
-    {
-    }
     
     public override async Task<int> ExecuteAsync(CommandContext context, ShowTeamSettings settings)
     {

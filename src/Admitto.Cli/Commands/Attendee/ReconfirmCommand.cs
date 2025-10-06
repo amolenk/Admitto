@@ -16,8 +16,8 @@ public class ReconfirmSettings : TeamEventSettings
     }
 }
 
-public class ReconfirmCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration)
-    : ApiCommand<ReconfirmSettings>(accessTokenProvider, configuration)
+public class ReconfirmCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration, OutputService outputService)
+    : ApiCommand<ReconfirmSettings>(accessTokenProvider, configuration, outputService)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, ReconfirmSettings settings)
     {
@@ -28,8 +28,7 @@ public class ReconfirmCommand(IAccessTokenProvider accessTokenProvider, IConfigu
             await client.Teams[teamSlug].Events[eventSlug].Attendees[settings.Id!.Value].Reconfirm.PostAsync());
         if (response is null) return 1;
         
-        AnsiConsole.MarkupLine(
-            $"[green]✓ Successfully reconfirmed registration.[/]");
+        OutputService.WriteSuccesMessage($"Successfully reconfirmed registration.");
         return 0;
     }
 }

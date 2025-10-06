@@ -1,7 +1,7 @@
 namespace Amolenk.Admitto.Cli.Commands.Events;
 
-public class ShowEventCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration)
-    : EventCommandBase<TeamEventSettings>(accessTokenProvider, configuration)
+public class ShowEventCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration, OutputService outputService)
+    : EventCommandBase<TeamEventSettings>(accessTokenProvider, configuration, outputService)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, TeamEventSettings settings)
     {

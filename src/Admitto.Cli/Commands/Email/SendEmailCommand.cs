@@ -30,7 +30,7 @@
 // public class SendEmailCommand(
 //     IAccessTokenProvider accessTokenProvider,
 //     IConfiguration configuration)
-//     : ApiCommand<PreviewEmailSettings>(accessTokenProvider, configuration)
+//     : ApiCommand<PreviewEmailSettings>(accessTokenProvider, configuration, outputService)
 // {
 //     public sealed override async Task<int> ExecuteAsync(CommandContext context, PreviewEmailSettings settings)
 //     {

@@ -2,8 +2,9 @@ namespace Amolenk.Admitto.Cli.Commands.Events;
 
 public abstract class EventCommandBase<TSettings>(
     IAccessTokenProvider accessTokenProvider,
-    IConfiguration configuration)
-    : ApiCommand<TSettings>(accessTokenProvider, configuration)
+    IConfiguration configuration,
+    OutputService outputService)
+    : ApiCommand<TSettings>(accessTokenProvider, configuration, outputService)
     where TSettings : TeamSettings
 {
     protected static string GetStatusString(DateTimeOffset registrationOpensAt, DateTimeOffset registrationEndsAt, 

@@ -49,8 +49,9 @@ public class ScheduleSettings : TeamEventSettings
 
 public class ScheduleCommand(
     IAccessTokenProvider accessTokenProvider,
-    IConfiguration configuration)
-    : ApiCommand<ScheduleSettings>(accessTokenProvider, configuration)
+    IConfiguration configuration,
+    OutputService outputService)
+    : ApiCommand<ScheduleSettings>(accessTokenProvider, configuration, outputService)
 {
     public sealed override async Task<int> ExecuteAsync(CommandContext context, ScheduleSettings settings)
     {
@@ -77,8 +78,7 @@ public class ScheduleCommand(
             await client.Teams[teamSlug].Events[eventSlug].Emails.Bulk.PostAsync(request));
         if (!response) return 1;
 
-        AnsiConsole.MarkupLine(
-            $"[green]✓ Successfully submitted '{settings.EmailType}' email bulk.[/]");
+        OutputService.WriteSuccesMessage($"Successfully submitted '{settings.EmailType}' email bulk.");
         
         return 0;
     }
