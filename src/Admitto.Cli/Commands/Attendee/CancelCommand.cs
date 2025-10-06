@@ -16,7 +16,10 @@ public class CancelSettings : TeamEventSettings
     }
 }
 
-public class CancelCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration)
+public class CancelCommand(
+    IAccessTokenProvider accessTokenProvider, 
+    IConfiguration configuration,
+    OutputService outputService)
     : ApiCommand<CancelSettings>(accessTokenProvider, configuration)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, CancelSettings settings)
@@ -28,8 +31,7 @@ public class CancelCommand(IAccessTokenProvider accessTokenProvider, IConfigurat
             await client.Teams[teamSlug].Events[eventSlug].Attendees[settings.Id!.Value].DeleteAsync());
         if (response is null) return 1;
         
-        AnsiConsole.MarkupLine(
-            $"[green]✓ Successfully cancelled registration.[/]");
+        outputService.WriteSuccesMessage("Successfully cancelled registration.");
         return 0;
     }
 }
