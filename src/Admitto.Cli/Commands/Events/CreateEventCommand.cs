@@ -33,41 +33,61 @@ public class CreateEventSettings : TeamSettings
     [CommandOption("--optionalField")]
     [Description("Optional custom field (in the format '<FieldName>=<MaxLength>') to collect additional information from attendees during registration.")]
     public string[]? OptionalAdditionalDetails { get; init; }
+    
+    public override ValidationResult Validate()
+    {
+        if (string.IsNullOrWhiteSpace(Name))
+        {
+            return ValidationResult.Error("Event name must be specified.");
+        }
+        
+        if (string.IsNullOrWhiteSpace(EventSlug))
+        {
+            return ValidationResult.Error("Event slug must be specified.");
+        }
+        
+        if (string.IsNullOrWhiteSpace(Website))
+        {
+            return ValidationResult.Error("Event website must be specified.");
+        }
+        
+        if (string.IsNullOrWhiteSpace(BaseUrl))
+        {
+            return ValidationResult.Error("Event base URL must be specified.");
+        }
+        
+        if (StartsAt is null)
+        {
+            return ValidationResult.Error("Event start date and time must be specified.");
+        }
+        
+        if (EndsAt is null)
+        {
+            return ValidationResult.Error("Event end date and time must be specified.");
+        }
+        
+        return base.Validate();
+    }
 }
 
-public class CreateEventCommand(InputService inputService, OutputService outputService, IApiService apiService)
+public class CreateEventCommand(OutputService outputService, IApiService apiService, IConfiguration configuration)
     : AsyncCommand<CreateEventSettings>
 {
     public override async Task<int> ExecuteAsync(CommandContext context, CreateEventSettings settings)
     {
-        var teamSlug = settings.TeamSlug?.Kebaberize() ?? inputService.GetTeamSlug();
-        var request = CreateRequest(settings);
-
-        var succes =
-            await apiService.CallApiAsync(async client => await client.Teams[teamSlug].Events.PostAsync(request));
-        if (!succes) return 1;
-        
-        outputService.WriteSuccesMessage($"Successfully created event '{settings.Name}'.");
-        return 0;
-    }
-
-    private CreateTicketedEventRequest CreateRequest(CreateEventSettings settings)
-    {
-        var name = settings.Name ?? inputService.GetString("Event name");
-        var slug = settings.EventSlug?.Kebaberize() ??
-                   inputService.GetString("Event slug", name.Kebaberize(), kebaberize: true);
-        var website = settings.Website ?? inputService.GetString("Event website");
-        
-        var baseUrl = settings.Website ?? inputService.GetString("Event base URL");
-        var startsAt = settings.StartsAt ?? inputService.GetDateTimeOffset("Event start");
-        var endsAt = settings.EndsAt ?? inputService.GetDateTimeOffset("Event end");
-        var additionalDetailSchemas =
-            ParseAdditionalDetailSchemas(settings.RequiredAdditionalDetails, settings.OptionalAdditionalDetails)
-            ?? GetAdditionalDetailSchemas();
-        
-        return new CreateTicketedEventRequest
+        var teamSlug = (settings.TeamSlug ?? configuration[ConfigSettings.DefaultTeamSetting])?.Kebaberize();
+        if (string.IsNullOrWhiteSpace(teamSlug))
         {
-            Slug = slug,
+            throw new ArgumentException("Team slug must be specified.");
+        }
+
+        var additionalDetailSchemas = ParseAdditionalDetailSchemas(
+            settings.RequiredAdditionalDetails, 
+            settings.OptionalAdditionalDetails);
+        
+        var request = new CreateTicketedEventRequest
+        {
+            Slug = settings.EventSlug!.Kebaberize(),
             Name = settings.Name,
             Website = settings.Website,
             BaseUrl = settings.BaseUrl,
@@ -75,6 +95,13 @@ public class CreateEventCommand(InputService inputService, OutputService outputS
             EndsAt = settings.EndsAt,
             AdditionalDetailSchemas = additionalDetailSchemas
         };
+
+        var succes =
+            await apiService.CallApiAsync(async client => await client.Teams[teamSlug].Events.PostAsync(request));
+        if (!succes) return 1;
+        
+        outputService.WriteSuccesMessage($"Successfully created event '{settings.Name}'.");
+        return 0;
     }
     
     private static List<AdditionalDetailSchemaDto>? ParseAdditionalDetailSchemas(string[]? requiredDetails, string[]? optionalDetails)
@@ -113,38 +140,5 @@ public class CreateEventCommand(InputService inputService, OutputService outputS
                 IsRequired = required
             };
         }
-    }
-    
-    private List<AdditionalDetailSchemaDto> GetAdditionalDetailSchemas()
-    {
-        var schemas = new List<AdditionalDetailSchemaDto>();
-        
-        while (true)
-        {
-            var schema = TryGetAdditionalDetailSchema();
-            if (schema is null) break;
-            schemas.Add(schema);
-        }
-
-        return schemas;
-    }
-    
-    private AdditionalDetailSchemaDto? TryGetAdditionalDetailSchema()
-    {
-        var name = inputService.GetString("[[Optional]] Custom field for registration", allowEmpty: true);
-        if (string.IsNullOrEmpty(name))
-        {
-            return null;
-        }
-        
-        var maxLength = inputService.GetNumber($"{name} max length", 1,255, 50);
-        var isRequired = inputService.GetBoolean($"Is {name} required", false);
-
-        return new AdditionalDetailSchemaDto
-        {
-            Name = name,
-            MaxLength = maxLength,
-            IsRequired = isRequired
-        };
     }
 }
