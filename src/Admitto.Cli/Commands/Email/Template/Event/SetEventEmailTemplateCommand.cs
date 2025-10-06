@@ -29,7 +29,10 @@ public class SetEventEmailTemplateSettings : TeamEventSettings
     }
 }
 
-public class SetEventEmailTemplateCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration)
+public class SetEventEmailTemplateCommand(
+    IAccessTokenProvider accessTokenProvider, 
+    IConfiguration configuration,
+    OutputService outputService)
     : ApiCommand<SetEventEmailTemplateSettings>(accessTokenProvider, configuration)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, SetEventEmailTemplateSettings settings)
@@ -51,7 +54,7 @@ public class SetEventEmailTemplateCommand(IAccessTokenProvider accessTokenProvid
                 .PutAsync(request));
         if (response is null) return 1;
 
-        AnsiConsole.MarkupLine($"[green]✓ Successfully set event-level template for '{settings.EmailType}' emails.[/]");
+        outputService.WriteSuccesMessage($"Successfully set event-level template for '{settings.EmailType}' emails.");
         return 0;
     }
 }

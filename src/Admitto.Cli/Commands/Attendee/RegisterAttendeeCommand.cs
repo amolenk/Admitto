@@ -21,6 +21,31 @@ public class RegisterAttendeeSettings : TeamEventSettings
     [CommandOption("--ticket")]
     [Description("Ticket(s) to register")]
     public string[]? Tickets { get; init; }
+
+    public override ValidationResult Validate()
+    {
+        if (string.IsNullOrWhiteSpace(Email))
+        {
+            return ValidationErrors.EmailMissing;
+        }
+
+        if (string.IsNullOrWhiteSpace(FirstName))
+        {
+            return ValidationErrors.FirstNameMissing;
+        }
+
+        if (string.IsNullOrWhiteSpace(LastName))
+        {
+            return ValidationErrors.LastNameMissing;
+        }
+
+        if (Tickets is null || Tickets.Length == 0)
+        {
+            return ValidationErrors.TicketsMissing;
+        }
+
+        return base.Validate();
+    }
 }
 
 public class RegisterAttendeeCommand(
