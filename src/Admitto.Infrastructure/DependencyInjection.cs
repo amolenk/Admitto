@@ -167,6 +167,7 @@ public static class DependencyInjection
         // TODO Not actually part of OpenFGA, but here is as good a place as any
         services.AddScoped<IAuthorizationService>(sp => new AdminOverrideAuthorizationService(
             sp.GetRequiredKeyedService<IAuthorizationService>("OpenFga"),
+            sp.GetRequiredService<IApplicationContext>(),
             sp.GetRequiredService<IConfiguration>()));
     }
 }

@@ -26,7 +26,19 @@
         <PackageReference Include="Aspire.Hosting.Keycloak" Version="9.1.0-preview.1.25121.10" />
         <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="9.4.1" />
         <PackageReference Include="Azure.Storage.Queues" Version="12.23.0" />
-        <PackageReference Include="CommunityToolkit.Aspire.Hosting.NodeJS.Extensions" Version="9.7.0" />
+        <PackageReference Include="CommunityToolkit.Aspire.Hosting.NodeJS.Extensions" Version="9.8.0" />
     </ItemGroup>
 
+
+<!--    TODO  Install npm pacakges if missing -->
+<!--    <Target Name="RestoreNpm" BeforeTargets="Build" Condition=" '$(DesignTimeBuild)' != 'true' ">-->
+<!--        <ItemGroup>-->
+<!--            <PackageJsons Include="..\*\package.json" />-->
+<!--        </ItemGroup>-->
+
+<!--        &lt;!&ndash; Install npm packages if node_modules is missing &ndash;&gt;-->
+<!--        <Message Importance="Normal" Text="Installing npm packages for %(PackageJsons.RelativeDir)" Condition="!Exists('%(PackageJsons.RootDir)%(PackageJsons.Directory)/node_modules')" />-->
+<!--        <Exec Command="npm install" WorkingDirectory="%(PackageJsons.RootDir)%(PackageJsons.Directory)" Condition="!Exists('%(PackageJsons.RootDir)%(PackageJsons.Directory)/node_modules')" />-->
+<!--    </Target>-->
+    
 </Project>

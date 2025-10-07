@@ -1,11 +1,13 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Amolenk.Admitto.ApiService;
 using Amolenk.Admitto.ApiService.Endpoints;
 using Amolenk.Admitto.ApiService.Middleware;
 using Amolenk.Admitto.Application.Common.Abstractions;
 using FluentValidation;
 using FluentValidation.Internal;
 using Humanizer;
+using Microsoft.AspNetCore.Authorization;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,7 +19,7 @@ builder.AddServiceDefaults();
 builder.Services.AddProblemDetails();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options => { options.AddDocumentTransformer<BearerSecuritySchemeTransformer>(); });
 
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
@@ -32,6 +34,8 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddDefaultApplicationServices();
 builder.Services.AddEmailServices();
 builder.Services.AddCommandHandlers();
+
+builder.Services.AddScoped<IAuthorizationHandler, AuthorizationHandler>();
 
 builder.AddDefaultInfrastructureServices();
 
@@ -91,6 +95,7 @@ app.UseExceptionHandler();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+
     app.MapScalarApiReference();
 }
 
