@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Amolenk.Admitto.ApiService;
 using Amolenk.Admitto.ApiService.Endpoints;
 using Amolenk.Admitto.ApiService.Middleware;
 using Amolenk.Admitto.Application.Common.Abstractions;
@@ -18,7 +19,7 @@ builder.AddServiceDefaults();
 builder.Services.AddProblemDetails();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options => { options.AddDocumentTransformer<BearerSecuritySchemeTransformer>(); });
 
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
@@ -94,6 +95,7 @@ app.UseExceptionHandler();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+
     app.MapScalarApiReference();
 }
 

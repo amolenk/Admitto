@@ -23,9 +23,9 @@ public interface IAuthorizationService
     ValueTask AddTeamRoleAsync(Guid userId, Guid teamId, TeamMemberRole role, 
         CancellationToken cancellationToken = default);
     
-    ValueTask<IEnumerable<string>> GetTeamsAsync(Guid userId, CancellationToken cancellationToken = default);
+    ValueTask<IEnumerable<Guid>> GetTeamsAsync(Guid userId, CancellationToken cancellationToken = default);
     
-    ValueTask<IEnumerable<string>> GetTicketedEventsAsync(Guid userId, Guid teamId,
+    ValueTask<IEnumerable<Guid>> GetTicketedEventsAsync(Guid userId, Guid teamId,
         CancellationToken cancellationToken = default);
 }
 

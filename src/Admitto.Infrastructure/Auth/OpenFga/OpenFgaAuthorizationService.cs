@@ -64,10 +64,18 @@ public class OpenFgaAuthorizationService(
             $"team:{teamId}",
             cancellationToken);
 
-    public ValueTask<IEnumerable<string>> GetTeamsAsync(Guid userId, CancellationToken cancellationToken = default) =>
-        ListObjectsAsync($"user:{userId}", "can_view_team", "team", cancellationToken);
+    public async ValueTask<IEnumerable<Guid>> GetTeamsAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        var objectIds = await ListObjectsAsync(
+            $"user:{userId}",
+            "can_view_team",
+            "team", 
+            cancellationToken);
+        
+        return objectIds.Select(Guid.Parse);
+    }
 
-    public async ValueTask<IEnumerable<string>> GetTicketedEventsAsync(
+    public async ValueTask<IEnumerable<Guid>> GetTicketedEventsAsync(
         Guid userId,
         Guid teamId,
         CancellationToken cancellationToken = default)
@@ -79,10 +87,10 @@ public class OpenFgaAuthorizationService(
             cancellationToken);
 
         var prefix = $"{teamId}_";
-        
+
         return objectIds
             .Where(o => o.StartsWith(prefix))
-            .Select(o => o[prefix.Length..]); // Skip the team slug prefix
+            .Select(o => Guid.Parse(o[prefix.Length..])); // Skip the team id prefix
     }
 
     public async ValueTask MigrateAsync()

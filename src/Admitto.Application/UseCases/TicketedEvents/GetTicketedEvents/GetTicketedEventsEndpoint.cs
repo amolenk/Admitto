@@ -43,7 +43,7 @@ public static class GetTicketedEventsEndpoint
 
         var ticketedEvents = await context.TicketedEvents
             .AsNoTracking()
-            .Where(te => te.TeamId == teamId && authorizedEvents.Contains(te.Slug))
+            .Where(te => te.TeamId == teamId && authorizedEvents.Contains(te.Id))
             .Select(te => new TicketedEventDto(
                 te.Slug,
                 te.Name,

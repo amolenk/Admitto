@@ -146,6 +146,8 @@ public static class Extensions
             })
             .AddJwtBearer(options =>
             {
+                options.IncludeErrorDetails = builder.Environment.IsDevelopment();
+                
                 options.Authority = authOptions.Authority;
                 options.Audience = authOptions.Audience;
                 options.RequireHttpsMetadata = authOptions.RequireHttpsMetadata;
