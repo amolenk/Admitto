@@ -6,5 +6,5 @@ namespace Amolenk.Admitto.Application.Common.Authorization;
 /// <summary>
 /// Represents an authorization requirement that can be used to check permissions.
 /// </summary>
-public record AuthorizationRequirement(Func<IAuthorizationService, HttpContext, ValueTask<bool>> Check)
+public record AuthorizationRequirement(Func<IAuthorizationService, ISlugResolver, HttpContext, ValueTask<bool>> Check)
     : IAuthorizationRequirement;

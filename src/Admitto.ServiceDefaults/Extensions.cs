@@ -146,6 +146,8 @@ public static class Extensions
             })
             .AddJwtBearer(options =>
             {
+                options.IncludeErrorDetails = builder.Environment.IsDevelopment();
+                
                 options.Authority = authOptions.Authority;
                 options.Audience = authOptions.Audience;
                 options.RequireHttpsMetadata = authOptions.RequireHttpsMetadata;
@@ -191,7 +193,6 @@ public static class Extensions
     public static WebApplicationBuilder AddDefaultAuthorization(this WebApplicationBuilder builder)
     {
         builder.Services
-            .AddScoped<IAuthorizationHandler, AuthorizationHandler>() // TODO Move?
             .AddAuthorization();
         
         return builder;

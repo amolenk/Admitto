@@ -38,7 +38,7 @@ public static class GetTeamsEndpoint
         }
 
         var teams = await context.Teams
-            .Where(t => authorizedTeams.Contains(t.Slug))
+            .Where(t => authorizedTeams.Contains(t.Id))
             .Select(t => new TeamDto(
                 t.Slug,
                 t.Name,

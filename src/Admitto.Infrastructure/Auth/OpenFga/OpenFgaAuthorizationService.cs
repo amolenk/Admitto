@@ -17,59 +17,67 @@ public class OpenFgaAuthorizationService(
 
     public ValueTask<bool> CanUpdateTeamAsync(
         Guid userId,
-        string teamSlug,
+        Guid teamId,
         CancellationToken cancellationToken = default) =>
-        CheckAsync(userId, "can_update_team", $"team:{teamSlug}", cancellationToken);
+        CheckAsync(userId, "can_update_team", $"team:{teamId}", cancellationToken);
 
     public ValueTask<bool> CanViewTeamAsync(
         Guid userId,
-        string teamSlug,
+        Guid teamId,
         CancellationToken cancellationToken = default) =>
-        CheckAsync(userId, "can_view_team", $"team:{teamSlug}", cancellationToken);
+        CheckAsync(userId, "can_view_team", $"team:{teamId}", cancellationToken);
 
     public ValueTask<bool> CanCreateEventAsync(
         Guid userId,
-        string teamSlug,
+        Guid teamId,
         CancellationToken cancellationToken = default) =>
-        CheckAsync(userId, "can_create_event", $"team:{teamSlug}", cancellationToken);
+        CheckAsync(userId, "can_create_event", $"team:{teamId}", cancellationToken);
 
     public ValueTask<bool> CanUpdateEventAsync(
         Guid userId,
-        string teamSlug,
-        string eventSlug,
+        Guid teamId,
+        Guid ticketedEventId,
         CancellationToken cancellationToken = default) =>
-        CheckAsync(userId, "can_update_event", $"event:{teamSlug}_{eventSlug}", cancellationToken);
+        CheckAsync(userId, "can_update_event", $"event:{teamId}_{ticketedEventId}", cancellationToken);
 
     public ValueTask<bool> CanViewEventAsync(
         Guid userId,
-        string teamSlug,
-        string eventSlug,
+        Guid teamId,
+        Guid ticketedEventId,
         CancellationToken cancellationToken = default) =>
-        CheckAsync(userId, "can_view_event", $"event:{teamSlug}_{eventSlug}", cancellationToken);
+        CheckAsync(userId, "can_view_event", $"event:{teamId}_{ticketedEventId}", cancellationToken);
 
     public ValueTask AddTicketedEventAsync(
-        string teamSlug,
-        string eventSlug,
+        Guid teamId,
+        Guid ticketedEventId,
         CancellationToken cancellationToken = default) =>
-        AddTupleAsync($"team:{teamSlug}", "team", $"event:{teamSlug}_{eventSlug}", cancellationToken);
+        AddTupleAsync($"team:{teamId}", "team", $"event:{teamId}_{ticketedEventId}", cancellationToken);
 
     public ValueTask AddTeamRoleAsync(
         Guid userId,
-        string teamSlug,
+        Guid teamId,
         TeamMemberRole role,
         CancellationToken cancellationToken = default) =>
         AddTupleAsync(
             $"user:{userId}",
             role.ToString().ToLowerInvariant(),
-            $"team:{teamSlug}",
+            $"team:{teamId}",
             cancellationToken);
 
-    public ValueTask<IEnumerable<string>> GetTeamsAsync(Guid userId, CancellationToken cancellationToken = default) =>
-        ListObjectsAsync($"user:{userId}", "can_view_team", "team", cancellationToken);
+    public async ValueTask<IEnumerable<Guid>> GetTeamsAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        var objectIds = await ListObjectsAsync(
+            $"user:{userId}",
+            "can_view_team",
+            "team", 
+            cancellationToken);
+        
+        return objectIds.Select(Guid.Parse);
+    }
 
-    public async ValueTask<IEnumerable<string>> GetTicketedEventsAsync(
+    public async ValueTask<IEnumerable<Guid>> GetTicketedEventsAsync(
         Guid userId,
-        string teamSlug,
+        Guid teamId,
         CancellationToken cancellationToken = default)
     {
         var objectIds = await ListObjectsAsync(
@@ -78,9 +86,11 @@ public class OpenFgaAuthorizationService(
             "event",
             cancellationToken);
 
+        var prefix = $"{teamId}_";
+
         return objectIds
-            .Where(o => o.StartsWith(teamSlug))
-            .Select(o => o[(teamSlug.Length + 1)..]); // Skip the team slug prefix
+            .Where(o => o.StartsWith(prefix))
+            .Select(o => Guid.Parse(o[prefix.Length..])); // Skip the team id prefix
     }
 
     public async ValueTask MigrateAsync()

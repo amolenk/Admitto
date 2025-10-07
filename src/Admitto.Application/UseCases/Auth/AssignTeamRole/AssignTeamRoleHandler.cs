@@ -8,12 +8,12 @@ public class AssignTeamRoleHandler(IAuthorizationService authorizationService, I
 {
     public async ValueTask HandleAsync(AssignTeamRoleCommand command, CancellationToken cancellationToken)
     {
-        await authorizationService.AddTeamRoleAsync(command.UserId, command.TeamSlug, command.Role, cancellationToken);
+        await authorizationService.AddTeamRoleAsync(command.UserId, command.TeamId, command.Role, cancellationToken);
 
         logger.LogInformation(
             "Assigned role '{role}' to user '{userId}' for team '{teamSlug}'.",
             command.Role,
             command.UserId,
-            command.TeamSlug);
+            command.TeamId);
     }
 }

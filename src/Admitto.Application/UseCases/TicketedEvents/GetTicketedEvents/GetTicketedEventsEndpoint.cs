@@ -29,9 +29,11 @@ public static class GetTicketedEventsEndpoint
         {
             return TypedResults.Unauthorized();
         }
-
+        
+        var teamId = await slugResolver.ResolveTeamIdAsync(teamSlug, cancellationToken);
+        
         var authorizedEvents = (
-                await authorizationService.GetTicketedEventsAsync(userId.Value, teamSlug, cancellationToken))
+                await authorizationService.GetTicketedEventsAsync(userId.Value, teamId, cancellationToken))
             .ToList();
 
         if (authorizedEvents.Count == 0)
@@ -39,11 +41,9 @@ public static class GetTicketedEventsEndpoint
             return TypedResults.Ok(new GetTicketedEventsResponse([]));
         }
 
-        var teamId = await slugResolver.ResolveTeamIdAsync(teamSlug, cancellationToken);
-
         var ticketedEvents = await context.TicketedEvents
             .AsNoTracking()
-            .Where(te => te.TeamId == teamId && authorizedEvents.Contains(te.Slug))
+            .Where(te => te.TeamId == teamId && authorizedEvents.Contains(te.Id))
             .Select(te => new TicketedEventDto(
                 te.Slug,
                 te.Name,

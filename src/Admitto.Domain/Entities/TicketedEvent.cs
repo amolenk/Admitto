@@ -41,7 +41,7 @@ public class TicketedEvent : Aggregate
 
         _additionalDetailSchemas = additionalDetailSchemas;
 
-        AddDomainEvent(new TicketedEventCreatedDomainEvent(teamId, Id, slug));
+        AddDomainEvent(new TicketedEventCreatedDomainEvent(teamId, Id));
     }
 
     public Guid TeamId { get; private set; }
