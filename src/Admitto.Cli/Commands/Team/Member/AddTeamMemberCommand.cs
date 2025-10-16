@@ -25,7 +25,10 @@ public class AddTeamMemberSettings : TeamSettings
     }
 }
 
-public class AddTeamMemberCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration)
+public class AddTeamMemberCommand(
+    IAccessTokenProvider accessTokenProvider, 
+    IConfiguration configuration,
+    OutputService outputService)
     : ApiCommand<AddTeamMemberSettings>(accessTokenProvider, configuration)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, AddTeamMemberSettings settings)
@@ -41,7 +44,7 @@ public class AddTeamMemberCommand(IAccessTokenProvider accessTokenProvider, ICon
         var succes = await CallApiAsync(async client => await client.Teams[teamSlug].Members.PostAsync(request));
         if (!succes) return 1;
         
-        AnsiConsole.MarkupLine($"[green]✓ Successfully added team member '{request.Email}'.[/]");
+        outputService.WriteSuccesMessage($"Successfully added team member '{request.Email}'.");
         return 0;
     }
 }

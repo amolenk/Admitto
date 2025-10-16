@@ -62,4 +62,40 @@ public static class ValidationErrors
     public static readonly ValidationResult ReconfirmReminderIntervalDelayMissing = 
         ValidationResult.Error("Reminder interval must be specified.");
     
+    public static readonly ValidationResult TeamNameMissing = 
+        ValidationResult.Error("Team name must be specified.");
+    
+    public static readonly ValidationResult TeamSlugMissing = 
+        ValidationResult.Error("Team slug must be specified.");
+    
+    public static readonly ValidationResult EmailServiceConnectionStringMissing = 
+        ValidationResult.Error("Email service connection string must be specified.");
+    
+    public static readonly ValidationResult EventNameMissing = 
+        ValidationResult.Error("Event name must be specified.");
+    
+    public static readonly ValidationResult EventSlugMissing = 
+        ValidationResult.Error("Event slug must be specified.");
+    
+    public static readonly ValidationResult EventWebsiteMissing = 
+        ValidationResult.Error("Event website must be specified.");
+    
+    public static readonly ValidationResult EventBaseUrlMissing = 
+        ValidationResult.Error("Event base URL must be specified.");
+    
+    public static readonly ValidationResult EventStartsAtMissing = 
+        ValidationResult.Error("Event start date and time must be specified.");
+    
+    public static readonly ValidationResult EventEndsAtMissing = 
+        ValidationResult.Error("Event end date and time must be specified.");
+    
+    public static readonly ValidationResult MigrationNameMissing = 
+        ValidationResult.Error("Migration name must be specified.");
+    
+    public static readonly ValidationResult TicketTypeSlugMissing = 
+        ValidationResult.Error("Ticket type slug must be specified.");
+    
+    public static readonly ValidationResult TicketTypeNameMissing = 
+        ValidationResult.Error("Ticket type name must be specified.");
+    
 }
