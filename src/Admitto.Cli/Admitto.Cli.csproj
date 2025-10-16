@@ -6,6 +6,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <RootNamespace>Amolenk.Admitto.Cli</RootNamespace>
+        <UserSecretsId>Admitto</UserSecretsId>
     </PropertyGroup>
 
     <ItemGroup>
@@ -25,6 +26,9 @@
     </ItemGroup>
 
     <ItemGroup>
+      <None Update="appsettings.Development.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </None>
       <None Update="appsettings.json">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>

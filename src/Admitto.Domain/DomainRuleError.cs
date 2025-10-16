@@ -106,6 +106,9 @@ public sealed class DomainRuleError
         public static DomainRuleError AtLeastOneTicketTypeIsRequired =>
             new("ticketed_event.missing_ticket_types", "At least one ticket type is required to activate the event.");
 
+        public static DomainRuleError TicketTypeNotFound(string slug) =>
+            new("ticketed_event.ticket_type_not_found", $"Ticket type with slug '{slug}' does not exist.");
+
         public static DomainRuleError NotFound(string slug) =>
             new("ticketed_event.not_found", $"Ticketed event with slug '{slug}' does not exist.");
 
@@ -145,5 +148,8 @@ public sealed class DomainRuleError
 
         public static DomainRuleError SlotNamesAreRequired =>
             new("ticket_type.slot_names_are_required", "Ticket type must have at least one slot.");
+
+        public static DomainRuleError MaxCapacityMustBeZeroOrPositive =>
+            new("ticket_type.max_capacity_must_be_zero_or_positive", "Ticket type maximum capacity must be zero or a positive number.");
     }
 }

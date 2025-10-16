@@ -1,0 +1,1 @@
+kiota generate --openapi http://localhost:5100/openapi/v1.json --output ./Api --namespace-name Amolenk.Admitto.Cli.Api --language csharp --clean-output

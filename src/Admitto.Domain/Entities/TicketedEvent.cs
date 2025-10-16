@@ -226,8 +226,18 @@ public class TicketedEvent : Aggregate
             throw new DomainRuleException(DomainRuleError.TicketedEvent.EndTimeMustBeAfterStartTime);
         }
     }
-
-
+    
+    public void UpdateMaxCapacity(string ticketTypeSlug, int maxCapacity)
+    {
+        var ticketType = _ticketTypes.FirstOrDefault(t => t.Slug == ticketTypeSlug);
+        if (ticketType is null)
+        {
+            throw new DomainRuleException(DomainRuleError.TicketedEvent.TicketTypeNotFound(ticketTypeSlug));
+        }
+        
+        ticketType.UpdateMaxCapacity(maxCapacity);
+    }
+    
     public void SetCancellationPolicy(CancellationPolicy policy)
     {
         CancellationPolicy = policy;

@@ -30,8 +30,8 @@ public class TicketType : Entity
 
     public static TicketType Create(string slug, string name, List<string> slotNames, int maxCapacity)
     {
-        // Note: we do allow ticket types with maxCapacity of 0, which means no tickets can be sold.
-        // This may be useful in some scenarios where registrations are only allowed at some later time.
+        EnsureValidMaxCapacity(maxCapacity);
+
         if (string.IsNullOrWhiteSpace(name))
             throw new DomainRuleException(DomainRuleError.TicketType.NameIsRequired);
         
@@ -56,5 +56,22 @@ public class TicketType : Entity
     public void ReleaseTickets(int quantity)
     {
         UsedCapacity -= quantity;
+    }
+    
+    public void UpdateMaxCapacity(int maxCapacity)
+    {
+        EnsureValidMaxCapacity(maxCapacity);
+        MaxCapacity = maxCapacity;
+    }
+    
+    private static void EnsureValidMaxCapacity(int maxCapacity)
+    {
+        // We do allow ticket types with maxCapacity of 0, which means no tickets can be sold.
+        // We also don't care about the current UsedCapacity. It may be useful to reduce the capacity at some point
+        // so that cancelled tickets cannot be re-sold.
+        if (maxCapacity < 0)
+        {
+            throw new DomainRuleException(DomainRuleError.TicketType.MaxCapacityMustBeZeroOrPositive);
+        }
     }
 }

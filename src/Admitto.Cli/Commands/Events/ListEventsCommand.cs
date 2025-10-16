@@ -18,10 +18,10 @@ public class ListEventsCommand(IAccessTokenProvider accessTokenProvider, IConfig
         foreach (var ticketedEvent in response.TicketedEvents ?? [])
         {
             var status = GetStatusString(
-                ticketedEvent.RegistrationOpensAt!.Value,
-                ticketedEvent.RegistrationClosesAt!.Value,
                 ticketedEvent.StartsAt!.Value,
-                ticketedEvent.EndsAt!.Value);
+                ticketedEvent.EndsAt!.Value,
+                ticketedEvent.RegistrationOpensAt,
+                ticketedEvent.RegistrationClosesAt);
 
             table.AddRow(ticketedEvent.Slug!, ticketedEvent.Name!, status);
         }
