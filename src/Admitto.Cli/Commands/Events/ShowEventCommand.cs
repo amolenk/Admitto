@@ -20,12 +20,21 @@ public class ShowEventCommand(IAccessTokenProvider accessTokenProvider, IConfigu
         grid.AddRow(
             "Status:",
             GetStatusString(
-                response.RegistrationOpensAt!.Value,
-                response.RegistrationClosesAt!.Value,
                 response.StartsAt!.Value,
-                response.EndsAt!.Value));
-        grid.AddRow("Registration opens:", response.RegistrationOpensAt!.Value.Format(true));
-        grid.AddRow("Registration closes:", response.RegistrationClosesAt!.Value.Format(true));
+                response.EndsAt!.Value,
+                response.RegistrationOpensAt,
+                response.RegistrationClosesAt));
+
+        if (response.RegistrationOpensAt.HasValue)
+        {
+            grid.AddRow("Registration opens:", response.RegistrationOpensAt.Value.Format(true));
+        }
+
+        if (response.RegistrationClosesAt.HasValue)
+        {
+            grid.AddRow("Registration closes:", response.RegistrationClosesAt.Value.Format(true));
+        }
+
         grid.AddRow("Event starts:", response.StartsAt!.Value.Format(true));
         grid.AddRow("Event ends:", response.EndsAt!.Value.Format(true));
 

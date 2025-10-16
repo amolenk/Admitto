@@ -97,5 +97,8 @@ public static class ValidationErrors
     
     public static readonly ValidationResult TicketTypeNameMissing = 
         ValidationResult.Error("Ticket type name must be specified.");
-    
+
+    public static readonly ValidationResult TicketTypeMaxCapacityMissing = 
+        ValidationResult.Error("Ticket type max capacity must be specified.");
+
 }

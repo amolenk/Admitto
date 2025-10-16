@@ -14,25 +14,23 @@ using Amolenk.Admitto.Cli.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Commands = Amolenk.Admitto.Cli.Commands;
 
+var environment = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? "Production";
+
 var configuration = new ConfigurationBuilder()
     .AddJsonFile("appsettings.json", optional: true)
+    .AddJsonFile($"appsettings.{environment}.json", optional: true)
     .AddJsonFile(ConfigSettings.GetConfigPath(), optional: true)
     .AddUserSecrets<Program>()
     .Build();
 
-
 var services = new ServiceCollection();
 
-
 services.Configure<CliAuthOptions>(configuration.GetSection("Authentication"));
-
 
 // Register configuration
 services.AddSingleton<IConfiguration>(configuration);
 services.AddSingleton<InputService>();
 services.AddSingleton<OutputService>();
-
-
 
 // Register services
 
@@ -130,7 +128,7 @@ app.Configure(config =>
                 .WithDescription("Remove a contributor");
             
             contributor.AddCommand<Commands.Contributor.UpdateCommand>("update")
-                .WithDescription("Updates a contributor");
+                .WithDescription("Update an existing contributor");
         });
     
     config.AddBranch(
@@ -149,7 +147,7 @@ app.Configure(config =>
                         .WithDescription("List all bulk emails");
 
                     bulk.AddCommand<Commands.Email.Bulk.RemoveCommand>("remove")
-                        .WithDescription("Removes a scheduled bulk email");
+                        .WithDescription("Remove a scheduled bulk email");
 
                     bulk.AddCommand<Commands.Email.Bulk.ScheduleCommand>("schedule")
                         .WithDescription("Schedule a bulk email");
@@ -258,6 +256,9 @@ app.Configure(config =>
 
                     ticketType.AddCommand<AddTicketTypeCommand>("add")
                         .WithDescription("Add a ticket type");
+
+                    ticketType.AddCommand<UpdateTicketTypeCommand>("update")
+                        .WithDescription("Update an existing ticket type");
                 });
             
             ticketedEvent.AddBranch(

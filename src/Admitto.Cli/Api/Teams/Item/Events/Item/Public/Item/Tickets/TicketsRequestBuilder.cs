@@ -22,7 +22,7 @@ namespace Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Public.Item.Tickets
         /// </summary>
         /// <param name="pathParameters">Path parameters for the request</param>
         /// <param name="requestAdapter">The request adapter to use to execute the requests.</param>
-        public TicketsRequestBuilder(Dictionary<string, object> pathParameters, IRequestAdapter requestAdapter) : base(requestAdapter, "{+baseurl}/teams/{teamSlug}/events/{eventSlug}/public/{publicId}/tickets?publicId={publicId}&signature={signature}", pathParameters)
+        public TicketsRequestBuilder(Dictionary<string, object> pathParameters, IRequestAdapter requestAdapter) : base(requestAdapter, "{+baseurl}/teams/{teamSlug}/events/{eventSlug}/public/{publicId}/tickets?signature={signature}", pathParameters)
         {
         }
         /// <summary>
@@ -30,7 +30,7 @@ namespace Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Public.Item.Tickets
         /// </summary>
         /// <param name="rawUrl">The raw URL to use for the request builder.</param>
         /// <param name="requestAdapter">The request adapter to use to execute the requests.</param>
-        public TicketsRequestBuilder(string rawUrl, IRequestAdapter requestAdapter) : base(requestAdapter, "{+baseurl}/teams/{teamSlug}/events/{eventSlug}/public/{publicId}/tickets?publicId={publicId}&signature={signature}", rawUrl)
+        public TicketsRequestBuilder(string rawUrl, IRequestAdapter requestAdapter) : base(requestAdapter, "{+baseurl}/teams/{teamSlug}/events/{eventSlug}/public/{publicId}/tickets?signature={signature}", rawUrl)
         {
         }
         /// <returns>A <see cref="global::Amolenk.Admitto.Cli.Api.Models.GetTicketsResponse"/></returns>
@@ -104,7 +104,7 @@ namespace Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Public.Item.Tickets
         public RequestInformation ToGetRequestInformation(Action<RequestConfiguration<global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Public.Item.Tickets.TicketsRequestBuilder.TicketsRequestBuilderGetQueryParameters>> requestConfiguration = default)
         {
 #endif
-            var requestInfo = new RequestInformation(Method.GET, "{+baseurl}/teams/{teamSlug}/events/{eventSlug}/public/{publicId}/tickets?signature={signature}", PathParameters);
+            var requestInfo = new RequestInformation(Method.GET, UrlTemplate, PathParameters);
             requestInfo.Configure(requestConfiguration);
             requestInfo.Headers.TryAdd("Accept", "application/json");
             return requestInfo;
@@ -165,8 +165,6 @@ namespace Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Public.Item.Tickets
         public partial class TicketsRequestBuilderPutQueryParameters 
         #pragma warning restore CS1591
         {
-            [QueryParameter("publicId")]
-            public Guid? PublicId { get; set; }
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
             [QueryParameter("signature")]
