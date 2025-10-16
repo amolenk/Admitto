@@ -7,6 +7,7 @@ using Amolenk.Admitto.Application.UseCases.TicketedEvents.GetTicketedEvents;
 using Amolenk.Admitto.Application.UseCases.TicketedEvents.SetReconfirmPolicy;
 using Amolenk.Admitto.Application.UseCases.TicketedEvents.SetRegistrationPolicy;
 using Amolenk.Admitto.Application.UseCases.TicketedEvents.UpdateTicketedEvent;
+using Amolenk.Admitto.Application.UseCases.TicketedEvents.UpdateTicketType;
 
 namespace Amolenk.Admitto.ApiService.Endpoints;
 
@@ -33,6 +34,7 @@ public static class TicketedEventEndpoints
             .MapGetTicketedEvents()
             .MapSetReconfirmPolicy()
             .MapSetRegistrationPolicy()
-            .MapUpdateTicketedEvent();
+            .MapUpdateTicketedEvent()
+            .MapUpdateTicketType();
     }
 }

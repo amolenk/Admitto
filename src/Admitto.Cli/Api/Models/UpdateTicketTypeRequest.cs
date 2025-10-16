@@ -9,45 +9,29 @@ namespace Amolenk.Admitto.Cli.Api.Models
 {
     [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
     #pragma warning disable CS1591
-    public partial class VerifyOtpCodeResponse : IAdditionalDataHolder, IParsable
+    public partial class UpdateTicketTypeRequest : IAdditionalDataHolder, IParsable
     #pragma warning restore CS1591
     {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
-        /// <summary>The publicId property</summary>
-        public Guid? PublicId { get; set; }
-        /// <summary>The registrationToken property</summary>
-#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
-#nullable enable
-        public string? RegistrationToken { get; set; }
-#nullable restore
-#else
-        public string RegistrationToken { get; set; }
-#endif
-        /// <summary>The signature property</summary>
-#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
-#nullable enable
-        public string? Signature { get; set; }
-#nullable restore
-#else
-        public string Signature { get; set; }
-#endif
+        /// <summary>The maxCapacity property</summary>
+        public int? MaxCapacity { get; set; }
         /// <summary>
-        /// Instantiates a new <see cref="global::Amolenk.Admitto.Cli.Api.Models.VerifyOtpCodeResponse"/> and sets the default values.
+        /// Instantiates a new <see cref="global::Amolenk.Admitto.Cli.Api.Models.UpdateTicketTypeRequest"/> and sets the default values.
         /// </summary>
-        public VerifyOtpCodeResponse()
+        public UpdateTicketTypeRequest()
         {
             AdditionalData = new Dictionary<string, object>();
         }
         /// <summary>
         /// Creates a new instance of the appropriate class based on discriminator value
         /// </summary>
-        /// <returns>A <see cref="global::Amolenk.Admitto.Cli.Api.Models.VerifyOtpCodeResponse"/></returns>
+        /// <returns>A <see cref="global::Amolenk.Admitto.Cli.Api.Models.UpdateTicketTypeRequest"/></returns>
         /// <param name="parseNode">The parse node to use to read the discriminator value and create the object</param>
-        public static global::Amolenk.Admitto.Cli.Api.Models.VerifyOtpCodeResponse CreateFromDiscriminatorValue(IParseNode parseNode)
+        public static global::Amolenk.Admitto.Cli.Api.Models.UpdateTicketTypeRequest CreateFromDiscriminatorValue(IParseNode parseNode)
         {
             _ = parseNode ?? throw new ArgumentNullException(nameof(parseNode));
-            return new global::Amolenk.Admitto.Cli.Api.Models.VerifyOtpCodeResponse();
+            return new global::Amolenk.Admitto.Cli.Api.Models.UpdateTicketTypeRequest();
         }
         /// <summary>
         /// The deserialization information for the current model
@@ -57,9 +41,7 @@ namespace Amolenk.Admitto.Cli.Api.Models
         {
             return new Dictionary<string, Action<IParseNode>>
             {
-                { "publicId", n => { PublicId = n.GetGuidValue(); } },
-                { "registrationToken", n => { RegistrationToken = n.GetStringValue(); } },
-                { "signature", n => { Signature = n.GetStringValue(); } },
+                { "maxCapacity", n => { MaxCapacity = n.GetIntValue(); } },
             };
         }
         /// <summary>
@@ -69,9 +51,7 @@ namespace Amolenk.Admitto.Cli.Api.Models
         public virtual void Serialize(ISerializationWriter writer)
         {
             _ = writer ?? throw new ArgumentNullException(nameof(writer));
-            writer.WriteGuidValue("publicId", PublicId);
-            writer.WriteStringValue("registrationToken", RegistrationToken);
-            writer.WriteStringValue("signature", Signature);
+            writer.WriteIntValue("maxCapacity", MaxCapacity);
             writer.WriteAdditionalData(AdditionalData);
         }
     }

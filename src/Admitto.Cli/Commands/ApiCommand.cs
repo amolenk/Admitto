@@ -145,9 +145,12 @@ public abstract class ApiCommand<TSettings>(IAccessTokenProvider accessTokenProv
     
     private ApiClient GetApiClient()
     {
-        var endpoint = configuration[ConfigSettings.EndpointSetting];
+        var endpoint = configuration["Admitto:Endpoint"];
+        
+        // var endpoint = configuration[ConfigSettings.EndpointSetting];
         if (string.IsNullOrWhiteSpace(endpoint))
         {
+            // TODO
             throw new InvalidOperationException(
                 "API endpoint is not configured. Please set it using 'config set --endpoint <url>' command.");
         }
