@@ -13,9 +13,27 @@ public class AddTicketTypeSettings : TeamEventSettings
 
     [CommandOption("--maxCapacity")]
     public int? MaxCapacity { get; set; }
+
+    public override ValidationResult Validate()
+    {
+        if (string.IsNullOrWhiteSpace(Slug))
+        {
+            return ValidationErrors.TicketTypeSlugMissing;
+        }
+
+        if (string.IsNullOrWhiteSpace(Name))
+        {
+            return ValidationErrors.TicketTypeNameMissing;
+        }
+
+        return base.Validate();
+    }
 }
 
-public class AddTicketTypeCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration)
+public class AddTicketTypeCommand(
+    IAccessTokenProvider accessTokenProvider, 
+    IConfiguration configuration,
+    OutputService outputService)
     : EventCommandBase<AddTicketTypeSettings>(accessTokenProvider, configuration)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, AddTicketTypeSettings settings)
@@ -35,7 +53,7 @@ public class AddTicketTypeCommand(IAccessTokenProvider accessTokenProvider, ICon
             async client => await client.Teams[teamSlug].Events[eventSlug].TicketTypes.PostAsync(request));
         if (!succes) return 1;
         
-        AnsiConsole.MarkupLine($"[green]✓ Successfully added ticket type {settings.Name}.[/]");
+        outputService.WriteSuccesMessage($"Successfully added ticket type {settings.Name}.");
         return 0;
     }
 }

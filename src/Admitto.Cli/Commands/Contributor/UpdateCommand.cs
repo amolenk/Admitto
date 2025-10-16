@@ -30,7 +30,10 @@ public class UpdateSettings : TeamEventSettings
     }
 }
 
-public class UpdateCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration)
+public class UpdateCommand(
+    IAccessTokenProvider accessTokenProvider, 
+    IConfiguration configuration,
+    OutputService outputService)
     : EventCommandBase<UpdateSettings>(accessTokenProvider, configuration)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, UpdateSettings settings)
@@ -57,8 +60,7 @@ public class UpdateCommand(IAccessTokenProvider accessTokenProvider, IConfigurat
             await client.Teams[teamSlug].Events[eventSlug].Contributors[settings.Id!.Value].PatchAsync(request));
         if (response is null) return 1;
 
-        AnsiConsole.MarkupLine(
-            $"[green]✓ Successfully updated contributor.[/]");
+        outputService.WriteSuccesMessage("Successfully updated contributor.");
         return 0;
     }
 }

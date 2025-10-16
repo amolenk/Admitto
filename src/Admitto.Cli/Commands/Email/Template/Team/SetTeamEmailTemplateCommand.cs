@@ -30,7 +30,10 @@ public class SetTeamEmailTemplateSettings : TeamSettings
     }
 }
 
-public class SetTeamEmailTemplateCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration)
+public class SetTeamEmailTemplateCommand(
+    IAccessTokenProvider accessTokenProvider, 
+    IConfiguration configuration,
+    OutputService outputService)
     : ApiCommand<SetTeamEmailTemplateSettings>(accessTokenProvider, configuration)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, SetTeamEmailTemplateSettings settings)
@@ -49,7 +52,7 @@ public class SetTeamEmailTemplateCommand(IAccessTokenProvider accessTokenProvide
             await client.Teams[teamSlug].EmailTemplates[settings.EmailType] .PutAsync(request));
         if (response is null) return 1;
 
-        AnsiConsole.MarkupLine($"[green]✓ Successfully set team-level template for '{settings.EmailType}' emails.[/]");
+        outputService.WriteSuccesMessage($"Successfully set team-level template for '{settings.EmailType}' emails.");
         return 0;
     }
 }

@@ -45,7 +45,10 @@ public class AddSettings : TeamEventSettings
     }
 }
 
-public class AddCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration)
+public class AddCommand(
+    IAccessTokenProvider accessTokenProvider, 
+    IConfiguration configuration,
+    OutputService outputService)
     : EventCommandBase<AddSettings>(accessTokenProvider, configuration)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, AddSettings settings)
@@ -72,8 +75,7 @@ public class AddCommand(IAccessTokenProvider accessTokenProvider, IConfiguration
             await client.Teams[teamSlug].Events[eventSlug].Contributors.PostAsync(request));
         if (response is null) return 1;
 
-        AnsiConsole.MarkupLine(
-            $"[green]✓ Successfully added contributor (registration ID = '{response.RegistrationId}').[/]");
+        outputService.WriteSuccesMessage($"Successfully added contributor (registration ID = '{response.RegistrationId}').");
         return 0;
     }
 }
