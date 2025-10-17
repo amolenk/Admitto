@@ -1,0 +1,102 @@
+name: Update CLI Homebrew Tap
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch: {}
+
+jobs:
+  update-tap:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout source
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Compute SHA256 of source tarball
+      id: sha
+      run: |
+        commit=${{ github.sha }}
+        url="https://github.com/${{ github.repository }}/archive/${commit}.tar.gz"
+        curl -L -o source.tar.gz "$url"
+        echo "tarball_url=$url" >> $GITHUB_OUTPUT
+        echo "sha256=$(shasum -a 256 source.tar.gz | awk '{print $1}')" >> $GITHUB_OUTPUT
+
+    - name: Checkout homebrew tap
+      uses: actions/checkout@v4
+      with:
+        repository: amolenk/homebrew-admitto
+        path: tap
+        token: ${{ secrets.HOMEBREW_REPO_PAT }}
+
+    - name: Create update branch
+      id: create_branch
+      run: |
+        short=${{ github.sha }}
+        short=${short:0:8}
+        branch="update/admitto-${short}"
+        git -C tap checkout -b "$branch"
+        echo "branch=$branch" >> $GITHUB_OUTPUT
+
+    - name: Update Formula
+      run: |
+        formula="tap/Formula/admitto.rb"
+        url="${{ steps.sha.outputs.tarball_url }}"
+        sha="${{ steps.sha.outputs.sha256 }}"
+        commit=${{ github.sha }}
+        version="1.0.${{ github.run_number }}"
+
+        if [ ! -f "$formula" ]; then
+          echo "Formula not found at $formula"
+          exit 1
+        fi
+
+        sed -E -i "s|url \".*\"|url \"${url}\"|" "$formula"
+        sed -E -i "s|sha256 \".*\"|sha256 \"${sha}\"|" "$formula"
+        sed -E -i "s|commit \".*\"|commit \"${commit}\"|" "$formula"
+        sed -E -i "s|version \".*\"|version \"${version}\"|" "$formula"
+
+        git -C tap add "$formula"
+        git -C tap commit -m "admitto: update formula to $GITHUB_RUN_NUMBER $GITHUB_SHA"
+
+    - name: Push branch
+      run: |
+        branch=$(git -C tap rev-parse --abbrev-ref HEAD)
+        git -C tap push origin $branch
+      env:
+        GIT_ASKPASS: /bin/true
+
+    - name: Create PR on tap via API
+      env:
+        TAP_REPO: amolenk/homebrew-admitto
+        BRANCH: ${{ steps.create_branch.outputs.branch }}
+        GH_TOKEN: ${{ secrets.HOMEBREW_REPO_PAT }}
+      run: |
+        api_url="https://api.github.com/repos/${TAP_REPO}/pulls"
+        title="admitto: update formula to ${{ github.sha }}"
+        body="Automated formula update for admitto.\nSource: ${{ github.repository }}@${{ github.sha }}"
+        head="${{ github.repository_owner }}:${BRANCH}"
+        data=$(jq -n --arg t "$title" --arg b "$body" --arg head "$head" --arg base "main" '{title:$t, body:$b, head:$head, base:$base}')
+        response=$(curl -s -X POST -H "Authorization: token ${GH_TOKEN}" -H "Accept: application/vnd.github+json" $api_url -d "$data")
+        pr_number=$(echo "$response" | jq -r '.number')
+        pr_url=$(echo "$response" | jq -r '.html_url')
+        echo "Created PR #${pr_number}: ${pr_url}"
+
+        if [ -z "$pr_number" ] || [ "$pr_number" = "null" ]; then
+          echo "Failed to create PR: $response"
+          exit 1
+        fi
+
+        # Attempt to merge the PR
+        merge_api="https://api.github.com/repos/${TAP_REPO}/pulls/${pr_number}/merge"
+        merge_payload='{"commit_title":"Merge admitto formula update","merge_method":"merge"}'
+        merge_response=$(curl -s -X PUT -H "Authorization: token ${GH_TOKEN}" -H "Accept: application/vnd.github+json" $merge_api -d "$merge_payload")
+        merged=$(echo "$merge_response" | jq -r '.merged // empty')
+        if [ "$merged" = "true" ]; then
+          echo "PR #${pr_number} merged successfully"
+        else
+          echo "Failed to merge PR #${pr_number}: $merge_response"
+          exit 1
+        fi
