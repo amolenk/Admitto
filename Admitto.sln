@@ -6,6 +6,9 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{4BA9B65C-5341-4641-B9C9-2B19E3A17933}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{BF963B15-CA98-4252-B5F5-294C9B8F7CE8}"
+	ProjectSection(SolutionItems) = preProject
+		src\Admitto.UI.Admin\.env.development = src\Admitto.UI.Admin\.env.development
+	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Admitto.Domain", "src\Admitto.Domain\Admitto.Domain.csproj", "{4EF4AE57-443B-41BD-9AC4-5729A2A3D384}"
 EndProject
