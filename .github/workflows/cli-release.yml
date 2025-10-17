@@ -42,7 +42,7 @@ jobs:
 
     - name: Update Formula
       run: |
-        formula="tap/Formula/admitto.rb"
+        formula="Formula/admitto.rb"
         url="${{ steps.sha.outputs.tarball_url }}"
         sha="${{ steps.sha.outputs.sha256 }}"
         commit=${{ github.sha }}
