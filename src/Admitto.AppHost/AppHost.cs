@@ -11,9 +11,6 @@ var postgres = builder.ConfigurePostgres();
 var postgresDb = postgres.AddDatabase("admitto-db");
 var openFgaDb = postgres.AddDatabase("openfga-db");
 
-// var serviceBus = builder.ConfigureServiceBus();
-// serviceBus.AddServiceBusQueue("queue");
-
 var queues = builder.ConfigureStorageQueues();
 
 var openFga = builder.ConfigureOpenFga(openFgaDb);

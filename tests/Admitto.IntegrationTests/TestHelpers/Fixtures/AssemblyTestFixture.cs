@@ -37,7 +37,8 @@ public static class AssemblyTestFixture
         IdentityTestFixture = IdentityTestFixture.Create(appHost);
         QueueStorageTestFixture = await QueueStorageTestFixture.CreateAsync(appHost);
 
-        WorkerHost = await CreateWorkerHostAsync();
+        // TODO
+        // WorkerHost = await CreateWorkerHostAsync();
     }
     
     [AssemblyCleanup]
@@ -71,7 +72,6 @@ public static class AssemblyTestFixture
         builder.Services.AddCommandHandlers();
         builder.Services.AddEventualDomainEventHandlers();
         builder.AddDefaultInfrastructureServices();
-        builder.AddSmtpEmailServices();
 
         return builder.Build();
     }

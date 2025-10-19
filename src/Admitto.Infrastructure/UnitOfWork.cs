@@ -23,7 +23,7 @@ public class UnitOfWork(ApplicationContext context, MessageOutbox outbox) : IUni
             
             result = await context.SaveChangesAsync(cancellationToken);
         }
-        catch (DbUpdateException e) when (e.InnerException is PostgresException pge && pge.SqlState == PostgresUniqueViolation)
+        catch (DbUpdateException e) when (e.InnerException is PostgresException { SqlState: PostgresUniqueViolation } pge)
         {
             var args = new UniqueViolationArgs
             {
@@ -60,6 +60,7 @@ public class UnitOfWork(ApplicationContext context, MessageOutbox outbox) : IUni
             "attendees" => ApplicationRuleError.Attendee.AlreadyRegistered,
             "contributors" => ApplicationRuleError.Contributor.AlreadyExists,
             "participants" => ApplicationRuleError.Participant.AlreadyExists,
+            "teams" => ApplicationRuleError.Team.AlreadyExists,
             _ => ApplicationRuleError.General.AlreadyExists
         };
     }

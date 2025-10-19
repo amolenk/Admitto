@@ -1,4 +1,4 @@
-name: Update CLI Homebrew Tap
+name: Update Admitto CLI Homebrew Formula
 
 on:
   push:

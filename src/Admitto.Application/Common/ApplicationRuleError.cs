@@ -108,6 +108,9 @@ public sealed class ApplicationRuleError
     {
         public static ApplicationRuleError NotFound =>
             new("team.not_found", "Team does not exist.");
+        
+        public static ApplicationRuleError AlreadyExists =>
+            new("team.already_exists", "The team that you tried to create already exists.");
     }
     
     public static class TicketedEvent
