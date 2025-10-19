@@ -1,7 +1,9 @@
+using Amolenk.Admitto.Application.Common;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Amolenk.Admitto.IntegrationTests.TestHelpers;
 
+// TODO Cleanup
 public static class ShouldHaveProblemDetailExtension
 {
     public static Task ShouldBeBadRequestAsync(this HttpResponseMessage response, string detail)
@@ -9,6 +11,14 @@ public static class ShouldHaveProblemDetailExtension
         return response.ShouldBeBadRequestAsync(problem =>
         {
             problem.Detail.ShouldBe(detail);
+        });
+    }
+
+    public static Task ShouldBeBadRequestForFieldAsync(this HttpResponseMessage response, string fieldName)
+    {
+        return response.ShouldBeBadRequestAsync(problem =>
+        {
+            problem.Errors.ShouldContainKey(fieldName);
         });
     }
 
@@ -21,6 +31,17 @@ public static class ShouldHaveProblemDetailExtension
         });
     }
     
+    public static async Task ShouldBeBadRequestAsync(this HttpResponseMessage response, ApplicationRuleError error)
+    {
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        
+        var validationProblem = await response.Content.ReadFromJsonAsync<ValidationProblemDetails>();
+        validationProblem.ShouldNotBeNull();
+        
+        validationProblem.Extensions.ShouldContainKey("errorCode");
+        (validationProblem.Extensions["errorCode"] ?? string.Empty).ToString().ShouldBe(error.Code);
+    }
+    
     public static async Task ShouldBeBadRequestAsync(this HttpResponseMessage response, Action<ValidationProblemDetails> condition)
     {
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
@@ -30,7 +51,7 @@ public static class ShouldHaveProblemDetailExtension
         
         condition(validationProblem);
     }
-    
+
     [Obsolete("Use ShouldBeBadRequestAsync instead.")]
     public static async Task ShouldHaveProblemDetailAsync(this HttpResponseMessage response,
         HttpStatusCode? expectedStatusCode = null, string? expectedDetail = null,
