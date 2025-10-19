@@ -4,12 +4,24 @@ using Amolenk.Admitto.Domain.Entities;
 using Amolenk.Admitto.Infrastructure.Persistence;
 using Amolenk.Admitto.IntegrationTests.TestHelpers.Builders;
 using TeamDataFactory = Amolenk.Admitto.IntegrationTests.TestHelpers.Data.TeamDataFactory;
+using AuthorizationTestFixture = Amolenk.Admitto.IntegrationTests.TestHelpers.Fixtures.AuthorizationTestFixture;
+using DatabaseTestFixture = Amolenk.Admitto.IntegrationTests.TestHelpers.Fixtures.DatabaseTestFixture;
+using EmailTestFixture = Amolenk.Admitto.IntegrationTests.TestHelpers.Fixtures.EmailTestFixture;
+using IdentityTestFixture = Amolenk.Admitto.IntegrationTests.TestHelpers.Fixtures.IdentityTestFixture;
+using QueueStorageTestFixture = Amolenk.Admitto.IntegrationTests.TestHelpers.Fixtures.QueueStorageTestFixture;
 
 namespace Amolenk.Admitto.IntegrationTests.TestHelpers;
 
 [DoNotParallelize]
 public abstract class FullStackTestsBase : ApiTestsBase
 {
+    // Convenience properties for accessing test fixtures
+    protected readonly AuthorizationTestFixture Authorization = AssemblyTestFixture.AuthorizationTestFixture;
+    protected readonly DatabaseTestFixture Database = AssemblyTestFixture.DatabaseTestFixture;
+    protected readonly EmailTestFixture Email = AssemblyTestFixture.EmailTestFixture;
+    protected readonly IdentityTestFixture Identity = AssemblyTestFixture.IdentityTestFixture;
+    protected readonly QueueStorageTestFixture QueueStorage = AssemblyTestFixture.QueueStorageTestFixture;
+
     [TestInitialize]
     public override async Task TestInitialize()
     {

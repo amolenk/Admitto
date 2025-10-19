@@ -1,6 +1,8 @@
 using Amolenk.Admitto.Infrastructure.Auth;
+using Amolenk.Admitto.IntegrationTests.TestHelpers.Auth;
 using Aspire.Hosting;
 using Aspire.Hosting.ApplicationModel;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Options;
 
@@ -36,7 +38,7 @@ public class TestingAspireAppHost()
             .AddJsonFile("appsettings.json", optional: false)
             .AddEnvironmentVariables()
             .Build();
-
+        
         applicationBuilder.Services.AddHttpClient("KeycloakApi")
             .AddHttpMessageHandler(() => 
                 CreateAccessTokenHandler(testConfiguration.GetSection("KeycloakApi")));
@@ -49,6 +51,10 @@ public class TestingAspireAppHost()
                 var keycloakEndpoint = Application.GetEndpoint("keycloak").ToString();
                 return CreateAccessTokenHandler(testConfiguration.GetSection("AdmittoApi"), keycloakEndpoint);
             });
+        
+        // Configure data protection with a fixed application name for tests. Normally, this is set in the
+        // service defaults, but we need to set it here because the DatabaseTestFixture uses data protection.
+        applicationBuilder.Services.AddDataProtection().SetApplicationName("Admitto");
     }
 
     private static AccessTokenHandler CreateAccessTokenHandler(IConfigurationSection configSection, 

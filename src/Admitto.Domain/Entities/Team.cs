@@ -22,8 +22,6 @@ public class Team : Aggregate
         Name = name;
         Email = email;
         EmailServiceConnectionString = emailServiceConnectionString;
-        
-        AddDomainEvent(new TeamCreatedDomainEvent(Id, slug));
     }
 
     public string Slug { get; private set; } = null!;

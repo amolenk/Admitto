@@ -14,10 +14,12 @@ public static class ShouldContainMessageExtension
         
         return ShouldEventually.CompleteIn(async () =>
             {
-                var message = await queueClient.PeekMessageAsync();
-                message.ShouldNotBeNull();
+                var response = await queueClient.PeekMessageAsync();
+                response.ShouldNotBeNull();
+                
+                response.Value.ShouldNotBeNull();
 
-                var cloudEvent = CloudEvent.Parse(message.Value.Body);
+                var cloudEvent = CloudEvent.Parse(response.Value.Body);
                 cloudEvent.ShouldNotBeNull();
 
                 var typedMessage = JsonSerializer.Deserialize<TMessage>(cloudEvent.Data!.ToString(), 

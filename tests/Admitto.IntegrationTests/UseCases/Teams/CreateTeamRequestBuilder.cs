@@ -6,9 +6,8 @@ public class CreateTeamRequestBuilder
 {
     private string _slug = "default-team";
     private string _name = "Default Team";
-    private EmailSettingsDto _emailSettings = EmailSettingsDto.FromEmailSettings(
-        AssemblyTestFixture.EmailTestFixture.DefaultEmailSettings);
-    private List<TeamMemberDto> _members = [];
+    private string _email = "team@example.com";
+    private string _emailServiceConnectionString = "host=localhost;port=1025";
 
     public CreateTeamRequestBuilder WithSlug(string slug)
     {
@@ -22,20 +21,20 @@ public class CreateTeamRequestBuilder
         return this;
     }
     
-    public CreateTeamRequestBuilder WithEmailSettings(EmailSettingsDto emailSettings)
+    public CreateTeamRequestBuilder WithEmail(string email)
     {
-        _emailSettings = emailSettings;
+        _email = email;
         return this;
     }
 
-    public CreateTeamRequestBuilder WithMembers(IEnumerable<TeamMemberDto> members)
+    public CreateTeamRequestBuilder WithEmailServiceConnectionString(string emailServiceConnectionString)
     {
-        _members = members.ToList();
+        _emailServiceConnectionString = emailServiceConnectionString;
         return this;
     }
 
     public CreateTeamRequest Build()
     {
-        return new CreateTeamRequest(_slug, _name, _emailSettings, _members);
+        return new CreateTeamRequest(_slug, _name, _email!, _emailServiceConnectionString!);
     }
 }

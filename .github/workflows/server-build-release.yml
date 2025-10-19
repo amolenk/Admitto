@@ -1,4 +1,4 @@
-name: Build and Push Docker Images
+name: Build and Release Admitto Server Components
 
 on:
   push:
@@ -79,13 +79,14 @@ jobs:
       with:
         context: ./src
         file: ${{ matrix.project.path }}/Dockerfile
-        push: true
+        push: ${{ github.event_name != 'pull_request' }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
         
     - name: Compose immutable image reference
+      if: ${{ github.event_name != 'pull_request' }}
       id: imm
       run: echo "IMMUTABLE_IMAGE=${{ env.REGISTRY }}/admitto-${{ matrix.project.name }}@${{ steps.build.outputs.digest }}" >> $GITHUB_ENV
       
@@ -97,7 +98,7 @@ jobs:
       
       # Deploy only non-jobrunner images
     - name: Deploy new revision to ACA (pinned by digest)
-      if: matrix.project.name != 'jobrunner'
+      if: ${{ github.event_name != 'pull_request' && matrix.project.name != 'jobrunner' }}
       run: |
         az containerapp update \
           -g ${{ vars.AZURE_RESOURCE_GROUP }} \

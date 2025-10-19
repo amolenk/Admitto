@@ -15,6 +15,6 @@ public static class UserDataFactory
         email ??= "bob@example.com";
         role ??= TeamMemberRole.Manager;
 
-        return TeamMember.Create(email, role);
+        return TeamMember.Create(email, role.Value);
     }
 }

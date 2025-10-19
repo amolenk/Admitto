@@ -1,5 +1,5 @@
 using Amolenk.Admitto.Application.Common.Abstractions;
-using Amolenk.Admitto.Infrastructure.Auth;
+using Amolenk.Admitto.Infrastructure.UserManagement.Keycloak;
 
 namespace Amolenk.Admitto.IntegrationTests.TestHelpers.Fixtures;
 
