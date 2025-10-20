@@ -1,6 +1,4 @@
-using Spectre.Console;
-
-namespace Amolenk.Admitto.Cli.Commands;
+namespace Amolenk.Admitto.Cli.Commands.Auth;
 
 public class LogoutSettings : CommandSettings
 {

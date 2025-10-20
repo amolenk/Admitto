@@ -14,9 +14,6 @@ public class AuthService(ITokenCache tokenCache, IHttpClientFactory clientFactor
         var disco = await GetDiscoveryDocumentAsync(client);
         if (disco is null) return false;
 
-        AnsiConsole.WriteLine($"Client ID: {_options.ClientId}");
-        AnsiConsole.WriteLine($"Scope: {_options.Scope}");
-        
         var deviceResponse = await client.RequestDeviceAuthorizationAsync(new DeviceAuthorizationRequest
         {
             Address = disco.DeviceAuthorizationEndpoint,
@@ -150,22 +147,14 @@ public class AuthService(ITokenCache tokenCache, IHttpClientFactory clientFactor
 
     private async Task<DiscoveryDocumentResponse?> GetDiscoveryDocumentAsync(HttpClient client)
     {
-        // TODO Didn't need this for Entra, so check that Keycloak still works or needs other config
-        // var discoveryAddress = $"{_options.Authority}/.well-known/openid-configuration";
-        // AnsiConsole.WriteLine($"🔎 Fetching discovery document from: {discoveryAddress}");
-        
         var disco = await client.GetDiscoveryDocumentAsync(new DiscoveryDocumentRequest
         {
             Address = _options.Authority,
             Policy = new DiscoveryPolicy
             {
                 RequireHttps = _options.RequireHttps,
-                // TODO document
-                // Microsoft token endpoint is https://login.microsoftonline.com/{tenant-id}/oauth2/v2.0/token
-                // But authority is https://login.microsoftonline.com/{tenant-id}/v2.0
-                // These look similar, but their base path segments differ, so Duende considers this invalid unless ValidateEndpoints = false.
                 ValidateEndpoints = false,
-                ValidateIssuerName = true // TODO Or false during development?
+                ValidateIssuerName = true
             }
         });
 
