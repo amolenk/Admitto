@@ -20,7 +20,7 @@ public class ClearEventEmailTemplateCommand(
     IAccessTokenProvider accessTokenProvider, 
     IConfiguration configuration,
     OutputService outputService)
-    : ApiCommand<ClearEventEmailTemplateSettings>(accessTokenProvider, configuration)
+    : ApiCommand<ClearEventEmailTemplateSettings>(accessTokenProvider, configuration, outputService)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, ClearEventEmailTemplateSettings settings)
     {

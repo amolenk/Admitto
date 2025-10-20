@@ -10,7 +10,7 @@ public class ShowTeamCommand(
     IAccessTokenProvider accessTokenProvider, 
     IConfiguration configuration,
     OutputService outputService) 
-    : ApiCommand<ShowTeamSettings>(accessTokenProvider, configuration)
+    : ApiCommand<ShowTeamSettings>(accessTokenProvider, configuration, outputService)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, ShowTeamSettings settings)
     {

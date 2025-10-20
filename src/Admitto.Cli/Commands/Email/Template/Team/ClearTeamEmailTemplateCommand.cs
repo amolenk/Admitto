@@ -20,7 +20,7 @@ public class ClearTeamEmailTemplateCommand(
     IAccessTokenProvider accessTokenProvider, 
     IConfiguration configuration,
     OutputService outputService)
-    : ApiCommand<ClearTeamEmailTemplateSettings>(accessTokenProvider, configuration)
+    : ApiCommand<ClearTeamEmailTemplateSettings>(accessTokenProvider, configuration, outputService)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, ClearTeamEmailTemplateSettings settings)
     {

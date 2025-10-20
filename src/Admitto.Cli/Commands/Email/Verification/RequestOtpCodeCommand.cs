@@ -20,7 +20,7 @@ public class RequestOtpCodeCommand(
     IAccessTokenProvider accessTokenProvider, 
     IConfiguration configuration,
     OutputService outputService)
-    : ApiCommand<RequestOtpCodeSettings>(accessTokenProvider, configuration)
+    : ApiCommand<RequestOtpCodeSettings>(accessTokenProvider, configuration, outputService)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, RequestOtpCodeSettings settings)
     {

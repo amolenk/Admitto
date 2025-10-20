@@ -51,7 +51,7 @@ public class ScheduleCommand(
     IAccessTokenProvider accessTokenProvider,
     IConfiguration configuration,
     OutputService outputService)
-    : ApiCommand<ScheduleSettings>(accessTokenProvider, configuration)
+    : ApiCommand<ScheduleSettings>(accessTokenProvider, configuration, outputService)
 {
     public sealed override async Task<int> ExecuteAsync(CommandContext context, ScheduleSettings settings)
     {

@@ -23,7 +23,7 @@ public class ShowCommand(
     IAccessTokenProvider accessTokenProvider, 
     IConfiguration configuration,
     OutputService outputService)
-    : ApiCommand<ShowSettings>(accessTokenProvider, configuration)
+    : ApiCommand<ShowSettings>(accessTokenProvider, configuration, outputService)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, ShowSettings settings)
     {

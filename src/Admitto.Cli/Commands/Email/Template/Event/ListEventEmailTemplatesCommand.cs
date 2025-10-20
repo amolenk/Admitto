@@ -4,7 +4,7 @@ public class ListEventEmailTemplatesCommand(
     IAccessTokenProvider accessTokenProvider, 
     IConfiguration configuration,
     OutputService outputService)
-    : ApiCommand<TeamEventSettings>(accessTokenProvider, configuration)
+    : ApiCommand<TeamEventSettings>(accessTokenProvider, configuration, outputService)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, TeamEventSettings settings)
     {

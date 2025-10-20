@@ -4,7 +4,10 @@ using Microsoft.Kiota.Http.HttpClientLibrary;
 
 namespace Amolenk.Admitto.Cli.Commands;
 
-public abstract class ApiCommand<TSettings>(IAccessTokenProvider accessTokenProvider, IConfiguration configuration) 
+public abstract class ApiCommand<TSettings>(
+    IAccessTokenProvider accessTokenProvider, 
+    IConfiguration configuration,
+    OutputService outputService) 
     : AsyncCommand<TSettings> where TSettings : CommandSettings
 {
     protected string GetTeamSlug(string? value)
@@ -89,17 +92,17 @@ public abstract class ApiCommand<TSettings>(IAccessTokenProvider accessTokenProv
         }
         catch (ProblemDetails e)
         {
-            WriteException(e);
+            outputService.WriteException(e);
             return false;
         }
         catch (HttpValidationProblemDetails e)
         {
-            WriteException(e);
+            outputService.WriteException(e);
             return false;
         }
         catch (Exception e)
         {
-            WriteException(e);
+            outputService.WriteException(e);
             return false;
         }
     }
@@ -113,15 +116,15 @@ public abstract class ApiCommand<TSettings>(IAccessTokenProvider accessTokenProv
         }
         catch (ProblemDetails e)
         {
-            WriteException(e);
+            outputService.WriteException(e);
         }
         catch (HttpValidationProblemDetails e)
         {
-            WriteException(e);
+            outputService.WriteException(e);
         }
         catch (Exception e)
         {
-            WriteException(e);
+            outputService.WriteException(e);
         }
         
         return default;
@@ -144,38 +147,5 @@ public abstract class ApiCommand<TSettings>(IAccessTokenProvider accessTokenProv
         requestAdapter.BaseUrl = endpoint;
         
         return new ApiClient(requestAdapter);
-    }
-
-    private static void WriteException(Exception ex)
-    {
-        AnsiConsole.MarkupLine($"[red]{ex.Message.EscapeMarkup()}[/]");
-    }
-    
-    private static void WriteException(ProblemDetails ex)
-    {
-        AnsiConsole.MarkupLine(
-            !string.IsNullOrWhiteSpace(ex.Detail)
-                ? $"[red]{ex.Title.EscapeMarkup()}:[/] {ex.Detail.EscapeMarkup()}"
-                : $"[red]{ex.Title.EscapeMarkup()}[/]");
-    }
-    
-    private static void WriteException(HttpValidationProblemDetails ex)
-    {
-        AnsiConsole.MarkupLine(
-            !string.IsNullOrWhiteSpace(ex.Detail)
-                ? $"[red]{ex.Title.EscapeMarkup()}:[/] {ex.Detail.EscapeMarkup()}"
-                : $"[red]Error: {ex.Title.EscapeMarkup()}[/]");
-
-        if (ex.Errors is null) return;
-        
-        // https://github.com/microsoft/kiota/issues/62
-        foreach (var error in ex.Errors.AdditionalData)
-        {
-            foreach (var errorValue in ((UntypedArray)error.Value).GetValue())
-            {
-                AnsiConsole.WriteLine(
-                    $"- {((UntypedString)errorValue).GetValue().EscapeMarkup()}");
-            }
-        }
     }
 }

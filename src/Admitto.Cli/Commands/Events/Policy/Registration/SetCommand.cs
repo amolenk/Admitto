@@ -30,7 +30,7 @@ public class SetCommand(
     IAccessTokenProvider accessTokenProvider, 
     IConfiguration configuration,
     OutputService outputService)
-    : ApiCommand<SetSettings>(accessTokenProvider, configuration)
+    : ApiCommand<SetSettings>(accessTokenProvider, configuration, outputService)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, SetSettings settings)
     {

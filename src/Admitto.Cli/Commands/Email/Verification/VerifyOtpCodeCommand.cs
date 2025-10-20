@@ -28,7 +28,7 @@ public class VerifyOtpCodeCommand(
     IAccessTokenProvider accessTokenProvider, 
     IConfiguration configuration,
     OutputService outputService)
-    : ApiCommand<VerifyOtpCodeSettings>(accessTokenProvider, configuration)
+    : ApiCommand<VerifyOtpCodeSettings>(accessTokenProvider, configuration, outputService)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, VerifyOtpCodeSettings settings)
     {

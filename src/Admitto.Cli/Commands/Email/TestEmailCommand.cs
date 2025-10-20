@@ -34,7 +34,7 @@ public class TestEmailCommand(
     IAccessTokenProvider accessTokenProvider,
     IConfiguration configuration,
     OutputService outputService)
-    : ApiCommand<TestEmailSettings>(accessTokenProvider, configuration)
+    : ApiCommand<TestEmailSettings>(accessTokenProvider, configuration, outputService)
 {
     public sealed override async Task<int> ExecuteAsync(CommandContext context, TestEmailSettings settings)
     {

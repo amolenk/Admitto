@@ -4,7 +4,7 @@ public class ListEventsCommand(
     IAccessTokenProvider accessTokenProvider, 
     IConfiguration configuration,
     OutputService outputService)
-    : EventCommandBase<TeamSettings>(accessTokenProvider, configuration)
+    : EventCommandBase<TeamSettings>(accessTokenProvider, configuration, outputService)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, TeamSettings settings)
     {

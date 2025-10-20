@@ -34,7 +34,7 @@ public class SetTeamEmailTemplateCommand(
     IAccessTokenProvider accessTokenProvider, 
     IConfiguration configuration,
     OutputService outputService)
-    : ApiCommand<SetTeamEmailTemplateSettings>(accessTokenProvider, configuration)
+    : ApiCommand<SetTeamEmailTemplateSettings>(accessTokenProvider, configuration, outputService)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, SetTeamEmailTemplateSettings settings)
     {

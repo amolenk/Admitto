@@ -33,7 +33,7 @@ public class SetEventEmailTemplateCommand(
     IAccessTokenProvider accessTokenProvider, 
     IConfiguration configuration,
     OutputService outputService)
-    : ApiCommand<SetEventEmailTemplateSettings>(accessTokenProvider, configuration)
+    : ApiCommand<SetEventEmailTemplateSettings>(accessTokenProvider, configuration, outputService)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, SetEventEmailTemplateSettings settings)
     {

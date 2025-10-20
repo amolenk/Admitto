@@ -21,7 +21,7 @@ public class RemoveCommand(
     IAccessTokenProvider accessTokenProvider, 
     IConfiguration configuration,
     OutputService outputService)
-    : EventCommandBase<RemoveSettings>(accessTokenProvider, configuration)
+    : EventCommandBase<RemoveSettings>(accessTokenProvider, configuration, outputService)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, RemoveSettings settings)
     {
