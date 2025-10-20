@@ -46,7 +46,7 @@ public class VerifyOtpCodeCommand(
         if (response is null) return 1;
         
         outputService.WriteSuccesMessage("Successfully verified email address.");
-        AnsiConsole.MarkupLine($"Token: {response.RegistrationToken}");
+        outputService.WriteMarkupLine($"Token: {response.RegistrationToken}");
         return 0;
     }
 }

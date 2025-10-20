@@ -1,6 +1,9 @@
 namespace Amolenk.Admitto.Cli.Commands.Email.Template.Team;
 
-public class ListTeamEmailTemplatesCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration)
+public class ListTeamEmailTemplatesCommand(
+    IAccessTokenProvider accessTokenProvider, 
+    IConfiguration configuration,
+    OutputService outputService)
     : ApiCommand<TeamSettings>(accessTokenProvider, configuration)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, TeamSettings settings)
@@ -21,7 +24,7 @@ public class ListTeamEmailTemplatesCommand(IAccessTokenProvider accessTokenProvi
             table.AddRow(emailTemplate.Type!, status);
         }
         
-        AnsiConsole.Write(table);
+        outputService.Write(table);
         return 0;
     }
 }

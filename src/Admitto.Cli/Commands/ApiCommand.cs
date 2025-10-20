@@ -37,22 +37,6 @@ public abstract class ApiCommand<TSettings>(IAccessTokenProvider accessTokenProv
         return value;
     }
     
-    protected string GetInput(Func<string> getValue, string description)
-    {
-        var value = getValue();
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            value = AnsiConsole.Prompt(new TextPrompt<string>($"{description}?"));
-        }
-        return value.Trim();
-    }
-
-    protected DateTimeOffset GetDateTimeOffsetInput(Func<DateTimeOffset?> getValue, string description)
-    {
-        var value = getValue();
-        return value ?? AnsiConsole.Prompt(new TextPrompt<DateTimeOffset>($"{description}?"));
-    }
-
     protected static List<TItem> Parse<TItem>(string[]? input, Func<string, string, TItem> createItem)
     {
         return Parse<TItem, string>(input, createItem);

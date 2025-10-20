@@ -1,6 +1,9 @@
 namespace Amolenk.Admitto.Cli.Commands.Teams;
 
-public class ListTeamsCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration)
+public class ListTeamsCommand(
+    IAccessTokenProvider accessTokenProvider, 
+    IConfiguration configuration,
+    OutputService outputService)
     : ApiCommand<PagingSettings>(accessTokenProvider, configuration)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, PagingSettings settings)
@@ -18,7 +21,7 @@ public class ListTeamsCommand(IAccessTokenProvider accessTokenProvider, IConfigu
             table.AddRow(team.Slug!, team.Name!, team.Email!);
         }
 
-        AnsiConsole.Write(table);
+        outputService.Write(table);
         return 0;
     }
 }

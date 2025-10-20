@@ -1,6 +1,9 @@
 namespace Amolenk.Admitto.Cli.Commands.Events;
 
-public class ListEventsCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration)
+public class ListEventsCommand(
+    IAccessTokenProvider accessTokenProvider, 
+    IConfiguration configuration,
+    OutputService outputService)
     : EventCommandBase<TeamSettings>(accessTokenProvider, configuration)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, TeamSettings settings)
@@ -26,7 +29,7 @@ public class ListEventsCommand(IAccessTokenProvider accessTokenProvider, IConfig
             table.AddRow(ticketedEvent.Slug!, ticketedEvent.Name!, status);
         }
 
-        AnsiConsole.Write(table);
+        outputService.Write(table);
         return 0;
     }
 }

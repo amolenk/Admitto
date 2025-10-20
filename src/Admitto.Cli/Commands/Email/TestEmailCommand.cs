@@ -32,7 +32,8 @@ public class TestEmailSettings : TeamEventSettings
 
 public class TestEmailCommand(
     IAccessTokenProvider accessTokenProvider,
-    IConfiguration configuration)
+    IConfiguration configuration,
+    OutputService outputService)
     : ApiCommand<TestEmailSettings>(accessTokenProvider, configuration)
 {
     public sealed override async Task<int> ExecuteAsync(CommandContext context, TestEmailSettings settings)
@@ -63,8 +64,7 @@ public class TestEmailCommand(
             await client.Teams[teamSlug].Events[eventSlug].Emails[settings.EmailType].Test.PostAsync(request));
         if (response is null) return 1;
 
-        AnsiConsole.MarkupLine(
-            $"[green]✓ Successfully requested '{settings.EmailType}' test mail for '{settings.Recipient}'.[/]");
+        outputService.WriteSuccesMessage($"Successfully requested '{settings.EmailType}' test mail for '{settings.Recipient}'.");
         return 0;
     }
 }

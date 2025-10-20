@@ -16,7 +16,10 @@ public class ClearEventEmailTemplateSettings : TeamEventSettings
     }
 }
 
-public class ClearEventEmailTemplateCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration)
+public class ClearEventEmailTemplateCommand(
+    IAccessTokenProvider accessTokenProvider, 
+    IConfiguration configuration,
+    OutputService outputService)
     : ApiCommand<ClearEventEmailTemplateSettings>(accessTokenProvider, configuration)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, ClearEventEmailTemplateSettings settings)
@@ -29,8 +32,7 @@ public class ClearEventEmailTemplateCommand(IAccessTokenProvider accessTokenProv
                 .DeleteAsync());
         if (response is null) return 1;
 
-        AnsiConsole.MarkupLine(
-            $"[green]✓ Successfully cleared event-level template for '{settings.EmailType}' emails.[/]");
+        outputService.WriteSuccesMessage($"Successfully cleared event-level template for '{settings.EmailType}' emails.");
         return 0;
     }
 }

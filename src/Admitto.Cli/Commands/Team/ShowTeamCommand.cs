@@ -6,13 +6,12 @@ public class ShowTeamSettings : CommandSettings
     public string? TeamSlug { get; set; }
 }
 
-public class ShowTeamCommand : ApiCommand<ShowTeamSettings>
+public class ShowTeamCommand(
+    IAccessTokenProvider accessTokenProvider, 
+    IConfiguration configuration,
+    OutputService outputService) 
+    : ApiCommand<ShowTeamSettings>(accessTokenProvider, configuration)
 {
-    public ShowTeamCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration) 
-        : base(accessTokenProvider, configuration)
-    {
-    }
-    
     public override async Task<int> ExecuteAsync(CommandContext context, ShowTeamSettings settings)
     {
         var teamSlug = GetTeamSlug(settings.TeamSlug);
@@ -20,7 +19,7 @@ public class ShowTeamCommand : ApiCommand<ShowTeamSettings>
         var response = await CallApiAsync(async client => await client.Teams[teamSlug].GetAsync());
         if (response is null) return 1;
         
-        AnsiConsole.Write(new JsonText(JsonSerializer.Serialize(response)));
+        outputService.Write(new JsonText(JsonSerializer.Serialize(response)));
         return 0;
     }
 }

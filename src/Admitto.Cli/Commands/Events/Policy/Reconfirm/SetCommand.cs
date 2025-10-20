@@ -42,7 +42,10 @@ public class SetSettings : TeamEventSettings
     }
 }
 
-public class SetCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration)
+public class SetCommand(
+    IAccessTokenProvider accessTokenProvider, 
+    IConfiguration configuration,
+    OutputService outputService)
     : ApiCommand<SetSettings>(accessTokenProvider, configuration)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, SetSettings settings)
@@ -63,7 +66,7 @@ public class SetCommand(IAccessTokenProvider accessTokenProvider, IConfiguration
         //     await client.Teams[teamSlug].Events[eventSlug].Policies.Reconfirm.PutAsync(request));
         // if (response is null) return 1;
 
-        AnsiConsole.MarkupLine($"[green]✓ Successfully set reconfirm policy.[/]");
+        outputService.WriteSuccesMessage("Successfully set reconfirm policy.");
         return 0;
     }
 }
