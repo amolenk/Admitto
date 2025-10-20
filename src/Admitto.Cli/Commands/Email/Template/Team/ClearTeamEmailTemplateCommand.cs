@@ -16,8 +16,11 @@ public class ClearTeamEmailTemplateSettings : TeamSettings
     }
 }
 
-public class ClearTeamEmailTemplateCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration)
-    : ApiCommand<ClearTeamEmailTemplateSettings>(accessTokenProvider, configuration)
+public class ClearTeamEmailTemplateCommand(
+    IAccessTokenProvider accessTokenProvider, 
+    IConfiguration configuration,
+    OutputService outputService)
+    : ApiCommand<ClearTeamEmailTemplateSettings>(accessTokenProvider, configuration, outputService)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, ClearTeamEmailTemplateSettings settings)
     {
@@ -27,8 +30,7 @@ public class ClearTeamEmailTemplateCommand(IAccessTokenProvider accessTokenProvi
             await client.Teams[teamSlug].EmailTemplates[settings.EmailType] .DeleteAsync());
         if (response is null) return 1;
 
-        AnsiConsole.MarkupLine(
-            $"[green]✓ Successfully cleared team-level template for '{settings.EmailType}' emails.[/]");
+        outputService.WriteSuccesMessage($"Successfully cleared team-level template for '{settings.EmailType}' emails.");
         return 0;
     }
 }

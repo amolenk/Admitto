@@ -34,7 +34,7 @@ public class UpdateCommand(
     IAccessTokenProvider accessTokenProvider, 
     IConfiguration configuration,
     OutputService outputService)
-    : EventCommandBase<UpdateSettings>(accessTokenProvider, configuration)
+    : EventCommandBase<UpdateSettings>(accessTokenProvider, configuration, outputService)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, UpdateSettings settings)
     {

@@ -29,7 +29,7 @@ public class AddTeamMemberCommand(
     IAccessTokenProvider accessTokenProvider, 
     IConfiguration configuration,
     OutputService outputService)
-    : ApiCommand<AddTeamMemberSettings>(accessTokenProvider, configuration)
+    : ApiCommand<AddTeamMemberSettings>(accessTokenProvider, configuration, outputService)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, AddTeamMemberSettings settings)
     {

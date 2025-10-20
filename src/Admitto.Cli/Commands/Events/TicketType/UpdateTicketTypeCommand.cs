@@ -28,7 +28,7 @@ public class UpdateTicketTypeCommand(
     IAccessTokenProvider accessTokenProvider, 
     IConfiguration configuration,
     OutputService outputService)
-    : EventCommandBase<UpdateTicketTypeSettings>(accessTokenProvider, configuration)
+    : EventCommandBase<UpdateTicketTypeSettings>(accessTokenProvider, configuration, outputService)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, UpdateTicketTypeSettings settings)
     {

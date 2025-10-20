@@ -49,7 +49,7 @@ public class AddCommand(
     IAccessTokenProvider accessTokenProvider, 
     IConfiguration configuration,
     OutputService outputService)
-    : EventCommandBase<AddSettings>(accessTokenProvider, configuration)
+    : EventCommandBase<AddSettings>(accessTokenProvider, configuration, outputService)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, AddSettings settings)
     {

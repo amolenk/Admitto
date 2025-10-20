@@ -1,7 +1,10 @@
 namespace Amolenk.Admitto.Cli.Commands.Attendee;
 
-public class ListCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration)
-    : ApiCommand<TeamEventSettings>(accessTokenProvider, configuration)
+public class ListCommand(
+    IAccessTokenProvider accessTokenProvider, 
+    IConfiguration configuration,
+    OutputService outputService)
+    : ApiCommand<TeamEventSettings>(accessTokenProvider, configuration, outputService)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, TeamEventSettings settings)
     {
@@ -30,7 +33,7 @@ public class ListCommand(IAccessTokenProvider accessTokenProvider, IConfiguratio
                 attendee.LastChangedAt!.Value.Format());
         }
 
-        AnsiConsole.Write(table);
+        outputService.Write(table);
         return 0;
     }
 }

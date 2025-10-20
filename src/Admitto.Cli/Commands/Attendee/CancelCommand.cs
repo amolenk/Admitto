@@ -20,7 +20,7 @@ public class CancelCommand(
     IAccessTokenProvider accessTokenProvider, 
     IConfiguration configuration,
     OutputService outputService)
-    : ApiCommand<CancelSettings>(accessTokenProvider, configuration)
+    : ApiCommand<CancelSettings>(accessTokenProvider, configuration, outputService)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, CancelSettings settings)
     {

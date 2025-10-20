@@ -34,7 +34,7 @@ public class AddTicketTypeCommand(
     IAccessTokenProvider accessTokenProvider, 
     IConfiguration configuration,
     OutputService outputService)
-    : EventCommandBase<AddTicketTypeSettings>(accessTokenProvider, configuration)
+    : EventCommandBase<AddTicketTypeSettings>(accessTokenProvider, configuration, outputService)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, AddTicketTypeSettings settings)
     {

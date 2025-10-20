@@ -1,7 +1,10 @@
 namespace Amolenk.Admitto.Cli.Commands.Events;
 
-public class ShowEventCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration)
-    : EventCommandBase<TeamEventSettings>(accessTokenProvider, configuration)
+public class ShowEventCommand(
+    IAccessTokenProvider accessTokenProvider, 
+    IConfiguration configuration,
+    OutputService outputService)
+    : EventCommandBase<TeamEventSettings>(accessTokenProvider, configuration, outputService)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, TeamEventSettings settings)
     {
@@ -11,7 +14,7 @@ public class ShowEventCommand(IAccessTokenProvider accessTokenProvider, IConfigu
         var response = await CallApiAsync(async client => await client.Teams[teamSlug].Events[eventSlug].GetAsync());
         if (response?.Slug is null) return 1;
 
-        AnsiConsole.Write(new Rule(response.Name!) { Justification = Justify.Left, Style = Style.Parse("blue") });
+        outputService.Write(new Rule(response.Name!) { Justification = Justify.Left, Style = Style.Parse("blue") });
 
         var grid = new Grid();
         grid.AddColumn(new GridColumn { Width = 20 });
@@ -38,11 +41,11 @@ public class ShowEventCommand(IAccessTokenProvider accessTokenProvider, IConfigu
         grid.AddRow("Event starts:", response.StartsAt!.Value.Format(true));
         grid.AddRow("Event ends:", response.EndsAt!.Value.Format(true));
 
-        AnsiConsole.Write(grid);
+        outputService.Write(grid);
 
         foreach (var ticketType in response.TicketTypes ?? [])
         {
-            AnsiConsole.Write(
+            outputService.Write(
                 new Rule($"{ticketType.Name} tickets") { Justification = Justify.Left, Style = Style.Parse("blue") });
 
             var remainingCapacity = Math.Max(0, ticketType.MaxCapacity!.Value - ticketType.UsedCapacity!.Value);
@@ -59,7 +62,7 @@ public class ShowEventCommand(IAccessTokenProvider accessTokenProvider, IConfigu
                     .AddItem("Registered", ticketType.UsedCapacity!.Value, Color.Blue)
                     .AddItem("Available", remainingCapacity, Color.Yellow));
 
-            AnsiConsole.Write(grid);
+            outputService.Write(grid);
         }
 
         return 0;
