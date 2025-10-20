@@ -6,7 +6,7 @@ on:
   workflow_dispatch: {}
 
 jobs:
-  update-tap:
+  update-formula:
     runs-on: ubuntu-latest
 
     steps:
