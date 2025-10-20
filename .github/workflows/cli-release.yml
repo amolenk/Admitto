@@ -43,7 +43,7 @@ jobs:
 
       - name: Update Formula
         run: |
-          formula="Formula/admitto.rb"
+          formula="Formula/admitto-cli.rb"
           url="${{ steps.sha.outputs.tarball_url }}"
           sha256="${{ steps.sha.outputs.sha256 }}"
           version="1.0.${{ github.run_number }}"
