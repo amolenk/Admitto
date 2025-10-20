@@ -46,7 +46,7 @@ public class VerifyOtpCodeCommand(
         if (response is null) return 1;
         
         outputService.WriteSuccesMessage("Successfully verified email address.");
-        outputService.WriteMarkupLine($"Token: {response.RegistrationToken}");
+        outputService.WriteLine($"Token: {response.RegistrationToken}");
         return 0;
     }
 }

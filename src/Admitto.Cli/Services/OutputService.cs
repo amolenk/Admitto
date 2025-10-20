@@ -15,9 +15,14 @@ public class OutputService
         AnsiConsole.MarkupLine($"[red]✗ {message}[/]");
     }
     
-    public void WriteMarkupLine(string message)
+    public void WriteWarning(string message)
     {
-        AnsiConsole.MarkupLine(message);
+        AnsiConsole.MarkupLine($"[yellow]⚠ {message}[/]");
+    }
+    
+    public void WriteLine(string message)
+    {
+        AnsiConsole.WriteLine(message);
     }
     
     public void Write(IRenderable renderable)

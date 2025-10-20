@@ -68,7 +68,7 @@ public class ShowCommand(
         //     var overwrite = await AnsiConsole.ConfirmAsync($"File '{filePath}' exists. Overwrite?");
         //     if (!overwrite)
         //     {
-        //         outputService.WriteMarkupLine("[yellow]QR code not saved.[/]");
+        //         outputService.WriteWarning("QR code not saved.");
         //         return 1;
         //     }
         // }

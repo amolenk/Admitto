@@ -9,7 +9,7 @@ public sealed class VersionCommand(OutputService outputService) : Command
         var assembly = Assembly.GetExecutingAssembly();
         var version = assembly.GetName().Version;
         
-        outputService.WriteMarkupLine($"[green]Admitto CLI[/] version [yellow]{version}[/]");
+        outputService.WriteLine($"Admitto CLI version {version}");
         
         return 0;
     }
