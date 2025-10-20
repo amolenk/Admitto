@@ -2,7 +2,7 @@ using System.Text.Json.Nodes;
 
 namespace Amolenk.Admitto.Cli.Commands.Config;
 
-public class GetConfigCommand : ConfigCommandBase<ConfigSettings>
+public class GetConfigCommand(OutputService outputService) : ConfigCommandBase<ConfigSettings>
 {
     public override int Execute(CommandContext context, ConfigSettings settings)
     {
@@ -16,7 +16,7 @@ public class GetConfigCommand : ConfigCommandBase<ConfigSettings>
         table.AddRow("Default Team", GetSettingValue(config, ConfigSettings.DefaultTeamSetting));
         table.AddRow("Default Event", GetSettingValue(config, ConfigSettings.DefaultEventSetting));
 
-        AnsiConsole.Write(table);
+        outputService.Write(table);
         
         return 0;
     }

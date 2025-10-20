@@ -1,4 +1,5 @@
 using Microsoft.Kiota.Abstractions.Serialization;
+using Spectre.Console.Rendering;
 
 namespace Amolenk.Admitto.Cli.Services;
 
@@ -7,6 +8,26 @@ public class OutputService
     public void WriteSuccesMessage(string message)
     {
         AnsiConsole.MarkupLine($"[green]✓ {message}[/]");
+    }
+    
+    public void WriteErrorMessage(string message)
+    {
+        AnsiConsole.MarkupLine($"[red]✗ {message}[/]");
+    }
+    
+    public void WriteWarning(string message)
+    {
+        AnsiConsole.MarkupLine($"[yellow]⚠ {message}[/]");
+    }
+    
+    public void WriteLine(string message)
+    {
+        AnsiConsole.WriteLine(message);
+    }
+    
+    public void Write(IRenderable renderable)
+    {
+        AnsiConsole.Write(renderable);
     }
     
     public void WriteException(Exception ex)

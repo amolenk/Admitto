@@ -20,7 +20,7 @@ public class ReconfirmCommand(
     IAccessTokenProvider accessTokenProvider, 
     IConfiguration configuration,
     OutputService outputService)
-    : ApiCommand<ReconfirmSettings>(accessTokenProvider, configuration)
+    : ApiCommand<ReconfirmSettings>(accessTokenProvider, configuration, outputService)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, ReconfirmSettings settings)
     {

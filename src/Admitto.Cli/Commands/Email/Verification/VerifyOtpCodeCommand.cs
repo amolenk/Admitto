@@ -28,7 +28,7 @@ public class VerifyOtpCodeCommand(
     IAccessTokenProvider accessTokenProvider, 
     IConfiguration configuration,
     OutputService outputService)
-    : ApiCommand<VerifyOtpCodeSettings>(accessTokenProvider, configuration)
+    : ApiCommand<VerifyOtpCodeSettings>(accessTokenProvider, configuration, outputService)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, VerifyOtpCodeSettings settings)
     {
@@ -46,7 +46,7 @@ public class VerifyOtpCodeCommand(
         if (response is null) return 1;
         
         outputService.WriteSuccesMessage("Successfully verified email address.");
-        AnsiConsole.MarkupLine($"Token: {response.RegistrationToken}");
+        outputService.WriteLine($"Token: {response.RegistrationToken}");
         return 0;
     }
 }

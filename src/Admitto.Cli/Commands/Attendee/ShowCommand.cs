@@ -19,8 +19,11 @@ public class ShowSettings : TeamEventSettings
     // }
 }
 
-public class ShowCommand(IAccessTokenProvider accessTokenProvider, IConfiguration configuration)
-    : ApiCommand<ShowSettings>(accessTokenProvider, configuration)
+public class ShowCommand(
+    IAccessTokenProvider accessTokenProvider, 
+    IConfiguration configuration,
+    OutputService outputService)
+    : ApiCommand<ShowSettings>(accessTokenProvider, configuration, outputService)
 {
     public override async Task<int> ExecuteAsync(CommandContext context, ShowSettings settings)
     {
@@ -38,7 +41,7 @@ public class ShowCommand(IAccessTokenProvider accessTokenProvider, IConfiguratio
         grid.AddRow("Email:", response.Email!);
         grid.AddRow("Registration status:", response.RegistrationStatus!.Value.Format());
 
-        AnsiConsole.Write(grid);
+        outputService.Write(grid);
 
         // if (settings.QRCodeFilePath is null) return 0;
         //
@@ -49,7 +52,7 @@ public class ShowCommand(IAccessTokenProvider accessTokenProvider, IConfiguratio
         //     }));
         // if (qrCodeStream is null)
         // {
-        //     AnsiConsole.MarkupLine($"[red]Failed to retrieve QR code.[/]");
+        //     outputService.WriteErrorMessage("Failed to retrieve QR code.");
         //     return 1;
         // }
         //
@@ -65,14 +68,14 @@ public class ShowCommand(IAccessTokenProvider accessTokenProvider, IConfiguratio
         //     var overwrite = await AnsiConsole.ConfirmAsync($"File '{filePath}' exists. Overwrite?");
         //     if (!overwrite)
         //     {
-        //         AnsiConsole.MarkupLine("[yellow]QR code not saved.[/]");
+        //         outputService.WriteWarning("QR code not saved.");
         //         return 1;
         //     }
         // }
         //
         // await using var fileStream = File.Create(filePath);
         // await qrCodeStream.CopyToAsync(fileStream);
-        // AnsiConsole.MarkupLine($"[green]QR code saved to '{filePath}'.[/]");
+        // outputService.WriteSuccesMessage($"QR code saved to '{filePath}'.");
 
         return 0;
     }
