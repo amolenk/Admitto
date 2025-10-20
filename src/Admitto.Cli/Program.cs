@@ -1,5 +1,6 @@
 ﻿using Amolenk.Admitto.Cli.Commands;
 using Amolenk.Admitto.Cli.Commands.Attendee;
+using Amolenk.Admitto.Cli.Commands.Auth;
 using Amolenk.Admitto.Cli.Commands.Email;
 using Amolenk.Admitto.Cli.Commands.Email.Template.Event;
 using Amolenk.Admitto.Cli.Commands.Email.Template.Team;
