@@ -1,5 +1,4 @@
 using System.Reflection;
-using Amolenk.Admitto.Cli.Common;
 
 namespace Amolenk.Admitto.Cli.Commands;
 
