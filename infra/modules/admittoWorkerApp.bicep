@@ -4,6 +4,10 @@ param acaEnvironmentDomain string
 param acaEnvironmentId string
 param acrLoginServer string
 param applicationInsightsConnectionString string
+param authApiAppId string
+@secure()
+param authApiAppSecret string
+param authTenantId string
 param keyVaultName string
 param managedIdentityClientId string
 param managedIdentityId string
@@ -66,6 +70,18 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
             {
               name: 'services__openfga__http__0'
               value: 'https://${openFgaAppName}.internal.${acaEnvironmentDomain}'
+            }
+            {
+                name: 'UserManagement__MicrosoftGraph__TenantId'
+                value: authTenantId
+            }
+            {
+                name: 'UserManagement__MicrosoftGraph__ClientId'
+                value: authApiAppId
+            }
+            {
+                name: 'UserManagement__MicrosoftGraph__ClientSecret'
+                value: authApiAppSecret
             }
             {
               name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
