@@ -290,18 +290,18 @@ app.Configure(config =>
                 });
         });
 
-    config.AddBranch(
-        "migration",
-        migration =>
-        {
-            migration.SetDescription("Manage migrations");
-
-            migration.AddCommand<ListMigrationsCommand>("list")
-                .WithDescription("List all migration");
-
-            migration.AddCommand<RunMigrationCommand>("run")
-                .WithDescription("Run a migration");
-        });
+    // config.AddBranch(
+    //     "migration",
+    //     migration =>
+    //     {
+    //         migration.SetDescription("Manage migrations");
+    //
+    //         migration.AddCommand<ListMigrationsCommand>("list")
+    //             .WithDescription("List all migration");
+    //
+    //         migration.AddCommand<RunMigrationCommand>("run")
+    //             .WithDescription("Run a migration");
+    //     });
 
     config.AddBranch(
         "team",
