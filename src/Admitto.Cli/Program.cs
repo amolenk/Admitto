@@ -30,6 +30,11 @@ var dataFolder = Path.Combine(
     "admitto-cli",
     Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(endpoint)))[..8]);
 
+if (!Directory.Exists(dataFolder))
+{
+    Directory.CreateDirectory(dataFolder);
+}
+
 var services = new ServiceCollection();
 
 services.Configure<AdmittoOptions>(configuration.GetSection("Admitto"));
