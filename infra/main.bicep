@@ -9,8 +9,13 @@ param location string
 param authTenantId string
 
 @minLength(1)
-@description('The ID of the Entra ID application representing the Admitto API')
-param authAudience string
+@description('The ID of the Entra ID application providing access to Microsoft Graph')
+param authApiAppId string
+
+@minLength(1)
+@description('The secret of the Entra ID application providing access to Microsoft Graph')
+@secure()
+param authApiAppSecret string
 
 @minLength(1)
 @description('The ID(s) of the admin users separated by commas')
@@ -125,41 +130,44 @@ module vpnGateway 'modules/vpnGateway.bicep' = {
   }
 }
 
-// module admittoApi 'modules/admittoApiApp.bicep' = {
-//   name: 'admitto-api-app'
-//   params: {
-//     acaEnvironmentDomain: containerAppEnvironment.outputs.defaultDomain
-//     acaEnvironmentId: containerAppEnvironment.outputs.id
-//     acrLoginServer: containerRegistry.outputs.loginServer
-//     applicationInsightsConnectionString: applicationInsights.outputs.connectionString
-//     authAdminUserIds: authAdminUserIds
-//     authTenantId: authTenantId
-//     authAudience: authAudience
-//     frontDoorId: frontDoor.outputs.frontDoorId
-//     keyVaultName: keyVault.outputs.name
-//     location: location
-//     managedIdentityClientId: managedIdentity.outputs.clientId
-//     managedIdentityId: managedIdentity.outputs.id
-//     openFgaAppName: openfga.outputs.name
-//     storageAccountName: storageAccount.outputs.storageAccountName
-//   }
-// }
+module admittoApi 'modules/admittoApiApp.bicep' = {
+  name: 'admitto-api-app'
+  params: {
+    acaEnvironmentDomain: containerAppEnvironment.outputs.defaultDomain
+    acaEnvironmentId: containerAppEnvironment.outputs.id
+    acrLoginServer: containerRegistry.outputs.loginServer
+    applicationInsightsConnectionString: applicationInsights.outputs.connectionString
+    authAdminUserIds: authAdminUserIds
+    authTenantId: authTenantId
+    authAudience: authApiAppId
+    frontDoorId: frontDoor.outputs.frontDoorId
+    keyVaultName: keyVault.outputs.name
+    location: location
+    managedIdentityClientId: managedIdentity.outputs.clientId
+    managedIdentityId: managedIdentity.outputs.id
+    openFgaAppName: openfga.outputs.name
+    storageAccountName: storageAccount.outputs.storageAccountName
+  }
+}
 
-// module admittoWorker 'modules/admittoWorkerApp.bicep' = {
-//   name: 'admitto-worker-app'
-//   params: {
-//     acaEnvironmentDomain: containerAppEnvironment.outputs.defaultDomain
-//     acaEnvironmentId: containerAppEnvironment.outputs.id
-//     applicationInsightsConnectionString: applicationInsights.outputs.connectionString
-//     acrLoginServer: containerRegistry.outputs.loginServer
-//     keyVaultName: keyVault.outputs.name
-//     location: location
-//     managedIdentityClientId: managedIdentity.outputs.clientId
-//     managedIdentityId: managedIdentity.outputs.id
-//     openFgaAppName: openfga.outputs.name
-//     storageAccountName: storageAccount.outputs.storageAccountName
-//   }
-// }
+module admittoWorker 'modules/admittoWorkerApp.bicep' = {
+  name: 'admitto-worker-app'
+  params: {
+    acaEnvironmentDomain: containerAppEnvironment.outputs.defaultDomain
+    acaEnvironmentId: containerAppEnvironment.outputs.id
+    applicationInsightsConnectionString: applicationInsights.outputs.connectionString
+    acrLoginServer: containerRegistry.outputs.loginServer
+    authTenantId: authTenantId
+    authApiAppId: authApiAppId
+    authApiAppSecret: authApiAppSecret
+    keyVaultName: keyVault.outputs.name
+    location: location
+    managedIdentityClientId: managedIdentity.outputs.clientId
+    managedIdentityId: managedIdentity.outputs.id
+    openFgaAppName: openfga.outputs.name
+    storageAccountName: storageAccount.outputs.storageAccountName
+  }
+}
 
 // module admittoJobRunner 'modules/admittoJobRunnerApp.bicep' = {
 //   name: 'admitto-jobrunner-app'
