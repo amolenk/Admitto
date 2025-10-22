@@ -1,17 +1,16 @@
+using Amolenk.Admitto.Cli.Common;
+
 namespace Amolenk.Admitto.Cli.Commands.Email.Template.Event;
 
-public class ListEventEmailTemplatesCommand(
-    IAccessTokenProvider accessTokenProvider, 
-    IConfiguration configuration,
-    OutputService outputService)
-    : ApiCommand<TeamEventSettings>(accessTokenProvider, configuration, outputService)
+public class ListEventEmailTemplatesCommand(IApiService apiService, IConfigService configService)
+    : AsyncCommand<TeamEventSettings>
 {
     public override async Task<int> ExecuteAsync(CommandContext context, TeamEventSettings settings)
     {
-        var teamSlug = GetTeamSlug(settings.TeamSlug);
-        var eventSlug = GetEventSlug(settings.EventSlug);
+        var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
+        var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);
         
-        var response = await CallApiAsync(async client =>
+        var response = await apiService.CallApiAsync(async client =>
             await client.Teams[teamSlug].Events[eventSlug].EmailTemplates.GetAsync());
         if (response is null) return 1;
 
@@ -27,7 +26,7 @@ public class ListEventEmailTemplatesCommand(
             table.AddRow(emailTemplate.Type!, status);
         }
         
-        outputService.Write(table);
+        AnsiConsole.Write(table);
         return 0;
     }
 }

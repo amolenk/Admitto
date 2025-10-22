@@ -1,42 +1,37 @@
+using Amolenk.Admitto.Cli.Common;
+
 namespace Amolenk.Admitto.Cli.Commands.Email.Verification;
 
 public class RequestOtpCodeSettings : TeamEventSettings
 {
     [CommandOption("--email")]
+    [Description("The email address to request the OTP code for")]
     public string? Email { get; set; }
     
     public override ValidationResult Validate()
     {
-        if (Email is null)
-        {
-            return ValidationErrors.EmailMissing;
-        }
-
-        return base.Validate();
+        return Email is null ? ValidationErrors.EmailMissing : base.Validate();
     }
 }
 
-public class RequestOtpCodeCommand(
-    IAccessTokenProvider accessTokenProvider, 
-    IConfiguration configuration,
-    OutputService outputService)
-    : ApiCommand<RequestOtpCodeSettings>(accessTokenProvider, configuration, outputService)
+public class RequestOtpCodeCommand(IApiService apiService, IConfigService configService)
+    : AsyncCommand<RequestOtpCodeSettings>
 {
     public override async Task<int> ExecuteAsync(CommandContext context, RequestOtpCodeSettings settings)
     {
-        var teamSlug = GetTeamSlug(settings.TeamSlug);
-        var eventSlug = GetEventSlug(settings.EventSlug);
+        var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
+        var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);
 
         var request = new RequestOtpCodeRequest
         {
             Email = settings.Email
         };
 
-        var success = await CallApiAsync(async client =>
+        var success = await apiService.CallApiAsync(async client =>
             await client.Teams[teamSlug].Events[eventSlug].Public.Otp.PostAsync(request));
         if (!success) return 1;
 
-        outputService.WriteSuccesMessage($"Successfully requested OTP code for '{settings.Email}'.");
+        AnsiConsoleExt.WriteSuccesMessage($"Successfully requested OTP code for '{settings.Email}'.");
         return 0;
     }
 }
