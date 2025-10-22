@@ -1,5 +1,7 @@
 param location string = resourceGroup().location
 
+@secure()
+param authApiAppSecret string
 param principalId string
 
 var resourceToken = uniqueString(resourceGroup().id)
@@ -15,6 +17,14 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
     }
     enableRbacAuthorization: true
   }
+}
+
+resource keyVault_authApiAppSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+  name: 'auth--api-app-secret'
+  properties: {
+    value: authApiAppSecret
+  }
+  parent: keyVault
 }
 
 resource keyVault_KeyVaultSecretsUser 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
