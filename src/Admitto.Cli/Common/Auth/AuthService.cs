@@ -48,7 +48,7 @@ public class AuthService(ITokenCache tokenCache, IHttpClientFactory clientFactor
         }
         else
         {
-            AnsiConsole.MarkupLine($"To sign in, use a web browser to open the page [link={deviceResponse.VerificationUri}]{deviceResponse.VerificationUri}[/] and enter the code {deviceResponse.UserCode} to authenticate.");
+            AnsiConsole.MarkupLine($"To sign in, use a web browser to open the page [yellow][link={deviceResponse.VerificationUri}]{deviceResponse.VerificationUri}[/][/] and enter the code [yellow]{deviceResponse.UserCode}[/] to authenticate.");
             AnsiConsole.WriteLine();
             AnsiConsole.WriteLine("⏳ Waiting for login...");
         }
