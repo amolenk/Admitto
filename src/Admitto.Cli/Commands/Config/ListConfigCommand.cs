@@ -1,28 +1,21 @@
-using System.Text.Json.Nodes;
+using Amolenk.Admitto.Cli.Common;
 
 namespace Amolenk.Admitto.Cli.Commands.Config;
 
-public class GetConfigCommand(OutputService outputService) : ConfigCommandBase<ConfigSettings>
+public class GetConfigCommand(IConfigService configService)
+    : Command
 {
-    public override int Execute(CommandContext context, ConfigSettings settings)
+    public override int Execute(CommandContext context)
     {
-        var config = GetConfig();
-
         var table = new Table();
         table.AddColumn("Setting");
         table.AddColumn("Value");
 
-        table.AddRow("Endpoint", GetSettingValue(config, ConfigSettings.EndpointSetting));
-        table.AddRow("Default Team", GetSettingValue(config, ConfigSettings.DefaultTeamSetting));
-        table.AddRow("Default Event", GetSettingValue(config, ConfigSettings.DefaultEventSetting));
+        table.AddRow("Default Team", configService.DefaultTeam ?? "[grey]<not set>[/]");
+        table.AddRow("Default Event", configService.DefaultEvent ?? "[grey]<not set>[/]");
 
-        outputService.Write(table);
-        
+        AnsiConsole.Write(table);
+
         return 0;
-    }
-    
-    private static string GetSettingValue(JsonObject config, string settingName)
-    {
-        return config[settingName]?.GetValue<string>() ?? "[grey]Not set[/]";
     }
 }

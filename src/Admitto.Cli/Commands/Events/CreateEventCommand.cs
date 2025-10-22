@@ -1,3 +1,5 @@
+using Amolenk.Admitto.Cli.Common;
+
 namespace Amolenk.Admitto.Cli.Commands.Events;
 
 public class CreateEventSettings : TeamSettings
@@ -70,16 +72,12 @@ public class CreateEventSettings : TeamSettings
     }
 }
 
-public class CreateEventCommand(OutputService outputService, IApiService apiService, IConfiguration configuration)
+public class CreateEventCommand(IApiService apiService, IConfigService configService)
     : AsyncCommand<CreateEventSettings>
 {
     public override async Task<int> ExecuteAsync(CommandContext context, CreateEventSettings settings)
     {
-        var teamSlug = settings.TeamSlug ?? configuration[ConfigSettings.DefaultTeamSetting];
-        if (string.IsNullOrWhiteSpace(teamSlug))
-        {
-            throw new ArgumentException("Team slug must be specified.");
-        }
+        var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         
         var additionalDetailSchemas = ParseAdditionalDetailSchemas(
             settings.RequiredAdditionalDetails, 
@@ -100,7 +98,7 @@ public class CreateEventCommand(OutputService outputService, IApiService apiServ
             await apiService.CallApiAsync(async client => await client.Teams[teamSlug].Events.PostAsync(request));
         if (!succes) return 1;
         
-        outputService.WriteSuccesMessage($"Successfully created event '{settings.Name}'.");
+        AnsiConsoleExt.WriteSuccesMessage($"Successfully created event '{settings.Name}'.");
         return 0;
     }
     

@@ -1,14 +1,12 @@
-namespace Amolenk.Admitto.Cli.Commands.Teams;
+using Amolenk.Admitto.Cli.Common;
 
-public class ListTeamsCommand(
-    IAccessTokenProvider accessTokenProvider, 
-    IConfiguration configuration,
-    OutputService outputService)
-    : ApiCommand<PagingSettings>(accessTokenProvider, configuration, outputService)
+namespace Amolenk.Admitto.Cli.Commands.Team;
+
+public class ListTeamsCommand(IApiService apiService) : AsyncCommand<TeamSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, PagingSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, TeamSettings settings)
     {
-        var response = await CallApiAsync(async client => await client.Teams.GetAsync());
+        var response = await apiService.CallApiAsync(async client => await client.Teams.GetAsync());
         if (response is null) return 1;
 
         var table = new Table();
@@ -21,7 +19,7 @@ public class ListTeamsCommand(
             table.AddRow(team.Slug!, team.Name!, team.Email!);
         }
 
-        outputService.Write(table);
+        AnsiConsole.Write(table);
         return 0;
     }
 }

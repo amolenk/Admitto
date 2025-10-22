@@ -1,17 +1,23 @@
+using Amolenk.Admitto.Cli.Common;
+
 namespace Amolenk.Admitto.Cli.Commands.Email;
 
 public class TestEmailSettings : TeamEventSettings
 {
     [CommandOption("--emailType")]
+    [Description("The type of email to test")]
     public string? EmailType { get; init; }
 
     [CommandOption("--recipient")]
+    [Description("The recipient of the test email")]
     public required string Recipient { get; init; }
     
     [CommandOption("--additionalDetail")]
+    [Description("Additional details to include in the email in the format 'Name=Value'")]
     public string[]? AdditionalDetails { get; set; } = null!;
 
     [CommandOption("--ticket")]
+    [Description("Ticket(s) to include in the email")]
     public string[]? Tickets { get; set; }
     
     public override ValidationResult Validate()
@@ -30,41 +36,26 @@ public class TestEmailSettings : TeamEventSettings
     }
 }
 
-public class TestEmailCommand(
-    IAccessTokenProvider accessTokenProvider,
-    IConfiguration configuration,
-    OutputService outputService)
-    : ApiCommand<TestEmailSettings>(accessTokenProvider, configuration, outputService)
+public class TestEmailCommand(IApiService apiService, IConfigService configService)
+    : AsyncCommand<TestEmailSettings>
 {
     public sealed override async Task<int> ExecuteAsync(CommandContext context, TestEmailSettings settings)
     {
-        var teamSlug = GetTeamSlug(settings.TeamSlug);
-        var eventSlug = GetEventSlug(settings.EventSlug);
+        var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
+        var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);
 
         var request = new TestEmailRequest
         {
             Recipient = settings.Recipient,
-            AdditionalDetails = Parse<AdditionalDetailDto>(
-                settings.AdditionalDetails,
-                (name, value) => new AdditionalDetailDto
-                {
-                    Name = name,
-                    Value = value
-                }),
-            Tickets = Parse<TicketSelectionDto, int>(
-                settings.Tickets,
-                (ticketTypeSlug, quantity) => new TicketSelectionDto
-                {
-                    TicketTypeSlug = ticketTypeSlug,
-                    Quantity = quantity
-                })
+            AdditionalDetails = InputHelper.ParseAdditionalDetails(settings.AdditionalDetails),
+            Tickets = InputHelper.ParseTickets(settings.Tickets)
         };
 
-        var response = await CallApiAsync(async client =>
+        var response = await apiService.CallApiAsync(async client =>
             await client.Teams[teamSlug].Events[eventSlug].Emails[settings.EmailType].Test.PostAsync(request));
         if (response is null) return 1;
 
-        outputService.WriteSuccesMessage($"Successfully requested '{settings.EmailType}' test mail for '{settings.Recipient}'.");
+        AnsiConsoleExt.WriteSuccesMessage($"Successfully requested '{settings.EmailType}' test mail for '{settings.Recipient}'.");
         return 0;
     }
 }

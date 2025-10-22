@@ -4,7 +4,6 @@ global using System.ComponentModel;
 global using System.Text.Json;
 global using Amolenk.Admitto.Cli.Api.Models;
 global using Amolenk.Admitto.Cli.Commands.Config;
-global using Amolenk.Admitto.Cli.Services;
 global using Humanizer;
 global using Microsoft.Extensions.Configuration;
 global using Microsoft.Kiota.Abstractions.Authentication;

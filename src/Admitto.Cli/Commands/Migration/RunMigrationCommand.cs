@@ -1,9 +1,11 @@
+using Amolenk.Admitto.Cli.Common;
+
 namespace Amolenk.Admitto.Cli.Commands.Migration;
 
 public class RunMigrationSettings : CommandSettings
 {
     [CommandOption("-n|--name")]
-    [Description("The name of the migration to run.")]
+    [Description("The name of the migration to run")]
     public string? Name { get; init; }
 
     public override ValidationResult Validate()
@@ -17,7 +19,7 @@ public class RunMigrationSettings : CommandSettings
     }
 }
 
-public class RunMigrationCommand(OutputService outputService, IApiService apiService)
+public class RunMigrationCommand(IApiService apiService)
     : AsyncCommand<RunMigrationSettings>
 {
     public override async Task<int> ExecuteAsync(CommandContext context, RunMigrationSettings settings)
@@ -25,7 +27,7 @@ public class RunMigrationCommand(OutputService outputService, IApiService apiSer
         var result = await apiService.CallApiAsync(async client => await client.Migration[settings.Name!].PostAsync());
         if (result is null) return 1;
 
-        outputService.WriteSuccesMessage($"Successfully ran migration '{settings.Name}'.");
+        AnsiConsoleExt.WriteSuccesMessage($"Successfully ran migration '{settings.Name}'.");
         return 0;
     }
 }

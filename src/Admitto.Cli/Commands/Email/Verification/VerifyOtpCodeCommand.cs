@@ -1,11 +1,15 @@
+using Amolenk.Admitto.Cli.Common;
+
 namespace Amolenk.Admitto.Cli.Commands.Email.Verification;
 
 public class VerifyOtpCodeSettings : TeamEventSettings
 {
     [CommandOption("--email")]
+    [Description("The email address to verify")]
     public string? Email { get; set; }
 
     [CommandOption("--code")]
+    [Description("The OTP verification code")]
     public string? Code { get; set; } = null!;
     
     public override ValidationResult Validate()
@@ -24,16 +28,13 @@ public class VerifyOtpCodeSettings : TeamEventSettings
     }
 }
 
-public class VerifyOtpCodeCommand(
-    IAccessTokenProvider accessTokenProvider, 
-    IConfiguration configuration,
-    OutputService outputService)
-    : ApiCommand<VerifyOtpCodeSettings>(accessTokenProvider, configuration, outputService)
+public class VerifyOtpCodeCommand(IApiService apiService, IConfigService configService)
+    : AsyncCommand<VerifyOtpCodeSettings>
 {
     public override async Task<int> ExecuteAsync(CommandContext context, VerifyOtpCodeSettings settings)
     {
-        var teamSlug = GetTeamSlug(settings.TeamSlug);
-        var eventSlug = GetEventSlug(settings.EventSlug);
+        var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
+        var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);
 
         var request = new VerifyOtpCodeRequest
         {
@@ -41,12 +42,12 @@ public class VerifyOtpCodeCommand(
             Code = settings.Code
         };
 
-        var response = await CallApiAsync(async client =>
+        var response = await apiService.CallApiAsync(async client =>
             await client.Teams[teamSlug].Events[eventSlug].Public.Verify.PostAsync(request));
         if (response is null) return 1;
         
-        outputService.WriteSuccesMessage("Successfully verified email address.");
-        outputService.WriteLine($"Token: {response.RegistrationToken}");
+        AnsiConsoleExt.WriteSuccesMessage("Successfully verified email address.");
+        AnsiConsoleExt.WriteSuccesMessage($"Token: {response.RegistrationToken}");
         return 0;
     }
 }

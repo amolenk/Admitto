@@ -1,38 +1,31 @@
+using Amolenk.Admitto.Cli.Common;
+
 namespace Amolenk.Admitto.Cli.Commands.Config;
 
-public class ClearConfigSettings : ConfigSettings
+public class ClearConfigSettings : CommandSettings
 {
-    [CommandOption("--endpoint")]
-    public required bool Endpoint { get; set; }
-
     [CommandOption("--defaultTeam")]
+    [Description("Clears the default team slug.")]
     public required bool DefaultTeam { get; set; }
 
     [CommandOption("--defaultEvent")]
+    [Description("Clears the default event slug.")]
     public required bool DefaultEvent { get; set; }
 }
 
-public class ClearConfigCommand : ConfigCommandBase<ClearConfigSettings>
+public class ClearConfigCommand(IConfigService configService) : Command<ClearConfigSettings>
 {
     public override int Execute(CommandContext context, ClearConfigSettings settings)
     {
-        UpdateConfig(config =>
+        if (settings.DefaultTeam)
         {
-            if (settings.Endpoint)
-            {
-                config.Remove(ConfigSettings.EndpointSetting);
-            }
+            configService.DefaultTeam = null;
+        }
 
-            if (settings.DefaultTeam)
-            {
-                config.Remove(ConfigSettings.DefaultTeamSetting);
-            }
-
-            if (settings.DefaultEvent)
-            {
-                config.Remove(ConfigSettings.DefaultEventSetting);
-            }
-        });
+        if (settings.DefaultEvent)
+        {
+            configService.DefaultEvent = null;
+        }
         
         return 0;
     }

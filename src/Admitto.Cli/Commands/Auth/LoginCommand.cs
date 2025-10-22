@@ -1,21 +1,24 @@
+using Amolenk.Admitto.Cli.Common;
+using Amolenk.Admitto.Cli.Common.Auth;
+
 namespace Amolenk.Admitto.Cli.Commands.Auth;
 
 public class LoginSettings : CommandSettings
 {
 }
 
-public class LoginCommand(IAuthService authService, OutputService outputService) : AsyncCommand<LoginSettings>
+public class LoginCommand(IAuthService authService) : AsyncCommand<LoginSettings>
 {
     public override async Task<int> ExecuteAsync(CommandContext context, LoginSettings settings)
     {
         var result = await authService.LoginAsync();
         if (result)
         {
-            outputService.WriteSuccesMessage("Successfully logged in.");
+            AnsiConsoleExt.WriteSuccesMessage("Successfully logged in.");
             return 0;
         }
 
-        outputService.WriteErrorMessage("Login failed.");
+        AnsiConsoleExt.WriteErrorMessage("Login failed.");
         return 1;
     }
 }

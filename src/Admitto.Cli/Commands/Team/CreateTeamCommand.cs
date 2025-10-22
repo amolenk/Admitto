@@ -1,3 +1,5 @@
+using Amolenk.Admitto.Cli.Common;
+
 namespace Amolenk.Admitto.Cli.Commands.Team;
 
 public class CreateTeamSettings : CommandSettings
@@ -7,15 +9,15 @@ public class CreateTeamSettings : CommandSettings
     public string? TeamSlug { get; init; }
 
     [CommandOption("-n|--name")]
-    [Description("The name of the team")]
+    [Description("The team name")]
     public string? Name { get; init; }
 
     [CommandOption("--email")]
-    [Description("The email address of the team")]
+    [Description("The email address where the team can be reached")]
     public string? Email { get; init; }
 
     [CommandOption("--emailServiceConnectionString")]
-    [Description("The connection string of the SMTP service to use for sending emails")]
+    [Description("The connection string of the email service to use for sending emails")]
     public string? EmailServiceConnectionString { get; init; }
 
     public override ValidationResult Validate()
@@ -44,7 +46,7 @@ public class CreateTeamSettings : CommandSettings
     }
 }
 
-public class CreateTeamCommand(OutputService outputService, IApiService apiService) 
+public class CreateTeamCommand(IApiService apiService) 
     : AsyncCommand<CreateTeamSettings>
 {
     public override async Task<int> ExecuteAsync(CommandContext context, CreateTeamSettings settings)
@@ -60,7 +62,7 @@ public class CreateTeamCommand(OutputService outputService, IApiService apiServi
         var succes = await apiService.CallApiAsync(async client => await client.Teams.PostAsync(request));
         if (!succes) return 1;
 
-        outputService.WriteSuccesMessage($"Successfully created team {request.Name}.");
+        AnsiConsoleExt.WriteSuccesMessage($"Successfully created team {request.Name}.");
         return 0;
     }
 }
