@@ -1,3 +1,5 @@
+using Amolenk.Admitto.Cli.Common;
+
 namespace Amolenk.Admitto.Cli.Commands.Attendee;
 
 public class RegisterAttendeeSettings : TeamEventSettings
@@ -48,23 +50,21 @@ public class RegisterAttendeeSettings : TeamEventSettings
     }
 }
 
-public class RegisterAttendeeCommand(
-    OutputService outputService,
-    IApiService apiService,
-    IConfiguration configuration)
+public class RegisterAttendeeCommand(IApiService apiService, IConfigService configService)
     : AsyncCommand<RegisterAttendeeSettings>
 {
     public override async Task<int> ExecuteAsync(CommandContext context, RegisterAttendeeSettings settings)
     {
-        var teamSlug = settings.TeamSlug ?? configuration[ConfigSettings.DefaultTeamSetting];
-        var eventSlug = settings.EventSlug ?? configuration[ConfigSettings.DefaultEventSetting];
+        var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
+        var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);
+
         var request = new RegisterAttendeeRequest
         {
             Email = settings.Email,
             FirstName = settings.FirstName,
             LastName = settings.LastName,
-            AdditionalDetails = ParseAdditionalDetails(settings.AdditionalDetails),
-            AssignedTickets = ParseTickets(settings.Tickets)
+            AdditionalDetails = InputHelper.ParseAdditionalDetails(settings.AdditionalDetails),
+            AssignedTickets = InputHelper.ParseTickets(settings.Tickets)
         };
 
         var succes =
@@ -72,42 +72,7 @@ public class RegisterAttendeeCommand(
                 await client.Teams[teamSlug].Events[eventSlug].Attendees.PostAsync(request));
         if (!succes) return 1;
 
-        outputService.WriteSuccesMessage($"Successfully registered attendee.");
+        AnsiConsoleExt.WriteSuccesMessage($"Successfully registered attendee.");
         return 0;
-    }
-
-    private static List<AdditionalDetailDto> ParseAdditionalDetails(string[]? additionalDetails)
-    {
-        var result = new List<AdditionalDetailDto>();
-
-        foreach (var additionalDetail in additionalDetails ?? [])
-        {
-            var parts = additionalDetail.Split('=', 2);
-            if (parts.Length != 2)
-            {
-                throw new ArgumentException(
-                    $"Invalid additional detail format: '{additionalDetail}'. Expected format is 'Name=Value'.");
-            }
-            
-            result.Add(
-                new AdditionalDetailDto
-                {
-                    Name = parts[0],
-                    Value = parts[1]
-                });
-        }
-
-        return result;
-    }
-
-    private static List<TicketSelectionDto> ParseTickets(string[]? tickets)
-    {
-        return (tickets ?? [])
-            .Select(t => new TicketSelectionDto
-            {
-                TicketTypeSlug = t,
-                Quantity = 1
-            })
-            .ToList();
     }
 }

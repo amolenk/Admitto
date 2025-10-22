@@ -1,25 +1,25 @@
-namespace Amolenk.Admitto.Cli.Commands.Teams;
+using Amolenk.Admitto.Cli.Common;
+
+namespace Amolenk.Admitto.Cli.Commands.Team;
 
 public class ShowTeamSettings : CommandSettings
 {
     [CommandOption("-t|--team")]
+    [Description("The slug of the team to show")]
     public string? TeamSlug { get; set; }
 }
 
-public class ShowTeamCommand(
-    IAccessTokenProvider accessTokenProvider, 
-    IConfiguration configuration,
-    OutputService outputService) 
-    : ApiCommand<ShowTeamSettings>(accessTokenProvider, configuration, outputService)
+public class ShowTeamCommand(IApiService apiService, IConfigService configService)
+    : AsyncCommand<ShowTeamSettings>
 {
     public override async Task<int> ExecuteAsync(CommandContext context, ShowTeamSettings settings)
     {
-        var teamSlug = GetTeamSlug(settings.TeamSlug);
+        var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         
-        var response = await CallApiAsync(async client => await client.Teams[teamSlug].GetAsync());
+        var response = await apiService.CallApiAsync(async client => await client.Teams[teamSlug].GetAsync());
         if (response is null) return 1;
         
-        outputService.Write(new JsonText(JsonSerializer.Serialize(response)));
+        AnsiConsole.Write(new JsonText(JsonSerializer.Serialize(response)));
         return 0;
     }
 }

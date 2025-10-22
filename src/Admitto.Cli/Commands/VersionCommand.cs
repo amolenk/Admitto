@@ -1,15 +1,16 @@
 using System.Reflection;
+using Amolenk.Admitto.Cli.Common;
 
 namespace Amolenk.Admitto.Cli.Commands;
 
-public sealed class VersionCommand(OutputService outputService) : Command
+public sealed class VersionCommand : Command
 {
     public override int Execute(CommandContext context)
     {
         var assembly = Assembly.GetExecutingAssembly();
         var version = assembly.GetName().Version;
         
-        outputService.WriteLine($"Admitto CLI version {version}");
+        AnsiConsole.WriteLine($"Admitto CLI version {version}");
         
         return 0;
     }

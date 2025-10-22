@@ -1,16 +1,15 @@
+using Amolenk.Admitto.Cli.Common;
+
 namespace Amolenk.Admitto.Cli.Commands.Events;
 
-public class ListEventsCommand(
-    IAccessTokenProvider accessTokenProvider, 
-    IConfiguration configuration,
-    OutputService outputService)
-    : EventCommandBase<TeamSettings>(accessTokenProvider, configuration, outputService)
+public class ListEventsCommand(IApiService apiService, IConfigService configService)
+    : AsyncCommand<TeamSettings>
 {
     public override async Task<int> ExecuteAsync(CommandContext context, TeamSettings settings)
     {
-        var teamSlug = GetTeamSlug(settings.TeamSlug);
+        var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         
-        var response = await CallApiAsync(async client => await client.Teams[teamSlug].Events.GetAsync());
+        var response = await apiService.CallApiAsync(async client => await client.Teams[teamSlug].Events.GetAsync());
         if (response is null) return 1;
 
         var table = new Table();
@@ -20,7 +19,7 @@ public class ListEventsCommand(
 
         foreach (var ticketedEvent in response.TicketedEvents ?? [])
         {
-            var status = GetStatusString(
+            var status = EventFormatHelper.GetStatusString(
                 ticketedEvent.StartsAt!.Value,
                 ticketedEvent.EndsAt!.Value,
                 ticketedEvent.RegistrationOpensAt,
@@ -29,7 +28,7 @@ public class ListEventsCommand(
             table.AddRow(ticketedEvent.Slug!, ticketedEvent.Name!, status);
         }
 
-        outputService.Write(table);
+        AnsiConsole.Write(table);
         return 0;
     }
 }

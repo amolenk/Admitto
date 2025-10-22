@@ -4,7 +4,7 @@ public record EmailTemplate(string SubjectTemplate, string TextBodyTemplate, str
 {
     public static EmailTemplate Load(string templateFolderPath)
     {
-        // TODO Check if files exist and throw meaningful exception
+        // TODO Check if files exist and throw meaningful exception if not
         
         var subjectTemplate = File.ReadAllText(System.IO.Path.Combine(templateFolderPath, "subject.txt"));
         var textBodyTemplate = File.ReadAllText(System.IO.Path.Combine(templateFolderPath, "body.txt"));

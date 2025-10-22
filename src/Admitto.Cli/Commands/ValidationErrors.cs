@@ -2,6 +2,9 @@ namespace Amolenk.Admitto.Cli.Commands;
 
 public static class ValidationErrors
 {
+    public static readonly ValidationResult ClosesBeforeEventMissing = 
+        ValidationResult.Error("Closes before event timespan must be specified.");
+
     public static readonly ValidationResult DataTypeEntityMissing =
         ValidationResult.Error("Data type entity must be specified.");
     
@@ -91,6 +94,9 @@ public static class ValidationErrors
     
     public static readonly ValidationResult MigrationNameMissing = 
         ValidationResult.Error("Migration name must be specified.");
+    
+    public static readonly ValidationResult OpensBeforeEventMissing = 
+        ValidationResult.Error("Opens before event timespan must be specified.");
     
     public static readonly ValidationResult TicketTypeSlugMissing = 
         ValidationResult.Error("Ticket type slug must be specified.");

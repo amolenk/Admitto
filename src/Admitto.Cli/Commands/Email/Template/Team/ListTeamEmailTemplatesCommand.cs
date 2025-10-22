@@ -1,16 +1,15 @@
+using Amolenk.Admitto.Cli.Common;
+
 namespace Amolenk.Admitto.Cli.Commands.Email.Template.Team;
 
-public class ListTeamEmailTemplatesCommand(
-    IAccessTokenProvider accessTokenProvider, 
-    IConfiguration configuration,
-    OutputService outputService)
-    : ApiCommand<TeamSettings>(accessTokenProvider, configuration, outputService)
+public class ListTeamEmailTemplatesCommand(IApiService apiService, IConfigService configService)
+    : AsyncCommand<TeamSettings>
 {
     public override async Task<int> ExecuteAsync(CommandContext context, TeamSettings settings)
     {
-        var teamSlug = GetTeamSlug(settings.TeamSlug);
+        var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         
-        var response = await CallApiAsync(async client => await client.Teams[teamSlug].EmailTemplates.GetAsync());
+        var response = await apiService.CallApiAsync(async client => await client.Teams[teamSlug].EmailTemplates.GetAsync());
         if (response is null) return 1;
 
         var table = new Table();
@@ -24,7 +23,7 @@ public class ListTeamEmailTemplatesCommand(
             table.AddRow(emailTemplate.Type!, status);
         }
         
-        outputService.Write(table);
+        AnsiConsole.Write(table);
         return 0;
     }
 }
