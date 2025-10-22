@@ -51,6 +51,7 @@ module containerRegistry 'modules/containerRegistry.bicep' = {
 module keyVault 'modules/keyVault.bicep' = {
   name: 'keyVault'
   params: {
+    authApiAppSecret: authApiAppSecret
     location: location
     principalId: managedIdentity.outputs.principalId
   }
@@ -94,16 +95,16 @@ module storageAccount 'modules/storageAccount.bicep' = {
   }
 }
 
-module postgres 'modules/postgres.bicep' = {
-  name: 'postgres'
-  params: {
-    administratorLoginPassword: postgresPassword
-    keyVaultName: keyVault.outputs.name
-    location: location
-    vnetId: network.outputs.vnetId
-    subnetId: network.outputs.privateEndpointSubnetId
-  }
-}
+// module postgres 'modules/postgres.bicep' = {
+//   name: 'postgres'
+//   params: {
+//     administratorLoginPassword: postgresPassword
+//     keyVaultName: keyVault.outputs.name
+//     location: location
+//     vnetId: network.outputs.vnetId
+//     subnetId: network.outputs.privateEndpointSubnetId
+//   }
+// }
 
 module openfga 'modules/openFgaApp.bicep' = {
   name: 'openfga-app'

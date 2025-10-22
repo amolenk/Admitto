@@ -45,6 +45,11 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
           keyVaultUrl: 'https://${keyVaultName}${environment().suffixes.keyvaultDns}/secrets/connectionstrings--admitto-db'
           identity: managedIdentityId
         }
+        {
+          name: 'auth-api-app-secret'
+          keyVaultUrl: 'https://${keyVaultName}${environment().suffixes.keyvaultDns}/secrets/auth--api-app-secret'
+          identity: managedIdentityId
+        }
       ]    
     }
     environmentId: acaEnvironmentId
@@ -52,7 +57,8 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
       containers: [
         {
           // Use a placeholder image until the real one is built and pushed
-          image: 'mendhak/http-https-echo:37'
+//           image: 'mendhak/http-https-echo:37'
+          image: 'acrutzwls7ov7ne2.azurecr.io/admitto-worker@sha256:8c8249f0e6646d58d30752891c9179b9e26c833a3011adab11c21655e1d8beec'
           name: 'admitto-worker'
           env: [
             {
@@ -81,7 +87,7 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
             }
             {
                 name: 'UserManagement__MicrosoftGraph__ClientSecret'
-                value: authApiAppSecret
+                secretRef: 'auth-api-app-secret'
             }
             {
               name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
