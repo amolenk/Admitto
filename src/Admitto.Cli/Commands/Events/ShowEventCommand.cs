@@ -58,6 +58,9 @@ public class ShowEventCommand(IApiService apiService, IConfigService configServi
             grid.AddRow(
                 new Text("Capacity"),
                 new BreakdownChart()
+                    {
+                        ValueColor = Color.White
+                    }
                     .AddItem("Registered", ticketType.UsedCapacity!.Value, Color.Blue)
                     .AddItem("Available", remainingCapacity, Color.Yellow));
 
