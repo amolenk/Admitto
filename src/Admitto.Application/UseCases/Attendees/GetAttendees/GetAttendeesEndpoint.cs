@@ -21,17 +21,24 @@ public static class GetAttendeesEndpoint
     {
         var eventId = await slugResolver.ResolveTicketedEventIdAsync(teamSlug, eventSlug, cancellationToken);
         
-        var attendees = await context.Attendees
+        var attendees = (await context.Attendees
             .AsNoTracking()
             .Where(a => a.TicketedEventId == eventId)
+            .ToArrayAsync(cancellationToken))
             .Select(a => new AttendeeDto(
                 a.Id,
                 a.Email,
                 a.FirstName,
                 a.LastName,
                 a.RegistrationStatus,
+                a.AdditionalDetails
+                    .Select(ad => new AdditionalDetailDto(ad.Name, ad.Value))
+                    .ToArray(),
+                a.Tickets
+                    .Select(at => new TicketSelectionDto(at.TicketTypeSlug, at.Quantity))
+                    .ToArray(),
                 a.LastChangedAt))
-            .ToArrayAsync(cancellationToken);
+            .ToArray();
 
         return TypedResults.Ok(new GetAttendeesResponse(attendees));
     }
