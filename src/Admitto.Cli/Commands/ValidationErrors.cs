@@ -34,7 +34,10 @@ public static class ValidationErrors
     
     public static readonly ValidationResult IdMissing = 
         ValidationResult.Error("ID must be specified.");
-    
+
+    public static readonly ValidationResult OutputPathMissing = 
+        ValidationResult.Error("Output path must be specified.");
+
     public static readonly ValidationResult RoleMissing = 
         ValidationResult.Error("Role must be specified.");
     

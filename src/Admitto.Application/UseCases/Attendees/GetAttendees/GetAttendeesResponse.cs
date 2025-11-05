@@ -10,4 +10,10 @@ public record AttendeeDto(
     string FirstName,
     string LastName,
     RegistrationStatus Status,
+    AdditionalDetailDto[] AdditionalDetails,
+    TicketSelectionDto[] Tickets,
     DateTimeOffset LastChangedAt);
+
+public record AdditionalDetailDto(string Name, string Value);
+
+public record TicketSelectionDto(string TicketTypeSlug, int Quantity);
