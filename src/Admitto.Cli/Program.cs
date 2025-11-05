@@ -67,6 +67,9 @@ app.Configure(config =>
             attendee.AddCommand<CancelAttendeeCommand>("cancel")
                 .WithDescription("Cancel an attendee registration");
 
+            attendee.AddCommand<ExportAttendeesCommand>("export")
+                .WithDescription("Export all attendee registrations to an Excel file");
+
             attendee.AddCommand<ListAttendeesCommand>("list")
                 .WithDescription("List all attendee registrations");
 
