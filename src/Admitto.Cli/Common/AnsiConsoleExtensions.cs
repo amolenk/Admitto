@@ -11,7 +11,17 @@ public static class AnsiConsoleExt
     {
         AnsiConsole.MarkupLine($"[red]✗ {message.EscapeMarkup()}[/]");
     }
-    
+
+    public static void WriteException(ProblemDetails ex)
+    {
+        WriteErrorMessage(ex.Detail!);
+    }
+
+    public static void WriteException(HttpValidationProblemDetails ex)
+    {
+        WriteErrorMessage(ex.Detail!);
+    }
+
     public static void WriteException(Exception ex)
     {
         WriteErrorMessage(ex.Message);
