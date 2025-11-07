@@ -25,7 +25,5 @@ public class CancelRegistrationHandler(IApplicationContext context)
         }
         
         attendee.CancelRegistration(ticketedEvent.CancellationPolicy, ticketedEvent.StartsAt);
-
-        context.Attendees.Remove(attendee);
     }
 }
