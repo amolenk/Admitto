@@ -6,7 +6,12 @@ public static class AnsiConsoleExt
     {
         AnsiConsole.MarkupLine($"[green]✓ {message.EscapeMarkup()}[/]");
     }
-    
+
+    public static void WriteWarningMessage(string message)
+    {
+        AnsiConsole.MarkupLine($"[yellow]! {message.EscapeMarkup()}[/]");
+    }
+
     public static void WriteErrorMessage(string message)
     {
         AnsiConsole.MarkupLine($"[red]✗ {message.EscapeMarkup()}[/]");
