@@ -18,5 +18,9 @@ public enum ParticipantActivity
     SponsorAdded,
     CrewRemoved,
     SpeakerRemoved,
-    SponsorRemoved
+    SponsorRemoved,
+    
+    // Edge cases
+    CanceledDueToTicketTypeRemoval,
+    VisaRequestDenied
 }

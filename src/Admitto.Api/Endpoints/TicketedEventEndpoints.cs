@@ -1,5 +1,6 @@
 using Amolenk.Admitto.ApiService.Middleware;
 using Amolenk.Admitto.Application.UseCases.TicketedEvents.AddTicketType;
+using Amolenk.Admitto.Application.UseCases.TicketedEvents.CancelTicketType;
 using Amolenk.Admitto.Application.UseCases.TicketedEvents.ClearReconfirmPolicy;
 using Amolenk.Admitto.Application.UseCases.TicketedEvents.CreateTicketedEvent;
 using Amolenk.Admitto.Application.UseCases.TicketedEvents.GetTicketedEvent;
@@ -28,6 +29,7 @@ public static class TicketedEventEndpoints
 
         group
             .MapAddTicketType()
+            .MapCancelTicketType()
             .MapClearReconfirmPolicy()
             .MapCreateTicketedEvent()
             .MapGetTicketedEvent()

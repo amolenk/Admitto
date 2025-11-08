@@ -108,7 +108,7 @@ public class ExportAttendeesCommand(IApiService apiService, IConfigService confi
         table.Columns.Add("Status", typeof(string));
         table.Columns.Add("LastChangedAt", typeof(DateTimeOffset));
 
-        foreach (var attendee in attendees)
+        foreach (var attendee in attendees.Where(a => a.Status != RegistrationStatus.Canceled))
         {
             foreach (var ticket in attendee.Tickets!)
             {
@@ -129,6 +129,7 @@ public class ExportAttendeesCommand(IApiService apiService, IConfigService confi
         table.Columns.Add("RegistrationCount", typeof(int));
 
         var totals = attendees
+            .Where(a => a.Status != RegistrationStatus.Canceled)
             .SelectMany(a => a.Tickets!)
             .GroupBy(t => t.TicketTypeSlug)
             .Select(g => new
