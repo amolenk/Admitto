@@ -31,11 +31,14 @@ public class ParticipantActivityHandler(IApplicationContext context)
     
     public ValueTask HandleAsync(AttendeeCanceledDomainEvent domainEvent, CancellationToken cancellationToken)
     {
+        var activity = domainEvent.Reason == CancellationReason.TicketTypeRemoved
+            ? ParticipantActivity.CanceledDueToTicketTypeRemoval : ParticipantActivity.CanceledOnTime;
+        
         LogActivity(
             domainEvent.TicketedEventId,
             domainEvent.ParticipantId,
             domainEvent.DomainEventId,
-            ParticipantActivity.CanceledOnTime,
+            activity,
             domainEvent.OccurredOn);
         
         return ValueTask.CompletedTask;

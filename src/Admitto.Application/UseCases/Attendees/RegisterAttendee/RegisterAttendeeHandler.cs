@@ -1,6 +1,7 @@
 using Amolenk.Admitto.Application.Common;
 using Amolenk.Admitto.Application.Projections.Participation;
 using Amolenk.Admitto.Domain.Entities;
+using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Application.UseCases.Attendees.RegisterAttendee;
 
@@ -31,8 +32,29 @@ public class RegisterAttendeeHandler(IApplicationContext context, IUnitOfWork un
             DateTimeOffset.UtcNow,
             command.RequestedTickets,
             ignoreCapacity: command.AdminOnBehalfOf);
+        
+        // There might be an existing registration for this participant.
+        var existingAttendee = await context.Attendees
+            .FirstOrDefaultAsync(a =>
+                    a.TicketedEventId == command.TicketedEventId &&
+                    a.ParticipantId == participantId,
+                cancellationToken);
 
-        // Add the attendee
+        // If there is an existing registration and it is canceled, we can remove it.
+        // Otherwise, we should fail the operation.
+        if (existingAttendee is not null)
+        {
+            if (existingAttendee.RegistrationStatus == RegistrationStatus.Canceled)
+            {
+                context.Attendees.Remove(existingAttendee);
+            }
+            else
+            {
+                throw new ApplicationRuleException(ApplicationRuleError.Attendee.AlreadyRegistered);
+            }
+        }
+        
+        // Add the new attendee registration.
         context.Attendees.Add(
             Attendee.Create(
                 command.TicketedEventId,

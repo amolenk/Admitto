@@ -36,7 +36,8 @@ public class Attendee : Aggregate
         _additionalDetails = additionalDetails;
         _tickets = tickets;
 
-        AddDomainEvent(new AttendeeRegisteredDomainEvent(ticketedEventId, participantId, id, email, firstName, lastName));
+        AddDomainEvent(
+            new AttendeeRegisteredDomainEvent(ticketedEventId, participantId, id, email, firstName, lastName));
     }
 
     public Guid TicketedEventId { get; private set; }
@@ -63,7 +64,7 @@ public class Attendee : Aggregate
         var additionalDetailSchemaList = additionalDetailSchemas.ToList();
 
         EnsureValidAdditionalDetails(additionalDetailsList, additionalDetailSchemaList);
-            
+
         return new Attendee(
             Guid.NewGuid(),
             ticketedEventId,
@@ -74,33 +75,38 @@ public class Attendee : Aggregate
             additionalDetailsList,
             tickets.ToList());
     }
-    
+
     public void UpdateTickets(IList<TicketSelection> newTickets)
     {
         if (RegistrationStatus != RegistrationStatus.Registered && RegistrationStatus != RegistrationStatus.Reconfirmed)
         {
             throw new DomainRuleException(DomainRuleError.Registration.CannotChangeTicketsInStatus(RegistrationStatus));
         }
-        
+
         _tickets.Clear();
         _tickets.AddRange(newTickets);
 
         AddDomainEvent(new AttendeeTicketsChangedDomainEvent(TicketedEventId, ParticipantId, Id));
     }
-    
-    public void CancelRegistration(CancellationPolicy policy, DateTimeOffset eventStartsAt)
+
+    public void CancelRegistration(
+        DateTimeOffset eventStartsAt,
+        CancellationReason? reason = CancellationReason.Unknown,
+        CancellationPolicy? policy = null)
     {
+        policy ??= CancellationPolicy.None;
+        
         var now = DateTimeOffset.UtcNow;
         if (now >= eventStartsAt)
         {
             throw new DomainRuleException(DomainRuleError.Registration.CannotCancelAfterEventStart);
         }
-        
+
         if (RegistrationStatus == RegistrationStatus.Canceled)
         {
             throw new DomainRuleException(DomainRuleError.Registration.AlreadyCanceled);
         }
-        
+
         if (RegistrationStatus != RegistrationStatus.Registered && RegistrationStatus != RegistrationStatus.Reconfirmed)
         {
             throw new DomainRuleException(DomainRuleError.Registration.CannotCancelInStatus(RegistrationStatus));
@@ -109,9 +115,9 @@ public class Attendee : Aggregate
         RegistrationStatus = RegistrationStatus.Canceled;
 
         DomainEvent domainEvent = eventStartsAt - now < policy.CutoffBeforeEvent
-            ? new AttendeeCanceledLateDomainEvent(TicketedEventId, ParticipantId, Id, Email, _tickets)
-            : new AttendeeCanceledDomainEvent(TicketedEventId,ParticipantId, Id, Email, _tickets);
-        
+            ? new AttendeeCanceledLateDomainEvent(TicketedEventId, ParticipantId, Id, Email, _tickets, reason)
+            : new AttendeeCanceledDomainEvent(TicketedEventId, ParticipantId, Id, Email, _tickets, reason);
+
         AddDomainEvent(domainEvent);
     }
 
@@ -123,7 +129,7 @@ public class Attendee : Aggregate
         }
 
         if (RegistrationStatus == RegistrationStatus.Reconfirmed) return;
-        
+
         RegistrationStatus = RegistrationStatus.Reconfirmed;
 
         AddDomainEvent(new AttendeeReconfirmedDomainEvent(TicketedEventId, ParticipantId, Id));
@@ -133,12 +139,12 @@ public class Attendee : Aggregate
     {
         RegistrationStatus = RegistrationStatus.CheckedIn;
     }
-    
+
     public void MarkAsNoShow()
     {
         RegistrationStatus = RegistrationStatus.NoShow;
     }
-    
+
     private static void EnsureValidAdditionalDetails(
         List<AdditionalDetail> additionalDetails,
         List<AdditionalDetailSchema> additionalDetailSchemas)
@@ -162,7 +168,7 @@ public class Attendee : Aggregate
             if (detail is null)
             {
                 if (!schema.IsRequired) continue;
-                
+
                 throw new DomainRuleException(
                     DomainRuleError.Attendee.MissingAdditionalDetail(schema.Name));
             }

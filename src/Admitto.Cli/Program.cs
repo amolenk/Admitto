@@ -257,6 +257,9 @@ app.Configure(config =>
                     ticketType.AddCommand<AddTicketTypeCommand>("add")
                         .WithDescription("Add a ticket type");
 
+                    ticketType.AddCommand<CancelTicketTypeCommand>("cancel")
+                        .WithDescription("Cancel a ticket type and update/cancel existing registrations");
+
                     ticketType.AddCommand<UpdateTicketTypeCommand>("update")
                         .WithDescription("Update an existing ticket type");
                 });

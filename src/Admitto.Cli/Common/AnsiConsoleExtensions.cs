@@ -6,12 +6,27 @@ public static class AnsiConsoleExt
     {
         AnsiConsole.MarkupLine($"[green]✓ {message.EscapeMarkup()}[/]");
     }
-    
+
+    public static void WriteWarningMessage(string message)
+    {
+        AnsiConsole.MarkupLine($"[yellow]! {message.EscapeMarkup()}[/]");
+    }
+
     public static void WriteErrorMessage(string message)
     {
         AnsiConsole.MarkupLine($"[red]✗ {message.EscapeMarkup()}[/]");
     }
-    
+
+    public static void WriteException(ProblemDetails ex)
+    {
+        WriteErrorMessage(ex.Detail!);
+    }
+
+    public static void WriteException(HttpValidationProblemDetails ex)
+    {
+        WriteErrorMessage(ex.Detail!);
+    }
+
     public static void WriteException(Exception ex)
     {
         WriteErrorMessage(ex.Message);

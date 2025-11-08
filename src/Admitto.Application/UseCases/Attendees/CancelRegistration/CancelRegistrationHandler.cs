@@ -24,8 +24,6 @@ public class CancelRegistrationHandler(IApplicationContext context)
             throw new ApplicationRuleException(ApplicationRuleError.Attendee.NotFound);
         }
         
-        attendee.CancelRegistration(ticketedEvent.CancellationPolicy, ticketedEvent.StartsAt);
-
-        context.Attendees.Remove(attendee);
+        attendee.CancelRegistration(ticketedEvent.StartsAt, policy: ticketedEvent.CancellationPolicy);
     }
 }

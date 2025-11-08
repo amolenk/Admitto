@@ -7,5 +7,6 @@ public record AttendeeCanceledDomainEvent(
     Guid ParticipantId,
     Guid AttendeeId,
     string Email,
-    IList<TicketSelection> Tickets)
+    IList<TicketSelection> Tickets,
+    CancellationReason? Reason = CancellationReason.Unknown)
     : DomainEvent;
