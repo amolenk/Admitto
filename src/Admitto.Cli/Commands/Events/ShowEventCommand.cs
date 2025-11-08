@@ -13,7 +13,7 @@ public class ShowEventCommand(IApiService apiService, IConfigService configServi
         var response = await apiService.CallApiAsync(async client => await client.Teams[teamSlug].Events[eventSlug].GetAsync());
         if (response?.Slug is null) return 1;
 
-        AnsiConsole.Write(new Rule(response.Name!) { Justification = Justify.Left, Style = Style.Parse("blue") });
+        AnsiConsole.Write(new Rule(response.Name!) { Justification = Justify.Left, Style = Style.Parse("cyan") });
 
         var grid = new Grid();
         grid.AddColumn(new GridColumn { Width = 20 });
@@ -45,7 +45,7 @@ public class ShowEventCommand(IApiService apiService, IConfigService configServi
         foreach (var ticketType in response.TicketTypes ?? [])
         {
             AnsiConsole.Write(
-                new Rule($"{ticketType.Name} tickets") { Justification = Justify.Left, Style = Style.Parse("blue") });
+                new Rule($"{ticketType.Name} tickets") { Justification = Justify.Left, Style = Style.Parse("cyan") });
 
             var remainingCapacity = Math.Max(0, ticketType.MaxCapacity!.Value - ticketType.UsedCapacity!.Value);
 
@@ -55,14 +55,22 @@ public class ShowEventCommand(IApiService apiService, IConfigService configServi
 
             grid.AddRow("Slug:", ticketType.Slug!);
             grid.AddRow("Slot(s):", string.Join(", ", ticketType.SlotNames ?? []));
-            grid.AddRow(
-                new Text("Capacity"),
-                new BreakdownChart()
-                    {
-                        ValueColor = Color.White
-                    }
-                    .AddItem("Registered", ticketType.UsedCapacity!.Value, Color.Blue)
-                    .AddItem("Available", remainingCapacity, Color.Yellow));
+
+            if (ticketType.MaxCapacity > 0)
+            {
+                grid.AddRow(
+                    new Text("Capacity"),
+                    new BreakdownChart()
+                        {
+                            ValueColor = Color.White
+                        }
+                        .AddItem("Registered", ticketType.UsedCapacity!.Value, Color.Green)
+                        .AddItem("Available", remainingCapacity, Color.Grey));
+            }
+            else
+            {
+                grid.AddRow("Capacity:", "[red]Unavailable[/]");
+            }
 
             AnsiConsole.Write(grid);
         }

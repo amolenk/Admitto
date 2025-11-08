@@ -12,8 +12,26 @@ namespace Amolenk.Admitto.Cli.Api.Models
     public partial class GetAttendeeResponse : IAdditionalDataHolder, IParsable
     #pragma warning restore CS1591
     {
+        /// <summary>The activities property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public List<global::Amolenk.Admitto.Cli.Api.Models.ActivityDto>? Activities { get; set; }
+#nullable restore
+#else
+        public List<global::Amolenk.Admitto.Cli.Api.Models.ActivityDto> Activities { get; set; }
+#endif
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
+        /// <summary>The additionalDetails property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public List<global::Amolenk.Admitto.Cli.Api.Models.AdditionalDetailDto>? AdditionalDetails { get; set; }
+#nullable restore
+#else
+        public List<global::Amolenk.Admitto.Cli.Api.Models.AdditionalDetailDto> AdditionalDetails { get; set; }
+#endif
+        /// <summary>The attendeeId property</summary>
+        public Guid? AttendeeId { get; set; }
         /// <summary>The email property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
@@ -30,8 +48,8 @@ namespace Amolenk.Admitto.Cli.Api.Models
 #else
         public string FirstName { get; set; }
 #endif
-        /// <summary>The id property</summary>
-        public Guid? Id { get; set; }
+        /// <summary>The lastChangedAt property</summary>
+        public DateTimeOffset? LastChangedAt { get; set; }
         /// <summary>The lastName property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
@@ -42,6 +60,14 @@ namespace Amolenk.Admitto.Cli.Api.Models
 #endif
         /// <summary>The registrationStatus property</summary>
         public global::Amolenk.Admitto.Cli.Api.Models.RegistrationStatus? RegistrationStatus { get; set; }
+        /// <summary>The tickets property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public List<global::Amolenk.Admitto.Cli.Api.Models.TicketSelectionDto>? Tickets { get; set; }
+#nullable restore
+#else
+        public List<global::Amolenk.Admitto.Cli.Api.Models.TicketSelectionDto> Tickets { get; set; }
+#endif
         /// <summary>
         /// Instantiates a new <see cref="global::Amolenk.Admitto.Cli.Api.Models.GetAttendeeResponse"/> and sets the default values.
         /// </summary>
@@ -67,11 +93,15 @@ namespace Amolenk.Admitto.Cli.Api.Models
         {
             return new Dictionary<string, Action<IParseNode>>
             {
+                { "activities", n => { Activities = n.GetCollectionOfObjectValues<global::Amolenk.Admitto.Cli.Api.Models.ActivityDto>(global::Amolenk.Admitto.Cli.Api.Models.ActivityDto.CreateFromDiscriminatorValue)?.AsList(); } },
+                { "additionalDetails", n => { AdditionalDetails = n.GetCollectionOfObjectValues<global::Amolenk.Admitto.Cli.Api.Models.AdditionalDetailDto>(global::Amolenk.Admitto.Cli.Api.Models.AdditionalDetailDto.CreateFromDiscriminatorValue)?.AsList(); } },
+                { "attendeeId", n => { AttendeeId = n.GetGuidValue(); } },
                 { "email", n => { Email = n.GetStringValue(); } },
                 { "firstName", n => { FirstName = n.GetStringValue(); } },
-                { "id", n => { Id = n.GetGuidValue(); } },
+                { "lastChangedAt", n => { LastChangedAt = n.GetDateTimeOffsetValue(); } },
                 { "lastName", n => { LastName = n.GetStringValue(); } },
                 { "registrationStatus", n => { RegistrationStatus = n.GetEnumValue<global::Amolenk.Admitto.Cli.Api.Models.RegistrationStatus>(); } },
+                { "tickets", n => { Tickets = n.GetCollectionOfObjectValues<global::Amolenk.Admitto.Cli.Api.Models.TicketSelectionDto>(global::Amolenk.Admitto.Cli.Api.Models.TicketSelectionDto.CreateFromDiscriminatorValue)?.AsList(); } },
             };
         }
         /// <summary>
@@ -81,11 +111,15 @@ namespace Amolenk.Admitto.Cli.Api.Models
         public virtual void Serialize(ISerializationWriter writer)
         {
             _ = writer ?? throw new ArgumentNullException(nameof(writer));
+            writer.WriteCollectionOfObjectValues<global::Amolenk.Admitto.Cli.Api.Models.ActivityDto>("activities", Activities);
+            writer.WriteCollectionOfObjectValues<global::Amolenk.Admitto.Cli.Api.Models.AdditionalDetailDto>("additionalDetails", AdditionalDetails);
+            writer.WriteGuidValue("attendeeId", AttendeeId);
             writer.WriteStringValue("email", Email);
             writer.WriteStringValue("firstName", FirstName);
-            writer.WriteGuidValue("id", Id);
+            writer.WriteDateTimeOffsetValue("lastChangedAt", LastChangedAt);
             writer.WriteStringValue("lastName", LastName);
             writer.WriteEnumValue<global::Amolenk.Admitto.Cli.Api.Models.RegistrationStatus>("registrationStatus", RegistrationStatus);
+            writer.WriteCollectionOfObjectValues<global::Amolenk.Admitto.Cli.Api.Models.TicketSelectionDto>("tickets", Tickets);
             writer.WriteAdditionalData(AdditionalData);
         }
     }
