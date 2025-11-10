@@ -143,14 +143,36 @@ app.Configure(config =>
                 {
                     bulk.SetDescription("Manage bulk emails");
 
-                    bulk.AddCommand<Commands.Email.Bulk.ListBulkEmailsCommand>("list")
-                        .WithDescription("List all bulk emails");
+                    bulk.AddCommand<Commands.Email.Bulk.SendCustomBulkEmailCommand>("send")
+                        .WithDescription("Send a bulk email");
 
-                    bulk.AddCommand<Commands.Email.Bulk.RemoveBulkEmailCommand>("remove")
-                        .WithDescription("Remove a scheduled bulk email");
+                    bulk.AddCommand<Commands.Email.Bulk.TestCustomBulkEmailCommand>("test")
+                        .WithDescription("Test a bulk email");
 
-                    bulk.AddCommand<Commands.Email.Bulk.ScheduleBulkEmailCommand>("schedule")
-                        .WithDescription("Schedule a bulk email");
+                    // bulk.AddCommand<Commands.Email.Bulk.ListBulkEmailsCommand>("list")
+                    //     .WithDescription("List all bulk emails");
+                    //
+                    // bulk.AddCommand<Commands.Email.Bulk.RemoveBulkEmailCommand>("remove")
+                    //     .WithDescription("Remove a scheduled bulk email");
+                    //
+                    // bulk.AddCommand<Commands.Email.Bulk.ScheduleBulkEmailCommand>("schedule")
+                    //     .WithDescription("Schedule a bulk email");
+                });
+            
+            email.AddBranch(
+                "recipientList",
+                bulk =>
+                {
+                    bulk.SetDescription("Manage email recipient lists");
+
+                    bulk.AddCommand<Commands.Email.RecipientLists.AddEmailRecipientListCommand>("add")
+                        .WithDescription("Add an email recipient list");
+
+                    bulk.AddCommand<Commands.Email.RecipientLists.ListEmailRecipientListsCommand>("list")
+                        .WithDescription("List all email recipient lists");
+                    
+                    bulk.AddCommand<Commands.Email.RecipientLists.RemoveEmailRecipientListCommand>("remove")
+                        .WithDescription("Remove an email recipient list");
                 });
 
             // email.AddBranch(

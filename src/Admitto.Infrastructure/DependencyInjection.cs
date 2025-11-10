@@ -45,6 +45,11 @@ public static class DependencyInjection
         
         builder.EnrichNpgsqlDbContext<ApplicationContext>();
 
+        // Add Npgsql data source for Quartz database.
+        builder.Services.AddNpgsqlDataSource(
+            builder.Configuration.GetConnectionString("quartz-db")!,
+            serviceKey: "quartz");
+        
         builder.Services.AddMemoryCache(options =>
         {
             // TODO Optimize cache size and expiration
@@ -77,7 +82,8 @@ public static class DependencyInjection
 
         builder.AddAuthServices();
         
-        builder.Services.AddTransient<Amolenk.Admitto.Infrastructure.Migrators.OpenFgaMigrator>();
+        builder.Services.AddTransient<QuartzMigrator>();
+        builder.Services.AddTransient<OpenFgaMigrator>();
         builder.Services.AddTransient<IMigrationService, MigrationService>();
         
         return builder;

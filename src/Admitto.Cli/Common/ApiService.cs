@@ -34,6 +34,7 @@ public class ApiService(IOptions<AdmittoOptions> options, IAccessTokenProvider a
         }
         catch (Exception e)
         {
+
             AnsiConsoleExt.WriteException(e);
             return false;
         }

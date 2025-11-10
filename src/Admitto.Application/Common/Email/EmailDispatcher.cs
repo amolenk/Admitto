@@ -43,7 +43,7 @@ public class EmailDispatcher(
     IUnitOfWork unitOfWork,
     ILogger<EmailDispatcher> logger) : IEmailDispatcher
 {
-    public static readonly Guid TestMessageDispatchId = Guid.Empty;
+    public static readonly Guid TestMessageIdempotencyKey = Guid.Empty;
 
     public async ValueTask DispatchEmailAsync(
         EmailMessage emailMessage,
@@ -118,7 +118,7 @@ public class EmailDispatcher(
         CancellationToken cancellationToken = default)
     {
         // If this is a test email message, send it without checking for duplicates or logging the result.
-        if (idempotencyKey == TestMessageDispatchId)
+        if (idempotencyKey == TestMessageIdempotencyKey)
         {
             await emailSender.SendEmailAsync(emailMessage);
             return;

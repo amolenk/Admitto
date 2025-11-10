@@ -432,6 +432,44 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                     b.ToTable("contributors", (string)null);
                 });
 
+            modelBuilder.Entity("Amolenk.Admitto.Domain.Entities.EmailRecipientList", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset>("LastChangedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_changed_at");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name");
+
+                    b.Property<Guid>("TicketedEventId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("event_id");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("email_recipient_lists", (string)null);
+                });
+
             modelBuilder.Entity("Amolenk.Admitto.Domain.Entities.EmailTemplate", b =>
                 {
                     b.Property<Guid>("Id")
@@ -803,6 +841,64 @@ namespace Amolenk.Admitto.Infrastructure.Persistence.Migrations
                         });
 
                     b.Navigation("AdditionalDetails");
+                });
+
+            modelBuilder.Entity("Amolenk.Admitto.Domain.Entities.EmailRecipientList", b =>
+                {
+                    b.OwnsMany("Amolenk.Admitto.Domain.ValueObjects.EmailRecipient", "Recipients", b1 =>
+                        {
+                            b1.Property<Guid>("EmailRecipientListId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<int>("__synthesizedOrdinal")
+                                .ValueGeneratedOnAdd()
+                                .HasColumnType("integer");
+
+                            b1.Property<string>("Email")
+                                .IsRequired()
+                                .HasColumnType("text");
+
+                            b1.HasKey("EmailRecipientListId", "__synthesizedOrdinal");
+
+                            b1.ToTable("email_recipient_lists");
+
+                            b1.ToJson("recipients");
+
+                            b1.WithOwner()
+                                .HasForeignKey("EmailRecipientListId");
+
+                            b1.OwnsMany("Amolenk.Admitto.Domain.ValueObjects.EmailRecipientDetail", "Details", b2 =>
+                                {
+                                    b2.Property<Guid>("EmailRecipientListId")
+                                        .HasColumnType("uuid");
+
+                                    b2.Property<int>("EmailRecipient__synthesizedOrdinal")
+                                        .HasColumnType("integer");
+
+                                    b2.Property<int>("__synthesizedOrdinal")
+                                        .ValueGeneratedOnAdd()
+                                        .HasColumnType("integer");
+
+                                    b2.Property<string>("Name")
+                                        .IsRequired()
+                                        .HasColumnType("text");
+
+                                    b2.Property<string>("Value")
+                                        .IsRequired()
+                                        .HasColumnType("text");
+
+                                    b2.HasKey("EmailRecipientListId", "EmailRecipient__synthesizedOrdinal", "__synthesizedOrdinal");
+
+                                    b2.ToTable("email_recipient_lists");
+
+                                    b2.WithOwner()
+                                        .HasForeignKey("EmailRecipientListId", "EmailRecipient__synthesizedOrdinal");
+                                });
+
+                            b1.Navigation("Details");
+                        });
+
+                    b.Navigation("Recipients");
                 });
 
             modelBuilder.Entity("Amolenk.Admitto.Domain.Entities.Team", b =>
