@@ -67,6 +67,9 @@ app.Configure(config =>
             attendee.AddCommand<CancelAttendeeCommand>("cancel")
                 .WithDescription("Cancel an attendee registration");
 
+            attendee.AddCommand<DenyAttendeeVisaLetterCommand>("denyVisaLetter")
+                .WithDescription("Deny a request for a visa letter and cancel the registration");
+
             attendee.AddCommand<ExportAttendeesCommand>("export")
                 .WithDescription("Export all attendee registrations to an Excel file");
 

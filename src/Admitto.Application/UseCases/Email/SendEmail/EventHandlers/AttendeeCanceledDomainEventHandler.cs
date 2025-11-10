@@ -1,6 +1,7 @@
 using Amolenk.Admitto.Application.Common.Email;
 using Amolenk.Admitto.Domain.DomainEvents;
 using Amolenk.Admitto.Domain.Utilities;
+using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Application.UseCases.Email.SendEmail.EventHandlers;
 
@@ -12,10 +13,14 @@ public class AttendeeCanceledDomainEventHandler(SendEmailHandler sendEmailHandle
 {
     public async ValueTask HandleAsync(AttendeeCanceledDomainEvent domainEvent, CancellationToken cancellationToken)
     {
+        var emailType = domainEvent.Reason == CancellationReason.VisaLetterDenied
+            ? WellKnownEmailType.VisaLetterDenied
+            : WellKnownEmailType.Canceled;
+        
         var command = new SendEmailCommand(
             domainEvent.TicketedEventId,
             domainEvent.AttendeeId,
-            WellKnownEmailType.Canceled)
+            emailType)
         {
             CommandId = DeterministicGuid.Create($"{domainEvent.DomainEventId}:{nameof(SendEmailCommand)}")
         };

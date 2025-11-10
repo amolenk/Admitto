@@ -31,8 +31,12 @@ public class ParticipantActivityHandler(IApplicationContext context)
     
     public ValueTask HandleAsync(AttendeeCanceledDomainEvent domainEvent, CancellationToken cancellationToken)
     {
-        var activity = domainEvent.Reason == CancellationReason.TicketTypeRemoved
-            ? ParticipantActivity.CanceledDueToTicketTypeRemoval : ParticipantActivity.CanceledOnTime;
+        var activity = domainEvent.Reason switch
+        {
+            CancellationReason.TicketTypeRemoved => ParticipantActivity.CanceledDueToTicketTypeRemoval,
+            CancellationReason.VisaLetterDenied => ParticipantActivity.CanceledDueToVisaLetterDenial,
+            _ => ParticipantActivity.CanceledOnTime
+        };
         
         LogActivity(
             domainEvent.TicketedEventId,

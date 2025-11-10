@@ -6,6 +6,7 @@ public static class WellKnownEmailType
     public const string Reconfirm = "reconfirm";
     public const string Ticket = "ticket";
     public const string VerifyEmail = "verify-email";
+    public const string VisaLetterDenied = "visa-letter-denied";
 
-    public static readonly string[] All = [ Canceled, Reconfirm, Ticket, VerifyEmail ];
+    public static readonly string[] All = [ Canceled, Reconfirm, Ticket, VerifyEmail, VisaLetterDenied ];
 }
