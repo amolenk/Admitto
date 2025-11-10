@@ -95,16 +95,16 @@ module storageAccount 'modules/storageAccount.bicep' = {
   }
 }
 
-// module postgres 'modules/postgres.bicep' = {
-//   name: 'postgres'
-//   params: {
-//     administratorLoginPassword: postgresPassword
-//     keyVaultName: keyVault.outputs.name
-//     location: location
-//     vnetId: network.outputs.vnetId
-//     subnetId: network.outputs.privateEndpointSubnetId
-//   }
-// }
+module postgres 'modules/postgres.bicep' = {
+  name: 'postgres'
+  params: {
+    administratorLoginPassword: postgresPassword
+    keyVaultName: keyVault.outputs.name
+    location: location
+    vnetId: network.outputs.vnetId
+    subnetId: network.outputs.privateEndpointSubnetId
+  }
+}
 
 module openfga 'modules/openFgaApp.bicep' = {
   name: 'openfga-app'
@@ -119,7 +119,7 @@ module openfga 'modules/openFgaApp.bicep' = {
 module frontDoor 'modules/frontDoor.bicep' = {
   name: 'front-door'
   params: {
-    acaEnvironmentDomain: containerAppEnvironment.outputs.defaultDomain
+//     acaEnvironmentDomain: containerAppEnvironment.outputs.defaultDomain
   }
 }
 
@@ -160,7 +160,6 @@ module admittoWorker 'modules/admittoWorkerApp.bicep' = {
     acrLoginServer: containerRegistry.outputs.loginServer
     authTenantId: authTenantId
     authApiAppId: authApiAppId
-    authApiAppSecret: authApiAppSecret
     keyVaultName: keyVault.outputs.name
     location: location
     managedIdentityClientId: managedIdentity.outputs.clientId
@@ -170,13 +169,3 @@ module admittoWorker 'modules/admittoWorkerApp.bicep' = {
   }
 }
 
-// module admittoJobRunner 'modules/admittoJobRunnerApp.bicep' = {
-//   name: 'admitto-jobrunner-app'
-//   params: {
-//     containerAppEnvironmentId: containerAppEnvironment.outputs.id
-//     keyVaultName: keyVault.outputs.name
-//     location: location
-//     managedIdentityId: managedIdentity.outputs.id
-//     acrLoginServer: containerRegistry.outputs.loginServer
-//   }
-// }

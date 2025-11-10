@@ -19,6 +19,7 @@ public class ApplicationContext(DbContextOptions options, IDataProtectionProvide
     public DbSet<Attendee> Attendees { get; set; } = null!;
     public DbSet<Contributor> Contributors { get; set; } = null!;
     public DbSet<EmailLog> EmailLog { get; set; } = null!;
+    public DbSet<EmailRecipientList> EmailRecipientLists { get; set; } = null!;
     public DbSet<EmailTemplate> EmailTemplates { get; set; } = null!;
     public DbSet<EmailVerificationRequest> EmailVerificationRequests { get; set; } = null!;
     public DbSet<Message> Outbox { get; set; } = null!;
@@ -39,6 +40,7 @@ public class ApplicationContext(DbContextOptions options, IDataProtectionProvide
         modelBuilder.ApplyConfiguration(new BulkEmailWorkItemEntityConfiguration());
         modelBuilder.ApplyConfiguration(new ContributorEntityConfiguration());
         modelBuilder.ApplyConfiguration(new EmailLogEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new EmailRecipientListEntityConfiguration());
         modelBuilder.ApplyConfiguration(new EmailTemplateEntityConfiguration());
         modelBuilder.ApplyConfiguration(new EmailVerificationRequestEntityConfiguration());
         modelBuilder.ApplyConfiguration(new MessageEntityConfiguration());

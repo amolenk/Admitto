@@ -1,5 +1,6 @@
-using Amolenk.Admitto.Application.Common.Cryptography;
+using Amolenk.Admitto.Application.Jobs.SendCustomBulkEmail;
 using Amolenk.Admitto.Worker;
+using Quartz;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -12,21 +13,13 @@ builder.Services.AddOptions<MessageQueuesWorkerOptions>()
     .ValidateDataAnnotations()
     .ValidateOnStart();
 
-// builder.Services.Configure<JobsOptions>(builder.Configuration.GetSection(
-//     JobsOptions.SectionName));
-// builder.Services.AddOptions<JobsOptions>()
-//     .ValidateDataAnnotations()
-//     .ValidateOnStart();
+builder.Services.AddQuartzHostedService(options =>
+{
+    options.WaitForJobsToComplete = true;
+});
 
 // builder.Services.AddHostedService<MessageOutboxWorker>();
 builder.Services.AddHostedService<MessageQueuesWorker>();
-
-// builder.Services.AddSingleton<JobsWorker>();
-// builder.Services.AddHostedService(provider => provider.GetRequiredService<JobsWorker>());
-// builder.Services.AddSingleton<IJobsWorker>(sp => sp.GetRequiredService<JobsWorker>());
-
-// builder.Services.AddScoped<IJobScheduler, JobScheduler>();
-
 
 // TODO Move to ServiceDefaults
 // builder.Services.AddDefaultApplicationServices();

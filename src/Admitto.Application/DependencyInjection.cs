@@ -85,5 +85,6 @@ public static class DependencyInjection
         services.AddScoped<IEmailTemplateService, EmailTemplateService>();
 
         services.AddScoped<IEmailDispatcher, EmailDispatcher>();
+        services.AddScoped<CustomEmailComposer>();
     }
 }

@@ -19,7 +19,10 @@ public static class ValidationErrors
 
     public static readonly ValidationResult EmailRecipientMissing =
         ValidationResult.Error("Email recipient must be specified.");
-    
+
+    public static readonly ValidationResult EmailRecipientListMissing =
+        ValidationResult.Error("Email recipient list must be specified.");
+
     public static readonly ValidationResult EmailTypeMissing = 
         ValidationResult.Error("Email type must be specified.");
     
@@ -29,9 +32,18 @@ public static class ValidationErrors
     public static readonly ValidationResult FirstNameMissing = 
         ValidationResult.Error("First name must be specified.");
 
+    public static readonly ValidationResult InputPathDoesNotExist = 
+        ValidationResult.Error("Input path does not exist.");
+
+    public static readonly ValidationResult InputPathMissing = 
+        ValidationResult.Error("Input path must be specified.");
+
     public static readonly ValidationResult LastNameMissing = 
         ValidationResult.Error("Last name must be specified.");
     
+    public static readonly ValidationResult NameMissing = 
+        ValidationResult.Error("Name must be specified.");
+
     public static readonly ValidationResult IdMissing = 
         ValidationResult.Error("ID must be specified.");
 

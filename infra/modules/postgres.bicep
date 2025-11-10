@@ -108,6 +108,11 @@ resource openfga_db 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2024-08
   parent: postgres
 }
 
+resource quartz_db 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2024-08-01' = {
+  name: 'quartz-db'
+  parent: postgres
+}
+
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' existing = {
   name: keyVaultName
 }
@@ -124,6 +129,14 @@ resource openfga_db_connectionString 'Microsoft.KeyVault/vaults/secrets@2023-07-
   name: 'connectionstrings--openfga-db'
   properties: {
     value: 'postgres://${administratorLogin}:${administratorLoginPassword}@${postgres.properties.fullyQualifiedDomainName}:5432/openfga-db?sslmode=require'
+  }
+  parent: keyVault
+}
+
+resource quartz_db_connectionString 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+  name: 'connectionstrings--quartz-db'
+  properties: {
+    value: 'Host=${postgres.properties.fullyQualifiedDomainName};Username=${administratorLogin};Password=${administratorLoginPassword};Database=quartz-db'
   }
   parent: keyVault
 }

@@ -11,13 +11,15 @@ public class GlobalExceptionHandler(IHostEnvironment environment, ILogger<Global
     {
         logger.LogError(exception, "An unhandled exception occurred.");
 
+        
+        
         var problemDetails = new ProblemDetails
         {
             Status = StatusCodes.Status500InternalServerError,
             Title = "Internal Server Error",
             Detail = environment.IsDevelopment()
-                ? exception.ToString()
-                : "An unexpected error occurred. Please try again later.",
+                ? $"An unexpected error occurred: {exception.Message} (Debug stacktrace: {exception.StackTrace})"
+                : $"An unexpected error occurred: {exception.Message}",
             Instance = httpContext.Request.Path
         };
 

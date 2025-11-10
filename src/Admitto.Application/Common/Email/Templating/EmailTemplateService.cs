@@ -41,7 +41,7 @@ public class EmailTemplateService(IApplicationContext context) : IEmailTemplateS
             WellKnownEmailType.Canceled => GetDefaultCancelTemplate(teamId),
             WellKnownEmailType.VerifyEmail => GetDefaultVerifyEmailTemplate(teamId),
             WellKnownEmailType.Ticket => GetDefaultTicketTemplate(teamId),
-            _ => throw new NotSupportedException($"Email type '{type}' is not supported.")
+            _ => throw new ApplicationRuleException(ApplicationRuleError.EmailTemplate.TemplateNotSupported(type))
         };
     }
 
