@@ -22,5 +22,5 @@ public enum ParticipantActivity
     
     // Edge cases
     CanceledDueToTicketTypeRemoval,
-    VisaRequestDenied
+    CanceledDueToVisaLetterDenial
 }

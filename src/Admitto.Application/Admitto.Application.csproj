@@ -34,6 +34,8 @@
       <EmbeddedResource Include="Common\Email\Templating\Defaults\canceled.html" />
       <EmbeddedResource Include="Common\Email\Templating\Defaults\ticket.txt" />
       <EmbeddedResource Include="Common\Email\Templating\Defaults\verify.html" />
+      <EmbeddedResource Include="Common\Email\Templating\Defaults\visa-letter-denied.html" />
+      <EmbeddedResource Include="Common\Email\Templating\Defaults\visa-letter-denied.txt" />
       <None Remove="Common\Email\Templating\Defaults\ticket.html" />
       <EmbeddedResource Include="Common\Email\Templating\Defaults\ticket.html" />
       <None Remove="Common\Email\Templating\Defaults\canceled.txt" />

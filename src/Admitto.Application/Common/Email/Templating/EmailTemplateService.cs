@@ -41,6 +41,7 @@ public class EmailTemplateService(IApplicationContext context) : IEmailTemplateS
             WellKnownEmailType.Canceled => GetDefaultCancelTemplate(teamId),
             WellKnownEmailType.VerifyEmail => GetDefaultVerifyEmailTemplate(teamId),
             WellKnownEmailType.Ticket => GetDefaultTicketTemplate(teamId),
+            WellKnownEmailType.VisaLetterDenied => GetDefaultVisaDeniedTemplate(teamId),
             _ => throw new ApplicationRuleException(ApplicationRuleError.EmailTemplate.TemplateNotSupported(type))
         };
     }
@@ -73,6 +74,16 @@ public class EmailTemplateService(IApplicationContext context) : IEmailTemplateS
         LoadEmbeddedResource("canceled.txt"),
         LoadEmbeddedResource("canceled.html"),
         teamId);
+    }
+    
+    private static EmailTemplate GetDefaultVisaDeniedTemplate(Guid teamId)
+    {
+        return EmailTemplate.Create(
+            WellKnownEmailType.VisaLetterDenied,
+            "Your {{ event_name }} Registration Has Been Cancelled",
+            LoadEmbeddedResource("visa-letter-denied.txt"),
+            LoadEmbeddedResource("visa-letter-denied.html"),
+            teamId);
     }
 
     private static string LoadEmbeddedResource(string resourceName)
