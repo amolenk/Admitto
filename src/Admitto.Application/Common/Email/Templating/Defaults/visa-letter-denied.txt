@@ -1,0 +1,16 @@
+Your {{ event_name }} Registration Has Been Cancelled
+
+Hi {{ first_name }},
+
+We’ve processed your request to cancel your registration for {{ event_name }}.
+
+Changed your mind?
+If you’d like to join us after all, you can register again while spots are available:
+{{ register_link }}
+
+For more details about the event, visit: {{ event_website }}
+
+We’re sorry you can’t make it, but we hope to see you at a future event!
+Best regards,
+The {{ event_name }} Team
+

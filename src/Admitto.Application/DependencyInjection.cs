@@ -77,6 +77,7 @@ public static class DependencyInjection
     public static void AddEmailServices(this IServiceCollection services)
     {
         services.AddKeyedScoped<IEmailComposer, CanceledEmailComposer>(WellKnownEmailType.Canceled);
+        services.AddKeyedScoped<IEmailComposer, VisaLetterDeniedEmailComposer>(WellKnownEmailType.VisaLetterDenied);
         services.AddKeyedScoped<IEmailComposer, ReconfirmEmailComposer>(WellKnownEmailType.Reconfirm);
         services.AddKeyedScoped<IEmailComposer, TicketEmailComposer>(WellKnownEmailType.Ticket);
         services.AddKeyedScoped<IEmailComposer, VerificationEmailComposer>(WellKnownEmailType.VerifyEmail);
