@@ -37,6 +37,7 @@ builder.Services.AddCommandHandlers();
 
 builder.Services.AddScoped<IAuthorizationHandler, AuthorizationHandler>();
 
+
 builder.AddDefaultInfrastructureServices();
 
 builder.AddDefaultAuthentication();
@@ -81,13 +82,6 @@ ValidatorOptions.Global.PropertyNameResolver = (_, memberInfo, expression) =>
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-    using var migrationScope = app.Services.CreateScope();
-    var migrationService = migrationScope.ServiceProvider.GetRequiredService<IMigrationService>();
-    await migrationService.MigrateAllAsync();
-}
-
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseExceptionHandler();
@@ -106,6 +100,7 @@ app.MapAttendeeEndpoints();
 app.MapBulkEmailEndpoints();
 app.MapContributorEndpoints();
 app.MapEmailEndpoints();
+app.MapEmailRecipientListEndpoints();
 app.MapEmailTemplateEndpoints();
 app.MapMigrationEndpoints();
 app.MapPublicEndpoints();

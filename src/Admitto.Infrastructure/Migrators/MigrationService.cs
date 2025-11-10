@@ -7,7 +7,7 @@ public class MigrationService(IServiceProvider serviceProvider) : IMigrationServ
 {
     public IEnumerable<string> GetSupportedMigrations()
     {
-        return ["database", "openfga"];
+        return ["database", "openfga", "quartz"];
     }
 
     public async Task MigrateAsync(string migrationName, CancellationToken cancellationToken)
@@ -29,6 +29,7 @@ public class MigrationService(IServiceProvider serviceProvider) : IMigrationServ
         {
             "database" => serviceProvider.GetRequiredService<DatabaseMigrator>(),
             "openfga" => serviceProvider.GetRequiredService<OpenFgaMigrator>(),
+            "quartz" => serviceProvider.GetRequiredService<QuartzMigrator>(),
             _ => throw new NotSupportedException($"Migrator '{migrationName}' is not supported.")
         };
 }

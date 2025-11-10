@@ -5,8 +5,6 @@ param acaEnvironmentId string
 param acrLoginServer string
 param applicationInsightsConnectionString string
 param authApiAppId string
-@secure()
-param authApiAppSecret string
 param authTenantId string
 param keyVaultName string
 param managedIdentityClientId string
@@ -46,6 +44,11 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
           identity: managedIdentityId
         }
         {
+          name: 'quartz-db-connection-string'
+          keyVaultUrl: 'https://${keyVaultName}${environment().suffixes.keyvaultDns}/secrets/connectionstrings--quartz-db'
+          identity: managedIdentityId
+        }
+        {
           name: 'auth-api-app-secret'
           keyVaultUrl: 'https://${keyVaultName}${environment().suffixes.keyvaultDns}/secrets/auth--api-app-secret'
           identity: managedIdentityId
@@ -58,7 +61,7 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
         {
           // Use a placeholder image until the real one is built and pushed
 //           image: 'mendhak/http-https-echo:37'
-          image: 'acrutzwls7ov7ne2.azurecr.io/admitto-worker@sha256:8c8249f0e6646d58d30752891c9179b9e26c833a3011adab11c21655e1d8beec'
+          image: 'acrutzwls7ov7ne2.azurecr.io/admitto-worker@sha256:18a47620f378eb8c181bb454bf7d6cd1a5280f3f44d420aba7ee89f999ecacd4'
           name: 'admitto-worker'
           env: [
             {
@@ -68,6 +71,10 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
             {
               name: 'ConnectionStrings__admitto-db'
               secretRef: 'admitto-db-connection-string'
+            }
+            {
+              name: 'ConnectionStrings__quartz-db'
+              secretRef: 'quartz-db-connection-string'
             }
             {
               name: 'ConnectionStrings__queues'

@@ -16,6 +16,7 @@
       <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.8" />
       <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.14.0" />
       <PackageReference Include="QRCoder" Version="1.6.0" />
+      <PackageReference Include="Quartz" Version="3.15.1" />
       <PackageReference Include="Scriban" Version="6.2.1" />
       <PackageReference Include="Scrutor" Version="6.1.0" />
       <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.14.0" />

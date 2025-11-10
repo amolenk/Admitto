@@ -80,6 +80,21 @@ public sealed class ApplicationRuleError
             new("email.bulk_not_supported", "Bulk sending is not supported for this email type.");
     }
 
+    public static class EmailRecipientList
+    {
+        public static ApplicationRuleError CannotBeEmpty =>
+            new("email_recipient_list.cannot_be_empty", "Email recipient list cannot be empty.");
+
+        public static ApplicationRuleError NotFound =>
+            new("email_recipient_list.not_found", "Email recipient list not found.");
+    }
+
+    public static class EmailTemplate
+    {
+        public static ApplicationRuleError TemplateNotSupported(string emailType) =>
+            new("email_template.type_not_supported", $"Email type '{emailType}' is not supported.");
+    }
+
     public static class General
     {
         public static ApplicationRuleError AlreadyExists =>

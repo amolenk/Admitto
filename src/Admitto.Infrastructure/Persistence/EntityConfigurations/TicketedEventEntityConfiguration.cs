@@ -65,9 +65,9 @@ public class TicketedEventEntityConfiguration(IDataProtectionProvider dataProtec
         });
         
         builder.OwnsOne<CancellationPolicy>(e => e.CancellationPolicy, b =>
-            {
-                b.ToJson("cancellation_policy");
-            });
+        {
+            b.ToJson("cancellation_policy");
+        });
 
         builder.OwnsOne<ReconfirmPolicy>(e => e.ReconfirmPolicy, b =>
         {

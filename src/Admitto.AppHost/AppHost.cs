@@ -10,20 +10,30 @@ var builder = DistributedApplication.CreateBuilder(args);
 var postgres = builder.ConfigurePostgres();
 var postgresDb = postgres.AddDatabase("admitto-db");
 var openFgaDb = postgres.AddDatabase("openfga-db");
+var quartzDb = postgres.AddDatabase("quartz-db");
 
 var queues = builder.ConfigureStorageQueues();
 
 var openFga = builder.ConfigureOpenFga(openFgaDb);
 
+var migrations = builder.AddProject<Projects.Admitto_Migrations>("migrations")
+    .WithReference(openFga.GetEndpoint("http")).WaitFor(openFga)
+    .WithReference(postgresDb).WaitFor(postgresDb)
+    .WithReference(quartzDb).WaitFor(quartzDb);
+
 var apiService = builder.AddProject<Projects.Admitto_Api>("api")
     .WithReference(openFga.GetEndpoint("http")).WaitFor(openFga)
     .WithReference(postgresDb).WaitFor(postgresDb)
-    .WithReference(queues).WaitFor(queues);
+    .WithReference(quartzDb).WaitFor(quartzDb)
+    .WithReference(queues).WaitFor(queues)
+    .WaitForCompletion(migrations);
 
 var worker = builder.AddProject<Projects.Admitto_Worker>("worker")
     .WithReference(openFga.GetEndpoint("http")).WaitFor(openFga)
     .WithReference(postgresDb).WaitFor(postgresDb)
-    .WithReference(queues).WaitFor(queues);
+    .WithReference(quartzDb).WaitFor(quartzDb)
+    .WithReference(queues).WaitFor(queues)
+    .WaitForCompletion(migrations);
 
 var jobRunner = builder.AddProject<Projects.Admitto_JobRunner>("job-runner")
     .WithReference(postgresDb).WaitFor(postgresDb)

@@ -12,6 +12,7 @@ public interface IApplicationContext
     DbSet<BulkEmailWorkItem> BulkEmailWorkItems { get; }
     DbSet<Contributor> Contributors { get; }
     DbSet<EmailLog> EmailLog { get; }
+    DbSet<EmailRecipientList> EmailRecipientLists { get; }
     DbSet<EmailTemplate> EmailTemplates { get; }
     DbSet<EmailVerificationRequest> EmailVerificationRequests { get; }
     DbSet<Participant> Participants { get; set; }

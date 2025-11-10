@@ -1,79 +1,82 @@
-param acaEnvironmentDomain string
+// param acaEnvironmentDomain string
 
 var resourceToken = uniqueString(resourceGroup().id)
 
-resource frontDoor 'Microsoft.Cdn/profiles@2024-02-01' = {
+// THIS MODULE ONLY REFERENCES AN EXISTING FRONT DOOR INSTANCE
+// RECREATING A FRONT DOOR VIA BICEP REQUIRES MANUAL STEPS IN PORTAL AFTER DEPLOYMENT TO ASSOCIATE ROUTES
+
+resource frontDoor 'Microsoft.Cdn/profiles@2024-02-01' existing = {
   name: 'fd-${resourceToken}'
-  location: 'Global'
-  sku: {
-    name: 'Standard_AzureFrontDoor'
-  }
-  properties: {}
+//   location: 'Global'
+//   sku: {
+//     name: 'Standard_AzureFrontDoor'
+//   }
+//   properties: {}
 }
 
-resource endpoint 'Microsoft.Cdn/profiles/afdEndpoints@2024-02-01' = {
-  name: 'admitto-api'
-  parent: frontDoor
-  location: 'Global'
-  properties: {
-    enabledState: 'Enabled'
-  }
-}
+// resource endpoint 'Microsoft.Cdn/profiles/afdEndpoints@2024-02-01' = {
+//   name: 'admitto-api'
+//   parent: frontDoor
+//   location: 'Global'
+//   properties: {
+//     enabledState: 'Enabled'
+//   }
+// }
+// 
+// resource originGroup 'Microsoft.Cdn/profiles/originGroups@2024-02-01' = {
+//   name: 'admitto-api-origin-group'
+//   parent: frontDoor
+//   properties: {
+//     loadBalancingSettings: {
+//       sampleSize: 4
+//       successfulSamplesRequired: 3
+//       additionalLatencyInMilliseconds: 50
+//     }
+//     healthProbeSettings: {
+//       probePath: '/health'
+//       probeRequestType: 'GET'
+//       probeProtocol: 'Http'
+//       probeIntervalInSeconds: 100
+//     }
+//   }
+// }
+// 
+// resource origin 'Microsoft.Cdn/profiles/originGroups/origins@2024-02-01' = {
+//   name: 'admitto-api-origin'
+//   parent: originGroup
+//   properties: {
+//     hostName: 'app-admitto-api-${resourceToken}.${acaEnvironmentDomain}'
+//     httpPort: 80
+//     originHostHeader: 'app-admitto-api-${resourceToken}.${acaEnvironmentDomain}'
+//     priority: 1
+//     weight: 1000
+//     enabledState: 'Enabled'
+//     enforceCertificateNameCheck: true
+//   }
+// }
+// 
+// resource route 'Microsoft.Cdn/profiles/afdEndpoints/routes@2024-02-01' = {
+//   name: 'default-route'
+//   parent: endpoint
+//   dependsOn: [
+//     origin
+//   ]
+//   properties: {
+//     originGroup: {
+//       id: originGroup.id
+//     }
+//     supportedProtocols: [
+//       'Http'
+//       'Https'
+//     ]
+//     patternsToMatch: [
+//       '/*'
+//     ]
+//     forwardingProtocol: 'HttpOnly' // Let AFD do the HTTPS termination
+//     linkToDefaultDomain: 'Enabled'
+//     httpsRedirect: 'Enabled'
+//   }
+// }
 
-resource originGroup 'Microsoft.Cdn/profiles/originGroups@2024-02-01' = {
-  name: 'admitto-api-origin-group'
-  parent: frontDoor
-  properties: {
-    loadBalancingSettings: {
-      sampleSize: 4
-      successfulSamplesRequired: 3
-      additionalLatencyInMilliseconds: 50
-    }
-    healthProbeSettings: {
-      probePath: '/health'
-      probeRequestType: 'GET'
-      probeProtocol: 'Http'
-      probeIntervalInSeconds: 100
-    }
-  }
-}
-
-resource origin 'Microsoft.Cdn/profiles/originGroups/origins@2024-02-01' = {
-  name: 'admitto-api-origin'
-  parent: originGroup
-  properties: {
-    hostName: 'app-admitto-api-${resourceToken}.${acaEnvironmentDomain}'
-    httpPort: 80
-    originHostHeader: 'app-admitto-api-${resourceToken}.${acaEnvironmentDomain}'
-    priority: 1
-    weight: 1000
-    enabledState: 'Enabled'
-    enforceCertificateNameCheck: true
-  }
-}
-
-resource route 'Microsoft.Cdn/profiles/afdEndpoints/routes@2024-02-01' = {
-  name: 'default-route'
-  parent: endpoint
-  dependsOn: [
-    origin
-  ]
-  properties: {
-    originGroup: {
-      id: originGroup.id
-    }
-    supportedProtocols: [
-      'Http'
-      'Https'
-    ]
-    patternsToMatch: [
-      '/*'
-    ]
-    forwardingProtocol: 'HttpOnly' // Let AFD do the HTTPS termination
-    linkToDefaultDomain: 'Enabled'
-    httpsRedirect: 'Enabled'
-  }
-}
-
-output frontDoorEndpointHostName string = endpoint.properties.hostName
+// output frontDoorEndpointHostName string = endpoint.properties.hostName
 output frontDoorId string = frontDoor.properties.frontDoorId

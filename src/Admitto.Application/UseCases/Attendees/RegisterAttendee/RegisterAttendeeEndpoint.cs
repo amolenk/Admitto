@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Application.Common.Email;
 using Amolenk.Admitto.Domain.ValueObjects;
 using Microsoft.AspNetCore.Mvc;
 
@@ -33,7 +34,7 @@ public static class RegisterAttendeeEndpoint
         var command = new RegisterAttendeeCommand(
             teamId,
             eventId,
-            request.Email,
+            request.Email.NormalizeEmail(),
             request.FirstName,
             request.LastName,
             request.AdditionalDetails.Select(ad => new AdditionalDetail(ad.Name, ad.Value)).ToList(),

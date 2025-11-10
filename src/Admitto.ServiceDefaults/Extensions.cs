@@ -5,6 +5,7 @@ using Amolenk.Admitto.Application.Common;
 using Amolenk.Admitto.Application.Common.Abstractions;
 using Amolenk.Admitto.Application.Common.Authorization;
 using Amolenk.Admitto.Application.Common.Cryptography;
+using Amolenk.Admitto.Application.Jobs.SendCustomBulkEmail;
 using Amolenk.Admitto.Infrastructure.Auth;
 using Amolenk.Admitto.ServiceDefaults;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
@@ -26,6 +27,7 @@ using OpenFga.Sdk.Client;
 using OpenTelemetry;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Trace;
+using Quartz;
 
 namespace Microsoft.Extensions.Hosting;
 
@@ -58,6 +60,7 @@ public static class Extensions
         // });
 
         builder.AddDataProtection();
+        builder.AddQuartzJobs();
 
         builder.Services.AddScoped<ISigningService, SigningService>();
         builder.Services.AddHttpContextAccessor();
@@ -88,6 +91,7 @@ public static class Extensions
                     // Uncomment the following line to enable gRPC instrumentation (requires the OpenTelemetry.Instrumentation.GrpcNetClient package)
                     //.AddGrpcClientInstrumentation()
                     .AddHttpClientInstrumentation()
+                    .AddQuartzInstrumentation()
                     .AddSource("Polly")
                     .AddSource(AdmittoActivitySource.Name);
             });
@@ -202,6 +206,29 @@ public static class Extensions
     {
         builder.Services.AddDataProtection()
             .SetApplicationName("Admitto");
+
+        return builder;
+    }
+
+    public static TBuilder AddQuartzJobs<TBuilder>(this TBuilder builder) where TBuilder : IHostApplicationBuilder
+    {
+        builder.Services.AddQuartz(options =>
+        {
+            options.AddJob<SendCustomBulkEmailJob>(c => c
+                .StoreDurably()
+                .WithIdentity(SendCustomBulkEmailJob.Name));
+    
+            options.UsePersistentStore(persistenceOptions =>
+            {
+                persistenceOptions.UsePostgres(cfg =>
+                {
+                    cfg.ConnectionString = builder.Configuration.GetConnectionString("quartz-db")!;
+                });
+                
+                persistenceOptions.UseSystemTextJsonSerializer();
+                persistenceOptions.UseProperties = true;
+            });
+        });
 
         return builder;
     }

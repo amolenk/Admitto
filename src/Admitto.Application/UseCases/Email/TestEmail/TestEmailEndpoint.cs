@@ -54,7 +54,7 @@ public static class TestEmailEndpoint
             emailMessage,
             teamId,
             ticketedEventId,
-            EmailDispatcher.TestMessageDispatchId,
+            EmailDispatcher.TestMessageIdempotencyKey,
             cancellationToken: cancellationToken);
 
         return TypedResults.Ok();

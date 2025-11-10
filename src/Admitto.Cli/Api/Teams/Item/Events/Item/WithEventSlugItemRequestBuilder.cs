@@ -3,6 +3,7 @@
 using Amolenk.Admitto.Cli.Api.Models;
 using Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Attendees;
 using Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Contributors;
+using Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.EmailRecipientLists;
 using Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.EmailTemplates;
 using Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Emails;
 using Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Policies;
@@ -33,6 +34,11 @@ namespace Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item
         public global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Contributors.ContributorsRequestBuilder Contributors
         {
             get => new global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Contributors.ContributorsRequestBuilder(PathParameters, RequestAdapter);
+        }
+        /// <summary>The emailRecipientLists property</summary>
+        public global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.EmailRecipientLists.EmailRecipientListsRequestBuilder EmailRecipientLists
+        {
+            get => new global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.EmailRecipientLists.EmailRecipientListsRequestBuilder(PathParameters, RequestAdapter);
         }
         /// <summary>The emails property</summary>
         public global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Emails.EmailsRequestBuilder Emails
