@@ -66,7 +66,6 @@ public class ExportAttendeesCommand(IApiService apiService, IConfigService confi
         List<AdditionalDetailSchemaDto2> additionalDetailSchemas)
     {
         var table = new DataTable("Attendees");
-        table.Columns.Add("AttendeeId", typeof(Guid));
         table.Columns.Add("Email", typeof(string));
         table.Columns.Add("FirstName", typeof(string));
         table.Columns.Add("LastName", typeof(string));
@@ -94,7 +93,6 @@ public class ExportAttendeesCommand(IApiService apiService, IConfigService confi
         List<AdditionalDetailSchemaDto2> additionalDetailSchemas)
     {
         var table = new DataTable("Tickets");
-        table.Columns.Add("AttendeeId", typeof(Guid));
         table.Columns.Add("TicketType", typeof(string));
         table.Columns.Add("Email", typeof(string));
         table.Columns.Add("FirstName", typeof(string));
@@ -154,7 +152,6 @@ public class ExportAttendeesCommand(IApiService apiService, IConfigService confi
         AttendeeDto attendee,
         List<AdditionalDetailSchemaDto2> additionalDetailSchemas)
     {
-        row["AttendeeId"] = attendee.AttendeeId!.Value;
         row["Email"] = attendee.Email;
         row["FirstName"] = attendee.FirstName;
         row["LastName"] = attendee.LastName;

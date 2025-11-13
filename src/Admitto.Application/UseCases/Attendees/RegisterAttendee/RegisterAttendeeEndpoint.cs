@@ -1,6 +1,5 @@
 using Amolenk.Admitto.Application.Common.Email;
 using Amolenk.Admitto.Domain.ValueObjects;
-using Microsoft.AspNetCore.Mvc;
 
 namespace Amolenk.Admitto.Application.UseCases.Attendees.RegisterAttendee;
 

@@ -4,17 +4,19 @@ namespace Amolenk.Admitto.Cli.Commands.Attendee;
 
 public class ShowSettings : TeamEventSettings
 {
-    [CommandOption("--id")]
-    [Description("The id of the attendee")]
-    public Guid? Id { get; set; }
+    [CommandOption("--email")]
+    [Description("The email address of the attendee")]
+    public string? Email { get; init; }
 
     public override ValidationResult Validate()
     {
-        return Id is null ? ValidationErrors.IdMissing : base.Validate();
+        if (string.IsNullOrWhiteSpace(Email))
+        {
+            return ValidationErrors.EmailMissing;
+        }
+
+        return base.Validate();
     }
-    
-    // [CommandOption("--qrCodeOutputPath")]
-    // public string? QRCodeFilePath { get; set; }
 }
 
 public class ShowAttendeeCommand(IApiService apiService, IConfigService configService)
@@ -25,8 +27,15 @@ public class ShowAttendeeCommand(IApiService apiService, IConfigService configSe
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);
         
+        var attendeeId = await apiService.FindAttendeeAsync(teamSlug, eventSlug, settings.Email!);
+        if (attendeeId is null)
+        {
+            AnsiConsoleExt.WriteErrorMessage($"Attendee with email '{settings.Email}' not found.");
+            return 1;
+        }
+        
         var attendeeResponse = await apiService.CallApiAsync(async client =>
-            await client.Teams[teamSlug].Events[eventSlug].Attendees[settings.Id!.Value].GetAsync());
+            await client.Teams[teamSlug].Events[eventSlug].Attendees[attendeeId.Value].GetAsync());
         if (attendeeResponse is null) return 1;
 
         var eventResponse = await apiService.CallApiAsync(async client =>

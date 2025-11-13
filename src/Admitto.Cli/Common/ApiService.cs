@@ -1,5 +1,6 @@
 using Amolenk.Admitto.Cli.Api;
 using Microsoft.Extensions.Options;
+using Microsoft.Kiota.Abstractions;
 using Microsoft.Kiota.Http.HttpClientLibrary;
 
 namespace Amolenk.Admitto.Cli.Common;
@@ -9,6 +10,8 @@ public interface IApiService
     ValueTask<bool> CallApiAsync(Func<ApiClient, ValueTask> callApi);
 
     ValueTask<TResponse?> CallApiAsync<TResponse>(Func<ApiClient, ValueTask<TResponse>> callApi);
+
+    Task<Guid?> FindAttendeeAsync(string teamSlug, string eventSlug, string email);
 }
 
 public class ApiService(IOptions<AdmittoOptions> options, IAccessTokenProvider accessTokenProvider)
@@ -55,12 +58,27 @@ public class ApiService(IOptions<AdmittoOptions> options, IAccessTokenProvider a
         {
             AnsiConsoleExt.WriteException(e);
         }
+        catch (ApiException ex) when (ex.ResponseStatusCode == 404)
+        {
+            return default;
+        }
         catch (Exception e)
         {
             AnsiConsoleExt.WriteException(e);
         }
 
         return default;
+    }
+    
+    public async Task<Guid?> FindAttendeeAsync(string teamSlug, string eventSlug, string email)
+    {
+        var response = await CallApiAsync(async client =>
+            await client.Teams[teamSlug].Events[eventSlug].Attendees.ByEmail.GetAsync(config =>
+            {
+                config.QueryParameters.Email = email;
+            }));
+
+        return response?.AttendeeId;
     }
 
     private ApiClient GetApiClient()
