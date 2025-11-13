@@ -84,6 +84,9 @@ app.Configure(config =>
 
             attendee.AddCommand<ShowAttendeeCommand>("show")
                 .WithDescription("Show the details of an attendee registration");
+
+            attendee.AddCommand<UpdateAttendeeCommand>("update")
+                .WithDescription("Updates an existing attendee");
         });
 
     config.AddBranch(
