@@ -15,7 +15,6 @@ public class ListAttendeesCommand(IApiService apiService, IConfigService configS
         if (response is null) return 1;
 
         var table = new Table();
-        table.AddColumn("Id");
         table.AddColumn("Email");
         table.AddColumn("Name");
         table.AddColumn("Status");
@@ -24,7 +23,6 @@ public class ListAttendeesCommand(IApiService apiService, IConfigService configS
         foreach (var attendee in response.Attendees!.OrderBy(r => r.LastChangedAt!.Value))
         {
             table.AddRow(
-                attendee.AttendeeId!.Value.ToString(),
                 attendee.Email!,
                 $"{attendee.FirstName} {attendee.LastName}",
                 attendee.Status!.Value.Format(),

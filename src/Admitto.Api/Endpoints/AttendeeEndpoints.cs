@@ -1,10 +1,13 @@
 using Amolenk.Admitto.ApiService.Middleware;
 using Amolenk.Admitto.Application.UseCases.Attendees.CancelRegistration;
 using Amolenk.Admitto.Application.UseCases.Attendees.DenyVisaLetter;
+using Amolenk.Admitto.Application.UseCases.Attendees.FindAttendee;
 using Amolenk.Admitto.Application.UseCases.Attendees.GetAttendee;
 using Amolenk.Admitto.Application.UseCases.Attendees.GetAttendees;
 using Amolenk.Admitto.Application.UseCases.Attendees.ReconfirmRegistration;
 using Amolenk.Admitto.Application.UseCases.Attendees.RegisterAttendee;
+using Amolenk.Admitto.Application.UseCases.Attendees.UpdateAttendee;
+using Amolenk.Admitto.Application.UseCases.Public.ChangeTickets;
 
 namespace Amolenk.Admitto.ApiService.Endpoints;
 
@@ -26,9 +29,11 @@ public static class AttendeeEndpoints
         group
             .MapCancelRegistration()
             .MapDenyVisaLetter()
+            .MapFindAttendee()
             .MapGetAttendee()
             .MapGetAttendees()
             .MapReconfirmRegistration()
-            .MapRegisterAttendee();
+            .MapRegisterAttendee()
+            .MapUpdateAttendee();
     }
 }
