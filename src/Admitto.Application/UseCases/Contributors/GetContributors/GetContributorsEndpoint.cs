@@ -1,3 +1,6 @@
+using Amolenk.Admitto.Application.Common.Persistence;
+using Amolenk.Admitto.Domain.ValueObjects;
+
 namespace Amolenk.Admitto.Application.UseCases.Contributors.GetContributors;
 
 public static class GetContributorsEndpoint
@@ -7,7 +10,7 @@ public static class GetContributorsEndpoint
         group
             .MapGet("/", GetContributors)
             .WithName(nameof(GetContributors))
-            .RequireAuthorization(policy => policy.RequireCanViewEvent());
+            .RequireAuthorization(policy => policy.RequireTeamMemberRole(TeamMemberRole.Crew));
 
         return group;
     }

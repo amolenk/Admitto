@@ -96,7 +96,6 @@
         "attributes" : { }
       } ],
       "admitto-test-runner" : [ ],
-      "admitto-admin-cli" : [ ],
       "realm-management" : [ {
         "id" : "abdccd08-df51-4e34-ad87-8b7bdc6d6527",
         "name" : "create-client",
@@ -265,6 +264,7 @@
         "containerId" : "e3a77822-5ccc-499b-a025-1d0fd2214b62",
         "attributes" : { }
       } ],
+      "admitto-ui" : [ ],
       "security-admin-console" : [ ],
       "admin-cli" : [ ],
       "account-console" : [ ],
@@ -277,7 +277,6 @@
         "containerId" : "1b04869e-7c96-47ca-8c48-eea45e708709",
         "attributes" : { }
       } ],
-      "admitto-admin-ui" : [ ],
       "account" : [ {
         "id" : "381ebb7d-3abe-4ec0-8203-9e6918c11d41",
         "name" : "view-consent",
@@ -352,7 +351,8 @@
         "clientRole" : true,
         "containerId" : "c0429caf-e735-471a-b4d2-3ba47d9d7261",
         "attributes" : { }
-      } ]
+      } ],
+      "admitto-cli" : [ ]
     }
   },
   "groups" : [ ],
@@ -403,8 +403,8 @@
     "lastName" : "Doe",
     "email" : "alice@example.com",
     "emailVerified" : true,
-    "createdTimestamp" : 1742780098178,
     "enabled" : true,
+    "createdTimestamp" : 1742780098178,
     "totp" : false,
     "credentials" : [ {
       "id" : "d403f593-3a42-4421-a7bb-9704832699e8",
@@ -421,10 +421,10 @@
       "admitto-api" : [ "administrator" ]
     },
     "clientConsents" : [ {
-      "clientId" : "admitto-admin-cli",
+      "clientId" : "admitto-cli",
       "grantedClientScopes" : [ "profile", "roles" ],
-      "createdDate" : 1752222361075,
-      "lastUpdatedDate" : 1752222361104
+      "createdDate" : 1767187498031,
+      "lastUpdatedDate" : 1767187498033
     } ],
     "notBefore" : 0,
     "groups" : [ ]
@@ -435,8 +435,8 @@
     "lastName" : "Doe",
     "email" : "bob@example.com",
     "emailVerified" : true,
-    "createdTimestamp" : 1752212761434,
     "enabled" : true,
+    "createdTimestamp" : 1752212761434,
     "totp" : false,
     "credentials" : [ {
       "id" : "edc7237b-7e5d-4708-bfd1-2b288729f842",
@@ -455,8 +455,8 @@
     "id" : "96eada08-208f-41f7-802c-a9cbe25086e6",
     "username" : "service-account-admitto-api",
     "emailVerified" : false,
-    "createdTimestamp" : 1749281615984,
     "enabled" : true,
+    "createdTimestamp" : 1749281615984,
     "totp" : false,
     "serviceAccountClientId" : "admitto-api",
     "credentials" : [ ],
@@ -578,119 +578,6 @@
     "defaultClientScopes" : [ "web-origins", "acr", "profile", "roles", "basic", "email" ],
     "optionalClientScopes" : [ "address", "phone", "offline_access", "organization", "microprofile-jwt" ]
   }, {
-    "id" : "a7079bcf-f1ef-4777-90d7-cc49b5f97bfc",
-    "clientId" : "admitto-admin-cli",
-    "name" : "Admitto Admin CLI",
-    "description" : "",
-    "rootUrl" : "http://localhost:7890",
-    "adminUrl" : "http://localhost:7890",
-    "baseUrl" : "",
-    "surrogateAuthRequired" : false,
-    "enabled" : true,
-    "alwaysDisplayInConsole" : false,
-    "clientAuthenticatorType" : "client-secret",
-    "redirectUris" : [ "http://localhost:7890/*" ],
-    "webOrigins" : [ "http://localhost:7890" ],
-    "notBefore" : 0,
-    "bearerOnly" : false,
-    "consentRequired" : false,
-    "standardFlowEnabled" : false,
-    "implicitFlowEnabled" : false,
-    "directAccessGrantsEnabled" : false,
-    "serviceAccountsEnabled" : false,
-    "publicClient" : true,
-    "frontchannelLogout" : true,
-    "protocol" : "openid-connect",
-    "attributes" : {
-      "client.introspection.response.allow.jwt.claim.enabled" : "false",
-      "post.logout.redirect.uris" : "+",
-      "oauth2.device.authorization.grant.enabled" : "true",
-      "backchannel.logout.revoke.offline.tokens" : "false",
-      "use.refresh.tokens" : "true",
-      "realm_client" : "false",
-      "oidc.ciba.grant.enabled" : "false",
-      "client.use.lightweight.access.token.enabled" : "false",
-      "backchannel.logout.session.required" : "true",
-      "client_credentials.use_refresh_token" : "false",
-      "tls.client.certificate.bound.access.tokens" : "false",
-      "require.pushed.authorization.requests" : "false",
-      "acr.loa.map" : "{}",
-      "display.on.consent.screen" : "false",
-      "token.response.type.bearer.lower-case" : "false"
-    },
-    "authenticationFlowBindingOverrides" : { },
-    "fullScopeAllowed" : true,
-    "nodeReRegistrationTimeout" : -1,
-    "protocolMappers" : [ {
-      "id" : "16ef6bc5-d939-4152-9ef3-6ef5300bfd38",
-      "name" : "audience",
-      "protocol" : "openid-connect",
-      "protocolMapper" : "oidc-audience-mapper",
-      "consentRequired" : false,
-      "config" : {
-        "id.token.claim" : "false",
-        "lightweight.claim" : "false",
-        "access.token.claim" : "true",
-        "introspection.token.claim" : "true",
-        "userinfo.token.claim" : "false"
-      }
-    }, {
-      "id" : "35cb5100-bdc8-4f35-9a87-ac9ebe590f9a",
-      "name" : "email",
-      "protocol" : "openid-connect",
-      "protocolMapper" : "oidc-usermodel-attribute-mapper",
-      "consentRequired" : false,
-      "config" : {
-        "introspection.token.claim" : "true",
-        "userinfo.token.claim" : "true",
-        "user.attribute" : "email",
-        "id.token.claim" : "true",
-        "access.token.claim" : "true",
-        "claim.name" : "email",
-        "jsonType.label" : "String"
-      }
-    } ],
-    "defaultClientScopes" : [ "web-origins", "profile", "roles", "basic" ],
-    "optionalClientScopes" : [ "acr", "address", "phone", "offline_access", "organization", "microprofile-jwt", "email", "api.admin" ]
-  }, {
-    "id" : "0822f430-63ac-4805-a6f5-ff67200fe480",
-    "clientId" : "admitto-admin-ui",
-    "name" : "Admitto Admin UI",
-    "description" : "",
-    "rootUrl" : "http://localhost:3000",
-    "adminUrl" : "http://localhost:3000",
-    "baseUrl" : "",
-    "surrogateAuthRequired" : false,
-    "enabled" : true,
-    "alwaysDisplayInConsole" : false,
-    "clientAuthenticatorType" : "client-secret",
-    "redirectUris" : [ "http://localhost:3000/*" ],
-    "webOrigins" : [ "http://localhost:3000" ],
-    "notBefore" : 0,
-    "bearerOnly" : false,
-    "consentRequired" : false,
-    "standardFlowEnabled" : true,
-    "implicitFlowEnabled" : false,
-    "directAccessGrantsEnabled" : false,
-    "serviceAccountsEnabled" : false,
-    "publicClient" : true,
-    "frontchannelLogout" : true,
-    "protocol" : "openid-connect",
-    "attributes" : {
-      "realm_client" : "false",
-      "oidc.ciba.grant.enabled" : "false",
-      "backchannel.logout.session.required" : "true",
-      "post.logout.redirect.uris" : "+",
-      "oauth2.device.authorization.grant.enabled" : "false",
-      "display.on.consent.screen" : "false",
-      "backchannel.logout.revoke.offline.tokens" : "false"
-    },
-    "authenticationFlowBindingOverrides" : { },
-    "fullScopeAllowed" : true,
-    "nodeReRegistrationTimeout" : -1,
-    "defaultClientScopes" : [ "web-origins", "acr", "profile", "roles", "basic", "email" ],
-    "optionalClientScopes" : [ "address", "phone", "offline_access", "organization", "microprofile-jwt" ]
-  }, {
     "id" : "3c2b9fa3-d113-40fd-8d06-9e665a40b2e5",
     "clientId" : "admitto-api",
     "name" : "Admitto API",
@@ -777,6 +664,84 @@
     "defaultClientScopes" : [ "web-origins", "acr", "profile", "roles", "basic", "email" ],
     "optionalClientScopes" : [ "address", "phone", "offline_access", "organization", "microprofile-jwt" ]
   }, {
+    "id" : "a7079bcf-f1ef-4777-90d7-cc49b5f97bfc",
+    "clientId" : "admitto-cli",
+    "name" : "Admitto CLI",
+    "description" : "",
+    "rootUrl" : "http://localhost:7890",
+    "adminUrl" : "http://localhost:7890",
+    "baseUrl" : "",
+    "surrogateAuthRequired" : false,
+    "enabled" : true,
+    "alwaysDisplayInConsole" : false,
+    "clientAuthenticatorType" : "client-secret",
+    "redirectUris" : [ "http://localhost:7890/*" ],
+    "webOrigins" : [ "http://localhost:7890" ],
+    "notBefore" : 0,
+    "bearerOnly" : false,
+    "consentRequired" : false,
+    "standardFlowEnabled" : false,
+    "implicitFlowEnabled" : false,
+    "directAccessGrantsEnabled" : false,
+    "serviceAccountsEnabled" : false,
+    "publicClient" : true,
+    "frontchannelLogout" : true,
+    "protocol" : "openid-connect",
+    "attributes" : {
+      "client.introspection.response.allow.jwt.claim.enabled" : "false",
+      "standard.token.exchange.enabled" : "false",
+      "post.logout.redirect.uris" : "+",
+      "frontchannel.logout.session.required" : "true",
+      "oauth2.device.authorization.grant.enabled" : "true",
+      "backchannel.logout.revoke.offline.tokens" : "false",
+      "use.refresh.tokens" : "true",
+      "realm_client" : "false",
+      "oidc.ciba.grant.enabled" : "false",
+      "client.use.lightweight.access.token.enabled" : "false",
+      "backchannel.logout.session.required" : "true",
+      "client_credentials.use_refresh_token" : "false",
+      "tls.client.certificate.bound.access.tokens" : "false",
+      "require.pushed.authorization.requests" : "false",
+      "acr.loa.map" : "{}",
+      "display.on.consent.screen" : "false",
+      "token.response.type.bearer.lower-case" : "false",
+      "dpop.bound.access.tokens" : "false"
+    },
+    "authenticationFlowBindingOverrides" : { },
+    "fullScopeAllowed" : true,
+    "nodeReRegistrationTimeout" : -1,
+    "protocolMappers" : [ {
+      "id" : "16ef6bc5-d939-4152-9ef3-6ef5300bfd38",
+      "name" : "audience",
+      "protocol" : "openid-connect",
+      "protocolMapper" : "oidc-audience-mapper",
+      "consentRequired" : false,
+      "config" : {
+        "id.token.claim" : "false",
+        "lightweight.claim" : "false",
+        "access.token.claim" : "true",
+        "introspection.token.claim" : "true",
+        "userinfo.token.claim" : "false"
+      }
+    }, {
+      "id" : "35cb5100-bdc8-4f35-9a87-ac9ebe590f9a",
+      "name" : "email",
+      "protocol" : "openid-connect",
+      "protocolMapper" : "oidc-usermodel-attribute-mapper",
+      "consentRequired" : false,
+      "config" : {
+        "introspection.token.claim" : "true",
+        "userinfo.token.claim" : "true",
+        "user.attribute" : "email",
+        "id.token.claim" : "true",
+        "access.token.claim" : "true",
+        "claim.name" : "email",
+        "jsonType.label" : "String"
+      }
+    } ],
+    "defaultClientScopes" : [ "web-origins", "profile", "roles", "basic" ],
+    "optionalClientScopes" : [ "api.manage", "acr", "address", "phone", "offline_access", "organization", "microprofile-jwt", "email" ]
+  }, {
     "id" : "c1c77913-2cd3-4994-b399-44d2e1f54c29",
     "clientId" : "admitto-test-runner",
     "name" : "Admitto Test Runner",
@@ -839,6 +804,47 @@
     } ],
     "defaultClientScopes" : [ "web-origins", "acr", "profile", "roles", "basic", "email" ],
     "optionalClientScopes" : [ "address", "phone", "offline_access", "organization", "microprofile-jwt" ]
+  }, {
+    "id" : "0822f430-63ac-4805-a6f5-ff67200fe480",
+    "clientId" : "admitto-ui",
+    "name" : "Admitto UI",
+    "description" : "",
+    "rootUrl" : "http://localhost:3000",
+    "adminUrl" : "http://localhost:3000",
+    "baseUrl" : "",
+    "surrogateAuthRequired" : false,
+    "enabled" : true,
+    "alwaysDisplayInConsole" : false,
+    "clientAuthenticatorType" : "client-secret",
+    "redirectUris" : [ "http://localhost:3000/*" ],
+    "webOrigins" : [ "http://localhost:3000" ],
+    "notBefore" : 0,
+    "bearerOnly" : false,
+    "consentRequired" : false,
+    "standardFlowEnabled" : true,
+    "implicitFlowEnabled" : false,
+    "directAccessGrantsEnabled" : false,
+    "serviceAccountsEnabled" : false,
+    "publicClient" : true,
+    "frontchannelLogout" : true,
+    "protocol" : "openid-connect",
+    "attributes" : {
+      "realm_client" : "false",
+      "oidc.ciba.grant.enabled" : "false",
+      "backchannel.logout.session.required" : "true",
+      "standard.token.exchange.enabled" : "false",
+      "post.logout.redirect.uris" : "+",
+      "frontchannel.logout.session.required" : "true",
+      "oauth2.device.authorization.grant.enabled" : "false",
+      "display.on.consent.screen" : "false",
+      "backchannel.logout.revoke.offline.tokens" : "false",
+      "dpop.bound.access.tokens" : "false"
+    },
+    "authenticationFlowBindingOverrides" : { },
+    "fullScopeAllowed" : true,
+    "nodeReRegistrationTimeout" : -1,
+    "defaultClientScopes" : [ "web-origins", "acr", "profile", "roles", "basic", "email" ],
+    "optionalClientScopes" : [ "api.manage", "address", "phone", "offline_access", "organization", "microprofile-jwt" ]
   }, {
     "id" : "1b04869e-7c96-47ca-8c48-eea45e708709",
     "clientId" : "broker",
@@ -948,6 +954,58 @@
     "optionalClientScopes" : [ "address", "phone", "offline_access", "organization", "microprofile-jwt" ]
   } ],
   "clientScopes" : [ {
+    "id" : "52119fd3-48e3-44f1-b459-2df57231c546",
+    "name" : "service_account",
+    "description" : "Specific scope for a client enabled for service accounts",
+    "protocol" : "openid-connect",
+    "attributes" : {
+      "include.in.token.scope" : "false",
+      "display.on.consent.screen" : "false"
+    },
+    "protocolMappers" : [ {
+      "id" : "1b02f69f-cfdc-4bf6-ac63-01877179c79f",
+      "name" : "Client Host",
+      "protocol" : "openid-connect",
+      "protocolMapper" : "oidc-usersessionmodel-note-mapper",
+      "consentRequired" : false,
+      "config" : {
+        "user.session.note" : "clientHost",
+        "id.token.claim" : "true",
+        "introspection.token.claim" : "true",
+        "access.token.claim" : "true",
+        "claim.name" : "clientHost",
+        "jsonType.label" : "String"
+      }
+    }, {
+      "id" : "b08c9650-bb85-47a2-ac3c-753bf6c0312a",
+      "name" : "Client ID",
+      "protocol" : "openid-connect",
+      "protocolMapper" : "oidc-usersessionmodel-note-mapper",
+      "consentRequired" : false,
+      "config" : {
+        "user.session.note" : "client_id",
+        "id.token.claim" : "true",
+        "introspection.token.claim" : "true",
+        "access.token.claim" : "true",
+        "claim.name" : "client_id",
+        "jsonType.label" : "String"
+      }
+    }, {
+      "id" : "178242fb-fc7a-46cc-b376-ff2e4d890588",
+      "name" : "Client IP Address",
+      "protocol" : "openid-connect",
+      "protocolMapper" : "oidc-usersessionmodel-note-mapper",
+      "consentRequired" : false,
+      "config" : {
+        "user.session.note" : "clientAddress",
+        "id.token.claim" : "true",
+        "introspection.token.claim" : "true",
+        "access.token.claim" : "true",
+        "claim.name" : "clientAddress",
+        "jsonType.label" : "String"
+      }
+    } ]
+  }, {
     "id" : "1ad5af7b-e30e-4ce7-97ed-250d314c603b",
     "name" : "basic",
     "description" : "OpenID Connect scope for add all basic claims to the token",
@@ -1122,14 +1180,15 @@
     } ]
   }, {
     "id" : "31e7f6bd-8d55-4f8a-ad28-0b90846c1702",
-    "name" : "api.admin",
+    "name" : "api.manage",
     "description" : "Required for Admitto admin routes",
     "protocol" : "openid-connect",
     "attributes" : {
       "include.in.token.scope" : "true",
       "display.on.consent.screen" : "false",
       "gui.order" : "",
-      "consent.screen.text" : ""
+      "consent.screen.text" : "",
+      "include.in.openid.provider.metadata" : "true"
     }
   }, {
     "id" : "ef1640bc-d4b9-4f22-b5bf-7192672807c2",
@@ -1531,7 +1590,7 @@
     } ]
   } ],
   "defaultDefaultClientScopes" : [ "role_list", "saml_organization", "profile", "email", "roles", "web-origins", "acr", "basic" ],
-  "defaultOptionalClientScopes" : [ "address", "phone", "microprofile-jwt", "organization", "api.admin", "offline_access" ],
+  "defaultOptionalClientScopes" : [ "address", "phone", "microprofile-jwt", "organization", "offline_access", "api.manage" ],
   "browserSecurityHeaders" : {
     "contentSecurityPolicyReportOnly" : "",
     "xContentTypeOptions" : "nosniff",
@@ -1568,7 +1627,7 @@
       "subType" : "authenticated",
       "subComponents" : { },
       "config" : {
-        "allowed-protocol-mapper-types" : [ "saml-role-list-mapper", "oidc-usermodel-attribute-mapper", "oidc-usermodel-property-mapper", "saml-user-property-mapper", "saml-user-attribute-mapper", "oidc-sha256-pairwise-sub-mapper", "oidc-full-name-mapper", "oidc-address-mapper" ]
+        "allowed-protocol-mapper-types" : [ "saml-role-list-mapper", "oidc-address-mapper", "oidc-usermodel-property-mapper", "oidc-usermodel-attribute-mapper", "saml-user-property-mapper", "oidc-full-name-mapper", "oidc-sha256-pairwise-sub-mapper", "saml-user-attribute-mapper" ]
       }
     }, {
       "id" : "63ce8001-fd01-4cab-b7ae-b95c0a3e4e74",
@@ -1618,7 +1677,7 @@
       "subType" : "anonymous",
       "subComponents" : { },
       "config" : {
-        "allowed-protocol-mapper-types" : [ "saml-user-property-mapper", "saml-user-attribute-mapper", "oidc-sha256-pairwise-sub-mapper", "oidc-full-name-mapper", "oidc-usermodel-attribute-mapper", "oidc-address-mapper", "oidc-usermodel-property-mapper", "saml-role-list-mapper" ]
+        "allowed-protocol-mapper-types" : [ "saml-user-property-mapper", "oidc-address-mapper", "saml-user-attribute-mapper", "oidc-usermodel-attribute-mapper", "oidc-sha256-pairwise-sub-mapper", "oidc-full-name-mapper", "oidc-usermodel-property-mapper", "saml-role-list-mapper" ]
       }
     } ],
     "org.keycloak.keys.KeyProvider" : [ {
@@ -1668,7 +1727,6 @@
     } ]
   },
   "internationalizationEnabled" : false,
-  "supportedLocales" : [ ],
   "authenticationFlows" : [ {
     "id" : "f525b8ef-5114-4b9c-a7f9-8ccef09720bd",
     "alias" : "Account verification options",
@@ -2277,6 +2335,14 @@
     "priority" : 100,
     "config" : { }
   }, {
+    "alias" : "idp_link",
+    "name" : "Linking Identity Provider",
+    "providerId" : "idp_link",
+    "enabled" : true,
+    "defaultAction" : false,
+    "priority" : 120,
+    "config" : { }
+  }, {
     "alias" : "update_user_locale",
     "name" : "Update User Locale",
     "providerId" : "update_user_locale",
@@ -2306,9 +2372,11 @@
     "cibaInterval" : "5",
     "realmReusableOtpCode" : "false"
   },
-  "keycloakVersion" : "26.0.8",
+  "keycloakVersion" : "26.4.7",
   "userManagedAccessAllowed" : false,
   "organizationsEnabled" : false,
+  "verifiableCredentialsEnabled" : false,
+  "adminPermissionsEnabled" : false,
   "clientProfiles" : {
     "profiles" : [ ]
   },

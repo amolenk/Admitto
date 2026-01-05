@@ -1,5 +1,6 @@
-using Amolenk.Admitto.Application.Common.Core;
 using Amolenk.Admitto.Application.Common.Email.Sending;
+using Amolenk.Admitto.Application.Common.Messaging;
+using Amolenk.Admitto.Application.Common.Persistence;
 using Amolenk.Admitto.Domain;
 using Amolenk.Admitto.Domain.DomainEvents;
 using Amolenk.Admitto.Domain.ValueObjects;

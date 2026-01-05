@@ -5,6 +5,7 @@ namespace Amolenk.Admitto.Domain.ValueObjects;
 /// </summary>
 public enum TeamMemberRole
 {
-    Manager = 0,
-    Organizer = 1
+    Crew = 0,
+    Organizer = 1,
+    Owner = 2
 }

@@ -1,4 +1,6 @@
 using Amolenk.Admitto.Application.Common.Email.Sending;
+using Amolenk.Admitto.Application.Common.Messaging;
+using Amolenk.Admitto.Application.Common.Persistence;
 using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Application.Common.Email;

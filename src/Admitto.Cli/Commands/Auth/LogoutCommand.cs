@@ -9,7 +9,7 @@ public class LogoutSettings : CommandSettings
 
 public class LogoutCommand(IAuthService authService) : Command<LogoutSettings>
 {
-    public override int Execute(CommandContext context, LogoutSettings settings)
+    public override int Execute(CommandContext context, LogoutSettings settings, CancellationToken cancellationToken)
     {
         authService.Logout();
         

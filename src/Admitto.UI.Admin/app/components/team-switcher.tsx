@@ -13,7 +13,7 @@ import {
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
-import { TeamDto } from "@/api-client";
+import { TeamDto } from "@/lib/admitto-api/generated/types.gen";
 import { useTeamStore } from "@/stores/team-store";
 
 export function TeamSwitcher(/*{teams}: TeamSwitcherProps*/)
@@ -57,7 +57,7 @@ export function TeamSwitcher(/*{teams}: TeamSwitcherProps*/)
                                 {teams.map((team: TeamDto) => (
                                     <DropdownMenuItem
                                         key={team.name}
-                                        onClick={() => setSelectedTeamId(team.id)}
+                                        onClick={() => setSelectedTeamId(team.slug)}
                                         className="gap-2 p-2"
                                     >
                                         {team.name}

@@ -1,4 +1,6 @@
 using Amolenk.Admitto.Application.Common;
+using Amolenk.Admitto.Application.Common.Persistence;
+using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Application.UseCases.TicketedEvents.ClearReconfirmPolicy;
 
@@ -12,7 +14,7 @@ public static class ClearReconfirmPolicyEndpoint
         group
             .MapDelete("/{eventSlug}/policies/reconfirm", ClearReconfirmPolicy)
             .WithName(nameof(ClearReconfirmPolicy))
-            .RequireAuthorization(policy => policy.RequireCanUpdateEvent());
+            .RequireAuthorization(policy => policy.RequireTeamMemberRole(TeamMemberRole.Organizer));
 
         return group;
     }

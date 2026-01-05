@@ -10,8 +10,6 @@ public class GlobalExceptionHandler(IHostEnvironment environment, ILogger<Global
         CancellationToken cancellationToken)
     {
         logger.LogError(exception, "An unhandled exception occurred.");
-
-        
         
         var problemDetails = new ProblemDetails
         {

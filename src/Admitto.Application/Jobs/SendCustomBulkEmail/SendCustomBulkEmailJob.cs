@@ -2,8 +2,8 @@ using System.Runtime.CompilerServices;
 using Amolenk.Admitto.Application.Common;
 using Amolenk.Admitto.Application.Common.Email;
 using Amolenk.Admitto.Application.Common.Email.Composing;
+using Amolenk.Admitto.Application.Common.Persistence;
 using Amolenk.Admitto.Domain.ValueObjects;
-using Humanizer;
 using Quartz;
 
 namespace Amolenk.Admitto.Application.Jobs.SendCustomBulkEmail;

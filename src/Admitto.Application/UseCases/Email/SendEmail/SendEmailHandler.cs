@@ -1,6 +1,8 @@
 using Amolenk.Admitto.Application.Common;
 using Amolenk.Admitto.Application.Common.Email;
 using Amolenk.Admitto.Application.Common.Email.Composing;
+using Amolenk.Admitto.Application.Common.Messaging;
+using Amolenk.Admitto.Application.Common.Persistence;
 
 namespace Amolenk.Admitto.Application.UseCases.Email.SendEmail;
 
@@ -8,7 +10,7 @@ public class SendEmailHandler(
     IEmailComposerRegistry emailComposerRegistry,
     IEmailDispatcher emailDispatcher,
     IApplicationContext context)
-    : ICommandHandler<SendEmailCommand>
+    : IWorkerCommandHandler<SendEmailCommand>
 {
     public async ValueTask HandleAsync(SendEmailCommand command, CancellationToken cancellationToken)
     {

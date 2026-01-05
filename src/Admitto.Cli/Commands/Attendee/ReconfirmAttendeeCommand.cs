@@ -22,7 +22,7 @@ public class ReconfirmSettings : TeamEventSettings
 public class ReconfirmAttendeeCommand(IApiService apiService, IConfigService configService)
     : AsyncCommand<ReconfirmSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, ReconfirmSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, ReconfirmSettings settings, CancellationToken cancellationToken)
     {
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);

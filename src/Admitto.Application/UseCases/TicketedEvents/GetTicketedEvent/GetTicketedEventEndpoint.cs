@@ -1,4 +1,6 @@
 using Amolenk.Admitto.Application.Common;
+using Amolenk.Admitto.Application.Common.Persistence;
+using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Application.UseCases.TicketedEvents.GetTicketedEvent;
 
@@ -12,7 +14,7 @@ public static class GetTicketedEventEndpoint
         group
             .MapGet("/{eventSlug}", GetTicketedEvent)
             .WithName(nameof(GetTicketedEvent))
-            .RequireAuthorization(policy => policy.RequireCanViewEvent());
+            .RequireAuthorization(policy => policy.RequireTeamMemberRole(TeamMemberRole.Crew));
 
         return group;
     }

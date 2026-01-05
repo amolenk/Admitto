@@ -24,7 +24,7 @@ public class UpdateTeamSettings : CommandSettings
 public class UpdateTeamCommand(IApiService apiService, IConfigService configService)
     : AsyncCommand<UpdateTeamSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, UpdateTeamSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, UpdateTeamSettings settings, CancellationToken cancellationToken)
     {
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
 

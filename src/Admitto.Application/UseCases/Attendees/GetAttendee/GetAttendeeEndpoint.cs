@@ -1,4 +1,6 @@
 using Amolenk.Admitto.Application.Common;
+using Amolenk.Admitto.Application.Common.Persistence;
+using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Application.UseCases.Attendees.GetAttendee;
 
@@ -9,7 +11,7 @@ public static class GetAttendeeEndpoint
         group
             .MapGet("/{attendeeId:guid}", GetAttendee)
             .WithName(nameof(GetAttendee))
-            .RequireAuthorization(policy => policy.RequireCanViewEvent());
+            .RequireAuthorization(policy => policy.RequireTeamMemberRole(TeamMemberRole.Crew));
 
         return group;
     }

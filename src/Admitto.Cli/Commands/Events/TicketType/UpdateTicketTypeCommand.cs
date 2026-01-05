@@ -31,7 +31,7 @@ public class UpdateTicketTypeSettings : TeamEventSettings
 public class UpdateTicketTypeCommand(IApiService apiService, IConfigService configService)
     : AsyncCommand<UpdateTicketTypeSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, UpdateTicketTypeSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, UpdateTicketTypeSettings settings, CancellationToken cancellationToken)
     {
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);

@@ -1,4 +1,6 @@
 using Amolenk.Admitto.Application.Common;
+using Amolenk.Admitto.Application.Common.Messaging;
+using Amolenk.Admitto.Application.Common.Persistence;
 
 namespace Amolenk.Admitto.Application.UseCases.Attendees.ReconfirmRegistration;
 
@@ -6,7 +8,7 @@ namespace Amolenk.Admitto.Application.UseCases.Attendees.ReconfirmRegistration;
 /// Reconfirms the registration process for an attendee.
 /// </summary>
 public class ReconfirmRegistrationHandler(IApplicationContext context)
-    : ICommandHandler<ReconfirmRegistrationCommand>
+    : IApiCommandHandler<ReconfirmRegistrationCommand>
 {
     public async ValueTask HandleAsync(ReconfirmRegistrationCommand command, CancellationToken cancellationToken)
     {

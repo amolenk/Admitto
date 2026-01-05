@@ -37,7 +37,7 @@ public class AddEmailRecipientListSettings : TeamEventSettings
 public class AddEmailRecipientListCommand(IApiService apiService, IConfigService configService)
     : AsyncCommand<AddEmailRecipientListSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, AddEmailRecipientListSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, AddEmailRecipientListSettings settings, CancellationToken cancellationToken)
     {
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);

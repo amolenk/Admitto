@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Application.Common;
+using Amolenk.Admitto.Application.Common.Persistence;
 using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Application.UseCases.Attendees.DenyVisaLetter;
@@ -13,7 +14,7 @@ public static class DenyVisaLetterEndpoint
         group
             .MapPost("/{attendeeId:guid}/deny-visa", DenyVisaLetter)
             .WithName(nameof(DenyVisaLetter))
-            .RequireAuthorization(policy => policy.RequireCanUpdateEvent());
+            .RequireAuthorization(policy => policy.RequireTeamMemberRole(TeamMemberRole.Organizer));
 
         return group;
     }

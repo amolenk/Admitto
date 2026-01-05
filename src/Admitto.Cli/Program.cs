@@ -1,5 +1,6 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json.Serialization;
 using Amolenk.Admitto.Cli.Commands;
 using Amolenk.Admitto.Cli.Commands.Attendee;
 using Amolenk.Admitto.Cli.Commands.Auth;
@@ -9,11 +10,11 @@ using Amolenk.Admitto.Cli.Commands.Email.Template.Team;
 using Amolenk.Admitto.Cli.Commands.Email.Verification;
 using Amolenk.Admitto.Cli.Commands.Events;
 using Amolenk.Admitto.Cli.Commands.Events.TicketType;
-using Amolenk.Admitto.Cli.Commands.Migration;
 using Amolenk.Admitto.Cli.Commands.Team;
 using Amolenk.Admitto.Cli.Commands.Team.Member;
 using Amolenk.Admitto.Cli.Common;
 using Amolenk.Admitto.Cli.Common.Auth;
+using Microsoft.AspNetCore.Http.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Commands = Amolenk.Admitto.Cli.Commands;
 
@@ -52,6 +53,8 @@ services.AddSingleton<IAuthService, AuthService>();
 services.AddTransient<IApiService, ApiService>();
 services.AddHttpClient();
 
+
+
 // Set up the CLI app
 var registrar = new TypeRegistrar(services);
 var app = new CommandApp(registrar);
@@ -89,18 +92,11 @@ app.Configure(config =>
                 .WithDescription("Updates an existing attendee");
         });
 
-    config.AddBranch(
-        "auth",
-        auth =>
-        {
-            auth.SetDescription("Manage authentication");
+    config.AddCommand<LoginCommand>("login")
+        .WithDescription("Login to the Admitto API");
 
-            auth.AddCommand<LoginCommand>("login")
-                .WithDescription("Login to the Admitto API");
-
-            auth.AddCommand<LogoutCommand>("logout")
-                .WithDescription("Logout from the Admitto API");
-        });
+    config.AddCommand<LogoutCommand>("logout")
+        .WithDescription("Logout from the Admitto API");
 
     config.AddBranch(
         "config",
@@ -152,8 +148,8 @@ app.Configure(config =>
                     bulk.AddCommand<Commands.Email.Bulk.SendCustomBulkEmailCommand>("send")
                         .WithDescription("Send a bulk email");
 
-                    bulk.AddCommand<Commands.Email.Bulk.TestCustomBulkEmailCommand>("test")
-                        .WithDescription("Test a bulk email");
+                    // bulk.AddCommand<Commands.Email.Bulk.TestCustomBulkEmailCommand>("test")
+                    //     .WithDescription("Test a bulk email");
 
                     // bulk.AddCommand<Commands.Email.Bulk.ListBulkEmailsCommand>("list")
                     //     .WithDescription("List all bulk emails");

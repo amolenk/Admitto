@@ -1,5 +1,4 @@
-using Amolenk.Admitto.Application.Common.Abstractions;
-using Amolenk.Admitto.Application.Common.Core;
+using Amolenk.Admitto.Application.Common.Messaging;
 using Amolenk.Admitto.Domain.DomainEvents;
 using Amolenk.Admitto.Infrastructure.Persistence;
 

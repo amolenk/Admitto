@@ -1,4 +1,6 @@
 using Amolenk.Admitto.Application.Common.Email;
+using Amolenk.Admitto.Application.Common.Persistence;
+using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Application.UseCases.Attendees.FindAttendee;
 
@@ -9,7 +11,7 @@ public static class FindAttendeeEndpoint
         group
             .MapGet("/by-email", FindAttendee)
             .WithName(nameof(FindAttendee))
-            .RequireAuthorization(policy => policy.RequireCanViewEvent());
+            .RequireAuthorization(policy => policy.RequireTeamMemberRole(TeamMemberRole.Crew));
 
         return group;
     }

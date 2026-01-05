@@ -1,4 +1,4 @@
-using Amolenk.Admitto.Application.Common.Abstractions;
+using Amolenk.Admitto.Application.Common.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace Amolenk.Admitto.ApiService.Middleware;

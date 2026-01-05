@@ -22,7 +22,7 @@ public class ShowSettings : TeamEventSettings
 public class ShowAttendeeCommand(IApiService apiService, IConfigService configService)
     : AsyncCommand<ShowSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, ShowSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, ShowSettings settings, CancellationToken cancellationToken)
     {
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);
@@ -45,7 +45,7 @@ public class ShowAttendeeCommand(IApiService apiService, IConfigService configSe
         AnsiConsole.Write(new Rule(attendeeResponse.Email!) { Justification = Justify.Left, Style = Style.Parse("cyan") });
 
         var headerColumnWidth = Math.Max(20, eventResponse.AdditionalDetailSchemas?.Max(
-            ds => ds.Name.Humanize().Length) ?? 0);
+            ds => ds.Name?.Humanize().Length) ?? 0);
         
         var grid = new Grid();
         grid.AddColumn(new GridColumn { Width = headerColumnWidth });
@@ -59,7 +59,7 @@ public class ShowAttendeeCommand(IApiService apiService, IConfigService configSe
             var detail = attendeeResponse.AdditionalDetails?.FirstOrDefault(
                 d => d.Name == detailSchema.Name);
             
-            grid.AddRow($"{detailSchema.Name.Humanize()}:", detail?.Value ?? "-");
+            grid.AddRow($"{detailSchema.Name?.Humanize()}:", detail?.Value ?? "-");
         }
 
         grid.AddRow("Last updated:", attendeeResponse.LastChangedAt!.Value.Format());
@@ -85,12 +85,12 @@ public class ShowAttendeeCommand(IApiService apiService, IConfigService configSe
         foreach (var activity in (attendeeResponse.Activities ?? []).OrderBy(a => a.OccuredOn))
         {
             var text = activity.EmailType is not null
-                ? $"{activity.Activity.Humanize()} ({activity.EmailType})"
-                : activity.Activity.Humanize();
+                ? $"{activity.Activity?.Humanize()} ({activity.EmailType})"
+                : activity.Activity?.Humanize();
             
             table.AddRow(
                 activity.OccuredOn!.Value.Format(),
-                text);
+                text ?? "-");
         }
 
         AnsiConsole.Write(table);

@@ -1,3 +1,6 @@
+using Amolenk.Admitto.Application.Common.Persistence;
+using Amolenk.Admitto.Domain.ValueObjects;
+
 namespace Amolenk.Admitto.Application.UseCases.EmailRecipientLists.GetEmailRecipientLists;
 
 /// <summary>
@@ -10,7 +13,7 @@ public static class GetEmailRecipientListsEndpoint
         group
             .MapGet("/", GetEmailRecipientLists)
             .WithName(nameof(GetEmailRecipientLists))
-            .RequireAuthorization(policy => policy.RequireCanViewEvent());
+            .RequireAuthorization(policy => policy.RequireTeamMemberRole(TeamMemberRole.Crew));
 
         return group;
     }

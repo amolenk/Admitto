@@ -1,5 +1,5 @@
 using Amolenk.Admitto.Application.Common;
-using Amolenk.Admitto.Application.Common.Abstractions;
+using Amolenk.Admitto.Application.Common.Persistence;
 using Amolenk.Admitto.Infrastructure.Messaging;
 using Amolenk.Admitto.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;

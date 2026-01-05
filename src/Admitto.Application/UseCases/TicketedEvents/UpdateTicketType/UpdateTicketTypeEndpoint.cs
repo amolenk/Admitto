@@ -1,4 +1,6 @@
 using Amolenk.Admitto.Application.Common;
+using Amolenk.Admitto.Application.Common.Persistence;
+using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Application.UseCases.TicketedEvents.UpdateTicketType;
 
@@ -12,7 +14,7 @@ public static class UpdateTicketTypeEndpoint
         group
             .MapPatch("/{eventSlug}/ticket-types/{slug}", UpdateTicketType)
             .WithName(nameof(UpdateTicketType))
-            .RequireAuthorization(policy => policy.RequireCanUpdateEvent());
+            .RequireAuthorization(policy => policy.RequireTeamMemberRole(TeamMemberRole.Organizer));
 
         return group;
     }

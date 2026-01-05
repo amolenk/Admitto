@@ -1,6 +1,9 @@
 using Amolenk.Admitto.Application.Common;
 using Amolenk.Admitto.Application.Common.Cryptography;
+using Amolenk.Admitto.Application.Common.Messaging;
+using Amolenk.Admitto.Application.Common.Persistence;
 using Amolenk.Admitto.Application.UseCases.Attendees.RecordAttendance;
+using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Application.UseCases.Public.CheckIn;
 
@@ -11,7 +14,7 @@ public static class CheckInEndpoint
         group
             .MapPost("/{publicId:guid}/check-in", CheckIn)
             .WithName(nameof(CheckIn))
-            .RequireAuthorization(policy => policy.RequireCanUpdateEvent());
+            .RequireAuthorization(policy => policy.RequireTeamMemberRole(TeamMemberRole.Organizer));
 
         return group;
     }

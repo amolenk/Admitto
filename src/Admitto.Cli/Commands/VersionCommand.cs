@@ -4,7 +4,7 @@ namespace Amolenk.Admitto.Cli.Commands;
 
 public sealed class VersionCommand : Command
 {
-    public override int Execute(CommandContext context)
+    public override int Execute(CommandContext context, CancellationToken cancellationToken)
     {
         var assembly = Assembly.GetExecutingAssembly();
         var version = assembly.GetName().Version;

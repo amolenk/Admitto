@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Application.Common.Email.Templating;
+using Amolenk.Admitto.Application.Common.Persistence;
 using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Application.Common.Email.Composing;

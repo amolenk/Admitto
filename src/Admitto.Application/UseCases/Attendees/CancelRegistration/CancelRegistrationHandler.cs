@@ -1,4 +1,6 @@
 using Amolenk.Admitto.Application.Common;
+using Amolenk.Admitto.Application.Common.Messaging;
+using Amolenk.Admitto.Application.Common.Persistence;
 
 namespace Amolenk.Admitto.Application.UseCases.Attendees.CancelRegistration;
 
@@ -6,7 +8,7 @@ namespace Amolenk.Admitto.Application.UseCases.Attendees.CancelRegistration;
 /// Cancels the registration process for an attendee.
 /// </summary>
 public class CancelRegistrationHandler(IApplicationContext context)
-    : ICommandHandler<CancelRegistrationCommand>
+    : IApiCommandHandler<CancelRegistrationCommand>
 {
     public async ValueTask HandleAsync(CancelRegistrationCommand command, CancellationToken cancellationToken)
     {

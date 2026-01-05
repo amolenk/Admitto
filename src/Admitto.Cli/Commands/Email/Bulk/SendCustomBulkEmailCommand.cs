@@ -39,7 +39,7 @@ public class SendCustomBulkEmailSettings : TeamEventSettings
 public class SendCustomBulkEmailCommand(IApiService apiService, IConfigService configService)
     : AsyncCommand<SendCustomBulkEmailSettings>
 {
-    public sealed override async Task<int> ExecuteAsync(CommandContext context, SendCustomBulkEmailSettings settings)
+    public sealed override async Task<int> ExecuteAsync(CommandContext context, SendCustomBulkEmailSettings settings, CancellationToken cancellationToken)
     {
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);
