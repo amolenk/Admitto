@@ -1,7 +1,7 @@
 param location string = resourceGroup().location
 
 @secure()
-param authApiAppSecret string
+param msGraphClientSecret string
 param principalId string
 
 var resourceToken = uniqueString(resourceGroup().id)
@@ -19,10 +19,10 @@ resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
   }
 }
 
-resource keyVault_authApiAppSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
-  name: 'auth--api-app-secret'
+resource keyVault_msGraphClientSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+  name: 'auth--ms-graph-client-secret'
   properties: {
-    value: authApiAppSecret
+    value: msGraphClientSecret
   }
   parent: keyVault
 }

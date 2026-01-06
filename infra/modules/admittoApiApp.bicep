@@ -1,22 +1,17 @@
 param location string = resourceGroup().location
 
-param acaEnvironmentDomain string
 param acaEnvironmentId string
 param acrLoginServer string
 param applicationInsightsConnectionString string
 param authAdminUserIds string
 param authAuthority string
 param authAudience string
-param authTenantId string
 param msGraphTenantId string
 param msGraphClientId string
-@secure()
-param msGraphClientSecret string
 param frontDoorId string
 param keyVaultName string
 param managedIdentityClientId string
 param managedIdentityId string
-param openFgaAppName string
 param storageAccountName string
 
 var resourceToken = uniqueString(resourceGroup().id)
@@ -60,6 +55,11 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
           keyVaultUrl: 'https://${keyVaultName}${environment().suffixes.keyvaultDns}/secrets/connectionstrings--quartz-db'
           identity: managedIdentityId
         }
+        {
+          name: 'ms-graph-client-secret'
+          keyVaultUrl: 'https://${keyVaultName}${environment().suffixes.keyvaultDns}/secrets/auth--ms-graph-client-secret'
+          identity: managedIdentityId
+        }
       ]  
     }
     environmentId: acaEnvironmentId
@@ -72,7 +72,7 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
           name: 'admitto-api'
           env: [
             {
-              name: 'AUTHENTICATION__ADMINUSERIDS'
+              name: 'AUTHENTICATION__ADMINUSERIDS__0'
               value: authAdminUserIds
             }
             {
@@ -93,33 +93,11 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
             }
             {
               name: 'AUTHENTICATION__MICROSOFTGRAPH__CLIENTSECRET'
-              value: msGraphClientSecret
-            }
-            {
-              name: 'AUTHENTICATION__AUTHORITY'
-              value: '${environment().authentication.loginEndpoint}${authTenantId}/v2.0'
-            }
-            {
-              name: 'AUTHENTICATION__AUDIENCE'
-              value: authAudience
-            }
-            // Personal Microsoft accounts use v1 tokens.
-            {
-              name: 'AUTHENTICATION__VALIDISSUERS__0'
-              value: 'https://sts.windows.net/${authTenantId}/'
-            }
-            // Work or school Microsoft accounts use v2 tokens.
-            {
-              name: 'AUTHENTICATION__VALIDISSUERS__1'
-              value: '${environment().authentication.loginEndpoint}${authTenantId}/v2.0'
+              secretRef: 'ms-graph-client-secret'
             }
             {
               name: 'AZURE_CLIENT_ID'
               value: managedIdentityClientId
-            }
-            {
-              name: 'AdminUserIds'
-              value: authAdminUserIds
             }
             {
               name: 'ConnectionStrings__admitto-db'
@@ -136,10 +114,6 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
             {
               name: 'FrontDoor__Id'
               value: frontDoorId
-            }
-            {
-              name: 'services__openfga__http__0'
-              value: 'https://${openFgaAppName}.internal.${acaEnvironmentDomain}'
             }
             {
               name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
