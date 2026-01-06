@@ -4,7 +4,7 @@ namespace Amolenk.Admitto.Infrastructure.UserManagement.Keycloak;
 
 public class KeycloakOptions
 {
-    public const string SectionName = "UserManagement:Keycloak";
+    public const string SectionName = "Authentication:Keycloak";
     
     [Required]
     public string Authority { get; init; } = null!;

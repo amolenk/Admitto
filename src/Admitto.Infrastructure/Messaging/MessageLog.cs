@@ -1,5 +1,3 @@
-using Amolenk.Admitto.Domain.Contracts;
-
 namespace Amolenk.Admitto.Infrastructure.Messaging;
 
 /// <summary>

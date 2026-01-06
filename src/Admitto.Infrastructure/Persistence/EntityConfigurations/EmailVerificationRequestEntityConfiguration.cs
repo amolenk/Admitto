@@ -1,4 +1,4 @@
-using Amolenk.Admitto.Application.Common.Identity;
+using Amolenk.Admitto.Application.Common.Email.Verification;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

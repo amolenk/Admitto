@@ -22,7 +22,7 @@ public class CancelSettings : TeamEventSettings
 public class CancelAttendeeCommand(IApiService apiService, IConfigService configService)
     : AsyncCommand<CancelSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, CancelSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, CancelSettings settings, CancellationToken cancellationToken)
     {
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);

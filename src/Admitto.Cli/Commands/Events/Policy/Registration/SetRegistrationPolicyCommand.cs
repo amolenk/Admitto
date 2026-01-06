@@ -31,7 +31,7 @@ public class SetSettings : TeamEventSettings
 public class SetRegistrationPolicyCommand(IApiService apiService, IConfigService configService)
     : AsyncCommand<SetSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, SetSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, SetSettings settings, CancellationToken cancellationToken)
     {
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);

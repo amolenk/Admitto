@@ -1,7 +1,9 @@
 using Amolenk.Admitto.Application.Common.Cryptography;
 using Amolenk.Admitto.Application.Common.Email;
 using Amolenk.Admitto.Application.Common.Email.Composing;
-using Amolenk.Admitto.Application.Common.Identity;
+using Amolenk.Admitto.Application.Common.Email.Verification;
+using Amolenk.Admitto.Application.Common.Messaging;
+using Amolenk.Admitto.Application.Common.Persistence;
 using Amolenk.Admitto.Application.UseCases.Email.SendEmail;
 
 namespace Amolenk.Admitto.Application.UseCases.Public.RequestOtpCode;

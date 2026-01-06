@@ -4,7 +4,7 @@ namespace Amolenk.Admitto.Infrastructure.UserManagement.MicrosoftGraph;
 
 public class MicrosoftGraphOptions
 {
-    public const string SectionName = "UserManagement:MicrosoftGraph";
+    public const string SectionName = "Authentication:MicrosoftGraph";
     
     [Required] 
     public required string TenantId { get; init; }

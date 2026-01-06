@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Application.Common;
+using Amolenk.Admitto.Application.Common.Persistence;
 using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Application.UseCases.TicketedEvents.SetReconfirmPolicy;
@@ -13,7 +14,7 @@ public static class SetReconfirmPolicyEndpoint
         group
             .MapPut("/{eventSlug}/policies/reconfirm", SetReconfirmPolicy)
             .WithName(nameof(SetReconfirmPolicy))
-            .RequireAuthorization(policy => policy.RequireCanUpdateEvent());
+            .RequireAuthorization(policy => policy.RequireTeamMemberRole(TeamMemberRole.Organizer));
 
         return group;
     }

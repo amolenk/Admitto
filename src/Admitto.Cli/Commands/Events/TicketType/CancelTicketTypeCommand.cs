@@ -22,7 +22,7 @@ public class CancelTicketTypeSettings : TeamEventSettings
 public class CancelTicketTypeCommand(IApiService apiService, IConfigService configService)
     : AsyncCommand<CancelTicketTypeSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, CancelTicketTypeSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, CancelTicketTypeSettings settings, CancellationToken cancellationToken)
     {
         AnsiConsoleExt.WriteWarningMessage("Canceling a ticket type is irreversible and will automatically change or cancel all current registrations.");
         AnsiConsoleExt.WriteWarningMessage("You must inform ticket holders manually before proceeding.");

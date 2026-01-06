@@ -1,4 +1,6 @@
 using Amolenk.Admitto.Application.Common;
+using Amolenk.Admitto.Application.Common.Messaging;
+using Amolenk.Admitto.Application.Common.Persistence;
 using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Application.UseCases.Attendees.RemoveTickets;
@@ -7,7 +9,7 @@ namespace Amolenk.Admitto.Application.UseCases.Attendees.RemoveTickets;
 /// Removes tickets of a specific type for a registered attendee.
 /// </summary>
 public class RemoveTicketsHandler(IApplicationContext context, IMessageOutbox outbox)
-    : ICommandHandler<RemoveTicketsCommand>
+    : IWorkerCommandHandler<RemoveTicketsCommand>
 {
     public async ValueTask HandleAsync(RemoveTicketsCommand command, CancellationToken cancellationToken)
     {

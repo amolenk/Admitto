@@ -1,4 +1,4 @@
-using Amolenk.Admitto.Application.Common.Abstractions;
+using Amolenk.Admitto.Application.Common.Migration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Amolenk.Admitto.Infrastructure.Migrators;
@@ -7,7 +7,7 @@ public class MigrationService(IServiceProvider serviceProvider) : IMigrationServ
 {
     public IEnumerable<string> GetSupportedMigrations()
     {
-        return ["database", "openfga", "quartz"];
+        return ["database", "quartz", "better-auth"];
     }
 
     public async Task MigrateAsync(string migrationName, CancellationToken cancellationToken)
@@ -28,8 +28,8 @@ public class MigrationService(IServiceProvider serviceProvider) : IMigrationServ
         migrationName.ToLower() switch
         {
             "database" => serviceProvider.GetRequiredService<DatabaseMigrator>(),
-            "openfga" => serviceProvider.GetRequiredService<OpenFgaMigrator>(),
             "quartz" => serviceProvider.GetRequiredService<QuartzMigrator>(),
+            "better-auth" => serviceProvider.GetRequiredService<BetterAuthMigrator>(),
             _ => throw new NotSupportedException($"Migrator '{migrationName}' is not supported.")
         };
 }

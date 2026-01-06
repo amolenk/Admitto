@@ -14,8 +14,8 @@ namespace Amolenk.Admitto.Cli.Api.Models
     {
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
-        /// <summary>The hasCapacity property</summary>
-        public bool? HasCapacity { get; set; }
+        /// <summary>The maxCapacity property</summary>
+        public int? MaxCapacity { get; set; }
         /// <summary>The name property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
@@ -40,6 +40,8 @@ namespace Amolenk.Admitto.Cli.Api.Models
 #else
         public string Slug { get; set; }
 #endif
+        /// <summary>The usedCapacity property</summary>
+        public int? UsedCapacity { get; set; }
         /// <summary>
         /// Instantiates a new <see cref="global::Amolenk.Admitto.Cli.Api.Models.TicketTypeDto"/> and sets the default values.
         /// </summary>
@@ -54,7 +56,7 @@ namespace Amolenk.Admitto.Cli.Api.Models
         /// <param name="parseNode">The parse node to use to read the discriminator value and create the object</param>
         public static global::Amolenk.Admitto.Cli.Api.Models.TicketTypeDto CreateFromDiscriminatorValue(IParseNode parseNode)
         {
-            _ = parseNode ?? throw new ArgumentNullException(nameof(parseNode));
+            if(ReferenceEquals(parseNode, null)) throw new ArgumentNullException(nameof(parseNode));
             return new global::Amolenk.Admitto.Cli.Api.Models.TicketTypeDto();
         }
         /// <summary>
@@ -65,10 +67,11 @@ namespace Amolenk.Admitto.Cli.Api.Models
         {
             return new Dictionary<string, Action<IParseNode>>
             {
-                { "hasCapacity", n => { HasCapacity = n.GetBoolValue(); } },
+                { "maxCapacity", n => { MaxCapacity = n.GetIntValue(); } },
                 { "name", n => { Name = n.GetStringValue(); } },
                 { "slotNames", n => { SlotNames = n.GetCollectionOfPrimitiveValues<string>()?.AsList(); } },
                 { "slug", n => { Slug = n.GetStringValue(); } },
+                { "usedCapacity", n => { UsedCapacity = n.GetIntValue(); } },
             };
         }
         /// <summary>
@@ -77,11 +80,12 @@ namespace Amolenk.Admitto.Cli.Api.Models
         /// <param name="writer">Serialization writer to use to serialize this model</param>
         public virtual void Serialize(ISerializationWriter writer)
         {
-            _ = writer ?? throw new ArgumentNullException(nameof(writer));
-            writer.WriteBoolValue("hasCapacity", HasCapacity);
+            if(ReferenceEquals(writer, null)) throw new ArgumentNullException(nameof(writer));
+            writer.WriteIntValue("maxCapacity", MaxCapacity);
             writer.WriteStringValue("name", Name);
             writer.WriteCollectionOfPrimitiveValues<string>("slotNames", SlotNames);
             writer.WriteStringValue("slug", Slug);
+            writer.WriteIntValue("usedCapacity", UsedCapacity);
             writer.WriteAdditionalData(AdditionalData);
         }
     }

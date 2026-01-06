@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Application.Common.Persistence;
 using Amolenk.Admitto.Domain.Entities;
 
 namespace Amolenk.Admitto.Application.Common.Email.Templating;

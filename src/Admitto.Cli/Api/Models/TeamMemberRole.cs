@@ -8,13 +8,17 @@ namespace Amolenk.Admitto.Cli.Api.Models
     public enum TeamMemberRole
     #pragma warning restore CS1591
     {
-        [EnumMember(Value = "manager")]
+        [EnumMember(Value = "crew")]
         #pragma warning disable CS1591
-        Manager,
+        Crew,
         #pragma warning restore CS1591
         [EnumMember(Value = "organizer")]
         #pragma warning disable CS1591
         Organizer,
+        #pragma warning restore CS1591
+        [EnumMember(Value = "owner")]
+        #pragma warning disable CS1591
+        Owner,
         #pragma warning restore CS1591
     }
 }

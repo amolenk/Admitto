@@ -1,5 +1,6 @@
 using Amolenk.Admitto.Application.Common;
 using Amolenk.Admitto.Application.Common.Cryptography;
+using Amolenk.Admitto.Application.Common.Persistence;
 
 namespace Amolenk.Admitto.Application.UseCases.Public.GetTickets;
 

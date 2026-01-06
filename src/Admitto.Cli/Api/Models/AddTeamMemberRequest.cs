@@ -22,6 +22,22 @@ namespace Amolenk.Admitto.Cli.Api.Models
 #else
         public string Email { get; set; }
 #endif
+        /// <summary>The firstName property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public string? FirstName { get; set; }
+#nullable restore
+#else
+        public string FirstName { get; set; }
+#endif
+        /// <summary>The lastName property</summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public string? LastName { get; set; }
+#nullable restore
+#else
+        public string LastName { get; set; }
+#endif
         /// <summary>The role property</summary>
         public global::Amolenk.Admitto.Cli.Api.Models.TeamMemberRole? Role { get; set; }
         /// <summary>
@@ -38,7 +54,7 @@ namespace Amolenk.Admitto.Cli.Api.Models
         /// <param name="parseNode">The parse node to use to read the discriminator value and create the object</param>
         public static global::Amolenk.Admitto.Cli.Api.Models.AddTeamMemberRequest CreateFromDiscriminatorValue(IParseNode parseNode)
         {
-            _ = parseNode ?? throw new ArgumentNullException(nameof(parseNode));
+            if(ReferenceEquals(parseNode, null)) throw new ArgumentNullException(nameof(parseNode));
             return new global::Amolenk.Admitto.Cli.Api.Models.AddTeamMemberRequest();
         }
         /// <summary>
@@ -50,6 +66,8 @@ namespace Amolenk.Admitto.Cli.Api.Models
             return new Dictionary<string, Action<IParseNode>>
             {
                 { "email", n => { Email = n.GetStringValue(); } },
+                { "firstName", n => { FirstName = n.GetStringValue(); } },
+                { "lastName", n => { LastName = n.GetStringValue(); } },
                 { "role", n => { Role = n.GetEnumValue<global::Amolenk.Admitto.Cli.Api.Models.TeamMemberRole>(); } },
             };
         }
@@ -59,8 +77,10 @@ namespace Amolenk.Admitto.Cli.Api.Models
         /// <param name="writer">Serialization writer to use to serialize this model</param>
         public virtual void Serialize(ISerializationWriter writer)
         {
-            _ = writer ?? throw new ArgumentNullException(nameof(writer));
+            if(ReferenceEquals(writer, null)) throw new ArgumentNullException(nameof(writer));
             writer.WriteStringValue("email", Email);
+            writer.WriteStringValue("firstName", FirstName);
+            writer.WriteStringValue("lastName", LastName);
             writer.WriteEnumValue<global::Amolenk.Admitto.Cli.Api.Models.TeamMemberRole>("role", Role);
             writer.WriteAdditionalData(AdditionalData);
         }

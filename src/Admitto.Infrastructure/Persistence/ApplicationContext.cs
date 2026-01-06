@@ -1,8 +1,10 @@
-using Amolenk.Admitto.Application.Common.Abstractions;
 using Amolenk.Admitto.Application.Common.Email.Sending;
-using Amolenk.Admitto.Application.Common.Identity;
+using Amolenk.Admitto.Application.Common.Email.Verification;
+using Amolenk.Admitto.Application.Common.Messaging;
+using Amolenk.Admitto.Application.Common.Persistence;
 using Amolenk.Admitto.Application.Projections.ParticipantActivity;
 using Amolenk.Admitto.Application.Projections.Participation;
+using Amolenk.Admitto.Application.Projections.TeamMember;
 using Amolenk.Admitto.Domain.Contracts;
 using Amolenk.Admitto.Domain.Entities;
 using Amolenk.Admitto.Infrastructure.Messaging;
@@ -12,7 +14,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Amolenk.Admitto.Infrastructure.Persistence;
 
-public class ApplicationContext(DbContextOptions options, IDataProtectionProvider dataProtectionProvider)
+public class ApplicationContext(
+    DbContextOptions<ApplicationContext> options,
+    IDataProtectionProvider dataProtectionProvider)
     : DbContext(options), IApplicationContext
 {
     public DbSet<BulkEmailWorkItem> BulkEmailWorkItems { get; set; } = null!;
@@ -27,15 +31,15 @@ public class ApplicationContext(DbContextOptions options, IDataProtectionProvide
     public DbSet<Participant> Participants { get; set; } = null!;
     public DbSet<ParticipantActivityView> ParticipantActivityView { get; set; } = null!;
     public DbSet<ParticipationView> ParticipationView { get; set; } = null!;
+    public DbSet<TeamMemberView> TeamMemberView { get; set; } = null!;
     public DbSet<Team> Teams { get; set; } = null!;
     public DbSet<TicketedEvent> TicketedEvents { get; set; } = null!;
-    
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         // Apply entity configurations using explicit instances.
         // We don't use modelBuilder.ApplyConfigurationsFromAssembly here because some configurations
         // require DI parameters (e.g. IDataProtectionProvider).
-        modelBuilder.ApplyConfiguration(new ParticipationViewEntityConfiguration());
         modelBuilder.ApplyConfiguration(new AttendeeEntityConfiguration());
         modelBuilder.ApplyConfiguration(new BulkEmailWorkItemEntityConfiguration());
         modelBuilder.ApplyConfiguration(new ContributorEntityConfiguration());
@@ -47,9 +51,11 @@ public class ApplicationContext(DbContextOptions options, IDataProtectionProvide
         modelBuilder.ApplyConfiguration(new MessageLogEntityConfiguration());
         modelBuilder.ApplyConfiguration(new ParticipantActivityViewEntityConfiguration());
         modelBuilder.ApplyConfiguration(new ParticipantEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new ParticipationViewEntityConfiguration());
         modelBuilder.ApplyConfiguration(new TeamEntityConfiguration(dataProtectionProvider));
         modelBuilder.ApplyConfiguration(new TicketedEventEntityConfiguration(dataProtectionProvider));
-        
+        modelBuilder.ApplyConfiguration(new TeamMemberViewEntityConfiguration());
+
         foreach (var entityType in modelBuilder.Model.GetEntityTypes().ToList())
         {
             if (typeof(IHasConcurrencyToken).IsAssignableFrom(entityType.ClrType))
@@ -58,14 +64,14 @@ public class ApplicationContext(DbContextOptions options, IDataProtectionProvide
                     .Property(nameof(IHasConcurrencyToken.Version))
                     .IsRowVersion();
             }
-            
+
             if (typeof(IIsAuditable).IsAssignableFrom(entityType.ClrType))
             {
                 modelBuilder.Entity(entityType.ClrType)
                     .Property(nameof(IIsAuditable.CreatedAt))
                     .HasColumnName("created_at")
                     .IsRequired();
-            
+
                 modelBuilder.Entity(entityType.ClrType)
                     .Property(nameof(IIsAuditable.LastChangedAt))
                     .HasColumnName("last_changed_at")

@@ -17,7 +17,7 @@ public class RequestOtpCodeSettings : TeamEventSettings
 public class RequestOtpCodeCommand(IApiService apiService, IConfigService configService)
     : AsyncCommand<RequestOtpCodeSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, RequestOtpCodeSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, RequestOtpCodeSettings settings, CancellationToken cancellationToken)
     {
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);

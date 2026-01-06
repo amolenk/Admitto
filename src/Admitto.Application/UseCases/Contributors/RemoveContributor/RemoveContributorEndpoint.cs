@@ -1,4 +1,6 @@
 using Amolenk.Admitto.Application.Common;
+using Amolenk.Admitto.Application.Common.Persistence;
+using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Application.UseCases.Contributors.RemoveContributor;
 
@@ -12,7 +14,7 @@ public static class RemoveContributorEndpoint
         group
             .MapDelete("/{contributorId:guid}", RemoveContributor)
             .WithName(nameof(RemoveContributor))
-            .RequireAuthorization(policy => policy.RequireCanUpdateEvent());
+            .RequireAuthorization(policy => policy.RequireTeamMemberRole(TeamMemberRole.Organizer));
 
         return group;
     }

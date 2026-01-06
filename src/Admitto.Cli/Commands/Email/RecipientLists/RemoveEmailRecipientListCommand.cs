@@ -22,7 +22,7 @@ public class RemoveEmailRecipientListSettings : TeamEventSettings
 public class RemoveEmailRecipientListCommand(IApiService apiService, IConfigService configService)
     : AsyncCommand<RemoveEmailRecipientListSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, RemoveEmailRecipientListSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, RemoveEmailRecipientListSettings settings, CancellationToken cancellationToken)
     {
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);

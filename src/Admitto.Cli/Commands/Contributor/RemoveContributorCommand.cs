@@ -22,7 +22,7 @@ public class RemoveContributorSettings : TeamEventSettings
 public class RemoveContributorCommand(IApiService apiService, IConfigService configService)
     : AsyncCommand<RemoveContributorSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, RemoveContributorSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, RemoveContributorSettings settings, CancellationToken cancellationToken)
     {
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);

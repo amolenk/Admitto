@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Application.Common.Persistence;
 using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Application.UseCases.EmailTemplates.ClearEventEmailTemplate;
@@ -12,7 +13,7 @@ public static class ClearEventEmailTemplateEndpoint
         group
             .MapDelete("/events/{eventSlug}/email-templates/{emailType}", ClearEventEmailTemplate)
             .WithName(nameof(ClearEventEmailTemplate))
-            .RequireAuthorization(policy => policy.RequireCanUpdateEvent());
+            .RequireAuthorization(policy => policy.RequireTeamMemberRole(TeamMemberRole.Organizer));
 
         return group;
     }

@@ -15,7 +15,7 @@ public class EmailTemplate : Aggregate
         string subject,
         string textBody,
         string htmlBody,
-        Guid teamId,
+        Guid? teamId,
         Guid? ticketedEventId)
         : base(id)
     {
@@ -31,7 +31,7 @@ public class EmailTemplate : Aggregate
     public string Subject { get; private set; } = null!;
     public string TextBody { get; private set; } = null!;
     public string HtmlBody { get; private set; } = null!;
-    public Guid TeamId { get; private set; }
+    public Guid? TeamId { get; private set; }
     public Guid? TicketedEventId { get; private set; }
 
     public static EmailTemplate Create(
@@ -39,7 +39,7 @@ public class EmailTemplate : Aggregate
         string subject,
         string textBody,
         string htmlBody,
-        Guid teamId,
+        Guid? teamId = null,
         Guid? ticketedEventId = null)
     {
         return new EmailTemplate(

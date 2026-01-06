@@ -22,7 +22,7 @@ public class DenyAttendeeVisaLetterSettings : TeamEventSettings
 public class DenyAttendeeVisaLetterCommand(IApiService apiService, IConfigService configService)
     : AsyncCommand<DenyAttendeeVisaLetterSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, DenyAttendeeVisaLetterSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, DenyAttendeeVisaLetterSettings settings, CancellationToken cancellationToken)
     {
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);

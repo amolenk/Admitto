@@ -26,7 +26,7 @@ jobs:
 
       - name: Checkout homebrew tap
         uses: actions/checkout@v4
-        with:
+        with: 
           repository: amolenk/homebrew-admitto
           path: tap
           fetch-depth: 0
