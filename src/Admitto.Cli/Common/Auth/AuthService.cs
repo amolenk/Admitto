@@ -171,8 +171,9 @@ public class AuthService(ITokenCache tokenCache, IHttpClientFactory clientFactor
                 Policy = new DiscoveryPolicy
                 {
                     RequireHttps = _options.RequireHttps,
-                    ValidateEndpoints = false,
-                    ValidateIssuerName = true
+                    // Authority uses a custom domain name on Azure Front Door, so is different from the issuer
+                    ValidateIssuerName = false,
+                    ValidateEndpoints = false
                 }
             });
 
