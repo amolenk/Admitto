@@ -1,4 +1,4 @@
-using Amolenk.Admitto.Application.Common.Abstractions;
+using Amolenk.Admitto.Application.Common.Messaging;
 using Azure.Messaging;
 using Azure.Storage.Queues;
 using Microsoft.Extensions.Logging;

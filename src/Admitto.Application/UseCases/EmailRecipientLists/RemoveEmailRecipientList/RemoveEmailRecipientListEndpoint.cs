@@ -1,4 +1,6 @@
 using Amolenk.Admitto.Application.Common;
+using Amolenk.Admitto.Application.Common.Persistence;
+using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Application.UseCases.EmailRecipientLists.RemoveEmailRecipientList;
 
@@ -12,7 +14,7 @@ public static class RemoveEmailRecipientListEndpoint
         group
             .MapDelete("/{name}", RemoveEmailRecipientList)
             .WithName(nameof(RemoveEmailRecipientList))
-            .RequireAuthorization(policy => policy.RequireCanUpdateEvent());
+            .RequireAuthorization(policy => policy.RequireTeamMemberRole(TeamMemberRole.Organizer));
 
         return group;
     }

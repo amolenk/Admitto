@@ -49,7 +49,7 @@ public class CreateTeamSettings : CommandSettings
 public class CreateTeamCommand(IApiService apiService) 
     : AsyncCommand<CreateTeamSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, CreateTeamSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, CreateTeamSettings settings, CancellationToken cancellationToken)
     {
         var request = new CreateTeamRequest()
         {

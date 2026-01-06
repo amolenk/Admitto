@@ -1,7 +1,7 @@
 using Amolenk.Admitto.Application.Common;
 using Amolenk.Admitto.Application.Common.Cryptography;
 using Amolenk.Admitto.Application.Common.Email;
-using Amolenk.Admitto.Application.Common.Identity;
+using Amolenk.Admitto.Application.Common.Email.Verification;
 using Amolenk.Admitto.Application.UseCases.Attendees.RegisterAttendee;
 using Amolenk.Admitto.Domain.ValueObjects;
 using Microsoft.AspNetCore.Mvc;

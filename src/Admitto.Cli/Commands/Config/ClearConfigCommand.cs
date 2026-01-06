@@ -15,7 +15,7 @@ public class ClearConfigSettings : CommandSettings
 
 public class ClearConfigCommand(IConfigService configService) : Command<ClearConfigSettings>
 {
-    public override int Execute(CommandContext context, ClearConfigSettings settings)
+    public override int Execute(CommandContext context, ClearConfigSettings settings, CancellationToken cancellationToken)
     {
         if (settings.DefaultTeam)
         {

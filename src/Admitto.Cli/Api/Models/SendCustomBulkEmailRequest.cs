@@ -43,10 +43,10 @@ namespace Amolenk.Admitto.Cli.Api.Models
         /// <summary>The testOptions property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public global::Amolenk.Admitto.Cli.Api.Models.TestOptionsDto? TestOptions { get; set; }
+        public global::Amolenk.Admitto.Cli.Api.Models.SendCustomBulkEmailRequest.SendCustomBulkEmailRequest_testOptions? TestOptions { get; set; }
 #nullable restore
 #else
-        public global::Amolenk.Admitto.Cli.Api.Models.TestOptionsDto TestOptions { get; set; }
+        public global::Amolenk.Admitto.Cli.Api.Models.SendCustomBulkEmailRequest.SendCustomBulkEmailRequest_testOptions TestOptions { get; set; }
 #endif
         /// <summary>
         /// Instantiates a new <see cref="global::Amolenk.Admitto.Cli.Api.Models.SendCustomBulkEmailRequest"/> and sets the default values.
@@ -62,7 +62,7 @@ namespace Amolenk.Admitto.Cli.Api.Models
         /// <param name="parseNode">The parse node to use to read the discriminator value and create the object</param>
         public static global::Amolenk.Admitto.Cli.Api.Models.SendCustomBulkEmailRequest CreateFromDiscriminatorValue(IParseNode parseNode)
         {
-            _ = parseNode ?? throw new ArgumentNullException(nameof(parseNode));
+            if(ReferenceEquals(parseNode, null)) throw new ArgumentNullException(nameof(parseNode));
             return new global::Amolenk.Admitto.Cli.Api.Models.SendCustomBulkEmailRequest();
         }
         /// <summary>
@@ -77,7 +77,7 @@ namespace Amolenk.Admitto.Cli.Api.Models
                 { "excludeAttendees", n => { ExcludeAttendees = n.GetBoolValue(); } },
                 { "idempotencyKey", n => { IdempotencyKey = n.GetStringValue(); } },
                 { "recipientListName", n => { RecipientListName = n.GetStringValue(); } },
-                { "testOptions", n => { TestOptions = n.GetObjectValue<global::Amolenk.Admitto.Cli.Api.Models.TestOptionsDto>(global::Amolenk.Admitto.Cli.Api.Models.TestOptionsDto.CreateFromDiscriminatorValue); } },
+                { "testOptions", n => { TestOptions = n.GetObjectValue<global::Amolenk.Admitto.Cli.Api.Models.SendCustomBulkEmailRequest.SendCustomBulkEmailRequest_testOptions>(global::Amolenk.Admitto.Cli.Api.Models.SendCustomBulkEmailRequest.SendCustomBulkEmailRequest_testOptions.CreateFromDiscriminatorValue); } },
             };
         }
         /// <summary>
@@ -86,13 +86,88 @@ namespace Amolenk.Admitto.Cli.Api.Models
         /// <param name="writer">Serialization writer to use to serialize this model</param>
         public virtual void Serialize(ISerializationWriter writer)
         {
-            _ = writer ?? throw new ArgumentNullException(nameof(writer));
+            if(ReferenceEquals(writer, null)) throw new ArgumentNullException(nameof(writer));
             writer.WriteStringValue("emailType", EmailType);
             writer.WriteBoolValue("excludeAttendees", ExcludeAttendees);
             writer.WriteStringValue("idempotencyKey", IdempotencyKey);
             writer.WriteStringValue("recipientListName", RecipientListName);
-            writer.WriteObjectValue<global::Amolenk.Admitto.Cli.Api.Models.TestOptionsDto>("testOptions", TestOptions);
+            writer.WriteObjectValue<global::Amolenk.Admitto.Cli.Api.Models.SendCustomBulkEmailRequest.SendCustomBulkEmailRequest_testOptions>("testOptions", TestOptions);
             writer.WriteAdditionalData(AdditionalData);
+        }
+        /// <summary>
+        /// Composed type wrapper for classes <see cref="global::Amolenk.Admitto.Cli.Api.Models.SendCustomBulkEmailRequest_testOptionsMember1"/>, <see cref="global::Amolenk.Admitto.Cli.Api.Models.TestOptionsDto"/>
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
+        public partial class SendCustomBulkEmailRequest_testOptions : IComposedTypeWrapper, IParsable
+        {
+            /// <summary>Composed type representation for type <see cref="global::Amolenk.Admitto.Cli.Api.Models.SendCustomBulkEmailRequest_testOptionsMember1"/></summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+            public global::Amolenk.Admitto.Cli.Api.Models.SendCustomBulkEmailRequest_testOptionsMember1? SendCustomBulkEmailRequestTestOptionsMember1 { get; set; }
+#nullable restore
+#else
+            public global::Amolenk.Admitto.Cli.Api.Models.SendCustomBulkEmailRequest_testOptionsMember1 SendCustomBulkEmailRequestTestOptionsMember1 { get; set; }
+#endif
+            /// <summary>Composed type representation for type <see cref="global::Amolenk.Admitto.Cli.Api.Models.TestOptionsDto"/></summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+            public global::Amolenk.Admitto.Cli.Api.Models.TestOptionsDto? TestOptionsDto { get; set; }
+#nullable restore
+#else
+            public global::Amolenk.Admitto.Cli.Api.Models.TestOptionsDto TestOptionsDto { get; set; }
+#endif
+            /// <summary>
+            /// Creates a new instance of the appropriate class based on discriminator value
+            /// </summary>
+            /// <returns>A <see cref="global::Amolenk.Admitto.Cli.Api.Models.SendCustomBulkEmailRequest.SendCustomBulkEmailRequest_testOptions"/></returns>
+            /// <param name="parseNode">The parse node to use to read the discriminator value and create the object</param>
+            public static global::Amolenk.Admitto.Cli.Api.Models.SendCustomBulkEmailRequest.SendCustomBulkEmailRequest_testOptions CreateFromDiscriminatorValue(IParseNode parseNode)
+            {
+                if(ReferenceEquals(parseNode, null)) throw new ArgumentNullException(nameof(parseNode));
+                var mappingValue = parseNode.GetChildNode("")?.GetStringValue();
+                var result = new global::Amolenk.Admitto.Cli.Api.Models.SendCustomBulkEmailRequest.SendCustomBulkEmailRequest_testOptions();
+                if("".Equals(mappingValue, StringComparison.OrdinalIgnoreCase))
+                {
+                    result.SendCustomBulkEmailRequestTestOptionsMember1 = new global::Amolenk.Admitto.Cli.Api.Models.SendCustomBulkEmailRequest_testOptionsMember1();
+                }
+                else if("TestOptionsDto".Equals(mappingValue, StringComparison.OrdinalIgnoreCase))
+                {
+                    result.TestOptionsDto = new global::Amolenk.Admitto.Cli.Api.Models.TestOptionsDto();
+                }
+                return result;
+            }
+            /// <summary>
+            /// The deserialization information for the current model
+            /// </summary>
+            /// <returns>A IDictionary&lt;string, Action&lt;IParseNode&gt;&gt;</returns>
+            public virtual IDictionary<string, Action<IParseNode>> GetFieldDeserializers()
+            {
+                if(SendCustomBulkEmailRequestTestOptionsMember1 != null)
+                {
+                    return SendCustomBulkEmailRequestTestOptionsMember1.GetFieldDeserializers();
+                }
+                else if(TestOptionsDto != null)
+                {
+                    return TestOptionsDto.GetFieldDeserializers();
+                }
+                return new Dictionary<string, Action<IParseNode>>();
+            }
+            /// <summary>
+            /// Serializes information the current object
+            /// </summary>
+            /// <param name="writer">Serialization writer to use to serialize this model</param>
+            public virtual void Serialize(ISerializationWriter writer)
+            {
+                if(ReferenceEquals(writer, null)) throw new ArgumentNullException(nameof(writer));
+                if(SendCustomBulkEmailRequestTestOptionsMember1 != null)
+                {
+                    writer.WriteObjectValue<global::Amolenk.Admitto.Cli.Api.Models.SendCustomBulkEmailRequest_testOptionsMember1>(null, SendCustomBulkEmailRequestTestOptionsMember1);
+                }
+                else if(TestOptionsDto != null)
+                {
+                    writer.WriteObjectValue<global::Amolenk.Admitto.Cli.Api.Models.TestOptionsDto>(null, TestOptionsDto);
+                }
+            }
         }
     }
 }

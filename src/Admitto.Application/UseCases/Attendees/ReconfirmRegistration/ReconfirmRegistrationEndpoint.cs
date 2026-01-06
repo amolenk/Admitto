@@ -1,3 +1,5 @@
+using Amolenk.Admitto.Domain.ValueObjects;
+
 namespace Amolenk.Admitto.Application.UseCases.Attendees.ReconfirmRegistration;
 
 /// <summary>
@@ -10,7 +12,7 @@ public static class ReconfirmRegistrationEndpoint
         group
             .MapPost("/{attendeeId:guid}/reconfirm", ReconfirmRegistration)
             .WithName(nameof(ReconfirmRegistration))
-            .RequireAuthorization(policy => policy.RequireCanUpdateEvent());
+            .RequireAuthorization(policy => policy.RequireTeamMemberRole(TeamMemberRole.Organizer));
 
         return group;
     }

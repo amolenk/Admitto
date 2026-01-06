@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Application.Common.Persistence;
 using Amolenk.Admitto.Domain.Entities;
 using Amolenk.Admitto.Domain.ValueObjects;
 
@@ -15,7 +16,7 @@ public static class SetEventEmailTemplateEndpoint
                 "/events/{eventSlug}/email-templates/{emailType}",
                 SetEventEmailTemplate)
             .WithName(nameof(SetEventEmailTemplate))
-            .RequireAuthorization(policy => policy.RequireCanUpdateEvent());
+            .RequireAuthorization(policy => policy.RequireTeamMemberRole(TeamMemberRole.Organizer));
 
         return group;
     }

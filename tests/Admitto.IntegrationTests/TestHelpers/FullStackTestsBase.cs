@@ -1,13 +1,9 @@
-using Amolenk.Admitto.Application.Common.Abstractions;
+using Amolenk.Admitto.Application.Common.Messaging;
+using Amolenk.Admitto.Application.Common.Persistence;
 using Amolenk.Admitto.Domain.DomainEvents;
-using Amolenk.Admitto.Domain.Entities;
 using Amolenk.Admitto.Infrastructure.Persistence;
-using Amolenk.Admitto.IntegrationTests.TestHelpers.Builders;
-using TeamDataFactory = Amolenk.Admitto.IntegrationTests.TestHelpers.Data.TeamDataFactory;
-using AuthorizationTestFixture = Amolenk.Admitto.IntegrationTests.TestHelpers.Fixtures.AuthorizationTestFixture;
 using DatabaseTestFixture = Amolenk.Admitto.IntegrationTests.TestHelpers.Fixtures.DatabaseTestFixture;
 using EmailTestFixture = Amolenk.Admitto.IntegrationTests.TestHelpers.Fixtures.EmailTestFixture;
-using IdentityTestFixture = Amolenk.Admitto.IntegrationTests.TestHelpers.Fixtures.IdentityTestFixture;
 using QueueStorageTestFixture = Amolenk.Admitto.IntegrationTests.TestHelpers.Fixtures.QueueStorageTestFixture;
 
 namespace Amolenk.Admitto.IntegrationTests.TestHelpers;
@@ -16,20 +12,19 @@ namespace Amolenk.Admitto.IntegrationTests.TestHelpers;
 public abstract class FullStackTestsBase : ApiTestsBase
 {
     // Convenience properties for accessing test fixtures
-    protected readonly AuthorizationTestFixture Authorization = AssemblyTestFixture.AuthorizationTestFixture;
     protected readonly DatabaseTestFixture Database = AssemblyTestFixture.DatabaseTestFixture;
     protected readonly EmailTestFixture Email = AssemblyTestFixture.EmailTestFixture;
-    protected readonly IdentityTestFixture Identity = AssemblyTestFixture.IdentityTestFixture;
+    // protected readonly IdentityTestFixture Identity = AssemblyTestFixture.IdentityTestFixture;
     protected readonly QueueStorageTestFixture QueueStorage = AssemblyTestFixture.QueueStorageTestFixture;
 
     [TestInitialize]
     public override async Task TestInitialize()
     {
         await Task.WhenAll(
-            Authorization.ResetAsync(),
+            // Authorization.ResetAsync(),
             Database.ResetAsync(),
             Email.ResetAsync(),
-            Identity.ResetAsync(),
+            // Identity.ResetAsync(),
             QueueStorage.ResetAsync());
 
         await base.TestInitialize();
@@ -56,7 +51,7 @@ public abstract class FullStackTestsBase : ApiTestsBase
     }
 
     protected async ValueTask HandleCommand<TCommand, THandler>(TCommand command)
-        where THandler : ICommandHandler<TCommand>
+        where THandler : IApiCommandHandler<TCommand>
         where TCommand : Command
     {
         using var serviceScope = AssemblyTestFixture.WorkerHost.Services.CreateScope();

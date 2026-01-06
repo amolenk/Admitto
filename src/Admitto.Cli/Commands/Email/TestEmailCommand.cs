@@ -39,7 +39,7 @@ public class TestEmailSettings : TeamEventSettings
 public class TestEmailCommand(IApiService apiService, IConfigService configService)
     : AsyncCommand<TestEmailSettings>
 {
-    public sealed override async Task<int> ExecuteAsync(CommandContext context, TestEmailSettings settings)
+    public sealed override async Task<int> ExecuteAsync(CommandContext context, TestEmailSettings settings, CancellationToken cancellationToken)
     {
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);
@@ -53,7 +53,7 @@ public class TestEmailCommand(IApiService apiService, IConfigService configServi
 
         var response = await apiService.CallApiAsync(async client =>
             await client.Teams[teamSlug].Events[eventSlug].Emails[settings.EmailType].Test.PostAsync(request));
-        if (response is null) return 1;
+        if (!response) return 1;
 
         AnsiConsoleExt.WriteSuccesMessage($"Successfully requested '{settings.EmailType}' test mail for '{settings.Recipient}'.");
         return 0;

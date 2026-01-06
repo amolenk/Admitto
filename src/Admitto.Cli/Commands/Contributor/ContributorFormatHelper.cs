@@ -9,7 +9,7 @@ public static class ContributorFormatHelper
             ContributorRole.Crew => "👷️ Crew",
             ContributorRole.Speaker => "🎤 Speaker",
             ContributorRole.Sponsor => "💰️ Sponsor",
-            _ => $"❤️ {role.Humanize()}"
+            _ => $"❤️ {role!.Value.Humanize()}"
         };
     }
 }

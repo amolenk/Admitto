@@ -15,7 +15,7 @@ public class SetConfigSettings : CommandSettings
 
 public class SetConfigCommand(IConfigService configService) : Command<SetConfigSettings>
 {
-    public override int Execute(CommandContext context, SetConfigSettings settings)
+    public override int Execute(CommandContext context, SetConfigSettings settings, CancellationToken cancellationToken)
     {
         if (settings.DefaultTeam is not null)
         {

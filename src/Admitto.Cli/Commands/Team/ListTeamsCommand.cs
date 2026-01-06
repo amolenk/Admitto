@@ -4,7 +4,7 @@ namespace Amolenk.Admitto.Cli.Commands.Team;
 
 public class ListTeamsCommand(IApiService apiService) : AsyncCommand<TeamSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, TeamSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, TeamSettings settings, CancellationToken cancellationToken)
     {
         var response = await apiService.CallApiAsync(async client => await client.Teams.GetAsync());
         if (response is null) return 1;

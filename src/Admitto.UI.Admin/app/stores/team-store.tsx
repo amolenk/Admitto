@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { TeamDto } from "@/api-client";
+import { TeamDto } from "@/lib/admitto-api/generated/types.gen";
 
 type TeamStore = {
     teams: TeamDto[];
@@ -17,7 +17,7 @@ export const useTeamStore = create<TeamStore>((set) => ({
     hasLoaded: false,
     setSelectedTeamId: (teamId: string) =>
     {
-        const team = useTeamStore.getState().teams.find((t) => t.id === teamId);
+        const team = useTeamStore.getState().teams.find((t) => t.slug === teamId);
         set({ selectedTeam: team });
     },
     fetchTeams: async (selectTeamId?: string) =>
@@ -42,7 +42,7 @@ export const useTeamStore = create<TeamStore>((set) => ({
             {
                 if (selectTeamId)
                 {
-                    const team = teams.find((t: TeamDto) => t.id === selectTeamId);
+                    const team = teams.find((t: TeamDto) => t.slug === selectTeamId);
                     set({ selectedTeam: team });
                 }
                 else

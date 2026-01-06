@@ -1,5 +1,6 @@
 using Amolenk.Admitto.Application.Common;
 using Amolenk.Admitto.Application.Common.Email;
+using Amolenk.Admitto.Application.Common.Persistence;
 using Amolenk.Admitto.Domain.Entities;
 using Amolenk.Admitto.Domain.ValueObjects;
 using Humanizer;
@@ -16,7 +17,7 @@ public static class AddEmailRecipientListEndpoint
         group
             .MapPost("/", AddEmailRecipientList)
             .WithName(nameof(AddEmailRecipientList))
-            .RequireAuthorization(policy => policy.RequireCanUpdateEvent());
+            .RequireAuthorization(policy => policy.RequireTeamMemberRole(TeamMemberRole.Organizer));
 
         return group;
     }

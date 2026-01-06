@@ -1,4 +1,5 @@
-using System.Security.Claims;
+using Amolenk.Admitto.Application.Common.Persistence;
+using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Application.UseCases.TicketedEvents.GetTicketedEvents;
 
@@ -11,7 +12,8 @@ public static class GetTicketedEventsEndpoint
     {
         group
             .MapGet("/", GetTicketedEvents)
-            .WithName(nameof(GetTicketedEvents));
+            .WithName(nameof(GetTicketedEvents))
+            .RequireAuthorization(policy => policy.RequireTeamMemberRole(TeamMemberRole.Crew));
 
         return group;
     }
@@ -20,30 +22,13 @@ public static class GetTicketedEventsEndpoint
         string teamSlug,
         ISlugResolver slugResolver,
         IApplicationContext context,
-        ClaimsPrincipal principal,
-        IAuthorizationService authorizationService,
         CancellationToken cancellationToken)
     {
-        var userId = principal.GetUserId();
-        if (userId is null)
-        {
-            return TypedResults.Unauthorized();
-        }
-        
         var teamId = await slugResolver.ResolveTeamIdAsync(teamSlug, cancellationToken);
         
-        var authorizedEvents = (
-                await authorizationService.GetTicketedEventsAsync(userId.Value, teamId, cancellationToken))
-            .ToList();
-
-        if (authorizedEvents.Count == 0)
-        {
-            return TypedResults.Ok(new GetTicketedEventsResponse([]));
-        }
-
         var ticketedEvents = await context.TicketedEvents
             .AsNoTracking()
-            .Where(te => te.TeamId == teamId && authorizedEvents.Contains(te.Id))
+            .Where(te => te.TeamId == teamId)
             .Select(te => new TicketedEventDto(
                 te.Slug,
                 te.Name,

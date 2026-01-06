@@ -1,4 +1,6 @@
 using Amolenk.Admitto.Application.Common;
+using Amolenk.Admitto.Application.Common.Messaging;
+using Amolenk.Admitto.Application.Common.Persistence;
 using Amolenk.Admitto.Domain.DomainEvents;
 
 namespace Amolenk.Admitto.Application.Projections.Participation;

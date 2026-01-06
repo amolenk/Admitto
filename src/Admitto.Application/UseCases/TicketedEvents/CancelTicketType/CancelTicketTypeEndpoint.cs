@@ -1,5 +1,8 @@
 using Amolenk.Admitto.Application.Common;
+using Amolenk.Admitto.Application.Common.Messaging;
+using Amolenk.Admitto.Application.Common.Persistence;
 using Amolenk.Admitto.Application.UseCases.Attendees.RemoveTickets;
+using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Application.UseCases.TicketedEvents.CancelTicketType;
 
@@ -13,7 +16,7 @@ public static class CancelTicketTypeEndpoint
         group
             .MapDelete("/{eventSlug}/ticket-types/{slug}", CancelTicketType)
             .WithName(nameof(CancelTicketType))
-            .RequireAuthorization(policy => policy.RequireCanUpdateEvent());
+            .RequireAuthorization(policy => policy.RequireTeamMemberRole(TeamMemberRole.Organizer));
 
         return group;
     }

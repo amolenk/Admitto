@@ -13,7 +13,7 @@ public static class UpdateAttendeeEndpoint
         group
             .MapPut("/{attendeeId}", UpdateAttendee)
             .WithName(nameof(UpdateAttendee))
-            .RequireAuthorization(policy => policy.RequireCanUpdateEvent());
+            .RequireAuthorization(policy => policy.RequireTeamMemberRole(TeamMemberRole.Organizer));
 
         return group;
     }

@@ -53,7 +53,7 @@ public class AddSettings : TeamEventSettings
 public class AddContributorCommand(IApiService apiService, IConfigService configService)
     : AsyncCommand<AddSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, AddSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, AddSettings settings, CancellationToken cancellationToken)
     {
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);

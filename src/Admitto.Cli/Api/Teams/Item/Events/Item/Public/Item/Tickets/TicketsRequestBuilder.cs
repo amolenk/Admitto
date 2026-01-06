@@ -80,7 +80,7 @@ namespace Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Public.Item.Tickets
         public async Task<Stream> PutAsync(global::Amolenk.Admitto.Cli.Api.Models.ChangeTicketsRequest body, Action<RequestConfiguration<global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Public.Item.Tickets.TicketsRequestBuilder.TicketsRequestBuilderPutQueryParameters>> requestConfiguration = default, CancellationToken cancellationToken = default)
         {
 #endif
-            _ = body ?? throw new ArgumentNullException(nameof(body));
+            if(ReferenceEquals(body, null)) throw new ArgumentNullException(nameof(body));
             var requestInfo = ToPutRequestInformation(body, requestConfiguration);
             var errorMapping = new Dictionary<string, ParsableFactory<IParsable>>
             {
@@ -121,7 +121,7 @@ namespace Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Public.Item.Tickets
         public RequestInformation ToPutRequestInformation(global::Amolenk.Admitto.Cli.Api.Models.ChangeTicketsRequest body, Action<RequestConfiguration<global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Public.Item.Tickets.TicketsRequestBuilder.TicketsRequestBuilderPutQueryParameters>> requestConfiguration = default)
         {
 #endif
-            _ = body ?? throw new ArgumentNullException(nameof(body));
+            if(ReferenceEquals(body, null)) throw new ArgumentNullException(nameof(body));
             var requestInfo = new RequestInformation(Method.PUT, UrlTemplate, PathParameters);
             requestInfo.Configure(requestConfiguration);
             requestInfo.Headers.TryAdd("Accept", "application/problem+json");

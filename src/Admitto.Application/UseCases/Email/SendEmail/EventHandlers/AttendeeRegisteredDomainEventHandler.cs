@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Application.Common.Email;
+using Amolenk.Admitto.Application.Common.Messaging;
 using Amolenk.Admitto.Domain.DomainEvents;
 using Amolenk.Admitto.Domain.Utilities;
 

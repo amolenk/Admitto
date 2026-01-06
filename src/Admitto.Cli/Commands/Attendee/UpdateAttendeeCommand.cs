@@ -31,7 +31,7 @@ public class UpdateAttendeeSettings : TeamEventSettings
 public class UpdateAttendeeCommand(IApiService apiService, IConfigService configService)
     : AsyncCommand<UpdateAttendeeSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, UpdateAttendeeSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, UpdateAttendeeSettings settings, CancellationToken cancellationToken)
     {
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);

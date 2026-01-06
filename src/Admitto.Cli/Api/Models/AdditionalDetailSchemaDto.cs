@@ -17,7 +17,13 @@ namespace Amolenk.Admitto.Cli.Api.Models
         /// <summary>The isRequired property</summary>
         public bool? IsRequired { get; set; }
         /// <summary>The maxLength property</summary>
-        public int? MaxLength { get; set; }
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public string? MaxLength { get; set; }
+#nullable restore
+#else
+        public string MaxLength { get; set; }
+#endif
         /// <summary>The name property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
@@ -40,7 +46,7 @@ namespace Amolenk.Admitto.Cli.Api.Models
         /// <param name="parseNode">The parse node to use to read the discriminator value and create the object</param>
         public static global::Amolenk.Admitto.Cli.Api.Models.AdditionalDetailSchemaDto CreateFromDiscriminatorValue(IParseNode parseNode)
         {
-            _ = parseNode ?? throw new ArgumentNullException(nameof(parseNode));
+            if(ReferenceEquals(parseNode, null)) throw new ArgumentNullException(nameof(parseNode));
             return new global::Amolenk.Admitto.Cli.Api.Models.AdditionalDetailSchemaDto();
         }
         /// <summary>
@@ -52,7 +58,7 @@ namespace Amolenk.Admitto.Cli.Api.Models
             return new Dictionary<string, Action<IParseNode>>
             {
                 { "isRequired", n => { IsRequired = n.GetBoolValue(); } },
-                { "maxLength", n => { MaxLength = n.GetIntValue(); } },
+                { "maxLength", n => { MaxLength = n.GetStringValue(); } },
                 { "name", n => { Name = n.GetStringValue(); } },
             };
         }
@@ -62,9 +68,9 @@ namespace Amolenk.Admitto.Cli.Api.Models
         /// <param name="writer">Serialization writer to use to serialize this model</param>
         public virtual void Serialize(ISerializationWriter writer)
         {
-            _ = writer ?? throw new ArgumentNullException(nameof(writer));
+            if(ReferenceEquals(writer, null)) throw new ArgumentNullException(nameof(writer));
             writer.WriteBoolValue("isRequired", IsRequired);
-            writer.WriteIntValue("maxLength", MaxLength);
+            writer.WriteStringValue("maxLength", MaxLength);
             writer.WriteStringValue("name", Name);
             writer.WriteAdditionalData(AdditionalData);
         }

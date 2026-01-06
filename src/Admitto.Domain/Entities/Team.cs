@@ -1,4 +1,3 @@
-using Amolenk.Admitto.Domain.Contracts;
 using Amolenk.Admitto.Domain.DomainEvents;
 using Amolenk.Admitto.Domain.ValueObjects;
 
@@ -37,17 +36,15 @@ public class Team : Aggregate
         return new Team(id, slug, name, email, emailServiceConnectionString);
     }
     
-    public void AddMember(string email, TeamMemberRole role)
+    public void AddMember(Guid userId, TeamMemberRole role)
     {
-        if (string.IsNullOrWhiteSpace(email)) throw new DomainRuleException(DomainRuleError.Team.EmailIsRequired);
-        
-        var member = TeamMember.Create(email, role);
-
-        if (_members.Any(m => m.Id == member.Id))
+        if (_members.Any(m => m.Id == userId))
         {
             throw new DomainRuleException(DomainRuleError.Team.MemberAlreadyExists);
         }
         
+        var member = TeamMember.Create(userId, role);
+
         _members.Add(member);
         
         AddDomainEvent(new TeamMemberAddedDomainEvent(Id, member));

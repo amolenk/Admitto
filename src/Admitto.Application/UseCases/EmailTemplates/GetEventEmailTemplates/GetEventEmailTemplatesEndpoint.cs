@@ -1,4 +1,6 @@
 using Amolenk.Admitto.Application.Common.Email;
+using Amolenk.Admitto.Application.Common.Persistence;
+using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Application.UseCases.EmailTemplates.GetEventEmailTemplates;
 
@@ -12,7 +14,7 @@ public static class GetEventEmailTemplatesEndpoint
         group
             .MapGet("/events/{eventSlug}/email-templates", GetEventEmailTemplates)
             .WithName(nameof(GetEventEmailTemplates))
-            .RequireAuthorization(policy => policy.RequireCanViewEvent());
+            .RequireAuthorization(policy => policy.RequireTeamMemberRole(TeamMemberRole.Crew));
 
         return group;
     }

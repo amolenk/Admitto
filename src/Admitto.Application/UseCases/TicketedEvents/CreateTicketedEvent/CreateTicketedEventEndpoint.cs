@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Application.Common.Persistence;
 using Amolenk.Admitto.Domain.Entities;
 using Amolenk.Admitto.Domain.ValueObjects;
 
@@ -13,7 +14,7 @@ public static class CreateTicketedEventEndpoint
         group
             .MapPost("/", CreateTicketedEvent)
             .WithName(nameof(CreateTicketedEvent))
-            .RequireAuthorization(policy => policy.RequireCanCreateEvent());
+            .RequireAuthorization(policy => policy.RequireTeamMemberRole(TeamMemberRole.Organizer));
 
         return group;
     }

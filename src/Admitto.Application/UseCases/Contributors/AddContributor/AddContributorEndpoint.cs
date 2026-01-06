@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Application.Common;
+using Amolenk.Admitto.Application.Common.Persistence;
 using Amolenk.Admitto.Application.Projections.Participation;
 using Amolenk.Admitto.Domain.Entities;
 using Amolenk.Admitto.Domain.ValueObjects;
@@ -15,12 +16,11 @@ public static class AddContributorEndpoint
         group
             .MapPost("/", AddContributor)
             .WithName(nameof(AddContributor))
-            .RequireAuthorization(policy => policy.RequireCanUpdateEvent());
+            .RequireAuthorization(policy => policy.RequireTeamMemberRole(TeamMemberRole.Organizer));
 
         return group;
     }
 
-    // TODO Use specific From* attributes for parameters everywhere
     private static async ValueTask<Ok<AddContributorResponse>> AddContributor(
         [FromRoute] string teamSlug,
         [FromRoute] string eventSlug,

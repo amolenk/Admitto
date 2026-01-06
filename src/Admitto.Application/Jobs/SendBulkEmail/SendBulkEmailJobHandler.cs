@@ -1,5 +1,7 @@
 using Amolenk.Admitto.Application.Common.Email;
 using Amolenk.Admitto.Application.Common.Email.Composing;
+using Amolenk.Admitto.Application.Common.Jobs;
+using Amolenk.Admitto.Application.Common.Persistence;
 using Amolenk.Admitto.Domain.Entities;
 using Amolenk.Admitto.Domain.ValueObjects;
 

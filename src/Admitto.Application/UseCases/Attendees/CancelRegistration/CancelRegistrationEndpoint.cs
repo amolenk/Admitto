@@ -1,7 +1,9 @@
+using Amolenk.Admitto.Domain.ValueObjects;
+
 namespace Amolenk.Admitto.Application.UseCases.Attendees.CancelRegistration;
 
 /// <summary>
-/// Represents the endpoint for cancelling an existing registration for a ticketed eve.
+/// Represents the endpoint for cancelling an existing registration for a ticketed event.
 /// </summary>
 public static class CancelRegistrationEndpoint
 {
@@ -10,7 +12,7 @@ public static class CancelRegistrationEndpoint
         group
             .MapDelete("/{attendeeId:guid}", CancelRegistration)
             .WithName(nameof(CancelRegistration))
-            .RequireAuthorization(policy => policy.RequireCanUpdateEvent());
+            .RequireAuthorization(policy => policy.RequireTeamMemberRole(TeamMemberRole.Organizer));
 
         return group;
     }

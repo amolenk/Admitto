@@ -1,3 +1,6 @@
+using Amolenk.Admitto.Application.Common.Messaging;
+using Amolenk.Admitto.Domain.ValueObjects;
+
 namespace Amolenk.Admitto.Application.UseCases.Email.SendEmail;
 
 /// <summary>
@@ -10,7 +13,7 @@ public static class SendEmailEndpoint
         group
             .MapPost("/{emailType}", SendEmail)
             .WithName(nameof(SendEmail))
-            .RequireAuthorization(policy => policy.RequireCanUpdateEvent());
+            .RequireAuthorization(policy => policy.RequireTeamMemberRole(TeamMemberRole.Organizer));
 
         return group;
     }

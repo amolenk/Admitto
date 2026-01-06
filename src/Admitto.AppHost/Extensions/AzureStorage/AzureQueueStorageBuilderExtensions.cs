@@ -15,7 +15,7 @@ public static class AzureQueueStorageBuilderExtensions
             QueueName = queueName
         });
         
-        builder.ApplicationBuilder.Services.TryAddLifecycleHook<AzureQueueCreatorHook>();
+        builder.ApplicationBuilder.Services.TryAddEventingSubscriber<AzureQueueCreatorHook>();
 
         return builder;
     }

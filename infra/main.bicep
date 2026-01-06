@@ -21,6 +21,27 @@ param authApiAppSecret string
 @description('The ID(s) of the admin users separated by commas')
 param authAdminUserIds string
 
+@minLength(1)
+@description('The OpenID Connect authority')
+param authAuthority string
+
+@minLength(1)
+@description('The OpenID Connect allowed audience')
+param authApiAudience string
+
+@minLength(1)
+@description('The ID of the Entra ID tenant used for User Management via MS Graph')
+param msGraphTenantId string
+
+@minLength(1)
+@description('The ID of the Entra ID application providing access to Microsoft Graph')
+param msGraphClientId string
+
+@minLength(1)
+@description('The secret of the Entra ID application providing access to Microsoft Graph')
+@secure()
+param msGraphClientSecret string
+
 @minLength(16)
 @description('The password for the PostgreSQL database')
 @secure()
@@ -66,6 +87,16 @@ module logAnalytics 'modules/logAnalyticsWorkspace.bicep' = {
   }
 }
 
+module openfga 'modules/openFgaApp.bicep' = {
+  name: 'openfga-app'
+  params: {
+    acaEnvironmentId: containerAppEnvironment.outputs.id
+    keyVaultName: keyVault.outputs.name
+    location: location
+    managedIdentityId: managedIdentity.outputs.id
+  }
+}
+
 module containerAppEnvironment 'modules/containerAppEnvironment.bicep' = {
   name: 'containerAppEnvironment'
   params: {
@@ -106,16 +137,6 @@ module postgres 'modules/postgres.bicep' = {
   }
 }
 
-module openfga 'modules/openFgaApp.bicep' = {
-  name: 'openfga-app'
-  params: {
-    acaEnvironmentId: containerAppEnvironment.outputs.id
-    keyVaultName: keyVault.outputs.name
-    location: location
-    managedIdentityId: managedIdentity.outputs.id
-  }
-}
-
 module frontDoor 'modules/frontDoor.bicep' = {
   name: 'front-door'
   params: {
@@ -139,8 +160,12 @@ module admittoApi 'modules/admittoApiApp.bicep' = {
     acrLoginServer: containerRegistry.outputs.loginServer
     applicationInsightsConnectionString: applicationInsights.outputs.connectionString
     authAdminUserIds: authAdminUserIds
+    authAuthority: authAuthority
+    authAudience: authApiAudience
     authTenantId: authTenantId
-    authAudience: authApiAppId
+    msGraphTenantId: msGraphTenantId
+    msGraphClientId: msGraphClientId
+    msGraphClientSecret: msGraphClientSecret
     frontDoorId: frontDoor.outputs.frontDoorId
     keyVaultName: keyVault.outputs.name
     location: location

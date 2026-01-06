@@ -26,9 +26,6 @@ public sealed class ApplicationRuleError
         public static ApplicationRuleError InvalidVerificationToken =>
             new("attendee.invalid_token", "Verification token is invalid or expired.");
         
-        public static ApplicationRuleError InvalidSignature =>
-            new("attendee.invalid_signature", "Signature is invalid.");
-        
         public static ApplicationRuleError NotFound =>
             new("attendee.not_found", "Attendee not found.");
     }
@@ -45,9 +42,6 @@ public sealed class ApplicationRuleError
     
     public static class Signing
     {
-        public static ApplicationRuleError InvalidVerificationToken =>
-            new("attendee.invalid_token", "Verification token is invalid or expired.");
-        
         public static ApplicationRuleError InvalidSignature =>
             new("attendee.invalid_signature", "Signature is invalid.");
     }
@@ -78,13 +72,13 @@ public sealed class ApplicationRuleError
     {
         public static ApplicationRuleError BulkNotSupported =>
             new("email.bulk_not_supported", "Bulk sending is not supported for this email type.");
+        
+        public static readonly ApplicationRuleError MagicLinkParameterMissing =
+            new("email.magic_link_parameter_missing", "Magic link must be passed as an additional parameter.");
     }
 
     public static class EmailRecipientList
     {
-        public static ApplicationRuleError CannotBeEmpty =>
-            new("email_recipient_list.cannot_be_empty", "Email recipient list cannot be empty.");
-
         public static ApplicationRuleError NotFound =>
             new("email_recipient_list.not_found", "Email recipient list not found.");
     }
@@ -100,7 +94,7 @@ public sealed class ApplicationRuleError
         public static ApplicationRuleError AlreadyExists =>
             new("general.already_exists", "The item that you tried to create already exists.");
     }
-    
+
     public static class Participant
     {
         public static ApplicationRuleError AlreadyExists =>
@@ -108,15 +102,6 @@ public sealed class ApplicationRuleError
 
         public static ApplicationRuleError NotFound =>
             new("participant.not_found", $"Participant not found.");
-    }
-    
-    public static class ContributorRegistration
-    {
-        public static ApplicationRuleError AlreadyExists =>
-            new("contributor.already_exists", "A registration for this attendee already exists.");
-        
-        public static ApplicationRuleError NotFound =>
-            new("contributor.not_found", $"Registration not found.");
     }
     
     public static class Team
@@ -137,5 +122,4 @@ public sealed class ApplicationRuleError
             new("event.reconfirm_policy_not_set", $"Reconfirm policy not set.");
 
     }
-    
-}
+}   

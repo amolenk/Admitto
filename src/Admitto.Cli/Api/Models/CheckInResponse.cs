@@ -15,9 +15,21 @@ namespace Amolenk.Admitto.Cli.Api.Models
         /// <summary>Stores additional data not described in the OpenAPI description found when deserializing. Can be used for serialization as well.</summary>
         public IDictionary<string, object> AdditionalData { get; set; }
         /// <summary>The attendeeStatus property</summary>
-        public global::Amolenk.Admitto.Cli.Api.Models.NullableOfParticipationAttendeeStatus? AttendeeStatus { get; set; }
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public global::Amolenk.Admitto.Cli.Api.Models.CheckInResponse.CheckInResponse_attendeeStatus? AttendeeStatus { get; set; }
+#nullable restore
+#else
+        public global::Amolenk.Admitto.Cli.Api.Models.CheckInResponse.CheckInResponse_attendeeStatus AttendeeStatus { get; set; }
+#endif
         /// <summary>The contributorStatus property</summary>
-        public global::Amolenk.Admitto.Cli.Api.Models.NullableOfParticipationContributorStatus? ContributorStatus { get; set; }
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+        public global::Amolenk.Admitto.Cli.Api.Models.CheckInResponse.CheckInResponse_contributorStatus? ContributorStatus { get; set; }
+#nullable restore
+#else
+        public global::Amolenk.Admitto.Cli.Api.Models.CheckInResponse.CheckInResponse_contributorStatus ContributorStatus { get; set; }
+#endif
         /// <summary>The email property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
@@ -58,7 +70,7 @@ namespace Amolenk.Admitto.Cli.Api.Models
         /// <param name="parseNode">The parse node to use to read the discriminator value and create the object</param>
         public static global::Amolenk.Admitto.Cli.Api.Models.CheckInResponse CreateFromDiscriminatorValue(IParseNode parseNode)
         {
-            _ = parseNode ?? throw new ArgumentNullException(nameof(parseNode));
+            if(ReferenceEquals(parseNode, null)) throw new ArgumentNullException(nameof(parseNode));
             return new global::Amolenk.Admitto.Cli.Api.Models.CheckInResponse();
         }
         /// <summary>
@@ -69,8 +81,8 @@ namespace Amolenk.Admitto.Cli.Api.Models
         {
             return new Dictionary<string, Action<IParseNode>>
             {
-                { "attendeeStatus", n => { AttendeeStatus = n.GetEnumValue<global::Amolenk.Admitto.Cli.Api.Models.NullableOfParticipationAttendeeStatus>(); } },
-                { "contributorStatus", n => { ContributorStatus = n.GetEnumValue<global::Amolenk.Admitto.Cli.Api.Models.NullableOfParticipationContributorStatus>(); } },
+                { "attendeeStatus", n => { AttendeeStatus = n.GetObjectValue<global::Amolenk.Admitto.Cli.Api.Models.CheckInResponse.CheckInResponse_attendeeStatus>(global::Amolenk.Admitto.Cli.Api.Models.CheckInResponse.CheckInResponse_attendeeStatus.CreateFromDiscriminatorValue); } },
+                { "contributorStatus", n => { ContributorStatus = n.GetObjectValue<global::Amolenk.Admitto.Cli.Api.Models.CheckInResponse.CheckInResponse_contributorStatus>(global::Amolenk.Admitto.Cli.Api.Models.CheckInResponse.CheckInResponse_contributorStatus.CreateFromDiscriminatorValue); } },
                 { "email", n => { Email = n.GetStringValue(); } },
                 { "firstName", n => { FirstName = n.GetStringValue(); } },
                 { "lastModifiedAt", n => { LastModifiedAt = n.GetDateTimeOffsetValue(); } },
@@ -83,14 +95,144 @@ namespace Amolenk.Admitto.Cli.Api.Models
         /// <param name="writer">Serialization writer to use to serialize this model</param>
         public virtual void Serialize(ISerializationWriter writer)
         {
-            _ = writer ?? throw new ArgumentNullException(nameof(writer));
-            writer.WriteEnumValue<global::Amolenk.Admitto.Cli.Api.Models.NullableOfParticipationAttendeeStatus>("attendeeStatus", AttendeeStatus);
-            writer.WriteEnumValue<global::Amolenk.Admitto.Cli.Api.Models.NullableOfParticipationContributorStatus>("contributorStatus", ContributorStatus);
+            if(ReferenceEquals(writer, null)) throw new ArgumentNullException(nameof(writer));
+            writer.WriteObjectValue<global::Amolenk.Admitto.Cli.Api.Models.CheckInResponse.CheckInResponse_attendeeStatus>("attendeeStatus", AttendeeStatus);
+            writer.WriteObjectValue<global::Amolenk.Admitto.Cli.Api.Models.CheckInResponse.CheckInResponse_contributorStatus>("contributorStatus", ContributorStatus);
             writer.WriteStringValue("email", Email);
             writer.WriteStringValue("firstName", FirstName);
             writer.WriteDateTimeOffsetValue("lastModifiedAt", LastModifiedAt);
             writer.WriteStringValue("lastName", LastName);
             writer.WriteAdditionalData(AdditionalData);
+        }
+        /// <summary>
+        /// Composed type wrapper for classes <see cref="global::Amolenk.Admitto.Cli.Api.Models.CheckInResponse_attendeeStatusMember1"/>, <see cref="global::Amolenk.Admitto.Cli.Api.Models.ParticipationAttendeeStatus"/>
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
+        public partial class CheckInResponse_attendeeStatus : IComposedTypeWrapper, IParsable
+        {
+            /// <summary>Composed type representation for type <see cref="global::Amolenk.Admitto.Cli.Api.Models.CheckInResponse_attendeeStatusMember1"/></summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+            public global::Amolenk.Admitto.Cli.Api.Models.CheckInResponse_attendeeStatusMember1? CheckInResponseAttendeeStatusMember1 { get; set; }
+#nullable restore
+#else
+            public global::Amolenk.Admitto.Cli.Api.Models.CheckInResponse_attendeeStatusMember1 CheckInResponseAttendeeStatusMember1 { get; set; }
+#endif
+            /// <summary>Composed type representation for type <see cref="global::Amolenk.Admitto.Cli.Api.Models.ParticipationAttendeeStatus"/></summary>
+            public global::Amolenk.Admitto.Cli.Api.Models.ParticipationAttendeeStatus? ParticipationAttendeeStatus { get; set; }
+            /// <summary>
+            /// Creates a new instance of the appropriate class based on discriminator value
+            /// </summary>
+            /// <returns>A <see cref="global::Amolenk.Admitto.Cli.Api.Models.CheckInResponse.CheckInResponse_attendeeStatus"/></returns>
+            /// <param name="parseNode">The parse node to use to read the discriminator value and create the object</param>
+            public static global::Amolenk.Admitto.Cli.Api.Models.CheckInResponse.CheckInResponse_attendeeStatus CreateFromDiscriminatorValue(IParseNode parseNode)
+            {
+                if(ReferenceEquals(parseNode, null)) throw new ArgumentNullException(nameof(parseNode));
+                var mappingValue = parseNode.GetChildNode("")?.GetStringValue();
+                var result = new global::Amolenk.Admitto.Cli.Api.Models.CheckInResponse.CheckInResponse_attendeeStatus();
+                if("".Equals(mappingValue, StringComparison.OrdinalIgnoreCase))
+                {
+                    result.CheckInResponseAttendeeStatusMember1 = new global::Amolenk.Admitto.Cli.Api.Models.CheckInResponse_attendeeStatusMember1();
+                }
+                else if(parseNode.GetEnumValue<global::Amolenk.Admitto.Cli.Api.Models.ParticipationAttendeeStatus>() is global::Amolenk.Admitto.Cli.Api.Models.ParticipationAttendeeStatus participationAttendeeStatusValue)
+                {
+                    result.ParticipationAttendeeStatus = participationAttendeeStatusValue;
+                }
+                return result;
+            }
+            /// <summary>
+            /// The deserialization information for the current model
+            /// </summary>
+            /// <returns>A IDictionary&lt;string, Action&lt;IParseNode&gt;&gt;</returns>
+            public virtual IDictionary<string, Action<IParseNode>> GetFieldDeserializers()
+            {
+                if(CheckInResponseAttendeeStatusMember1 != null)
+                {
+                    return CheckInResponseAttendeeStatusMember1.GetFieldDeserializers();
+                }
+                return new Dictionary<string, Action<IParseNode>>();
+            }
+            /// <summary>
+            /// Serializes information the current object
+            /// </summary>
+            /// <param name="writer">Serialization writer to use to serialize this model</param>
+            public virtual void Serialize(ISerializationWriter writer)
+            {
+                if(ReferenceEquals(writer, null)) throw new ArgumentNullException(nameof(writer));
+                if(CheckInResponseAttendeeStatusMember1 != null)
+                {
+                    writer.WriteObjectValue<global::Amolenk.Admitto.Cli.Api.Models.CheckInResponse_attendeeStatusMember1>(null, CheckInResponseAttendeeStatusMember1);
+                }
+                else if(ParticipationAttendeeStatus != null)
+                {
+                    writer.WriteEnumValue<global::Amolenk.Admitto.Cli.Api.Models.ParticipationAttendeeStatus>(null, ParticipationAttendeeStatus);
+                }
+            }
+        }
+        /// <summary>
+        /// Composed type wrapper for classes <see cref="global::Amolenk.Admitto.Cli.Api.Models.CheckInResponse_contributorStatusMember1"/>, <see cref="global::Amolenk.Admitto.Cli.Api.Models.ParticipationContributorStatus"/>
+        /// </summary>
+        [global::System.CodeDom.Compiler.GeneratedCode("Kiota", "1.0.0")]
+        public partial class CheckInResponse_contributorStatus : IComposedTypeWrapper, IParsable
+        {
+            /// <summary>Composed type representation for type <see cref="global::Amolenk.Admitto.Cli.Api.Models.CheckInResponse_contributorStatusMember1"/></summary>
+#if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
+#nullable enable
+            public global::Amolenk.Admitto.Cli.Api.Models.CheckInResponse_contributorStatusMember1? CheckInResponseContributorStatusMember1 { get; set; }
+#nullable restore
+#else
+            public global::Amolenk.Admitto.Cli.Api.Models.CheckInResponse_contributorStatusMember1 CheckInResponseContributorStatusMember1 { get; set; }
+#endif
+            /// <summary>Composed type representation for type <see cref="global::Amolenk.Admitto.Cli.Api.Models.ParticipationContributorStatus"/></summary>
+            public global::Amolenk.Admitto.Cli.Api.Models.ParticipationContributorStatus? ParticipationContributorStatus { get; set; }
+            /// <summary>
+            /// Creates a new instance of the appropriate class based on discriminator value
+            /// </summary>
+            /// <returns>A <see cref="global::Amolenk.Admitto.Cli.Api.Models.CheckInResponse.CheckInResponse_contributorStatus"/></returns>
+            /// <param name="parseNode">The parse node to use to read the discriminator value and create the object</param>
+            public static global::Amolenk.Admitto.Cli.Api.Models.CheckInResponse.CheckInResponse_contributorStatus CreateFromDiscriminatorValue(IParseNode parseNode)
+            {
+                if(ReferenceEquals(parseNode, null)) throw new ArgumentNullException(nameof(parseNode));
+                var mappingValue = parseNode.GetChildNode("")?.GetStringValue();
+                var result = new global::Amolenk.Admitto.Cli.Api.Models.CheckInResponse.CheckInResponse_contributorStatus();
+                if("".Equals(mappingValue, StringComparison.OrdinalIgnoreCase))
+                {
+                    result.CheckInResponseContributorStatusMember1 = new global::Amolenk.Admitto.Cli.Api.Models.CheckInResponse_contributorStatusMember1();
+                }
+                else if(parseNode.GetEnumValue<global::Amolenk.Admitto.Cli.Api.Models.ParticipationContributorStatus>() is global::Amolenk.Admitto.Cli.Api.Models.ParticipationContributorStatus participationContributorStatusValue)
+                {
+                    result.ParticipationContributorStatus = participationContributorStatusValue;
+                }
+                return result;
+            }
+            /// <summary>
+            /// The deserialization information for the current model
+            /// </summary>
+            /// <returns>A IDictionary&lt;string, Action&lt;IParseNode&gt;&gt;</returns>
+            public virtual IDictionary<string, Action<IParseNode>> GetFieldDeserializers()
+            {
+                if(CheckInResponseContributorStatusMember1 != null)
+                {
+                    return CheckInResponseContributorStatusMember1.GetFieldDeserializers();
+                }
+                return new Dictionary<string, Action<IParseNode>>();
+            }
+            /// <summary>
+            /// Serializes information the current object
+            /// </summary>
+            /// <param name="writer">Serialization writer to use to serialize this model</param>
+            public virtual void Serialize(ISerializationWriter writer)
+            {
+                if(ReferenceEquals(writer, null)) throw new ArgumentNullException(nameof(writer));
+                if(CheckInResponseContributorStatusMember1 != null)
+                {
+                    writer.WriteObjectValue<global::Amolenk.Admitto.Cli.Api.Models.CheckInResponse_contributorStatusMember1>(null, CheckInResponseContributorStatusMember1);
+                }
+                else if(ParticipationContributorStatus != null)
+                {
+                    writer.WriteEnumValue<global::Amolenk.Admitto.Cli.Api.Models.ParticipationContributorStatus>(null, ParticipationContributorStatus);
+                }
+            }
         }
     }
 }

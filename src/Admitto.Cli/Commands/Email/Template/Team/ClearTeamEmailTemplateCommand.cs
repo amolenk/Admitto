@@ -17,7 +17,7 @@ public class ClearTeamEmailTemplateSettings : TeamSettings
 public class ClearTeamEmailTemplateCommand(IApiService apiService, IConfigService configService)
     : AsyncCommand<ClearTeamEmailTemplateSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, ClearTeamEmailTemplateSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, ClearTeamEmailTemplateSettings settings, CancellationToken cancellationToken)
     {
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         

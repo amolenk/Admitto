@@ -1,7 +1,4 @@
 using Amolenk.Admitto.ApiService.Middleware;
-using Amolenk.Admitto.Application.UseCases.BulkEmail.GetBulkEmails;
-using Amolenk.Admitto.Application.UseCases.BulkEmail.RemoveBulkEmail;
-using Amolenk.Admitto.Application.UseCases.BulkEmail.ScheduleBulkEmail;
 using Amolenk.Admitto.Application.UseCases.BulkEmail.SendCustomBulkEmail;
 
 namespace Amolenk.Admitto.ApiService.Endpoints;
@@ -22,9 +19,6 @@ public static class BulkEmailEndpoints
             .RequireAuthorization();
 
         group
-            .MapGetBulkEmails()
-            .MapRemoveBulkEmail()
-            .MapScheduleBulkEmail()
             .MapSendCustomBulkEmail();
     }
 }

@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Application.Common.Persistence;
 using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Application.UseCases.EmailTemplates.ClearTeamEmailTemplate;
@@ -12,7 +13,7 @@ public static class ClearTeamEmailTemplateEndpoint
         group
             .MapDelete("/email-templates/{emailType}", ClearTeamEmailTemplate)
             .WithName(nameof(ClearTeamEmailTemplate))
-            .RequireAuthorization(policy => policy.RequireCanUpdateTeam());
+            .RequireAuthorization(policy => policy.RequireTeamMemberRole(TeamMemberRole.Owner));
 
         return group;
     }

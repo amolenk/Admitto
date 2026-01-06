@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Application.Common.Persistence;
 using Amolenk.Admitto.Domain.Entities;
 using Amolenk.Admitto.Domain.ValueObjects;
 
@@ -13,7 +14,7 @@ public static class SetTeamEmailTemplateEndpoint
         group
             .MapPut("/email-templates/{emailType}", SetTeamEmailTemplate)
             .WithName(nameof(SetTeamEmailTemplate))
-            .RequireAuthorization(policy => policy.RequireCanUpdateTeam());
+            .RequireAuthorization(policy => policy.RequireTeamMemberRole(TeamMemberRole.Owner));
 
         return group;
     }

@@ -17,10 +17,10 @@ namespace Amolenk.Admitto.Cli.Api.Models
         /// <summary>The additionalDetailSchemas property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public List<global::Amolenk.Admitto.Cli.Api.Models.AdditionalDetailSchemaDto2>? AdditionalDetailSchemas { get; set; }
+        public List<global::Amolenk.Admitto.Cli.Api.Models.AdditionalDetailSchemaDto>? AdditionalDetailSchemas { get; set; }
 #nullable restore
 #else
-        public List<global::Amolenk.Admitto.Cli.Api.Models.AdditionalDetailSchemaDto2> AdditionalDetailSchemas { get; set; }
+        public List<global::Amolenk.Admitto.Cli.Api.Models.AdditionalDetailSchemaDto> AdditionalDetailSchemas { get; set; }
 #endif
         /// <summary>The baseUrl property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
@@ -57,10 +57,10 @@ namespace Amolenk.Admitto.Cli.Api.Models
         /// <summary>The ticketTypes property</summary>
 #if NETSTANDARD2_1_OR_GREATER || NETCOREAPP3_1_OR_GREATER
 #nullable enable
-        public List<global::Amolenk.Admitto.Cli.Api.Models.TicketTypeDto2>? TicketTypes { get; set; }
+        public List<global::Amolenk.Admitto.Cli.Api.Models.TicketTypeDto>? TicketTypes { get; set; }
 #nullable restore
 #else
-        public List<global::Amolenk.Admitto.Cli.Api.Models.TicketTypeDto2> TicketTypes { get; set; }
+        public List<global::Amolenk.Admitto.Cli.Api.Models.TicketTypeDto> TicketTypes { get; set; }
 #endif
         /// <summary>
         /// Instantiates a new <see cref="global::Amolenk.Admitto.Cli.Api.Models.GetTicketedEventResponse"/> and sets the default values.
@@ -76,7 +76,7 @@ namespace Amolenk.Admitto.Cli.Api.Models
         /// <param name="parseNode">The parse node to use to read the discriminator value and create the object</param>
         public static global::Amolenk.Admitto.Cli.Api.Models.GetTicketedEventResponse CreateFromDiscriminatorValue(IParseNode parseNode)
         {
-            _ = parseNode ?? throw new ArgumentNullException(nameof(parseNode));
+            if(ReferenceEquals(parseNode, null)) throw new ArgumentNullException(nameof(parseNode));
             return new global::Amolenk.Admitto.Cli.Api.Models.GetTicketedEventResponse();
         }
         /// <summary>
@@ -87,7 +87,7 @@ namespace Amolenk.Admitto.Cli.Api.Models
         {
             return new Dictionary<string, Action<IParseNode>>
             {
-                { "additionalDetailSchemas", n => { AdditionalDetailSchemas = n.GetCollectionOfObjectValues<global::Amolenk.Admitto.Cli.Api.Models.AdditionalDetailSchemaDto2>(global::Amolenk.Admitto.Cli.Api.Models.AdditionalDetailSchemaDto2.CreateFromDiscriminatorValue)?.AsList(); } },
+                { "additionalDetailSchemas", n => { AdditionalDetailSchemas = n.GetCollectionOfObjectValues<global::Amolenk.Admitto.Cli.Api.Models.AdditionalDetailSchemaDto>(global::Amolenk.Admitto.Cli.Api.Models.AdditionalDetailSchemaDto.CreateFromDiscriminatorValue)?.AsList(); } },
                 { "baseUrl", n => { BaseUrl = n.GetStringValue(); } },
                 { "endsAt", n => { EndsAt = n.GetDateTimeOffsetValue(); } },
                 { "name", n => { Name = n.GetStringValue(); } },
@@ -95,7 +95,7 @@ namespace Amolenk.Admitto.Cli.Api.Models
                 { "registrationOpensAt", n => { RegistrationOpensAt = n.GetDateTimeOffsetValue(); } },
                 { "slug", n => { Slug = n.GetStringValue(); } },
                 { "startsAt", n => { StartsAt = n.GetDateTimeOffsetValue(); } },
-                { "ticketTypes", n => { TicketTypes = n.GetCollectionOfObjectValues<global::Amolenk.Admitto.Cli.Api.Models.TicketTypeDto2>(global::Amolenk.Admitto.Cli.Api.Models.TicketTypeDto2.CreateFromDiscriminatorValue)?.AsList(); } },
+                { "ticketTypes", n => { TicketTypes = n.GetCollectionOfObjectValues<global::Amolenk.Admitto.Cli.Api.Models.TicketTypeDto>(global::Amolenk.Admitto.Cli.Api.Models.TicketTypeDto.CreateFromDiscriminatorValue)?.AsList(); } },
             };
         }
         /// <summary>
@@ -104,8 +104,8 @@ namespace Amolenk.Admitto.Cli.Api.Models
         /// <param name="writer">Serialization writer to use to serialize this model</param>
         public virtual void Serialize(ISerializationWriter writer)
         {
-            _ = writer ?? throw new ArgumentNullException(nameof(writer));
-            writer.WriteCollectionOfObjectValues<global::Amolenk.Admitto.Cli.Api.Models.AdditionalDetailSchemaDto2>("additionalDetailSchemas", AdditionalDetailSchemas);
+            if(ReferenceEquals(writer, null)) throw new ArgumentNullException(nameof(writer));
+            writer.WriteCollectionOfObjectValues<global::Amolenk.Admitto.Cli.Api.Models.AdditionalDetailSchemaDto>("additionalDetailSchemas", AdditionalDetailSchemas);
             writer.WriteStringValue("baseUrl", BaseUrl);
             writer.WriteDateTimeOffsetValue("endsAt", EndsAt);
             writer.WriteStringValue("name", Name);
@@ -113,7 +113,7 @@ namespace Amolenk.Admitto.Cli.Api.Models
             writer.WriteDateTimeOffsetValue("registrationOpensAt", RegistrationOpensAt);
             writer.WriteStringValue("slug", Slug);
             writer.WriteDateTimeOffsetValue("startsAt", StartsAt);
-            writer.WriteCollectionOfObjectValues<global::Amolenk.Admitto.Cli.Api.Models.TicketTypeDto2>("ticketTypes", TicketTypes);
+            writer.WriteCollectionOfObjectValues<global::Amolenk.Admitto.Cli.Api.Models.TicketTypeDto>("ticketTypes", TicketTypes);
             writer.WriteAdditionalData(AdditionalData);
         }
     }

@@ -12,10 +12,9 @@ public static class AssemblyTestFixture
 
     public static DistributedApplication Application { get; private set; } = null!;
     public static IHost WorkerHost { get; private set; } = null!;
-    public static AuthorizationTestFixture AuthorizationTestFixture { get; private set; } = null!;
     public static DatabaseTestFixture DatabaseTestFixture { get; private set; } = null!;
     public static EmailTestFixture EmailTestFixture { get; private set; } = null!;
-    public static IdentityTestFixture IdentityTestFixture { get; private set; } = null!;
+    // public static IdentityTestFixture IdentityTestFixture { get; private set; } = null!;
     public static QueueStorageTestFixture QueueStorageTestFixture { get; private set; } = null!;
 
     [AssemblyInitialize]
@@ -31,10 +30,9 @@ public static class AssemblyTestFixture
             .WaitAsync(DefaultTimeout, cancellationToken);
 
         Application = appHost.Application;
-        AuthorizationTestFixture = AuthorizationTestFixture.Create(appHost);
         DatabaseTestFixture = await DatabaseTestFixture.CreateAsync(appHost, cancellationToken);
         EmailTestFixture = EmailTestFixture.Create(appHost);
-        IdentityTestFixture = IdentityTestFixture.Create(appHost);
+        // IdentityTestFixture = IdentityTestFixture.Create(appHost);
         QueueStorageTestFixture = await QueueStorageTestFixture.CreateAsync(appHost);
 
         // TODO
@@ -68,10 +66,10 @@ public static class AssemblyTestFixture
         });
         
         builder.AddServiceDefaults();
-        builder.Services.AddDefaultApplicationServices();
-        builder.Services.AddCommandHandlers();
-        builder.Services.AddEventualDomainEventHandlers();
-        builder.AddDefaultInfrastructureServices();
+        // builder.Services.AddDefaultApplicationServices();
+        // builder.Services.AddCommandHandlers();
+        // builder.Services.AddEventualDomainEventHandlers();
+        // builder.AddDefaultInfrastructureServices();
 
         return builder.Build();
     }

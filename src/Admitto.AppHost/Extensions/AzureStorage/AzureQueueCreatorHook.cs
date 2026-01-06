@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using Aspire.Hosting.Azure;
+using Aspire.Hosting.Eventing;
 using Aspire.Hosting.Lifecycle;
 using Azure.Storage.Queues;
 using Microsoft.Extensions.Logging;
@@ -8,26 +9,33 @@ namespace Admitto.AppHost.Extensions.AzureStorage;
 
 [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
 internal sealed class AzureQueueCreatorHook(ILogger<AzureQueueCreatorHook> logger)
-	: IDistributedApplicationLifecycleHook
+	: IDistributedApplicationEventingSubscriber
 {
 	private static readonly TimeSpan RetryDelay = TimeSpan.FromMilliseconds(250);
 
-	public async Task AfterResourcesCreatedAsync(DistributedApplicationModel appModel,
-		CancellationToken cancellationToken = default)
+	public Task SubscribeAsync(
+		IDistributedApplicationEventing eventing,
+		DistributedApplicationExecutionContext executionContext,
+		CancellationToken cancellationToken)
 	{
-		var queueResources = appModel.Resources.OfType<AzureQueueStorageResource>();
-		foreach (var queueResource in queueResources)
+		eventing.Subscribe<AfterResourcesCreatedEvent>(async (@event, ct) =>
 		{
-			if (!queueResource.TryGetAnnotationsOfType<AzureQueueAnnotation>(
-				    out var queueAnnotations)) continue;
+			var queueResources = @event.Model.Resources.OfType<AzureQueueStorageResource>();
+			foreach (var queueResource in queueResources)
+			{
+				if (!queueResource.TryGetAnnotationsOfType<AzureQueueAnnotation>(
+					    out var queueAnnotations)) continue;
 
-			var connectionString = await queueResource.ConnectionStringExpression.GetValueAsync(cancellationToken);
-			if (connectionString is null) continue;
+				var connectionString = await queueResource.ConnectionStringExpression.GetValueAsync(ct);
+				if (connectionString is null) continue;
 
-			await TryCreateQueuesUntilSuccessfulAsync(connectionString, 
-				queueAnnotations.Select(a => a.QueueName).ToList(), cancellationToken);
-		}
-    }
+				await TryCreateQueuesUntilSuccessfulAsync(connectionString, 
+					queueAnnotations.Select(a => a.QueueName).ToList(), ct);
+			}
+		});
+
+		return Task.CompletedTask;
+	}
 
 	private async Task TryCreateQueuesUntilSuccessfulAsync(string connectionString, List<string> queueNames,
 		CancellationToken cancellationToken)
@@ -64,4 +72,5 @@ internal sealed class AzureQueueCreatorHook(ILogger<AzureQueueCreatorHook> logge
 			logger.LogInformation("Created queue '{QueueName}'", queueName);
 		}
 	}
+
 }

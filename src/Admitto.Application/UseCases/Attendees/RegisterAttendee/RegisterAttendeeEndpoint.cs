@@ -14,7 +14,7 @@ public static class RegisterAttendeeEndpoint
         group
             .MapPost("/", RegisterAttendee)
             .WithName(nameof(RegisterAttendee))
-            .RequireAuthorization(policy => policy.RequireCanUpdateEvent());
+            .RequireAuthorization(policy => policy.RequireTeamMemberRole(TeamMemberRole.Organizer));
 
         return group;
     }

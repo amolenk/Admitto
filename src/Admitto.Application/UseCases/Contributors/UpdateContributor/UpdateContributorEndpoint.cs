@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Application.Common;
+using Amolenk.Admitto.Application.Common.Persistence;
 using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Application.UseCases.Contributors.UpdateContributor;
@@ -13,7 +14,7 @@ public static class UpdateContributorEndpoint
         group
             .MapPatch("/{contributorId:guid}", UpdateContributor)
             .WithName(nameof(UpdateContributor))
-            .RequireAuthorization(policy => policy.RequireCanUpdateEvent());
+            .RequireAuthorization(policy => policy.RequireTeamMemberRole(TeamMemberRole.Organizer));
 
         return group;
     }

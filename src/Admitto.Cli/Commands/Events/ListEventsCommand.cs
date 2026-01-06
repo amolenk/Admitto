@@ -5,7 +5,7 @@ namespace Amolenk.Admitto.Cli.Commands.Events;
 public class ListEventsCommand(IApiService apiService, IConfigService configService)
     : AsyncCommand<TeamSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, TeamSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, TeamSettings settings, CancellationToken cancellationToken)
     {
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         

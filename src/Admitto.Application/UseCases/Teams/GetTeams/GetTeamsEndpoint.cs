@@ -1,4 +1,6 @@
 using System.Security.Claims;
+using Amolenk.Admitto.Application.Common.Authentication;
+using Amolenk.Admitto.Application.Common.Persistence;
 
 namespace Amolenk.Admitto.Application.UseCases.Teams.GetTeams;
 
@@ -19,26 +21,24 @@ public static class GetTeamsEndpoint
     private static async ValueTask<Results<Ok<GetTeamsResponse>, UnauthorizedHttpResult>> GetTeams(
         IApplicationContext context,
         ClaimsPrincipal principal,
-        IAuthorizationService authorizationService,
+        IAdministratorRoleService administratorRoleService,
+        ITeamMemberRoleService teamMemberRoleService,
         CancellationToken cancellationToken)
     {
+        var teamQuery = context.Teams.AsQueryable();
+
+        // Administrators can see all teams, other users only the teams they are members of.
         var userId = principal.GetUserId();
-        if (userId is null)
+        if (!administratorRoleService.IsAdministrator(userId))
         {
-            return TypedResults.Unauthorized();
+            var authorizedTeamIds = (
+                    await teamMemberRoleService.GetTeamsAsync(userId, cancellationToken))
+                .ToList();
+
+            teamQuery = teamQuery.Where(t => authorizedTeamIds.Contains(t.Id));
         }
 
-        var authorizedTeams = (
-                await authorizationService.GetTeamsAsync(userId.Value, cancellationToken))
-            .ToList();
-
-        if (authorizedTeams.Count == 0)
-        {
-            return TypedResults.Ok(new GetTeamsResponse([]));
-        }
-
-        var teams = await context.Teams
-            .Where(t => authorizedTeams.Contains(t.Id))
+        var teams = await teamQuery
             .Select(t => new TeamDto(
                 t.Slug,
                 t.Name,

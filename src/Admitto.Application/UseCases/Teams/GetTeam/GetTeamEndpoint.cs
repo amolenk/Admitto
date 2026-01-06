@@ -1,5 +1,7 @@
 using Amolenk.Admitto.Application.Common;
 using Amolenk.Admitto.Application.Common.Cryptography;
+using Amolenk.Admitto.Application.Common.Persistence;
+using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Application.UseCases.Teams.GetTeam;
 
@@ -13,7 +15,7 @@ public static class GetTeamEndpoint
         group
             .MapGet("/{teamSlug}", GetTeam)
             .WithName(nameof(GetTeam))
-            .RequireAuthorization(policy => policy.RequireCanViewTeam());
+            .RequireAuthorization(policy => policy.RequireTeamMemberRole(TeamMemberRole.Crew));
 
         return group;
     }

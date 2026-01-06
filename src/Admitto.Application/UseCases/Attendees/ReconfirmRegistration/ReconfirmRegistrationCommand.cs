@@ -1,3 +1,5 @@
+using Amolenk.Admitto.Application.Common.Messaging;
+
 namespace Amolenk.Admitto.Application.UseCases.Attendees.ReconfirmRegistration;
 
 /// <summary>

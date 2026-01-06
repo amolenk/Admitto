@@ -17,7 +17,7 @@ public class ClearEventEmailTemplateSettings : TeamEventSettings
 public class ClearEventEmailTemplateCommand(IApiService apiService, IConfigService configService)
     : AsyncCommand<ClearEventEmailTemplateSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, ClearEventEmailTemplateSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, ClearEventEmailTemplateSettings settings, CancellationToken cancellationToken)
     {
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);

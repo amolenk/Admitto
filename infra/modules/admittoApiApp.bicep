@@ -5,8 +5,13 @@ param acaEnvironmentId string
 param acrLoginServer string
 param applicationInsightsConnectionString string
 param authAdminUserIds string
+param authAuthority string
 param authAudience string
 param authTenantId string
+param msGraphTenantId string
+param msGraphClientId string
+@secure()
+param msGraphClientSecret string
 param frontDoorId string
 param keyVaultName string
 param managedIdentityClientId string
@@ -63,9 +68,33 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
         {
           // Use a placeholder image until the real one is built and pushed
 //           image: 'mendhak/http-https-echo:37'
-          image: 'acrutzwls7ov7ne2.azurecr.io/admitto-api@sha256:3c91a077960275449c2e33efc7eecfec50676138aa41292bd82dc15a6ec3bf88'
+          image: 'acrutzwls7ov7ne2.azurecr.io/admitto-api@sha256:12e36ee3483375448d8279d2c6e4277939f12bfe0bee2ad1334096a8c76b04f4'
           name: 'admitto-api'
           env: [
+            {
+              name: 'AUTHENTICATION__ADMINUSERIDS'
+              value: authAdminUserIds
+            }
+            {
+              name: 'AUTHENTICATION__BEARER__AUTHORITY'
+              value: authAuthority
+            }
+            {
+              name: 'AUTHENTICATION__BEARER__TOKENVALIDATIONPARAMETERS__VALIDAUDIENCE'
+              value: authAudience
+            }
+            {
+              name: 'AUTHENTICATION__MICROSOFTGRAPH__TENANTID'
+              value: msGraphTenantId
+            }
+            {
+              name: 'AUTHENTICATION__MICROSOFTGRAPH__CLIENTID'
+              value: msGraphClientId
+            }
+            {
+              name: 'AUTHENTICATION__MICROSOFTGRAPH__CLIENTSECRET'
+              value: msGraphClientSecret
+            }
             {
               name: 'AUTHENTICATION__AUTHORITY'
               value: '${environment().authentication.loginEndpoint}${authTenantId}/v2.0'

@@ -1,4 +1,6 @@
 using Amolenk.Admitto.Application.Common;
+using Amolenk.Admitto.Application.Common.Persistence;
+using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Application.UseCases.Teams.UpdateTeam;
 
@@ -12,7 +14,7 @@ public static class CreateTeamEndpoint
         group
             .MapPatch("/{teamSlug}", UpdateTeam)
             .WithName(nameof(UpdateTeam))
-            .RequireAuthorization(policy => policy.RequireCanUpdateTeam());
+            .RequireAuthorization(policy => policy.RequireTeamMemberRole(TeamMemberRole.Owner));
         
         return group;
     }

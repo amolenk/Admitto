@@ -33,7 +33,7 @@ public class UpdateContributorSettings : TeamEventSettings
 public class UpdateContributorCommand(IApiService apiService, IConfigService configService)
     : AsyncCommand<UpdateContributorSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, UpdateContributorSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, UpdateContributorSettings settings, CancellationToken cancellationToken)
     {
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);

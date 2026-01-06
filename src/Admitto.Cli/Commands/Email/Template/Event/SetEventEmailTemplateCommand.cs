@@ -36,7 +36,7 @@ public class SetEventEmailTemplateSettings : TeamEventSettings
 public class SetEventEmailTemplateCommand(IApiService apiService, IConfigService configService)
     : AsyncCommand<SetEventEmailTemplateSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, SetEventEmailTemplateSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, SetEventEmailTemplateSettings settings, CancellationToken cancellationToken)
     {
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);

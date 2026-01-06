@@ -8,11 +8,11 @@ import { useRouter } from "next/navigation";
 import { NavUser } from "@/components/nav-user";
 
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail } from "@/components/ui/sidebar";
-import { Session } from "next-auth";
 import { TeamSwitcher } from "@/components/team-switcher";
 import { NavEvents } from "@/components/nav-events";
 import { NavTeam } from "@/components/nav-team";
 import { useTeamStore } from "@/stores/team-store";
+import { Session } from "@/lib/auth";
 
 type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
     session: Session | null
@@ -20,7 +20,6 @@ type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
 
 export function AppSidebar({ ...props }: AppSidebarProps)
 {
-
     const fetchTeams = useTeamStore((s) => s.fetchTeams);
     const selectedTeam = useTeamStore((s) => s.selectedTeam);
     const [events, setEvents] = useState([]);
@@ -35,45 +34,45 @@ export function AppSidebar({ ...props }: AppSidebarProps)
     {
         async function fetchEvents()
         {
-            if (selectedTeam)
-            {
-                try
-                {
-
-                    const response = await fetch(`/api/teams/${selectedTeam.id}/events`, { method: "GET" });
-                    if (!response.ok)
-                    {
-                        console.log(response);
-                        throw new Error("Failed to fetch events");
-                    }
-                    const data = await response.json();
-                    setEvents(data);
-                }
-                catch (error)
-                {
-                    console.error("Error fetching events:", error);
-                }
-
-                // router.push("/")
-            }
+            // if (selectedTeam)
+            // {
+            //     try
+            //     {
+            //
+            //         const response = await fetch(`/api/teams/${selectedTeam.id}/events`, { method: "GET" });
+            //         if (!response.ok)
+            //         {
+            //             console.log(response);
+            //             throw new Error("Failed to fetch events");
+            //         }
+            //         const data = await response.json();
+            //         setEvents(data);
+            //     }
+            //     catch (error)
+            //     {
+            //         console.error("Error fetching events:", error);
+            //     }
+            //
+            //     // router.push("/")
+            // }
         }
 
-        fetchEvents();
+        // fetchEvents();
     }, [selectedTeam, router]);
 
     return (
         <Sidebar collapsible="offcanvas" {...props}>
             <SidebarHeader>
-                <TeamSwitcher />
+                 <TeamSwitcher />
             </SidebarHeader>
-            <SidebarContent>
-                {selectedTeam && (
-                    <>
-                        <NavEvents teamId={selectedTeam.id} events={events} />
-                        <NavTeam />
-                    </>
-                )}
-            </SidebarContent>
+            {/*<SidebarContent>*/}
+            {/*    {selectedTeam && (*/}
+            {/*        <>*/}
+            {/*            <NavEvents teamId={selectedTeam.id} events={events} />*/}
+            {/*            <NavTeam />*/}
+            {/*        </>*/}
+            {/*    )}*/}
+            {/*</SidebarContent>*/}
             <SidebarFooter>
                 {props.session?.user && (
                     <>

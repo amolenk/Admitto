@@ -1,4 +1,6 @@
 using Amolenk.Admitto.Application.Common;
+using Amolenk.Admitto.Application.Common.Messaging;
+using Amolenk.Admitto.Application.Common.Persistence;
 
 namespace Amolenk.Admitto.Application.UseCases.Attendees.RecordAttendance;
 
@@ -6,7 +8,7 @@ namespace Amolenk.Admitto.Application.UseCases.Attendees.RecordAttendance;
 /// Records the attendance of a participant at a ticketed event.
 /// </summary>
 public class RecordAttendanceHandler(IApplicationContext context)
-    : ICommandHandler<RecordAttendanceCommand>
+    : IWorkerCommandHandler<RecordAttendanceCommand>
 {
     public async ValueTask HandleAsync(RecordAttendanceCommand command, CancellationToken cancellationToken)
     {

@@ -12,7 +12,7 @@ public class ShowTeamSettings : CommandSettings
 public class ShowTeamCommand(IApiService apiService, IConfigService configService)
     : AsyncCommand<ShowTeamSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, ShowTeamSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, ShowTeamSettings settings, CancellationToken cancellationToken)
     {
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         

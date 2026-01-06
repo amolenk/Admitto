@@ -1,4 +1,4 @@
-using Amolenk.Admitto.Application.Common.Abstractions;
+using Amolenk.Admitto.Application.Common.Messaging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 

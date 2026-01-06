@@ -1,7 +1,6 @@
-import {NextResponse} from 'next/server'
+import { NextResponse } from 'next/server'
 
-export async function GET(teamId: string)
-{
+export async function GET(teamId: string) {
 
     console.log(teamId);
 

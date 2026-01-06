@@ -10,13 +10,13 @@ namespace Amolenk.Admitto.Infrastructure.Email;
 
 public record SmtpSettings
 {
-    public string Host { get; init; } = null!;
-    public int Port { get; init; }
+    public required string Host { get; init; } = null!;
+    public required int Port { get; init; }
     public string? Username { get; init; }
     public string? Password { get; init; }
-    public string FromName { get; init; } = null!;
-    public string FromEmail { get; init; } = null!;
-    public SecureSocketOptions SecureSocketOptions { get; init; }
+    public required string FromName { get; init; } = "Admitto";
+    public required string FromEmail { get; init; } = null!;
+    public SecureSocketOptions SecureSocketOptions { get; init; } = SecureSocketOptions.Auto;
 }
 
 public class SmtpEmailSender : IEmailSender

@@ -1,8 +1,10 @@
 using Amolenk.Admitto.Application.Common;
 using Amolenk.Admitto.Application.Common.Email;
 using Amolenk.Admitto.Application.Common.Email.Templating;
+using Amolenk.Admitto.Application.Common.Persistence;
 using Amolenk.Admitto.Application.Jobs.SendCustomBulkEmail;
 using Amolenk.Admitto.Domain.Utilities;
+using Amolenk.Admitto.Domain.ValueObjects;
 using Quartz;
 
 namespace Amolenk.Admitto.Application.UseCases.BulkEmail.SendCustomBulkEmail;
@@ -17,7 +19,7 @@ public static class SendCustomBulkEmailEndpoint
         group
             .MapPost("/custom", SendCustomBulkEmail)
             .WithName(nameof(SendCustomBulkEmail))
-            .RequireAuthorization(policy => policy.RequireCanUpdateEvent());
+            .RequireAuthorization(policy => policy.RequireTeamMemberRole(TeamMemberRole.Organizer));
 
         return group;
     }

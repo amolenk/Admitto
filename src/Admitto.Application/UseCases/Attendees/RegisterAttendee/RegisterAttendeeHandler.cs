@@ -1,4 +1,6 @@
 using Amolenk.Admitto.Application.Common;
+using Amolenk.Admitto.Application.Common.Messaging;
+using Amolenk.Admitto.Application.Common.Persistence;
 using Amolenk.Admitto.Application.Projections.Participation;
 using Amolenk.Admitto.Domain.Entities;
 using Amolenk.Admitto.Domain.ValueObjects;
@@ -9,7 +11,7 @@ namespace Amolenk.Admitto.Application.UseCases.Attendees.RegisterAttendee;
 /// Registers an attendee for a ticketed event.
 /// </summary>
 public class RegisterAttendeeHandler(IApplicationContext context, IUnitOfWork unitOfWork)
-    : ICommandHandler<RegisterAttendeeCommand>
+    : IApiCommandHandler<RegisterAttendeeCommand>
 {
     public async ValueTask HandleAsync(RegisterAttendeeCommand command, CancellationToken cancellationToken)
     {

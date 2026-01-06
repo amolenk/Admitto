@@ -19,7 +19,7 @@ public class ExportSettings : TeamEventSettings
 public class ExportAttendeesCommand(IApiService apiService, IConfigService configService)
     : AsyncCommand<ExportSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, ExportSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, ExportSettings settings, CancellationToken cancellationToken)
     {
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);
@@ -60,10 +60,9 @@ public class ExportAttendeesCommand(IApiService apiService, IConfigService confi
         return 0;
     }
 
-    // TODO Fix AdditionalDetailSchemaDto2
     private static DataTable CreateAttendeesDataTable(
         List<AttendeeDto> attendees,
-        List<AdditionalDetailSchemaDto2> additionalDetailSchemas)
+        List<AdditionalDetailSchemaDto> additionalDetailSchemas)
     {
         var table = new DataTable("Attendees");
         table.Columns.Add("Email", typeof(string));
@@ -90,7 +89,7 @@ public class ExportAttendeesCommand(IApiService apiService, IConfigService confi
 
     private static DataTable CreateTicketsDataTable(
         List<AttendeeDto> attendees,
-        List<AdditionalDetailSchemaDto2> additionalDetailSchemas)
+        List<AdditionalDetailSchemaDto> additionalDetailSchemas)
     {
         var table = new DataTable("Tickets");
         table.Columns.Add("TicketType", typeof(string));
@@ -150,7 +149,7 @@ public class ExportAttendeesCommand(IApiService apiService, IConfigService confi
     private static void PopulateAttendeesRow(
         DataRow row,
         AttendeeDto attendee,
-        List<AdditionalDetailSchemaDto2> additionalDetailSchemas)
+        List<AdditionalDetailSchemaDto> additionalDetailSchemas)
     {
         row["Email"] = attendee.Email;
         row["FirstName"] = attendee.FirstName;

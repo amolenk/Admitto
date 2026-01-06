@@ -1,5 +1,4 @@
-using Amolenk.Admitto.Application.Common.Email;
-using Amolenk.Admitto.Application.Common.Email.Composing;
+using Amolenk.Admitto.Application.Common.Messaging;
 using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Application.UseCases.Email.TestEmail;
@@ -17,46 +16,33 @@ public static class TestEmailEndpoint
         group
             .MapPost("/{emailType}/test", TestEmail)
             .WithName(nameof(TestEmail))
-            .RequireAuthorization(policy => policy.RequireCanUpdateEvent());
+            .RequireAuthorization(policy => policy.RequireTeamMemberRole(TeamMemberRole.Organizer));
 
         return group;
     }
 
-    private static async ValueTask<Ok> TestEmail(
+    private static async ValueTask<Accepted> TestEmail(
         string teamSlug,
         string eventSlug,
         string emailType,
         TestEmailRequest request,
         ISlugResolver slugResolver,
-        IEmailComposerRegistry emailComposerRegistry,
-        IEmailDispatcher emailDispatcher,
+        IMessageOutbox messageOutbox,
         CancellationToken cancellationToken)
     {
-        var (teamId, ticketedEventId) =
+        var (teamId, eventId) =
             await slugResolver.ResolveTeamAndTicketedEventIdsAsync(teamSlug, eventSlug, cancellationToken);
 
-        var emailComposer = emailComposerRegistry.GetEmailComposer(emailType);
-
-        var emailMessage = await emailComposer.ComposeTestMessageAsync(
-            emailType,
+        var command = new TestEmailCommand(
             teamId,
-            ticketedEventId,
+            eventId,
             request.Recipient,
-            (request.AdditionalDetails ?? [])
-                .Select(ad => new AdditionalDetail(ad.Name, ad.Value))
-                .ToList(),
-            (request.Tickets ?? [])
-                .Select(t => new TicketSelection(t.TicketTypeSlug, t.Quantity))
-                .ToList(),
-            cancellationToken);
+            emailType,
+            request.AdditionalDetails ?? [],
+            request.Tickets ?? []);
+        
+        messageOutbox.Enqueue(command);
 
-        await emailDispatcher.DispatchEmailAsync(
-            emailMessage,
-            teamId,
-            ticketedEventId,
-            EmailDispatcher.TestMessageIdempotencyKey,
-            cancellationToken: cancellationToken);
-
-        return TypedResults.Ok();
+        return TypedResults.Accepted((string?)null);
     }
 }

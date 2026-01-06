@@ -1,4 +1,6 @@
 using Amolenk.Admitto.Application.Common.Email;
+using Amolenk.Admitto.Application.Common.Persistence;
+using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Application.UseCases.EmailTemplates.GetTeamEmailTemplates;
 
@@ -12,7 +14,7 @@ public static class GetTeamEmailTemplatesEndpoint
         group
             .MapGet("/email-templates", GetTeamEmailTemplates)
             .WithName(nameof(GetTeamEmailTemplates))
-            .RequireAuthorization(policy => policy.RequireCanViewTeam());
+            .RequireAuthorization(policy => policy.RequireTeamMemberRole(TeamMemberRole.Crew));
 
         return group;
     }

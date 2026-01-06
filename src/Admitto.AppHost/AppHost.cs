@@ -1,84 +1,56 @@
-using System.Data.Common;
-using System.Net;
-using Admitto.AppHost.Extensions.AzureServiceBus;
 using Admitto.AppHost.Extensions.AzureStorage;
-using Amolenk.Admitto.Application.Jobs;
 using Aspire.Hosting.Azure;
 
 var builder = DistributedApplication.CreateBuilder(args);
 
 var postgres = builder.ConfigurePostgres();
 var postgresDb = postgres.AddDatabase("admitto-db");
-var openFgaDb = postgres.AddDatabase("openfga-db");
 var quartzDb = postgres.AddDatabase("quartz-db");
+var betterAuthDb = postgres.AddDatabase("better-auth-db");
 
 var queues = builder.ConfigureStorageQueues();
 
-var openFga = builder.ConfigureOpenFga(openFgaDb);
+var mailDev = builder.ConfigureMailDev();
+var keycloak = builder.ConfigureKeycloak();
 
 var migrations = builder.AddProject<Projects.Admitto_Migrations>("migrations")
-    .WithReference(openFga.GetEndpoint("http")).WaitFor(openFga)
     .WithReference(postgresDb).WaitFor(postgresDb)
-    .WithReference(quartzDb).WaitFor(quartzDb);
+    .WithReference(quartzDb).WaitFor(quartzDb)
+    .WithReference(betterAuthDb).WaitFor(betterAuthDb);
 
-var apiService = builder.AddProject<Projects.Admitto_Api>("api")
-    .WithReference(openFga.GetEndpoint("http")).WaitFor(openFga)
+builder.AddProject<Projects.Admitto_Api>("api")
     .WithReference(postgresDb).WaitFor(postgresDb)
     .WithReference(quartzDb).WaitFor(quartzDb)
     .WithReference(queues).WaitFor(queues)
-    .WaitForCompletion(migrations);
-
-var worker = builder.AddProject<Projects.Admitto_Worker>("worker")
-    .WithReference(openFga.GetEndpoint("http")).WaitFor(openFga)
-    .WithReference(postgresDb).WaitFor(postgresDb)
-    .WithReference(quartzDb).WaitFor(quartzDb)
-    .WithReference(queues).WaitFor(queues)
-    .WaitForCompletion(migrations);
-
-var jobRunner = builder.AddProject<Projects.Admitto_JobRunner>("job-runner")
-    .WithReference(postgresDb).WaitFor(postgresDb)
-    .WithReference(queues).WaitFor(queues)
-    .WithHttpCommand(
-        path: $"/jobs/{WellKnownJob.SendBulkEmails}/run",
-        displayName: "Send bulk emails",
-        commandOptions: new HttpCommandOptions()
+    .WithReference(keycloak)
+    .WaitForCompletion(migrations)
+    .WithEnvironment(
+        "AUTHENTICATION__BEARER__AUTHORITY",
+        ReferenceExpression.Create($"{keycloak.GetEndpoint("http")}/realms/admitto"))
+    .WithUrlForEndpoint(
+        "http",
+        ep => new ResourceUrlAnnotation
         {
-            Description = "Starts a job for sending scheduled bulk emails.",
-            IconName = "Send",
-            IsHighlighted = true
+            Url = "/scalar",
+            DisplayText = "Scalar",
+            DisplayLocation = UrlDisplayLocation.SummaryAndDetails
         });
 
-if (builder.ExecutionContext.IsRunMode)
-{
-    var mailDev = builder.ConfigureMailDev();
-    var keycloak = builder.ConfigureKeycloak();
+builder.AddProject<Projects.Admitto_Worker>("worker")
+    .WithReference(postgresDb).WaitFor(postgresDb)
+    .WithReference(quartzDb).WaitFor(quartzDb)
+    .WithReference(queues).WaitFor(queues)
+    .WaitFor(mailDev)
+    .WithEnvironment(
+        "EMAIL__DEFAULTSMTP__HOST",
+        ReferenceExpression.Create($"{mailDev.GetEndpoint("smtp").Property(EndpointProperty.Host)}"))
+    .WithEnvironment(
+        "EMAIL__DEFAULTSMTP__PORT",
+        ReferenceExpression.Create($"{mailDev.GetEndpoint("smtp").Property(EndpointProperty.Port)}"))
+    .WaitForCompletion(migrations);
 
-    // var migration = builder.AddProject<Projects.Admitto_Migration>("migrate")
-    //     .WithArgs("run")
-    //     .WithReference(openFga.GetEndpoint("http")).WaitFor(openFga)
-    //     .WithReference(postgresDb).WaitFor(postgresDb);
-
-    apiService
-        .WithEnvironment("AUTHENTICATION__AUTHORITY", $"{keycloak.GetEndpoint("http")}/realms/admitto")
-        .WithEnvironment("AUTHENTICATION__VALIDISSUERS__0", $"{keycloak.GetEndpoint("http")}/realms/admitto")
-        .WithUrlForEndpoint(
-            "http",
-            ep => new ResourceUrlAnnotation
-            {
-                Url = "/scalar",
-                DisplayText = "Scalar",
-                DisplayLocation = UrlDisplayLocation.SummaryAndDetails
-            });
-        // .WaitForCompletion(migration);
-
-        worker
-            .WithReference(keycloak).WaitFor(keycloak)
-            .WaitFor(mailDev);
-        // .WaitForCompletion(migration);
-
-    var adminApp = builder.ConfigureAdminApp();
-    adminApp.WithReference(apiService).WaitFor(apiService);
-}
+    // var adminApp = builder.ConfigureAdminApp();
+    // adminApp.WithReference(apiService).WaitFor(apiService);
 
 builder.Build().Run();
 return;
@@ -94,71 +66,30 @@ internal static class Extensions
                 container
                     .WithDataVolume("admitto-postgres-data")
                     .WithLifetime(ContainerLifetime.Persistent)
-                    .WithHostPort(8011)
+                    .WithHostPort(5432)
                     .WithPgWeb(pgWeb =>
                     {
                         pgWeb
-                            .WithHostPort(8010)
+                            .WithHostPort(5433)
                             .WithLifetime(ContainerLifetime.Persistent);
                     });
             });
 
         return postgres;
     }
-
-    public static IResourceBuilder<AzureServiceBusResource> ConfigureServiceBus(
-        this IDistributedApplicationBuilder builder)
-    {
-        var serviceBus = builder.AddAzureServiceBus("messaging")
-            .RunAsEmulator(configure => { configure.WithLifetime(ContainerLifetime.Persistent); })
-            .ReplaceEmulatorDatabase();
-
-        return serviceBus;
-    }
-
+    
     public static IResourceBuilder<AzureQueueStorageResource> ConfigureStorageQueues(
         this IDistributedApplicationBuilder builder)
     {
         var storage = builder.AddAzureStorage("storage")
             .RunAsEmulator(configure => { configure.WithLifetime(ContainerLifetime.Persistent); });
-        
+
         var queues = storage.AddQueues("queues")
             .CreateQueue("queue");
 
         return queues;
     }
-
-    public static IResourceBuilder<ContainerResource> ConfigureOpenFga(
-        this IDistributedApplicationBuilder builder,
-        IResourceBuilder<AzurePostgresFlexibleServerDatabaseResource> openFgaDb)
-    {
-        // TODO Figure out a way to get the connection string in Key Vault
-
-        var openFga = builder.AddContainer("openfga", "openfga/openfga:latest")
-            .WithArgs("run")
-            .WithEnvironment("OPENFGA_DATASTORE_ENGINE", "postgres")
-            .WithHttpEndpoint(port: builder.ExecutionContext.IsRunMode ? 8000 : 80, targetPort: 8080)
-            .WithLifetime(ContainerLifetime.Persistent);
-
-        if (builder.ExecutionContext.IsPublishMode)
-        {
-            return openFga;
-        }
-
-        var initOpenFga = builder.AddContainer("openfga-init", "openfga/openfga:latest")
-            .WithArgs("migrate")
-            .WithEnvironment("OPENFGA_DATASTORE_ENGINE", "postgres")
-            .WithPostgresUriEnvironment("OPENFGA_DATASTORE_URI", openFgaDb.Resource)
-            .WithLifetime(ContainerLifetime.Persistent)
-            .WaitFor(openFgaDb);
-
-        openFga
-            .WithPostgresUriEnvironment("OPENFGA_DATASTORE_URI", openFgaDb.Resource)
-            .WaitForCompletion(initOpenFga);
-
-        return openFga;
-    }
-
+    
     public static IResourceBuilder<ContainerResource> ConfigureMailDev(this IDistributedApplicationBuilder builder)
     {
         var mailDev = builder.AddContainer("maildev", "maildev/maildev:latest")
@@ -189,43 +120,19 @@ internal static class Extensions
 
     public static IResourceBuilder<NodeAppResource> ConfigureAdminApp(this IDistributedApplicationBuilder builder)
     {
-        var authSecret = builder.AddParameter("AuthSecret", true);
-        var authClientId = builder.AddParameter("AuthClientId");
-        var authClientSecret = builder.AddParameter("AuthClientSecret", true);
-        var authIssuer = builder.AddParameter("AuthIssuer");
+        // var authSecret = builder.AddParameter("AuthSecret", true);
+        // var authClientId = builder.AddParameter("AuthClientId");
+        // var authClientSecret = builder.AddParameter("AuthClientSecret", true);
+        // var authIssuer = builder.AddParameter("AuthIssuer");
+        //
+        // var app = builder.AddPnpmApp("admin-ui", "../Admitto.UI.Admin", "dev")
+        //     .WithEnvironment("AUTH_SECRET", authSecret)
+        //     .WithEnvironment("AUTH_KEYCLOAK_ID", authClientId)
+        //     .WithEnvironment("AUTH_KEYCLOAK_SECRET", authClientSecret)
+        //     .WithEnvironment("AUTH_KEYCLOAK_ISSUER", authIssuer)
+        //     .WithHttpEndpoint(3000, isProxied: false) // Use a static port number for OAuth redirect URIs
+        //     .WithExternalHttpEndpoints();
 
-        var app = builder.AddPnpmApp("admin-ui", "../Admitto.UI.Admin", "dev")
-            .WithEnvironment("AUTH_SECRET", authSecret)
-            .WithEnvironment("AUTH_KEYCLOAK_ID", authClientId)
-            .WithEnvironment("AUTH_KEYCLOAK_SECRET", authClientSecret)
-            .WithEnvironment("AUTH_KEYCLOAK_ISSUER", authIssuer)
-            .WithHttpEndpoint(3000, isProxied: false) // Use a static port number for OAuth redirect URIs
-            .WithExternalHttpEndpoints();
-
-        return app;
-    }
-
-    private static IResourceBuilder<T> WithPostgresUriEnvironment<T>(
-        this IResourceBuilder<T> builder,
-        string name,
-        AzurePostgresFlexibleServerDatabaseResource resource)
-        where T : IResourceWithEnvironment
-    {
-        return builder.WithEnvironment(async (context) =>
-        {
-            var adoConnectionString = await resource.ConnectionStringExpression.GetValueAsync(CancellationToken.None);
-
-            var connectionBuilder = new DbConnectionStringBuilder { ConnectionString = adoConnectionString };
-
-            const string host = "host.docker.internal";
-            var port = connectionBuilder["Port"];
-            var username = connectionBuilder["Username"];
-            var password = WebUtility.UrlEncode(connectionBuilder["Password"].ToString());
-            var database = connectionBuilder["Database"];
-
-            var connectionString = $"postgres://{username}:{password}@{host}:{port}/{database}?sslmode=disable";
-
-            context.EnvironmentVariables[name] = connectionString;
-        });
+        throw new NotImplementedException();
     }
 }

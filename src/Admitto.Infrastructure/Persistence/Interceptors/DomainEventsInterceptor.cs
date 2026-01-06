@@ -1,4 +1,4 @@
-using Amolenk.Admitto.Application.Common.Abstractions;
+using Amolenk.Admitto.Application.Common.Messaging;
 using Amolenk.Admitto.Domain.Entities;
 using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.DependencyInjection;

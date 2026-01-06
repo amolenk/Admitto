@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Application.Common;
+using Amolenk.Admitto.Application.Common.Persistence;
 using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Application.UseCases.TicketedEvents.SetRegistrationPolicy;
@@ -13,7 +14,7 @@ public static class SetRegistrationPolicyEndpoint
         group
             .MapPut("/{eventSlug}/policies/registration", SetRegistrationPolicy)
             .WithName(nameof(SetRegistrationPolicy))
-            .RequireAuthorization(policy => policy.RequireCanUpdateEvent());
+            .RequireAuthorization(policy => policy.RequireTeamMemberRole(TeamMemberRole.Organizer));
 
         return group;
     }

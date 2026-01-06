@@ -4,23 +4,25 @@ using Microsoft.Extensions.Options;
 
 namespace Amolenk.Admitto.Cli.Common.Auth;
 
-public class AuthService(ITokenCache tokenCache, IHttpClientFactory clientFactory, IOptions<AuthOptions> options) : IAuthService
+public class AuthService(ITokenCache tokenCache, IHttpClientFactory clientFactory, IOptions<AuthOptions> options)
+    : IAuthService
 {
     private readonly AuthOptions _options = options.Value;
-    
+
     public async ValueTask<bool> LoginAsync()
     {
         var client = clientFactory.CreateClient();
         var disco = await GetDiscoveryDocumentAsync(client);
         if (disco is null) return false;
 
-        var deviceResponse = await client.RequestDeviceAuthorizationAsync(new DeviceAuthorizationRequest
-        {
-            Address = disco.DeviceAuthorizationEndpoint,
-            ClientId = _options.ClientId,
-            ClientCredentialStyle = ClientCredentialStyle.PostBody, // For Entra
-            Scope = _options.Scope,
-        });
+        var deviceResponse = await client.RequestDeviceAuthorizationAsync(
+            new DeviceAuthorizationRequest
+            {
+                Address = disco.DeviceAuthorizationEndpoint,
+                ClientId = _options.ClientId,
+                ClientCredentialStyle = ClientCredentialStyle.PostBody, // For Entra
+                Scope = _options.Scope,
+            });
 
         if (deviceResponse.IsError)
         {
@@ -40,19 +42,31 @@ public class AuthService(ITokenCache tokenCache, IHttpClientFactory clientFactor
             AnsiConsole.WriteLine();
             AnsiConsole.WriteLine("⏳ Waiting for login...");
 
-            Process.Start(new ProcessStartInfo
-            {
-                FileName = deviceResponse.VerificationUriComplete,
-                UseShellExecute = true
-            });
+            Process.Start(
+                new ProcessStartInfo
+                {
+                    FileName = deviceResponse.VerificationUriComplete,
+                    UseShellExecute = true
+                });
         }
         else
         {
-            AnsiConsole.MarkupLine($"To sign in, use a web browser to open the page [blue][link={deviceResponse.VerificationUri}]{deviceResponse.VerificationUri}[/][/] and enter the code [blue]{deviceResponse.UserCode}[/] to authenticate.");
+            // Unfortunately, the Entra External ID returns the incorrect verification URI, so we need to replace it
+            // ourselves with the correct one.
+            // See https://github.com/AzureAD/microsoft-authentication-library-for-dotnet/issues/4666.
+            var verificationUri = deviceResponse.VerificationUri!;
+            if (verificationUri.Contains("microsoft.com"))
+            {
+                // TODO Can probably get this from discovery document instead of options
+                verificationUri = options.Value.VerificationUri;
+            }
+
+            AnsiConsole.MarkupLine(
+                $"To sign in, use a web browser to open the page [link={verificationUri}]{verificationUri}[/] and enter the code {deviceResponse.UserCode} to authenticate.");
             AnsiConsole.WriteLine();
             AnsiConsole.WriteLine("⏳ Waiting for login...");
         }
-        
+
 
         var expiration = DateTime.UtcNow.AddSeconds(deviceResponse.ExpiresIn ?? 120);
         var interval = TimeSpan.FromSeconds(deviceResponse.Interval);
@@ -63,13 +77,14 @@ public class AuthService(ITokenCache tokenCache, IHttpClientFactory clientFactor
         {
             await Task.Delay(interval);
 
-            tokenResponse = await client.RequestDeviceTokenAsync(new DeviceTokenRequest
-            {
-                Address = disco.TokenEndpoint,
-                ClientId = _options.ClientId,
-                ClientCredentialStyle = ClientCredentialStyle.PostBody,
-                DeviceCode = deviceResponse.DeviceCode!
-            });
+            tokenResponse = await client.RequestDeviceTokenAsync(
+                new DeviceTokenRequest
+                {
+                    Address = disco.TokenEndpoint,
+                    ClientId = _options.ClientId,
+                    ClientCredentialStyle = ClientCredentialStyle.PostBody,
+                    DeviceCode = deviceResponse.DeviceCode!
+                });
 
             if (tokenResponse.IsError)
             {
@@ -86,6 +101,7 @@ public class AuthService(ITokenCache tokenCache, IHttpClientFactory clientFactor
                         {
                             AnsiConsole.WriteLine(deviceResponse.Raw);
                         }
+
                         return false;
                 }
             }
@@ -121,18 +137,19 @@ public class AuthService(ITokenCache tokenCache, IHttpClientFactory clientFactor
         var client = clientFactory.CreateClient();
         var disco = await GetDiscoveryDocumentAsync(client);
         if (disco is null) return null;
-        
-        #if DEBUG
+
+#if DEBUG
         AnsiConsole.WriteLine("🔄 Refreshing access token...");
-        #endif 
-        
-        var tokenResponse = await client.RequestRefreshTokenAsync(new RefreshTokenRequest
-        {
-            Address = disco.TokenEndpoint,
-            ClientId = _options.ClientId,
-            ClientCredentialStyle = ClientCredentialStyle.PostBody,
-            RefreshToken = cachedToken.RefreshToken
-        });
+#endif
+
+        var tokenResponse = await client.RequestRefreshTokenAsync(
+            new RefreshTokenRequest
+            {
+                Address = disco.TokenEndpoint,
+                ClientId = _options.ClientId,
+                ClientCredentialStyle = ClientCredentialStyle.PostBody,
+                RefreshToken = cachedToken.RefreshToken
+            });
 
         if (tokenResponse.IsError)
         {
@@ -147,38 +164,40 @@ public class AuthService(ITokenCache tokenCache, IHttpClientFactory clientFactor
 
     private async Task<DiscoveryDocumentResponse?> GetDiscoveryDocumentAsync(HttpClient client)
     {
-        var disco = await client.GetDiscoveryDocumentAsync(new DiscoveryDocumentRequest
-        {
-            Address = _options.Authority,
-            Policy = new DiscoveryPolicy
+        var disco = await client.GetDiscoveryDocumentAsync(
+            new DiscoveryDocumentRequest
             {
-                RequireHttps = _options.RequireHttps,
-                ValidateEndpoints = false,
-                ValidateIssuerName = true
-            }
-        });
+                Address = _options.Authority,
+                Policy = new DiscoveryPolicy
+                {
+                    RequireHttps = _options.RequireHttps,
+                    ValidateEndpoints = false,
+                    ValidateIssuerName = true
+                }
+            });
 
         if (disco.IsError)
         {
             AnsiConsole.WriteLine($"❌ Discovery failed: {disco.Error}");
             return null;
         }
-        
-        #if DEBUG
+
+#if DEBUG
         AnsiConsole.WriteLine($"✅ Token endpoint: {disco.TokenEndpoint}");
         AnsiConsole.WriteLine($"✅ Device auth endpoint: {disco.DeviceAuthorizationEndpoint}");
-        #endif
-        
+#endif
+
         return disco;
     }
 
     private void CacheToken(TokenResponse tokenResponse)
     {
-        tokenCache.Save(new CachedToken
-        {
-            AccessToken = tokenResponse.AccessToken!,
-            RefreshToken = tokenResponse.RefreshToken,
-            ExpiresAt = DateTime.UtcNow.AddSeconds(tokenResponse.ExpiresIn)
-        });
+        tokenCache.Save(
+            new CachedToken
+            {
+                AccessToken = tokenResponse.AccessToken!,
+                RefreshToken = tokenResponse.RefreshToken,
+                ExpiresAt = DateTime.UtcNow.AddSeconds(tokenResponse.ExpiresIn)
+            });
     }
 }

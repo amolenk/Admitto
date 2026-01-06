@@ -1,0 +1,8 @@
+Sign in to Admitto
+
+Hi,
+
+To complete your sign-in to Admitto, copy and paste the link below into your browser:
+
+{{ magic_link }}
+

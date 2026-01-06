@@ -75,7 +75,7 @@ public class CreateEventSettings : TeamSettings
 public class CreateEventCommand(IApiService apiService, IConfigService configService)
     : AsyncCommand<CreateEventSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, CreateEventSettings settings)
+    public override async Task<int> ExecuteAsync(CommandContext context, CreateEventSettings settings, CancellationToken cancellationToken)
     {
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         
@@ -134,7 +134,7 @@ public class CreateEventCommand(IApiService apiService, IConfigService configSer
             yield return new AdditionalDetailSchemaDto
             {
                 Name = parts[0].Trim(),
-                MaxLength = maxLength,
+                MaxLength = maxLength.ToString(),
                 IsRequired = required
             };
         }

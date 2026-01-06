@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Application.Common.Messaging;
 using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Application.UseCases.Attendees.ChangeTickets;

@@ -1,5 +1,6 @@
 using Amolenk.Admitto.Application.Common;
 using Amolenk.Admitto.Application.Common.Cryptography;
+using Amolenk.Admitto.Application.Common.Persistence;
 using Amolenk.Admitto.Application.UseCases.Attendees.ReconfirmRegistration;
 using Microsoft.AspNetCore.Mvc;
 

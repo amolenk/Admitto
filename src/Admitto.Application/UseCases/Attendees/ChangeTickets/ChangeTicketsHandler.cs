@@ -1,11 +1,13 @@
 using Amolenk.Admitto.Application.Common;
+using Amolenk.Admitto.Application.Common.Messaging;
+using Amolenk.Admitto.Application.Common.Persistence;
 
 namespace Amolenk.Admitto.Application.UseCases.Attendees.ChangeTickets;
 
 /// <summary>
 /// Changes the tickets for a registered attendee.
 /// </summary>
-public class ChangeTicketsHandler(IApplicationContext context) : ICommandHandler<ChangeTicketsCommand>
+public class ChangeTicketsHandler(IApplicationContext context) : IWorkerCommandHandler<ChangeTicketsCommand>
 {
     public async ValueTask HandleAsync(ChangeTicketsCommand command, CancellationToken cancellationToken)
     {
