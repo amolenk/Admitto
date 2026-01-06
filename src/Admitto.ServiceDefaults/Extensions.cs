@@ -100,7 +100,7 @@ public static class Extensions
                     .UseAzureMonitor(options =>
                     {
                         options.ConnectionString = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
-                        options.SamplingRatio = 0.1f; // Sample 10% of telemetry
+                        // options.SamplingRatio = 0.1f; // Sample 10% of telemetry
                     });
             }
         }

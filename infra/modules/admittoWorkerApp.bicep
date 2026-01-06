@@ -1,15 +1,11 @@
 param location string = resourceGroup().location
 
-param acaEnvironmentDomain string
 param acaEnvironmentId string
 param acrLoginServer string
 param applicationInsightsConnectionString string
-param authApiAppId string
-param authTenantId string
 param keyVaultName string
 param managedIdentityClientId string
 param managedIdentityId string
-param openFgaAppName string
 param storageAccountName string
 
 var resourceToken = uniqueString(resourceGroup().id)
@@ -48,11 +44,6 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
           keyVaultUrl: 'https://${keyVaultName}${environment().suffixes.keyvaultDns}/secrets/connectionstrings--quartz-db'
           identity: managedIdentityId
         }
-        {
-          name: 'auth-api-app-secret'
-          keyVaultUrl: 'https://${keyVaultName}${environment().suffixes.keyvaultDns}/secrets/auth--api-app-secret'
-          identity: managedIdentityId
-        }
       ]    
     }
     environmentId: acaEnvironmentId
@@ -79,22 +70,6 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
             {
               name: 'ConnectionStrings__queues'
               value: 'https://${storageAccountName}.queue.${environment().suffixes.storage}'
-            }
-            {
-              name: 'services__openfga__http__0'
-              value: 'https://${openFgaAppName}.internal.${acaEnvironmentDomain}'
-            }
-            {
-                name: 'UserManagement__MicrosoftGraph__TenantId'
-                value: authTenantId
-            }
-            {
-                name: 'UserManagement__MicrosoftGraph__ClientId'
-                value: authApiAppId
-            }
-            {
-                name: 'UserManagement__MicrosoftGraph__ClientSecret'
-                secretRef: 'auth-api-app-secret'
             }
             {
               name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
