@@ -1,6 +1,5 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
-using System.Text.Json.Serialization;
 using Amolenk.Admitto.Cli.Commands;
 using Amolenk.Admitto.Cli.Commands.Attendee;
 using Amolenk.Admitto.Cli.Commands.Auth;
@@ -14,7 +13,6 @@ using Amolenk.Admitto.Cli.Commands.Team;
 using Amolenk.Admitto.Cli.Commands.Team.Member;
 using Amolenk.Admitto.Cli.Common;
 using Amolenk.Admitto.Cli.Common.Auth;
-using Microsoft.AspNetCore.Http.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Commands = Amolenk.Admitto.Cli.Commands;
 

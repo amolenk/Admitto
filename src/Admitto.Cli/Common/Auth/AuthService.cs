@@ -57,6 +57,7 @@ public class AuthService(ITokenCache tokenCache, IHttpClientFactory clientFactor
             var verificationUri = deviceResponse.VerificationUri!;
             if (verificationUri.Contains("microsoft.com"))
             {
+                // TODO Can probably get this from discovery document instead of options
                 verificationUri = options.Value.VerificationUri;
             }
 
