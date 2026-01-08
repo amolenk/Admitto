@@ -7,7 +7,7 @@ namespace Amolenk.Admitto.Application.UseCases.Attendees.ChangeTickets;
 /// <summary>
 /// Changes the tickets for a registered attendee.
 /// </summary>
-public class ChangeTicketsHandler(IApplicationContext context) : IWorkerCommandHandler<ChangeTicketsCommand>
+public class ChangeTicketsHandler(IApplicationContext context) : IApiCommandHandler<ChangeTicketsCommand>
 {
     public async ValueTask HandleAsync(ChangeTicketsCommand command, CancellationToken cancellationToken)
     {
