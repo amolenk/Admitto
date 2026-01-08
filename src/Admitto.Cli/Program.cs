@@ -143,8 +143,11 @@ app.Configure(config =>
                 {
                     bulk.SetDescription("Manage bulk emails");
 
-                    bulk.AddCommand<Commands.Email.Bulk.SendCustomBulkEmailCommand>("send")
-                        .WithDescription("Send a bulk email");
+                    bulk.AddCommand<Commands.Email.Bulk.SendCustomBulkEmailCommand>("custom")
+                        .WithDescription("Send a custom bulk email");
+
+                    bulk.AddCommand<Commands.Email.Bulk.SendReconfirmBulkEmailCommand>("reconfirm")
+                        .WithDescription("Send a reconfirm bulk email");
 
                     // bulk.AddCommand<Commands.Email.Bulk.TestCustomBulkEmailCommand>("test")
                     //     .WithDescription("Test a bulk email");
@@ -301,8 +304,8 @@ app.Configure(config =>
                             reconfirm.AddCommand<Commands.Events.Policy.Reconfirm.ClearReconfirmPolicyCommand>("clear")
                                 .WithDescription("Clear the reconfirm policy");
 
-                            // reconfirm.AddCommand<Commands.Events.Policy.Reconfirm.SetReconfirmPolicyCommand>("set")
-                            //     .WithDescription("Set the reconfirm policy");
+                            reconfirm.AddCommand<Commands.Events.Policy.Reconfirm.SetReconfirmPolicyCommand>("set")
+                                .WithDescription("Set the reconfirm policy");
                         });
 
                     policy.AddBranch(

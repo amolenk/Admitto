@@ -51,7 +51,7 @@ public abstract class FullStackTestsBase : ApiTestsBase
     }
 
     protected async ValueTask HandleCommand<TCommand, THandler>(TCommand command)
-        where THandler : IApiCommandHandler<TCommand>
+        where THandler : ICommandHandler<TCommand>
         where TCommand : Command
     {
         using var serviceScope = AssemblyTestFixture.WorkerHost.Services.CreateScope();

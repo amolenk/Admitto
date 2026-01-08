@@ -6,6 +6,8 @@ using Amolenk.Admitto.Application.Common.Email.Templating;
 using Amolenk.Admitto.Application.Common.Messaging;
 using Amolenk.Admitto.Application.Common.Persistence;
 using Amolenk.Admitto.Application.Jobs.SendCustomBulkEmail;
+using Amolenk.Admitto.Application.Jobs.SendReconfirmBulkEmail;
+using Amolenk.Admitto.Application.UseCases.BulkEmail.ScheduleReconfirmBulkEmail;
 using FluentValidation.Internal;
 using Humanizer;
 using Microsoft.Extensions.Caching.Memory;
@@ -51,11 +53,11 @@ public static class DependencyInjection
         {
             services.Scan(scan => scan
                 .FromAssemblies(Assembly.GetExecutingAssembly())
-                .AddClasses(classes => classes.AssignableTo<IApiCommandHandler>())
+                .AddClasses(classes => classes.AssignableTo<ICommandHandler>())
                 .AsSelf()
                 .As(t => t.GetInterfaces()
                     .Where(i => i.IsGenericType &&
-                                i.GetGenericTypeDefinition() == typeof(IApiCommandHandler<>)))
+                                i.GetGenericTypeDefinition() == typeof(ICommandHandler<>)))
                 .WithScopedLifetime());
 
             return services;
@@ -107,6 +109,10 @@ public static class DependencyInjection
                 options.AddJob<SendCustomBulkEmailJob>(c => c
                     .StoreDurably()
                     .WithIdentity(SendCustomBulkEmailJob.Name));
+
+                options.AddJob<SendReconfirmBulkEmailJob>(c => c
+                    .StoreDurably()
+                    .WithIdentity(SendReconfirmBulkEmailJob.Name));
             });
 
             return services;
@@ -161,11 +167,12 @@ public static class DependencyInjection
         {
             services.Scan(scan => scan
                 .FromAssemblies(Assembly.GetExecutingAssembly())
-                .AddClasses(classes => classes.AssignableTo<IWorkerCommandHandler>())
+                .AddClasses(classes => classes.AssignableTo<ICommandHandler>()
+                    && classes.AssignableTo<IApiHandler>())
                 .AsSelf()
                 .As(t => t.GetInterfaces()
                     .Where(i => i.IsGenericType &&
-                                i.GetGenericTypeDefinition() == typeof(IWorkerCommandHandler<>)))
+                                i.GetGenericTypeDefinition() == typeof(ICommandHandler<>)))
                 .WithScopedLifetime());
 
             return services;

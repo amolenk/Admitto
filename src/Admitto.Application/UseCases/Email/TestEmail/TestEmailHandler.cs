@@ -10,7 +10,7 @@ public class TestEmailHandler(
     IEmailComposerRegistry emailComposerRegistry,
     IEmailDispatcher emailDispatcher,
     IApplicationContext context)
-    : IWorkerCommandHandler<TestEmailCommand>
+    : ICommandHandler<TestEmailCommand>, IWorkerHandler
 {
     public async ValueTask HandleAsync(TestEmailCommand command, CancellationToken cancellationToken)
     {

@@ -1,13 +1,12 @@
 using System.Text;
 using System.Text.Json;
 using Amolenk.Admitto.Application.Common.Cryptography;
+using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Application.Common.Email.Verification;
 
-public record EmailVerifiedToken(string Email, DateTimeOffset VerifiedAtUtc)
+public record EmailVerifiedToken(string Email, DateTimeOffset ExpiresAtUtc, List<Coupon>? Coupons = null)
 {
-    private const int ExpirationMinutes = 30;
-
     public async ValueTask<string> EncodeAsync(
         ISigningService signingService,
         Guid ticketedEventId,
@@ -54,6 +53,6 @@ public record EmailVerifiedToken(string Email, DateTimeOffset VerifiedAtUtc)
         }
 
         // Check if token has expired
-        return DateTimeOffset.UtcNow - token.VerifiedAtUtc > TimeSpan.FromMinutes(ExpirationMinutes) ? null : token;
+        return token.ExpiresAtUtc > DateTimeOffset.UtcNow ? token : null;
     }
 }

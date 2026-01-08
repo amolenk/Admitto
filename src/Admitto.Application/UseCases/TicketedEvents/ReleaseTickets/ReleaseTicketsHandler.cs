@@ -7,7 +7,7 @@ namespace Amolenk.Admitto.Application.UseCases.TicketedEvents.ReleaseTickets;
 /// <summary>
 /// Represents a command handler that processes the releases of tickets from a ticketed event.
 /// </summary>
-public class ReleaseTicketsHandler(IApplicationContext context) : IWorkerCommandHandler<ReleaseTicketsCommand>
+public class ReleaseTicketsHandler(IApplicationContext context) : ICommandHandler<ReleaseTicketsCommand>, IWorkerHandler
 {
     public async ValueTask HandleAsync(ReleaseTicketsCommand command, CancellationToken cancellationToken)
     {

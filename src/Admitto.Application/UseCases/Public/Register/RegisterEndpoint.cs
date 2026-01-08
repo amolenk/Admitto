@@ -4,7 +4,6 @@ using Amolenk.Admitto.Application.Common.Email;
 using Amolenk.Admitto.Application.Common.Email.Verification;
 using Amolenk.Admitto.Application.UseCases.Attendees.RegisterAttendee;
 using Amolenk.Admitto.Domain.ValueObjects;
-using Microsoft.AspNetCore.Mvc;
 
 namespace Amolenk.Admitto.Application.UseCases.Public.Register;
 
@@ -34,7 +33,7 @@ public static class RegisterEndpoint
         var (teamId, eventId) =
             await slugResolver.ResolveTeamAndTicketedEventIdsAsync(teamSlug, eventSlug, cancellationToken);
 
-        await EnsureValidRequestAsync(request, eventId, signingService, cancellationToken);
+        var coupons = await EnsureValidRequestAsync(request, eventId, signingService, cancellationToken);
 
         var command = new RegisterAttendeeCommand(
             teamId,
@@ -43,15 +42,15 @@ public static class RegisterEndpoint
             request.FirstName,
             request.LastName,
             request.AdditionalDetails.Select(ad => new AdditionalDetail(ad.Name, ad.Value)).ToList(),
-            request.RequestedTickets.Select(t => new TicketSelection(t, 1)).ToList());
+            request.RequestedTickets.Select(t => new TicketSelection(t, 1)).ToList(),
+            coupons);
 
         await registerAttendeeHandler.HandleAsync(command, cancellationToken);
 
         return TypedResults.Created();
     }
 
-    // TODO Can we re-use this?
-    private static async ValueTask EnsureValidRequestAsync(
+    private static async ValueTask<List<Coupon>> EnsureValidRequestAsync(
         RegisterRequest request,
         Guid eventId,
         ISigningService signingService,
@@ -75,5 +74,7 @@ public static class RegisterEndpoint
         {
             throw new ApplicationRuleException(ApplicationRuleError.Attendee.InvalidVerificationToken);
         }
+
+        return token.Coupons ?? [];
     }
 }

@@ -10,7 +10,7 @@ public class SendEmailHandler(
     IEmailComposerRegistry emailComposerRegistry,
     IEmailDispatcher emailDispatcher,
     IApplicationContext context)
-    : IWorkerCommandHandler<SendEmailCommand>
+    : ICommandHandler<SendEmailCommand>, IWorkerHandler
 {
     public async ValueTask HandleAsync(SendEmailCommand command, CancellationToken cancellationToken)
     {
