@@ -22,12 +22,14 @@ public class ScheduleReconfirmBulkEmailHandler(IApplicationContext context, ISch
             "SendReconfirmBulkEmail",
             $"{command.TeamId}/{command.TicketedEventId}");
 
+        // Remove any existing trigger.
+        // TODO Check that we can call this if the job does not exist.
+        await scheduler.UnscheduleJob(triggerKey, cancellationToken);
+        
         // If no reconfirmation policy is set, make sure no job is scheduled.
         var policy = ticketedEvent.ReconfirmPolicy;
         if (policy is null)
         {
-            // TODO Check that we can call this if the job does not exist.
-            await scheduler.UnscheduleJob(triggerKey, cancellationToken);
             return;
         }
 
