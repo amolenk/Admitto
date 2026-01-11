@@ -1,9 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Amolenk.Admitto.ApiService.Auth;
 using Amolenk.Admitto.ApiService.Endpoints;
 using Amolenk.Admitto.ApiService.Middleware;
-using Amolenk.Admitto.ApiService.OpenApi;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -13,7 +11,7 @@ builder.AddServiceDefaults();
 
 // Add application services.
 builder.Services
-    .AddApplicationApiCommandHandlers()
+    .AddApplicationCommandHandlers()
     .AddApplicationTransactionalDomainEventHandlers();
     
 // Add auth services.

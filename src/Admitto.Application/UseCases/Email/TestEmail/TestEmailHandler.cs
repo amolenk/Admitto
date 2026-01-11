@@ -6,11 +6,12 @@ using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Application.UseCases.Email.TestEmail;
 
+[RequiresCapability(HostCapability.Email)]
 public class TestEmailHandler(
     IEmailComposerRegistry emailComposerRegistry,
     IEmailDispatcher emailDispatcher,
     IApplicationContext context)
-    : ICommandHandler<TestEmailCommand>, IWorkerHandler
+    : ICommandHandler<TestEmailCommand>
 {
     public async ValueTask HandleAsync(TestEmailCommand command, CancellationToken cancellationToken)
     {

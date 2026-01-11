@@ -8,7 +8,7 @@ namespace Amolenk.Admitto.Application.UseCases.Attendees.RecordAttendance;
 /// Records the attendance of a participant at a ticketed event.
 /// </summary>
 public class RecordAttendanceHandler(IApplicationContext context)
-    : ICommandHandler<RecordAttendanceCommand>, IWorkerHandler
+    : ICommandHandler<RecordAttendanceCommand>
 {
     public async ValueTask HandleAsync(RecordAttendanceCommand command, CancellationToken cancellationToken)
     {

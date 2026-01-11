@@ -1,0 +1,16 @@
+Reconfirm Your {{ event_name }} Registration
+
+Hi {{ first_name }},
+
+{{ event_name }} is almost here! Please take a moment to <strong>reconfirm</strong> your attendance.
+It's just one click and helps us plan food and logistics responsibly.
+
+Reconfirm: {{ reconfirm_link }}
+
+Cancel: {{ cancel_link }}
+
+Thanks for helping us prepare {{ event_name }}. See you soon!
+
+Best regards,
+The {{ event_name }} Team
+

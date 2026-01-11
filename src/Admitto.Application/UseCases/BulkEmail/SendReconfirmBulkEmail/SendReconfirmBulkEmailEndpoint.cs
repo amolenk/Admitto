@@ -1,6 +1,5 @@
-using Amolenk.Admitto.Application.Jobs.SendReconfirmBulkEmail;
+using Amolenk.Admitto.Application.Common.Messaging;
 using Amolenk.Admitto.Domain.ValueObjects;
-using Quartz;
 
 namespace Amolenk.Admitto.Application.UseCases.BulkEmail.SendReconfirmBulkEmail;
 
@@ -19,32 +18,25 @@ public static class SendReconfirmBulkEmailEndpoint
         return group;
     }
 
-    private static async ValueTask<Created> SendReconfirmBulkEmail(
+    private static async ValueTask<Accepted> SendReconfirmBulkEmail(
         string teamSlug,
         string eventSlug,
         SendReconfirmBulkEmailRequest request,
         ISlugResolver slugResolver,
-        ISchedulerFactory schedulerFactory,
+        ICommandSender commandSender,
         CancellationToken cancellationToken)
     {
         var (teamId, eventId) =
             await slugResolver.ResolveTeamAndTicketedEventIdsAsync(teamSlug, eventSlug, cancellationToken);
 
-        var scheduler = await schedulerFactory.GetScheduler(cancellationToken);
-        var triggerKey = new TriggerKey($"adhoc:{Guid.NewGuid()}", $"{teamId}/{eventId}");
+        var sendReconfirmBulkEmailCommand = new SendReconfirmBulkEmailCommand(
+            teamId,
+            eventId,
+            request.InitialDelayAfterRegistration,
+            request.ReminderInterval);
 
-        var triggerBuilder = TriggerBuilder.Create()
-            .ForJob(new JobKey(SendReconfirmBulkEmailJob.Name))
-            .WithIdentity(triggerKey)
-            .UsingJobData(SendReconfirmBulkEmailJob.JobData.TeamId, teamId.ToString())
-            .UsingJobData(SendReconfirmBulkEmailJob.JobData.TicketedEventId, eventId.ToString())
-            .UsingJobData(
-                SendReconfirmBulkEmailJob.JobData.InitialDelayAfterRegistration,
-                request.InitialDelayAfterRegistration.ToString())
-            .UsingJobData(SendReconfirmBulkEmailJob.JobData.ReminderInterval, request.ReminderInterval?.ToString()!)
-            .StartNow();
+        commandSender.Enqueue(sendReconfirmBulkEmailCommand);
         
-        await scheduler.ScheduleJob(triggerBuilder.Build(), cancellationToken);
-        return TypedResults.Created();
+        return TypedResults.Accepted((string?)null);
     }
 }

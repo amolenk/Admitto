@@ -1,7 +1,15 @@
 namespace Amolenk.Admitto.Application.Common.Messaging;
 
+public interface ICommandSender
+{
+    ValueTask SendAsync(Command command, CancellationToken cancellationToken = default);
+
+    void Enqueue(Command command);
+}
+
 // TODO Upgrade to full mediator and use in message processing as well
 public class CommandSender(IMessageOutbox outbox, IServiceProvider serviceProvider, ILogger<CommandSender> logger)
+    : ICommandSender
 {
     public async ValueTask SendAsync(Command command, CancellationToken cancellationToken = default)
     {

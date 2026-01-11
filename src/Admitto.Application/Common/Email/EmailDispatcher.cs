@@ -1,6 +1,7 @@
 using Amolenk.Admitto.Application.Common.Email.Sending;
 using Amolenk.Admitto.Application.Common.Messaging;
 using Amolenk.Admitto.Application.Common.Persistence;
+using Amolenk.Admitto.Domain.Utilities;
 using Amolenk.Admitto.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Application.Common.Email;
@@ -10,8 +11,17 @@ namespace Amolenk.Admitto.Application.Common.Email;
 /// </summary>
 public interface IEmailDispatcher
 {
+    // TODO Replace with string key
     ValueTask DispatchEmailAsync(
         EmailMessage emailMessage,
+        Guid teamId,
+        Guid ticketedEventId,
+        Guid idempotencyKey,
+        CancellationToken cancellationToken = default);
+
+    // TODO Remove in favor of string overload
+    ValueTask DispatchEmailsAsync(
+        IAsyncEnumerable<EmailMessage> emailMessages,
         Guid teamId,
         Guid ticketedEventId,
         Guid idempotencyKey,
@@ -21,7 +31,7 @@ public interface IEmailDispatcher
         IAsyncEnumerable<EmailMessage> emailMessages,
         Guid teamId,
         Guid ticketedEventId,
-        Guid idempotencyKey,
+        string idempotencyKey,
         CancellationToken cancellationToken = default);
 }
 
@@ -62,6 +72,21 @@ public class EmailDispatcher(
             teamId,
             ticketedEventId,
             idempotencyKey,
+            cancellationToken);
+    }
+
+    public ValueTask DispatchEmailsAsync(
+        IAsyncEnumerable<EmailMessage> emailMessages,
+        Guid teamId,
+        Guid ticketedEventId,
+        string idempotencyKey,
+        CancellationToken cancellationToken = default)
+    {
+        return DispatchEmailsAsync(
+            emailMessages,
+            teamId,
+            ticketedEventId,
+            DeterministicGuid.Create(idempotencyKey),
             cancellationToken);
     }
 
@@ -130,7 +155,7 @@ public class EmailDispatcher(
             .Where(l => l.TicketedEventId == ticketedEventId && l.Recipient == emailMessage.Recipient &&
                         l.IdempotencyKey == idempotencyKey)
             .AnyAsync(cancellationToken);
-        
+
         if (emailSent)
         {
             logger.LogInformation(
@@ -138,18 +163,18 @@ public class EmailDispatcher(
                 emailMessage.Subject,
                 emailMessage.Recipient,
                 idempotencyKey);
-        
+
             return;
         }
-        
+
         await emailSender.SendEmailAsync(emailMessage);
-        
+
         logger.LogInformation(
             "Sent email with subject '{Subject}' to '{Recipient}' for idempotency key '{IdempotencyKey}'.",
             emailMessage.Subject,
             emailMessage.Recipient,
             idempotencyKey);
-        
+
         // Directly log the email in the database for strong consistency.
         var now = DateTimeOffset.UtcNow;
         var emailLog = new EmailLog
@@ -167,7 +192,7 @@ public class EmailDispatcher(
             StatusUpdatedAt = now
         };
         context.EmailLog.Add(emailLog);
-        
+
         // If the email is for an existing participant, raise an application event to notify other parts of the system.
         if (emailMessage.ParticipantId is not null)
         {

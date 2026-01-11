@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Application.Common.Messaging;
 using Amolenk.Admitto.Worker;
 using Quartz;
 
@@ -8,16 +9,11 @@ builder.AddServiceDefaults();
 
 // Add application services.
 builder.Services
-    .AddApplicationWorkerCommandHandlers()
+    .AddApplicationCommandHandlers(HostCapability.Email)
     .AddApplicationApplicationEventHandlers()
     .AddApplicationEventualDomainEventHandlers()
     .AddApplicationTransactionalDomainEventHandlers()
     .AddApplicationJobs();
-
-// Add application event handlers for events that are processed in the worker.
-builder.Services
-    .AddApplicationApplicationEventHandlers()
-    .AddApplicationEventualDomainEventHandlers();
 
 // Add Quartz.NET hosted service.
 builder.Services.AddQuartzHostedService(options => { options.WaitForJobsToComplete = true; });

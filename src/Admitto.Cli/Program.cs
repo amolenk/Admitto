@@ -4,6 +4,7 @@ using Amolenk.Admitto.Cli.Commands;
 using Amolenk.Admitto.Cli.Commands.Attendee;
 using Amolenk.Admitto.Cli.Commands.Auth;
 using Amolenk.Admitto.Cli.Commands.Email;
+using Amolenk.Admitto.Cli.Commands.Email.Bulk;
 using Amolenk.Admitto.Cli.Commands.Email.Template.Event;
 using Amolenk.Admitto.Cli.Commands.Email.Template.Team;
 using Amolenk.Admitto.Cli.Commands.Email.Verification;
@@ -178,28 +179,15 @@ app.Configure(config =>
                         .WithDescription("Remove an email recipient list");
                 });
 
-            // email.AddBranch(
-            //     "send",
-            //     sendEmail =>
-            //     {
-            //         sendEmail.SetDescription("Manage registration email templates.");
-            //
-            //         sendEmail.AddBranch(
-            //             "attendee",
-            //             attendeeEmail =>
-            //             {
-            //                 attendeeEmail.AddCommand<SendRegistrationVerifyEmailCommand>("ticket");
-            //             });
-            //
-            //         sendEmail.AddBranch(
-            //             "registration",
-            //             registrationEmail =>
-            //             {
-            //                 registrationEmail.AddCommand<SendRegistrationVerifyEmailCommand>("verify");
-            //             });
-            //     });
+            email.AddBranch(
+                "send",
+                sendEmail =>
+                {
+                    sendEmail.SetDescription("Manually send emails to attendees.");
 
-
+                    sendEmail.AddCommand<SendReconfirmEmailCommand>("reconfirm");
+                });
+            
             email.AddBranch(
                 "template",
                 template =>

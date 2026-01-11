@@ -11,7 +11,7 @@ namespace Amolenk.Admitto.Application.UseCases.Attendees.RegisterAttendee;
 /// Registers an attendee for a ticketed event.
 /// </summary>
 public class RegisterAttendeeHandler(IApplicationContext context, IUnitOfWork unitOfWork)
-    : ICommandHandler<RegisterAttendeeCommand>, IApiHandler
+    : ICommandHandler<RegisterAttendeeCommand>
 {
     public async ValueTask HandleAsync(RegisterAttendeeCommand command, CancellationToken cancellationToken)
     {
