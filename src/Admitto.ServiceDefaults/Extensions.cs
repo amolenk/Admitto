@@ -148,8 +148,7 @@ public static class Extensions
     }
 }
 
-
-sealed class AzureMonitorExporterListener : EventListener
+public sealed class AzureMonitorExporterListener : EventListener
 {
     protected override void OnEventSourceCreated(EventSource eventSource)
     {
