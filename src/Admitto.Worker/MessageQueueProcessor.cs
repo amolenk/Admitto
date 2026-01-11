@@ -56,7 +56,7 @@ public class MessageQueueProcessor(
                 await ExecuteHandlerAsync(
                     command.CommandId,
                     command,
-                    typeof(IWorkerCommandHandler<>),
+                    typeof(ICommandHandler<>),
                     scope.ServiceProvider,
                     cancellationToken);
                 break;

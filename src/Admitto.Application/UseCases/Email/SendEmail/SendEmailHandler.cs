@@ -6,11 +6,12 @@ using Amolenk.Admitto.Application.Common.Persistence;
 
 namespace Amolenk.Admitto.Application.UseCases.Email.SendEmail;
 
+[RequiresCapability(HostCapability.Email)]
 public class SendEmailHandler(
     IEmailComposerRegistry emailComposerRegistry,
     IEmailDispatcher emailDispatcher,
     IApplicationContext context)
-    : IWorkerCommandHandler<SendEmailCommand>
+    : ICommandHandler<SendEmailCommand>
 {
     public async ValueTask HandleAsync(SendEmailCommand command, CancellationToken cancellationToken)
     {

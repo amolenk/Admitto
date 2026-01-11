@@ -6,6 +6,7 @@ using Amolenk.Admitto.Application.Common.Email.Templating;
 using Amolenk.Admitto.Application.Common.Messaging;
 using Amolenk.Admitto.Application.Common.Persistence;
 using Amolenk.Admitto.Application.Jobs.SendCustomBulkEmail;
+using Amolenk.Admitto.Application.Jobs.SendReconfirmBulkEmail;
 using FluentValidation.Internal;
 using Humanizer;
 using Microsoft.Extensions.Caching.Memory;
@@ -28,7 +29,7 @@ public static class DependencyInjection
                     .Where(i => i.IsGenericType &&
                                 i.GetGenericTypeDefinition() == typeof(IApplicationEventHandler<>)))
                 .WithScopedLifetime());
-            
+
             return services;
         }
 
@@ -47,32 +48,39 @@ public static class DependencyInjection
             return services;
         }
 
-        public IServiceCollection AddApplicationApiCommandHandlers()
+        public IServiceCollection AddApplicationCommandHandlers(HostCapability capabilities = HostCapability.None)
         {
             services.Scan(scan => scan
                 .FromAssemblies(Assembly.GetExecutingAssembly())
-                .AddClasses(classes => classes.AssignableTo<IApiCommandHandler>())
-                .AsSelf()
+                .AddClasses(classes => classes
+                    .AssignableTo<ICommandHandler>()
+                    .Where(c =>
+                    {
+                        var requiresCapabilityAttribute = c.GetCustomAttribute<RequiresCapabilityAttribute>();
+                        return requiresCapabilityAttribute is null
+                               || (requiresCapabilityAttribute.Capability & capabilities) ==
+                               requiresCapabilityAttribute.Capability;
+                    }))
+                .AsSelf() // TODO No longer needed if we use a mediator
                 .As(t => t.GetInterfaces()
                     .Where(i => i.IsGenericType &&
-                                i.GetGenericTypeDefinition() == typeof(IApiCommandHandler<>)))
+                                i.GetGenericTypeDefinition() == typeof(ICommandHandler<>)))
                 .WithScopedLifetime());
 
             return services;
         }
-        
+
         public IServiceCollection AddApplicationCryptographyServices()
         {
             services.AddScoped<ISigningService, SigningService>();
-            
+
             return services;
         }
-        
+
         public IServiceCollection AddApplicationEmailServices()
         {
             services
                 .AddKeyedScoped<IEmailComposer, CanceledEmailComposer>(WellKnownEmailType.Canceled)
-                .AddKeyedScoped<IEmailComposer, ReconfirmEmailComposer>(WellKnownEmailType.Reconfirm)
                 .AddKeyedScoped<IEmailComposer, TicketEmailComposer>(WellKnownEmailType.Ticket)
                 .AddKeyedScoped<IEmailComposer, VerificationEmailComposer>(WellKnownEmailType.VerifyEmail)
                 .AddKeyedScoped<IEmailComposer, VisaLetterDeniedEmailComposer>(WellKnownEmailType.VisaLetterDenied);
@@ -85,7 +93,7 @@ public static class DependencyInjection
 
             return services;
         }
-        
+
         public IServiceCollection AddApplicationEventualDomainEventHandlers()
         {
             services.Scan(scan => scan
@@ -96,7 +104,7 @@ public static class DependencyInjection
                     .Where(i => i.IsGenericType &&
                                 i.GetGenericTypeDefinition() == typeof(IEventualDomainEventHandler<>)))
                 .WithScopedLifetime());
-            
+
             return services;
         }
 
@@ -107,11 +115,23 @@ public static class DependencyInjection
                 options.AddJob<SendCustomBulkEmailJob>(c => c
                     .StoreDurably()
                     .WithIdentity(SendCustomBulkEmailJob.Name));
+
+                options.AddJob<SendReconfirmBulkEmailJob>(c => c
+                    .StoreDurably()
+                    .WithIdentity(SendReconfirmBulkEmailJob.Name));
             });
 
             return services;
         }
-        
+
+        public IServiceCollection AddApplicationMessagingServices()
+        {
+            services.AddScoped<ICommandSender, CommandSender>();
+
+            return services;
+        }
+
+
         public IServiceCollection AddApplicationTransactionalDomainEventHandlers()
         {
             services.Scan(scan => scan
@@ -122,10 +142,10 @@ public static class DependencyInjection
                     .Where(i => i.IsGenericType &&
                                 i.GetGenericTypeDefinition() == typeof(ITransactionalDomainEventHandler<>)))
                 .WithScopedLifetime());
-            
+
             return services;
         }
-        
+
         public IServiceCollection AddApplicationValidationServices()
         {
             services.AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
@@ -153,20 +173,6 @@ public static class DependencyInjection
 
                 return memberInfo?.Name.Camelize();
             };
-
-            return services;
-        }
-        
-        public IServiceCollection AddApplicationWorkerCommandHandlers()
-        {
-            services.Scan(scan => scan
-                .FromAssemblies(Assembly.GetExecutingAssembly())
-                .AddClasses(classes => classes.AssignableTo<IWorkerCommandHandler>())
-                .AsSelf()
-                .As(t => t.GetInterfaces()
-                    .Where(i => i.IsGenericType &&
-                                i.GetGenericTypeDefinition() == typeof(IWorkerCommandHandler<>)))
-                .WithScopedLifetime());
 
             return services;
         }

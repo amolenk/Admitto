@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reconfirm Your {{ event_name }} Registration</title>
+</head>
+
+<body style="margin: 0; padding: 0; background-color: #f9f9f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+
+<div style="width: 560px; line-height: 1.5; background-color: #ffffff; margin: 20px auto; padding: 20px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+
+    <div>
+        <h1 style="font-size: 24px; font-weight: bold; color: #0e1b4d; margin-top: 0; padding-bottom: 10px;">Reconfirm Your {{ event_name }} Registration</h1>
+
+        <p style="margin-top: 0;">Hi {{ first_name }},</p>
+        <p>
+            {{ event_name }} is almost here! Please take a moment to <strong>reconfirm</strong> your attendance.
+            It's just one click and helps us plan food and logistics responsibly.
+        </p>
+    </div>
+
+    <div style="border-top: 1px solid #ddd; margin-top: 20px;">
+        <p style="margin-top: 10px;">
+            <a href="{{ reconfirm_link }}"
+               style="background-color: #2F7D4A; color: #ffffff; text-decoration: none; padding: 10px 20px; margin-right: 10px; border-radius: 4px; display: inline-block;">
+                Yes, I'll Be There!
+            </a>
+            <a href="{{ cancel_link }}"
+               style="background-color: #9B2C2C; color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 4px; display: inline-block;">
+                No, I Can't Make It
+            </a>
+        </p>
+    </div>
+
+    <div style="border-top: 1px solid #ddd; margin-top: 20px;">
+        <p>If the buttons above don’t work, copy and paste the URL into your browser:</p>
+        <p style="font-size: 14px;">
+            <strong>Reconfirm: </strong><a href="{{ reconfirm_link }}" style="color: #0e1b4d;">{{ reconfirm_link }}</a>
+        </p>
+        <p style="font-size: 14px;">
+            <strong>Cancel: </strong><a href="{{ cancel_link }}" style="color: #0e1b4d;">{{ cancel_link }}</a>
+        </p>
+    </div>
+
+    <div style="border-top: 1px solid #ddd; margin-top: 20px;">
+        <p>Thanks for helping us prepare {{ event_name }}. See you soon!</p>
+        <p>Best regards,<br>The {{ event_name }} Team</p>
+    </div>
+
+</div>
+</body>
+</html>

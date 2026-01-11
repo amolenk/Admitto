@@ -58,7 +58,7 @@ public static class SendCustomBulkEmailEndpoint
 
         var triggerBuilder = TriggerBuilder.Create()
             .ForJob(new JobKey(SendCustomBulkEmailJob.Name))
-            .WithIdentity(Guid.NewGuid().ToString(), $"{teamSlug}/{eventSlug}")
+            .WithIdentity(Guid.NewGuid().ToString(), $"{teamId}/{eventId}")
             .UsingJobData(SendCustomBulkEmailJob.JobData.TeamId, teamId.ToString())
             .UsingJobData(SendCustomBulkEmailJob.JobData.TicketedEventId, eventId.ToString())
             .UsingJobData(SendCustomBulkEmailJob.JobData.EmailType, request.EmailType)

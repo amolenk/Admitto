@@ -7,7 +7,7 @@ namespace Amolenk.Admitto.Application.UseCases.Attendees.ChangeTickets;
 /// <summary>
 /// Changes the tickets for a registered attendee.
 /// </summary>
-public class ChangeTicketsHandler(IApplicationContext context) : IApiCommandHandler<ChangeTicketsCommand>
+public class ChangeTicketsHandler(IApplicationContext context) : ICommandHandler<ChangeTicketsCommand>
 {
     public async ValueTask HandleAsync(ChangeTicketsCommand command, CancellationToken cancellationToken)
     {
@@ -17,7 +17,7 @@ public class ChangeTicketsHandler(IApplicationContext context) : IApiCommandHand
         {
             throw new ApplicationRuleException(ApplicationRuleError.Attendee.NotFound);
         }
-        
+
         // Get the ticketed event.
         var ticketedEvent = await context.TicketedEvents.FindAsync([command.TicketedEventId], cancellationToken);
         if (ticketedEvent is null)
@@ -27,14 +27,15 @@ public class ChangeTicketsHandler(IApplicationContext context) : IApiCommandHand
 
         // Release the previously claimed tickets.
         ticketedEvent.ReleaseTickets(attendee.Tickets);
-        
+
         // Try to claim the new tickets. This can fail if there are not enough tickets available.
         ticketedEvent.ClaimTickets(
             attendee.Email,
             DateTimeOffset.UtcNow,
             command.RequestedTickets,
+            coupons: [],
             ignoreCapacity: command.AdminOnBehalfOf);
-        
+
         // Update the attendee's tickets.
         attendee.UpdateTickets(command.RequestedTickets);
     }

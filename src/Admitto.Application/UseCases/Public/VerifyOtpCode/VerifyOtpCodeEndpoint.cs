@@ -63,7 +63,8 @@ public static class VerifyOtpCodeEndpoint
             throw new ApplicationRuleException(ApplicationRuleError.EmailVerificationRequest.Invalid);
         }
         
-        var token = new EmailVerifiedToken(email, DateTime.UtcNow);
+        // Token is valid for 30 minutes.
+        var token = new EmailVerifiedToken(email, DateTime.UtcNow.AddMinutes(30));
         var signedToken = await token.EncodeAsync(signingService, eventId, cancellationToken);
         var response = new VerifyOtpCodeResponse(signedToken);
 
