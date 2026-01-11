@@ -4,8 +4,6 @@ using Amolenk.Admitto.ApiService.Endpoints;
 using Amolenk.Admitto.ApiService.Middleware;
 using Scalar.AspNetCore;
 
-_ = new AzureMonitorExporterListener();
-
 var builder = WebApplication.CreateBuilder(args);
 
 // Add default services.

@@ -1,4 +1,3 @@
-using System.Diagnostics.Tracing;
 using Amolenk.Admitto.Application.Common;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
 using Microsoft.AspNetCore.Builder;
@@ -145,37 +144,5 @@ public static class Extensions
         }
 
         return app;
-    }
-}
-
-public sealed class AzureMonitorExporterListener : EventListener
-{
-    protected override void OnEventSourceCreated(EventSource eventSource)
-    {
-        // Name per Microsoft troubleshooting guidance
-        if (eventSource.Name == "OpenTelemetry-AzureMonitor-Exporter")
-        {
-            EnableEvents(eventSource, EventLevel.Verbose);
-        }
-    }
-
-    protected override void OnEventWritten(EventWrittenEventArgs eventData)
-    {
-        try
-        {
-            var msg = eventData.Message;
-            if (msg != null && eventData.Payload != null)
-            {
-                Console.WriteLine("[AzureMonitorExporter] " + string.Format(msg, eventData.Payload.ToArray()));
-            }
-            else
-            {
-                Console.WriteLine("[AzureMonitorExporter] " + (msg ?? eventData.EventName));
-            }
-        }
-        catch
-        {
-            Console.WriteLine("[AzureMonitorExporter] event received (formatting failed).");
-        }
     }
 }
