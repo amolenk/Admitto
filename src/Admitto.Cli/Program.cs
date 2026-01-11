@@ -4,6 +4,7 @@ using Amolenk.Admitto.Cli.Commands;
 using Amolenk.Admitto.Cli.Commands.Attendee;
 using Amolenk.Admitto.Cli.Commands.Auth;
 using Amolenk.Admitto.Cli.Commands.Email;
+using Amolenk.Admitto.Cli.Commands.Email.Bulk;
 using Amolenk.Admitto.Cli.Commands.Email.Template.Event;
 using Amolenk.Admitto.Cli.Commands.Email.Template.Team;
 using Amolenk.Admitto.Cli.Commands.Email.Verification;
@@ -143,8 +144,11 @@ app.Configure(config =>
                 {
                     bulk.SetDescription("Manage bulk emails");
 
-                    bulk.AddCommand<Commands.Email.Bulk.SendCustomBulkEmailCommand>("send")
-                        .WithDescription("Send a bulk email");
+                    bulk.AddCommand<Commands.Email.Bulk.SendCustomBulkEmailCommand>("custom")
+                        .WithDescription("Send a custom bulk email");
+
+                    bulk.AddCommand<Commands.Email.Bulk.SendReconfirmBulkEmailCommand>("reconfirm")
+                        .WithDescription("Send a reconfirm bulk email");
 
                     // bulk.AddCommand<Commands.Email.Bulk.TestCustomBulkEmailCommand>("test")
                     //     .WithDescription("Test a bulk email");
@@ -175,28 +179,15 @@ app.Configure(config =>
                         .WithDescription("Remove an email recipient list");
                 });
 
-            // email.AddBranch(
-            //     "send",
-            //     sendEmail =>
-            //     {
-            //         sendEmail.SetDescription("Manage registration email templates.");
-            //
-            //         sendEmail.AddBranch(
-            //             "attendee",
-            //             attendeeEmail =>
-            //             {
-            //                 attendeeEmail.AddCommand<SendRegistrationVerifyEmailCommand>("ticket");
-            //             });
-            //
-            //         sendEmail.AddBranch(
-            //             "registration",
-            //             registrationEmail =>
-            //             {
-            //                 registrationEmail.AddCommand<SendRegistrationVerifyEmailCommand>("verify");
-            //             });
-            //     });
+            email.AddBranch(
+                "send",
+                sendEmail =>
+                {
+                    sendEmail.SetDescription("Manually send emails to attendees.");
 
-
+                    sendEmail.AddCommand<SendReconfirmEmailCommand>("reconfirm");
+                });
+            
             email.AddBranch(
                 "template",
                 template =>
@@ -301,8 +292,8 @@ app.Configure(config =>
                             reconfirm.AddCommand<Commands.Events.Policy.Reconfirm.ClearReconfirmPolicyCommand>("clear")
                                 .WithDescription("Clear the reconfirm policy");
 
-                            // reconfirm.AddCommand<Commands.Events.Policy.Reconfirm.SetReconfirmPolicyCommand>("set")
-                            //     .WithDescription("Set the reconfirm policy");
+                            reconfirm.AddCommand<Commands.Events.Policy.Reconfirm.SetReconfirmPolicyCommand>("set")
+                                .WithDescription("Set the reconfirm policy");
                         });
 
                     policy.AddBranch(

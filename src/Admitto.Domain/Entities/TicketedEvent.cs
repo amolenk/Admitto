@@ -113,6 +113,7 @@ public class TicketedEvent : Aggregate
         string email,
         DateTimeOffset registrationDateTime,
         IList<TicketSelection> tickets,
+        IList<Coupon> coupons,
         bool ignoreCapacity = false)
     {
         if (RegistrationPolicy is null
@@ -161,15 +162,17 @@ public class TicketedEvent : Aggregate
         foreach (var ticketSelection in tickets)
         {
             var ticketType = _ticketTypes.FirstOrDefault(tt => tt.Slug == ticketSelection.TicketTypeSlug);
-            // Ticket type validation already done above, so ticketType should not be null here
 
             // Ensure that there's enough capacity for the requested tickets.
-            if (!ignoreCapacity && !ticketType!.HasAvailableCapacity(ticketSelection.Quantity))
+            // Ticket type validation already done above, so ticketType should not be null here
+            if (!ticketType!.HasAvailableCapacity(ticketSelection.Quantity)
+                && !ignoreCapacity
+                && !coupons.Any(c => c.TicketTypeSlug == ticketType.Slug && c.Quantity >= ticketSelection.Quantity))
             {
                 throw new DomainRuleException(DomainRuleError.TicketedEvent.CapacityExceeded(ticketType.Slug));
             }
 
-            ticketType!.ClaimTickets(ticketSelection.Quantity);
+            ticketType.ClaimTickets(ticketSelection.Quantity);
         }
     }
 
@@ -226,7 +229,7 @@ public class TicketedEvent : Aggregate
             throw new DomainRuleException(DomainRuleError.TicketedEvent.EndTimeMustBeAfterStartTime);
         }
     }
-    
+
     public void UpdateMaxCapacity(string ticketTypeSlug, int maxCapacity)
     {
         var ticketType = _ticketTypes.FirstOrDefault(t => t.Slug == ticketTypeSlug);
@@ -234,10 +237,10 @@ public class TicketedEvent : Aggregate
         {
             throw new DomainRuleException(DomainRuleError.TicketedEvent.TicketTypeNotFound(ticketTypeSlug));
         }
-        
+
         ticketType.UpdateMaxCapacity(maxCapacity);
     }
-    
+
     public void SetCancellationPolicy(CancellationPolicy policy)
     {
         CancellationPolicy = policy;
@@ -246,6 +249,8 @@ public class TicketedEvent : Aggregate
     public void SetReconfirmPolicy(ReconfirmPolicy? policy)
     {
         ReconfirmPolicy = policy;
+
+        AddDomainEvent(new ReconfirmPolicyUpdatedDomainEvent(TeamId, Id));
     }
 
     public void SetRegistrationPolicy(RegistrationPolicy policy)

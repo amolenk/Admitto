@@ -38,6 +38,7 @@ public static class RegisterAttendeeEndpoint
             request.LastName,
             request.AdditionalDetails.Select(ad => new AdditionalDetail(ad.Name, ad.Value)).ToList(),
             request.AssignedTickets.Select(t => new TicketSelection(t.TicketTypeSlug, t.Quantity)).ToList(),
+            Coupons: [],
             AdminOnBehalfOf: true);
 
         await registerAttendeeHandler.HandleAsync(command, cancellationToken);

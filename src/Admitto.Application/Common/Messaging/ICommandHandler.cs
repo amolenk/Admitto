@@ -1,20 +1,10 @@
 namespace Amolenk.Admitto.Application.Common.Messaging;
 
-public interface IApiCommandHandler
+public interface ICommandHandler
 {
 }
 
-public interface IApiCommandHandler<in TCommand> : IApiCommandHandler
-    where TCommand : Command
-{
-    ValueTask HandleAsync(TCommand command, CancellationToken cancellationToken);
-}
-
-public interface IWorkerCommandHandler
-{
-}
-
-public interface IWorkerCommandHandler<in TCommand> : IWorkerCommandHandler
+public interface ICommandHandler<in TCommand> : ICommandHandler
     where TCommand : Command
 {
     ValueTask HandleAsync(TCommand command, CancellationToken cancellationToken);

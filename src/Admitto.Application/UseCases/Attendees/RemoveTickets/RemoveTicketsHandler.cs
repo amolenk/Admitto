@@ -9,7 +9,7 @@ namespace Amolenk.Admitto.Application.UseCases.Attendees.RemoveTickets;
 /// Removes tickets of a specific type for a registered attendee.
 /// </summary>
 public class RemoveTicketsHandler(IApplicationContext context, IMessageOutbox outbox)
-    : IWorkerCommandHandler<RemoveTicketsCommand>
+    : ICommandHandler<RemoveTicketsCommand>
 {
     public async ValueTask HandleAsync(RemoveTicketsCommand command, CancellationToken cancellationToken)
     {

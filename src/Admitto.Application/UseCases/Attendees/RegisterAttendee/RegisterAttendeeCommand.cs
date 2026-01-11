@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Application.Common.Email.Verification;
 using Amolenk.Admitto.Application.Common.Messaging;
 using Amolenk.Admitto.Domain.ValueObjects;
 
@@ -14,5 +15,6 @@ public record RegisterAttendeeCommand(
     string LastName,
     IList<AdditionalDetail> AdditionalDetails,
     IList<TicketSelection> RequestedTickets,
+    IList<Coupon> Coupons,
     bool AdminOnBehalfOf = false)
     : Command;

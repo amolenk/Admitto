@@ -2,6 +2,7 @@
 #pragma warning disable CS0618
 using Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Emails.Bulk;
 using Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Emails.Item;
+using Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Emails.Reconfirm;
 using Microsoft.Kiota.Abstractions.Extensions;
 using Microsoft.Kiota.Abstractions;
 using System.Collections.Generic;
@@ -20,6 +21,11 @@ namespace Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Emails
         public global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Emails.Bulk.BulkRequestBuilder Bulk
         {
             get => new global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Emails.Bulk.BulkRequestBuilder(PathParameters, RequestAdapter);
+        }
+        /// <summary>The reconfirm property</summary>
+        public global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Emails.Reconfirm.ReconfirmRequestBuilder Reconfirm
+        {
+            get => new global::Amolenk.Admitto.Cli.Api.Teams.Item.Events.Item.Emails.Reconfirm.ReconfirmRequestBuilder(PathParameters, RequestAdapter);
         }
         /// <summary>Gets an item from the Amolenk.Admitto.Cli.Api.teams.item.events.item.emails.item collection</summary>
         /// <param name="position">Unique identifier of the item</param>

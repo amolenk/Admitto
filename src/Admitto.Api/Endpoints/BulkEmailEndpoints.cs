@@ -1,5 +1,6 @@
 using Amolenk.Admitto.ApiService.Middleware;
 using Amolenk.Admitto.Application.UseCases.BulkEmail.SendCustomBulkEmail;
+using Amolenk.Admitto.Application.UseCases.BulkEmail.SendReconfirmBulkEmail;
 
 namespace Amolenk.Admitto.ApiService.Endpoints;
 
@@ -19,6 +20,7 @@ public static class BulkEmailEndpoints
             .RequireAuthorization();
 
         group
-            .MapSendCustomBulkEmail();
+            .MapSendCustomBulkEmail()
+            .MapSendReconfirmBulkEmail();
     }
 }

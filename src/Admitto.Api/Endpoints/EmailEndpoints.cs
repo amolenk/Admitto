@@ -1,5 +1,6 @@
 using Amolenk.Admitto.ApiService.Middleware;
 using Amolenk.Admitto.Application.UseCases.Email.SendEmail;
+using Amolenk.Admitto.Application.UseCases.Email.SendReconfirmEmail;
 using Amolenk.Admitto.Application.UseCases.Email.TestEmail;
 
 namespace Amolenk.Admitto.ApiService.Endpoints;
@@ -21,6 +22,7 @@ public static class EmailEndpoints
 
         group
             .MapSendEmail()
-            .MapTestEmail();
+            .MapTestEmail()
+            .MapSendReconfirmEmail();
     }
 }

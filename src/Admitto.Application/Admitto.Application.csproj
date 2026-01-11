@@ -35,6 +35,8 @@
       <EmbeddedResource Include="Common\Email\Templating\Defaults\canceled.html" />
       <EmbeddedResource Include="Common\Email\Templating\Defaults\magic-link.html" />
       <EmbeddedResource Include="Common\Email\Templating\Defaults\magic-link.txt" />
+      <EmbeddedResource Include="Common\Email\Templating\Defaults\reconfirm.html" />
+      <EmbeddedResource Include="Common\Email\Templating\Defaults\reconfirm.txt" />
       <EmbeddedResource Include="Common\Email\Templating\Defaults\ticket.txt" />
       <EmbeddedResource Include="Common\Email\Templating\Defaults\verify.html" />
       <EmbeddedResource Include="Common\Email\Templating\Defaults\visa-letter-denied.html" />

@@ -1,5 +1,9 @@
+using Amolenk.Admitto.Application.Common.Email.Composing;
 using Amolenk.Admitto.Application.Common.Persistence;
 using Amolenk.Admitto.Domain.Entities;
+using Amolenk.Admitto.Domain.ValueObjects;
+using Scriban;
+using Scriban.Runtime;
 
 namespace Amolenk.Admitto.Application.Common.Email.Templating;
 
@@ -9,11 +13,20 @@ namespace Amolenk.Admitto.Application.Common.Email.Templating;
 /// </summary>
 public interface IEmailTemplateService
 {
+    // TODO Make private
     ValueTask<EmailTemplate> LoadEmailTemplateAsync(
         string type,
         Guid teamId,
         Guid ticketedEventId,
         CancellationToken cancellationToken);
+
+    ValueTask<EmailMessage> RenderEmailMessageAsync(
+        string emailType,
+        Guid teamId,
+        Guid ticketedEventId,
+        IEmailParameters templateParameters,
+        Guid? participantId = null,
+        CancellationToken cancellationToken = default); 
 }
 
 /// <summary>
@@ -22,6 +35,39 @@ public interface IEmailTemplateService
 /// </summary>
 public class EmailTemplateService(IApplicationContext context) : IEmailTemplateService
 {
+    public async ValueTask<EmailMessage> RenderEmailMessageAsync(
+        string emailType,
+        Guid teamId,
+        Guid ticketedEventId,
+        IEmailParameters templateParameters,
+        Guid? participantId = null,
+        CancellationToken cancellationToken = default)
+    {
+        var scriptObject = new ScriptObject();
+        scriptObject.Import(templateParameters);
+
+        var templateContext = new TemplateContext();
+        templateContext.PushGlobal(scriptObject);
+
+        var emailTemplate = await LoadEmailTemplateAsync(
+            emailType,
+            teamId,
+            ticketedEventId,
+            cancellationToken);
+
+        var subject = await RenderTemplateAsync(emailTemplate.Subject, templateContext);
+        var textBody = await RenderTemplateAsync(emailTemplate.TextBody, templateContext);
+        var htmlBody = await RenderTemplateAsync(emailTemplate.HtmlBody, templateContext);
+
+        return new EmailMessage(
+            templateParameters.Recipient,
+            subject,
+            textBody,
+            htmlBody,
+            emailType,
+            participantId);
+    }
+    
     // TODO - consider caching templates
     public async ValueTask<EmailTemplate> LoadEmailTemplateAsync(
         string type,
@@ -40,8 +86,9 @@ public class EmailTemplateService(IApplicationContext context) : IEmailTemplateS
         return type switch
         {
             WellKnownEmailType.Canceled => GetDefaultCancelTemplate(teamId),
-            WellKnownEmailType.VerifyEmail => GetDefaultVerifyEmailTemplate(teamId),
+            WellKnownEmailType.Reconfirm => GetDefaultReconfirmTemplate(teamId),
             WellKnownEmailType.Ticket => GetDefaultTicketTemplate(teamId),
+            WellKnownEmailType.VerifyEmail => GetDefaultVerifyEmailTemplate(teamId),
             WellKnownEmailType.VisaLetterDenied => GetDefaultVisaDeniedTemplate(teamId),
             _ => throw new ApplicationRuleException(ApplicationRuleError.EmailTemplate.TemplateNotSupported(type))
         };
@@ -64,6 +111,16 @@ public class EmailTemplateService(IApplicationContext context) : IEmailTemplateS
             "Your {{ event_name }} Ticket",
             LoadEmbeddedResource("ticket.txt"),
             LoadEmbeddedResource("ticket.html"),
+            teamId);
+    }
+
+    private static EmailTemplate GetDefaultReconfirmTemplate(Guid teamId)
+    {
+        return EmailTemplate.Create(
+            WellKnownEmailType.Reconfirm,
+            "One quick click: Reconfirm your {{ event_name }} attendance",
+            LoadEmbeddedResource("reconfirm.txt"),
+            LoadEmbeddedResource("reconfirm.html"),
             teamId);
     }
 
@@ -95,5 +152,16 @@ public class EmailTemplateService(IApplicationContext context) : IEmailTemplateS
         if (stream == null) throw new InvalidOperationException($"Resource '{resourceName}' not found.");
         using var reader = new StreamReader(stream);
         return reader.ReadToEnd();
+    }
+    
+    private static async ValueTask<string> RenderTemplateAsync(string templateContent, TemplateContext templateContext)
+    {
+        var template = Template.Parse(templateContent);
+        if (template.HasErrors)
+        {
+            throw new InvalidOperationException($"Template parsing failed: {string.Join(", ", template.Messages)}");
+        }
+
+        return await template.RenderAsync(templateContext);
     }
 }
