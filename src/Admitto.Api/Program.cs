@@ -65,6 +65,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors();
 
+app.UseRequestTimeouts();
+app.UseOutputCache();
+
 app.MapDefaultEndpoints();
 app.MapAttendeeEndpoints();
 app.MapBulkEmailEndpoints();
