@@ -1,4 +1,7 @@
+using Amolenk.Admitto.Cli.Api;
 using Amolenk.Admitto.Cli.Common;
+using Amolenk.Admitto.Cli.Configuration;
+using Amolenk.Admitto.Cli.IO;
 
 namespace Amolenk.Admitto.Cli.Commands.Email.Template.Event;
 
@@ -14,18 +17,17 @@ public class ClearEventEmailTemplateSettings : TeamEventSettings
     }
 }
 
-public class ClearEventEmailTemplateCommand(IApiService apiService, IConfigService configService)
+public class ClearEventEmailTemplateCommand(IAdmittoService admittoService, IConfigService configService)
     : AsyncCommand<ClearEventEmailTemplateSettings>
 {
     public override async Task<int> ExecuteAsync(CommandContext context, ClearEventEmailTemplateSettings settings, CancellationToken cancellationToken)
     {
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);
-        
-        var response = await apiService.CallApiAsync(async client =>
-            await client.Teams[teamSlug].Events[eventSlug].EmailTemplates[settings.EmailType]
-                .DeleteAsync());
-        if (response is null) return 1;
+
+        var result = await admittoService.SendAsync(client =>
+            client.ClearEventEmailTemplateAsync(teamSlug, eventSlug, settings.EmailType, cancellationToken));
+        if (!result) return 1;
 
         AnsiConsoleExt.WriteSuccesMessage($"Successfully cleared event-level template for '{settings.EmailType}' emails.");
         return 0;

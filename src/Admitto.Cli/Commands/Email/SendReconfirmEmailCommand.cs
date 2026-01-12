@@ -1,4 +1,7 @@
+using Amolenk.Admitto.Cli.Api;
 using Amolenk.Admitto.Cli.Common;
+using Amolenk.Admitto.Cli.Configuration;
+using Amolenk.Admitto.Cli.IO;
 
 namespace Amolenk.Admitto.Cli.Commands.Email;
 
@@ -19,7 +22,7 @@ public class SendReconfirmEmailSettings : TeamEventSettings
     }
 }
 
-public class SendReconfirmEmailCommand(IApiService apiService, IConfigService configService)
+public class SendReconfirmEmailCommand(IAdmittoService admittoService, IConfigService configService)
     : AsyncCommand<SendReconfirmEmailSettings>
 {
     public sealed override async Task<int> ExecuteAsync(
@@ -30,7 +33,7 @@ public class SendReconfirmEmailCommand(IApiService apiService, IConfigService co
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);
 
-        var attendeeId = await apiService.FindAttendeeAsync(teamSlug, eventSlug, settings.Email!);
+        var attendeeId = await admittoService.FindAttendeeAsync(teamSlug, eventSlug, settings.Email!);
         if (attendeeId is null)
         {
             AnsiConsoleExt.WriteErrorMessage($"Attendee with email '{settings.Email}' not found.");
@@ -39,7 +42,7 @@ public class SendReconfirmEmailCommand(IApiService apiService, IConfigService co
 
         var request = new SendReconfirmEmailRequest
         {
-            AttendeeId = attendeeId
+            AttendeeId = attendeeId.Value
         };
 
         if (!AnsiConsoleExt.Confirm(
@@ -50,9 +53,9 @@ public class SendReconfirmEmailCommand(IApiService apiService, IConfigService co
         }
 
 
-        var response = await apiService.CallApiAsync(async client =>
-            await client.Teams[teamSlug].Events[eventSlug].Emails.Reconfirm.PostAsync(request));
-        if (!response) return 1;
+        var result = await admittoService.SendAsync(client =>
+            client.SendReconfirmEmailAsync(teamSlug, eventSlug, request, cancellationToken));
+        if (!result) return 1;
 
         AnsiConsoleExt.WriteSuccesMessage(
             $"Successfully sent reconfirmation mail.");

@@ -1,4 +1,7 @@
+using Amolenk.Admitto.Cli.Api;
 using Amolenk.Admitto.Cli.Common;
+using Amolenk.Admitto.Cli.Configuration;
+using Amolenk.Admitto.Cli.IO;
 
 namespace Amolenk.Admitto.Cli.Commands.Events;
 
@@ -29,11 +32,13 @@ public class CreateEventSettings : TeamSettings
     public string? BaseUrl { get; init; }
 
     [CommandOption("--requiredField")]
-    [Description("Required custom field (in the format '<FieldName>=<MaxLength>') to collect additional information from attendees during registration (e.g. dietary preferences, company name, etc.).")]
+    [Description(
+        "Required custom field (in the format '<FieldName>=<MaxLength>') to collect additional information from attendees during registration (e.g. dietary preferences, company name, etc.).")]
     public string[]? RequiredAdditionalDetails { get; init; }
 
     [CommandOption("--optionalField")]
-    [Description("Optional custom field (in the format '<FieldName>=<MaxLength>') to collect additional information from attendees during registration.")]
+    [Description(
+        "Optional custom field (in the format '<FieldName>=<MaxLength>') to collect additional information from attendees during registration.")]
     public string[]? OptionalAdditionalDetails { get; init; }
 
     public override ValidationResult Validate()
@@ -72,37 +77,43 @@ public class CreateEventSettings : TeamSettings
     }
 }
 
-public class CreateEventCommand(IApiService apiService, IConfigService configService)
+public class CreateEventCommand(IAdmittoService admittoService, IConfigService configService)
     : AsyncCommand<CreateEventSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, CreateEventSettings settings, CancellationToken cancellationToken)
+    public override async Task<int> ExecuteAsync(
+        CommandContext context,
+        CreateEventSettings settings,
+        CancellationToken cancellationToken)
     {
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
-        
+
         var additionalDetailSchemas = ParseAdditionalDetailSchemas(
-            settings.RequiredAdditionalDetails, 
+            settings.RequiredAdditionalDetails,
             settings.OptionalAdditionalDetails);
-        
+
         var request = new CreateTicketedEventRequest
         {
             Slug = settings.EventSlug!.Kebaberize(),
             Name = settings.Name,
             Website = settings.Website,
             BaseUrl = settings.BaseUrl,
-            StartsAt = settings.StartsAt,
-            EndsAt = settings.EndsAt,
+            StartsAt = settings.StartsAt!.Value,
+            EndsAt = settings.EndsAt!.Value,
             AdditionalDetailSchemas = additionalDetailSchemas
         };
 
         var succes =
-            await apiService.CallApiAsync(async client => await client.Teams[teamSlug].Events.PostAsync(request));
+            await admittoService.SendAsync(client =>
+                client.CreateTicketedEventAsync(teamSlug, request, cancellationToken));
         if (!succes) return 1;
-        
+
         AnsiConsoleExt.WriteSuccesMessage($"Successfully created event '{settings.Name}'.");
         return 0;
     }
-    
-    private static List<AdditionalDetailSchemaDto>? ParseAdditionalDetailSchemas(string[]? requiredDetails, string[]? optionalDetails)
+
+    private static List<AdditionalDetailSchemaDto>? ParseAdditionalDetailSchemas(
+        string[]? requiredDetails,
+        string[]? optionalDetails)
     {
         var schemas = new List<AdditionalDetailSchemaDto>();
 
@@ -115,7 +126,7 @@ public class CreateEventCommand(IApiService apiService, IConfigService configSer
         {
             schemas.AddRange(ParseAdditionalDetailSchemas(optionalDetails, false));
         }
-        
+
         return schemas.Count > 0 ? schemas : null;
     }
 

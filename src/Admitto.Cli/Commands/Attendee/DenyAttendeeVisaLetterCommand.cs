@@ -1,4 +1,7 @@
+using Amolenk.Admitto.Cli.Api;
 using Amolenk.Admitto.Cli.Common;
+using Amolenk.Admitto.Cli.Configuration;
+using Amolenk.Admitto.Cli.IO;
 
 namespace Amolenk.Admitto.Cli.Commands.Attendee;
 
@@ -19,30 +22,33 @@ public class DenyAttendeeVisaLetterSettings : TeamEventSettings
     }
 }
 
-public class DenyAttendeeVisaLetterCommand(IApiService apiService, IConfigService configService)
+public class DenyAttendeeVisaLetterCommand(IAdmittoService admittoService, IConfigService configService)
     : AsyncCommand<DenyAttendeeVisaLetterSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, DenyAttendeeVisaLetterSettings settings, CancellationToken cancellationToken)
+    public override async Task<int> ExecuteAsync(
+        CommandContext context,
+        DenyAttendeeVisaLetterSettings settings,
+        CancellationToken cancellationToken)
     {
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);
 
-        var attendeeId = await apiService.FindAttendeeAsync(teamSlug, eventSlug, settings.Email!);
+        var attendeeId = await admittoService.FindAttendeeAsync(teamSlug, eventSlug, settings.Email!);
         if (attendeeId is null)
         {
             AnsiConsoleExt.WriteErrorMessage($"Attendee with email '{settings.Email}' not found.");
             return 1;
         }
-        
+
         if (!AnsiConsoleExt.Confirm("Deny visa letter (registration will be canceled)?"))
         {
             return 0;
         }
-        
-        var response = await apiService.CallApiAsync(async client =>
-            await client.Teams[teamSlug].Events[eventSlug].Attendees[attendeeId.Value].DenyVisa.PostAsync());
-        if (response is null) return 1;
-        
+
+        var result = await admittoService.SendAsync(client =>
+            client.DenyVisaLetterAsync(teamSlug, eventSlug, attendeeId.Value, cancellationToken));
+        if (!result) return 1;
+
         AnsiConsoleExt.WriteSuccesMessage("Successfully cancelled registration.");
         return 0;
     }

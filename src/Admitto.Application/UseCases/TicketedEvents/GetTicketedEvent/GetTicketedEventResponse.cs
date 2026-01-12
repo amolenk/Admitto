@@ -9,8 +9,15 @@ public record GetTicketedEventResponse(
     DateTimeOffset? RegistrationClosesAt,
     string BaseUrl,
     List<TicketTypeDto> TicketTypes,
-    List<AdditionalDetailSchemaDto>? AdditionalDetailSchemas);
+    List<AdditionalDetailSchemaDto>? AdditionalDetailSchemas,
+    ReconfirmPolicyDto? ReconfirmPolicy);
 
 public record TicketTypeDto(string Slug, string Name, List<string> SlotNames, int MaxCapacity, int UsedCapacity);
 
 public record AdditionalDetailSchemaDto(string Name, string MaxLength, bool IsRequired);
+
+public record ReconfirmPolicyDto(
+    DateTimeOffset WindowOpensAt,
+    DateTimeOffset WindowClosesAt,
+    TimeSpan InitialDelayAfterRegistration,
+    TimeSpan ReminderInterval);

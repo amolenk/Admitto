@@ -1,4 +1,7 @@
+using Amolenk.Admitto.Cli.Api;
 using Amolenk.Admitto.Cli.Common;
+using Amolenk.Admitto.Cli.Configuration;
+using Amolenk.Admitto.Cli.IO;
 
 namespace Amolenk.Admitto.Cli.Commands.Email;
 
@@ -11,7 +14,7 @@ public class TestEmailSettings : TeamEventSettings
     [CommandOption("--recipient")]
     [Description("The recipient of the test email")]
     public required string Recipient { get; init; }
-    
+
     [CommandOption("--additionalDetail")]
     [Description("Additional details to include in the email in the format 'Name=Value'")]
     public string[]? AdditionalDetails { get; set; } = null!;
@@ -19,7 +22,7 @@ public class TestEmailSettings : TeamEventSettings
     [CommandOption("--ticket")]
     [Description("Ticket(s) to include in the email")]
     public string[]? Tickets { get; set; }
-    
+
     public override ValidationResult Validate()
     {
         if (EmailType is null)
@@ -36,10 +39,13 @@ public class TestEmailSettings : TeamEventSettings
     }
 }
 
-public class TestEmailCommand(IApiService apiService, IConfigService configService)
+public class TestEmailCommand(IAdmittoService admittoService, IConfigService configService)
     : AsyncCommand<TestEmailSettings>
 {
-    public sealed override async Task<int> ExecuteAsync(CommandContext context, TestEmailSettings settings, CancellationToken cancellationToken)
+    public sealed override async Task<int> ExecuteAsync(
+        CommandContext context,
+        TestEmailSettings settings,
+        CancellationToken cancellationToken)
     {
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);
@@ -51,11 +57,16 @@ public class TestEmailCommand(IApiService apiService, IConfigService configServi
             Tickets = InputHelper.ParseTickets(settings.Tickets)
         };
 
-        var response = await apiService.CallApiAsync(async client =>
-            await client.Teams[teamSlug].Events[eventSlug].Emails[settings.EmailType].Test.PostAsync(request));
-        if (!response) return 1;
+        var result = await admittoService.SendAsync(client => client.TestEmailAsync(
+            teamSlug,
+            eventSlug,
+            settings.EmailType,
+            request,
+            cancellationToken));
+        if (!result) return 1;
 
-        AnsiConsoleExt.WriteSuccesMessage($"Successfully requested '{settings.EmailType}' test mail for '{settings.Recipient}'.");
+        AnsiConsoleExt.WriteSuccesMessage(
+            $"Successfully requested '{settings.EmailType}' test mail for '{settings.Recipient}'.");
         return 0;
     }
 }

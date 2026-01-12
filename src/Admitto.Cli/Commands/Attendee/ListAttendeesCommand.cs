@@ -1,8 +1,11 @@
+using Amolenk.Admitto.Cli.Api;
 using Amolenk.Admitto.Cli.Common;
+using Amolenk.Admitto.Cli.Configuration;
+using Amolenk.Admitto.Cli.IO;
 
 namespace Amolenk.Admitto.Cli.Commands.Attendee;
 
-public class ListAttendeesCommand(IApiService apiService, IConfigService configService)
+public class ListAttendeesCommand(IAdmittoService admittoService, IConfigService configService)
     : AsyncCommand<TeamEventSettings>
 {
     public override async Task<int> ExecuteAsync(CommandContext context, TeamEventSettings settings, CancellationToken cancellationToken)
@@ -10,8 +13,8 @@ public class ListAttendeesCommand(IApiService apiService, IConfigService configS
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);
 
-        var response = await apiService.CallApiAsync(async client =>
-            await client.Teams[teamSlug].Events[eventSlug].Attendees.GetAsync());
+        var response = await admittoService.QueryAsync(client =>
+            client.GetAttendeesAsync(teamSlug, eventSlug, cancellationToken));
         if (response is null) return 1;
 
         var table = new Table();
@@ -20,13 +23,13 @@ public class ListAttendeesCommand(IApiService apiService, IConfigService configS
         table.AddColumn("Status");
         table.AddColumn("Last updated");
 
-        foreach (var attendee in response.Attendees!.OrderBy(r => r.LastChangedAt!.Value))
+        foreach (var attendee in response.Attendees.OrderBy(r => r.LastChangedAt))
         {
             table.AddRow(
                 attendee.Email!,
                 $"{attendee.FirstName} {attendee.LastName}",
-                attendee.Status!.Value.Format(),
-                attendee.LastChangedAt!.Value.Format());
+                attendee.Status.Format(),
+                attendee.LastChangedAt.Format());
         }
 
         AnsiConsole.Write(table);

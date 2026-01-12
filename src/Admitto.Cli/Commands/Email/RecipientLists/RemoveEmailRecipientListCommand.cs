@@ -1,4 +1,7 @@
+using Amolenk.Admitto.Cli.Api;
 using Amolenk.Admitto.Cli.Common;
+using Amolenk.Admitto.Cli.Configuration;
+using Amolenk.Admitto.Cli.IO;
 
 namespace Amolenk.Admitto.Cli.Commands.Email.RecipientLists;
 
@@ -19,7 +22,7 @@ public class RemoveEmailRecipientListSettings : TeamEventSettings
     }
 }
 
-public class RemoveEmailRecipientListCommand(IApiService apiService, IConfigService configService)
+public class RemoveEmailRecipientListCommand(IAdmittoService admittoService, IConfigService configService)
     : AsyncCommand<RemoveEmailRecipientListSettings>
 {
     public override async Task<int> ExecuteAsync(CommandContext context, RemoveEmailRecipientListSettings settings, CancellationToken cancellationToken)
@@ -27,9 +30,9 @@ public class RemoveEmailRecipientListCommand(IApiService apiService, IConfigServ
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);
 
-        var response = await apiService.CallApiAsync(async client =>
-            await client.Teams[teamSlug].Events[eventSlug].EmailRecipientLists[settings.ListName].DeleteAsync());
-        if (response is null) return 1;
+        var result = await admittoService.SendAsync(client =>
+            client.RemoveEmailRecipientListAsync(teamSlug, eventSlug, settings.ListName, cancellationToken));
+        if (!result) return 1;
 
         AnsiConsoleExt.WriteSuccesMessage(
             $"Successfully removed {settings.ListName} recipient list.");
