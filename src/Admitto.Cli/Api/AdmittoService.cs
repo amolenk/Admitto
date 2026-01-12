@@ -92,25 +92,23 @@ public class AdmittoService(IOptions<AdmittoOptions> options, IAuthService authS
         var endpoint = options.Value.Endpoint;
         if (string.IsNullOrWhiteSpace(endpoint))
         {
-            throw new InvalidOperationException(
-                "API endpoint is not configured. Please set it using 'config set --endpoint <url>' command.");
+            throw new InvalidOperationException("API endpoint is not configured.");
         }
-
+        
         var token = await authService.GetAccessTokenAsync();
         if (string.IsNullOrEmpty(token))
         {
             throw new InvalidOperationException("Authentication required. Please login first.");
         }
-        
-        var httpClient = new HttpClient
-        {
-            BaseAddress = new Uri(endpoint)
-        };
 
+        var httpClient = new HttpClient();
         httpClient.DefaultRequestHeaders.Authorization =
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-
-        return new ApiClient(httpClient);
+        
+        return new ApiClient(httpClient)
+        {
+            BaseUrl = endpoint
+        };
     }
 }
 
