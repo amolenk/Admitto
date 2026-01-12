@@ -1,8 +1,11 @@
+using Amolenk.Admitto.Cli.Api;
 using Amolenk.Admitto.Cli.Common;
+using Amolenk.Admitto.Cli.Configuration;
+using Amolenk.Admitto.Cli.IO;
 
 namespace Amolenk.Admitto.Cli.Commands.Email.RecipientLists;
 
-public class ListEmailRecipientListsCommand(IApiService apiService, IConfigService configService)
+public class ListEmailRecipientListsCommand(IAdmittoService admittoService, IConfigService configService)
     : AsyncCommand<TeamEventSettings>
 {
     public override async Task<int> ExecuteAsync(CommandContext context, TeamEventSettings settings, CancellationToken cancellationToken)
@@ -10,8 +13,8 @@ public class ListEmailRecipientListsCommand(IApiService apiService, IConfigServi
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);
 
-        var response = await apiService.CallApiAsync(async client => 
-            await client.Teams[teamSlug].Events[eventSlug].EmailRecipientLists.GetAsync());
+        var response = await admittoService.QueryAsync(client =>
+            client.GetEmailRecipientListsAsync(teamSlug, eventSlug, cancellationToken)); 
         if (response is null) return 1;
 
         var table = new Table();

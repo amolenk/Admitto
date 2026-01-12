@@ -51,6 +51,12 @@ public static class GetTicketedEventEndpoint
                 ads.MaxLength.ToString(),
                 ads.IsRequired))
             .ToList();
+        
+        var reconfirmPolicy = ticketedEvent.ReconfirmPolicy is null ? null : new ReconfirmPolicyDto(
+            ticketedEvent.StartsAt - ticketedEvent.ReconfirmPolicy.WindowStartBeforeEvent,
+            ticketedEvent.StartsAt - ticketedEvent.ReconfirmPolicy.WindowEndBeforeEvent,
+            ticketedEvent.ReconfirmPolicy.InitialDelayAfterRegistration,
+            ticketedEvent.ReconfirmPolicy.ReminderInterval);
 
         var response = new GetTicketedEventResponse(
             ticketedEvent.Slug,
@@ -61,7 +67,8 @@ public static class GetTicketedEventEndpoint
             ticketedEvent.RegistrationClosesAt,
             ticketedEvent.BaseUrl,
             ticketTypes,
-            additionalDetailSchemas);
+            additionalDetailSchemas,
+            reconfirmPolicy);
 
         return TypedResults.Ok(response);
     }

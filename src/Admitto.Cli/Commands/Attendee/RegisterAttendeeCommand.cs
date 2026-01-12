@@ -1,4 +1,7 @@
+using Amolenk.Admitto.Cli.Api;
 using Amolenk.Admitto.Cli.Common;
+using Amolenk.Admitto.Cli.Configuration;
+using Amolenk.Admitto.Cli.IO;
 
 namespace Amolenk.Admitto.Cli.Commands.Attendee;
 
@@ -50,10 +53,13 @@ public class RegisterAttendeeSettings : TeamEventSettings
     }
 }
 
-public class RegisterAttendeeCommand(IApiService apiService, IConfigService configService)
+public class RegisterAttendeeCommand(IAdmittoService admittoService, IConfigService configService)
     : AsyncCommand<RegisterAttendeeSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, RegisterAttendeeSettings settings, CancellationToken cancellationToken)
+    public override async Task<int> ExecuteAsync(
+        CommandContext context,
+        RegisterAttendeeSettings settings,
+        CancellationToken cancellationToken)
     {
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);
@@ -67,9 +73,8 @@ public class RegisterAttendeeCommand(IApiService apiService, IConfigService conf
             AssignedTickets = InputHelper.ParseTickets(settings.Tickets)
         };
 
-        var succes =
-            await apiService.CallApiAsync(async client =>
-                await client.Teams[teamSlug].Events[eventSlug].Attendees.PostAsync(request));
+        var succes = await admittoService.SendAsync(client =>
+            client.RegisterAttendeeAsync(teamSlug, eventSlug, request, cancellationToken));
         if (!succes) return 1;
 
         AnsiConsoleExt.WriteSuccesMessage($"Successfully registered attendee.");

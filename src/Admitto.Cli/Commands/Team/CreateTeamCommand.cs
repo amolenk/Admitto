@@ -1,4 +1,6 @@
+using Amolenk.Admitto.Cli.Api;
 using Amolenk.Admitto.Cli.Common;
+using Amolenk.Admitto.Cli.IO;
 
 namespace Amolenk.Admitto.Cli.Commands.Team;
 
@@ -46,20 +48,20 @@ public class CreateTeamSettings : CommandSettings
     }
 }
 
-public class CreateTeamCommand(IApiService apiService) 
+public class CreateTeamCommand(IAdmittoService admittoService) 
     : AsyncCommand<CreateTeamSettings>
 {
     public override async Task<int> ExecuteAsync(CommandContext context, CreateTeamSettings settings, CancellationToken cancellationToken)
     {
         var request = new CreateTeamRequest()
         {
-            Name = settings.Name!,
+            Name = settings.Name,
             Slug = settings.TeamSlug!.Kebaberize(),
-            Email = settings.Email!,
-            EmailServiceConnectionString = settings.EmailServiceConnectionString!
+            Email = settings.Email,
+            EmailServiceConnectionString = settings.EmailServiceConnectionString
         };
 
-        var succes = await apiService.CallApiAsync(async client => await client.Teams.PostAsync(request));
+        var succes = await admittoService.SendAsync(client => client.CreateTeamAsync(request, cancellationToken));
         if (!succes) return 1;
 
         AnsiConsoleExt.WriteSuccesMessage($"Successfully created team {request.Name}.");

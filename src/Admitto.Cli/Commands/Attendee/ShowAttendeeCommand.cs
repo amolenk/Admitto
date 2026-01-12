@@ -1,4 +1,7 @@
+using Amolenk.Admitto.Cli.Api;
 using Amolenk.Admitto.Cli.Common;
+using Amolenk.Admitto.Cli.Configuration;
+using Amolenk.Admitto.Cli.IO;
 
 namespace Amolenk.Admitto.Cli.Commands.Attendee;
 
@@ -19,7 +22,7 @@ public class ShowSettings : TeamEventSettings
     }
 }
 
-public class ShowAttendeeCommand(IApiService apiService, IConfigService configService)
+public class ShowAttendeeCommand(IAdmittoService admittoService, IConfigService configService)
     : AsyncCommand<ShowSettings>
 {
     public override async Task<int> ExecuteAsync(CommandContext context, ShowSettings settings, CancellationToken cancellationToken)
@@ -27,19 +30,19 @@ public class ShowAttendeeCommand(IApiService apiService, IConfigService configSe
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);
         
-        var attendeeId = await apiService.FindAttendeeAsync(teamSlug, eventSlug, settings.Email!);
+        var attendeeId = await admittoService.FindAttendeeAsync(teamSlug, eventSlug, settings.Email!);
         if (attendeeId is null)
         {
             AnsiConsoleExt.WriteErrorMessage($"Attendee with email '{settings.Email}' not found.");
             return 1;
         }
-        
-        var attendeeResponse = await apiService.CallApiAsync(async client =>
-            await client.Teams[teamSlug].Events[eventSlug].Attendees[attendeeId.Value].GetAsync());
+
+        var attendeeResponse = await admittoService.QueryAsync(client =>
+            client.GetAttendeeAsync(teamSlug, eventSlug, attendeeId.Value, cancellationToken));
         if (attendeeResponse is null) return 1;
 
-        var eventResponse = await apiService.CallApiAsync(async client =>
-            await client.Teams[teamSlug].Events[eventSlug].GetAsync());
+        var eventResponse = await admittoService.QueryAsync(client =>
+            client.GetTicketedEventAsync(teamSlug, eventSlug, cancellationToken));
         if (eventResponse is null) return 1;
 
         AnsiConsole.Write(new Rule(attendeeResponse.Email!) { Justification = Justify.Left, Style = Style.Parse("cyan") });
@@ -51,7 +54,7 @@ public class ShowAttendeeCommand(IApiService apiService, IConfigService configSe
         grid.AddColumn(new GridColumn { Width = headerColumnWidth });
         grid.AddColumn();
 
-        grid.AddRow("Status:", attendeeResponse.RegistrationStatus!.Value.Format());
+        grid.AddRow("Status:", attendeeResponse.RegistrationStatus.Format());
         grid.AddRow("Name:", $"{attendeeResponse.FirstName} {attendeeResponse.LastName}");
 
         foreach (var detailSchema in eventResponse.AdditionalDetailSchemas ?? [])
@@ -62,7 +65,7 @@ public class ShowAttendeeCommand(IApiService apiService, IConfigService configSe
             grid.AddRow($"{detailSchema.Name?.Humanize()}:", detail?.Value ?? "-");
         }
 
-        grid.AddRow("Last updated:", attendeeResponse.LastChangedAt!.Value.Format());
+        grid.AddRow("Last updated:", attendeeResponse.LastChangedAt.Format());
         
         
         var ticketLines = attendeeResponse.Tickets?.Select(t =>
@@ -89,7 +92,7 @@ public class ShowAttendeeCommand(IApiService apiService, IConfigService configSe
                 : activity.Activity?.Humanize();
             
             table.AddRow(
-                activity.OccuredOn!.Value.Format(),
+                activity.OccuredOn.Format(),
                 text ?? "-");
         }
 
