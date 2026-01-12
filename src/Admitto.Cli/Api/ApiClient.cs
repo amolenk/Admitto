@@ -1,4 +1,4 @@
-using Amolenk.Admitto.Cli.Common;
+using System.Net.Http.Headers;
 
 namespace Amolenk.Admitto.Cli.Api;
 
@@ -8,4 +8,9 @@ public partial class ApiClient
     {
         settings.Converters.Add(new Iso8601TimeSpanConverter());
     }
+    
+    public void SetBearerToken(string token)  
+    {  
+        _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);  
+    }  
 }
