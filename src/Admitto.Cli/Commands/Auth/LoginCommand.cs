@@ -1,5 +1,6 @@
+using Amolenk.Admitto.Cli.Auth;
 using Amolenk.Admitto.Cli.Common;
-using Amolenk.Admitto.Cli.Common.Auth;
+using Amolenk.Admitto.Cli.IO;
 
 namespace Amolenk.Admitto.Cli.Commands.Auth;
 

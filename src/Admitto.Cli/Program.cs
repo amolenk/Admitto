@@ -1,10 +1,11 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
+using Amolenk.Admitto.Cli.Api;
+using Amolenk.Admitto.Cli.Auth;
 using Amolenk.Admitto.Cli.Commands;
 using Amolenk.Admitto.Cli.Commands.Attendee;
 using Amolenk.Admitto.Cli.Commands.Auth;
 using Amolenk.Admitto.Cli.Commands.Email;
-using Amolenk.Admitto.Cli.Commands.Email.Bulk;
 using Amolenk.Admitto.Cli.Commands.Email.Template.Event;
 using Amolenk.Admitto.Cli.Commands.Email.Template.Team;
 using Amolenk.Admitto.Cli.Commands.Email.Verification;
@@ -13,7 +14,7 @@ using Amolenk.Admitto.Cli.Commands.Events.TicketType;
 using Amolenk.Admitto.Cli.Commands.Team;
 using Amolenk.Admitto.Cli.Commands.Team.Member;
 using Amolenk.Admitto.Cli.Common;
-using Amolenk.Admitto.Cli.Common.Auth;
+using Amolenk.Admitto.Cli.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Commands = Amolenk.Admitto.Cli.Commands;
 
@@ -47,14 +48,10 @@ services.AddSingleton<ITokenCache>(_ =>
     new TokenCache(
         Path.Combine(dataFolder, "tokens.json")));
 
-services.AddTransient<IAccessTokenProvider, AccessTokenProvider>();
 services.AddSingleton<IAuthService, AuthService>();
-services.AddTransient<IApiService, ApiService>();
+services.AddTransient<IAdmittoService, AdmittoService>();
 services.AddHttpClient();
 
-
-
-// Set up the CLI app
 var registrar = new TypeRegistrar(services);
 var app = new CommandApp(registrar);
 
@@ -113,24 +110,24 @@ app.Configure(config =>
                 .WithDescription("Set configuration values");
         });
 
-    config.AddBranch(
-        "contributor",
-        contributor =>
-        {
-            contributor.SetDescription("Manage contributors");
-
-            contributor.AddCommand<Commands.Contributor.AddContributorCommand>("add")
-                .WithDescription("Add a contributor");
-
-            contributor.AddCommand<Commands.Contributor.ListContributorsCommand>("list")
-                .WithDescription("List all contributors of an event");
-
-            contributor.AddCommand<Commands.Contributor.RemoveContributorCommand>("remove")
-                .WithDescription("Remove a contributor");
-
-            contributor.AddCommand<Commands.Contributor.UpdateContributorCommand>("update")
-                .WithDescription("Update an existing contributor");
-        });
+    // config.AddBranch(
+    //     "contributor",
+    //     contributor =>
+    //     {
+    //         contributor.SetDescription("Manage contributors");
+    //
+    //         contributor.AddCommand<Commands.Contributor.AddContributorCommand>("add")
+    //             .WithDescription("Add a contributor");
+    //
+    //         contributor.AddCommand<Commands.Contributor.ListContributorsCommand>("list")
+    //             .WithDescription("List all contributors of an event");
+    //
+    //         contributor.AddCommand<Commands.Contributor.RemoveContributorCommand>("remove")
+    //             .WithDescription("Remove a contributor");
+    //
+    //         contributor.AddCommand<Commands.Contributor.UpdateContributorCommand>("update")
+    //             .WithDescription("Update an existing contributor");
+    //     });
 
     config.AddBranch(
         "email",
@@ -149,18 +146,6 @@ app.Configure(config =>
 
                     bulk.AddCommand<Commands.Email.Bulk.SendReconfirmBulkEmailCommand>("reconfirm")
                         .WithDescription("Send a reconfirm bulk email");
-
-                    // bulk.AddCommand<Commands.Email.Bulk.TestCustomBulkEmailCommand>("test")
-                    //     .WithDescription("Test a bulk email");
-
-                    // bulk.AddCommand<Commands.Email.Bulk.ListBulkEmailsCommand>("list")
-                    //     .WithDescription("List all bulk emails");
-                    //
-                    // bulk.AddCommand<Commands.Email.Bulk.RemoveBulkEmailCommand>("remove")
-                    //     .WithDescription("Remove a scheduled bulk email");
-                    //
-                    // bulk.AddCommand<Commands.Email.Bulk.ScheduleBulkEmailCommand>("schedule")
-                    //     .WithDescription("Schedule a bulk email");
                 });
             
             email.AddBranch(
@@ -308,19 +293,6 @@ app.Configure(config =>
                         });
                 });
         });
-
-    // config.AddBranch(
-    //     "migration",
-    //     migration =>
-    //     {
-    //         migration.SetDescription("Manage migrations");
-    //
-    //         migration.AddCommand<ListMigrationsCommand>("list")
-    //             .WithDescription("List all migration");
-    //
-    //         migration.AddCommand<RunMigrationCommand>("run")
-    //             .WithDescription("Run a migration");
-    //     });
 
     config.AddBranch(
         "team",

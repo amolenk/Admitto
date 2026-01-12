@@ -1,4 +1,7 @@
+using Amolenk.Admitto.Cli.Api;
 using Amolenk.Admitto.Cli.Common;
+using Amolenk.Admitto.Cli.Configuration;
+using Amolenk.Admitto.Cli.IO;
 
 namespace Amolenk.Admitto.Cli.Commands.Attendee;
 
@@ -19,7 +22,7 @@ public class CancelSettings : TeamEventSettings
     }
 }
 
-public class CancelAttendeeCommand(IApiService apiService, IConfigService configService)
+public class CancelAttendeeCommand(IAdmittoService admittoService, IConfigService configService)
     : AsyncCommand<CancelSettings>
 {
     public override async Task<int> ExecuteAsync(CommandContext context, CancelSettings settings, CancellationToken cancellationToken)
@@ -27,7 +30,7 @@ public class CancelAttendeeCommand(IApiService apiService, IConfigService config
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);
 
-        var attendeeId = await apiService.FindAttendeeAsync(teamSlug, eventSlug, settings.Email!);
+        var attendeeId = await admittoService.FindAttendeeAsync(teamSlug, eventSlug, settings.Email!);
         if (attendeeId is null)
         {
             AnsiConsoleExt.WriteErrorMessage($"Attendee with email '{settings.Email}' not found.");
@@ -39,9 +42,9 @@ public class CancelAttendeeCommand(IApiService apiService, IConfigService config
             return 0;
         }
 
-        var response = await apiService.CallApiAsync(async client =>
-            await client.Teams[teamSlug].Events[eventSlug].Attendees[attendeeId.Value].DeleteAsync());
-        if (response is null) return 1;
+        var result = await admittoService.SendAsync(client =>
+            client.CancelRegistrationAsync(teamSlug, eventSlug, attendeeId.Value, cancellationToken));
+        if (!result) return 1;
         
         AnsiConsoleExt.WriteSuccesMessage("Successfully cancelled registration.");
         return 0;

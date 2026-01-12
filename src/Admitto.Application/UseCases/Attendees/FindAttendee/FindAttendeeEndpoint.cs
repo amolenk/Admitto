@@ -25,12 +25,11 @@ public static class FindAttendeeEndpoint
         CancellationToken cancellationToken)
     {
         var eventId = await slugResolver.ResolveTicketedEventIdAsync(teamSlug, eventSlug, cancellationToken);
-        var normalizedEmail = email.NormalizeEmail();
         
         var participant = await context.ParticipationView
             .AsNoTracking()
             .FirstOrDefaultAsync(
-                p => p.TicketedEventId == eventId && p.Email == normalizedEmail,
+                p => p.TicketedEventId == eventId && p.Email == email,
                 cancellationToken);
 
         if (participant?.AttendeeId is null)

@@ -1,5 +1,8 @@
 using System.Data;
+using Amolenk.Admitto.Cli.Api;
 using Amolenk.Admitto.Cli.Common;
+using Amolenk.Admitto.Cli.Configuration;
+using Amolenk.Admitto.Cli.IO;
 using ClosedXML.Excel;
 
 namespace Amolenk.Admitto.Cli.Commands.Attendee;
@@ -16,7 +19,7 @@ public class ExportSettings : TeamEventSettings
     }
 }
 
-public class ExportAttendeesCommand(IApiService apiService, IConfigService configService)
+public class ExportAttendeesCommand(IAdmittoService admittoService, IConfigService configService)
     : AsyncCommand<ExportSettings>
 {
     public override async Task<int> ExecuteAsync(CommandContext context, ExportSettings settings, CancellationToken cancellationToken)
@@ -24,18 +27,18 @@ public class ExportAttendeesCommand(IApiService apiService, IConfigService confi
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);
 
-        var attendeesResponse = await apiService.CallApiAsync(async client =>
-            await client.Teams[teamSlug].Events[eventSlug].Attendees.GetAsync());
+        var attendeesResponse = await admittoService.QueryAsync(client =>
+            client.GetAttendeesAsync(teamSlug, eventSlug, cancellationToken));
         if (attendeesResponse is null) return 1;
 
-        var eventResponse = await apiService.CallApiAsync(async client =>
-            await client.Teams[teamSlug].Events[eventSlug].GetAsync());
+        var eventResponse = await admittoService.QueryAsync(client =>
+            client.GetTicketedEventAsync(teamSlug, eventSlug, cancellationToken));
         if (eventResponse is null) return 1;
 
         using var workbook = new XLWorkbook();
 
         var attendeesData = CreateAttendeesDataTable(
-            attendeesResponse.Attendees!,
+            attendeesResponse.Attendees,
             eventResponse.AdditionalDetailSchemas!);
         var attendeesSheet = workbook.AddWorksheet();
         attendeesSheet.Name = attendeesData.TableName;
@@ -43,14 +46,14 @@ public class ExportAttendeesCommand(IApiService apiService, IConfigService confi
         attendeesSheet.FirstCell().InsertTable(attendeesData, attendeesData.TableName, true);
 
         var ticketsData = CreateTicketsDataTable(
-            attendeesResponse.Attendees!,
+            attendeesResponse.Attendees,
             eventResponse.AdditionalDetailSchemas!);
         var ticketsSheet = workbook.AddWorksheet();
         ticketsSheet.Name = ticketsData.TableName;
         ticketsSheet.ColumnWidth = 12;
         ticketsSheet.FirstCell().InsertTable(ticketsData, ticketsData.TableName, true);
 
-        var totalsData = CreateTotalsDataTable(attendeesResponse.Attendees!);
+        var totalsData = CreateTotalsDataTable(attendeesResponse.Attendees);
         var totalsSheet = workbook.AddWorksheet();
         totalsSheet.Name = totalsData.TableName;
         totalsSheet.ColumnWidth = 12;
@@ -61,8 +64,8 @@ public class ExportAttendeesCommand(IApiService apiService, IConfigService confi
     }
 
     private static DataTable CreateAttendeesDataTable(
-        List<AttendeeDto> attendees,
-        List<AdditionalDetailSchemaDto> additionalDetailSchemas)
+        ICollection<AttendeeDto> attendees,
+        ICollection<AdditionalDetailSchemaDto> additionalDetailSchemas)
     {
         var table = new DataTable("Attendees");
         table.Columns.Add("Email", typeof(string));
@@ -88,8 +91,8 @@ public class ExportAttendeesCommand(IApiService apiService, IConfigService confi
     }
 
     private static DataTable CreateTicketsDataTable(
-        List<AttendeeDto> attendees,
-        List<AdditionalDetailSchemaDto> additionalDetailSchemas)
+        ICollection<AttendeeDto> attendees,
+        ICollection<AdditionalDetailSchemaDto> additionalDetailSchemas)
     {
         var table = new DataTable("Tickets");
         table.Columns.Add("TicketType", typeof(string));
@@ -119,7 +122,7 @@ public class ExportAttendeesCommand(IApiService apiService, IConfigService confi
         return table;
     }
     
-    private static DataTable CreateTotalsDataTable(List<AttendeeDto> attendees)
+    private static DataTable CreateTotalsDataTable(ICollection<AttendeeDto> attendees)
     {
         var table = new DataTable("Totals");
         table.Columns.Add("TicketType", typeof(string));
@@ -149,7 +152,7 @@ public class ExportAttendeesCommand(IApiService apiService, IConfigService confi
     private static void PopulateAttendeesRow(
         DataRow row,
         AttendeeDto attendee,
-        List<AdditionalDetailSchemaDto> additionalDetailSchemas)
+        ICollection<AdditionalDetailSchemaDto> additionalDetailSchemas)
     {
         row["Email"] = attendee.Email;
         row["FirstName"] = attendee.FirstName;
@@ -166,6 +169,6 @@ public class ExportAttendeesCommand(IApiService apiService, IConfigService confi
         }
 
         row["Status"] = attendee.Status;
-        row["LastChangedAt"] = attendee.LastChangedAt!.Value.ToLocalTime();
+        row["LastChangedAt"] = attendee.LastChangedAt.ToLocalTime();
     }
 }

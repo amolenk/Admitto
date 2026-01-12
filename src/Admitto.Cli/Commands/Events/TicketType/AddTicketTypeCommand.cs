@@ -1,4 +1,7 @@
+using Amolenk.Admitto.Cli.Api;
 using Amolenk.Admitto.Cli.Common;
+using Amolenk.Admitto.Cli.Configuration;
+using Amolenk.Admitto.Cli.IO;
 
 namespace Amolenk.Admitto.Cli.Commands.Events.TicketType;
 
@@ -7,7 +10,7 @@ public class AddTicketTypeSettings : TeamEventSettings
     [CommandOption("-s|--slug")]
     [Description("Slug of the ticket type")]
     public string? Slug { get; set; }
-    
+
     [CommandOption("-n|--name")]
     [Description("Ticket type name")]
     public string? Name { get; set; } = null!;
@@ -36,26 +39,29 @@ public class AddTicketTypeSettings : TeamEventSettings
     }
 }
 
-public class AddTicketTypeCommand(IApiService apiService, IConfigService configService)
+public class AddTicketTypeCommand(IAdmittoService admittoService, IConfigService configService)
     : AsyncCommand<AddTicketTypeSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, AddTicketTypeSettings settings, CancellationToken cancellationToken)
+    public override async Task<int> ExecuteAsync(
+        CommandContext context,
+        AddTicketTypeSettings settings,
+        CancellationToken cancellationToken)
     {
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);
-        
+
         var request = new AddTicketTypeRequest
         {
             Slug = settings.Slug,
             Name = settings.Name,
             SlotNames = (settings.SlotName ?? []).ToList(),
-            MaxCapacity = settings.MaxCapacity
+            MaxCapacity = settings.MaxCapacity!.Value
         };
-        
-        var succes = await apiService.CallApiAsync(
-            async client => await client.Teams[teamSlug].Events[eventSlug].TicketTypes.PostAsync(request));
+
+        var succes = await admittoService.SendAsync(client =>
+            client.AddTicketTypeAsync(teamSlug, eventSlug, request, cancellationToken));
         if (!succes) return 1;
-        
+
         AnsiConsoleExt.WriteSuccesMessage($"Successfully added ticket type {settings.Name}.");
         return 0;
     }

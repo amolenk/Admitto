@@ -1,12 +1,13 @@
+using Amolenk.Admitto.Cli.Api;
 using Amolenk.Admitto.Cli.Common;
 
 namespace Amolenk.Admitto.Cli.Commands.Team;
 
-public class ListTeamsCommand(IApiService apiService) : AsyncCommand<TeamSettings>
+public class ListTeamsCommand(IAdmittoService admittoService) : AsyncCommand<TeamSettings>
 {
     public override async Task<int> ExecuteAsync(CommandContext context, TeamSettings settings, CancellationToken cancellationToken)
     {
-        var response = await apiService.CallApiAsync(async client => await client.Teams.GetAsync());
+        var response = await admittoService.QueryAsync(client => client.GetTeamsAsync(cancellationToken));
         if (response is null) return 1;
 
         var table = new Table();

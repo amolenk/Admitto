@@ -1,4 +1,7 @@
+using Amolenk.Admitto.Cli.Api;
 using Amolenk.Admitto.Cli.Common;
+using Amolenk.Admitto.Cli.Configuration;
+using Amolenk.Admitto.Cli.IO;
 
 namespace Amolenk.Admitto.Cli.Commands.Email.Bulk;
 
@@ -23,7 +26,7 @@ public class SendReconfirmBulkEmailSettings : TeamEventSettings
     }
 }
 
-public class SendReconfirmBulkEmailCommand(IApiService apiService, IConfigService configService)
+public class SendReconfirmBulkEmailCommand(IAdmittoService admittoService, IConfigService configService)
     : AsyncCommand<SendReconfirmBulkEmailSettings>
 {
     public sealed override async Task<int> ExecuteAsync(
@@ -48,16 +51,15 @@ public class SendReconfirmBulkEmailCommand(IApiService apiService, IConfigServic
 
         var request = new SendReconfirmBulkEmailRequest
         {
-            InitialDelayAfterRegistration = settings.InitialDelayAfterRegistration!.Value.ToString(),
+            InitialDelayAfterRegistration = TimeSpan.FromDays(settings.InitialDelayAfterRegistration!.Value),
             ReminderInterval = settings.ReminderInterval is not null
-                ? TimeSpan.FromDays(settings.ReminderInterval.Value).ToString()
+                ? TimeSpan.FromDays(settings.ReminderInterval.Value)
                 : null
         };
 
-        var response = await apiService.CallApiAsync(async client =>
-            await client.Teams[teamSlug].Events[eventSlug].Emails.Bulk.Reconfirm
-                .PostAsync(request, cancellationToken: cancellationToken));
-        if (!response) return 1;
+        var result = await admittoService.SendAsync(client =>
+            client.SendReconfirmBulkEmailAsync(teamSlug, eventSlug, request, cancellationToken));
+        if (!result) return 1;
 
         AnsiConsoleExt.WriteSuccesMessage(
             $"Successfully requested reconfirm email bulk.");

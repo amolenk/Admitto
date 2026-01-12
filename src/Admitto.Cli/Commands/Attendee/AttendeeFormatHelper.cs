@@ -1,3 +1,5 @@
+using Amolenk.Admitto.Cli.Api;
+
 namespace Amolenk.Admitto.Cli.Commands.Attendee;
 
 public static class AttendeeFormatHelper

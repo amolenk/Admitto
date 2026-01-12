@@ -1,4 +1,7 @@
+using Amolenk.Admitto.Cli.Api;
 using Amolenk.Admitto.Cli.Common;
+using Amolenk.Admitto.Cli.Configuration;
+using Amolenk.Admitto.Cli.IO;
 
 namespace Amolenk.Admitto.Cli.Commands.Events.Policy.Reconfirm;
 
@@ -42,7 +45,7 @@ public class SetSettings : TeamEventSettings
     }
 }
 
-public class SetReconfirmPolicyCommand(IApiService apiService, IConfigService configService)
+public class SetReconfirmPolicyCommand(IAdmittoService admittoService, IConfigService configService)
     : AsyncCommand<SetSettings>
 {
     public override async Task<int> ExecuteAsync(
@@ -55,17 +58,16 @@ public class SetReconfirmPolicyCommand(IApiService apiService, IConfigService co
 
         var request = new SetReconfirmPolicyRequest
         {
-            WindowStartBeforeEvent = settings.WindowStartBeforeEvent!.Value.ToString(),
-            WindowEndBeforeEvent = settings.WindowEndBeforeEvent!.Value.ToString(),
-            InitialDelayAfterRegistration = settings.InitialDelayAfterRegistration!.Value.ToString(),
-            ReminderInterval = settings.ReminderInterval!.Value.ToString(),
+            WindowStartBeforeEvent = settings.WindowStartBeforeEvent!.Value,
+            WindowEndBeforeEvent = settings.WindowEndBeforeEvent!.Value,
+            InitialDelayAfterRegistration = settings.InitialDelayAfterRegistration!.Value,
+            ReminderInterval = settings.ReminderInterval!.Value,
         };
 
-        var response = await apiService.CallApiAsync(async client =>
-            await client.Teams[teamSlug].Events[eventSlug].Policies.Reconfirm
-                .PutAsync(request, cancellationToken: cancellationToken));
-        if (response is null) return 1;
-        
+        var result = await admittoService.SendAsync(client =>
+            client.SetReconfirmPolicyAsync(teamSlug, eventSlug, request, cancellationToken));
+        if (!result) return 1;
+
         AnsiConsoleExt.WriteSuccesMessage("Successfully set reconfirm policy.");
         return 0;
     }

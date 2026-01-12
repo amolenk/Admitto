@@ -1,4 +1,7 @@
+using Amolenk.Admitto.Cli.Api;
 using Amolenk.Admitto.Cli.Common;
+using Amolenk.Admitto.Cli.Configuration;
+using Amolenk.Admitto.Cli.IO;
 using ClosedXML.Excel;
 
 namespace Amolenk.Admitto.Cli.Commands.Email.RecipientLists;
@@ -34,7 +37,7 @@ public class AddEmailRecipientListSettings : TeamEventSettings
     }
 }
 
-public class AddEmailRecipientListCommand(IApiService apiService, IConfigService configService)
+public class AddEmailRecipientListCommand(IAdmittoService admittoService, IConfigService configService)
     : AsyncCommand<AddEmailRecipientListSettings>
 {
     public override async Task<int> ExecuteAsync(CommandContext context, AddEmailRecipientListSettings settings, CancellationToken cancellationToken)
@@ -44,12 +47,12 @@ public class AddEmailRecipientListCommand(IApiService apiService, IConfigService
 
         var request = CreateRequest(settings.ListName!, settings.InputPath!);
 
-        var response = await apiService.CallApiAsync(async client =>
-            await client.Teams[teamSlug].Events[eventSlug].EmailRecipientLists.PostAsync(request));
-        if (response is null) return 1;
+        var result = await admittoService.SendAsync(client =>
+            client.AddEmailRecipientListAsync(teamSlug, eventSlug, request, cancellationToken));
+        if (!result) return 1;
 
         AnsiConsoleExt.WriteSuccesMessage(
-            $"Successfully added {settings.ListName} recipient list with {request.Recipients?.Count} email(s).");
+            $"Successfully added {settings.ListName} recipient list with {request.Recipients.Count} email(s).");
         return 0;
     }
 

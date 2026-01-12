@@ -45,7 +45,7 @@
 //     }
 // }
 //
-// public class TestCustomBulkEmailCommand(IApiService apiService, IConfigService configService)
+// public class TestCustomBulkEmailCommand(IadmittoService admittoService, IConfigService configService)
 //     : AsyncCommand<TestCustomBulkEmailSettings>
 // {
 //     public sealed override async Task<int> ExecuteAsync(CommandContext context, TestCustomBulkEmailSettings settings, CancellationToken cancellationToken)
@@ -65,7 +65,7 @@
 //             }
 //         };
 //   
-//         var response = await apiService.CallApiAsync(async client =>
+//         var response = await admittoService.CallApiAsync(async client =>
 //             await client.Teams[teamSlug].Events[eventSlug].Emails.Bulk.Custom.PostAsync(request));
 //         if (!response) return 1;
 //

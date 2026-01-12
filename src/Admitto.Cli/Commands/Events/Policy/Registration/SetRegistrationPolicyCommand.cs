@@ -1,4 +1,7 @@
+using Amolenk.Admitto.Cli.Api;
 using Amolenk.Admitto.Cli.Common;
+using Amolenk.Admitto.Cli.Configuration;
+using Amolenk.Admitto.Cli.IO;
 
 namespace Amolenk.Admitto.Cli.Commands.Events.Policy.Registration;
 
@@ -11,7 +14,7 @@ public class SetSettings : TeamEventSettings
     [CommandOption("--closes-before")]
     [Description("The timespan before the event when registration closes")]
     public TimeSpan? ClosesBeforeEvent { get; set; }
-    
+
     public override ValidationResult Validate()
     {
         if (OpensBeforeEvent is null)
@@ -28,23 +31,26 @@ public class SetSettings : TeamEventSettings
     }
 }
 
-public class SetRegistrationPolicyCommand(IApiService apiService, IConfigService configService)
+public class SetRegistrationPolicyCommand(IAdmittoService admittoService, IConfigService configService)
     : AsyncCommand<SetSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, SetSettings settings, CancellationToken cancellationToken)
+    public override async Task<int> ExecuteAsync(
+        CommandContext context,
+        SetSettings settings,
+        CancellationToken cancellationToken)
     {
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);
-        
+
         var request = new SetRegistrationPolicyRequest
         {
-            OpensBeforeEvent = settings.OpensBeforeEvent.ToString(),
-            ClosesBeforeEvent = settings.ClosesBeforeEvent.ToString()
+            OpensBeforeEvent = settings.OpensBeforeEvent!.Value,
+            ClosesBeforeEvent = settings.ClosesBeforeEvent!.Value
         };
-        
-        var response = await apiService.CallApiAsync(async client =>
-            await client.Teams[teamSlug].Events[eventSlug].Policies.Registration.PutAsync(request));
-        if (response is null) return 1;
+
+        var result = await admittoService.SendAsync(client =>
+            client.SetRegistrationPolicyAsync(teamSlug, eventSlug, request, cancellationToken));
+        if (!result) return 1;
 
         AnsiConsoleExt.WriteSuccesMessage("Successfully set registration policy.");
         return 0;

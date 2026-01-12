@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Cli.Common;
+using Amolenk.Admitto.Cli.Configuration;
 
 namespace Amolenk.Admitto.Cli.Commands.Config;
 

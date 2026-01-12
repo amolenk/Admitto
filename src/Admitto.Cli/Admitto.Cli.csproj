@@ -13,7 +13,10 @@
       <PackageReference Include="ClosedXML" Version="0.105.0" />
       <PackageReference Include="Duende.IdentityModel.OidcClient" Version="6.0.1" />
       <PackageReference Include="Humanizer" Version="3.0.1" />
-      <PackageReference Include="Microsoft.Kiota.Bundle" Version="1.21.0" />
+      <PackageReference Include="NSwag.MSBuild" Version="14.6.3">
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        <PrivateAssets>all</PrivateAssets>
+      </PackageReference>
       <PackageReference Include="Spectre.Console.Cli" Version="0.53.1" />
       <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.0" />
       <PackageReference Include="Microsoft.Extensions.Configuration" Version="10.0.0" />

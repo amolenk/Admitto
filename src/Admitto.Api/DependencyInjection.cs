@@ -19,17 +19,11 @@ public static class DependencyInjection
             {
                 // Add Bearer token security scheme to the OpenAPI output.
                 options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
-
-                // Kiota (which is used for client generation in the CLI) can't handle types of integer|string or
-                // number|string. The types are generated this way because System.Text.Json by default allows reading
-                // numbers from strings. We could disable this globally by setting
-                // JsonSerializerOptions.NumberHandling = JsonNumberHandling.Strict, but reading numbers from string
-                // is a useful feature to have in many scenarios, so instead we only adjust the OpenAPI schema here.
+                
                 options.AddSchemaTransformer<NumberTypeTransformer>();
-                NumberTypeTransformer.MapType<int>(
-                    new OpenApiSchema { Type = JsonSchemaType.Integer, Format = "int32" });
-                NumberTypeTransformer.MapType<int?>(
-                    new OpenApiSchema { Type = JsonSchemaType.Integer | JsonSchemaType.Null, Format = "int32" });
+                NumberTypeTransformer.MapType<TimeSpan>(
+                    new OpenApiSchema { Type = JsonSchemaType.String, Format = "duration" });
+
             });
         }
     }

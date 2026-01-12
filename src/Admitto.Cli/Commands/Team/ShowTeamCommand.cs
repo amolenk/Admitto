@@ -1,4 +1,7 @@
+using Amolenk.Admitto.Cli.Api;
 using Amolenk.Admitto.Cli.Common;
+using Amolenk.Admitto.Cli.Configuration;
+using Amolenk.Admitto.Cli.IO;
 
 namespace Amolenk.Admitto.Cli.Commands.Team;
 
@@ -9,16 +12,19 @@ public class ShowTeamSettings : CommandSettings
     public string? TeamSlug { get; set; }
 }
 
-public class ShowTeamCommand(IApiService apiService, IConfigService configService)
+public class ShowTeamCommand(IAdmittoService admittoService, IConfigService configService)
     : AsyncCommand<ShowTeamSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, ShowTeamSettings settings, CancellationToken cancellationToken)
+    public override async Task<int> ExecuteAsync(
+        CommandContext context,
+        ShowTeamSettings settings,
+        CancellationToken cancellationToken)
     {
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
-        
-        var response = await apiService.CallApiAsync(async client => await client.Teams[teamSlug].GetAsync());
+
+        var response = await admittoService.QueryAsync(client => client.GetTeamAsync(teamSlug, cancellationToken));
         if (response is null) return 1;
-        
+
         AnsiConsole.Write(new JsonText(JsonSerializer.Serialize(response)));
         return 0;
     }

@@ -1,4 +1,7 @@
+using Amolenk.Admitto.Cli.Api;
 using Amolenk.Admitto.Cli.Common;
+using Amolenk.Admitto.Cli.Configuration;
+using Amolenk.Admitto.Cli.IO;
 
 namespace Amolenk.Admitto.Cli.Commands.Team;
 
@@ -21,10 +24,13 @@ public class UpdateTeamSettings : CommandSettings
     public string? EmailServiceConnectionString { get; init; }
 }
 
-public class UpdateTeamCommand(IApiService apiService, IConfigService configService)
+public class UpdateTeamCommand(IAdmittoService admittoService, IConfigService configService)
     : AsyncCommand<UpdateTeamSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, UpdateTeamSettings settings, CancellationToken cancellationToken)
+    public override async Task<int> ExecuteAsync(
+        CommandContext context,
+        UpdateTeamSettings settings,
+        CancellationToken cancellationToken)
     {
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
 
@@ -35,8 +41,9 @@ public class UpdateTeamCommand(IApiService apiService, IConfigService configServ
             EmailServiceConnectionString = settings.EmailServiceConnectionString
         };
 
-        var response = await apiService.CallApiAsync(async client => await client.Teams[teamSlug].PatchAsync(request));
-        if (response is null) return 1;
+        var result =
+            await admittoService.SendAsync(client => client.UpdateTeamAsync(teamSlug, request, cancellationToken));
+        if (!result) return 1;
 
         AnsiConsoleExt.WriteSuccesMessage($"Successfully updated team.");
         return 0;
