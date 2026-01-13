@@ -127,15 +127,26 @@ public class ExportAttendeesCommand(IAdmittoService admittoService, IConfigServi
         var table = new DataTable("Totals");
         table.Columns.Add("TicketType", typeof(string));
         table.Columns.Add("RegistrationCount", typeof(int));
+        table.Columns.Add("ReconfirmedCount", typeof(int));
+        table.Columns.Add("CheckedInCount", typeof(int));
+        table.Columns.Add("NoShowCount", typeof(int));
 
         var totals = attendees
             .Where(a => a.Status != RegistrationStatus.Canceled)
-            .SelectMany(a => a.Tickets!)
+            .SelectMany(a => a.Tickets.Select(t => new
+            {
+                a.Status,
+                t.TicketTypeSlug,
+                t.Quantity
+            }))
             .GroupBy(t => t.TicketTypeSlug)
             .Select(g => new
             {
                 TicketType = g.Key,
-                RegistrationCount = g.Sum(t => t.Quantity)
+                RegistrationCount = g.Sum(t => t.Quantity),
+                ReconfirmedCount = g.Count(x => x.Status == RegistrationStatus.Reconfirmed),
+                CheckedInCount = g.Count(x => x.Status == RegistrationStatus.CheckedIn),
+                NoShowCount = g.Count(x => x.Status == RegistrationStatus.NoShow),
             });
         
         foreach (var total in totals)
@@ -143,6 +154,9 @@ public class ExportAttendeesCommand(IAdmittoService admittoService, IConfigServi
             var row = table.NewRow();
             row["TicketType"] = total.TicketType;
             row["RegistrationCount"] = total.RegistrationCount;
+            row["ReconfirmedCount"] = total.ReconfirmedCount;
+            row["CheckedInCount"] = total.CheckedInCount;
+            row["NoShowCount"] = total.NoShowCount;
             table.Rows.Add(row);
         }
 
