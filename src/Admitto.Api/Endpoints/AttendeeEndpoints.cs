@@ -1,5 +1,6 @@
 using Amolenk.Admitto.ApiService.Middleware;
 using Amolenk.Admitto.Application.UseCases.Attendees.CancelRegistration;
+using Amolenk.Admitto.Application.UseCases.Attendees.CheckIn;
 using Amolenk.Admitto.Application.UseCases.Attendees.DenyVisaLetter;
 using Amolenk.Admitto.Application.UseCases.Attendees.FindAttendee;
 using Amolenk.Admitto.Application.UseCases.Attendees.GetAttendee;
@@ -28,6 +29,7 @@ public static class AttendeeEndpoints
 
         group
             .MapCancelRegistration()
+            .MapCheckIn()
             .MapDenyVisaLetter()
             .MapFindAttendee()
             .MapGetAttendee()
