@@ -63,8 +63,6 @@ export function QrCodeScanner({
 
     async function callCheckIn(scanResult: string) {
 
-        alert(scanResult);
-
         const parts = scanResult.split(":");
         if (parts.length < 2) {
             throw new Error("Invalid QR code format");
