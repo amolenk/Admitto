@@ -13,7 +13,8 @@ public class TeamMemberRoleAuthorizationHandler(
     IHttpContextAccessor contextAccessor,
     ISlugResolver slugResolver,
     ITeamMemberRoleService teamMemberRoleService,
-    IAdministratorRoleService administratorRoleService)
+    IAdministratorRoleService administratorRoleService,
+    ILogger<TeamMemberRoleAuthorizationHandler> logger)
     : AuthorizationHandler<TeamMemberRoleAuthorizationRequirement>
 {
     protected override async Task HandleRequirementAsync(
@@ -25,18 +26,36 @@ public class TeamMemberRoleAuthorizationHandler(
 
         var userId = context.User.GetUserId();
 
+        logger.LogCritical("User ID: {UserId}", userId);
+
         if (administratorRoleService.IsAdministrator(userId))
         {
             context.Succeed(requirement);
             return;
         }
-        
+
+        logger.LogCritical("No administrator role found for user: {UserId}", userId);
+
         var teamId = await GetTeamIdOrThrowAsync(httpContext, requirement.TeamSlugParameterName, slugResolver);
+
+        logger.LogCritical("Team ID: {TeamId}", teamId);
+
         var role = await teamMemberRoleService.GetTeamMemberRoleAsync(userId, teamId);
-        
-        if (role is not null && role >= requirement.RequiredRole)
+
+        logger.LogCritical("Role: {Role}", role);
+
+        if (role is not null && role.Value >= requirement.RequiredRole)
         {
+            logger.LogCritical("Successfully authorized user: {UserId}", userId);
+
             context.Succeed(requirement);
+        }
+        else
+        {
+            logger.LogCritical(
+                "Failed to authorize user: {UserId}. Requested role: {Role}",
+                userId,
+                requirement.RequiredRole);
         }
     }
 

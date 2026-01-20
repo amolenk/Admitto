@@ -42,22 +42,22 @@ resource applicationInsights 'Microsoft.Insights/components@2020-02-02' = {
 // }
 
 // Private DNS zone for Application Insights
-resource privateDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' = {
-  name: 'privatelink.monitor.azure.com'
-  location: 'global'
-}
+// resource privateDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' = {
+//   name: 'privatelink.monitor.azure.com'
+//   location: 'global'
+// }
 
-resource privateDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
-  name: 'appinsights-link'
-  parent: privateDnsZone
-  location: 'global'
-  properties: {
-    registrationEnabled: false
-    virtualNetwork: {
-      id: vnetId
-    }
-  }
-}
+// resource privateDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
+//   name: 'appinsights-link'
+//   parent: privateDnsZone
+//   location: 'global'
+//   properties: {
+//     registrationEnabled: false
+//     virtualNetwork: {
+//       id: vnetId
+//     }
+//   }
+// }
 
 // resource privateDnsZoneGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2023-04-01' = {
 //   name: 'applicationinsights-dns-group'
