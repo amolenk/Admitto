@@ -10,6 +10,9 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
 FROM base AS builder
+# Build-time secret only for this stage to silence Better Auth warnings
+ARG BETTER_AUTH_SECRET_BUILD=build-only-secret
+ENV BETTER_AUTH_SECRET=$BETTER_AUTH_SECRET_BUILD
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN pnpm build
