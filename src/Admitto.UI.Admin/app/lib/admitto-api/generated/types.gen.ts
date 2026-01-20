@@ -7,7 +7,7 @@ export type ClientOptions = {
 export type ActivityDto = {
     occuredOn: string;
     activity: string;
-    emailType: string | null;
+    emailType: null | string;
 };
 
 export type AddContributorRequest = {
@@ -34,18 +34,14 @@ export type AdditionalDetailDto = {
 
 export type AdditionalDetailSchemaDto = {
     name: string;
-    maxLength: number;
-    isRequired: boolean;
-};
-
-export type AdditionalDetailSchemaDto2 = {
-    name: string;
     maxLength: string;
     isRequired: boolean;
 };
 
 export type AddTeamMemberRequest = {
     email: string;
+    firstName: string;
+    lastName: string;
     role: TeamMemberRole;
 };
 
@@ -53,7 +49,7 @@ export type AddTicketTypeRequest = {
     slug: string;
     name: string;
     slotNames: Array<string>;
-    maxCapacity: number;
+    maxCapacity: number | string;
 };
 
 export type AttendeeDto = {
@@ -67,22 +63,6 @@ export type AttendeeDto = {
     lastChangedAt: string;
 };
 
-export type BulkEmailWorkItemDto = {
-    id: string;
-    emailType: string;
-    repeat: BulkEmailWorkItemRepeatDto;
-    status: BulkEmailWorkItemStatus;
-    lastRunAt: string | null;
-    error: string | null;
-};
-
-export type BulkEmailWorkItemRepeatDto = {
-    windowStart: string;
-    windowEnd: string;
-} | null;
-
-export type BulkEmailWorkItemStatus = 'pending' | 'pendingRepeat' | 'running' | 'completed' | 'error';
-
 export type ChangeTicketsRequest = {
     requestedTickets: Array<string>;
 };
@@ -91,8 +71,8 @@ export type CheckInResponse = {
     email: string;
     firstName: string;
     lastName: string;
-    attendeeStatus: NullableOfParticipationAttendeeStatus;
-    contributorStatus: NullableOfParticipationContributorStatus;
+    attendeeStatus: null | ParticipationAttendeeStatus;
+    contributorStatus: null | ParticipationContributorStatus;
     lastModifiedAt: string;
 };
 
@@ -121,7 +101,7 @@ export type CreateTicketedEventRequest = {
     startsAt: string;
     endsAt: string;
     baseUrl: string;
-    additionalDetailSchemas: Array<AdditionalDetailSchemaDto> | null;
+    additionalDetailSchemas: null | Array<AdditionalDetailSchemaDto>;
 };
 
 export type EmailRecipientDetailDto = {
@@ -136,7 +116,7 @@ export type EmailRecipientDto = {
 
 export type EventEmailTemplateDto = {
     type: string;
-    ticketedEventId: string | null;
+    ticketedEventId: null | string;
     isCustom: boolean;
 };
 
@@ -162,14 +142,10 @@ export type GetAttendeesResponse = {
 };
 
 export type GetAvailabilityResponse = {
-    registrationOpensAt: string | null;
-    registrationClosesAt: string | null;
+    registrationOpensAt: null | string;
+    registrationClosesAt: null | string;
     ticketTypes: Array<TicketTypeDto>;
-    additionalDetailSchemas: Array<AdditionalDetailSchemaDto> | null;
-};
-
-export type GetBulkEmailsResponse = {
-    bulkEmails: Array<BulkEmailWorkItemDto>;
+    additionalDetailSchemas: null | Array<AdditionalDetailSchemaDto>;
 };
 
 export type GetContributorsResponse = {
@@ -182,10 +158,6 @@ export type GetEmailRecipientListsResponse = {
 
 export type GetEventEmailTemplatesResponse = {
     emailTemplates: Array<EventEmailTemplateDto>;
-};
-
-export type GetMigrationsResponse = {
-    migrations: Array<string>;
 };
 
 export type GetTeamEmailTemplatesResponse = {
@@ -208,11 +180,12 @@ export type GetTicketedEventResponse = {
     name: string;
     startsAt: string;
     endsAt: string;
-    registrationOpensAt: string | null;
-    registrationClosesAt: string | null;
+    registrationOpensAt: null | string;
+    registrationClosesAt: null | string;
     baseUrl: string;
-    ticketTypes: Array<TicketTypeDto2>;
-    additionalDetailSchemas: Array<AdditionalDetailSchemaDto2> | null;
+    ticketTypes: Array<TicketTypeDto>;
+    additionalDetailSchemas: null | Array<AdditionalDetailSchemaDto>;
+    reconfirmPolicy: null | ReconfirmPolicyDto;
 };
 
 export type GetTicketedEventsResponse = {
@@ -224,26 +197,33 @@ export type GetTicketsResponse = {
 };
 
 export type HttpValidationProblemDetails = {
-    type?: string | null;
-    title?: string | null;
-    status?: number | null;
-    detail?: string | null;
-    instance?: string | null;
+    type?: null | string;
+    title?: null | string;
+    status?: null | number | string;
+    detail?: null | string;
+    instance?: null | string;
     errors?: {
         [key: string]: Array<string>;
     };
 };
 
-export type NullableOfParticipationAttendeeStatus = 'registered' | 'canceled' | null;
+export type ParticipationAttendeeStatus = 'registered' | 'canceled';
 
-export type NullableOfParticipationContributorStatus = 'active' | 'removed' | null;
+export type ParticipationContributorStatus = 'active' | 'removed';
 
 export type ProblemDetails = {
-    type?: string | null;
-    title?: string | null;
-    status?: number | null;
-    detail?: string | null;
-    instance?: string | null;
+    type?: null | string;
+    title?: null | string;
+    status?: null | number | string;
+    detail?: null | string;
+    instance?: null | string;
+};
+
+export type ReconfirmPolicyDto = {
+    windowOpensAt: string;
+    windowClosesAt: string;
+    initialDelayAfterRegistration: string;
+    reminderInterval: string;
 };
 
 export type RegisterAttendeeRequest = {
@@ -265,30 +245,29 @@ export type RegisterRequest = {
 
 export type RegistrationStatus = 'none' | 'registered' | 'reconfirmed' | 'checkedIn' | 'noShow' | 'canceled';
 
-export type RepeatDto = {
-    windowStart: string;
-    windowEnd: string;
-} | null;
-
 export type RequestOtpCodeRequest = {
     email: string;
-};
-
-export type ScheduleBulkEmailRequest = {
-    emailType: string;
-    repeat: RepeatDto;
 };
 
 export type SendCustomBulkEmailRequest = {
     emailType: string;
     recipientListName: string;
     excludeAttendees: boolean;
-    idempotencyKey: string | null;
-    testOptions: TestOptionsDto;
+    idempotencyKey: null | string;
+    testOptions: null | TestOptionsDto;
 };
 
 export type SendEmailRequest = {
     dataEntityId: string;
+};
+
+export type SendReconfirmBulkEmailRequest = {
+    initialDelayAfterRegistration: string;
+    reminderInterval: unknown;
+};
+
+export type SendReconfirmEmailRequest = {
+    attendeeId: string;
 };
 
 export type SetEventEmailTemplateRequest = {
@@ -307,7 +286,7 @@ export type SetReconfirmPolicyRequest = {
 export type SetRegistrationPolicyRequest = {
     opensBeforeEvent: string;
     closesBeforeEvent: string;
-    emailDomainName: string | null;
+    emailDomainName: null | string;
 };
 
 export type SetTeamEmailTemplateRequest = {
@@ -327,46 +306,39 @@ export type TeamEmailTemplateDto = {
     isCustom: boolean;
 };
 
-export type TeamMemberRole = 'manager' | 'organizer';
+export type TeamMemberRole = 'crew' | 'organizer' | 'owner';
 
 export type TestEmailRequest = {
     recipient: string;
-    additionalDetails?: Array<AdditionalDetailDto> | null;
-    tickets?: Array<TicketSelectionDto> | null;
+    additionalDetails?: null | Array<AdditionalDetailDto>;
+    tickets?: null | Array<TicketSelectionDto>;
 };
 
 export type TestOptionsDto = {
     recipient: string;
-    maxEmailCount: number;
-} | null;
+    maxEmailCount: number | string;
+};
 
 export type TicketedEventDto = {
     slug: string;
     name: string;
     startsAt: string;
     endsAt: string;
-    registrationOpensAt: string | null;
-    registrationClosesAt: string | null;
+    registrationOpensAt: null | string;
+    registrationClosesAt: null | string;
 };
 
 export type TicketSelectionDto = {
     ticketTypeSlug: string;
-    quantity: number;
+    quantity: number | string;
 };
 
 export type TicketTypeDto = {
     slug: string;
     name: string;
     slotNames: Array<string>;
-    hasCapacity: boolean;
-};
-
-export type TicketTypeDto2 = {
-    slug: string;
-    name: string;
-    slotNames: Array<string>;
-    maxCapacity: number;
-    usedCapacity: number;
+    maxCapacity: number | string;
+    usedCapacity: number | string;
 };
 
 export type UpdateAttendeeRequest = {
@@ -374,29 +346,29 @@ export type UpdateAttendeeRequest = {
 };
 
 export type UpdateContributorRequest = {
-    email: string | null;
-    firstName: string | null;
-    lastName: string | null;
-    additionalDetails: Array<AdditionalDetailDto> | null;
-    roles: Array<ContributorRole> | null;
+    email: null | string;
+    firstName: null | string;
+    lastName: null | string;
+    additionalDetails: null | Array<AdditionalDetailDto>;
+    roles: null | Array<ContributorRole>;
 };
 
 export type UpdateTeamRequest = {
-    name: string | null;
-    email: string | null;
-    emailServiceConnectionString: string | null;
+    name: null | string;
+    email: null | string;
+    emailServiceConnectionString: null | string;
 };
 
 export type UpdateTicketedEventRequest = {
-    name: string | null;
-    website: string | null;
-    startsAt: string | null;
-    endsAt: string | null;
-    baseUrl: string | null;
+    name: null | string;
+    website: null | string;
+    startsAt: null | string;
+    endsAt: null | string;
+    baseUrl: null | string;
 };
 
 export type UpdateTicketTypeRequest = {
-    maxCapacity: number;
+    maxCapacity: number | string;
 };
 
 export type VerifyOtpCodeRequest = {
@@ -406,50 +378,8 @@ export type VerifyOtpCodeRequest = {
 
 export type VerifyOtpCodeResponse = {
     registrationToken: string;
-    publicId?: string | null;
-    signature?: string | null;
-};
-
-export type GetConnectVerifyData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/connect/verify';
-};
-
-export type GetConnectVerifyResponses = {
-    /**
-     * OK
-     */
-    200: unknown;
-};
-
-export type GetConnectAuthorizeData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/connect/authorize';
-};
-
-export type GetConnectAuthorizeResponses = {
-    /**
-     * OK
-     */
-    200: unknown;
-};
-
-export type PostConnectAuthorizeData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/connect/authorize';
-};
-
-export type PostConnectAuthorizeResponses = {
-    /**
-     * OK
-     */
-    200: unknown;
+    publicId?: null | string;
+    signature?: null | string;
 };
 
 export type CancelRegistrationData = {
@@ -582,6 +512,51 @@ export type UpdateAttendeeResponses = {
      */
     200: unknown;
 };
+
+export type PrivilegedCheckInData = {
+    body?: never;
+    path: {
+        teamSlug: string;
+        eventSlug: string;
+        attendeeId: string;
+    };
+    query?: never;
+    url: '/teams/{teamSlug}/events/{eventSlug}/attendees/{attendeeId}/privileged-check-in';
+};
+
+export type PrivilegedCheckInErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type PrivilegedCheckInError = PrivilegedCheckInErrors[keyof PrivilegedCheckInErrors];
+
+export type PrivilegedCheckInResponses = {
+    /**
+     * OK
+     */
+    200: CheckInResponse;
+};
+
+export type PrivilegedCheckInResponse = PrivilegedCheckInResponses[keyof PrivilegedCheckInResponses];
 
 export type DenyVisaLetterData = {
     body?: never;
@@ -805,135 +780,6 @@ export type ReconfirmRegistrationResponses = {
     200: unknown;
 };
 
-export type GetBulkEmailsData = {
-    body?: never;
-    path: {
-        teamSlug: string;
-        eventSlug: string;
-    };
-    query?: never;
-    url: '/teams/{teamSlug}/events/{eventSlug}/emails/bulk';
-};
-
-export type GetBulkEmailsErrors = {
-    /**
-     * Bad Request
-     */
-    400: HttpValidationProblemDetails;
-    /**
-     * Unauthorized
-     */
-    401: ProblemDetails;
-    /**
-     * Forbidden
-     */
-    403: ProblemDetails;
-    /**
-     * Conflict
-     */
-    409: ProblemDetails;
-    /**
-     * Internal Server Error
-     */
-    500: ProblemDetails;
-};
-
-export type GetBulkEmailsError = GetBulkEmailsErrors[keyof GetBulkEmailsErrors];
-
-export type GetBulkEmailsResponses = {
-    /**
-     * OK
-     */
-    200: GetBulkEmailsResponse;
-};
-
-export type GetBulkEmailsResponse2 = GetBulkEmailsResponses[keyof GetBulkEmailsResponses];
-
-export type ScheduleBulkEmailJobData = {
-    body: ScheduleBulkEmailRequest;
-    path: {
-        teamSlug: string;
-        eventSlug: string;
-    };
-    query?: never;
-    url: '/teams/{teamSlug}/events/{eventSlug}/emails/bulk';
-};
-
-export type ScheduleBulkEmailJobErrors = {
-    /**
-     * Bad Request
-     */
-    400: HttpValidationProblemDetails;
-    /**
-     * Unauthorized
-     */
-    401: ProblemDetails;
-    /**
-     * Forbidden
-     */
-    403: ProblemDetails;
-    /**
-     * Conflict
-     */
-    409: ProblemDetails;
-    /**
-     * Internal Server Error
-     */
-    500: ProblemDetails;
-};
-
-export type ScheduleBulkEmailJobError = ScheduleBulkEmailJobErrors[keyof ScheduleBulkEmailJobErrors];
-
-export type ScheduleBulkEmailJobResponses = {
-    /**
-     * Created
-     */
-    201: unknown;
-};
-
-export type RemoveBulkEmailJobData = {
-    body?: never;
-    path: {
-        teamSlug: string;
-        eventSlug: string;
-        workItemId: string;
-    };
-    query?: never;
-    url: '/teams/{teamSlug}/events/{eventSlug}/emails/bulk/{workItemId}';
-};
-
-export type RemoveBulkEmailJobErrors = {
-    /**
-     * Bad Request
-     */
-    400: HttpValidationProblemDetails;
-    /**
-     * Unauthorized
-     */
-    401: ProblemDetails;
-    /**
-     * Forbidden
-     */
-    403: ProblemDetails;
-    /**
-     * Conflict
-     */
-    409: ProblemDetails;
-    /**
-     * Internal Server Error
-     */
-    500: ProblemDetails;
-};
-
-export type RemoveBulkEmailJobError = RemoveBulkEmailJobErrors[keyof RemoveBulkEmailJobErrors];
-
-export type RemoveBulkEmailJobResponses = {
-    /**
-     * OK
-     */
-    200: unknown;
-};
-
 export type SendCustomBulkEmailData = {
     body: SendCustomBulkEmailRequest;
     path: {
@@ -974,6 +820,48 @@ export type SendCustomBulkEmailResponses = {
      * Created
      */
     201: unknown;
+};
+
+export type SendReconfirmBulkEmailData = {
+    body: SendReconfirmBulkEmailRequest;
+    path: {
+        teamSlug: string;
+        eventSlug: string;
+    };
+    query?: never;
+    url: '/teams/{teamSlug}/events/{eventSlug}/emails/bulk/reconfirm';
+};
+
+export type SendReconfirmBulkEmailErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type SendReconfirmBulkEmailError = SendReconfirmBulkEmailErrors[keyof SendReconfirmBulkEmailErrors];
+
+export type SendReconfirmBulkEmailResponses = {
+    /**
+     * Accepted
+     */
+    202: unknown;
 };
 
 export type GetContributorsData = {
@@ -1231,9 +1119,51 @@ export type TestEmailError = TestEmailErrors[keyof TestEmailErrors];
 
 export type TestEmailResponses = {
     /**
-     * OK
+     * Accepted
      */
-    200: unknown;
+    202: unknown;
+};
+
+export type SendReconfirmEmailData = {
+    body: SendReconfirmEmailRequest;
+    path: {
+        teamSlug: string;
+        eventSlug: string;
+    };
+    query?: never;
+    url: '/teams/{teamSlug}/events/{eventSlug}/emails/reconfirm';
+};
+
+export type SendReconfirmEmailErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type SendReconfirmEmailError = SendReconfirmEmailErrors[keyof SendReconfirmEmailErrors];
+
+export type SendReconfirmEmailResponses = {
+    /**
+     * Accepted
+     */
+    202: unknown;
 };
 
 export type GetEmailRecipientListsData = {
@@ -1621,84 +1551,6 @@ export type GetTeamEmailTemplatesResponses = {
 };
 
 export type GetTeamEmailTemplatesResponse2 = GetTeamEmailTemplatesResponses[keyof GetTeamEmailTemplatesResponses];
-
-export type GetMigrationsData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/migration';
-};
-
-export type GetMigrationsErrors = {
-    /**
-     * Unauthorized
-     */
-    401: ProblemDetails;
-    /**
-     * Forbidden
-     */
-    403: ProblemDetails;
-    /**
-     * Conflict
-     */
-    409: ProblemDetails;
-    /**
-     * Internal Server Error
-     */
-    500: ProblemDetails;
-};
-
-export type GetMigrationsError = GetMigrationsErrors[keyof GetMigrationsErrors];
-
-export type GetMigrationsResponses = {
-    /**
-     * OK
-     */
-    200: GetMigrationsResponse;
-};
-
-export type GetMigrationsResponse2 = GetMigrationsResponses[keyof GetMigrationsResponses];
-
-export type RunMigrationData = {
-    body?: never;
-    path: {
-        migrationName: string;
-    };
-    query?: never;
-    url: '/migration/{migrationName}';
-};
-
-export type RunMigrationErrors = {
-    /**
-     * Unauthorized
-     */
-    401: ProblemDetails;
-    /**
-     * Forbidden
-     */
-    403: ProblemDetails;
-    /**
-     * Not Found
-     */
-    404: unknown;
-    /**
-     * Conflict
-     */
-    409: ProblemDetails;
-    /**
-     * Internal Server Error
-     */
-    500: ProblemDetails;
-};
-
-export type RunMigrationError = RunMigrationErrors[keyof RunMigrationErrors];
-
-export type RunMigrationResponses = {
-    /**
-     * OK
-     */
-    200: unknown;
-};
 
 export type CancelData = {
     body?: never;

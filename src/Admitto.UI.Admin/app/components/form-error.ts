@@ -1,4 +1,4 @@
-import { HttpValidationProblemDetails } from "@/api-client";
+import {HttpValidationProblemDetails} from "@/lib/admitto-api/generated";
 
 export class FormError extends Error
 {
@@ -12,7 +12,7 @@ export class FormError extends Error
         super(problemDetails.title ?? "Server Error");
         this.name = "FormError";
 
-        this.status = problemDetails.status ?? 500;
+        this.status = problemDetails.status as number ?? 500;
         this.title = problemDetails.title ?? "Server Error";
         this.detail = problemDetails.detail ?? "An unexpected error occurred.";
         this.errors = problemDetails.errors ?? {};

@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AddContributorData, AddContributorErrors, AddContributorResponses, AddEmailRecipientListData, AddEmailRecipientListErrors, AddEmailRecipientListResponses, AddTeamMemberData, AddTeamMemberErrors, AddTeamMemberResponses, AddTicketTypeData, AddTicketTypeErrors, AddTicketTypeResponses, CancelData, CancelErrors, CancelRegistrationData, CancelRegistrationErrors, CancelRegistrationResponses, CancelResponses, CancelTicketTypeData, CancelTicketTypeErrors, CancelTicketTypeResponses, ChangeTicketsData, ChangeTicketsErrors, ChangeTicketsResponses, CheckInData, CheckInErrors, CheckInResponses, ClearEventEmailTemplateData, ClearEventEmailTemplateErrors, ClearEventEmailTemplateResponses, ClearReconfirmPolicyData, ClearReconfirmPolicyErrors, ClearReconfirmPolicyResponses, ClearTeamEmailTemplateData, ClearTeamEmailTemplateErrors, ClearTeamEmailTemplateResponses, CreateTeamData, CreateTeamErrors, CreateTeamResponses, CreateTicketedEventData, CreateTicketedEventErrors, CreateTicketedEventResponses, DenyVisaLetterData, DenyVisaLetterErrors, DenyVisaLetterResponses, FindAttendeeData, FindAttendeeErrors, FindAttendeeResponses, GetAttendeeData, GetAttendeeErrors, GetAttendeeResponses, GetAttendeesData, GetAttendeesErrors, GetAttendeesResponses, GetAvailabilityData, GetAvailabilityErrors, GetAvailabilityResponses, GetBulkEmailsData, GetBulkEmailsErrors, GetBulkEmailsResponses, GetConnectAuthorizeData, GetConnectAuthorizeResponses, GetConnectVerifyData, GetConnectVerifyResponses, GetContributorsData, GetContributorsErrors, GetContributorsResponses, GetEmailRecipientListsData, GetEmailRecipientListsErrors, GetEmailRecipientListsResponses, GetEventEmailTemplatesData, GetEventEmailTemplatesErrors, GetEventEmailTemplatesResponses, GetMigrationsData, GetMigrationsErrors, GetMigrationsResponses, GetQrCodeData, GetQrCodeErrors, GetTeamData, GetTeamEmailTemplatesData, GetTeamEmailTemplatesErrors, GetTeamEmailTemplatesResponses, GetTeamErrors, GetTeamResponses, GetTeamsData, GetTeamsErrors, GetTeamsResponses, GetTicketedEventData, GetTicketedEventErrors, GetTicketedEventResponses, GetTicketedEventsData, GetTicketedEventsErrors, GetTicketedEventsResponses, GetTicketsData, GetTicketsErrors, GetTicketsResponses, PostConnectAuthorizeData, PostConnectAuthorizeResponses, ReconfirmData, ReconfirmErrors, ReconfirmRegistrationData, ReconfirmRegistrationErrors, ReconfirmRegistrationResponses, ReconfirmResponses, RegisterAttendeeData, RegisterAttendeeErrors, RegisterAttendeeResponses, RegisterData, RegisterErrors, RegisterResponses, RemoveBulkEmailJobData, RemoveBulkEmailJobErrors, RemoveBulkEmailJobResponses, RemoveContributorData, RemoveContributorErrors, RemoveContributorResponses, RemoveEmailRecipientListData, RemoveEmailRecipientListErrors, RemoveEmailRecipientListResponses, RequestOtpData, RequestOtpErrors, RequestOtpResponses, RunMigrationData, RunMigrationErrors, RunMigrationResponses, ScheduleBulkEmailJobData, ScheduleBulkEmailJobErrors, ScheduleBulkEmailJobResponses, SendCustomBulkEmailData, SendCustomBulkEmailErrors, SendCustomBulkEmailResponses, SendEmailData, SendEmailErrors, SendEmailResponses, SetEventEmailTemplateData, SetEventEmailTemplateErrors, SetEventEmailTemplateResponses, SetReconfirmPolicyData, SetReconfirmPolicyErrors, SetReconfirmPolicyResponses, SetRegistrationPolicyData, SetRegistrationPolicyErrors, SetRegistrationPolicyResponses, SetTeamEmailTemplateData, SetTeamEmailTemplateErrors, SetTeamEmailTemplateResponses, TestEmailData, TestEmailErrors, TestEmailResponses, UpdateAttendeeData, UpdateAttendeeErrors, UpdateAttendeeResponses, UpdateContributorData, UpdateContributorErrors, UpdateContributorResponses, UpdateTeamData, UpdateTeamErrors, UpdateTeamResponses, UpdateTicketedEventData, UpdateTicketedEventErrors, UpdateTicketedEventResponses, UpdateTicketTypeData, UpdateTicketTypeErrors, UpdateTicketTypeResponses, VerifyOtpCodeData, VerifyOtpCodeErrors, VerifyOtpCodeResponses } from './types.gen';
+import type { AddContributorData, AddContributorErrors, AddContributorResponses, AddEmailRecipientListData, AddEmailRecipientListErrors, AddEmailRecipientListResponses, AddTeamMemberData, AddTeamMemberErrors, AddTeamMemberResponses, AddTicketTypeData, AddTicketTypeErrors, AddTicketTypeResponses, CancelData, CancelErrors, CancelRegistrationData, CancelRegistrationErrors, CancelRegistrationResponses, CancelResponses, CancelTicketTypeData, CancelTicketTypeErrors, CancelTicketTypeResponses, ChangeTicketsData, ChangeTicketsErrors, ChangeTicketsResponses, CheckInData, CheckInErrors, CheckInResponses, ClearEventEmailTemplateData, ClearEventEmailTemplateErrors, ClearEventEmailTemplateResponses, ClearReconfirmPolicyData, ClearReconfirmPolicyErrors, ClearReconfirmPolicyResponses, ClearTeamEmailTemplateData, ClearTeamEmailTemplateErrors, ClearTeamEmailTemplateResponses, CreateTeamData, CreateTeamErrors, CreateTeamResponses, CreateTicketedEventData, CreateTicketedEventErrors, CreateTicketedEventResponses, DenyVisaLetterData, DenyVisaLetterErrors, DenyVisaLetterResponses, FindAttendeeData, FindAttendeeErrors, FindAttendeeResponses, GetAttendeeData, GetAttendeeErrors, GetAttendeeResponses, GetAttendeesData, GetAttendeesErrors, GetAttendeesResponses, GetAvailabilityData, GetAvailabilityErrors, GetAvailabilityResponses, GetContributorsData, GetContributorsErrors, GetContributorsResponses, GetEmailRecipientListsData, GetEmailRecipientListsErrors, GetEmailRecipientListsResponses, GetEventEmailTemplatesData, GetEventEmailTemplatesErrors, GetEventEmailTemplatesResponses, GetQrCodeData, GetQrCodeErrors, GetTeamData, GetTeamEmailTemplatesData, GetTeamEmailTemplatesErrors, GetTeamEmailTemplatesResponses, GetTeamErrors, GetTeamResponses, GetTeamsData, GetTeamsErrors, GetTeamsResponses, GetTicketedEventData, GetTicketedEventErrors, GetTicketedEventResponses, GetTicketedEventsData, GetTicketedEventsErrors, GetTicketedEventsResponses, GetTicketsData, GetTicketsErrors, GetTicketsResponses, PrivilegedCheckInData, PrivilegedCheckInErrors, PrivilegedCheckInResponses, ReconfirmData, ReconfirmErrors, ReconfirmRegistrationData, ReconfirmRegistrationErrors, ReconfirmRegistrationResponses, ReconfirmResponses, RegisterAttendeeData, RegisterAttendeeErrors, RegisterAttendeeResponses, RegisterData, RegisterErrors, RegisterResponses, RemoveContributorData, RemoveContributorErrors, RemoveContributorResponses, RemoveEmailRecipientListData, RemoveEmailRecipientListErrors, RemoveEmailRecipientListResponses, RequestOtpData, RequestOtpErrors, RequestOtpResponses, SendCustomBulkEmailData, SendCustomBulkEmailErrors, SendCustomBulkEmailResponses, SendEmailData, SendEmailErrors, SendEmailResponses, SendReconfirmBulkEmailData, SendReconfirmBulkEmailErrors, SendReconfirmBulkEmailResponses, SendReconfirmEmailData, SendReconfirmEmailErrors, SendReconfirmEmailResponses, SetEventEmailTemplateData, SetEventEmailTemplateErrors, SetEventEmailTemplateResponses, SetReconfirmPolicyData, SetReconfirmPolicyErrors, SetReconfirmPolicyResponses, SetRegistrationPolicyData, SetRegistrationPolicyErrors, SetRegistrationPolicyResponses, SetTeamEmailTemplateData, SetTeamEmailTemplateErrors, SetTeamEmailTemplateResponses, TestEmailData, TestEmailErrors, TestEmailResponses, UpdateAttendeeData, UpdateAttendeeErrors, UpdateAttendeeResponses, UpdateContributorData, UpdateContributorErrors, UpdateContributorResponses, UpdateTeamData, UpdateTeamErrors, UpdateTeamResponses, UpdateTicketedEventData, UpdateTicketedEventErrors, UpdateTicketedEventResponses, UpdateTicketTypeData, UpdateTicketTypeErrors, UpdateTicketTypeResponses, VerifyOtpCodeData, VerifyOtpCodeErrors, VerifyOtpCodeResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -16,45 +16,6 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
      * used to access values that aren't defined as part of the SDK function.
      */
     meta?: Record<string, unknown>;
-};
-
-export const getConnectVerify = <ThrowOnError extends boolean = false>(options?: Options<GetConnectVerifyData, ThrowOnError>) => {
-    return (options?.client ?? client).get<GetConnectVerifyResponses, unknown, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/connect/verify',
-        ...options
-    });
-};
-
-export const getConnectAuthorize = <ThrowOnError extends boolean = false>(options?: Options<GetConnectAuthorizeData, ThrowOnError>) => {
-    return (options?.client ?? client).get<GetConnectAuthorizeResponses, unknown, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/connect/authorize',
-        ...options
-    });
-};
-
-export const postConnectAuthorize = <ThrowOnError extends boolean = false>(options?: Options<PostConnectAuthorizeData, ThrowOnError>) => {
-    return (options?.client ?? client).post<PostConnectAuthorizeResponses, unknown, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/connect/authorize',
-        ...options
-    });
 };
 
 export const cancelRegistration = <ThrowOnError extends boolean = false>(options: Options<CancelRegistrationData, ThrowOnError>) => {
@@ -97,6 +58,19 @@ export const updateAttendee = <ThrowOnError extends boolean = false>(options: Op
             'Content-Type': 'application/json',
             ...options.headers
         }
+    });
+};
+
+export const privilegedCheckIn = <ThrowOnError extends boolean = false>(options: Options<PrivilegedCheckInData, ThrowOnError>) => {
+    return (options.client ?? client).post<PrivilegedCheckInResponses, PrivilegedCheckInErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/teams/{teamSlug}/events/{eventSlug}/attendees/{attendeeId}/privileged-check-in',
+        ...options
     });
 };
 
@@ -169,49 +143,6 @@ export const reconfirmRegistration = <ThrowOnError extends boolean = false>(opti
     });
 };
 
-export const getBulkEmails = <ThrowOnError extends boolean = false>(options: Options<GetBulkEmailsData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetBulkEmailsResponses, GetBulkEmailsErrors, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/emails/bulk',
-        ...options
-    });
-};
-
-export const scheduleBulkEmailJob = <ThrowOnError extends boolean = false>(options: Options<ScheduleBulkEmailJobData, ThrowOnError>) => {
-    return (options.client ?? client).post<ScheduleBulkEmailJobResponses, ScheduleBulkEmailJobErrors, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/emails/bulk',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const removeBulkEmailJob = <ThrowOnError extends boolean = false>(options: Options<RemoveBulkEmailJobData, ThrowOnError>) => {
-    return (options.client ?? client).delete<RemoveBulkEmailJobResponses, RemoveBulkEmailJobErrors, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/emails/bulk/{workItemId}',
-        ...options
-    });
-};
-
 export const sendCustomBulkEmail = <ThrowOnError extends boolean = false>(options: Options<SendCustomBulkEmailData, ThrowOnError>) => {
     return (options.client ?? client).post<SendCustomBulkEmailResponses, SendCustomBulkEmailErrors, ThrowOnError>({
         security: [
@@ -221,6 +152,23 @@ export const sendCustomBulkEmail = <ThrowOnError extends boolean = false>(option
             }
         ],
         url: '/teams/{teamSlug}/events/{eventSlug}/emails/bulk/custom',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+export const sendReconfirmBulkEmail = <ThrowOnError extends boolean = false>(options: Options<SendReconfirmBulkEmailData, ThrowOnError>) => {
+    return (options.client ?? client).post<SendReconfirmBulkEmailResponses, SendReconfirmBulkEmailErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/teams/{teamSlug}/events/{eventSlug}/emails/bulk/reconfirm',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -315,6 +263,23 @@ export const testEmail = <ThrowOnError extends boolean = false>(options: Options
             }
         ],
         url: '/teams/{teamSlug}/events/{eventSlug}/emails/{emailType}/test',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+export const sendReconfirmEmail = <ThrowOnError extends boolean = false>(options: Options<SendReconfirmEmailData, ThrowOnError>) => {
+    return (options.client ?? client).post<SendReconfirmEmailResponses, SendReconfirmEmailErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/teams/{teamSlug}/events/{eventSlug}/emails/reconfirm',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -448,32 +413,6 @@ export const getTeamEmailTemplates = <ThrowOnError extends boolean = false>(opti
             }
         ],
         url: '/teams/{teamSlug}/email-templates',
-        ...options
-    });
-};
-
-export const getMigrations = <ThrowOnError extends boolean = false>(options?: Options<GetMigrationsData, ThrowOnError>) => {
-    return (options?.client ?? client).get<GetMigrationsResponses, GetMigrationsErrors, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/migration',
-        ...options
-    });
-};
-
-export const runMigration = <ThrowOnError extends boolean = false>(options: Options<RunMigrationData, ThrowOnError>) => {
-    return (options.client ?? client).post<RunMigrationResponses, RunMigrationErrors, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/migration/{migrationName}',
         ...options
     });
 };
