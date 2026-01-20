@@ -16,7 +16,7 @@ export const auth = betterAuth({
                     clientId: process.env.BETTER_AUTH_CLIENT_ID || "",
                     clientSecret: process.env.BETTER_AUTH_CLIENT_SECRET || "",
                     scopes: (process.env.BETTER_AUTH_SCOPES || "").split(" "),
-                    prompt: process.env.BETTER_AUTH_PROMPT || "select_account",
+                    prompt: process.env.BETTER_AUTH_PROMPT as "select_account" | "login" || "select_account",
                 }
             ]
         }),
