@@ -103,8 +103,8 @@ resource admitto_db 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2024-08
   parent: postgres
 }
 
-resource openfga_db 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2024-08-01' = {
-  name: 'openfga-db'
+resource better_auth_db 'Microsoft.DBforPostgreSQL/flexibleServers/databases@2024-08-01' = {
+  name: 'better-auth-db'
   parent: postgres
 }
 
@@ -125,10 +125,10 @@ resource admitto_db_connectionString 'Microsoft.KeyVault/vaults/secrets@2023-07-
   parent: keyVault
 }
 
-resource openfga_db_connectionString 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
-  name: 'connectionstrings--openfga-db'
+resource better_auth_db_connectionString 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+  name: 'connectionstrings--better-auth-db'
   properties: {
-    value: 'postgres://${administratorLogin}:${administratorLoginPassword}@${postgres.properties.fullyQualifiedDomainName}:5432/openfga-db?sslmode=require'
+    value: 'postgres://${administratorLogin}:${administratorLoginPassword}@${postgres.properties.fullyQualifiedDomainName}:5432/better-auth-db'
   }
   parent: keyVault
 }

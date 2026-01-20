@@ -34,6 +34,32 @@ param msGraphClientSecret string
 @secure()
 param postgresPassword string
 
+@minLength(1)
+@description('The secret for the UI application authentication used for signing tokens')
+@secure()
+param uiAuthSecret string
+
+@minLength(1)
+@description('The client ID for the UI application authentication')
+param uiAuthClientId string
+
+@minLength(1)
+@description('The client secret for the UI application authentication')
+@secure()
+param uiAuthClientSecret string
+
+@minLength(1)
+@description('The scopes for the UI application authentication')
+param uiAuthScopes string
+
+@minLength(1)
+@description('The prompt behavior for the UI application authentication')
+param uiAuthPrompt string
+
+@minLength(1)
+@description('The public URL for the Admitto API')
+param publicAdmittoApiUrl string
+
 module managedIdentity 'modules/managedIdentity.bicep' = {
   name: 'managedIdentity'
   params: {
@@ -62,6 +88,8 @@ module keyVault 'modules/keyVault.bicep' = {
     msGraphClientSecret: msGraphClientSecret
     location: location
     principalId: managedIdentity.outputs.principalId
+    uiAuthSecret: uiAuthSecret
+    uiAuthClientSecret: uiAuthClientSecret
   }
 }
 
@@ -163,3 +191,18 @@ module admittoWorker 'modules/admittoWorkerApp.bicep' = {
   }
 }
 
+module admittoUi 'modules/admittoUiApp.bicep' = {
+  name: 'admitto-ui-app'
+  params: {
+    acaEnvironmentId: containerAppEnvironment.outputs.id
+    acrLoginServer: containerRegistry.outputs.loginServer
+    authAuthority: authAuthority
+    authClientId: uiAuthClientId
+    authScopes: uiAuthScopes
+    authPrompt: uiAuthPrompt
+    admittoApiUrl: publicAdmittoApiUrl
+    keyVaultName: keyVault.outputs.name
+    location: location
+    managedIdentityId: managedIdentity.outputs.id
+  }
+}
