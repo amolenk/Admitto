@@ -12,21 +12,11 @@ export const auth = betterAuth({
             config: [
                 {
                     providerId: "generic-oauth",
-                    discoveryUrl: `${process.env.BETTER_AUTH_AUTHORITY || (() => {
-                        throw new Error("BETTER_AUTH_DISCOVERY_URL not set")
-                    })()}/.well-known/openid-configuration`,
-                    clientId: process.env.BETTER_AUTH_CLIENT_ID || (() => {
-                        throw new Error("BETTER_AUTH_CLIENT_ID not set")
-                    })(),
-                    clientSecret: process.env.BETTER_AUTH_CLIENT_SECRET || (() => {
-                        throw new Error("BETTER_AUTH_CLIENT_SECRET not set")
-                    })(),
-                    scopes: (process.env.BETTER_AUTH_SCOPES || (() => {
-                        throw new Error("BETTER_AUTH_SCOPES not set")
-                    })()).split(" "),
-                    prompt: process.env.BETTER_AUTH_PROMPT as "select_account" | "login" | undefined || (() => {
-                        throw new Error("BETTER_AUTH_PROMPT not set")
-                    })(),
+                    discoveryUrl: `${process.env.BETTER_AUTH_AUTHORITY || ""}/.well-known/openid-configuration`,
+                    clientId: process.env.BETTER_AUTH_CLIENT_ID || "",
+                    clientSecret: process.env.BETTER_AUTH_CLIENT_SECRET || "",
+                    scopes: (process.env.BETTER_AUTH_SCOPES || "").split(" "),
+                    prompt: process.env.BETTER_AUTH_PROMPT || "select_account",
                 }
             ]
         }),
