@@ -170,7 +170,7 @@ export function AddTeamForm()
                 </div>
 
 
-                <Button type="submit">Add team</Button>
+                {/*<Button type="submit">Add team</Button>*/}
 
             </form>
         </Form>
