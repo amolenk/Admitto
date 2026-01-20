@@ -128,7 +128,7 @@ resource admitto_db_connectionString 'Microsoft.KeyVault/vaults/secrets@2023-07-
 resource better_auth_db_connectionString 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
   name: 'connectionstrings--better-auth-db'
   properties: {
-    value: 'postgres://${administratorLogin}:${administratorLoginPassword}@${postgres.properties.fullyQualifiedDomainName}:5432/better-auth-db'
+    value: 'postgres://${administratorLogin}:${administratorLoginPassword}@${postgres.properties.fullyQualifiedDomainName}:5432/better-auth-db?sslmode=require'
   }
   parent: keyVault
 }

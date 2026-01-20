@@ -5,7 +5,7 @@ import {Pool} from "pg";
 export const auth = betterAuth({
     baseURL: process.env.PUBLIC_BASE_URL, // Set public URL when behind a proxy
     database: new Pool({
-        connectionString: process.env.NEXT_BETTER_AUTH
+        connectionString: process.env.BETTER_AUTH_DB
     }),
     experimental: {joins: true},
     plugins: [
