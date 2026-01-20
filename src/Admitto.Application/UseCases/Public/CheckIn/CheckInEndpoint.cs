@@ -14,7 +14,7 @@ public static class CheckInEndpoint
         group
             .MapPost("/{publicId:guid}/check-in", CheckIn)
             .WithName(nameof(CheckIn))
-            .RequireAuthorization(policy => policy.RequireTeamMemberRole(TeamMemberRole.Organizer));
+            .RequireAuthorization(policy => policy.RequireTeamMemberRole(TeamMemberRole.Crew));
 
         return group;
     }
