@@ -3,6 +3,10 @@ param location string = resourceGroup().location
 @secure()
 param msGraphClientSecret string
 param principalId string
+@secure()
+param uiAuthSecret string
+@secure()
+param uiAuthClientSecret string
 
 var resourceToken = uniqueString(resourceGroup().id)
 
@@ -23,6 +27,22 @@ resource keyVault_msGraphClientSecret 'Microsoft.KeyVault/vaults/secrets@2023-07
   name: 'auth--ms-graph-client-secret'
   properties: {
     value: msGraphClientSecret
+  }
+  parent: keyVault
+}
+
+resource keyVault_uiAuthSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+  name: 'auth--ui-secret'
+  properties: {
+    value: uiAuthSecret
+  }
+  parent: keyVault
+}
+
+resource keyVault_uiAuthClientSecret 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+  name: 'auth--ui-client-secret'
+  properties: {
+    value: uiAuthClientSecret
   }
   parent: keyVault
 }

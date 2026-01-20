@@ -1,0 +1,78 @@
+name: Build and Release Admitto UI
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/Admitto.UI.Admin/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'src/Admitto.UI.Admin/**'
+  workflow_dispatch: {}
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  REGISTRY_NAME: acr${{ vars.AZURE_RESOURCE_SUFFIX }}
+  REGISTRY: acr${{ vars.AZURE_RESOURCE_SUFFIX }}.azurecr.io
+  
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: ACR login
+        run: az acr login --name ${{ env.REGISTRY_NAME }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/admitto-ui
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=${{ github.run_number }}
+            
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: ./src
+          file: src/Admitto.UI.Admin/Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+        
+      - name: Compose immutable image reference
+        if: ${{ github.event_name != 'pull_request' }}
+        id: imm
+        run: echo "IMMUTABLE_IMAGE=${{ env.REGISTRY }}/admitto-ui@${{ steps.build.outputs.digest }}" >> $GITHUB_ENV
+              
+      - name: Deploy new revision to ACA (pinned by digest)
+        if: ${{ github.event_name != 'pull_request' }}
+        run: |
+          az containerapp update \
+            -g ${{ vars.AZURE_RESOURCE_GROUP }} \
+            -n app-admitto-ui-${{ vars.AZURE_RESOURCE_SUFFIX }} \
+            --image ${{ env.IMMUTABLE_IMAGE }} \
+            --revision-suffix build-${{ github.run_number }}
