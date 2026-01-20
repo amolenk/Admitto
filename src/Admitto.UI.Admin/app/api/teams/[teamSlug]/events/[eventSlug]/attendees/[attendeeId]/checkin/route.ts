@@ -18,6 +18,8 @@ export async function POST(
 
     } catch (err) {
 
+        console.log(err);
+
         return NextResponse.json(
             {error: err || "Failed to check-in attendee"},
             {status: 502}
