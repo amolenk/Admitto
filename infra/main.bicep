@@ -60,6 +60,10 @@ param uiAuthPrompt string
 @description('The public URL for the Admitto API')
 param publicAdmittoApiUrl string
 
+@minLength(1)
+@description('The public base URL for the Admitto UI')
+param publicAdmittoUiUrl string
+
 module managedIdentity 'modules/managedIdentity.bicep' = {
   name: 'managedIdentity'
   params: {
@@ -201,6 +205,7 @@ module admittoUi 'modules/admittoUiApp.bicep' = {
     authScopes: uiAuthScopes
     authPrompt: uiAuthPrompt
     admittoApiUrl: publicAdmittoApiUrl
+    publicBaseUrl: publicAdmittoUiUrl
     keyVaultName: keyVault.outputs.name
     location: location
     managedIdentityId: managedIdentity.outputs.id
