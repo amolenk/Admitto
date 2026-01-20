@@ -61,23 +61,9 @@ export function QrCodeScanner({
         }
     }
 
-    // async function resumeScanner() {
-    //     setResult({kind: "scanning"});
-    //
-    //     try {
-    //         const s = scannerRef.current;
-    //         if (s?.resume) {
-    //             await s.resume(); // keeps stream if supported (helps iOS)
-    //             return;
-    //         }
-    //     } catch {
-    //     }
-    //
-    //     await clearScanner();
-    //     await renderScanner();
-    // }
-
     async function callCheckIn(scanResult: string) {
+
+        alert(scanResult);
 
         const parts = scanResult.split(":");
         if (parts.length < 2) {
