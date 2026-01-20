@@ -1,7 +1,7 @@
 'use client';
 
 import {CheckInResponse} from "@/lib/admitto-api/generated";
-import React, {useEffect, useMemo, useRef, useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 
 type ScanResult =
     | { kind: "idle" }
@@ -42,20 +42,40 @@ export function QrCodeScanner({
     }
 
     async function resumeScanner() {
-        setResult({kind: "scanning"});
+        setResult({ kind: "scanning" });
+
+        // Let React hide the result UI / show the scanner container
+        await new Promise((r) => setTimeout(r, 0));
 
         try {
             const s = scannerRef.current;
             if (s?.resume) {
-                await s.resume(); // keeps stream if supported (helps iOS)
+                await s.resume();
                 return;
             }
         } catch {
+            // If resume fails, last resort fallback:
+            // you can show an error message instructing a page refresh,
+            // because reinitializing may trigger permission again on iOS.
+            setResult({ kind: "failed", error: "Unable to resume camera. Please refresh the page." });
         }
-
-        await clearScanner();
-        await renderScanner();
     }
+
+    // async function resumeScanner() {
+    //     setResult({kind: "scanning"});
+    //
+    //     try {
+    //         const s = scannerRef.current;
+    //         if (s?.resume) {
+    //             await s.resume(); // keeps stream if supported (helps iOS)
+    //             return;
+    //         }
+    //     } catch {
+    //     }
+    //
+    //     await clearScanner();
+    //     await renderScanner();
+    // }
 
     async function callCheckIn(scanResult: string) {
 
@@ -72,7 +92,7 @@ export function QrCodeScanner({
 
         const res = await fetch(endpoint, {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: {"Content-Type": "application/json"},
             cache: "no-store",
         });
 
@@ -147,7 +167,6 @@ export function QrCodeScanner({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    const showScanner = result.kind === "idle" || result.kind === "scanning";
     const showInlineResult = result.kind === "success" || result.kind === "failed";
 
     return (
@@ -162,11 +181,18 @@ export function QrCodeScanner({
                         </p>
                     </noscript>
 
-                    {showScanner && (
-                        <div className="mb-4 flex justify-center">
-                            <div id={readerId} className="w-[350px] max-w-full"/>
-                        </div>
-                    )}
+                    <div className={showInlineResult ? "hidden" : "mb-4 flex justify-center"}>
+                        <div
+                            id={readerId}
+                            className="
+                                w-[350px] max-w-full
+                                [&_button]:appearance-auto
+                                [&_button]:border [&_button]:rounded-md [&_button]:px-3 [&_button]:my-2
+                                [&_button]:cursor-pointer
+                                [&_select]:border [&_select]:rounded-md [&_select]:px-2 [&_select]:py-1
+                              "
+                        />
+                    </div>
 
                     {showInlineResult && (
                         <div className="mt-3">
