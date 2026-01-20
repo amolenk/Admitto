@@ -5,10 +5,12 @@ on:
     branches: [ main ]
     paths:
       - 'src/Admitto.UI.Admin/**'
+      - '.github/workflows/ui-build-release.yml'
   pull_request:
     branches: [ main ]
     paths:
       - 'src/Admitto.UI.Admin/**'
+      - '.github/workflows/ui-build-release.yml'
   workflow_dispatch: {}
 
 permissions:
@@ -51,6 +53,7 @@ jobs:
             type=raw,value=${{ github.run_number }}
             
       - name: Build and push Docker image
+        id: build
         uses: docker/build-push-action@v6
         with:
           context: ./src/Admitto.UI.Admin/
