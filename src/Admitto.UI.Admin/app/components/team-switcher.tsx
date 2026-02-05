@@ -21,7 +21,7 @@ export function TeamSwitcher(/*{teams}: TeamSwitcherProps*/)
     const router = useRouter();
     const { isMobile } = useSidebar();
 
-    const { teams, selectedTeam, setSelectedTeamId, hasLoaded } = useTeamStore();
+    const { teams, selectedTeam, setSelectedTeamSlug, hasLoaded } = useTeamStore();
 
     if (!hasLoaded)
     {
@@ -57,7 +57,7 @@ export function TeamSwitcher(/*{teams}: TeamSwitcherProps*/)
                                 {teams.map((team: TeamDto) => (
                                     <DropdownMenuItem
                                         key={team.name}
-                                        onClick={() => setSelectedTeamId(team.slug)}
+                                        onClick={() => setSelectedTeamSlug(team.slug)}
                                         className="gap-2 p-2"
                                     >
                                         {team.name}

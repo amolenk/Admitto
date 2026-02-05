@@ -5,15 +5,15 @@ using Amolenk.Admitto.Application.Common.Persistence;
 using Amolenk.Admitto.Application.UseCases.Attendees.RecordAttendance;
 using Amolenk.Admitto.Domain.ValueObjects;
 
-namespace Amolenk.Admitto.Application.UseCases.Public.CheckIn;
+namespace Amolenk.Admitto.Application.UseCases.Attendees.CheckIn;
 
 public static class CheckInEndpoint
 {
     public static RouteGroupBuilder MapCheckIn(this RouteGroupBuilder group)
     {
         group
-            .MapPost("/{publicId:guid}/check-in", CheckIn)
-            .WithName(nameof(CheckIn))
+            .MapPost("/{attendeeId:guid}/privileged-check-in", CheckIn)
+            .WithName($"Privileged{nameof(CheckIn)}")
             .RequireAuthorization(policy => policy.RequireTeamMemberRole(TeamMemberRole.Crew));
 
         return group;
@@ -22,8 +22,7 @@ public static class CheckInEndpoint
     private static async ValueTask<Ok<CheckInResponse>> CheckIn(
         string teamSlug,
         string eventSlug,
-        Guid publicId,
-        string signature,
+        Guid attendeeId,
         ISlugResolver slugResolver,
         IApplicationContext context,
         ISigningService signingService,
@@ -32,13 +31,8 @@ public static class CheckInEndpoint
     {
         var eventId = await slugResolver.ResolveTicketedEventIdAsync(teamSlug, eventSlug, cancellationToken);
         
-        if (!await signingService.IsValidAsync(publicId, signature, eventId, cancellationToken))
-        {
-            throw new ApplicationRuleException(ApplicationRuleError.Signing.InvalidSignature);
-        }
-
         var admissionRecord = await context.ParticipationView
-            .Where(a => a.TicketedEventId == eventId && a.PublicId == publicId)
+            .Where(a => a.TicketedEventId == eventId && a.AttendeeId == attendeeId)
             .FirstOrDefaultAsync(cancellationToken);
         
         if (admissionRecord is null)

@@ -6,8 +6,8 @@ type TeamStore = {
     selectedTeam: TeamDto | null;
     isLoading: boolean,
     hasLoaded: boolean,
-    setSelectedTeamId: (teamId: string) => void;
-    fetchTeams: (selectTeamId?: string) => Promise<void>;
+    setSelectedTeamSlug: (teamSlug: string) => void;
+    fetchTeams: (selectTeamSlug?: string) => Promise<void>;
 };
 
 export const useTeamStore = create<TeamStore>((set) => ({
@@ -15,9 +15,9 @@ export const useTeamStore = create<TeamStore>((set) => ({
     selectedTeam: null,
     isLoading: false,
     hasLoaded: false,
-    setSelectedTeamId: (teamId: string) =>
+    setSelectedTeamSlug: (teamSlug: string) =>
     {
-        const team = useTeamStore.getState().teams.find((t) => t.slug === teamId);
+        const team = useTeamStore.getState().teams.find((t) => t.slug === teamSlug);
         set({ selectedTeam: team });
     },
     fetchTeams: async (selectTeamId?: string) =>

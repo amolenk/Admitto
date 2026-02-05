@@ -51,13 +51,14 @@ public class UpdateAttendeeCommand(IAdmittoService admittoService, IConfigServic
             Tickets = InputHelper.ParseTickets(settings.Tickets)
         };
 
-        var response =
-            await admittoService.QueryAsync(client => client.GetAttendeeAsync(
+        var result =
+            await admittoService.SendAsync(client => client.UpdateAttendeeAsync(
                 teamSlug,
                 eventSlug,
                 attendeeId.Value,
+                request,
                 cancellationToken));
-        if (response is null) return 1;
+        if (!result) return 1;
         
         AnsiConsoleExt.WriteSuccesMessage($"Successfully updated attendee.");
         return 0;

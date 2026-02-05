@@ -6,7 +6,7 @@ import { NextResponse } from "next/server";
 
 export async function GET(req: Request) {
     const response = await auth.api.signInWithOAuth2({
-        body: { providerId: process.env.AUTH_PROVIDER_ID as string || "keycloak" },
+        body: { providerId: "generic-oauth" },
         headers: await headers(),
         asResponse: true,
     });
