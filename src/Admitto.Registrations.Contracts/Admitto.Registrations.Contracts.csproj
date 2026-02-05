@@ -1,0 +1,8 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+      <ProjectReference Include="..\Admitto.Shared.Contracts\Admitto.Shared.Contracts.csproj" />
+      <ProjectReference Include="..\Admitto.Shared.Kernel\Admitto.Shared.Kernel.csproj" />
+    </ItemGroup>
+
+</Project>

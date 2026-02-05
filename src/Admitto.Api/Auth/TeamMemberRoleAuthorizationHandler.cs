@@ -1,7 +1,11 @@
-using Amolenk.Admitto.Application.Common.Authentication;
-using Amolenk.Admitto.Application.Common.Authorization;
-using Amolenk.Admitto.Application.Common.Slugs;
+using Amolenk.Admitto.ApiService.Middleware;
+using Amolenk.Admitto.Organization.Contracts;
+using Amolenk.Admitto.Organization.Domain.ValueObjects;
+using Amolenk.Admitto.Shared.Application;
+using Amolenk.Admitto.Shared.Application.Auth;
 using Microsoft.AspNetCore.Authorization;
+using TeamMemberRoleAuthorizationRequirement =
+    Amolenk.Admitto.Shared.Application.Auth.TeamMemberRoleAuthorizationRequirement;
 
 namespace Amolenk.Admitto.ApiService.Auth;
 
@@ -10,54 +14,40 @@ namespace Amolenk.Admitto.ApiService.Auth;
 /// Administrator users automatically satisfy this requirement.
 /// </summary>
 public class TeamMemberRoleAuthorizationHandler(
-    IHttpContextAccessor contextAccessor,
-    ISlugResolver slugResolver,
-    ITeamMemberRoleService teamMemberRoleService,
-    IAdministratorRoleService administratorRoleService)
+    IUserContextAccessor userContextAccessor,
+    IOrganizationFacade organizationFacade,
+    IAdministratorRoleService administratorRoleService,
+    IOrganizationScopeResolver organizationScopeResolver)
     : AuthorizationHandler<TeamMemberRoleAuthorizationRequirement>
 {
     protected override async Task HandleRequirementAsync(
         AuthorizationHandlerContext context,
         TeamMemberRoleAuthorizationRequirement requirement)
     {
-        var httpContext = contextAccessor.HttpContext ??
-                          throw new InvalidOperationException("HttpContext is required.");
+        var userId = userContextAccessor.Current.UserId;
 
-        var userId = context.User.GetUserId();
-
+        // If the user is an administrator, they automatically satisfy the requirement.
         if (administratorRoleService.IsAdministrator(userId))
         {
             context.Succeed(requirement);
             return;
         }
-        
-        var teamId = await GetTeamIdOrThrowAsync(httpContext, requirement.TeamSlugParameterName, slugResolver);
-        var role = await teamMemberRoleService.GetTeamMemberRoleAsync(userId, teamId);
-        
-        if (role is not null && role >= requirement.RequiredRole)
+
+        // Otherwise, check the user's role in the organization.
+        var organizationScope = await organizationScopeResolver.ResolveAsync();
+        var role = await organizationFacade.GetTeamMemberRoleAsync(userId, organizationScope.TeamId);
+
+        if (role >= MapToTeamMemberRoleDto(requirement.RequiredRole))
         {
             context.Succeed(requirement);
         }
     }
 
-    private static async ValueTask<Guid> GetTeamIdOrThrowAsync(
-        HttpContext context,
-        string teamSlugParameterName,
-        ISlugResolver slugResolver)
+    private static TeamMemberRoleDto MapToTeamMemberRoleDto(RequiredTeamMemberRole role) => role switch
     {
-        var teamSlug = GetRouteValueOrThrow(context, teamSlugParameterName);
-        var teamId = await slugResolver.ResolveTeamIdAsync(teamSlug);
-        return teamId;
-    }
-
-    private static string GetRouteValueOrThrow(HttpContext context, string key)
-    {
-        var value = context.GetRouteValue(key);
-        if (value is not string routeString)
-        {
-            throw new UnauthorizedAccessException($"Cannot authorize access because route parameter {key} is not set.");
-        }
-
-        return routeString;
-    }
+        RequiredTeamMemberRole.Crew => TeamMemberRoleDto.Crew,
+        RequiredTeamMemberRole.Organizer => TeamMemberRoleDto.Organizer,
+        RequiredTeamMemberRole.Owner => TeamMemberRoleDto.Owner,
+        _ => throw new ArgumentOutOfRangeException(nameof(role))
+    };
 }

@@ -13,6 +13,8 @@ public class UnitOfWork(ApplicationContext context, MessageOutbox outbox) : IUni
 
     public Action<UniqueViolationArgs>? OnUniqueViolation { get; set; }
     
+    
+    
     public async ValueTask SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         int result;

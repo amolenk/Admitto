@@ -1,0 +1,13 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+      <ProjectReference Include="..\Admitto.Organization.Contracts\Admitto.Organization.Contracts.csproj" />
+      <ProjectReference Include="..\Admitto.Organization.Domain\Admitto.Organization.Domain.csproj" />
+      <ProjectReference Include="..\Admitto.Shared.Application\Admitto.Shared.Application.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+    </ItemGroup>
+
+</Project>

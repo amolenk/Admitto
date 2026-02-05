@@ -1,4 +1,3 @@
-using Amolenk.Admitto.Application.Common;
 using Azure.Monitor.OpenTelemetry.AspNetCore;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
@@ -42,18 +41,18 @@ public static class Extensions
             // TODO Optimize cache size
             builder.Services.AddMemoryCache();
 
-            builder.Services.AddHttpContextAccessor();
-
             // Add default infrastructure services.
-            builder
-                .AddInfrastructureDatabaseServices()
-                .AddInfrastructureMessagingServices()
-                .AddInfrastructureJobServices();
+            // TODO
+            // builder
+                // .AddInfrastructureDatabaseServices()
+                // .AddInfrastructureMessagingServices()
+                // .AddInfrastructureJobServices();
         
             // Add default application services.
-            builder.Services
-                .AddApplicationCryptographyServices()
-                .AddApplicationMessagingServices();
+            // TODO
+            // builder.Services
+            //     .AddApplicationCryptographyServices()
+            //     .AddApplicationMessagingServices();
         }
 
         private void ConfigureOpenTelemetry()
@@ -80,8 +79,9 @@ public static class Extensions
                         //.AddGrpcClientInstrumentation()
                         .AddHttpClientInstrumentation()
                         .AddQuartzInstrumentation()
-                        .AddSource("Polly")
-                        .AddSource(AdmittoActivitySource.Name);
+                        .AddSource("Polly");
+                        // TODO
+                        //.AddSource(AdmittoActivitySource.Name);
                 });
 
             builder.AddOpenTelemetryExporters();

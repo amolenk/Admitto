@@ -1,4 +1,4 @@
-namespace Admitto.AppHost.Extensions.AzureStorage;
+namespace Amolenk.Admitto.AppHost.Extensions.AzureStorage;
 
 public class AzureQueueAnnotation : IResourceAnnotation
 {

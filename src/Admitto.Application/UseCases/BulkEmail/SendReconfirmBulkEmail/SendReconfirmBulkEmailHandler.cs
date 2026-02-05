@@ -76,31 +76,34 @@ public class SendReconfirmBulkEmailHandler(
     {
         var now = DateTime.UtcNow;
 
-        return (await context.ParticipationView
-                .AsNoTracking()
-                .Where(p => p.TicketedEventId == ticketedEventId &&
-                            p.AttendeeStatus == ParticipationAttendeeStatus.Registered)
-                .Join(
-                    context.Attendees,
-                    p => p.AttendeeId,
-                    a => a.Id,
-                    (p, a) => new EmailRecipient(
-                        p.ParticipantId,
-                        p.PublicId,
-                        p.Email,
-                        a.FirstName,
-                        a.LastName,
-                        a.AdditionalDetails.ToList(),
-                        a.Tickets.ToList(),
-                        a.CreatedAt,
-                        context.EmailLog
-                            .Where(el => el.Recipient == p.Email && el.EmailType == WellKnownEmailType.Reconfirm)
-                            .OrderByDescending(el => el.SentAt)
-                            .Select(el => el.SentAt)
-                            .FirstOrDefault()
-                    ))
-                .ToListAsync(cancellationToken))
-            .Where(a => ShouldSendReconfirmEmail(
+        // TODO TEST 
+        // There was a bug with Bitbash where all reconfirmed attendees got sent reconfirmation emails again.
+        // Problem was that we were checking the Participation.AttendeeStatus, which is never updated to reflect reconfirmation.
+        // Instead, we should check the actual RegistrationStatus on Attendee which is what the code below does.
+        
+        var recipients = await (
+            from p in context.ParticipationView.AsNoTracking()
+            join a in context.Attendees on p.AttendeeId equals a.Id
+            where p.TicketedEventId == ticketedEventId
+                  && p.AttendeeStatus != null
+                  && a.RegistrationStatus == RegistrationStatus.Registered
+            select new EmailRecipient(
+                p.ParticipantId,
+                p.PublicId,
+                p.Email,
+                a.FirstName,
+                a.LastName,
+                a.AdditionalDetails.ToList(),
+                a.Tickets.ToList(),
+                a.CreatedAt,
+                context.EmailLog
+                    .Where(el => el.Recipient == p.Email && el.EmailType == WellKnownEmailType.Reconfirm)
+                    .OrderByDescending(el => el.SentAt)
+                    .Select(el => (DateTimeOffset?)el.SentAt)
+                    .FirstOrDefault())
+        ).ToListAsync(cancellationToken);
+        
+        return recipients.Where(a => ShouldSendReconfirmEmail(
                 a.Email,
                 now,
                 a.RegisteredAt,

@@ -1,5 +1,7 @@
+using System.Reflection;
 using Amolenk.Admitto.ApiService.Auth;
 using Amolenk.Admitto.ApiService.OpenApi;
+using Amolenk.Admitto.Shared.Application.Messaging;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -25,6 +27,27 @@ public static class DependencyInjection
                     new OpenApiSchema { Type = JsonSchemaType.String, Format = "duration" });
 
             });
+        }
+        
+        public IServiceCollection AddApplicationCommandHandlers(HostCapability capabilities = HostCapability.None)
+        {
+            services.Scan(scan => scan
+                .FromAssemblies(Assembly.GetExecutingAssembly())
+                .AddClasses(classes => classes
+                    .AssignableTo<ICommandHandler>()
+                    .Where(c =>
+                    {
+                        var requiresCapabilityAttribute = c.GetCustomAttribute<RequiresCapabilityAttribute>();
+                        return requiresCapabilityAttribute is null
+                               || (requiresCapabilityAttribute.Capability & capabilities) ==
+                               requiresCapabilityAttribute.Capability;
+                    }))
+                .As(t => t.GetInterfaces()
+                    .Where(i => i.IsGenericType &&
+                                i.GetGenericTypeDefinition() == typeof(ICommandHandler<>)))
+                .WithScopedLifetime());
+
+            return services;
         }
     }
 
@@ -77,7 +100,7 @@ public static class DependencyInjection
                     };
                 });
 
-            builder.AddInfrastructureUserManagementServices();
+            builder.AddOrganizationIdentityServices();
 
             return builder;
         }
@@ -85,9 +108,9 @@ public static class DependencyInjection
         public TBuilder AddApiAuthorization()
         {
             builder.Services
-                .AddApplicationAuthorizationServices()
                 .AddScoped<IAuthorizationHandler, AdminAuthorizationHandler>()
                 .AddScoped<IAuthorizationHandler, TeamMemberRoleAuthorizationHandler>()
+                .AddScoped<IAdministratorRoleService, AdministratorRoleService>()
                 .AddAuthorization();
 
             return builder;

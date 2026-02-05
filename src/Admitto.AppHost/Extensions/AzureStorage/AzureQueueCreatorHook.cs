@@ -5,7 +5,7 @@ using Aspire.Hosting.Lifecycle;
 using Azure.Storage.Queues;
 using Microsoft.Extensions.Logging;
 
-namespace Admitto.AppHost.Extensions.AzureStorage;
+namespace Amolenk.Admitto.AppHost.Extensions.AzureStorage;
 
 [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
 internal sealed class AzureQueueCreatorHook(ILogger<AzureQueueCreatorHook> logger)
