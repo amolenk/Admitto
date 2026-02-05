@@ -68,7 +68,7 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
         {
           // Use a placeholder image until the real one is built and pushed
 //           image: 'mendhak/http-https-echo:37'
-          image: 'acrutzwls7ov7ne2.azurecr.io/admitto-api@sha256:12e36ee3483375448d8279d2c6e4277939f12bfe0bee2ad1334096a8c76b04f4'
+          image: 'acrutzwls7ov7ne2.azurecr.io/admitto-api@sha256:2608c8ba544cb6497c738d17ff8d148dcc81402f73c9da9e68124c29e688e93d'
           name: 'admitto-api'
           env: [
             {
