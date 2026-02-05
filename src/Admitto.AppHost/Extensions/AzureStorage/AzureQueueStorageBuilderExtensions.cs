@@ -1,7 +1,7 @@
 using Aspire.Hosting.Azure;
 using Aspire.Hosting.Lifecycle;
 
-namespace Admitto.AppHost.Extensions.AzureStorage;
+namespace Amolenk.Admitto.AppHost.Extensions.AzureStorage;
 
 public static class AzureQueueStorageBuilderExtensions
 {

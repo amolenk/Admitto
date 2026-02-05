@@ -1,17 +1,24 @@
-﻿using Amolenk.Admitto.Application.Common.Migration;
-using Amolenk.Admitto.Infrastructure.Migrators;
+﻿using Amolenk.Admitto.Organization.Infrastructure.Persistence;
+using Amolenk.Admitto.Registrations.Infrastructure;
+using Amolenk.Admitto.Registrations.Infrastructure.Persistence;
+using Microsoft.EntityFrameworkCore;
 
 var builder = Host.CreateApplicationBuilder(args);
 
 builder.AddServiceDefaults();
-
-builder.Services.AddTransient<BetterAuthMigrator>();
-builder.Services.AddTransient<QuartzMigrator>();
-builder.Services.AddTransient<IMigrationService, MigrationService>();
+builder.AddOrganizationInfrastructureServices();
+builder.AddRegistrationsInfrastructureServices();
 
 var app = builder.Build();
 
 using var migrationScope = app.Services.CreateScope();
-var migrationService = migrationScope.ServiceProvider.GetRequiredService<IMigrationService>();
-await migrationService.MigrateAllAsync();
 
+await MigrateDatabasesAsync<OrganizationDbContext>(migrationScope);
+await MigrateDatabasesAsync<RegistrationsDbContext>(migrationScope);
+return;
+
+async ValueTask MigrateDatabasesAsync<TDbContext>(IServiceScope scope) where TDbContext : DbContext
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<TDbContext>();
+    await dbContext.Database.MigrateAsync();
+}

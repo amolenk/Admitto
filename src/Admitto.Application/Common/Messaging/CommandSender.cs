@@ -4,6 +4,8 @@ public interface ICommandSender
 {
     ValueTask SendAsync(Command command, CancellationToken cancellationToken = default);
 
+    ValueTask<TResult> SendReceiveAsync<TResult>(Command command, CancellationToken cancellationToken = default);
+
     void Enqueue(Command command);
 }
 
@@ -14,7 +16,7 @@ public class CommandSender(IMessageOutbox outbox, IServiceProvider serviceProvid
     public async ValueTask SendAsync(Command command, CancellationToken cancellationToken = default)
     {
         using var scope = serviceProvider.CreateScope();
-        
+
         var commandType = command.GetType();
         var handlerType = typeof(ICommandHandler<>).MakeGenericType(commandType);
         var handler = scope.ServiceProvider.GetRequiredService(handlerType);
@@ -24,7 +26,7 @@ public class CommandSender(IMessageOutbox outbox, IServiceProvider serviceProvid
         activity?.SetTag("admitto.message.id", command.CommandId);
         activity?.SetTag("admitto.message.type", commandType.Name);
         activity?.SetTag("admitto.handler.type", handlerType);
-        
+
         logger.LogDebug(
             "Handling '{CommandType}' with handler '{HandlerType}'",
             commandType,
@@ -32,7 +34,32 @@ public class CommandSender(IMessageOutbox outbox, IServiceProvider serviceProvid
 
         await ((dynamic)handler).HandleAsync((dynamic)command, cancellationToken);
     }
-    
+
+    public async ValueTask<TResult> SendReceiveAsync<TResult>(
+        Command command,
+        CancellationToken cancellationToken = default)
+    {
+        using var scope = serviceProvider.CreateScope();
+
+        var commandType = command.GetType();
+        var resultType = typeof(TResult);
+        var handlerType = typeof(ICommandHandler<,>).MakeGenericType(commandType, resultType);
+        var handler = scope.ServiceProvider.GetRequiredService(handlerType);
+
+        // ReSharper disable once ExplicitCallerInfoArgument
+        using var activity = AdmittoActivitySource.ActivitySource.StartActivity("handle message");
+        activity?.SetTag("admitto.message.id", command.CommandId);
+        activity?.SetTag("admitto.message.type", commandType.Name);
+        activity?.SetTag("admitto.handler.type", handlerType);
+
+        logger.LogDebug(
+            "Handling '{CommandType}' with handler '{HandlerType}'",
+            commandType,
+            handlerType);
+
+        return await ((dynamic)handler).HandleAsync((dynamic)command, cancellationToken);
+    }
+
     public void Enqueue(Command command)
     {
         outbox.Enqueue(command);

@@ -2,9 +2,6 @@
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
-        <TargetFramework>net10.0</TargetFramework>
-        <ImplicitUsings>enable</ImplicitUsings>
-        <Nullable>enable</Nullable>
     </PropertyGroup>
 
     <ItemGroup>
@@ -12,7 +9,14 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\Admitto.Organization.Infrastructure\Admitto.Organization.Infrastructure.csproj" />
+      <ProjectReference Include="..\Admitto.Registrations.Infrastructure\Admitto.Registrations.Infrastructure.csproj" />
       <ProjectReference Include="..\Admitto.ServiceDefaults\Admitto.ServiceDefaults.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.EntityFrameworkCore" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
     </ItemGroup>
     
 </Project>

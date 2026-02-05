@@ -1,6 +1,6 @@
-using Amolenk.Admitto.Application.Common.Messaging;
-using Amolenk.Admitto.Worker;
-using Quartz;
+// using Amolenk.Admitto.Application.Common.Messaging;
+// using Amolenk.Admitto.Worker;
+// using Quartz;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -8,28 +8,28 @@ var builder = Host.CreateApplicationBuilder(args);
 builder.AddServiceDefaults();
 
 // Add application services.
-builder.Services
-    .AddApplicationCommandHandlers(HostCapability.Email)
-    .AddApplicationApplicationEventHandlers()
-    .AddApplicationEventualDomainEventHandlers()
-    .AddApplicationTransactionalDomainEventHandlers()
-    .AddApplicationJobs();
+// builder.Services
+    // .AddApplicationCommandHandlers(HostCapability.Email)
+    // .AddApplicationApplicationEventHandlers()
+    // .AddApplicationEventualDomainEventHandlers()
+    // .AddApplicationTransactionalDomainEventHandlers()
+    // .AddApplicationJobs();
 
 // Add Quartz.NET hosted service.
-builder.Services.AddQuartzHostedService(options => { options.WaitForJobsToComplete = true; });
+// builder.Services.AddQuartzHostedService(options => { options.WaitForJobsToComplete = true; });
 
 // Add email services.
-builder.Services
-    .AddApplicationEmailServices()
-    .AddInfrastructureEmailServices();
+// builder.Services
+//     .AddApplicationEmailServices()
+//     .AddInfrastructureEmailServices();
 
 // Add message queue processor for processing internal messages.
-builder.Services
-    .AddHostedService<MessageQueueProcessor>()
-    .AddOptions<MessageQueueProcessorOptions>()
-    .Bind(builder.Configuration.GetSection(MessageQueueProcessorOptions.SectionName))
-    .ValidateDataAnnotations()
-    .ValidateOnStart();
+// builder.Services
+//     .AddHostedService<MessageQueueProcessor>()
+//     .AddOptions<MessageQueueProcessorOptions>()
+//     .Bind(builder.Configuration.GetSection(MessageQueueProcessorOptions.SectionName))
+//     .ValidateDataAnnotations()
+//     .ValidateOnStart();
 
 var host = builder.Build();
 host.Run();
