@@ -6,8 +6,7 @@ public interface IOrganizationWriteStore
 {
     DbSet<Team> Teams { get; }
 
-//    DbSet<TicketedEvent> TicketedEvents { get; }
+    DbSet<TicketedEvent> TicketedEvents { get; }
     
-    DbSet<TicketedEventRecord> TicketedEvents { get; }
-
+    DbSet<User> Users { get; }
 }

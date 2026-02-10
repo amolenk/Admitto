@@ -42,7 +42,7 @@ public sealed class RegisterAttendeeTests(TestContext testContext) : AspireInteg
 
             ticketedEventCapacity
                 .ShouldNotBeNull()
-                .TicketTypeCapacities.ShouldHaveSingleItem().UsedCapacity.ShouldBe(1);
+                .TicketCapacities.ShouldHaveSingleItem().UsedCapacity.ShouldBe(1);
         });
     }
 

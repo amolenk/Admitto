@@ -1,3 +1,3 @@
 namespace Amolenk.Admitto.Registrations.Domain.ValueObjects;
 
-public readonly record struct Ticket(TicketTypeId TicketTypeId);
+public sealed record Ticket(TicketTypeId TicketTypeId);

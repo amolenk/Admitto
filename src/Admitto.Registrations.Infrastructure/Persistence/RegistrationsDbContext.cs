@@ -16,7 +16,7 @@ public sealed class RegistrationsDbContext(DbContextOptions<RegistrationsDbConte
 
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
     
-    public DbSet<TicketedEventCapacity> TicketedEventCapacities => Set<TicketedEventCapacity>();
+    public DbSet<EventCapacity> TicketedEventCapacities => Set<EventCapacity>();
     
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

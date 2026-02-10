@@ -6,13 +6,13 @@ using Humanizer;
 
 namespace Amolenk.Admitto.Shared.Infrastructure.Persistence.Outbox;
 
-internal class OutboxWriter(IOutboxDbContext dbContext, IMessagePolicy policy)
+internal class OutboxWriter(IOutboxDbContext dbContext, IMessagePolicy messagePolicy)
 {
     public bool TryEnqueue(IDomainEvent domainEvent)
     {
         var enqueued = false;
         
-        if (policy.ShouldPublishAsyncDomainEvent(domainEvent))
+        if (messagePolicy.ShouldPublishAsyncDomainEvent(domainEvent))
         {
             var messageType = GetMessageType(domainEvent);
             PersistMessageInOutbox(messageType, domainEvent);
@@ -20,9 +20,9 @@ internal class OutboxWriter(IOutboxDbContext dbContext, IMessagePolicy policy)
             enqueued = true;
         }
 
-        if (policy.ShouldPublishIntegrationEvent(domainEvent))
+        if (messagePolicy.ShouldPublishIntegrationEvent(domainEvent))
         {
-            var integrationEvent = policy.MapToIntegrationEvent(domainEvent);
+            var integrationEvent = messagePolicy.MapToIntegrationEvent(domainEvent);
             var messageType = GetMessageType(integrationEvent);
             PersistMessageInOutbox(messageType, integrationEvent);
             

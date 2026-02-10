@@ -5,7 +5,7 @@ using Amolenk.Admitto.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Organization.Infrastructure.UserDirectories.Keycloak;
 
-public class KeycloakUserManagementService(HttpClient client) : IUserDirectory
+public class KeycloakUserManagementService(HttpClient client) : IExternalUserDirectory
 {
     private const string Realm = "admitto";
 
@@ -15,7 +15,7 @@ public class KeycloakUserManagementService(HttpClient client) : IUserDirectory
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
-    public async ValueTask<User?> GetUserByEmailAsync(
+    public async ValueTask<ExternalUser?> GetUserByEmailAsync(
         string email,
         CancellationToken cancellationToken = default)
     {
@@ -36,7 +36,7 @@ public class KeycloakUserManagementService(HttpClient client) : IUserDirectory
         return users.Select(u => u.ToUser()).FirstOrDefault();
     }
 
-    public async ValueTask<IEnumerable<User>> GetUsersAsync(CancellationToken cancellationToken)
+    public async ValueTask<IEnumerable<ExternalUser>> GetUsersAsync(CancellationToken cancellationToken)
     {
         var response = await client.GetAsync($"/admin/realms/{Realm}/users", cancellationToken);
 
@@ -53,7 +53,7 @@ public class KeycloakUserManagementService(HttpClient client) : IUserDirectory
         return users.Select(u => u.ToUser());
     }
 
-    public async ValueTask<User> AddUserAsync(
+    public async ValueTask<ExternalUser> AddUserAsync(
         string email,
         string firstName,
         string lastName,
@@ -103,7 +103,7 @@ public class KeycloakUserManagementService(HttpClient client) : IUserDirectory
         var userId = new UserId(Guid.Parse(locationHeader.Split('/').Last()));
 
         // Return a User domain object
-        return new User(userId, EmailAddress.From(email));
+        return new ExternalUser(userId, EmailAddress.From(email));
     }
 
     public async ValueTask DeleteUserAsync(Guid userId, CancellationToken cancellationToken = default)
@@ -119,6 +119,6 @@ public class KeycloakUserManagementService(HttpClient client) : IUserDirectory
 
     private record KeycloakUser(string Id, string Email)
     {
-        public User ToUser() => new(new UserId(Guid.Parse(Id)), EmailAddress.From(Email));
+        public ExternalUser ToUser() => new(new UserId(Guid.Parse(Id)), EmailAddress.From(Email));
     }
 }

@@ -1,44 +1,53 @@
-﻿using Amolenk.Admitto.Shared.Kernel.ErrorHandling;
+using Amolenk.Admitto.Shared.Kernel.ErrorHandling;
 using Humanizer;
 
 namespace Amolenk.Admitto.Shared.Kernel.ValueObjects;
 
-public abstract record Slug : IStringValueObject
+public readonly record struct Slug
 {
     public const int MaxLength = 100;
-    
+
     public string Value { get; }
 
-    public static implicit operator string(Slug slug) => slug.Value;
-
-    protected Slug(string normalizedValue)
+    private Slug(string normalizedValue)
     {
         Value = normalizedValue;
     }
+    
+    public static ValidationResult<Slug> TryFrom(string? input)
+        => NormalizeAndValidate(input)
+            .Map(normalized => new Slug(normalized));
 
-    protected static ValidationResult<string> NormalizeAndValidate(string? input)
+    public static Slug From(string input)
+        => TryFrom(input).GetValueOrThrow();
+
+    private static ValidationResult<string> NormalizeAndValidate(string? input)
     {
         if (input is null)
-            return Errors.Required();
+            return Errors.Empty;
 
-        var normalized = input.Kebaberize();
+        var normalized = input.Trim().Kebaberize();
 
         if (string.IsNullOrWhiteSpace(input))
-            return Errors.Empty();
-
+            return Errors.Empty;
+        
         if (normalized.Length > MaxLength)
-            return Errors.TooLong(MaxLength);
+            return Errors.TooLong;
 
         return normalized;
     }
     
     private static class Errors
     {
-        private const string Name = "slug";
-    
-        public static Error Required() => SharedErrors.ValueObjects.Required(Name);
-        public static Error Empty() => SharedErrors.ValueObjects.Empty(Name);
-        public static Error TooLong(int max) => SharedErrors.ValueObjects.TooLong(Name, max);
+        public static readonly Error Empty = new(
+            "slug.empty",
+            "Slug is required.");
+
+        public static readonly Error TooLong = new(
+            "slug.too_long",
+            $"Slug must be at most {MaxLength} character(s).");
     }
 }
+
+
 

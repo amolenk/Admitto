@@ -4,7 +4,6 @@ using Amolenk.Admitto.Organization.Contracts;
 using Amolenk.Admitto.Shared.Application.Messaging;
 using FluentValidation;
 using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 namespace Amolenk.Admitto.Organization.Application;

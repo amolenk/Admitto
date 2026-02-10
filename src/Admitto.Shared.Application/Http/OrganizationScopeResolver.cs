@@ -1,7 +1,7 @@
 using Amolenk.Admitto.Organization.Contracts;
-using Amolenk.Admitto.Shared.Application.Http;
+using Amolenk.Admitto.Shared.Kernel.ValueObjects;
 
-namespace Amolenk.Admitto.ApiService.Middleware;
+namespace Amolenk.Admitto.Shared.Application.Http;
 
 public interface IOrganizationScopeResolver
 {
@@ -14,11 +14,11 @@ public sealed class OrganizationScopeResolver(
     : IOrganizationScopeResolver
 {
     private OrganizationScope? _cachedScope;
-    
+
     public async ValueTask<OrganizationScope> ResolveAsync(CancellationToken cancellationToken)
     {
         if (_cachedScope is not null) return _cachedScope;
-        
+
         var httpContext = httpContextAccessor.HttpContext;
         if (httpContext is null)
         {
@@ -28,15 +28,15 @@ public sealed class OrganizationScopeResolver(
         var teamSlug = GetRouteRequired(httpContext, "teamSlug");
         var eventSlug = GetRouteOptional(httpContext, "eventSlug");
 
-        var teamId = await organizationFacade.ResolveTeamIdAsync(teamSlug, cancellationToken);
+        var teamId = await organizationFacade.GetTeamIdAsync(teamSlug, cancellationToken);
 
         var eventId = Guid.Empty;
         if (eventSlug is not null)
         {
-            eventId = await organizationFacade.ResolveEventIdAsync(teamId, eventSlug, cancellationToken);
+            eventId = await organizationFacade.GetEventIdAsync(teamId, eventSlug, cancellationToken);
         }
-            
-        _cachedScope = new OrganizationScope(teamSlug, teamId, eventSlug, eventId);
+
+        _cachedScope = new OrganizationScope(teamSlug, TeamId.From(teamId), eventSlug, TicketedEventId.From(eventId));
         return _cachedScope;
     }
 

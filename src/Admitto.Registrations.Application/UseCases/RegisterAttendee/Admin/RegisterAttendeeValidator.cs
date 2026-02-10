@@ -1,4 +1,4 @@
-using Amolenk.Admitto.Registrations.Domain.Validation;
+using Amolenk.Admitto.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Shared.Application.Validation;
 using Amolenk.Admitto.Shared.Kernel.ValueObjects;
 using FluentValidation;
@@ -9,18 +9,29 @@ public class RegisterAttendeeValidator : AbstractValidator<RegisterAttendeeHttpR
 {
     public RegisterAttendeeValidator()
     {
-        RuleFor(x => x.FirstName)
-            .MustBeParseable(FirstName.TryNormalize);
-
-        RuleFor(x => x.LastName)
-            .MustBeParseable(LastName.TryNormalize);
-
         RuleFor(x => x.Email)
             .MustBeParseable(EmailAddress.TryFrom);
 
-        // TODO Verify
-        RuleForEach(x => x.TicketTypeIds)
+        RuleFor(x => x.AttendeeInfo)
             .NotNull()
-            .NotEmpty();
+            .ChildRules(ai =>
+            {
+                ai.RuleFor(x => x.FirstName)
+                    .MustBeParseable(FirstName.TryFrom);
+                
+                ai.RuleFor(x => x.LastName)
+                    .MustBeParseable(LastName.TryFrom);
+            });
+
+        RuleFor(x => x.TicketRequests)
+            .NotNull()
+            .NotEmpty()
+            .ForEach(x => x
+                .NotNull()
+                .ChildRules(tr =>
+                {
+                    tr.RuleFor(r => r.TicketTypeId)
+                        .MustBeParseable(TicketTypeId.TryFrom);
+                }));
     }
 }

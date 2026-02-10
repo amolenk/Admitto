@@ -67,7 +67,7 @@ public static class DependencyInjection
                 return new GraphServiceClient(credential);
             });
 
-            services.AddScoped<IUserDirectory, MicrosoftGraphUserManagementService>();
+            services.AddScoped<IExternalUserDirectory, MicrosoftGraphUserManagementService>();
         }
 
         private void AddKeycloakServices()
@@ -84,7 +84,7 @@ public static class DependencyInjection
 
             // Use Keycloak as the identity service
             var settings = builder.Configuration.GetSection(KeycloakOptions.SectionName).Get<KeycloakOptions>();
-            services.AddHttpClient<IUserDirectory, KeycloakUserManagementService>(client =>
+            services.AddHttpClient<IExternalUserDirectory, KeycloakUserManagementService>(client =>
                 {
                     // Use .NET Service Discovery to get Keycloak endpoint
                     client.BaseAddress = new Uri(settings!.Authority);

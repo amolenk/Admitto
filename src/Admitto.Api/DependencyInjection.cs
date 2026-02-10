@@ -1,4 +1,5 @@
 using System.Reflection;
+using Amolenk.Admitto.Api.Auth;
 using Amolenk.Admitto.ApiService.Auth;
 using Amolenk.Admitto.ApiService.OpenApi;
 using Amolenk.Admitto.Shared.Application.Messaging;
@@ -109,7 +110,7 @@ public static class DependencyInjection
         {
             builder.Services
                 .AddScoped<IAuthorizationHandler, AdminAuthorizationHandler>()
-                .AddScoped<IAuthorizationHandler, TeamMemberRoleAuthorizationHandler>()
+                .AddScoped<IAuthorizationHandler, TeamMembershipAuthorizationHandler>()
                 .AddScoped<IAdministratorRoleService, AdministratorRoleService>()
                 .AddAuthorization();
 

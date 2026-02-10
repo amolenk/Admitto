@@ -20,9 +20,9 @@ public class TicketedEventCapacityBuilder
         return this;
     }
 
-    public TicketedEventCapacity Build()
+    public EventCapacity Build()
     {
-        var capacity = TicketedEventCapacity.Create(_eventId);
+        var capacity = EventCapacity.Create(_eventId);
         foreach (var (ticketTypeId, maxCapacity) in _ticketTypeCapacities)
         {
             capacity.SetTicketTypeCapacity(new TicketTypeId(ticketTypeId), maxCapacity);

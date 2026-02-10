@@ -4,12 +4,12 @@
         <LangVersion>latest</LangVersion>
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
-        <RootNamespace>Amolenk.$(AssemblyName)</RootNamespace>
+        <RootNamespace>Amolenk.$(MSBuildProjectName)</RootNamespace>
         <UserSecretsId>Admitto</UserSecretsId>
     </PropertyGroup>
 
     <ItemGroup>
-        <InternalsVisibleTo Include="$(AssemblyName).Tests" />
+        <InternalsVisibleTo Include="Amolenk.$(MSBuildProjectName).Tests" />
     </ItemGroup>
 
 </Project>

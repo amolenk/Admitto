@@ -9,7 +9,7 @@ public interface ICapacityTracker
 {
     ValueTask ClaimTicketsAsync(
         TicketedEventId eventId,
-        IReadOnlyList<TicketRequest> ticketRequests,
+        IReadOnlyList<Ticket> tickets,
         CancellationToken cancellationToken = default);
 }
 
@@ -17,7 +17,7 @@ public class CapacityTracker(IRegistrationsWriteStore writeStore) : ICapacityTra
 {
     public async ValueTask ClaimTicketsAsync(
         TicketedEventId eventId,
-        IReadOnlyList<TicketRequest> ticketRequests,
+        IReadOnlyList<Ticket> tickets,
         CancellationToken cancellationToken = default)
     {
         var eventCapacity = await writeStore.TicketedEventCapacities.FindAsync([eventId], cancellationToken);

@@ -1,5 +1,3 @@
-using Amolenk.Admitto.Registrations.Application.Mapping;
-using Amolenk.Admitto.Registrations.Domain.Validation;
 using Amolenk.Admitto.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Shared.Application;
 using Amolenk.Admitto.Shared.Application.Auth;
@@ -21,7 +19,7 @@ public static class RegisterAttendeeHttpEndpoint
         group
             .MapPost("/registrations", RegisterAttendee)
             .WithName(nameof(RegisterAttendee))
-            .RequireAuthorization(policy => policy.RequireTeamMemberRole(RequiredTeamMemberRole.Organizer));
+            .RequireAuthorization(policy => policy.RequireTeamMembership(TeamMembershipRole.Organizer));
 
         return group;
     }
@@ -36,17 +34,8 @@ public static class RegisterAttendeeHttpEndpoint
         var registrationId = await unitOfWork.RunAsync(
             (mediator, ct) =>
             {
-                var ticketRequests = httpRequest.TicketTypeIds
-                    .Select(TicketRequestMapping.ToPrivilegedTicketRequest)
-                    .ToArray();
-
-                var command = new RegisterAttendeeCommand(
-                    new TicketedEventId(organizationScope.EventId!.Value),
-                    FirstName.Normalize(httpRequest.FirstName),
-                    LastName.Normalize(httpRequest.LastName),
-                    EmailAddress.From(httpRequest.Email),
-                    ticketRequests);
-
+                var command = httpRequest.ToCommand(organizationScope.EventId!.Value);
+                
                 return mediator.SendReceiveAsync<RegisterAttendeeCommand, RegistrationId>(command, ct);
             },
             cancellationToken);

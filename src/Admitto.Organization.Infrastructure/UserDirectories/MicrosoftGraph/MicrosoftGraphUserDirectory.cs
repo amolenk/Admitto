@@ -7,7 +7,7 @@ using User = Amolenk.Admitto.Organization.Domain.ValueObjects.User;
 
 namespace Amolenk.Admitto.Organization.Infrastructure.UserDirectories.MicrosoftGraph;
 
-public class MicrosoftGraphUserManagementService(GraphServiceClient graphServiceClient) : IUserDirectory
+public class MicrosoftGraphUserManagementService(GraphServiceClient graphServiceClient) : IExternalUserDirectory
 {
     public async ValueTask<User?> GetUserByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
@@ -24,6 +24,7 @@ public class MicrosoftGraphUserManagementService(GraphServiceClient graphService
                     cancellationToken);
 
             var user = users?.Value?.FirstOrDefault();
+            
             if (user?.Id == null) return null;
 
             // Use mail if available, otherwise fall back to userPrincipalName

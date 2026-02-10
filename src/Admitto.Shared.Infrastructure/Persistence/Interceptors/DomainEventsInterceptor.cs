@@ -25,7 +25,7 @@ public sealed class DomainEventsInterceptor(IServiceProvider serviceProvider, st
         {
             outboxWriter = new OutboxWriter(
                 outboxDbContext, 
-                policy: serviceProvider.GetRequiredKeyedService<IMessagePolicy>(moduleKey));
+                messagePolicy: serviceProvider.GetRequiredKeyedService<IMessagePolicy>(moduleKey));
         }
 
         foreach (var entry in dbContext.ChangeTracker.Entries().ToList())

@@ -4,16 +4,16 @@ namespace Amolenk.Admitto.Organization.Contracts;
 
 public interface IOrganizationFacade
 {
-    ValueTask<Guid> ResolveTeamIdAsync(
+    ValueTask<Guid> GetTeamIdAsync(
         string teamSlug,
         CancellationToken cancellationToken = default);
 
-    ValueTask<Guid> ResolveEventIdAsync(
+    ValueTask<Guid> GetEventIdAsync(
         Guid teamId,
         string eventSlug,
         CancellationToken cancellationToken = default);
 
-    ValueTask<TeamMemberRoleDto> GetTeamMemberRoleAsync(
+    ValueTask<TeamMembershipRoleDto?> GetTeamMembershipRoleAsync(
         Guid userId,
         Guid teamId,
         CancellationToken cancellationToken = default);

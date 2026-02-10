@@ -18,8 +18,7 @@ internal class RegisterAttendeeHandler(
         RegisterAttendeeCommand command,
         CancellationToken cancellationToken)
     {
-        // Get ticket types once to make sure ticket types are
-        // consistent and deterministic for the duration of the handler.
+        // Get ticket types once to make sure they're consistent and deterministic for the duration of the handler.
         var ticketTypes = (await organizationFacade
                 .GetTicketTypesAsync(command.EventId.Value, cancellationToken))
             .Select(ticketType => ticketType.ToDomain())
@@ -28,22 +27,23 @@ internal class RegisterAttendeeHandler(
         // Create the registration.
         var registration = Registration.Create(
             command.EventId,
-            command.EmailAddress);
+            command.EmailAddress,
+            command.AttendeeInfo);
 
-        // Let's be optimistic and assume there's enough capacity.	
-        registration.GrantTickets(
+        // Grant the tickets without worrying about capacity for now.
+        // There may be other validation errors to catch first.
+        var tickets = registration.GrantTickets(
             command.TicketRequests,
             ticketTypes);
         
-        // Minimize contention by checking for capacity only after we
-        // know that the registration is valid.
+        // Minimize contention by checking for capacity only after we know that the registration is valid.
         await capacityTracker.ClaimTicketsAsync(
             command.EventId,
-            command.TicketRequests,
+            tickets,
             cancellationToken);
 
         // Persist the new registration.
-        writeStore.Registrations.Add(registration);
+        writeStore.Registrations.SaveAggregate(registration);
 
         return registration.Id;
     }
