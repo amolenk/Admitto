@@ -24,15 +24,15 @@ public readonly record struct EmailAddress
     private static ValidationResult<string> NormalizeAndValidate(string? input)
     {
         if (input is null)
-            return Errors.Required();
+            return Errors.Empty;
 
         var normalized = input.Trim().ToLowerInvariant();
 
         if (string.IsNullOrWhiteSpace(input))
-            return Errors.Empty();
+            return Errors.Empty;
         
         if (normalized.Length > MaxLength)
-            return Errors.TooLong(MaxLength);
+            return Errors.TooLong;
         
         // Basic but robust validation
         try
@@ -41,7 +41,7 @@ public readonly record struct EmailAddress
         }
         catch
         {
-            return Errors.InvalidFormat();
+            return Errors.InvalidFormat;
         }
 
         return normalized;
@@ -49,12 +49,17 @@ public readonly record struct EmailAddress
     
     private static class Errors
     {
-        private const string Name = "email";
-    
-        public static Error Required() => SharedErrors.ValueObjects.Required(Name);
-        public static Error Empty() => SharedErrors.ValueObjects.Empty(Name);
-        public static Error TooLong(int max) => SharedErrors.ValueObjects.TooLong(Name, max);
-        public static Error InvalidFormat() => SharedErrors.ValueObjects.InvalidFormat(Name);
+        public static readonly Error Empty = new(
+            "email_address.empty",
+            "Email is required.");
+
+        public static readonly Error TooLong = new(
+            "email_address.too_long",
+            $"Email must be at most {MaxLength} character(s).");
+
+        public static readonly Error InvalidFormat = new(
+            "email_address.invalid_format",
+            $"Email has an invalid format.");
     }
 }
 

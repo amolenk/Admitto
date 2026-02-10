@@ -11,6 +11,6 @@ public enum ErrorType
 public sealed record Error(
     string Code,
     string Message,
-    ErrorType Type = ErrorType.Validation,
-    IReadOnlyDictionary<string, object?>? Details = null);
+    IReadOnlyDictionary<string, object?>? Details = null,
+    ErrorType Type = ErrorType.Validation);
     

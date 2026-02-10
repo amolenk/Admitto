@@ -10,4 +10,15 @@
       <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="UseCases\Teams\CreateTeam\" />
+      <Folder Include="UseCases\Teams\GetTeams\" />
+      <Folder Include="UseCases\TicketedEvents\CancelTicketType\" />
+      <Folder Include="UseCases\TicketedEvents\CreateTicketedEvent\" />
+      <Folder Include="UseCases\TicketedEvents\GetTicketedEvents\" />
+      <Folder Include="UseCases\TicketedEvents\GetTicketedEvent\" />
+      <Folder Include="UseCases\TicketedEvents\UpdateTicketedEvent\" />
+      <Folder Include="UseCases\Users\" />
+    </ItemGroup>
+
 </Project>

@@ -10,50 +10,35 @@ namespace Amolenk.Admitto.Organization.Domain.Entities;
 /// </summary>
 public class TicketedEvent : Aggregate<TicketedEventId>
 {
-    private readonly List<TicketType> _ticketTypes = [];
-    // private readonly List<AdditionalDetailSchema> _additionalDetailSchemas = [];
-
-    private TicketedEvent()
-    {
-    }
+    private readonly List<TicketType> _ticketTypes;
 
     private TicketedEvent(
         TicketedEventId id,
         TeamId teamId,
-        TicketedEventSlug slug,
-        string name,
-        string website,
-        string baseUrl,
-        DateTimeOffset startsAt,
-        DateTimeOffset endsAt,
-        List<TicketType> ticketTypes)
+        Slug slug,
+        TicketedEventName name,
+        WebsiteUrl website,
+        BaseUrl baseUrl,
+        TimeWindow eventWindow,
+        IReadOnlyList<TicketType> ticketTypes)
         : base(id)
     {
         TeamId = teamId;
         Slug = slug;
         Name = name;
         Website = website;
-        StartsAt = startsAt;
-        EndsAt = endsAt;
         BaseUrl = baseUrl;
-        
-        _ticketTypes = ticketTypes;
-        
-        // CancellationPolicy = CancellationPolicy.Default;
-        // SigningKey = GenerateSigningKey(32);
-        //
-        // _additionalDetailSchemas = additionalDetailSchemas;
+        EventWindow = eventWindow;
 
-        // AddDomainEvent(new TicketedEventCreatedDomainEvent(teamId, Id));
+        _ticketTypes = ticketTypes.ToList();
     }
 
     public TeamId TeamId { get; private set; }
-    public TicketedEventSlug Slug { get; private set; } = null!;
-    public string Name { get; private set; } = null!;
-    public string Website { get; private set; } = null!;
-    public DateTimeOffset StartsAt { get; private set; }
-    public DateTimeOffset EndsAt { get; private set; }
-    public string BaseUrl { get; private set; } = null!;
+    public Slug Slug { get; private set; }
+    public TicketedEventName Name { get; private set; }
+    public WebsiteUrl Website { get; private set; }
+    public BaseUrl BaseUrl { get; private set; }
+    public TimeWindow EventWindow { get; private set; }
     public IReadOnlyList<TicketType> TicketTypes => _ticketTypes.AsReadOnly();
 
     // public CancellationPolicy CancellationPolicy { get; private set; } = null!;
@@ -66,59 +51,42 @@ public class TicketedEvent : Aggregate<TicketedEventId>
 
     // public IReadOnlyCollection<AdditionalDetailSchema> AdditionalDetailSchemas => _additionalDetailSchemas.AsReadOnly();
 
+    
     public static TicketedEvent Create(
         TeamId teamId,
-        TicketedEventSlug slug,
-        string name,
-        string website,
-        string baseUrl,
-        DateTimeOffset startsAt,
-        DateTimeOffset endsAt
-        /*IEnumerable<AdditionalDetailSchema> additionalDetailSchemas*/)
-    {
-        // TODO Additional validations
-
-        // if (string.IsNullOrWhiteSpace(name))
-        //     throw new DomainRuleException(DomainRuleError.TicketedEvent.NameIsRequired);
-        //
-        // if (endsAt < startsAt)
-        //     throw new DomainRuleException(DomainRuleError.TicketedEvent.EndTimeMustBeAfterStartTime);
-
-        return new TicketedEvent(
+        Slug slug,
+        TicketedEventName name,
+        WebsiteUrl website,
+        BaseUrl baseUrl,
+        TimeWindow eventWindow) =>
+        new(
             TicketedEventId.New(),
             teamId,
             slug,
             name,
             website,
             baseUrl,
-            startsAt,
-            endsAt,
+            eventWindow,
             []);
-//            additionalDetailSchemas.ToList());
-    }
-    
+
     public static TicketedEvent Rehydrate(
         TicketedEventId id,
         TeamId teamId,
-        TicketedEventSlug slug,
-        string name,
-        string website,
-        string baseUrl,
-        DateTimeOffset startsAt,
-        DateTimeOffset endsAt,
-        TicketType[] ticketTypes)
-    {
-        return new TicketedEvent(
+        Slug slug,
+        TicketedEventName name,
+        WebsiteUrl website,
+        BaseUrl baseUrl,
+        TimeWindow eventWindow,
+        IReadOnlyList<TicketType> ticketTypes) =>
+        new(
             id,
             teamId,
             slug,
             name,
             website,
             baseUrl,
-            startsAt,
-            endsAt,
-            ticketTypes.ToList());
-    }
+            eventWindow,
+            ticketTypes);
 
     public ValidationResult<TicketType> AddAdminGrantTicketType(
         string adminLabel,
@@ -126,22 +94,24 @@ public class TicketedEvent : Aggregate<TicketedEventId>
         IReadOnlyList<string>? timeSlots = null,
         int? capacity = null)
     {
+        throw new NotImplementedException();
+        
         // TODO Check adminLabel uniqueness?
 
-        timeSlots ??= [];
-
-        var ticketType = new TicketType(
-            TicketTypeId.New(),
-            adminLabel,
-            publicTitle,
-            IsSelfService: false,
-            IsSelfServiceAvailable: false,
-            timeSlots?.ToArray() ?? [],
-            capacity);
-
-        _ticketTypes.Add(ticketType);
-
-        return ticketType;
+        // timeSlots ??= [];
+        //
+        // var ticketType = new TicketType(
+        //     TicketTypeId.New(),
+        //     adminLabel,
+        //     publicTitle,
+        //     IsSelfService: false,
+        //     IsSelfServiceAvailable: false,
+        //     timeSlots?.ToArray() ?? [],
+        //     capacity);
+        //
+        // _ticketTypes.Add(ticketType);
+        //
+        // return ticketType;
     }
 
     public ValidationResult<TicketType> AddSelfServiceTicketType(
@@ -151,22 +121,24 @@ public class TicketedEvent : Aggregate<TicketedEventId>
         IReadOnlyList<string>? timeSlots = null,
         int? capacity = null)
     {
-        // TODO Check adminLabel uniqueness?
-
-        timeSlots ??= [];
-
-        var ticketType = new TicketType(
-            TicketTypeId.New(),
-            adminLabel,
-            publicTitle,
-            IsSelfService: true,
-            IsSelfServiceAvailable: isAvailable,
-            timeSlots?.ToArray() ?? [],
-            capacity);
-
-        _ticketTypes.Add(ticketType);
-
-        return ticketType;
+        throw new NotImplementedException();
+        //
+        // // TODO Check adminLabel uniqueness?
+        //
+        // timeSlots ??= [];
+        //
+        // var ticketType = new TicketType(
+        //     TicketTypeId.New(),
+        //     adminLabel,
+        //     publicTitle,
+        //     IsSelfService: true,
+        //     IsSelfServiceAvailable: isAvailable,
+        //     timeSlots?.ToArray() ?? [],
+        //     capacity);
+        //
+        // _ticketTypes.Add(ticketType);
+        //
+        // return ticketType;
     }
 
     

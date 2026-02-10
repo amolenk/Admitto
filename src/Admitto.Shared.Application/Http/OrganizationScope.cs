@@ -1,13 +1,13 @@
 using System.Reflection;
-using Amolenk.Admitto.ApiService.Middleware;
+using Amolenk.Admitto.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Shared.Application.Http;
 
 public sealed record OrganizationScope(
     string TeamSlug,
-    Guid TeamId,
+    TeamId TeamId,
     string? EventSlug,
-    Guid? EventId)
+    TicketedEventId? EventId)
 {
     public static async ValueTask<OrganizationScope?> BindAsync(
         HttpContext context,

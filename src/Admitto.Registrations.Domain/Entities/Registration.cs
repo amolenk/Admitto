@@ -1,4 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
 using Amolenk.Admitto.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Shared.Kernel.Entities;
 using Amolenk.Admitto.Shared.Kernel.ErrorHandling;
@@ -10,40 +9,57 @@ namespace Amolenk.Admitto.Registrations.Domain.Entities;
 /// </summary>
 public class Registration : Aggregate<RegistrationId>
 {
-    private readonly List<Ticket> _tickets = null!;
+    private readonly List<Ticket> _tickets;
     
-    // EF Core constructor
-    private Registration()
-    {
-    }
-
     private Registration(
         RegistrationId id,
         TicketedEventId eventId,
-        EmailAddress email)
+        EmailAddress email,
+        AttendeeInfo attendeeInfo,
+        IReadOnlyList<Ticket> tickets)
         : base(id)
     {
         EventId = eventId;
         Email = email;
+        AttendeeInfo = attendeeInfo;
 
-        _tickets = [];
+        _tickets = tickets.ToList();
     }
 
     public TicketedEventId EventId { get; private set; }
     public EmailAddress Email { get; private set; }
+    public AttendeeInfo AttendeeInfo { get; private set; }
     public IReadOnlyList<Ticket> Tickets => _tickets.AsReadOnly();
 
     public static Registration Create(
         TicketedEventId eventId,
-        EmailAddress email)
+        EmailAddress email,
+        AttendeeInfo attendeeInfo)
     {
         return new Registration(
             RegistrationId.New(),
             eventId,
-            email);
+            email,
+            attendeeInfo,
+            []);
+    }
+    
+    public static Registration Rehydrate(
+        RegistrationId id,
+        TicketedEventId eventId,
+        EmailAddress email,
+        AttendeeInfo attendeeInfo,
+        IReadOnlyList<Ticket> tickets)
+    {
+        return new Registration(
+            id,
+            eventId,
+            email,
+            attendeeInfo,
+            tickets);
     }
 
-    public void GrantTickets(
+    public IReadOnlyList<Ticket> GrantTickets(
         IReadOnlyList<TicketRequest> ticketRequests,
         IReadOnlyList<TicketTypeSnapshot> ticketTypes)
     {

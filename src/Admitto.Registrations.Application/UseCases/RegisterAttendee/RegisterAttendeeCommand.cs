@@ -6,8 +6,7 @@ namespace Amolenk.Admitto.Registrations.Application.UseCases.RegisterAttendee;
 
 internal record RegisterAttendeeCommand(
     TicketedEventId EventId,
-    string FirstName,
-    string LastName,
     EmailAddress EmailAddress,
+    AttendeeInfo AttendeeInfo,
     TicketRequest[] TicketRequests) : Command<RegistrationId>;
     

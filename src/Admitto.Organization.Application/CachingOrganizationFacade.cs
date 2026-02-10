@@ -10,7 +10,7 @@ internal class CachingOrganizationFacade(IOrganizationFacade innerFacade, IMemor
     private static readonly TimeSpan TeamIdCacheDuration = TimeSpan.FromMinutes(5);
     private static readonly TimeSpan EventIdCacheDuration = TimeSpan.FromMinutes(5);
 
-    public async ValueTask<Guid> ResolveTeamIdAsync(
+    public async ValueTask<Guid> GetTeamIdAsync(
         string teamSlug,
         CancellationToken cancellationToken = default)
     {
@@ -20,14 +20,14 @@ internal class CachingOrganizationFacade(IOrganizationFacade innerFacade, IMemor
             return teamId;
         }
 
-        var result = await innerFacade.ResolveTeamIdAsync(teamSlug, cancellationToken);
+        var result = await innerFacade.GetTeamIdAsync(teamSlug, cancellationToken);
 
         memoryCache.Set(cacheKey, result, DateTimeOffset.Now.Add(TeamIdCacheDuration));
 
         return result;
     }
 
-    public async ValueTask<Guid> ResolveEventIdAsync(
+    public async ValueTask<Guid> GetEventIdAsync(
         Guid teamId,
         string eventSlug,
         CancellationToken cancellationToken = default)
@@ -38,18 +38,18 @@ internal class CachingOrganizationFacade(IOrganizationFacade innerFacade, IMemor
             return eventId;
         }
 
-        var result = await innerFacade.ResolveEventIdAsync(teamId, eventSlug, cancellationToken);
+        var result = await innerFacade.GetEventIdAsync(teamId, eventSlug, cancellationToken);
 
         memoryCache.Set(cacheKey, result, DateTimeOffset.Now.Add(EventIdCacheDuration));
 
         return result;
     }
 
-    public ValueTask<TeamMemberRoleDto> GetTeamMemberRoleAsync(
+    public ValueTask<TeamMembershipRoleDto?> GetTeamMembershipRoleAsync(
         Guid userId,
         Guid teamId,
         CancellationToken cancellationToken = default) =>
-        innerFacade.GetTeamMemberRoleAsync(userId, teamId, cancellationToken);
+        innerFacade.GetTeamMembershipRoleAsync(userId, teamId, cancellationToken);
 
     public ValueTask<TicketTypeDto[]> GetTicketTypesAsync(
         Guid eventId,

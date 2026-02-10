@@ -6,9 +6,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Amolenk.Admitto.Registrations.Infrastructure.Persistence.EntityConfigurations;
 
-public class TicketedEventCapacityEntityConfiguration : IEntityTypeConfiguration<TicketedEventCapacity>
+public class TicketedEventCapacityEntityConfiguration : IEntityTypeConfiguration<EventCapacity>
 {
-    public void Configure(EntityTypeBuilder<TicketedEventCapacity> builder)
+    public void Configure(EntityTypeBuilder<EventCapacity> builder)
     {
         builder.ToTable("ticketed_event_capacity");
         builder.HasKey(e => e.Id);
@@ -19,7 +19,7 @@ public class TicketedEventCapacityEntityConfiguration : IEntityTypeConfiguration
             .IsRequired()
             .ValueGeneratedNever();
 
-        builder.OwnsMany(e => e.TicketTypeCapacities, b =>
+        builder.OwnsMany(e => e.TicketCapacities, b =>
         {
             b.ToJson("ticket_type_capacities");
 
