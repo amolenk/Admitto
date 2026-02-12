@@ -4,7 +4,7 @@ using FluentValidation;
 
 namespace Amolenk.Admitto.Organization.Application.UseCases.Users.AssignTeamMembership.AdminApi;
 
-public class AssignTeamMembershipValidator : AbstractValidator<AssignTeamMembershipHttpRequest>
+public sealed class AssignTeamMembershipValidator : AbstractValidator<AssignTeamMembershipHttpRequest>
 {
     public AssignTeamMembershipValidator()
     {

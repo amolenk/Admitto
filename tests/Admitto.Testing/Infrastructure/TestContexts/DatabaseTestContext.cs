@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Shared.Infrastructure.Persistence;
+using Amolenk.Admitto.Shared.Infrastructure.Persistence.Interceptors;
 using Microsoft.EntityFrameworkCore;
 using Respawn;
 
@@ -26,6 +27,8 @@ public class DatabaseTestContext<TDbContext> : IAsyncDisposable
             .UseNpgsql(
                 connectionString,
                 npgsql => { npgsql.MigrationsHistoryTable("ef_migrations_history", TDbContext.SchemaName); })
+            // Add the audit interceptor to ensure that audit fields are properly set during tests.
+            .AddInterceptors(new AuditInterceptor(new FakeUserContextAccessor()))
             .Options;
 
         var dbContext = (TDbContext)Activator.CreateInstance(typeof(TDbContext), options)!;
@@ -54,6 +57,16 @@ public class DatabaseTestContext<TDbContext> : IAsyncDisposable
         Context.ChangeTracker.Clear();
     }
 
+    public async ValueTask AssertAsync(Func<TDbContext, ValueTask> operation)
+    {
+        // Save changes first so we can ensure that the changes can actually be saved to the database before we
+        // execute the assertion operation.
+        await Context.SaveChangesAsync();
+        
+        await operation(Context);
+    }
+
+    
     public async ValueTask WithContextAsync(Func<TDbContext, ValueTask> operation)
     {
         await operation(Context);

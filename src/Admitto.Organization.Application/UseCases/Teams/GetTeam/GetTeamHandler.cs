@@ -1,7 +1,7 @@
 using Amolenk.Admitto.Organization.Application.Persistence;
+using Amolenk.Admitto.Organization.Domain.Entities;
 using Amolenk.Admitto.Shared.Application.Messaging;
 using Amolenk.Admitto.Shared.Kernel.ErrorHandling;
-using Amolenk.Admitto.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Organization.Application.UseCases.Teams.GetTeam;
 
@@ -17,17 +17,9 @@ internal class GetTeamHandler(IOrganizationWriteStore writeStore)
             .Where(t => t.Id == query.TeamId)
             .Select(t => new TeamDto(
                 t.Slug.Value,
-                t.Name.Value))
+                t.Name.Value,
+                t.EmailAddress.Value))
             .FirstOrDefaultAsync(cancellationToken)
-            ?? throw new BusinessRuleViolationException(Errors.TeamNotFound(query.TeamId));
-    }
-
-    private static class Errors
-    {
-        public static Error TeamNotFound(TeamId teamId) =>
-            new(
-                "team.not_found",
-                "Team could not be found.",
-                new Dictionary<string, object?> { ["teamId"] = teamId });
+            ?? throw new BusinessRuleViolationException(NotFoundError.Create<Team>(query.TeamId));
     }
 }

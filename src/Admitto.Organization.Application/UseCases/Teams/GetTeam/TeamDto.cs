@@ -1,5 +1,3 @@
 namespace Amolenk.Admitto.Organization.Application.UseCases.Teams.GetTeam;
 
-public record TeamDto(
-    string Slug,
-    string Name);
+internal sealed record TeamDto(string Slug, string Name, string EmailAddress);

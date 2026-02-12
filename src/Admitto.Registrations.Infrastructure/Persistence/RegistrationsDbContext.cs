@@ -21,7 +21,7 @@ public sealed class RegistrationsDbContext(DbContextOptions<RegistrationsDbConte
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.HasDefaultSchema(SchemaName);
-        modelBuilder.ApplyDefaultConfiguration();
+        modelBuilder.ApplySharedConfiguration();
         modelBuilder.ApplyConfiguration(new OutboxMessageEntityConfiguration());
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
     }

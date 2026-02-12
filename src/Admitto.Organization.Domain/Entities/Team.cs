@@ -1,4 +1,3 @@
-using Amolenk.Admitto.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Shared.Kernel.Entities;
 using Amolenk.Admitto.Shared.Kernel.ValueObjects;
 
@@ -9,29 +8,35 @@ namespace Amolenk.Admitto.Organization.Domain.Entities;
 /// </summary>
 public class Team : Aggregate<TeamId>
 {
+    // ReSharper disable once UnusedMember.Local
+    // Required for EF Core
+    private Team()
+    {
+    }
+    
     private Team(
         TeamId id,
         Slug slug,
-        TeamName name,
-        EmailAddress email)
+        DisplayName name,
+        EmailAddress emailAddress)
         : base(id)
     {
         Slug = slug;
         Name = name;
-        Email = email;
+        EmailAddress = emailAddress;
     }
 
     public Slug Slug { get; private set; }
-    public TeamName Name { get; private set; }
-    public EmailAddress Email { get; private set; }
+    public DisplayName Name { get; private set; }
+    public EmailAddress EmailAddress { get; private set; }
 
     public static Team Create(
         Slug slug,
-        TeamName name,
-        EmailAddress email) =>
+        DisplayName name,
+        EmailAddress emailAddress) =>
         new(
             TeamId.New(),
             slug,
             name,
-            email);
+            emailAddress);
 }

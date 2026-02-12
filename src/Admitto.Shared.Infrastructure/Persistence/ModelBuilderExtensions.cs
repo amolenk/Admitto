@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Shared.Kernel.Abstractions;
+using Amolenk.Admitto.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 
 namespace Amolenk.Admitto.Shared.Infrastructure.Persistence;
@@ -7,7 +8,7 @@ public static class ModelBuilderExtensions
 {
     extension(ModelBuilder modelBuilder)
     {
-        public void ApplyDefaultConfiguration()
+        public void ApplySharedConfiguration()
         {
             foreach (var entityType in modelBuilder.Model.GetEntityTypes().ToList())
             {
@@ -28,6 +29,12 @@ public static class ModelBuilderExtensions
                     modelBuilder.Entity(entityType.ClrType)
                         .Property(nameof(IIsAuditable.LastChangedAt))
                         .HasColumnName("last_changed_at")
+                        .IsRequired();
+
+                    modelBuilder.Entity(entityType.ClrType)
+                        .Property(nameof(IIsAuditable.LastChangedBy))
+                        .HasColumnName("last_changed_by")
+                        .HasMaxLength(EmailAddress.MaxLength)
                         .IsRequired();
                 }
             }

@@ -17,9 +17,5 @@ public readonly record struct CommandId : IGuidValueObject
     public static CommandId From(Guid value)
         => GuidValueObject.TryFrom(value, v => new CommandId(v)).GetValueOrThrow();
 
-    public static CommandId For<TCommand>(DomainEventId domainEventId)
-        where TCommand : ICommand
-        => From(DeterministicGuid.Create($"{domainEventId}:{typeof(TCommand).FullName}"));
-
     public override string ToString() => Value.ToString();
 }

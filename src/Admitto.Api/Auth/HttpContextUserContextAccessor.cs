@@ -15,7 +15,8 @@ public class HttpContextUserContextAccessor(IHttpContextAccessor httpContextAcce
 
             var user = httpContext.User;
         
-            return new UserContextDto(GetUserId(user), GetUserName(user) ?? "Unknown");
+            // TODO
+            return new UserContextDto(GetUserId(user), GetUserName(user) ?? "Unknown", "todo@example.com");
         }
     }
     

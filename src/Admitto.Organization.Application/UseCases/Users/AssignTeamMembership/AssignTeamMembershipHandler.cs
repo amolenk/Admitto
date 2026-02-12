@@ -4,7 +4,7 @@ using Amolenk.Admitto.Shared.Application.Messaging;
 
 namespace Amolenk.Admitto.Organization.Application.UseCases.Users.AssignTeamMembership;
 
-internal class AssignTeamMembershipHandler(IOrganizationWriteStore writeStore)
+internal sealed class AssignTeamMembershipHandler(IOrganizationWriteStore writeStore)
     : ICommandHandler<AssignTeamMembershipCommand>
 {
     public async ValueTask HandleAsync(AssignTeamMembershipCommand command, CancellationToken cancellationToken)

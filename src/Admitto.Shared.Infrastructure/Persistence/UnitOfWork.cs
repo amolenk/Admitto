@@ -68,6 +68,6 @@ public sealed class UnitOfWork<TDbContext>(
             new(
                 "concurrency_conflict",
                 "The resource was modified by another operation.",
-                ErrorType.Conflict);
+                Type: ErrorType.Conflict);
     }
 }

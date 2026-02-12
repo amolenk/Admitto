@@ -5,7 +5,7 @@ using Amolenk.Admitto.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Organization.Application.UseCases.Teams.GetTeam.AdminApi;
 
-public static class GetTeamHttpEndpoint
+internal static class GetTeamHttpEndpoint
 {
     public static RouteGroupBuilder MapGetTeam(this RouteGroupBuilder group)
     {

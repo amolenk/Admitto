@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Amolenk.Admitto.Api.Endpoints;
 using Amolenk.Admitto.ApiService.Auth;
-using Amolenk.Admitto.ApiService.Endpoints;
 using Amolenk.Admitto.ApiService.Middleware;
 using Amolenk.Admitto.ApiService.OpenApi;
 using Amolenk.Admitto.Organization.Application;

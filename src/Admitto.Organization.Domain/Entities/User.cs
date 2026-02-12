@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Organization.Domain.DomainEvents;
 using Amolenk.Admitto.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Shared.Kernel.Entities;
 using Amolenk.Admitto.Shared.Kernel.ErrorHandling;
@@ -6,11 +7,18 @@ using Amolenk.Admitto.Shared.Kernel.ValueObjects;
 namespace Amolenk.Admitto.Organization.Domain.Entities;
 
 /// <summary>
-/// Represents a user in the system.
+/// Represents a user in the system. Users can be members of multiple teams and can have different roles in each team.
+/// They are linked to an external user ID, which is used for authentication and authorization purposes.
 /// </summary>
 public class User : Aggregate<UserId>
 {
-    private readonly List<TeamMembership> _memberships;
+    private readonly List<TeamMembership> _memberships = [];
+
+    // ReSharper disable once UnusedMember.Local
+    // Required for EF Core
+    private User()
+    {
+    }
 
     private User(
         UserId id,
@@ -18,13 +26,13 @@ public class User : Aggregate<UserId>
         : base(id)
     {
         EmailAddress = email;
-        
-        _memberships = [];
     }
 
+    public ExternalUserId? ExternalUserId { get; private set; }
+    
     public EmailAddress EmailAddress { get; private set; }
     
-    public IReadOnlyCollection<TeamMembership> Memberships => _memberships;
+    public IReadOnlyList<TeamMembership> Memberships => _memberships;
 
     public static User Create(
         EmailAddress email)
@@ -33,10 +41,14 @@ public class User : Aggregate<UserId>
             UserId.New(),
             email);
 
-        
-        // TODO Add domain event
+        user.AddDomainEvent(new UserCreatedDomainEvent(user.Id, email));
 
         return user;
+    }
+    
+    public void AssignExternalUserId(ExternalUserId externalUserId)
+    {
+        ExternalUserId = externalUserId;
     }
 
     public void AddTeamMembership(TeamId teamId, TeamMembershipRole role)
@@ -54,7 +66,7 @@ public class User : Aggregate<UserId>
         }
     }
     
-    private static class Errors
+    internal static class Errors
     {
         public static Error UserAlreadyTeamMember(UserId userId, TeamId teamId) =>
             new(
