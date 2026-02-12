@@ -15,6 +15,25 @@ namespace Amolenk.Admitto.Organization.Infrastructure.Persistence.Migrations
                 name: "organization");
 
             migrationBuilder.CreateTable(
+                name: "teams",
+                schema: "organization",
+                columns: table => new
+                {
+                    id = table.Column<Guid>(type: "uuid", nullable: false),
+                    slug = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
+                    name = table.Column<string>(type: "character varying(64)", maxLength: 64, nullable: false),
+                    email_address = table.Column<string>(type: "character varying(320)", maxLength: 320, nullable: false),
+                    created_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    last_changed_at = table.Column<DateTimeOffset>(type: "timestamp with time zone", nullable: false),
+                    last_changed_by = table.Column<string>(type: "character varying(320)", maxLength: 320, nullable: false),
+                    xmin = table.Column<uint>(type: "xid", rowVersion: true, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_teams", x => x.id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "users",
                 schema: "organization",
                 columns: table => new
@@ -34,6 +53,13 @@ namespace Amolenk.Admitto.Organization.Infrastructure.Persistence.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_teams_slug",
+                schema: "organization",
+                table: "teams",
+                column: "slug",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_users_email_address",
                 schema: "organization",
                 table: "users",
@@ -44,6 +70,10 @@ namespace Amolenk.Admitto.Organization.Infrastructure.Persistence.Migrations
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.DropTable(
+                name: "teams",
+                schema: "organization");
+
             migrationBuilder.DropTable(
                 name: "users",
                 schema: "organization");

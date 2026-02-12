@@ -1,6 +1,10 @@
 using Amolenk.Admitto.Organization.Infrastructure.Persistence;
+using Amolenk.Admitto.Shared.Application.Messaging;
+using Amolenk.Admitto.Shared.Application.Persistence;
+using Amolenk.Admitto.Shared.Infrastructure.Persistence;
 using Amolenk.Admitto.Testing.Infrastructure.TestContexts;
 using Aspire.Hosting.Testing;
+using Microsoft.EntityFrameworkCore;
 
 namespace Amolenk.Admitto.Organization.Application.Tests.Infrastructure.Hosting;
 
