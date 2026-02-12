@@ -1,15 +1,25 @@
 using Amolenk.Admitto.Organization.Application.Services;
-using Amolenk.Admitto.Organization.Domain.ValueObjects;
 using Microsoft.Graph;
 using Microsoft.Graph.Models;
-using EmailAddress = Amolenk.Admitto.Shared.Kernel.ValueObjects.EmailAddress;
-using User = Amolenk.Admitto.Organization.Domain.ValueObjects.User;
 
 namespace Amolenk.Admitto.Organization.Infrastructure.UserDirectories.MicrosoftGraph;
 
 public class MicrosoftGraphUserManagementService(GraphServiceClient graphServiceClient) : IExternalUserDirectory
 {
-    public async ValueTask<User?> GetUserByEmailAsync(string email, CancellationToken cancellationToken = default)
+    public async ValueTask<Guid> UpsertUserAsync(string emailAddress, CancellationToken cancellationToken = default)
+    {
+        var userId = await GetUserByEmailAsync(emailAddress, cancellationToken);
+        if (userId.HasValue) return userId.Value;
+        
+        return await AddUserAsync(emailAddress, cancellationToken);
+    }
+
+    public async ValueTask DeleteUserAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        await graphServiceClient.Users[userId.ToString()].DeleteAsync(cancellationToken: cancellationToken);
+    }
+    
+    private async ValueTask<Guid?> GetUserByEmailAsync(string email, CancellationToken cancellationToken = default)
     {
         try
         {
@@ -29,9 +39,7 @@ public class MicrosoftGraphUserManagementService(GraphServiceClient graphService
 
             // Use mail if available, otherwise fall back to userPrincipalName
             var userEmail = user.Mail ?? user.UserPrincipalName;
-            return !string.IsNullOrEmpty(userEmail)
-                ? new User(new UserId(Guid.Parse(user.Id)), Shared.Kernel.ValueObjects.EmailAddress.From(userEmail))
-                : null;
+            return !string.IsNullOrEmpty(userEmail) ? Guid.Parse(user.Id) : null;
         }
         catch (ServiceException ex) when (ex.ResponseStatusCode == 404)
         {
@@ -39,35 +47,12 @@ public class MicrosoftGraphUserManagementService(GraphServiceClient graphService
         }
     }
 
-    public async ValueTask<IEnumerable<User>> GetUsersAsync(CancellationToken cancellationToken = default)
-    {
-        var users = await graphServiceClient.Users
-            .GetAsync(
-                requestConfiguration =>
-                {
-                    requestConfiguration.QueryParameters.Select = ["id", "mail", "userPrincipalName"];
-                    requestConfiguration.QueryParameters.Filter = "accountEnabled eq true";
-                },
-                cancellationToken);
-
-        return users?.Value?.Where(u => !string.IsNullOrEmpty(u.Mail) || !string.IsNullOrEmpty(u.UserPrincipalName))
-            .Select(u => new User(
-                new UserId(Guid.Parse(u.Id!)),
-                EmailAddress.From(
-                    u.Mail ?? u.UserPrincipalName!))) ?? Enumerable.Empty<User>();
-    }
-
-    public async ValueTask<User> AddUserAsync(
-        string email,
-        string firstName,
-        string lastName,
-        CancellationToken cancellationToken = default)
+    private async ValueTask<Guid> AddUserAsync(string emailAddress, CancellationToken cancellationToken = default)
     {
         // For Entra ID, we invite guest users instead of creating actual users
         var invitation = new Invitation
         {
-            InvitedUserEmailAddress = email,
-            InvitedUserDisplayName = $"{firstName} {lastName}",
+            InvitedUserEmailAddress = emailAddress,
             InviteRedirectUrl = "https://www.admitto.org", // TODO Make configurable
         };
 
@@ -77,11 +62,6 @@ public class MicrosoftGraphUserManagementService(GraphServiceClient graphService
 
         return createdInvitation?.InvitedUser?.Id == null
             ? throw new InvalidOperationException("Guest invitation was sent but user ID is missing")
-            : new User( new UserId(Guid.Parse(createdInvitation.InvitedUser.Id)), EmailAddress.From(email));
-    }
-
-    public async ValueTask DeleteUserAsync(Guid userId, CancellationToken cancellationToken = default)
-    {
-        await graphServiceClient.Users[userId.ToString()].DeleteAsync(cancellationToken: cancellationToken);
+            : Guid.Parse(createdInvitation.InvitedUser.Id);
     }
 }

@@ -2,6 +2,6 @@ using Amolenk.Admitto.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Shared.Application.Messaging;
 using Amolenk.Admitto.Shared.Kernel.ValueObjects;
 
-namespace Amolenk.Admitto.Organization.Application.UseCases.GetTeamMembershipRole;
+namespace Amolenk.Admitto.Organization.Application.UseCases.Users.GetTeamMembershipRole;
 
-internal record GetTeamMembershipRoleQuery(TeamId TeamId, UserId UserId) : Query<TeamMembershipRole?>;
+internal sealed record GetTeamMembershipRoleQuery(TeamId TeamId, UserId UserId) : Query<TeamMembershipRole?>;

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Amolenk.Admitto.Shared.Application.Auth;
 using Amolenk.Admitto.Shared.Application.Messaging;
 using Amolenk.Admitto.Shared.Application.Persistence;
 using Amolenk.Admitto.Shared.Infrastructure.Persistence;
@@ -69,7 +70,7 @@ public static class DependencyInjection
                     });
             
                 options.AddInterceptors(
-                    new AuditInterceptor(),
+                    new AuditInterceptor(sp.GetRequiredService<IUserContextAccessor>()),
                     new DomainEventsInterceptor(sp, moduleKey));
             });
 

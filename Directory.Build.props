@@ -9,7 +9,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <InternalsVisibleTo Include="Amolenk.$(MSBuildProjectName).Tests" />
+        <InternalsVisibleTo Include="$(MSBuildProjectName).Tests" />
     </ItemGroup>
 
 </Project>

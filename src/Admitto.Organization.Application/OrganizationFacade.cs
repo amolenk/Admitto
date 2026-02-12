@@ -1,8 +1,8 @@
 using Amolenk.Admitto.Organization.Application.Mapping;
 using Amolenk.Admitto.Organization.Application.UseCases.GetEventId;
-using Amolenk.Admitto.Organization.Application.UseCases.GetTeamMembershipRole;
 using Amolenk.Admitto.Organization.Application.UseCases.GetTicketTypes;
 using Amolenk.Admitto.Organization.Application.UseCases.Teams.GetTeamId;
+using Amolenk.Admitto.Organization.Application.UseCases.Users.GetTeamMembershipRole;
 using Amolenk.Admitto.Organization.Contracts;
 using Amolenk.Admitto.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Shared.Application.Messaging;

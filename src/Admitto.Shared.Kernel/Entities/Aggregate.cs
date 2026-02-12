@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using Amolenk.Admitto.Shared.Kernel.Abstractions;
 using Amolenk.Admitto.Shared.Kernel.DomainEvents;
+using Amolenk.Admitto.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Shared.Kernel.Entities;
 
@@ -19,6 +20,8 @@ public abstract class Aggregate<TId> : Entity<TId>, IIsAuditable, IIsVersioned, 
     public DateTimeOffset CreatedAt { get; set; }
 
     public DateTimeOffset LastChangedAt { get; set; }
+
+    public EmailAddress LastChangedBy { get; set; }
 
     [Timestamp]
     public uint Version { get; set; }

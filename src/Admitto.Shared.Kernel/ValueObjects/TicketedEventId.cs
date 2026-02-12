@@ -11,16 +11,10 @@ public readonly record struct TicketedEventId : IGuidValueObject
     public static TicketedEventId New() => new(Guid.NewGuid());
 
     public static ValidationResult<TicketedEventId> TryFrom(Guid value)
-        => GuidValueObject.TryFrom(value, v => new TicketedEventId(v), Errors.Empty);
+        => GuidValueObject.TryFrom(value, v => new TicketedEventId(v));
 
     public static TicketedEventId From(Guid value)
-        => GuidValueObject.TryFrom(value, v => new TicketedEventId(v), Errors.Empty).GetValueOrThrow();
+        => GuidValueObject.TryFrom(value, v => new TicketedEventId(v)).GetValueOrThrow();
 
     public override string ToString() => Value.ToString();
-
-    private static class Errors
-    {
-        public static readonly Error Empty =
-            new("ticketed_event_id.empty", "Ticketed event ID is required.");
-    }
 }

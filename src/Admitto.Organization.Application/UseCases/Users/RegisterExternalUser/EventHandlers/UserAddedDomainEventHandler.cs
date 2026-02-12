@@ -1,19 +1,16 @@
 using Amolenk.Admitto.Organization.Domain.DomainEvents;
+using Amolenk.Admitto.Shared.Application.Mapping;
 using Amolenk.Admitto.Shared.Application.Messaging;
-using Amolenk.Admitto.Shared.Kernel.ValueObjects;
 
-namespace Amolenk.Admitto.Organization.Application.UseCases.RegisterExternalUser.EventHandlers;
+namespace Amolenk.Admitto.Organization.Application.UseCases.Users.RegisterExternalUser.EventHandlers;
 
-internal class UserAddedDomainEventHandler(RegisterExternalUserHandler registerExternalUserHandler)
-    : IDomainEventHandler<UserAddedDomainEvent>
+internal sealed class UserAddedDomainEventHandler(IMediator mediator) : IDomainEventHandler<UserCreatedDomainEvent>
 {
-    public async ValueTask HandleAsync(UserAddedDomainEvent domainEvent, CancellationToken cancellationToken)
-    {
-        var command = new RegisterExternalUserCommand(domainEvent.EmailAddress)
-        {
-            CommandId = CommandId.For<RegisterExternalUserCommand>(domainEvent.EventId)
-        };
-
-        await registerExternalUserHandler.HandleAsync(command, cancellationToken);
-    }
+    public ValueTask HandleAsync(UserCreatedDomainEvent domainEvent, CancellationToken cancellationToken) =>
+        mediator.SendAsync(
+            new RegisterExternalUserCommand(domainEvent.UserId, domainEvent.EmailAddress)
+            {
+                CommandId = domainEvent.EventId.ToDeterministicCommandId<RegisterExternalUserCommand>()
+            },
+            cancellationToken);
 }

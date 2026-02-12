@@ -4,7 +4,7 @@ using Amolenk.Admitto.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Organization.Domain.DomainEvents;
 
-public record UserAddedDomainEvent(
+public sealed record UserCreatedDomainEvent(
     UserId UserId,
     EmailAddress EmailAddress)
     : DomainEvent;

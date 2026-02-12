@@ -4,7 +4,7 @@ using Amolenk.Admitto.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Organization.Application.UseCases.Users.AssignTeamMembership.AdminApi;
 
-public record AssignTeamMembershipHttpRequest(
+public sealed record AssignTeamMembershipHttpRequest(
     string Email,
     TeamMembershipRoleDto Role)
 {

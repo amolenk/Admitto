@@ -38,6 +38,7 @@
   <Folder Name="/tests/Modules/" />
   <Folder Name="/tests/Modules/Organization/">
     <Project Path="tests/Admitto.Organization.Application.Tests/Admitto.Organization.Application.Tests.csproj" />
+    <Project Path="tests/Admitto.Organization.Domain.Tests/Admitto.Organization.Domain.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/Modules/Registrations/">
     <Project Path="tests/Admitto.Registrations.Application.Tests/Admitto.Registrations.Application.Tests.csproj" />

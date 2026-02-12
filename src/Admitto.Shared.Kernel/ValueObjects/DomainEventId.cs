@@ -11,16 +11,10 @@ public readonly record struct DomainEventId : IGuidValueObject
     public static DomainEventId New() => new(Guid.NewGuid());
 
     public static ValidationResult<DomainEventId> TryFrom(Guid value)
-        => GuidValueObject.TryFrom(value, v => new DomainEventId(v), Errors.Empty);
+        => GuidValueObject.TryFrom(value, v => new DomainEventId(v));
 
     public static DomainEventId From(Guid value)
-        => GuidValueObject.TryFrom(value, v => new DomainEventId(v), Errors.Empty).GetValueOrThrow();
+        => GuidValueObject.TryFrom(value, v => new DomainEventId(v)).GetValueOrThrow();
 
     public override string ToString() => Value.ToString();
-
-    private static class Errors
-    {
-        public static readonly Error Empty =
-            new("domain_event_id.empty", "Domain event ID is required.");
-    }
 }

@@ -3,9 +3,9 @@ using Humanizer;
 
 namespace Amolenk.Admitto.Shared.Kernel.ValueObjects;
 
-public readonly record struct Slug
+public readonly record struct Slug : IStringValueObject
 {
-    public const int MaxLength = 100;
+    public const int MaxLength = 64;
 
     public string Value { get; }
 

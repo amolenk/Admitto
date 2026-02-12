@@ -10,8 +10,12 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\..\src\Admitto.AppHost\Admitto.AppHost.csproj" />
       <ProjectReference Include="..\..\src\Admitto.Organization.Application\Admitto.Organization.Application.csproj" />
       <ProjectReference Include="..\..\src\Admitto.Organization.Domain\Admitto.Organization.Domain.csproj" />
+      <ProjectReference Include="..\..\src\Admitto.Organization.Infrastructure\Admitto.Organization.Infrastructure.csproj" />
+      <ProjectReference Include="..\Admitto.Organization.Domain.Tests\Admitto.Organization.Domain.Tests.csproj" />
+      <ProjectReference Include="..\Admitto.Testing\Admitto.Testing.csproj" />
     </ItemGroup>
 
 </Project>

@@ -1,3 +1,6 @@
+using Amolenk.Admitto.Organization.Application.UseCases.Teams.GetTeam.AdminApi;
+using Amolenk.Admitto.Organization.Application.UseCases.Users.AssignTeamMembership.AdminApi;
+
 namespace Amolenk.Admitto.Organization.Application;
 
 public static class OrganizationModule
@@ -7,7 +10,9 @@ public static class OrganizationModule
     public static RouteGroupBuilder MapOrganizationAdminEndpoints(this RouteGroupBuilder group)
     {
         group
-            .MapGroup("/teams/{teamSlug}/events/{eventSlug}");
+            .MapGroup("/teams/{teamSlug}/events/{eventSlug}")
+            .MapAssignTeamMembership()
+            .MapGetTeam();
         
         return group;
     }
