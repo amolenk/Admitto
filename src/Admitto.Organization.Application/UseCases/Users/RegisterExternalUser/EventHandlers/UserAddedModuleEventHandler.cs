@@ -4,7 +4,8 @@ using Amolenk.Admitto.Shared.Application.Messaging;
 
 namespace Amolenk.Admitto.Organization.Application.UseCases.Users.RegisterExternalUser.EventHandlers;
 
-internal sealed class UserAddedDomainEventHandler(IMediator mediator) : IDomainEventHandler<UserCreatedDomainEvent>
+internal sealed class UserAddedDomainEventHandler(IMediator mediator)
+    : IOutboxDomainEventHandler<UserCreatedDomainEvent>
 {
     public ValueTask HandleAsync(UserCreatedDomainEvent domainEvent, CancellationToken cancellationToken) =>
         mediator.SendAsync(
