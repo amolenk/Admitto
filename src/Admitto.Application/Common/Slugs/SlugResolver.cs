@@ -25,10 +25,11 @@ public class SlugResolver(IApplicationContext applicationContext, IMemoryCache c
 {
     public async ValueTask<Guid> ResolveTeamIdAsync(string teamSlug, CancellationToken cancellationToken = default)
     {
-        if (TryGetCachedTeamId(teamSlug, out var teamId))
-        {
-            return teamId;
-        }
+        // TODO Re-enable caching
+        // if (TryGetCachedTeamId(teamSlug, out var teamId))
+        // {
+        //     return teamId;
+        // }
 
         teamId = await applicationContext.Teams
             .AsNoTracking()
@@ -50,10 +51,11 @@ public class SlugResolver(IApplicationContext applicationContext, IMemoryCache c
         string eventSlug,
         CancellationToken cancellationToken = default)
     {
-        if (TryGetCachedTicketedEventId(teamSlug, eventSlug, out var cachedEventId))
-        {
-            return cachedEventId;
-        }
+        // TODO Re-enable caching
+        // if (TryGetCachedTicketedEventId(teamSlug, eventSlug, out var cachedEventId))
+        // {
+        //     return cachedEventId;
+        // }
         
         var (_, eventId) = await ResolveTeamAndTicketedEventIdsAsync(teamSlug, eventSlug, cancellationToken);
 
@@ -67,10 +69,11 @@ public class SlugResolver(IApplicationContext applicationContext, IMemoryCache c
     {
         var teamId = await ResolveTeamIdAsync(teamSlug, cancellationToken);
 
-        if (TryGetCachedTicketedEventId(teamSlug, eventSlug, out var eventId))
-        {
-            return (teamId, eventId);
-        }
+        // TODO Re-enable caching
+        // if (TryGetCachedTicketedEventId(teamSlug, eventSlug, out var eventId))
+        // {
+        //     return (teamId, eventId);
+        // }
 
         eventId = await applicationContext.TicketedEvents
             .AsNoTracking()
