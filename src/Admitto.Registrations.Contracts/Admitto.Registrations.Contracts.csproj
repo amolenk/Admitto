@@ -5,4 +5,8 @@
       <ProjectReference Include="..\Admitto.Shared.Kernel\Admitto.Shared.Kernel.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+      <Folder Include="IntegrationEvents\" />
+    </ItemGroup>
+
 </Project>

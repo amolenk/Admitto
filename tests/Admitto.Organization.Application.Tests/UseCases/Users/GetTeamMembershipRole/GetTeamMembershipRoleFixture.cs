@@ -1,15 +1,15 @@
+using Amolenk.Admitto.Organization.Application.Mapping;
 using Amolenk.Admitto.Organization.Application.Tests.Infrastructure.Hosting;
+using Amolenk.Admitto.Organization.Contracts;
 using Amolenk.Admitto.Organization.Domain.Tests.Builders;
-using Amolenk.Admitto.Organization.Domain.ValueObjects;
-using Amolenk.Admitto.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Organization.Application.Tests.UseCases.Users.GetTeamMembershipRole;
 
 internal sealed class GetTeamMembershipRoleFixture
 {
-    public TeamId TeamId { get; } = TeamId.New();
-    public UserId UserId { get; private set; }
-    public TeamMembershipRole? Role { get; private set; } = TeamMembershipRole.Organizer;
+    public Guid TeamId { get; } = Guid.NewGuid();
+    public Guid UserId { get; private set; }
+    public TeamMembershipRoleDto? Role { get; private set; } = TeamMembershipRoleDto.Organizer;
 
     private GetTeamMembershipRoleFixture()
     {
@@ -28,7 +28,9 @@ internal sealed class GetTeamMembershipRoleFixture
 
         if (Role is not null)
         {
-            user.AddTeamMembership(TeamId, Role.Value);
+            user.AddTeamMembership(
+                Shared.Kernel.ValueObjects.TeamId.From(TeamId),
+                Role.Value.ToDomain());
         }
         
         await environment.Database.SeedAsync(dbContext =>
@@ -36,6 +38,6 @@ internal sealed class GetTeamMembershipRoleFixture
             dbContext.Users.Add(user);
         });
         
-        UserId = user.Id;
+        UserId = user.Id.Value;
     }
 }

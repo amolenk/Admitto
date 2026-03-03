@@ -1,16 +1,33 @@
 using Amolenk.Admitto.Organization.Application.Persistence;
-using Amolenk.Admitto.Organization.Domain.Entities;
 using Amolenk.Admitto.Shared.Application.Messaging;
+using Amolenk.Admitto.Shared.Application.Persistence;
+using Amolenk.Admitto.Shared.Kernel.ValueObjects;
 
-namespace Amolenk.Admitto.Organization.Application.UseCases.Teams.CreateTeam;
+namespace Amolenk.Admitto.Organization.Application.UseCases.Teams.UpdateTeam;
 
-internal sealed class CreateTeamHandler(IOrganizationWriteStore writeStore)
-    : ICommandHandler<CreateTeamCommand>
+internal sealed class UpdateTeamHandler(IOrganizationWriteStore writeStore)
+    : ICommandHandler<UpdateTeamCommand>
 {
-    public async ValueTask HandleAsync(CreateTeamCommand command, CancellationToken cancellationToken)
+    public async ValueTask HandleAsync(UpdateTeamCommand command, CancellationToken cancellationToken)
     {
-        var team = Team.Create(command.Slug, command.Name, command.EmailAddress);
+        var team = await writeStore.Teams.GetAsync(
+            TeamId.From(command.TeamId),
+            command.ExpectedVersion,
+            cancellationToken);
 
-        await writeStore.Teams.AddAsync(team, cancellationToken);
+        if (command.Slug is not null)
+        {
+            team.ChangeSlug(Slug.From(command.Slug));
+        }
+
+        if (command.Name is not null)
+        {
+            team.ChangeName(DisplayName.From(command.Name));
+        }
+
+        if (command.EmailAddress is not null)
+        {
+            team.ChangeEmailAddress(EmailAddress.From(command.EmailAddress));
+        }
     }
 }

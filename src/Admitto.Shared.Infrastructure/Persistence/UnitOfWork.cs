@@ -9,30 +9,17 @@ namespace Amolenk.Admitto.Shared.Infrastructure.Persistence;
 
 public sealed class UnitOfWork<TDbContext>(
     TDbContext dbContext,
-    IMediator mediator,
     IOutboxMessageSender outboxMessageSender,
-    IPostgresExceptionMapper? postgresExceptionMapper = null) : IUnitOfWork
+    IPostgresExceptionMapping? postgresExceptionMapping = null) : IUnitOfWork
     where TDbContext : DbContext
 {
-    public async ValueTask RunAsync(
-        Func<IMediator, CancellationToken, ValueTask> operation,
-        CancellationToken cancellationToken)
+    public async ValueTask SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        await operation(mediator, cancellationToken);
-        await SaveChangesAsync(cancellationToken);
-    }
-
-    public async ValueTask<TResult> RunAsync<TResult>(
-        Func<IMediator, CancellationToken, ValueTask<TResult>> operation,
-        CancellationToken cancellationToken)
-    {
-        var result = await operation(mediator, cancellationToken);
-        await SaveChangesAsync(cancellationToken);
-        return result;
-    }
-
-    private async ValueTask SaveChangesAsync(CancellationToken cancellationToken = default)
-    {
+        if (dbContext.ChangeTracker.HasChanges())
+        {
+            
+        }
+        
         try
         {
             var result = await dbContext.SaveChangesAsync(cancellationToken);
@@ -49,7 +36,7 @@ public sealed class UnitOfWork<TDbContext>(
         }
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException pge)
         {
-            if (postgresExceptionMapper?.TryMap(pge, out var error) ?? false)
+            if (postgresExceptionMapping?.TryMapToError(pge, out var error) ?? false)
             {
                 throw new BusinessRuleViolationException(error);
             }
@@ -58,16 +45,7 @@ public sealed class UnitOfWork<TDbContext>(
         }
         catch (DbUpdateConcurrencyException)
         {
-            throw new BusinessRuleViolationException(Errors.ConcurrencyConflict());
+            throw new BusinessRuleViolationException(ConcurrencyConflictError.Create());
         }
-    }
-    
-    private static class Errors
-    {
-        public static Error ConcurrencyConflict() =>
-            new(
-                "concurrency_conflict",
-                "The resource was modified by another operation.",
-                Type: ErrorType.Conflict);
     }
 }

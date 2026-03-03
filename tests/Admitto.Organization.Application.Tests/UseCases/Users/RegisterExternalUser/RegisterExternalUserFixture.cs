@@ -12,9 +12,9 @@ internal sealed class RegisterExternalUserFixture
     private bool _ensureUserExistsInDatabase;
     private bool _ensureUserExistsInExternalDirectory;
 
-    public EmailAddress EmailAddress { get; } = EmailAddress.From("test@example.com");
-    public UserId UserId { get; private set; }
-    public ExternalUserId ExternalUserId { get; } = ExternalUserId.New();
+    public string EmailAddress { get; } = "test@example.com";
+    public Guid UserId { get; private set; }
+    public Guid ExternalUserId { get; } = Guid.NewGuid();
     public IExternalUserDirectory ExternalUserDirectory { get; } = Substitute.For<IExternalUserDirectory>();
 
     private RegisterExternalUserFixture()
@@ -37,12 +37,12 @@ internal sealed class RegisterExternalUserFixture
         if (_ensureUserExistsInExternalDirectory)
         {
             ExternalUserDirectory
-                .UpsertUserAsync(EmailAddress.Value, Arg.Any<CancellationToken>())
-                .Returns(ExternalUserId.Value);
+                .UpsertUserAsync(EmailAddress, Arg.Any<CancellationToken>())
+                .Returns(ExternalUserId);
         }
 
         var user = new UserBuilder()
-            .WithEmailAddress(EmailAddress)
+            .WithEmailAddress(Shared.Kernel.ValueObjects.EmailAddress.From(EmailAddress))
             .Build();
 
         if (_ensureUserExistsInDatabase)
@@ -50,6 +50,6 @@ internal sealed class RegisterExternalUserFixture
             await environment.Database.SeedAsync(dbContext => { dbContext.Users.Add(user); });
         }
         
-        UserId = user.Id;
+        UserId = user.Id.Value;
     }
 }

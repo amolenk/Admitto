@@ -1,65 +1,56 @@
-using System.Net.Mail;
 using Amolenk.Admitto.Shared.Kernel.ErrorHandling;
 
 namespace Amolenk.Admitto.Shared.Kernel.ValueObjects;
 
-public readonly record struct EmailAddress : IStringValueObject
+public readonly record struct AbsoluteUrl : IUriValueObject
 {
-    public const int MaxLength = 320; // RFC 5321 practical max
+    // The practical maximum length for a URI seems to be around 2000 characters,
+    // but most URIs are much shorter. Setting a limit of 320 characters
+    // to cover most use cases while preventing excessively long URIs.
+    // This aligns with the maximum length for email addresses defined in RFC 5321.
+    private const int MaxLength = 320;
 
-    public string Value { get; }
+    public Uri Value { get; }
 
-    private EmailAddress(string normalizedValue)
+    private AbsoluteUrl(Uri normalizedValue)
     {
         Value = normalizedValue;
     }
     
-    public static ValidationResult<EmailAddress> TryFrom(string? input)
+    public static ValidationResult<AbsoluteUrl> TryFrom(string? input)
         => NormalizeAndValidate(input)
-            .Map(normalized => new EmailAddress(normalized));
+            .Map(normalized => new AbsoluteUrl(normalized));
 
-    public static EmailAddress From(string input)
+    public static AbsoluteUrl From(string input)
         => TryFrom(input).GetValueOrThrow();
 
-    private static ValidationResult<string> NormalizeAndValidate(string? input)
+    private static ValidationResult<Uri> NormalizeAndValidate(string? value)
     {
-        if (input is null)
+        if (string.IsNullOrWhiteSpace(value))
             return Errors.Empty;
 
-        var normalized = input.Trim().ToLowerInvariant();
+        var normalized = value.Trim();
 
-        if (string.IsNullOrWhiteSpace(input))
-            return Errors.Empty;
-        
-        if (normalized.Length > MaxLength)
-            return Errors.TooLong;
-        
-        // Basic but robust validation
-        try
-        {
-            _ = new MailAddress(normalized);
-        }
-        catch
-        {
-            return Errors.InvalidFormat;
-        }
+        if (normalized.Length > MaxLength) return Errors.TooLong;
 
-        return normalized;
+        return !Uri.TryCreate(normalized, UriKind.Absolute, out var uri)
+            ? Errors.InvalidFormat
+            : ValidationResult<Uri>.Success(uri);
     }
     
     private static class Errors
     {
         public static readonly Error Empty = new(
-            "email_address.empty",
-            "Email is required.");
+            "url.empty",
+            "URL is required.");
 
         public static readonly Error TooLong = new(
-            "email_address.too_long",
-            $"Email must be at most {MaxLength} character(s).");
+            "url.too_long",
+            $"URL must be at most {MaxLength} character(s).");
 
         public static readonly Error InvalidFormat = new(
-            "email_address.invalid_format",
-            $"Email has an invalid format.");
+            "url.invalid_format",
+            $"URL has an invalid format.");
     }
 }
 

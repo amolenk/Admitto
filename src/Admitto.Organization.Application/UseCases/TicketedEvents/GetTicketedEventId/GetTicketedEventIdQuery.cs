@@ -1,6 +1,5 @@
 using Amolenk.Admitto.Shared.Application.Messaging;
-using Amolenk.Admitto.Shared.Kernel.ValueObjects;
 
-namespace Amolenk.Admitto.Organization.Application.UseCases.GetEventId;
+namespace Amolenk.Admitto.Organization.Application.UseCases.TicketedEvents.GetTicketedEventId;
 
-internal record GetEventIdQuery(TeamId TeamId, Slug EventSlug) : Query<TicketedEventId>;
+internal record GetTicketedEventIdQuery(Guid TeamId, string EventSlug) : Query<Guid>;

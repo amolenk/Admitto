@@ -13,7 +13,7 @@ public sealed class CreateTeamValidator : AbstractValidator<CreateTeamHttpReques
 
         RuleFor(x => x.Name)
             .MustBeParseable(DisplayName.TryFrom);
-        
+
         RuleFor(x => x.EmailAddress)
             .MustBeParseable(EmailAddress.TryFrom);
     }

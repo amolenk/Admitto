@@ -5,6 +5,7 @@ using Amolenk.Admitto.Organization.Infrastructure.UserDirectories.Keycloak;
 using Amolenk.Admitto.Organization.Infrastructure.UserDirectories.MicrosoftGraph;
 using Amolenk.Admitto.Organization.Infrastructure.Persistence;
 using Amolenk.Admitto.Shared.Infrastructure;
+using Amolenk.Admitto.Shared.Infrastructure.Persistence;
 using Azure.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
@@ -20,7 +21,10 @@ public static class DependencyInjection
     {
         public IHostApplicationBuilder AddOrganizationInfrastructureServices()
         {
-            builder.AddModuleDatabaseServices<IOrganizationWriteStore, OrganizationDbContext>(OrganizationModule.Key);
+            builder.AddModuleDatabaseServices<IOrganizationWriteStore, OrganizationDbContext>(
+                OrganizationModuleKey.Value);
+
+            builder.Services.AddKeyedScoped<IPostgresExceptionMapping, PostgresExceptionMapping>(OrganizationModuleKey.Value);
 
             return builder;
         }

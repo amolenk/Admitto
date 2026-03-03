@@ -3,7 +3,7 @@ using Amolenk.Admitto.Shared.Kernel.ErrorHandling;
 
 namespace Amolenk.Admitto.Shared.Kernel.ValueObjects;
 
-public readonly record struct EmailAddress
+public readonly record struct EmailAddress : IStringValueObject
 {
     public const int MaxLength = 320; // RFC 5321 practical max
 

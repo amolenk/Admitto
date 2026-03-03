@@ -1,7 +1,10 @@
 using System.Reflection;
+using Amolenk.Admitto.Organization.Application.Mapping;
 using Amolenk.Admitto.Organization.Application.Messaging;
+using Amolenk.Admitto.Organization.Application.UseCases;
 using Amolenk.Admitto.Organization.Contracts;
 using Amolenk.Admitto.Shared.Application.Messaging;
+using Amolenk.Admitto.Shared.Infrastructure.Persistence;
 using FluentValidation;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Hosting;
@@ -19,22 +22,24 @@ public static class DependencyInjection
 
         services.AddCommandHandlersFromAssembly(executingAssembly, capabilities);
         services.AddDomainEventHandlersFromAssembly(executingAssembly);
+        services.AddModuleEventHandlersFromAssembly(executingAssembly);
         services.AddQueryHandlersFromAssembly(executingAssembly);
         services.AddValidatorsFromAssembly(executingAssembly);
-
+        
         services.AddScoped<OrganizationFacade>();
         services.AddScoped<IOrganizationFacade>(sp =>
         {
             // TODO Options?
             if (builder.Configuration["ORGANIZATION__CACHING__ENABLED"] != "true")
                 return sp.GetRequiredService<OrganizationFacade>();
-            
+
             var inner = sp.GetRequiredService<OrganizationFacade>();
             var memoryCache = sp.GetRequiredService<IMemoryCache>();
             return new CachingOrganizationFacade(inner, memoryCache);
         });
 
-        services.AddKeyedSingleton<IMessagePolicy>(OrganizationModule.Key, new OrganizationMessagePolicy());
+        services.AddKeyedSingleton<IMessagePolicy, OrganizationMessagePolicy>(
+            OrganizationModuleKey.Value);
 
         return builder;
     }

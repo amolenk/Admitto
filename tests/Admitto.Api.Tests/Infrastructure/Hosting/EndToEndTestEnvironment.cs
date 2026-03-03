@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Organization.Infrastructure.Persistence;
-using Amolenk.Admitto.Registrations.Infrastructure.Persistence;
 using Amolenk.Admitto.Testing.Infrastructure.TestContexts;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -7,7 +6,7 @@ namespace Amolenk.Admitto.Api.Tests.Infrastructure.Hosting;
 
 public sealed record EndToEndTestEnvironment(
     DatabaseTestContext<OrganizationDbContext> OrganizationDatabase,
-    DatabaseTestContext<RegistrationsDbContext> RegistrationsDatabase,
+    // DatabaseTestContext<RegistrationsDbContext> RegistrationsDatabase,
     HttpClient ApiClient)
 {
     public static async ValueTask<EndToEndTestEnvironment> CreateAsync(
@@ -25,14 +24,14 @@ public sealed record EndToEndTestEnvironment(
                 databaseConnectionString,
                 cancellationToken);
 
-        var registrationsDatabase =
-            await DatabaseTestContext<RegistrationsDbContext>.CreateAsync(
-                databaseConnectionString,
-                cancellationToken);
+        // var registrationsDatabase =
+        //     await DatabaseTestContext<RegistrationsDbContext>.CreateAsync(
+        //         databaseConnectionString,
+        //         cancellationToken);
 
         var apiClient = appHost.Application.Services.GetRequiredService<IHttpClientFactory>()
             .CreateClient("AdmittoApi");
 
-        return new EndToEndTestEnvironment(organizationDatabase, registrationsDatabase, apiClient);
+        return new EndToEndTestEnvironment(organizationDatabase, apiClient);
     }
 }

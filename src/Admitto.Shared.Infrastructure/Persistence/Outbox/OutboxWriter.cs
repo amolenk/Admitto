@@ -1,6 +1,5 @@
 using System.Text.Json;
 using Amolenk.Admitto.Shared.Application.Messaging;
-using Amolenk.Admitto.Shared.Contracts;
 using Amolenk.Admitto.Shared.Kernel.DomainEvents;
 using Humanizer;
 
@@ -12,10 +11,11 @@ internal class OutboxWriter(IOutboxDbContext dbContext, IMessagePolicy messagePo
     {
         var enqueued = false;
         
-        if (messagePolicy.ShouldPublishAsyncDomainEvent(domainEvent))
+        if (messagePolicy.ShouldPublishModuleEvent(domainEvent))
         {
-            var messageType = GetMessageType(domainEvent);
-            PersistMessageInOutbox(messageType, domainEvent);
+            var moduleEvent = messagePolicy.MapToModuleEvent(domainEvent);
+            var messageType = GetMessageType(moduleEvent);
+            PersistMessageInOutbox(messageType, moduleEvent);
             
             enqueued = true;
         }
@@ -34,6 +34,7 @@ internal class OutboxWriter(IOutboxDbContext dbContext, IMessagePolicy messagePo
     
     private void PersistMessageInOutbox(string messageType, object payload)
     {
+        // TODO Isn't JsonDocument disposable? Do we need to dispose it after the message is published?
         var serializedPayload = JsonSerializer.SerializeToDocument(payload, JsonSerializerOptions.Web);
         var message = OutboxMessage.Pending(messageType, serializedPayload);
 
@@ -41,32 +42,32 @@ internal class OutboxWriter(IOutboxDbContext dbContext, IMessagePolicy messagePo
     }
 
     // TODO Move to separate utility class
-    private static string GetMessageType(IDomainEvent domainEvent)
+    private static string GetMessageType(IModuleEvent moduleEvent)
     {
-        var type = domainEvent.GetType();
+        var type = moduleEvent.GetType();
 
         var ns = type.Namespace
                  ?? throw new InvalidOperationException(
                      $"Domain event {type.Name} has no namespace.");
 
-        // Expected: Amolenk.Admitto.<ModuleName>.Domain.DomainEvents
+        // Expected: Amolenk.Admitto.<ModuleName>.Application.ModuleEvents
         var parts = ns.Split('.');
 
         // Defensive validation so mistakes fail fast
         if (parts.Length < 5 ||
             parts[0] != "Amolenk" ||
             parts[1] != "Admitto" ||
-            parts[^2] != "Domain" ||
-            parts[^1] != "DomainEvents")
+            parts[^2] != "Application" ||
+            parts[^1] != "ModuleEvents")
         {
             throw new InvalidOperationException(
-                $"Domain event {type.FullName} does not follow the expected namespace convention.");
+                $"Module event {type.FullName} does not follow the expected namespace convention.");
         }
 
         var moduleName = parts[2];
         var eventName = type.Name;
 
-        return $"{moduleName.Kebaberize()}.domain.{eventName.Kebaberize()}";
+        return $"{moduleName.Kebaberize()}.{eventName.Kebaberize()}";
     }
     
     // TODO Move to separate utility class
@@ -95,6 +96,6 @@ internal class OutboxWriter(IOutboxDbContext dbContext, IMessagePolicy messagePo
         var moduleName = parts[2];
         var eventName = type.Name;
 
-        return $"{moduleName.Kebaberize()}.integration.{eventName.Kebaberize()}";
+        return $"integration.{moduleName.Kebaberize()}.{eventName.Kebaberize()}";
     }
 }

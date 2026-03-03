@@ -1,8 +1,7 @@
 using Amolenk.Admitto.Organization.Contracts;
-using Amolenk.Admitto.Shared.Contracts;
 using Microsoft.Extensions.Caching.Memory;
 
-namespace Amolenk.Admitto.Organization.Application;
+namespace Amolenk.Admitto.Organization.Application.UseCases;
 
 internal class CachingOrganizationFacade(IOrganizationFacade innerFacade, IMemoryCache memoryCache)
     : IOrganizationFacade
@@ -27,7 +26,7 @@ internal class CachingOrganizationFacade(IOrganizationFacade innerFacade, IMemor
         return result;
     }
 
-    public async ValueTask<Guid> GetEventIdAsync(
+    public async ValueTask<Guid> GetTicketedEventIdAsync(
         Guid teamId,
         string eventSlug,
         CancellationToken cancellationToken = default)
@@ -38,7 +37,7 @@ internal class CachingOrganizationFacade(IOrganizationFacade innerFacade, IMemor
             return eventId;
         }
 
-        var result = await innerFacade.GetEventIdAsync(teamId, eventSlug, cancellationToken);
+        var result = await innerFacade.GetTicketedEventIdAsync(teamId, eventSlug, cancellationToken);
 
         memoryCache.Set(cacheKey, result, DateTimeOffset.Now.Add(EventIdCacheDuration));
 

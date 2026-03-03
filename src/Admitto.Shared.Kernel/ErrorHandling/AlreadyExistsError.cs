@@ -12,5 +12,11 @@ public static class AlreadyExistsError
         {
             ["key"] = key.ToString() ?? string.Empty
         },
-        ErrorType.NotFound);
+        ErrorType.Conflict);
+    
+    public static Error Create<T>()
+        => new(
+            $"{typeof(T).Name.Kebaberize()}.already_exists",
+            $"{typeof(T).Name.Humanize()} already exists.",
+            Type: ErrorType.Conflict);
 }

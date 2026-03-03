@@ -1,14 +1,9 @@
-using System.Text.Json;
 using Amolenk.Admitto.Shared.Application.Auth;
-using Amolenk.Admitto.Shared.Application.Messaging;
 using Amolenk.Admitto.Shared.Application.Persistence;
 using Amolenk.Admitto.Shared.Infrastructure.Persistence;
 using Amolenk.Admitto.Shared.Infrastructure.Persistence.Interceptors;
 using Amolenk.Admitto.Shared.Infrastructure.Persistence.Outbox;
-using Amolenk.Admitto.Shared.Infrastructure.Serialization;
-using Amolenk.Admitto.Shared.Kernel.ValueObjects;
 using Azure.Storage.Queues;
-using Microsoft.AspNetCore.Http.Json;
 using Microsoft.EntityFrameworkCore;
 
 namespace Amolenk.Admitto.Shared.Infrastructure;
@@ -17,20 +12,9 @@ public static class DependencyInjection
 {
     extension(IServiceCollection services)
     {
-        public void AddSharedInfrastructureJsonConverters()
-        {
-            services.Configure<JsonOptions>(options =>
-            {
-                var converters = options.SerializerOptions.Converters;
-                converters.Add(new GuidValueObjectJsonConverter<TicketedEventId>());
-            });
-        }
-        
         public void AddSharedInfrastructureServices()
         {
             services.AddScoped<IOutboxMessageSender, OutboxMessageSender>();
-            
-            services.AddSharedInfrastructureJsonConverters();
         }
     }
 
@@ -83,18 +67,15 @@ public static class DependencyInjection
                     (sp, key) =>
                     {
                         var dbContext = sp.GetRequiredService<TDbContext>();
-                        var mediator = sp.GetRequiredService<IMediator>();
                         var outboxMessageSender = sp.GetRequiredService<IOutboxMessageSender>();
-                        var postgresExceptionMapper = sp.GetKeyedService<IPostgresExceptionMapper>(moduleKey);
+                        var postgresExceptionMapping = sp.GetKeyedService<IPostgresExceptionMapping>(key);
                         return new UnitOfWork<TDbContext>(
                             dbContext,
-                            mediator,
                             outboxMessageSender,
-                            postgresExceptionMapper);
+                            postgresExceptionMapping);
                     });
 
             return builder;
         }
-
     }
 }

@@ -10,7 +10,7 @@ public static class GetTeamHttpEndpoint
     public static RouteGroupBuilder MapGetTeam(this RouteGroupBuilder group)
     {
         group
-            .MapGet("/teams", GetTeam)
+            .MapGet("/", GetTeam)
             .WithName(nameof(GetTeam))
             .RequireAuthorization(policy => policy.RequireTeamMembership(TeamMembershipRole.Crew));
 
@@ -23,9 +23,9 @@ public static class GetTeamHttpEndpoint
         CancellationToken cancellationToken)
     {
         var query = new GetTeamQuery(organizationScope.TeamId);
-        
+
         var team = await mediator.QueryAsync<GetTeamQuery, TeamDto>(query, cancellationToken);
-        
+
         return TypedResults.Ok(team);
     }
 }

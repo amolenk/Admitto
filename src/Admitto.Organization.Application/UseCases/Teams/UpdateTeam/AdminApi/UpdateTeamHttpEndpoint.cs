@@ -1,34 +1,36 @@
 using Amolenk.Admitto.Shared.Application.Auth;
+using Amolenk.Admitto.Shared.Application.Http;
+using Amolenk.Admitto.Shared.Application.Messaging;
 using Amolenk.Admitto.Shared.Application.Persistence;
+using Amolenk.Admitto.Shared.Kernel.ValueObjects;
 
-namespace Amolenk.Admitto.Organization.Application.UseCases.Teams.CreateTeam.AdminApi;
+namespace Amolenk.Admitto.Organization.Application.UseCases.Teams.UpdateTeam.AdminApi;
 
-public static class CreateTeamHttpEndpoint
+public static class UpdateTeamHttpEndpoint
 {
-    public static RouteGroupBuilder MapCreateTeam(this RouteGroupBuilder group)
+    public static RouteGroupBuilder MapUpdateTeam(this RouteGroupBuilder group)
     {
         group
-            .MapPost("/teams", CreateTeam)
-            .WithName(nameof(CreateTeam))
-            .RequireAuthorization(policy => policy.RequireAdminRole());
+            .MapPut("/", UpdateTeam)
+            .WithName(nameof(UpdateTeam))
+            .RequireAuthorization(policy => policy.RequireTeamMembership(TeamMembershipRole.Owner));
 
         return group;
     }
 
-    private static async ValueTask<Ok> CreateTeam(
-        CreateTeamHttpRequest request,
+    private static async ValueTask<Ok> UpdateTeam(
+        OrganizationScope organizationScope,
+        UpdateTeamHttpRequest request,
+        IMediator mediator,
         [FromKeyedServices(OrganizationModuleKey.Value)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
-        await unitOfWork.RunAsync(
-            (mediator, ct) =>
-            {
-                var command = request.ToCommand();
+        var command = request.ToCommand(organizationScope.TeamId);
 
-                return mediator.SendAsync(command, ct);
-            },
-            cancellationToken);
+        await mediator.SendAsync(command, cancellationToken);
+
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return TypedResults.Ok();
     }
