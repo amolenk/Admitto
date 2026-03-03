@@ -32,7 +32,7 @@ public class User : Aggregate<UserId>
     
     public EmailAddress EmailAddress { get; private set; }
     
-    public IReadOnlyList<TeamMembership> Memberships => _memberships;
+    public IReadOnlyList<TeamMembership> Memberships => _memberships.AsReadOnly();
 
     public static User Create(
         EmailAddress email)

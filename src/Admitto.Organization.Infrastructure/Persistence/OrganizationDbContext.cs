@@ -13,6 +13,8 @@ public sealed class OrganizationDbContext(DbContextOptions<OrganizationDbContext
     public static string SchemaName => "organization";
 
     public DbSet<Team> Teams => Set<Team>();
+
+    public DbSet<TicketedEvent> TicketedEvents => Set<TicketedEvent>();
     
     public DbSet<User> Users => Set<User>();
 

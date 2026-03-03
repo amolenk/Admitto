@@ -8,9 +8,9 @@ internal sealed class CreateTeamFixture
 {
     private bool _seedExistingTeamWithSameSlug;
 
-    public Slug Slug { get; } = Slug.From("team-alpha");
-    public DisplayName ExistingTeamName { get; } = DisplayName.From("Existing Team");
-    public EmailAddress ExistingTeamEmailAddress { get; } = EmailAddress.From("existing@example.com");
+    public string TeamSlug { get; } = "team-alpha";
+    public string ExistingTeamName { get; } = "Existing Team";
+    public string ExistingTeamEmailAddress { get; } = "existing@example.com";
 
     private CreateTeamFixture()
     {
@@ -28,7 +28,10 @@ internal sealed class CreateTeamFixture
             return;
         }
 
-        var existingTeam = Team.Create(Slug, ExistingTeamName, ExistingTeamEmailAddress);
+        var existingTeam = Team.Create(
+            Slug.From(TeamSlug),
+            DisplayName.From(ExistingTeamName),
+            EmailAddress.From(ExistingTeamEmailAddress));
 
         await environment.Database.SeedAsync(dbContext =>
         {

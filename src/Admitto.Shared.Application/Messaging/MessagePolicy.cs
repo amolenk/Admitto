@@ -5,9 +5,11 @@ namespace Amolenk.Admitto.Shared.Application.Messaging;
 
 public interface IMessagePolicy
 {
-    bool ShouldPublishAsyncDomainEvent(IDomainEvent domainEvent);
+    bool ShouldPublishModuleEvent(IDomainEvent domainEvent);
 
     bool ShouldPublishIntegrationEvent(IDomainEvent domainEvent);
+
+    IModuleEvent MapToModuleEvent(IDomainEvent domainEvent);
 
     IIntegrationEvent MapToIntegrationEvent(IDomainEvent domainEvent);
 }
@@ -16,9 +18,9 @@ public abstract class MessagePolicy : IMessagePolicy
 {
     private readonly Dictionary<Type, MessagePolicyRule> _rules = new();
 
-    public bool ShouldPublishAsyncDomainEvent(IDomainEvent domainEvent)
+    public bool ShouldPublishModuleEvent(IDomainEvent domainEvent)
     {
-        return _rules.TryGetValue(domainEvent.GetType(), out var rule) && rule.PersistAsDomainEvent;
+        return _rules.TryGetValue(domainEvent.GetType(), out var rule) && rule.ModuleEventMapper is not null;
     }
 
     public bool ShouldPublishIntegrationEvent(IDomainEvent domainEvent)
@@ -26,12 +28,23 @@ public abstract class MessagePolicy : IMessagePolicy
         return _rules.TryGetValue(domainEvent.GetType(), out var rule) && rule.IntegrationEventMapper is not null;
     }
 
+    public IModuleEvent MapToModuleEvent(IDomainEvent domainEvent)
+    {
+        if (!_rules.TryGetValue(domainEvent.GetType(), out var rule) || rule.ModuleEventMapper is null)
+        {
+            throw new InvalidOperationException(
+                $"No module event mapping function found for domain event of type {domainEvent.GetType().FullName}.");
+        }
+
+        return rule.ModuleEventMapper(domainEvent);
+    }
+
     public IIntegrationEvent MapToIntegrationEvent(IDomainEvent domainEvent)
     {
         if (!_rules.TryGetValue(domainEvent.GetType(), out var rule) || rule.IntegrationEventMapper is null)
         {
             throw new InvalidOperationException(
-                $"No mapping function found for domain event of type {domainEvent.GetType().FullName}.");
+                $"No integration event mapping function found for domain event of type {domainEvent.GetType().FullName}.");
         }
 
         return rule.IntegrationEventMapper(domainEvent);
@@ -52,13 +65,13 @@ public abstract class MessagePolicy : IMessagePolicy
 
 public sealed class MessagePolicyRuleBuilder<TDomainEvent>(MessagePolicyRule rule)
 {
-    public MessagePolicyRuleBuilder<TDomainEvent> AsyncDomainEvent()
+    public MessagePolicyRuleBuilder<TDomainEvent> PublishModuleEvent(Func<TDomainEvent, IModuleEvent> mapper)
     {
-        rule.PersistAsDomainEvent = true;
+        rule.ModuleEventMapper = domainEvent => mapper((TDomainEvent)domainEvent);
         return this;
     }
     
-    public MessagePolicyRuleBuilder<TDomainEvent> IntegrationEvent(Func<TDomainEvent, IIntegrationEvent> mapper)
+    public MessagePolicyRuleBuilder<TDomainEvent> PublishIntegrationEvent(Func<TDomainEvent, IIntegrationEvent> mapper)
     {
         rule.IntegrationEventMapper = domainEvent => mapper((TDomainEvent)domainEvent);
         return this;
@@ -67,7 +80,7 @@ public sealed class MessagePolicyRuleBuilder<TDomainEvent>(MessagePolicyRule rul
 
 public sealed class MessagePolicyRule
 {
-    public bool PersistAsDomainEvent { get; set; }
+    public Func<IDomainEvent, IModuleEvent>? ModuleEventMapper { get; set; } 
 
     public Func<IDomainEvent, IIntegrationEvent>? IntegrationEventMapper { get; set; } 
 }

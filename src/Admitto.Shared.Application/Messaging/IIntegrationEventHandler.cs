@@ -1,12 +1,9 @@
-using Amolenk.Admitto.Shared.Kernel.DomainEvents;
+using Amolenk.Admitto.Shared.Contracts;
 
 namespace Amolenk.Admitto.Shared.Application.Messaging;
 
-/// <summary>
-/// Represents a domain event handler that runs as part of the unit of work transaction.
-/// </summary>
-public interface IInTransactionDomainEventHandler<in TDomainEvent>
-    where TDomainEvent : IDomainEvent
+public interface IIntegrationEventHandler<in TIntegrationEvent>
+    where TIntegrationEvent : IIntegrationEvent
 {
-    ValueTask HandleAsync(TDomainEvent domainEvent, CancellationToken cancellationToken);
+    ValueTask HandleAsync(TIntegrationEvent integrationEvent, CancellationToken cancellationToken);
 }

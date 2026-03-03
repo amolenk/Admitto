@@ -25,7 +25,7 @@ public interface IMediator
         where TDomainEvent : IDomainEvent;
 }
 
-internal class Mediator(IServiceProvider serviceProvider) : IMediator
+public partial class Mediator(IServiceProvider serviceProvider, ILogger<Mediator> logger) : IMediator
 {
     public ValueTask SendAsync<TCommand>(TCommand command, CancellationToken cancellationToken = default)
         where TCommand : ICommand
@@ -36,6 +36,8 @@ internal class Mediator(IServiceProvider serviceProvider) : IMediator
             throw new InvalidOperationException(
                 $"No handler registered for command of type '{command.GetType().FullName}'");
         }
+
+        LogCommandHandling(logger, command.GetType().FullName!, handler.GetType().FullName!);
 
         return handler.HandleAsync(command, cancellationToken);
     }
@@ -52,6 +54,8 @@ internal class Mediator(IServiceProvider serviceProvider) : IMediator
                 $"No handler registered for command of type '{command.GetType().FullName}'");
         }
 
+        LogCommandHandling(logger, command.GetType().FullName!, handler.GetType().FullName!);
+
         return handler.HandleAsync(command, cancellationToken);
     }
 
@@ -67,21 +71,40 @@ internal class Mediator(IServiceProvider serviceProvider) : IMediator
                 $"No handler registered for query of type '{query.GetType().FullName}'");
         }
 
+        LogQueryHandling(logger, query.GetType().FullName!, handler.GetType().FullName!);
+
         return handler.HandleAsync(query, cancellationToken);
     }
 
-    public ValueTask PublishDomainEventAsync<TDomainEvent>(
+    public async ValueTask PublishDomainEventAsync<TDomainEvent>(
         TDomainEvent domainEvent,
         CancellationToken cancellationToken = default)
         where TDomainEvent : IDomainEvent
     {
-        var handler = serviceProvider.GetRequiredService<IDomainEventHandler<TDomainEvent>>();
-        if (handler is null)
+        var handlers = serviceProvider
+            .GetServices<IDomainEventHandler<TDomainEvent>>()
+            .ToList();
+
+        if (handlers.Count == 0)
         {
             throw new InvalidOperationException(
-                $"No handler registered for domain event of type '{domainEvent.GetType().FullName}'");
+                $"No handlers registered for domain event of type '{domainEvent.GetType().FullName}'");
         }
 
-        return handler.HandleAsync(domainEvent, cancellationToken);
+        foreach (var handler in handlers)
+        {
+            LogEventHandling(logger, domainEvent.GetType().FullName!, handler.GetType().FullName!);
+
+            await handler.HandleAsync(domainEvent, cancellationToken);
+        }
     }
+
+    [LoggerMessage(LogLevel.Information, "Handling command of type '{CommandType}' with handler '{handlerType}'")]
+    static partial void LogCommandHandling(ILogger<Mediator> logger, string commandType, string handlerType);
+
+    [LoggerMessage(LogLevel.Information, "Handling event of type '{EventType}' with handler '{handlerType}'")]
+    static partial void LogEventHandling(ILogger<Mediator> logger, string eventType, string handlerType);
+
+    [LoggerMessage(LogLevel.Information, "Handling query of type '{QueryType}' with handler '{handlerType}'")]
+    static partial void LogQueryHandling(ILogger<Mediator> logger, string queryType, string handlerType);
 }

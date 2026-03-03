@@ -13,13 +13,14 @@ internal class GetTeamHandler(IOrganizationWriteStore writeStore)
         CancellationToken cancellationToken)
     {
         return await writeStore.Teams
-            .AsNoTracking()
-            .Where(t => t.Id == query.TeamId)
-            .Select(t => new TeamDto(
-                t.Slug.Value,
-                t.Name.Value,
-                t.EmailAddress.Value))
-            .FirstOrDefaultAsync(cancellationToken)
-            ?? throw new BusinessRuleViolationException(NotFoundError.Create<Team>(query.TeamId));
+                   .AsNoTracking()
+                   .Where(t => t.Id.Value == query.TeamId)
+                   .Select(t => new TeamDto(
+                       t.Slug.Value,
+                       t.Name.Value,
+                       t.EmailAddress.Value,
+                       t.Version))
+                   .FirstOrDefaultAsync(cancellationToken)
+               ?? throw new BusinessRuleViolationException(NotFoundError.Create<Team>(query.TeamId));
     }
 }

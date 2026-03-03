@@ -1,12 +1,10 @@
-using Amolenk.Admitto.Shared.Kernel.DomainEvents;
-
 namespace Amolenk.Admitto.Shared.Application.Messaging;
 
 /// <summary>
-/// Represents a domain event handler that runs after the events has been published through the outbox.
+/// Represents a module event handler that runs after events has been published through the outbox.
 /// </summary>
-public interface IOutboxDomainEventHandler<in TDomainEvent>
-    where TDomainEvent : IDomainEvent
+public interface IModuleEventHandler<in TModuleEvent>
+    where TModuleEvent : IModuleEvent
 {
-    ValueTask HandleAsync(TDomainEvent domainEvent, CancellationToken cancellationToken);
+    ValueTask HandleAsync(TModuleEvent moduleEvent, CancellationToken cancellationToken);
 }

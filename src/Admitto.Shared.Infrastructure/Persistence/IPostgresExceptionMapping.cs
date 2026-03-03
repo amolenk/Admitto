@@ -3,7 +3,7 @@ using Npgsql;
 
 namespace Amolenk.Admitto.Shared.Infrastructure.Persistence;
 
-public interface IPostgresExceptionMapper
+public interface IPostgresExceptionMapping
 {
-    bool TryMap(PostgresException ex, out Error error);
+    bool TryMapToError(PostgresException ex, out Error error);
 }

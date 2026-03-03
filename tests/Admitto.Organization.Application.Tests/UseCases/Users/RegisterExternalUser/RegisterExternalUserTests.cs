@@ -4,7 +4,6 @@ using Amolenk.Admitto.Organization.Application.UseCases.Users.RegisterExternalUs
 using Amolenk.Admitto.Organization.Domain.Entities;
 using Amolenk.Admitto.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Shared.Kernel.ErrorHandling;
-using Amolenk.Admitto.Shared.Kernel.ValueObjects;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 
 namespace Amolenk.Admitto.Organization.Application.Tests.UseCases.Users.RegisterExternalUser;
@@ -19,7 +18,7 @@ public sealed class RegisterExternalUserTests(TestContext testContext) : AspireI
         var fixture = RegisterExternalUserFixture.HappyFlow();
         await fixture.SetupAsync(Environment);
 
-        var command = NewRegisterExternalUserCommand(fixture.UserId, fixture.EmailAddress);
+        var command = NewRegisterExternalUserCommand(fixture.UserId);
         var sut = NewRegisterExternalUserHandler(fixture.ExternalUserDirectory);
 
         // Act
@@ -29,10 +28,10 @@ public sealed class RegisterExternalUserTests(TestContext testContext) : AspireI
         await Environment.Database.AssertAsync(async dbContext =>
         {
             // Verify that the external user ID is added to the existing user.
-            var user = await dbContext.Users.FindAsync([fixture.UserId], testContext.CancellationToken);
+            var user = await dbContext.Users.FindAsync([UserId.From(fixture.UserId)], testContext.CancellationToken);
 
             user.ShouldNotBeNull();
-            user.ExternalUserId.ShouldBe(fixture.ExternalUserId);
+            user.ExternalUserId.ShouldNotBeNull().Value.ShouldBe(fixture.ExternalUserId);
         });
     }
 
@@ -43,7 +42,7 @@ public sealed class RegisterExternalUserTests(TestContext testContext) : AspireI
         var fixture = RegisterExternalUserFixture.UserDoesNotExist();
         await fixture.SetupAsync(Environment);
 
-        var command = NewRegisterExternalUserCommand(fixture.UserId, fixture.EmailAddress);
+        var command = NewRegisterExternalUserCommand(fixture.UserId);
         var sut = NewRegisterExternalUserHandler(fixture.ExternalUserDirectory);
 
         // Act
@@ -53,13 +52,9 @@ public sealed class RegisterExternalUserTests(TestContext testContext) : AspireI
         result.Error.ShouldMatch(NotFoundError.Create<User>(fixture.UserId));
     }
 
-    private static RegisterExternalUserCommand NewRegisterExternalUserCommand(
-        UserId userId,
-        EmailAddress? emailAddress = null)
+    private static RegisterExternalUserCommand NewRegisterExternalUserCommand(Guid userId)
     {
-        emailAddress ??= EmailAddress.From("alice@example.com");
-
-        return new RegisterExternalUserCommand(userId, emailAddress.Value);
+        return new RegisterExternalUserCommand(userId);
     }
 
     private static RegisterExternalUserHandler NewRegisterExternalUserHandler(

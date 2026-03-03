@@ -1,3 +1,3 @@
-namespace Amolenk.Admitto.Registrations.Application.UseCases.RegisterAttendee.Admin;
-
-public record RegisterAttendeeHttpResponse(Guid RegistrationId);
+// namespace Amolenk.Admitto.Registrations.Application.UseCases.RegisterAttendee.Admin;
+//
+// public record RegisterAttendeeHttpResponse(Guid RegistrationId);

@@ -13,11 +13,12 @@ internal sealed class RegisterExternalUserHandler(
 {
     public async ValueTask HandleAsync(RegisterExternalUserCommand command, CancellationToken cancellationToken)
     {
-        var user = await writeStore.Users.GetAsync(command.UserId, cancellationToken);
+        var userId = UserId.From(command.UserId);
+        var user = await writeStore.Users.GetAsync(userId, cancellationToken);
 
         if (user.ExternalUserId is null)
         {
-            var externalUserId = await userDirectory.UpsertUserAsync(command.EmailAddress.Value, cancellationToken);
+            var externalUserId = await userDirectory.UpsertUserAsync(user.EmailAddress.Value, cancellationToken);
 
             user.AssignExternalUserId(ExternalUserId.From(externalUserId));
         }

@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Shared.Application.Auth;
+using Amolenk.Admitto.Shared.Application.Messaging;
 using Amolenk.Admitto.Shared.Application.Persistence;
 
 namespace Amolenk.Admitto.Organization.Application.UseCases.Teams.CreateTeam.AdminApi;
@@ -17,18 +18,16 @@ public static class CreateTeamHttpEndpoint
 
     private static async ValueTask<Ok> CreateTeam(
         CreateTeamHttpRequest request,
-        [FromKeyedServices(OrganizationModule.Key)]
+        IMediator mediator,
+        [FromKeyedServices(OrganizationModuleKey.Value)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
-        await unitOfWork.RunAsync(
-            (mediator, ct) =>
-            {
-                var command = request.ToCommand();
-                
-                return mediator.SendAsync(command, ct);
-            },
-            cancellationToken);
+        var command = request.ToCommand();
+
+        await mediator.SendAsync(command, cancellationToken);
+
+        await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return TypedResults.Ok();
     }

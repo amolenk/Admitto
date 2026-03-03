@@ -6,6 +6,17 @@ namespace Amolenk.Admitto.Shared.Application.Validation;
 
 public static class FluentValidationResultExtensions
 {
+    public static IRuleBuilderOptionsConditions<T, TProperty> MustBeNullOrParseable<T, TProperty, TOut>(
+        this IRuleBuilderInitial<T, TProperty> ruleBuilder,
+        Func<TProperty, ValidationResult<TOut>> func)
+        => ruleBuilder.Custom((value, context) =>
+            {
+                if (value is not null)
+                {
+                    AddParseFailure(value, context, func);
+                }
+            });
+
     public static IRuleBuilderOptionsConditions<T, TProperty> MustBeParseable<T, TProperty, TOut>(
         this IRuleBuilderInitial<T, TProperty> ruleBuilder,
         Func<TProperty, ValidationResult<TOut>> func)

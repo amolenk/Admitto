@@ -5,9 +5,9 @@ namespace Amolenk.Admitto.Shared.Application.Http;
 
 public sealed record OrganizationScope(
     string TeamSlug,
-    TeamId TeamId,
+    Guid TeamId,
     string? EventSlug,
-    TicketedEventId? EventId)
+    Guid? EventId)
 {
     public static async ValueTask<OrganizationScope?> BindAsync(
         HttpContext context,

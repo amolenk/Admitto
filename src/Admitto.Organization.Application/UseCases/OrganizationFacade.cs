@@ -1,14 +1,12 @@
-using Amolenk.Admitto.Organization.Application.Mapping;
-using Amolenk.Admitto.Organization.Application.UseCases.GetEventId;
-using Amolenk.Admitto.Organization.Application.UseCases.GetTicketTypes;
 using Amolenk.Admitto.Organization.Application.UseCases.Teams.GetTeamId;
+using Amolenk.Admitto.Organization.Application.UseCases.TicketedEvents.GetTicketedEventId;
+using Amolenk.Admitto.Organization.Application.UseCases.TicketedEvents.GetTicketTypes;
 using Amolenk.Admitto.Organization.Application.UseCases.Users.GetTeamMembershipRole;
 using Amolenk.Admitto.Organization.Contracts;
-using Amolenk.Admitto.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Shared.Application.Messaging;
 using Amolenk.Admitto.Shared.Kernel.ValueObjects;
 
-namespace Amolenk.Admitto.Organization.Application;
+namespace Amolenk.Admitto.Organization.Application.UseCases;
 
 internal class OrganizationFacade(IMediator mediator) : IOrganizationFacade
 {
@@ -16,23 +14,23 @@ internal class OrganizationFacade(IMediator mediator) : IOrganizationFacade
         string teamSlug,
         CancellationToken cancellationToken = default)
     {
-        var teamId = await mediator.QueryAsync<GetTeamIdQuery, TeamId>(
-            new GetTeamIdQuery(Slug.From(teamSlug)),
+        var teamId = await mediator.QueryAsync<GetTeamIdQuery, Guid>(
+            new GetTeamIdQuery(teamSlug),
             cancellationToken);
-        
-        return teamId.Value;
+
+        return teamId;
     }
-    
-    public async ValueTask<Guid> GetEventIdAsync(
+
+    public async ValueTask<Guid> GetTicketedEventIdAsync(
         Guid teamId,
         string eventSlug,
         CancellationToken cancellationToken = default)
     {
-        var ticketedEventId = await mediator.QueryAsync<GetEventIdQuery, TicketedEventId>(
-            new GetEventIdQuery(TeamId.From(teamId), Slug.From(eventSlug)),
+        var ticketedEventId = await mediator.QueryAsync<GetTicketedEventIdQuery, Guid>(
+            new GetTicketedEventIdQuery(teamId, eventSlug),
             cancellationToken);
 
-        return ticketedEventId.Value;
+        return ticketedEventId;
     }
 
     public async ValueTask<TeamMembershipRoleDto?> GetTeamMembershipRoleAsync(
@@ -40,11 +38,11 @@ internal class OrganizationFacade(IMediator mediator) : IOrganizationFacade
         Guid teamId,
         CancellationToken cancellationToken = default)
     {
-        var teamMembershipRole = await mediator.QueryAsync<GetTeamMembershipRoleQuery, TeamMembershipRole?>(
-            new GetTeamMembershipRoleQuery(TeamId.From(teamId), UserId.From(userId)),
+        var teamMembershipRole = await mediator.QueryAsync<GetTeamMembershipRoleQuery, TeamMembershipRoleDto?>(
+            new GetTeamMembershipRoleQuery(teamId, userId),
             cancellationToken);
 
-        return teamMembershipRole?.ToDto();
+        return teamMembershipRole;
     }
 
     public async ValueTask<TicketTypeDto[]> GetTicketTypesAsync(
@@ -52,7 +50,7 @@ internal class OrganizationFacade(IMediator mediator) : IOrganizationFacade
         CancellationToken cancellationToken = default)
     {
         return await mediator.QueryAsync<GetTicketTypesQuery, TicketTypeDto[]>(
-            new GetTicketTypesQuery(TicketedEventId.From(eventId)),
+            new GetTicketTypesQuery(eventId),
             cancellationToken);
     }
 }

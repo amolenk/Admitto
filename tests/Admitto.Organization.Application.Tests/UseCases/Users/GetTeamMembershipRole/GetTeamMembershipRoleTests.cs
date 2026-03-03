@@ -29,8 +29,8 @@ public sealed class GetTeamMembershipRoleTests(TestContext testContext) : Aspire
     public async ValueTask GetTeamMembershipRole_UserDoesNotExist_ReturnsNull()
     {
         // Arrange
-        var teamId = TeamId.New();
-        var userId = UserId.New();
+        var teamId = Guid.NewGuid();
+        var userId = Guid.NewGuid();
         var command = NewGetTeamMembershipRoleQuery(teamId, userId);
         var sut = NewGetTeamMembershipRoleHandler();
 
@@ -58,7 +58,7 @@ public sealed class GetTeamMembershipRoleTests(TestContext testContext) : Aspire
         role.ShouldBeNull();    
     }
     
-    private static GetTeamMembershipRoleQuery NewGetTeamMembershipRoleQuery(TeamId teamId, UserId userId) =>
+    private static GetTeamMembershipRoleQuery NewGetTeamMembershipRoleQuery(Guid teamId, Guid userId) =>
         new (teamId, userId);
     
     private static GetTeamMembershipRoleHandler NewGetTeamMembershipRoleHandler() =>

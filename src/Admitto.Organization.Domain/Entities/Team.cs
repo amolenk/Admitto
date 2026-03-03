@@ -39,4 +39,19 @@ public class Team : Aggregate<TeamId>
             slug,
             name,
             emailAddress);
+
+    public void ChangeSlug(Slug slug)
+    {
+        Slug = slug;
+    }
+
+    public void ChangeName(DisplayName name)
+    {
+        Name = name;
+    }
+    
+    public void ChangeEmailAddress(EmailAddress emailAddress)
+    {
+        EmailAddress = emailAddress;
+    }
 }

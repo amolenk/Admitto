@@ -1,16 +1,13 @@
 using Amolenk.Admitto.Organization.Application.Tests.Infrastructure.Hosting;
 using Amolenk.Admitto.Organization.Domain.Tests.Builders;
-using Amolenk.Admitto.Organization.Domain.ValueObjects;
-using Amolenk.Admitto.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Organization.Application.Tests.UseCases.Users.AssignTeamMembership;
 
 internal sealed class AssignTeamMembershipFixture
 {
-    public TeamId TeamId { get; } = TeamId.New();
-    public EmailAddress EmailAddress { get; } = EmailAddress.From("test@example.com");
-    
-    public UserId UserId { get; private set; }
+    public Guid TeamId { get; } = Guid.NewGuid();
+    public string EmailAddress { get; } = "test@example.com";
+    public Guid UserId { get; private set; }
     
     private AssignTeamMembershipFixture()
     {
@@ -22,7 +19,7 @@ internal sealed class AssignTeamMembershipFixture
     {
         // TODO Really reference Domain.Test? Or duplicate the builder / extract to Test Support
         var user = new UserBuilder()
-            .WithEmailAddress(EmailAddress)
+            .WithEmailAddress(Shared.Kernel.ValueObjects.EmailAddress.From(EmailAddress))
             .Build();
         
         await environment.Database.SeedAsync(dbContext =>
@@ -30,6 +27,6 @@ internal sealed class AssignTeamMembershipFixture
             dbContext.Users.Add(user);
         });
         
-        UserId = user.Id;
+        UserId = user.Id.Value;
     }
 }

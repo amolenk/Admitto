@@ -3,7 +3,7 @@ using Amolenk.Admitto.Shared.Infrastructure.Persistence;
 using Amolenk.Admitto.Shared.Kernel.ErrorHandling;
 using Npgsql;
 
-namespace Amolenk.Admitto.Organization.Application.Mapping;
+namespace Amolenk.Admitto.Organization.Infrastructure.Persistence;
 
 // TODO Move to infrastructure
 internal sealed class PostgresExceptionMapping : IPostgresExceptionMapping

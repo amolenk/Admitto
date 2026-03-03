@@ -1,8 +1,8 @@
+using Amolenk.Admitto.Shared.Application.Messaging;
 using Amolenk.Admitto.Shared.Application.Persistence;
 using Amolenk.Admitto.Shared.Contracts;
-using Amolenk.Admitto.Shared.Kernel.DomainEvents;
 
-namespace Amolenk.Admitto.Shared.Application.Messaging;
+namespace Amolenk.Admitto.Shared.Infrastructure.Messaging;
 
 internal partial class IntegrationEventRouter(IServiceProvider serviceProvider, ILogger<Mediator> logger)
 {
@@ -11,15 +11,15 @@ internal partial class IntegrationEventRouter(IServiceProvider serviceProvider, 
         CancellationToken cancellationToken = default)
         where TIntegrationEvent : IIntegrationEvent
     {
-        var routes = serviceProvider.GetServices<IntegrationEventRoute>()
+        var subscriberModules = serviceProvider.GetServices<IntegrationEventSubscriber>()
             .ToList();
 
-        foreach (var route in routes)
+        foreach (var subscriberModule in subscriberModules)
         {
             using var scope = serviceProvider.CreateScope();
 
             var handlers = serviceProvider
-                .GetKeyedServices<IIntegrationEventHandler<TIntegrationEvent>>(route.ModuleKey)
+                .GetKeyedServices<IIntegrationEventHandler<TIntegrationEvent>>(subscriberModule.ModuleKey)
                 .ToList();
 
             foreach (var handler in handlers)
@@ -29,7 +29,7 @@ internal partial class IntegrationEventRouter(IServiceProvider serviceProvider, 
                 await handler.HandleAsync(integrationEvent, cancellationToken);
             }
 
-            var unitOfWork = scope.ServiceProvider.GetRequiredKeyedService<IUnitOfWork>(route.ModuleKey);
+            var unitOfWork = scope.ServiceProvider.GetRequiredKeyedService<IUnitOfWork>(subscriberModule.ModuleKey);
             await unitOfWork.SaveChangesAsync(cancellationToken);
         }
     }
@@ -39,4 +39,3 @@ internal partial class IntegrationEventRouter(IServiceProvider serviceProvider, 
         "Handling integration event of type '{EventType}' with handler '{handlerType}'")]
     static partial void LogEventHandling(ILogger<Mediator> logger, string eventType, string handlerType);
 }
-

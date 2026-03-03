@@ -33,10 +33,10 @@ public sealed class OrganizationScopeResolver(
         var eventId = Guid.Empty;
         if (eventSlug is not null)
         {
-            eventId = await organizationFacade.GetEventIdAsync(teamId, eventSlug, cancellationToken);
+            eventId = await organizationFacade.GetTicketedEventIdAsync(teamId, eventSlug, cancellationToken);
         }
 
-        _cachedScope = new OrganizationScope(teamSlug, TeamId.From(teamId), eventSlug, TicketedEventId.From(eventId));
+        _cachedScope = new OrganizationScope(teamSlug, teamId, eventSlug, eventId);
         return _cachedScope;
     }
 

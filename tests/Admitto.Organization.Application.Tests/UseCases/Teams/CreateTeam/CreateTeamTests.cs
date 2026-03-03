@@ -1,9 +1,5 @@
 using Amolenk.Admitto.Organization.Application.Tests.Infrastructure;
 using Amolenk.Admitto.Organization.Application.UseCases.Teams.CreateTeam;
-using Amolenk.Admitto.Organization.Domain.Entities;
-using Amolenk.Admitto.Shared.Kernel.ErrorHandling;
-using Amolenk.Admitto.Shared.Kernel.ValueObjects;
-using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using Should = Shouldly.Should;
@@ -17,9 +13,9 @@ public sealed class CreateTeamTests(TestContext testContext) : AspireIntegration
     public async ValueTask CreateTeam_ValidCommand_CreatesTeam()
     {
         // Arrange
-        var slug = Slug.From("team-bravo");
-        var name = DisplayName.From("Team Bravo");
-        var emailAddress = EmailAddress.From("team-bravo@example.com");
+        const string slug = "team-bravo";
+        const string name = "Team Bravo";
+        const string emailAddress = "team-bravo@example.com";
         var command = NewCreateTeamCommand(slug, name, emailAddress);
         var sut = NewCreateTeamHandler();
 
@@ -33,9 +29,9 @@ public sealed class CreateTeamTests(TestContext testContext) : AspireIntegration
             var team = await dbContext.Teams.SingleOrDefaultAsync(testContext.CancellationToken);
 
             team.ShouldNotBeNull();
-            team.Slug.ShouldBe(command.Slug);
-            team.Name.ShouldBe(command.Name);
-            team.EmailAddress.ShouldBe(command.EmailAddress);
+            team.Slug.Value.ShouldBe(command.Slug);
+            team.Name.Value.ShouldBe(command.Name);
+            team.EmailAddress.Value.ShouldBe(command.EmailAddress);
         });
     }
 
@@ -47,9 +43,9 @@ public sealed class CreateTeamTests(TestContext testContext) : AspireIntegration
         await fixture.SetupAsync(Environment);
 
         var command = NewCreateTeamCommand(
-            fixture.Slug,
-            DisplayName.From("Another Team"),
-            EmailAddress.From("another@example.com"));
+            fixture.TeamSlug,
+            "Another Team",
+            "another@example.com");
         var sut = NewCreateTeamHandler();
 
         // Act
@@ -65,15 +61,15 @@ public sealed class CreateTeamTests(TestContext testContext) : AspireIntegration
     }
 
     private static CreateTeamCommand NewCreateTeamCommand(
-        Slug? slug = null,
-        DisplayName? name = null,
-        EmailAddress? emailAddress = null)
+        string? slug = null,
+        string? name = null,
+        string? emailAddress = null)
     {
-        slug ??= Slug.From("team-charlie");
-        name ??= DisplayName.From("Team Charlie");
-        emailAddress ??= EmailAddress.From("team-charlie@example.com");
+        slug ??= "team-charlie";
+        name ??= "Team Charlie";
+        emailAddress ??= "team-charlie@example.com";
 
-        return new CreateTeamCommand(slug.Value, name.Value, emailAddress.Value);
+        return new CreateTeamCommand(slug, name, emailAddress);
     }
 
     private static CreateTeamHandler NewCreateTeamHandler() =>

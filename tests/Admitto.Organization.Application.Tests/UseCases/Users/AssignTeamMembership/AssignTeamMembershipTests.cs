@@ -1,6 +1,8 @@
+using Amolenk.Admitto.Organization.Application.Mapping;
 using Amolenk.Admitto.Organization.Application.Tests.Infrastructure;
 using Amolenk.Admitto.Organization.Application.UseCases.Users.AssignTeamMembership;
-using Amolenk.Admitto.Shared.Kernel.ValueObjects;
+using Amolenk.Admitto.Organization.Contracts;
+using Amolenk.Admitto.Organization.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 
 namespace Amolenk.Admitto.Organization.Application.Tests.UseCases.Users.AssignTeamMembership;
@@ -12,7 +14,7 @@ public sealed class AssignTeamMembershipTests(TestContext testContext) : AspireI
     public async ValueTask AssignTeamMembership_UserDoesNotExist_CreatesUserAndAssignsMembership()
     {
         // Arrange
-        var teamId = TeamId.New();
+        var teamId = Guid.NewGuid();
         var command = NewAssignTeamMembershipCommand(teamId);
         var sut = NewAssignTeamMembershipHandler();
 
@@ -27,15 +29,15 @@ public sealed class AssignTeamMembershipTests(TestContext testContext) : AspireI
 
             user.ShouldNotBeNull();
             user.ExternalUserId.ShouldBeNull();
-            user.EmailAddress.ShouldBe(command.EmailAddress);
+            user.EmailAddress.Value.ShouldBe(command.EmailAddress);
             user.Memberships.ShouldHaveSingleItem().ShouldSatisfyAllConditions(m =>
             {
-                m.Id.ShouldBe(teamId);
-                m.Role.ShouldBe(command.Role);
+                m.Id.Value.ShouldBe(teamId);
+                m.Role.ToDto().ShouldBe(command.Role);
             });
         });
     }
-    
+
     [TestMethod]
     public async ValueTask AssignTeamMembership_UserAlreadyExists_AssignsMembership()
     {
@@ -53,30 +55,30 @@ public sealed class AssignTeamMembershipTests(TestContext testContext) : AspireI
         await Environment.Database.AssertAsync(async dbContext =>
         {
             // Verify that the membership is added to the existing user.
-            var user = await dbContext.Users.FindAsync([fixture.UserId], testContext.CancellationToken);
+            var user = await dbContext.Users.FindAsync([UserId.From(fixture.UserId)], testContext.CancellationToken);
 
             user.ShouldNotBeNull();
             user.ExternalUserId.ShouldBeNull();
-            user.EmailAddress.ShouldBe(command.EmailAddress);
+            user.EmailAddress.Value.ShouldBe(command.EmailAddress);
             user.Memberships.ShouldHaveSingleItem().ShouldSatisfyAllConditions(m =>
             {
-                m.Id.ShouldBe(fixture.TeamId);
-                m.Role.ShouldBe(command.Role);
+                m.Id.Value.ShouldBe(fixture.TeamId);
+                m.Role.ToDto().ShouldBe(command.Role);
             });
         });
     }
 
     private static AssignTeamMembershipCommand NewAssignTeamMembershipCommand(
-        TeamId teamId,
-        EmailAddress? emailAddress = null,
-        TeamMembershipRole? role = null)
+        Guid teamId,
+        string? emailAddress = null,
+        TeamMembershipRoleDto? role = null)
     {
-        emailAddress ??= EmailAddress.From("alice@example.com");
-        role ??= TeamMembershipRole.Crew;
+        emailAddress ??= "alice@example.com";
+        role ??= TeamMembershipRoleDto.Crew;
 
-        return new AssignTeamMembershipCommand(teamId, emailAddress.Value, role.Value);
+        return new AssignTeamMembershipCommand(teamId, emailAddress, role.Value);
     }
-    
+
     private static AssignTeamMembershipHandler NewAssignTeamMembershipHandler() =>
-        new (Environment.Database.Context);
+        new(Environment.Database.Context);
 }

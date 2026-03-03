@@ -1,6 +1,5 @@
+using Amolenk.Admitto.Shared.Application.Messaging;
+
 namespace Amolenk.Admitto.Organization.Application.ModuleEvents;
 
-public class UserCreatedModuleEvent
-{
-    
-}
+public sealed record UserCreatedModuleEvent(Guid UserId) : ModuleEvent;

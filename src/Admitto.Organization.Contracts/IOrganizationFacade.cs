@@ -8,7 +8,7 @@ public interface IOrganizationFacade
         string teamSlug,
         CancellationToken cancellationToken = default);
 
-    ValueTask<Guid> GetEventIdAsync(
+    ValueTask<Guid> GetTicketedEventIdAsync(
         Guid teamId,
         string eventSlug,
         CancellationToken cancellationToken = default);

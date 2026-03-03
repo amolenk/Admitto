@@ -33,7 +33,7 @@ public class TeamMembershipAuthorizationHandler(
 
         // Otherwise, check the user's role in the organization.
         var organizationScope = await organizationScopeResolver.ResolveAsync();
-        var role = await organizationFacade.GetTeamMembershipRoleAsync(userId, organizationScope.TeamId.Value);
+        var role = await organizationFacade.GetTeamMembershipRoleAsync(userId, organizationScope.TeamId);
 
         if (role.HasValue && MapToTeamMembershipRole(role.Value) >= requirement.RequiredRole)
         {
