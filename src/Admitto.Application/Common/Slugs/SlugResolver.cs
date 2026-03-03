@@ -31,7 +31,7 @@ public class SlugResolver(IApplicationContext applicationContext, IMemoryCache c
         //     return teamId;
         // }
 
-        teamId = await applicationContext.Teams
+        var teamId = await applicationContext.Teams
             .AsNoTracking()
             .Where(t => t.Slug == teamSlug)
             .Select(t => t.Id)
@@ -75,7 +75,7 @@ public class SlugResolver(IApplicationContext applicationContext, IMemoryCache c
         //     return (teamId, eventId);
         // }
 
-        eventId = await applicationContext.TicketedEvents
+        var eventId = await applicationContext.TicketedEvents
             .AsNoTracking()
             .Where(t => t.TeamId == teamId && t.Slug == eventSlug)
             .Select(t => t.Id)
