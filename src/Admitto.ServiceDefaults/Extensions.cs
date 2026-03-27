@@ -102,12 +102,8 @@ public static class Extensions
                 builder.Services.AddOpenTelemetry()
                     .UseAzureMonitor(options =>
                     {
-                        Console.WriteLine("Using Application Insights exporter for OpenTelemetry.");
-                        Console.WriteLine(builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]);
-                        
-                        
                         options.ConnectionString = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
-                        // options.SamplingRatio = 0.1f; // Sample 10% of telemetry
+                        options.SamplingRatio = 0.1f; // Sample 10% of telemetry
                     });
             }
         }

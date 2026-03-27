@@ -1,0 +1,31 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+      <InternalsVisibleTo Include="Admitto.Module.Organization.Tests" />
+      <InternalsVisibleTo Include="Admitto.Module.Organization.Domain.Tests" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Admitto.Module.Organization.Contracts\Admitto.Module.Organization.Contracts.csproj" />
+      <ProjectReference Include="..\Admitto.Module.Shared\Admitto.Module.Shared.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+      <PackageReference Include="Azure.Identity" />
+      <PackageReference Include="Microsoft.Graph" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="Application\UseCases\TicketedEvents\AddTicketType\" />
+      <Folder Include="Application\UseCases\TicketedEvents\CancelTicketType\" />
+      <Folder Include="Application\UseCases\TicketedEvents\GetTicketedEvents\" />
+      <Folder Include="Application\UseCases\TicketedEvents\GetTicketedEvent\" />
+      <Folder Include="Application\UseCases\TicketedEvents\UpdateTicketedEvent\" />
+    </ItemGroup>
+
+</Project>

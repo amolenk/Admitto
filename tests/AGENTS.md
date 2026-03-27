@@ -7,21 +7,16 @@ This file applies to `/tests`.
 - Test intent and layer boundaries are described in `/docs/README.md` section `10 Quality Requirements and Test Strategy`.
 
 ## Choosing the Right Suite
-- Domain rule changes:
-  - `tests/Admitto.Organization.Domain.Tests`
-  - `tests/Admitto.Registrations.Domain.Tests`
-- Application/module behavior changes:
-  - `tests/Admitto.Organization.Application.Tests`
-  - `tests/Admitto.Registrations.Application.Tests`
+- Domain rule or application/module behavior changes:
+  - `tests/Admitto.Module.Organization.Tests`
+  - `tests/Admitto.Module.Registrations.Tests`
 - API wiring/auth/route pipeline changes:
   - `tests/Admitto.Api.Tests`
 
 ## Commands
 ```bash
-dotnet test tests/Admitto.Organization.Domain.Tests/Admitto.Organization.Domain.Tests.csproj
-dotnet test tests/Admitto.Registrations.Domain.Tests/Admitto.Registrations.Domain.Tests.csproj
-dotnet test tests/Admitto.Organization.Application.Tests/Admitto.Organization.Application.Tests.csproj
-dotnet test tests/Admitto.Registrations.Application.Tests/Admitto.Registrations.Application.Tests.csproj
+dotnet test tests/Admitto.Module.Organization.Tests/Admitto.Module.Organization.Tests.csproj
+dotnet test tests/Admitto.Module.Registrations.Tests/Admitto.Module.Registrations.Tests.csproj
 dotnet test tests/Admitto.Api.Tests/Admitto.Api.Tests.csproj
 ```
 

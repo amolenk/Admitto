@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Amolenk.Admitto.Shared.Kernel.ErrorHandling;
+using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
 using Microsoft.AspNetCore.Mvc;
 using Shouldly;
 

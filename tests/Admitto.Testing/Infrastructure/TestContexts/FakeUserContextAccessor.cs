@@ -1,5 +1,5 @@
-using Amolenk.Admitto.Shared.Application.Auth;
-using Amolenk.Admitto.Shared.Contracts;
+using Amolenk.Admitto.Module.Shared.Application.Auth;
+using Amolenk.Admitto.Module.Shared.Contracts;
 
 namespace Amolenk.Admitto.Testing.Infrastructure.TestContexts;
 

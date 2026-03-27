@@ -1,0 +1,13 @@
+<Project Sdk="MSTest.Sdk">
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\src\Admitto.Module.Registrations\Admitto.Module.Registrations.csproj" />
+      <ProjectReference Include="..\Admitto.Testing\Admitto.Testing.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="Microsoft.NET.Test.Sdk" />
+      <PackageReference Include="Shouldly" />
+    </ItemGroup>
+
+</Project>

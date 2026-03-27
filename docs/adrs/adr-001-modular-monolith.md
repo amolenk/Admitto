@@ -21,7 +21,7 @@ We want:
   - Prevent accidental coupling at the database level.
   - Enable future extraction of modules if required.
 - Enforce module boundaries through:
-  - Project structure (Contracts, Application, Domain, Infrastructure per module where applicable).
+  - Project structure: one main project per module (with `Domain/`, `Application/`, `Infrastructure/` folders) plus a separate Contracts project for the module's public surface.
   - Explicit inter-module communication via facades and DTOs.
 
 ## Rationale
@@ -31,6 +31,8 @@ Although this architecture requires careful identification and enforcement of mo
 - **Simpler development workflow**: a single solution, unified debugging, and the ability to refactor across modules when needed.
 - **Lower operational complexity**: fewer deployments, fewer failure modes, and simpler local development and CI pipelines.
 - **Incremental evolution**: boundaries are explicit but not enforced by physical separation, allowing the architecture to evolve without premature optimization.
+
+The **separation into API and Worker hosts** also enables **zero-downtime deployments**. The API host is stateless and can be rolling-updated with multiple instances running concurrently. The Worker host, however, must be stopped before updating because overlapping instances would run duplicate background jobs (outbox dispatch, scheduled work). By deploying them as separate containers, the API stays available while the Worker is briefly recycled — background processing pauses momentarily but user-facing traffic is uninterrupted.
 
 Compared to a traditional monolith, the use of:
 - multiple hosts,
@@ -43,6 +45,7 @@ provides many of the benefits commonly associated with microservices (clear owne
 ### Positive
 - Clear separation of concerns at both runtime (hosts) and data level (schemas).
 - Independent scaling of API and background processing.
+- Zero-downtime deployments: the stateless API host can be rolling-updated while the Worker host is briefly recycled.
 - Stronger architectural discipline than a classic layered monolith.
 - Easier future extraction of modules if business or scale requirements change.
 

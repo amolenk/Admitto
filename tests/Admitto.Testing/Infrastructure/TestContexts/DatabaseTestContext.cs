@@ -1,5 +1,5 @@
-using Amolenk.Admitto.Shared.Infrastructure.Persistence;
-using Amolenk.Admitto.Shared.Infrastructure.Persistence.Interceptors;
+using Amolenk.Admitto.Module.Shared.Infrastructure.Persistence;
+using Amolenk.Admitto.Module.Shared.Infrastructure.Persistence.Interceptors;
 using Microsoft.EntityFrameworkCore;
 using Respawn;
 

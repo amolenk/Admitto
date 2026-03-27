@@ -1,10 +1,10 @@
 // using System.Collections.Concurrent;
-// using Amolenk.Admitto.Shared.Infrastructure.Persistence;
+// using Amolenk.Admitto.Module.Shared.Infrastructure.Persistence;
 // using Aspire.Hosting.Testing;
 // using Microsoft.EntityFrameworkCore;
 // using Respawn;
 //
-// namespace Amolenk.Admitto.Registrations.Application.Tests.UseCases;
+// namespace Amolenk.Admitto.Module.Registrations.Tests.Application.UseCases;
 //
 // public static class DistributedApplicationFactoryExtensions
 // {

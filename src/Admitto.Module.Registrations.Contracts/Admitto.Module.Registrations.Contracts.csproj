@@ -1,0 +1,12 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+      <ProjectReference Include="..\Admitto.Module.Shared/Admitto.Module.Shared.csproj" />
+      <ProjectReference Include="..\Admitto.Module.Shared.Kernel\Admitto.Module.Shared.Kernel.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Folder Include="IntegrationEvents\" />
+    </ItemGroup>
+
+</Project>

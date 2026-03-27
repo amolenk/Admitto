@@ -12,24 +12,17 @@
     <Project Path="src/Admitto.ServiceDefaults/Admitto.ServiceDefaults.csproj" />
     <Project Path="src/Admitto.Worker/Admitto.Worker.csproj" />
   </Folder>
-  <Folder Name="/src/Modules/" />
-  <Folder Name="/src/Modules/Organization/">
-    <Project Path="src/Admitto.Organization.Application/Admitto.Organization.Application.csproj" />
-    <Project Path="src/Admitto.Organization.Contracts/Admitto.Organization.Contracts.csproj" />
-    <Project Path="src/Admitto.Organization.Domain/Admitto.Organization.Domain.csproj" />
-    <Project Path="src/Admitto.Organization.Infrastructure/Admitto.Organization.Infrastructure.csproj" />
+  <Folder Name="/src/Organization/">
+    <Project Path="src/Admitto.Module.Organization/Admitto.Module.Organization.csproj" />
+    <Project Path="src/Admitto.Module.Organization.Contracts/Admitto.Module.Organization.Contracts.csproj" />
   </Folder>
-  <Folder Name="/src/Modules/Registrations/">
-    <Project Path="src/Admitto.Registrations.Application/Admitto.Registrations.Application.csproj" />
-    <Project Path="src/Admitto.Registrations.Contracts/Admitto.Registrations.Contracts.csproj" />
-    <Project Path="src/Admitto.Registrations.Domain/Admitto.Registrations.Domain.csproj" />
-    <Project Path="src/Admitto.Registrations.Infrastructure/Admitto.Registrations.Infrastructure.csproj" />
+  <Folder Name="/src/Registrations/">
+    <Project Path="src/Admitto.Module.Registrations/Admitto.Module.Registrations.csproj" />
+    <Project Path="src/Admitto.Module.Registrations.Contracts/Admitto.Module.Registrations.Contracts.csproj" />
   </Folder>
-  <Folder Name="/src/Modules/Shared/">
-    <Project Path="src/Admitto.Shared.Application/Admitto.Shared.Application.csproj" />
-    <Project Path="src/Admitto.Shared.Contracts/Admitto.Shared.Contracts.csproj" />
-    <Project Path="src/Admitto.Shared.Infrastructure/Admitto.Shared.Infrastructure.csproj" />
-    <Project Path="src/Admitto.Shared.Kernel/Admitto.Shared.Kernel.csproj" />
+  <Folder Name="/src/Shared/">
+    <Project Path="src/Admitto.Module.Shared/Admitto.Module.Shared.csproj" />
+    <Project Path="src/Admitto.Module.Shared.Kernel/Admitto.Module.Shared.Kernel.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Admitto.Api.Tests/Admitto.Api.Tests.csproj" />
@@ -37,11 +30,11 @@
   </Folder>
   <Folder Name="/tests/Modules/" />
   <Folder Name="/tests/Modules/Organization/">
-    <Project Path="tests/Admitto.Organization.Application.Tests/Admitto.Organization.Application.Tests.csproj" />
-    <Project Path="tests/Admitto.Organization.Domain.Tests/Admitto.Organization.Domain.Tests.csproj" />
+    <Project Path="tests/Admitto.Module.Organization.Domain.Tests/Admitto.Module.Organization.Domain.Tests.csproj" />
+    <Project Path="tests/Admitto.Module.Organization.Tests/Admitto.Module.Organization.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/Modules/Registrations/">
-    <Project Path="tests/Admitto.Registrations.Application.Tests/Admitto.Registrations.Application.Tests.csproj" />
-    <Project Path="tests/Admitto.Registrations.Domain.Tests/Admitto.Registrations.Domain.Tests.csproj" />
+    <Project Path="tests/Admitto.Module.Registrations.Domain.Tests/Admitto.Module.Registrations.Domain.Tests.csproj" />
+    <Project Path="tests/Admitto.Module.Registrations.Tests/Admitto.Module.Registrations.Tests.csproj" />
   </Folder>
 </Solution>

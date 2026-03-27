@@ -2,9 +2,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Admitto.AppHost\Admitto.AppHost.csproj" />
-    <ProjectReference Include="..\..\src\Admitto.Organization.Infrastructure\Admitto.Organization.Infrastructure.csproj" />
-    <ProjectReference Include="..\Admitto.Organization.Application.Tests\Admitto.Organization.Application.Tests.csproj" />
-    <ProjectReference Include="..\Admitto.Registrations.Application.Tests\Admitto.Registrations.Application.Tests.csproj" />
+    <ProjectReference Include="..\..\src\Admitto.Module.Organization\Admitto.Module.Organization.csproj" />
+    <ProjectReference Include="..\Admitto.Module.Organization.Tests\Admitto.Module.Organization.Tests.csproj" />
+    <ProjectReference Include="..\Admitto.Module.Registrations.Tests\Admitto.Module.Registrations.Tests.csproj" />
     <ProjectReference Include="..\Admitto.Testing\Admitto.Testing.csproj" />
   </ItemGroup>
 

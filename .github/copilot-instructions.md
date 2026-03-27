@@ -14,10 +14,12 @@ Architecture references
 - `src/Admitto.AppHost`: .NET Aspire orchestration for local dev.
 - `src/Admitto.Cli`: Admin/ops CLI.
 - `src/Admitto.UI.Admin`: Next.js admin UI.
-- `src/Admitto.Application`, `src/Admitto.Domain`, `src/Admitto.Infrastructure`: Core application, domain, and infrastructure.
-- `src/Admitto.Organization.*`: Organization module.
-- `src/Admitto.Registrations.*`: Registrations module.
-- `src/Admitto.Shared.*`: Shared cross-cutting code.
+- `src/Admitto.Module.Shared.Kernel`: Shared domain kernel (Entity, Aggregate, ValueObject, Error).
+- `src/Admitto.Module.Shared`: Shared application and infrastructure code.
+- `src/Admitto.Module.Organization`: Organization module (Domain/, Application/, Infrastructure/ folders).
+- `src/Admitto.Module.Organization.Contracts`: Organization module public surface (DTOs, facades, integration events).
+- `src/Admitto.Module.Registrations`: Registrations module (Domain/, Application/, Infrastructure/ folders).
+- `src/Admitto.Module.Registrations.Contracts`: Registrations module public surface.
 - `tests/`: Test projects.
 
 ## Key technical constraints
@@ -58,7 +60,7 @@ Architecture references
 
 - Keep module boundaries intact; use module `Contracts` projects for cross-module DTOs.
 - Add endpoints next to their use cases (feature slicing).
-- Use domain entities and value objects from the Domain projects.
+- Use domain entities and value objects from the module's `Domain/` folder.
 - Use FluentValidation validators for request validation.
 - Prefer outbox + queue for async workflows.
 
@@ -67,5 +69,5 @@ Architecture references
 - Solution file: `Admitto.slnx`.
 - Example test runs:
   - `dotnet test tests/Admitto.Api.Tests`
-  - `dotnet test tests/Admitto.Organization.Application.Tests`
-  - `dotnet test tests/Admitto.Registrations.Domain.Tests`
+  - `dotnet test tests/Admitto.Module.Organization.Tests`
+  - `dotnet test tests/Admitto.Module.Registrations.Tests`

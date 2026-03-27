@@ -1,4 +1,4 @@
-using Amolenk.Admitto.Organization.Infrastructure.Persistence;
+using Amolenk.Admitto.Module.Organization.Infrastructure.Persistence;
 using Amolenk.Admitto.Testing.Infrastructure.TestContexts;
 using Microsoft.Extensions.DependencyInjection;
 

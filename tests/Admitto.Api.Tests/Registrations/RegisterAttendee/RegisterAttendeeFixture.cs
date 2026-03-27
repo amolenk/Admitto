@@ -1,7 +1,7 @@
 // using Amolenk.Admitto.Api.Tests.Infrastructure.Hosting;
-// using Amolenk.Admitto.Organization.Application.Tests.Builders;
-// using Amolenk.Admitto.Registrations.Application.Tests.Builders;
-// using Amolenk.Admitto.Shared.Kernel.ValueObjects;
+// using Amolenk.Admitto.Module.Organization.Tests.Application.Builders;
+// using Amolenk.Admitto.Module.Registrations.Tests.Application.Builders;
+// using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 //
 // namespace Amolenk.Admitto.Api.Tests.Registrations.RegisterAttendee;
 //

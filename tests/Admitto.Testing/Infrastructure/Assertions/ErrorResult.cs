@@ -1,4 +1,4 @@
-using Amolenk.Admitto.Shared.Kernel.ErrorHandling;
+using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
 using Shouldly;
 
 namespace Amolenk.Admitto.Testing.Infrastructure.Assertions;

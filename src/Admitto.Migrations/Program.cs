@@ -1,4 +1,4 @@
-﻿using Amolenk.Admitto.Organization.Infrastructure.Persistence;
+﻿using Amolenk.Admitto.Module.Organization.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 var builder = Host.CreateApplicationBuilder(args);

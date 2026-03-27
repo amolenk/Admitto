@@ -401,3 +401,25 @@ FodyWeavers.xsd
 
 # Bicep compiled ARM templates
 *.json
+
+# Temporary work-around for Claude
+.claude
+.agents/skills/architecture-impact-check
+.agents/skills/dotnet-bootstrap
+.agents/skills/impact-map
+.agents/skills/maintain-arc42-chapter-1
+.agents/skills/maintain-arc42-chapter-2
+.agents/skills/maintain-arc42-chapter-3
+.agents/skills/maintain-arc42-chapter-4
+.agents/skills/maintain-arc42-chapter-5
+.agents/skills/maintain-arc42-chapter-6
+.agents/skills/maintain-arc42-chapter-7
+.agents/skills/maintain-arc42-chapter-8
+.agents/skills/maintain-arc42-chapter-9
+.agents/skills/maintain-arc42-chapter-10
+.agents/skills/maintain-arc42-chapter-11
+.agents/skills/maintain-arc42-chapter-12
+.agents/skills/arc42-bootstrap
+.agents/skills/record-adr
+.agents/skills/repo-bootstrap
+.agents/skills/spec

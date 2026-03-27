@@ -1,13 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
     <ItemGroup>
-        <ProjectReference Include="..\Admitto.Organization.Application\Admitto.Organization.Application.csproj" />
-        <ProjectReference Include="..\Admitto.Organization.Contracts\Admitto.Organization.Contracts.csproj" />
-        <ProjectReference Include="..\Admitto.Organization.Infrastructure\Admitto.Organization.Infrastructure.csproj" />
-        <ProjectReference Include="..\Admitto.Registrations.Application\Admitto.Registrations.Application.csproj" />
-        <ProjectReference Include="..\Admitto.Registrations.Infrastructure\Admitto.Registrations.Infrastructure.csproj" />
+        <ProjectReference Include="..\Admitto.Module.Organization\Admitto.Module.Organization.csproj" />
+        <ProjectReference Include="..\Admitto.Module.Organization.Contracts\Admitto.Module.Organization.Contracts.csproj" />
+        <ProjectReference Include="..\Admitto.Module.Registrations\Admitto.Module.Registrations.csproj" />
         <ProjectReference Include="..\Admitto.ServiceDefaults\Admitto.ServiceDefaults.csproj"/>
-        <ProjectReference Include="..\Admitto.Shared.Application\Admitto.Shared.Application.csproj" />
+        <ProjectReference Include="..\Admitto.Module.Shared/Admitto.Module.Shared.csproj" />
     </ItemGroup>
 
     <ItemGroup>

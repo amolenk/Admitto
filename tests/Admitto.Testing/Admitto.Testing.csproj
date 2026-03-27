@@ -8,7 +8,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\..\src\Admitto.Shared.Infrastructure\Admitto.Shared.Infrastructure.csproj" />
+      <ProjectReference Include="..\..\src\Admitto.Module.Shared/Admitto.Module.Shared.csproj" />
     </ItemGroup>
 
 </Project>

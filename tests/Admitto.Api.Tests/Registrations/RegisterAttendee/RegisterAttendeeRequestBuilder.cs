@@ -1,4 +1,4 @@
-// using Amolenk.Admitto.Registrations.Application.UseCases.RegisterAttendee.Admin;
+// using Amolenk.Admitto.Module.Registrations.Application.UseCases.RegisterAttendee.Admin;
 //
 // namespace Amolenk.Admitto.Testing.Builders;
 //

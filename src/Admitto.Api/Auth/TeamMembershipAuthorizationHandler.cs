@@ -1,8 +1,8 @@
 using Amolenk.Admitto.ApiService.Auth;
-using Amolenk.Admitto.Organization.Contracts;
-using Amolenk.Admitto.Shared.Application.Auth;
-using Amolenk.Admitto.Shared.Application.Http;
-using Amolenk.Admitto.Shared.Kernel.ValueObjects;
+using Amolenk.Admitto.Module.Organization.Contracts;
+using Amolenk.Admitto.Module.Shared.Application.Auth;
+using Amolenk.Admitto.Module.Shared.Application.Http;
+using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 using Microsoft.AspNetCore.Authorization;
 
 namespace Amolenk.Admitto.Api.Auth;

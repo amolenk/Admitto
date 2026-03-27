@@ -9,8 +9,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Admitto.Organization.Infrastructure\Admitto.Organization.Infrastructure.csproj" />
-      <ProjectReference Include="..\Admitto.Registrations.Infrastructure\Admitto.Registrations.Infrastructure.csproj" />
+      <ProjectReference Include="..\Admitto.Module.Organization\Admitto.Module.Organization.csproj" />
+      <ProjectReference Include="..\Admitto.Module.Registrations\Admitto.Module.Registrations.csproj" />
       <ProjectReference Include="..\Admitto.ServiceDefaults\Admitto.ServiceDefaults.csproj" />
     </ItemGroup>
 

@@ -4,10 +4,11 @@ using Amolenk.Admitto.Api.Endpoints;
 using Amolenk.Admitto.ApiService.Auth;
 using Amolenk.Admitto.ApiService.Middleware;
 using Amolenk.Admitto.ApiService.OpenApi;
-using Amolenk.Admitto.Organization.Application;
-using Amolenk.Admitto.Shared.Application.Auth;
-using Amolenk.Admitto.Shared.Application.Http;
-using Amolenk.Admitto.Shared.Infrastructure;
+using Amolenk.Admitto.Module.Organization.Application;
+using Amolenk.Admitto.Module.Organization.Application.Http;
+using Amolenk.Admitto.Module.Shared.Application.Auth;
+using Amolenk.Admitto.Module.Shared.Application.Http;
+using Amolenk.Admitto.Module.Shared.Infrastructure;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
