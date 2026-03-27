@@ -46,3 +46,16 @@ dotnet test tests/Admitto.Api.Tests/Admitto.Api.Tests.csproj
 - Architecture documentation lives in `docs/arc42/` (arc42 format, one file per chapter).
 - If a structural decision changes, update the relevant arc42 chapter and ADRs in `docs/adrs/`.
 - Link ADRs from `docs/arc42/09-architectural-decisions.md`.
+
+## Feature Implementation Checklist
+
+Before declaring a feature complete, verify every item:
+
+- Read the full feature spec in `docs/specs/` (see `docs/specs/AGENTS.md` for interpretation rules).
+- Each user story has a corresponding vertical slice folder under `Application/UseCases/{Feature}/`.
+- Each slice follows the standard file layout (command/query, handler, endpoint, request, validator).
+- Endpoint is wired in `{Module}ApiEndpoints.cs`.
+- Each acceptance scenario (`SC-*`) has a corresponding test method with scenario ID prefix (`SC001_...`).
+- Tests use fixture/builder patterns, not inline setup.
+- All new and existing tests pass.
+- Domain model changes are covered by domain-level tests.
