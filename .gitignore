@@ -399,9 +399,6 @@ FodyWeavers.xsd
 .azure
 .idea/
 
-# Bicep compiled ARM templates
-*.json
-
 # Temporary work-around for Claude
 .claude
 .agents/skills/architecture-impact-check
