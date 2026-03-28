@@ -11,9 +11,8 @@ namespace Amolenk.Admitto.Module.Registrations.Domain.Tests.Entities;
 [TestClass]
 public sealed class CouponTests
 {
-    // SC-001: Successful coupon creation
     [TestMethod]
-    public void SC001_Create_ValidInput_CreatesCouponAndRaisesDomainEvent()
+    public void Create_ValidInput_CreatesCouponAndRaisesDomainEvent()
     {
         // Arrange
         var ticketTypeId = TicketTypeId.New();
@@ -43,9 +42,8 @@ public sealed class CouponTests
                 e => e.Email.ShouldBe(email));
     }
 
-    // SC-002: Coupon with registration window bypass
     [TestMethod]
-    public void SC002_Create_BypassRegistrationWindow_SetsBypassFlag()
+    public void Create_BypassRegistrationWindow_SetsBypassFlag()
     {
         // Act
         var sut = new CouponBuilder()
@@ -56,9 +54,8 @@ public sealed class CouponTests
         sut.BypassRegistrationWindow.ShouldBeTrue();
     }
 
-    // SC-003: Rejected — ticket type does not exist
     [TestMethod]
-    public void SC003_Create_UnknownTicketType_ThrowsUnknownTicketTypesError()
+    public void Create_UnknownTicketType_ThrowsUnknownTicketTypesError()
     {
         // Arrange
         var unknownTicketTypeId = TicketTypeId.New();
@@ -75,9 +72,8 @@ public sealed class CouponTests
         result.Error.ShouldMatch(Coupon.Errors.UnknownTicketTypes([unknownTicketTypeId]));
     }
 
-    // SC-004: Rejected — ticket type is cancelled
     [TestMethod]
-    public void SC004_Create_CancelledTicketType_ThrowsCancelledTicketTypesError()
+    public void Create_CancelledTicketType_ThrowsCancelledTicketTypesError()
     {
         // Arrange
         var cancelledTicketTypeId = TicketTypeId.New();
@@ -93,9 +89,8 @@ public sealed class CouponTests
         result.Error.ShouldMatch(Coupon.Errors.CancelledTicketTypes([cancelledTicketTypeId]));
     }
 
-    // SC-005: Rejected — expiry in the past
     [TestMethod]
-    public void SC005_Create_ExpiryInThePast_ThrowsExpiryMustBeInFutureError()
+    public void Create_ExpiryInThePast_ThrowsExpiryMustBeInFutureError()
     {
         // Act
         var result = ErrorResult.Capture(() =>
@@ -107,9 +102,6 @@ public sealed class CouponTests
         result.Error.ShouldMatch(Coupon.Errors.ExpiryMustBeInFuture);
     }
 
-    // SC-006: Rejected — cancelled event (handler-level concern, tested via CreateCouponHandlerTests)
-
-    // Supplementary: No ticket types specified (domain validation)
     [TestMethod]
     public void Create_NoTicketTypes_ThrowsNoTicketTypesError()
     {
@@ -123,9 +115,8 @@ public sealed class CouponTests
         result.Error.ShouldMatch(Coupon.Errors.NoTicketTypes);
     }
 
-    // SC-007: List coupons — verifies status computation for different coupon states
     [TestMethod]
-    public void SC007_GetStatus_VariousCouponStates_ReturnsCorrectStatus()
+    public void GetStatus_VariousCouponStates_ReturnsCorrectStatus()
     {
         // Arrange
         var now = CouponBuilder.DefaultNow;
@@ -145,11 +136,8 @@ public sealed class CouponTests
         expiredCoupon.GetStatus(now.AddHours(2)).ShouldBe(CouponStatus.Expired);
     }
 
-    // SC-008: Empty coupon list — no domain test needed (query-level concern)
-
-    // SC-009: View coupon details — verifies all properties are accessible
     [TestMethod]
-    public void SC009_Create_ValidInput_AllPropertiesAccessible()
+    public void Create_ValidInput_AllPropertiesAccessible()
     {
         // Arrange
         var ticketTypeId1 = TicketTypeId.New();
@@ -182,9 +170,8 @@ public sealed class CouponTests
             () => sut.RevokedAt.ShouldBeNull());
     }
 
-    // SC-010: Successful revocation
     [TestMethod]
-    public void SC010_Revoke_ActiveCoupon_SetsRevokedAt()
+    public void Revoke_ActiveCoupon_SetsRevokedAt()
     {
         // Arrange
         var sut = new CouponBuilder().Build();
@@ -197,9 +184,8 @@ public sealed class CouponTests
         sut.GetStatus(CouponBuilder.DefaultNow).ShouldBe(CouponStatus.Revoked);
     }
 
-    // SC-011: Revoke already-expired coupon — succeeds
     [TestMethod]
-    public void SC011_Revoke_ExpiredCoupon_SetsRevokedAt()
+    public void Revoke_ExpiredCoupon_SetsRevokedAt()
     {
         // Arrange
         var now = CouponBuilder.DefaultNow;
@@ -219,9 +205,8 @@ public sealed class CouponTests
         sut.GetStatus(afterExpiry).ShouldBe(CouponStatus.Revoked);
     }
 
-    // SC-012: Rejected — revoke redeemed coupon
     [TestMethod]
-    public void SC012_Revoke_RedeemedCoupon_ThrowsCouponAlreadyRedeemedError()
+    public void Revoke_RedeemedCoupon_ThrowsCouponAlreadyRedeemedError()
     {
         // Arrange — we need a redeemed coupon. Since Redeem isn't implemented yet,
         // we simulate by setting RedeemedAt via reflection (this is a domain-level test concern).
@@ -236,9 +221,8 @@ public sealed class CouponTests
         result.Error.ShouldMatch(Coupon.Errors.CouponAlreadyRedeemed);
     }
 
-    // SC-010 supplement: Revoking an already-revoked coupon is idempotent (NFR-003)
     [TestMethod]
-    public void SC010_Revoke_AlreadyRevokedCoupon_IsIdempotent()
+    public void Revoke_AlreadyRevokedCoupon_IsIdempotent()
     {
         // Arrange
         var sut = new CouponBuilder().Build();

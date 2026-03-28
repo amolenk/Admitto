@@ -101,7 +101,15 @@ private static CreateCouponHandler NewCreateCouponHandler(CreateCouponFixture fi
 
 ### Test naming convention
 
-Test methods follow: `{ScenarioId}_{UseCase}_{Condition}_{ExpectedOutcome}`
+**Domain tests** (`*.Domain.Tests`) use: `{Method}_{Condition}_{ExpectedOutcome}`
+
+Domain tests describe aggregate invariants — business rules that hold regardless of which feature exercises them. They must **never** reference feature-specific IDs like `SC-001` or `NFR-003`.
+
+Examples: `Create_UnknownTicketType_ThrowsUnknownTicketTypesError`, `Revoke_RedeemedCoupon_ThrowsCouponAlreadyRedeemedError`
+
+**Handler integration tests** (`*.Tests`) use: `{ScenarioId}_{UseCase}_{Condition}_{ExpectedOutcome}`
+
+Handler tests map 1:1 to acceptance scenarios from a feature spec, so the `SC-*` prefix creates traceability back to the spec.
 
 Example: `SC001_CreateCoupon_ValidInput_PersistsCouponAndRaisesDomainEvent`
 
