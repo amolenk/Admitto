@@ -3,6 +3,7 @@
     <ItemGroup>
       <ProjectReference Include="..\..\src\Admitto.AppHost\Admitto.AppHost.csproj" />
       <ProjectReference Include="..\..\src\Admitto.Module.Registrations\Admitto.Module.Registrations.csproj" />
+      <ProjectReference Include="..\Admitto.Module.Registrations.Domain.Tests\Admitto.Module.Registrations.Domain.Tests.csproj" />
       <ProjectReference Include="..\Admitto.Testing\Admitto.Testing.csproj" />
     </ItemGroup>
 

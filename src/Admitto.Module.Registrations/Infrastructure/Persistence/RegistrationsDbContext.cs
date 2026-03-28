@@ -27,4 +27,9 @@ public sealed class RegistrationsDbContext(DbContextOptions<RegistrationsDbConte
         modelBuilder.ApplyConfiguration(new OutboxMessageEntityConfiguration());
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
     }
+
+    protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+    {
+        configurationBuilder.ConfigureSharedConventions();
+    }
 }
