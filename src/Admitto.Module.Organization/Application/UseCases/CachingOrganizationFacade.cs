@@ -54,4 +54,9 @@ internal class CachingOrganizationFacade(IOrganizationFacade innerFacade, IMemor
         Guid eventId,
         CancellationToken cancellationToken = default) =>
         innerFacade.GetTicketTypesAsync(eventId, cancellationToken);
+
+    public ValueTask<bool> IsEventActiveAsync(
+        Guid eventId,
+        CancellationToken cancellationToken = default) =>
+        innerFacade.IsEventActiveAsync(eventId, cancellationToken);
 }

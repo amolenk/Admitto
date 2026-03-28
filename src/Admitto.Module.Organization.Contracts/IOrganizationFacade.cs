@@ -21,4 +21,8 @@ public interface IOrganizationFacade
     ValueTask<TicketTypeDto[]> GetTicketTypesAsync(
         Guid eventId,
         CancellationToken cancellationToken = default);
+
+    ValueTask<bool> IsEventActiveAsync(
+        Guid eventId,
+        CancellationToken cancellationToken = default);
 }

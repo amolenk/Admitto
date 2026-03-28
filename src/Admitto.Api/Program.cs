@@ -6,6 +6,8 @@ using Amolenk.Admitto.ApiService.Middleware;
 using Amolenk.Admitto.ApiService.OpenApi;
 using Amolenk.Admitto.Module.Organization.Application;
 using Amolenk.Admitto.Module.Organization.Application.Http;
+using Amolenk.Admitto.Module.Registrations.Application;
+using Amolenk.Admitto.Module.Registrations.Infrastructure;
 using Amolenk.Admitto.Module.Shared.Application.Auth;
 using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Infrastructure;
@@ -20,6 +22,7 @@ builder.AddServiceDefaults();
 builder
     .AddOrganizationApplicationServices()
     .Services
+    .AddRegistrationsApplicationServices()
     .AddMessagingApplicationServices()
     .AddValidationApplicationServices();
 
@@ -27,6 +30,7 @@ builder
 builder
     .AddSharedInfrastructureMessagingServices()
     .AddOrganizationInfrastructureServices()
+    .AddRegistrationsInfrastructureServices()
     .Services
     .AddSharedInfrastructureServices();
 

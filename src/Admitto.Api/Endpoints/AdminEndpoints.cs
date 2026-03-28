@@ -18,6 +18,7 @@ public static class AdminEndpoints
             .RequireAuthorization();
 
         adminGroup
-            .MapOrganizationAdminEndpoints();
+            .MapOrganizationAdminEndpoints()
+            .MapRegistrationsAdminEndpoints();
     }
 }

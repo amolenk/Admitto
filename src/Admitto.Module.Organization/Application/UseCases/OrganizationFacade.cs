@@ -53,4 +53,13 @@ internal class OrganizationFacade(IMediator mediator) : IOrganizationFacade
             new GetTicketTypesQuery(eventId),
             cancellationToken);
     }
+
+    // Event cancellation is not yet supported (planned for FEAT-003).
+    // Always returns true (active) until the Organization domain adds event lifecycle management.
+    public ValueTask<bool> IsEventActiveAsync(
+        Guid eventId,
+        CancellationToken cancellationToken = default)
+    {
+        return ValueTask.FromResult(true);
+    }
 }

@@ -9,4 +9,6 @@ public class TicketTypeDto
     public required string PublicTitle { get; init; }
     
     public required string[] TimeSlots { get; init; }
+    
+    public bool IsCancelled { get; init; }
 }
