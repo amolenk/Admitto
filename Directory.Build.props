@@ -10,6 +10,7 @@
 
     <ItemGroup>
         <InternalsVisibleTo Include="$(MSBuildProjectName).Tests" />
+        <InternalsVisibleTo Include="$(MSBuildProjectName).Domain.Tests" />
     </ItemGroup>
 
 </Project>

@@ -44,11 +44,32 @@ Each module declares a `MessagePolicy` that maps domain events to module and/or 
 
 ## 8.6 Error handling
 
-- `BusinessRuleViolationException` is thrown when a `ValidationResult<T>` is unwrapped on failure.
+### Pipeline
+
+- `BusinessRuleViolationException` is thrown when a `ValidationResult<T>` is unwrapped on failure, or directly when a business rule is violated.
 - `ApplicationErrorExceptionHandler` maps business exceptions to ProblemDetails responses.
 - `GlobalExceptionHandler` catches unexpected exceptions.
 - `IPostgresExceptionMapping` (keyed per module) maps database constraint violations to domain errors.
 - Optimistic concurrency conflicts (`DbUpdateConcurrencyException`) are mapped to `ConcurrencyConflictError`.
+
+### Error placement — three tiers
+
+Errors are defined as close as possible to the code that throws them. Three tiers cover all cases:
+
+| Tier | Where defined | Visibility | Used by | Examples |
+| :--- | :------------ | :--------- | :------ | :------- |
+| Shared helper | `Shared.Kernel/ErrorHandling/` | `public static` | Any layer | `NotFoundError.Create<T>()`, `AlreadyExistsError`, `ConcurrencyConflictError` |
+| Entity-nested | Nested `Errors` class in entity or value object | `internal` | Methods of that entity/VO only | `User.Errors.UserAlreadyTeamMember`, `Coupon.Errors.NoTicketTypes` |
+| Handler-local | Nested `Errors` class in handler | `internal` | That handler only | `CreateCouponHandler.Errors.EventNotActive` |
+
+**Rules:**
+
+1. An error is defined in the same class that throws it.
+2. Entity-nested errors are for rules the entity validates inside its own methods (`Create`, `Revoke`, etc.).
+3. Handler-local errors are for application-level checks the handler performs (e.g., cross-module lookups, precondition checks via facades).
+4. If a pattern repeats across multiple entities or handlers (not-found, already-exists, concurrency), promote it to a shared helper in the kernel.
+5. Visibility is `internal`, not `public`, so errors stay testable via `InternalsVisibleTo` without leaking to other modules.
+6. Never add an error to an entity for a rule that the entity does not validate itself.
 
 ## 8.7 Persistence
 
