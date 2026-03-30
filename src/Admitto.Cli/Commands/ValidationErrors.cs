@@ -122,4 +122,13 @@ public static class ValidationErrors
     public static readonly ValidationResult TicketTypeMaxCapacityMissing = 
         ValidationResult.Error("Ticket type max capacity must be specified.");
 
+    public static readonly ValidationResult CouponTicketTypesMissing = 
+        ValidationResult.Error("At least one ticket type ID must be specified.");
+
+    public static readonly ValidationResult CouponExpiresAtMissing = 
+        ValidationResult.Error("Expiry date must be specified.");
+
+    public static readonly ValidationResult CouponIdMissing = 
+        ValidationResult.Error("Coupon ID must be specified.");
+
 }

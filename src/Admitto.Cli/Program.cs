@@ -5,6 +5,7 @@ using Amolenk.Admitto.Cli.Auth;
 using Amolenk.Admitto.Cli.Commands;
 using Amolenk.Admitto.Cli.Commands.Attendee;
 using Amolenk.Admitto.Cli.Commands.Auth;
+using Amolenk.Admitto.Cli.Commands.Coupon;
 using Amolenk.Admitto.Cli.Commands.Email;
 using Amolenk.Admitto.Cli.Commands.Email.Template.Event;
 using Amolenk.Admitto.Cli.Commands.Email.Template.Team;
@@ -108,6 +109,25 @@ app.Configure(config =>
 
             cfg.AddCommand<SetConfigCommand>("set")
                 .WithDescription("Set configuration values");
+        });
+
+    config.AddBranch(
+        "coupon",
+        coupon =>
+        {
+            coupon.SetDescription("Manage coupons");
+
+            coupon.AddCommand<CreateCouponCommand>("create")
+                .WithDescription("Create a new coupon");
+
+            coupon.AddCommand<ListCouponsCommand>("list")
+                .WithDescription("List all coupons for an event");
+
+            coupon.AddCommand<RevokeCouponCommand>("revoke")
+                .WithDescription("Revoke a coupon");
+
+            coupon.AddCommand<ShowCouponCommand>("show")
+                .WithDescription("Show coupon details");
         });
 
     // config.AddBranch(
