@@ -55,6 +55,7 @@ Before declaring a feature complete, verify every item:
 - Each user story has a corresponding vertical slice folder under `Application/UseCases/{Feature}/`.
 - Each slice follows the standard file layout (command/query, handler, endpoint, request, validator).
 - Endpoint is wired in `{Module}ApiEndpoints.cs`.
+- Each admin API endpoint has a corresponding CLI command in `src/Admitto.Cli/Commands/` (see `src/Admitto.Cli/AGENTS.md`).
 - Each acceptance scenario (`SC-*`) has a corresponding test method with scenario ID prefix (`SC001_...`).
 - Tests use fixture/builder patterns, not inline setup.
 - All new and existing tests pass.
