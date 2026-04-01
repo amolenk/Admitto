@@ -1,0 +1,35 @@
+{
+  "runtime": "Net90",
+  "documentGenerator": {
+    "fromDocument": {
+      "url": "http://localhost:15000/openapi/v1.json"
+    }
+  },
+  "codeGenerators": {
+    "openApiToCSharpClient": {
+      "className": "ApiClient",
+      "namespace": "Amolenk.Admitto.Cli.Api",
+      "jsonLibrary": "SystemTextJson",
+      "generateClientInterfaces": false,
+      "generateExceptionClasses": true,
+      "exceptionClass": "ApiException",
+      "useBaseUrl": true,
+      "generateBaseUrlProperty": true,
+      "generateUpdateJsonSerializerSettingsMethod": true,
+      "generatePrepareRequestAndProcessResponseAsAsyncMethods": false,
+      "exposeJsonSerializerSettings": false,
+      "generateDtoTypes": true,
+      "generateOptionalParameters": false,
+      "generateNullableReferenceTypes": true,
+      "parameterDateTimeFormat": "s",
+      "generateDefaultValues": true,
+      "injectHttpClient": true,
+      "useHttpClientCreationMethod": false,
+      "disposeHttpClient": false,
+      "clientClassAccessModifier": "public",
+      "typeAccessModifier": "public",
+      "wrapResponses": false,
+      "output": "Api/ApiClient.g.cs"
+    }
+  }
+}

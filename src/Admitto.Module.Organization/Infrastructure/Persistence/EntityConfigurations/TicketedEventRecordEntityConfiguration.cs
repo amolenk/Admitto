@@ -3,6 +3,7 @@ using Amolenk.Admitto.Module.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Amolenk.Admitto.Module.Organization.Infrastructure.Persistence.EntityConfigurations;
 
@@ -78,11 +79,13 @@ public class TicketedEventEntityConfiguration : IEntityTypeConfiguration<Tickete
                 b.Property(tt => tt.IsSelfServiceAvailable)
                     .HasJsonPropertyName("isSelfServiceAvailable");
 
-                b.Property(tt => tt.TimeSlots)
-                    .HasConversion(
-                        v => v.Select(ts => ts.Slug.Value).ToArray(),
-                        v => v.Select(ts => new TimeSlot(Slug.From(ts))).ToArray())
-                    .HasJsonPropertyName("timeSlots");
+                b.PrimitiveCollection(tt => tt.TimeSlots)
+                  .HasJsonPropertyName("timeSlots")
+                  .ElementType()
+                  .HasConversion(
+                    new ValueConverter<TimeSlot, string>(
+                      ts => ts.Slug.Value,
+                      s => new TimeSlot(Slug.From(s))));
 
                 b.Property(tt => tt.Capacity)
                     .HasConversion(

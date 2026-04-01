@@ -40,7 +40,7 @@ if (builder.Environment.IsEndToEndTesting() || builder.Environment.IsDevelopment
             })
         .WithReference(postgresDb)
         .WithReference(quartzDb)
-        .WithReference(keycloak).WaitFor(keycloak) // Idiot
+        .WithReference(keycloak).WaitFor(keycloak)
         .WithReference(queues).WaitFor(queues)
         .WaitForCompletion(migrations);
 
