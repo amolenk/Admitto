@@ -2,6 +2,7 @@ using System.Reflection;
 using Amolenk.Admitto.Api.Auth;
 using Amolenk.Admitto.ApiService.Auth;
 using Amolenk.Admitto.ApiService.OpenApi;
+using Amolenk.Admitto.Module.Shared.Application.Auth;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;

@@ -72,6 +72,13 @@ audit purposes.
 **I want** to see a list of teams I belong to,
 **so that** I can navigate to the teams I am involved with.
 
+> **Implementation note (US-003 + US-006):** These two user stories are served by a single
+> `GET /admin/teams` endpoint with role-based filtering. Admins receive all active teams;
+> non-admin authenticated users receive only the teams they belong to. Both return the same
+> DTO shape. This deviates from the one-user-story-one-handler convention by explicit design
+> decision — the role-filtered single endpoint simplifies the API surface with no loss of
+> correctness.
+
 ## 3. Functional Requirements
 
 | ID     | Requirement                                                                                                        | Priority | User Story |

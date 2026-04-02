@@ -1,4 +1,4 @@
-using Amolenk.Admitto.Module.Organization.Application.UseCases.Teams.GetTeamId;
+using Amolenk.Admitto.Module.Organization.Application.UseCases.TeamManagement.GetTeamId;
 using Amolenk.Admitto.Module.Organization.Application.UseCases.TicketedEvents.GetTicketedEventId;
 using Amolenk.Admitto.Module.Organization.Application.UseCases.TicketedEvents.GetTicketTypes;
 using Amolenk.Admitto.Module.Organization.Application.UseCases.Users.GetTeamMembershipRole;

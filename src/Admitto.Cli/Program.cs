@@ -341,6 +341,9 @@ app.Configure(config =>
 
             team.AddCommand<UpdateTeamCommand>("update")
                 .WithDescription("Updates details of an existing team");
+
+            team.AddCommand<ArchiveTeamCommand>("archive")
+                .WithDescription("Archive a team");
         });
 
     config.AddCommand<VersionCommand>("version")

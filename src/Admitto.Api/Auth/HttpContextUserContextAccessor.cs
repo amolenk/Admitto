@@ -14,12 +14,12 @@ public class HttpContextUserContextAccessor(IHttpContextAccessor httpContextAcce
                               ?? throw new InvalidOperationException("No HTTP context available.");
 
             var user = httpContext.User;
-        
+
             // TODO
             return new UserContextDto(GetUserId(user), GetUserName(user) ?? "Unknown", "todo@example.com");
         }
     }
-    
+
     private static Guid GetUserId(ClaimsPrincipal user)
     {
         // Entra

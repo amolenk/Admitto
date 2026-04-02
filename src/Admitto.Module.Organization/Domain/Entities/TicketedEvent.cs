@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Module.Organization.Domain.DomainEvents;
 using Amolenk.Admitto.Module.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Kernel.Entities;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
@@ -7,6 +8,12 @@ namespace Amolenk.Admitto.Module.Organization.Domain.Entities;
 /// <summary>
 /// Represents an event for which attendees can register.
 /// </summary>
+/// <remarks>
+/// On creation a <see cref="TicketedEventCreatedDomainEvent"/> is raised so that the owning
+/// <see cref="Team"/> can update its <see cref="Team.TicketedEventScopeVersion"/>, which
+/// ensures the team row is modified in the same transaction. This closes the TOCTOU window
+/// between the active-events guard in <c>ArchiveTeamHandler</c> and the archive commit.
+/// </remarks>
 public class TicketedEvent : Aggregate<TicketedEventId>
 {
     private readonly List<TicketType> _ticketTypes = [];
@@ -36,6 +43,9 @@ public class TicketedEvent : Aggregate<TicketedEventId>
         EventWindow = eventWindow;
 
         _ticketTypes = ticketTypes.ToList();
+
+        // Notify the owning team so it can update its TicketedEventScopeVersion.
+        AddDomainEvent(new TicketedEventCreatedDomainEvent(teamId));
     }
 
     public TeamId TeamId { get; private set; }

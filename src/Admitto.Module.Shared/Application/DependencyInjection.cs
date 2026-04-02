@@ -13,7 +13,7 @@ public static class DependencyInjection
     {
         public IServiceCollection AddMessagingApplicationServices()
         {
-//            services.AddScoped<IMediator, Mediator>();
+            services.AddScoped<IMediator, Mediator>();
 
             return services;
         }

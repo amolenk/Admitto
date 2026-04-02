@@ -31,6 +31,13 @@ public class TeamEntityConfiguration : IEntityTypeConfiguration<Team>
             .HasColumnName("email_address")
             .IsRequired()
             .HasMaxLength(EmailAddress.MaxLength);
+
+        builder.Property(e => e.ArchivedAt)
+            .HasColumnName("archived_at");
+
+        builder.Property(e => e.TicketedEventScopeVersion)
+            .HasColumnName("ticketed_event_scope_version")
+            .IsRequired();
         
         builder.HasIndex(e => e.Slug)
             .IsUnique();
