@@ -2,7 +2,7 @@ using Amolenk.Admitto.Module.Organization.Application.UseCases.TeamManagement.Re
 using Amolenk.Admitto.Module.Organization.Domain.DomainEvents;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 
-namespace Amolenk.Admitto.Module.Organization.Application.UseCases.TeamManagement;
+namespace Amolenk.Admitto.Module.Organization.Application.UseCases.TeamManagement.RegisterTicketedEventCreation.EventHandlers;
 
 /// <summary>
 /// Reacts to <see cref="TicketedEventCreatedDomainEvent"/> on behalf of the Team aggregate.
