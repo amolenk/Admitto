@@ -86,3 +86,112 @@ Service defaults (`Admitto.ServiceDefaults`) configure:
 - Health checks at `/health` and `/alive`
 - Request timeouts
 - Output caching
+
+## 8.9 Vertical slice structure
+
+Each use case lives in its own feature folder under `Application/UseCases/{Feature}/{Slice}/`. The table below shows the canonical files for an admin-facing command slice and which are optional.
+
+| File | Purpose | Required |
+| :--- | :------- | :------- |
+| `{Slice}Command.cs` | Immutable record sent via `IMediator.SendAsync` | Always |
+| `{Slice}Handler.cs` | Business logic; must not inject or commit `IUnitOfWork` | Always |
+| `AdminApi/{Slice}HttpEndpoint.cs` | Minimal API endpoint; owns the UoW commit | When HTTP-exposed |
+| `AdminApi/{Slice}HttpRequest.cs` | Inbound DTO with `ToCommand()` helper | When HTTP-exposed |
+| `AdminApi/{Slice}Validator.cs` | FluentValidation validator for the request DTO | When HTTP-exposed |
+| `EventHandlers/{Event}DomainEventHandler.cs` | Translates a domain event into the command and dispatches it | When triggered by a domain event |
+
+Feature group naming mirrors the aggregate it modifies: `TeamManagement/`, `TicketedEvents/`, `Users/`.
+
+### Domain-event-triggered slices
+
+When a slice is triggered by a domain event rather than an HTTP request, the event handler lives in `EventHandlers/` inside the slice folder and is kept intentionally dumb — it translates the event into the slice's command and dispatches it via `IMediator`:
+
+```
+TeamManagement/
+  RegisterTicketedEventCreation/
+    EventHandlers/
+      TicketedEventCreatedDomainEventHandler.cs   ← translates event → command
+    RegisterTicketedEventCreationCommand.cs
+    RegisterTicketedEventCreationHandler.cs        ← business logic
+```
+
+The owning aggregate's feature folder hosts the domain event handler (the aggregate that *reacts*), not the feature folder that *produced* the event.
+
+### HTTP endpoint registration
+
+All admin endpoints are wired in `{Module}ApiEndpoints.cs` via `MapXxx()` extension methods. Groups mirror the URL hierarchy:
+
+```csharp
+// /admin/teams
+var teams = group.MapGroup("/teams");
+teams.MapCreateTeam();     // POST /
+teams.MapGetTeams();       // GET  /
+
+// /admin/teams/{teamSlug}
+var team = teams.MapGroup("/{teamSlug}");
+team.MapGetTeam();         // GET  /
+team.MapUpdateTeam();      // PUT  /
+team.MapArchiveTeam();     // POST /archive
+```
+
+## 8.10 EF Core query rules
+
+Several EF-specific gotchas discovered during development:
+
+### Computed properties are not translatable
+
+C# computed properties (e.g. `IsArchived => ArchivedAt.HasValue`) cannot be translated to SQL. LINQ queries must reference the backing column directly:
+
+```csharp
+// ❌ Runtime exception — EF cannot translate
+.Where(t => !t.IsArchived)
+
+// ✅ Correct
+.Where(t => t.ArchivedAt == null)
+```
+
+### Value object comparisons in LINQ
+
+EF value converters handle persistence, but LINQ predicates must use the full value object, not the inner primitive:
+
+```csharp
+// ❌ Not translatable
+.Where(t => t.Id.Value == guid)
+
+// ✅ Correct
+.Where(t => t.Id == TeamId.From(guid))
+```
+
+### AsNoTracking for guard queries
+
+Queries used only as precondition checks (e.g. "does an active event exist?") should use `.AsNoTracking()` to avoid polluting the EF change tracker with entities that will not be modified.
+
+### Optimistic concurrency
+
+The `Version` property on all aggregates (`[Timestamp]`, `uint`) is the EF row-version concurrency token. `DbSetExtensions.GetAsync(key, expectedVersion?)` validates the token on load and throws `ConcurrencyConflictError` on mismatch. Clients read the current version when fetching a resource and supply it on mutating operations.
+
+## 8.11 Domain event dispatch — in-process pattern
+
+`DomainEventsInterceptor` fires inside `SavingChangesAsync` (before the actual write), so domain event handlers run **within the same database transaction** as the triggering aggregate. This guarantees atomicity.
+
+### EF change tracker reuse
+
+When a command handler loads an aggregate and a domain event handler (running during save) loads the same aggregate, EF returns the already-tracked instance from the change tracker. No extra database round-trip occurs.
+
+### Write-amplifier pattern for concurrency tokens
+
+When one aggregate must protect against concurrent modifications triggered by another aggregate, increment a dedicated counter on the first aggregate whenever the second is modified. This forces a write to the first aggregate's row, advancing its EF `Version` token, so any concurrent operation holding the old token fails at commit.
+
+Example: `Team.TicketedEventScopeVersion` is incremented by `RegisterTicketedEventCreationHandler` whenever a `TicketedEvent` is created under the team. This closes the TOCTOU window between the active-events guard in `ArchiveTeamHandler` and its commit.
+
+### Fast-fail guard rule
+
+Domain event handlers are not executed in the test `DatabaseTestContext` (no `DomainEventsInterceptor` registered). Business rules that need test coverage must therefore be enforced as an explicit guard in the command handler *before* the save, not solely in the domain event handler. The domain event handler provides defence in depth in production; the handler guard provides testability.
+
+## 8.12 Handler and event handler DI registration
+
+Command handlers, domain event handlers, module event handlers, and integration event handlers are all auto-discovered by assembly scan (`Scrutor`) — no manual registrations required. The scan uses `AssignableTo(typeof(ICommandHandler<>))` (and equivalents for other handler types) to find all concrete implementations regardless of folder.
+
+**Rule:** Do not register handlers manually in `DependencyInjection.cs`. Place the class in any folder within the module assembly and implement the correct interface.
+
+**Caveat:** The scan for domain/module/integration event handlers uses `AssignableTo(typeof(IXxxHandler<>))`, *not* `Where(t => t.IsGenericType …)`. The latter only matches open generic types (never a concrete handler) and is a known pitfall if the scan helper is extended.
