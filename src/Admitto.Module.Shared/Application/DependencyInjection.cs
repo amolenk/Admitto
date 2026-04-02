@@ -75,16 +75,14 @@ public static class DependencyInjection
 
         public IServiceCollection AddDomainEventHandlersFromAssembly(Assembly assembly)
         {
-            Func<Type, bool> isDomainEventHandler = t =>
-                t.IsGenericType &&
-                t.GetGenericTypeDefinition() == typeof(IDomainEventHandler<>);
-
             services.Scan(scan => scan
                 .FromAssemblies(assembly)
                 .AddClasses(
-                    classes => classes.Where(isDomainEventHandler),
+                    classes => classes.AssignableTo(typeof(IDomainEventHandler<>)),
                     publicOnly: false)
-                .As(t => t.GetInterfaces().Where(isDomainEventHandler))
+                .As(t => t.GetInterfaces()
+                    .Where(i => i.IsGenericType &&
+                                i.GetGenericTypeDefinition() == typeof(IDomainEventHandler<>)))
                 .WithScopedLifetime());
 
             return services;
@@ -92,16 +90,14 @@ public static class DependencyInjection
 
         public IServiceCollection AddModuleEventHandlersFromAssembly(Assembly assembly)
         {
-            Func<Type, bool> isModuleEventHandler = t =>
-                t.IsGenericType &&
-                t.GetGenericTypeDefinition() == typeof(IModuleEventHandler<>);
-
             services.Scan(scan => scan
                 .FromAssemblies(assembly)
                 .AddClasses(
-                    classes => classes.Where(isModuleEventHandler),
+                    classes => classes.AssignableTo(typeof(IModuleEventHandler<>)),
                     publicOnly: false)
-                .As(t => t.GetInterfaces().Where(isModuleEventHandler))
+                .As(t => t.GetInterfaces()
+                    .Where(i => i.IsGenericType &&
+                                i.GetGenericTypeDefinition() == typeof(IModuleEventHandler<>)))
                 .WithScopedLifetime());
 
             return services;
@@ -109,22 +105,20 @@ public static class DependencyInjection
 
         public IServiceCollection AddIntegrationEventHandlersFromAssembly(Assembly assembly, string moduleKey)
         {
-            Func<Type, bool> isIntegrationEventHandler = t =>
-                t.IsGenericType &&
-                t.GetGenericTypeDefinition() == typeof(IIntegrationEventHandler<>);
-            
             services.Scan(scan => scan
                 .FromAssemblies(assembly)
                 .AddClasses(
-                    classes => classes.Where(isIntegrationEventHandler),
+                    classes => classes.AssignableTo(typeof(IIntegrationEventHandler<>)),
                     publicOnly: false)
-                .As(t => t.GetInterfaces().Where(isIntegrationEventHandler))
+                .As(t => t.GetInterfaces()
+                    .Where(i => i.IsGenericType &&
+                                i.GetGenericTypeDefinition() == typeof(IIntegrationEventHandler<>)))
                 .WithServiceKey(moduleKey)
                 .WithScopedLifetime());
 
             // Add a marker service to identify that this module has integration event handlers.
             services.AddSingleton(new IntegrationEventSubscriber(moduleKey));
-            
+
             return services;
         }
 
