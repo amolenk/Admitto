@@ -25,7 +25,7 @@ public static class StringValueObject
         return ValidationResult<TValueObject>.Success(factory(normalized));
     }
     
-    private static class Errors
+    public static class Errors
     {
         public static readonly Error Empty = new(
             "text.empty",

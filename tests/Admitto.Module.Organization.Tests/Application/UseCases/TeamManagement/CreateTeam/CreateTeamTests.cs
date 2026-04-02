@@ -1,6 +1,8 @@
 using Amolenk.Admitto.Module.Organization.Tests.Application.Infrastructure;
 using Amolenk.Admitto.Module.Organization.Application.UseCases.TeamManagement.CreateTeam;
 using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
+using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
+using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
 using Should = Shouldly.Should;
@@ -89,6 +91,6 @@ public sealed class CreateTeamTests(TestContext testContext) : AspireIntegration
         var exception = await Should.ThrowAsync<BusinessRuleViolationException>(
             async () => await sut.HandleAsync(command, testContext.CancellationToken));
 
-        exception.Error.Code.ShouldBe("text.empty");
+        exception.Error.ShouldMatch(StringValueObject.Errors.Empty);
     }
 }

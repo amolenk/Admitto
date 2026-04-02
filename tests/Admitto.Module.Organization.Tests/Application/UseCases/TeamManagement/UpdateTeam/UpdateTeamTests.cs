@@ -1,6 +1,9 @@
 using Amolenk.Admitto.Module.Organization.Tests.Application.Infrastructure;
 using Amolenk.Admitto.Module.Organization.Application.UseCases.TeamManagement.UpdateTeam;
+using Amolenk.Admitto.Module.Organization.Domain.Entities;
 using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
+using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
+using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Microsoft.EntityFrameworkCore;
 using Should = Shouldly.Should;
 
@@ -69,7 +72,7 @@ public sealed class UpdateTeamTests(TestContext testContext) : AspireIntegration
         var exception = await Should.ThrowAsync<BusinessRuleViolationException>(
             async () => await sut.HandleAsync(command, testContext.CancellationToken));
 
-        exception.Error.Code.ShouldBe("concurrency_conflict");
+        exception.Error.ShouldMatch(ConcurrencyConflictError.Create(wrongVersion, fixture.TeamVersion));
     }
 
     [TestMethod]
@@ -93,6 +96,6 @@ public sealed class UpdateTeamTests(TestContext testContext) : AspireIntegration
         var exception = await Should.ThrowAsync<BusinessRuleViolationException>(
             async () => await sut.HandleAsync(command, testContext.CancellationToken));
 
-        exception.Error.Code.ShouldBe("team.archived");
+        exception.Error.ShouldMatch(Team.Errors.TeamArchived(TeamId.From(fixture.TeamId)));
     }
 }
