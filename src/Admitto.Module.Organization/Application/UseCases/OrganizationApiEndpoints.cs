@@ -4,7 +4,10 @@ using Amolenk.Admitto.Module.Organization.Application.UseCases.TeamManagement.Ge
 using Amolenk.Admitto.Module.Organization.Application.UseCases.TeamManagement.GetTeams.AdminApi;
 using Amolenk.Admitto.Module.Organization.Application.UseCases.TeamManagement.UpdateTeam.AdminApi;
 using Amolenk.Admitto.Module.Organization.Application.UseCases.TicketedEvents.CreateTicketedEvent.AdminApi;
-using Amolenk.Admitto.Module.Organization.Application.UseCases.Users.AssignTeamMembership.AdminApi;
+using Amolenk.Admitto.Module.Organization.Application.UseCases.TeamMembershipManagement.AssignTeamMembership.AdminApi;
+using Amolenk.Admitto.Module.Organization.Application.UseCases.TeamMembershipManagement.ChangeTeamMembershipRole.AdminApi;
+using Amolenk.Admitto.Module.Organization.Application.UseCases.TeamMembershipManagement.ListTeamMembers.AdminApi;
+using Amolenk.Admitto.Module.Organization.Application.UseCases.TeamMembershipManagement.RemoveTeamMembership.AdminApi;
 
 namespace Amolenk.Admitto.Module.Organization.Application.UseCases;
 
@@ -12,16 +15,26 @@ public static class OrganizationApiEndpoints
 {
     public static RouteGroupBuilder MapOrganizationAdminEndpoints(this RouteGroupBuilder group)
     {
-        group
-            .MapGroup("/teams")
+        var teams = group.MapGroup("/teams");
+
+        teams
             .MapCreateTeam()
-            .MapGetTeams()
-            .MapGroup("/{teamSlug}")
-            .MapAssignTeamMembership()
+            .MapGetTeams();
+
+        var team = teams.MapGroup("/{teamSlug}");
+
+        team
             .MapGetTeam()
             .MapUpdateTeam()
             .MapArchiveTeam()
-            .MapGroup("/events")
+            .MapListTeamMembers()
+            .MapAssignTeamMembership();
+
+        team.MapGroup("/members")
+            .MapChangeTeamMembershipRole()
+            .MapRemoveTeamMembership();
+
+        team.MapGroup("/events")
             .MapCreateTicketedEvent()
             .MapGroup("/{eventSlug}");
 

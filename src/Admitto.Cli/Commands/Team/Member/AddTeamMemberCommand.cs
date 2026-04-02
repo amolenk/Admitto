@@ -11,14 +11,6 @@ public class AddTeamMemberSettings : TeamSettings
     [Description("The email address")]
     public string? Email { get; init; }
 
-    [CommandOption("--firstName")]
-    [Description("The first name")]
-    public string? FirstName { get; init; }
-
-    [CommandOption("--lastName")]
-    [Description("The last name")]
-    public string? LastName { get; init; }
-
     [CommandOption("--role")]
     [TeamMemberRoleDescription]
     public TeamMemberRole? Role { get; init; }
@@ -28,16 +20,6 @@ public class AddTeamMemberSettings : TeamSettings
         if (string.IsNullOrWhiteSpace(Email))
         {
             return ValidationResult.Error("Email is required.");
-        }
-
-        if (string.IsNullOrWhiteSpace(FirstName))
-        {
-            return ValidationResult.Error("First name is required.");
-        }
-
-        if (string.IsNullOrWhiteSpace(LastName))
-        {
-            return ValidationResult.Error("Last name is required.");
         }
 
         if (Role is null)
@@ -59,16 +41,14 @@ public class AddTeamMemberCommand(IAdmittoService admittoService, IConfigService
     {
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
 
-        var request = new AddTeamMemberRequest
+        var request = new AssignTeamMemberV2Request
         {
-            Email = settings.Email,
-            FirstName = settings.FirstName,
-            LastName = settings.LastName,
+            Email = settings.Email!,
             Role = settings.Role!.Value
         };
 
         var succes =
-            await admittoService.SendAsync(client => client.AddTeamMemberAsync(teamSlug, request, cancellationToken));
+            await admittoService.SendAsync(client => client.AssignTeamMemberV2Async(teamSlug, request, cancellationToken));
         if (!succes) return 1;
 
         AnsiConsoleExt.WriteSuccesMessage($"Successfully added team member '{request.Email}'.");

@@ -1,4 +1,5 @@
 using System.Reflection;
+using Amolenk.Admitto.Module.Organization.Application.Jobs;
 using Amolenk.Admitto.Module.Organization.Application.Mapping;
 using Amolenk.Admitto.Module.Organization.Application.Messaging;
 using Amolenk.Admitto.Module.Organization.Application.UseCases;
@@ -8,6 +9,7 @@ using Amolenk.Admitto.Module.Shared.Infrastructure.Persistence;
 using FluentValidation;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Hosting;
+using Quartz;
 
 namespace Amolenk.Admitto.Module.Organization.Application;
 
@@ -41,6 +43,34 @@ public static class DependencyInjection
         services.AddKeyedSingleton<IMessagePolicy, OrganizationMessagePolicy>(
             OrganizationModuleKey.Value);
 
+        if (capabilities.HasFlag(HostCapability.Jobs))
+        {
+            builder.AddOrganizationJobs();
+        }
+
         return builder;
+    }
+
+    private static void AddOrganizationJobs(this IHostApplicationBuilder builder)
+    {
+        builder.Services.AddQuartz(options =>
+        {
+            options.AddJob<DeprovisionUserIdpJob>(c => c
+                .StoreDurably()
+                .WithIdentity(DeprovisionUserIdpJob.Name));
+
+            options.AddTrigger(t => t
+                .ForJob(DeprovisionUserIdpJob.Name)
+                .WithIdentity($"{DeprovisionUserIdpJob.Name}.trigger")
+                .WithSimpleSchedule(s => s
+                    .WithIntervalInHours(1)
+                    .RepeatForever())
+                .StartNow());
+        });
+
+        builder.Services.AddQuartzHostedService(options =>
+        {
+            options.WaitForJobsToComplete = true;
+        });
     }
 }

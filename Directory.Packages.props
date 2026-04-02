@@ -41,6 +41,9 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.0" />
     <PackageVersion Include="Polly.Core" Version="8.6.6" />
     <PackageVersion Include="Polly.Extensions" Version="8.6.6" />
+    <PackageVersion Include="Quartz" Version="3.15.1" />
+    <PackageVersion Include="Quartz.Extensions.Hosting" Version="3.15.1" />
+    <PackageVersion Include="Quartz.Serialization.SystemTextJson" Version="3.15.1" />
     <PackageVersion Include="Respawn" Version="7.0.0" />
     <PackageVersion Include="Scalar.AspNetCore" Version="2.13.17" />
     <PackageVersion Include="Scrutor" Version="7.0.0" />

@@ -59,6 +59,129 @@ public sealed class UserTests
         // Assert
         result.Error.ShouldMatch(User.Errors.UserAlreadyTeamMember(sut.Id, teamId));
     }
+
+    [TestMethod]
+    public void AddTeamMembership_PendingDeprovisioning_CancelsDeprovisioning()
+    {
+        // Arrange — simulate a user whose last membership was removed (has a deprovisioning deadline)
+        var teamId = TeamId.New();
+
+        var sut = new UserBuilder()
+            .WithMembership(teamId)
+            .Build();
+
+        sut.RemoveTeamMembership(teamId);
+        sut.DeprovisionAfter.ShouldNotBeNull();
+
+        // Act — re-add the membership
+        var secondTeamId = TeamId.New();
+        sut.AddTeamMembership(secondTeamId, TeamMembershipRole.Crew);
+
+        // Assert
+        sut.DeprovisionAfter.ShouldBeNull();
+    }
+
+    [TestMethod]
+    public void ChangeTeamMembershipRole_ExistingMembership_UpdatesRole()
+    {
+        // Arrange
+        var teamId = TeamId.New();
+
+        var sut = new UserBuilder()
+            .WithMembership(teamId, TeamMembershipRole.Crew)
+            .Build();
+
+        // Act
+        sut.ChangeTeamMembershipRole(teamId, TeamMembershipRole.Owner);
+
+        // Assert
+        sut.Memberships.ShouldHaveSingleItem().Role.ShouldBe(TeamMembershipRole.Owner);
+    }
+
+    [TestMethod]
+    public void ChangeTeamMembershipRole_UserNotMember_ThrowsException()
+    {
+        // Arrange
+        var sut = new UserBuilder().Build();
+        var teamId = TeamId.New();
+
+        // Act
+        var result = ErrorResult.Capture(() => sut.ChangeTeamMembershipRole(teamId, TeamMembershipRole.Owner));
+
+        // Assert
+        result.Error.ShouldMatch(User.Errors.UserNotTeamMember(sut.Id, teamId));
+    }
+
+    [TestMethod]
+    public void RemoveTeamMembership_LastMembership_SetsDeprovisionAfter()
+    {
+        // Arrange
+        var teamId = TeamId.New();
+
+        var sut = new UserBuilder()
+            .WithMembership(teamId, TeamMembershipRole.Crew)
+            .Build();
+
+        // Act
+        sut.RemoveTeamMembership(teamId);
+
+        // Assert
+        sut.DeprovisionAfter.ShouldNotBeNull();
+        sut.DeprovisionAfter.Value.ShouldBeGreaterThan(DateTimeOffset.UtcNow);
+    }
+
+    [TestMethod]
+    public void RemoveTeamMembership_NotLastMembership_DoesNotSetDeprovisionAfter()
+    {
+        // Arrange
+        var teamId1 = TeamId.New();
+        var teamId2 = TeamId.New();
+
+        var sut = new UserBuilder()
+            .WithMembership(teamId1, TeamMembershipRole.Crew)
+            .WithMembership(teamId2, TeamMembershipRole.Owner)
+            .Build();
+
+        // Act
+        sut.RemoveTeamMembership(teamId1);
+
+        // Assert
+        sut.DeprovisionAfter.ShouldBeNull();
+    }
+
+    [TestMethod]
+    public void RemoveTeamMembership_UserNotMember_ThrowsException()
+    {
+        // Arrange
+        var sut = new UserBuilder().Build();
+        var teamId = TeamId.New();
+
+        // Act
+        var result = ErrorResult.Capture(() => sut.RemoveTeamMembership(teamId));
+
+        // Assert
+        result.Error.ShouldMatch(User.Errors.UserNotTeamMember(sut.Id, teamId));
+    }
+
+    [TestMethod]
+    public void CancelDeprovisioning_WithPendingDeprovisioning_ClearsDeprovisionAfter()
+    {
+        // Arrange
+        var teamId = TeamId.New();
+
+        var sut = new UserBuilder()
+            .WithMembership(teamId)
+            .Build();
+
+        sut.RemoveTeamMembership(teamId);
+        sut.DeprovisionAfter.ShouldNotBeNull();
+
+        // Act
+        sut.CancelDeprovisioning();
+
+        // Assert
+        sut.DeprovisionAfter.ShouldBeNull();
+    }
     
     [TestMethod]
     public void AssignExternalUserId_NotYetAssigned_SetsExternalUserId()

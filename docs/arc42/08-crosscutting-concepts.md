@@ -238,3 +238,63 @@ Service defaults (`Admitto.ServiceDefaults`) configure:
 - Health checks at `/health` and `/alive`
 - Request timeouts
 - Output caching
+
+## 8.12 Scheduled jobs (Quartz.NET)
+
+Background work that cannot be expressed as a domain or integration event — for example, polling for records whose grace period has expired — is implemented as a Quartz `IJob`.
+
+### Capability gating
+
+Jobs are registered only in hosts that carry the `HostCapability.Jobs` flag. The `[RequiresCapability(HostCapability.Jobs)]` attribute on a job class gates its DI registration in the module's `AddOrganizationJobs()` helper, which is only called when `capabilities.HasFlag(HostCapability.Jobs)` is true.
+
+The Worker host (`Admitto.Worker`) sets this flag. The API host does not.
+
+### Transaction ownership
+
+A Quartz job is the **transaction boundary owner** for its work, exactly as an HTTP endpoint is for a request. The job injects the keyed `IUnitOfWork` for its module and calls `SaveChangesAsync` after each logical unit of work:
+
+```csharp
+[RequiresCapability(HostCapability.Jobs)]
+[DisallowConcurrentExecution]
+public sealed class DeprovisionUserIdpJob(
+    IOrganizationWriteStore writeStore,
+    IExternalUserDirectory userDirectory,
+    [FromKeyedServices(OrganizationModuleKey.Value)] IUnitOfWork unitOfWork,
+    ILogger<DeprovisionUserIdpJob> logger)
+    : IJob
+{
+    public async Task Execute(IJobExecutionContext context)
+    {
+        var users = await writeStore.Users
+            .Where(u => u.DeprovisionAfter != null && u.DeprovisionAfter <= DateTimeOffset.UtcNow)
+            .ToListAsync(context.CancellationToken);
+
+        foreach (var user in users)
+        {
+            // ... mutate user ...
+            await unitOfWork.SaveChangesAsync(context.CancellationToken);
+        }
+    }
+}
+```
+
+Committing per record (not per batch) limits the blast radius of failures and allows partial progress.
+
+### Concurrency control
+
+`[DisallowConcurrentExecution]` prevents a second trigger from starting while the previous execution is still running. This is always applied to jobs that mutate database state.
+
+### Scheduling
+
+Jobs are registered with an in-memory trigger (no persistent Quartz store). The trigger fires on an interval appropriate for the SLA of the business operation — hourly for IdP deprovisioning. The schedule is defined alongside the job registration in the module's `DependencyInjection.cs`.
+
+### Testing jobs
+
+Because jobs own the transaction boundary, they are tested at the integration level (like endpoints), not the unit level. The test:
+
+1. Seeds the database state that should trigger the job (e.g. a user with `DeprovisionAfter` in the past via raw SQL, bypassing the domain's grace-period constraint).
+2. Creates the job with the real DbContext and NSubstitute mocks for external services.
+3. Supplies a substitute `IJobExecutionContext` so the job's `CancellationToken` is bound to the test's token.
+4. Executes the job and asserts the resulting database state.
+
+A thin `DbContextUnitOfWork` adapter is used in tests to forward `SaveChangesAsync` to the underlying `DbContext`, replacing the keyed DI service that is not available in the test context.

@@ -169,6 +169,10 @@ namespace Amolenk.Admitto.Module.Organization.Infrastructure.Persistence.Migrati
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
+                    b.Property<DateTimeOffset?>("DeprovisionAfter")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deprovision_after");
+
                     b.Property<string>("EmailAddress")
                         .IsRequired()
                         .HasMaxLength(320)

@@ -1,35 +1,19 @@
-// using Amolenk.Admitto.Application.Common.Messaging;
-// using Amolenk.Admitto.Worker;
-// using Quartz;
+using Amolenk.Admitto.Module.Organization.Application;
+using Amolenk.Admitto.Module.Shared.Application.Messaging;
+using Amolenk.Admitto.Module.Shared.Infrastructure;
 
 var builder = Host.CreateApplicationBuilder(args);
 
 // Add default services.
 builder.AddServiceDefaults();
 
-// Add application services.
-// builder.Services
-    // .AddApplicationCommandHandlers(HostCapability.Email)
-    // .AddApplicationApplicationEventHandlers()
-    // .AddApplicationEventualDomainEventHandlers()
-    // .AddApplicationTransactionalDomainEventHandlers()
-    // .AddApplicationJobs();
+// Add Organization module services (with Jobs capability to register Quartz jobs).
+builder
+    .AddOrganizationApplicationServices(HostCapability.Jobs)
+    .AddOrganizationInfrastructureServices()
+    .AddOrganizationIdentityServices();
 
-// Add Quartz.NET hosted service.
-// builder.Services.AddQuartzHostedService(options => { options.WaitForJobsToComplete = true; });
-
-// Add email services.
-// builder.Services
-//     .AddApplicationEmailServices()
-//     .AddInfrastructureEmailServices();
-
-// Add message queue processor for processing internal messages.
-// builder.Services
-//     .AddHostedService<MessageQueueProcessor>()
-//     .AddOptions<MessageQueueProcessorOptions>()
-//     .Bind(builder.Configuration.GetSection(MessageQueueProcessorOptions.SectionName))
-//     .ValidateDataAnnotations()
-//     .ValidateOnStart();
+builder.Services.AddSharedInfrastructureServices();
 
 var host = builder.Build();
 host.Run();

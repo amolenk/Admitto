@@ -20,6 +20,9 @@ public class UserEntityConfiguration : IEntityTypeConfiguration<User>
         builder.Property(e => e.ExternalUserId)
             .HasColumnName("external_user_id");
 
+        builder.Property(e => e.DeprovisionAfter)
+            .HasColumnName("deprovision_after");
+
         builder.Property(e => e.EmailAddress)
             .HasColumnName("email_address")
             .IsRequired()

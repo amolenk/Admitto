@@ -7,7 +7,8 @@ namespace Amolenk.Admitto.Api.Tests.Infrastructure.Hosting;
 public sealed record EndToEndTestEnvironment(
     DatabaseTestContext<OrganizationDbContext> OrganizationDatabase,
     // DatabaseTestContext<RegistrationsDbContext> RegistrationsDatabase,
-    HttpClient ApiClient)
+    HttpClient ApiClient,
+    HttpClient BobApiClient)
 {
     public static async ValueTask<EndToEndTestEnvironment> CreateAsync(
         EndToEndTestAppHost appHost,
@@ -29,9 +30,10 @@ public sealed record EndToEndTestEnvironment(
         //         databaseConnectionString,
         //         cancellationToken);
 
-        var apiClient = appHost.Application.Services.GetRequiredService<IHttpClientFactory>()
-            .CreateClient("AdmittoApi");
+        var factory = appHost.Application.Services.GetRequiredService<IHttpClientFactory>();
+        var apiClient = factory.CreateClient("AdmittoApi");
+        var bobApiClient = factory.CreateClient("AdmittoApiBob");
 
-        return new EndToEndTestEnvironment(organizationDatabase, apiClient);
+        return new EndToEndTestEnvironment(organizationDatabase, apiClient, bobApiClient);
     }
 }

@@ -41,6 +41,23 @@ public sealed class EndToEndTestAppHost() : DistributedApplicationFactory(typeof
 
                 return new AccessTokenHandler(accessTokenOptions, keycloakEndpoint);
             });
+
+        applicationBuilder.Services.AddHttpClient("AdmittoApiBob")
+            .ConfigureHttpClient(client => { client.BaseAddress = Application.GetEndpoint("api"); })
+            .AddHttpMessageHandler(() =>
+            {
+                var keycloakEndpoint = Application.GetEndpoint("keycloak").ToString();
+
+                var accessTokenOptions = new AccessTokenOptions
+                {
+                    TokenPath = "/realms/admitto/protocol/openid-connect/token",
+                    ClientId = "admitto-test-runner",
+                    Username = "bob",
+                    Password = "bob"
+                };
+
+                return new AccessTokenHandler(accessTokenOptions, keycloakEndpoint);
+            });
     }
 
     protected override void OnBuilt(DistributedApplication application)

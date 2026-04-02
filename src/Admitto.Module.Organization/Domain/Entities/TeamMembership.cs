@@ -21,4 +21,9 @@ public class TeamMembership : Entity<TeamId>
         new(
             teamId,
             role);
+
+    public void ChangeRole(TeamMembershipRole newRole)
+    {
+        Role = newRole;
+    }
 }

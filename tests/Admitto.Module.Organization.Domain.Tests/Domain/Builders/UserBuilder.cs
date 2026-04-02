@@ -8,6 +8,7 @@ public class UserBuilder
     public static readonly EmailAddress DefaultEmail = EmailAddress.From("test@example.com");
     
     private EmailAddress _emailAddress = DefaultEmail;
+    private readonly List<(TeamId TeamId, TeamMembershipRole Role)> _memberships = [];
     
     public UserBuilder WithEmailAddress(EmailAddress emailAddress)
     {
@@ -15,8 +16,21 @@ public class UserBuilder
         return this;
     }
 
+    public UserBuilder WithMembership(TeamId teamId, TeamMembershipRole role = TeamMembershipRole.Crew)
+    {
+        _memberships.Add((teamId, role));
+        return this;
+    }
+
     public User Build()
     {
-        return User.Create(_emailAddress);
+        var user = User.Create(_emailAddress);
+
+        foreach (var (teamId, role) in _memberships)
+        {
+            user.AddTeamMembership(teamId, role);
+        }
+
+        return user;
     }
 }

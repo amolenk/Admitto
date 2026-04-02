@@ -334,6 +334,15 @@ app.Configure(config =>
 
                     member.AddCommand<AddTeamMemberCommand>("add")
                         .WithDescription("Add a team member");
+
+                    member.AddCommand<ListTeamMembersCommand>("list")
+                        .WithDescription("List team members");
+
+                    member.AddCommand<UpdateTeamMemberCommand>("update")
+                        .WithDescription("Update a team member's role");
+
+                    member.AddCommand<RemoveTeamMemberCommand>("remove")
+                        .WithDescription("Remove a team member");
                 });
 
             team.AddCommand<ShowTeamCommand>("show")
