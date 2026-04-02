@@ -2,6 +2,7 @@ using Amolenk.Admitto.Module.Organization.Tests.Application.Infrastructure;
 using Amolenk.Admitto.Module.Organization.Application.UseCases.TeamManagement.ArchiveTeam;
 using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
+using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Should = Shouldly.Should;
 
 namespace Amolenk.Admitto.Module.Organization.Tests.Application.UseCases.TeamManagement.ArchiveTeam;
@@ -72,7 +73,7 @@ public sealed class ArchiveTeamTests(TestContext testContext) : AspireIntegratio
         var exception = await Should.ThrowAsync<BusinessRuleViolationException>(
             async () => await sut.HandleAsync(command, testContext.CancellationToken));
 
-        exception.Error.Code.ShouldBe("team.has_active_events");
+        exception.Error.ShouldMatch(ArchiveTeamHandler.Errors.HasActiveEvents);
 
         // Verify the team remains active
         await Environment.Database.WithContextAsync(async dbContext =>

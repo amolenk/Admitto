@@ -50,13 +50,17 @@ internal sealed class ArchiveTeamHandler(IOrganizationWriteStore writeStore)
 
         if (hasActiveEvents)
         {
-            throw new BusinessRuleViolationException(
-                new Error(
-                    "team.has_active_events",
-                    "The team has active ticketed events.",
-                    Type: ErrorType.Validation));
+            throw new BusinessRuleViolationException(Errors.HasActiveEvents);
         }
 
         team.Archive(now);
+    }
+
+    internal static class Errors
+    {
+        public static Error HasActiveEvents =>
+            new("team.has_active_events",
+                "The team has active ticketed events.",
+                Type: ErrorType.Validation);
     }
 }

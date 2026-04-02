@@ -127,6 +127,25 @@ Errors are defined as close as possible to the code that throws them. Three tier
 5. Visibility is `internal`, not `public`, so errors stay testable via `InternalsVisibleTo` without leaking to other modules.
 6. Never add an error to an entity for a rule that the entity does not validate itself.
 
+### Test assertion convention
+
+Tests assert on errors using `ShouldMatch(expectedErrorObject)`, **never** via raw string code comparison:
+
+```csharp
+// ❌ Brittle — breaks silently on rename, only checks code
+exception.Error.Code.ShouldBe("team.has_active_events");
+
+// ✅ Correct — compile-time safe, checks Code + Type + Message + Details in one call
+exception.Error.ShouldMatch(ArchiveTeamHandler.Errors.HasActiveEvents);
+```
+
+`ShouldMatch` verifies `Code`, `Type`, `Message`, and `Details` in a single assertion.
+Referencing the static error object instead of an inline string means a rename of the error
+class or code is caught at compile time.
+
+The static error object is `internal`, so test projects require `InternalsVisibleTo` access
+(already configured for all module test projects).
+
 ## 8.8 Persistence
 
 - EF Core `DbContext` per module, each targeting a separate PostgreSQL schema.
