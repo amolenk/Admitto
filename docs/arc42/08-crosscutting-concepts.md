@@ -28,7 +28,63 @@ Endpoints declare requirements with `policy.RequireAdminRole()` or `policy.Requi
 
 `OrganizationScope` is a bindable record that resolves team and event identity from URL route parameters. It implements ASP.NET Core's `BindAsync` pattern, so endpoints can inject it directly. Resolution goes through `IOrganizationScopeResolver`, which queries the Organization facade and caches the result per request.
 
-## 8.5 Messaging and outbox
+## 8.5 Use case slice layout
+
+Each use case lives in a vertical slice folder under `Application/UseCases/{FeatureName}/{SliceName}/`. Feature group naming mirrors the aggregate being modified: `TeamManagement/`, `TicketedEvents/`, `Users/`.
+
+### Standard HTTP-exposed slice
+
+```
+UseCases/TeamManagement/
+  CreateTeam/
+    CreateTeamCommand.cs
+    CreateTeamHandler.cs
+    AdminApi/
+      CreateTeamHttpRequest.cs
+      CreateTeamHttpEndpoint.cs
+      CreateTeamValidator.cs
+```
+
+| File | Purpose | Required |
+| :--- | :------- | :------- |
+| `{Slice}Command.cs` / `{Slice}Query.cs` | Immutable record sent via `IMediator` | Always |
+| `{Slice}Handler.cs` | Business logic; must not inject or commit UoW | Always |
+| `AdminApi/{Slice}HttpEndpoint.cs` | Minimal API endpoint; owns the UoW commit | When HTTP-exposed |
+| `AdminApi/{Slice}HttpRequest.cs` | Inbound DTO with `ToCommand()` helper | When HTTP-exposed |
+| `AdminApi/{Slice}Validator.cs` | FluentValidation validator for the request DTO | When HTTP-exposed |
+| `EventHandlers/{Event}DomainEventHandler.cs` | Translates a domain event into the slice command | When triggered by domain event |
+
+### Domain-event-triggered (internal) slice
+
+Slices triggered by domain events omit the `AdminApi/` subfolder. The event handler lives in `EventHandlers/` inside the slice folder and is kept intentionally **dumb** — it only translates the event into the slice's command and dispatches it via `IMediator`. All business logic stays in the command handler.
+
+```
+UseCases/TeamManagement/
+  RegisterTicketedEventCreation/
+    RegisterTicketedEventCreationCommand.cs
+    RegisterTicketedEventCreationHandler.cs   ← business logic
+    EventHandlers/
+      TicketedEventCreatedDomainEventHandler.cs   ← translates event → command
+```
+
+The domain event handler lives in the feature folder of the aggregate that **reacts** (not the feature that produced the event).
+
+### HTTP endpoint registration
+
+All admin endpoints are wired in `{Module}ApiEndpoints.cs` via `MapXxx()` extension methods. Groups mirror the URL hierarchy:
+
+```csharp
+var teams = group.MapGroup("/teams");
+teams.MapCreateTeam();   // POST /admin/teams
+teams.MapGetTeams();     // GET  /admin/teams
+
+var team = teams.MapGroup("/{teamSlug}");
+team.MapGetTeam();       // GET  /admin/teams/{teamSlug}
+team.MapUpdateTeam();    // PUT  /admin/teams/{teamSlug}
+team.MapArchiveTeam();   // POST /admin/teams/{teamSlug}/archive
+```
+
+## 8.6 Messaging and outbox
 
 Three event tiers, each with distinct scope:
 
@@ -42,7 +98,7 @@ Three event tiers, each with distinct scope:
 
 Each module declares a `MessagePolicy` that maps domain events to module and/or integration events. The `DomainEventsInterceptor` calls the policy during `SaveChanges`; mapped events are written to the outbox table in the same transaction. `OutboxDispatcher` attempts best-effort dispatch immediately, with background retry via the Worker host.
 
-## 8.6 Error handling
+## 8.7 Error handling
 
 ### Pipeline
 
@@ -71,76 +127,18 @@ Errors are defined as close as possible to the code that throws them. Three tier
 5. Visibility is `internal`, not `public`, so errors stay testable via `InternalsVisibleTo` without leaking to other modules.
 6. Never add an error to an entity for a rule that the entity does not validate itself.
 
-## 8.7 Persistence
+## 8.8 Persistence
 
 - EF Core `DbContext` per module, each targeting a separate PostgreSQL schema.
 - `AuditInterceptor` populates `CreatedAt`, `LastChangedAt`, `LastChangedBy` on auditable entities.
 - `DomainEventsInterceptor` dispatches domain events and writes outbox messages during `SaveChanges`.
 - Shared value converters for kernel types (`Slug`, `EmailAddress`, `TeamId`, etc.) in `Admitto.Module.Shared` (under `Infrastructure/`).
 
-## 8.8 Observability
+### EF Core query rules
 
-Service defaults (`Admitto.ServiceDefaults`) configure:
+Several EF-specific pitfalls to be aware of:
 
-- OpenTelemetry tracing and metrics
-- Health checks at `/health` and `/alive`
-- Request timeouts
-- Output caching
-
-## 8.9 Vertical slice structure
-
-Each use case lives in its own feature folder under `Application/UseCases/{Feature}/{Slice}/`. The table below shows the canonical files for an admin-facing command slice and which are optional.
-
-| File | Purpose | Required |
-| :--- | :------- | :------- |
-| `{Slice}Command.cs` | Immutable record sent via `IMediator.SendAsync` | Always |
-| `{Slice}Handler.cs` | Business logic; must not inject or commit `IUnitOfWork` | Always |
-| `AdminApi/{Slice}HttpEndpoint.cs` | Minimal API endpoint; owns the UoW commit | When HTTP-exposed |
-| `AdminApi/{Slice}HttpRequest.cs` | Inbound DTO with `ToCommand()` helper | When HTTP-exposed |
-| `AdminApi/{Slice}Validator.cs` | FluentValidation validator for the request DTO | When HTTP-exposed |
-| `EventHandlers/{Event}DomainEventHandler.cs` | Translates a domain event into the command and dispatches it | When triggered by a domain event |
-
-Feature group naming mirrors the aggregate it modifies: `TeamManagement/`, `TicketedEvents/`, `Users/`.
-
-### Domain-event-triggered slices
-
-When a slice is triggered by a domain event rather than an HTTP request, the event handler lives in `EventHandlers/` inside the slice folder and is kept intentionally dumb — it translates the event into the slice's command and dispatches it via `IMediator`:
-
-```
-TeamManagement/
-  RegisterTicketedEventCreation/
-    EventHandlers/
-      TicketedEventCreatedDomainEventHandler.cs   ← translates event → command
-    RegisterTicketedEventCreationCommand.cs
-    RegisterTicketedEventCreationHandler.cs        ← business logic
-```
-
-The owning aggregate's feature folder hosts the domain event handler (the aggregate that *reacts*), not the feature folder that *produced* the event.
-
-### HTTP endpoint registration
-
-All admin endpoints are wired in `{Module}ApiEndpoints.cs` via `MapXxx()` extension methods. Groups mirror the URL hierarchy:
-
-```csharp
-// /admin/teams
-var teams = group.MapGroup("/teams");
-teams.MapCreateTeam();     // POST /
-teams.MapGetTeams();       // GET  /
-
-// /admin/teams/{teamSlug}
-var team = teams.MapGroup("/{teamSlug}");
-team.MapGetTeam();         // GET  /
-team.MapUpdateTeam();      // PUT  /
-team.MapArchiveTeam();     // POST /archive
-```
-
-## 8.10 EF Core query rules
-
-Several EF-specific gotchas discovered during development:
-
-### Computed properties are not translatable
-
-C# computed properties (e.g. `IsArchived => ArchivedAt.HasValue`) cannot be translated to SQL. LINQ queries must reference the backing column directly:
+**Computed properties are not translatable.** C# computed properties (e.g. `IsArchived => ArchivedAt.HasValue`) cannot be translated to SQL. LINQ queries must reference the backing column directly:
 
 ```csharp
 // ❌ Runtime exception — EF cannot translate
@@ -150,9 +148,7 @@ C# computed properties (e.g. `IsArchived => ArchivedAt.HasValue`) cannot be tran
 .Where(t => t.ArchivedAt == null)
 ```
 
-### Value object comparisons in LINQ
-
-EF value converters handle persistence, but LINQ predicates must use the full value object, not the inner primitive:
+**Value object comparisons in LINQ.** EF value converters handle persistence, but LINQ predicates must use the full value object, not the inner primitive:
 
 ```csharp
 // ❌ Not translatable
@@ -162,36 +158,64 @@ EF value converters handle persistence, but LINQ predicates must use the full va
 .Where(t => t.Id == TeamId.From(guid))
 ```
 
-### AsNoTracking for guard queries
-
-Queries used only as precondition checks (e.g. "does an active event exist?") should use `.AsNoTracking()` to avoid polluting the EF change tracker with entities that will not be modified.
+**Use `.AsNoTracking()` for guard queries.** Queries used only as precondition checks (e.g. "does an active event exist?") should call `.AsNoTracking()` to avoid polluting the change tracker with entities that will not be modified.
 
 ### Optimistic concurrency
 
 The `Version` property on all aggregates (`[Timestamp]`, `uint`) is the EF row-version concurrency token. `DbSetExtensions.GetAsync(key, expectedVersion?)` validates the token on load and throws `ConcurrencyConflictError` on mismatch. Clients read the current version when fetching a resource and supply it on mutating operations.
 
-## 8.11 Domain event dispatch — in-process pattern
+### Write-amplifier pattern
 
-`DomainEventsInterceptor` fires inside `SavingChangesAsync` (before the actual write), so domain event handlers run **within the same database transaction** as the triggering aggregate. This guarantees atomicity.
+When one aggregate must protect against concurrent modifications triggered by another aggregate, store a monotonically-incrementing counter on the first aggregate and increment it whenever the second is modified. This forces a write to the first aggregate's row, advancing its `Version` token, so any concurrent operation holding the old token fails at commit.
+
+Example: `Team.TicketedEventScopeVersion` is incremented by `RegisterTicketedEventCreationHandler` each time a `TicketedEvent` is created under the team. This closes the TOCTOU window between the active-events guard in `ArchiveTeamHandler` and its commit: if a ticketed event is created concurrently, the team row changes, and the archive's optimistic concurrency check fails.
+
+Note: `TicketedEventScopeVersion` is a monotonically-increasing counter, not a count of currently-active events. It never decrements.
+
+## 8.9 Domain event dispatch — in-process pattern
+
+`DomainEventsInterceptor` fires inside `SavingChangesAsync` (before the actual write), so domain event handlers run **within the same database transaction** as the triggering aggregate. This guarantees atomicity between the event and its side effects.
 
 ### EF change tracker reuse
 
-When a command handler loads an aggregate and a domain event handler (running during save) loads the same aggregate, EF returns the already-tracked instance from the change tracker. No extra database round-trip occurs.
-
-### Write-amplifier pattern for concurrency tokens
-
-When one aggregate must protect against concurrent modifications triggered by another aggregate, increment a dedicated counter on the first aggregate whenever the second is modified. This forces a write to the first aggregate's row, advancing its EF `Version` token, so any concurrent operation holding the old token fails at commit.
-
-Example: `Team.TicketedEventScopeVersion` is incremented by `RegisterTicketedEventCreationHandler` whenever a `TicketedEvent` is created under the team. This closes the TOCTOU window between the active-events guard in `ArchiveTeamHandler` and its commit.
+When a command handler loads an aggregate and a domain event handler (running during save) loads the same aggregate by the same key, EF returns the already-tracked instance from the change tracker — no extra database round-trip.
 
 ### Fast-fail guard rule
 
-Domain event handlers are not executed in the test `DatabaseTestContext` (no `DomainEventsInterceptor` registered). Business rules that need test coverage must therefore be enforced as an explicit guard in the command handler *before* the save, not solely in the domain event handler. The domain event handler provides defence in depth in production; the handler guard provides testability.
+`DatabaseTestContext` (used in integration tests) only registers `AuditInterceptor`. `DomainEventsInterceptor` is **not** registered, so domain event handlers do not fire during handler-level tests.
 
-## 8.12 Handler and event handler DI registration
+Business rules that need test coverage must be enforced as an explicit guard in the command handler *before* the save, in addition to any enforcement inside a domain event handler. The command handler guard provides testability; the domain event handler provides defence in depth in production.
 
-Command handlers, domain event handlers, module event handlers, and integration event handlers are all auto-discovered by assembly scan (`Scrutor`) — no manual registrations required. The scan uses `AssignableTo(typeof(ICommandHandler<>))` (and equivalents for other handler types) to find all concrete implementations regardless of folder.
+```csharp
+// In CreateTicketedEventHandler — explicit guard so SC-015 is testable
+var team = await writeStore.Teams.GetAsync(TeamId.From(command.TeamId), cancellationToken);
+team.EnsureNotArchived();   // fast-fail here
 
-**Rule:** Do not register handlers manually in `DependencyInjection.cs`. Place the class in any folder within the module assembly and implement the correct interface.
+// TicketedEvent.Create() raises TicketedEventCreatedDomainEvent,
+// which triggers RegisterTicketedEventCreationHandler during SaveChanges —
+// that handler also calls EnsureNotArchived() inside RegisterTicketedEventCreation(),
+// providing defence in depth in production at no extra DB cost (change tracker reuse).
+```
 
-**Caveat:** The scan for domain/module/integration event handlers uses `AssignableTo(typeof(IXxxHandler<>))`, *not* `Where(t => t.IsGenericType …)`. The latter only matches open generic types (never a concrete handler) and is a known pitfall if the scan helper is extended.
+## 8.10 Handler and event handler DI registration
+
+Command handlers, query handlers, domain event handlers, module event handlers, and integration event handlers are all auto-discovered by Scrutor assembly scan. No manual registration is needed.
+
+| Handler type | Registration method | Scrutor selector |
+| :----------- | :------------------ | :--------------- |
+| `ICommandHandler<T>` / `ICommandHandler<T,R>` | `AddCommandHandlersFromAssembly` | `AssignableTo<ICommandHandler>()` (marker interface) |
+| `IQueryHandler<T,R>` | `AddQueryHandlersFromAssembly` | `AssignableTo(typeof(IQueryHandler<,>))` |
+| `IDomainEventHandler<T>` | `AddDomainEventHandlersFromAssembly` | `AssignableTo(typeof(IDomainEventHandler<>))` |
+| `IModuleEventHandler<T>` | `AddModuleEventHandlersFromAssembly` | `AssignableTo(typeof(IModuleEventHandler<>))` |
+| `IIntegrationEventHandler<T>` | `AddIntegrationEventHandlersFromAssembly` | `AssignableTo(typeof(IIntegrationEventHandler<>))` |
+
+**Rule:** Place the handler class anywhere in the module assembly and implement the correct interface. Do not use `Where(t => t.IsGenericType …)` as a filter — this matches only open generic types and never selects a concrete handler.
+
+## 8.11 Observability
+
+Service defaults (`Admitto.ServiceDefaults`) configure:
+
+- OpenTelemetry tracing and metrics
+- Health checks at `/health` and `/alive`
+- Request timeouts
+- Output caching
