@@ -16,23 +16,13 @@ public static class StringValueObject
         where TValueObject : IStringValueObject
     {
         if (string.IsNullOrWhiteSpace(value))
-            return Errors.Empty;
+            return CommonErrors.TextEmpty;
 
         var normalized = value.Trim();
 
-        if (normalized.Length > maxLength) return Errors.TooLong(maxLength);
+        if (normalized.Length > maxLength) return CommonErrors.TextTooLong(maxLength);
 
         return ValidationResult<TValueObject>.Success(factory(normalized));
     }
-    
-    public static class Errors
-    {
-        public static readonly Error Empty = new(
-            "text.empty",
-            "Text is required.");
 
-        public static Error TooLong(int maxLength) => new(
-            "text.too_long",
-            $"Text must be at most {maxLength} character(s).");
-    }
 }

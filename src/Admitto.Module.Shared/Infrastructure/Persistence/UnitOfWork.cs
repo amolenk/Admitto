@@ -17,9 +17,9 @@ public sealed class UnitOfWork<TDbContext>(
     {
         if (dbContext.ChangeTracker.HasChanges())
         {
-            
+
         }
-        
+
         try
         {
             var result = await dbContext.SaveChangesAsync(cancellationToken);
@@ -45,7 +45,7 @@ public sealed class UnitOfWork<TDbContext>(
         }
         catch (DbUpdateConcurrencyException)
         {
-            throw new BusinessRuleViolationException(ConcurrencyConflictError.Create());
+            throw new BusinessRuleViolationException(CommonErrors.ConcurrencyConflict());
         }
     }
 }

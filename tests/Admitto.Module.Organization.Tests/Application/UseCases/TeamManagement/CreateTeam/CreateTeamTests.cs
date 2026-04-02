@@ -53,10 +53,10 @@ public sealed class CreateTeamTests(TestContext testContext) : AspireIntegration
 
         // Act
         await sut.HandleAsync(command, testContext.CancellationToken);
-        
+
         var exception = Should.Throw<DbUpdateException>(
             () => Environment.Database.Context.SaveChangesAsync(testContext.CancellationToken));
-        
+
         // Assert
         exception.InnerException
             .ShouldBeAssignableTo<PostgresException>()?
@@ -91,6 +91,6 @@ public sealed class CreateTeamTests(TestContext testContext) : AspireIntegration
         var exception = await Should.ThrowAsync<BusinessRuleViolationException>(
             async () => await sut.HandleAsync(command, testContext.CancellationToken));
 
-        exception.Error.ShouldMatch(StringValueObject.Errors.Empty);
+        exception.Error.ShouldMatch(CommonErrors.TextEmpty);
     }
 }

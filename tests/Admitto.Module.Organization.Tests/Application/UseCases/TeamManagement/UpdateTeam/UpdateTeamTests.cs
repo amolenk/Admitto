@@ -72,7 +72,7 @@ public sealed class UpdateTeamTests(TestContext testContext) : AspireIntegration
         var exception = await Should.ThrowAsync<BusinessRuleViolationException>(
             async () => await sut.HandleAsync(command, testContext.CancellationToken));
 
-        exception.Error.ShouldMatch(ConcurrencyConflictError.Create(wrongVersion, fixture.TeamVersion));
+        exception.Error.ShouldMatch(CommonErrors.ConcurrencyConflict(wrongVersion, fixture.TeamVersion));
     }
 
     [TestMethod]

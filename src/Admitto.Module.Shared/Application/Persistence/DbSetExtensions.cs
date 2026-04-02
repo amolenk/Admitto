@@ -33,6 +33,6 @@ public static class DbSetExtensions
         }
 
         throw new BusinessRuleViolationException(
-            ConcurrencyConflictError.Create(expectedVersion.Value, entity.Version));
+          CommonErrors.ConcurrencyConflict(expectedVersion.Value, entity.Version));
     }
 }
