@@ -3,10 +3,6 @@
 ## Scope
 This file applies to `/src`.
 
-## First Reference
-- Read `/docs/README.md` before modifying source code.
-- Follow `/docs/README.md` section `5.3 Architecture Pattern Catalog`.
-
 ## HTTP and Use Case Rules
 - Keep minimal API endpoints feature-sliced (`UseCases/.../*HttpEndpoint.cs`).
 - Use `OrganizationScope` for route-derived organization context where applicable.
