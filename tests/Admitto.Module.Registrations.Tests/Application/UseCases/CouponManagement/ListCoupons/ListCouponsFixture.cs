@@ -10,7 +10,7 @@ internal sealed class ListCouponsFixture
     private bool _seedCoupons;
 
     public TicketedEventId EventId { get; } = TicketedEventId.New();
-    public TicketTypeId TicketTypeId { get; } = TicketTypeId.New();
+    public string TicketTypeSlug { get; } = "general-admission";
 
     private ListCouponsFixture()
     {
@@ -34,8 +34,8 @@ internal sealed class ListCouponsFixture
         var activeCoupon = new CouponBuilder()
             .WithEventId(EventId)
             .WithEmail(EmailAddress.From("active@example.com"))
-            .WithRequestedTicketTypeIds(TicketTypeId)
-            .WithAvailableTicketTypes(new TicketTypeInfo(TicketTypeId, IsCancelled: false))
+            .WithRequestedTicketTypeSlugs(TicketTypeSlug)
+            .WithAvailableTicketTypes(new TicketTypeInfo(TicketTypeSlug, IsCancelled: false))
             .WithExpiresAt(DateTimeOffset.UtcNow.AddDays(30))
             .Build();
 
@@ -43,8 +43,8 @@ internal sealed class ListCouponsFixture
         var revokedCoupon = new CouponBuilder()
             .WithEventId(EventId)
             .WithEmail(EmailAddress.From("revoked@example.com"))
-            .WithRequestedTicketTypeIds(TicketTypeId)
-            .WithAvailableTicketTypes(new TicketTypeInfo(TicketTypeId, IsCancelled: false))
+            .WithRequestedTicketTypeSlugs(TicketTypeSlug)
+            .WithAvailableTicketTypes(new TicketTypeInfo(TicketTypeSlug, IsCancelled: false))
             .WithExpiresAt(DateTimeOffset.UtcNow.AddDays(30))
             .Build();
         revokedCoupon.Revoke();

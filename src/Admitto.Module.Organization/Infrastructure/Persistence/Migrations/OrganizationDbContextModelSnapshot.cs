@@ -122,6 +122,12 @@ namespace Amolenk.Admitto.Module.Organization.Infrastructure.Persistence.Migrati
                         .HasColumnType("character varying(64)")
                         .HasColumnName("slug");
 
+                    b.Property<int>("Status")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("status");
+
                     b.Property<Guid>("TeamId")
                         .HasColumnType("uuid")
                         .HasColumnName("team_id");
@@ -218,6 +224,9 @@ namespace Amolenk.Admitto.Module.Organization.Infrastructure.Persistence.Migrati
 
                             b1.Property<int?>("Capacity")
                                 .HasJsonPropertyName("capacity");
+
+                            b1.Property<bool>("IsCancelled")
+                                .HasJsonPropertyName("isCancelled");
 
                             b1.Property<bool>("IsSelfService")
                                 .HasJsonPropertyName("isSelfService");

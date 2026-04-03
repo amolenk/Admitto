@@ -11,8 +11,8 @@ internal sealed class CreateCouponFixture
     private bool _hasCancelledTicketType;
 
     public TicketedEventId EventId { get; } = TicketedEventId.New();
-    public TicketTypeId TicketTypeId { get; } = TicketTypeId.New();
-    public TicketTypeId CancelledTicketTypeId { get; } = TicketTypeId.New();
+    public string TicketTypeSlug { get; } = "general-admission";
+    public string CancelledTicketTypeSlug { get; } = "vip-pass";
     public IOrganizationFacade OrganizationFacade { get; } = Substitute.For<IOrganizationFacade>();
 
     private CreateCouponFixture()
@@ -35,24 +35,15 @@ internal sealed class CreateCouponFixture
     {
         var ticketTypes = new List<TicketTypeDto>
         {
-            new()
-            {
-                Id = TicketTypeId.Value,
-                AdminLabel = "Speaker Pass",
-                PublicTitle = "Speaker Pass",
-                TimeSlots = [],
-                IsCancelled = false
-            }
+            new() { Slug = TicketTypeSlug, Name = "General Admission", IsCancelled = false }
         };
 
         if (_hasCancelledTicketType)
         {
             ticketTypes.Add(new TicketTypeDto
             {
-                Id = CancelledTicketTypeId.Value,
-                AdminLabel = "Workshop A",
-                PublicTitle = "Workshop A",
-                TimeSlots = [],
+                Slug = CancelledTicketTypeSlug,
+                Name = "VIP Pass",
                 IsCancelled = true
             });
         }

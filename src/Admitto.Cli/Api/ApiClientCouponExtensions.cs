@@ -322,8 +322,8 @@ public class CreateCouponRequest
     [System.Text.Json.Serialization.JsonPropertyName("email")]
     public string? Email { get; set; }
 
-    [System.Text.Json.Serialization.JsonPropertyName("allowedTicketTypeIds")]
-    public Guid[]? AllowedTicketTypeIds { get; set; }
+    [System.Text.Json.Serialization.JsonPropertyName("allowedTicketTypeSlugs")]
+    public string[]? AllowedTicketTypeSlugs { get; set; }
 
     [System.Text.Json.Serialization.JsonPropertyName("expiresAt")]
     public DateTimeOffset ExpiresAt { get; set; }
@@ -358,8 +358,8 @@ public class CouponSummaryDto
     [System.Text.Json.Serialization.JsonPropertyName("status")]
     public string? Status { get; set; }
 
-    [System.Text.Json.Serialization.JsonPropertyName("allowedTicketTypeIds")]
-    public Guid[]? AllowedTicketTypeIds { get; set; }
+    [System.Text.Json.Serialization.JsonPropertyName("allowedTicketTypeSlugs")]
+    public string[]? AllowedTicketTypeSlugs { get; set; }
 
     [System.Text.Json.Serialization.JsonPropertyName("expiresAt")]
     public DateTimeOffset ExpiresAt { get; set; }
@@ -383,8 +383,8 @@ public class GetCouponDetailsResponse
     [System.Text.Json.Serialization.JsonPropertyName("status")]
     public string? Status { get; set; }
 
-    [System.Text.Json.Serialization.JsonPropertyName("allowedTicketTypeIds")]
-    public Guid[]? AllowedTicketTypeIds { get; set; }
+    [System.Text.Json.Serialization.JsonPropertyName("allowedTicketTypeSlugs")]
+    public string[]? AllowedTicketTypeSlugs { get; set; }
 
     [System.Text.Json.Serialization.JsonPropertyName("expiresAt")]
     public DateTimeOffset ExpiresAt { get; set; }

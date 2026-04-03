@@ -8,4 +8,5 @@ public record TicketType(
     bool IsSelfService, // If false, only admins can grant
     bool IsSelfServiceAvailable, // If false, the ticket type will be shown as unavailable
     TimeSlot[] TimeSlots,
-    Capacity? Capacity);
+    Capacity? Capacity,
+    bool IsCancelled = false);

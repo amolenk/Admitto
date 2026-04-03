@@ -68,5 +68,5 @@ public partial class ApiClient
 public class ArchiveTeamRequest
 {
     [System.Text.Json.Serialization.JsonPropertyName("expectedVersion")]
-    public uint ExpectedVersion { get; set; }
+    public uint? ExpectedVersion { get; set; }
 }

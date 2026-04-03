@@ -19,7 +19,7 @@ namespace Amolenk.Admitto.Module.Registrations.Infrastructure.Persistence.Migrat
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("registrations")
-                .HasAnnotation("ProductVersion", "10.0.2")
+                .HasAnnotation("ProductVersion", "10.0.5")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -30,10 +30,11 @@ namespace Amolenk.Admitto.Module.Registrations.Infrastructure.Persistence.Migrat
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.PrimitiveCollection<Guid[]>("AllowedTicketTypeIds")
+                    b.PrimitiveCollection<string[]>("AllowedTicketTypeSlugs")
                         .IsRequired()
-                        .HasColumnType("uuid[]")
-                        .HasColumnName("allowed_ticket_type_ids");
+                        .HasMaxLength(64)
+                        .HasColumnType("text[]")
+                        .HasColumnName("allowed_ticket_type_slugs");
 
                     b.Property<bool>("BypassRegistrationWindow")
                         .HasColumnType("boolean")

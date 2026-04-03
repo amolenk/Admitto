@@ -54,8 +54,8 @@ public class ShowCouponCommand(IAdmittoService admittoService, IConfigService co
         grid.AddRow("Expires at:", response.ExpiresAt.Format());
         grid.AddRow("Bypass window:", response.BypassRegistrationWindow ? "Yes" : "No");
 
-        var ticketTypes = response.AllowedTicketTypeIds is { Length: > 0 }
-            ? string.Join(", ", response.AllowedTicketTypeIds)
+        var ticketTypes = response.AllowedTicketTypeSlugs is { Length: > 0 }
+            ? string.Join(", ", response.AllowedTicketTypeSlugs)
             : "-";
         grid.AddRow("Ticket types:", ticketTypes);
 

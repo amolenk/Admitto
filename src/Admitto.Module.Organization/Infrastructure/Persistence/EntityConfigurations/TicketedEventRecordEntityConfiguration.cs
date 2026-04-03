@@ -59,6 +59,12 @@ public class TicketedEventEntityConfiguration : IEntityTypeConfiguration<Tickete
                     .IsRequired();
             });
 
+        builder.Property(e => e.Status)
+            .HasColumnName("status")
+            .HasConversion<int>()
+            .IsRequired()
+            .HasDefaultValue(EventStatus.Active);
+
         // Can't use ComplexTypes yet because read-only collections aren't supported, see
         // https://github.com/dotnet/efcore/issues/37405
         builder.OwnsMany(
@@ -92,6 +98,9 @@ public class TicketedEventEntityConfiguration : IEntityTypeConfiguration<Tickete
                         v => v.HasValue ? v.Value.Value : (int?)null,
                         v => v.HasValue ? Capacity.From(v.Value) : null)
                     .HasJsonPropertyName("capacity");
+
+                b.Property(tt => tt.IsCancelled)
+                    .HasJsonPropertyName("isCancelled");
             });
 
         builder.HasIndex(e => new { e.TeamId, e.Slug })

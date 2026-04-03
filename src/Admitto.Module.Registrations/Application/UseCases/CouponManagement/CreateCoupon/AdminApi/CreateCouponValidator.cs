@@ -11,12 +11,12 @@ public sealed class CreateCouponValidator : AbstractValidator<CreateCouponHttpRe
         RuleFor(x => x.Email)
             .MustBeParseable(EmailAddress.TryFrom);
 
-        RuleFor(x => x.AllowedTicketTypeIds)
+        RuleFor(x => x.AllowedTicketTypeSlugs)
             .NotNull()
             .NotEmpty();
 
-        RuleForEach(x => x.AllowedTicketTypeIds)
-            .MustBeParseable(TicketTypeId.TryFrom);
+        RuleForEach(x => x.AllowedTicketTypeSlugs)
+            .MustBeParseable(Slug.TryFrom);
 
         RuleFor(x => x.ExpiresAt)
             .NotEmpty();

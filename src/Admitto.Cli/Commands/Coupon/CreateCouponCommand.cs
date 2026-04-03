@@ -11,8 +11,8 @@ public class CreateCouponSettings : TeamEventSettings
     public string? Email { get; init; }
 
     [CommandOption("--ticket-type")]
-    [Description("Allowed ticket type ID (can be specified multiple times)")]
-    public Guid[]? TicketTypeIds { get; init; }
+    [Description("Allowed ticket type slug (can be specified multiple times)")]
+    public string[]? TicketTypeSlugs { get; init; }
 
     [CommandOption("--expires-at")]
     [Description("Coupon expiry date and time (ISO 8601)")]
@@ -27,7 +27,7 @@ public class CreateCouponSettings : TeamEventSettings
         if (string.IsNullOrWhiteSpace(Email))
             return ValidationErrors.EmailMissing;
 
-        if (TicketTypeIds is null || TicketTypeIds.Length == 0)
+        if (TicketTypeSlugs is null || TicketTypeSlugs.Length == 0)
             return ValidationErrors.CouponTicketTypesMissing;
 
         if (string.IsNullOrWhiteSpace(ExpiresAt) || !DateTimeOffset.TryParse(ExpiresAt, out _))
@@ -49,7 +49,7 @@ public class CreateCouponCommand(IAdmittoService admittoService, IConfigService 
         var request = new CreateCouponRequest
         {
             Email = settings.Email,
-            AllowedTicketTypeIds = settings.TicketTypeIds,
+            AllowedTicketTypeSlugs = settings.TicketTypeSlugs,
             ExpiresAt = DateTimeOffset.Parse(settings.ExpiresAt!),
             BypassRegistrationWindow = settings.BypassRegistrationWindow
         };

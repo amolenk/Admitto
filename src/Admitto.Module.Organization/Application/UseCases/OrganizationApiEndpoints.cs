@@ -3,7 +3,15 @@ using Amolenk.Admitto.Module.Organization.Application.UseCases.TeamManagement.Cr
 using Amolenk.Admitto.Module.Organization.Application.UseCases.TeamManagement.GetTeam.AdminApi;
 using Amolenk.Admitto.Module.Organization.Application.UseCases.TeamManagement.GetTeams.AdminApi;
 using Amolenk.Admitto.Module.Organization.Application.UseCases.TeamManagement.UpdateTeam.AdminApi;
+using Amolenk.Admitto.Module.Organization.Application.UseCases.TicketedEvents.AddTicketType.AdminApi;
+using Amolenk.Admitto.Module.Organization.Application.UseCases.TicketedEvents.ArchiveTicketedEvent.AdminApi;
+using Amolenk.Admitto.Module.Organization.Application.UseCases.TicketedEvents.CancelTicketedEvent.AdminApi;
+using Amolenk.Admitto.Module.Organization.Application.UseCases.TicketedEvents.CancelTicketType.AdminApi;
 using Amolenk.Admitto.Module.Organization.Application.UseCases.TicketedEvents.CreateTicketedEvent.AdminApi;
+using Amolenk.Admitto.Module.Organization.Application.UseCases.TicketedEvents.GetTicketedEvent.AdminApi;
+using Amolenk.Admitto.Module.Organization.Application.UseCases.TicketedEvents.GetTicketedEvents.AdminApi;
+using Amolenk.Admitto.Module.Organization.Application.UseCases.TicketedEvents.UpdateTicketedEvent.AdminApi;
+using Amolenk.Admitto.Module.Organization.Application.UseCases.TicketedEvents.UpdateTicketType.AdminApi;
 using Amolenk.Admitto.Module.Organization.Application.UseCases.TeamMembershipManagement.AssignTeamMembership.AdminApi;
 using Amolenk.Admitto.Module.Organization.Application.UseCases.TeamMembershipManagement.ChangeTeamMembershipRole.AdminApi;
 using Amolenk.Admitto.Module.Organization.Application.UseCases.TeamMembershipManagement.ListTeamMembers.AdminApi;
@@ -34,9 +42,24 @@ public static class OrganizationApiEndpoints
             .MapChangeTeamMembershipRole()
             .MapRemoveTeamMembership();
 
-        team.MapGroup("/events")
+        var events = team.MapGroup("/events");
+
+        events
             .MapCreateTicketedEvent()
-            .MapGroup("/{eventSlug}");
+            .MapGetTicketedEvents();
+
+        var eventGroup = events.MapGroup("/{eventSlug}");
+
+        eventGroup
+            .MapGetTicketedEvent()
+            .MapUpdateTicketedEvent()
+            .MapCancelTicketedEvent()
+            .MapArchiveTicketedEvent()
+            .MapAddTicketType();
+
+        eventGroup.MapGroup("/ticket-types")
+            .MapUpdateTicketType()
+            .MapCancelTicketType();
 
         return group;
     }

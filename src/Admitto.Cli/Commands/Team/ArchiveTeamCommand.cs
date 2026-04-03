@@ -17,11 +17,6 @@ public class ArchiveTeamSettings : CommandSettings
 
     public override ValidationResult Validate()
     {
-        if (ExpectedVersion is null)
-        {
-            return ValidationResult.Error("--expected-version is required.");
-        }
-
         return base.Validate();
     }
 }
@@ -36,7 +31,7 @@ public class ArchiveTeamCommand(IAdmittoService admittoService)
     {
         var request = new ArchiveTeamRequest
         {
-            ExpectedVersion = settings.ExpectedVersion!.Value
+            ExpectedVersion = settings.ExpectedVersion
         };
 
         var success = await admittoService.SendAsync(

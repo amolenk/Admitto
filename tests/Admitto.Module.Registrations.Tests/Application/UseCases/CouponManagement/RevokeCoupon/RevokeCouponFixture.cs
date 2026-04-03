@@ -13,7 +13,7 @@ internal sealed class RevokeCouponFixture
     private bool _seedExpiredCoupon;
 
     public TicketedEventId EventId { get; } = TicketedEventId.New();
-    public TicketTypeId TicketTypeId { get; } = TicketTypeId.New();
+    public string TicketTypeSlug { get; } = "general-admission";
     public CouponId CouponId { get; private set; } = CouponId.New();
 
     private RevokeCouponFixture()
@@ -51,8 +51,8 @@ internal sealed class RevokeCouponFixture
 
         var builder = new CouponBuilder()
             .WithEventId(EventId)
-            .WithRequestedTicketTypeIds(TicketTypeId)
-            .WithAvailableTicketTypes(new TicketTypeInfo(TicketTypeId, IsCancelled: false))
+            .WithRequestedTicketTypeSlugs(TicketTypeSlug)
+            .WithAvailableTicketTypes(new TicketTypeInfo(TicketTypeSlug, IsCancelled: false))
             .WithExpiresAt(DateTimeOffset.UtcNow.AddDays(30));
 
         if (_seedExpiredCoupon)

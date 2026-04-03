@@ -7,6 +7,6 @@ namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.CouponManage
 internal sealed record CreateCouponCommand(
     TicketedEventId EventId,
     EmailAddress Email,
-    TicketTypeId[] AllowedTicketTypeIds,
+    string[] AllowedTicketTypeSlugs,
     DateTimeOffset ExpiresAt,
     bool BypassRegistrationWindow) : Command<CouponId>;

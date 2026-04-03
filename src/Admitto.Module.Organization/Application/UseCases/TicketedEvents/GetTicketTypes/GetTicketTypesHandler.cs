@@ -1,23 +1,29 @@
-// using Amolenk.Admitto.Module.Organization.Contracts;
-// using Amolenk.Admitto.Module.Organization.Application.Mapping;
-// using Amolenk.Admitto.Module.Organization.Application.Persistence;
-// using Amolenk.Admitto.Module.Shared.Application.Messaging;
-//
-// namespace Amolenk.Admitto.Module.Organization.Application.UseCases.GetTicketTypes;
-//
-// internal class GetTicketTypesHandler(IOrganizationWriteStore writeStore)
-//     : IQueryHandler<GetTicketTypesQuery, TicketTypeDto[]>
-// {
-//     public async ValueTask<TicketTypeDto[]> HandleAsync(
-//         GetTicketTypesQuery query,
-//         CancellationToken cancellationToken)
-//     {
-//         var ticketTypes = await writeStore.TicketedEvents
-//             .AsNoTracking()
-//             .Where(t => t.Id == query.TicketedEventId.Value)
-//             .SelectMany(t => t.TicketTypes.Select(tt => tt.ToDto()))
-//             .ToArrayAsync(cancellationToken);
-//
-//         return ticketTypes;
-//     }
-// }
+using Amolenk.Admitto.Module.Organization.Application.Persistence;
+using Amolenk.Admitto.Module.Organization.Contracts;
+using Amolenk.Admitto.Module.Organization.Domain.Entities;
+using Amolenk.Admitto.Module.Shared.Application.Messaging;
+using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
+using Microsoft.EntityFrameworkCore;
+
+namespace Amolenk.Admitto.Module.Organization.Application.UseCases.TicketedEvents.GetTicketTypes;
+
+internal class GetTicketTypesHandler(IOrganizationWriteStore writeStore)
+    : IQueryHandler<GetTicketTypesQuery, TicketTypeDto[]>
+{
+    public async ValueTask<TicketTypeDto[]> HandleAsync(
+        GetTicketTypesQuery query,
+        CancellationToken cancellationToken)
+    {
+        var ticketedEventId = TicketedEventId.From(query.TicketedEventId);
+
+        var ticketedEvent = await writeStore.TicketedEvents
+            .AsNoTracking()
+            .FirstOrDefaultAsync(e => e.Id == ticketedEventId, cancellationToken);
+
+        if (ticketedEvent is null) return [];
+
+        return ticketedEvent.TicketTypes
+            .Select(tt => new TicketTypeDto { Slug = tt.Slug.Value, Name = tt.Name.Value, IsCancelled = tt.IsCancelled })
+            .ToArray();
+    }
+}

@@ -266,6 +266,15 @@ app.Configure(config =>
             ticketedEvent.AddCommand<ShowEventCommand>("show")
                 .WithDescription("Show the details of an event");
 
+            ticketedEvent.AddCommand<UpdateEventCommand>("update")
+                .WithDescription("Update event details");
+
+            ticketedEvent.AddCommand<CancelEventCommand>("cancel")
+                .WithDescription("Cancel an event");
+
+            ticketedEvent.AddCommand<ArchiveEventCommand>("archive")
+                .WithDescription("Archive an event");
+
             ticketedEvent.AddBranch(
                 "ticketType",
                 ticketType =>

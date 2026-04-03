@@ -6,7 +6,5 @@ public sealed class ArchiveTeamValidator : AbstractValidator<ArchiveTeamHttpRequ
 {
     public ArchiveTeamValidator()
     {
-        RuleFor(x => x.ExpectedVersion)
-            .NotNull();
     }
 }

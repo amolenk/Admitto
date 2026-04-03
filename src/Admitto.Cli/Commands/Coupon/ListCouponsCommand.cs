@@ -28,8 +28,8 @@ public class ListCouponsCommand(IAdmittoService admittoService, IConfigService c
 
         foreach (var coupon in response.Coupons ?? [])
         {
-            var ticketTypes = coupon.AllowedTicketTypeIds is { Length: > 0 }
-                ? string.Join(", ", coupon.AllowedTicketTypeIds.Select(id => id.ToString()[..8]))
+            var ticketTypes = coupon.AllowedTicketTypeSlugs is { Length: > 0 }
+                ? string.Join(", ", coupon.AllowedTicketTypeSlugs)
                 : "-";
 
             table.AddRow(

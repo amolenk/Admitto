@@ -5,4 +5,4 @@ namespace Amolenk.Admitto.Module.Organization.Application.UseCases.TeamManagemen
 /// <summary>
 /// Command to archive a team (US-005).
 /// </summary>
-internal sealed record ArchiveTeamCommand(Guid TeamId, uint ExpectedVersion) : Command;
+internal sealed record ArchiveTeamCommand(Guid TeamId, uint? ExpectedVersion) : Command;

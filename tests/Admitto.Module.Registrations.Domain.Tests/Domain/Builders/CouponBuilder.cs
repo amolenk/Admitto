@@ -8,16 +8,16 @@ public class CouponBuilder
 {
     public static readonly TicketedEventId DefaultEventId = TicketedEventId.New();
     public static readonly EmailAddress DefaultEmail = EmailAddress.From("invitee@example.com");
-    public static readonly TicketTypeId DefaultTicketTypeId = TicketTypeId.New();
+    public static readonly string DefaultTicketTypeSlug = "general-admission";
     public static readonly DateTimeOffset DefaultNow = new(2025, 1, 1, 0, 0, 0, TimeSpan.Zero);
     public static readonly DateTimeOffset DefaultExpiresAt = new(2025, 6, 1, 0, 0, 0, TimeSpan.Zero);
 
     private TicketedEventId _eventId = DefaultEventId;
     private EmailAddress _email = DefaultEmail;
-    private List<TicketTypeId> _requestedTicketTypeIds = [DefaultTicketTypeId];
+    private List<string> _requestedTicketTypeSlugs = [DefaultTicketTypeSlug];
     private DateTimeOffset _expiresAt = DefaultExpiresAt;
     private bool _bypassRegistrationWindow;
-    private List<TicketTypeInfo> _availableTicketTypes = [new(DefaultTicketTypeId, IsCancelled: false)];
+    private List<TicketTypeInfo> _availableTicketTypes = [new(DefaultTicketTypeSlug, IsCancelled: false)];
     private DateTimeOffset _now = DefaultNow;
 
     public CouponBuilder WithEventId(TicketedEventId eventId)
@@ -32,9 +32,9 @@ public class CouponBuilder
         return this;
     }
 
-    public CouponBuilder WithRequestedTicketTypeIds(params TicketTypeId[] ticketTypeIds)
+    public CouponBuilder WithRequestedTicketTypeSlugs(params string[] slugs)
     {
-        _requestedTicketTypeIds = [..ticketTypeIds];
+        _requestedTicketTypeSlugs = [..slugs];
         return this;
     }
 
@@ -67,7 +67,7 @@ public class CouponBuilder
         return Coupon.Create(
             _eventId,
             _email,
-            _requestedTicketTypeIds,
+            _requestedTicketTypeSlugs,
             _expiresAt,
             _bypassRegistrationWindow,
             _availableTicketTypes,

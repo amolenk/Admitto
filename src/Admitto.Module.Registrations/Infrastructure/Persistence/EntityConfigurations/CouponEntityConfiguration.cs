@@ -3,7 +3,7 @@ using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+
 
 namespace Amolenk.Admitto.Module.Registrations.Infrastructure.Persistence.EntityConfigurations;
 
@@ -52,12 +52,10 @@ public class CouponEntityConfiguration : IEntityTypeConfiguration<Coupon>
         builder.Property(e => e.RevokedAt)
             .HasColumnName("revoked_at");
 
-        builder.PrimitiveCollection(e => e.AllowedTicketTypeIds)
-            .HasColumnName("allowed_ticket_type_ids")
-            .ElementType()
-            .HasConversion(new ValueConverter<TicketTypeId, Guid>(
-                v => v.Value,
-                v => TicketTypeId.From(v)));
+        builder.PrimitiveCollection(e => e.AllowedTicketTypeSlugs)
+            .HasColumnName("allowed_ticket_type_slugs")
+            .IsRequired()
+            .HasMaxLength(Slug.MaxLength);
 
         builder.HasIndex(e => e.EventId);
     }

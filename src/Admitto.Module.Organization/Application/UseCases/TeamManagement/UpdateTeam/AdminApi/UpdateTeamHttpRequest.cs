@@ -1,16 +1,16 @@
 namespace Amolenk.Admitto.Module.Organization.Application.UseCases.TeamManagement.UpdateTeam.AdminApi;
 
 public sealed record UpdateTeamHttpRequest(
-    uint ExpectedVersion,
     string? Slug,
     string? Name,
-    string? EmailAddress)
+    string? EmailAddress,
+    uint? ExpectedVersion)
 {
     internal UpdateTeamCommand ToCommand(Guid teamId)
         => new(
             teamId,
-            ExpectedVersion,
             Slug,
             Name,
-            EmailAddress);
+            EmailAddress,
+            ExpectedVersion);
 }

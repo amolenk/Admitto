@@ -5,14 +5,14 @@ namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.CouponManage
 
 public sealed record CreateCouponHttpRequest(
     string Email,
-    Guid[] AllowedTicketTypeIds,
+    string[] AllowedTicketTypeSlugs,
     DateTimeOffset ExpiresAt,
     bool BypassRegistrationWindow = false)
 {
     internal CreateCouponCommand ToCommand(TicketedEventId eventId) => new(
         eventId,
         EmailAddress.From(Email),
-        AllowedTicketTypeIds.Select(TicketTypeId.From).ToArray(),
+        AllowedTicketTypeSlugs,
         ExpiresAt,
         BypassRegistrationWindow);
 }

@@ -22,7 +22,7 @@ public sealed class CreateCouponTests(TestContext testContext) : AspireIntegrati
 
         var command = NewCreateCouponCommand(
             fixture.EventId,
-            allowedTicketTypeIds: [fixture.TicketTypeId]);
+            allowedTicketTypeSlugs: [fixture.TicketTypeSlug]);
         var sut = NewCreateCouponHandler(fixture);
 
         // Act
@@ -37,7 +37,7 @@ public sealed class CreateCouponTests(TestContext testContext) : AspireIntegrati
             coupon.Id.ShouldBe(couponId);
             coupon.EventId.ShouldBe(fixture.EventId);
             coupon.Email.Value.ShouldBe("speaker@example.com");
-            coupon.AllowedTicketTypeIds.ShouldContain(fixture.TicketTypeId);
+            coupon.AllowedTicketTypeSlugs.ShouldContain(fixture.TicketTypeSlug);
             coupon.Code.Value.ShouldNotBe(Guid.Empty);
             coupon.BypassRegistrationWindow.ShouldBeFalse();
         });
@@ -53,7 +53,7 @@ public sealed class CreateCouponTests(TestContext testContext) : AspireIntegrati
 
         var command = NewCreateCouponCommand(
             fixture.EventId,
-            allowedTicketTypeIds: [fixture.TicketTypeId],
+            allowedTicketTypeSlugs: [fixture.TicketTypeSlug],
             bypassRegistrationWindow: true);
         var sut = NewCreateCouponHandler(fixture);
 
@@ -76,10 +76,10 @@ public sealed class CreateCouponTests(TestContext testContext) : AspireIntegrati
         var fixture = CreateCouponFixture.HappyFlow();
         await fixture.SetupAsync(Environment);
 
-        var unknownTicketTypeId = TicketTypeId.New();
+        var unknownSlug = "unknown-type";
         var command = NewCreateCouponCommand(
             fixture.EventId,
-            allowedTicketTypeIds: [unknownTicketTypeId]);
+            allowedTicketTypeSlugs: [unknownSlug]);
         var sut = NewCreateCouponHandler(fixture);
 
         // Act
@@ -87,7 +87,7 @@ public sealed class CreateCouponTests(TestContext testContext) : AspireIntegrati
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
         // Assert
-        result.Error.ShouldMatch(Coupon.Errors.UnknownTicketTypes([unknownTicketTypeId]));
+        result.Error.ShouldMatch(Coupon.Errors.UnknownTicketTypes([unknownSlug]));
     }
 
     // SC-004: Rejected — ticket type is cancelled
@@ -100,7 +100,7 @@ public sealed class CreateCouponTests(TestContext testContext) : AspireIntegrati
 
         var command = NewCreateCouponCommand(
             fixture.EventId,
-            allowedTicketTypeIds: [fixture.CancelledTicketTypeId]);
+            allowedTicketTypeSlugs: [fixture.CancelledTicketTypeSlug]);
         var sut = NewCreateCouponHandler(fixture);
 
         // Act
@@ -108,7 +108,7 @@ public sealed class CreateCouponTests(TestContext testContext) : AspireIntegrati
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
         // Assert
-        result.Error.ShouldMatch(Coupon.Errors.CancelledTicketTypes([fixture.CancelledTicketTypeId]));
+        result.Error.ShouldMatch(Coupon.Errors.CancelledTicketTypes([fixture.CancelledTicketTypeSlug]));
     }
 
     // SC-005: Rejected — expiry in the past
@@ -121,7 +121,7 @@ public sealed class CreateCouponTests(TestContext testContext) : AspireIntegrati
 
         var command = NewCreateCouponCommand(
             fixture.EventId,
-            allowedTicketTypeIds: [fixture.TicketTypeId],
+            allowedTicketTypeSlugs: [fixture.TicketTypeSlug],
             expiresAt: new DateTimeOffset(2020, 1, 1, 0, 0, 0, TimeSpan.Zero));
         var sut = NewCreateCouponHandler(fixture);
 
@@ -143,7 +143,7 @@ public sealed class CreateCouponTests(TestContext testContext) : AspireIntegrati
 
         var command = NewCreateCouponCommand(
             fixture.EventId,
-            allowedTicketTypeIds: [fixture.TicketTypeId]);
+            allowedTicketTypeSlugs: [fixture.TicketTypeSlug]);
         var sut = NewCreateCouponHandler(fixture);
 
         // Act
@@ -156,19 +156,19 @@ public sealed class CreateCouponTests(TestContext testContext) : AspireIntegrati
 
     private static CreateCouponCommand NewCreateCouponCommand(
         TicketedEventId eventId,
-        TicketTypeId[]? allowedTicketTypeIds = null,
+        string[]? allowedTicketTypeSlugs = null,
         string? email = null,
         DateTimeOffset? expiresAt = null,
         bool bypassRegistrationWindow = false)
     {
         email ??= "speaker@example.com";
         expiresAt ??= DateTimeOffset.UtcNow.AddDays(30);
-        allowedTicketTypeIds ??= [TicketTypeId.New()];
+        allowedTicketTypeSlugs ??= ["general-admission"];
 
         return new CreateCouponCommand(
             eventId,
             EmailAddress.From(email),
-            allowedTicketTypeIds,
+            allowedTicketTypeSlugs,
             expiresAt.Value,
             bypassRegistrationWindow);
     }
@@ -176,3 +176,4 @@ public sealed class CreateCouponTests(TestContext testContext) : AspireIntegrati
     private static CreateCouponHandler NewCreateCouponHandler(CreateCouponFixture fixture) =>
         new(fixture.OrganizationFacade, Environment.Database.Context);
 }
+

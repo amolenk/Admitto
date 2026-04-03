@@ -4,7 +4,6 @@ using Amolenk.Admitto.Module.Registrations.Domain.Entities;
 using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
-using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.CouponManagement.CreateCoupon;
 
@@ -31,13 +30,13 @@ internal sealed class CreateCouponHandler(
             command.EventId.Value, cancellationToken);
 
         var availableTicketTypes = ticketTypeDtos
-            .Select(dto => new TicketTypeInfo(TicketTypeId.From(dto.Id), dto.IsCancelled))
+            .Select(dto => new TicketTypeInfo(dto.Slug, dto.IsCancelled))
             .ToList();
 
         var coupon = Coupon.Create(
             command.EventId,
             command.Email,
-            command.AllowedTicketTypeIds,
+            command.AllowedTicketTypeSlugs,
             command.ExpiresAt,
             command.BypassRegistrationWindow,
             availableTicketTypes,

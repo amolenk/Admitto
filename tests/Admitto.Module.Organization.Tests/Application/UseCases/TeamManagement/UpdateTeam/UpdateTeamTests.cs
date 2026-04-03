@@ -23,14 +23,10 @@ public sealed class UpdateTeamTests(TestContext testContext) : AspireIntegration
 
         var command = new UpdateTeamCommand(
             fixture.TeamId,
-            fixture.TeamVersion,
             Slug: null,
             Name: "Acme Corp",
-            EmailAddress: null);
-        var sut = new UpdateTeamHandler(Environment.Database.Context);
-
-        // Act
-        await sut.HandleAsync(command, testContext.CancellationToken);
+            EmailAddress: null,
+            ExpectedVersion: fixture.TeamVersion);
 
         // Assert
         await Environment.Database.AssertAsync(async dbContext =>
@@ -62,10 +58,10 @@ public sealed class UpdateTeamTests(TestContext testContext) : AspireIntegration
 
         var command = new UpdateTeamCommand(
             fixture.TeamId,
-            wrongVersion,
             Slug: null,
             Name: "Acme Corp",
-            EmailAddress: null);
+            EmailAddress: null,
+            ExpectedVersion: wrongVersion);
         var sut = new UpdateTeamHandler(Environment.Database.Context);
 
         // Act & Assert
@@ -86,10 +82,10 @@ public sealed class UpdateTeamTests(TestContext testContext) : AspireIntegration
 
         var command = new UpdateTeamCommand(
             fixture.TeamId,
-            fixture.TeamVersion,
             Slug: null,
             Name: "Acme Corp",
-            EmailAddress: null);
+            EmailAddress: null,
+            ExpectedVersion: fixture.TeamVersion);
         var sut = new UpdateTeamHandler(Environment.Database.Context);
 
         // Act & Assert

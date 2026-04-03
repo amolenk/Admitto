@@ -3,12 +3,14 @@ using Amolenk.Admitto.Module.Organization.Application.UseCases.TicketedEvents.Ge
 using Amolenk.Admitto.Module.Organization.Application.UseCases.TicketedEvents.GetTicketTypes;
 using Amolenk.Admitto.Module.Organization.Application.UseCases.Users.GetTeamMembershipRole;
 using Amolenk.Admitto.Module.Organization.Contracts;
+using Amolenk.Admitto.Module.Organization.Domain.ValueObjects;
+using Amolenk.Admitto.Module.Organization.Application.Persistence;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Module.Organization.Application.UseCases;
 
-internal class OrganizationFacade(IMediator mediator) : IOrganizationFacade
+internal class OrganizationFacade(IMediator mediator, IOrganizationWriteStore writeStore) : IOrganizationFacade
 {
     public async ValueTask<Guid> GetTeamIdAsync(
         string teamSlug,
@@ -54,12 +56,18 @@ internal class OrganizationFacade(IMediator mediator) : IOrganizationFacade
             cancellationToken);
     }
 
-    // Event cancellation is not yet supported (planned for FEAT-003).
-    // Always returns true (active) until the Organization domain adds event lifecycle management.
-    public ValueTask<bool> IsEventActiveAsync(
+    public async ValueTask<bool> IsEventActiveAsync(
         Guid eventId,
         CancellationToken cancellationToken = default)
     {
-        return ValueTask.FromResult(true);
+        var ticketedEventId = TicketedEventId.From(eventId);
+
+        var status = await writeStore.TicketedEvents
+            .AsNoTracking()
+            .Where(e => e.Id == ticketedEventId)
+            .Select(e => (EventStatus?)e.Status)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return status == EventStatus.Active;
     }
 }

@@ -15,20 +15,20 @@ public sealed class CouponTests
     public void Create_ValidInput_CreatesCouponAndRaisesDomainEvent()
     {
         // Arrange
-        var ticketTypeId = TicketTypeId.New();
+        var slug = "general-admission";
         var email = EmailAddress.From("speaker@example.com");
 
         // Act
         var sut = new CouponBuilder()
             .WithEmail(email)
-            .WithRequestedTicketTypeIds(ticketTypeId)
-            .WithAvailableTicketTypes(new TicketTypeInfo(ticketTypeId, IsCancelled: false))
+            .WithRequestedTicketTypeSlugs(slug)
+            .WithAvailableTicketTypes(new TicketTypeInfo(slug, IsCancelled: false))
             .Build();
 
         // Assert
         sut.EventId.ShouldBe(CouponBuilder.DefaultEventId);
         sut.Email.ShouldBe(email);
-        sut.AllowedTicketTypeIds.ShouldContain(ticketTypeId);
+        sut.AllowedTicketTypeSlugs.ShouldContain(slug);
         sut.ExpiresAt.ShouldBe(CouponBuilder.DefaultExpiresAt);
         sut.BypassRegistrationWindow.ShouldBeFalse();
         sut.GetStatus(CouponBuilder.DefaultNow).ShouldBe(CouponStatus.Active);
@@ -58,35 +58,35 @@ public sealed class CouponTests
     public void Create_UnknownTicketType_ThrowsUnknownTicketTypesError()
     {
         // Arrange
-        var unknownTicketTypeId = TicketTypeId.New();
-        var knownTicketTypeId = TicketTypeId.New();
+        var unknownSlug = "unknown-type";
+        var knownSlug = "general-admission";
 
         // Act
         var result = ErrorResult.Capture(() =>
             new CouponBuilder()
-                .WithRequestedTicketTypeIds(unknownTicketTypeId)
-                .WithAvailableTicketTypes(new TicketTypeInfo(knownTicketTypeId, IsCancelled: false))
+                .WithRequestedTicketTypeSlugs(unknownSlug)
+                .WithAvailableTicketTypes(new TicketTypeInfo(knownSlug, IsCancelled: false))
                 .Build());
 
         // Assert
-        result.Error.ShouldMatch(Coupon.Errors.UnknownTicketTypes([unknownTicketTypeId]));
+        result.Error.ShouldMatch(Coupon.Errors.UnknownTicketTypes(new List<string> { unknownSlug }));
     }
 
     [TestMethod]
     public void Create_CancelledTicketType_ThrowsCancelledTicketTypesError()
     {
         // Arrange
-        var cancelledTicketTypeId = TicketTypeId.New();
+        var cancelledSlug = "vip-pass";
 
         // Act
         var result = ErrorResult.Capture(() =>
             new CouponBuilder()
-                .WithRequestedTicketTypeIds(cancelledTicketTypeId)
-                .WithAvailableTicketTypes(new TicketTypeInfo(cancelledTicketTypeId, IsCancelled: true))
+                .WithRequestedTicketTypeSlugs(cancelledSlug)
+                .WithAvailableTicketTypes(new TicketTypeInfo(cancelledSlug, IsCancelled: true))
                 .Build());
 
         // Assert
-        result.Error.ShouldMatch(Coupon.Errors.CancelledTicketTypes([cancelledTicketTypeId]));
+        result.Error.ShouldMatch(Coupon.Errors.CancelledTicketTypes(new List<string> { cancelledSlug }));
     }
 
     [TestMethod]
@@ -108,7 +108,7 @@ public sealed class CouponTests
         // Act
         var result = ErrorResult.Capture(() =>
             new CouponBuilder()
-                .WithRequestedTicketTypeIds()
+                .WithRequestedTicketTypeSlugs()
                 .Build());
 
         // Assert
@@ -140,18 +140,18 @@ public sealed class CouponTests
     public void Create_ValidInput_AllPropertiesAccessible()
     {
         // Arrange
-        var ticketTypeId1 = TicketTypeId.New();
-        var ticketTypeId2 = TicketTypeId.New();
+        var slug1 = "general-admission";
+        var slug2 = "vip-pass";
         var email = EmailAddress.From("speaker@example.com");
         var expiresAt = new DateTimeOffset(2025, 12, 31, 0, 0, 0, TimeSpan.Zero);
 
         // Act
         var sut = new CouponBuilder()
             .WithEmail(email)
-            .WithRequestedTicketTypeIds(ticketTypeId1, ticketTypeId2)
+            .WithRequestedTicketTypeSlugs(slug1, slug2)
             .WithAvailableTicketTypes(
-                new TicketTypeInfo(ticketTypeId1, IsCancelled: false),
-                new TicketTypeInfo(ticketTypeId2, IsCancelled: false))
+                new TicketTypeInfo(slug1, IsCancelled: false),
+                new TicketTypeInfo(slug2, IsCancelled: false))
             .WithExpiresAt(expiresAt)
             .WithBypassRegistrationWindow()
             .Build();
@@ -161,9 +161,9 @@ public sealed class CouponTests
             () => sut.Id.Value.ShouldNotBe(Guid.Empty),
             () => sut.Code.Value.ShouldNotBe(Guid.Empty),
             () => sut.Email.ShouldBe(email),
-            () => sut.AllowedTicketTypeIds.Count.ShouldBe(2),
-            () => sut.AllowedTicketTypeIds.ShouldContain(ticketTypeId1),
-            () => sut.AllowedTicketTypeIds.ShouldContain(ticketTypeId2),
+            () => sut.AllowedTicketTypeSlugs.Count.ShouldBe(2),
+            () => sut.AllowedTicketTypeSlugs.ShouldContain(slug1),
+            () => sut.AllowedTicketTypeSlugs.ShouldContain(slug2),
             () => sut.ExpiresAt.ShouldBe(expiresAt),
             () => sut.BypassRegistrationWindow.ShouldBeTrue(),
             () => sut.RedeemedAt.ShouldBeNull(),
@@ -242,3 +242,4 @@ public sealed class CouponTests
         property.SetValue(coupon, redeemedAt);
     }
 }
+
