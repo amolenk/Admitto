@@ -19,19 +19,21 @@ Each `FEAT-*.md` file is a self-contained feature specification. Before implemen
 ## Implementation Rules
 
 ### One User Story → One Vertical Slice
-- Each user story (`US-*`) in section 2 becomes its own subfolder under `Application/UseCases/{Feature}/{UseCaseName}/`.
-- The feature name in the folder path must match the spec title (e.g., `FEAT-001 Team Management` → `UseCases/TeamManagement/`).
-- Do not merge multiple user stories into a single handler.
+- Each user story (`US-*`) in section 2 should become its own primary slice whenever possible.
+- Prefer an existing `Application/UseCases/` grouping when one already models the capability cleanly.
+- Create a new top-level grouping only when no established grouping fits the feature.
+- Do not merge multiple user stories into a single handler or slice unless the spec explicitly documents the exception.
 
 ### One Acceptance Scenario → One Test Method
-- Every `SC-*` scenario in section 4 must have a corresponding test method.
+- Every `SC-*` scenario in section 4 should have a corresponding test method.
 - Test methods are prefixed with the scenario ID (e.g., `SC001_CreateTeam_ValidInput_CreatesTeam`).
 - `Must`-priority scenarios are mandatory; `Should`-priority scenarios should be implemented when feasible.
+- If the spec documents a controlled exception, keep scenario traceability and document why the default mapping is not followed.
 
 ### Mapping Feature Specs to Modules
 - The spec's **Epic / Parent** field (section 1) tells you which module the feature belongs to.
 - Implement the code in the module project indicated (e.g., `Admitto.Module.Organization` for Organization Module features).
-- Write tests in the corresponding test project (e.g., `Admitto.Module.Organization.Tests`).
+- Write tests in the corresponding domain, integration, or API test project based on the behavior changed.
 
 ## Do Not
 - Skip reading the full spec before starting implementation.

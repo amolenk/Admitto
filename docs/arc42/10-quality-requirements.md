@@ -14,20 +14,21 @@ Quality goals from [chapter 1](01-introduction-and-goals.md) are made concrete h
 
 ## 10.2 Test strategy
 
-### Two-tier test structure
+### Project test structure
 
-Each module has two test projects with distinct responsibilities:
+Admitto uses three complementary test suites:
 
 | Project | Tests | Database | Dependencies |
 | :------ | :---- | :------- | :----------- |
 | `*.Domain.Tests` | Aggregate invariants, value objects, domain logic | None (pure in-memory) | Direct entity construction via builders |
-| `*.Tests` | Handler integration, query results, persistence | Real PostgreSQL via Aspire | Aspire AppHost, Respawn, NSubstitute for cross-module facades |
+| `*.Tests` | Handler integration, query results, event-driven workflows, jobs, persistence | Real PostgreSQL via Aspire | Aspire AppHost, Respawn, NSubstitute for cross-module facades |
+| `Admitto.Api.Tests` | Routing, validation, authorization, and full HTTP pipeline behavior | Real PostgreSQL via Aspire | Aspire AppHost, real HTTP pipeline, test auth helpers |
 
-**Guiding principle:** Domain tests verify *business rules* in isolation; integration tests verify *handler orchestration* with real infrastructure.
+**Guiding principle:** Domain tests verify *business rules* in isolation; module integration tests verify *application orchestration* with real infrastructure; API tests verify the *full HTTP pipeline*.
 
 ### Aspire integration test infrastructure
 
-Integration tests run against a real PostgreSQL database managed by .NET Aspire:
+Module integration tests and API tests run against a real PostgreSQL database managed by .NET Aspire:
 
 1. **`AssemblySetup`** — `[AssemblyInitialize]` starts the Aspire `IntegrationTestAppHost` once per assembly, waits for `admitto-db` health, and creates the shared `IntegrationTestEnvironment`.
 2. **`IntegrationTestEnvironment`** — wraps a `DatabaseTestContext<TDbContext>` that creates the database from EF Core migrations and initializes Respawn.
@@ -107,9 +108,9 @@ Domain tests describe aggregate invariants — business rules that hold regardle
 
 Examples: `Create_UnknownTicketType_ThrowsUnknownTicketTypesError`, `Revoke_RedeemedCoupon_ThrowsCouponAlreadyRedeemedError`
 
-**Handler integration tests** (`*.Tests`) use: `{ScenarioId}_{UseCase}_{Condition}_{ExpectedOutcome}`
+**Integration and API tests** (`*.Tests`, `Admitto.Api.Tests`) use: `{ScenarioId}_{UseCase}_{Condition}_{ExpectedOutcome}`
 
-Handler tests map 1:1 to acceptance scenarios from a feature spec, so the `SC-*` prefix creates traceability back to the spec.
+These tests map to acceptance scenarios from a feature spec, so the `SC-*` prefix creates traceability back to the spec. Keep one scenario = one test whenever possible, and use only documented exceptions.
 
 Example: `SC001_CreateCoupon_ValidInput_PersistsCouponAndRaisesDomainEvent`
 

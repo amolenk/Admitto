@@ -37,9 +37,10 @@ When implementing a feature from `docs/specs/FEAT-*.md`:
 ### 1. Read the Spec First
 Read `docs/specs/AGENTS.md` for interpretation rules, then read the full feature spec.
 
-### 2. Feature-Named Folder Structure
-The top-level folder under `Application/UseCases/` is named after the **feature**
-(derived from the spec title), not the aggregate:
+### 2. Use Existing Capability Grouping First
+The top-level folder under `Application/UseCases/` should extend the existing
+capability grouping when one already fits the feature. Create a new grouping only
+when no established structure fits cleanly.
 
 ```
 Application/UseCases/
@@ -63,25 +64,29 @@ Application/UseCases/
 ```
 
 ### 3. One User Story → One Subfolder
-Each user story (`US-*`) in the spec becomes its own subfolder. Do not merge
-multiple user stories into a single handler.
+Each user story (`US-*`) in the spec should become its own primary subfolder
+whenever possible. Do not merge multiple user stories into a single handler unless
+the spec or existing architecture explicitly documents the exception.
 
 ### 4. Standard Slice Files
-Every use case subfolder must contain:
+HTTP-exposed use case subfolders typically contain:
 - `{Name}Command.cs` or `{Name}Query.cs` — the request object
 - `{Name}Handler.cs` — the business logic (must NOT commit `IUnitOfWork`)
 - `AdminApi/` (or `Public/`) subfolder with:
   - `{Name}HttpEndpoint.cs` — maps route, dispatches, commits `IUnitOfWork`
-  - `{Name}HttpRequest.cs` — DTO with `ToCommand()` / `ToQuery()` mapper
-  - `{Name}Validator.cs` — FluentValidation rules for the request DTO
+  - `{Name}HttpRequest.cs` — DTO with `ToCommand()` / `ToQuery()` mapper when the endpoint needs an inbound DTO
+  - `{Name}Validator.cs` — FluentValidation rules for the request DTO when validation is required
+
+Internal event-driven slices omit the HTTP folder and keep event translation in
+`EventHandlers/`. Jobs live under `Application/Jobs/`.
 
 ### 5. Wire the Endpoint
-Register the endpoint in the module's `{Module}ApiEndpoints.cs` file.
+Register the endpoint in the module's endpoint registration entry point.
 
 ### Canonical Examples
 - **Command:** `UseCases/TeamManagement/CreateTeam/` in `Admitto.Module.Organization`
 - **Query:** `UseCases/TeamManagement/GetTeam/` in `Admitto.Module.Organization`
 
 ## When You Change Architecture
-- Update `/docs/README.md`.
-- If the change is an architecture decision, add or update an ADR in `/docs/adrs`.
+- Update the relevant chapter in `docs/arc42/`.
+- If the change is an architecture decision, add or update an ADR in `docs/adrs/`.

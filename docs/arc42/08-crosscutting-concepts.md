@@ -30,7 +30,14 @@ Endpoints declare requirements with `policy.RequireAdminRole()` or `policy.Requi
 
 ## 8.5 Use case slice layout
 
-Each use case lives in a vertical slice folder under `Application/UseCases/{FeatureName}/{SliceName}/`. Feature group naming mirrors the aggregate being modified: `TeamManagement/`, `TicketedEvents/`, `Users/`.
+Each use case lives in a vertical slice folder under `Application/UseCases/{FeatureGroup}/{SliceName}/`.
+The top-level group follows the module's established capability structure. Prefer
+extending an existing group when it already fits the feature cleanly. Create a new
+group only when no established structure fits.
+
+One user story should map to one slice whenever possible. If a spec intentionally
+merges behavior, document the exception in the spec or architecture record rather
+than relying on an implicit convention.
 
 ### Standard HTTP-exposed slice
 
@@ -49,9 +56,9 @@ UseCases/TeamManagement/
 | :--- | :------- | :------- |
 | `{Slice}Command.cs` / `{Slice}Query.cs` | Immutable record sent via `IMediator` | Always |
 | `{Slice}Handler.cs` | Business logic; must not inject or commit UoW | Always |
-| `AdminApi/{Slice}HttpEndpoint.cs` | Minimal API endpoint; owns the UoW commit | When HTTP-exposed |
-| `AdminApi/{Slice}HttpRequest.cs` | Inbound DTO with `ToCommand()` helper | When HTTP-exposed |
-| `AdminApi/{Slice}Validator.cs` | FluentValidation validator for the request DTO | When HTTP-exposed |
+| `{Surface}/{Slice}HttpEndpoint.cs` | Minimal API endpoint; owns the UoW commit. `Surface` follows the established module convention, such as `AdminApi/` or `Public/`. | When HTTP-exposed |
+| `{Surface}/{Slice}HttpRequest.cs` | Inbound DTO with `ToCommand()` or `ToQuery()` helper | When the endpoint accepts structured input |
+| `{Surface}/{Slice}Validator.cs` | FluentValidation validator for the request DTO | When the endpoint uses a validated request DTO |
 | `EventHandlers/{Event}DomainEventHandler.cs` | Translates a domain event into the slice command | When triggered by domain event |
 
 ### Domain-event-triggered (internal) slice
@@ -71,7 +78,9 @@ The domain event handler lives in the feature folder of the aggregate that **rea
 
 ### HTTP endpoint registration
 
-All admin endpoints are wired in `{Module}ApiEndpoints.cs` via `MapXxx()` extension methods. Groups mirror the URL hierarchy:
+All admin endpoints are wired in the module's endpoint registration entry point
+(for example `OrganizationApiEndpoints.cs` or `RegistrationsModule.cs`) via
+`MapXxx()` extension methods. Groups mirror the URL hierarchy:
 
 ```csharp
 var teams = group.MapGroup("/teams");

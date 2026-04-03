@@ -37,7 +37,9 @@ Focus on these sections when implementing changes:
 
 Suggested commands:
 ```bash
+dotnet test tests/Admitto.Module.Organization.Domain.Tests/Admitto.Module.Organization.Domain.Tests.csproj
 dotnet test tests/Admitto.Module.Organization.Tests/Admitto.Module.Organization.Tests.csproj
+dotnet test tests/Admitto.Module.Registrations.Domain.Tests/Admitto.Module.Registrations.Domain.Tests.csproj
 dotnet test tests/Admitto.Module.Registrations.Tests/Admitto.Module.Registrations.Tests.csproj
 dotnet test tests/Admitto.Api.Tests/Admitto.Api.Tests.csproj
 ```
@@ -52,9 +54,10 @@ dotnet test tests/Admitto.Api.Tests/Admitto.Api.Tests.csproj
 Before declaring a feature complete, verify every item:
 
 - Read the full feature spec in `docs/specs/` (see `docs/specs/AGENTS.md` for interpretation rules).
-- Each user story has a corresponding vertical slice folder under `Application/UseCases/{Feature}/`.
-- Each slice follows the standard file layout (command/query, handler, endpoint, request, validator).
-- Endpoint is wired in `{Module}ApiEndpoints.cs`.
+- Each user story maps to one primary slice or implementation unit whenever possible. Follow only documented exceptions.
+- HTTP-exposed slices follow the standard file layout where applicable: command/query, handler, endpoint, and request/validator/response types as needed by the surface.
+- Internal event-driven work follows the event-handler pattern under `Application/UseCases/.../EventHandlers/`, and jobs live under `Application/Jobs/`.
+- Endpoint wiring is updated in the module's endpoint registration entry point.
 - Each admin API endpoint has a corresponding CLI command in `src/Admitto.Cli/Commands/` (see `src/Admitto.Cli/AGENTS.md`).
 - Each acceptance scenario (`SC-*`) has a corresponding test method with scenario ID prefix (`SC001_...`).
 - Tests use fixture/builder patterns, not inline setup.
