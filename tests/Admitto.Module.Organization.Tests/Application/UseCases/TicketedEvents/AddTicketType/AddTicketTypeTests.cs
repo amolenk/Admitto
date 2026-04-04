@@ -30,8 +30,6 @@ public sealed class AddTicketTypeTests(TestContext testContext) : AspireIntegrat
             ExpectedVersion: fixture.EventVersion,
             Slug: "vip",
             Name: "VIP Pass",
-            IsSelfService: false,
-            IsSelfServiceAvailable: false,
             TimeSlots: ["morning", "afternoon"],
             Capacity: 50);
 
@@ -53,8 +51,6 @@ public sealed class AddTicketTypeTests(TestContext testContext) : AspireIntegrat
             var ticketType = ticketedEvent.TicketTypes.Single();
             ticketType.Slug.Value.ShouldBe("vip");
             ticketType.Name.Value.ShouldBe("VIP Pass");
-            ticketType.IsSelfService.ShouldBeFalse();
-            ticketType.IsSelfServiceAvailable.ShouldBeFalse();
             ticketType.Capacity?.Value.ShouldBe(50);
             ticketType.TimeSlots.Length.ShouldBe(2);
             ticketType.IsCancelled.ShouldBeFalse();
@@ -76,8 +72,6 @@ public sealed class AddTicketTypeTests(TestContext testContext) : AspireIntegrat
             ExpectedVersion: fixture.EventVersion,
             Slug: fixture.ExistingTicketTypeSlug,
             Name: "Duplicate General",
-            IsSelfService: true,
-            IsSelfServiceAvailable: true,
             TimeSlots: ["all-day"],
             Capacity: null);
 
@@ -106,8 +100,6 @@ public sealed class AddTicketTypeTests(TestContext testContext) : AspireIntegrat
             ExpectedVersion: fixture.EventVersion,
             Slug: "standard",
             Name: "Standard Pass",
-            IsSelfService: true,
-            IsSelfServiceAvailable: true,
             TimeSlots: ["all-day"],
             Capacity: null);
 

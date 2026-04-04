@@ -53,7 +53,7 @@ dotnet test tests/Admitto.Api.Tests/Admitto.Api.Tests.csproj
 
 Before declaring a feature complete, verify every item:
 
-- Read the full feature spec in `docs/specs/` (see `docs/specs/AGENTS.md` for interpretation rules).
+- Read the full feature spec in `openspec/specs/` (use `openspec spec show <capability>` or view the file directly).
 - Each user story maps to one primary slice or implementation unit whenever possible. Follow only documented exceptions.
 - HTTP-exposed slices follow the standard file layout where applicable: command/query, handler, endpoint, and request/validator/response types as needed by the surface.
 - Internal event-driven work follows the event-handler pattern under `Application/UseCases/.../EventHandlers/`, and jobs live under `Application/Jobs/`.

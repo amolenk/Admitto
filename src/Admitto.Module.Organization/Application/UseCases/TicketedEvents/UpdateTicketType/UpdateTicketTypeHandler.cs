@@ -19,7 +19,6 @@ internal sealed class UpdateTicketTypeHandler(IOrganizationWriteStore writeStore
         ticketedEvent.UpdateTicketType(
             Slug.From(command.TicketTypeSlug),
             command.Name is not null ? DisplayName.From(command.Name) : null,
-            command.Capacity.HasValue ? Capacity.From(command.Capacity.Value) : (Capacity?)null,
-            command.IsSelfServiceAvailable);
+            command.Capacity.HasValue ? Capacity.From(command.Capacity.Value) : (Capacity?)null);
     }
 }

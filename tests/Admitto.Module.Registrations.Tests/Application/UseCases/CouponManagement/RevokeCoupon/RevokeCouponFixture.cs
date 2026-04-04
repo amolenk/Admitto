@@ -66,9 +66,7 @@ internal sealed class RevokeCouponFixture
 
         if (_seedRedeemedCoupon)
         {
-            // Simulate redemption via reflection (Redeem not yet implemented).
-            var property = typeof(Domain.Entities.Coupon).GetProperty(nameof(Domain.Entities.Coupon.RedeemedAt))!;
-            property.SetValue(coupon, DateTimeOffset.UtcNow);
+            coupon.Redeem();
         }
 
         if (_seedRevokedCoupon)

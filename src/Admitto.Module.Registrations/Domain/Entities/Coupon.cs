@@ -121,6 +121,17 @@ public class Coupon : Aggregate<CouponId>
         return coupon;
     }
 
+    public void Redeem()
+    {
+        if (RevokedAt.HasValue)
+            throw new BusinessRuleViolationException(Errors.CouponAlreadyRevoked);
+
+        if (RedeemedAt.HasValue)
+            throw new BusinessRuleViolationException(Errors.CouponAlreadyRedeemed);
+
+        RedeemedAt = DateTimeOffset.UtcNow;
+    }
+
     public void Revoke()
     {
         if (RedeemedAt.HasValue)
@@ -155,6 +166,11 @@ public class Coupon : Aggregate<CouponId>
         public static readonly Error CouponAlreadyRedeemed = new(
             "coupon.already_redeemed",
             "Cannot revoke a coupon that has already been redeemed.",
+            Type: ErrorType.Conflict);
+
+        public static readonly Error CouponAlreadyRevoked = new(
+            "coupon.already_revoked",
+            "This coupon has been revoked.",
             Type: ErrorType.Conflict);
     }
 }

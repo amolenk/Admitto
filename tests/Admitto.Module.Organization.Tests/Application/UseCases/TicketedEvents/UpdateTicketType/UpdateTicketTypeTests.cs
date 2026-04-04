@@ -24,8 +24,7 @@ public sealed class UpdateTicketTypeTests(TestContext testContext) : AspireInteg
             ExpectedVersion: fixture.EventVersion,
             TicketTypeSlug: fixture.TicketTypeSlug,
             Name: null,
-            Capacity: 150,
-            IsSelfServiceAvailable: false);
+            Capacity: 150);
 
         var sut = new UpdateTicketTypeHandler(Environment.Database.Context);
 
@@ -43,7 +42,6 @@ public sealed class UpdateTicketTypeTests(TestContext testContext) : AspireInteg
 
             var ticketType = ticketedEvent.TicketTypes.Single(tt => tt.Slug.Value == fixture.TicketTypeSlug);
             ticketType.Capacity?.Value.ShouldBe(150);
-            ticketType.IsSelfServiceAvailable.ShouldBeFalse();
             ticketType.Name.Value.ShouldBe("General Admission");
         });
     }

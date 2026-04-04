@@ -146,8 +146,7 @@ public sealed class TicketedEventTests
         var name = DisplayName.From("General Admission");
 
         // Act
-        sut.AddTicketType(slug, name, isSelfService: false, isSelfServiceAvailable: false,
-            timeSlots: [], capacity: null);
+        sut.AddTicketType(slug, name, timeSlots: [], capacity: null);
 
         // Assert
         sut.TicketTypes.ShouldHaveSingleItem().ShouldSatisfyAllConditions(tt =>
@@ -171,7 +170,7 @@ public sealed class TicketedEventTests
 
         // Act
         var result = ErrorResult.Capture(() =>
-            sut.AddTicketType(slug, DisplayName.From("Duplicate"), false, false, [], null));
+            sut.AddTicketType(slug, DisplayName.From("Duplicate"), [], null));
 
         // Assert
         result.Error.ShouldMatch(TicketedEvent.Errors.DuplicateTicketTypeSlug(slug));
@@ -185,7 +184,7 @@ public sealed class TicketedEventTests
 
         // Act
         var result = ErrorResult.Capture(() =>
-            sut.AddTicketType(Slug.From("new-type"), DisplayName.From("New Type"), false, false, [], null));
+            sut.AddTicketType(Slug.From("new-type"), DisplayName.From("New Type"), [], null));
 
         // Assert
         result.Error.ShouldMatch(TicketedEvent.Errors.EventCancelled(sut.Id));
@@ -196,7 +195,7 @@ public sealed class TicketedEventTests
     // -------------------------------------------------------------------------
 
     [TestMethod]
-    public void SC017_UpdateTicketType_UpdatesCapacityAndAvailability()
+    public void SC017_UpdateTicketType_UpdatesCapacity()
     {
         // Arrange
         var slug = Slug.From("general-admission");
@@ -209,13 +208,12 @@ public sealed class TicketedEventTests
         var newCapacity = Capacity.From(100);
 
         // Act
-        sut.UpdateTicketType(slug, null, newCapacity, isSelfServiceAvailable: true);
+        sut.UpdateTicketType(slug, null, newCapacity);
 
         // Assert
         sut.TicketTypes.ShouldHaveSingleItem().ShouldSatisfyAllConditions(tt =>
         {
             tt.Capacity.ShouldBe(newCapacity);
-            tt.IsSelfServiceAvailable.ShouldBeTrue();
         });
     }
 
@@ -234,7 +232,7 @@ public sealed class TicketedEventTests
 
         // Act
         var result = ErrorResult.Capture(() =>
-            sut.UpdateTicketType(slug, null, Capacity.From(50), null));
+            sut.UpdateTicketType(slug, null, Capacity.From(50)));
 
         // Assert
         result.Error.ShouldMatch(TicketedEvent.Errors.TicketTypeAlreadyCancelled(slug));

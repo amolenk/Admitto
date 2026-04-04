@@ -23,7 +23,14 @@ internal class GetTicketTypesHandler(IOrganizationWriteStore writeStore)
         if (ticketedEvent is null) return [];
 
         return ticketedEvent.TicketTypes
-            .Select(tt => new TicketTypeDto { Slug = tt.Slug.Value, Name = tt.Name.Value, IsCancelled = tt.IsCancelled })
+            .Select(tt => new TicketTypeDto
+            {
+                Slug = tt.Slug.Value,
+                Name = tt.Name.Value,
+                TimeSlots = tt.TimeSlots.Select(ts => ts.Slug.Value).ToList(),
+                Capacity = tt.Capacity == null ? (int?)null : tt.Capacity.Value.Value,
+                IsCancelled = tt.IsCancelled
+            })
             .ToArray();
     }
 }

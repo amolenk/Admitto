@@ -53,16 +53,12 @@ internal sealed class CancelTicketedEventFixture
             ticketedEvent.AddTicketType(
                 Slug.From("general"),
                 DisplayName.From("General Admission"),
-                isSelfService: true,
-                isSelfServiceAvailable: true,
                 timeSlots: [new TimeSlot(Slug.From("all-day"))],
                 capacity: Capacity.From(200));
 
             ticketedEvent.AddTicketType(
                 Slug.From("vip"),
                 DisplayName.From("VIP Pass"),
-                isSelfService: false,
-                isSelfServiceAvailable: false,
                 timeSlots: [new TimeSlot(Slug.From("morning"))],
                 capacity: Capacity.From(20));
         }

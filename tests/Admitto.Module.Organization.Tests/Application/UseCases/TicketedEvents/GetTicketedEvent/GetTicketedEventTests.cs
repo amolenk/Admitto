@@ -37,16 +37,12 @@ public sealed class GetTicketedEventTests(TestContext testContext) : AspireInteg
         var general = result.TicketTypes.FirstOrDefault(tt => tt.Slug == "general");
         general.ShouldNotBeNull();
         general.Name.ShouldBe("General Admission");
-        general.IsSelfService.ShouldBeTrue();
-        general.IsSelfServiceAvailable.ShouldBeTrue();
         general.Capacity.ShouldBe(500);
         general.IsCancelled.ShouldBeFalse();
 
         var vip = result.TicketTypes.FirstOrDefault(tt => tt.Slug == "vip");
         vip.ShouldNotBeNull();
         vip.Name.ShouldBe("VIP Pass");
-        vip.IsSelfService.ShouldBeFalse();
-        vip.IsSelfServiceAvailable.ShouldBeFalse();
         vip.Capacity.ShouldBe(50);
         vip.TimeSlots.Count.ShouldBe(2);
     }

@@ -27,8 +27,6 @@ internal sealed class AddTicketTypeHandler(IOrganizationWriteStore writeStore)
         ticketedEvent.AddTicketType(
             Slug.From(command.Slug),
             DisplayName.From(command.Name),
-            command.IsSelfService,
-            command.IsSelfServiceAvailable,
             timeSlots,
             capacity);
     }

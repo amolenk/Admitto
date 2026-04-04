@@ -65,8 +65,7 @@ public class TicketedEventBuilder
 
         foreach (var (slug, name) in _ticketTypes)
         {
-            ticketedEvent.AddTicketType(slug, name, isSelfService: false, isSelfServiceAvailable: false,
-                timeSlots: [], capacity: null);
+            ticketedEvent.AddTicketType(slug, name, timeSlots: [], capacity: null);
         }
 
         if (_targetStatus == EventStatus.Cancelled)

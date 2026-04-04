@@ -1,0 +1,30 @@
+schema: spec-driven
+
+# Project context (optional)
+# This is shown to AI when creating artifacts.
+context: |
+  Read the arc42 documentation in `docs/arc42/`
+  Treat it as the source of truth for constraints, decisions, and concepts
+  If a request conflicts with the docs, do not "pick a side".
+  Explain the conflict and propose a change to the docs (ADR), the code, or both.
+  The repository contains a legacy codebase that is being refactored.
+  Legacy projects: Admitto.Application, Admitto.Domain, Admitto.Infrastructure
+
+
+# Per-artifact rules (optional)
+# Add custom rules for specific artifacts.
+# Example:
+#   rules:
+#     proposal:
+#       - Keep proposals under 500 words
+#       - Always include a "Non-goals" section
+#     tasks:
+#       - Break tasks into chunks of max 2 hours
+
+# rules:
+#   proposal:
+#     - Include rollback plan
+#     - Identify affected teams
+#   specs:
+#     - Use Given/When/Then format
+#     - Reference existing patterns before inventing new ones

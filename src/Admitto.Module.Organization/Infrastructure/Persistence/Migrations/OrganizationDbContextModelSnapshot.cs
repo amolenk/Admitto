@@ -228,12 +228,6 @@ namespace Amolenk.Admitto.Module.Organization.Infrastructure.Persistence.Migrati
                             b1.Property<bool>("IsCancelled")
                                 .HasJsonPropertyName("isCancelled");
 
-                            b1.Property<bool>("IsSelfService")
-                                .HasJsonPropertyName("isSelfService");
-
-                            b1.Property<bool>("IsSelfServiceAvailable")
-                                .HasJsonPropertyName("isSelfServiceAvailable");
-
                             b1.Property<string>("Name")
                                 .IsRequired()
                                 .HasJsonPropertyName("name");

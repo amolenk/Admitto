@@ -14,8 +14,6 @@ internal sealed record TicketedEventDto(
 internal sealed record TicketTypeDto(
     string Slug,
     string Name,
-    bool IsSelfService,
-    bool IsSelfServiceAvailable,
     IReadOnlyList<string> TimeSlots,
     int? Capacity,
     bool IsCancelled);

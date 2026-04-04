@@ -7,7 +7,6 @@ namespace Amolenk.Admitto.Module.Organization.Application.UseCases.TicketedEvent
 public sealed record UpdateTicketTypeHttpRequest(
     string Name,
     int? Capacity,
-    bool IsSelfServiceAvailable,
     uint? ExpectedVersion)
 {
     internal UpdateTicketTypeCommand ToCommand(Guid teamId, Guid eventId, string ticketTypeSlug) =>
@@ -17,6 +16,5 @@ public sealed record UpdateTicketTypeHttpRequest(
             ticketTypeSlug,
             Name,
             Capacity,
-            IsSelfServiceAvailable,
             ExpectedVersion);
 }

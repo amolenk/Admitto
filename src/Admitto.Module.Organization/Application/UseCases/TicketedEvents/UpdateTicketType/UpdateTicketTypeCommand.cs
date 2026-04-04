@@ -8,5 +8,4 @@ internal sealed record UpdateTicketTypeCommand(
     string TicketTypeSlug,
     string? Name,
     int? Capacity,
-    bool? IsSelfServiceAvailable,
     uint? ExpectedVersion) : Command;

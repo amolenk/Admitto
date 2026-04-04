@@ -7,28 +7,17 @@ namespace Amolenk.Admitto.Cli.Commands.Events.Policy.Registration;
 
 public class SetSettings : TeamEventSettings
 {
-    [CommandOption("--opens-before")]
-    [Description("The timespan before the event when registration opens")]
-    public TimeSpan? OpensBeforeEvent { get; set; }
+    [CommandOption("--window-open")]
+    [Description("The registration window open date/time (ISO 8601)")]
+    public string? WindowOpensAt { get; set; }
 
-    [CommandOption("--closes-before")]
-    [Description("The timespan before the event when registration closes")]
-    public TimeSpan? ClosesBeforeEvent { get; set; }
+    [CommandOption("--window-close")]
+    [Description("The registration window close date/time (ISO 8601)")]
+    public string? WindowClosesAt { get; set; }
 
-    public override ValidationResult Validate()
-    {
-        if (OpensBeforeEvent is null)
-        {
-            return ValidationErrors.OpensBeforeEventMissing;
-        }
-
-        if (ClosesBeforeEvent is null)
-        {
-            return ValidationErrors.ClosesBeforeEventMissing;
-        }
-
-        return base.Validate();
-    }
+    [CommandOption("--allowed-domain")]
+    [Description("Restrict self-service registration to this email domain (e.g. @acme.com). Omit to remove restriction.")]
+    public string? AllowedEmailDomain { get; set; }
 }
 
 public class SetRegistrationPolicyCommand(IAdmittoService admittoService, IConfigService configService)
@@ -42,14 +31,39 @@ public class SetRegistrationPolicyCommand(IAdmittoService admittoService, IConfi
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);
 
-        var request = new SetRegistrationPolicyRequest
+        DateTimeOffset? windowOpensAt = null;
+        if (!string.IsNullOrWhiteSpace(settings.WindowOpensAt))
         {
-            OpensBeforeEvent = settings.OpensBeforeEvent!.Value,
-            ClosesBeforeEvent = settings.ClosesBeforeEvent!.Value
+            if (!DateTimeOffset.TryParse(settings.WindowOpensAt, out var parsed))
+            {
+                AnsiConsoleExt.WriteErrorMessage("Invalid --window-open value. Expected ISO 8601 date/time.");
+                return 1;
+            }
+
+            windowOpensAt = parsed;
+        }
+
+        DateTimeOffset? windowClosesAt = null;
+        if (!string.IsNullOrWhiteSpace(settings.WindowClosesAt))
+        {
+            if (!DateTimeOffset.TryParse(settings.WindowClosesAt, out var parsed))
+            {
+                AnsiConsoleExt.WriteErrorMessage("Invalid --window-close value. Expected ISO 8601 date/time.");
+                return 1;
+            }
+
+            windowClosesAt = parsed;
+        }
+
+        var request = new UpdateRegistrationPolicyRequest
+        {
+            RegistrationWindowOpensAt = windowOpensAt,
+            RegistrationWindowClosesAt = windowClosesAt,
+            AllowedEmailDomain = settings.AllowedEmailDomain
         };
 
         var result = await admittoService.SendAsync(client =>
-            client.SetRegistrationPolicyAsync(teamSlug, eventSlug, request, cancellationToken));
+            client.UpdateRegistrationPolicyAsync(teamSlug, eventSlug, request, cancellationToken));
         if (!result) return 1;
 
         AnsiConsoleExt.WriteSuccesMessage("Successfully set registration policy.");

@@ -17,29 +17,29 @@ internal sealed class GetTicketedEventHandler(IOrganizationWriteStore writeStore
         var teamId = TeamId.From(query.TeamId);
         var eventSlug = Slug.From(query.EventSlug);
 
-        var dto = await writeStore.TicketedEvents
+        var entity = await writeStore.TicketedEvents
             .AsNoTracking()
             .Where(e => e.TeamId == teamId && e.Slug == eventSlug)
-            .Select(e => new TicketedEventDto(
-                e.Slug.Value,
-                e.Name.Value,
-                e.WebsiteUrl.Value.ToString(),
-                e.BaseUrl.Value.ToString(),
-                e.EventWindow.Start,
-                e.EventWindow.End,
-                e.Status.ToString(),
-                e.Version,
-                e.TicketTypes.Select(tt => new TicketTypeDto(
-                    tt.Slug.Value,
-                    tt.Name.Value,
-                    tt.IsSelfService,
-                    tt.IsSelfServiceAvailable,
-                    tt.TimeSlots.Select(ts => ts.Slug.Value).ToList(),
-                    tt.Capacity == null ? (int?)null : tt.Capacity.Value.Value,
-                    tt.IsCancelled)).ToList()))
             .FirstOrDefaultAsync(cancellationToken);
 
-        return dto ?? throw new BusinessRuleViolationException(
-            NotFoundError.Create<TicketedEvent>(query.EventSlug));
+        if (entity is null)
+            throw new BusinessRuleViolationException(
+                NotFoundError.Create<TicketedEvent>(query.EventSlug));
+
+        return new TicketedEventDto(
+            entity.Slug.Value,
+            entity.Name.Value,
+            entity.WebsiteUrl.Value.ToString(),
+            entity.BaseUrl.Value.ToString(),
+            entity.EventWindow.Start,
+            entity.EventWindow.End,
+            entity.Status.ToString(),
+            entity.Version,
+            entity.TicketTypes.Select(tt => new TicketTypeDto(
+                tt.Slug.Value,
+                tt.Name.Value,
+                tt.TimeSlots.Select(ts => ts.Slug.Value).ToList(),
+                tt.Capacity == null ? (int?)null : tt.Capacity.Value.Value,
+                tt.IsCancelled)).ToList());
     }
 }

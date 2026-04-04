@@ -126,8 +126,6 @@ public class TicketedEvent : Aggregate<TicketedEventId>
     public void AddTicketType(
         Slug slug,
         DisplayName name,
-        bool isSelfService,
-        bool isSelfServiceAvailable,
         TimeSlot[] timeSlots,
         Capacity? capacity)
     {
@@ -138,14 +136,20 @@ public class TicketedEvent : Aggregate<TicketedEventId>
             throw new BusinessRuleViolationException(Errors.DuplicateTicketTypeSlug(slug));
         }
 
-        _ticketTypes.Add(new TicketType(slug, name, isSelfService, isSelfServiceAvailable, timeSlots, capacity));
+        _ticketTypes.Add(new TicketType(slug, name, timeSlots, capacity));
+
+        AddDomainEvent(new TicketTypeAddedDomainEvent(
+            Id,
+            slug.Value,
+            name.Value,
+            timeSlots.Select(ts => ts.Slug.Value).ToArray(),
+            capacity?.Value));
     }
 
     public void UpdateTicketType(
         Slug slug,
         DisplayName? name,
-        Capacity? capacity,
-        bool? isSelfServiceAvailable)
+        Capacity? capacity)
     {
         EnsureNotCancelledOrArchived();
 
@@ -157,11 +161,15 @@ public class TicketedEvent : Aggregate<TicketedEventId>
             throw new BusinessRuleViolationException(Errors.TicketTypeAlreadyCancelled(slug));
         }
 
+        if (capacity != existing.Capacity)
+        {
+            AddDomainEvent(new TicketTypeCapacityChangedDomainEvent(Id, slug.Value, capacity?.Value));
+        }
+
         _ticketTypes[index] = existing with
         {
             Name = name ?? existing.Name,
-            Capacity = capacity,
-            IsSelfServiceAvailable = isSelfServiceAvailable ?? existing.IsSelfServiceAvailable
+            Capacity = capacity
         };
     }
 

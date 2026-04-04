@@ -1,70 +1,60 @@
-// using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
-// using Amolenk.Admitto.Module.Shared.Kernel.Entities;
-// using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
-//
-// namespace Amolenk.Admitto.Module.Registrations.Domain.Entities;
-//
-// public class EventCapacity : Aggregate<TicketedEventId>
-// {
-//     private readonly List<TicketCapacity> _ticketTypeCapacities = [];
-//
-//     // EF Core constructor
-//     private EventCapacity()
-//     {
-//     }
-//
-//     private EventCapacity(
-//         TicketedEventId id)
-//         : base(id)
-//     {
-//     }
-//
-//     public IReadOnlyCollection<TicketCapacity> TicketCapacities => _ticketTypeCapacities.AsReadOnly();
-//
-//     public static EventCapacity Create(
-//         TicketedEventId ticketedEventId)
-//     {
-//         return new EventCapacity(ticketedEventId);
-//     }
-//     
-//     public static EventCapacity Rehydrate(TicketedEventId eventId, IReadOnlyList<TicketCapacity> ticketCapacities)
-//     {
-//         throw new NotImplementedException();
-//     }
-//
-//
-//     public void Claim(IReadOnlyList<TicketRequest> ticketRequests)
-//     {
-//         // for each ticket request, check if there is enough capacity
-//         // if there is enough capacity, reduce the available capacity
-//         // if there is not enough capacity, return an error
-//
-//         foreach (var ticketRequest in ticketRequests)
-//         {
-//             var capacity = _ticketTypeCapacities
-//                 .FirstOrDefault(tc => tc.Id == ticketRequest.TicketTypeId);
-//             if (capacity is null)
-//             {
-//                 throw new BusinessRuleViolationException(Errors.TicketTypeCapacityNotFound(ticketRequest.TicketTypeId));
-//             }
-//
-//             capacity.ClaimTicket();
-//         }
-//     }
-//
-//     public void SetTicketTypeCapacity(TicketTypeId id, int capacity)
-//     {
-//         // TODO Validate and remove name
-//         _ticketTypeCapacities.Add(TicketCapacity.Create(id, "unused", capacity, 0));
-//     }
-//
-//     private static class Errors
-//     {
-//         public static Error TicketTypeCapacityNotFound(TicketTypeId ticketTypeId) =>
-//             new(
-//                 "ticket_capacity_not_found",
-//                 "Cannot find capacity details for ticket type.",
-//                 ErrorType.Validation,
-//                 new Dictionary<string, object?> { ["ticketTypeId"] = ticketTypeId.Value });
-//     }
-// }
+using Amolenk.Admitto.Module.Shared.Kernel.Entities;
+using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
+using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
+
+namespace Amolenk.Admitto.Module.Registrations.Domain.Entities;
+
+/// <summary>
+/// Tracks ticket capacity for an event. Keyed by TicketedEventId.
+/// Optimistic concurrency is enforced via the inherited Version row-version token.
+/// </summary>
+public class EventCapacity : Aggregate<TicketedEventId>
+{
+    private readonly List<TicketCapacity> _ticketCapacities = [];
+
+    private EventCapacity() { }
+
+    private EventCapacity(TicketedEventId id) : base(id) { }
+
+    public IReadOnlyList<TicketCapacity> TicketCapacities => _ticketCapacities.AsReadOnly();
+
+    public static EventCapacity Create(TicketedEventId eventId) => new(eventId);
+
+    /// <summary>
+    /// Adds or updates a TicketCapacity entry for the given slug.
+    /// </summary>
+    public void SetTicketCapacity(string slug, int? maxCapacity)
+    {
+        var existing = _ticketCapacities.FirstOrDefault(tc => tc.Id == slug);
+        if (existing is null)
+            _ticketCapacities.Add(TicketCapacity.Create(slug, maxCapacity));
+        else
+            existing.UpdateMaxCapacity(maxCapacity);
+    }
+
+    /// <summary>
+    /// Claims tickets for the given slugs. If enforce is true, capacity is enforced (self-service path).
+    /// If enforce is false, UsedCapacity is incremented without enforcement (coupon path).
+    /// </summary>
+    public void Claim(IReadOnlyList<string> slugs, bool enforce)
+    {
+        foreach (var slug in slugs)
+        {
+            var capacity = _ticketCapacities.FirstOrDefault(tc => tc.Id == slug);
+            if (capacity is null)
+                throw new BusinessRuleViolationException(Errors.TicketCapacityNotFound(slug));
+
+            if (enforce)
+                capacity.ClaimWithEnforcement();
+            else
+                capacity.ClaimUncapped();
+        }
+    }
+
+    private static class Errors
+    {
+        public static Error TicketCapacityNotFound(string slug) =>
+            new("ticket_capacity_not_found", "Capacity record not found for ticket type.",
+                Details: new Dictionary<string, object?> { ["slug"] = slug });
+    }
+}

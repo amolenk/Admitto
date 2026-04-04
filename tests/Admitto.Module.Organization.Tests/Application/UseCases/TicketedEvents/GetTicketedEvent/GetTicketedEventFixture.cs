@@ -42,16 +42,12 @@ internal sealed class GetTicketedEventFixture
         ticketedEvent.AddTicketType(
             Slug.From("general"),
             DisplayName.From("General Admission"),
-            isSelfService: true,
-            isSelfServiceAvailable: true,
             timeSlots: [new TimeSlot(Slug.From("all-day"))],
             capacity: Capacity.From(500));
 
         ticketedEvent.AddTicketType(
             Slug.From("vip"),
             DisplayName.From("VIP Pass"),
-            isSelfService: false,
-            isSelfServiceAvailable: false,
             timeSlots: [new TimeSlot(Slug.From("morning")), new TimeSlot(Slug.From("afternoon"))],
             capacity: Capacity.From(50));
 

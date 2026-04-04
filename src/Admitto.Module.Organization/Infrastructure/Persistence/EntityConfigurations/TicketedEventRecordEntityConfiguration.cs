@@ -79,12 +79,6 @@ public class TicketedEventEntityConfiguration : IEntityTypeConfiguration<Tickete
                 b.Property(tt => tt.Name)
                     .HasJsonPropertyName("name");
 
-                b.Property(tt => tt.IsSelfService)
-                    .HasJsonPropertyName("isSelfService");
-
-                b.Property(tt => tt.IsSelfServiceAvailable)
-                    .HasJsonPropertyName("isSelfServiceAvailable");
-
                 b.PrimitiveCollection(tt => tt.TimeSlots)
                   .HasJsonPropertyName("timeSlots")
                   .ElementType()

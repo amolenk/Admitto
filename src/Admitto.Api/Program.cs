@@ -98,6 +98,7 @@ app.UseOutputCache();
 
 app.MapDefaultEndpoints();
 app.MapAdminEndpoints();
+app.MapPublicEndpoints();
 
 var logger = app.Services.GetRequiredService<ILogger<AppDomain>>();
 logger.LogInformation("Starting application...");

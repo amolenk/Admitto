@@ -15,6 +15,7 @@ public static class DependencyInjection
 
         services.AddCommandHandlersFromAssembly(executingAssembly, capabilities);
         services.AddDomainEventHandlersFromAssembly(executingAssembly);
+        services.AddModuleEventHandlersFromAssembly(executingAssembly);
         services.AddQueryHandlersFromAssembly(executingAssembly);
         services.AddValidatorsFromAssembly(executingAssembly);
 

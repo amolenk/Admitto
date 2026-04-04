@@ -3,8 +3,6 @@ namespace Amolenk.Admitto.Module.Organization.Application.UseCases.TicketedEvent
 public sealed record AddTicketTypeHttpRequest(
     string Slug,
     string Name,
-    bool IsSelfService,
-    bool IsSelfServiceAvailable,
     string[] TimeSlots,
     int? Capacity,
     uint? ExpectedVersion)
@@ -15,8 +13,6 @@ public sealed record AddTicketTypeHttpRequest(
             eventId,
             Slug,
             Name,
-            IsSelfService,
-            IsSelfServiceAvailable,
             TimeSlots,
             Capacity,
             ExpectedVersion);

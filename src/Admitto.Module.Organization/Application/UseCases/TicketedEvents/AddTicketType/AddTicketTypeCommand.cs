@@ -7,8 +7,6 @@ internal sealed record AddTicketTypeCommand(
     Guid EventId,
     string Slug,
     string Name,
-    bool IsSelfService,
-    bool IsSelfServiceAvailable,
     string[] TimeSlots,
     int? Capacity,
     uint? ExpectedVersion) : Command;

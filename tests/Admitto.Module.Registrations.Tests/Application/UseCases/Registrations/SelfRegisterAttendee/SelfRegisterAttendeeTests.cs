@@ -1,0 +1,272 @@
+using Amolenk.Admitto.Module.Registrations.Application.UseCases.Registrations.SelfRegisterAttendee;
+using Amolenk.Admitto.Module.Registrations.Domain.Entities;
+using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
+using Amolenk.Admitto.Module.Registrations.Tests.Application.Aspire;
+using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
+using Amolenk.Admitto.Testing.Infrastructure.Assertions;
+using Microsoft.EntityFrameworkCore;
+
+namespace Amolenk.Admitto.Module.Registrations.Tests.Application.UseCases.Registrations.SelfRegisterAttendee;
+
+[TestClass]
+public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireIntegrationTestBase
+{
+    // SC001: Successful self-service registration
+    [TestMethod]
+    public async ValueTask SC001_SelfRegisterAttendee_Success_CreatesRegistrationAndUpdatesCapacity()
+    {
+        var fixture = SelfRegisterAttendeeFixture.OpenWindowWithCapacity(max: 100, used: 50);
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(fixture.EventId, "dave@example.com", fixture.TicketTypeSlug);
+        var sut = NewHandler(fixture);
+
+        var registrationId = await sut.HandleAsync(command, testContext.CancellationToken);
+
+        await Environment.Database.AssertAsync(async dbContext =>
+        {
+            var registration = await dbContext.Registrations.SingleOrDefaultAsync(testContext.CancellationToken);
+            registration.ShouldNotBeNull();
+            registration.Id.ShouldBe(registrationId);
+            registration.Email.Value.ShouldBe("dave@example.com");
+            registration.Tickets.ShouldHaveSingleItem().Slug.ShouldBe(fixture.TicketTypeSlug);
+
+            var capacity = await dbContext.EventCapacities.SingleOrDefaultAsync(testContext.CancellationToken);
+            capacity.ShouldNotBeNull();
+            capacity.TicketCapacities[0].UsedCapacity.ShouldBe(51);
+        });
+    }
+
+    // SC002: Self-service rejected — capacity full
+    [TestMethod]
+    public async ValueTask SC002_SelfRegisterAttendee_CapacityFull_ThrowsAtCapacityError()
+    {
+        var fixture = SelfRegisterAttendeeFixture.CapacityFull();
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(fixture.EventId, "dave@example.com", "workshop");
+        var sut = NewHandler(fixture);
+
+        var result = await ErrorResult.CaptureAsync(
+            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
+
+        result.Error.Code.ShouldBe("ticket_type_at_capacity");
+    }
+
+    // SC003: Self-service rejected — ticket type has no capacity set
+    [TestMethod]
+    public async ValueTask SC003_SelfRegisterAttendee_NoCapacitySet_ThrowsNotAvailableError()
+    {
+        var fixture = SelfRegisterAttendeeFixture.NoCapacitySet();
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(fixture.EventId, "dave@example.com", "speaker-pass");
+        var sut = NewHandler(fixture);
+
+        var result = await ErrorResult.CaptureAsync(
+            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
+
+        result.Error.Code.ShouldBe("ticket_type_not_available");
+    }
+
+    // SC004: Self-service rejected — before registration window opens
+    [TestMethod]
+    public async ValueTask SC004_SelfRegisterAttendee_BeforeWindowOpens_ThrowsRegistrationNotOpenError()
+    {
+        var fixture = SelfRegisterAttendeeFixture.WindowNotYetOpen();
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(fixture.EventId, "dave@example.com", fixture.TicketTypeSlug);
+        var sut = NewHandler(fixture);
+
+        var result = await ErrorResult.CaptureAsync(
+            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
+
+        result.Error.ShouldMatch(SelfRegisterAttendeeHandler.Errors.RegistrationNotOpen);
+    }
+
+    // SC005: Self-service rejected — after registration window closes
+    [TestMethod]
+    public async ValueTask SC005_SelfRegisterAttendee_AfterWindowCloses_ThrowsRegistrationClosedError()
+    {
+        var fixture = SelfRegisterAttendeeFixture.WindowClosed();
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(fixture.EventId, "dave@example.com", fixture.TicketTypeSlug);
+        var sut = NewHandler(fixture);
+
+        var result = await ErrorResult.CaptureAsync(
+            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
+
+        result.Error.ShouldMatch(SelfRegisterAttendeeHandler.Errors.RegistrationClosed);
+    }
+
+    // SC006: Self-service rejected — no registration window configured
+    [TestMethod]
+    public async ValueTask SC006_SelfRegisterAttendee_NoWindowConfigured_ThrowsRegistrationNotOpenError()
+    {
+        var fixture = SelfRegisterAttendeeFixture.NoWindowConfigured();
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(fixture.EventId, "dave@example.com", fixture.TicketTypeSlug);
+        var sut = NewHandler(fixture);
+
+        var result = await ErrorResult.CaptureAsync(
+            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
+
+        result.Error.ShouldMatch(SelfRegisterAttendeeHandler.Errors.RegistrationNotOpen);
+    }
+
+    // SC007: Self-service rejected — email domain mismatch
+    [TestMethod]
+    public async ValueTask SC007_SelfRegisterAttendee_DomainMismatch_ThrowsEmailDomainNotAllowedError()
+    {
+        var fixture = SelfRegisterAttendeeFixture.WithDomainRestriction("@acme.com");
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(fixture.EventId, "outsider@gmail.com", fixture.TicketTypeSlug);
+        var sut = NewHandler(fixture);
+
+        var result = await ErrorResult.CaptureAsync(
+            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
+
+        result.Error.ShouldMatch(SelfRegisterAttendeeHandler.Errors.EmailDomainNotAllowed);
+    }
+
+    // SC008: Self-service allowed — email domain matches
+    [TestMethod]
+    public async ValueTask SC008_SelfRegisterAttendee_DomainMatches_CreatesRegistration()
+    {
+        var fixture = SelfRegisterAttendeeFixture.WithDomainRestriction("@acme.com");
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(fixture.EventId, "employee@acme.com", fixture.TicketTypeSlug);
+        var sut = NewHandler(fixture);
+
+        await sut.HandleAsync(command, testContext.CancellationToken);
+
+        await Environment.Database.AssertAsync(async dbContext =>
+        {
+            var registration = await dbContext.Registrations.SingleOrDefaultAsync(testContext.CancellationToken);
+            registration.ShouldNotBeNull();
+            registration.Email.Value.ShouldBe("employee@acme.com");
+        });
+    }
+
+    // SC009: Successful registration with multiple ticket types
+    [TestMethod]
+    public async ValueTask SC009_SelfRegisterAttendee_MultipleTickets_CreatesRegistrationWithBothTickets()
+    {
+        var fixture = SelfRegisterAttendeeFixture.WithMultipleTicketTypes();
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(fixture.EventId, "dave@example.com", "general-admission", "workshop-a");
+        var sut = NewHandler(fixture);
+
+        await sut.HandleAsync(command, testContext.CancellationToken);
+
+        await Environment.Database.AssertAsync(async dbContext =>
+        {
+            var registration = await dbContext.Registrations.SingleOrDefaultAsync(testContext.CancellationToken);
+            registration.ShouldNotBeNull();
+            registration.Tickets.Count.ShouldBe(2);
+
+            var capacity = await dbContext.EventCapacities.SingleOrDefaultAsync(testContext.CancellationToken);
+            capacity.ShouldNotBeNull();
+            capacity.TicketCapacities.Single(tc => tc.Id == "general-admission").UsedCapacity.ShouldBe(1);
+            capacity.TicketCapacities.Single(tc => tc.Id == "workshop-a").UsedCapacity.ShouldBe(1);
+        });
+    }
+
+    // SC010: Rejected — duplicate ticket types in selection
+    [TestMethod]
+    public async ValueTask SC010_SelfRegisterAttendee_DuplicateTickets_ThrowsDuplicateError()
+    {
+        var fixture = SelfRegisterAttendeeFixture.OpenWindowWithCapacity();
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(fixture.EventId, "dave@example.com",
+            fixture.TicketTypeSlug, fixture.TicketTypeSlug);
+        var sut = NewHandler(fixture);
+
+        var result = await ErrorResult.CaptureAsync(
+            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
+
+        result.Error.Code.ShouldBe("registration.duplicate_ticket_types");
+    }
+
+    // SC011: Rejected — non-existent ticket type
+    [TestMethod]
+    public async ValueTask SC011_SelfRegisterAttendee_UnknownTicketType_ThrowsUnknownTicketTypesError()
+    {
+        var fixture = SelfRegisterAttendeeFixture.OpenWindowWithCapacity();
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(fixture.EventId, "dave@example.com", "premium-vip");
+        var sut = NewHandler(fixture);
+
+        var result = await ErrorResult.CaptureAsync(
+            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
+
+        result.Error.Code.ShouldBe("registration.unknown_ticket_types");
+    }
+
+    // SC012: Rejected — cancelled ticket type
+    [TestMethod]
+    public async ValueTask SC012_SelfRegisterAttendee_CancelledTicketType_ThrowsCancelledError()
+    {
+        var fixture = SelfRegisterAttendeeFixture.WithCancelledTicketType();
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(fixture.EventId, "dave@example.com", "workshop-a");
+        var sut = NewHandler(fixture);
+
+        var result = await ErrorResult.CaptureAsync(
+            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
+
+        result.Error.Code.ShouldBe("registration.cancelled_ticket_types");
+    }
+
+    // SC013: Rejected — overlapping time slots
+    [TestMethod]
+    public async ValueTask SC013_SelfRegisterAttendee_OverlappingTimeSlots_ThrowsOverlappingError()
+    {
+        var fixture = SelfRegisterAttendeeFixture.WithOverlappingTimeSlots();
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(fixture.EventId, "dave@example.com", "workshop-a", "workshop-b");
+        var sut = NewHandler(fixture);
+
+        var result = await ErrorResult.CaptureAsync(
+            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
+
+        result.Error.Code.ShouldBe("registration.overlapping_time_slots");
+    }
+
+    // SC014/SC015: Rejected — cancelled or archived event
+    [TestMethod]
+    public async ValueTask SC014_SelfRegisterAttendee_EventNotActive_ThrowsEventNotActiveError()
+    {
+        var fixture = SelfRegisterAttendeeFixture.EventNotActive();
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(fixture.EventId, "dave@example.com", fixture.TicketTypeSlug);
+        var sut = NewHandler(fixture);
+
+        var result = await ErrorResult.CaptureAsync(
+            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
+
+        result.Error.ShouldMatch(SelfRegisterAttendeeHandler.Errors.EventNotActive);
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+
+    private static SelfRegisterAttendeeCommand NewCommand(
+        TicketedEventId eventId,
+        string email,
+        params string[] ticketTypeSlugs)
+        => new(eventId, EmailAddress.From(email), ticketTypeSlugs);
+
+    private static SelfRegisterAttendeeHandler NewHandler(SelfRegisterAttendeeFixture fixture)
+        => new(fixture.OrganizationFacade, Environment.Database.Context);
+}
