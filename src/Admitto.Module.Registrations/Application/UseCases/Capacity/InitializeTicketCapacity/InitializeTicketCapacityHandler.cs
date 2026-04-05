@@ -1,17 +1,16 @@
-using Amolenk.Admitto.Module.Organization.Contracts;
 using Amolenk.Admitto.Module.Registrations.Application.Persistence;
 using Amolenk.Admitto.Module.Registrations.Domain.Entities;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 
-namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.Capacity;
+namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.Capacity.InitializeTicketCapacity;
 
-internal sealed class TicketTypeAddedModuleEventHandler(IRegistrationsWriteStore store)
-    : IModuleEventHandler<TicketTypeAddedModuleEvent>
+internal sealed class InitializeTicketCapacityHandler(IRegistrationsWriteStore store)
+    : ICommandHandler<InitializeTicketCapacityCommand>
 {
-    public async ValueTask HandleAsync(TicketTypeAddedModuleEvent moduleEvent, CancellationToken cancellationToken)
+    public async ValueTask HandleAsync(InitializeTicketCapacityCommand command, CancellationToken cancellationToken)
     {
-        var eventId = TicketedEventId.From(moduleEvent.TicketedEventId);
+        var eventId = TicketedEventId.From(command.TicketedEventId);
 
         var capacity = await store.EventCapacities
             .FirstOrDefaultAsync(ec => ec.Id == eventId, cancellationToken);
@@ -22,6 +21,6 @@ internal sealed class TicketTypeAddedModuleEventHandler(IRegistrationsWriteStore
             store.EventCapacities.Add(capacity);
         }
 
-        capacity.SetTicketCapacity(moduleEvent.Slug, moduleEvent.Capacity);
+        capacity.SetTicketCapacity(command.Slug, command.Capacity);
     }
 }

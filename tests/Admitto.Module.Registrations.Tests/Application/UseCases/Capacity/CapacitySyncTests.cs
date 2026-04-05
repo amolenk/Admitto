@@ -1,6 +1,6 @@
-using Amolenk.Admitto.Module.Organization.Contracts;
 using Amolenk.Admitto.Module.Registrations.Tests.Application.Infrastructure.Hosting;
-using Amolenk.Admitto.Module.Registrations.Application.UseCases.Capacity;
+using Amolenk.Admitto.Module.Registrations.Application.UseCases.Capacity.InitializeTicketCapacity;
+using Amolenk.Admitto.Module.Registrations.Application.UseCases.Capacity.UpdateTicketCapacity;
 using Amolenk.Admitto.Module.Registrations.Tests.Application.Aspire;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,17 +14,10 @@ public sealed class CapacitySyncTests(TestContext testContext) : AspireIntegrati
     public async ValueTask SC001_TicketTypeAdded_NewEvent_CreatesEventCapacityWithTicketCapacity()
     {
         var eventId = Guid.NewGuid();
-        var moduleEvent = new TicketTypeAddedModuleEvent
-        {
-            TicketedEventId = eventId,
-            Slug = "general-admission",
-            Name = "General Admission",
-            TimeSlots = [],
-            Capacity = 100
-        };
+        var command = new InitializeTicketCapacityCommand(eventId, "general-admission", 100);
 
-        var sut = new TicketTypeAddedModuleEventHandler(Environment.Database.Context);
-        await sut.HandleAsync(moduleEvent, testContext.CancellationToken);
+        var sut = new InitializeTicketCapacityHandler(Environment.Database.Context);
+        await sut.HandleAsync(command, testContext.CancellationToken);
 
         await Environment.Database.AssertAsync(async dbContext =>
         {
@@ -43,17 +36,10 @@ public sealed class CapacitySyncTests(TestContext testContext) : AspireIntegrati
     public async ValueTask SC002_TicketTypeAdded_NullCapacity_CreatesTicketCapacityWithNullMax()
     {
         var eventId = Guid.NewGuid();
-        var moduleEvent = new TicketTypeAddedModuleEvent
-        {
-            TicketedEventId = eventId,
-            Slug = "speaker-pass",
-            Name = "Speaker Pass",
-            TimeSlots = [],
-            Capacity = null
-        };
+        var command = new InitializeTicketCapacityCommand(eventId, "speaker-pass", null);
 
-        var sut = new TicketTypeAddedModuleEventHandler(Environment.Database.Context);
-        await sut.HandleAsync(moduleEvent, testContext.CancellationToken);
+        var sut = new InitializeTicketCapacityHandler(Environment.Database.Context);
+        await sut.HandleAsync(command, testContext.CancellationToken);
 
         await Environment.Database.AssertAsync(async dbContext =>
         {
@@ -70,30 +56,16 @@ public sealed class CapacitySyncTests(TestContext testContext) : AspireIntegrati
     {
         var eventId = Guid.NewGuid();
 
-        var firstEvent = new TicketTypeAddedModuleEvent
-        {
-            TicketedEventId = eventId,
-            Slug = "general-admission",
-            Name = "General Admission",
-            TimeSlots = [],
-            Capacity = 100
-        };
-        var secondEvent = new TicketTypeAddedModuleEvent
-        {
-            TicketedEventId = eventId,
-            Slug = "workshop-a",
-            Name = "Workshop A",
-            TimeSlots = ["morning"],
-            Capacity = 20
-        };
+        var firstCommand = new InitializeTicketCapacityCommand(eventId, "general-admission", 100);
+        var secondCommand = new InitializeTicketCapacityCommand(eventId, "workshop-a", 20);
 
-        var sut = new TicketTypeAddedModuleEventHandler(Environment.Database.Context);
-        await sut.HandleAsync(firstEvent, testContext.CancellationToken);
+        var sut = new InitializeTicketCapacityHandler(Environment.Database.Context);
+        await sut.HandleAsync(firstCommand, testContext.CancellationToken);
 
         // Save first so second handler sees the persisted record.
         await Environment.Database.AssertAsync(_ => ValueTask.CompletedTask);
 
-        await sut.HandleAsync(secondEvent, testContext.CancellationToken);
+        await sut.HandleAsync(secondCommand, testContext.CancellationToken);
 
         await Environment.Database.AssertAsync(async dbContext =>
         {
@@ -109,28 +81,16 @@ public sealed class CapacitySyncTests(TestContext testContext) : AspireIntegrati
     {
         var eventId = Guid.NewGuid();
 
-        // Seed initial capacity via add handler
-        var addEvent = new TicketTypeAddedModuleEvent
-        {
-            TicketedEventId = eventId,
-            Slug = "general-admission",
-            Name = "General Admission",
-            TimeSlots = [],
-            Capacity = 100
-        };
-        var addHandler = new TicketTypeAddedModuleEventHandler(Environment.Database.Context);
-        await addHandler.HandleAsync(addEvent, testContext.CancellationToken);
+        // Seed initial capacity via initialize handler
+        var initCommand = new InitializeTicketCapacityCommand(eventId, "general-admission", 100);
+        var initHandler = new InitializeTicketCapacityHandler(Environment.Database.Context);
+        await initHandler.HandleAsync(initCommand, testContext.CancellationToken);
         await Environment.Database.AssertAsync(_ => ValueTask.CompletedTask);
 
         // Now update capacity
-        var changeEvent = new TicketTypeCapacityChangedModuleEvent
-        {
-            TicketedEventId = eventId,
-            Slug = "general-admission",
-            Capacity = 200
-        };
-        var sut = new TicketTypeCapacityChangedModuleEventHandler(Environment.Database.Context);
-        await sut.HandleAsync(changeEvent, testContext.CancellationToken);
+        var updateCommand = new UpdateTicketCapacityCommand(eventId, "general-admission", 200);
+        var sut = new UpdateTicketCapacityHandler(Environment.Database.Context);
+        await sut.HandleAsync(updateCommand, testContext.CancellationToken);
 
         await Environment.Database.AssertAsync(async dbContext =>
         {
@@ -146,26 +106,14 @@ public sealed class CapacitySyncTests(TestContext testContext) : AspireIntegrati
     {
         var eventId = Guid.NewGuid();
 
-        var addEvent = new TicketTypeAddedModuleEvent
-        {
-            TicketedEventId = eventId,
-            Slug = "workshop",
-            Name = "Workshop",
-            TimeSlots = [],
-            Capacity = 50
-        };
-        var addHandler = new TicketTypeAddedModuleEventHandler(Environment.Database.Context);
-        await addHandler.HandleAsync(addEvent, testContext.CancellationToken);
+        var initCommand = new InitializeTicketCapacityCommand(eventId, "workshop", 50);
+        var initHandler = new InitializeTicketCapacityHandler(Environment.Database.Context);
+        await initHandler.HandleAsync(initCommand, testContext.CancellationToken);
         await Environment.Database.AssertAsync(_ => ValueTask.CompletedTask);
 
-        var changeEvent = new TicketTypeCapacityChangedModuleEvent
-        {
-            TicketedEventId = eventId,
-            Slug = "workshop",
-            Capacity = null
-        };
-        var sut = new TicketTypeCapacityChangedModuleEventHandler(Environment.Database.Context);
-        await sut.HandleAsync(changeEvent, testContext.CancellationToken);
+        var updateCommand = new UpdateTicketCapacityCommand(eventId, "workshop", null);
+        var sut = new UpdateTicketCapacityHandler(Environment.Database.Context);
+        await sut.HandleAsync(updateCommand, testContext.CancellationToken);
 
         await Environment.Database.AssertAsync(async dbContext =>
         {
