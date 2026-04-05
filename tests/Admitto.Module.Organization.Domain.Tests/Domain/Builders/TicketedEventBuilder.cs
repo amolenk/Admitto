@@ -21,7 +21,7 @@ public class TicketedEventBuilder
     private AbsoluteUrl _baseUrl = DefaultBaseUrl;
     private TimeWindow _eventWindow = DefaultEventWindow;
     private EventStatus _targetStatus = EventStatus.Active;
-    private readonly List<(Slug Slug, DisplayName Name)> _ticketTypes = [];
+    private readonly List<(Slug Slug, DisplayName Name, Capacity? Capacity)> _ticketTypes = [];
 
     public TicketedEventBuilder WithTeamId(TeamId teamId)
     {
@@ -47,9 +47,10 @@ public class TicketedEventBuilder
         return this;
     }
 
-    public TicketedEventBuilder WithTicketType(string slug, string name)
+    public TicketedEventBuilder WithTicketType(string slug, string name, int? capacity = null)
     {
-        _ticketTypes.Add((Slug.From(slug), DisplayName.From(name)));
+        _ticketTypes.Add((Slug.From(slug), DisplayName.From(name),
+            capacity.HasValue ? Capacity.From(capacity.Value) : null));
         return this;
     }
 
@@ -63,9 +64,9 @@ public class TicketedEventBuilder
     {
         var ticketedEvent = TicketedEvent.Create(_teamId, _slug, _name, _websiteUrl, _baseUrl, _eventWindow);
 
-        foreach (var (slug, name) in _ticketTypes)
+        foreach (var (slug, name, capacity) in _ticketTypes)
         {
-            ticketedEvent.AddTicketType(slug, name, timeSlots: [], capacity: null);
+            ticketedEvent.AddTicketType(slug, name, timeSlots: [], capacity: capacity);
         }
 
         if (_targetStatus == EventStatus.Cancelled)

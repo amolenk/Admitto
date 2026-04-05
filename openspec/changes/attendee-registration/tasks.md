@@ -79,7 +79,7 @@
 - [x] 11.2 Add a Registrations module EF migration for the `registrations` table with the composite unique constraint on `(ticketed_event_id, email)` (replacing the broken single-column index from the scaffold)
 - [x] 11.3 Add a Registrations module EF migration for the `event_capacity` table (and owned `ticket_type_capacities` JSON/table) keyed by slug with nullable `max_capacity`
 - [x] 11.4 Add a Registrations module EF migration for the `event_registration_policy` table
-- [ ] 11.5 Run `dotnet run --project src/Admitto.Migrations` against a local database and verify all migrations apply cleanly
+- [x] 11.5 Run `dotnet run --project src/Admitto.Migrations` against a local database and verify all migrations apply cleanly
 
 ## 12. Final verification
 

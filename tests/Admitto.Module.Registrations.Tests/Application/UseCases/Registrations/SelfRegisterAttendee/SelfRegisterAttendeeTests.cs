@@ -5,6 +5,8 @@ using Amolenk.Admitto.Module.Registrations.Tests.Application.Aspire;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
+using Should = Shouldly.Should;
 
 namespace Amolenk.Admitto.Module.Registrations.Tests.Application.UseCases.Registrations.SelfRegisterAttendee;
 
@@ -257,6 +259,27 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
         result.Error.ShouldMatch(SelfRegisterAttendeeHandler.Errors.EventNotActive);
+    }
+
+    // SC016: Rejected — duplicate email (DB constraint)
+    [TestMethod]
+    public async ValueTask SC016_SelfRegisterAttendee_DuplicateEmail_ThrowsDbConstraintViolation()
+    {
+        var fixture = SelfRegisterAttendeeFixture.WithExistingRegistration();
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(fixture.EventId, "alice@example.com", fixture.TicketTypeSlug);
+        var sut = NewHandler(fixture);
+
+        // The handler succeeds (adds entity to context), but SaveChanges fires the unique constraint.
+        await sut.HandleAsync(command, testContext.CancellationToken);
+
+        var exception = Should.Throw<DbUpdateException>(
+            () => Environment.Database.Context.SaveChangesAsync(testContext.CancellationToken));
+
+        exception.InnerException
+            .ShouldBeAssignableTo<PostgresException>()?
+            .ConstraintName.ShouldBe("IX_registrations_event_id_email");
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────

@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Module.Organization.Domain.DomainEvents;
 using Amolenk.Admitto.Module.Organization.Domain.Entities;
 using Amolenk.Admitto.Module.Organization.Domain.Tests.Builders;
 using Amolenk.Admitto.Module.Organization.Domain.ValueObjects;
@@ -138,23 +139,59 @@ public sealed class TicketedEventTests
     // -------------------------------------------------------------------------
 
     [TestMethod]
-    public void SC014_AddTicketType_ActiveEvent_AddsTicketType()
+    public void SC014_AddTicketType_ActiveEvent_AddsTicketTypeAndRaisesDomainEvent()
     {
         // Arrange
         var sut = new TicketedEventBuilder().AsActive().Build();
         var slug = Slug.From("general-admission");
         var name = DisplayName.From("General Admission");
+        var capacity = Capacity.From(100);
 
         // Act
-        sut.AddTicketType(slug, name, timeSlots: [], capacity: null);
+        sut.AddTicketType(slug, name, timeSlots: [new TimeSlot(Slug.From("morning"))], capacity: capacity);
 
         // Assert
         sut.TicketTypes.ShouldHaveSingleItem().ShouldSatisfyAllConditions(tt =>
         {
             tt.Slug.ShouldBe(slug);
             tt.Name.ShouldBe(name);
+            tt.Capacity.ShouldBe(capacity);
             tt.IsCancelled.ShouldBeFalse();
         });
+
+        sut.GetDomainEvents()
+            .OfType<TicketTypeAddedDomainEvent>()
+            .ShouldHaveSingleItem()
+            .ShouldSatisfyAllConditions(e =>
+            {
+                e.TicketedEventId.ShouldBe(sut.Id);
+                e.Slug.ShouldBe("general-admission");
+                e.Name.ShouldBe("General Admission");
+                e.TimeSlots.ShouldBe(["morning"]);
+                e.Capacity.ShouldBe(100);
+            });
+    }
+
+    [TestMethod]
+    public void SC014b_AddTicketType_NullCapacity_RaisesDomainEventWithNullCapacity()
+    {
+        // Arrange
+        var sut = new TicketedEventBuilder().AsActive().Build();
+
+        // Act
+        sut.AddTicketType(Slug.From("speaker"), DisplayName.From("Speaker Pass"), timeSlots: [], capacity: null);
+
+        // Assert
+        sut.TicketTypes.ShouldHaveSingleItem().Capacity.ShouldBeNull();
+
+        sut.GetDomainEvents()
+            .OfType<TicketTypeAddedDomainEvent>()
+            .ShouldHaveSingleItem()
+            .ShouldSatisfyAllConditions(e =>
+            {
+                e.Slug.ShouldBe("speaker");
+                e.Capacity.ShouldBeNull();
+            });
     }
 
     [TestMethod]
@@ -195,7 +232,7 @@ public sealed class TicketedEventTests
     // -------------------------------------------------------------------------
 
     [TestMethod]
-    public void SC017_UpdateTicketType_UpdatesCapacity()
+    public void SC017_UpdateTicketType_UpdatesCapacityAndRaisesDomainEvent()
     {
         // Arrange
         var slug = Slug.From("general-admission");
@@ -215,6 +252,38 @@ public sealed class TicketedEventTests
         {
             tt.Capacity.ShouldBe(newCapacity);
         });
+
+        sut.GetDomainEvents()
+            .OfType<TicketTypeCapacityChangedDomainEvent>()
+            .ShouldHaveSingleItem()
+            .ShouldSatisfyAllConditions(e =>
+            {
+                e.TicketedEventId.ShouldBe(sut.Id);
+                e.Slug.ShouldBe("general-admission");
+                e.Capacity.ShouldBe(100);
+            });
+    }
+
+    [TestMethod]
+    public void SC017b_UpdateTicketType_NameOnly_DoesNotRaiseCapacityChangedDomainEvent()
+    {
+        // Arrange
+        var slug = Slug.From("general-admission");
+
+        var sut = new TicketedEventBuilder()
+            .AsActive()
+            .WithTicketType("general-admission", "General Admission", capacity: 200)
+            .Build();
+
+        // Clear any domain events from AddTicketType.
+        sut.ClearDomainEvents();
+
+        // Act — update name only, keep same capacity
+        sut.UpdateTicketType(slug, DisplayName.From("GA Pass"), Capacity.From(200));
+
+        // Assert
+        sut.TicketTypes.ShouldHaveSingleItem().Name.ShouldBe(DisplayName.From("GA Pass"));
+        sut.GetDomainEvents().OfType<TicketTypeCapacityChangedDomainEvent>().ShouldBeEmpty();
     }
 
     [TestMethod]

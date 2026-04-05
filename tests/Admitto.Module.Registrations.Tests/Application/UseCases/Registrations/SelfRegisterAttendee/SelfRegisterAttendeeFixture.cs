@@ -1,5 +1,6 @@
 using Amolenk.Admitto.Module.Organization.Contracts;
 using Amolenk.Admitto.Module.Registrations.Domain.Entities;
+using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Registrations.Tests.Application.Infrastructure.Hosting;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 using NSubstitute;
@@ -9,6 +10,7 @@ namespace Amolenk.Admitto.Module.Registrations.Tests.Application.UseCases.Regist
 internal sealed class SelfRegisterAttendeeFixture
 {
     private bool _eventNotActive;
+    private bool _seedExistingRegistration;
     private EventRegistrationPolicy? _policy;
     private EventCapacity? _eventCapacity;
     private List<TicketTypeDto> _ticketTypes;
@@ -160,6 +162,13 @@ internal sealed class SelfRegisterAttendeeFixture
         ]) { _eventNotActive = true };
     }
 
+    public static SelfRegisterAttendeeFixture WithExistingRegistration()
+    {
+        var f = OpenWindowWithCapacity(max: 100, used: 50);
+        f._seedExistingRegistration = true;
+        return f;
+    }
+
     // ── Setup ────────────────────────────────────────────────────────────────
 
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
@@ -180,6 +189,18 @@ internal sealed class SelfRegisterAttendeeFixture
                     dbContext.EventRegistrationPolicies.Add(_policy);
                 if (_eventCapacity is not null)
                     dbContext.EventCapacities.Add(_eventCapacity);
+            });
+        }
+
+        if (_seedExistingRegistration)
+        {
+            await environment.Database.SeedAsync(dbContext =>
+            {
+                var existing = Registration.Create(
+                    EventId,
+                    EmailAddress.From("alice@example.com"),
+                    [new TicketTypeSnapshot(TicketTypeSlug, [])]);
+                dbContext.Registrations.Add(existing);
             });
         }
     }
