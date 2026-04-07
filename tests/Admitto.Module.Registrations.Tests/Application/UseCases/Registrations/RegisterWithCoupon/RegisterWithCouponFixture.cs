@@ -12,7 +12,7 @@ internal sealed class RegisterWithCouponFixture
 {
     private Coupon? _coupon;
     private EventRegistrationPolicy? _policy;
-    private EventCapacity? _eventCapacity;
+    private TicketCatalog? _catalog;
 
     public TicketedEventId EventId { get; } = TicketedEventId.New();
     public string TicketTypeSlug { get; } = "speaker-pass";
@@ -29,27 +29,16 @@ internal sealed class RegisterWithCouponFixture
     public static RegisterWithCouponFixture HappyFlow()
     {
         var f = new RegisterWithCouponFixture();
-        var ticketTypes = new List<TicketTypeDto>
-        {
-            new() { Slug = f.TicketTypeSlug, Name = "Speaker Pass", IsCancelled = false }
-        };
-        f.SetupFacade(ticketTypes, eventActive: true);
-
         f._coupon = f.BuildCoupon(bypassWindow: false);
         f._policy = f.MakeOpenPolicy();
         // Capacity at 5/5 — coupon should still succeed (uncapped).
-        f._eventCapacity = f.MakeCapacity(f.TicketTypeSlug, 5, 5);
+        f._catalog = f.MakeCatalog((f.TicketTypeSlug, "Speaker Pass", 5, 5));
         return f;
     }
 
     public static RegisterWithCouponFixture ExpiredCoupon()
     {
         var f = new RegisterWithCouponFixture();
-        f.SetupFacade(
-        [
-            new TicketTypeDto { Slug = f.TicketTypeSlug, Name = "Speaker Pass", IsCancelled = false }
-        ], eventActive: true);
-
         f._coupon = new CouponBuilder()
             .WithEventId(f.EventId)
             .WithRequestedTicketTypeSlugs(f.TicketTypeSlug)
@@ -64,11 +53,6 @@ internal sealed class RegisterWithCouponFixture
     public static RegisterWithCouponFixture RedeemedCoupon()
     {
         var f = new RegisterWithCouponFixture();
-        f.SetupFacade(
-        [
-            new TicketTypeDto { Slug = f.TicketTypeSlug, Name = "Speaker Pass", IsCancelled = false }
-        ], eventActive: true);
-
         f._coupon = f.BuildCoupon();
         f._coupon.Redeem();
         f.CouponCodeString = f._coupon.Code.Value.ToString();
@@ -79,11 +63,6 @@ internal sealed class RegisterWithCouponFixture
     public static RegisterWithCouponFixture RevokedCoupon()
     {
         var f = new RegisterWithCouponFixture();
-        f.SetupFacade(
-        [
-            new TicketTypeDto { Slug = f.TicketTypeSlug, Name = "Speaker Pass", IsCancelled = false }
-        ], eventActive: true);
-
         f._coupon = f.BuildCoupon();
         f._coupon.Revoke();
         f.CouponCodeString = f._coupon.Code.Value.ToString();
@@ -94,78 +73,55 @@ internal sealed class RegisterWithCouponFixture
     public static RegisterWithCouponFixture TicketTypeNotAllowlisted()
     {
         var f = new RegisterWithCouponFixture();
-        f.SetupFacade(
-        [
-            new TicketTypeDto { Slug = "general-admission", Name = "General Admission", IsCancelled = false },
-            new TicketTypeDto { Slug = f.TicketTypeSlug, Name = "Speaker Pass", IsCancelled = false }
-        ], eventActive: true);
-
         // Coupon only allows "speaker-pass", but test will try "general-admission".
         f._coupon = f.BuildCoupon();
         f.CouponCodeString = f._coupon.Code.Value.ToString();
         f._policy = f.MakeOpenPolicy();
+        f._catalog = f.MakeCatalog(
+            ("general-admission", "General Admission", 100, 0),
+            (f.TicketTypeSlug, "Speaker Pass", 100, 0));
         return f;
     }
 
     public static RegisterWithCouponFixture BypassesWindow()
     {
         var f = new RegisterWithCouponFixture();
-        f.SetupFacade(
-        [
-            new TicketTypeDto { Slug = f.TicketTypeSlug, Name = "Speaker Pass", IsCancelled = false }
-        ], eventActive: true);
-
         f._coupon = f.BuildCoupon(bypassWindow: true);
         // Window is closed.
         f._policy = EventRegistrationPolicy.Create(f.EventId);
         f._policy.SetWindow(DateTimeOffset.UtcNow.AddDays(-30), DateTimeOffset.UtcNow.AddDays(-1));
-        f._eventCapacity = f.MakeCapacity(f.TicketTypeSlug, 10, 0);
+        f._catalog = f.MakeCatalog((f.TicketTypeSlug, "Speaker Pass", 10, 0));
         return f;
     }
 
     public static RegisterWithCouponFixture RespectsWindow()
     {
         var f = new RegisterWithCouponFixture();
-        f.SetupFacade(
-        [
-            new TicketTypeDto { Slug = f.TicketTypeSlug, Name = "Speaker Pass", IsCancelled = false }
-        ], eventActive: true);
-
         f._coupon = f.BuildCoupon(bypassWindow: false);
         // Window is closed.
         f._policy = EventRegistrationPolicy.Create(f.EventId);
         f._policy.SetWindow(DateTimeOffset.UtcNow.AddDays(-30), DateTimeOffset.UtcNow.AddDays(-1));
-        f._eventCapacity = f.MakeCapacity(f.TicketTypeSlug, 10, 0);
+        f._catalog = f.MakeCatalog((f.TicketTypeSlug, "Speaker Pass", 10, 0));
         return f;
     }
 
     public static RegisterWithCouponFixture BypassesDomainRestriction()
     {
         var f = new RegisterWithCouponFixture();
-        f.SetupFacade(
-        [
-            new TicketTypeDto { Slug = f.TicketTypeSlug, Name = "Speaker Pass", IsCancelled = false }
-        ], eventActive: true);
-
         f._coupon = f.BuildCoupon(bypassWindow: false);
         f._policy = f.MakeOpenPolicy();
         f._policy.SetDomainRestriction("@acme.com");
-        f._eventCapacity = f.MakeCapacity(f.TicketTypeSlug, 10, 0);
+        f._catalog = f.MakeCatalog((f.TicketTypeSlug, "Speaker Pass", 10, 0));
         return f;
     }
 
     public static RegisterWithCouponFixture BypassesNullCapacity()
     {
         var f = new RegisterWithCouponFixture();
-        f.SetupFacade(
-        [
-            new TicketTypeDto { Slug = f.TicketTypeSlug, Name = "Speaker Pass", IsCancelled = false }
-        ], eventActive: true);
-
         f._coupon = f.BuildCoupon(bypassWindow: false);
         f._policy = f.MakeOpenPolicy();
         // MaxCapacity = null — self-service would reject this but coupon should bypass.
-        f._eventCapacity = f.MakeCapacity(f.TicketTypeSlug, null, 0);
+        f._catalog = f.MakeCatalog((f.TicketTypeSlug, "Speaker Pass", null, 0));
         return f;
     }
 
@@ -173,7 +129,7 @@ internal sealed class RegisterWithCouponFixture
 
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
     {
-        if (_coupon is null && _policy is null && _eventCapacity is null) return;
+        if (_coupon is null && _policy is null && _catalog is null) return;
 
         await environment.Database.SeedAsync(dbContext =>
         {
@@ -181,8 +137,8 @@ internal sealed class RegisterWithCouponFixture
                 dbContext.Coupons.Add(_coupon);
             if (_policy is not null)
                 dbContext.EventRegistrationPolicies.Add(_policy);
-            if (_eventCapacity is not null)
-                dbContext.EventCapacities.Add(_eventCapacity);
+            if (_catalog is not null)
+                dbContext.TicketCatalogs.Add(_catalog);
         });
     }
 
@@ -201,16 +157,6 @@ internal sealed class RegisterWithCouponFixture
         return coupon;
     }
 
-    private void SetupFacade(List<TicketTypeDto> ticketTypes, bool eventActive)
-    {
-        OrganizationFacade
-            .GetTicketTypesAsync(EventId.Value, Arg.Any<CancellationToken>())
-            .Returns(ticketTypes.ToArray());
-        OrganizationFacade
-            .IsEventActiveAsync(EventId.Value, Arg.Any<CancellationToken>())
-            .Returns(eventActive);
-    }
-
     private EventRegistrationPolicy MakeOpenPolicy()
     {
         var policy = EventRegistrationPolicy.Create(EventId);
@@ -220,16 +166,18 @@ internal sealed class RegisterWithCouponFixture
         return policy;
     }
 
-    private EventCapacity MakeCapacity(string slug, int? max, int used)
+    private TicketCatalog MakeCatalog(params (string slug, string name, int? max, int used)[] ticketTypes)
     {
-        var capacity = EventCapacity.Create(EventId);
-        capacity.SetTicketCapacity(slug, max);
-        if (used > 0)
+        var catalog = TicketCatalog.Create(EventId);
+        foreach (var (slug, name, max, used) in ticketTypes)
         {
-            for (var i = 0; i < used; i++)
-                capacity.Claim([slug], enforce: false);
+            catalog.AddTicketType(Slug.From(slug), DisplayName.From(name), [], max);
+            if (used > 0)
+            {
+                for (var i = 0; i < used; i++)
+                    catalog.Claim([slug], enforce: false);
+            }
         }
-
-        return capacity;
+        return catalog;
     }
 }

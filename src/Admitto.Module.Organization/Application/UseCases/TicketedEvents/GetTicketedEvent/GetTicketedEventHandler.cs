@@ -1,6 +1,5 @@
 using Amolenk.Admitto.Module.Organization.Application.Persistence;
 using Amolenk.Admitto.Module.Organization.Domain.Entities;
-using Amolenk.Admitto.Module.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
@@ -34,12 +33,6 @@ internal sealed class GetTicketedEventHandler(IOrganizationWriteStore writeStore
             entity.EventWindow.Start,
             entity.EventWindow.End,
             entity.Status.ToString(),
-            entity.Version,
-            entity.TicketTypes.Select(tt => new TicketTypeDto(
-                tt.Slug.Value,
-                tt.Name.Value,
-                tt.TimeSlots.Select(ts => ts.Slug.Value).ToList(),
-                tt.Capacity == null ? (int?)null : tt.Capacity.Value.Value,
-                tt.IsCancelled)).ToList());
+            entity.Version);
     }
 }

@@ -7,6 +7,6 @@ public interface IRegistrationsWriteStore
 {
     DbSet<Coupon> Coupons { get; }
     DbSet<Registration> Registrations { get; }
-    DbSet<EventCapacity> EventCapacities { get; }
+    DbSet<TicketCatalog> TicketCatalogs { get; }
     DbSet<EventRegistrationPolicy> EventRegistrationPolicies { get; }
 }

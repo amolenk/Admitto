@@ -98,11 +98,11 @@ The Contracts project (`*.Contracts`) holds DTOs, facade interfaces, and integra
 
 ### Organization module
 
-Manages teams, team membership and roles, and ticketed events (including ticket type configuration). Integrates with external identity providers (Keycloak, Microsoft Graph) for user provisioning.
+Manages teams, team membership and roles, and ticketed events (event metadata, lifecycle status, team ownership). Publishes lifecycle events (cancelled, archived) consumed by the Registrations module. Integrates with external identity providers (Keycloak, Microsoft Graph) for user provisioning.
 
 ### Registrations module
 
-Handles attendee registration flows — both admin-initiated and public self-service — with capacity-aware ticket allocation. _(Under active development.)_
+Handles attendee registration flows — both admin-initiated and public self-service — with capacity-aware ticket allocation. Owns ticket type configuration (the `TicketCatalog` aggregate) and event registration policies. Reacts to Organization lifecycle events to disable registrations when events are cancelled or archived.
 
 ### Shared module
 

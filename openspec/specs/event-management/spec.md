@@ -34,11 +34,12 @@ creating events for archived teams.
 
 ### Requirement: Team member can view event details
 The system SHALL allow team members with Crew role or above to view a ticketed
-event's details and ticket types by event slug.
+event's details by event slug. Ticket types are managed separately by the
+Registrations module and are not included in the event details response.
 
-#### Scenario: View event details with ticket types
-- **WHEN** a Crew member of team "acme" views event "conf-2026" which has two ticket types
-- **THEN** the event's name, dates, URLs, status, and both ticket types are returned
+#### Scenario: View event details
+- **WHEN** a Crew member of team "acme" views event "conf-2026"
+- **THEN** the event's name, dates, URLs, and status are returned
 
 #### Scenario: Non-member cannot view events
 - **WHEN** a user who is not a member of team "acme" attempts to view an event
@@ -78,11 +79,15 @@ archived events.
 
 ### Requirement: Organizer can cancel an event
 The system SHALL allow organizers to cancel an active event. When an event is
-cancelled, the system SHALL cancel all its active ticket types.
+cancelled, the system SHALL publish a `TicketedEventCancelledDomainEvent` which
+is mapped to a `TicketedEventCancelledModuleEvent` for cross-module notification.
+Ticket type cancellation is no longer cascaded within the Organization module; the
+Registrations module handles lifecycle status updates independently via the
+event-lifecycle-sync capability.
 
 #### Scenario: Cancel an active event
-- **WHEN** an organizer cancels event "conf-2026" which is active and has two active ticket types
-- **THEN** the event status is changed to cancelled and both ticket types are cancelled
+- **WHEN** an organizer cancels event "conf-2026" which is active
+- **THEN** the event status is changed to cancelled and a `TicketedEventCancelledModuleEvent` is published
 
 #### Scenario: Reject cancelling an already cancelled event
 - **WHEN** an organizer attempts to cancel event "meetup-q1" which is already cancelled
@@ -91,64 +96,18 @@ cancelled, the system SHALL cancel all its active ticket types.
 ---
 
 ### Requirement: Organizer can archive an event
-The system SHALL allow organizers to archive an active or cancelled event.
+The system SHALL allow organizers to archive an active or cancelled event. When an
+event is archived, the system SHALL publish a `TicketedEventArchivedDomainEvent`
+which is mapped to a `TicketedEventArchivedModuleEvent` for cross-module notification.
 
 #### Scenario: Archive an active event
 - **WHEN** an organizer archives event "conf-2025" which is active
-- **THEN** the event status is changed to archived
+- **THEN** the event status is changed to archived and a `TicketedEventArchivedModuleEvent` is published
 
 #### Scenario: Archive a cancelled event
 - **WHEN** an organizer archives event "meetup-q1" which is cancelled
-- **THEN** the event status is changed to archived
+- **THEN** the event status is changed to archived and a `TicketedEventArchivedModuleEvent` is published
 
 #### Scenario: Reject archiving an already archived event
 - **WHEN** an organizer attempts to archive event "conf-2024" which is already archived
 - **THEN** the request is rejected because the event is already archived
-
----
-
-### Requirement: Organizer can add ticket types to an event
-The system SHALL allow organizers to add a ticket type to an active event with a
-slug, name, self-service flag, time slots, and optional capacity. Ticket type
-slugs SHALL be unique within an event. The system SHALL reject adding ticket types
-to cancelled or archived events.
-
-#### Scenario: Add a ticket type to an active event
-- **WHEN** an organizer adds a ticket type with slug "vip", name "VIP Pass", self-service enabled, time slots ["morning", "afternoon"], and capacity 100 to event "conf-2026"
-- **THEN** the event has a ticket type "vip" with the provided details
-
-#### Scenario: Reject duplicate ticket type slug
-- **WHEN** event "conf-2026" already has a ticket type with slug "vip" and an organizer adds another with slug "vip"
-- **THEN** the request is rejected with a duplicate ticket type slug error
-
-#### Scenario: Reject adding ticket type to cancelled event
-- **WHEN** an organizer attempts to add a ticket type to a cancelled event
-- **THEN** the request is rejected because the event is cancelled
-
----
-
-### Requirement: Organizer can update ticket types
-The system SHALL allow organizers to update a ticket type's name, capacity, and
-self-service availability. Ticket type slugs SHALL be immutable after creation.
-
-#### Scenario: Update a ticket type's capacity and availability
-- **WHEN** an organizer updates ticket type "vip" to capacity 200 and disables self-service availability
-- **THEN** the ticket type capacity is changed to 200 and self-service availability is disabled
-
-#### Scenario: Reject changing a ticket type's slug
-- **WHEN** an organizer attempts to change the slug of ticket type "vip" to "premium"
-- **THEN** the request is rejected because ticket type slugs are immutable
-
----
-
-### Requirement: Organizer can cancel ticket types
-The system SHALL allow organizers to cancel a ticket type, preventing new
-registrations for it.
-
-#### Scenario: Cancel a ticket type
-- **WHEN** an organizer cancels active ticket type "vip" on event "conf-2026"
-- **THEN** the ticket type is marked as cancelled and no new registrations can be made for it
-
-#### Scenario: Reject cancelling an already cancelled ticket type
-- **WHEN** an organizer attempts to cancel ticket type "early-bird" which is already cancelled
-- **THEN** the request is rejected because the ticket type is already cancelled

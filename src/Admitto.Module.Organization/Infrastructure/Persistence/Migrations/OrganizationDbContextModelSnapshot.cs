@@ -213,48 +213,6 @@ namespace Amolenk.Admitto.Module.Organization.Infrastructure.Persistence.Migrati
                     b.ToTable("users", "organization");
                 });
 
-            modelBuilder.Entity("Amolenk.Admitto.Module.Organization.Domain.Entities.TicketedEvent", b =>
-                {
-                    b.OwnsMany("Amolenk.Admitto.Module.Organization.Domain.ValueObjects.TicketType", "TicketTypes", b1 =>
-                        {
-                            b1.Property<Guid>("TicketedEventId");
-
-                            b1.Property<int>("__synthesizedOrdinal")
-                                .ValueGeneratedOnAdd();
-
-                            b1.Property<int?>("Capacity")
-                                .HasJsonPropertyName("capacity");
-
-                            b1.Property<bool>("IsCancelled")
-                                .HasJsonPropertyName("isCancelled");
-
-                            b1.Property<string>("Name")
-                                .IsRequired()
-                                .HasJsonPropertyName("name");
-
-                            b1.Property<string>("Slug")
-                                .IsRequired()
-                                .HasJsonPropertyName("slug");
-
-                            b1.PrimitiveCollection<string>("TimeSlots")
-                                .IsRequired()
-                                .HasJsonPropertyName("timeSlots");
-
-                            b1.HasKey("TicketedEventId", "__synthesizedOrdinal");
-
-                            b1.ToTable("ticketed_events", "organization");
-
-                            b1
-                                .ToJson("ticket_types")
-                                .HasColumnType("jsonb");
-
-                            b1.WithOwner()
-                                .HasForeignKey("TicketedEventId");
-                        });
-
-                    b.Navigation("TicketTypes");
-                });
-
             modelBuilder.Entity("Amolenk.Admitto.Module.Organization.Domain.Entities.User", b =>
                 {
                     b.OwnsMany("Amolenk.Admitto.Module.Organization.Domain.Entities.TeamMembership", "Memberships", b1 =>

@@ -49,14 +49,4 @@ internal class CachingOrganizationFacade(IOrganizationFacade innerFacade, IMemor
         Guid teamId,
         CancellationToken cancellationToken = default) =>
         innerFacade.GetTeamMembershipRoleAsync(userId, teamId, cancellationToken);
-
-    public ValueTask<TicketTypeDto[]> GetTicketTypesAsync(
-        Guid eventId,
-        CancellationToken cancellationToken = default) =>
-        innerFacade.GetTicketTypesAsync(eventId, cancellationToken);
-
-    public ValueTask<bool> IsEventActiveAsync(
-        Guid eventId,
-        CancellationToken cancellationToken = default) =>
-        innerFacade.IsEventActiveAsync(eventId, cancellationToken);
 }

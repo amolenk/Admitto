@@ -15,8 +15,8 @@ internal sealed class GetTicketedEventFixture
     {
     }
 
-    /// <summary>Seeds an active event with two ticket types for retrieval.</summary>
-    public static GetTicketedEventFixture EventWithTicketTypes() => new();
+    /// <summary>Seeds an active event for retrieval.</summary>
+    public static GetTicketedEventFixture ActiveEvent() => new();
 
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
     {
@@ -38,18 +38,6 @@ internal sealed class GetTicketedEventFixture
             new TimeWindow(
                 new DateTimeOffset(2026, 6, 1, 9, 0, 0, TimeSpan.Zero),
                 new DateTimeOffset(2026, 6, 3, 17, 0, 0, TimeSpan.Zero)));
-
-        ticketedEvent.AddTicketType(
-            Slug.From("general"),
-            DisplayName.From("General Admission"),
-            timeSlots: [new TimeSlot(Slug.From("all-day"))],
-            capacity: Capacity.From(500));
-
-        ticketedEvent.AddTicketType(
-            Slug.From("vip"),
-            DisplayName.From("VIP Pass"),
-            timeSlots: [new TimeSlot(Slug.From("morning")), new TimeSlot(Slug.From("afternoon"))],
-            capacity: Capacity.From(50));
 
         await environment.Database.SeedAsync(dbContext =>
         {

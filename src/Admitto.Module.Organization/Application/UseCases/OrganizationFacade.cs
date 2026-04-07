@@ -1,16 +1,12 @@
 using Amolenk.Admitto.Module.Organization.Application.UseCases.TeamManagement.GetTeamId;
 using Amolenk.Admitto.Module.Organization.Application.UseCases.TicketedEvents.GetTicketedEventId;
-using Amolenk.Admitto.Module.Organization.Application.UseCases.TicketedEvents.GetTicketTypes;
 using Amolenk.Admitto.Module.Organization.Application.UseCases.Users.GetTeamMembershipRole;
 using Amolenk.Admitto.Module.Organization.Contracts;
-using Amolenk.Admitto.Module.Organization.Domain.ValueObjects;
-using Amolenk.Admitto.Module.Organization.Application.Persistence;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
-using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Module.Organization.Application.UseCases;
 
-internal class OrganizationFacade(IMediator mediator, IOrganizationWriteStore writeStore) : IOrganizationFacade
+internal class OrganizationFacade(IMediator mediator) : IOrganizationFacade
 {
     public async ValueTask<Guid> GetTeamIdAsync(
         string teamSlug,
@@ -45,29 +41,5 @@ internal class OrganizationFacade(IMediator mediator, IOrganizationWriteStore wr
             cancellationToken);
 
         return teamMembershipRole;
-    }
-
-    public async ValueTask<TicketTypeDto[]> GetTicketTypesAsync(
-        Guid eventId,
-        CancellationToken cancellationToken = default)
-    {
-        return await mediator.QueryAsync<GetTicketTypesQuery, TicketTypeDto[]>(
-            new GetTicketTypesQuery(eventId),
-            cancellationToken);
-    }
-
-    public async ValueTask<bool> IsEventActiveAsync(
-        Guid eventId,
-        CancellationToken cancellationToken = default)
-    {
-        var ticketedEventId = TicketedEventId.From(eventId);
-
-        var status = await writeStore.TicketedEvents
-            .AsNoTracking()
-            .Where(e => e.Id == ticketedEventId)
-            .Select(e => (EventStatus?)e.Status)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        return status == EventStatus.Active;
     }
 }

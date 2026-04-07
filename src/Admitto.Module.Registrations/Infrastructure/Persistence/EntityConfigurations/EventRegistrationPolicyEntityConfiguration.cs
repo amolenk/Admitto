@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Module.Registrations.Domain.Entities;
+using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -27,5 +28,12 @@ public class EventRegistrationPolicyEntityConfiguration : IEntityTypeConfigurati
         builder.Property(e => e.AllowedEmailDomain)
             .HasColumnName("allowed_email_domain")
             .HasMaxLength(255);
+
+        builder.Property(e => e.EventLifecycleStatus)
+            .HasColumnName("event_lifecycle_status")
+            .HasConversion<string>()
+            .HasMaxLength(32)
+            .HasDefaultValue(EventLifecycleStatus.Active)
+            .IsRequired();
     }
 }

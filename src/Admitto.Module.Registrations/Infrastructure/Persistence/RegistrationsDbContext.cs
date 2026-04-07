@@ -14,7 +14,7 @@ public sealed class RegistrationsDbContext(DbContextOptions<RegistrationsDbConte
 
     public DbSet<Coupon> Coupons => Set<Coupon>();
     public DbSet<Registration> Registrations => Set<Registration>();
-    public DbSet<EventCapacity> EventCapacities => Set<EventCapacity>();
+    public DbSet<TicketCatalog> TicketCatalogs => Set<TicketCatalog>();
     public DbSet<EventRegistrationPolicy> EventRegistrationPolicies => Set<EventRegistrationPolicy>();
 
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();

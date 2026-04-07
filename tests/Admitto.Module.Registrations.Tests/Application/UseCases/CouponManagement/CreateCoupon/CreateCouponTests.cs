@@ -174,6 +174,5 @@ public sealed class CreateCouponTests(TestContext testContext) : AspireIntegrati
     }
 
     private static CreateCouponHandler NewCreateCouponHandler(CreateCouponFixture fixture) =>
-        new(fixture.OrganizationFacade, Environment.Database.Context);
+        new(Environment.Database.Context);
 }
-

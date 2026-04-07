@@ -1,14 +1,13 @@
-using Amolenk.Admitto.Module.Organization.Contracts;
 using Amolenk.Admitto.Module.Registrations.Application.Persistence;
 using Amolenk.Admitto.Module.Registrations.Domain.Entities;
 using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
+using Microsoft.EntityFrameworkCore;
 
 namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.CouponManagement.CreateCoupon;
 
 internal sealed class CreateCouponHandler(
-    IOrganizationFacade organizationFacade,
     IRegistrationsWriteStore writeStore)
     : ICommandHandler<CreateCouponCommand, CouponId>
 {
@@ -16,22 +15,22 @@ internal sealed class CreateCouponHandler(
         CreateCouponCommand command,
         CancellationToken cancellationToken)
     {
-        // Verify the event is still active (not cancelled or archived).
-        var isEventActive = await organizationFacade.IsEventActiveAsync(
-            command.EventId.Value, cancellationToken);
+        // Load registration policy and check lifecycle status.
+        var policy = await writeStore.EventRegistrationPolicies
+            .FirstOrDefaultAsync(p => p.Id == command.EventId, cancellationToken);
 
-        if (!isEventActive)
+        if (policy is null || !policy.IsEventActive)
         {
             throw new BusinessRuleViolationException(Errors.EventNotActive);
         }
 
-        // Fetch ticket types from the Organization module to validate the request.
-        var ticketTypeDtos = await organizationFacade.GetTicketTypesAsync(
-            command.EventId.Value, cancellationToken);
+        // Load ticket catalog to validate the coupon's allowed ticket types.
+        var catalog = await writeStore.TicketCatalogs
+            .FirstOrDefaultAsync(tc => tc.Id == command.EventId, cancellationToken);
 
-        var availableTicketTypes = ticketTypeDtos
-            .Select(dto => new TicketTypeInfo(dto.Slug, dto.IsCancelled))
-            .ToList();
+        var availableTicketTypes = catalog?.TicketTypes
+            .Select(tt => new TicketTypeInfo(tt.Id, tt.IsCancelled))
+            .ToList() ?? [];
 
         var coupon = Coupon.Create(
             command.EventId,

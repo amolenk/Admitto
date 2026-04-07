@@ -32,9 +32,9 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
             var coupon = await dbContext.Coupons.SingleOrDefaultAsync(testContext.CancellationToken);
             coupon.ShouldNotBeNull().RedeemedAt.ShouldNotBeNull();
 
-            var capacity = await dbContext.EventCapacities.SingleOrDefaultAsync(testContext.CancellationToken);
-            capacity.ShouldNotBeNull();
-            capacity.TicketCapacities[0].UsedCapacity.ShouldBe(6); // was 5/5, now 6
+            var catalog = await dbContext.TicketCatalogs.SingleOrDefaultAsync(testContext.CancellationToken);
+            catalog.ShouldNotBeNull();
+            catalog.TicketTypes[0].UsedCapacity.ShouldBe(6); // was 5/5, now 6
         });
     }
 
@@ -179,10 +179,10 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
             var registration = await dbContext.Registrations.SingleOrDefaultAsync(testContext.CancellationToken);
             registration.ShouldNotBeNull();
 
-            var capacity = await dbContext.EventCapacities.SingleOrDefaultAsync(testContext.CancellationToken);
-            capacity.ShouldNotBeNull();
-            capacity.TicketCapacities[0].UsedCapacity.ShouldBe(1);
-            capacity.TicketCapacities[0].MaxCapacity.ShouldBeNull();
+            var catalog = await dbContext.TicketCatalogs.SingleOrDefaultAsync(testContext.CancellationToken);
+            catalog.ShouldNotBeNull();
+            catalog.TicketTypes[0].UsedCapacity.ShouldBe(1);
+            catalog.TicketTypes[0].MaxCapacity.ShouldBeNull();
         });
     }
 
@@ -192,5 +192,5 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         => new(fixture.EventId, fixture.CouponCodeString, EmailAddress.From(email), [fixture.TicketTypeSlug]);
 
     private static RegisterWithCouponHandler NewHandler(RegisterWithCouponFixture fixture)
-        => new(fixture.OrganizationFacade, Environment.Database.Context);
+        => new(Environment.Database.Context);
 }

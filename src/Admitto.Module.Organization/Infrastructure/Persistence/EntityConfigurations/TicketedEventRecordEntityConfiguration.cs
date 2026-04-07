@@ -3,7 +3,6 @@ using Amolenk.Admitto.Module.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Amolenk.Admitto.Module.Organization.Infrastructure.Persistence.EntityConfigurations;
 
@@ -64,38 +63,6 @@ public class TicketedEventEntityConfiguration : IEntityTypeConfiguration<Tickete
             .HasConversion<int>()
             .IsRequired()
             .HasDefaultValue(EventStatus.Active);
-
-        // Can't use ComplexTypes yet because read-only collections aren't supported, see
-        // https://github.com/dotnet/efcore/issues/37405
-        builder.OwnsMany(
-            e => e.TicketTypes,
-            b =>
-            {
-                b.ToJson("ticket_types");
-
-                b.Property(tt => tt.Slug)
-                    .HasJsonPropertyName("slug");
-
-                b.Property(tt => tt.Name)
-                    .HasJsonPropertyName("name");
-
-                b.PrimitiveCollection(tt => tt.TimeSlots)
-                  .HasJsonPropertyName("timeSlots")
-                  .ElementType()
-                  .HasConversion(
-                    new ValueConverter<TimeSlot, string>(
-                      ts => ts.Slug.Value,
-                      s => new TimeSlot(Slug.From(s))));
-
-                b.Property(tt => tt.Capacity)
-                    .HasConversion(
-                        v => v.HasValue ? v.Value.Value : (int?)null,
-                        v => v.HasValue ? Capacity.From(v.Value) : null)
-                    .HasJsonPropertyName("capacity");
-
-                b.Property(tt => tt.IsCancelled)
-                    .HasJsonPropertyName("isCancelled");
-            });
 
         builder.HasIndex(e => new { e.TeamId, e.Slug })
             .IsUnique();

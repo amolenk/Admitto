@@ -33,9 +33,9 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
             registration.Email.Value.ShouldBe("dave@example.com");
             registration.Tickets.ShouldHaveSingleItem().Slug.ShouldBe(fixture.TicketTypeSlug);
 
-            var capacity = await dbContext.EventCapacities.SingleOrDefaultAsync(testContext.CancellationToken);
-            capacity.ShouldNotBeNull();
-            capacity.TicketCapacities[0].UsedCapacity.ShouldBe(51);
+            var catalog = await dbContext.TicketCatalogs.SingleOrDefaultAsync(testContext.CancellationToken);
+            catalog.ShouldNotBeNull();
+            catalog.TicketTypes[0].UsedCapacity.ShouldBe(51);
         });
     }
 
@@ -52,7 +52,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.Code.ShouldBe("ticket_type_at_capacity");
+        result.Error.Code.ShouldBe("ticket_type.at_capacity");
     }
 
     // SC003: Self-service rejected — ticket type has no capacity set
@@ -68,7 +68,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.Code.ShouldBe("ticket_type_not_available");
+        result.Error.Code.ShouldBe("ticket_type.not_available");
     }
 
     // SC004: Self-service rejected — before registration window opens
@@ -173,10 +173,10 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
             registration.ShouldNotBeNull();
             registration.Tickets.Count.ShouldBe(2);
 
-            var capacity = await dbContext.EventCapacities.SingleOrDefaultAsync(testContext.CancellationToken);
-            capacity.ShouldNotBeNull();
-            capacity.TicketCapacities.Single(tc => tc.Id == "general-admission").UsedCapacity.ShouldBe(1);
-            capacity.TicketCapacities.Single(tc => tc.Id == "workshop-a").UsedCapacity.ShouldBe(1);
+            var catalog = await dbContext.TicketCatalogs.SingleOrDefaultAsync(testContext.CancellationToken);
+            catalog.ShouldNotBeNull();
+            catalog.TicketTypes.Single(tt => tt.Id == "general-admission").UsedCapacity.ShouldBe(1);
+            catalog.TicketTypes.Single(tt => tt.Id == "workshop-a").UsedCapacity.ShouldBe(1);
         });
     }
 
@@ -291,5 +291,5 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         => new(eventId, EmailAddress.From(email), ticketTypeSlugs);
 
     private static SelfRegisterAttendeeHandler NewHandler(SelfRegisterAttendeeFixture fixture)
-        => new(fixture.OrganizationFacade, Environment.Database.Context);
+        => new(Environment.Database.Context);
 }

@@ -1,6 +1,4 @@
-﻿using Amolenk.Admitto.Module.Shared.Contracts;
-
-namespace Amolenk.Admitto.Module.Organization.Contracts;
+﻿namespace Amolenk.Admitto.Module.Organization.Contracts;
 
 public interface IOrganizationFacade
 {
@@ -16,13 +14,5 @@ public interface IOrganizationFacade
     ValueTask<TeamMembershipRoleDto?> GetTeamMembershipRoleAsync(
         Guid userId,
         Guid teamId,
-        CancellationToken cancellationToken = default);
-
-    ValueTask<TicketTypeDto[]> GetTicketTypesAsync(
-        Guid eventId,
-        CancellationToken cancellationToken = default);
-
-    ValueTask<bool> IsEventActiveAsync(
-        Guid eventId,
         CancellationToken cancellationToken = default);
 }

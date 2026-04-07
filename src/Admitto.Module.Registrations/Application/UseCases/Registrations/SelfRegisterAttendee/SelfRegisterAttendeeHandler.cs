@@ -1,4 +1,3 @@
-using Amolenk.Admitto.Module.Organization.Contracts;
 using Amolenk.Admitto.Module.Registrations.Application.Persistence;
 using Amolenk.Admitto.Module.Registrations.Domain.Entities;
 using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
@@ -9,7 +8,6 @@ using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.Registrations.SelfRegisterAttendee;
 
 internal sealed class SelfRegisterAttendeeHandler(
-    IOrganizationFacade organizationFacade,
     IRegistrationsWriteStore writeStore)
     : ICommandHandler<SelfRegisterAttendeeCommand, RegistrationId>
 {
@@ -17,20 +15,17 @@ internal sealed class SelfRegisterAttendeeHandler(
         SelfRegisterAttendeeCommand command,
         CancellationToken cancellationToken)
     {
-        // Verify the event is still active (not cancelled or archived).
-        var isEventActive = await organizationFacade.IsEventActiveAsync(
-            command.EventId.Value, cancellationToken);
-        if (!isEventActive)
-            throw new BusinessRuleViolationException(Errors.EventNotActive);
-
-        // Load and enforce registration policy.
+        // Load and enforce registration policy (includes lifecycle status check).
         var policy = await writeStore.EventRegistrationPolicies
             .FirstOrDefaultAsync(p => p.Id == command.EventId, cancellationToken);
 
+        if (policy is null || !policy.IsEventActive)
+            throw new BusinessRuleViolationException(Errors.EventNotActive);
+
         var now = DateTimeOffset.UtcNow;
-        if (policy is null || !policy.IsRegistrationOpen(now))
+        if (!policy.IsRegistrationOpen(now))
         {
-            var isAfterWindow = policy?.RegistrationWindowClosesAt.HasValue == true
+            var isAfterWindow = policy.RegistrationWindowClosesAt.HasValue
                                 && now > policy.RegistrationWindowClosesAt;
             throw new BusinessRuleViolationException(
                 isAfterWindow ? Errors.RegistrationClosed : Errors.RegistrationNotOpen);
@@ -39,23 +34,25 @@ internal sealed class SelfRegisterAttendeeHandler(
         if (!policy.IsEmailDomainAllowed(command.Email.Value))
             throw new BusinessRuleViolationException(Errors.EmailDomainNotAllowed);
 
-        // Load ticket types and validate the selection.
-        var ticketTypeDtos = await organizationFacade.GetTicketTypesAsync(
-            command.EventId.Value, cancellationToken);
-        var ticketTypeMap = ticketTypeDtos.ToDictionary(t => t.Slug);
+        // Load ticket catalog and validate the selection.
+        var catalog = await writeStore.TicketCatalogs
+            .FirstOrDefaultAsync(tc => tc.Id == command.EventId, cancellationToken);
+
+        if (catalog is null)
+            throw new BusinessRuleViolationException(Errors.NoTicketTypesConfigured);
+
+        var ticketTypeMap = catalog.TicketTypes.ToDictionary(t => t.Id);
         ValidateTicketTypeSelection(command.TicketTypeSlugs, ticketTypeMap);
 
         // Build ticket snapshots.
         var tickets = command.TicketTypeSlugs
-            .Select(slug => new TicketTypeSnapshot(slug, ticketTypeMap[slug].TimeSlots.ToArray()))
+            .Select(slug => new TicketTypeSnapshot(
+                slug,
+                ticketTypeMap[slug].TimeSlots.Select(ts => ts.Slug.Value).ToArray()))
             .ToList();
 
-        // Load capacity and claim (enforced — self-service path).
-        var capacity = await writeStore.EventCapacities
-            .FirstOrDefaultAsync(ec => ec.Id == command.EventId, cancellationToken)
-            ?? EventCapacity.Create(command.EventId);
-
-        capacity.Claim(command.TicketTypeSlugs, enforce: true);
+        // Claim capacity (enforced — self-service path).
+        catalog.Claim(command.TicketTypeSlugs, enforce: true);
 
         // Create the registration.
         var registration = Registration.Create(command.EventId, command.Email, tickets);
@@ -64,9 +61,9 @@ internal sealed class SelfRegisterAttendeeHandler(
         return registration.Id;
     }
 
-    private static void ValidateTicketTypeSelection(
+    internal static void ValidateTicketTypeSelection(
         string[] slugs,
-        Dictionary<string, TicketTypeDto> ticketTypeMap)
+        Dictionary<string, TicketType> ticketTypeMap)
     {
         var duplicates = slugs.GroupBy(s => s).Where(g => g.Count() > 1).Select(g => g.Key).ToArray();
         if (duplicates.Length > 0)
@@ -80,7 +77,9 @@ internal sealed class SelfRegisterAttendeeHandler(
         if (cancelledSlugs.Length > 0)
             throw new BusinessRuleViolationException(Errors.CancelledTicketTypes(cancelledSlugs));
 
-        var allTimeSlots = slugs.SelectMany(s => ticketTypeMap[s].TimeSlots).ToList();
+        var allTimeSlots = slugs
+            .SelectMany(s => ticketTypeMap[s].TimeSlots.Select(ts => ts.Slug.Value))
+            .ToList();
         var overlapping = allTimeSlots.GroupBy(ts => ts).Where(g => g.Count() > 1).Select(g => g.Key).ToArray();
         if (overlapping.Length > 0)
             throw new BusinessRuleViolationException(Errors.OverlappingTimeSlots(overlapping));
@@ -106,6 +105,11 @@ internal sealed class SelfRegisterAttendeeHandler(
         public static readonly Error EmailDomainNotAllowed = new(
             "registration.email_domain_not_allowed",
             "Your email domain is not allowed for this event.",
+            Type: ErrorType.Validation);
+
+        public static readonly Error NoTicketTypesConfigured = new(
+            "registration.no_ticket_types",
+            "No ticket types have been configured for this event.",
             Type: ErrorType.Validation);
 
         public static Error DuplicateTicketTypes(string[] slugs) => new(

@@ -1,5 +1,5 @@
-using Amolenk.Admitto.Module.Organization.Contracts;
 using Amolenk.Admitto.Module.Registrations.Application.Persistence;
+using Amolenk.Admitto.Module.Registrations.Application.UseCases.Registrations.SelfRegisterAttendee;
 using Amolenk.Admitto.Module.Registrations.Domain.Entities;
 using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
@@ -9,7 +9,6 @@ using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.Registrations.RegisterWithCoupon;
 
 internal sealed class RegisterWithCouponHandler(
-    IOrganizationFacade organizationFacade,
     IRegistrationsWriteStore writeStore)
     : ICommandHandler<RegisterWithCouponCommand, RegistrationId>
 {
@@ -49,57 +48,51 @@ internal sealed class RegisterWithCouponHandler(
         if (notAllowlisted.Length > 0)
             throw new BusinessRuleViolationException(Errors.TicketTypeNotAllowlisted(notAllowlisted));
 
-        // Verify the event is still active.
-        var isEventActive = await organizationFacade.IsEventActiveAsync(
-            command.EventId.Value, cancellationToken);
-        if (!isEventActive)
+        // Load registration policy and check lifecycle status.
+        var policy = await writeStore.EventRegistrationPolicies
+            .FirstOrDefaultAsync(p => p.Id == command.EventId, cancellationToken);
+
+        if (policy is null || !policy.IsEventActive)
             throw new BusinessRuleViolationException(Errors.EventNotActive);
 
         // Conditionally enforce registration window.
         if (!coupon.BypassRegistrationWindow)
         {
-            var policy = await writeStore.EventRegistrationPolicies
-                .FirstOrDefaultAsync(p => p.Id == command.EventId, cancellationToken);
-
-            if (policy is null || !policy.IsRegistrationOpen(now))
+            if (!policy.IsRegistrationOpen(now))
             {
-                var isAfterWindow = policy?.RegistrationWindowClosesAt.HasValue == true
+                var isAfterWindow = policy.RegistrationWindowClosesAt.HasValue
                                     && now > policy.RegistrationWindowClosesAt;
                 throw new BusinessRuleViolationException(
                     isAfterWindow ? Errors.RegistrationClosed : Errors.RegistrationNotOpen);
             }
         }
 
-        // Load and validate ticket types.
-        var ticketTypeDtos = await organizationFacade.GetTicketTypesAsync(
-            command.EventId.Value, cancellationToken);
-        var ticketTypeMap = ticketTypeDtos.ToDictionary(t => t.Slug);
-        ValidateTicketTypeSelection(command.TicketTypeSlugs, ticketTypeMap);
+        // Load ticket catalog and validate the selection.
+        var catalog = await writeStore.TicketCatalogs
+            .FirstOrDefaultAsync(tc => tc.Id == command.EventId, cancellationToken);
+
+        if (catalog is not null)
+        {
+            var ticketTypeMap = catalog.TicketTypes.ToDictionary(t => t.Id);
+            SelfRegisterAttendeeHandler.ValidateTicketTypeSelection(
+                command.TicketTypeSlugs, ticketTypeMap);
+        }
 
         // Build ticket snapshots.
         var tickets = command.TicketTypeSlugs
-            .Select(slug => new TicketTypeSnapshot(slug, ticketTypeMap[slug].TimeSlots.ToArray()))
+            .Select(slug =>
+            {
+                var tt = catalog?.GetTicketType(slug);
+                var timeSlots = tt?.TimeSlots.Select(ts => ts.Slug.Value).ToArray() ?? [];
+                return new TicketTypeSnapshot(slug, timeSlots);
+            })
             .ToList();
 
-        // Load or create EventCapacity, ensuring entries exist for each slug.
-        var capacity = await writeStore.EventCapacities
-            .FirstOrDefaultAsync(ec => ec.Id == command.EventId, cancellationToken);
-
-        if (capacity is null)
-        {
-            capacity = EventCapacity.Create(command.EventId);
-            writeStore.EventCapacities.Add(capacity);
-        }
-
-        // Ensure TicketCapacity entries exist (coupon bypasses max-capacity enforcement).
-        foreach (var slug in command.TicketTypeSlugs)
-        {
-            if (capacity.TicketCapacities.All(tc => tc.Id != slug))
-                capacity.SetTicketCapacity(slug, null);
-        }
-
         // Claim uncapped — coupon-based registrations always count toward occupancy.
-        capacity.Claim(command.TicketTypeSlugs, enforce: false);
+        if (catalog is not null)
+        {
+            catalog.Claim(command.TicketTypeSlugs, enforce: false);
+        }
 
         // Redeem the coupon (single-use).
         coupon.Redeem();
@@ -109,28 +102,6 @@ internal sealed class RegisterWithCouponHandler(
         await writeStore.Registrations.AddAsync(registration, cancellationToken);
 
         return registration.Id;
-    }
-
-    private static void ValidateTicketTypeSelection(
-        string[] slugs,
-        Dictionary<string, TicketTypeDto> ticketTypeMap)
-    {
-        var duplicates = slugs.GroupBy(s => s).Where(g => g.Count() > 1).Select(g => g.Key).ToArray();
-        if (duplicates.Length > 0)
-            throw new BusinessRuleViolationException(SelfRegisterAttendeeErrors.DuplicateTicketTypes(duplicates));
-
-        var unknownSlugs = slugs.Where(s => !ticketTypeMap.ContainsKey(s)).ToArray();
-        if (unknownSlugs.Length > 0)
-            throw new BusinessRuleViolationException(SelfRegisterAttendeeErrors.UnknownTicketTypes(unknownSlugs));
-
-        var cancelledSlugs = slugs.Where(s => ticketTypeMap[s].IsCancelled).ToArray();
-        if (cancelledSlugs.Length > 0)
-            throw new BusinessRuleViolationException(SelfRegisterAttendeeErrors.CancelledTicketTypes(cancelledSlugs));
-
-        var allTimeSlots = slugs.SelectMany(s => ticketTypeMap[s].TimeSlots).ToList();
-        var overlapping = allTimeSlots.GroupBy(ts => ts).Where(g => g.Count() > 1).Select(g => g.Key).ToArray();
-        if (overlapping.Length > 0)
-            throw new BusinessRuleViolationException(SelfRegisterAttendeeErrors.OverlappingTimeSlots(overlapping));
     }
 
     internal static class Errors
@@ -174,29 +145,5 @@ internal sealed class RegisterWithCouponHandler(
             "registration.closed",
             "Registration for this event has closed.",
             Type: ErrorType.Validation);
-    }
-
-    // Re-use ticket-selection error definitions from SelfRegisterAttendeeHandler.
-    private static class SelfRegisterAttendeeErrors
-    {
-        public static Error DuplicateTicketTypes(string[] slugs) => new(
-            "registration.duplicate_ticket_types",
-            "Duplicate ticket types in selection.",
-            Details: new Dictionary<string, object?> { ["slugs"] = slugs });
-
-        public static Error UnknownTicketTypes(string[] slugs) => new(
-            "registration.unknown_ticket_types",
-            "One or more ticket types do not exist.",
-            Details: new Dictionary<string, object?> { ["slugs"] = slugs });
-
-        public static Error CancelledTicketTypes(string[] slugs) => new(
-            "registration.cancelled_ticket_types",
-            "One or more ticket types have been cancelled.",
-            Details: new Dictionary<string, object?> { ["slugs"] = slugs });
-
-        public static Error OverlappingTimeSlots(string[] slots) => new(
-            "registration.overlapping_time_slots",
-            "Selected ticket types have overlapping time slots.",
-            Details: new Dictionary<string, object?> { ["slots"] = slots });
     }
 }

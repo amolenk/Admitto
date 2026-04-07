@@ -12,22 +12,10 @@ public class OrganizationMessagePolicy : MessagePolicy
         Configure<UserCreatedDomainEvent>()
             .PublishModuleEvent(e => new UserCreatedModuleEvent(e.UserId.Value));
 
-        Configure<TicketTypeAddedDomainEvent>()
-            .PublishModuleEvent(e => new TicketTypeAddedModuleEvent
-            {
-                TicketedEventId = e.TicketedEventId.Value,
-                Slug = e.Slug,
-                Name = e.Name,
-                TimeSlots = e.TimeSlots,
-                Capacity = e.Capacity
-            });
+        Configure<TicketedEventCancelledDomainEvent>()
+            .PublishModuleEvent(e => new TicketedEventCancelledModuleEvent(e.TicketedEventId.Value));
 
-        Configure<TicketTypeCapacityChangedDomainEvent>()
-            .PublishModuleEvent(e => new TicketTypeCapacityChangedModuleEvent
-            {
-                TicketedEventId = e.TicketedEventId.Value,
-                Slug = e.Slug,
-                Capacity = e.Capacity
-            });
+        Configure<TicketedEventArchivedDomainEvent>()
+            .PublishModuleEvent(e => new TicketedEventArchivedModuleEvent(e.TicketedEventId.Value));
     }
 }

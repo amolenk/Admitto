@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Kernel.Entities;
 using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
@@ -5,7 +6,8 @@ using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 namespace Amolenk.Admitto.Module.Registrations.Domain.Entities;
 
 /// <summary>
-/// Stores registration policy for an event: registration window and optional email domain restriction.
+/// Stores registration policy for an event: registration window, optional email domain restriction,
+/// and event lifecycle status synced from the Organization module.
 /// </summary>
 public class EventRegistrationPolicy : Aggregate<TicketedEventId>
 {
@@ -16,6 +18,9 @@ public class EventRegistrationPolicy : Aggregate<TicketedEventId>
     public DateTimeOffset? RegistrationWindowOpensAt { get; private set; }
     public DateTimeOffset? RegistrationWindowClosesAt { get; private set; }
     public string? AllowedEmailDomain { get; private set; }
+    public EventLifecycleStatus EventLifecycleStatus { get; private set; } = EventLifecycleStatus.Active;
+
+    public bool IsEventActive => EventLifecycleStatus == EventLifecycleStatus.Active;
 
     public bool HasRegistrationWindow =>
         RegistrationWindowOpensAt.HasValue && RegistrationWindowClosesAt.HasValue;
@@ -59,6 +64,24 @@ public class EventRegistrationPolicy : Aggregate<TicketedEventId>
     {
         if (AllowedEmailDomain is null) return true;
         return email.EndsWith(AllowedEmailDomain, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Sets the lifecycle status to Cancelled. Idempotent — no-op if already Cancelled.
+    /// </summary>
+    public void SetCancelled()
+    {
+        if (EventLifecycleStatus != EventLifecycleStatus.Cancelled)
+            EventLifecycleStatus = EventLifecycleStatus.Cancelled;
+    }
+
+    /// <summary>
+    /// Sets the lifecycle status to Archived. Idempotent — no-op if already Archived.
+    /// </summary>
+    public void SetArchived()
+    {
+        if (EventLifecycleStatus != EventLifecycleStatus.Archived)
+            EventLifecycleStatus = EventLifecycleStatus.Archived;
     }
 
     internal static class Errors

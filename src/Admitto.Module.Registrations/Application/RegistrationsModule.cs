@@ -5,6 +5,10 @@ using Amolenk.Admitto.Module.Registrations.Application.UseCases.CouponManagement
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.RegistrationPolicy.AdminApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.Registrations.RegisterWithCoupon.PublicApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.Registrations.SelfRegisterAttendee.PublicApi;
+using Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketTypeManagement.AddTicketType.AdminApi;
+using Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketTypeManagement.CancelTicketType.AdminApi;
+using Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketTypeManagement.GetTicketTypes.AdminApi;
+using Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketTypeManagement.UpdateTicketType.AdminApi;
 
 namespace Amolenk.Admitto.Module.Registrations.Application;
 
@@ -14,13 +18,22 @@ public static class RegistrationsModule
 
     public static RouteGroupBuilder MapRegistrationsAdminEndpoints(this RouteGroupBuilder group)
     {
-        group
-            .MapGroup("/teams/{teamSlug}/events/{eventSlug}")
+        var eventGroup = group
+            .MapGroup("/teams/{teamSlug}/events/{eventSlug}");
+
+        eventGroup
             .MapCreateCoupon()
             .MapListCoupons()
             .MapGetCouponDetails()
             .MapRevokeCoupon()
             .MapSetRegistrationPolicy();
+
+        eventGroup
+            .MapGroup("/ticket-types")
+            .MapAddTicketType()
+            .MapUpdateTicketType()
+            .MapCancelTicketType()
+            .MapGetTicketTypes();
 
         return group;
     }

@@ -5,8 +5,6 @@ using Amolenk.Admitto.Module.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
-using Microsoft.EntityFrameworkCore;
-using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Should = Shouldly.Should;
 using Microsoft.EntityFrameworkCore;
 using Shouldly;
@@ -17,12 +15,12 @@ namespace Amolenk.Admitto.Module.Organization.Tests.Application.UseCases.Tickete
 public sealed class CancelTicketedEventTests(TestContext testContext) : AspireIntegrationTestBase
 {
     [TestMethod]
-    public async ValueTask SC009_CancelTicketedEvent_ActiveEvent_CancelsEventAndTicketTypes()
+    public async ValueTask SC009_CancelTicketedEvent_ActiveEvent_CancelsEvent()
     {
         // Arrange
-        // SC-009: Given an active ticketed event with active ticket types, when an organizer
-        // cancels the event, its status and all ticket type statuses become cancelled.
-        var fixture = CancelTicketedEventFixture.ActiveEventWithTicketTypes();
+        // SC-009: Given an active ticketed event, when an organizer
+        // cancels the event, its status becomes cancelled.
+        var fixture = CancelTicketedEventFixture.ActiveEvent();
         await fixture.SetupAsync(Environment);
 
         var command = new CancelTicketedEventCommand(fixture.TeamId, fixture.EventId, fixture.EventVersion);
@@ -40,8 +38,6 @@ public sealed class CancelTicketedEventTests(TestContext testContext) : AspireIn
 
             ticketedEvent.ShouldNotBeNull();
             ticketedEvent.Status.ShouldBe(EventStatus.Cancelled);
-            ticketedEvent.TicketTypes.ShouldNotBeEmpty();
-            ticketedEvent.TicketTypes.ShouldAllBe(tt => tt.IsCancelled);
         });
     }
 

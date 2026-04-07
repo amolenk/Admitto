@@ -107,6 +107,10 @@ Three event tiers, each with distinct scope:
 
 Each module declares a `MessagePolicy` that maps domain events to module and/or integration events. The `DomainEventsInterceptor` calls the policy during `SaveChanges`; mapped events are written to the outbox table in the same transaction. `OutboxDispatcher` attempts best-effort dispatch immediately, with background retry via the Worker host.
 
+### Cross-module lifecycle events
+
+When a ticketed event is cancelled or archived in the Organization module, the corresponding domain events (`TicketedEventCancelledDomainEvent`, `TicketedEventArchivedDomainEvent`) are mapped via `OrganizationMessagePolicy` to module events (`TicketedEventCancelledModuleEvent`, `TicketedEventArchivedModuleEvent`). The Registrations module handles these via the event→command→handler pattern (see §8.5) to update the local `EventRegistrationPolicy` lifecycle status. This is the only cross-module data sync — ticket type data is owned entirely by the Registrations module.
+
 ## 8.7 Error handling
 
 ### Pipeline

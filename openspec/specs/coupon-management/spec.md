@@ -11,7 +11,7 @@ the coupon bypasses the registration window. The system SHALL generate a unique
 GUID-based coupon code upon creation. The system SHALL trigger an invitation email
 to the target email upon creation. The system SHALL reject coupon creation if any
 specified ticket type does not exist or is cancelled, if the expiry datetime is in
-the past, or if the event is cancelled or archived.
+the past, or if the event lifecycle status is Cancelled or Archived.
 
 #### Scenario: Successful coupon creation
 - **WHEN** an organizer creates a coupon for "speaker@example.com" on active event "DevConf" allowlisting "Speaker Pass" expiring "2025-06-01T00:00Z" with bypassRegistrationWindow disabled
@@ -33,8 +33,12 @@ the past, or if the event is cancelled or archived.
 - **WHEN** an organizer creates a coupon with expiry "2020-01-01T00:00Z"
 - **THEN** the coupon creation is rejected with reason "expiry must be in the future"
 
-#### Scenario: Rejected — cancelled event
-- **WHEN** an organizer creates a coupon for event "OldConf" which has been cancelled
+#### Scenario: Rejected — event lifecycle status is Cancelled
+- **WHEN** an organizer creates a coupon for event "OldConf" whose lifecycle status is Cancelled
+- **THEN** the coupon creation is rejected with reason "event not active"
+
+#### Scenario: Rejected — event lifecycle status is Archived
+- **WHEN** an organizer creates a coupon for event "OldConf" whose lifecycle status is Archived
 - **THEN** the coupon creation is rejected with reason "event not active"
 
 ---

@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Module.Registrations.Domain.Entities;
+using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Shouldly;
@@ -148,5 +149,72 @@ public sealed class EventRegistrationPolicyTests
         sut.RegistrationWindowOpensAt.ShouldBeNull();
         sut.RegistrationWindowClosesAt.ShouldBeNull();
         sut.HasRegistrationWindow.ShouldBeFalse();
+    }
+
+    [TestMethod]
+    public void SC012_EventRegistrationPolicy_DefaultLifecycleStatus_IsActive()
+    {
+        // Act
+        var sut = EventRegistrationPolicy.Create(DefaultEventId);
+
+        // Assert
+        sut.EventLifecycleStatus.ShouldBe(ValueObjects.EventLifecycleStatus.Active);
+        sut.IsEventActive.ShouldBeTrue();
+    }
+
+    [TestMethod]
+    public void SC013_EventRegistrationPolicy_SetCancelled_UpdatesStatus()
+    {
+        // Arrange
+        var sut = EventRegistrationPolicy.Create(DefaultEventId);
+
+        // Act
+        sut.SetCancelled();
+
+        // Assert
+        sut.EventLifecycleStatus.ShouldBe(ValueObjects.EventLifecycleStatus.Cancelled);
+        sut.IsEventActive.ShouldBeFalse();
+    }
+
+    [TestMethod]
+    public void SC014_EventRegistrationPolicy_SetArchived_UpdatesStatus()
+    {
+        // Arrange
+        var sut = EventRegistrationPolicy.Create(DefaultEventId);
+
+        // Act
+        sut.SetArchived();
+
+        // Assert
+        sut.EventLifecycleStatus.ShouldBe(ValueObjects.EventLifecycleStatus.Archived);
+        sut.IsEventActive.ShouldBeFalse();
+    }
+
+    [TestMethod]
+    public void SC015_EventRegistrationPolicy_SetCancelled_Idempotent()
+    {
+        // Arrange
+        var sut = EventRegistrationPolicy.Create(DefaultEventId);
+        sut.SetCancelled();
+
+        // Act (second call — should be idempotent)
+        sut.SetCancelled();
+
+        // Assert
+        sut.EventLifecycleStatus.ShouldBe(ValueObjects.EventLifecycleStatus.Cancelled);
+    }
+
+    [TestMethod]
+    public void SC016_EventRegistrationPolicy_SetArchived_Idempotent()
+    {
+        // Arrange
+        var sut = EventRegistrationPolicy.Create(DefaultEventId);
+        sut.SetArchived();
+
+        // Act (second call — should be idempotent)
+        sut.SetArchived();
+
+        // Assert
+        sut.EventLifecycleStatus.ShouldBe(ValueObjects.EventLifecycleStatus.Archived);
     }
 }

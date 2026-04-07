@@ -11,12 +11,12 @@ namespace Amolenk.Admitto.Module.Organization.Tests.Application.UseCases.Tickete
 public sealed class GetTicketedEventTests(TestContext testContext) : AspireIntegrationTestBase
 {
     [TestMethod]
-    public async ValueTask SC004_GetTicketedEvent_ExistingEvent_ReturnsEventWithTicketTypes()
+    public async ValueTask SC004_GetTicketedEvent_ExistingEvent_ReturnsEventDetails()
     {
         // Arrange
-        // SC-004: Given a ticketed event exists with two ticket types, when an organizer
-        // requests the event by slug, the full event details including ticket types are returned.
-        var fixture = GetTicketedEventFixture.EventWithTicketTypes();
+        // SC-004: Given a ticketed event exists, when an organizer
+        // requests the event by slug, the event details are returned.
+        var fixture = GetTicketedEventFixture.ActiveEvent();
         await fixture.SetupAsync(Environment);
 
         var query = new GetTicketedEventQuery(fixture.TeamId, fixture.EventSlug);
@@ -31,27 +31,13 @@ public sealed class GetTicketedEventTests(TestContext testContext) : AspireInteg
         result.Name.ShouldBe("Acme Conf 2026");
         result.Status.ShouldBe("Active");
         result.Version.ShouldBeGreaterThan(0u);
-
-        result.TicketTypes.Count.ShouldBe(2);
-
-        var general = result.TicketTypes.FirstOrDefault(tt => tt.Slug == "general");
-        general.ShouldNotBeNull();
-        general.Name.ShouldBe("General Admission");
-        general.Capacity.ShouldBe(500);
-        general.IsCancelled.ShouldBeFalse();
-
-        var vip = result.TicketTypes.FirstOrDefault(tt => tt.Slug == "vip");
-        vip.ShouldNotBeNull();
-        vip.Name.ShouldBe("VIP Pass");
-        vip.Capacity.ShouldBe(50);
-        vip.TimeSlots.Count.ShouldBe(2);
     }
 
     [TestMethod]
     public async ValueTask GetTicketedEvent_NonExistentEvent_ThrowsNotFound()
     {
         // Arrange
-        var fixture = GetTicketedEventFixture.EventWithTicketTypes();
+        var fixture = GetTicketedEventFixture.ActiveEvent();
         await fixture.SetupAsync(Environment);
 
         var query = new GetTicketedEventQuery(fixture.TeamId, "does-not-exist");

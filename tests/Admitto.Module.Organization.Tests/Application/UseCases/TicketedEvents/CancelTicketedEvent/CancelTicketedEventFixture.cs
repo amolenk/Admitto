@@ -13,16 +13,14 @@ internal sealed class CancelTicketedEventFixture
     public uint EventVersion { get; private set; }
 
     private readonly bool _alreadyCancelled;
-    private readonly bool _withTicketTypes;
 
-    private CancelTicketedEventFixture(bool alreadyCancelled = false, bool withTicketTypes = false)
+    private CancelTicketedEventFixture(bool alreadyCancelled = false)
     {
         _alreadyCancelled = alreadyCancelled;
-        _withTicketTypes = withTicketTypes;
     }
 
-    /// <summary>Seeds an active event with two active ticket types.</summary>
-    public static CancelTicketedEventFixture ActiveEventWithTicketTypes() => new(withTicketTypes: true);
+    /// <summary>Seeds an active event.</summary>
+    public static CancelTicketedEventFixture ActiveEvent() => new();
 
     /// <summary>Seeds an already cancelled event.</summary>
     public static CancelTicketedEventFixture AlreadyCancelledEvent() => new(alreadyCancelled: true);
@@ -47,21 +45,6 @@ internal sealed class CancelTicketedEventFixture
             new TimeWindow(
                 new DateTimeOffset(2026, 6, 1, 9, 0, 0, TimeSpan.Zero),
                 new DateTimeOffset(2026, 6, 3, 17, 0, 0, TimeSpan.Zero)));
-
-        if (_withTicketTypes)
-        {
-            ticketedEvent.AddTicketType(
-                Slug.From("general"),
-                DisplayName.From("General Admission"),
-                timeSlots: [new TimeSlot(Slug.From("all-day"))],
-                capacity: Capacity.From(200));
-
-            ticketedEvent.AddTicketType(
-                Slug.From("vip"),
-                DisplayName.From("VIP Pass"),
-                timeSlots: [new TimeSlot(Slug.From("morning"))],
-                capacity: Capacity.From(20));
-        }
 
         if (_alreadyCancelled) ticketedEvent.Cancel();
 
