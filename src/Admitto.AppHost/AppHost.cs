@@ -55,6 +55,7 @@ if (builder.Environment.IsEndToEndTesting() || builder.Environment.IsDevelopment
             ReferenceExpression.Create($"{mailDev.GetEndpoint("smtp").Property(EndpointProperty.Port)}"))
         .WithReference(postgresDb)
         .WithReference(quartzDb)
+        .WithReference(keycloak).WaitFor(keycloak)
         .WithReference(queues).WaitFor(queues)
         .WaitFor(mailDev)
         .WaitForCompletion(migrations);

@@ -13,7 +13,13 @@ builder
     .AddOrganizationInfrastructureServices()
     .AddOrganizationIdentityServices();
 
-builder.Services.AddSharedInfrastructureServices();
+// Add shared services.
+builder
+    .AddSharedInfrastructureMessagingServices();
+
+builder.Services
+    .AddMessagingApplicationServices()
+    .AddSharedInfrastructureServices();
 
 var host = builder.Build();
 host.Run();

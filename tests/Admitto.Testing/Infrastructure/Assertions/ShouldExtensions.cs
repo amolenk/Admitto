@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Text.Json;
 using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
 using Microsoft.AspNetCore.Mvc;
@@ -24,7 +25,21 @@ public static class ShouldExtensions
 
         foreach (var expectedDetail in expected.Details)
         {
-            actual.Details[expectedDetail.Key].ShouldBeEquivalentTo(expectedDetail.Value);
+            var actualValue = actual.Details[expectedDetail.Key];
+            var expectedValue = expectedDetail.Value;
+
+            // Compare collections element-wise to avoid type mismatches between
+            // different IEnumerable implementations (e.g. List vs ReadOnlySingleElementList).
+            if (actualValue is IEnumerable actualEnumerable and not string
+                && expectedValue is IEnumerable expectedEnumerable and not string)
+            {
+                actualEnumerable.Cast<object>().ToList()
+                    .ShouldBeEquivalentTo(expectedEnumerable.Cast<object>().ToList());
+            }
+            else
+            {
+                actualValue.ShouldBeEquivalentTo(expectedValue);
+            }
         }
     }
     

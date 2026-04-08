@@ -45,7 +45,7 @@ public sealed class UpdateTicketedEventTests(TestContext testContext) : AspireIn
 
             ticketedEvent.ShouldNotBeNull();
             ticketedEvent.Name.Value.ShouldBe("Acme Conf 2026 — Updated");
-            ticketedEvent.WebsiteUrl.Value.ToString().ShouldBe("https://conf2.acme.org");
+            ticketedEvent.WebsiteUrl.Value.ToString().ShouldBe("https://conf2.acme.org/");
             ticketedEvent.EventWindow.Start.ShouldBe(command.StartsAt!.Value);
             ticketedEvent.EventWindow.End.ShouldBe(command.EndsAt!.Value);
         });

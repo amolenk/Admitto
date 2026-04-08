@@ -28,6 +28,11 @@ public sealed class UpdateTeamTests(TestContext testContext) : AspireIntegration
             EmailAddress: null,
             ExpectedVersion: fixture.TeamVersion);
 
+        var sut = new UpdateTeamHandler(Environment.Database.Context);
+
+        // Act
+        await sut.HandleAsync(command, testContext.CancellationToken);
+
         // Assert
         await Environment.Database.AssertAsync(async dbContext =>
         {
