@@ -9,6 +9,7 @@ Detailed ADRs are stored in [`/docs/adrs/`](../adrs/).
 | — | EF Core with PostgreSQL | Accepted | [ADR-003](../adrs/adr-003-ef-core-postgresql.md) |
 | — | Azure Storage Queues for async messaging | Accepted | [ADR-004](../adrs/adr-004-azure-storage-queues.md) |
 | — | Capability gating for host-specific handlers | Accepted | [ADR-005](../adrs/adr-005-capability-gating.md) |
+| — | Admin UI technology stack | Accepted | [ADR-006](../adrs/adr-006-admin-ui-technology-stack.md) |
 
 ## Done-when
 

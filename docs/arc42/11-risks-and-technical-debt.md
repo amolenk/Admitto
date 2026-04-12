@@ -16,3 +16,6 @@
 | Registration aggregate partially commented out | Registrations module is incomplete | Medium | Under active refactoring |
 | Registrations infrastructure (DbContext) not implemented | No persistence for registrations | Medium | Blocked on domain stabilization |
 | Admin UI not wired into AppHost | Local dev requires manual UI startup | Low | `cd src/Admitto.UI.Admin && pnpm dev` works standalone |
+| Admin UI dead code and unused dependencies | Maintenance burden, confusion for contributors | Medium | Tracked in audit plan; dead components, commented-out code blocks, and unused npm packages to remove |
+| Admin UI has no tests | No regression safety for frontend changes | Medium | Test infrastructure (Vitest + React Testing Library) to be added |
+| Admin UI has no error boundaries | Runtime errors crash pages with no recovery | Low | Add `error.tsx` files per route segment |

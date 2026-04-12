@@ -24,44 +24,6 @@ export function useDataLoader<T>(loadDataFunction: () => Promise<T>)
             .finally(() => {
                 setLoading(false);
             });
-
-        // async function loadData()
-        // {
-        //     setLoading(true);
-        //     setError(null);
-        //
-        //     loadDataFunction()
-        //         .then((result) => {
-        //             setData(result);
-        //         })
-        //         .catch((err) => {
-        //             setError("Failed to load data.");
-        //             console.error(err);
-        //         })
-        //         .finally(() => {
-        //             setLoading(false);
-        //         });
-        //     //
-        //     // setLoading(true);
-        //     // setError(null);
-        //     //
-        //     // try
-        //     // {
-        //     //     const result = await loadDataFunction();
-        //     //     setData(result);
-        //     // }
-        //     // catch (err)
-        //     // {
-        //     //     setError("Failed to load data.");
-        //     //     console.error(err);
-        //     // }
-        //     // finally
-        //     // {
-        //     //     setLoading(false);
-        //     // }
-        // }
-        //
-        // loadData();
     }, [loadDataFunction]);
 
     return { data, loading, error };

@@ -36,7 +36,7 @@ flowchart TB
 | `Admitto.Migrations` | Database schema migration | .NET |
 | `Admitto.AppHost` | Aspire orchestration for local development | .NET |
 | `Admitto.Cli` | CLI management tool | .NET |
-| `Admitto.UI.Admin` | Frontend UI | Next.js |
+| `Admitto.UI.Admin` | Frontend UI for admin/team member interaction | Next.js ([ADR-006](../adrs/adr-006-admin-ui-technology-stack.md)) |
 
 ### Infrastructure mapping
 
@@ -107,6 +107,47 @@ Handles attendee registration flows — both admin-initiated and public self-ser
 ### Shared module
 
 Contains code re-used across modules. It should be kept as light-weight as possible.
+
+## 5.3 Admin UI
+
+The Admin UI (`Admitto.UI.Admin`) is a Next.js 15 application that serves organizers and team members. It communicates exclusively with the API host over HTTPS and is deployed as a separate container.
+
+### Architecture
+
+The application uses the Next.js App Router with two route groups:
+
+- **`(auth)`** — Unauthenticated pages (sign-in). Minimal layout, no session check.
+- **`(dashboard)`** — Protected pages. The layout performs a server-side session check and redirects to `/signin` if the user is not authenticated.
+
+### Key patterns
+
+| Pattern | Implementation |
+| :------ | :------------- |
+| **Component library** | Shadcn/UI (new-york variant) with Radix UI primitives. Reusable primitives live in `components/ui/`; app-specific compositions in `components/`. |
+| **Form handling** | React Hook Form + Zod schemas. A custom `useCustomForm` hook maps server-side ProblemDetails errors (field-level and general) to form state. |
+| **API client** | HeyAPI-generated TypeScript SDK from the Admitto API OpenAPI spec. Runtime config in `lib/admitto-api/admitto-client.ts` injects base URL and access token. |
+| **Data fetching** | TanStack Query for client-side data fetching with caching, deduplication, and background refetch. |
+| **Data tables** | TanStack Table v8 with sorting, filtering, pagination, and faceted search. |
+| **Authentication** | Better Auth with generic OAuth plugin. OIDC discovery against the identity provider; access tokens forwarded to the Admitto API via the generated SDK. |
+| **State management** | Zustand for cross-component state (team selection). Page-level UI state uses React local state. |
+
+### Folder structure
+
+```
+app/
+├── (auth)/             # Unauthenticated route group
+├── (dashboard)/        # Protected route group (session check in layout)
+│   └── teams/          # Team and event management pages
+├── api/                # Next.js API routes (BFF proxy layer)
+├── components/         # App-specific components
+│   └── ui/             # Shadcn/UI primitives
+├── hooks/              # Custom React hooks
+├── lib/                # Utilities, auth config, API client
+│   └── admitto-api/    # Generated SDK + runtime config
+└── stores/             # Zustand stores
+```
+
+See [ADR-006](../adrs/adr-006-admin-ui-technology-stack.md) for technology selection rationale.
 
 ### 5.2.1 Capability gating
 

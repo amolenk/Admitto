@@ -10,14 +10,14 @@ type TeamStore = {
     fetchTeams: (selectTeamSlug?: string) => Promise<void>;
 };
 
-export const useTeamStore = create<TeamStore>((set) => ({
+export const useTeamStore = create<TeamStore>((set, get) => ({
     teams: [],
     selectedTeam: null,
     isLoading: false,
     hasLoaded: false,
     setSelectedTeamSlug: (teamSlug: string) =>
     {
-        const team = useTeamStore.getState().teams.find((t) => t.slug === teamSlug);
+        const team = get().teams.find((t) => t.slug === teamSlug);
         set({ selectedTeam: team });
     },
     fetchTeams: async (selectTeamId?: string) =>

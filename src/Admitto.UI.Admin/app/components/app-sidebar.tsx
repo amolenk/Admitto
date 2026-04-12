@@ -1,16 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { useEffect, useState } from "react";
-
-import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 import { NavUser } from "@/components/nav-user";
 
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail } from "@/components/ui/sidebar";
 import { TeamSwitcher } from "@/components/team-switcher";
 import { NavEvents } from "@/components/nav-events";
-import { NavTeam } from "@/components/nav-team";
 import { useTeamStore } from "@/stores/team-store";
 import { Session } from "@/lib/auth";
 
@@ -22,7 +19,6 @@ export function AppSidebar({ ...props }: AppSidebarProps)
 {
     const fetchTeams = useTeamStore((s) => s.fetchTeams);
     const selectedTeam = useTeamStore((s) => s.selectedTeam);
-    const router = useRouter();
 
     useEffect(() =>
     {
@@ -36,10 +32,7 @@ export function AppSidebar({ ...props }: AppSidebarProps)
             </SidebarHeader>
             <SidebarContent>
                 {selectedTeam && (
-                    <>
-                        <NavEvents teamSlug={selectedTeam.slug} />
-                        {/*<NavTeam />*/}
-                    </>
+                    <NavEvents teamSlug={selectedTeam.slug} />
                 )}
             </SidebarContent>
             <SidebarFooter>

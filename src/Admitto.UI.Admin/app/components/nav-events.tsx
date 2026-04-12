@@ -10,21 +10,14 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
-    useSidebar,
 } from "@/components/ui/sidebar"
 import {useEffect, useState} from "react";
 
 export function NavEvents({
                               teamSlug,
-                              // events,
                           }: {
     teamSlug: string,
-    // events: {
-    //     id: string
-    //     name: string
-    // }[]
 }) {
-    const {isMobile} = useSidebar()
     const router = useRouter()
 
     const [events, setEvents] = useState<Array<TicketedEventDto>>([]);
@@ -33,12 +26,8 @@ export function NavEvents({
     {
         async function fetchEvents()
         {
-            console.log("Fetching events for team slug:", teamSlug);
-
             try
             {
-                console.log(`/api/teams/${teamSlug}/events`)
-
                 const response = await fetch(`/api/teams/${teamSlug}/events`, { method: "GET" });
                 if (!response.ok)
                 {
@@ -46,19 +35,16 @@ export function NavEvents({
                 }
 
                 const data = (await response.json()) as Array<TicketedEventDto>;
-                console.log(data)
                 setEvents(data);
             }
             catch (error)
             {
                 console.error("Error fetching events:", error);
             }
-
-            router.push("/")
         }
 
         fetchEvents();
-    }, [router]);
+    }, [teamSlug]);
 
     return (
         <SidebarGroup className="group-data-[collapsible=icon]:hidden">
