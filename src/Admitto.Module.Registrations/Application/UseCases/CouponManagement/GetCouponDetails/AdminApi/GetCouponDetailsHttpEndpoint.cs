@@ -21,12 +21,16 @@ public static class GetCouponDetailsHttpEndpoint
 
     private static async ValueTask<Ok<CouponDetailsDto>> GetCouponDetails(
         Guid couponId,
-        OrganizationScope organizationScope,
+        string teamSlug,
+        string eventSlug,
+        IOrganizationScopeResolver scopeResolver,
         IMediator mediator,
         CancellationToken cancellationToken)
     {
+        var scope = await scopeResolver.ResolveAsync(teamSlug, eventSlug, cancellationToken);
+
         var query = new GetCouponDetailsQuery(
-            TicketedEventId.From(organizationScope.EventId!.Value),
+            TicketedEventId.From(scope.EventId!.Value),
             CouponId.From(couponId));
 
         var result = await mediator.QueryAsync<GetCouponDetailsQuery, CouponDetailsDto>(

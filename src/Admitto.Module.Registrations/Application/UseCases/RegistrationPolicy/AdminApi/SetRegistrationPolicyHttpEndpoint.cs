@@ -19,14 +19,18 @@ public static class SetRegistrationPolicyHttpEndpoint
     }
 
     private static async ValueTask<Ok> SetRegistrationPolicy(
-        OrganizationScope organizationScope,
+        string teamSlug,
+        string eventSlug,
+        IOrganizationScopeResolver scopeResolver,
         SetRegistrationPolicyHttpRequest request,
         IMediator mediator,
         [FromKeyedServices(RegistrationsModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
-        var command = request.ToCommand(TicketedEventId.From(organizationScope.EventId!.Value));
+        var scope = await scopeResolver.ResolveAsync(teamSlug, eventSlug, cancellationToken);
+
+        var command = request.ToCommand(TicketedEventId.From(scope.EventId!.Value));
 
         await mediator.SendAsync(command, cancellationToken);
 

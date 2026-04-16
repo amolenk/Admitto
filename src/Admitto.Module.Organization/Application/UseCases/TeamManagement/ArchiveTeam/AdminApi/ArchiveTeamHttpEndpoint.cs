@@ -23,14 +23,17 @@ public static class ArchiveTeamHttpEndpoint
     }
 
     private static async ValueTask<Ok> ArchiveTeam(
-        OrganizationScope organizationScope,
+        string teamSlug,
+        IOrganizationScopeResolver scopeResolver,
         ArchiveTeamHttpRequest request,
         IMediator mediator,
         [FromKeyedServices(OrganizationModuleKey.Value)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
-        var command = request.ToCommand(organizationScope.TeamId);
+        var scope = await scopeResolver.ResolveAsync(teamSlug, cancellationToken: cancellationToken);
+
+        var command = request.ToCommand(scope.TeamId);
 
         await mediator.SendAsync(command, cancellationToken);
 

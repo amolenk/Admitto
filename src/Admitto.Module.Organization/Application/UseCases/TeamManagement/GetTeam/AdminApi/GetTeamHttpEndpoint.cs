@@ -18,11 +18,14 @@ public static class GetTeamHttpEndpoint
     }
 
     private static async ValueTask<Ok<TeamDto>> GetTeam(
-        OrganizationScope organizationScope,
+        string teamSlug,
+        IOrganizationScopeResolver scopeResolver,
         IMediator mediator,
         CancellationToken cancellationToken)
     {
-        var query = new GetTeamQuery(organizationScope.TeamId);
+        var scope = await scopeResolver.ResolveAsync(teamSlug, cancellationToken: cancellationToken);
+
+        var query = new GetTeamQuery(scope.TeamId);
 
         var team = await mediator.QueryAsync<GetTeamQuery, TeamDto>(query, cancellationToken);
 

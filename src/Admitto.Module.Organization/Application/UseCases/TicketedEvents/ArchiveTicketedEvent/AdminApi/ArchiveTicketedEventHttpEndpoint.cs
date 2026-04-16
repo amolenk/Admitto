@@ -19,14 +19,18 @@ public static class ArchiveTicketedEventHttpEndpoint
     }
 
     private static async ValueTask<Ok> ArchiveTicketedEvent(
-        OrganizationScope organizationScope,
+        string teamSlug,
+        string eventSlug,
+        IOrganizationScopeResolver scopeResolver,
         ArchiveTicketedEventHttpRequest request,
         IMediator mediator,
         [FromKeyedServices(OrganizationModuleKey.Value)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
-        var command = request.ToCommand(organizationScope.TeamId, organizationScope.EventId!.Value);
+        var scope = await scopeResolver.ResolveAsync(teamSlug, eventSlug, cancellationToken);
+
+        var command = request.ToCommand(scope.TeamId, scope.EventId!.Value);
 
         await mediator.SendAsync(command, cancellationToken);
 

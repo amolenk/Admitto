@@ -19,14 +19,17 @@ public static class RemoveTeamMembershipHttpEndpoint
     }
 
     private static async ValueTask<Ok> RemoveTeamMembership(
-        OrganizationScope organizationScope,
+        string teamSlug,
+        IOrganizationScopeResolver scopeResolver,
         string email,
         IMediator mediator,
         [FromKeyedServices(OrganizationModuleKey.Value)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
-        var command = new RemoveTeamMembershipCommand(organizationScope.TeamId, email);
+        var scope = await scopeResolver.ResolveAsync(teamSlug, cancellationToken: cancellationToken);
+
+        var command = new RemoveTeamMembershipCommand(scope.TeamId, email);
 
         await mediator.SendAsync(command, cancellationToken);
 

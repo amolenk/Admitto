@@ -19,14 +19,18 @@ public static class CancelTicketedEventHttpEndpoint
     }
 
     private static async ValueTask<Ok> CancelTicketedEvent(
-        OrganizationScope organizationScope,
+        string teamSlug,
+        string eventSlug,
+        IOrganizationScopeResolver scopeResolver,
         CancelTicketedEventHttpRequest request,
         IMediator mediator,
         [FromKeyedServices(OrganizationModuleKey.Value)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
-        var command = request.ToCommand(organizationScope.TeamId, organizationScope.EventId!.Value);
+        var scope = await scopeResolver.ResolveAsync(teamSlug, eventSlug, cancellationToken);
+
+        var command = request.ToCommand(scope.TeamId, scope.EventId!.Value);
 
         await mediator.SendAsync(command, cancellationToken);
 

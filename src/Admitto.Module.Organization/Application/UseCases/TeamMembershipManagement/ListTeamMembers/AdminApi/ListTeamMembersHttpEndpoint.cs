@@ -18,11 +18,14 @@ public static class ListTeamMembersHttpEndpoint
     }
 
     private static async ValueTask<Ok<IReadOnlyList<TeamMemberListItemDto>>> ListTeamMembers(
-        OrganizationScope organizationScope,
+        string teamSlug,
+        IOrganizationScopeResolver scopeResolver,
         IMediator mediator,
         CancellationToken cancellationToken)
     {
-        var query = new GetTeamMembersQuery(organizationScope.TeamId);
+        var scope = await scopeResolver.ResolveAsync(teamSlug, cancellationToken: cancellationToken);
+
+        var query = new GetTeamMembersQuery(scope.TeamId);
 
         var members = await mediator.QueryAsync<GetTeamMembersQuery, IReadOnlyList<TeamMemberListItemDto>>(
             query, cancellationToken);

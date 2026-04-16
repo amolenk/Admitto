@@ -21,14 +21,18 @@ public static class CancelTicketTypeHttpEndpoint
 
     private static async ValueTask<NoContent> CancelTicketType(
         string ticketTypeSlug,
-        OrganizationScope organizationScope,
+        string teamSlug,
+        string eventSlug,
+        IOrganizationScopeResolver scopeResolver,
         IMediator mediator,
         [FromKeyedServices(RegistrationsModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
+        var scope = await scopeResolver.ResolveAsync(teamSlug, eventSlug, cancellationToken);
+
         var command = new CancelTicketTypeCommand(
-            TicketedEventId.From(organizationScope.EventId!.Value),
+            TicketedEventId.From(scope.EventId!.Value),
             Slug.From(ticketTypeSlug));
 
         await mediator.SendAsync(command, cancellationToken);

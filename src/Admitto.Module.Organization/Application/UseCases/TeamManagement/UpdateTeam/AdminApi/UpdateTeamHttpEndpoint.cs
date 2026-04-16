@@ -19,14 +19,17 @@ public static class UpdateTeamHttpEndpoint
     }
 
     private static async ValueTask<Ok> UpdateTeam(
-        OrganizationScope organizationScope,
+        string teamSlug,
+        IOrganizationScopeResolver scopeResolver,
         UpdateTeamHttpRequest request,
         IMediator mediator,
         [FromKeyedServices(OrganizationModuleKey.Value)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
-        var command = request.ToCommand(organizationScope.TeamId);
+        var scope = await scopeResolver.ResolveAsync(teamSlug, cancellationToken: cancellationToken);
+
+        var command = request.ToCommand(scope.TeamId);
 
         await mediator.SendAsync(command, cancellationToken);
 

@@ -5,7 +5,7 @@ This file applies to `/src`.
 
 ## HTTP and Use Case Rules
 - Keep minimal API endpoints feature-sliced (`UseCases/.../*HttpEndpoint.cs`).
-- Use `OrganizationScope` for route-derived organization context where applicable.
+- Use explicit `string teamSlug` / `string eventSlug` path parameters and `IOrganizationScopeResolver` for route-derived organization context.
 - For write endpoints:
   - map request DTO to command
   - dispatch via `IMediator`

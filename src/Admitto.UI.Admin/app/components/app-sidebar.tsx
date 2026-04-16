@@ -1,14 +1,13 @@
 "use client";
 
 import * as React from "react";
-import { useEffect } from "react";
 
 import { NavUser } from "@/components/nav-user";
 
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail } from "@/components/ui/sidebar";
 import { TeamSwitcher } from "@/components/team-switcher";
 import { NavEvents } from "@/components/nav-events";
-import { useTeamStore } from "@/stores/team-store";
+import { useTeams } from "@/hooks/use-teams";
 import { Session } from "@/lib/auth";
 
 type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
@@ -17,13 +16,7 @@ type AppSidebarProps = React.ComponentProps<typeof Sidebar> & {
 
 export function AppSidebar({ ...props }: AppSidebarProps)
 {
-    const fetchTeams = useTeamStore((s) => s.fetchTeams);
-    const selectedTeam = useTeamStore((s) => s.selectedTeam);
-
-    useEffect(() =>
-    {
-        fetchTeams();
-    }, [fetchTeams]);
+    const { selectedTeam } = useTeams();
 
     return (
         <Sidebar collapsible="offcanvas" {...props}>

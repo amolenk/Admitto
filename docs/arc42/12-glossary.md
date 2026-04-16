@@ -12,7 +12,7 @@
 | Write store | Module-owned persistence abstraction (e.g. `IOrganizationWriteStore`) exposing DbSets for aggregates; located in the module's `Infrastructure/` folder |
 | Facade | Cross-module query interface published in a Contracts project; prevents direct DbContext access between modules |
 | Module key | String identifier (e.g. `"Organization"`) used for keyed DI registration of module-specific services |
-| Organization scope | Bindable record (`OrganizationScope`) that resolves team and event identity from URL route parameters |
+| Organization scope | Record (`OrganizationScope`) returned by `IOrganizationScopeResolver` that holds resolved team and event identity (slugs + IDs) |
 | Attendee | A person who holds one or more tickets for a ticketed event |
 | Feature slice | Organizational pattern where an endpoint, its request DTO, validator, and mapping live together under a single use case folder |
 | Organizer | A team member with the Organizer role; can create events and manage attendees |

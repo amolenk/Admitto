@@ -22,14 +22,18 @@ public static class RevokeCouponHttpEndpoint
 
     private static async ValueTask<Ok> RevokeCoupon(
         Guid couponId,
-        OrganizationScope organizationScope,
+        string teamSlug,
+        string eventSlug,
+        IOrganizationScopeResolver scopeResolver,
         IMediator mediator,
         [FromKeyedServices(RegistrationsModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
+        var scope = await scopeResolver.ResolveAsync(teamSlug, eventSlug, cancellationToken);
+
         var command = new RevokeCouponCommand(
-            TicketedEventId.From(organizationScope.EventId!.Value),
+            TicketedEventId.From(scope.EventId!.Value),
             CouponId.From(couponId));
 
         await mediator.SendAsync(command, cancellationToken);

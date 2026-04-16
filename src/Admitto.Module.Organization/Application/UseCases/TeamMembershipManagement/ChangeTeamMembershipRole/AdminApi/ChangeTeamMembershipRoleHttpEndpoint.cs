@@ -19,7 +19,8 @@ public static class ChangeTeamMembershipRoleHttpEndpoint
     }
 
     private static async ValueTask<Ok> ChangeTeamMembershipRole(
-        OrganizationScope organizationScope,
+        string teamSlug,
+        IOrganizationScopeResolver scopeResolver,
         string email,
         ChangeTeamMembershipRoleHttpRequest request,
         IMediator mediator,
@@ -27,7 +28,9 @@ public static class ChangeTeamMembershipRoleHttpEndpoint
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
-        var command = request.ToCommand(organizationScope.TeamId, email);
+        var scope = await scopeResolver.ResolveAsync(teamSlug, cancellationToken: cancellationToken);
+
+        var command = request.ToCommand(scope.TeamId, email);
 
         await mediator.SendAsync(command, cancellationToken);
 

@@ -5,6 +5,8 @@ import { AppHeader } from "@/components/app-header";
 import { Geist, Geist_Mono } from "next/font/google";
 import "@/globals.css";
 import { HeaderProvider } from "@/components/header-context";
+import { QueryProvider } from "@/components/query-provider";
+import { Toaster } from "@/components/ui/sonner";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
@@ -43,19 +45,22 @@ export default async function RootLayout({
         <body
             className={`${geistSans.variable} ${geistMono.variable} font-[family-name:var(--font-geist-sans)] antialiased`}
         >
-        <HeaderProvider>
-            <SidebarProvider>
-                <AppSidebar session={session} variant="inset" />
-                <SidebarInset>
-                    <AppHeader />
-                    <div className="flex flex-1 flex-col">
-                        <div className="@container/main flex flex-1 flex-col gap-2 px-4 py-4 lg:px-6 lg:py-6">
-                            {children}
+        <QueryProvider>
+            <HeaderProvider>
+                <SidebarProvider>
+                    <AppSidebar session={session} variant="inset" />
+                    <SidebarInset>
+                        <AppHeader />
+                        <div className="flex flex-1 flex-col">
+                            <div className="@container/main flex flex-1 flex-col gap-2 px-4 py-4 lg:px-6 lg:py-6">
+                                {children}
+                            </div>
                         </div>
-                    </div>
-                </SidebarInset>
-            </SidebarProvider>
-        </HeaderProvider>
+                    </SidebarInset>
+                </SidebarProvider>
+            </HeaderProvider>
+            <Toaster />
+        </QueryProvider>
         </body>
         </html>
     );

@@ -13,17 +13,17 @@ import {
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
-import { TeamDto } from "@/lib/admitto-api/generated/types.gen";
-import { useTeamStore } from "@/stores/team-store";
+import { TeamListItemDto } from "@/lib/admitto-api/generated/types.gen";
+import { useTeams } from "@/hooks/use-teams";
 
-export function TeamSwitcher(/*{teams}: TeamSwitcherProps*/)
+export function TeamSwitcher()
 {
     const router = useRouter();
     const { isMobile } = useSidebar();
 
-    const { teams, selectedTeam, setSelectedTeamSlug, hasLoaded } = useTeamStore();
+    const { teams, selectedTeam, isLoading, setSelectedTeamSlug } = useTeams();
 
-    if (!hasLoaded)
+    if (isLoading)
     {
         return (<div></div>);
     }
@@ -54,7 +54,7 @@ export function TeamSwitcher(/*{teams}: TeamSwitcherProps*/)
                         {teams && teams.length > 0 ? (
                             <>
                                 <DropdownMenuLabel className="text-xs text-muted-foreground">Teams</DropdownMenuLabel>
-                                {teams.map((team: TeamDto) => (
+                                {teams.map((team: TeamListItemDto) => (
                                     <DropdownMenuItem
                                         key={team.name}
                                         onClick={() => setSelectedTeamSlug(team.slug)}

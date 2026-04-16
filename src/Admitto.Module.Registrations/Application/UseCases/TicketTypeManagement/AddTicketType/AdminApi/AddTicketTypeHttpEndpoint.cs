@@ -20,21 +20,25 @@ public static class AddTicketTypeHttpEndpoint
     }
 
     private static async ValueTask<Created<AddTicketTypeHttpResponse>> AddTicketType(
-        OrganizationScope organizationScope,
+        string teamSlug,
+        string eventSlug,
+        IOrganizationScopeResolver scopeResolver,
         AddTicketTypeHttpRequest request,
         IMediator mediator,
         [FromKeyedServices(RegistrationsModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
-        var command = request.ToCommand(TicketedEventId.From(organizationScope.EventId!.Value));
+        var scope = await scopeResolver.ResolveAsync(teamSlug, eventSlug, cancellationToken);
+
+        var command = request.ToCommand(TicketedEventId.From(scope.EventId!.Value));
 
         await mediator.SendAsync(command, cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return TypedResults.Created(
-            $"/teams/{organizationScope.TeamSlug}/events/{organizationScope.EventSlug}/ticket-types/{request.Slug}",
+            $"/teams/{teamSlug}/events/{eventSlug}/ticket-types/{request.Slug}",
             new AddTicketTypeHttpResponse(request.Slug));
     }
 }

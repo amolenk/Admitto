@@ -24,9 +24,13 @@ Reference: `Admitto.Api/Middleware/ValidationFilter.cs`, applied in `Admitto.Api
 
 Endpoints declare requirements with `policy.RequireAdminRole()` or `policy.RequireTeamMembership(role)`.
 
-## 8.4 Organization scope binding
+## 8.4 Organization scope resolution
 
-`OrganizationScope` is a bindable record that resolves team and event identity from URL route parameters. It implements ASP.NET Core's `BindAsync` pattern, so endpoints can inject it directly. Resolution goes through `IOrganizationScopeResolver`, which queries the Organization facade and caches the result per request.
+Admin endpoints declare `teamSlug` and `eventSlug` as explicit path parameters in their handler signatures. An `IOrganizationScopeResolver` is injected to translate slugs into IDs via the Organization facade. The resolver returns an `OrganizationScope` record containing the resolved team/event identity and caches the result per request.
+
+Endpoints call `scopeResolver.ResolveAsync(teamSlug, eventSlug, cancellationToken)` to obtain the scope. The resolver itself is HTTP-agnostic — it receives slugs from its callers rather than extracting them from route values. This keeps path parameters visible to the OpenAPI generator and makes the resolver testable without an HTTP context.
+
+The `TeamMembershipAuthorizationHandler` extracts `teamSlug` from `HttpContext.GetRouteValue()` because authorization runs before endpoint binding.
 
 ## 8.5 Use case slice layout
 

@@ -15,7 +15,8 @@ public class TeamMembershipAuthorizationHandler(
     IUserContextAccessor userContextAccessor,
     IOrganizationFacade organizationFacade,
     IAdministratorRoleService administratorRoleService,
-    IOrganizationScopeResolver organizationScopeResolver)
+    IOrganizationScopeResolver organizationScopeResolver,
+    IHttpContextAccessor httpContextAccessor)
     : AuthorizationHandler<TeamMembershipAuthorizationRequirement>
 {
     protected override async Task HandleRequirementAsync(
@@ -31,8 +32,20 @@ public class TeamMembershipAuthorizationHandler(
             return;
         }
 
-        // Otherwise, check the user's role in the organization.
-        var organizationScope = await organizationScopeResolver.ResolveAsync();
+        // Extract teamSlug from route values since authorization runs before endpoint binding.
+        var httpContext = httpContextAccessor.HttpContext;
+        if (httpContext is null)
+        {
+            return;
+        }
+
+        var teamSlug = httpContext.GetRouteValue("teamSlug")?.ToString();
+        if (string.IsNullOrWhiteSpace(teamSlug))
+        {
+            return;
+        }
+
+        var organizationScope = await organizationScopeResolver.ResolveAsync(teamSlug);
         var role = await organizationFacade.GetTeamMembershipRoleAsync(userId, organizationScope.TeamId);
 
         if (role.HasValue && MapToTeamMembershipRole(role.Value) >= requirement.RequiredRole)

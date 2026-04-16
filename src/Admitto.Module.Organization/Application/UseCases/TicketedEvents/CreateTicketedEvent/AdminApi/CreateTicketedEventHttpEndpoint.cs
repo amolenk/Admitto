@@ -19,19 +19,22 @@ public static class CreateTicketedEventHttpEndpoint
     }
 
     private static async ValueTask<Created> CreateTicketedEvent(
-        OrganizationScope organizationScope,
+        string teamSlug,
+        IOrganizationScopeResolver scopeResolver,
         CreateTicketedEventHttpRequest request,
         IMediator mediator,
         [FromKeyedServices(OrganizationModuleKey.Value)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
-        var command = request.ToCommand(organizationScope.TeamId);
+        var scope = await scopeResolver.ResolveAsync(teamSlug, cancellationToken: cancellationToken);
+
+        var command = request.ToCommand(scope.TeamId);
 
         await mediator.SendAsync(command, cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return TypedResults.Created($"/teams/{organizationScope.TeamSlug}/events/{request.Slug}");
+        return TypedResults.Created($"/teams/{teamSlug}/events/{request.Slug}");
     }
 }

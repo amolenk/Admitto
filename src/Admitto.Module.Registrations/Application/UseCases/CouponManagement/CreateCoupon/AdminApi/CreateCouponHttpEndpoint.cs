@@ -21,14 +21,18 @@ public static class CreateCouponHttpEndpoint
     }
 
     private static async ValueTask<Created<CreateCouponHttpResponse>> CreateCoupon(
-        OrganizationScope organizationScope,
+        string teamSlug,
+        string eventSlug,
+        IOrganizationScopeResolver scopeResolver,
         CreateCouponHttpRequest request,
         IMediator mediator,
         [FromKeyedServices(RegistrationsModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
-        var command = request.ToCommand(TicketedEventId.From(organizationScope.EventId!.Value));
+        var scope = await scopeResolver.ResolveAsync(teamSlug, eventSlug, cancellationToken);
+
+        var command = request.ToCommand(TicketedEventId.From(scope.EventId!.Value));
 
         var couponId = await mediator.SendReceiveAsync<CreateCouponCommand, CouponId>(
             command, cancellationToken);
@@ -36,7 +40,7 @@ public static class CreateCouponHttpEndpoint
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return TypedResults.Created(
-            $"/teams/{organizationScope.TeamSlug}/events/{organizationScope.EventSlug}/coupons/{couponId.Value}",
+            $"/teams/{teamSlug}/events/{eventSlug}/coupons/{couponId.Value}",
             new CreateCouponHttpResponse(couponId.Value));
     }
 }

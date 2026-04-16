@@ -19,11 +19,15 @@ public static class GetTicketTypesHttpEndpoint
     }
 
     private static async ValueTask<Ok<IReadOnlyList<TicketTypeDto>>> GetTicketTypes(
-        OrganizationScope organizationScope,
+        string teamSlug,
+        string eventSlug,
+        IOrganizationScopeResolver scopeResolver,
         IMediator mediator,
         CancellationToken cancellationToken)
     {
-        var query = new GetTicketTypesQuery(TicketedEventId.From(organizationScope.EventId!.Value));
+        var scope = await scopeResolver.ResolveAsync(teamSlug, eventSlug, cancellationToken);
+
+        var query = new GetTicketTypesQuery(TicketedEventId.From(scope.EventId!.Value));
 
         var result = await mediator.QueryAsync<GetTicketTypesQuery, IReadOnlyList<TicketTypeDto>>(
             query, cancellationToken);

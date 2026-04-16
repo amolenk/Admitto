@@ -19,11 +19,15 @@ public static class ListCouponsHttpEndpoint
     }
 
     private static async ValueTask<Ok<ListCouponsResult>> ListCoupons(
-        OrganizationScope organizationScope,
+        string teamSlug,
+        string eventSlug,
+        IOrganizationScopeResolver scopeResolver,
         IMediator mediator,
         CancellationToken cancellationToken)
     {
-        var query = new ListCouponsQuery(TicketedEventId.From(organizationScope.EventId!.Value));
+        var scope = await scopeResolver.ResolveAsync(teamSlug, eventSlug, cancellationToken);
+
+        var query = new ListCouponsQuery(TicketedEventId.From(scope.EventId!.Value));
 
         var result = await mediator.QueryAsync<ListCouponsQuery, ListCouponsResult>(
             query, cancellationToken);

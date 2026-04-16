@@ -18,11 +18,15 @@ public static class GetTicketedEventHttpEndpoint
     }
 
     private static async ValueTask<Ok<TicketedEventDto>> GetTicketedEvent(
-        OrganizationScope organizationScope,
+        string teamSlug,
+        string eventSlug,
+        IOrganizationScopeResolver scopeResolver,
         IMediator mediator,
         CancellationToken cancellationToken)
     {
-        var query = new GetTicketedEventQuery(organizationScope.TeamId, organizationScope.EventSlug!);
+        var scope = await scopeResolver.ResolveAsync(teamSlug, eventSlug, cancellationToken);
+
+        var query = new GetTicketedEventQuery(scope.TeamId, eventSlug);
 
         var ticketedEvent = await mediator.QueryAsync<GetTicketedEventQuery, TicketedEventDto>(
             query, cancellationToken);
