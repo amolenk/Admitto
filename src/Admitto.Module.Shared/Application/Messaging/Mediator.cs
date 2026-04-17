@@ -85,12 +85,6 @@ public partial class Mediator(IServiceProvider serviceProvider, ILogger<Mediator
             .GetServices<IDomainEventHandler<TDomainEvent>>()
             .ToList();
 
-        if (handlers.Count == 0)
-        {
-            throw new InvalidOperationException(
-                $"No handlers registered for domain event of type '{domainEvent.GetType().FullName}'");
-        }
-
         foreach (var handler in handlers)
         {
             LogEventHandling(logger, domainEvent.GetType().FullName!, handler.GetType().FullName!);

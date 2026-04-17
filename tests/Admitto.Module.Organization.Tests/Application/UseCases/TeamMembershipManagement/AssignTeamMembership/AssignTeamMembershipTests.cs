@@ -7,6 +7,7 @@ using Amolenk.Admitto.Module.Organization.Domain.Entities;
 using Amolenk.Admitto.Module.Organization.Domain.Tests.Builders;
 using Amolenk.Admitto.Module.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Organization.Tests.Application.Builders;
+using TeamBuilder = Amolenk.Admitto.Module.Organization.Tests.Application.Builders.TeamBuilder;
 using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;

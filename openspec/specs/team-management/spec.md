@@ -62,9 +62,10 @@ Archived teams SHALL be excluded.
 ---
 
 ### Requirement: Team owner can update team details
-The system SHALL allow team owners to update a team's slug, name, and/or email
-address as a partial update. The system SHALL use optimistic concurrency (expected
-version) to prevent lost updates.
+The system SHALL allow team owners to update a team's name and/or email
+address as a partial update. The system SHALL NOT allow updating a team's slug —
+slugs are immutable after creation. The system SHALL use optimistic concurrency
+(expected version) to prevent lost updates.
 
 #### Scenario: Update team details with partial fields
 - **WHEN** an owner of team "acme" at version 1 updates the name to "Acme Corp" with expected version 1

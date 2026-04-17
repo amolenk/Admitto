@@ -2,6 +2,7 @@ using Amolenk.Admitto.Module.Organization.Tests.Application.Builders;
 using Amolenk.Admitto.Module.Organization.Tests.Application.Infrastructure.Hosting;
 using Amolenk.Admitto.Module.Organization.Domain.Tests.Builders;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
+using TeamBuilder = Amolenk.Admitto.Module.Organization.Tests.Application.Builders.TeamBuilder;
 
 namespace Amolenk.Admitto.Module.Organization.Tests.Application.UseCases.TeamMembershipManagement.AssignTeamMembership;
 

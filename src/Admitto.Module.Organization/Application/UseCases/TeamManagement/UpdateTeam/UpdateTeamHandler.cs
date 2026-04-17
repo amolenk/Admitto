@@ -15,11 +15,6 @@ internal sealed class UpdateTeamHandler(IOrganizationWriteStore writeStore)
             command.ExpectedVersion,
             cancellationToken);
 
-        if (command.Slug is not null)
-        {
-            team.ChangeSlug(Slug.From(command.Slug));
-        }
-
         if (command.Name is not null)
         {
             team.ChangeName(DisplayName.From(command.Name));

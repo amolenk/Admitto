@@ -8,9 +8,6 @@ public sealed class UpdateTeamValidator : AbstractValidator<UpdateTeamHttpReques
 {
     public UpdateTeamValidator()
     {
-        RuleFor(x => x.Slug)
-            .MustBeNullOrParseable(Slug.TryFrom);
-
         RuleFor(x => x.Name)
             .MustBeNullOrParseable(DisplayName.TryFrom);
 

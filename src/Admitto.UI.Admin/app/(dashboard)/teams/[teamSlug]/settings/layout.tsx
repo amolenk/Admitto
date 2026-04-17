@@ -7,8 +7,8 @@ import { PageLayout } from "@/components/page-layout";
 
 const navItems = [
     { label: "General", href: "", enabled: true },
-    { label: "Members", href: "/members", enabled: false },
-    { label: "Danger Zone", href: "/danger", enabled: false },
+    { label: "Members", href: "/members", enabled: true },
+    { label: "Danger Zone", href: "/danger", enabled: true },
 ];
 
 export default function SettingsLayout({ children }: { children: React.ReactNode }) {

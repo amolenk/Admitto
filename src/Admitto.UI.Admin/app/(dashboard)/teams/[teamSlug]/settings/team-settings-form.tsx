@@ -9,15 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import { useCustomForm } from "@/hooks/use-custom-form";
-import { useTeamStore } from "@/stores/team-store";
 import { apiClient } from "@/lib/api-client";
 import { TeamDto } from "@/lib/admitto-api/generated";
 
 const teamSettingsSchema = z.object({
-    slug: z
-        .string()
-        .min(1, "Slug is required")
-        .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slug must be lowercase alphanumeric with hyphens"),
     name: z.string().min(1, "Name is required"),
     emailAddress: z.string().min(1, "Email is required").email("Must be a valid email address"),
 });
@@ -29,12 +24,9 @@ interface TeamSettingsFormProps {
 }
 
 export function TeamSettingsForm({ team }: TeamSettingsFormProps) {
-    const router = useRouter();
     const queryClient = useQueryClient();
-    const setSelectedTeamSlug = useTeamStore((s) => s.setSelectedTeamSlug);
 
     const form = useCustomForm<TeamSettingsValues>(teamSettingsSchema, {
-        slug: team.slug,
         name: team.name,
         emailAddress: team.emailAddress,
     });
@@ -44,7 +36,6 @@ export function TeamSettingsForm({ team }: TeamSettingsFormProps) {
             expectedVersion: Number(team.version),
         };
 
-        if (values.slug !== team.slug) body.slug = values.slug;
         if (values.name !== team.name) body.name = values.name;
         if (values.emailAddress !== team.emailAddress) body.emailAddress = values.emailAddress;
 
@@ -52,15 +43,6 @@ export function TeamSettingsForm({ team }: TeamSettingsFormProps) {
 
         await queryClient.invalidateQueries({ queryKey: ["teams"] });
         await queryClient.invalidateQueries({ queryKey: ["team", team.slug] });
-
-        const newSlug = values.slug !== team.slug ? values.slug : team.slug;
-        setSelectedTeamSlug(newSlug);
-
-        if (values.slug !== team.slug) {
-            router.push(`/teams/${newSlug}/settings`);
-        } else {
-            await queryClient.invalidateQueries({ queryKey: ["team", newSlug] });
-        }
     }
 
     return (
@@ -74,19 +56,13 @@ export function TeamSettingsForm({ team }: TeamSettingsFormProps) {
                     </Alert>
                 )}
 
-                <FormField
-                    control={form.control}
-                    name="slug"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Slug</FormLabel>
-                            <FormControl>
-                                <Input placeholder="e.g. my-team" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
+                <div className="space-y-2">
+                    <label className="text-sm font-medium leading-none">Slug</label>
+                    <Input value={team.slug} disabled className="bg-muted" />
+                    <p className="text-xs text-muted-foreground">
+                        Slugs cannot be changed after creation.
+                    </p>
+                </div>
 
                 <FormField
                     control={form.control}

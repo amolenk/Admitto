@@ -3,6 +3,13 @@ import { FormError } from "@/components/form-error";
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
     const res = await fetch(path, init);
 
+    if (res.status === 401) {
+        window.location.href = "/signin";
+        // Return a never-resolving promise so callers don't process stale data
+        // while the browser navigates.
+        return new Promise<T>(() => {});
+    }
+
     if (!res.ok) {
         const contentType = res.headers.get("content-type") ?? "";
 
@@ -41,5 +48,10 @@ export const apiClient = {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
             ...(body !== undefined && { body: JSON.stringify(body) }),
+        }),
+
+    delete: <T>(path: string) =>
+        request<T>(path, {
+            method: "DELETE",
         }),
 };

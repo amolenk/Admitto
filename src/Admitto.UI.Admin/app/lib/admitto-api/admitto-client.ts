@@ -1,5 +1,5 @@
 import {auth} from "@/lib/auth";
-import {cookies, headers} from 'next/headers';
+import {headers} from 'next/headers';
 import {NextResponse} from "next/server";
 import {type CreateClientConfig} from './generated/client.gen';
 
@@ -8,14 +8,20 @@ export const createClientConfig: CreateClientConfig = (config) => ({
     baseUrl: process.env.ADMITTO_API_URL ?? "http://localhost:5100",
     auth: async () => {
 
-        const { accessToken } = await auth.api.getAccessToken({
-            body: {
-                providerId: "generic-oauth",
-            },
-            headers: await headers()
-        });
+        try {
+            const { accessToken } = await auth.api.getAccessToken({
+                body: {
+                    providerId: "generic-oauth",
+                },
+                headers: await headers()
+            });
 
-        return accessToken ?? ""; // HeyAPI will NOT add Authorization if empty
+            return accessToken ?? "";
+        } catch {
+            // Token expired and refresh failed — return empty so the backend
+            // returns 401, which callAdmittoApi forwards to the client.
+            return "";
+        }
     },
 });
 

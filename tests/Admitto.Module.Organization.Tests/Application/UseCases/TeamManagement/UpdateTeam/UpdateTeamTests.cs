@@ -16,14 +16,13 @@ public sealed class UpdateTeamTests(TestContext testContext) : AspireIntegration
     public async ValueTask SC007_UpdateTeam_PartialUpdateWithCorrectVersion_UpdatesNameOnly()
     {
         // Arrange
-        // SC-007: Given team "acme" at version N, when slug+email unchanged but name updated
+        // SC-007: Given team "acme" at version N, when email unchanged but name updated
         // with the correct version, the name changes and version increments.
         var fixture = UpdateTeamFixture.ActiveTeam();
         await fixture.SetupAsync(Environment);
 
         var command = new UpdateTeamCommand(
             fixture.TeamId,
-            Slug: null,
             Name: "Acme Corp",
             EmailAddress: null,
             ExpectedVersion: fixture.TeamVersion);
@@ -63,7 +62,6 @@ public sealed class UpdateTeamTests(TestContext testContext) : AspireIntegration
 
         var command = new UpdateTeamCommand(
             fixture.TeamId,
-            Slug: null,
             Name: "Acme Corp",
             EmailAddress: null,
             ExpectedVersion: wrongVersion);
@@ -87,7 +85,6 @@ public sealed class UpdateTeamTests(TestContext testContext) : AspireIntegration
 
         var command = new UpdateTeamCommand(
             fixture.TeamId,
-            Slug: null,
             Name: "Acme Corp",
             EmailAddress: null,
             ExpectedVersion: fixture.TeamVersion);

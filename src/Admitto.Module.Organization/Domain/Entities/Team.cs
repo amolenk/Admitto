@@ -63,12 +63,6 @@ public class Team : Aggregate<TeamId>
             archivedAt: null,
             ticketedEventScopeVersion: 0);
 
-    public void ChangeSlug(Slug slug)
-    {
-        EnsureNotArchived();
-        Slug = slug;
-    }
-
     public void ChangeName(DisplayName name)
     {
         EnsureNotArchived();

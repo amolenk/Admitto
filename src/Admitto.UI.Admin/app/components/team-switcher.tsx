@@ -28,6 +28,13 @@ export function TeamSwitcher()
         return (<div></div>);
     }
 
+    function handleSelectTeam(slug: string) {
+        if (slug !== selectedTeam?.slug) {
+            setSelectedTeamSlug(slug);
+            router.push("/");
+        }
+    }
+
     return (
         <SidebarMenu>
             <SidebarMenuItem>
@@ -57,7 +64,7 @@ export function TeamSwitcher()
                                 {teams.map((team: TeamListItemDto) => (
                                     <DropdownMenuItem
                                         key={team.name}
-                                        onClick={() => setSelectedTeamSlug(team.slug)}
+                                        onClick={() => handleSelectTeam(team.slug)}
                                         className="gap-2 p-2"
                                     >
                                         {team.name}
