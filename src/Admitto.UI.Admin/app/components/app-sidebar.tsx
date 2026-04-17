@@ -7,6 +7,7 @@ import { NavUser } from "@/components/nav-user";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarRail } from "@/components/ui/sidebar";
 import { TeamSwitcher } from "@/components/team-switcher";
 import { NavEvents } from "@/components/nav-events";
+import { NavSettings } from "@/components/nav-settings";
 import { useTeams } from "@/hooks/use-teams";
 import { Session } from "@/lib/auth";
 
@@ -25,7 +26,10 @@ export function AppSidebar({ ...props }: AppSidebarProps)
             </SidebarHeader>
             <SidebarContent>
                 {selectedTeam && (
-                    <NavEvents teamSlug={selectedTeam.slug} />
+                    <>
+                        <NavEvents teamSlug={selectedTeam.slug} />
+                        <NavSettings teamSlug={selectedTeam.slug} />
+                    </>
                 )}
             </SidebarContent>
             <SidebarFooter>
