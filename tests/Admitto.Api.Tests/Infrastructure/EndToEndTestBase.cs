@@ -10,6 +10,6 @@ public abstract class EndToEndTestBase
     public virtual async ValueTask TestInitialize()
     {
         await Environment.OrganizationDatabase.ResetAsync();
-        // await Environment.RegistrationsDatabase.ResetAsync();
+        await Environment.RegistrationsDatabase.ResetAsync();
     }
 }
