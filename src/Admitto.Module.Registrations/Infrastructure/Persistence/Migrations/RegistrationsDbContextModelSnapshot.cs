@@ -129,6 +129,12 @@ namespace Amolenk.Admitto.Module.Registrations.Infrastructure.Persistence.Migrat
                         .HasColumnType("character varying(320)")
                         .HasColumnName("last_changed_by");
 
+                    b.Property<string>("RegistrationStatus")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("registration_status");
+
                     b.Property<DateTimeOffset?>("RegistrationWindowClosesAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("registration_window_closes_at");

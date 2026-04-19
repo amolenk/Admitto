@@ -19,8 +19,14 @@ internal sealed class SelfRegisterAttendeeHandler(
         var policy = await writeStore.EventRegistrationPolicies
             .FirstOrDefaultAsync(p => p.Id == command.EventId, cancellationToken);
 
-        if (policy is null || !policy.IsEventActive)
+        if (policy is null)
+            throw new BusinessRuleViolationException(EventRegistrationPolicy.Errors.EventNotFound);
+
+        if (!policy.IsEventActive)
             throw new BusinessRuleViolationException(Errors.EventNotActive);
+
+        if (!policy.IsRegistrationOpenForBusiness)
+            throw new BusinessRuleViolationException(Errors.RegistrationStatusNotOpen);
 
         var now = DateTimeOffset.UtcNow;
         if (!policy.IsRegistrationOpen(now))
@@ -94,6 +100,11 @@ internal sealed class SelfRegisterAttendeeHandler(
 
         public static readonly Error RegistrationNotOpen = new(
             "registration.not_open",
+            "Registration is not open for this event.",
+            Type: ErrorType.Validation);
+
+        public static readonly Error RegistrationStatusNotOpen = new(
+            "registration.status_not_open",
             "Registration is not open for this event.",
             Type: ErrorType.Validation);
 

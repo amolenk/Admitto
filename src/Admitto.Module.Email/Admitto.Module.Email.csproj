@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <ItemGroup>
+      <ProjectReference Include="..\Admitto.Module.Email.Contracts\Admitto.Module.Email.Contracts.csproj" />
+      <ProjectReference Include="..\Admitto.Module.Organization.Contracts\Admitto.Module.Organization.Contracts.csproj" />
+      <ProjectReference Include="..\Admitto.Module.Shared\Admitto.Module.Shared.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+      <PackageReference Include="Microsoft.AspNetCore.DataProtection" />
+      <PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
+    </ItemGroup>
+
+</Project>

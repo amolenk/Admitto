@@ -1,4 +1,5 @@
-﻿using Amolenk.Admitto.Module.Organization.Infrastructure.Persistence;
+﻿using Amolenk.Admitto.Module.Email.Infrastructure.Persistence;
+using Amolenk.Admitto.Module.Organization.Infrastructure.Persistence;
 using Amolenk.Admitto.Module.Registrations.Infrastructure;
 using Amolenk.Admitto.Module.Registrations.Infrastructure.Persistence;
 using Amolenk.Admitto.Module.Shared.Application.Auth;
@@ -14,6 +15,7 @@ builder.AddServiceDefaults();
 builder.Services.AddSingleton<IUserContextAccessor>(new MigrationUserContextAccessor());
 
 builder.AddOrganizationInfrastructureServices();
+builder.AddEmailInfrastructureServices();
 builder.AddRegistrationsInfrastructureServices();
 
 var app = builder.Build();
@@ -21,6 +23,7 @@ var app = builder.Build();
 using var migrationScope = app.Services.CreateScope();
 
 await MigrateDatabasesAsync<OrganizationDbContext>(migrationScope);
+await MigrateDatabasesAsync<EmailDbContext>(migrationScope);
 await MigrateDatabasesAsync<RegistrationsDbContext>(migrationScope);
 return;
 

@@ -12,6 +12,9 @@ public class OrganizationMessagePolicy : MessagePolicy
         Configure<UserCreatedDomainEvent>()
             .PublishModuleEvent(e => new UserCreatedModuleEvent(e.UserId.Value));
 
+        Configure<TicketedEventCreatedDomainEvent>()
+            .PublishModuleEvent(e => new TicketedEventCreatedModuleEvent(e.TicketedEventId.Value));
+
         Configure<TicketedEventCancelledDomainEvent>()
             .PublishModuleEvent(e => new TicketedEventCancelledModuleEvent(e.TicketedEventId.Value));
 

@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketTypeManagement.AddTicketType;
+using Amolenk.Admitto.Module.Registrations.Domain.Entities;
 using Amolenk.Admitto.Module.Registrations.Tests.Application.Aspire;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
@@ -125,9 +126,10 @@ public sealed class AddTicketTypeTests(TestContext testContext) : AspireIntegrat
         result.Error.ShouldMatch(AddTicketTypeHandler.Errors.EventNotActive);
     }
 
-    // SC-005: Reject when no policy exists — throws BusinessRuleViolationException
+    // SC-005: Add ticket type when no policy exists yet — surfaces EventNotFound (the
+    // policy is expected to be created upstream by the Organization → Registrations sync).
     [TestMethod]
-    public async ValueTask SC005_AddTicketType_NoPolicyExists_ThrowsEventNotActiveError()
+    public async ValueTask SC005_AddTicketType_NoPolicyExists_ThrowsEventNotFoundError()
     {
         // Arrange
         var fixture = AddTicketTypeFixture.NoPolicyExists();
@@ -146,6 +148,6 @@ public sealed class AddTicketTypeTests(TestContext testContext) : AspireIntegrat
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
         // Assert
-        result.Error.ShouldMatch(AddTicketTypeHandler.Errors.EventNotActive);
+        result.Error.ShouldMatch(EventRegistrationPolicy.Errors.EventNotFound);
     }
 }

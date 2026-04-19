@@ -1,6 +1,7 @@
 using Amolenk.Admitto.Module.Registrations.Application.Persistence;
 using Amolenk.Admitto.Module.Registrations.Domain.Entities;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
+using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
 
 namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.RegistrationPolicy;
 
@@ -15,10 +16,7 @@ internal sealed class SetRegistrationPolicyHandler(IRegistrationsWriteStore writ
             .FirstOrDefaultAsync(p => p.Id == command.EventId, cancellationToken);
 
         if (policy is null)
-        {
-            policy = EventRegistrationPolicy.Create(command.EventId);
-            writeStore.EventRegistrationPolicies.Add(policy);
-        }
+            throw new BusinessRuleViolationException(EventRegistrationPolicy.Errors.EventNotFound);
 
         if (command.RegistrationWindowOpensAt.HasValue && command.RegistrationWindowClosesAt.HasValue)
         {

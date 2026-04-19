@@ -8,6 +8,8 @@
 
     <ItemGroup>
       <ProjectReference Include="..\Admitto.ServiceDefaults\Admitto.ServiceDefaults.csproj" />
+      <ProjectReference Include="..\Admitto.Module.Email\Admitto.Module.Email.csproj" />
+      <ProjectReference Include="..\Admitto.Module.Email.Contracts\Admitto.Module.Email.Contracts.csproj" />
       <ProjectReference Include="..\Admitto.Module.Organization\Admitto.Module.Organization.csproj" />
     </ItemGroup>
 </Project>

@@ -55,6 +55,7 @@ internal sealed class SelfRegisterAttendeeFixture
         var closesAt = DateTimeOffset.UtcNow.AddDays(30);
         f._policy = EventRegistrationPolicy.Create(f.EventId);
         f._policy.SetWindow(opensAt, closesAt);
+        f._policy.OpenForRegistration();
         f._catalog = f.MakeCatalog(("general-admission", "General Admission", 100, 0));
         return f;
     }
@@ -66,6 +67,7 @@ internal sealed class SelfRegisterAttendeeFixture
         var closesAt = DateTimeOffset.UtcNow.AddDays(-1);
         f._policy = EventRegistrationPolicy.Create(f.EventId);
         f._policy.SetWindow(opensAt, closesAt);
+        f._policy.OpenForRegistration();
         f._catalog = f.MakeCatalog(("general-admission", "General Admission", 100, 0));
         return f;
     }
@@ -74,6 +76,7 @@ internal sealed class SelfRegisterAttendeeFixture
     {
         var f = new SelfRegisterAttendeeFixture();
         f._policy = EventRegistrationPolicy.Create(f.EventId); // no window
+        f._policy.OpenForRegistration();
         f._catalog = f.MakeCatalog(("general-admission", "General Admission", 100, 0));
         return f;
     }
@@ -127,6 +130,7 @@ internal sealed class SelfRegisterAttendeeFixture
         var f = new SelfRegisterAttendeeFixture();
         f._policy = EventRegistrationPolicy.Create(f.EventId);
         f._policy.SetWindow(DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddDays(30));
+        f._policy.OpenForRegistration();
         f._policy.SetCancelled();
         f._catalog = f.MakeCatalog(("general-admission", "General Admission", 100, 0));
         return f;
@@ -175,6 +179,7 @@ internal sealed class SelfRegisterAttendeeFixture
         policy.SetWindow(
             DateTimeOffset.UtcNow.AddDays(-1),
             DateTimeOffset.UtcNow.AddDays(30));
+        policy.OpenForRegistration();
         return policy;
     }
 

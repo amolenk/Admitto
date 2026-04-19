@@ -48,7 +48,7 @@ export function NavEvents({
                 <SidebarMenuItem>
                     <SidebarMenuButton
                         className="text-sidebar-foreground/70"
-                        onClick={() => router.push(`/teams/${teamSlug}/events/add`)}
+                        onClick={() => router.push(`/teams/${teamSlug}/events/new`)}
                     >
                         <SquarePlus className="text-sidebar-foreground/70"/>
                         <a href="#">New event</a>

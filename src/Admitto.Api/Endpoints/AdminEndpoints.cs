@@ -1,4 +1,5 @@
 using Amolenk.Admitto.ApiService.Middleware;
+using Amolenk.Admitto.Module.Email.Application.UseCases;
 using Amolenk.Admitto.Module.Organization.Application.UseCases;
 using Amolenk.Admitto.Module.Registrations.Application;
 
@@ -19,6 +20,7 @@ public static class AdminEndpoints
 
         adminGroup
             .MapOrganizationAdminEndpoints()
+            .MapEmailAdminEndpoints()
             .MapRegistrationsAdminEndpoints();
     }
 }

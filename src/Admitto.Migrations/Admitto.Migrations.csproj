@@ -9,6 +9,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ProjectReference Include="..\Admitto.Module.Email\Admitto.Module.Email.csproj" />
       <ProjectReference Include="..\Admitto.Module.Organization\Admitto.Module.Organization.csproj" />
       <ProjectReference Include="..\Admitto.Module.Registrations\Admitto.Module.Registrations.csproj" />
       <ProjectReference Include="..\Admitto.ServiceDefaults\Admitto.ServiceDefaults.csproj" />
@@ -17,6 +18,10 @@
     <ItemGroup>
       <PackageReference Include="Microsoft.EntityFrameworkCore" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+      <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
+        <PrivateAssets>all</PrivateAssets>
+        <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      </PackageReference>
     </ItemGroup>
     
 </Project>

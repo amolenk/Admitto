@@ -72,6 +72,37 @@ Example: Registrations module needs ticket types from Organization.
 
 The same facade is used by authorization handlers to resolve team membership roles.
 
+## 6.4 Org → Registrations event-creation sync
+
+When an organizer creates a `TicketedEvent`, the new event must also exist in the Registrations module so that registration-policy operations (open/close, set window, manage ticket types) can find it. This happens via the standard module-event pipeline — there is no shared transaction between modules.
+
+```mermaid
+sequenceDiagram
+  participant Endpoint as Organization endpoint
+  participant Aggregate as TicketedEvent
+  participant Interceptor as DomainEventsInterceptor
+  participant Policy as OrganizationMessagePolicy
+  participant Outbox as outbox table
+  participant Dispatcher as OutboxDispatcher
+  participant Bus as Module bus
+  participant Handler as TicketedEventCreatedModuleEventHandler (Registrations)
+  participant Mediator
+  participant Sync as HandleEventCreatedHandler
+
+  Endpoint->>Aggregate: TicketedEvent.Create(...)
+  Aggregate-->>Endpoint: raises TicketedEventCreatedDomainEvent (TeamId, TicketedEventId)
+  Endpoint->>Interceptor: SaveChangesAsync()
+  Interceptor->>Policy: map domain event
+  Policy-->>Outbox: TicketedEventCreatedModuleEvent (same transaction)
+  Dispatcher->>Bus: dispatch
+  Bus->>Handler: handle
+  Handler->>Mediator: HandleEventCreatedCommand (DeterministicCommandId)
+  Mediator->>Sync: HandleAsync
+  Sync-->>Sync: idempotent: no-op if policy exists, else create Draft + Active EventRegistrationPolicy
+```
+
+Registrations command/query handlers that need the policy (`OpenRegistration`, `CloseRegistration`, `SetRegistrationPolicy`, ticket-type management, registration flows, `GetRegistrationOpenStatus`) look it up by `TicketedEventId` and throw `EventRegistrationPolicy.Errors.EventNotFound` (HTTP 404) when it is missing — they do not create a policy on demand. Cancel and Archive follow the same shape, mapping `TicketedEventCancelledDomainEvent` / `TicketedEventArchivedDomainEvent` onto the corresponding module events.
+
 ## Done-when
 
 - [x] The most important end-to-end flow is documented.

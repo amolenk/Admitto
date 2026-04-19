@@ -1,0 +1,20 @@
+<Project Sdk="MSTest.Sdk">
+
+    <ItemGroup>
+        <PackageReference Include="Aspire.Hosting.Testing" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+
+        <PackageReference Include="NSubstitute" />
+        <PackageReference Include="Respawn" />
+        <PackageReference Include="Shouldly" />
+        <PackageReference Update="Microsoft.Testing.Extensions.CodeCoverage" VersionOverride="18.5.2" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\Admitto.AppHost\Admitto.AppHost.csproj" />
+        <ProjectReference Include="..\..\src\Admitto.Module.Email\Admitto.Module.Email.csproj" />
+        <ProjectReference Include="..\Admitto.Module.Email.Domain.Tests\Admitto.Module.Email.Domain.Tests.csproj" />
+        <ProjectReference Include="..\Admitto.Testing\Admitto.Testing.csproj" />
+    </ItemGroup>
+
+</Project>

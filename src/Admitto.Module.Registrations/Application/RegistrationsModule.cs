@@ -3,6 +3,9 @@ using Amolenk.Admitto.Module.Registrations.Application.UseCases.CouponManagement
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.CouponManagement.ListCoupons.AdminApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.CouponManagement.RevokeCoupon.AdminApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.RegistrationPolicy.AdminApi;
+using Amolenk.Admitto.Module.Registrations.Application.UseCases.RegistrationPolicy.CloseRegistration.AdminApi;
+using Amolenk.Admitto.Module.Registrations.Application.UseCases.RegistrationPolicy.GetRegistrationOpenStatus.AdminApi;
+using Amolenk.Admitto.Module.Registrations.Application.UseCases.RegistrationPolicy.OpenRegistration.AdminApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.Registrations.RegisterWithCoupon.PublicApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.Registrations.SelfRegisterAttendee.PublicApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketTypeManagement.AddTicketType.AdminApi;
@@ -26,7 +29,10 @@ public static class RegistrationsModule
             .MapListCoupons()
             .MapGetCouponDetails()
             .MapRevokeCoupon()
-            .MapSetRegistrationPolicy();
+            .MapSetRegistrationPolicy()
+            .MapOpenRegistration()
+            .MapCloseRegistration()
+            .MapGetRegistrationOpenStatus();
 
         eventGroup
             .MapGroup("/ticket-types")

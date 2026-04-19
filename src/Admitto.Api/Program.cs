@@ -4,6 +4,7 @@ using Amolenk.Admitto.Api.Endpoints;
 using Amolenk.Admitto.ApiService.Auth;
 using Amolenk.Admitto.ApiService.Middleware;
 using Amolenk.Admitto.ApiService.OpenApi;
+using Amolenk.Admitto.Module.Email.Application;
 using Amolenk.Admitto.Module.Organization.Application;
 using Amolenk.Admitto.Module.Organization.Application.Http;
 using Amolenk.Admitto.Module.Registrations.Application;
@@ -21,6 +22,7 @@ builder.AddServiceDefaults();
 // Add application services.
 builder
     .AddOrganizationApplicationServices()
+    .AddEmailApplicationServices()
     .Services
     .AddRegistrationsApplicationServices()
     .AddMessagingApplicationServices()
@@ -30,6 +32,7 @@ builder
 builder
     .AddSharedInfrastructureMessagingServices()
     .AddOrganizationInfrastructureServices()
+    .AddEmailInfrastructureServices()
     .AddRegistrationsInfrastructureServices()
     .Services
     .AddSharedInfrastructureServices();

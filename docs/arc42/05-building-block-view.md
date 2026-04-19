@@ -69,6 +69,13 @@ flowchart TB
     RegMain -.->|implements| RegContracts
   end
 
+  subgraph email["Email module"]
+    direction TB
+    EmailContracts["Admitto.Module.Email.Contracts<br/><small>IEventEmailFacade, DTOs</small>"]
+    EmailMain["Admitto.Module.Email<br/><small>Domain/ · Application/ · Infrastructure/</small>"]
+    EmailMain -.->|implements| EmailContracts
+  end
+
   subgraph shared["Shared"]
     direction TB
     Kernel["Admitto.Module.Shared.Kernel<br/><small>Entity, Aggregate, ValueObject, Error</small>"]
@@ -76,10 +83,13 @@ flowchart TB
   end
 
   RegMain -->|uses| OrgContracts
+  RegMain -->|uses| EmailContracts
   OrgMain --> Kernel
   RegMain --> Kernel
+  EmailMain --> Kernel
   OrgMain --> SharedMain
   RegMain --> SharedMain
+  EmailMain --> SharedMain
 
   style RegMain stroke-dasharray: 5 5
 ```
@@ -90,7 +100,7 @@ Each module project uses folder-based layer separation internally:
 
 | Folder | Contains |
 | :----- | :------- |
-| `Domain/` | Aggregates, value objects, domain events |
+| `Domain/` | Aggregates, value objects (see [§8.8 Value objects](08-crosscutting-concepts.md#88-value-objects)), domain events |
 | `Application/` | Command/query handlers, validators, facades, message policies, module events |
 | `Infrastructure/` | EF Core DbContext, entity configurations, value converters, external adapters |
 
@@ -102,7 +112,11 @@ Manages teams, team membership and roles, and ticketed events (event metadata, l
 
 ### Registrations module
 
-Handles attendee registration flows — both admin-initiated and public self-service — with capacity-aware ticket allocation. Owns ticket type configuration (the `TicketCatalog` aggregate) and event registration policies. Reacts to Organization lifecycle events to disable registrations when events are cancelled or archived.
+Handles attendee registration flows — both admin-initiated and public self-service — with capacity-aware ticket allocation. Owns ticket type configuration (the `TicketCatalog` aggregate) and event registration policies. Reacts to Organization lifecycle events to disable registrations when events are cancelled or archived. Calls the Email module's `IEventEmailFacade` synchronously when opening registration to verify that per-event SMTP credentials are configured (see [§8.4 Cross-module facades](08-crosscutting-concepts.md#84-organization-scope-resolution-and-cross-module-facades)).
+
+### Email module
+
+Owns per-event email-server configuration (SMTP host/port, from-address, auth mode, credentials). Exposes `IEventEmailFacade` via `Admitto.Module.Email.Contracts` so the Registrations module can check whether email is configured before allowing registration to open. SMTP passwords are protected at rest via ASP.NET Data Protection (see [§8.7.x Secret protection](08-crosscutting-concepts.md#secret-protection)).
 
 ### Shared module
 

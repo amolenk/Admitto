@@ -1,0 +1,13 @@
+<Project Sdk="MSTest.Sdk">
+
+    <ItemGroup>
+        <PackageReference Include="Shouldly" />
+        <PackageReference Update="Microsoft.Testing.Extensions.CodeCoverage" VersionOverride="18.5.2" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\src\Admitto.Module.Email\Admitto.Module.Email.csproj" />
+        <ProjectReference Include="..\Admitto.Testing\Admitto.Testing.csproj" />
+    </ItemGroup>
+
+</Project>

@@ -35,5 +35,11 @@ public class EventRegistrationPolicyEntityConfiguration : IEntityTypeConfigurati
             .HasMaxLength(32)
             .HasDefaultValue(EventLifecycleStatus.Active)
             .IsRequired();
+
+        builder.Property(e => e.RegistrationStatus)
+            .HasColumnName("registration_status")
+            .HasConversion<string>()
+            .HasMaxLength(16)
+            .IsRequired();
     }
 }

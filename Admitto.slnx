@@ -12,6 +12,10 @@
     <Project Path="src/Admitto.ServiceDefaults/Admitto.ServiceDefaults.csproj" />
     <Project Path="src/Admitto.Worker/Admitto.Worker.csproj" />
   </Folder>
+  <Folder Name="/src/Email/">
+    <Project Path="src/Admitto.Module.Email/Admitto.Module.Email.csproj" />
+    <Project Path="src/Admitto.Module.Email.Contracts/Admitto.Module.Email.Contracts.csproj" />
+  </Folder>
   <Folder Name="/src/Organization/">
     <Project Path="src/Admitto.Module.Organization/Admitto.Module.Organization.csproj" />
     <Project Path="src/Admitto.Module.Organization.Contracts/Admitto.Module.Organization.Contracts.csproj" />
@@ -29,6 +33,10 @@
     <Project Path="tests/Admitto.Testing/Admitto.Testing.csproj" />
   </Folder>
   <Folder Name="/tests/Modules/" />
+  <Folder Name="/tests/Modules/Email/">
+    <Project Path="tests/Admitto.Module.Email.Domain.Tests/Admitto.Module.Email.Domain.Tests.csproj" />
+    <Project Path="tests/Admitto.Module.Email.Tests/Admitto.Module.Email.Tests.csproj" />
+  </Folder>
   <Folder Name="/tests/Modules/Organization/">
     <Project Path="tests/Admitto.Module.Organization.Domain.Tests/Admitto.Module.Organization.Domain.Tests.csproj" />
     <Project Path="tests/Admitto.Module.Organization.Tests/Admitto.Module.Organization.Tests.csproj" />

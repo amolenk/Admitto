@@ -11,13 +11,19 @@ namespace Amolenk.Admitto.Module.Registrations.Tests.Application.UseCases.Regist
 [TestClass]
 public sealed class SetRegistrationPolicyTests(TestContext testContext) : AspireIntegrationTestBase
 {
-    // SC001: Configure registration window — policy created with correct times
+    // SC001: Configure registration window — policy already exists (synced from Organization),
+    // window is updated correctly.
     [TestMethod]
-    public async ValueTask SC001_SetRegistrationPolicy_NewPolicy_CreatesWindowCorrectly()
+    public async ValueTask SC001_SetRegistrationPolicy_ExistingPolicy_SetsWindowCorrectly()
     {
         var eventId = TicketedEventId.New();
         var opensAt = new DateTimeOffset(2025, 1, 1, 0, 0, 0, TimeSpan.Zero);
         var closesAt = new DateTimeOffset(2025, 6, 1, 0, 0, 0, TimeSpan.Zero);
+
+        await Environment.Database.SeedAsync(dbContext =>
+        {
+            dbContext.EventRegistrationPolicies.Add(EventRegistrationPolicy.Create(eventId));
+        });
 
         var command = new SetRegistrationPolicyCommand(eventId, opensAt, closesAt, null);
         var sut = new SetRegistrationPolicyHandler(Environment.Database.Context);
@@ -75,6 +81,11 @@ public sealed class SetRegistrationPolicyTests(TestContext testContext) : Aspire
         var eventId = TicketedEventId.New();
         var opensAt = new DateTimeOffset(2025, 1, 1, 0, 0, 0, TimeSpan.Zero);
         var closesAt = new DateTimeOffset(2025, 6, 1, 0, 0, 0, TimeSpan.Zero);
+
+        await Environment.Database.SeedAsync(dbContext =>
+        {
+            dbContext.EventRegistrationPolicies.Add(EventRegistrationPolicy.Create(eventId));
+        });
 
         var command = new SetRegistrationPolicyCommand(eventId, opensAt, closesAt, "@acme.com");
         var sut = new SetRegistrationPolicyHandler(Environment.Database.Context);
@@ -156,6 +167,11 @@ public sealed class SetRegistrationPolicyTests(TestContext testContext) : Aspire
         var opensAt = new DateTimeOffset(2025, 6, 1, 0, 0, 0, TimeSpan.Zero);
         var closesAt = new DateTimeOffset(2025, 1, 1, 0, 0, 0, TimeSpan.Zero); // before open
 
+        await Environment.Database.SeedAsync(dbContext =>
+        {
+            dbContext.EventRegistrationPolicies.Add(EventRegistrationPolicy.Create(eventId));
+        });
+
         var command = new SetRegistrationPolicyCommand(eventId, opensAt, closesAt, null);
         var sut = new SetRegistrationPolicyHandler(Environment.Database.Context);
 
@@ -163,5 +179,20 @@ public sealed class SetRegistrationPolicyTests(TestContext testContext) : Aspire
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
         result.Error.ShouldMatch(EventRegistrationPolicy.Errors.WindowCloseBeforeOpen);
+    }
+
+    // SC007: No policy exists in Registrations module → throws EventNotFound (the policy is
+    // created upstream by the Organization → Registrations sync handler).
+    [TestMethod]
+    public async ValueTask SC007_SetRegistrationPolicy_NoPolicy_ThrowsEventNotFoundError()
+    {
+        var eventId = TicketedEventId.New();
+        var command = new SetRegistrationPolicyCommand(eventId, null, null, null);
+        var sut = new SetRegistrationPolicyHandler(Environment.Database.Context);
+
+        var result = await ErrorResult.CaptureAsync(
+            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
+
+        result.Error.ShouldMatch(EventRegistrationPolicy.Errors.EventNotFound);
     }
 }

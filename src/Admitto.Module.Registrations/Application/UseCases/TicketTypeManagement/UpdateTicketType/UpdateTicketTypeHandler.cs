@@ -16,10 +16,11 @@ internal sealed class UpdateTicketTypeHandler(IRegistrationsWriteStore writeStor
         var policy = await writeStore.EventRegistrationPolicies
             .FirstOrDefaultAsync(p => p.Id == command.EventId, cancellationToken);
 
-        if (policy is null || !policy.IsEventActive)
-        {
+        if (policy is null)
+            throw new BusinessRuleViolationException(EventRegistrationPolicy.Errors.EventNotFound);
+
+        if (!policy.IsEventActive)
             throw new BusinessRuleViolationException(Errors.EventNotActive);
-        }
 
         var catalog = await writeStore.TicketCatalogs
             .FirstOrDefaultAsync(tc => tc.Id == command.EventId, cancellationToken);

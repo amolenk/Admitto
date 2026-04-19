@@ -19,8 +19,10 @@ public class EventRegistrationPolicy : Aggregate<TicketedEventId>
     public DateTimeOffset? RegistrationWindowClosesAt { get; private set; }
     public string? AllowedEmailDomain { get; private set; }
     public EventLifecycleStatus EventLifecycleStatus { get; private set; } = EventLifecycleStatus.Active;
+    public RegistrationStatus RegistrationStatus { get; private set; } = RegistrationStatus.Draft;
 
     public bool IsEventActive => EventLifecycleStatus == EventLifecycleStatus.Active;
+    public bool IsRegistrationOpenForBusiness => RegistrationStatus == RegistrationStatus.Open;
 
     public bool HasRegistrationWindow =>
         RegistrationWindowOpensAt.HasValue && RegistrationWindowClosesAt.HasValue;
@@ -84,10 +86,45 @@ public class EventRegistrationPolicy : Aggregate<TicketedEventId>
             EventLifecycleStatus = EventLifecycleStatus.Archived;
     }
 
+    /// <summary>
+    /// Transitions the registration status to <see cref="ValueObjects.RegistrationStatus.Open"/>.
+    /// Allowed from <c>Draft</c> or <c>Closed</c>. Rejected when the event lifecycle is Cancelled
+    /// or Archived. Idempotent on <c>Open</c>. The cross-module "email is configured" check is
+    /// enforced in the application layer, not here.
+    /// </summary>
+    public void OpenForRegistration()
+    {
+        if (!IsEventActive)
+            throw new BusinessRuleViolationException(Errors.EventNotActive);
+
+        if (RegistrationStatus != RegistrationStatus.Open)
+            RegistrationStatus = RegistrationStatus.Open;
+    }
+
+    /// <summary>
+    /// Transitions the registration status to <see cref="ValueObjects.RegistrationStatus.Closed"/>.
+    /// Allowed from any status. Idempotent on <c>Closed</c>.
+    /// </summary>
+    public void CloseForRegistration()
+    {
+        if (RegistrationStatus != RegistrationStatus.Closed)
+            RegistrationStatus = RegistrationStatus.Closed;
+    }
+
     internal static class Errors
     {
         public static readonly Error WindowCloseBeforeOpen = new(
             "registration_policy.window_close_before_open",
             "Registration window close time must be after open time.");
+
+        public static readonly Error EventNotActive = new(
+            "registration_policy.event_not_active",
+            "Cannot change registration status for a cancelled or archived event.",
+            Type: ErrorType.Validation);
+
+        public static readonly Error EventNotFound = new(
+            "registration_policy.event_not_found",
+            "Event not found in the Registrations module.",
+            Type: ErrorType.NotFound);
     }
 }

@@ -41,8 +41,9 @@ public class TicketedEvent : Aggregate<TicketedEventId>
         EventWindow = eventWindow;
         Status = EventStatus.Active;
 
-        // Notify the owning team so it can update its TicketedEventScopeVersion.
-        AddDomainEvent(new TicketedEventCreatedDomainEvent(teamId));
+        // Notify the owning team so it can update its TicketedEventScopeVersion,
+        // and announce the new event to other modules via the message policy.
+        AddDomainEvent(new TicketedEventCreatedDomainEvent(teamId, id));
     }
 
     public TeamId TeamId { get; private set; }

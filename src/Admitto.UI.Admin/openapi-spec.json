@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "https://localhost:7100/"
+      "url": "http://localhost:15000/"
     }
   ],
   "paths": {
@@ -1255,6 +1255,186 @@
         }
       }
     },
+    "/admin/teams/{teamSlug}/events/{eventSlug}/email-settings": {
+      "put": {
+        "tags": [
+          "UpsertEventEmailSettingsHttpEndpoint"
+        ],
+        "operationId": "UpsertEventEmailSettings",
+        "parameters": [
+          {
+            "name": "teamSlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "eventSlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpsertEventEmailSettingsHttpRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK"
+          },
+          "201": {
+            "description": "Created"
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "GetEventEmailSettingsHttpEndpoint"
+        ],
+        "operationId": "GetEventEmailSettings",
+        "parameters": [
+          {
+            "name": "teamSlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "eventSlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EventEmailSettingsDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/admin/teams/{teamSlug}/events/{eventSlug}/coupons": {
       "post": {
         "tags": [
@@ -1713,6 +1893,256 @@
           },
           "200": {
             "description": "OK"
+          }
+        }
+      }
+    },
+    "/admin/teams/{teamSlug}/events/{eventSlug}/registration/open": {
+      "post": {
+        "tags": [
+          "OpenRegistrationHttpEndpoint"
+        ],
+        "operationId": "OpenRegistration",
+        "parameters": [
+          {
+            "name": "teamSlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "eventSlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/admin/teams/{teamSlug}/events/{eventSlug}/registration/close": {
+      "post": {
+        "tags": [
+          "CloseRegistrationHttpEndpoint"
+        ],
+        "operationId": "CloseRegistration",
+        "parameters": [
+          {
+            "name": "teamSlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "eventSlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/admin/teams/{teamSlug}/events/{eventSlug}/registration/open-status": {
+      "get": {
+        "tags": [
+          "GetRegistrationOpenStatusHttpEndpoint"
+        ],
+        "operationId": "GetRegistrationOpenStatus",
+        "parameters": [
+          {
+            "name": "teamSlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "eventSlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistrationOpenStatusDto"
+                }
+              }
+            }
           }
         }
       }
@@ -2550,6 +2980,60 @@
           }
         }
       },
+      "EmailAuthMode": {
+        "enum": [
+          "none",
+          "basic"
+        ]
+      },
+      "EventEmailSettingsDto": {
+        "required": [
+          "smtpHost",
+          "smtpPort",
+          "fromAddress",
+          "authMode",
+          "username",
+          "hasPassword",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "smtpHost": {
+            "type": "string"
+          },
+          "smtpPort": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "fromAddress": {
+            "type": "string"
+          },
+          "authMode": {
+            "$ref": "#/components/schemas/EmailAuthMode"
+          },
+          "username": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "hasPassword": {
+            "type": "boolean"
+          },
+          "version": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "uint32"
+          }
+        }
+      },
       "HttpValidationProblemDetails": {
         "type": "object",
         "properties": {
@@ -2670,6 +3154,35 @@
             }
           }
         }
+      },
+      "RegistrationOpenStatusDto": {
+        "required": [
+          "status",
+          "canOpen",
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/RegistrationStatus"
+          },
+          "canOpen": {
+            "type": "boolean"
+          },
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
+      "RegistrationStatus": {
+        "enum": [
+          "draft",
+          "open",
+          "closed"
+        ]
       },
       "SelfRegisterAttendeeHttpRequest": {
         "required": [
@@ -2919,19 +3432,12 @@
       },
       "UpdateTeamHttpRequest": {
         "required": [
-          "slug",
           "name",
           "emailAddress",
           "expectedVersion"
         ],
         "type": "object",
         "properties": {
-          "slug": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
           "name": {
             "type": [
               "null",
@@ -3028,6 +3534,58 @@
             "format": "int32"
           }
         }
+      },
+      "UpsertEventEmailSettingsHttpRequest": {
+        "required": [
+          "smtpHost",
+          "smtpPort",
+          "fromAddress",
+          "authMode",
+          "username",
+          "password",
+          "version"
+        ],
+        "type": "object",
+        "properties": {
+          "smtpHost": {
+            "type": "string"
+          },
+          "smtpPort": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "fromAddress": {
+            "type": "string"
+          },
+          "authMode": {
+            "$ref": "#/components/schemas/EmailAuthMode"
+          },
+          "username": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "password": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "version": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "uint32"
+          }
+        }
       }
     },
     "securitySchemes": {
@@ -3105,6 +3663,12 @@
       "name": "ArchiveTicketedEventHttpEndpoint"
     },
     {
+      "name": "UpsertEventEmailSettingsHttpEndpoint"
+    },
+    {
+      "name": "GetEventEmailSettingsHttpEndpoint"
+    },
+    {
       "name": "CreateCouponHttpEndpoint"
     },
     {
@@ -3118,6 +3682,15 @@
     },
     {
       "name": "SetRegistrationPolicyHttpEndpoint"
+    },
+    {
+      "name": "OpenRegistrationHttpEndpoint"
+    },
+    {
+      "name": "CloseRegistrationHttpEndpoint"
+    },
+    {
+      "name": "GetRegistrationOpenStatusHttpEndpoint"
     },
     {
       "name": "AddTicketTypeHttpEndpoint"

@@ -1,5 +1,6 @@
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.EventLifecycleSync.HandleEventArchived;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.EventLifecycleSync.HandleEventCancelled;
+using Amolenk.Admitto.Module.Registrations.Application.UseCases.EventLifecycleSync.HandleEventCreated;
 using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Registrations.Tests.Application.Aspire;
 using Microsoft.EntityFrameworkCore;
@@ -158,6 +159,60 @@ public sealed class EventLifecycleSyncTests(TestContext testContext) : AspireInt
 
             policy.ShouldNotBeNull();
             policy.EventLifecycleStatus.ShouldBe(EventLifecycleStatus.Archived);
+        });
+    }
+
+    // SC-007: Created event syncs into Registrations as a fresh Draft + Active policy
+    [TestMethod]
+    public async ValueTask SC007_HandleEventCreated_NoPolicyExists_CreatesDraftActivePolicy()
+    {
+        // Arrange
+        var fixture = EventLifecycleSyncFixture.NoPolicyExists();
+        await fixture.SetupAsync(Environment);
+
+        var command = new HandleEventCreatedCommand(fixture.EventId.Value);
+        var sut = new HandleEventCreatedHandler(Environment.Database.Context);
+
+        // Act
+        await sut.HandleAsync(command, testContext.CancellationToken);
+
+        // Assert
+        await Environment.Database.AssertAsync(async dbContext =>
+        {
+            var policy = await dbContext.EventRegistrationPolicies
+                .FirstOrDefaultAsync(p => p.Id == fixture.EventId, testContext.CancellationToken);
+
+            policy.ShouldNotBeNull();
+            policy.EventLifecycleStatus.ShouldBe(EventLifecycleStatus.Active);
+            policy.RegistrationStatus.ShouldBe(RegistrationStatus.Draft);
+            policy.HasRegistrationWindow.ShouldBeFalse();
+            policy.AllowedEmailDomain.ShouldBeNull();
+        });
+    }
+
+    // SC-008: Re-delivery of the created event is idempotent (no second policy, no exception)
+    [TestMethod]
+    public async ValueTask SC008_HandleEventCreated_PolicyAlreadyExists_NoOp()
+    {
+        // Arrange
+        var fixture = EventLifecycleSyncFixture.WithActivePolicy();
+        await fixture.SetupAsync(Environment);
+
+        var command = new HandleEventCreatedCommand(fixture.EventId.Value);
+        var sut = new HandleEventCreatedHandler(Environment.Database.Context);
+
+        // Act — must not throw
+        await sut.HandleAsync(command, testContext.CancellationToken);
+
+        // Assert — exactly one policy still exists, lifecycle untouched
+        await Environment.Database.AssertAsync(async dbContext =>
+        {
+            var policies = await dbContext.EventRegistrationPolicies
+                .Where(p => p.Id == fixture.EventId)
+                .ToListAsync(testContext.CancellationToken);
+
+            policies.Count.ShouldBe(1);
+            policies[0].EventLifecycleStatus.ShouldBe(EventLifecycleStatus.Active);
         });
     }
 }

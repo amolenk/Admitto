@@ -24,13 +24,24 @@ Reference: `Admitto.Api/Middleware/ValidationFilter.cs`, applied in `Admitto.Api
 
 Endpoints declare requirements with `policy.RequireAdminRole()` or `policy.RequireTeamMembership(role)`.
 
-## 8.4 Organization scope resolution
+## 8.4 Organization scope resolution and cross-module facades
 
 Admin endpoints declare `teamSlug` and `eventSlug` as explicit path parameters in their handler signatures. An `IOrganizationScopeResolver` is injected to translate slugs into IDs via the Organization facade. The resolver returns an `OrganizationScope` record containing the resolved team/event identity and caches the result per request.
 
 Endpoints call `scopeResolver.ResolveAsync(teamSlug, eventSlug, cancellationToken)` to obtain the scope. The resolver itself is HTTP-agnostic — it receives slugs from its callers rather than extracting them from route values. This keeps path parameters visible to the OpenAPI generator and makes the resolver testable without an HTTP context.
 
 The `TeamMembershipAuthorizationHandler` extracts `teamSlug` from `HttpContext.GetRouteValue()` because authorization runs before endpoint binding.
+
+### Synchronous cross-module facades
+
+Some workflows need to consult another module's state inside the same request without going through the outbox. We expose these as **facade interfaces** in the target module's `*.Contracts` project, implemented inside the module proper. Callers depend only on the interface.
+
+| Facade | Module | Used by | Purpose |
+| :----- | :----- | :------ | :------ |
+| `IOrganizationFacade` | Organization | Registrations, API auth | Resolve team/event slugs → IDs, check team membership |
+| `IEventEmailFacade` | Email | Registrations | Check whether per-event SMTP credentials are configured before allowing registration to open |
+
+Facades are read-only and side-effect-free. Cross-module *writes* still go through module/integration events on the outbox (see §8.6).
 
 ## 8.5 Use case slice layout
 
@@ -113,7 +124,14 @@ Each module declares a `MessagePolicy` that maps domain events to module and/or 
 
 ### Cross-module lifecycle events
 
-When a ticketed event is cancelled or archived in the Organization module, the corresponding domain events (`TicketedEventCancelledDomainEvent`, `TicketedEventArchivedDomainEvent`) are mapped via `OrganizationMessagePolicy` to module events (`TicketedEventCancelledModuleEvent`, `TicketedEventArchivedModuleEvent`). The Registrations module handles these via the event→command→handler pattern (see §8.5) to update the local `EventRegistrationPolicy` lifecycle status. This is the only cross-module data sync — ticket type data is owned entirely by the Registrations module.
+When a ticketed event is created, cancelled, or archived in the Organization module, the corresponding domain events (`TicketedEventCreatedDomainEvent`, `TicketedEventCancelledDomainEvent`, `TicketedEventArchivedDomainEvent`) are mapped via `OrganizationMessagePolicy` to module events (`TicketedEventCreatedModuleEvent`, `TicketedEventCancelledModuleEvent`, `TicketedEventArchivedModuleEvent`). The Registrations module handles these via the event→command→handler pattern (see §8.5):
+
+- **Created** → `HandleEventCreatedHandler` creates an `EventRegistrationPolicy` with `EventLifecycleStatus = Active` and `RegistrationStatus = Draft`. Idempotent: re-delivery is a no-op.
+- **Cancelled** / **Archived** → set the corresponding lifecycle status on the existing policy.
+
+Registrations handlers that operate on the policy (open/close registration, set window, manage ticket types, register attendees, …) **trust this sync**: they look the policy up by `TicketedEventId` and throw a `NotFound` error (`EventRegistrationPolicy.Errors.EventNotFound`) when it is missing instead of creating one on demand. This keeps "the event is unknown to Registrations" distinct from "the event exists but is not active", and surfaces sync bugs immediately as 404s instead of hiding them behind misleading validation messages.
+
+Ticket type data is owned entirely by the Registrations module — no cross-module sync.
 
 ## 8.7 Error handling
 
@@ -163,12 +181,109 @@ class or code is caught at compile time.
 The static error object is `internal`, so test projects require `InternalsVisibleTo` access
 (already configured for all module test projects).
 
-## 8.8 Persistence
+### Secret protection
+
+Per-event SMTP passwords (and similar at-rest secrets owned by a module) are protected with **ASP.NET Data Protection**. Each module that stores secrets injects an `IProtectedSecret` adapter that wraps `IDataProtectionProvider` with a stable purpose string (e.g. `"Admitto.Email.ConnectionString.v1"`). The adapter is wired into EF as a value converter or property accessor on the secret column, so encryption on write and decryption on read are transparent to handlers.
+
+The Data Protection key ring is **persisted to a stable backing store and shared across hosts** (API and Worker). Without a shared, persistent key ring, secrets written by one host would become unreadable after a restart or by another host. See `Admitto.Module.Email/Infrastructure/` for the reference implementation.
+
+## 8.8 Value objects
+
+Aggregates and validators express format and range invariants through small **value objects**, never raw `string` or `int` parameters. The same VO is the single owner of the rule, the constant (e.g. `MaxLength`), and the error returned when input is invalid; both EF and FluentValidation reference it.
+
+See §8.7 for the nested `Errors` convention they participate in, and §8.9 for the EF value-converter wiring.
+
+### Anatomy
+
+```csharp
+public readonly record struct Hostname : IStringValueObject
+{
+    public const int MaxLength = 255;
+
+    public string Value { get; }
+
+    private Hostname(string value) => Value = value;
+
+    public static ValidationResult<Hostname> TryFrom(string? value)
+        => StringValueObject.TryFrom(value, MaxLength, v => new Hostname(v));
+
+    public static Hostname From(string? value) => TryFrom(value).GetValueOrThrow();
+}
+```
+
+- `readonly record struct` for value semantics with no allocation overhead.
+- Implements `IStringValueObject` or `IInt32ValueObject` from the shared kernel.
+- Private constructor; construction goes through `TryFrom` (returns `ValidationResult<T>`) or `From` (throws on failure).
+- `StringValueObject.TryFrom` / `Int32ValueObject.TryFrom` in the kernel encapsulate the common rules (non-empty, length cap, range) and return `CommonErrors.TextEmpty` / `CommonErrors.TextTooLong(MaxLength)` / out-of-range errors.
+
+### Constants live on the VO
+
+`public const int MaxLength = N;` lives on the VO and is the single source of truth — EF references it through `HasMaxLength(Foo.MaxLength)`, never through a separate constants class.
+
+### Validation reuse
+
+FluentValidation surfaces the VO's error code through the shared `MustBeParseable` extension, so the rule is not duplicated:
+
+```csharp
+RuleFor(x => x.SmtpHost).MustBeParseable(Hostname.TryFrom);
+RuleFor(x => x.SmtpPort).MustBeParseable(Port.TryFrom);
+```
+
+`MustBeParseable` lives in `Admitto.Module.Shared.Application.Validation.FluentValidationResultExtensions` and writes the VO's error `Code` into `ValidationFailure.ErrorCode`.
+
+### Marker types
+
+Some types exist purely for type-level safety with no format check — e.g. `ProtectedPassword` wraps the ciphertext output of `IProtectedSecret.Protect(...)`:
+
+```csharp
+public readonly record struct ProtectedPassword
+{
+    public string Ciphertext { get; }
+
+    private ProtectedPassword(string ciphertext) => Ciphertext = ciphertext;
+
+    internal static ProtectedPassword FromCiphertext(string ciphertext) => new(ciphertext);
+}
+```
+
+- Module-internal factory so plaintext cannot be wrapped from outside the module.
+- No format validation (the encrypted blob is opaque).
+- Domain code can take `ProtectedPassword` as a parameter type, making it impossible to accidentally pass plaintext to a property that expects an encrypted value.
+
+### Where to place a VO
+
+- **Module-local first.** New VOs live under `<Module>/Domain/ValueObjects/`. Module-local VO converters live under `<Module>/Infrastructure/Persistence/ValueConverters/` and are wired in the module's `DbContext.ConfigureConventions` (see §8.9).
+- **Promote to shared kernel only when a second consumer appears.** `Slug`, `DisplayName`, `EmailAddress`, and `TicketedEventId` live in the shared kernel because multiple modules need them; module-local types like `Hostname` or `Port` stay local until they are needed elsewhere.
+
+### What does NOT belong in a VO
+
+- Cross-field rules (e.g. "Basic auth requires both username and password") — those stay in the aggregate.
+- Side effects, service calls, or DB access.
+- Mutable state.
+
+## 8.9 Persistence
 
 - EF Core `DbContext` per module, each targeting a separate PostgreSQL schema.
 - `AuditInterceptor` populates `CreatedAt`, `LastChangedAt`, `LastChangedBy` on auditable entities.
 - `DomainEventsInterceptor` dispatches domain events and writes outbox messages during `SaveChanges`.
-- Shared value converters for kernel types (`Slug`, `EmailAddress`, `TeamId`, etc.) in `Admitto.Module.Shared` (under `Infrastructure/`).
+- Value converters bridge value objects (§8.8) to their primitive column types.
+
+### Value converter wiring
+
+- **Shared kernel types** (`Slug`, `DisplayName`, `EmailAddress`, `TeamId`, …) have shared converters in `Admitto.Module.Shared/Infrastructure/Persistence/ValueConverters/`. They are registered globally by `ConfigureSharedConventions(...)`, which every module's `DbContext.ConfigureConventions` calls first.
+- **Module-local types** (e.g. `Hostname`, `Port` in the Email module) have converters under `<Module>/Infrastructure/Persistence/ValueConverters/`. Register them in the module's `ConfigureConventions` after the shared call:
+
+  ```csharp
+  protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
+  {
+      configurationBuilder.ConfigureSharedConventions();
+
+      configurationBuilder.Properties<Hostname>().HaveConversion<HostnameConverter>();
+      configurationBuilder.Properties<Port>().HaveConversion<PortConverter>();
+  }
+  ```
+
+  Once the convention is in place, `IEntityTypeConfiguration` only needs `HasMaxLength(Foo.MaxLength)` — no inline `HasConversion(...)` calls per property.
 
 ### EF Core query rules
 
@@ -208,7 +323,7 @@ Example: `Team.TicketedEventScopeVersion` is incremented by `RegisterTicketedEve
 
 Note: `TicketedEventScopeVersion` is a monotonically-increasing counter, not a count of currently-active events. It never decrements.
 
-## 8.9 Domain event dispatch — in-process pattern
+## 8.10 Domain event dispatch — in-process pattern
 
 `DomainEventsInterceptor` fires inside `SavingChangesAsync` (before the actual write), so domain event handlers run **within the same database transaction** as the triggering aggregate. This guarantees atomicity between the event and its side effects.
 
@@ -233,7 +348,7 @@ team.EnsureNotArchived();   // fast-fail here
 // providing defence in depth in production at no extra DB cost (change tracker reuse).
 ```
 
-## 8.10 Handler and event handler DI registration
+## 8.11 Handler and event handler DI registration
 
 Command handlers, query handlers, domain event handlers, module event handlers, and integration event handlers are all auto-discovered by Scrutor assembly scan. No manual registration is needed.
 
@@ -247,7 +362,7 @@ Command handlers, query handlers, domain event handlers, module event handlers, 
 
 **Rule:** Place the handler class anywhere in the module assembly and implement the correct interface. Do not use `Where(t => t.IsGenericType …)` as a filter — this matches only open generic types and never selects a concrete handler.
 
-## 8.11 Observability
+## 8.12 Observability
 
 Service defaults (`Admitto.ServiceDefaults`) configure:
 
@@ -256,7 +371,7 @@ Service defaults (`Admitto.ServiceDefaults`) configure:
 - Request timeouts
 - Output caching
 
-## 8.12 Scheduled jobs (Quartz.NET)
+## 8.13 Scheduled jobs (Quartz.NET)
 
 Background work that cannot be expressed as a domain or integration event — for example, polling for records whose grace period has expired — is implemented as a Quartz `IJob`.
 

@@ -19,10 +19,11 @@ internal sealed class CreateCouponHandler(
         var policy = await writeStore.EventRegistrationPolicies
             .FirstOrDefaultAsync(p => p.Id == command.EventId, cancellationToken);
 
-        if (policy is null || !policy.IsEventActive)
-        {
+        if (policy is null)
+            throw new BusinessRuleViolationException(EventRegistrationPolicy.Errors.EventNotFound);
+
+        if (!policy.IsEventActive)
             throw new BusinessRuleViolationException(Errors.EventNotActive);
-        }
 
         // Load ticket catalog to validate the coupon's allowed ticket types.
         var catalog = await writeStore.TicketCatalogs

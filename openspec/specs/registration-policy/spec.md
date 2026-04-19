@@ -58,7 +58,3 @@ modifications SHALL be rejected.
 #### Scenario: Registrations blocked when lifecycle status is Archived
 - **WHEN** the event lifecycle status for "conf-2026" is Archived and an attendee attempts to register
 - **THEN** the registration is rejected with reason "event not active"
-
-#### Scenario: Ticket type modifications blocked when lifecycle status is Cancelled
-- **WHEN** the event lifecycle status for "conf-2026" is Cancelled and an organizer attempts to add a ticket type
-- **THEN** the request is rejected because the event is cancelled

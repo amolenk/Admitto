@@ -217,4 +217,117 @@ public sealed class EventRegistrationPolicyTests
         // Assert
         sut.EventLifecycleStatus.ShouldBe(ValueObjects.EventLifecycleStatus.Archived);
     }
+
+    [TestMethod]
+    public void SC017_EventRegistrationPolicy_DefaultRegistrationStatus_IsDraft()
+    {
+        // Act
+        var sut = EventRegistrationPolicy.Create(DefaultEventId);
+
+        // Assert
+        sut.RegistrationStatus.ShouldBe(ValueObjects.RegistrationStatus.Draft);
+        sut.IsRegistrationOpenForBusiness.ShouldBeFalse();
+    }
+
+    [TestMethod]
+    public void SC018_EventRegistrationPolicy_OpenForRegistration_FromDraft_TransitionsToOpen()
+    {
+        // Arrange
+        var sut = EventRegistrationPolicy.Create(DefaultEventId);
+
+        // Act
+        sut.OpenForRegistration();
+
+        // Assert
+        sut.RegistrationStatus.ShouldBe(ValueObjects.RegistrationStatus.Open);
+        sut.IsRegistrationOpenForBusiness.ShouldBeTrue();
+    }
+
+    [TestMethod]
+    public void SC019_EventRegistrationPolicy_OpenForRegistration_FromClosed_TransitionsToOpen()
+    {
+        // Arrange
+        var sut = EventRegistrationPolicy.Create(DefaultEventId);
+        sut.OpenForRegistration();
+        sut.CloseForRegistration();
+        sut.RegistrationStatus.ShouldBe(ValueObjects.RegistrationStatus.Closed);
+
+        // Act
+        sut.OpenForRegistration();
+
+        // Assert
+        sut.RegistrationStatus.ShouldBe(ValueObjects.RegistrationStatus.Open);
+    }
+
+    [TestMethod]
+    public void SC020_EventRegistrationPolicy_OpenForRegistration_Idempotent()
+    {
+        // Arrange
+        var sut = EventRegistrationPolicy.Create(DefaultEventId);
+        sut.OpenForRegistration();
+
+        // Act
+        sut.OpenForRegistration();
+
+        // Assert
+        sut.RegistrationStatus.ShouldBe(ValueObjects.RegistrationStatus.Open);
+    }
+
+    [TestMethod]
+    public void SC021_EventRegistrationPolicy_OpenForRegistration_WhenCancelled_Throws()
+    {
+        // Arrange
+        var sut = EventRegistrationPolicy.Create(DefaultEventId);
+        sut.SetCancelled();
+
+        // Act
+        var result = ErrorResult.Capture(() => sut.OpenForRegistration());
+
+        // Assert
+        result.Error.ShouldMatch(EventRegistrationPolicy.Errors.EventNotActive);
+    }
+
+    [TestMethod]
+    public void SC022_EventRegistrationPolicy_OpenForRegistration_WhenArchived_Throws()
+    {
+        // Arrange
+        var sut = EventRegistrationPolicy.Create(DefaultEventId);
+        sut.SetArchived();
+
+        // Act
+        var result = ErrorResult.Capture(() => sut.OpenForRegistration());
+
+        // Assert
+        result.Error.ShouldMatch(EventRegistrationPolicy.Errors.EventNotActive);
+    }
+
+    [TestMethod]
+    public void SC023_EventRegistrationPolicy_CloseForRegistration_FromOpen_TransitionsToClosed()
+    {
+        // Arrange
+        var sut = EventRegistrationPolicy.Create(DefaultEventId);
+        sut.OpenForRegistration();
+
+        // Act
+        sut.CloseForRegistration();
+
+        // Assert
+        sut.RegistrationStatus.ShouldBe(ValueObjects.RegistrationStatus.Closed);
+        sut.IsRegistrationOpenForBusiness.ShouldBeFalse();
+    }
+
+    [TestMethod]
+    public void SC024_EventRegistrationPolicy_CloseForRegistration_Idempotent()
+    {
+        // Arrange
+        var sut = EventRegistrationPolicy.Create(DefaultEventId);
+        sut.OpenForRegistration();
+        sut.CloseForRegistration();
+
+        // Act
+        sut.CloseForRegistration();
+
+        // Assert
+        sut.RegistrationStatus.ShouldBe(ValueObjects.RegistrationStatus.Closed);
+    }
 }

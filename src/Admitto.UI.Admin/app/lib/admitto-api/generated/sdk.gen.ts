@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AddTicketTypeData, AddTicketTypeErrors, AddTicketTypeResponses, ArchiveTeamData, ArchiveTeamErrors, ArchiveTeamResponses, ArchiveTicketedEventData, ArchiveTicketedEventErrors, ArchiveTicketedEventResponses, AssignTeamMembershipData, AssignTeamMembershipErrors, AssignTeamMembershipResponses, CancelTicketedEventData, CancelTicketedEventErrors, CancelTicketedEventResponses, CancelTicketTypeData, CancelTicketTypeErrors, CancelTicketTypeResponses, ChangeTeamMembershipRoleData, ChangeTeamMembershipRoleErrors, ChangeTeamMembershipRoleResponses, CreateCouponData, CreateCouponErrors, CreateCouponResponses, CreateTeamData, CreateTeamErrors, CreateTeamResponses, CreateTicketedEventData, CreateTicketedEventErrors, CreateTicketedEventResponses, GetCouponDetailsData, GetCouponDetailsErrors, GetCouponDetailsResponses, GetTeamData, GetTeamErrors, GetTeamResponses, GetTeamsData, GetTeamsErrors, GetTeamsResponses, GetTicketedEventData, GetTicketedEventErrors, GetTicketedEventResponses, GetTicketedEventsData, GetTicketedEventsErrors, GetTicketedEventsResponses, GetTicketTypesData, GetTicketTypesErrors, GetTicketTypesResponses, ListCouponsData, ListCouponsErrors, ListCouponsResponses, ListTeamMembersData, ListTeamMembersErrors, ListTeamMembersResponses, RegisterWithCouponHttpEndpointData, RegisterWithCouponHttpEndpointErrors, RemoveTeamMembershipData, RemoveTeamMembershipErrors, RemoveTeamMembershipResponses, RevokeCouponData, RevokeCouponErrors, RevokeCouponResponses, SelfRegisterAttendeeHttpEndpointData, SelfRegisterAttendeeHttpEndpointErrors, SetRegistrationPolicyData, SetRegistrationPolicyErrors, SetRegistrationPolicyResponses, UpdateTeamData, UpdateTeamErrors, UpdateTeamResponses, UpdateTicketedEventData, UpdateTicketedEventErrors, UpdateTicketedEventResponses, UpdateTicketTypeData, UpdateTicketTypeErrors, UpdateTicketTypeResponses } from './types.gen';
+import type { AddTicketTypeData, AddTicketTypeErrors, AddTicketTypeResponses, ArchiveTeamData, ArchiveTeamErrors, ArchiveTeamResponses, ArchiveTicketedEventData, ArchiveTicketedEventErrors, ArchiveTicketedEventResponses, AssignTeamMembershipData, AssignTeamMembershipErrors, AssignTeamMembershipResponses, CancelTicketedEventData, CancelTicketedEventErrors, CancelTicketedEventResponses, CancelTicketTypeData, CancelTicketTypeErrors, CancelTicketTypeResponses, ChangeTeamMembershipRoleData, ChangeTeamMembershipRoleErrors, ChangeTeamMembershipRoleResponses, CloseRegistrationData, CloseRegistrationErrors, CloseRegistrationResponses, CreateCouponData, CreateCouponErrors, CreateCouponResponses, CreateTeamData, CreateTeamErrors, CreateTeamResponses, CreateTicketedEventData, CreateTicketedEventErrors, CreateTicketedEventResponses, GetCouponDetailsData, GetCouponDetailsErrors, GetCouponDetailsResponses, GetEventEmailSettingsData, GetEventEmailSettingsErrors, GetEventEmailSettingsResponses, GetRegistrationOpenStatusData, GetRegistrationOpenStatusErrors, GetRegistrationOpenStatusResponses, GetTeamData, GetTeamErrors, GetTeamResponses, GetTeamsData, GetTeamsErrors, GetTeamsResponses, GetTicketedEventData, GetTicketedEventErrors, GetTicketedEventResponses, GetTicketedEventsData, GetTicketedEventsErrors, GetTicketedEventsResponses, GetTicketTypesData, GetTicketTypesErrors, GetTicketTypesResponses, ListCouponsData, ListCouponsErrors, ListCouponsResponses, ListTeamMembersData, ListTeamMembersErrors, ListTeamMembersResponses, OpenRegistrationData, OpenRegistrationErrors, OpenRegistrationResponses, RegisterWithCouponHttpEndpointData, RegisterWithCouponHttpEndpointErrors, RemoveTeamMembershipData, RemoveTeamMembershipErrors, RemoveTeamMembershipResponses, RevokeCouponData, RevokeCouponErrors, RevokeCouponResponses, SelfRegisterAttendeeHttpEndpointData, SelfRegisterAttendeeHttpEndpointErrors, SetRegistrationPolicyData, SetRegistrationPolicyErrors, SetRegistrationPolicyResponses, UpdateTeamData, UpdateTeamErrors, UpdateTeamResponses, UpdateTicketedEventData, UpdateTicketedEventErrors, UpdateTicketedEventResponses, UpdateTicketTypeData, UpdateTicketTypeErrors, UpdateTicketTypeResponses, UpsertEventEmailSettingsData, UpsertEventEmailSettingsErrors, UpsertEventEmailSettingsResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -249,6 +249,36 @@ export const archiveTicketedEvent = <ThrowOnError extends boolean = false>(optio
     });
 };
 
+export const getEventEmailSettings = <ThrowOnError extends boolean = false>(options: Options<GetEventEmailSettingsData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetEventEmailSettingsResponses, GetEventEmailSettingsErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamSlug}/events/{eventSlug}/email-settings',
+        ...options
+    });
+};
+
+export const upsertEventEmailSettings = <ThrowOnError extends boolean = false>(options: Options<UpsertEventEmailSettingsData, ThrowOnError>) => {
+    return (options.client ?? client).put<UpsertEventEmailSettingsResponses, UpsertEventEmailSettingsErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamSlug}/events/{eventSlug}/email-settings',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
 export const listCoupons = <ThrowOnError extends boolean = false>(options: Options<ListCouponsData, ThrowOnError>) => {
     return (options.client ?? client).get<ListCouponsResponses, ListCouponsErrors, ThrowOnError>({
         security: [
@@ -319,6 +349,45 @@ export const setRegistrationPolicy = <ThrowOnError extends boolean = false>(opti
             'Content-Type': 'application/json',
             ...options.headers
         }
+    });
+};
+
+export const openRegistration = <ThrowOnError extends boolean = false>(options: Options<OpenRegistrationData, ThrowOnError>) => {
+    return (options.client ?? client).post<OpenRegistrationResponses, OpenRegistrationErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamSlug}/events/{eventSlug}/registration/open',
+        ...options
+    });
+};
+
+export const closeRegistration = <ThrowOnError extends boolean = false>(options: Options<CloseRegistrationData, ThrowOnError>) => {
+    return (options.client ?? client).post<CloseRegistrationResponses, CloseRegistrationErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamSlug}/events/{eventSlug}/registration/close',
+        ...options
+    });
+};
+
+export const getRegistrationOpenStatus = <ThrowOnError extends boolean = false>(options: Options<GetRegistrationOpenStatusData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetRegistrationOpenStatusResponses, GetRegistrationOpenStatusErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamSlug}/events/{eventSlug}/registration/open-status',
+        ...options
     });
 };
 

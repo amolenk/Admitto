@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Module.Email.Application;
 using Amolenk.Admitto.Module.Organization.Application;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Infrastructure;
@@ -12,6 +13,12 @@ builder
     .AddOrganizationApplicationServices(HostCapability.Jobs)
     .AddOrganizationInfrastructureServices()
     .AddOrganizationIdentityServices();
+
+// Add Email module services (needed by the worker for the IEventEmailFacade
+// and to keep encrypted secrets decryptable here).
+builder
+    .AddEmailApplicationServices(HostCapability.Jobs)
+    .AddEmailInfrastructureServices();
 
 // Add shared services.
 builder
