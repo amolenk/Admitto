@@ -30,7 +30,7 @@ public class ShowCouponCommand(IAdmittoService admittoService, IConfigService co
 
         var response = await admittoService.QueryAsync(
             client => client.GetCouponDetailsAsync(
-                teamSlug, eventSlug, settings.CouponId!.Value, cancellationToken));
+                settings.CouponId!.Value, teamSlug, eventSlug, cancellationToken));
 
         if (response is null)
         {
@@ -50,11 +50,11 @@ public class ShowCouponCommand(IAdmittoService admittoService, IConfigService co
 
         grid.AddRow("Email:", response.Email ?? "-");
         grid.AddRow("Code:", response.Code.ToString());
-        grid.AddRow("Status:", response.Status?.Humanize() ?? "-");
+        grid.AddRow("Status:", response.Status.Humanize());
         grid.AddRow("Expires at:", response.ExpiresAt.Format());
         grid.AddRow("Bypass window:", response.BypassRegistrationWindow ? "Yes" : "No");
 
-        var ticketTypes = response.AllowedTicketTypeSlugs is { Length: > 0 }
+        var ticketTypes = response.AllowedTicketTypeSlugs is { Count: > 0 }
             ? string.Join(", ", response.AllowedTicketTypeSlugs)
             : "-";
         grid.AddRow("Ticket types:", ticketTypes);

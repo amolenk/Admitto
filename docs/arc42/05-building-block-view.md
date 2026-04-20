@@ -112,7 +112,17 @@ Manages teams, team membership and roles, and ticketed events (event metadata, l
 
 ### Registrations module
 
-Handles attendee registration flows — both admin-initiated and public self-service — with capacity-aware ticket allocation. Owns ticket type configuration (the `TicketCatalog` aggregate) and event registration policies. Reacts to Organization lifecycle events to disable registrations when events are cancelled or archived. Calls the Email module's `IEventEmailFacade` synchronously when opening registration to verify that per-event SMTP credentials are configured (see [§8.4 Cross-module facades](08-crosscutting-concepts.md#84-organization-scope-resolution-and-cross-module-facades)).
+Handles attendee registration flows — both admin-initiated and public self-service — with capacity-aware ticket allocation. Owns ticket type configuration (the `TicketCatalog` aggregate) and event policies. Reacts to Organization lifecycle events to sync the event's lifecycle status into the Registrations module via a `TicketedEventLifecycleGuard` aggregate (see [§8.14 Lifecycle guard pattern](08-crosscutting-concepts.md#814-lifecycle-guard-pattern)).
+
+The module manages three independent policy aggregates per event:
+
+| Aggregate | Purpose |
+| :-------- | :------ |
+| `EventRegistrationPolicy` | Registration window (opens/closes at) and optional email-domain restriction. |
+| `CancellationPolicy` | Late-cancellation cutoff. Optional — absence means no cancellation is ever late. |
+| `ReconfirmPolicy` | Reconfirmation window (opens/closes at) and cadence. Optional — absence means no reconfirmation. |
+
+Registration openness is derived from the registration window and the lifecycle guard — there is no explicit "open/close registration" toggle. Every policy-mutation command loads the lifecycle guard, asserts the event is Active, and bumps a mutation counter to protect against concurrent lifecycle transitions (see [§8.14](08-crosscutting-concepts.md#814-lifecycle-guard-pattern)).
 
 ### Email module
 

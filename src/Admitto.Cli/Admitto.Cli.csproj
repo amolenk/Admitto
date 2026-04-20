@@ -22,6 +22,23 @@
       <PackageReference Include="TextCopy" />
     </ItemGroup>
 
+    <ItemGroup Label="Quarantined: backend admin endpoints removed; restore once the API exposes attendee / contributor / email-template / team-member surfaces again. See AGENTS.md &gt; Quarantining commands when the API surface shrinks.">
+      <Compile Remove="Commands/Attendee/**/*.cs" />
+      <Compile Remove="Commands/Contributor/**/*.cs" />
+      <Compile Remove="Commands/Email/Bulk/**/*.cs" />
+      <Compile Remove="Commands/Email/RecipientLists/**/*.cs" />
+      <Compile Remove="Commands/Email/Template/**/*.cs" />
+      <Compile Remove="Commands/Email/Verification/**/*.cs" />
+      <Compile Remove="Commands/Email/SendReconfirmEmailCommand.cs" />
+      <Compile Remove="Commands/Email/TestEmailCommand.cs" />
+      <Compile Remove="Commands/Events/CreateEventCommand.cs" />
+      <Compile Remove="Commands/Team/Member/**/*.cs" />
+      <Compile Remove="Api/ApiClientMemberExtensions.cs" />
+    </ItemGroup>
+
+
+
+
     <ItemGroup>
       <None Update="appsettings.json">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>

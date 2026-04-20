@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Module.Registrations.Domain.Entities;
-using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Shouldly;
@@ -78,7 +77,18 @@ public sealed class EventRegistrationPolicyTests
     }
 
     [TestMethod]
-    public void SC006_EventRegistrationPolicy_IsRegistrationOpen_NoWindow_ReturnsFalse()
+    public void SC006_EventRegistrationPolicy_IsRegistrationOpen_AtClosesAt_ReturnsFalse()
+    {
+        // Arrange — half-open interval [opensAt, closesAt)
+        var sut = EventRegistrationPolicy.Create(DefaultEventId);
+        sut.SetWindow(Now.AddDays(-1), Now);
+
+        // Act & Assert
+        sut.IsRegistrationOpen(Now).ShouldBeFalse();
+    }
+
+    [TestMethod]
+    public void SC007_EventRegistrationPolicy_IsRegistrationOpen_NoWindow_ReturnsFalse()
     {
         // Arrange
         var sut = EventRegistrationPolicy.Create(DefaultEventId);
@@ -88,7 +98,7 @@ public sealed class EventRegistrationPolicyTests
     }
 
     [TestMethod]
-    public void SC007_EventRegistrationPolicy_IsEmailDomainAllowed_NoRestriction_ReturnsTrue()
+    public void SC008_EventRegistrationPolicy_IsEmailDomainAllowed_NoRestriction_ReturnsTrue()
     {
         // Arrange
         var sut = EventRegistrationPolicy.Create(DefaultEventId);
@@ -98,7 +108,7 @@ public sealed class EventRegistrationPolicyTests
     }
 
     [TestMethod]
-    public void SC008_EventRegistrationPolicy_IsEmailDomainAllowed_MatchingDomain_ReturnsTrue()
+    public void SC009_EventRegistrationPolicy_IsEmailDomainAllowed_MatchingDomain_ReturnsTrue()
     {
         // Arrange
         var sut = EventRegistrationPolicy.Create(DefaultEventId);
@@ -109,7 +119,7 @@ public sealed class EventRegistrationPolicyTests
     }
 
     [TestMethod]
-    public void SC009_EventRegistrationPolicy_IsEmailDomainAllowed_NonMatchingDomain_ReturnsFalse()
+    public void SC010_EventRegistrationPolicy_IsEmailDomainAllowed_NonMatchingDomain_ReturnsFalse()
     {
         // Arrange
         var sut = EventRegistrationPolicy.Create(DefaultEventId);
@@ -120,7 +130,7 @@ public sealed class EventRegistrationPolicyTests
     }
 
     [TestMethod]
-    public void SC010_EventRegistrationPolicy_SetDomainRestriction_Null_ClearsRestriction()
+    public void SC011_EventRegistrationPolicy_SetDomainRestriction_Null_ClearsRestriction()
     {
         // Arrange
         var sut = EventRegistrationPolicy.Create(DefaultEventId);
@@ -135,7 +145,7 @@ public sealed class EventRegistrationPolicyTests
     }
 
     [TestMethod]
-    public void SC011_EventRegistrationPolicy_ClearWindow_RemovesWindow()
+    public void SC012_EventRegistrationPolicy_ClearWindow_RemovesWindow()
     {
         // Arrange
         var sut = EventRegistrationPolicy.Create(DefaultEventId);
@@ -149,185 +159,5 @@ public sealed class EventRegistrationPolicyTests
         sut.RegistrationWindowOpensAt.ShouldBeNull();
         sut.RegistrationWindowClosesAt.ShouldBeNull();
         sut.HasRegistrationWindow.ShouldBeFalse();
-    }
-
-    [TestMethod]
-    public void SC012_EventRegistrationPolicy_DefaultLifecycleStatus_IsActive()
-    {
-        // Act
-        var sut = EventRegistrationPolicy.Create(DefaultEventId);
-
-        // Assert
-        sut.EventLifecycleStatus.ShouldBe(ValueObjects.EventLifecycleStatus.Active);
-        sut.IsEventActive.ShouldBeTrue();
-    }
-
-    [TestMethod]
-    public void SC013_EventRegistrationPolicy_SetCancelled_UpdatesStatus()
-    {
-        // Arrange
-        var sut = EventRegistrationPolicy.Create(DefaultEventId);
-
-        // Act
-        sut.SetCancelled();
-
-        // Assert
-        sut.EventLifecycleStatus.ShouldBe(ValueObjects.EventLifecycleStatus.Cancelled);
-        sut.IsEventActive.ShouldBeFalse();
-    }
-
-    [TestMethod]
-    public void SC014_EventRegistrationPolicy_SetArchived_UpdatesStatus()
-    {
-        // Arrange
-        var sut = EventRegistrationPolicy.Create(DefaultEventId);
-
-        // Act
-        sut.SetArchived();
-
-        // Assert
-        sut.EventLifecycleStatus.ShouldBe(ValueObjects.EventLifecycleStatus.Archived);
-        sut.IsEventActive.ShouldBeFalse();
-    }
-
-    [TestMethod]
-    public void SC015_EventRegistrationPolicy_SetCancelled_Idempotent()
-    {
-        // Arrange
-        var sut = EventRegistrationPolicy.Create(DefaultEventId);
-        sut.SetCancelled();
-
-        // Act (second call — should be idempotent)
-        sut.SetCancelled();
-
-        // Assert
-        sut.EventLifecycleStatus.ShouldBe(ValueObjects.EventLifecycleStatus.Cancelled);
-    }
-
-    [TestMethod]
-    public void SC016_EventRegistrationPolicy_SetArchived_Idempotent()
-    {
-        // Arrange
-        var sut = EventRegistrationPolicy.Create(DefaultEventId);
-        sut.SetArchived();
-
-        // Act (second call — should be idempotent)
-        sut.SetArchived();
-
-        // Assert
-        sut.EventLifecycleStatus.ShouldBe(ValueObjects.EventLifecycleStatus.Archived);
-    }
-
-    [TestMethod]
-    public void SC017_EventRegistrationPolicy_DefaultRegistrationStatus_IsDraft()
-    {
-        // Act
-        var sut = EventRegistrationPolicy.Create(DefaultEventId);
-
-        // Assert
-        sut.RegistrationStatus.ShouldBe(ValueObjects.RegistrationStatus.Draft);
-        sut.IsRegistrationOpenForBusiness.ShouldBeFalse();
-    }
-
-    [TestMethod]
-    public void SC018_EventRegistrationPolicy_OpenForRegistration_FromDraft_TransitionsToOpen()
-    {
-        // Arrange
-        var sut = EventRegistrationPolicy.Create(DefaultEventId);
-
-        // Act
-        sut.OpenForRegistration();
-
-        // Assert
-        sut.RegistrationStatus.ShouldBe(ValueObjects.RegistrationStatus.Open);
-        sut.IsRegistrationOpenForBusiness.ShouldBeTrue();
-    }
-
-    [TestMethod]
-    public void SC019_EventRegistrationPolicy_OpenForRegistration_FromClosed_TransitionsToOpen()
-    {
-        // Arrange
-        var sut = EventRegistrationPolicy.Create(DefaultEventId);
-        sut.OpenForRegistration();
-        sut.CloseForRegistration();
-        sut.RegistrationStatus.ShouldBe(ValueObjects.RegistrationStatus.Closed);
-
-        // Act
-        sut.OpenForRegistration();
-
-        // Assert
-        sut.RegistrationStatus.ShouldBe(ValueObjects.RegistrationStatus.Open);
-    }
-
-    [TestMethod]
-    public void SC020_EventRegistrationPolicy_OpenForRegistration_Idempotent()
-    {
-        // Arrange
-        var sut = EventRegistrationPolicy.Create(DefaultEventId);
-        sut.OpenForRegistration();
-
-        // Act
-        sut.OpenForRegistration();
-
-        // Assert
-        sut.RegistrationStatus.ShouldBe(ValueObjects.RegistrationStatus.Open);
-    }
-
-    [TestMethod]
-    public void SC021_EventRegistrationPolicy_OpenForRegistration_WhenCancelled_Throws()
-    {
-        // Arrange
-        var sut = EventRegistrationPolicy.Create(DefaultEventId);
-        sut.SetCancelled();
-
-        // Act
-        var result = ErrorResult.Capture(() => sut.OpenForRegistration());
-
-        // Assert
-        result.Error.ShouldMatch(EventRegistrationPolicy.Errors.EventNotActive);
-    }
-
-    [TestMethod]
-    public void SC022_EventRegistrationPolicy_OpenForRegistration_WhenArchived_Throws()
-    {
-        // Arrange
-        var sut = EventRegistrationPolicy.Create(DefaultEventId);
-        sut.SetArchived();
-
-        // Act
-        var result = ErrorResult.Capture(() => sut.OpenForRegistration());
-
-        // Assert
-        result.Error.ShouldMatch(EventRegistrationPolicy.Errors.EventNotActive);
-    }
-
-    [TestMethod]
-    public void SC023_EventRegistrationPolicy_CloseForRegistration_FromOpen_TransitionsToClosed()
-    {
-        // Arrange
-        var sut = EventRegistrationPolicy.Create(DefaultEventId);
-        sut.OpenForRegistration();
-
-        // Act
-        sut.CloseForRegistration();
-
-        // Assert
-        sut.RegistrationStatus.ShouldBe(ValueObjects.RegistrationStatus.Closed);
-        sut.IsRegistrationOpenForBusiness.ShouldBeFalse();
-    }
-
-    [TestMethod]
-    public void SC024_EventRegistrationPolicy_CloseForRegistration_Idempotent()
-    {
-        // Arrange
-        var sut = EventRegistrationPolicy.Create(DefaultEventId);
-        sut.OpenForRegistration();
-        sut.CloseForRegistration();
-
-        // Act
-        sut.CloseForRegistration();
-
-        // Assert
-        sut.RegistrationStatus.ShouldBe(ValueObjects.RegistrationStatus.Closed);
     }
 }

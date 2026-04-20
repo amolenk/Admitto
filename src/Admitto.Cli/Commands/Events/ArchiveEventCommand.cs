@@ -9,7 +9,7 @@ public class ArchiveEventSettings : TeamEventSettings
 {
     [CommandOption("--expected-version <version>")]
     [Description("The expected current version of the event (optimistic concurrency token)")]
-    public uint? ExpectedVersion { get; init; }
+    public int? ExpectedVersion { get; init; }
 
     public override ValidationResult Validate()
     {
@@ -28,7 +28,7 @@ public class ArchiveEventCommand(IAdmittoService admittoService, IConfigService 
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);
 
-        var request = new ArchiveTicketedEventRequest
+        var request = new ArchiveTicketedEventHttpRequest
         {
             ExpectedVersion = settings.ExpectedVersion
         };

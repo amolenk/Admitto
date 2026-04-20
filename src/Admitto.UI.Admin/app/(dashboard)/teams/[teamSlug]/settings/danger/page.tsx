@@ -7,6 +7,7 @@ import { apiClient } from "@/lib/api-client";
 import { TeamDto } from "@/lib/admitto-api/generated";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
 import {
     AlertDialog,
     AlertDialogCancel,
@@ -45,9 +46,9 @@ export default function DangerZonePage() {
 
     if (isLoading) {
         return (
-            <div className="space-y-4 max-w-lg">
-                <Skeleton className="h-10 w-full" />
-                <Skeleton className="h-10 w-full" />
+            <div className="space-y-4">
+                <Skeleton className="h-10 w-48" />
+                <Skeleton className="h-32 w-full" />
             </div>
         );
     }
@@ -77,57 +78,68 @@ export default function DangerZonePage() {
     const slugMatches = confirmSlug === team.slug;
 
     return (
-        <div className="space-y-6 max-w-lg">
-            <div className="rounded-lg border border-destructive p-6 space-y-4">
-                <div>
-                    <h3 className="text-lg font-semibold text-destructive">Archive this team</h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                        Once archived, the team and all its data will become read-only. This action cannot be undone.
-                        Teams with active ticketed events cannot be archived.
-                    </p>
-                </div>
-
-                {error && (
-                    <Alert variant="destructive">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>Error</AlertTitle>
-                        <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                )}
-
-                <AlertDialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) setConfirmSlug(""); }}>
-                    <AlertDialogTrigger asChild>
-                        <Button variant="destructive">Archive team</Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                This will archive the team <strong>{team.name}</strong> and all its associated data.
-                                To confirm, type the team slug below:
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <div className="px-1">
-                            <Input
-                                placeholder={team.slug}
-                                value={confirmSlug}
-                                onChange={(e) => setConfirmSlug(e.target.value)}
-                                autoFocus
-                            />
-                        </div>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <Button
-                                variant="destructive"
-                                onClick={handleArchive}
-                                disabled={!slugMatches || isArchiving}
-                            >
-                                {isArchiving ? "Archiving…" : "I understand, archive this team"}
-                            </Button>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
+        <div>
+            <div className="mb-5">
+                <h2 className="font-display text-[22px] font-semibold">Danger zone</h2>
+                <p className="text-[13.5px] text-muted-foreground">Permanent actions. No undo.</p>
             </div>
+
+            {error && (
+                <Alert variant="destructive" className="mb-5">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Error</AlertTitle>
+                    <AlertDescription>{error}</AlertDescription>
+                </Alert>
+            )}
+
+            <Card className="divide-y" style={{ borderColor: "color-mix(in oklch, var(--destructive) 30%, var(--border))" }}>
+                <div className="flex items-center gap-4 p-5">
+                    <div className="flex-1 min-w-0">
+                        <div className="text-sm font-medium">Archive this team</div>
+                        <div className="text-xs text-muted-foreground mt-0.5">
+                            Once archived, the team and all its data will become read-only. Teams with active events cannot be archived.
+                        </div>
+                    </div>
+                    <AlertDialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) setConfirmSlug(""); }}>
+                        <AlertDialogTrigger asChild>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="text-destructive border-destructive/30"
+                            >
+                                Archive team
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This will archive the team <strong>{team.name}</strong> and all its associated data.
+                                    To confirm, type the team slug below:
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <div className="px-1">
+                                <Input
+                                    placeholder={team.slug}
+                                    value={confirmSlug}
+                                    onChange={(e) => setConfirmSlug(e.target.value)}
+                                    autoFocus
+                                />
+                            </div>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <Button
+                                    variant="destructive"
+                                    onClick={handleArchive}
+                                    disabled={!slugMatches || isArchiving}
+                                >
+                                    {isArchiving ? "Archiving…" : "I understand, archive this team"}
+                                </Button>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </div>
+            </Card>
         </div>
     );
 }

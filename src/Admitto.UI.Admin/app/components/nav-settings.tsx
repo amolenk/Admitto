@@ -1,29 +1,32 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Settings } from "lucide-react";
 import {
     SidebarGroup,
     SidebarGroupLabel,
     SidebarMenu,
-    SidebarMenuButton,
     SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
 export function NavSettings({ teamSlug }: { teamSlug: string }) {
     const router = useRouter();
+    const pathname = usePathname();
+    const isActive = pathname.startsWith(`/teams/${teamSlug}/settings`);
 
     return (
         <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-            <SidebarGroupLabel>Team</SidebarGroupLabel>
+            <SidebarGroupLabel className="uppercase tracking-wider">Team</SidebarGroupLabel>
             <SidebarMenu>
                 <SidebarMenuItem>
-                    <SidebarMenuButton
+                    <button
                         onClick={() => router.push(`/teams/${teamSlug}/settings`)}
+                        data-active={isActive ? "true" : "false"}
+                        className="side-item"
                     >
-                        <Settings className="size-4" />
-                        <span>Settings</span>
-                    </SidebarMenuButton>
+                        <Settings className="size-3.5" />
+                        <span>Team Settings</span>
+                    </button>
                 </SidebarMenuItem>
             </SidebarMenu>
         </SidebarGroup>

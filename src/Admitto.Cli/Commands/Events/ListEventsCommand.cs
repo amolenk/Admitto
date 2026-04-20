@@ -21,15 +21,9 @@ public class ListEventsCommand(IAdmittoService admittoService, IConfigService co
         table.AddColumn("Name");
         table.AddColumn("Status");
 
-        foreach (var ticketedEvent in response.TicketedEvents ?? [])
+        foreach (var ticketedEvent in response)
         {
-            var status = EventFormatHelper.GetStatusString(
-                ticketedEvent.StartsAt,
-                ticketedEvent.EndsAt,
-                ticketedEvent.RegistrationOpensAt,
-                ticketedEvent.RegistrationClosesAt);
-
-            table.AddRow(ticketedEvent.Slug!, ticketedEvent.Name!, status);
+            table.AddRow(ticketedEvent.Slug, ticketedEvent.Name, ticketedEvent.Status);
         }
 
         AnsiConsole.Write(table);

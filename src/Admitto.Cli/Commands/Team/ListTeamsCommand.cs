@@ -15,9 +15,9 @@ public class ListTeamsCommand(IAdmittoService admittoService) : AsyncCommand<Tea
         table.AddColumn("Name");
         table.AddColumn("Email");
 
-        foreach (var team in response.Teams ?? [])
+        foreach (var team in response)
         {
-            table.AddRow(team.Slug!, team.Name!, team.Email!);
+            table.AddRow(team.Slug, team.Name, team.EmailAddress);
         }
 
         AnsiConsole.Write(table);

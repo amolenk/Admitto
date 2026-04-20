@@ -13,7 +13,7 @@ public class ArchiveTeamSettings : CommandSettings
 
     [CommandOption("--expected-version <version>")]
     [Description("The expected current version of the team (optimistic concurrency token)")]
-    public uint? ExpectedVersion { get; init; }
+    public int? ExpectedVersion { get; init; }
 
     public override ValidationResult Validate()
     {
@@ -29,7 +29,7 @@ public class ArchiveTeamCommand(IAdmittoService admittoService)
         ArchiveTeamSettings settings,
         CancellationToken cancellationToken)
     {
-        var request = new ArchiveTeamRequest
+        var request = new ArchiveTeamHttpRequest
         {
             ExpectedVersion = settings.ExpectedVersion
         };

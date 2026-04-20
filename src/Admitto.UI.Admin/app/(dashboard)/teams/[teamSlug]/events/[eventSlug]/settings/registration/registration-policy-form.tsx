@@ -1,15 +1,31 @@
 "use client";
 
 import * as z from "zod";
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Card } from "@/components/ui/card";
 import { useCustomForm } from "@/hooks/use-custom-form";
 import { apiClient } from "@/lib/api-client";
+
+function Field({ label, hint, children }: {
+    label: string;
+    hint?: string;
+    children: React.ReactNode;
+}) {
+    return (
+        <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-x-8 gap-y-1.5 py-4">
+            <div>
+                <label className="text-[13.5px] font-medium">{label}</label>
+                {hint && <p className="text-[12px] text-muted-foreground mt-0.5 leading-snug">{hint}</p>}
+            </div>
+            <div className="min-w-0">{children}</div>
+        </div>
+    );
+}
 
 const policySchema = z
     .object({
@@ -59,88 +75,103 @@ export function RegistrationPolicyForm({
         };
 
         await apiClient.put(`/api/teams/${teamSlug}/events/${eventSlug}/registration-policy`, body);
+        form.reset(values);
     }
 
     return (
-        <Form {...form}>
-            <form onSubmit={form.submit(onSubmit)} className="space-y-4">
-                {form.generalError && (
-                    <Alert variant="destructive">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>{form.generalError.title}</AlertTitle>
-                        <AlertDescription>{form.generalError.detail}</AlertDescription>
-                    </Alert>
-                )}
+        <div>
+            <div className="flex items-start justify-between mb-5">
+                <div>
+                    <h2 className="font-display text-[22px] font-semibold">Registration policy</h2>
+                    <p className="text-[13.5px] text-muted-foreground">Control when and who can register for this event.</p>
+                </div>
+                <div className="flex gap-2">
+                    <Button variant="ghost" size="sm" type="button" onClick={() => form.reset()}>
+                        Discard
+                    </Button>
+                    <Button size="sm" onClick={form.submit(onSubmit)} disabled={form.formState.isSubmitting}>
+                        <Check className="size-3.5" />
+                        {form.formState.isSubmitting ? "Saving\u2026" : "Save changes"}
+                    </Button>
+                </div>
+            </div>
 
-                <FormField
-                    control={form.control}
-                    name="registrationWindowOpensAt"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Window opens at</FormLabel>
-                            <FormControl>
-                                <Input type="datetime-local" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
+            {form.generalError && (
+                <Alert variant="destructive" className="mb-5">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>{form.generalError.title}</AlertTitle>
+                    <AlertDescription>{form.generalError.detail}</AlertDescription>
+                </Alert>
+            )}
 
-                <FormField
-                    control={form.control}
-                    name="registrationWindowClosesAt"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Window closes at</FormLabel>
-                            <FormControl>
-                                <Input type="datetime-local" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
+            <Form {...form}>
+                <form onSubmit={form.submit(onSubmit)}>
+                    <Card>
+                        <div className="px-6 divide-y">
+                            <FormField
+                                control={form.control}
+                                name="registrationWindowOpensAt"
+                                render={({ field }) => (
+                                    <Field label="Window opens" hint="When attendees can start registering.">
+                                        <FormItem className="space-y-1">
+                                            <FormControl>
+                                                <Input type="datetime-local" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    </Field>
+                                )}
+                            />
 
-                <FormField
-                    control={form.control}
-                    name="restrictEmailDomain"
-                    render={({ field }) => (
-                        <FormItem className="flex items-center justify-between rounded-md border p-3">
-                            <div className="space-y-0.5">
-                                <Label className="text-sm font-medium">
-                                    Restrict to a single email domain
-                                </Label>
-                                <p className="text-xs text-muted-foreground">
-                                    Only attendees whose email address matches the configured domain
-                                    can register.
-                                </p>
-                            </div>
-                            <FormControl>
-                                <Switch checked={field.value} onCheckedChange={field.onChange} />
-                            </FormControl>
-                        </FormItem>
-                    )}
-                />
+                            <FormField
+                                control={form.control}
+                                name="registrationWindowClosesAt"
+                                render={({ field }) => (
+                                    <Field label="Window closes" hint="When registration stops accepting entries.">
+                                        <FormItem className="space-y-1">
+                                            <FormControl>
+                                                <Input type="datetime-local" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    </Field>
+                                )}
+                            />
 
-                {restrictEmailDomain && (
-                    <FormField
-                        control={form.control}
-                        name="allowedEmailDomain"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Allowed email domain</FormLabel>
-                                <FormControl>
-                                    <Input placeholder="e.g. acme.org" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                )}
+                            <FormField
+                                control={form.control}
+                                name="restrictEmailDomain"
+                                render={({ field }) => (
+                                    <Field label="Restrict domain" hint="Only allow registrations from a specific email domain.">
+                                        <FormItem className="space-y-1">
+                                            <FormControl>
+                                                <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                            </FormControl>
+                                        </FormItem>
+                                    </Field>
+                                )}
+                            />
 
-                <Button type="submit" disabled={form.formState.isSubmitting}>
-                    {form.formState.isSubmitting ? "Saving…" : "Save policy"}
-                </Button>
-            </form>
-        </Form>
+                            {restrictEmailDomain && (
+                                <FormField
+                                    control={form.control}
+                                    name="allowedEmailDomain"
+                                    render={({ field }) => (
+                                        <Field label="Allowed domain" hint="e.g. acme.org">
+                                            <FormItem className="space-y-1">
+                                                <FormControl>
+                                                    <Input placeholder="acme.org" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        </Field>
+                                    )}
+                                />
+                            )}
+                        </div>
+                    </Card>
+                </form>
+            </Form>
+        </div>
     );
 }

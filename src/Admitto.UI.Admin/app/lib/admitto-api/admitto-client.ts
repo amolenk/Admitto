@@ -40,6 +40,9 @@ export async function callAdmittoApi<T>(
 
         // Success path
         if (typed?.response?.ok) {
+            if (typed.response.status === 204) {
+                return new NextResponse(null, { status: 204 });
+            }
             return NextResponse.json(typed.data, {
                 status: typed.response.status,
             });

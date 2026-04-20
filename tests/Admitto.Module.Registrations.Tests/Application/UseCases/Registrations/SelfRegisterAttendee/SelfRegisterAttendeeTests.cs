@@ -291,5 +291,5 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         => new(eventId, EmailAddress.From(email), ticketTypeSlugs);
 
     private static SelfRegisterAttendeeHandler NewHandler(SelfRegisterAttendeeFixture fixture)
-        => new(Environment.Database.Context);
+        => new(Environment.Database.Context, TimeProvider.System);
 }

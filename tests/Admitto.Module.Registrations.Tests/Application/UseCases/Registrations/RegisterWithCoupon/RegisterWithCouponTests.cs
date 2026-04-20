@@ -192,5 +192,5 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         => new(fixture.EventId, fixture.CouponCodeString, EmailAddress.From(email), [fixture.TicketTypeSlug]);
 
     private static RegisterWithCouponHandler NewHandler(RegisterWithCouponFixture fixture)
-        => new(Environment.Database.Context);
+        => new(Environment.Database.Context, TimeProvider.System);
 }

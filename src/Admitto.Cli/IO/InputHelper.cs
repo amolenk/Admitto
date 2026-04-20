@@ -1,4 +1,3 @@
-using Amolenk.Admitto.Cli.Api;
 using Amolenk.Admitto.Cli.Configuration;
 
 namespace Amolenk.Admitto.Cli.IO;
@@ -34,42 +33,10 @@ public static class InputHelper
         
         throw new ArgumentException("Event slug must be specified.");
     }
-    
-    public static List<AdditionalDetailDto> ParseAdditionalDetails(string[]? additionalDetails)
-    {
-        var result = new List<AdditionalDetailDto>();
 
-        foreach (var additionalDetail in additionalDetails ?? [])
-        {
-            var parts = additionalDetail.Split('=', 2);
-            if (parts.Length != 2)
-            {
-                throw new ArgumentException(
-                    $"Invalid additional detail format: '{additionalDetail}'. Expected format is 'Name=Value'.");
-            }
+    // Quarantined: ParseAdditionalDetails / ParseTickets depended on AdditionalDetailDto / TicketSelectionDto,
+    // which were dropped from the API surface. Restore alongside the corresponding admin endpoints.
 
-            result.Add(
-                new AdditionalDetailDto
-                {
-                    Name = parts[0],
-                    Value = parts[1]
-                });
-        }
-
-        return result;
-    }
-    
-    public static List<TicketSelectionDto> ParseTickets(string[]? tickets)
-    {
-        return (tickets ?? [])
-            .Select(t => new TicketSelectionDto
-            {
-                TicketTypeSlug = t,
-                Quantity = 1
-            })
-            .ToList();
-    }
-    
     [Obsolete]
     public static List<TItem> Parse<TItem>(string[]? input, Func<string, string, TItem> createItem)
     {

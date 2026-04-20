@@ -90,7 +90,6 @@ internal sealed class RegisterWithCouponFixture
         // Window is closed.
         f._policy = EventRegistrationPolicy.Create(f.EventId);
         f._policy.SetWindow(DateTimeOffset.UtcNow.AddDays(-30), DateTimeOffset.UtcNow.AddDays(-1));
-        f._policy.OpenForRegistration();
         f._catalog = f.MakeCatalog((f.TicketTypeSlug, "Speaker Pass", 10, 0));
         return f;
     }
@@ -102,7 +101,6 @@ internal sealed class RegisterWithCouponFixture
         // Window is closed.
         f._policy = EventRegistrationPolicy.Create(f.EventId);
         f._policy.SetWindow(DateTimeOffset.UtcNow.AddDays(-30), DateTimeOffset.UtcNow.AddDays(-1));
-        f._policy.OpenForRegistration();
         f._catalog = f.MakeCatalog((f.TicketTypeSlug, "Speaker Pass", 10, 0));
         return f;
     }
@@ -165,7 +163,6 @@ internal sealed class RegisterWithCouponFixture
         policy.SetWindow(
             DateTimeOffset.UtcNow.AddDays(-1),
             DateTimeOffset.UtcNow.AddDays(30));
-        policy.OpenForRegistration();
         return policy;
     }
 

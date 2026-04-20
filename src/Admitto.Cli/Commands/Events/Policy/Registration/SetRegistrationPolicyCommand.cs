@@ -55,7 +55,7 @@ public class SetRegistrationPolicyCommand(IAdmittoService admittoService, IConfi
             windowClosesAt = parsed;
         }
 
-        var request = new UpdateRegistrationPolicyRequest
+        var request = new SetRegistrationPolicyHttpRequest
         {
             RegistrationWindowOpensAt = windowOpensAt,
             RegistrationWindowClosesAt = windowClosesAt,
@@ -63,7 +63,7 @@ public class SetRegistrationPolicyCommand(IAdmittoService admittoService, IConfi
         };
 
         var result = await admittoService.SendAsync(client =>
-            client.UpdateRegistrationPolicyAsync(teamSlug, eventSlug, request, cancellationToken));
+            client.SetRegistrationPolicyAsync(teamSlug, eventSlug, request, cancellationToken));
         if (!result) return 1;
 
         AnsiConsoleExt.WriteSuccesMessage("Successfully set registration policy.");

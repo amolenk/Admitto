@@ -1,11 +1,15 @@
+using Amolenk.Admitto.Module.Registrations.Application.UseCases.CancellationPolicy.GetCancellationPolicy.AdminApi;
+using Amolenk.Admitto.Module.Registrations.Application.UseCases.CancellationPolicy.RemoveCancellationPolicy.AdminApi;
+using Amolenk.Admitto.Module.Registrations.Application.UseCases.CancellationPolicy.SetCancellationPolicy.AdminApi;
+using Amolenk.Admitto.Module.Registrations.Application.UseCases.ReconfirmPolicy.GetReconfirmPolicy.AdminApi;
+using Amolenk.Admitto.Module.Registrations.Application.UseCases.ReconfirmPolicy.RemoveReconfirmPolicy.AdminApi;
+using Amolenk.Admitto.Module.Registrations.Application.UseCases.ReconfirmPolicy.SetReconfirmPolicy.AdminApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.CouponManagement.CreateCoupon.AdminApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.CouponManagement.GetCouponDetails.AdminApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.CouponManagement.ListCoupons.AdminApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.CouponManagement.RevokeCoupon.AdminApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.RegistrationPolicy.AdminApi;
-using Amolenk.Admitto.Module.Registrations.Application.UseCases.RegistrationPolicy.CloseRegistration.AdminApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.RegistrationPolicy.GetRegistrationOpenStatus.AdminApi;
-using Amolenk.Admitto.Module.Registrations.Application.UseCases.RegistrationPolicy.OpenRegistration.AdminApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.Registrations.RegisterWithCoupon.PublicApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.Registrations.SelfRegisterAttendee.PublicApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketTypeManagement.AddTicketType.AdminApi;
@@ -30,9 +34,13 @@ public static class RegistrationsModule
             .MapGetCouponDetails()
             .MapRevokeCoupon()
             .MapSetRegistrationPolicy()
-            .MapOpenRegistration()
-            .MapCloseRegistration()
-            .MapGetRegistrationOpenStatus();
+            .MapGetRegistrationOpenStatus()
+            .MapSetCancellationPolicy()
+            .MapRemoveCancellationPolicy()
+            .MapGetCancellationPolicy()
+            .MapSetReconfirmPolicy()
+            .MapRemoveReconfirmPolicy()
+            .MapGetReconfirmPolicy();
 
         eventGroup
             .MapGroup("/ticket-types")

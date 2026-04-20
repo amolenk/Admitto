@@ -9,7 +9,7 @@ public class UpdateEventSettings : TeamEventSettings
 {
     [CommandOption("--expected-version <version>")]
     [Description("The expected current version of the event (optimistic concurrency token)")]
-    public uint? ExpectedVersion { get; init; }
+    public int? ExpectedVersion { get; init; }
 
     [CommandOption("-n|--name")]
     [Description("New name of the event")]
@@ -48,7 +48,7 @@ public class UpdateEventCommand(IAdmittoService admittoService, IConfigService c
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);
 
-        var request = new UpdateEventRequest
+        var request = new UpdateTicketedEventHttpRequest
         {
             ExpectedVersion = settings.ExpectedVersion,
             Name = settings.Name,

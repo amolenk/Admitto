@@ -3,17 +3,19 @@ using System.Text;
 using Amolenk.Admitto.Cli.Api;
 using Amolenk.Admitto.Cli.Auth;
 using Amolenk.Admitto.Cli.Commands;
-using Amolenk.Admitto.Cli.Commands.Attendee;
+// Quarantined namespaces (no matching admin endpoints in the regenerated API client).
+// Restore when the backend re-exposes the corresponding surface.
+// using Amolenk.Admitto.Cli.Commands.Attendee;
+// using Amolenk.Admitto.Cli.Commands.Email;
+// using Amolenk.Admitto.Cli.Commands.Email.Template.Event;
+// using Amolenk.Admitto.Cli.Commands.Email.Template.Team;
+// using Amolenk.Admitto.Cli.Commands.Email.Verification;
+// using Amolenk.Admitto.Cli.Commands.Team.Member;
 using Amolenk.Admitto.Cli.Commands.Auth;
 using Amolenk.Admitto.Cli.Commands.Coupon;
-using Amolenk.Admitto.Cli.Commands.Email;
-using Amolenk.Admitto.Cli.Commands.Email.Template.Event;
-using Amolenk.Admitto.Cli.Commands.Email.Template.Team;
-using Amolenk.Admitto.Cli.Commands.Email.Verification;
 using Amolenk.Admitto.Cli.Commands.Events;
 using Amolenk.Admitto.Cli.Commands.Events.TicketType;
 using Amolenk.Admitto.Cli.Commands.Team;
-using Amolenk.Admitto.Cli.Commands.Team.Member;
 using Amolenk.Admitto.Cli.Common;
 using Amolenk.Admitto.Cli.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -58,36 +60,37 @@ var app = new CommandApp(registrar);
 
 app.Configure(config =>
 {
-    config.AddBranch(
-        "attendee",
-        attendee =>
-        {
-            attendee.SetDescription("Manage attendees");
-
-            attendee.AddCommand<CancelAttendeeCommand>("cancel")
-                .WithDescription("Cancel an attendee registration");
-
-            attendee.AddCommand<DenyAttendeeVisaLetterCommand>("denyVisaLetter")
-                .WithDescription("Deny a request for a visa letter and cancel the registration");
-
-            attendee.AddCommand<ExportAttendeesCommand>("export")
-                .WithDescription("Export all attendee registrations to an Excel file");
-
-            attendee.AddCommand<ListAttendeesCommand>("list")
-                .WithDescription("List all attendee registrations");
-
-            attendee.AddCommand<ReconfirmAttendeeCommand>("reconfirm")
-                .WithDescription("Reconfirms an attendee registration");
-
-            attendee.AddCommand<RegisterAttendeeCommand>("register")
-                .WithDescription("Register a new attendee");
-
-            attendee.AddCommand<ShowAttendeeCommand>("show")
-                .WithDescription("Show the details of an attendee registration");
-
-            attendee.AddCommand<UpdateAttendeeCommand>("update")
-                .WithDescription("Updates an existing attendee");
-        });
+    // Quarantined: backend admin attendee endpoints removed. Restore when the API exposes them again.
+    // config.AddBranch(
+    //     "attendee",
+    //     attendee =>
+    //     {
+    //         attendee.SetDescription("Manage attendees");
+    //
+    //         attendee.AddCommand<CancelAttendeeCommand>("cancel")
+    //             .WithDescription("Cancel an attendee registration");
+    //
+    //         attendee.AddCommand<DenyAttendeeVisaLetterCommand>("denyVisaLetter")
+    //             .WithDescription("Deny a request for a visa letter and cancel the registration");
+    //
+    //         attendee.AddCommand<ExportAttendeesCommand>("export")
+    //             .WithDescription("Export all attendee registrations to an Excel file");
+    //
+    //         attendee.AddCommand<ListAttendeesCommand>("list")
+    //             .WithDescription("List all attendee registrations");
+    //
+    //         attendee.AddCommand<ReconfirmAttendeeCommand>("reconfirm")
+    //             .WithDescription("Reconfirms an attendee registration");
+    //
+    //         attendee.AddCommand<RegisterAttendeeCommand>("register")
+    //             .WithDescription("Register a new attendee");
+    //
+    //         attendee.AddCommand<ShowAttendeeCommand>("show")
+    //             .WithDescription("Show the details of an attendee registration");
+    //
+    //         attendee.AddCommand<UpdateAttendeeCommand>("update")
+    //             .WithDescription("Updates an existing attendee");
+    //     });
 
     config.AddCommand<LoginCommand>("login")
         .WithDescription("Login to the Admitto API");
@@ -149,106 +152,27 @@ app.Configure(config =>
     //             .WithDescription("Update an existing contributor");
     //     });
 
-    config.AddBranch(
-        "email",
-        email =>
-        {
-            email.SetDescription("Manage emails");
-
-            email.AddBranch(
-                "bulk",
-                bulk =>
-                {
-                    bulk.SetDescription("Manage bulk emails");
-
-                    bulk.AddCommand<Commands.Email.Bulk.SendCustomBulkEmailCommand>("custom")
-                        .WithDescription("Send a custom bulk email");
-
-                    bulk.AddCommand<Commands.Email.Bulk.SendReconfirmBulkEmailCommand>("reconfirm")
-                        .WithDescription("Send a reconfirm bulk email");
-                });
-            
-            email.AddBranch(
-                "recipientList",
-                bulk =>
-                {
-                    bulk.SetDescription("Manage email recipient lists");
-
-                    bulk.AddCommand<Commands.Email.RecipientLists.AddEmailRecipientListCommand>("add")
-                        .WithDescription("Add an email recipient list");
-
-                    bulk.AddCommand<Commands.Email.RecipientLists.ListEmailRecipientListsCommand>("list")
-                        .WithDescription("List all email recipient lists");
-                    
-                    bulk.AddCommand<Commands.Email.RecipientLists.RemoveEmailRecipientListCommand>("remove")
-                        .WithDescription("Remove an email recipient list");
-                });
-
-            email.AddBranch(
-                "send",
-                sendEmail =>
-                {
-                    sendEmail.SetDescription("Manually send emails to attendees.");
-
-                    sendEmail.AddCommand<SendReconfirmEmailCommand>("reconfirm");
-                });
-            
-            email.AddBranch(
-                "template",
-                template =>
-                {
-                    template.SetDescription("Manage email templates");
-
-                    template.AddBranch(
-                        "team",
-                        team =>
-                        {
-                            template.SetDescription("Manage team templates");
-
-                            team.AddCommand<ClearTeamEmailTemplateCommand>("clear")
-                                .WithDescription("Clear a team email template");
-
-                            team.AddCommand<ListTeamEmailTemplatesCommand>("list")
-                                .WithDescription("List all team email templates");
-
-                            team.AddCommand<SetTeamEmailTemplateCommand>("set")
-                                .WithDescription("Set a team email template");
-                        });
-
-                    template.AddBranch(
-                        "event",
-                        ticketedEvent =>
-                        {
-                            template.SetDescription("Manage team templates");
-
-                            ticketedEvent.AddCommand<ClearEventEmailTemplateCommand>("clear")
-                                .WithDescription("Clear an event email template");
-
-                            ticketedEvent.AddCommand<ListEventEmailTemplatesCommand>("list")
-                                .WithDescription("List all event email templates");
-
-                            ticketedEvent.AddCommand<SetEventEmailTemplateCommand>("set")
-                                .WithDescription("Set an event email template");
-                        });
-                });
-
-            email.AddCommand<TestEmailCommand>("test")
-                .WithDescription("Send a test email");
-#if DEBUG
-            email.AddBranch(
-                "verification",
-                verification =>
-                {
-                    verification.SetDescription("Manage email verification (debug only)");
-
-                    verification.AddCommand<RequestOtpCodeCommand>("request")
-                        .WithDescription("Request a one-time verification code");
-
-                    verification.AddCommand<VerifyOtpCodeCommand>("verify")
-                        .WithDescription("Verify a one-time verification code");
-                });
-#endif
-        });
+    // Quarantined: backend admin endpoints removed for bulk emails, recipient lists,
+    // single-attendee email actions, templates, test email, and OTP verification.
+    // Restore once the API exposes the corresponding admin surfaces again.
+    // (Event-level email *settings* are handled under the `event` branch instead.)
+    //
+    // config.AddBranch(
+    //     "email",
+    //     email =>
+    //     {
+    //         email.SetDescription("Manage emails");
+    //
+    //         email.AddBranch("bulk", bulk => { /* ... */ });
+    //         email.AddBranch("recipientList", list => { /* ... */ });
+    //         email.AddBranch("send", send => { /* ... */ });
+    //         email.AddBranch("template", tpl => { /* ... */ });
+    //         email.AddCommand<TestEmailCommand>("test");
+    //
+    //         #if DEBUG
+    //         email.AddBranch("verification", verification => { /* ... */ });
+    //         #endif
+    //     });
 
 
     config.AddBranch(
@@ -257,8 +181,9 @@ app.Configure(config =>
         {
             ticketedEvent.SetDescription("Manage events");
 
-            ticketedEvent.AddCommand<CreateEventCommand>("create")
-                .WithDescription("Create a new event");
+            // Quarantined: CreateEventCommand depends on removed AdditionalDetailSchemaDto.
+            // ticketedEvent.AddCommand<CreateEventCommand>("create")
+            //     .WithDescription("Create a new event");
 
             ticketedEvent.AddCommand<ListEventsCommand>("list")
                 .WithDescription("List all events for a team");
@@ -292,10 +217,49 @@ app.Configure(config =>
                 });
 
             ticketedEvent.AddBranch(
+                "registration",
+                registration =>
+                {
+                    registration.SetDescription("Manage event registration lifecycle");
+
+                    registration.AddCommand<Commands.Events.Registration.ShowRegistrationStatusCommand>("show")
+                        .WithDescription("Show the current registration open status");
+                });
+
+            ticketedEvent.AddBranch(
+                "email",
+                email =>
+                {
+                    email.SetDescription("Manage event email settings");
+
+                    email.AddCommand<Commands.Events.Email.ShowEventEmailCommand>("show")
+                        .WithDescription("Show the email settings for the event");
+
+                    email.AddCommand<Commands.Events.Email.UpdateEventEmailCommand>("update")
+                        .WithDescription("Create or update the email settings for the event");
+                });
+
+            ticketedEvent.AddBranch(
                 "policy",
                 policy =>
                 {
                     policy.SetDescription("Manage event policies");
+
+                    policy.AddBranch(
+                        "cancellation",
+                        cancellation =>
+                        {
+                            cancellation.SetDescription("Manage cancellation policy");
+
+                            cancellation.AddCommand<Commands.Events.Policy.Cancellation.ShowCancellationPolicyCommand>("show")
+                                .WithDescription("Show the cancellation policy");
+
+                            cancellation.AddCommand<Commands.Events.Policy.Cancellation.SetCancellationPolicyCommand>("set")
+                                .WithDescription("Set the cancellation policy");
+
+                            cancellation.AddCommand<Commands.Events.Policy.Cancellation.RemoveCancellationPolicyCommand>("remove")
+                                .WithDescription("Remove the cancellation policy");
+                        });
 
                     policy.AddBranch(
                         "reconfirm",
@@ -303,11 +267,14 @@ app.Configure(config =>
                         {
                             reconfirm.SetDescription("Manage reconfirm policy");
 
-                            reconfirm.AddCommand<Commands.Events.Policy.Reconfirm.ClearReconfirmPolicyCommand>("clear")
-                                .WithDescription("Clear the reconfirm policy");
+                            reconfirm.AddCommand<Commands.Events.Policy.Reconfirm.ShowReconfirmPolicyCommand>("show")
+                                .WithDescription("Show the reconfirm policy");
 
                             reconfirm.AddCommand<Commands.Events.Policy.Reconfirm.SetReconfirmPolicyCommand>("set")
                                 .WithDescription("Set the reconfirm policy");
+
+                            reconfirm.AddCommand<Commands.Events.Policy.Reconfirm.RemoveReconfirmPolicyCommand>("remove")
+                                .WithDescription("Remove the reconfirm policy");
                         });
 
                     policy.AddBranch(
@@ -335,24 +302,25 @@ app.Configure(config =>
             team.AddCommand<ListTeamsCommand>("list")
                 .WithDescription("List all teams");
 
-            team.AddBranch(
-                "member",
-                member =>
-                {
-                    member.SetDescription("Manage team members");
-
-                    member.AddCommand<AddTeamMemberCommand>("add")
-                        .WithDescription("Add a team member");
-
-                    member.AddCommand<ListTeamMembersCommand>("list")
-                        .WithDescription("List team members");
-
-                    member.AddCommand<UpdateTeamMemberCommand>("update")
-                        .WithDescription("Update a team member's role");
-
-                    member.AddCommand<RemoveTeamMemberCommand>("remove")
-                        .WithDescription("Remove a team member");
-                });
+            // Quarantined: team member commands depend on removed TeamMemberRole and ApiClientMemberExtensions.
+            // team.AddBranch(
+            //     "member",
+            //     member =>
+            //     {
+            //         member.SetDescription("Manage team members");
+            //
+            //         member.AddCommand<AddTeamMemberCommand>("add")
+            //             .WithDescription("Add a team member");
+            //
+            //         member.AddCommand<ListTeamMembersCommand>("list")
+            //             .WithDescription("List team members");
+            //
+            //         member.AddCommand<UpdateTeamMemberCommand>("update")
+            //             .WithDescription("Update a team member's role");
+            //
+            //         member.AddCommand<RemoveTeamMemberCommand>("remove")
+            //             .WithDescription("Remove a team member");
+            //     });
 
             team.AddCommand<ShowTeamCommand>("show")
                 .WithDescription("Show the details of a team");

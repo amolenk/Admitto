@@ -12,6 +12,7 @@ internal sealed class SelfRegisterAttendeeFixture
     private bool _seedExistingRegistration;
     private EventRegistrationPolicy? _policy;
     private TicketCatalog? _catalog;
+    private TicketedEventLifecycleGuard? _guard;
 
     public TicketedEventId EventId { get; } = TicketedEventId.New();
     public string TicketTypeSlug { get; } = "general-admission";
@@ -55,7 +56,6 @@ internal sealed class SelfRegisterAttendeeFixture
         var closesAt = DateTimeOffset.UtcNow.AddDays(30);
         f._policy = EventRegistrationPolicy.Create(f.EventId);
         f._policy.SetWindow(opensAt, closesAt);
-        f._policy.OpenForRegistration();
         f._catalog = f.MakeCatalog(("general-admission", "General Admission", 100, 0));
         return f;
     }
@@ -67,7 +67,6 @@ internal sealed class SelfRegisterAttendeeFixture
         var closesAt = DateTimeOffset.UtcNow.AddDays(-1);
         f._policy = EventRegistrationPolicy.Create(f.EventId);
         f._policy.SetWindow(opensAt, closesAt);
-        f._policy.OpenForRegistration();
         f._catalog = f.MakeCatalog(("general-admission", "General Admission", 100, 0));
         return f;
     }
@@ -76,7 +75,6 @@ internal sealed class SelfRegisterAttendeeFixture
     {
         var f = new SelfRegisterAttendeeFixture();
         f._policy = EventRegistrationPolicy.Create(f.EventId); // no window
-        f._policy.OpenForRegistration();
         f._catalog = f.MakeCatalog(("general-admission", "General Admission", 100, 0));
         return f;
     }
@@ -130,8 +128,8 @@ internal sealed class SelfRegisterAttendeeFixture
         var f = new SelfRegisterAttendeeFixture();
         f._policy = EventRegistrationPolicy.Create(f.EventId);
         f._policy.SetWindow(DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddDays(30));
-        f._policy.OpenForRegistration();
-        f._policy.SetCancelled();
+        f._guard = TicketedEventLifecycleGuard.Create(f.EventId);
+        f._guard.SetCancelled();
         f._catalog = f.MakeCatalog(("general-admission", "General Admission", 100, 0));
         return f;
     }
@@ -147,7 +145,7 @@ internal sealed class SelfRegisterAttendeeFixture
 
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
     {
-        if (_policy is not null || _catalog is not null)
+        if (_policy is not null || _catalog is not null || _guard is not null)
         {
             await environment.Database.SeedAsync(dbContext =>
             {
@@ -155,6 +153,8 @@ internal sealed class SelfRegisterAttendeeFixture
                     dbContext.EventRegistrationPolicies.Add(_policy);
                 if (_catalog is not null)
                     dbContext.TicketCatalogs.Add(_catalog);
+                if (_guard is not null)
+                    dbContext.TicketedEventLifecycleGuards.Add(_guard);
             });
         }
 
@@ -179,7 +179,6 @@ internal sealed class SelfRegisterAttendeeFixture
         policy.SetWindow(
             DateTimeOffset.UtcNow.AddDays(-1),
             DateTimeOffset.UtcNow.AddDays(30));
-        policy.OpenForRegistration();
         return policy;
     }
 

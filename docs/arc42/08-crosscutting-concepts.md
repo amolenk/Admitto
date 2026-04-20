@@ -126,10 +126,10 @@ Each module declares a `MessagePolicy` that maps domain events to module and/or 
 
 When a ticketed event is created, cancelled, or archived in the Organization module, the corresponding domain events (`TicketedEventCreatedDomainEvent`, `TicketedEventCancelledDomainEvent`, `TicketedEventArchivedDomainEvent`) are mapped via `OrganizationMessagePolicy` to module events (`TicketedEventCreatedModuleEvent`, `TicketedEventCancelledModuleEvent`, `TicketedEventArchivedModuleEvent`). The Registrations module handles these via the event→command→handler pattern (see §8.5):
 
-- **Created** → `HandleEventCreatedHandler` creates an `EventRegistrationPolicy` with `EventLifecycleStatus = Active` and `RegistrationStatus = Draft`. Idempotent: re-delivery is a no-op.
-- **Cancelled** / **Archived** → set the corresponding lifecycle status on the existing policy.
+- **Created** → `HandleEventCreatedHandler` creates a `TicketedEventLifecycleGuard` with `EventLifecycleStatus = Active`. Idempotent: re-delivery is a no-op. Policy aggregates are **not** auto-created — they are created on demand when the operator configures them.
+- **Cancelled** / **Archived** → load-or-create the guard and set the corresponding lifecycle status. Idempotent — no-op if already in the target state. Bumps `PolicyMutationCount` only on a real transition.
 
-Registrations handlers that operate on the policy (open/close registration, set window, manage ticket types, register attendees, …) **trust this sync**: they look the policy up by `TicketedEventId` and throw a `NotFound` error (`EventRegistrationPolicy.Errors.EventNotFound`) when it is missing instead of creating one on demand. This keeps "the event is unknown to Registrations" distinct from "the event exists but is not active", and surfaces sync bugs immediately as 404s instead of hiding them behind misleading validation messages.
+Registrations handlers that mutate policies load the guard, assert the event is Active, and bump `PolicyMutationCount` (see [§8.14 Lifecycle guard pattern](#814-lifecycle-guard-pattern)). This ensures strong consistency between policy edits and lifecycle transitions via optimistic concurrency on the guard row.
 
 Ticket type data is owned entirely by the Registrations module — no cross-module sync.
 
@@ -430,3 +430,48 @@ Because jobs own the transaction boundary, they are tested at the integration le
 4. Executes the job and asserts the resulting database state.
 
 A thin `DbContextUnitOfWork` adapter is used in tests to forward `SaveChangesAsync` to the underlying `DbContext`, replacing the keyed DI service that is not available in the test context.
+
+## 8.14 Lifecycle guard pattern
+
+When a module needs to enforce that a parent entity (e.g. a ticketed event) is in the correct lifecycle state before allowing policy mutations, and must prevent those mutations from racing with lifecycle transitions, the **lifecycle guard** pattern provides strong consistency without distributed locks.
+
+### Structure
+
+A dedicated guard aggregate sits between the lifecycle source (Organization module) and the policy aggregates (Registrations module):
+
+```
+TicketedEventLifecycleGuard (one per event)
+├── LifecycleStatus : EventLifecycleStatus (Active / Cancelled / Archived)
+├── PolicyMutationCount : long (monotonically increasing)
+└── Version : uint (EF [Timestamp] row-version)
+```
+
+The guard is **not** embedded in any policy aggregate. This avoids giving any single policy a privileged role and ensures every policy sees the same access pattern.
+
+### Mutation protocol
+
+Every command that creates or updates a policy aggregate follows this protocol inside the handler:
+
+1. **Load** the guard via `LifecycleGuardStore.LoadOrCreateAsync(eventId)`.
+2. **Assert** by calling `guard.AssertActiveAndRegisterPolicyMutation()` — throws if status is not Active, otherwise increments `PolicyMutationCount`.
+3. **Mutate** the policy aggregate (create, update, or delete).
+4. **Commit** — the endpoint-owned UoW saves both the guard and the policy in one transaction.
+
+Because `PolicyMutationCount++` writes the guard row, EF advances `Version`. A concurrent lifecycle handler (cancel/archive) that loaded the same guard will fail `SaveChangesAsync` with a `DbUpdateConcurrencyException`.
+
+### Lifecycle handler protocol
+
+Lifecycle event handlers (Created, Cancelled, Archived) **load-or-create** the guard and set the status. They bump `PolicyMutationCount` only on a real state transition (idempotent — no-op if already in the target state). This means a re-delivered event does not cause spurious concurrency conflicts.
+
+### Relationship to write-amplifier
+
+The lifecycle guard is a specialisation of the [write-amplifier pattern](#write-amplifier-pattern) (§8.9). Where `Team.TicketedEventScopeVersion` protects against concurrent event creation during team archive, `TicketedEventLifecycleGuard.PolicyMutationCount` protects against concurrent policy edits during event cancellation/archive.
+
+### Where used
+
+| Guard | Module | Protects |
+| :---- | :----- | :------- |
+| `TicketedEventLifecycleGuard` | Registrations | `EventRegistrationPolicy`, `CancellationPolicy`, `ReconfirmPolicy`, ticket-type management |
+| `Team.TicketedEventScopeVersion` | Organization | `ArchiveTeam` vs concurrent `CreateTicketedEvent` |
+
+Reference: `src/Admitto.Module.Registrations/Domain/Entities/TicketedEventLifecycleGuard.cs`, `src/Admitto.Module.Registrations/Application/Services/LifecycleGuardStore.cs`.

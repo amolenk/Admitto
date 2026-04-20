@@ -123,31 +123,6 @@ public sealed class AddTicketTypeTests(TestContext testContext) : AspireIntegrat
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
         // Assert
-        result.Error.ShouldMatch(AddTicketTypeHandler.Errors.EventNotActive);
-    }
-
-    // SC-005: Add ticket type when no policy exists yet — surfaces EventNotFound (the
-    // policy is expected to be created upstream by the Organization → Registrations sync).
-    [TestMethod]
-    public async ValueTask SC005_AddTicketType_NoPolicyExists_ThrowsEventNotFoundError()
-    {
-        // Arrange
-        var fixture = AddTicketTypeFixture.NoPolicyExists();
-        await fixture.SetupAsync(Environment);
-
-        var command = new AddTicketTypeCommand(
-            fixture.EventId,
-            Slug.From("general-admission"),
-            DisplayName.From("General Admission"),
-            [],
-            100);
-        var sut = new AddTicketTypeHandler(Environment.Database.Context);
-
-        // Act
-        var result = await ErrorResult.CaptureAsync(
-            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
-
-        // Assert
-        result.Error.ShouldMatch(EventRegistrationPolicy.Errors.EventNotFound);
+        result.Error.ShouldMatch(TicketedEventLifecycleGuard.Errors.EventNotActive);
     }
 }

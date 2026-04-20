@@ -6,8 +6,8 @@ namespace Amolenk.Admitto.Module.Registrations.Tests.Application.UseCases.EventL
 
 internal sealed class EventLifecycleSyncFixture
 {
-    private bool _seedPolicy;
-    private bool _policyCancelled;
+    private bool _seedGuard;
+    private bool _guardCancelled;
 
     public TicketedEventId EventId { get; } = TicketedEventId.New();
 
@@ -15,32 +15,32 @@ internal sealed class EventLifecycleSyncFixture
     {
     }
 
-    public static EventLifecycleSyncFixture WithActivePolicy() => new()
+    public static EventLifecycleSyncFixture WithActiveGuard() => new()
     {
-        _seedPolicy = true
+        _seedGuard = true
     };
 
-    public static EventLifecycleSyncFixture WithCancelledPolicy() => new()
+    public static EventLifecycleSyncFixture WithCancelledGuard() => new()
     {
-        _seedPolicy = true,
-        _policyCancelled = true
+        _seedGuard = true,
+        _guardCancelled = true
     };
 
-    public static EventLifecycleSyncFixture NoPolicyExists() => new();
+    public static EventLifecycleSyncFixture NoGuardExists() => new();
 
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
     {
-        if (!_seedPolicy)
+        if (!_seedGuard)
             return;
 
         await environment.Database.SeedAsync(dbContext =>
         {
-            var policy = EventRegistrationPolicy.Create(EventId);
-            if (_policyCancelled)
+            var guard = TicketedEventLifecycleGuard.Create(EventId);
+            if (_guardCancelled)
             {
-                policy.SetCancelled();
+                guard.SetCancelled();
             }
-            dbContext.EventRegistrationPolicies.Add(policy);
+            dbContext.TicketedEventLifecycleGuards.Add(guard);
         });
     }
 }

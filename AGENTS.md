@@ -49,6 +49,11 @@ dotnet test tests/Admitto.Api.Tests/Admitto.Api.Tests.csproj
 - If a structural decision changes, update the relevant arc42 chapter and ADRs in `docs/adrs/`.
 - Link ADRs from `docs/arc42/09-architectural-decisions.md`.
 
+## Admin UI Design
+
+- Keep design of new features in line with existing features.
+- The `design` directory contains the original UI design. Use it when designing UI for new/changed features.
+
 ## Feature Implementation Checklist
 
 Before declaring a feature complete, verify every item:

@@ -30,7 +30,7 @@ public class RevokeCouponCommand(IAdmittoService admittoService, IConfigService 
 
         var success = await admittoService.SendAsync(
             client => client.RevokeCouponAsync(
-                teamSlug, eventSlug, settings.CouponId!.Value, cancellationToken));
+                settings.CouponId!.Value, teamSlug, eventSlug, cancellationToken));
 
         if (!success) return 1;
 

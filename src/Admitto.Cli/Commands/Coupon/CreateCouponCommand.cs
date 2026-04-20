@@ -46,10 +46,10 @@ public class CreateCouponCommand(IAdmittoService admittoService, IConfigService 
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);
 
-        var request = new CreateCouponRequest
+        var request = new CreateCouponHttpRequest
         {
-            Email = settings.Email,
-            AllowedTicketTypeSlugs = settings.TicketTypeSlugs,
+            Email = settings.Email!,
+            AllowedTicketTypeSlugs = settings.TicketTypeSlugs!,
             ExpiresAt = DateTimeOffset.Parse(settings.ExpiresAt!),
             BypassRegistrationWindow = settings.BypassRegistrationWindow
         };

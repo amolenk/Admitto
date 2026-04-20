@@ -181,18 +181,31 @@ public sealed class SetRegistrationPolicyTests(TestContext testContext) : Aspire
         result.Error.ShouldMatch(EventRegistrationPolicy.Errors.WindowCloseBeforeOpen);
     }
 
-    // SC007: No policy exists in Registrations module → throws EventNotFound (the policy is
-    // created upstream by the Organization → Registrations sync handler).
+    // SC007: No policy exists — handler auto-creates guard and policy, succeeds
     [TestMethod]
-    public async ValueTask SC007_SetRegistrationPolicy_NoPolicy_ThrowsEventNotFoundError()
+    public async ValueTask SC007_SetRegistrationPolicy_NoPolicy_CreatesGuardAndPolicy()
     {
         var eventId = TicketedEventId.New();
-        var command = new SetRegistrationPolicyCommand(eventId, null, null, null);
+        var opensAt = new DateTimeOffset(2025, 1, 1, 0, 0, 0, TimeSpan.Zero);
+        var closesAt = new DateTimeOffset(2025, 6, 1, 0, 0, 0, TimeSpan.Zero);
+
+        var command = new SetRegistrationPolicyCommand(eventId, opensAt, closesAt, null);
         var sut = new SetRegistrationPolicyHandler(Environment.Database.Context);
 
-        var result = await ErrorResult.CaptureAsync(
-            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
+        await sut.HandleAsync(command, testContext.CancellationToken);
 
-        result.Error.ShouldMatch(EventRegistrationPolicy.Errors.EventNotFound);
+        await Environment.Database.AssertAsync(async dbContext =>
+        {
+            var guard = await dbContext.TicketedEventLifecycleGuards
+                .SingleOrDefaultAsync(g => g.Id == eventId, testContext.CancellationToken);
+            guard.ShouldNotBeNull();
+            guard.IsActive.ShouldBeTrue();
+
+            var policy = await dbContext.EventRegistrationPolicies
+                .SingleOrDefaultAsync(p => p.Id == eventId, testContext.CancellationToken);
+            policy.ShouldNotBeNull();
+            policy.RegistrationWindowOpensAt.ShouldBe(opensAt);
+            policy.RegistrationWindowClosesAt.ShouldBe(closesAt);
+        });
     }
 }

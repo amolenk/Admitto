@@ -31,13 +31,14 @@ internal sealed class CreateCouponFixture
 
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
     {
-        var policy = EventRegistrationPolicy.Create(EventId);
-        policy.SetWindow(DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddDays(30));
-
+        var guard = TicketedEventLifecycleGuard.Create(EventId);
         if (_eventCancelled)
         {
-            policy.SetCancelled();
+            guard.SetCancelled();
         }
+
+        var policy = EventRegistrationPolicy.Create(EventId);
+        policy.SetWindow(DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddDays(30));
 
         var catalog = TicketCatalog.Create(EventId);
         catalog.AddTicketType(
@@ -52,6 +53,7 @@ internal sealed class CreateCouponFixture
 
         await environment.Database.SeedAsync(dbContext =>
         {
+            dbContext.TicketedEventLifecycleGuards.Add(guard);
             dbContext.EventRegistrationPolicies.Add(policy);
             dbContext.TicketCatalogs.Add(catalog);
         });

@@ -1,6 +1,7 @@
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.EventLifecycleSync.HandleEventArchived;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.EventLifecycleSync.HandleEventCancelled;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.EventLifecycleSync.HandleEventCreated;
+using Amolenk.Admitto.Module.Registrations.Domain.Entities;
 using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Registrations.Tests.Application.Aspire;
 using Microsoft.EntityFrameworkCore;
@@ -10,54 +11,48 @@ namespace Amolenk.Admitto.Module.Registrations.Tests.Application.UseCases.EventL
 [TestClass]
 public sealed class EventLifecycleSyncTests(TestContext testContext) : AspireIntegrationTestBase
 {
-    // SC-001: Cancel existing active policy — status becomes Cancelled
+    // SC-001: Cancel existing active guard — status becomes Cancelled
     [TestMethod]
-    public async ValueTask SC001_HandleEventCancelled_ActivePolicy_StatusBecomesCancelled()
+    public async ValueTask SC001_HandleEventCancelled_ActiveGuard_StatusBecomesCancelled()
     {
-        // Arrange
-        var fixture = EventLifecycleSyncFixture.WithActivePolicy();
+        var fixture = EventLifecycleSyncFixture.WithActiveGuard();
         await fixture.SetupAsync(Environment);
 
         var command = new HandleEventCancelledCommand(fixture.EventId.Value);
         var sut = new HandleEventCancelledHandler(Environment.Database.Context);
 
-        // Act
         await sut.HandleAsync(command, testContext.CancellationToken);
 
-        // Assert
         await Environment.Database.AssertAsync(async dbContext =>
         {
-            var policy = await dbContext.EventRegistrationPolicies
-                .FirstOrDefaultAsync(p => p.Id == fixture.EventId, testContext.CancellationToken);
+            var guard = await dbContext.TicketedEventLifecycleGuards
+                .FirstOrDefaultAsync(g => g.Id == fixture.EventId, testContext.CancellationToken);
 
-            policy.ShouldNotBeNull();
-            policy.EventLifecycleStatus.ShouldBe(EventLifecycleStatus.Cancelled);
-            policy.IsEventActive.ShouldBeFalse();
+            guard.ShouldNotBeNull();
+            guard.LifecycleStatus.ShouldBe(EventLifecycleStatus.Cancelled);
+            guard.IsActive.ShouldBeFalse();
         });
     }
 
-    // SC-002: Cancel with no existing policy — creates policy and sets Cancelled
+    // SC-002: Cancel with no existing guard — creates guard and sets Cancelled
     [TestMethod]
-    public async ValueTask SC002_HandleEventCancelled_NoPolicyExists_CreatesPolicyAndSetsCancelled()
+    public async ValueTask SC002_HandleEventCancelled_NoGuardExists_CreatesGuardAndSetsCancelled()
     {
-        // Arrange
-        var fixture = EventLifecycleSyncFixture.NoPolicyExists();
+        var fixture = EventLifecycleSyncFixture.NoGuardExists();
         await fixture.SetupAsync(Environment);
 
         var command = new HandleEventCancelledCommand(fixture.EventId.Value);
         var sut = new HandleEventCancelledHandler(Environment.Database.Context);
 
-        // Act
         await sut.HandleAsync(command, testContext.CancellationToken);
 
-        // Assert
         await Environment.Database.AssertAsync(async dbContext =>
         {
-            var policy = await dbContext.EventRegistrationPolicies
-                .FirstOrDefaultAsync(p => p.Id == fixture.EventId, testContext.CancellationToken);
+            var guard = await dbContext.TicketedEventLifecycleGuards
+                .FirstOrDefaultAsync(g => g.Id == fixture.EventId, testContext.CancellationToken);
 
-            policy.ShouldNotBeNull();
-            policy.EventLifecycleStatus.ShouldBe(EventLifecycleStatus.Cancelled);
+            guard.ShouldNotBeNull();
+            guard.LifecycleStatus.ShouldBe(EventLifecycleStatus.Cancelled);
         });
     }
 
@@ -65,154 +60,134 @@ public sealed class EventLifecycleSyncTests(TestContext testContext) : AspireInt
     [TestMethod]
     public async ValueTask SC003_HandleEventCancelled_AlreadyCancelled_IdempotentNoError()
     {
-        // Arrange
-        var fixture = EventLifecycleSyncFixture.WithCancelledPolicy();
+        var fixture = EventLifecycleSyncFixture.WithCancelledGuard();
         await fixture.SetupAsync(Environment);
 
         var command = new HandleEventCancelledCommand(fixture.EventId.Value);
         var sut = new HandleEventCancelledHandler(Environment.Database.Context);
 
-        // Act — should not throw
         await sut.HandleAsync(command, testContext.CancellationToken);
 
-        // Assert
         await Environment.Database.AssertAsync(async dbContext =>
         {
-            var policy = await dbContext.EventRegistrationPolicies
-                .FirstOrDefaultAsync(p => p.Id == fixture.EventId, testContext.CancellationToken);
+            var guard = await dbContext.TicketedEventLifecycleGuards
+                .FirstOrDefaultAsync(g => g.Id == fixture.EventId, testContext.CancellationToken);
 
-            policy.ShouldNotBeNull();
-            policy.EventLifecycleStatus.ShouldBe(EventLifecycleStatus.Cancelled);
+            guard.ShouldNotBeNull();
+            guard.LifecycleStatus.ShouldBe(EventLifecycleStatus.Cancelled);
         });
     }
 
-    // SC-004: Archive existing active policy — status becomes Archived
+    // SC-004: Archive existing active guard — status becomes Archived
     [TestMethod]
-    public async ValueTask SC004_HandleEventArchived_ActivePolicy_StatusBecomesArchived()
+    public async ValueTask SC004_HandleEventArchived_ActiveGuard_StatusBecomesArchived()
     {
-        // Arrange
-        var fixture = EventLifecycleSyncFixture.WithActivePolicy();
+        var fixture = EventLifecycleSyncFixture.WithActiveGuard();
         await fixture.SetupAsync(Environment);
 
         var command = new HandleEventArchivedCommand(fixture.EventId.Value);
         var sut = new HandleEventArchivedHandler(Environment.Database.Context);
 
-        // Act
         await sut.HandleAsync(command, testContext.CancellationToken);
 
-        // Assert
         await Environment.Database.AssertAsync(async dbContext =>
         {
-            var policy = await dbContext.EventRegistrationPolicies
-                .FirstOrDefaultAsync(p => p.Id == fixture.EventId, testContext.CancellationToken);
+            var guard = await dbContext.TicketedEventLifecycleGuards
+                .FirstOrDefaultAsync(g => g.Id == fixture.EventId, testContext.CancellationToken);
 
-            policy.ShouldNotBeNull();
-            policy.EventLifecycleStatus.ShouldBe(EventLifecycleStatus.Archived);
-            policy.IsEventActive.ShouldBeFalse();
+            guard.ShouldNotBeNull();
+            guard.LifecycleStatus.ShouldBe(EventLifecycleStatus.Archived);
+            guard.IsActive.ShouldBeFalse();
         });
     }
 
-    // SC-005: Archive already-cancelled policy — status becomes Archived
+    // SC-005: Archive already-cancelled guard — status becomes Archived
     [TestMethod]
-    public async ValueTask SC005_HandleEventArchived_CancelledPolicy_StatusBecomesArchived()
+    public async ValueTask SC005_HandleEventArchived_CancelledGuard_StatusBecomesArchived()
     {
-        // Arrange
-        var fixture = EventLifecycleSyncFixture.WithCancelledPolicy();
+        var fixture = EventLifecycleSyncFixture.WithCancelledGuard();
         await fixture.SetupAsync(Environment);
 
         var command = new HandleEventArchivedCommand(fixture.EventId.Value);
         var sut = new HandleEventArchivedHandler(Environment.Database.Context);
 
-        // Act
         await sut.HandleAsync(command, testContext.CancellationToken);
 
-        // Assert
         await Environment.Database.AssertAsync(async dbContext =>
         {
-            var policy = await dbContext.EventRegistrationPolicies
-                .FirstOrDefaultAsync(p => p.Id == fixture.EventId, testContext.CancellationToken);
+            var guard = await dbContext.TicketedEventLifecycleGuards
+                .FirstOrDefaultAsync(g => g.Id == fixture.EventId, testContext.CancellationToken);
 
-            policy.ShouldNotBeNull();
-            policy.EventLifecycleStatus.ShouldBe(EventLifecycleStatus.Archived);
+            guard.ShouldNotBeNull();
+            guard.LifecycleStatus.ShouldBe(EventLifecycleStatus.Archived);
         });
     }
 
-    // SC-006: Archive creates policy if none exists
+    // SC-006: Archive creates guard if none exists
     [TestMethod]
-    public async ValueTask SC006_HandleEventArchived_NoPolicyExists_CreatesPolicyAndSetsArchived()
+    public async ValueTask SC006_HandleEventArchived_NoGuardExists_CreatesGuardAndSetsArchived()
     {
-        // Arrange
-        var fixture = EventLifecycleSyncFixture.NoPolicyExists();
+        var fixture = EventLifecycleSyncFixture.NoGuardExists();
         await fixture.SetupAsync(Environment);
 
         var command = new HandleEventArchivedCommand(fixture.EventId.Value);
         var sut = new HandleEventArchivedHandler(Environment.Database.Context);
 
-        // Act
         await sut.HandleAsync(command, testContext.CancellationToken);
 
-        // Assert
         await Environment.Database.AssertAsync(async dbContext =>
         {
-            var policy = await dbContext.EventRegistrationPolicies
-                .FirstOrDefaultAsync(p => p.Id == fixture.EventId, testContext.CancellationToken);
+            var guard = await dbContext.TicketedEventLifecycleGuards
+                .FirstOrDefaultAsync(g => g.Id == fixture.EventId, testContext.CancellationToken);
 
-            policy.ShouldNotBeNull();
-            policy.EventLifecycleStatus.ShouldBe(EventLifecycleStatus.Archived);
+            guard.ShouldNotBeNull();
+            guard.LifecycleStatus.ShouldBe(EventLifecycleStatus.Archived);
         });
     }
 
-    // SC-007: Created event syncs into Registrations as a fresh Draft + Active policy
+    // SC-007: Created event syncs into Registrations as a fresh Active guard
     [TestMethod]
-    public async ValueTask SC007_HandleEventCreated_NoPolicyExists_CreatesDraftActivePolicy()
+    public async ValueTask SC007_HandleEventCreated_NoGuardExists_CreatesActiveGuard()
     {
-        // Arrange
-        var fixture = EventLifecycleSyncFixture.NoPolicyExists();
+        var fixture = EventLifecycleSyncFixture.NoGuardExists();
         await fixture.SetupAsync(Environment);
 
         var command = new HandleEventCreatedCommand(fixture.EventId.Value);
         var sut = new HandleEventCreatedHandler(Environment.Database.Context);
 
-        // Act
         await sut.HandleAsync(command, testContext.CancellationToken);
 
-        // Assert
         await Environment.Database.AssertAsync(async dbContext =>
         {
-            var policy = await dbContext.EventRegistrationPolicies
-                .FirstOrDefaultAsync(p => p.Id == fixture.EventId, testContext.CancellationToken);
+            var guard = await dbContext.TicketedEventLifecycleGuards
+                .FirstOrDefaultAsync(g => g.Id == fixture.EventId, testContext.CancellationToken);
 
-            policy.ShouldNotBeNull();
-            policy.EventLifecycleStatus.ShouldBe(EventLifecycleStatus.Active);
-            policy.RegistrationStatus.ShouldBe(RegistrationStatus.Draft);
-            policy.HasRegistrationWindow.ShouldBeFalse();
-            policy.AllowedEmailDomain.ShouldBeNull();
+            guard.ShouldNotBeNull();
+            guard.LifecycleStatus.ShouldBe(EventLifecycleStatus.Active);
+            guard.IsActive.ShouldBeTrue();
         });
     }
 
-    // SC-008: Re-delivery of the created event is idempotent (no second policy, no exception)
+    // SC-008: Re-delivery of the created event is idempotent
     [TestMethod]
-    public async ValueTask SC008_HandleEventCreated_PolicyAlreadyExists_NoOp()
+    public async ValueTask SC008_HandleEventCreated_GuardAlreadyExists_NoOp()
     {
-        // Arrange
-        var fixture = EventLifecycleSyncFixture.WithActivePolicy();
+        var fixture = EventLifecycleSyncFixture.WithActiveGuard();
         await fixture.SetupAsync(Environment);
 
         var command = new HandleEventCreatedCommand(fixture.EventId.Value);
         var sut = new HandleEventCreatedHandler(Environment.Database.Context);
 
-        // Act — must not throw
         await sut.HandleAsync(command, testContext.CancellationToken);
 
-        // Assert — exactly one policy still exists, lifecycle untouched
         await Environment.Database.AssertAsync(async dbContext =>
         {
-            var policies = await dbContext.EventRegistrationPolicies
-                .Where(p => p.Id == fixture.EventId)
+            var guards = await dbContext.TicketedEventLifecycleGuards
+                .Where(g => g.Id == fixture.EventId)
                 .ToListAsync(testContext.CancellationToken);
 
-            policies.Count.ShouldBe(1);
-            policies[0].EventLifecycleStatus.ShouldBe(EventLifecycleStatus.Active);
+            guards.Count.ShouldBe(1);
+            guards[0].LifecycleStatus.ShouldBe(EventLifecycleStatus.Active);
         });
     }
 }

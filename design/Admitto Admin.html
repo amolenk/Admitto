@@ -1,0 +1,1696 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Admitto — Azure Fest</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Instrument+Serif:ital@0;1&family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+/* ============================================================
+   Admitto admin — three themes sharing the same shadcn tokens.
+   Switch theme by toggling body.theme-editorial/community/linear
+   Dark mode by adding .dark on body.
+   ============================================================ */
+
+:root {
+  --radius: 0.625rem;
+  --font-sans: 'Inter', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: 'Fraunces', ui-serif, Georgia, serif;
+  --font-mono: 'Geist Mono', ui-monospace, monospace;
+}
+
+/* ---------- Theme: Editorial (Stripe/Vercel-esque) ---------- */
+body.theme-editorial {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Fraunces', ui-serif, Georgia, serif;
+  --font-mono: 'Geist Mono', ui-monospace, monospace;
+  --radius: 0.625rem;
+
+  --background: oklch(0.995 0.002 260);
+  --foreground: oklch(0.18 0.02 265);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.18 0.02 265);
+  --muted: oklch(0.97 0.004 265);
+  --muted-foreground: oklch(0.50 0.02 265);
+  --accent: oklch(0.96 0.008 265);
+  --accent-foreground: oklch(0.20 0.02 265);
+  --border: oklch(0.92 0.006 265);
+  --input: oklch(0.92 0.006 265);
+  --primary: oklch(0.48 0.17 268);
+  --primary-foreground: oklch(0.99 0.003 268);
+  --ring: oklch(0.48 0.17 268);
+  --success: oklch(0.58 0.13 160);
+  --warning: oklch(0.72 0.14 70);
+  --destructive: oklch(0.55 0.22 27);
+  --sidebar: oklch(0.985 0.004 265);
+  --sidebar-foreground: oklch(0.22 0.02 265);
+  --sidebar-border: oklch(0.92 0.006 265);
+  --accent-2: oklch(0.72 0.14 70);  /* amber for hero gradient */
+  --accent-3: oklch(0.65 0.17 330); /* pink complement */
+}
+body.theme-editorial.dark {
+  --background: oklch(0.16 0.015 265);
+  --foreground: oklch(0.98 0.003 265);
+  --card: oklch(0.21 0.02 265);
+  --card-foreground: oklch(0.98 0.003 265);
+  --muted: oklch(0.24 0.018 265);
+  --muted-foreground: oklch(0.70 0.015 265);
+  --accent: oklch(0.26 0.02 265);
+  --accent-foreground: oklch(0.98 0 0);
+  --border: oklch(1 0 0 / 0.09);
+  --input: oklch(1 0 0 / 0.14);
+  --primary: oklch(0.68 0.18 268);
+  --primary-foreground: oklch(0.15 0.04 268);
+  --ring: oklch(0.68 0.18 268);
+  --sidebar: oklch(0.19 0.018 265);
+  --sidebar-foreground: oklch(0.98 0.003 265);
+  --sidebar-border: oklch(1 0 0 / 0.08);
+}
+
+/* ---------- Theme: Community (warm, friendly) ---------- */
+body.theme-community {
+  --font-sans: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Instrument Serif', ui-serif, Georgia, serif;
+  --font-mono: 'Geist Mono', ui-monospace, monospace;
+  --radius: 0.875rem;
+
+  --background: oklch(0.985 0.008 75);
+  --foreground: oklch(0.22 0.02 40);
+  --card: oklch(0.995 0.005 75);
+  --card-foreground: oklch(0.22 0.02 40);
+  --muted: oklch(0.955 0.012 75);
+  --muted-foreground: oklch(0.48 0.02 45);
+  --accent: oklch(0.95 0.015 70);
+  --accent-foreground: oklch(0.25 0.03 40);
+  --border: oklch(0.91 0.012 70);
+  --input: oklch(0.91 0.012 70);
+  --primary: oklch(0.56 0.16 40);    /* terracotta */
+  --primary-foreground: oklch(0.99 0.005 70);
+  --ring: oklch(0.56 0.16 40);
+  --success: oklch(0.58 0.11 155);
+  --warning: oklch(0.72 0.14 70);
+  --destructive: oklch(0.54 0.22 27);
+  --sidebar: oklch(0.97 0.012 75);
+  --sidebar-foreground: oklch(0.25 0.025 40);
+  --sidebar-border: oklch(0.90 0.014 70);
+  --accent-2: oklch(0.74 0.14 80);
+  --accent-3: oklch(0.62 0.14 20);
+}
+body.theme-community.dark {
+  --background: oklch(0.19 0.012 40);
+  --foreground: oklch(0.97 0.006 75);
+  --card: oklch(0.23 0.015 40);
+  --card-foreground: oklch(0.97 0.006 75);
+  --muted: oklch(0.26 0.014 40);
+  --muted-foreground: oklch(0.70 0.012 60);
+  --accent: oklch(0.28 0.018 40);
+  --accent-foreground: oklch(0.97 0.006 75);
+  --border: oklch(1 0 0 / 0.10);
+  --input: oklch(1 0 0 / 0.14);
+  --primary: oklch(0.70 0.14 45);
+  --primary-foreground: oklch(0.18 0.04 40);
+  --ring: oklch(0.70 0.14 45);
+  --sidebar: oklch(0.21 0.014 40);
+  --sidebar-foreground: oklch(0.97 0.006 75);
+  --sidebar-border: oklch(1 0 0 / 0.08);
+}
+
+/* ---------- Theme: Linear (sharp, mono, minimal) ---------- */
+body.theme-linear {
+  --font-sans: 'Geist', ui-sans-serif, system-ui, sans-serif;
+  --font-display: 'Geist', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, monospace;
+  --radius: 0.3rem;
+
+  --background: oklch(0.995 0.001 270);
+  --foreground: oklch(0.14 0.01 270);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.14 0.01 270);
+  --muted: oklch(0.97 0.002 270);
+  --muted-foreground: oklch(0.52 0.012 270);
+  --accent: oklch(0.96 0.003 270);
+  --accent-foreground: oklch(0.18 0.01 270);
+  --border: oklch(0.91 0.004 270);
+  --input: oklch(0.91 0.004 270);
+  --primary: oklch(0.20 0.01 270);
+  --primary-foreground: oklch(0.99 0 0);
+  --ring: oklch(0.60 0.18 290);
+  --success: oklch(0.62 0.13 150);
+  --warning: oklch(0.72 0.14 70);
+  --destructive: oklch(0.55 0.22 27);
+  --sidebar: oklch(0.985 0.002 270);
+  --sidebar-foreground: oklch(0.22 0.01 270);
+  --sidebar-border: oklch(0.91 0.004 270);
+  --accent-2: oklch(0.60 0.18 290);  /* violet */
+  --accent-3: oklch(0.70 0.16 200);  /* cyan complement */
+}
+body.theme-linear.dark {
+  --background: oklch(0.135 0.008 270);
+  --foreground: oklch(0.98 0.002 270);
+  --card: oklch(0.17 0.01 270);
+  --card-foreground: oklch(0.98 0.002 270);
+  --muted: oklch(0.20 0.01 270);
+  --muted-foreground: oklch(0.68 0.01 270);
+  --accent: oklch(0.22 0.012 270);
+  --accent-foreground: oklch(0.98 0.002 270);
+  --border: oklch(1 0 0 / 0.08);
+  --input: oklch(1 0 0 / 0.12);
+  --primary: oklch(0.98 0.002 270);
+  --primary-foreground: oklch(0.14 0.01 270);
+  --ring: oklch(0.68 0.18 290);
+  --sidebar: oklch(0.155 0.008 270);
+  --sidebar-foreground: oklch(0.98 0.002 270);
+  --sidebar-border: oklch(1 0 0 / 0.08);
+}
+
+/* ---------- Density ---------- */
+body.density-compact { --space: 0.75; }
+body.density-comfortable { --space: 1; }
+body.density-roomy { --space: 1.25; }
+
+/* ---------- Base ---------- */
+* { border-color: var(--border); }
+html, body { height: 100%; }
+body {
+  font-family: var(--font-sans);
+  background: var(--background);
+  color: var(--foreground);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "cv11", "ss01";
+}
+.font-display { font-family: var(--font-display); }
+.font-mono { font-family: var(--font-mono); }
+
+/* Color helpers bound to tokens */
+.bg-background { background: var(--background); }
+.bg-card       { background: var(--card); }
+.bg-muted      { background: var(--muted); }
+.bg-accent     { background: var(--accent); }
+.bg-sidebar    { background: var(--sidebar); }
+.bg-primary    { background: var(--primary); }
+.bg-primary\/10 { background: color-mix(in oklch, var(--primary) 10%, transparent); }
+.bg-primary\/15 { background: color-mix(in oklch, var(--primary) 15%, transparent); }
+.bg-primary\/5  { background: color-mix(in oklch, var(--primary) 5%, transparent); }
+.text-fg       { color: var(--foreground); }
+.text-muted-fg { color: var(--muted-foreground); }
+.text-primary  { color: var(--primary); }
+.text-primary-fg { color: var(--primary-foreground); }
+.text-sidebar-fg { color: var(--sidebar-foreground); }
+.text-success  { color: var(--success); }
+.text-warning  { color: var(--warning); }
+.text-destructive { color: var(--destructive); }
+.border-default { border-color: var(--border); }
+.border-sidebar { border-color: var(--sidebar-border); }
+.ring-primary  { --tw-ring-color: var(--primary); }
+
+/* Cards */
+.card {
+  background: var(--card);
+  color: var(--card-foreground);
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) + 2px);
+}
+
+/* Buttons (shadcn-ish) */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 0.5rem; height: 2.25rem; padding: 0 0.875rem;
+  border-radius: var(--radius);
+  font-size: 0.875rem; font-weight: 500;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease, transform 80ms;
+  cursor: pointer; white-space: nowrap;
+  border: 1px solid transparent;
+}
+.btn:active { transform: translateY(0.5px); }
+.btn-primary {
+  background: var(--primary); color: var(--primary-foreground);
+}
+.btn-primary:hover { background: color-mix(in oklch, var(--primary) 88%, black); }
+.btn-outline {
+  background: var(--card); color: var(--foreground); border-color: var(--border);
+}
+.btn-outline:hover { background: var(--accent); }
+.btn-ghost { background: transparent; color: var(--foreground); }
+.btn-ghost:hover { background: var(--accent); }
+.btn-sm { height: 1.875rem; padding: 0 0.625rem; font-size: 0.8125rem; border-radius: calc(var(--radius) - 1px); }
+
+/* Badge */
+.badge {
+  display: inline-flex; align-items: center; gap: 0.375rem;
+  padding: 0.125rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.75rem; font-weight: 500;
+  background: var(--card);
+  color: var(--foreground);
+}
+.badge-success { color: var(--success); border-color: color-mix(in oklch, var(--success) 30%, var(--border)); background: color-mix(in oklch, var(--success) 8%, var(--card)); }
+.badge-warning { color: var(--warning); border-color: color-mix(in oklch, var(--warning) 30%, var(--border)); background: color-mix(in oklch, var(--warning) 10%, var(--card)); }
+.badge-primary { color: var(--primary); border-color: color-mix(in oklch, var(--primary) 30%, var(--border)); background: color-mix(in oklch, var(--primary) 8%, var(--card)); }
+.badge-muted   { color: var(--muted-foreground); }
+
+/* Live pulse */
+.pulse-dot { position: relative; display: inline-block; width: 0.5rem; height: 0.5rem; border-radius: 999px; background: var(--success); }
+.pulse-dot::after {
+  content: ""; position: absolute; inset: -3px; border-radius: 999px;
+  background: var(--success); opacity: 0.3; animation: pulse 1.8s ease-out infinite;
+}
+@keyframes pulse { 0%{transform:scale(0.8);opacity:.45} 100%{transform:scale(2.2);opacity:0} }
+
+/* Inputs */
+.input {
+  height: 2.25rem; width: 100%; padding: 0 0.75rem;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); font-size: 0.875rem;
+  color: var(--foreground);
+}
+.input:focus { outline: 2px solid color-mix(in oklch, var(--ring) 50%, transparent); outline-offset: 1px; border-color: var(--ring); }
+.textarea { min-height: 5.5rem; padding: 0.5rem 0.75rem; resize: vertical; }
+
+/* Subtle scrollbars */
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb { background: color-mix(in oklch, var(--muted-foreground) 30%, transparent); border-radius: 999px; border: 2px solid var(--background); }
+*::-webkit-scrollbar-track { background: transparent; }
+
+/* Hero gradient — theme-aware */
+.hero-gradient {
+  background:
+    radial-gradient(circle at 0% 100%, color-mix(in oklch, var(--primary) 35%, transparent), transparent 50%),
+    radial-gradient(circle at 90% 0%, color-mix(in oklch, var(--accent-2) 28%, transparent), transparent 55%),
+    radial-gradient(circle at 60% 100%, color-mix(in oklch, var(--accent-3) 22%, transparent), transparent 60%),
+    var(--card);
+}
+.hero-gradient-dark { filter: brightness(0.95) saturate(1.05); }
+
+/* Ticket perforation — used as divider in hero */
+.ticket-perf {
+  --perf-c: color-mix(in oklch, var(--border) 80%, transparent);
+  background-image: radial-gradient(circle at 50% 50%, var(--background) 4px, transparent 4.5px);
+  background-size: 16px 16px;
+  background-position: 0 50%;
+  background-repeat: repeat-x;
+  height: 16px;
+}
+
+/* Capacity bar */
+.bar { width: 100%; height: 6px; background: var(--muted); border-radius: 999px; overflow: hidden; }
+.bar > span { display: block; height: 100%; background: var(--primary); border-radius: 999px; transition: width 400ms ease; }
+
+/* Sparkline container */
+.sparkline { width: 100%; height: 56px; }
+
+/* Mono number */
+.num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+
+/* Section label */
+.eyebrow { font-size: 0.6875rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted-foreground); font-weight: 600; }
+
+/* Divider */
+.hr { height: 1px; background: var(--border); width: 100%; }
+
+/* kbd */
+kbd { font-family: var(--font-mono); font-size: 0.72rem; padding: 1px 6px; border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 4px; background: var(--muted); color: var(--muted-foreground); }
+
+/* Selectable tab */
+.tab {
+  display: inline-flex; align-items: center; gap: 0.5rem;
+  padding: 0.5rem 0.875rem; border-radius: calc(var(--radius) - 2px);
+  font-size: 0.875rem; color: var(--muted-foreground);
+  cursor: pointer; border: 1px solid transparent;
+}
+.tab[data-active="true"] { background: var(--card); color: var(--foreground); border-color: var(--border); box-shadow: 0 1px 2px rgba(0,0,0,0.03); }
+.tab-group { background: var(--muted); padding: 4px; border-radius: var(--radius); display: inline-flex; gap: 2px; }
+
+/* Sidebar item */
+.side-item {
+  display: flex; align-items: center; gap: 0.625rem;
+  padding: 0.4rem 0.625rem; border-radius: calc(var(--radius) - 2px);
+  font-size: 0.8125rem; color: var(--sidebar-foreground);
+  cursor: pointer; width: 100%; text-align: left;
+  border: 1px solid transparent;
+}
+.side-item:hover { background: color-mix(in oklch, var(--sidebar-foreground) 5%, transparent); }
+.side-item[data-active="true"] {
+  background: var(--card); border-color: var(--border);
+  color: var(--foreground); font-weight: 500;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.03);
+}
+
+/* Data table row hover */
+.row:hover { background: color-mix(in oklch, var(--accent) 70%, transparent); }
+
+/* Keep app container widths */
+.container-q { container-type: inline-size; }
+
+/* Tweaks panel */
+.tweaks {
+  position: fixed; right: 16px; bottom: 16px; width: 280px;
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: calc(var(--radius) + 2px);
+  box-shadow: 0 20px 40px -20px rgba(0,0,0,0.25), 0 8px 16px -8px rgba(0,0,0,0.12);
+  z-index: 50; padding: 14px;
+}
+
+/* Wordmark ticket */
+.wordmark-ticket {
+  width: 28px; height: 28px; border-radius: 8px;
+  background: linear-gradient(135deg, var(--primary), color-mix(in oklch, var(--primary) 60%, var(--accent-2)));
+  position: relative; flex: none;
+  display: grid; place-items: center; color: var(--primary-foreground);
+  box-shadow: inset 0 0 0 1px color-mix(in oklch, var(--primary-foreground) 20%, transparent);
+}
+.wordmark-ticket::before,
+.wordmark-ticket::after {
+  content: ""; position: absolute; width: 6px; height: 6px; border-radius: 999px; background: var(--sidebar); top: 50%; transform: translateY(-50%);
+}
+.wordmark-ticket::before { left: -3px; }
+.wordmark-ticket::after { right: -3px; }
+.theme-linear .wordmark-ticket { border-radius: 4px; }
+
+/* Fine grid background for empty states */
+.bg-grid {
+  background-image:
+    linear-gradient(to right, color-mix(in oklch, var(--border) 60%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklch, var(--border) 60%, transparent) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* Minor util */
+.divide-y-border > * + * { border-top: 1px solid var(--border); }
+
+</style>
+<script src="https://cdn.tailwindcss.com?plugins=forms,typography"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: {
+          sans: ['var(--font-sans)', 'ui-sans-serif', 'system-ui'],
+          display: ['var(--font-display)', 'ui-serif', 'Georgia'],
+          mono: ['var(--font-mono)', 'ui-monospace'],
+        },
+      },
+    },
+  };
+</script>
+</head>
+<body class="theme-editorial">
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  
+  
+  
+  
+  
+  
+  
+  
+<script type="text/babel">
+
+//====== data.jsx ======
+// Mock data for Azure Fest
+const AZURE_FEST = {
+  team: { name: "Azure Fest NL", slug: "azurefest-nl" },
+  event: {
+    name: "Azure Fest",
+    slug: "azurefest-2026",
+    tagline: "The Dutch Azure community day",
+    date: "Wednesday, September 23, 2026",
+    dateShort: "Sep 23",
+    time: "09:00 – 18:00 CEST",
+    location: "Pathé Ede",
+    locationCity: "Ede, Netherlands",
+    url: "azurefest.nl",
+    capacity: 250,
+    registered: 187,
+    confirmed: 162,
+    waitlist: 0,
+    checkedIn: 0,
+    daysUntil: 157,
+    status: "Registration open",
+  },
+  ticketTypes: [
+    { name: "Early bird", slug: "early-bird", price: 0, sold: 120, cap: 120, status: "Sold out", closed: true },
+    { name: "Regular", slug: "regular", price: 0, sold: 58, cap: 100, status: "On sale", closed: false },
+    { name: "Student", slug: "student", price: 0, sold: 9, cap: 20, status: "On sale", closed: false },
+    { name: "Speaker", slug: "speaker", price: 0, sold: 0, cap: 10, status: "Invite only", closed: false, hidden: true },
+  ],
+  // 14-day trend: new registrations/day
+  trend: [2, 5, 3, 7, 4, 9, 12, 8, 6, 11, 14, 9, 7, 10],
+  activity: [
+    { t: "2m ago",  who: "Sanne de Vries",     what: "registered",            ticket: "Regular" },
+    { t: "18m ago", who: "Mark Janssen",       what: "registered",            ticket: "Regular" },
+    { t: "41m ago", who: "Priya Shah",         what: "confirmed email",       ticket: "Student" },
+    { t: "1h ago",  who: "Lukas Bauer",        what: "changed ticket type",   ticket: "Regular" },
+    { t: "3h ago",  who: "Emma Visser",        what: "registered",            ticket: "Regular" },
+    { t: "5h ago",  who: "Niels van den Berg", what: "cancelled",             ticket: "Early bird" },
+  ],
+  attendees: [
+    { id: 1,  name: "Sanne de Vries",        email: "sanne@kpn.nl",              company: "KPN",                ticket: "Regular",   status: "Confirmed",   checkedIn: false, registered: "2m ago",   reconfirmed: true  },
+    { id: 2,  name: "Mark Janssen",          email: "mark.janssen@ing.nl",       company: "ING",                ticket: "Regular",   status: "Confirmed",   checkedIn: false, registered: "18m ago",  reconfirmed: true  },
+    { id: 3,  name: "Priya Shah",            email: "priya.shah@tudelft.nl",     company: "TU Delft",           ticket: "Student",   status: "Pending",     checkedIn: false, registered: "41m ago",  reconfirmed: false },
+    { id: 4,  name: "Lukas Bauer",           email: "l.bauer@microsoft.com",     company: "Microsoft",          ticket: "Regular",   status: "Confirmed",   checkedIn: false, registered: "1h ago",   reconfirmed: true  },
+    { id: 5,  name: "Emma Visser",           email: "emma@xebia.com",            company: "Xebia",              ticket: "Regular",   status: "Confirmed",   checkedIn: false, registered: "3h ago",   reconfirmed: false },
+    { id: 6,  name: "Niels van den Berg",    email: "niels.vdberg@rabobank.nl",  company: "Rabobank",           ticket: "Early bird",status: "Cancelled",   checkedIn: false, registered: "5h ago",   reconfirmed: false },
+    { id: 7,  name: "Fatima El Amrani",      email: "fatima@ahold.com",          company: "Ahold Delhaize",     ticket: "Regular",   status: "Confirmed",   checkedIn: false, registered: "yesterday",reconfirmed: true  },
+    { id: 8,  name: "Pieter Bakker",         email: "p.bakker@info.nl",          company: "Info Support",       ticket: "Early bird",status: "Confirmed",   checkedIn: false, registered: "yesterday",reconfirmed: true  },
+    { id: 9,  name: "Sofia Rossi",           email: "sofia.rossi@accenture.com", company: "Accenture",          ticket: "Regular",   status: "Confirmed",   checkedIn: false, registered: "2 days ago",reconfirmed: true },
+    { id: 10, name: "Jasper Mulder",         email: "jasper@bol.com",            company: "Bol",                ticket: "Regular",   status: "Pending",     checkedIn: false, registered: "2 days ago",reconfirmed: false},
+    { id: 11, name: "Aisha Khan",            email: "aisha@adyen.com",           company: "Adyen",              ticket: "Regular",   status: "Confirmed",   checkedIn: false, registered: "3 days ago",reconfirmed: true },
+    { id: 12, name: "Thomas Peeters",        email: "t.peeters@asml.com",        company: "ASML",               ticket: "Early bird",status: "Confirmed",   checkedIn: false, registered: "4 days ago",reconfirmed: true },
+    { id: 13, name: "Iris Hendriks",         email: "iris@bunq.com",             company: "bunq",               ticket: "Early bird",status: "Confirmed",   checkedIn: false, registered: "5 days ago",reconfirmed: false},
+    { id: 14, name: "Daan Vermeer",          email: "daan.vermeer@aegon.nl",     company: "Aegon",              ticket: "Regular",   status: "Confirmed",   checkedIn: false, registered: "6 days ago",reconfirmed: true },
+    { id: 15, name: "Mei-Ling Tan",          email: "meiling@tomtom.com",        company: "TomTom",             ticket: "Early bird",status: "Confirmed",   checkedIn: false, registered: "1 wk ago", reconfirmed: true },
+    { id: 16, name: "Robin de Groot",        email: "robin@uva.nl",              company: "UvA",                ticket: "Student",   status: "Confirmed",   checkedIn: false, registered: "1 wk ago", reconfirmed: false},
+    { id: 17, name: "Hugo van Dijk",         email: "hugo@philips.com",          company: "Philips",            ticket: "Early bird",status: "Confirmed",   checkedIn: false, registered: "2 wk ago", reconfirmed: true },
+    { id: 18, name: "Nora Al-Fassi",         email: "nora@booking.com",          company: "Booking.com",        ticket: "Regular",   status: "Confirmed",   checkedIn: false, registered: "2 wk ago", reconfirmed: true },
+    { id: 19, name: "Kasper Boer",           email: "kasper@shell.com",          company: "Shell",              ticket: "Early bird",status: "Confirmed",   checkedIn: false, registered: "3 wk ago", reconfirmed: true },
+    { id: 20, name: "Yasmin Öztürk",         email: "yasmin@picnic.nl",          company: "Picnic",             ticket: "Early bird",status: "Confirmed",   checkedIn: false, registered: "3 wk ago", reconfirmed: false},
+  ],
+};
+
+// A small set of team events for the sidebar
+const TEAM_EVENTS = [
+  { name: "Azure Fest",            slug: "azurefest-2026",   active: true },
+  { name: "dotNext Amsterdam",     slug: "dotnext-ams-2026", active: false },
+  { name: "CloudNative Workshop",  slug: "cn-workshop-03",   active: false },
+];
+
+window.AZURE_FEST = AZURE_FEST;
+window.TEAM_EVENTS = TEAM_EVENTS;
+
+
+//====== icons.jsx ======
+// Tiny icon set as inline SVG components — lucide-style, 16px default stroke
+const Icon = ({ path, size = 16, className = "", stroke = 1.6, fill = "none" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor"
+       strokeWidth={stroke} strokeLinecap="round" strokeLinejoin="round" className={className}>
+    {path}
+  </svg>
+);
+
+const Icons = {
+  Home:       (p) => <Icon {...p} path={<><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></>} />,
+  Calendar:   (p) => <Icon {...p} path={<><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></>} />,
+  Ticket:     (p) => <Icon {...p} path={<><path d="M3 10V8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4Z"/><path d="M9 8v8"/></>} />,
+  Users:      (p) => <Icon {...p} path={<><circle cx="9" cy="8" r="3.2"/><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M16 5.5a3 3 0 1 1 0 5"/><path d="M20.5 20c0-2.5-1.5-4.5-4-5.5"/></>} />,
+  Settings:   (p) => <Icon {...p} path={<><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3h0a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9v0a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1Z"/></>} />,
+  Mail:       (p) => <Icon {...p} path={<><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></>} />,
+  Chevron:    (p) => <Icon {...p} path={<path d="m6 9 6 6 6-6"/>} />,
+  ChevUp:     (p) => <Icon {...p} path={<path d="m18 15-6-6-6 6"/>} />,
+  ChevRight:  (p) => <Icon {...p} path={<path d="m9 6 6 6-6 6"/>} />,
+  Plus:       (p) => <Icon {...p} path={<><path d="M12 5v14M5 12h14"/></>} />,
+  Search:     (p) => <Icon {...p} path={<><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></>} />,
+  Dots:       (p) => <Icon {...p} path={<><circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/></>} />,
+  Download:   (p) => <Icon {...p} path={<><path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 21h16"/></>} />,
+  Upload:     (p) => <Icon {...p} path={<><path d="M12 21V9"/><path d="m7 14 5-5 5 5"/><path d="M4 3h16"/></>} />,
+  Check:      (p) => <Icon {...p} path={<path d="m5 12 5 5L20 7"/>} />,
+  CheckCircle:(p) => <Icon {...p} path={<><circle cx="12" cy="12" r="9"/><path d="m8 12 3 3 5-6"/></>} />,
+  Clock:      (p) => <Icon {...p} path={<><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></>} />,
+  Pin:        (p) => <Icon {...p} path={<><path d="M12 22s7-7 7-12a7 7 0 1 0-14 0c0 5 7 12 7 12Z"/><circle cx="12" cy="10" r="2.5"/></>} />,
+  Link:       (p) => <Icon {...p} path={<><path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1"/><path d="M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1"/></>} />,
+  Globe:      (p) => <Icon {...p} path={<><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/></>} />,
+  Sparkles:   (p) => <Icon {...p} path={<><path d="m12 3 2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/></>} />,
+  Eye:        (p) => <Icon {...p} path={<><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></>} />,
+  EyeOff:     (p) => <Icon {...p} path={<><path d="M3 3l18 18"/><path d="M10.6 6.2A10 10 0 0 1 22 12s-1.2 2.2-3.3 4.2"/><path d="M6 7.5C3.5 9.4 2 12 2 12s4 7 10 7a10 10 0 0 0 5-1.3"/><path d="M14.1 14.1a3 3 0 0 1-4.2-4.2"/></>} />,
+  Copy:       (p) => <Icon {...p} path={<><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></>} />,
+  Edit:       (p) => <Icon {...p} path={<><path d="M4 20h4L20 8l-4-4L4 16z"/></>} />,
+  Trash:      (p) => <Icon {...p} path={<><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M6 6l1 14a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-14"/></>} />,
+  Zap:        (p) => <Icon {...p} path={<path d="M13 2 3 14h7l-1 8 10-12h-7z"/>} />,
+  ArrowUp:    (p) => <Icon {...p} path={<><path d="M12 19V5"/><path d="m5 12 7-7 7 7"/></>} />,
+  ArrowDown:  (p) => <Icon {...p} path={<><path d="M12 5v14"/><path d="m5 12 7 7 7-7"/></>} />,
+  Moon:       (p) => <Icon {...p} path={<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/>} />,
+  Sun:        (p) => <Icon {...p} path={<><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></>} />,
+  Palette:    (p) => <Icon {...p} path={<><path d="M12 3a9 9 0 1 0 0 18c1 0 1.5-.8 1.5-1.5S13 18 13 17.2s.8-1.5 1.7-1.5H17a4 4 0 0 0 4-4 9 9 0 0 0-9-9Z"/><circle cx="7" cy="11" r="1"/><circle cx="9.5" cy="7" r="1"/><circle cx="15" cy="7" r="1"/><circle cx="17" cy="11" r="1"/></>} />,
+  LogOut:     (p) => <Icon {...p} path={<><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5"/><path d="M21 12H9"/></>} />,
+  Qr:         (p) => <Icon {...p} path={<><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v3M14 20h3M20 20v1"/></>} />,
+  Filter:     (p) => <Icon {...p} path={<path d="M4 5h16l-6 8v6l-4-2v-4z"/>} />,
+};
+
+window.Icons = Icons;
+
+
+//====== shell.jsx ======
+// Sidebar + header + tabs shell
+const { useState } = React;
+
+function Wordmark() {
+  return (
+    <div className="flex items-center gap-2.5 px-1.5 py-1">
+      <div className="wordmark-ticket">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M4 8v8M8 6v12M12 6v12M16 6v12M20 8v8"/>
+        </svg>
+      </div>
+      <div className="flex flex-col leading-tight">
+        <span className="font-display text-[17px] font-semibold tracking-tight text-fg">Admitto</span>
+        <span className="text-[10px] uppercase tracking-wider text-muted-fg">Event ticketing</span>
+      </div>
+    </div>
+  );
+}
+
+function TeamSwitcher() {
+  return (
+    <button className="side-item mt-1 justify-between" style={{padding:"0.5rem 0.625rem"}}>
+      <div className="flex items-center gap-2.5 min-w-0">
+        <div className="grid place-items-center h-7 w-7 rounded-md bg-primary/15 text-primary font-display font-semibold text-[13px]">AF</div>
+        <div className="flex flex-col min-w-0 text-left">
+          <span className="text-[13px] font-medium truncate">Azure Fest NL</span>
+          <span className="text-[11px] text-muted-fg truncate">Community team</span>
+        </div>
+      </div>
+      <Icons.Chevron size={14} className="text-muted-fg" />
+    </button>
+  );
+}
+
+function SidebarNav({ page, setPage }) {
+  return (
+    <aside className="bg-sidebar text-sidebar-fg border-r border-default flex flex-col"
+           style={{ width: 248, minHeight: "100%", borderColor: "var(--sidebar-border)" }}>
+      <div className="px-3 pt-3"><Wordmark /></div>
+      <div className="px-3 mt-2"><TeamSwitcher /></div>
+
+      <div className="px-3 mt-5">
+        <div className="eyebrow px-2 mb-1.5">Events</div>
+        <div className="flex flex-col gap-0.5">
+          {TEAM_EVENTS.map(ev => (
+            <button key={ev.slug}
+                    className="side-item"
+                    data-active={ev.active ? "true" : "false"}>
+              <span className={"h-1.5 w-1.5 rounded-full " + (ev.active ? "bg-primary" : "")} style={!ev.active ? {background:"var(--border)"} : null}></span>
+              <span className="truncate flex-1">{ev.name}</span>
+              {ev.active && <span className="text-[10px] text-muted-fg">SEP 23</span>}
+            </button>
+          ))}
+          <button className="side-item text-muted-fg mt-1">
+            <Icons.Plus size={14} />
+            <span>New event</span>
+          </button>
+        </div>
+      </div>
+
+      <div className="px-3 mt-5">
+        <div className="eyebrow px-2 mb-1.5">Azure Fest</div>
+        <div className="flex flex-col gap-0.5">
+          <button className="side-item" data-active={page==="dashboard"?"true":"false"} onClick={()=>setPage("dashboard")}>
+            <Icons.Home size={14}/> Dashboard
+          </button>
+          <button className="side-item" data-active={page==="registrations"?"true":"false"} onClick={()=>setPage("registrations")}>
+            <Icons.Users size={14}/> Registrations
+            <span className="ml-auto num text-[11px] text-muted-fg">187</span>
+          </button>
+          <button className="side-item" data-active={page==="tickets"?"true":"false"} onClick={()=>setPage("tickets")}>
+            <Icons.Ticket size={14}/> Ticket types
+          </button>
+          <button className="side-item">
+            <Icons.Mail size={14}/> Emails
+          </button>
+          <button className="side-item" data-active={page==="settings"?"true":"false"} onClick={()=>setPage("settings")}>
+            <Icons.Settings size={14}/> Settings
+          </button>
+        </div>
+      </div>
+
+      <div className="flex-1"></div>
+
+      <div className="px-3 pb-3 mt-4">
+        <div className="hr mb-3"></div>
+        <button className="side-item">
+          <div className="h-6 w-6 rounded-full bg-primary/15 text-primary grid place-items-center text-[11px] font-semibold">AM</div>
+          <div className="flex flex-col leading-tight min-w-0 text-left flex-1">
+            <span className="text-[12.5px] font-medium truncate">Anne Molenkamp</span>
+            <span className="text-[10.5px] text-muted-fg truncate">anne@azurefest.nl</span>
+          </div>
+          <Icons.ChevUp size={12} className="text-muted-fg" />
+        </button>
+      </div>
+    </aside>
+  );
+}
+
+function AppHeader({ page, setPage, showDark, setShowDark }) {
+  const crumbs = {
+    dashboard:     ["Azure Fest NL", "Azure Fest", "Dashboard"],
+    registrations: ["Azure Fest NL", "Azure Fest", "Registrations"],
+    tickets:       ["Azure Fest NL", "Azure Fest", "Ticket types"],
+    settings:      ["Azure Fest NL", "Azure Fest", "Settings"],
+  }[page];
+
+  return (
+    <header className="h-14 border-b border-default flex items-center gap-3 px-5" style={{background: "color-mix(in oklch, var(--background) 70%, transparent)", backdropFilter: "blur(8px)"}}>
+      <nav className="flex items-center gap-1.5 text-[13px] text-muted-fg min-w-0">
+        {crumbs.map((c, i) => (
+          <React.Fragment key={i}>
+            {i>0 && <Icons.ChevRight size={12} />}
+            <span className={i===crumbs.length-1 ? "text-fg font-medium truncate" : "truncate hover:text-fg cursor-pointer"}>{c}</span>
+          </React.Fragment>
+        ))}
+      </nav>
+      <div className="flex-1"></div>
+      <div className="relative hidden md:flex items-center">
+        <Icons.Search size={14} className="absolute left-2.5 text-muted-fg" />
+        <input className="input pl-8 pr-14 h-8 w-64 text-[13px]" placeholder="Search attendees…"/>
+        <kbd className="absolute right-2">⌘K</kbd>
+      </div>
+      <button className="btn btn-ghost btn-sm" onClick={()=>setShowDark(!showDark)} title="Toggle theme">
+        {showDark ? <Icons.Sun size={14}/> : <Icons.Moon size={14}/>}
+      </button>
+      <button className="btn btn-outline btn-sm">
+        <Icons.Eye size={14}/> View public page
+      </button>
+    </header>
+  );
+}
+
+window.SidebarNav = SidebarNav;
+window.AppHeader = AppHeader;
+
+
+//====== dashboard.jsx ======
+// Event dashboard — shared hero + three layout variants exposed as "layout" prop
+// layout: "editorial" | "community" | "linear" (but mostly the same with subtle shifts)
+// For simplicity we render ONE great dashboard; personality comes from theme tokens.
+
+function TicketStubHero() {
+  const e = AZURE_FEST.event;
+  const pct = Math.round((e.registered / e.capacity) * 100);
+  return (
+    <div className="card overflow-hidden relative">
+      <div className="hero-gradient p-7 relative">
+        <div className="flex items-start justify-between gap-6">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="badge badge-success"><span className="pulse-dot"></span>{e.status}</span>
+              <span className="badge badge-muted"><Icons.Clock size={11}/>{e.daysUntil} days to go</span>
+            </div>
+            <h1 className="font-display text-[40px] leading-[1.05] font-semibold tracking-tight">{e.name}</h1>
+            <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-[13.5px]">
+              <div className="flex items-center gap-1.5"><Icons.Calendar size={14} className="text-muted-fg"/><span>{e.date}</span></div>
+              <div className="flex items-center gap-1.5"><Icons.Clock size={14} className="text-muted-fg"/><span>{e.time}</span></div>
+              <a className="flex items-center gap-1.5 text-primary font-medium hover:underline" href="#"><Icons.Globe size={14}/>{e.url}</a>
+            </div>
+          </div>
+          <div className="flex flex-col items-end gap-2 flex-none">
+            <button className="btn btn-outline btn-sm"><Icons.Copy size={14}/>Copy link</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HeroStat({ label, value, sub, pct, muted }) {
+  return (
+    <div className="p-5">
+      <div className="eyebrow">{label}</div>
+      <div className="flex items-baseline gap-2 mt-1.5">
+        <span className={"num text-[28px] font-semibold " + (muted ? "text-muted-fg" : "")}>{value}</span>
+        <span className="text-[12px] text-muted-fg">{sub}</span>
+      </div>
+      {pct != null && (
+        <div className="mt-3">
+          <div className="bar"><span style={{width: pct + "%"}}></span></div>
+          <div className="flex justify-between text-[11px] text-muted-fg mt-1.5">
+            <span className="num">{pct}%</span>
+            <span>capacity</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Sparkline({ data, color = "var(--primary)" }) {
+  const w = 320, h = 56, pad = 4;
+  const max = Math.max(...data);
+  const min = 0;
+  const step = (w - pad*2) / (data.length - 1);
+  const pts = data.map((v,i) => [pad + i*step, h - pad - ((v-min)/(max-min)) * (h - pad*2)]);
+  const path = "M " + pts.map(p => p.join(",")).join(" L ");
+  const area = path + ` L ${pts[pts.length-1][0]},${h-pad} L ${pts[0][0]},${h-pad} Z`;
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} className="sparkline" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="spark" x1="0" x2="0" y1="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.25"/>
+          <stop offset="100%" stopColor={color} stopOpacity="0"/>
+        </linearGradient>
+      </defs>
+      <path d={area} fill="url(#spark)"/>
+      <path d={path} fill="none" stroke={color} strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
+      {pts.map((p,i) => <circle key={i} cx={p[0]} cy={p[1]} r={i===pts.length-1?3:0} fill={color}/>)}
+    </svg>
+  );
+}
+
+function TicketBreakdown() {
+  const types = AZURE_FEST.ticketTypes.filter(t => !t.hidden);
+  return (
+    <div className="card p-5">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <div className="eyebrow">Ticket types</div>
+          <h3 className="font-display text-[18px] font-semibold mt-0.5">Availability</h3>
+        </div>
+        <button className="btn btn-ghost btn-sm text-muted-fg">Manage <Icons.ChevRight size={12}/></button>
+      </div>
+      <div className="flex flex-col gap-3.5">
+        {types.map(t => {
+          const pct = Math.round((t.sold / t.cap) * 100);
+          return (
+            <div key={t.slug}>
+              <div className="flex items-baseline justify-between mb-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-[14px] font-medium">{t.name}</span>
+                  {t.closed && <span className="badge badge-muted" style={{fontSize:"0.68rem"}}>Closed</span>}
+                  {!t.closed && <span className="badge badge-primary" style={{fontSize:"0.68rem"}}>{t.status}</span>}
+                </div>
+                <div className="text-[12.5px] text-muted-fg"><span className="num text-fg font-medium">{t.sold}</span> / {t.cap}</div>
+              </div>
+              <div className="bar"><span style={{width: pct+"%", background: t.closed ? "var(--muted-foreground)" : undefined, opacity: t.closed ? 0.5 : 1}}></span></div>
+            </div>
+          );
+        })}
+      </div>
+      <div className="hr my-4"></div>
+      <button className="btn btn-outline btn-sm w-full"><Icons.Plus size={14}/>Add ticket type</button>
+    </div>
+  );
+}
+
+function TrendCard() {
+  const total = AZURE_FEST.trend.reduce((a,b)=>a+b,0);
+  const prev = AZURE_FEST.trend.slice(0,7).reduce((a,b)=>a+b,0);
+  const curr = AZURE_FEST.trend.slice(7).reduce((a,b)=>a+b,0);
+  const delta = Math.round(((curr - prev) / prev) * 100);
+  return (
+    <div className="card p-5">
+      <div className="flex items-center justify-between mb-1">
+        <div>
+          <div className="eyebrow">Registrations · last 14 days</div>
+          <div className="flex items-baseline gap-3 mt-1.5">
+            <span className="font-display num text-[32px] font-semibold leading-none">{total}</span>
+            <span className={"badge " + (delta>=0 ? "badge-success" : "badge-warning")}>
+              {delta>=0 ? <Icons.ArrowUp size={11}/> : <Icons.ArrowDown size={11}/>}
+              {Math.abs(delta)}% vs prior week
+            </span>
+          </div>
+        </div>
+        <div className="tab-group">
+          <button className="tab" data-active="false">24h</button>
+          <button className="tab" data-active="true">14d</button>
+          <button className="tab" data-active="false">90d</button>
+        </div>
+      </div>
+      <div className="mt-4"><Sparkline data={AZURE_FEST.trend}/></div>
+      <div className="flex justify-between text-[10.5px] text-muted-fg mt-1 px-1 num">
+        <span>Apr 06</span><span>Apr 12</span><span>Today</span>
+      </div>
+    </div>
+  );
+}
+
+function CheckInCard() {
+  return (
+    <div className="card p-5">
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <div className="eyebrow">Check-in</div>
+          <h3 className="font-display text-[18px] font-semibold mt-0.5">Event day</h3>
+        </div>
+        <span className="badge badge-muted"><Icons.Clock size={11}/>157 days</span>
+      </div>
+      <div className="rounded-xl border border-default p-4 bg-grid">
+        <div className="flex items-start gap-4">
+          <div className="h-14 w-14 rounded-lg bg-card border border-default grid place-items-center flex-none">
+            <Icons.Qr size={24} className="text-muted-fg"/>
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-[13.5px] leading-relaxed">Check-in opens automatically at <span className="num font-medium">08:00 CEST</span> on event day. Share the QR scanner link with your door team.</p>
+            <div className="flex gap-2 mt-3">
+              <button className="btn btn-outline btn-sm"><Icons.Qr size={14}/>Scanner</button>
+              <button className="btn btn-ghost btn-sm text-muted-fg"><Icons.Copy size={14}/>Share link</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="grid grid-cols-3 mt-4 gap-3 text-center">
+        <CheckinPill n="0" l="Checked in"/>
+        <CheckinPill n="187" l="Expected" primary/>
+        <CheckinPill n="0%" l="Complete" muted/>
+      </div>
+    </div>
+  );
+}
+function CheckinPill({ n, l, primary, muted }) {
+  return (
+    <div className={"rounded-lg border border-default py-2.5 " + (primary ? "bg-primary/5" : "bg-muted")}>
+      <div className={"num text-[18px] font-semibold " + (muted ? "text-muted-fg" : primary ? "text-primary" : "")}>{n}</div>
+      <div className="text-[11px] text-muted-fg mt-0.5">{l}</div>
+    </div>
+  );
+}
+
+function EventDetailsCard() {
+  const e = AZURE_FEST.event;
+  const items = [
+    ["Status", <span className="badge badge-success">Registration open</span>],
+    ["Date", <span className="num">{e.date}</span>],
+    ["Time", <span className="num">{e.time}</span>],
+    ["Venue", `${e.location}, ${e.locationCity}`],
+    ["Website", <a className="text-primary hover:underline" href="#">{e.url}</a>],
+    ["Capacity", <span className="num">{e.capacity} attendees</span>],
+    ["Organizer", "Azure Fest NL"],
+  ];
+  return (
+    <div className="card p-5">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <div className="eyebrow">Event</div>
+          <h3 className="font-display text-[18px] font-semibold mt-0.5">Key details</h3>
+        </div>
+        <button className="btn btn-ghost btn-sm text-muted-fg"><Icons.Edit size={14}/>Edit</button>
+      </div>
+      <dl className="divide-y divide-default">
+        {items.map(([k,v], i) => (
+          <div key={i} className="grid grid-cols-[110px_1fr] gap-3 py-2.5 text-[13.5px]">
+            <dt className="text-muted-fg">{k}</dt>
+            <dd className="min-w-0 truncate">{v}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
+}
+
+function ActivityCard() {
+  return (
+    <div className="card p-5">
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <div className="eyebrow">Live</div>
+          <h3 className="font-display text-[18px] font-semibold mt-0.5 flex items-center gap-2">
+            Recent activity <span className="pulse-dot"></span>
+          </h3>
+        </div>
+        <button className="btn btn-ghost btn-sm text-muted-fg">View all</button>
+      </div>
+      <div className="flex flex-col divide-y divide-default">
+        {AZURE_FEST.activity.map((a,i) => (
+          <div key={i} className="flex items-center gap-3 py-2.5">
+            <div className="h-7 w-7 rounded-full bg-muted grid place-items-center text-[11px] font-semibold text-muted-fg">
+              {a.who.split(" ").map(n=>n[0]).slice(0,2).join("")}
+            </div>
+            <div className="min-w-0 flex-1 text-[13px]">
+              <span className="font-medium">{a.who}</span>
+              <span className="text-muted-fg"> {a.what} · </span>
+              <span className="text-muted-fg">{a.ticket}</span>
+            </div>
+            <span className="text-[11.5px] text-muted-fg num whitespace-nowrap">{a.t}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Dashboard() {
+  return (
+    <div className="flex flex-col gap-5">
+      <TicketStubHero/>
+      <TrendCard/>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <TicketBreakdown/>
+        <CheckInCard/>
+      </div>
+    </div>
+  );
+}
+
+window.Dashboard = Dashboard;
+
+//====== registrations.jsx ======
+// Registrations table — filterable list of attendees
+function RegistrationsPage() {
+  const all = AZURE_FEST.attendees;
+  const [query, setQuery]   = useState("");
+  const [status, setStatus] = useState("all");   // all | confirmed | pending | cancelled
+  const [ticket, setTicket] = useState("all");
+  const [sortKey, setSortKey] = useState("registered");
+  const [sortDir, setSortDir] = useState("desc");
+  const [selected, setSelected] = useState(() => new Set());
+
+  const ticketNames = ["all", ...Array.from(new Set(all.map(a => a.ticket)))];
+
+  const counts = {
+    all:       all.length,
+    confirmed: all.filter(a => a.status === "Confirmed").length,
+    pending:   all.filter(a => a.status === "Pending").length,
+    cancelled: all.filter(a => a.status === "Cancelled").length,
+  };
+
+  const filtered = all.filter(a => {
+    if (status !== "all" && a.status.toLowerCase() !== status) return false;
+    if (ticket !== "all" && a.ticket !== ticket) return false;
+    if (query) {
+      const q = query.toLowerCase();
+      if (!a.name.toLowerCase().includes(q) &&
+          !a.email.toLowerCase().includes(q) &&
+          !a.company.toLowerCase().includes(q)) return false;
+    }
+    return true;
+  });
+
+  function toggleSort(key) {
+    if (sortKey === key) setSortDir(sortDir === "asc" ? "desc" : "asc");
+    else { setSortKey(key); setSortDir("asc"); }
+  }
+
+  function toggleRow(id) {
+    const next = new Set(selected);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    setSelected(next);
+  }
+  function toggleAll() {
+    if (selected.size === filtered.length) setSelected(new Set());
+    else setSelected(new Set(filtered.map(a => a.id)));
+  }
+
+  const statusPill = (s) => {
+    if (s === "Confirmed") return <span className="badge badge-success">{s}</span>;
+    if (s === "Pending")   return <span className="badge badge-warning">{s}</span>;
+    return <span className="badge badge-muted">{s}</span>;
+  };
+
+  const tabs = [
+    { id: "all",       label: "All" },
+    { id: "confirmed", label: "Confirmed" },
+    { id: "pending",   label: "Pending" },
+    { id: "cancelled", label: "Cancelled" },
+  ];
+
+  const allChecked = filtered.length > 0 && filtered.every(a => selected.has(a.id));
+
+  return (
+    <div className="flex flex-col gap-5">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="font-display text-[26px] font-semibold tracking-tight">Registrations</h2>
+          <p className="text-[13.5px] text-muted-fg mt-0.5">Everyone who has signed up for Azure Fest.</p>
+        </div>
+        <div className="flex gap-2">
+          <button className="btn btn-outline btn-sm"><Icons.Download size={14}/>Export CSV</button>
+          <button className="btn btn-primary btn-sm"><Icons.Plus size={14}/>Add attendee</button>
+        </div>
+      </div>
+
+      {/* Summary strip */}
+      <div className="card">
+        <div className="grid grid-cols-4 divide-x divide-default">
+          {[
+            ["Total",     counts.all,       "of 250 capacity"],
+            ["Confirmed", counts.confirmed, "email verified"],
+            ["Pending",   counts.pending,   "awaiting verification"],
+            ["Cancelled", counts.cancelled, "spots freed"],
+          ].map(([l,v,s]) => (
+            <div key={l} className="p-5">
+              <div className="eyebrow">{l}</div>
+              <div className="flex items-baseline gap-2 mt-1.5">
+                <span className="num text-[24px] font-semibold">{v}</span>
+                <span className="text-[12px] text-muted-fg">{s}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Toolbar: tabs + filters */}
+      <div className="flex flex-wrap items-center gap-3 justify-between">
+        <div className="flex items-center gap-1 border border-default rounded-[var(--radius)] bg-card p-0.5">
+          {tabs.map(t => (
+            <button key={t.id}
+              onClick={() => setStatus(t.id)}
+              className={"px-3 h-7 rounded-[calc(var(--radius)-2px)] text-[13px] flex items-center gap-1.5 " +
+                (status === t.id ? "bg-muted text-foreground font-medium" : "text-muted-fg hover:text-foreground")}>
+              {t.label}
+              <span className="num text-[11px] text-muted-fg">{counts[t.id]}</span>
+            </button>
+          ))}
+        </div>
+        <div className="flex items-center gap-2 flex-1 justify-end">
+          <div className="relative flex items-center">
+            <Icons.Search size={14} className="absolute left-2.5 text-muted-fg"/>
+            <input className="input pl-8 h-8 w-64 text-[13px]" placeholder="Search name, email, company…"
+                   value={query} onChange={e => setQuery(e.target.value)}/>
+          </div>
+          <select className="input h-8 text-[13px] w-auto" value={ticket} onChange={e => setTicket(e.target.value)}>
+            {ticketNames.map(t => (
+              <option key={t} value={t}>{t === "all" ? "All tickets" : t}</option>
+            ))}
+          </select>
+          <button className="btn btn-outline btn-sm"><Icons.Filter size={14}/>More</button>
+        </div>
+      </div>
+
+      {/* Bulk action bar when rows are selected */}
+      {selected.size > 0 && (
+        <div className="card px-4 py-2.5 flex items-center gap-3 bg-primary/5"
+             style={{borderColor:"color-mix(in oklch, var(--primary) 30%, var(--border))"}}>
+          <span className="text-[13px] font-medium">{selected.size} selected</span>
+          <span className="text-muted-fg text-[12.5px]">·</span>
+          <button className="btn btn-ghost btn-sm"><Icons.Mail size={14}/>Email selected</button>
+          <button className="btn btn-ghost btn-sm"><Icons.CheckCircle size={14}/>Mark confirmed</button>
+          <button className="btn btn-ghost btn-sm text-destructive"><Icons.Trash size={14}/>Cancel registration</button>
+          <button className="btn btn-ghost btn-sm ml-auto" onClick={() => setSelected(new Set())}>Clear</button>
+        </div>
+      )}
+
+      {/* Table */}
+      <div className="card overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-[13.5px]">
+            <thead className="bg-muted/40">
+              <tr className="text-left text-muted-fg text-[12px] uppercase tracking-wide">
+                <th className="w-10 px-4 py-2.5">
+                  <input type="checkbox" className="h-3.5 w-3.5 align-middle"
+                         checked={allChecked}
+                         onChange={toggleAll}/>
+                </th>
+                <HeadCell label="Attendee" k="name"       sortKey={sortKey} sortDir={sortDir} onSort={toggleSort}/>
+                <HeadCell label="Company"  k="company"    sortKey={sortKey} sortDir={sortDir} onSort={toggleSort}/>
+                <HeadCell label="Ticket"   k="ticket"     sortKey={sortKey} sortDir={sortDir} onSort={toggleSort}/>
+                <HeadCell label="Status"   k="status"     sortKey={sortKey} sortDir={sortDir} onSort={toggleSort}/>
+                <HeadCell label="Reconfirm" k="reconfirmed" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort}/>
+                <HeadCell label="Registered" k="registered" sortKey={sortKey} sortDir={sortDir} onSort={toggleSort}/>
+                <th className="w-10"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.length === 0 && (
+                <tr><td colSpan={8} className="text-center py-10 text-muted-fg text-[13px]">No attendees match these filters.</td></tr>
+              )}
+              {filtered.map(a => (
+                <tr key={a.id} className="row border-t border-default">
+                  <td className="px-4 py-3">
+                    <input type="checkbox" className="h-3.5 w-3.5 align-middle"
+                           checked={selected.has(a.id)}
+                           onChange={() => toggleRow(a.id)}/>
+                  </td>
+                  <td className="px-3 py-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="h-7 w-7 rounded-full bg-muted grid place-items-center text-[11px] font-semibold text-muted-fg">
+                        {a.name.split(" ").map(s=>s[0]).slice(0,2).join("")}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-medium truncate">{a.name}</div>
+                        <div className="text-[12px] text-muted-fg truncate">{a.email}</div>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-3 py-3 text-muted-fg">{a.company}</td>
+                  <td className="px-3 py-3">
+                    <span className="badge badge-muted">{a.ticket}</span>
+                  </td>
+                  <td className="px-3 py-3">{statusPill(a.status)}</td>
+                  <td className="px-3 py-3">
+                    {a.reconfirmed
+                      ? <span className="inline-flex items-center gap-1 text-[12.5px] text-success"><Icons.Check size={12}/>Reconfirmed</span>
+                      : <span className="text-[12.5px] text-muted-fg">—</span>}
+                  </td>
+                  <td className="px-3 py-3 text-muted-fg text-[12.5px]">{a.registered}</td>
+                  <td className="px-2 py-3">
+                    <button className="btn btn-ghost btn-sm h-7 w-7 p-0"><Icons.Dots size={14}/></button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="flex items-center justify-between px-4 py-3 border-t border-default text-[12.5px] text-muted-fg">
+          <span>Showing <span className="num text-foreground">{filtered.length}</span> of <span className="num text-foreground">{all.length}</span></span>
+          <div className="flex items-center gap-1">
+            <button className="btn btn-ghost btn-sm h-7" disabled>Previous</button>
+            <button className="btn btn-ghost btn-sm h-7">Next</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HeadCell({ label, k, sortKey, sortDir, onSort }) {
+  const active = sortKey === k;
+  return (
+    <th className="px-3 py-2.5 font-medium cursor-pointer select-none hover:text-foreground"
+        onClick={() => onSort(k)}>
+      <span className="inline-flex items-center gap-1">
+        {label}
+        {active && (sortDir === "asc" ? <Icons.ChevUp size={12}/> : <Icons.Chevron size={12}/>)}
+      </span>
+    </th>
+  );
+}
+
+window.RegistrationsPage = RegistrationsPage;
+
+
+//====== settings.jsx ======
+// Event settings hub
+function SettingsNav({ section, setSection }) {
+  const items = [
+    { id: "general", label: "General", icon: "Settings", desc: "Name, date, venue, website" },
+    { id: "registration", label: "Registration", icon: "Users", desc: "Policy, windows, waitlist" },
+    { id: "email", label: "Email", icon: "Mail", desc: "Templates, SMTP, sender" },
+    { id: "access", label: "Access", icon: "Zap", desc: "Coupons & recipient lists" },
+    { id: "danger", label: "Danger zone", icon: "Trash", desc: "Cancel or archive" },
+  ];
+  return (
+    <nav className="flex flex-col gap-1">
+      {items.map(it => {
+        const Ic = Icons[it.icon];
+        const active = section===it.id;
+        return (
+          <button key={it.id}
+                  onClick={()=>setSection(it.id)}
+                  className="side-item flex-col items-start !p-3 gap-0.5" data-active={active?"true":"false"}>
+            <div className="flex items-center gap-2 w-full">
+              <Ic size={14} className={active ? "text-primary" : "text-muted-fg"}/>
+              <span className="text-[13.5px] font-medium">{it.label}</span>
+              {active && <span className="ml-auto h-1.5 w-1.5 rounded-full bg-primary"></span>}
+            </div>
+            <div className="text-[11.5px] text-muted-fg pl-6">{it.desc}</div>
+          </button>
+        );
+      })}
+    </nav>
+  );
+}
+
+function Field({ label, children, hint, required, badge }) {
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-[220px_1fr] gap-x-8 gap-y-1.5 py-4">
+      <div>
+        <label className="text-[13.5px] font-medium flex items-center gap-1.5">
+          {label}
+          {required && <span className="text-destructive">*</span>}
+          {badge && <span className="badge badge-muted" style={{fontSize:"0.65rem"}}>{badge}</span>}
+        </label>
+        {hint && <p className="text-[12px] text-muted-fg mt-0.5 leading-snug">{hint}</p>}
+      </div>
+      <div className="min-w-0">{children}</div>
+    </div>
+  );
+}
+
+function GeneralSettings() {
+  return (
+    <div>
+      <div className="flex items-start justify-between mb-5">
+        <div>
+          <h2 className="font-display text-[22px] font-semibold">General</h2>
+          <p className="text-[13.5px] text-muted-fg">Public-facing event details.</p>
+        </div>
+        <div className="flex gap-2">
+          <button className="btn btn-ghost btn-sm">Discard</button>
+          <button className="btn btn-primary btn-sm"><Icons.Check size={14}/>Save changes</button>
+        </div>
+      </div>
+
+      <div className="card">
+        <div className="px-6 divide-y-border">
+          <Field label="Event name" required hint="Shown on the public page and in all emails.">
+            <input className="input" defaultValue="Azure Fest"/>
+          </Field>
+          <Field label="URL slug" hint="Used in registration links." badge="Immutable">
+            <div className="flex items-center gap-2">
+              <span className="text-[13px] text-muted-fg font-mono">admitto.app/azurefest-nl/</span>
+              <input className="input max-w-[220px] font-mono" defaultValue="azurefest-2026" disabled/>
+            </div>
+          </Field>
+          <Field label="Tagline" hint="One short line under the title.">
+            <input className="input" defaultValue="The Dutch Azure community day"/>
+          </Field>
+          <Field label="Date & time" required>
+            <div className="grid grid-cols-2 gap-2">
+              <input className="input" defaultValue="2026-09-23"/>
+              <input className="input" defaultValue="09:00 – 18:00"/>
+            </div>
+          </Field>
+          <Field label="Timezone">
+            <select className="input"><option>Europe/Amsterdam (CEST, UTC+2)</option></select>
+          </Field>
+          <Field label="Venue">
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_200px] gap-2">
+              <input className="input" defaultValue="Pathé Ede"/>
+              <input className="input" defaultValue="Ede, Netherlands"/>
+            </div>
+          </Field>
+          <Field label="Website">
+            <div className="flex items-center gap-2">
+              <span className="text-[13px] text-muted-fg">https://</span>
+              <input className="input" defaultValue="www.azurefest.nl"/>
+            </div>
+          </Field>
+          <Field label="Description" hint="Supports Markdown.">
+            <textarea className="input textarea" defaultValue="Azure Fest is the largest community-run Azure event in the Netherlands. A full day of talks, workshops, and conversation with cloud practitioners from across the region."/>
+          </Field>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RegistrationSettings() {
+  return (
+    <div>
+      <div className="flex items-start justify-between mb-5">
+        <div>
+          <h2 className="font-display text-[22px] font-semibold">Registration</h2>
+          <p className="text-[13.5px] text-muted-fg">Control when and how people can register.</p>
+        </div>
+        <button className="btn btn-primary btn-sm"><Icons.Check size={14}/>Save changes</button>
+      </div>
+      <div className="card">
+        <div className="px-6 divide-y-border">
+          <Field label="Registration window" hint="Registration opens and closes automatically at these times. Status is derived from this window.">
+            <div className="grid grid-cols-2 gap-2">
+              <input className="input" defaultValue="2026-04-01 00:00"/>
+              <input className="input" defaultValue="2026-09-20 23:59"/>
+            </div>
+          </Field>
+          <Field label="Capacity" hint="Capacity is defined per ticket type. There is no global event-wide cap.">
+            <a href="#" className="text-[13px] text-primary hover:underline inline-flex items-center gap-1">
+              <Icons.Ticket size={13}/> Manage ticket types →
+            </a>
+          </Field>
+          <Field label="Tickets per attendee" hint="Every attendee registers for themselves — one ticket each.">
+            <div className="flex items-center gap-2 text-[13.5px] text-muted-fg">
+              <span className="badge badge-muted num">1</span>
+              <span>ticket per registration · fixed</span>
+            </div>
+          </Field>
+          <Field label="Waitlist" hint="Automatically enrol attendees when a ticket type sells out.">
+            <label className="flex items-center gap-2">
+              <input type="checkbox" className="h-4 w-4" defaultChecked/>
+              <span className="text-[13.5px]">Enable waitlist</span>
+            </label>
+          </Field>
+          <Field label="Reconfirm policy" hint="Send reminders asking registrants to reconfirm their attendance." badge="Optional">
+            <div className="flex flex-col gap-3">
+              <label className="flex items-center gap-2">
+                <input type="checkbox" className="h-4 w-4" defaultChecked/>
+                <span className="text-[13.5px] font-medium">Send reconfirm emails</span>
+              </label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pl-6">
+                <div>
+                  <label className="text-[12px] text-muted-fg block mb-1">Window</label>
+                  <div className="flex items-center gap-2">
+                    <input className="input max-w-[72px] num" defaultValue="14"/>
+                    <span className="text-[12.5px] text-muted-fg">to</span>
+                    <input className="input max-w-[72px] num" defaultValue="3"/>
+                    <span className="text-[12.5px] text-muted-fg">days before event</span>
+                  </div>
+                </div>
+                <div>
+                  <label className="text-[12px] text-muted-fg block mb-1">Cadence</label>
+                  <select className="input" defaultValue="every-3">
+                    <option value="once">Send once</option>
+                    <option value="every-7">Every 7 days</option>
+                    <option value="every-3">Every 3 days</option>
+                    <option value="every-1">Every day</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </Field>
+          <Field label="Cancellation policy" hint="Attendees can cancel any time by default. Set a cutoff to freeze cancellations close to the event." badge="Optional">
+            <div className="flex flex-col gap-3">
+              <label className="flex items-center gap-2">
+                <input type="checkbox" className="h-4 w-4" defaultChecked/>
+                <span className="text-[13.5px] font-medium">Set late-cancellation cutoff</span>
+              </label>
+              <div className="pl-6 flex items-center gap-2">
+                <span className="text-[12.5px] text-muted-fg">No cancellations after</span>
+                <input className="input max-w-[160px]" defaultValue="2026-09-21 12:00"/>
+                <span className="text-[12.5px] text-muted-fg">· attendees contact support instead</span>
+              </div>
+            </div>
+          </Field>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EmailSettings() {
+  return (
+    <div>
+      <div className="flex items-start justify-between mb-5">
+        <div>
+          <h2 className="font-display text-[22px] font-semibold">Email</h2>
+          <p className="text-[13.5px] text-muted-fg">Sender identity, SMTP, and templates.</p>
+        </div>
+        <button className="btn btn-primary btn-sm"><Icons.Check size={14}/>Save changes</button>
+      </div>
+      <div className="card">
+        <div className="px-6 divide-y-border">
+          <Field label="From name" hint="Shown in recipients' inbox.">
+            <input className="input" defaultValue="Azure Fest NL"/>
+          </Field>
+          <Field label="From address" required>
+            <input className="input" defaultValue="hello@azurefest.nl"/>
+          </Field>
+          <Field label="Reply-to">
+            <input className="input" defaultValue="organizers@azurefest.nl"/>
+          </Field>
+          <Field label="SMTP host" badge="Azure Communication">
+            <input className="input font-mono" defaultValue="smtp.azurecomm.net"/>
+          </Field>
+          <Field label="Port & auth">
+            <div className="grid grid-cols-[120px_1fr] gap-2">
+              <input className="input num" defaultValue="587"/>
+              <select className="input"><option>STARTTLS + Basic auth</option></select>
+            </div>
+          </Field>
+        </div>
+      </div>
+
+      <div className="mt-5">
+        <h3 className="font-display text-[16px] font-semibold mb-2.5">Templates</h3>
+        <div className="card divide-y-border">
+          {[
+            ["Verification email","Sent when someone starts registration","Default"],
+            ["Ticket confirmation","Sent after successful registration","Customised"],
+            ["Reconfirm","One-week-out reconfirmation","Default"],
+            ["Cancellation","When an attendee cancels","Default"],
+          ].map(([n,d,s]) => (
+            <div key={n} className="flex items-center gap-4 p-4">
+              <div className="h-8 w-8 rounded-md bg-muted grid place-items-center"><Icons.Mail size={14} className="text-muted-fg"/></div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[13.5px] font-medium">{n}</div>
+                <div className="text-[12px] text-muted-fg">{d}</div>
+              </div>
+              <span className={"badge " + (s==="Customised" ? "badge-primary" : "badge-muted")}>{s}</span>
+              <button className="btn btn-ghost btn-sm">Edit</button>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SettingsHub() {
+  const [section, setSection] = useState("general");
+  return (
+    <div>
+      <div className="mb-5">
+        <div className="eyebrow">Settings</div>
+        <h1 className="font-display text-[30px] font-semibold tracking-tight leading-tight mt-0.5">Azure Fest</h1>
+      </div>
+      <div className="grid grid-cols-12 gap-8">
+        <div className="col-span-12 lg:col-span-3">
+          <SettingsNav section={section} setSection={setSection}/>
+        </div>
+        <div className="col-span-12 lg:col-span-9">
+          {section==="general" && <GeneralSettings/>}
+          {section==="registration" && <RegistrationSettings/>}
+          {section==="email" && <EmailSettings/>}
+          {section==="access" && <AccessSettings/>}
+          {section==="danger" && <DangerZone/>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AccessSettings() {
+  return (
+    <div>
+      <div className="flex items-start justify-between mb-5">
+        <div>
+          <h2 className="font-display text-[22px] font-semibold">Access</h2>
+          <p className="text-[13.5px] text-muted-fg">Coupons and closed recipient lists.</p>
+        </div>
+        <button className="btn btn-primary btn-sm"><Icons.Plus size={14}/>New coupon</button>
+      </div>
+      <div className="card p-10 text-center bg-grid">
+        <div className="mx-auto w-12 h-12 rounded-xl bg-card border border-default grid place-items-center mb-3">
+          <Icons.Ticket size={20} className="text-muted-fg"/>
+        </div>
+        <p className="font-display text-[18px] font-medium">No coupons yet</p>
+        <p className="text-[13px] text-muted-fg mt-1 max-w-sm mx-auto">Create a coupon to grant access to invite-only ticket types like <span className="font-mono">speaker</span> or <span className="font-mono">sponsor</span>.</p>
+      </div>
+    </div>
+  );
+}
+
+function DangerZone() {
+  return (
+    <div>
+      <div className="mb-5">
+        <h2 className="font-display text-[22px] font-semibold">Danger zone</h2>
+        <p className="text-[13.5px] text-muted-fg">Permanent actions. No undo.</p>
+      </div>
+      <div className="card border-default divide-y-border" style={{borderColor: "color-mix(in oklch, var(--destructive) 30%, var(--border))"}}>
+        {[
+          ["Cancel event","Notify all registrants and stop accepting new registrations.","Cancel event"],
+          ["Archive event","Hide from the dashboard and make read-only. Can be restored.","Archive"],
+        ].map(([t,d,a]) => (
+          <div key={t} className="flex items-center gap-4 p-5">
+            <div className="flex-1 min-w-0">
+              <div className="text-[14px] font-medium">{t}</div>
+              <div className="text-[12.5px] text-muted-fg mt-0.5">{d}</div>
+            </div>
+            <button className="btn btn-outline btn-sm text-destructive" style={{borderColor:"color-mix(in oklch, var(--destructive) 35%, var(--border))"}}>{a}</button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+window.SettingsHub = SettingsHub;
+
+
+//====== tickets.jsx ======
+// Ticket types management
+function TicketTypeCard({ t }) {
+  const pct = Math.round((t.sold / t.cap) * 100);
+  const remaining = t.cap - t.sold;
+  return (
+    <div className="card overflow-hidden">
+      <div className="p-5">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <h3 className="font-display text-[18px] font-semibold">{t.name}</h3>
+              {t.closed ? (
+                <span className="badge badge-muted">Closed</span>
+              ) : t.hidden ? (
+                <span className="badge badge-muted"><Icons.EyeOff size={11}/>Hidden</span>
+              ) : (
+                <span className="badge badge-success"><span className="pulse-dot"></span>On sale</span>
+              )}
+            </div>
+            <p className="text-[12.5px] text-muted-fg font-mono">{t.slug}</p>
+          </div>
+          <button className="btn btn-ghost btn-sm"><Icons.Dots size={16}/></button>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4 mt-4">
+          <div>
+            <div className="text-[11px] uppercase tracking-wide text-muted-fg">Sold</div>
+            <div className="num text-[22px] font-semibold mt-0.5">{t.sold}</div>
+          </div>
+          <div>
+            <div className="text-[11px] uppercase tracking-wide text-muted-fg">Remaining</div>
+            <div className={"num text-[22px] font-semibold mt-0.5 " + (remaining===0 ? "text-muted-fg" : "")}>{remaining}</div>
+          </div>
+          <div>
+            <div className="text-[11px] uppercase tracking-wide text-muted-fg">Price</div>
+            <div className="num text-[22px] font-semibold mt-0.5">{t.price === 0 ? "Free" : `€${t.price}`}</div>
+          </div>
+        </div>
+
+        <div className="mt-4">
+          <div className="bar"><span style={{width: pct + "%", background: t.closed ? "var(--muted-foreground)" : undefined, opacity: t.closed ? 0.5 : 1}}></span></div>
+          <div className="flex justify-between text-[11px] text-muted-fg mt-1.5 num">
+            <span>{pct}% sold</span>
+            <span>cap {t.cap}</span>
+          </div>
+        </div>
+      </div>
+      <div className="border-t border-default px-5 py-3 flex items-center gap-2 bg-muted">
+        <button className="btn btn-ghost btn-sm"><Icons.Edit size={14}/>Edit</button>
+        <button className="btn btn-ghost btn-sm"><Icons.Copy size={14}/>Duplicate</button>
+        <div className="flex-1"></div>
+        {!t.closed && <button className="btn btn-ghost btn-sm text-destructive">Close sales</button>}
+      </div>
+    </div>
+  );
+}
+
+function TicketsPage() {
+  const types = AZURE_FEST.ticketTypes;
+  const totalSold = types.reduce((s,t)=>s+t.sold,0);
+  const totalCap  = types.reduce((s,t)=>s+t.cap,0);
+  return (
+    <div>
+      <div className="flex items-start justify-between mb-6">
+        <div>
+          <div className="eyebrow">Ticket types</div>
+          <h1 className="font-display text-[30px] font-semibold tracking-tight leading-tight mt-0.5">Tickets</h1>
+          <p className="text-[13.5px] text-muted-fg mt-1">
+            <span className="num text-fg font-medium">{totalSold}</span> sold of <span className="num">{totalCap}</span> across <span className="num">{types.length}</span> ticket types.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <button className="btn btn-outline btn-sm"><Icons.Download size={14}/>Export</button>
+          <button className="btn btn-primary btn-sm"><Icons.Plus size={14}/>New ticket type</button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+        {types.map(t => <TicketTypeCard key={t.slug} t={t}/>)}
+        <button className="card border-default border-dashed p-6 flex flex-col items-center justify-center gap-2 text-muted-fg hover:text-fg hover:bg-accent transition bg-grid" style={{borderStyle:"dashed", minHeight: 260}}>
+          <div className="h-10 w-10 rounded-lg border border-default grid place-items-center bg-card"><Icons.Plus size={18}/></div>
+          <div className="font-display text-[15px] font-medium text-fg">Add a ticket type</div>
+          <div className="text-[12px] text-center max-w-[200px]">Free, paid, early-bird, or invite-only — all supported.</div>
+        </button>
+      </div>
+    </div>
+  );
+}
+
+window.TicketsPage = TicketsPage;
+
+
+//====== tweaks.jsx ======
+// Tweaks panel
+function TweaksPanel({ theme, setTheme, dark, setDark, density, setDensity, page, setPage, open, setOpen }) {
+  if (!open) return null;
+  return (
+    <div className="tweaks">
+      <div className="flex items-center gap-2 mb-3">
+        <Icons.Palette size={14} className="text-primary"/>
+        <span className="font-display font-semibold text-[15px]">Tweaks</span>
+        <button className="ml-auto btn btn-ghost btn-sm" onClick={()=>setOpen(false)} style={{padding:"0 .4rem", height:"1.4rem"}}>✕</button>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <TweakGroup label="Theme">
+          <div className="grid grid-cols-3 gap-1">
+            {[["editorial","Editorial"],["community","Community"],["linear","Linear"]].map(([v,l]) => (
+              <button key={v} onClick={()=>setTheme(v)} className="tab text-center justify-center" data-active={theme===v?"true":"false"} style={{padding:".35rem .3rem", fontSize:"12px"}}>{l}</button>
+            ))}
+          </div>
+        </TweakGroup>
+
+        <TweakGroup label="Mode">
+          <div className="grid grid-cols-2 gap-1">
+            <button onClick={()=>setDark(false)} className="tab justify-center" data-active={!dark?"true":"false"} style={{padding:".35rem", fontSize:"12px"}}><Icons.Sun size={12}/>Light</button>
+            <button onClick={()=>setDark(true)} className="tab justify-center" data-active={dark?"true":"false"} style={{padding:".35rem", fontSize:"12px"}}><Icons.Moon size={12}/>Dark</button>
+          </div>
+        </TweakGroup>
+
+        <TweakGroup label="Density">
+          <div className="grid grid-cols-3 gap-1">
+            {["compact","comfortable","roomy"].map(d => (
+              <button key={d} onClick={()=>setDensity(d)} className="tab justify-center" data-active={density===d?"true":"false"} style={{padding:".35rem", fontSize:"12px", textTransform:"capitalize"}}>{d}</button>
+            ))}
+          </div>
+        </TweakGroup>
+
+        <TweakGroup label="Page">
+          <div className="grid grid-cols-1 gap-1">
+            {[["dashboard","Dashboard"],["tickets","Ticket types"],["settings","Settings hub"]].map(([v,l]) => (
+              <button key={v} onClick={()=>setPage(v)} className="tab justify-start" data-active={page===v?"true":"false"} style={{padding:".4rem .5rem", fontSize:"12.5px"}}>{l}</button>
+            ))}
+          </div>
+        </TweakGroup>
+      </div>
+    </div>
+  );
+}
+function TweakGroup({ label, children }) {
+  return (
+    <div>
+      <div className="eyebrow mb-1.5">{label}</div>
+      {children}
+    </div>
+  );
+}
+
+function TweaksToggle({ open, setOpen }) {
+  if (open) return null;
+  return (
+    <button className="tweaks" style={{width:"auto", padding:"8px 12px"}} onClick={()=>setOpen(true)}>
+      <div className="flex items-center gap-2">
+        <Icons.Palette size={14} className="text-primary"/>
+        <span className="text-[13px] font-medium">Tweaks</span>
+      </div>
+    </button>
+  );
+}
+
+window.TweaksPanel = TweaksPanel;
+window.TweaksToggle = TweaksToggle;
+
+
+//====== app.jsx ======
+// Main app
+function App() {
+  const [theme, setTheme] = useState(() => localStorage.getItem("admitto.theme") || "editorial");
+  const [dark, setDark] = useState(() => localStorage.getItem("admitto.dark") === "1");
+  const [density, setDensity] = useState(() => localStorage.getItem("admitto.density") || "comfortable");
+  const [page, setPage] = useState(() => localStorage.getItem("admitto.page") || "dashboard");
+  const [tweaksOpen, setTweaksOpen] = useState(false);
+
+  React.useEffect(() => {
+    document.body.className = `theme-${theme} density-${density}` + (dark ? " dark" : "");
+    localStorage.setItem("admitto.theme", theme);
+    localStorage.setItem("admitto.dark", dark ? "1" : "0");
+    localStorage.setItem("admitto.density", density);
+    localStorage.setItem("admitto.page", page);
+  }, [theme, dark, density, page]);
+
+  return (
+    <div className="flex h-screen w-screen overflow-hidden">
+      <SidebarNav page={page} setPage={setPage}/>
+      <div className="flex-1 flex flex-col min-w-0">
+        <AppHeader page={page} showDark={dark} setShowDark={setDark}/>
+        <main className="flex-1 overflow-auto">
+          <div className="max-w-[1360px] mx-auto px-6 lg:px-8 py-7">
+            {page==="dashboard" && <Dashboard/>}
+            {page==="tickets" && <TicketsPage/>}
+            {page==="settings" && <SettingsHub/>}
+            {page==="registrations" && <RegistrationsPage/>}
+          </div>
+        </main>
+      </div>
+      <TweaksToggle open={tweaksOpen} setOpen={setTweaksOpen}/>
+      <TweaksPanel theme={theme} setTheme={setTheme} dark={dark} setDark={setDark}
+                   density={density} setDensity={setDensity}
+                   page={page} setPage={setPage}
+                   open={tweaksOpen} setOpen={setTweaksOpen}/>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+
+
+</script>
+</body>
+</html>

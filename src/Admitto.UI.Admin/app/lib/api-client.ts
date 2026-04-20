@@ -30,6 +30,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
         });
     }
 
+    if (res.status === 204) {
+        return undefined as unknown as T;
+    }
+
     return (await res.json()) as T;
 }
 

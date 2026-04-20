@@ -19,9 +19,9 @@ public class UpdateTeamSettings : CommandSettings
     [Description("The email address where the team can be reached")]
     public string? Email { get; init; }
 
-    [CommandOption("--emailServiceConnectionString")]
-    [Description("The connection string of the email service to use for sending emails")]
-    public string? EmailServiceConnectionString { get; init; }
+    [CommandOption("--expected-version <version>")]
+    [Description("The expected current version of the team (optimistic concurrency token)")]
+    public int? ExpectedVersion { get; init; }
 }
 
 public class UpdateTeamCommand(IAdmittoService admittoService, IConfigService configService)
@@ -34,11 +34,11 @@ public class UpdateTeamCommand(IAdmittoService admittoService, IConfigService co
     {
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
 
-        var request = new UpdateTeamRequest()
+        var request = new UpdateTeamHttpRequest()
         {
             Name = settings.Name,
-            Email = settings.Email,
-            EmailServiceConnectionString = settings.EmailServiceConnectionString
+            EmailAddress = settings.Email,
+            ExpectedVersion = settings.ExpectedVersion
         };
 
         var result =

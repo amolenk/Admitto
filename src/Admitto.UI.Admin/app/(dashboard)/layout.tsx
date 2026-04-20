@@ -2,17 +2,24 @@ import type { Metadata } from "next";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/app-sidebar";
 import { AppHeader } from "@/components/app-header";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Fraunces } from "next/font/google";
+import { Geist_Mono } from "next/font/google";
 import "@/globals.css";
 import { HeaderProvider } from "@/components/header-context";
 import { QueryProvider } from "@/components/query-provider";
 import { Toaster } from "@/components/ui/sonner";
+import { ThemeProvider } from "@/components/theme-provider";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 
-const geistSans = Geist({
-    variable: "--font-geist-sans",
+const inter = Inter({
+    variable: "--font-inter",
+    subsets: ["latin"]
+});
+
+const fraunces = Fraunces({
+    variable: "--font-fraunces",
     subsets: ["latin"]
 });
 
@@ -41,10 +48,11 @@ export default async function RootLayout({
     }
 
     return (
-        <html lang="en">
+        <html lang="en" suppressHydrationWarning>
         <body
-            className={`${geistSans.variable} ${geistMono.variable} font-[family-name:var(--font-geist-sans)] antialiased`}
+            className={`${inter.variable} ${fraunces.variable} ${geistMono.variable} font-[family-name:var(--font-inter)] antialiased`}
         >
+        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
         <QueryProvider>
             <HeaderProvider>
                 <SidebarProvider>
@@ -61,6 +69,7 @@ export default async function RootLayout({
             </HeaderProvider>
             <Toaster />
         </QueryProvider>
+        </ThemeProvider>
         </body>
         </html>
     );

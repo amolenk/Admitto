@@ -1,9 +1,15 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter, Fraunces } from "next/font/google";
+import { Geist_Mono } from "next/font/google";
 import "@/globals.css";
 
-const geistSans = Geist({
-    variable: "--font-geist-sans",
+const inter = Inter({
+    variable: "--font-inter",
+    subsets: ["latin"]
+});
+
+const fraunces = Fraunces({
+    variable: "--font-fraunces",
     subsets: ["latin"]
 });
 
@@ -26,7 +32,7 @@ export default async function RootLayout({
     return (
         <html lang="en">
         <body
-            className={`${geistSans.variable} ${geistMono.variable} font-[family-name:var(--font-geist-sans)] antialiased`}
+            className={`${inter.variable} ${fraunces.variable} ${geistMono.variable} font-[family-name:var(--font-inter)] antialiased`}
         >
         <div className="flex flex-1 flex-col">
             <div className="@container/main flex flex-1 flex-col">

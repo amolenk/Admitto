@@ -50,11 +50,11 @@ public class AddTicketTypeCommand(IAdmittoService admittoService, IConfigService
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);
 
-        var request = new AddTicketTypeRequest
+        var request = new AddTicketTypeHttpRequest
         {
-            Slug = settings.Slug,
-            Name = settings.Name,
-            SlotNames = (settings.SlotName ?? []).ToList(),
+            Slug = settings.Slug!,
+            Name = settings.Name!,
+            TimeSlots = (settings.SlotName ?? []).ToList(),
             MaxCapacity = settings.MaxCapacity!.Value
         };
 

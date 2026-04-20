@@ -10,6 +10,7 @@ Detailed ADRs are stored in [`/docs/adrs/`](../adrs/).
 | — | Azure Storage Queues for async messaging | Accepted | [ADR-004](../adrs/adr-004-azure-storage-queues.md) |
 | — | Capability gating for host-specific handlers | Accepted | [ADR-005](../adrs/adr-005-capability-gating.md) |
 | — | Admin UI technology stack | Accepted | [ADR-006](../adrs/adr-006-admin-ui-technology-stack.md) |
+| — | Lifecycle guard pattern in the Registrations module | Accepted | [ADR-007](../adrs/adr-007-lifecycle-guard-pattern.md) |
 
 ## Done-when
 

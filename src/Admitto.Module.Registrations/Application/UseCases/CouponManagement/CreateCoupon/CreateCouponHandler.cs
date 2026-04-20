@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Module.Registrations.Application.Persistence;
+using Amolenk.Admitto.Module.Registrations.Application.Services;
 using Amolenk.Admitto.Module.Registrations.Domain.Entities;
 using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
@@ -8,22 +9,17 @@ using Microsoft.EntityFrameworkCore;
 namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.CouponManagement.CreateCoupon;
 
 internal sealed class CreateCouponHandler(
-    IRegistrationsWriteStore writeStore)
+    IRegistrationsWriteStore writeStore,
+    TimeProvider timeProvider)
     : ICommandHandler<CreateCouponCommand, CouponId>
 {
     public async ValueTask<CouponId> HandleAsync(
         CreateCouponCommand command,
         CancellationToken cancellationToken)
     {
-        // Load registration policy and check lifecycle status.
-        var policy = await writeStore.EventRegistrationPolicies
-            .FirstOrDefaultAsync(p => p.Id == command.EventId, cancellationToken);
-
-        if (policy is null)
-            throw new BusinessRuleViolationException(EventRegistrationPolicy.Errors.EventNotFound);
-
-        if (!policy.IsEventActive)
-            throw new BusinessRuleViolationException(Errors.EventNotActive);
+        // Load lifecycle guard and check event is active.
+        var guard = await LifecycleGuardStore.LoadOrCreateAsync(writeStore, command.EventId, cancellationToken);
+        guard.AssertActiveAndRegisterPolicyMutation();
 
         // Load ticket catalog to validate the coupon's allowed ticket types.
         var catalog = await writeStore.TicketCatalogs
@@ -40,18 +36,10 @@ internal sealed class CreateCouponHandler(
             command.ExpiresAt,
             command.BypassRegistrationWindow,
             availableTicketTypes,
-            DateTimeOffset.UtcNow);
+            timeProvider.GetUtcNow());
 
         await writeStore.Coupons.AddAsync(coupon, cancellationToken);
 
         return coupon.Id;
-    }
-
-    internal static class Errors
-    {
-        public static readonly Error EventNotActive = new(
-            "coupon.event_not_active",
-            "Coupons cannot be created for cancelled or archived events.",
-            Type: ErrorType.Validation);
     }
 }

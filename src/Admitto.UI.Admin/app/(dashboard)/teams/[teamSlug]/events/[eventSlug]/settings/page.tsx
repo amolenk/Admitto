@@ -22,7 +22,7 @@ export default function EventGeneralSettingsPage() {
 
     if (isLoading) {
         return (
-            <div className="space-y-6 max-w-lg">
+            <div className="space-y-6">
                 <Skeleton className="h-10 w-full" />
                 <Skeleton className="h-10 w-full" />
                 <Skeleton className="h-10 w-full" />

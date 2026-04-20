@@ -119,6 +119,31 @@ config.AddBranch("coupon", coupon =>
 
 **Do not edit `ApiClient.g.cs` manually.**
 
+> See "Quarantining commands when the API surface shrinks" below for what to do when regeneration removes types that existing commands depend on.
+
+## Quarantining commands when the API surface shrinks
+
+When the backend admin API removes endpoints (or renames request/response types), regenerating `ApiClient.g.cs` can leave existing commands referencing types that no longer exist. **Do not delete the commands** — they still reflect intended functionality and may come back.
+
+Failure mode to watch for: when one transitively-shared file (e.g. `IO/InputHelper.cs`) fails to compile because of missing types, the C# compiler suppresses *downstream* type-resolution errors in every file that depends on it. The initial build may show only a handful of errors; after fixing the shared file, the true cascade surfaces.
+
+How to quarantine commands cleanly:
+
+1. Add a labeled `<ItemGroup>` to `Admitto.Cli.csproj` that excludes the affected files via `<Compile Remove="Commands/.../**/*.cs" />`. Example:
+
+   ```xml
+   <ItemGroup Label="Quarantined: backend admin endpoints removed; restore once the API exposes ... again.">
+     <Compile Remove="Commands/Attendee/**/*.cs" />
+     <Compile Remove="Commands/Events/Policy/Reconfirm/**/*.cs" />
+   </ItemGroup>
+   ```
+
+2. Comment out (do not delete) the corresponding `AddCommand` / `AddBranch` registrations in `Program.cs`, with a short note pointing back at the csproj entry and the missing endpoint.
+3. Comment out any helper methods on `IAdmittoService` (and its implementation) that only the quarantined commands used.
+4. Build until clean. If new errors appear in surviving files, prefer fixing them (rename `XxxRequest` → `XxxHttpRequest`, drop removed properties) over expanding the quarantine.
+
+Restoration (when the backend re-exposes the endpoints): regenerate `ApiClient.g.cs`, remove the `<Compile Remove>` entries, uncomment the `Program.cs` registrations, and rebuild.
+
 ## Conventions
 
 - Return `0` on success, `1` on failure.

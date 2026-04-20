@@ -12,7 +12,9 @@ public interface IAdmittoService
 
     ValueTask<TResponse?> QueryAsync<TResponse>(Func<ApiClient, Task<TResponse>> callApi);
 
-    Task<Guid?> FindAttendeeAsync(string teamSlug, string eventSlug, string email);
+    // Quarantined: depended on the admin attendee lookup endpoint (FindAttendeeAsync), which was removed.
+    // Restore once the API re-exposes attendee lookup.
+    // Task<Guid?> FindAttendeeAsync(string teamSlug, string eventSlug, string email);
 }
 
 public class AdmittoService(IOptions<AdmittoOptions> options, IAuthService authService)
@@ -79,13 +81,15 @@ public class AdmittoService(IOptions<AdmittoOptions> options, IAuthService authS
         return default;
     }
     
-    public async Task<Guid?> FindAttendeeAsync(string teamSlug, string eventSlug, string email)
-    {
-        var response =
-            await QueryAsync<FindAttendeeResponse>(client => client.FindAttendeeAsync(teamSlug, eventSlug, email));
-        
-        return response?.AttendeeId;
-    }
+    // Quarantined: depended on the admin attendee lookup endpoint (FindAttendeeAsync), which was removed.
+    // Restore once the API re-exposes attendee lookup.
+    // public async Task<Guid?> FindAttendeeAsync(string teamSlug, string eventSlug, string email)
+    // {
+    //     var response =
+    //         await QueryAsync<FindAttendeeResponse>(client => client.FindAttendeeAsync(teamSlug, eventSlug, email));
+    //
+    //     return response?.AttendeeId;
+    // }
 
     private async ValueTask<ApiClient> GetApiClientAsync()
     {

@@ -74,7 +74,7 @@ The same facade is used by authorization handlers to resolve team membership rol
 
 ## 6.4 Org → Registrations event-creation sync
 
-When an organizer creates a `TicketedEvent`, the new event must also exist in the Registrations module so that registration-policy operations (open/close, set window, manage ticket types) can find it. This happens via the standard module-event pipeline — there is no shared transaction between modules.
+When an organizer creates a `TicketedEvent`, the new event must also exist in the Registrations module so that policy operations (set registration window, manage ticket types, configure cancellation/reconfirm policies) can find it. This happens via the standard module-event pipeline — there is no shared transaction between modules.
 
 ```mermaid
 sequenceDiagram
@@ -98,10 +98,35 @@ sequenceDiagram
   Bus->>Handler: handle
   Handler->>Mediator: HandleEventCreatedCommand (DeterministicCommandId)
   Mediator->>Sync: HandleAsync
-  Sync-->>Sync: idempotent: no-op if policy exists, else create Draft + Active EventRegistrationPolicy
+  Sync-->>Sync: idempotent: no-op if guard exists, else create Active TicketedEventLifecycleGuard
 ```
 
-Registrations command/query handlers that need the policy (`OpenRegistration`, `CloseRegistration`, `SetRegistrationPolicy`, ticket-type management, registration flows, `GetRegistrationOpenStatus`) look it up by `TicketedEventId` and throw `EventRegistrationPolicy.Errors.EventNotFound` (HTTP 404) when it is missing — they do not create a policy on demand. Cancel and Archive follow the same shape, mapping `TicketedEventCancelledDomainEvent` / `TicketedEventArchivedDomainEvent` onto the corresponding module events.
+The Created handler creates a `TicketedEventLifecycleGuard` (not a policy aggregate). Policy aggregates are created on demand when the operator configures them. Cancel and Archive follow the same shape, mapping `TicketedEventCancelledDomainEvent` / `TicketedEventArchivedDomainEvent` onto the corresponding module events — their handlers load-or-create the guard and set the lifecycle status (idempotent).
+
+## 6.5 Policy mutation flow
+
+Every command that mutates a policy aggregate (registration, cancellation, reconfirm, ticket types) follows the lifecycle guard pattern (see [§8.14](08-crosscutting-concepts.md#814-lifecycle-guard-pattern)):
+
+```mermaid
+sequenceDiagram
+  participant Endpoint as Admin endpoint
+  participant Mediator
+  participant Handler as Policy handler
+  participant Guard as TicketedEventLifecycleGuard
+  participant PolicyAgg as Policy aggregate
+  participant UoW as Module UnitOfWork
+
+  Endpoint->>Mediator: Send(command)
+  Mediator->>Handler: HandleAsync(command)
+  Handler->>Guard: LoadOrCreate(eventId)
+  Handler->>Guard: AssertActiveAndRegisterPolicyMutation()
+  Note over Guard: Throws if not Active; bumps PolicyMutationCount++
+  Handler->>PolicyAgg: Create or update policy
+  Endpoint->>UoW: SaveChangesAsync()
+  Note over UoW: Guard row version advances → concurrent lifecycle event conflicts
+```
+
+Because `PolicyMutationCount++` writes the guard row, EF advances `Version`. A concurrent lifecycle handler that loaded the same guard will fail with a `DbUpdateConcurrencyException`, ensuring strong consistency between policy edits and lifecycle transitions.
 
 ## Done-when
 

@@ -9,7 +9,8 @@ using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.Registrations.RegisterWithCoupon;
 
 internal sealed class RegisterWithCouponHandler(
-    IRegistrationsWriteStore writeStore)
+    IRegistrationsWriteStore writeStore,
+    TimeProvider timeProvider)
     : ICommandHandler<RegisterWithCouponCommand, RegistrationId>
 {
     public async ValueTask<RegistrationId> HandleAsync(
@@ -28,7 +29,7 @@ internal sealed class RegisterWithCouponHandler(
         if (coupon is null)
             throw new BusinessRuleViolationException(Errors.CouponNotFound);
 
-        var now = DateTimeOffset.UtcNow;
+        var now = timeProvider.GetUtcNow();
         var status = coupon.GetStatus(now);
 
         switch (status)
@@ -48,26 +49,25 @@ internal sealed class RegisterWithCouponHandler(
         if (notAllowlisted.Length > 0)
             throw new BusinessRuleViolationException(Errors.TicketTypeNotAllowlisted(notAllowlisted));
 
-        // Load registration policy and check lifecycle status.
-        var policy = await writeStore.EventRegistrationPolicies
-            .FirstOrDefaultAsync(p => p.Id == command.EventId, cancellationToken);
+        // Check lifecycle guard.
+        var guard = await writeStore.TicketedEventLifecycleGuards
+            .AsNoTracking()
+            .FirstOrDefaultAsync(g => g.Id == command.EventId, cancellationToken);
 
-        if (policy is null)
-            throw new BusinessRuleViolationException(EventRegistrationPolicy.Errors.EventNotFound);
-
-        if (!policy.IsEventActive)
+        if (guard is not null && !guard.IsActive)
             throw new BusinessRuleViolationException(Errors.EventNotActive);
 
-        if (!policy.IsRegistrationOpenForBusiness)
-            throw new BusinessRuleViolationException(Errors.RegistrationStatusNotOpen);
+        // Load registration policy and conditionally enforce window.
+        var policy = await writeStore.EventRegistrationPolicies
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Id == command.EventId, cancellationToken);
 
-        // Conditionally enforce registration window.
-        if (!coupon.BypassRegistrationWindow)
+        if (!coupon.BypassRegistrationWindow && policy is not null)
         {
             if (!policy.IsRegistrationOpen(now))
             {
                 var isAfterWindow = policy.RegistrationWindowClosesAt.HasValue
-                                    && now > policy.RegistrationWindowClosesAt;
+                                    && now >= policy.RegistrationWindowClosesAt;
                 throw new BusinessRuleViolationException(
                     isAfterWindow ? Errors.RegistrationClosed : Errors.RegistrationNotOpen);
             }
@@ -144,11 +144,6 @@ internal sealed class RegisterWithCouponHandler(
 
         public static readonly Error RegistrationNotOpen = new(
             "registration.not_open",
-            "Registration is not open for this event.",
-            Type: ErrorType.Validation);
-
-        public static readonly Error RegistrationStatusNotOpen = new(
-            "registration.status_not_open",
             "Registration is not open for this event.",
             Type: ErrorType.Validation);
 

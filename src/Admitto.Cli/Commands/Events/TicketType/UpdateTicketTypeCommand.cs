@@ -42,7 +42,7 @@ public class UpdateTicketTypeCommand(IAdmittoService admittoService, IConfigServ
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);
 
-        var request = new UpdateTicketTypeRequest()
+        var request = new UpdateTicketTypeHttpRequest()
         {
             MaxCapacity = settings.MaxCapacity!.Value
         };

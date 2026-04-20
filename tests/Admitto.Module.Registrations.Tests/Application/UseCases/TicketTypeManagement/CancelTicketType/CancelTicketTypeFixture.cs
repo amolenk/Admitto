@@ -32,10 +32,10 @@ internal sealed class CancelTicketTypeFixture
     {
         await environment.Database.SeedAsync(dbContext =>
         {
-            var policy = EventRegistrationPolicy.Create(EventId);
+            var guard = TicketedEventLifecycleGuard.Create(EventId);
             if (_eventCancelled)
             {
-                policy.SetCancelled();
+                guard.SetCancelled();
             }
 
             var catalog = TicketCatalog.Create(EventId);
@@ -50,7 +50,7 @@ internal sealed class CancelTicketTypeFixture
                 catalog.CancelTicketType(Slug.From(TicketTypeSlug));
             }
 
-            dbContext.EventRegistrationPolicies.Add(policy);
+            dbContext.TicketedEventLifecycleGuards.Add(guard);
             dbContext.TicketCatalogs.Add(catalog);
         });
     }

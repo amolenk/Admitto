@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketTypeManagement.CancelTicketType;
+using Amolenk.Admitto.Module.Registrations.Domain.Entities;
 using Amolenk.Admitto.Module.Registrations.Tests.Application.Aspire;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
@@ -76,6 +77,6 @@ public sealed class CancelTicketTypeTests(TestContext testContext) : AspireInteg
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
         // Assert
-        result.Error.ShouldMatch(CancelTicketTypeHandler.Errors.EventNotActive);
+        result.Error.ShouldMatch(TicketedEventLifecycleGuard.Errors.EventNotActive);
     }
 }

@@ -151,7 +151,7 @@ public sealed class CreateCouponTests(TestContext testContext) : AspireIntegrati
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
         // Assert
-        result.Error.ShouldMatch(CreateCouponHandler.Errors.EventNotActive);
+        result.Error.ShouldMatch(TicketedEventLifecycleGuard.Errors.EventNotActive);
     }
 
     private static CreateCouponCommand NewCreateCouponCommand(
@@ -174,5 +174,5 @@ public sealed class CreateCouponTests(TestContext testContext) : AspireIntegrati
     }
 
     private static CreateCouponHandler NewCreateCouponHandler(CreateCouponFixture fixture) =>
-        new(Environment.Database.Context);
+        new(Environment.Database.Context, TimeProvider.System);
 }

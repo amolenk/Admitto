@@ -9,4 +9,7 @@ public interface IRegistrationsWriteStore
     DbSet<Registration> Registrations { get; }
     DbSet<TicketCatalog> TicketCatalogs { get; }
     DbSet<EventRegistrationPolicy> EventRegistrationPolicies { get; }
+    DbSet<TicketedEventLifecycleGuard> TicketedEventLifecycleGuards { get; }
+    DbSet<CancellationPolicy> CancellationPolicies { get; }
+    DbSet<ReconfirmPolicy> ReconfirmPolicies { get; }
 }

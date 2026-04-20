@@ -7,7 +7,6 @@ namespace Amolenk.Admitto.Module.Registrations.Tests.Application.UseCases.Ticket
 internal sealed class AddTicketTypeFixture
 {
     private bool _eventCancelled;
-    private bool _seedPolicy = true;
     private bool _seedCatalog;
 
     public TicketedEventId EventId { get; } = TicketedEventId.New();
@@ -28,24 +27,16 @@ internal sealed class AddTicketTypeFixture
         _eventCancelled = true
     };
 
-    public static AddTicketTypeFixture NoPolicyExists() => new()
-    {
-        _seedPolicy = false
-    };
-
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
     {
         await environment.Database.SeedAsync(dbContext =>
         {
-            if (_seedPolicy)
+            var guard = TicketedEventLifecycleGuard.Create(EventId);
+            if (_eventCancelled)
             {
-                var policy = EventRegistrationPolicy.Create(EventId);
-                if (_eventCancelled)
-                {
-                    policy.SetCancelled();
-                }
-                dbContext.EventRegistrationPolicies.Add(policy);
+                guard.SetCancelled();
             }
+            dbContext.TicketedEventLifecycleGuards.Add(guard);
 
             if (_seedCatalog)
             {

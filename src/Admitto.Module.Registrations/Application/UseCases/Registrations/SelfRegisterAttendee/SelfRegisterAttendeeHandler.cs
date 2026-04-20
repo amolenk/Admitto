@@ -8,31 +8,32 @@ using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.Registrations.SelfRegisterAttendee;
 
 internal sealed class SelfRegisterAttendeeHandler(
-    IRegistrationsWriteStore writeStore)
+    IRegistrationsWriteStore writeStore,
+    TimeProvider timeProvider)
     : ICommandHandler<SelfRegisterAttendeeCommand, RegistrationId>
 {
     public async ValueTask<RegistrationId> HandleAsync(
         SelfRegisterAttendeeCommand command,
         CancellationToken cancellationToken)
     {
-        // Load and enforce registration policy (includes lifecycle status check).
-        var policy = await writeStore.EventRegistrationPolicies
-            .FirstOrDefaultAsync(p => p.Id == command.EventId, cancellationToken);
+        // Load lifecycle guard and check event is active.
+        var guard = await writeStore.TicketedEventLifecycleGuards
+            .AsNoTracking()
+            .FirstOrDefaultAsync(g => g.Id == command.EventId, cancellationToken);
 
-        if (policy is null)
-            throw new BusinessRuleViolationException(EventRegistrationPolicy.Errors.EventNotFound);
-
-        if (!policy.IsEventActive)
+        if (guard is not null && !guard.IsActive)
             throw new BusinessRuleViolationException(Errors.EventNotActive);
 
-        if (!policy.IsRegistrationOpenForBusiness)
-            throw new BusinessRuleViolationException(Errors.RegistrationStatusNotOpen);
+        // Load and enforce registration policy.
+        var policy = await writeStore.EventRegistrationPolicies
+            .AsNoTracking()
+            .FirstOrDefaultAsync(p => p.Id == command.EventId, cancellationToken);
 
-        var now = DateTimeOffset.UtcNow;
-        if (!policy.IsRegistrationOpen(now))
+        var now = timeProvider.GetUtcNow();
+        if (policy is null || !policy.IsRegistrationOpen(now))
         {
-            var isAfterWindow = policy.RegistrationWindowClosesAt.HasValue
-                                && now > policy.RegistrationWindowClosesAt;
+            var isAfterWindow = policy?.RegistrationWindowClosesAt.HasValue == true
+                                && now >= policy.RegistrationWindowClosesAt;
             throw new BusinessRuleViolationException(
                 isAfterWindow ? Errors.RegistrationClosed : Errors.RegistrationNotOpen);
         }
@@ -100,11 +101,6 @@ internal sealed class SelfRegisterAttendeeHandler(
 
         public static readonly Error RegistrationNotOpen = new(
             "registration.not_open",
-            "Registration is not open for this event.",
-            Type: ErrorType.Validation);
-
-        public static readonly Error RegistrationStatusNotOpen = new(
-            "registration.status_not_open",
             "Registration is not open for this event.",
             Type: ErrorType.Validation);
 

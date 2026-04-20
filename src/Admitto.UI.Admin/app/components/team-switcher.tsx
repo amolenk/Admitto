@@ -12,9 +12,18 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger
 } from "@/components/ui/dropdown-menu";
-import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
+import { SidebarMenu, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 import { TeamListItemDto } from "@/lib/admitto-api/generated/types.gen";
 import { useTeams } from "@/hooks/use-teams";
+
+function getInitials(name: string): string {
+    return name
+        .split(/\s+/)
+        .map((w) => w[0])
+        .slice(0, 2)
+        .join("")
+        .toUpperCase();
+}
 
 export function TeamSwitcher()
 {
@@ -40,17 +49,17 @@ export function TeamSwitcher()
             <SidebarMenuItem>
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <SidebarMenuButton
-                            size="lg"
-                            className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-                        >
-                            <div className="grid flex-1 text-left text-sm leading-tight">
-                                <span className="truncate font-semibold">
+                        <button className="flex items-center justify-between w-full rounded-md px-2.5 py-2 text-left text-sm transition-colors hover:bg-sidebar-accent border border-transparent hover:border-border">
+                            <div className="flex items-center gap-2.5 min-w-0">
+                                <div className="grid place-items-center h-7 w-7 rounded-md bg-primary/15 text-primary font-display font-semibold text-[13px] shrink-0">
+                                    {selectedTeam ? getInitials(selectedTeam.name) : "?"}
+                                </div>
+                                <span className="text-[13px] font-medium truncate">
                                     {selectedTeam ? selectedTeam.name : "No teams found"}
                                 </span>
                             </div>
-                            <ChevronsUpDown className="ml-auto" />
-                        </SidebarMenuButton>
+                            <ChevronsUpDown className="size-3.5 text-muted-foreground shrink-0" />
+                        </button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent
                         className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
@@ -67,6 +76,9 @@ export function TeamSwitcher()
                                         onClick={() => handleSelectTeam(team.slug)}
                                         className="gap-2 p-2"
                                     >
+                                        <div className="grid place-items-center h-6 w-6 rounded-md bg-primary/15 text-primary font-semibold text-[11px] shrink-0">
+                                            {getInitials(team.name)}
+                                        </div>
                                         {team.name}
                                     </DropdownMenuItem>
                                 ))}

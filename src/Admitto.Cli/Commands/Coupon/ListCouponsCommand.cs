@@ -26,16 +26,16 @@ public class ListCouponsCommand(IAdmittoService admittoService, IConfigService c
         table.AddColumn("Expires At");
         table.AddColumn("Created At");
 
-        foreach (var coupon in response.Coupons ?? [])
+        foreach (var coupon in response.Coupons)
         {
-            var ticketTypes = coupon.AllowedTicketTypeSlugs is { Length: > 0 }
+            var ticketTypes = coupon.AllowedTicketTypeSlugs is { Count: > 0 }
                 ? string.Join(", ", coupon.AllowedTicketTypeSlugs)
                 : "-";
 
             table.AddRow(
                 coupon.Id.ToString()[..8],
                 coupon.Email ?? "-",
-                coupon.Status?.Humanize() ?? "-",
+                coupon.Status.Humanize(),
                 ticketTypes,
                 coupon.ExpiresAt.Format(),
                 coupon.CreatedAt.Format());
