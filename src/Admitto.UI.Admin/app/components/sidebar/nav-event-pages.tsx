@@ -20,6 +20,7 @@ import { TicketedEventDetailsDto } from "@/lib/admitto-api/generated";
 
 const eventPages = [
     { label: "Dashboard", href: "", icon: LayoutDashboard },
+    { label: "Registrations", href: "/registrations", icon: Users },
     { label: "Ticket types", href: "/ticket-types", icon: Ticket },
     { label: "Emails", href: "/settings/email", icon: Mail },
     { label: "Settings", href: "/settings", icon: Settings },

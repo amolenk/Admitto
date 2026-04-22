@@ -180,6 +180,13 @@ export type RegisterWithCouponHttpRequest = {
     };
 };
 
+export type RegistrationListItemDto = {
+    id: string;
+    email: string;
+    tickets: Array<TicketSummaryDto>;
+    createdAt: string;
+};
+
 export type RegistrationPolicyDto = {
     opensAt: string;
     closesAt: string;
@@ -248,6 +255,11 @@ export type TicketedEventListItemDto = {
     startsAt: string;
     endsAt: string;
     status: EventLifecycleStatus;
+};
+
+export type TicketSummaryDto = {
+    slug: string;
+    name: string;
 };
 
 export type TicketTypeDto = {
@@ -1240,6 +1252,50 @@ export type UpdateAdditionalDetailSchemaResponses = {
 };
 
 export type UpdateAdditionalDetailSchemaResponse = UpdateAdditionalDetailSchemaResponses[keyof UpdateAdditionalDetailSchemaResponses];
+
+export type GetRegistrationsData = {
+    body?: never;
+    path: {
+        teamSlug: string;
+        eventSlug: string;
+    };
+    query?: never;
+    url: '/admin/teams/{teamSlug}/events/{eventSlug}/registrations';
+};
+
+export type GetRegistrationsErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetRegistrationsError = GetRegistrationsErrors[keyof GetRegistrationsErrors];
+
+export type GetRegistrationsResponses = {
+    /**
+     * OK
+     */
+    200: Array<RegistrationListItemDto>;
+};
+
+export type GetRegistrationsResponse = GetRegistrationsResponses[keyof GetRegistrationsResponses];
 
 export type AdminRegisterAttendeeData = {
     body: AdminRegisterAttendeeHttpRequest;

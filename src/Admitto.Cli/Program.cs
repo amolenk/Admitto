@@ -228,6 +228,9 @@ app.Configure(config =>
 
                     registration.AddCommand<Commands.Events.Registration.AddRegistrationCommand>("add")
                         .WithDescription("Directly add a registration to the event (bypasses window/capacity/email-domain checks)");
+
+                    registration.AddCommand<Commands.Events.Registration.ListRegistrationsCommand>("list")
+                        .WithDescription("List all registrations for the event");
                 });
 
             ticketedEvent.AddBranch(

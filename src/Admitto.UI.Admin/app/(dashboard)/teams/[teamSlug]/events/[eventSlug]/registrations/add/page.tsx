@@ -64,7 +64,7 @@ export default function AddRegistrationPage() {
                     ticketTypes={ticketTypes}
                     additionalDetailSchema={additionalDetailSchema}
                     onCancel={() => router.back()}
-                    onAdded={() => router.push(`/teams/${teamSlug}/events/${eventSlug}`)}
+                    onAdded={() => router.push(`/teams/${teamSlug}/events/${eventSlug}/registrations`)}
                 />
             )}
         </PageLayout>

@@ -102,6 +102,16 @@ function TicketTypeCard({ t, teamSlug, eventSlug }: { t: TicketTypeDto; teamSlug
                         </DropdownMenu>
                     </div>
 
+                    {t.timeSlots && t.timeSlots.length > 0 && (
+                        <div className="mt-3 flex flex-wrap gap-1.5">
+                            {t.timeSlots.map((slot) => (
+                                <Badge key={slot} variant="outline" className="font-mono text-[11px]">
+                                    {slot}
+                                </Badge>
+                            ))}
+                        </div>
+                    )}
+
                     <div className="grid grid-cols-3 gap-4 mt-4">
                         <div>
                             <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Sold</div>
@@ -195,6 +205,9 @@ export default function TicketTypesPage() {
     const types = ticketTypes ?? [];
     const totalSold = types.reduce((s, t) => s + Number(t.usedCapacity), 0);
     const totalCap = types.reduce((s, t) => s + (Number(t.maxCapacity) || 0), 0);
+    const availableTimeSlots = Array.from(
+        new Set(types.flatMap((t) => t.timeSlots ?? []))
+    ).sort();
 
     return (
         <PageLayout title="Ticket types" breadcrumbs={breadcrumbs}>
@@ -256,6 +269,7 @@ export default function TicketTypesPage() {
                     <AddTicketTypeForm
                         teamSlug={teamSlug}
                         eventSlug={eventSlug}
+                        suggestions={availableTimeSlots}
                         onAdded={() => setAddOpen(false)}
                         onCancel={() => setAddOpen(false)}
                     />

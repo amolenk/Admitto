@@ -6,6 +6,7 @@ import { AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useCustomForm } from "@/hooks/use-custom-form";
 import { apiClient } from "@/lib/api-client";
@@ -97,6 +98,25 @@ export function EditTicketTypeForm({
                         </FormItem>
                     )}
                 />
+                {ticketType.timeSlots && ticketType.timeSlots.length > 0 && (
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium leading-none">Time slots</label>
+                        <div className="flex flex-wrap gap-1.5">
+                            {ticketType.timeSlots.map((slot) => (
+                                <Badge
+                                    key={slot}
+                                    variant="outline"
+                                    className="font-mono text-[11px] opacity-70"
+                                >
+                                    {slot}
+                                </Badge>
+                            ))}
+                        </div>
+                        <p className="text-[11px] text-muted-foreground">
+                            Time slots can&apos;t be changed after creation.
+                        </p>
+                    </div>
+                )}
                 <div className="flex gap-2 justify-end">
                     <Button type="button" variant="ghost" onClick={onCancel}>
                         Cancel

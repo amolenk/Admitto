@@ -1967,6 +1967,95 @@
             }
           }
         }
+      },
+      "get": {
+        "tags": [
+          "GetRegistrationsHttpEndpoint"
+        ],
+        "operationId": "GetRegistrations",
+        "parameters": [
+          {
+            "name": "teamSlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "eventSlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/RegistrationListItemDto"
+                  }
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/admin/teams/{teamSlug}/events/{eventSlug}/coupons": {
@@ -3570,6 +3659,34 @@
           }
         }
       },
+      "RegistrationListItemDto": {
+        "required": [
+          "id",
+          "email",
+          "tickets",
+          "createdAt"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string"
+          },
+          "tickets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketSummaryDto"
+            }
+          },
+          "createdAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "RegistrationPolicyDto": {
         "required": [
           "opensAt",
@@ -3858,6 +3975,21 @@
           },
           "status": {
             "$ref": "#/components/schemas/EventLifecycleStatus"
+          }
+        }
+      },
+      "TicketSummaryDto": {
+        "required": [
+          "slug",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
           }
         }
       },
@@ -4168,6 +4300,9 @@
     },
     {
       "name": "AdminRegisterAttendeeHttpEndpoint"
+    },
+    {
+      "name": "GetRegistrationsHttpEndpoint"
     },
     {
       "name": "CreateCouponHttpEndpoint"
