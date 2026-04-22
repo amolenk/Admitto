@@ -1,4 +1,10 @@
-## ADDED Requirements
+# Email Settings Specification
+
+## Purpose
+
+The Email module owns per-event email server settings (SMTP host, port, from-address, authentication mode, and credentials). It persists secrets encrypted with ASP.NET Data Protection, exposes admin endpoints for organizers to manage the settings, and publishes a facade that other modules (notably Registrations) can consult to determine whether email is configured for a given event.
+
+## Requirements
 
 ### Requirement: Email module owns per-event email server settings
 The system SHALL provide an Email module (`Admitto.Module.Email`) that owns email server settings on a per-ticketed-event basis. Each settings record SHALL belong to exactly one event, identified by the event's `TicketedEventId`. Settings SHALL include at minimum: SMTP host, SMTP port, from-address, authentication mode (none, basic), and credentials when applicable. The aggregate SHALL carry a `Version` token for optimistic concurrency and SHALL be persisted in a dedicated `email` database schema.

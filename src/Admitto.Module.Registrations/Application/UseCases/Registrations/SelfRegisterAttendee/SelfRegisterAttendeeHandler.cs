@@ -65,7 +65,15 @@ internal sealed class SelfRegisterAttendeeHandler(
             throw new BusinessRuleViolationException(Errors.EventNotActive);
         }
 
-        var registration = Registration.Create(command.EventId, command.Email, tickets);
+        var additionalDetails = AdditionalDetails.Validate(
+            command.AdditionalDetails,
+            ticketedEvent.AdditionalDetailSchema);
+
+        var registration = Registration.Create(
+            command.EventId,
+            command.Email,
+            tickets,
+            additionalDetails);
         await writeStore.Registrations.AddAsync(registration, cancellationToken);
 
         return registration.Id;

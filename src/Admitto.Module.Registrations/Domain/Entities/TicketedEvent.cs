@@ -55,6 +55,7 @@ public class TicketedEvent : Aggregate<TicketedEventId>
     public TicketedEventRegistrationPolicy? RegistrationPolicy { get; private set; }
     public TicketedEventCancellationPolicy? CancellationPolicy { get; private set; }
     public TicketedEventReconfirmPolicy? ReconfirmPolicy { get; private set; }
+    public AdditionalDetailSchema AdditionalDetailSchema { get; private set; } = AdditionalDetailSchema.Empty;
 
     public bool IsActive => Status == EventLifecycleStatus.Active;
 
@@ -130,6 +131,16 @@ public class TicketedEvent : Aggregate<TicketedEventId>
     {
         EnsureActive();
         ReconfirmPolicy = policy;
+    }
+
+    public void UpdateAdditionalDetailSchema(IReadOnlyList<AdditionalDetailField> fields)
+    {
+        EnsureActive();
+
+        var schema = AdditionalDetailSchema.Create(fields);
+        AdditionalDetailSchema = schema;
+
+        AddDomainEvent(new AdditionalDetailSchemaUpdatedDomainEvent(Id, TeamId, Slug, schema));
     }
 
     /// <summary>

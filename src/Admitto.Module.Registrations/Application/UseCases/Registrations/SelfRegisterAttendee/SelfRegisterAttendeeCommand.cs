@@ -7,4 +7,5 @@ namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.Registration
 internal sealed record SelfRegisterAttendeeCommand(
     TicketedEventId EventId,
     EmailAddress Email,
-    string[] TicketTypeSlugs) : Command<RegistrationId>;
+    string[] TicketTypeSlugs,
+    IReadOnlyDictionary<string, string>? AdditionalDetails = null) : Command<RegistrationId>;

@@ -16,7 +16,10 @@ public sealed record TicketedEventDetailsDto(
     bool IsRegistrationOpen,
     RegistrationPolicyDto? RegistrationPolicy,
     CancellationPolicyDto? CancellationPolicy,
-    ReconfirmPolicyDto? ReconfirmPolicy);
+    ReconfirmPolicyDto? ReconfirmPolicy,
+    IReadOnlyList<AdditionalDetailFieldDto> AdditionalDetailSchema);
+
+public sealed record AdditionalDetailFieldDto(string Key, string Name, int MaxLength);
 
 public sealed record RegistrationPolicyDto(
     DateTimeOffset OpensAt,

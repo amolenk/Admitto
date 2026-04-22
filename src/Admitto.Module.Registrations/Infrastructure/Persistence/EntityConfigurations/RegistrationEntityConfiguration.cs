@@ -40,5 +40,12 @@ public class RegistrationEntityConfiguration : IEntityTypeConfiguration<Registra
             b.Property(t => t.Slug).HasJsonPropertyName("slug").IsRequired();
             b.PrimitiveCollection(t => t.TimeSlots).HasJsonPropertyName("time_slots");
         });
+
+        builder.Property(e => e.AdditionalDetails)
+            .HasColumnName("additional_details")
+            .HasColumnType("jsonb")
+            .HasConversion(AdditionalDetailJsonConverters.DetailsConverter)
+            .HasDefaultValueSql("'{}'::jsonb")
+            .IsRequired();
     }
 }

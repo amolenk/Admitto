@@ -16,6 +16,12 @@ export interface ReconfirmPolicy {
     cadenceDays: number;
 }
 
+export interface AdditionalDetailField {
+    key: string;
+    name: string;
+    maxLength: number;
+}
+
 export interface TicketedEventDetails {
     id: string;
     teamId: string;
@@ -29,6 +35,7 @@ export interface TicketedEventDetails {
     registrationPolicy: RegistrationPolicy | null;
     cancellationPolicy: CancellationPolicy | null;
     reconfirmPolicy: ReconfirmPolicy | null;
+    additionalDetailSchema?: AdditionalDetailField[];
     websiteUrl?: string;
     baseUrl?: string;
 }

@@ -1,5 +1,11 @@
 # Attendee Registration Specification
 
+## Purpose
+
+Attendees register themselves for a ticketed event either via a public self-service endpoint (subject to capacity, registration window, and email-domain rules) or via a single-use coupon code (which can bypass select policies). Registration is gated by the event's lifecycle status on `TicketedEvent`, with `TicketCatalog.EventStatus` providing the atomic claim-time safety net.
+
+## Requirements
+
 ### Requirement: Attendee can self-register
 The system SHALL allow attendees to register themselves via a public endpoint by
 providing their email, attendee info, and selected ticket types. Self-service
@@ -9,11 +15,17 @@ and optional email domain restrictions.
 
 Whether registration is open SHALL be derived from the registration window
 (`now ∈ [opensAt, closesAt)`) combined with the event's lifecycle status read from
-the `TicketedEventLifecycleGuard` (see event-lifecycle-guard). There is no separate
-stored registration-status.
+the `TicketedEvent` aggregate (see event-management). There is no separate stored
+registration-status. Application handlers SHALL load the `TicketedEvent` to validate
+window, domain, and active-status invariants, then atomically claim ticket capacity
+on the `TicketCatalog`. The atomic claim SHALL also be guarded by
+`TicketCatalog.EventStatus` so that a concurrent cancel/archive cannot leak
+through after the policy check; an `EventStatus` of Cancelled or Archived at
+claim time SHALL fail the registration with reason "event not active" (the EF
+optimistic concurrency token on `TicketCatalog` is the safety net).
 
 #### Scenario: Successful self-service registration
-- **WHEN** an attendee self-registers as "dave@example.com" for "General Admission" on event "DevConf" with capacity 100 (50 used), lifecycle guard Active, window "2025-01-01T00:00Z" / "2025-06-01T00:00Z" at current time "2025-03-15T12:00Z", and no domain restriction
+- **WHEN** an attendee self-registers as "dave@example.com" for "General Admission" on event "DevConf" with capacity 100 (50 used), `TicketedEvent.Status` Active, `TicketCatalog.EventStatus` Active, window "2025-01-01T00:00Z" / "2025-06-01T00:00Z" at current time "2025-03-15T12:00Z", and no domain restriction
 - **THEN** a registration is created for "dave@example.com" with ticket "General Admission" and capacity used increases to 51
 
 #### Scenario: Self-service rejected — capacity full
@@ -44,6 +56,10 @@ stored registration-status.
 - **WHEN** an attendee self-registers as "employee@acme.com" for event "CorpConf" which is restricted to "@acme.com" and the window is open
 - **THEN** a registration is created for "employee@acme.com"
 
+#### Scenario: Concurrent cancel detected at claim time
+- **WHEN** an attendee self-registers and `TicketedEvent.Status` is Active at policy-check time but `TicketCatalog.EventStatus` has been transitioned to Cancelled by an in-flight cancel before the claim commits
+- **THEN** the registration fails with reason "event not active" and no capacity is consumed
+
 ---
 
 ### Requirement: Attendee can register using a coupon code
@@ -54,7 +70,10 @@ registrations SHALL bypass capacity enforcement, email domain restrictions, and 
 requirement for a capacity to be set. If the coupon has `bypassRegistrationWindow`
 set, the registration SHALL also bypass the registration window. Upon successful
 registration, the system SHALL mark the coupon as redeemed. The used capacity
-counter SHALL be incremented for each ticket type regardless of bypass.
+counter SHALL be incremented for each ticket type regardless of bypass. Coupon
+registrations SHALL NOT bypass the active-status gate: registrations are rejected
+when `TicketedEvent.Status` is Cancelled or Archived (with the `TicketCatalog.EventStatus`
+claim-time check as the safety net for concurrent transitions).
 
 #### Scenario: Successful coupon registration
 - **WHEN** an attendee registers as "speaker@gmail.com" using valid coupon "INVITE-001" for "Speaker Pass" on event "DevConf" where capacity is 5/5 used and the window is open
@@ -92,6 +111,10 @@ counter SHALL be incremented for each ticket type regardless of bypass.
 - **WHEN** an attendee registers using valid coupon "INVITE-009" for "Speaker Pass" which has no capacity configured
 - **THEN** a registration is created
 
+#### Scenario: Coupon does not bypass cancelled/archived event
+- **WHEN** an attendee registers using valid coupon "INVITE-010" for an event with `TicketedEvent.Status` Cancelled
+- **THEN** the registration is rejected with reason "event not active"
+
 ---
 
 ### Requirement: Ticket selection validation applies to all registration paths
@@ -100,12 +123,13 @@ The system SHALL reject registrations with duplicate ticket types in the selecti
 The system SHALL reject registrations referencing non-existent or cancelled ticket
 types. The system SHALL reject registrations where selected ticket types have
 overlapping time slots. The system SHALL reject all registrations when the
-`TicketedEventLifecycleGuard` status for the event is Cancelled or Archived. The
-system SHALL reject registrations if the email address is already registered for
-the same event.
+`TicketedEvent.Status` for the event is Cancelled or Archived (and as a
+consistency safety net, the atomic claim against `TicketCatalog` rejects when
+`TicketCatalog.EventStatus` is Cancelled or Archived). The system SHALL reject
+registrations if the email address is already registered for the same event.
 
 #### Scenario: Successful registration with multiple ticket types
-- **WHEN** an attendee self-registers selecting both "General Admission" (capacity 100, 50 used) and "Workshop A" (capacity 20, 10 used) on event "DevConf" with an open window and Active lifecycle guard
+- **WHEN** an attendee self-registers selecting both "General Admission" (capacity 100, 50 used) and "Workshop A" (capacity 20, 10 used) on event "DevConf" with an open window and `TicketedEvent.Status` Active
 - **THEN** a registration is created with both ticket types, "General Admission" capacity used increases to 51, and "Workshop A" capacity used increases to 11
 
 #### Scenario: Rejected — duplicate ticket types in selection
@@ -124,14 +148,64 @@ the same event.
 - **WHEN** an attendee registers selecting both "Workshop A" (slot "morning") and "Workshop B" (slot "morning") which share a time slot
 - **THEN** the registration is rejected with reason "overlapping time slots"
 
-#### Scenario: Rejected — lifecycle guard status is Cancelled
-- **WHEN** an attendee attempts to register for event "OldConf" whose `TicketedEventLifecycleGuard` status is Cancelled
+#### Scenario: Rejected — TicketedEvent status is Cancelled
+- **WHEN** an attendee attempts to register for event "OldConf" whose `TicketedEvent.Status` is Cancelled
 - **THEN** the registration is rejected with reason "event not active"
 
-#### Scenario: Rejected — lifecycle guard status is Archived
-- **WHEN** an attendee attempts to register for event "OldConf" whose `TicketedEventLifecycleGuard` status is Archived
+#### Scenario: Rejected — TicketedEvent status is Archived
+- **WHEN** an attendee attempts to register for event "OldConf" whose `TicketedEvent.Status` is Archived
 - **THEN** the registration is rejected with reason "event not active"
+
+#### Scenario: Rejected — TicketCatalog.EventStatus catches concurrent transition
+- **WHEN** policy checks pass against `TicketedEvent` (Active) but the event is cancelled before the claim commits, so `TicketCatalog.EventStatus` is Cancelled at claim time
+- **THEN** the registration is rejected with reason "event not active" and no capacity is consumed
 
 #### Scenario: Rejected — duplicate email
 - **WHEN** "alice@example.com" is already registered for event "DevConf" and attempts to register again
 - **THEN** the registration is rejected with reason "already registered"
+
+---
+
+### Requirement: Self-registration accepts and validates additional detail values
+The self-registration command and public endpoint SHALL accept an optional `additionalDetails` map of `string` keys to `string` values. The handler SHALL validate the map against the event's current `AdditionalDetailSchema` (see event-management). All additional detail values SHALL be optional at the platform layer; missing keys SHALL be treated as not provided and SHALL NOT cause a rejection.
+
+The handler SHALL reject the registration when the map contains a key that is not present in the current schema (`AdditionalDetailKeyNotInSchema`), or when any value's length exceeds the field's `MaxLength` (`AdditionalDetailValueTooLong`). Empty-string values SHALL be accepted and stored verbatim.
+
+Accepted values SHALL be stored on the resulting `Registration` aggregate (see registration-additional-details for the storage model).
+
+#### Scenario: Self-service accepts additional details matching the schema
+- **WHEN** an attendee self-registers for event "DevConf" whose schema declares `dietary` (maxLength 200) and `tshirt` (maxLength 5), submitting `{ "dietary": "vegan", "tshirt": "M" }`
+- **THEN** the registration is created and the values are stored
+
+#### Scenario: Self-service accepts when additional details are omitted
+- **WHEN** an attendee self-registers for "DevConf" without sending any `additionalDetails`
+- **THEN** the registration is created with no additional detail values
+
+#### Scenario: Self-service accepts a partial set of declared keys
+- **WHEN** an attendee self-registers for "DevConf" with only `{ "dietary": "vegan" }`
+- **THEN** the registration is created and `tshirt` is recorded as not provided
+
+#### Scenario: Self-service accepts empty-string values
+- **WHEN** an attendee self-registers for "DevConf" with `{ "dietary": "" }`
+- **THEN** the registration is created and `dietary` is stored as the empty string
+
+#### Scenario: Self-service rejected — unknown key
+- **WHEN** an attendee self-registers for "DevConf" with `{ "shoesize": "44" }` and the schema has no `shoesize` field
+- **THEN** the registration is rejected with reason "additional detail key not in schema"
+
+#### Scenario: Self-service rejected — value too long
+- **WHEN** an attendee self-registers for "DevConf" with `{ "tshirt": "XXXXL-extra-long" }` and the `tshirt` field has `maxLength: 5`
+- **THEN** the registration is rejected with reason "additional detail value too long"
+
+---
+
+### Requirement: Coupon registration accepts and validates additional detail values
+The coupon registration command and public endpoint SHALL accept the same optional `additionalDetails` map and apply the same validation rules described in "Self-registration accepts and validates additional detail values". Coupon-based registrations SHALL NOT bypass additional-detail validation; the schema applies regardless of coupon usage.
+
+#### Scenario: Coupon registration accepts additional details
+- **WHEN** an attendee redeems coupon "EARLYBIRD" for event "DevConf" and submits `{ "dietary": "vegan" }`
+- **THEN** the registration is created with the values stored
+
+#### Scenario: Coupon registration rejected — unknown key
+- **WHEN** an attendee redeems a coupon for "DevConf" with `{ "shoesize": "44" }` and the schema has no `shoesize` field
+- **THEN** the registration is rejected with reason "additional detail key not in schema"

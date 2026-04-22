@@ -11,6 +11,7 @@ using Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketedEventMan
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketedEventManagement.ConfigureRegistrationPolicy.AdminApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketedEventManagement.GetTicketedEventDetails.AdminApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketedEventManagement.GetTicketedEvents.AdminApi;
+using Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketedEventManagement.UpdateAdditionalDetailSchema.AdminApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketedEventManagement.UpdateTicketedEventDetails.AdminApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketTypeManagement.AddTicketType.AdminApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketTypeManagement.CancelTicketType.AdminApi;
@@ -40,6 +41,7 @@ public static class RegistrationsModule
             .MapConfigureRegistrationPolicy()
             .MapConfigureCancellationPolicy()
             .MapConfigureReconfirmPolicy()
+            .MapUpdateAdditionalDetailSchema()
             .MapCreateCoupon()
             .MapListCoupons()
             .MapGetCouponDetails()

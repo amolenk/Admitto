@@ -102,6 +102,13 @@ namespace Amolenk.Admitto.Module.Registrations.Infrastructure.Persistence.Migrat
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<string>("AdditionalDetails")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("additional_details")
+                        .HasDefaultValueSql("'{}'::jsonb");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -183,6 +190,13 @@ namespace Amolenk.Admitto.Module.Registrations.Infrastructure.Persistence.Migrat
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
                         .HasColumnName("id");
+
+                    b.Property<string>("AdditionalDetailSchema")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("additional_detail_schema")
+                        .HasDefaultValueSql("'[]'::jsonb");
 
                     b.Property<string>("BaseUrl")
                         .IsRequired()

@@ -3,4 +3,5 @@ namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.Registration
 public sealed record RegisterWithCouponHttpRequest(
     string CouponCode,
     string Email,
-    string[] TicketTypeSlugs);
+    string[] TicketTypeSlugs,
+    Dictionary<string, string>? AdditionalDetails = null);

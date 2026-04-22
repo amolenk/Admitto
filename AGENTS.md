@@ -24,6 +24,10 @@ Focus on these sections when implementing changes:
 - Each module has one main project (with `Domain/`, `Application/`, `Infrastructure/` folders) and a separate Contracts project.
 - Shared code lives in `Admitto.Module.Shared` and `Admitto.Module.Shared.Kernel`.
 
+### Aggregate Ownership
+- `Admitto.Module.Organization` owns `Team` (and team membership). It only tracks the existence of a ticketed event for slug/id resolution and team-archive guards; it does not own per-event configuration.
+- `Admitto.Module.Registrations` owns the authoritative `TicketedEvent` aggregate (slug/name/dates, lifecycle status, and the registration/cancellation/reconfirm policies as value objects), as well as `TicketCatalog`, `Coupon`, and `Registration`. New per-event configuration and admin commands belong here.
+
 ## Non-Negotiable Conventions
 - API endpoint handlers own the transaction boundary and commit the module unit of work.
 - Command handlers must not inject or commit unit-of-work objects.

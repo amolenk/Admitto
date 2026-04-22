@@ -34,7 +34,8 @@ public static class SelfRegisterAttendeeHttpEndpoint
         var command = new SelfRegisterAttendeeCommand(
             TicketedEventId.From(eventId),
             EmailAddress.From(request.Email),
-            request.TicketTypeSlugs);
+            request.TicketTypeSlugs,
+            request.AdditionalDetails);
 
         var registrationId = await mediator.SendReceiveAsync<SelfRegisterAttendeeCommand, RegistrationId>(
             command, cancellationToken);

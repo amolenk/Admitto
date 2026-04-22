@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { apiClient } from "@/lib/api-client";
 import { TicketedEventDetails, isEventActive } from "../event-detail-types";
 import { EventStatusBanner } from "../event-status-banner";
+import { AdditionalDetailsEditor } from "./additional-details-editor";
 import { RegistrationPolicyForm } from "./registration-policy-form";
 
 export default function RegistrationSettingsPage() {
@@ -32,6 +33,13 @@ export default function RegistrationSettingsPage() {
             <EventStatusBanner status={event.data.status} />
             <RegistrationPolicyForm
                 key={`${event.data.slug}-${event.data.version}`}
+                event={event.data}
+                teamSlug={teamSlug}
+                eventSlug={eventSlug}
+                disabled={disabled}
+            />
+            <AdditionalDetailsEditor
+                key={`adschema-${event.data.slug}-${event.data.version}`}
                 event={event.data}
                 teamSlug={teamSlug}
                 eventSlug={eventSlug}

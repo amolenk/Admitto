@@ -47,6 +47,9 @@ internal sealed class GetTicketedEventDetailsHandler(
                 : new ReconfirmPolicyDto(
                     ticketedEvent.ReconfirmPolicy.OpensAt,
                     ticketedEvent.ReconfirmPolicy.ClosesAt,
-                    (int)ticketedEvent.ReconfirmPolicy.Cadence.TotalDays));
+                    (int)ticketedEvent.ReconfirmPolicy.Cadence.TotalDays),
+            ticketedEvent.AdditionalDetailSchema.Fields
+                .Select(f => new AdditionalDetailFieldDto(f.Key, f.Name, f.MaxLength))
+                .ToArray());
     }
 }

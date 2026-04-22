@@ -1,99 +1,101 @@
 # Registration Policy Specification
 
-### Requirement: Organizer can configure a registration window
-The system SHALL allow organizers (Owner or Organizer role) to configure a
-registration window (open and close datetimes) for an event. This configuration
-is stored in the Registrations module as part of the event's registration policy.
-The close datetime SHALL be strictly after the open datetime. Self-service registrations
-outside the window SHALL be rejected; coupon-based registrations are unaffected
-unless the coupon has `bypassRegistrationWindow` disabled.
+## Purpose
 
-Configuring or updating the registration window SHALL go through the lifecycle guard
-(see event-lifecycle-guard) and SHALL therefore only succeed when the event's
-lifecycle status is Active.
+The Registrations module owns each event's `EventRegistrationPolicy`, including an explicit `RegistrationStatus` (`Draft`, `Open`, `Closed`) that organizers transition via admin endpoints. Opening registration is gated by the Email module's configuration status (consulted through `IEventEmailFacade`) and by the event's lifecycle status. Policies are created exclusively in response to a `TicketedEventCreatedModuleEvent` published by the Organization module — handlers never create policies on demand and surface NotFound errors when a policy is missing.
 
-There is no separate "registration status" toggle: registration is accepted when
-`now ∈ [opensAt, closesAt)` and the lifecycle guard is Active.
+## Requirements
 
-#### Scenario: Configure registration window
-- **WHEN** an organizer sets the registration window for event "DevConf" from "2025-01-01T00:00Z" to "2025-06-01T00:00Z"
-- **THEN** the registration window is saved for "DevConf"
+### Requirement: Registration policy tracks an explicit registration status
+The system SHALL track an explicit `RegistrationStatus` on each `EventRegistrationPolicy` with values `Draft`, `Open`, and `Closed`. Newly created policies for events created through the admin UI SHALL default to `Draft`. Policies migrated from pre-existing data SHALL default to `Open` to preserve current behavior. Self-service registration and coupon-based registration SHALL be rejected unless the status is `Open` (in addition to existing window and lifecycle checks).
 
-#### Scenario: Update existing registration window
-- **WHEN** an organizer updates the registration window for event "DevConf" from "2025-01-01T00:00Z" / "2025-06-01T00:00Z" to "2025-02-01T00:00Z" / "2025-07-01T00:00Z"
-- **THEN** the registration window is updated
+#### Scenario: New event defaults to Draft
+- **WHEN** an organizer creates a new ticketed event "devconf-2026" via the admin UI
+- **THEN** its `EventRegistrationPolicy.RegistrationStatus` is `Draft`
 
-#### Scenario: Rejected — close before open
-- **WHEN** an organizer sets a registration window where the close datetime is before or equal to the open datetime
+#### Scenario: Self-service registration blocked when status is Draft
+- **WHEN** the registration status for "devconf-2026" is `Draft` and an attendee attempts self-service registration
+- **THEN** the registration is rejected with reason "registration not open"
+
+#### Scenario: Self-service registration blocked when status is Closed
+- **WHEN** the registration status for "devconf-2026" is `Closed` and an attendee attempts self-service registration
+- **THEN** the registration is rejected with reason "registration not open"
+
+#### Scenario: Coupon registration blocked when status is Draft
+- **WHEN** the registration status for "devconf-2026" is `Draft` and an attendee attempts to register with a coupon
+- **THEN** the registration is rejected with reason "registration not open"
+
+---
+
+### Requirement: Organizer can open an event for registration
+The system SHALL allow organizers (Owner or Organizer role) to transition an event's registration status from `Draft` or `Closed` to `Open` via an admin endpoint. The transition SHALL be rejected when the Email module reports that email is not configured for the event. The check SHALL be performed synchronously by calling `IEventEmailFacade.IsEmailConfiguredAsync` from the Registrations command handler before the status transition. Lifecycle status (Cancelled or Archived) SHALL also block the transition.
+
+#### Scenario: Open event when email is configured
+- **WHEN** an organizer opens registration for "devconf-2026" and the Email module reports email is configured
+- **THEN** the registration status becomes `Open`
+
+#### Scenario: Open rejected when email is not configured
+- **WHEN** an organizer opens registration for "devconf-2026" and the Email module reports email is not configured
+- **THEN** the request is rejected with a validation error indicating email must be configured first
+- **AND** the registration status remains unchanged
+
+#### Scenario: Open rejected when event lifecycle is Cancelled
+- **WHEN** an organizer attempts to open registration for an event whose lifecycle status is `Cancelled`
 - **THEN** the request is rejected with a validation error
 
-#### Scenario: Rejected — configuring on a cancelled event
-- **WHEN** event "DevConf" has a lifecycle guard with status Cancelled and an organizer attempts to set the registration window
-- **THEN** the request is rejected with reason "event not active"
-
-#### Scenario: Rejected — configuring on an archived event
-- **WHEN** event "DevConf" has a lifecycle guard with status Archived and an organizer attempts to set the registration window
-- **THEN** the request is rejected with reason "event not active"
+#### Scenario: Re-open a previously closed event
+- **WHEN** an organizer opens registration for an event whose status is `Closed` and email is configured
+- **THEN** the registration status becomes `Open`
 
 ---
 
-### Requirement: Organizer can configure an email domain restriction
-The system SHALL allow organizers (Owner or Organizer role) to configure an
-optional email domain restriction (single domain pattern, e.g. "@acme.com") for
-an event. Self-service registrations from non-matching domains SHALL be rejected.
-Coupon-based registrations SHALL bypass domain restrictions. The restriction MAY
-be removed, after which any email domain is accepted for self-service registration.
+### Requirement: Organizer can close an event for registration
+The system SHALL allow organizers (Owner or Organizer role) to transition an event's registration status from `Open` to `Closed` via an admin endpoint. Closing SHALL be permitted regardless of email configuration. After closing, self-service and coupon registrations SHALL be rejected.
 
-Configuring or updating the email-domain restriction SHALL go through the lifecycle
-guard and SHALL therefore only succeed when the event's lifecycle status is Active.
+#### Scenario: Close an open event
+- **WHEN** an organizer closes registration for "devconf-2026" whose status is `Open`
+- **THEN** the registration status becomes `Closed`
 
-#### Scenario: Configure email domain restriction
-- **WHEN** an organizer sets the allowed email domain for event "CorpConf" to "@acme.com"
-- **THEN** self-service registrations for "CorpConf" are restricted to "@acme.com" emails
-
-#### Scenario: Remove email domain restriction
-- **WHEN** an organizer removes the email domain restriction from event "CorpConf" which was restricted to "@acme.com"
-- **THEN** self-service registrations for "CorpConf" accept any email domain
-
-#### Scenario: Rejected — configuring on a cancelled event
-- **WHEN** event "CorpConf" has a lifecycle guard with status Cancelled and an organizer attempts to set the email-domain restriction
-- **THEN** the request is rejected with reason "event not active"
+#### Scenario: Close is idempotent
+- **WHEN** an organizer closes registration for an event whose status is already `Closed`
+- **THEN** the request succeeds and the status remains `Closed`
 
 ---
 
-### Requirement: Registration openness is derived from window and lifecycle
-The system SHALL derive whether registration is open for an event from two sources
-only: the registration window (`now ∈ [opensAt, closesAt)`) and the event's
-lifecycle status from the lifecycle guard. The system SHALL NOT store a separate
-registration-status value.
+### Requirement: Registrations module exposes can-open status for the admin UI
+The Registrations module SHALL expose an admin query endpoint that reports whether the "Open for registration" action is currently allowed for an event. The response SHALL include the current `RegistrationStatus` and a boolean indicating whether opening is permitted. The implementation SHALL consult `IEventEmailFacade` and the lifecycle status. The endpoint exists so the Admin UI can reflect backend gating without bypassing module boundaries.
 
-Registration is "open" when **all** of the following hold:
-- a `RegistrationPolicy` exists for the event and has a registration window configured, and
-- `opensAt ≤ now < closesAt`, and
-- the `TicketedEventLifecycleGuard` for the event has `LifecycleStatus = Active`.
+#### Scenario: Status reports can-open=true when conditions are met
+- **WHEN** the admin UI queries can-open status for an event with `Draft` status, email configured, and lifecycle `Active`
+- **THEN** the response is `{ status: "Draft", canOpen: true }`
 
-Otherwise registration is "closed".
+#### Scenario: Status reports can-open=false when email is not configured
+- **WHEN** the admin UI queries can-open status for an event with `Draft` status and email not configured
+- **THEN** the response is `{ status: "Draft", canOpen: false, reason: "email-not-configured" }`
 
-#### Scenario: Registration open within window and Active lifecycle
-- **WHEN** event "DevConf" has window "2025-01-01T00:00Z" / "2025-06-01T00:00Z", current time is "2025-03-15T12:00Z", and guard status is Active
-- **THEN** registration for "DevConf" is reported as open
+---
 
-#### Scenario: Registration closed before window opens
-- **WHEN** current time is "2024-12-31T23:59Z" and the window opens "2025-01-01T00:00Z"
-- **THEN** registration is reported as closed
+### Requirement: Event creation in Organization synchronously creates a registration policy in Registrations
+The Organization module SHALL publish a `TicketedEventCreatedModuleEvent` (containing `TeamId` and `TicketedEventId`) whenever a new ticketed event is created. The Registrations module SHALL consume this module event and create an `EventRegistrationPolicy` for the same `TicketedEventId` with `EventLifecycleStatus = Active` and `RegistrationStatus = Draft`. The handler SHALL be idempotent: re-delivery of the same event SHALL NOT create a duplicate policy and SHALL NOT raise an error.
 
-#### Scenario: Registration closed after window closes
-- **WHEN** current time is "2025-06-01T00:01Z" and the window closes "2025-06-01T00:00Z"
-- **THEN** registration is reported as closed
+#### Scenario: New event creates a Draft + Active policy
+- **WHEN** the Organization module publishes a `TicketedEventCreatedModuleEvent` for event "devconf-2026"
+- **THEN** the Registrations module persists an `EventRegistrationPolicy` with the matching id, `EventLifecycleStatus = Active`, and `RegistrationStatus = Draft`
 
-#### Scenario: Registration closed with no window configured
-- **WHEN** event "DevConf" has no registration window configured
-- **THEN** registration is reported as closed
+#### Scenario: Re-delivery is a no-op
+- **WHEN** the same `TicketedEventCreatedModuleEvent` is delivered twice
+- **THEN** exactly one `EventRegistrationPolicy` exists for the event and its lifecycle status is unchanged
 
-#### Scenario: Registration closed when lifecycle is Cancelled
-- **WHEN** event "OldConf" has an open window and guard status Cancelled
-- **THEN** registration is reported as closed
+---
 
-#### Scenario: Registration closed when lifecycle is Archived
-- **WHEN** event "OldConf" has an open window and guard status Archived
-- **THEN** registration is reported as closed
+### Requirement: Registrations handlers surface NotFound when the policy is missing
+Every Registrations command and query handler that operates on an `EventRegistrationPolicy` (set window, set allowed email domain, open/close registration, add/update/cancel ticket types, create coupon, self-register attendee, register with coupon, get registration open status) SHALL look up the policy by `TicketedEventId` and SHALL throw a `BusinessRuleViolationException` carrying `EventRegistrationPolicy.Errors.EventNotFound` (`ErrorType.NotFound`) when the policy does not exist. Handlers SHALL NOT create the policy on demand; the policy is created exclusively by the Org→Registrations event-creation sync.
+
+#### Scenario: Adding a ticket type for an unknown event is rejected with NotFound
+- **WHEN** an organizer attempts to add a ticket type to an event id that has no `EventRegistrationPolicy` row
+- **THEN** the handler throws `BusinessRuleViolationException` with the `EventNotFound` error
+- **AND** the API surfaces an HTTP 404 ProblemDetails response
+
+#### Scenario: Setting the registration window for an unknown event is rejected with NotFound
+- **WHEN** an organizer attempts to set the registration window for an event id that has no `EventRegistrationPolicy` row
+- **THEN** the handler throws `BusinessRuleViolationException` with the `EventNotFound` error

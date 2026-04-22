@@ -1,10 +1,16 @@
 # Admin UI Event Policies Specification
 
+## Purpose
+
+Admins manage a ticketed event's registration, cancellation, and reconfirm policies from dedicated Admin UI pages, with optimistic concurrency against the owning `TicketedEvent` aggregate and read-only behaviour when the event is no longer Active.
+
+## Requirements
+
 ### Requirement: Admin can manage the registration policy from the UI
 
-The Admin UI SHALL provide a "Registration Policy" page for a ticketed event with a form for the registration window (opens-at and closes-at) and an optional email-domain restriction. The form SHALL be pre-filled with the current policy values. The form SHALL submit the event's current policy version for optimistic concurrency. On success the UI SHALL show a confirmation message and refresh the displayed values. The page SHALL NOT display any "Open registration" / "Close registration" controls or any registration-status toggle — registration openness is derived from the window.
+The Admin UI SHALL provide a "Registration Policy" page for a ticketed event with a form for the registration window (opens-at and closes-at) and an optional email-domain restriction. The form SHALL be pre-filled with the current policy values. The form SHALL submit the event's current `TicketedEvent.Version` for optimistic concurrency. On success the UI SHALL show a confirmation message and refresh the displayed values. The page SHALL NOT display any "Open registration" / "Close registration" controls or any registration-status toggle — registration openness is derived from the window and the event's status.
 
-When the event's lifecycle status is Cancelled or Archived, the form SHALL be read-only and SHALL display a banner indicating the event is not active.
+When `TicketedEvent.Status` is Cancelled or Archived, the form SHALL be read-only and SHALL display a banner indicating the event is not active.
 
 #### Scenario: Configure the registration window
 - **WHEN** an organizer of team "acme" opens the Registration Policy page for event "DevConf" and sets the window to "2025-01-01T00:00Z" / "2025-06-01T00:00Z" and submits
@@ -19,7 +25,7 @@ When the event's lifecycle status is Cancelled or Archived, the form SHALL be re
 - **THEN** the page displays no "Open registration" or "Close registration" buttons or any registration-status toggle
 
 #### Scenario: Form is read-only for cancelled events
-- **WHEN** an organizer opens the Registration Policy page for event "DevConf" whose lifecycle status is Cancelled
+- **WHEN** an organizer opens the Registration Policy page for event "DevConf" whose `TicketedEvent.Status` is Cancelled
 - **THEN** the form fields are disabled and a banner indicates the event is cancelled
 
 #### Scenario: Concurrency conflict surfaces to the user
@@ -28,11 +34,51 @@ When the event's lifecycle status is Cancelled or Archived, the form SHALL be re
 
 ---
 
+### Requirement: Admin can manage the additional-detail schema from the registration policy page
+The Admin UI SHALL extend the Registration Policy page with an "Additional details" section that lets organizers add, rename, reorder, and remove additional detail fields. Each row SHALL display the field's `Name`, `Key`, and `MaxLength`. Adding a field SHALL auto-generate the `Key` from the `Name` (kebab-case) and SHALL allow the organizer to override it before the field is first persisted; once persisted the `Key` SHALL be read-only.
+
+The form SHALL submit the entire ordered field list together with the event's current `TicketedEvent.Version` for optimistic concurrency. On success the UI SHALL show a confirmation message and refresh the displayed values.
+
+Removing a field SHALL require an explicit confirmation that informs the organizer that historical values for that field will be preserved on existing registrations but will no longer be collected for new registrations.
+
+When `TicketedEvent.Status` is Cancelled or Archived, the editor SHALL be read-only and SHALL display a banner indicating the event is not active.
+
+#### Scenario: Add a new additional detail field
+- **WHEN** an organizer of team "acme" opens the Registration Policy page for active event "DevConf", adds a field named "Dietary requirements" with maxLength 200, and submits
+- **THEN** the schema is saved with a new field whose key is auto-generated as "dietary-requirements"
+
+#### Scenario: Override the auto-generated key before persisting
+- **WHEN** an organizer adds a new field named "Dietary requirements" and edits the auto-generated key to "dietary" before submitting
+- **THEN** the schema is saved with the field's key as "dietary"
+
+#### Scenario: Reorder fields
+- **WHEN** an organizer drags the "T-shirt size" row above the "Dietary requirements" row and submits
+- **THEN** the schema is persisted in the new order
+
+#### Scenario: Rename a field without changing its key
+- **WHEN** an organizer changes the name of the persisted field with key "dietary" to "Dietary needs" and submits
+- **THEN** the schema is saved and the field's key remains "dietary"
+
+#### Scenario: Remove a field requires confirmation
+- **WHEN** an organizer clicks the remove button for the field with key "dietary"
+- **THEN** the UI shows a confirmation dialog explaining that historical values will be preserved but no longer collected
+- **AND** removal proceeds only after the organizer confirms
+
+#### Scenario: Editor is read-only for cancelled events
+- **WHEN** an organizer opens the Registration Policy page for event "DevConf" whose `TicketedEvent.Status` is Cancelled
+- **THEN** the additional-details rows are read-only and a banner indicates the event is cancelled
+
+#### Scenario: Concurrency conflict surfaces to the user
+- **WHEN** an organizer submits the additional-details form but the backend rejects the write with a concurrency conflict
+- **THEN** the UI shows an error prompting the user to reload the page
+
+---
+
 ### Requirement: Admin can manage the cancellation policy from the UI
 
-The Admin UI SHALL provide a "Cancellation Policy" page for a ticketed event with a form for a single late-cancellation cutoff datetime. The field SHALL be clearable (removing the policy entirely). The form SHALL be pre-filled with the current value or shown empty when no policy is configured. On success the UI SHALL show a confirmation message.
+The Admin UI SHALL provide a "Cancellation Policy" page for a ticketed event with a form for a single late-cancellation cutoff datetime. The field SHALL be clearable (removing the policy entirely). The form SHALL be pre-filled with the current value or shown empty when no policy is configured. The form SHALL submit the event's current `TicketedEvent.Version` for optimistic concurrency. On success the UI SHALL show a confirmation message.
 
-When the event's lifecycle status is Cancelled or Archived, the form SHALL be read-only with an explanatory banner.
+When `TicketedEvent.Status` is Cancelled or Archived, the form SHALL be read-only with an explanatory banner.
 
 #### Scenario: Configure the late-cancellation cutoff
 - **WHEN** an organizer opens the Cancellation Policy page for event "DevConf" and sets the cutoff to "2025-05-25T00:00Z" and submits
@@ -43,16 +89,16 @@ When the event's lifecycle status is Cancelled or Archived, the form SHALL be re
 - **THEN** the cancellation policy is removed and the page displays no configured policy
 
 #### Scenario: Form is read-only for archived events
-- **WHEN** an organizer opens the Cancellation Policy page for event "OldConf" whose lifecycle status is Archived
+- **WHEN** an organizer opens the Cancellation Policy page for event "OldConf" whose `TicketedEvent.Status` is Archived
 - **THEN** the form fields are disabled and a banner indicates the event is archived
 
 ---
 
 ### Requirement: Admin can manage the reconfirm policy from the UI
 
-The Admin UI SHALL provide a "Reconfirmation Policy" page for a ticketed event with a form for the reconfirmation window (opens-at and closes-at) and a cadence expressed in days. The form SHALL support removing the policy entirely. The form SHALL validate client-side that close is after open and cadence is a positive integer ≥ 1. Server-side validation errors SHALL be displayed inline. On success the UI SHALL show a confirmation message.
+The Admin UI SHALL provide a "Reconfirmation Policy" page for a ticketed event with a form for the reconfirmation window (opens-at and closes-at) and a cadence expressed in days. The form SHALL support removing the policy entirely. The form SHALL validate client-side that close is after open and cadence is a positive integer ≥ 1. Server-side validation errors SHALL be displayed inline. The form SHALL submit the event's current `TicketedEvent.Version` for optimistic concurrency. On success the UI SHALL show a confirmation message.
 
-When the event's lifecycle status is Cancelled or Archived, the form SHALL be read-only with an explanatory banner.
+When `TicketedEvent.Status` is Cancelled or Archived, the form SHALL be read-only with an explanatory banner.
 
 #### Scenario: Configure the reconfirm policy
 - **WHEN** an organizer sets the reconfirm window to "2025-05-01T00:00Z" / "2025-05-25T00:00Z" and cadence to 7 days and submits
@@ -74,12 +120,12 @@ When the event's lifecycle status is Cancelled or Archived, the form SHALL be re
 
 ### Requirement: Event policy pages are reachable from the sidebar
 
-The Admin UI SHALL expose the Registration Policy, Cancellation Policy, and Reconfirmation Policy pages from the event detail sidebar under a "Policies" section. The event detail header SHALL display the current lifecycle status (Active / Cancelled / Archived).
+The Admin UI SHALL expose the Registration Policy, Cancellation Policy, and Reconfirmation Policy pages from the event detail sidebar under a "Policies" section. The event detail header SHALL display the current event status (Active / Cancelled / Archived), read from `TicketedEvent.Status`.
 
 #### Scenario: Navigate to all three policy pages
 - **WHEN** an organizer opens the event detail view for event "DevConf"
 - **THEN** the sidebar shows a "Policies" section containing links to "Registration", "Cancellation", and "Reconfirmation"
 
-#### Scenario: Event header shows lifecycle status
-- **WHEN** an organizer views event "DevConf" whose lifecycle status is Cancelled
+#### Scenario: Event header shows status
+- **WHEN** an organizer views event "DevConf" whose `TicketedEvent.Status` is Cancelled
 - **THEN** the event detail header shows a badge or label indicating the event is Cancelled

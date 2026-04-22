@@ -8,4 +8,5 @@ internal sealed record RegisterWithCouponCommand(
     TicketedEventId EventId,
     string CouponCode,
     EmailAddress Email,
-    string[] TicketTypeSlugs) : Command<RegistrationId>;
+    string[] TicketTypeSlugs,
+    IReadOnlyDictionary<string, string>? AdditionalDetails = null) : Command<RegistrationId>;

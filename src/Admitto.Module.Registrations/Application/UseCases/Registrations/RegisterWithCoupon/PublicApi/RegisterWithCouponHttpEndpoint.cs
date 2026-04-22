@@ -35,7 +35,8 @@ public static class RegisterWithCouponHttpEndpoint
             TicketedEventId.From(eventId),
             request.CouponCode,
             EmailAddress.From(request.Email),
-            request.TicketTypeSlugs);
+            request.TicketTypeSlugs,
+            request.AdditionalDetails);
 
         var registrationId = await mediator.SendReceiveAsync<RegisterWithCouponCommand, RegistrationId>(
             command, cancellationToken);

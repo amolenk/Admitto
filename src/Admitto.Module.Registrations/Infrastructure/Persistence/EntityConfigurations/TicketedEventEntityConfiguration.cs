@@ -84,6 +84,13 @@ public class TicketedEventEntityConfiguration : IEntityTypeConfiguration<Tickete
             p.Property(x => x.Cadence).HasColumnName("reconfirm_policy_cadence");
         });
 
+        builder.Property(e => e.AdditionalDetailSchema)
+            .HasColumnName("additional_detail_schema")
+            .HasColumnType("jsonb")
+            .HasConversion(AdditionalDetailJsonConverters.SchemaConverter)
+            .HasDefaultValueSql("'[]'::jsonb")
+            .IsRequired();
+
         builder.HasIndex(e => new { e.TeamId, e.Slug })
             .IsUnique();
     }

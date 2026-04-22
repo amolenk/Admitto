@@ -267,6 +267,117 @@ public sealed class TicketedEventTests
         ex.Error.Code.ShouldBe("ticketed_event.event_not_active");
     }
 
+    // ── UpdateAdditionalDetailSchema ─────────────────────────────────────────
+
+    [TestMethod]
+    public void SC100_UpdateAdditionalDetailSchema_Active_StoresSchemaAndRaisesEvent()
+    {
+        var sut = NewEvent();
+        var fields = new[]
+        {
+            AdditionalDetailField.Create("dietary", "Dietary requirements", 200),
+            AdditionalDetailField.Create("tshirt", "T-shirt size", 5),
+        };
+
+        sut.UpdateAdditionalDetailSchema(fields);
+
+        sut.AdditionalDetailSchema.Fields.Count.ShouldBe(2);
+        sut.AdditionalDetailSchema.Fields[0].Key.ShouldBe("dietary");
+        sut.AdditionalDetailSchema.Fields[1].Key.ShouldBe("tshirt");
+
+        var raised = sut.GetDomainEvents()
+            .OfType<AdditionalDetailSchemaUpdatedDomainEvent>()
+            .ShouldHaveSingleItem();
+        raised.TicketedEventId.ShouldBe(DefaultEventId);
+        raised.Schema.Fields.Count.ShouldBe(2);
+    }
+
+    [TestMethod]
+    public void SC101_UpdateAdditionalDetailSchema_ReplacesAtomically()
+    {
+        var sut = NewEvent();
+        sut.UpdateAdditionalDetailSchema(new[]
+        {
+            AdditionalDetailField.Create("dietary", "Dietary requirements", 200),
+        });
+
+        sut.UpdateAdditionalDetailSchema(new[]
+        {
+            AdditionalDetailField.Create("tshirt", "T-shirt size", 5),
+        });
+
+        sut.AdditionalDetailSchema.Fields.Count.ShouldBe(1);
+        sut.AdditionalDetailSchema.Fields[0].Key.ShouldBe("tshirt");
+    }
+
+    [TestMethod]
+    public void SC102_UpdateAdditionalDetailSchema_Cancelled_Throws()
+    {
+        var sut = NewEvent();
+        sut.Cancel();
+
+        var act = () => sut.UpdateAdditionalDetailSchema(Array.Empty<AdditionalDetailField>());
+
+        var ex = Should.Throw<BusinessRuleViolationException>(act);
+        ex.Error.Code.ShouldBe("ticketed_event.event_not_active");
+    }
+
+    [TestMethod]
+    public void SC103_UpdateAdditionalDetailSchema_Archived_Throws()
+    {
+        var sut = NewEvent();
+        sut.Archive();
+
+        var act = () => sut.UpdateAdditionalDetailSchema(Array.Empty<AdditionalDetailField>());
+
+        var ex = Should.Throw<BusinessRuleViolationException>(act);
+        ex.Error.Code.ShouldBe("ticketed_event.event_not_active");
+    }
+
+    [TestMethod]
+    public void SC104_UpdateAdditionalDetailSchema_DuplicateKey_Throws()
+    {
+        var sut = NewEvent();
+
+        var act = () => sut.UpdateAdditionalDetailSchema(new[]
+        {
+            AdditionalDetailField.Create("dietary", "Dietary", 200),
+            AdditionalDetailField.Create("dietary", "Dietary needs", 200),
+        });
+
+        var ex = Should.Throw<BusinessRuleViolationException>(act);
+        ex.Error.Code.ShouldBe("additional_detail_schema.duplicate_key");
+    }
+
+    [TestMethod]
+    public void SC105_UpdateAdditionalDetailSchema_DuplicateName_CaseInsensitive_Throws()
+    {
+        var sut = NewEvent();
+
+        var act = () => sut.UpdateAdditionalDetailSchema(new[]
+        {
+            AdditionalDetailField.Create("dietary-1", "Dietary", 200),
+            AdditionalDetailField.Create("dietary-2", "dietary", 200),
+        });
+
+        var ex = Should.Throw<BusinessRuleViolationException>(act);
+        ex.Error.Code.ShouldBe("additional_detail_schema.duplicate_name");
+    }
+
+    [TestMethod]
+    public void SC106_UpdateAdditionalDetailSchema_TooManyFields_Throws()
+    {
+        var sut = NewEvent();
+        var fields = Enumerable.Range(0, AdditionalDetailSchema.MaxFields + 1)
+            .Select(i => AdditionalDetailField.Create($"f-{i}", $"Field {i}", 100))
+            .ToArray();
+
+        var act = () => sut.UpdateAdditionalDetailSchema(fields);
+
+        var ex = Should.Throw<BusinessRuleViolationException>(act);
+        ex.Error.Code.ShouldBe("additional_detail_schema.too_many_fields");
+    }
+
     // ── IsRegistrationOpen ───────────────────────────────────────────────────
 
     [TestMethod]
