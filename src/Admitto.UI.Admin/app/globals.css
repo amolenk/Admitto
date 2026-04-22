@@ -199,6 +199,31 @@
   background-size: 24px 24px;
 }
 
+/* Ticket-stub card: stronger rounded corners with a perforated tear-line
+   (dashed divider with rounded notches on the left and right edges) */
+.ticket-card {
+  border-radius: calc(var(--radius) + 6px);
+}
+.ticket-perf {
+  position: relative;
+  height: 1px;
+  margin: 1rem -1.25rem 0; /* extend to card edges (p-5 = 1.25rem) */
+  border-top: 1px dashed color-mix(in oklch, var(--border) 95%, transparent);
+}
+.ticket-perf::before,
+.ticket-perf::after {
+  content: "";
+  position: absolute;
+  top: -9px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--background);
+  border: 1px solid var(--border);
+}
+.ticket-perf::before { left: -9px; }
+.ticket-perf::after { right: -9px; }
+
 /* Sidebar item */
 .side-item {
   display: flex;
