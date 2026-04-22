@@ -4,6 +4,12 @@ export type ClientOptions = {
     baseUrl: 'http://localhost:15000/' | (string & {});
 };
 
+export type AdditionalDetailFieldDto = {
+    key: string;
+    name: string;
+    maxLength: number | string;
+};
+
 export type AddTicketTypeHttpRequest = {
     slug: string;
     name: string;
@@ -15,11 +21,19 @@ export type AddTicketTypeHttpResponse = {
     slug: string;
 };
 
-export type ArchiveTeamHttpRequest = {
-    expectedVersion: null | number | string;
+export type AdminRegisterAttendeeHttpRequest = {
+    email: string;
+    ticketTypeSlugs: Array<string>;
+    additionalDetails?: null | {
+        [key: string]: string;
+    };
 };
 
-export type ArchiveTicketedEventHttpRequest = {
+export type AdminRegisterAttendeeHttpResponse = {
+    registrationId: string;
+};
+
+export type ArchiveTeamHttpRequest = {
     expectedVersion: null | number | string;
 };
 
@@ -32,12 +46,27 @@ export type CancellationPolicyDto = {
     lateCancellationCutoff: string;
 };
 
-export type CancelTicketedEventHttpRequest = {
-    expectedVersion: null | number | string;
-};
-
 export type ChangeTeamMembershipRoleHttpRequest = {
     newRole: TeamMembershipRoleDto;
+};
+
+export type ConfigureCancellationPolicyHttpRequest = {
+    lateCancellationCutoff?: null | string;
+    expectedVersion?: null | number | string;
+};
+
+export type ConfigureReconfirmPolicyHttpRequest = {
+    opensAt?: null | string;
+    closesAt?: null | string;
+    cadenceDays?: null | number | string;
+    expectedVersion?: null | number | string;
+};
+
+export type ConfigureRegistrationPolicyHttpRequest = {
+    opensAt: string;
+    closesAt: string;
+    allowedEmailDomain?: null | string;
+    expectedVersion?: null | number | string;
 };
 
 export type CouponDetailsDto = {
@@ -81,16 +110,19 @@ export type CreateTeamHttpRequest = {
     emailAddress: string;
 };
 
-export type CreateTicketedEventHttpRequest = {
-    slug: string;
-    name: string;
-    websiteUrl: string;
-    baseUrl: string;
-    startsAt: string;
-    endsAt: string;
-};
-
 export type EmailAuthMode = 'none' | 'basic';
+
+export type EventCreationRequestDto = {
+    creationRequestId: string;
+    teamId: string;
+    requestedSlug: string;
+    requesterId: string;
+    requestedAt: string;
+    status: string;
+    completedAt: null | string;
+    ticketedEventId: null | string;
+    rejectionReason: null | string;
+};
 
 export type EventEmailSettingsDto = {
     smtpHost: string;
@@ -100,6 +132,14 @@ export type EventEmailSettingsDto = {
     username: null | string;
     hasPassword: boolean;
     version: number | string;
+};
+
+export type EventLifecycleStatus = 'active' | 'cancelled' | 'archived';
+
+export type FieldDto = {
+    key: string;
+    name: string;
+    maxLength: number | string;
 };
 
 export type HttpValidationProblemDetails = {
@@ -135,34 +175,32 @@ export type RegisterWithCouponHttpRequest = {
     couponCode: string;
     email: string;
     ticketTypeSlugs: Array<string>;
+    additionalDetails?: null | {
+        [key: string]: string;
+    };
 };
 
-export type RegistrationOpenStatusDto = {
-    isOpen: boolean;
-    isEventActive: boolean;
-    windowOpensAt: null | string;
-    windowClosesAt: null | string;
+export type RegistrationPolicyDto = {
+    opensAt: string;
+    closesAt: string;
+    allowedEmailDomain: null | string;
+};
+
+export type RequestTicketedEventCreationHttpRequest = {
+    slug: string;
+    name: string;
+    websiteUrl: string;
+    baseUrl: string;
+    startsAt: string;
+    endsAt: string;
 };
 
 export type SelfRegisterAttendeeHttpRequest = {
     email: string;
     ticketTypeSlugs: Array<string>;
-};
-
-export type SetCancellationPolicyHttpRequest = {
-    lateCancellationCutoff: string;
-};
-
-export type SetReconfirmPolicyHttpRequest = {
-    opensAt: string;
-    closesAt: string;
-    cadenceDays: number | string;
-};
-
-export type SetRegistrationPolicyHttpRequest = {
-    registrationWindowOpensAt: null | string;
-    registrationWindowClosesAt: null | string;
-    allowedEmailDomain: null | string;
+    additionalDetails?: null | {
+        [key: string]: string;
+    };
 };
 
 export type TeamDto = {
@@ -186,15 +224,22 @@ export type TeamMemberListItemDto = {
 
 export type TeamMembershipRoleDto = 'crew' | 'organizer' | 'owner';
 
-export type TicketedEventDto = {
+export type TicketedEventDetailsDto = {
+    id: string;
+    teamId: string;
     slug: string;
     name: string;
     websiteUrl: string;
     baseUrl: string;
     startsAt: string;
     endsAt: string;
-    status: string;
+    status: EventLifecycleStatus;
     version: number | string;
+    isRegistrationOpen: boolean;
+    registrationPolicy: null | RegistrationPolicyDto;
+    cancellationPolicy: null | CancellationPolicyDto;
+    reconfirmPolicy: null | ReconfirmPolicyDto;
+    additionalDetailSchema: Array<AdditionalDetailFieldDto>;
 };
 
 export type TicketedEventListItemDto = {
@@ -202,7 +247,7 @@ export type TicketedEventListItemDto = {
     name: string;
     startsAt: string;
     endsAt: string;
-    status: string;
+    status: EventLifecycleStatus;
 };
 
 export type TicketTypeDto = {
@@ -214,19 +259,24 @@ export type TicketTypeDto = {
     isCancelled: boolean;
 };
 
+export type UpdateAdditionalDetailSchemaHttpRequest = {
+    fields: Array<FieldDto>;
+    expectedVersion?: null | number | string;
+};
+
 export type UpdateTeamHttpRequest = {
     name: null | string;
     emailAddress: null | string;
     expectedVersion: null | number | string;
 };
 
-export type UpdateTicketedEventHttpRequest = {
-    name: null | string;
-    websiteUrl: null | string;
-    baseUrl: null | string;
-    startsAt: null | string;
-    endsAt: null | string;
-    expectedVersion: null | number | string;
+export type UpdateTicketedEventDetailsHttpRequest = {
+    name: string;
+    websiteUrl: string;
+    baseUrl: string;
+    startsAt: string;
+    endsAt: string;
+    expectedVersion?: null | number | string;
 };
 
 export type UpdateTicketTypeHttpRequest = {
@@ -533,6 +583,134 @@ export type AssignTeamMembershipResponses = {
     200: unknown;
 };
 
+export type GetTicketedEventsData = {
+    body?: never;
+    path: {
+        teamSlug: string;
+    };
+    query?: never;
+    url: '/admin/teams/{teamSlug}/events';
+};
+
+export type GetTicketedEventsErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetTicketedEventsError = GetTicketedEventsErrors[keyof GetTicketedEventsErrors];
+
+export type GetTicketedEventsResponses = {
+    /**
+     * OK
+     */
+    200: Array<TicketedEventListItemDto>;
+};
+
+export type GetTicketedEventsResponse = GetTicketedEventsResponses[keyof GetTicketedEventsResponses];
+
+export type RequestTicketedEventCreationData = {
+    body: RequestTicketedEventCreationHttpRequest;
+    path: {
+        teamSlug: string;
+    };
+    query?: never;
+    url: '/admin/teams/{teamSlug}/events';
+};
+
+export type RequestTicketedEventCreationErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type RequestTicketedEventCreationError = RequestTicketedEventCreationErrors[keyof RequestTicketedEventCreationErrors];
+
+export type RequestTicketedEventCreationResponses = {
+    /**
+     * Accepted
+     */
+    202: unknown;
+};
+
+export type GetEventCreationRequestData = {
+    body?: never;
+    path: {
+        teamSlug: string;
+        creationRequestId: string;
+    };
+    query?: never;
+    url: '/admin/teams/{teamSlug}/event-creations/{creationRequestId}';
+};
+
+export type GetEventCreationRequestErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetEventCreationRequestError = GetEventCreationRequestErrors[keyof GetEventCreationRequestErrors];
+
+export type GetEventCreationRequestResponses = {
+    /**
+     * OK
+     */
+    200: EventCreationRequestDto;
+};
+
+export type GetEventCreationRequestResponse = GetEventCreationRequestResponses[keyof GetEventCreationRequestResponses];
+
 export type RemoveTeamMembershipData = {
     body?: never;
     path: {
@@ -611,260 +789,6 @@ export type ChangeTeamMembershipRoleErrors = {
 export type ChangeTeamMembershipRoleError = ChangeTeamMembershipRoleErrors[keyof ChangeTeamMembershipRoleErrors];
 
 export type ChangeTeamMembershipRoleResponses = {
-    /**
-     * OK
-     */
-    200: unknown;
-};
-
-export type GetTicketedEventsData = {
-    body?: never;
-    path: {
-        teamSlug: string;
-    };
-    query?: never;
-    url: '/admin/teams/{teamSlug}/events';
-};
-
-export type GetTicketedEventsErrors = {
-    /**
-     * Bad Request
-     */
-    400: HttpValidationProblemDetails;
-    /**
-     * Unauthorized
-     */
-    401: ProblemDetails;
-    /**
-     * Forbidden
-     */
-    403: ProblemDetails;
-    /**
-     * Conflict
-     */
-    409: ProblemDetails;
-    /**
-     * Internal Server Error
-     */
-    500: ProblemDetails;
-};
-
-export type GetTicketedEventsError = GetTicketedEventsErrors[keyof GetTicketedEventsErrors];
-
-export type GetTicketedEventsResponses = {
-    /**
-     * OK
-     */
-    200: Array<TicketedEventListItemDto>;
-};
-
-export type GetTicketedEventsResponse = GetTicketedEventsResponses[keyof GetTicketedEventsResponses];
-
-export type CreateTicketedEventData = {
-    body: CreateTicketedEventHttpRequest;
-    path: {
-        teamSlug: string;
-    };
-    query?: never;
-    url: '/admin/teams/{teamSlug}/events';
-};
-
-export type CreateTicketedEventErrors = {
-    /**
-     * Bad Request
-     */
-    400: HttpValidationProblemDetails;
-    /**
-     * Unauthorized
-     */
-    401: ProblemDetails;
-    /**
-     * Forbidden
-     */
-    403: ProblemDetails;
-    /**
-     * Conflict
-     */
-    409: ProblemDetails;
-    /**
-     * Internal Server Error
-     */
-    500: ProblemDetails;
-};
-
-export type CreateTicketedEventError = CreateTicketedEventErrors[keyof CreateTicketedEventErrors];
-
-export type CreateTicketedEventResponses = {
-    /**
-     * Created
-     */
-    201: unknown;
-};
-
-export type GetTicketedEventData = {
-    body?: never;
-    path: {
-        teamSlug: string;
-        eventSlug: string;
-    };
-    query?: never;
-    url: '/admin/teams/{teamSlug}/events/{eventSlug}';
-};
-
-export type GetTicketedEventErrors = {
-    /**
-     * Bad Request
-     */
-    400: HttpValidationProblemDetails;
-    /**
-     * Unauthorized
-     */
-    401: ProblemDetails;
-    /**
-     * Forbidden
-     */
-    403: ProblemDetails;
-    /**
-     * Conflict
-     */
-    409: ProblemDetails;
-    /**
-     * Internal Server Error
-     */
-    500: ProblemDetails;
-};
-
-export type GetTicketedEventError = GetTicketedEventErrors[keyof GetTicketedEventErrors];
-
-export type GetTicketedEventResponses = {
-    /**
-     * OK
-     */
-    200: TicketedEventDto;
-};
-
-export type GetTicketedEventResponse = GetTicketedEventResponses[keyof GetTicketedEventResponses];
-
-export type UpdateTicketedEventData = {
-    body: UpdateTicketedEventHttpRequest;
-    path: {
-        teamSlug: string;
-        eventSlug: string;
-    };
-    query?: never;
-    url: '/admin/teams/{teamSlug}/events/{eventSlug}';
-};
-
-export type UpdateTicketedEventErrors = {
-    /**
-     * Bad Request
-     */
-    400: HttpValidationProblemDetails;
-    /**
-     * Unauthorized
-     */
-    401: ProblemDetails;
-    /**
-     * Forbidden
-     */
-    403: ProblemDetails;
-    /**
-     * Conflict
-     */
-    409: ProblemDetails;
-    /**
-     * Internal Server Error
-     */
-    500: ProblemDetails;
-};
-
-export type UpdateTicketedEventError = UpdateTicketedEventErrors[keyof UpdateTicketedEventErrors];
-
-export type UpdateTicketedEventResponses = {
-    /**
-     * OK
-     */
-    200: unknown;
-};
-
-export type CancelTicketedEventData = {
-    body: CancelTicketedEventHttpRequest;
-    path: {
-        teamSlug: string;
-        eventSlug: string;
-    };
-    query?: never;
-    url: '/admin/teams/{teamSlug}/events/{eventSlug}/cancel';
-};
-
-export type CancelTicketedEventErrors = {
-    /**
-     * Bad Request
-     */
-    400: HttpValidationProblemDetails;
-    /**
-     * Unauthorized
-     */
-    401: ProblemDetails;
-    /**
-     * Forbidden
-     */
-    403: ProblemDetails;
-    /**
-     * Conflict
-     */
-    409: ProblemDetails;
-    /**
-     * Internal Server Error
-     */
-    500: ProblemDetails;
-};
-
-export type CancelTicketedEventError = CancelTicketedEventErrors[keyof CancelTicketedEventErrors];
-
-export type CancelTicketedEventResponses = {
-    /**
-     * OK
-     */
-    200: unknown;
-};
-
-export type ArchiveTicketedEventData = {
-    body: ArchiveTicketedEventHttpRequest;
-    path: {
-        teamSlug: string;
-        eventSlug: string;
-    };
-    query?: never;
-    url: '/admin/teams/{teamSlug}/events/{eventSlug}/archive';
-};
-
-export type ArchiveTicketedEventErrors = {
-    /**
-     * Bad Request
-     */
-    400: HttpValidationProblemDetails;
-    /**
-     * Unauthorized
-     */
-    401: ProblemDetails;
-    /**
-     * Forbidden
-     */
-    403: ProblemDetails;
-    /**
-     * Conflict
-     */
-    409: ProblemDetails;
-    /**
-     * Internal Server Error
-     */
-    500: ProblemDetails;
-};
-
-export type ArchiveTicketedEventError = ArchiveTicketedEventErrors[keyof ArchiveTicketedEventErrors];
-
-export type ArchiveTicketedEventResponses = {
     /**
      * OK
      */
@@ -960,6 +884,406 @@ export type UpsertEventEmailSettingsResponses = {
      */
     201: unknown;
 };
+
+export type GetTicketedEventDetailsData = {
+    body?: never;
+    path: {
+        teamSlug: string;
+        eventSlug: string;
+    };
+    query?: never;
+    url: '/admin/teams/{teamSlug}/events/{eventSlug}';
+};
+
+export type GetTicketedEventDetailsErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Not Found
+     */
+    404: unknown;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetTicketedEventDetailsError = GetTicketedEventDetailsErrors[keyof GetTicketedEventDetailsErrors];
+
+export type GetTicketedEventDetailsResponses = {
+    /**
+     * OK
+     */
+    200: TicketedEventDetailsDto;
+};
+
+export type GetTicketedEventDetailsResponse = GetTicketedEventDetailsResponses[keyof GetTicketedEventDetailsResponses];
+
+export type UpdateTicketedEventDetailsData = {
+    body: UpdateTicketedEventDetailsHttpRequest;
+    path: {
+        teamSlug: string;
+        eventSlug: string;
+    };
+    query?: never;
+    url: '/admin/teams/{teamSlug}/events/{eventSlug}';
+};
+
+export type UpdateTicketedEventDetailsErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type UpdateTicketedEventDetailsError = UpdateTicketedEventDetailsErrors[keyof UpdateTicketedEventDetailsErrors];
+
+export type UpdateTicketedEventDetailsResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type UpdateTicketedEventDetailsResponse = UpdateTicketedEventDetailsResponses[keyof UpdateTicketedEventDetailsResponses];
+
+export type CancelTicketedEventData = {
+    body?: never;
+    path: {
+        teamSlug: string;
+        eventSlug: string;
+    };
+    query?: never;
+    url: '/admin/teams/{teamSlug}/events/{eventSlug}/cancel';
+};
+
+export type CancelTicketedEventErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type CancelTicketedEventError = CancelTicketedEventErrors[keyof CancelTicketedEventErrors];
+
+export type CancelTicketedEventResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type CancelTicketedEventResponse = CancelTicketedEventResponses[keyof CancelTicketedEventResponses];
+
+export type ArchiveTicketedEventData = {
+    body?: never;
+    path: {
+        teamSlug: string;
+        eventSlug: string;
+    };
+    query?: never;
+    url: '/admin/teams/{teamSlug}/events/{eventSlug}/archive';
+};
+
+export type ArchiveTicketedEventErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type ArchiveTicketedEventError = ArchiveTicketedEventErrors[keyof ArchiveTicketedEventErrors];
+
+export type ArchiveTicketedEventResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type ArchiveTicketedEventResponse = ArchiveTicketedEventResponses[keyof ArchiveTicketedEventResponses];
+
+export type ConfigureRegistrationPolicyData = {
+    body: ConfigureRegistrationPolicyHttpRequest;
+    path: {
+        teamSlug: string;
+        eventSlug: string;
+    };
+    query?: never;
+    url: '/admin/teams/{teamSlug}/events/{eventSlug}/registration-policy';
+};
+
+export type ConfigureRegistrationPolicyErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type ConfigureRegistrationPolicyError = ConfigureRegistrationPolicyErrors[keyof ConfigureRegistrationPolicyErrors];
+
+export type ConfigureRegistrationPolicyResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type ConfigureRegistrationPolicyResponse = ConfigureRegistrationPolicyResponses[keyof ConfigureRegistrationPolicyResponses];
+
+export type ConfigureCancellationPolicyData = {
+    body: ConfigureCancellationPolicyHttpRequest;
+    path: {
+        teamSlug: string;
+        eventSlug: string;
+    };
+    query?: never;
+    url: '/admin/teams/{teamSlug}/events/{eventSlug}/cancellation-policy';
+};
+
+export type ConfigureCancellationPolicyErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type ConfigureCancellationPolicyError = ConfigureCancellationPolicyErrors[keyof ConfigureCancellationPolicyErrors];
+
+export type ConfigureCancellationPolicyResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type ConfigureCancellationPolicyResponse = ConfigureCancellationPolicyResponses[keyof ConfigureCancellationPolicyResponses];
+
+export type ConfigureReconfirmPolicyData = {
+    body: ConfigureReconfirmPolicyHttpRequest;
+    path: {
+        teamSlug: string;
+        eventSlug: string;
+    };
+    query?: never;
+    url: '/admin/teams/{teamSlug}/events/{eventSlug}/reconfirm-policy';
+};
+
+export type ConfigureReconfirmPolicyErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type ConfigureReconfirmPolicyError = ConfigureReconfirmPolicyErrors[keyof ConfigureReconfirmPolicyErrors];
+
+export type ConfigureReconfirmPolicyResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type ConfigureReconfirmPolicyResponse = ConfigureReconfirmPolicyResponses[keyof ConfigureReconfirmPolicyResponses];
+
+export type UpdateAdditionalDetailSchemaData = {
+    body: UpdateAdditionalDetailSchemaHttpRequest;
+    path: {
+        teamSlug: string;
+        eventSlug: string;
+    };
+    query?: never;
+    url: '/admin/teams/{teamSlug}/events/{eventSlug}/additional-detail-schema';
+};
+
+export type UpdateAdditionalDetailSchemaErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type UpdateAdditionalDetailSchemaError = UpdateAdditionalDetailSchemaErrors[keyof UpdateAdditionalDetailSchemaErrors];
+
+export type UpdateAdditionalDetailSchemaResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type UpdateAdditionalDetailSchemaResponse = UpdateAdditionalDetailSchemaResponses[keyof UpdateAdditionalDetailSchemaResponses];
+
+export type AdminRegisterAttendeeData = {
+    body: AdminRegisterAttendeeHttpRequest;
+    path: {
+        teamSlug: string;
+        eventSlug: string;
+    };
+    query?: never;
+    url: '/admin/teams/{teamSlug}/events/{eventSlug}/registrations';
+};
+
+export type AdminRegisterAttendeeErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type AdminRegisterAttendeeError = AdminRegisterAttendeeErrors[keyof AdminRegisterAttendeeErrors];
+
+export type AdminRegisterAttendeeResponses = {
+    /**
+     * Created
+     */
+    201: AdminRegisterAttendeeHttpResponse;
+};
+
+export type AdminRegisterAttendeeResponse = AdminRegisterAttendeeResponses[keyof AdminRegisterAttendeeResponses];
 
 export type ListCouponsData = {
     body?: never;
@@ -1131,360 +1455,6 @@ export type RevokeCouponErrors = {
 export type RevokeCouponError = RevokeCouponErrors[keyof RevokeCouponErrors];
 
 export type RevokeCouponResponses = {
-    /**
-     * OK
-     */
-    200: unknown;
-};
-
-export type SetRegistrationPolicyData = {
-    body: SetRegistrationPolicyHttpRequest;
-    path: {
-        teamSlug: string;
-        eventSlug: string;
-    };
-    query?: never;
-    url: '/admin/teams/{teamSlug}/events/{eventSlug}/registration-policy';
-};
-
-export type SetRegistrationPolicyErrors = {
-    /**
-     * Bad Request
-     */
-    400: HttpValidationProblemDetails;
-    /**
-     * Unauthorized
-     */
-    401: ProblemDetails;
-    /**
-     * Forbidden
-     */
-    403: ProblemDetails;
-    /**
-     * Conflict
-     */
-    409: ProblemDetails;
-    /**
-     * Internal Server Error
-     */
-    500: ProblemDetails;
-};
-
-export type SetRegistrationPolicyError = SetRegistrationPolicyErrors[keyof SetRegistrationPolicyErrors];
-
-export type SetRegistrationPolicyResponses = {
-    /**
-     * OK
-     */
-    200: unknown;
-};
-
-export type GetRegistrationOpenStatusData = {
-    body?: never;
-    path: {
-        teamSlug: string;
-        eventSlug: string;
-    };
-    query?: never;
-    url: '/admin/teams/{teamSlug}/events/{eventSlug}/registration/open-status';
-};
-
-export type GetRegistrationOpenStatusErrors = {
-    /**
-     * Bad Request
-     */
-    400: HttpValidationProblemDetails;
-    /**
-     * Unauthorized
-     */
-    401: ProblemDetails;
-    /**
-     * Forbidden
-     */
-    403: ProblemDetails;
-    /**
-     * Conflict
-     */
-    409: ProblemDetails;
-    /**
-     * Internal Server Error
-     */
-    500: ProblemDetails;
-};
-
-export type GetRegistrationOpenStatusError = GetRegistrationOpenStatusErrors[keyof GetRegistrationOpenStatusErrors];
-
-export type GetRegistrationOpenStatusResponses = {
-    /**
-     * OK
-     */
-    200: RegistrationOpenStatusDto;
-};
-
-export type GetRegistrationOpenStatusResponse = GetRegistrationOpenStatusResponses[keyof GetRegistrationOpenStatusResponses];
-
-export type RemoveCancellationPolicyData = {
-    body?: never;
-    path: {
-        teamSlug: string;
-        eventSlug: string;
-    };
-    query?: never;
-    url: '/admin/teams/{teamSlug}/events/{eventSlug}/cancellation-policy';
-};
-
-export type RemoveCancellationPolicyErrors = {
-    /**
-     * Bad Request
-     */
-    400: HttpValidationProblemDetails;
-    /**
-     * Unauthorized
-     */
-    401: ProblemDetails;
-    /**
-     * Forbidden
-     */
-    403: ProblemDetails;
-    /**
-     * Conflict
-     */
-    409: ProblemDetails;
-    /**
-     * Internal Server Error
-     */
-    500: ProblemDetails;
-};
-
-export type RemoveCancellationPolicyError = RemoveCancellationPolicyErrors[keyof RemoveCancellationPolicyErrors];
-
-export type RemoveCancellationPolicyResponses = {
-    /**
-     * No Content
-     */
-    204: void;
-};
-
-export type RemoveCancellationPolicyResponse = RemoveCancellationPolicyResponses[keyof RemoveCancellationPolicyResponses];
-
-export type GetCancellationPolicyData = {
-    body?: never;
-    path: {
-        teamSlug: string;
-        eventSlug: string;
-    };
-    query?: never;
-    url: '/admin/teams/{teamSlug}/events/{eventSlug}/cancellation-policy';
-};
-
-export type GetCancellationPolicyErrors = {
-    /**
-     * Bad Request
-     */
-    400: HttpValidationProblemDetails;
-    /**
-     * Unauthorized
-     */
-    401: ProblemDetails;
-    /**
-     * Forbidden
-     */
-    403: ProblemDetails;
-    /**
-     * Not Found
-     */
-    404: unknown;
-    /**
-     * Conflict
-     */
-    409: ProblemDetails;
-    /**
-     * Internal Server Error
-     */
-    500: ProblemDetails;
-};
-
-export type GetCancellationPolicyError = GetCancellationPolicyErrors[keyof GetCancellationPolicyErrors];
-
-export type GetCancellationPolicyResponses = {
-    /**
-     * OK
-     */
-    200: CancellationPolicyDto;
-};
-
-export type GetCancellationPolicyResponse = GetCancellationPolicyResponses[keyof GetCancellationPolicyResponses];
-
-export type SetCancellationPolicyData = {
-    body: SetCancellationPolicyHttpRequest;
-    path: {
-        teamSlug: string;
-        eventSlug: string;
-    };
-    query?: never;
-    url: '/admin/teams/{teamSlug}/events/{eventSlug}/cancellation-policy';
-};
-
-export type SetCancellationPolicyErrors = {
-    /**
-     * Bad Request
-     */
-    400: HttpValidationProblemDetails;
-    /**
-     * Unauthorized
-     */
-    401: ProblemDetails;
-    /**
-     * Forbidden
-     */
-    403: ProblemDetails;
-    /**
-     * Conflict
-     */
-    409: ProblemDetails;
-    /**
-     * Internal Server Error
-     */
-    500: ProblemDetails;
-};
-
-export type SetCancellationPolicyError = SetCancellationPolicyErrors[keyof SetCancellationPolicyErrors];
-
-export type SetCancellationPolicyResponses = {
-    /**
-     * OK
-     */
-    200: unknown;
-};
-
-export type RemoveReconfirmPolicyData = {
-    body?: never;
-    path: {
-        teamSlug: string;
-        eventSlug: string;
-    };
-    query?: never;
-    url: '/admin/teams/{teamSlug}/events/{eventSlug}/reconfirm-policy';
-};
-
-export type RemoveReconfirmPolicyErrors = {
-    /**
-     * Bad Request
-     */
-    400: HttpValidationProblemDetails;
-    /**
-     * Unauthorized
-     */
-    401: ProblemDetails;
-    /**
-     * Forbidden
-     */
-    403: ProblemDetails;
-    /**
-     * Conflict
-     */
-    409: ProblemDetails;
-    /**
-     * Internal Server Error
-     */
-    500: ProblemDetails;
-};
-
-export type RemoveReconfirmPolicyError = RemoveReconfirmPolicyErrors[keyof RemoveReconfirmPolicyErrors];
-
-export type RemoveReconfirmPolicyResponses = {
-    /**
-     * No Content
-     */
-    204: void;
-};
-
-export type RemoveReconfirmPolicyResponse = RemoveReconfirmPolicyResponses[keyof RemoveReconfirmPolicyResponses];
-
-export type GetReconfirmPolicyData = {
-    body?: never;
-    path: {
-        teamSlug: string;
-        eventSlug: string;
-    };
-    query?: never;
-    url: '/admin/teams/{teamSlug}/events/{eventSlug}/reconfirm-policy';
-};
-
-export type GetReconfirmPolicyErrors = {
-    /**
-     * Bad Request
-     */
-    400: HttpValidationProblemDetails;
-    /**
-     * Unauthorized
-     */
-    401: ProblemDetails;
-    /**
-     * Forbidden
-     */
-    403: ProblemDetails;
-    /**
-     * Not Found
-     */
-    404: unknown;
-    /**
-     * Conflict
-     */
-    409: ProblemDetails;
-    /**
-     * Internal Server Error
-     */
-    500: ProblemDetails;
-};
-
-export type GetReconfirmPolicyError = GetReconfirmPolicyErrors[keyof GetReconfirmPolicyErrors];
-
-export type GetReconfirmPolicyResponses = {
-    /**
-     * OK
-     */
-    200: ReconfirmPolicyDto;
-};
-
-export type GetReconfirmPolicyResponse = GetReconfirmPolicyResponses[keyof GetReconfirmPolicyResponses];
-
-export type SetReconfirmPolicyData = {
-    body: SetReconfirmPolicyHttpRequest;
-    path: {
-        teamSlug: string;
-        eventSlug: string;
-    };
-    query?: never;
-    url: '/admin/teams/{teamSlug}/events/{eventSlug}/reconfirm-policy';
-};
-
-export type SetReconfirmPolicyErrors = {
-    /**
-     * Bad Request
-     */
-    400: HttpValidationProblemDetails;
-    /**
-     * Unauthorized
-     */
-    401: ProblemDetails;
-    /**
-     * Forbidden
-     */
-    403: ProblemDetails;
-    /**
-     * Conflict
-     */
-    409: ProblemDetails;
-    /**
-     * Internal Server Error
-     */
-    500: ProblemDetails;
-};
-
-export type SetReconfirmPolicyError = SetReconfirmPolicyErrors[keyof SetReconfirmPolicyErrors];
-
-export type SetReconfirmPolicyResponses = {
     /**
      * OK
      */

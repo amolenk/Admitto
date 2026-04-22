@@ -1,6 +1,6 @@
 "use client";
 
-import { TicketedEventDto, TicketTypeDto } from "@/lib/admitto-api/generated";
+import { TicketedEventDetailsDto, TicketTypeDto } from "@/lib/admitto-api/generated";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -17,7 +17,7 @@ function formatTime(iso: string): string {
 }
 
 interface CheckInCardProps {
-    event: TicketedEventDto;
+    event: TicketedEventDetailsDto;
     ticketTypes: TicketTypeDto[];
 }
 

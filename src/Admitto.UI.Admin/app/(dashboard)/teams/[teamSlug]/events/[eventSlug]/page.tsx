@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { TicketedEventDto, TicketTypeDto } from "@/lib/admitto-api/generated";
+import { TicketedEventDetailsDto, TicketTypeDto } from "@/lib/admitto-api/generated";
 import { apiClient } from "@/lib/api-client";
 import { PageLayout } from "@/components/page-layout";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -11,7 +11,7 @@ import { EventHeroCard } from "./components/event-hero-card";
 import { TicketBreakdownCard } from "./components/ticket-breakdown-card";
 import { CheckInCard } from "./components/check-in-card";
 
-type EventWithStatus = TicketedEventDto & { isRegistrationOpen?: boolean };
+type EventWithStatus = TicketedEventDetailsDto & { isRegistrationOpen?: boolean };
 
 async function fetchEvent(teamSlug: string, eventSlug: string): Promise<EventWithStatus> {
     return apiClient.get<EventWithStatus>(`/api/teams/${teamSlug}/events/${eventSlug}`);

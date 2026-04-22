@@ -1,5 +1,5 @@
 import { callAdmittoApi } from "@/lib/admitto-api/admitto-client";
-import { setCancellationPolicy } from "@/lib/admitto-api/generated";
+import { configureCancellationPolicy } from "@/lib/admitto-api/generated";
 
 export async function PUT(
     request: Request,
@@ -7,5 +7,5 @@ export async function PUT(
 ) {
     const { teamSlug, eventSlug } = await params;
     const body = await request.json();
-    return callAdmittoApi(() => setCancellationPolicy({ path: { teamSlug, eventSlug }, body }));
+    return callAdmittoApi(() => configureCancellationPolicy({ path: { teamSlug, eventSlug }, body }));
 }

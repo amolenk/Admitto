@@ -1,6 +1,6 @@
 import {NextResponse} from "next/server";
 import {callAdmittoApi} from "@/lib/admitto-api/admitto-client";
-import {createTicketedEvent, getTicketedEvents} from "@/lib/admitto-api/generated";
+import {requestTicketedEventCreation, getTicketedEvents} from "@/lib/admitto-api/generated";
 
 export async function GET(
     _request: Request,
@@ -19,7 +19,7 @@ export async function POST(
     const body = await request.json();
 
     try {
-        const result = await createTicketedEvent({path: {teamSlug}, body});
+        const result = await requestTicketedEventCreation({path: {teamSlug}, body});
         const res = (result as any).response as Response | undefined;
 
         if (res?.ok) {
@@ -43,7 +43,7 @@ export async function POST(
         if (err?.response?.status === 401) {
             return new NextResponse(null, {status: 401});
         }
-        console.error("createTicketedEvent unexpected error:", err);
+        console.error("requestTicketedEventCreation unexpected error:", err);
         return NextResponse.json({error: "Internal server error"}, {status: 500});
     }
 }

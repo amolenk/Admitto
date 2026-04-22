@@ -2,7 +2,7 @@
 
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { TicketedEventDto } from "@/lib/admitto-api/generated";
+import { TicketedEventDetailsDto } from "@/lib/admitto-api/generated";
 import { apiClient } from "@/lib/api-client";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -19,8 +19,8 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
-async function fetchEvent(teamSlug: string, eventSlug: string): Promise<TicketedEventDto> {
-    return apiClient.get<TicketedEventDto>(`/api/teams/${teamSlug}/events/${eventSlug}`);
+async function fetchEvent(teamSlug: string, eventSlug: string): Promise<TicketedEventDetailsDto> {
+    return apiClient.get<TicketedEventDetailsDto>(`/api/teams/${teamSlug}/events/${eventSlug}`);
 }
 
 export default function DangerZonePage() {
@@ -83,7 +83,7 @@ export default function DangerZonePage() {
                                 variant="outline"
                                 size="sm"
                                 className="text-destructive border-destructive/30"
-                                disabled={isSubmitting || event.data?.status === "Cancelled"}
+                                disabled={isSubmitting || event.data?.status === "cancelled"}
                             >
                                 Cancel event
                             </Button>

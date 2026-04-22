@@ -12,7 +12,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card } from "@/components/ui/card";
 import { useCustomForm } from "@/hooks/use-custom-form";
 import { apiClient } from "@/lib/api-client";
-import { TicketedEventDto } from "@/lib/admitto-api/generated";
+import { TicketedEventDetailsDto } from "@/lib/admitto-api/generated";
 
 function toLocalInput(iso: string): string {
     if (!iso) return "";
@@ -60,7 +60,7 @@ const generalSchema = z
 
 type GeneralValues = z.infer<typeof generalSchema>;
 
-export function GeneralSettingsForm({ event }: { event: TicketedEventDto }) {
+export function GeneralSettingsForm({ event }: { event: TicketedEventDetailsDto }) {
     const queryClient = useQueryClient();
     const { teamSlug, eventSlug } = useParams<{ teamSlug: string; eventSlug: string }>();
 

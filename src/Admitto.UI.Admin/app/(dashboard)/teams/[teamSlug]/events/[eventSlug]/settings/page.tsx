@@ -2,13 +2,13 @@
 
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { TicketedEventDto } from "@/lib/admitto-api/generated";
+import { TicketedEventDetailsDto } from "@/lib/admitto-api/generated";
 import { apiClient } from "@/lib/api-client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { GeneralSettingsForm } from "./general-settings-form";
 
-async function fetchEvent(teamSlug: string, eventSlug: string): Promise<TicketedEventDto> {
-    return apiClient.get<TicketedEventDto>(`/api/teams/${teamSlug}/events/${eventSlug}`);
+async function fetchEvent(teamSlug: string, eventSlug: string): Promise<TicketedEventDetailsDto> {
+    return apiClient.get<TicketedEventDetailsDto>(`/api/teams/${teamSlug}/events/${eventSlug}`);
 }
 
 export default function EventGeneralSettingsPage() {

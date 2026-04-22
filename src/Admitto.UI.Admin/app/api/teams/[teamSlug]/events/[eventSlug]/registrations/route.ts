@@ -1,11 +1,11 @@
 import { callAdmittoApi } from "@/lib/admitto-api/admitto-client";
-import { configureRegistrationPolicy } from "@/lib/admitto-api/generated";
+import { adminRegisterAttendee } from "@/lib/admitto-api/generated";
 
-export async function PUT(
+export async function POST(
     request: Request,
     { params }: { params: Promise<{ teamSlug: string; eventSlug: string }> }
 ) {
     const { teamSlug, eventSlug } = await params;
     const body = await request.json();
-    return callAdmittoApi(() => configureRegistrationPolicy({ path: { teamSlug, eventSlug }, body }));
+    return callAdmittoApi(() => adminRegisterAttendee({ path: { teamSlug, eventSlug }, body }));
 }

@@ -16,7 +16,7 @@ import {
     SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { apiClient } from "@/lib/api-client";
-import { TicketedEventDto } from "@/lib/admitto-api/generated";
+import { TicketedEventDetailsDto } from "@/lib/admitto-api/generated";
 
 const eventPages = [
     { label: "Dashboard", href: "", icon: LayoutDashboard },
@@ -25,8 +25,8 @@ const eventPages = [
     { label: "Settings", href: "/settings", icon: Settings },
 ];
 
-async function fetchEvent(teamSlug: string, eventSlug: string): Promise<TicketedEventDto> {
-    return apiClient.get<TicketedEventDto>(`/api/teams/${teamSlug}/events/${eventSlug}`);
+async function fetchEvent(teamSlug: string, eventSlug: string): Promise<TicketedEventDetailsDto> {
+    return apiClient.get<TicketedEventDetailsDto>(`/api/teams/${teamSlug}/events/${eventSlug}`);
 }
 
 export function NavEventPages({ teamSlug }: { teamSlug: string }) {

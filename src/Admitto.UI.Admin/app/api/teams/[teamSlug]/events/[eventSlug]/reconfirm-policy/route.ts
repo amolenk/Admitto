@@ -1,5 +1,5 @@
 import { callAdmittoApi } from "@/lib/admitto-api/admitto-client";
-import { setReconfirmPolicy } from "@/lib/admitto-api/generated";
+import { configureReconfirmPolicy } from "@/lib/admitto-api/generated";
 
 export async function PUT(
     request: Request,
@@ -7,5 +7,5 @@ export async function PUT(
 ) {
     const { teamSlug, eventSlug } = await params;
     const body = await request.json();
-    return callAdmittoApi(() => setReconfirmPolicy({ path: { teamSlug, eventSlug }, body }));
+    return callAdmittoApi(() => configureReconfirmPolicy({ path: { teamSlug, eventSlug }, body }));
 }

@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { PageLayout } from "@/components/page-layout";
 import { apiClient } from "@/lib/api-client";
 import { useTeams } from "@/hooks/use-teams";
-import { TicketedEventDto } from "@/lib/admitto-api/generated";
+import { TicketedEventDetailsDto } from "@/lib/admitto-api/generated";
 import { Settings, Users, Mail, Zap, Trash2 } from "lucide-react";
 
 const navItems = [
@@ -28,7 +28,7 @@ export default function EventSettingsLayout({ children }: { children: React.Reac
     const event = useQuery({
         queryKey: ["event", params.teamSlug, params.eventSlug],
         queryFn: () =>
-            apiClient.get<TicketedEventDto>(
+            apiClient.get<TicketedEventDetailsDto>(
                 `/api/teams/${params.teamSlug}/events/${params.eventSlug}`
             ),
     });

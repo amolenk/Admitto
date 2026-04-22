@@ -99,7 +99,7 @@ export function EmailSettingsForm({
             queryKey: ["email-settings", teamSlug, eventSlug],
         });
         await queryClient.invalidateQueries({
-            queryKey: ["registration-open-status", teamSlug, eventSlug],
+            queryKey: ["event", teamSlug, eventSlug],
         });
         form.reset({ ...values, password: "" });
     }

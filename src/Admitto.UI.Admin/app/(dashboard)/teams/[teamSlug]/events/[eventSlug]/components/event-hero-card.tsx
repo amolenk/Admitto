@@ -1,6 +1,6 @@
 "use client";
 
-import { TicketedEventDto, TicketTypeDto } from "@/lib/admitto-api/generated";
+import { TicketedEventDetailsDto, TicketTypeDto } from "@/lib/admitto-api/generated";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, Globe, Copy } from "lucide-react";
@@ -63,7 +63,7 @@ function HeroStat({ label, value, sub, pct, muted }: HeroStatProps) {
 }
 
 interface EventHeroCardProps {
-    event: TicketedEventDto;
+    event: TicketedEventDetailsDto;
     openStatus?: { isOpen: boolean } | null;
     ticketTypes?: TicketTypeDto[] | null;
 }
