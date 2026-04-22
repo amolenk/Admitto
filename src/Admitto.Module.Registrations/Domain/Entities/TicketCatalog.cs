@@ -19,7 +19,41 @@ public class TicketCatalog : Aggregate<TicketedEventId>
 
     public IReadOnlyList<TicketType> TicketTypes => _ticketTypes.AsReadOnly();
 
+    /// <summary>
+    /// Projection of the owning <see cref="TicketedEvent"/> lifecycle status. Kept in sync
+    /// via the in-module <c>TicketedEventStatusChangedDomainEvent</c> handler so that the
+    /// atomic capacity claim can refuse to run once the event has been cancelled or
+    /// archived, even if a registration handler's earlier policy check observed Active.
+    /// Transitions are one-way: Active → Cancelled, Active → Archived, Cancelled → Archived.
+    /// </summary>
+    public EventLifecycleStatus EventStatus { get; private set; } = EventLifecycleStatus.Active;
+
     public static TicketCatalog Create(TicketedEventId eventId) => new(eventId);
+
+    /// <summary>
+    /// Transitions <see cref="EventStatus"/> to <see cref="EventLifecycleStatus.Cancelled"/>.
+    /// Idempotent when already Cancelled; rejected when the catalog is already Archived.
+    /// </summary>
+    public void MarkEventCancelled()
+    {
+        if (EventStatus == EventLifecycleStatus.Cancelled) return;
+
+        if (EventStatus == EventLifecycleStatus.Archived)
+            throw new BusinessRuleViolationException(Errors.IllegalEventStatusTransition);
+
+        EventStatus = EventLifecycleStatus.Cancelled;
+    }
+
+    /// <summary>
+    /// Transitions <see cref="EventStatus"/> to <see cref="EventLifecycleStatus.Archived"/>.
+    /// Idempotent when already Archived. Legal from Active or Cancelled.
+    /// </summary>
+    public void MarkEventArchived()
+    {
+        if (EventStatus == EventLifecycleStatus.Archived) return;
+
+        EventStatus = EventLifecycleStatus.Archived;
+    }
 
     public void AddTicketType(
         Slug slug,
@@ -27,6 +61,8 @@ public class TicketCatalog : Aggregate<TicketedEventId>
         TimeSlot[] timeSlots,
         int? maxCapacity)
     {
+        EnsureEventActive();
+
         if (_ticketTypes.Any(tt => tt.Id == slug.Value))
             throw new BusinessRuleViolationException(Errors.DuplicateTicketTypeSlug(slug));
 
@@ -38,6 +74,8 @@ public class TicketCatalog : Aggregate<TicketedEventId>
         DisplayName? name,
         int? maxCapacity)
     {
+        EnsureEventActive();
+
         var ticketType = FindTicketType(slug);
 
         if (ticketType.IsCancelled)
@@ -51,8 +89,16 @@ public class TicketCatalog : Aggregate<TicketedEventId>
 
     public void CancelTicketType(Slug slug)
     {
+        EnsureEventActive();
+
         var ticketType = FindTicketType(slug);
         ticketType.Cancel();
+    }
+
+    private void EnsureEventActive()
+    {
+        if (EventStatus != EventLifecycleStatus.Active)
+            throw new BusinessRuleViolationException(Errors.EventNotActive);
     }
 
     public TicketType? GetTicketType(string slug)
@@ -66,6 +112,8 @@ public class TicketCatalog : Aggregate<TicketedEventId>
     /// </summary>
     public void Claim(IReadOnlyList<string> slugs, bool enforce)
     {
+        EnsureEventActive();
+
         foreach (var slug in slugs)
         {
             var ticketType = _ticketTypes.FirstOrDefault(tt => tt.Id == slug);
@@ -105,5 +153,14 @@ public class TicketCatalog : Aggregate<TicketedEventId>
             new("ticket_catalog.ticket_type_already_cancelled",
                 "The ticket type is already cancelled.",
                 Details: new Dictionary<string, object?> { ["slug"] = slug.Value });
+
+        public static readonly Error EventNotActive = new(
+            "ticket_catalog.event_not_active",
+            "Operation not allowed: the ticketed event is not Active.",
+            Type: ErrorType.Validation);
+
+        public static readonly Error IllegalEventStatusTransition = new(
+            "ticket_catalog.illegal_event_status_transition",
+            "Illegal ticket catalog event status transition.");
     }
 }

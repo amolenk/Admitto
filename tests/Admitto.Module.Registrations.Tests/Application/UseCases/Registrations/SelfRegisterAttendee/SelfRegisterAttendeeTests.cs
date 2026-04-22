@@ -73,84 +73,85 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
 
     // SC004: Self-service rejected — before registration window opens
     [TestMethod]
-    public async ValueTask SC004_SelfRegisterAttendee_BeforeWindowOpens_ThrowsRegistrationNotOpenError()
+    public async ValueTask SC004_SelfRegisterAttendee_BeforeWindowOpens_ThrowsRegistrationNotOpen()
     {
         var fixture = SelfRegisterAttendeeFixture.WindowNotYetOpen();
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture.EventId, "dave@example.com", fixture.TicketTypeSlug);
+        var command = NewCommand(fixture.EventId, "dave@example.com", "general-admission");
         var sut = NewHandler(fixture);
 
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.ShouldMatch(SelfRegisterAttendeeHandler.Errors.RegistrationNotOpen);
+        result.Error.Code.ShouldBe("registration.not_open");
     }
 
     // SC005: Self-service rejected — after registration window closes
     [TestMethod]
-    public async ValueTask SC005_SelfRegisterAttendee_AfterWindowCloses_ThrowsRegistrationClosedError()
+    public async ValueTask SC005_SelfRegisterAttendee_AfterWindowCloses_ThrowsRegistrationClosed()
     {
         var fixture = SelfRegisterAttendeeFixture.WindowClosed();
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture.EventId, "dave@example.com", fixture.TicketTypeSlug);
+        var command = NewCommand(fixture.EventId, "dave@example.com", "general-admission");
         var sut = NewHandler(fixture);
 
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.ShouldMatch(SelfRegisterAttendeeHandler.Errors.RegistrationClosed);
+        result.Error.Code.ShouldBe("registration.closed");
     }
 
     // SC006: Self-service rejected — no registration window configured
     [TestMethod]
-    public async ValueTask SC006_SelfRegisterAttendee_NoWindowConfigured_ThrowsRegistrationNotOpenError()
+    public async ValueTask SC006_SelfRegisterAttendee_NoRegistrationPolicy_ThrowsRegistrationNotOpen()
     {
-        var fixture = SelfRegisterAttendeeFixture.NoWindowConfigured();
+        var fixture = SelfRegisterAttendeeFixture.WithoutRegistrationPolicy();
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture.EventId, "dave@example.com", fixture.TicketTypeSlug);
+        var command = NewCommand(fixture.EventId, "dave@example.com", "general-admission");
         var sut = NewHandler(fixture);
 
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.ShouldMatch(SelfRegisterAttendeeHandler.Errors.RegistrationNotOpen);
+        result.Error.Code.ShouldBe("registration.not_open");
     }
 
     // SC007: Self-service rejected — email domain mismatch
     [TestMethod]
-    public async ValueTask SC007_SelfRegisterAttendee_DomainMismatch_ThrowsEmailDomainNotAllowedError()
+    public async ValueTask SC007_SelfRegisterAttendee_DomainMismatch_ThrowsEmailDomainNotAllowed()
     {
-        var fixture = SelfRegisterAttendeeFixture.WithDomainRestriction("@acme.com");
+        var fixture = SelfRegisterAttendeeFixture.WithEmailDomainRestriction("@acme.com");
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture.EventId, "outsider@gmail.com", fixture.TicketTypeSlug);
+        var command = NewCommand(fixture.EventId, "outsider@gmail.com", "general-admission");
         var sut = NewHandler(fixture);
 
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.ShouldMatch(SelfRegisterAttendeeHandler.Errors.EmailDomainNotAllowed);
+        result.Error.Code.ShouldBe("registration.email_domain_not_allowed");
     }
 
     // SC008: Self-service allowed — email domain matches
     [TestMethod]
     public async ValueTask SC008_SelfRegisterAttendee_DomainMatches_CreatesRegistration()
     {
-        var fixture = SelfRegisterAttendeeFixture.WithDomainRestriction("@acme.com");
+        var fixture = SelfRegisterAttendeeFixture.WithEmailDomainRestriction("@acme.com");
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture.EventId, "employee@acme.com", fixture.TicketTypeSlug);
+        var command = NewCommand(fixture.EventId, "employee@acme.com", "general-admission");
         var sut = NewHandler(fixture);
 
-        await sut.HandleAsync(command, testContext.CancellationToken);
+        var registrationId = await sut.HandleAsync(command, testContext.CancellationToken);
 
         await Environment.Database.AssertAsync(async dbContext =>
         {
             var registration = await dbContext.Registrations.SingleOrDefaultAsync(testContext.CancellationToken);
             registration.ShouldNotBeNull();
+            registration.Id.ShouldBe(registrationId);
             registration.Email.Value.ShouldBe("employee@acme.com");
         });
     }
@@ -245,20 +246,60 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         result.Error.Code.ShouldBe("registration.overlapping_time_slots");
     }
 
-    // SC014/SC015: Rejected — cancelled or archived event
+    // SC014: Rejected — TicketedEvent status is Cancelled
     [TestMethod]
-    public async ValueTask SC014_SelfRegisterAttendee_EventNotActive_ThrowsEventNotActiveError()
+    public async ValueTask SC014_SelfRegisterAttendee_EventCancelled_ThrowsEventNotActive()
     {
-        var fixture = SelfRegisterAttendeeFixture.EventNotActive();
+        var fixture = SelfRegisterAttendeeFixture.EventCancelled();
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture.EventId, "dave@example.com", fixture.TicketTypeSlug);
+        var command = NewCommand(fixture.EventId, "dave@example.com", "general-admission");
         var sut = NewHandler(fixture);
 
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.ShouldMatch(SelfRegisterAttendeeHandler.Errors.EventNotActive);
+        result.Error.Code.ShouldBe("registration.event_not_active");
+    }
+
+    // SC014b: Rejected — TicketedEvent status is Archived
+    [TestMethod]
+    public async ValueTask SC014_SelfRegisterAttendee_EventArchived_ThrowsEventNotActive()
+    {
+        var fixture = SelfRegisterAttendeeFixture.EventArchived();
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(fixture.EventId, "dave@example.com", "general-admission");
+        var sut = NewHandler(fixture);
+
+        var result = await ErrorResult.CaptureAsync(
+            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
+
+        result.Error.Code.ShouldBe("registration.event_not_active");
+    }
+
+    // SC015: Rejected — TicketCatalog.EventStatus catches concurrent transition
+    [TestMethod]
+    public async ValueTask SC015_SelfRegisterAttendee_ConcurrentCancelAtClaim_ThrowsEventNotActive()
+    {
+        var fixture = SelfRegisterAttendeeFixture.ConcurrentCancelDetectedAtClaim();
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(fixture.EventId, "dave@example.com", "general-admission");
+        var sut = NewHandler(fixture);
+
+        var result = await ErrorResult.CaptureAsync(
+            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
+
+        result.Error.Code.ShouldBe("registration.event_not_active");
+
+        await Environment.Database.AssertAsync(async dbContext =>
+        {
+            var catalog = await dbContext.TicketCatalogs.SingleOrDefaultAsync(testContext.CancellationToken);
+            catalog.ShouldNotBeNull();
+            // No capacity consumed.
+            catalog.TicketTypes[0].UsedCapacity.ShouldBe(0);
+        });
     }
 
     // SC016: Rejected — duplicate email (DB constraint)

@@ -7,8 +7,13 @@ registrations SHALL enforce per-ticket-type capacity (ticket types without an
 explicit capacity set SHALL be rejected as not available), the registration window,
 and optional email domain restrictions.
 
+Whether registration is open SHALL be derived from the registration window
+(`now ∈ [opensAt, closesAt)`) combined with the event's lifecycle status read from
+the `TicketedEventLifecycleGuard` (see event-lifecycle-guard). There is no separate
+stored registration-status.
+
 #### Scenario: Successful self-service registration
-- **WHEN** an attendee self-registers as "dave@example.com" for "General Admission" on active event "DevConf" with capacity 100 (50 used), an open registration window, and no domain restriction
+- **WHEN** an attendee self-registers as "dave@example.com" for "General Admission" on event "DevConf" with capacity 100 (50 used), lifecycle guard Active, window "2025-01-01T00:00Z" / "2025-06-01T00:00Z" at current time "2025-03-15T12:00Z", and no domain restriction
 - **THEN** a registration is created for "dave@example.com" with ticket "General Admission" and capacity used increases to 51
 
 #### Scenario: Self-service rejected — capacity full
@@ -94,12 +99,13 @@ The system SHALL allow selecting multiple ticket types in a single registration.
 The system SHALL reject registrations with duplicate ticket types in the selection.
 The system SHALL reject registrations referencing non-existent or cancelled ticket
 types. The system SHALL reject registrations where selected ticket types have
-overlapping time slots. The system SHALL reject all registrations when the event
-lifecycle status is Cancelled or Archived. The system SHALL reject registrations if
-the email address is already registered for the same event.
+overlapping time slots. The system SHALL reject all registrations when the
+`TicketedEventLifecycleGuard` status for the event is Cancelled or Archived. The
+system SHALL reject registrations if the email address is already registered for
+the same event.
 
 #### Scenario: Successful registration with multiple ticket types
-- **WHEN** an attendee self-registers selecting both "General Admission" (capacity 100, 50 used) and "Workshop A" (capacity 20, 10 used) on event "DevConf" with an open window
+- **WHEN** an attendee self-registers selecting both "General Admission" (capacity 100, 50 used) and "Workshop A" (capacity 20, 10 used) on event "DevConf" with an open window and Active lifecycle guard
 - **THEN** a registration is created with both ticket types, "General Admission" capacity used increases to 51, and "Workshop A" capacity used increases to 11
 
 #### Scenario: Rejected — duplicate ticket types in selection
@@ -118,12 +124,12 @@ the email address is already registered for the same event.
 - **WHEN** an attendee registers selecting both "Workshop A" (slot "morning") and "Workshop B" (slot "morning") which share a time slot
 - **THEN** the registration is rejected with reason "overlapping time slots"
 
-#### Scenario: Rejected — event lifecycle status is Cancelled
-- **WHEN** an attendee attempts to register for event "OldConf" whose lifecycle status is Cancelled
+#### Scenario: Rejected — lifecycle guard status is Cancelled
+- **WHEN** an attendee attempts to register for event "OldConf" whose `TicketedEventLifecycleGuard` status is Cancelled
 - **THEN** the registration is rejected with reason "event not active"
 
-#### Scenario: Rejected — event lifecycle status is Archived
-- **WHEN** an attendee attempts to register for event "OldConf" whose lifecycle status is Archived
+#### Scenario: Rejected — lifecycle guard status is Archived
+- **WHEN** an attendee attempts to register for event "OldConf" whose `TicketedEventLifecycleGuard` status is Archived
 - **THEN** the registration is rejected with reason "event not active"
 
 #### Scenario: Rejected — duplicate email

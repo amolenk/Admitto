@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Module.Registrations.Domain.Entities;
+using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Registrations.Tests.Application.Infrastructure.Hosting;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 
@@ -6,8 +7,8 @@ namespace Amolenk.Admitto.Module.Registrations.Tests.Application.UseCases.Ticket
 
 internal sealed class AddTicketTypeFixture
 {
-    private bool _eventCancelled;
-    private bool _seedCatalog;
+    private bool _seedExistingTicketType;
+    private EventLifecycleStatus _eventStatus = EventLifecycleStatus.Active;
 
     public TicketedEventId EventId { get; } = TicketedEventId.New();
 
@@ -19,35 +20,44 @@ internal sealed class AddTicketTypeFixture
 
     public static AddTicketTypeFixture ActiveEventWithCatalog() => new()
     {
-        _seedCatalog = true
+        _seedExistingTicketType = true
     };
 
     public static AddTicketTypeFixture CancelledEvent() => new()
     {
-        _eventCancelled = true
+        _eventStatus = EventLifecycleStatus.Cancelled
+    };
+
+    public static AddTicketTypeFixture ArchivedEvent() => new()
+    {
+        _eventStatus = EventLifecycleStatus.Archived
     };
 
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
     {
         await environment.Database.SeedAsync(dbContext =>
         {
-            var guard = TicketedEventLifecycleGuard.Create(EventId);
-            if (_eventCancelled)
-            {
-                guard.SetCancelled();
-            }
-            dbContext.TicketedEventLifecycleGuards.Add(guard);
+            var catalog = TicketCatalog.Create(EventId);
 
-            if (_seedCatalog)
+            if (_seedExistingTicketType)
             {
-                var catalog = TicketCatalog.Create(EventId);
                 catalog.AddTicketType(
                     Slug.From("existing-type"),
                     DisplayName.From("Existing Type"),
                     [],
                     100);
-                dbContext.TicketCatalogs.Add(catalog);
             }
+
+            if (_eventStatus == EventLifecycleStatus.Cancelled)
+            {
+                catalog.MarkEventCancelled();
+            }
+            else if (_eventStatus == EventLifecycleStatus.Archived)
+            {
+                catalog.MarkEventArchived();
+            }
+
+            dbContext.TicketCatalogs.Add(catalog);
         });
     }
 }

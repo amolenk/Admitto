@@ -59,9 +59,8 @@ public sealed class CancelTicketTypeTests(TestContext testContext) : AspireInteg
         result.Error.Code.ShouldBe("ticket_type.already_cancelled");
     }
 
-    // SC-003: Reject on cancelled event — throws BusinessRuleViolationException
     [TestMethod]
-    public async ValueTask SC003_CancelTicketType_CancelledEvent_ThrowsEventNotActiveError()
+    public async ValueTask SC003_CancelTicketType_CancelledEvent_ThrowsEventNotActive()
     {
         // Arrange
         var fixture = CancelTicketTypeFixture.CancelledEvent();
@@ -77,6 +76,6 @@ public sealed class CancelTicketTypeTests(TestContext testContext) : AspireInteg
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
         // Assert
-        result.Error.ShouldMatch(TicketedEventLifecycleGuard.Errors.EventNotActive);
+        result.Error.Code.ShouldBe("ticket_catalog.event_not_active");
     }
 }

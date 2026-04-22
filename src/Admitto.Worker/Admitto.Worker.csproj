@@ -11,5 +11,7 @@
       <ProjectReference Include="..\Admitto.Module.Email\Admitto.Module.Email.csproj" />
       <ProjectReference Include="..\Admitto.Module.Email.Contracts\Admitto.Module.Email.Contracts.csproj" />
       <ProjectReference Include="..\Admitto.Module.Organization\Admitto.Module.Organization.csproj" />
+      <ProjectReference Include="..\Admitto.Module.Registrations\Admitto.Module.Registrations.csproj" />
+      <ProjectReference Include="..\Admitto.Module.Registrations.Contracts\Admitto.Module.Registrations.Contracts.csproj" />
     </ItemGroup>
 </Project>

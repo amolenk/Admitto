@@ -5,7 +5,7 @@ import { PageLayout } from "@/components/page-layout";
 
 export default function CreateTeamPage() {
     return (
-        <PageLayout title="Add team">
+        <PageLayout title="Create team">
             <CreateTeamForm />
         </PageLayout>
     );

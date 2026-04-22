@@ -1,7 +1,9 @@
 # ADR-007: Lifecycle Guard Pattern in the Registrations Module
 
 ## Status
-Accepted
+Superseded by [ADR-008](adr-008-ticketed-event-ownership-in-registrations.md).
+
+The `TicketedEventLifecycleGuard` aggregate described below has been removed. `TicketedEvent` now lives in the Registrations module and enforces its own lifecycle invariants; `TicketCatalog.EventStatus` replaces the guard's claim-side role. See ADR-008 for the rationale.
 
 ## Context
 The Registrations module manages multiple policy aggregates per ticketed event — registration policy, cancellation policy, and reconfirmation policy. Each policy can be independently configured by organizers via admin endpoints. The event's lifecycle (Active → Cancelled → Archived) is managed by the Organization module and synced to Registrations via module events.

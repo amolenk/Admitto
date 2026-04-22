@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { TicketedEventDto, TicketTypeDto, RegistrationOpenStatusDto } from "@/lib/admitto-api/generated";
+import { TicketedEventDto, TicketTypeDto } from "@/lib/admitto-api/generated";
 import { apiClient } from "@/lib/api-client";
 import { PageLayout } from "@/components/page-layout";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -11,18 +11,14 @@ import { EventHeroCard } from "./components/event-hero-card";
 import { TicketBreakdownCard } from "./components/ticket-breakdown-card";
 import { CheckInCard } from "./components/check-in-card";
 
-async function fetchEvent(teamSlug: string, eventSlug: string): Promise<TicketedEventDto> {
-    return apiClient.get<TicketedEventDto>(`/api/teams/${teamSlug}/events/${eventSlug}`);
+type EventWithStatus = TicketedEventDto & { isRegistrationOpen?: boolean };
+
+async function fetchEvent(teamSlug: string, eventSlug: string): Promise<EventWithStatus> {
+    return apiClient.get<EventWithStatus>(`/api/teams/${teamSlug}/events/${eventSlug}`);
 }
 
 async function fetchTicketTypes(teamSlug: string, eventSlug: string): Promise<TicketTypeDto[]> {
     return apiClient.get<TicketTypeDto[]>(`/api/teams/${teamSlug}/events/${eventSlug}/ticket-types`);
-}
-
-async function fetchOpenStatus(teamSlug: string, eventSlug: string): Promise<RegistrationOpenStatusDto> {
-    return apiClient.get<RegistrationOpenStatusDto>(
-        `/api/teams/${teamSlug}/events/${eventSlug}/registration/open-status`
-    );
 }
 
 export default function EventDashboardPage() {
@@ -38,12 +34,6 @@ export default function EventDashboardPage() {
     const ticketTypes = useQuery({
         queryKey: ["ticket-types", teamSlug, eventSlug],
         queryFn: () => fetchTicketTypes(teamSlug, eventSlug),
-        throwOnError: false,
-    });
-
-    const openStatus = useQuery({
-        queryKey: ["registration-open-status", teamSlug, eventSlug],
-        queryFn: () => fetchOpenStatus(teamSlug, eventSlug),
         throwOnError: false,
     });
 
@@ -78,7 +68,11 @@ export default function EventDashboardPage() {
             <div className="flex flex-col gap-5">
                 <EventHeroCard
                     event={event.data}
-                    openStatus={openStatus.data}
+                    openStatus={
+                        event.data.isRegistrationOpen !== undefined
+                            ? { isOpen: event.data.isRegistrationOpen }
+                            : null
+                    }
                     ticketTypes={ticketTypes.data}
                 />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

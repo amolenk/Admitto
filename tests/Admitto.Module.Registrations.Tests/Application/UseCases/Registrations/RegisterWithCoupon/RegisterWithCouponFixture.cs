@@ -8,13 +8,15 @@ using NSubstitute;
 
 namespace Amolenk.Admitto.Module.Registrations.Tests.Application.UseCases.Registrations.RegisterWithCoupon;
 
+// ReSharper disable once UnusedType.Global
 internal sealed class RegisterWithCouponFixture
 {
     private Coupon? _coupon;
-    private EventRegistrationPolicy? _policy;
+    private TicketedEvent? _ticketedEvent;
     private TicketCatalog? _catalog;
 
     public TicketedEventId EventId { get; } = TicketedEventId.New();
+    public TeamId TeamId { get; } = TeamId.New();
     public string TicketTypeSlug { get; } = "speaker-pass";
     public string CouponCodeString { get; private set; } = string.Empty;
     public IOrganizationFacade OrganizationFacade { get; } = Substitute.For<IOrganizationFacade>();
@@ -25,13 +27,11 @@ internal sealed class RegisterWithCouponFixture
 
     // ── Factory methods ──────────────────────────────────────────────────────
 
-    /// Successful coupon registration: capacity exceeded (5/5) but coupon bypasses it.
     public static RegisterWithCouponFixture HappyFlow()
     {
         var f = new RegisterWithCouponFixture();
         f._coupon = f.BuildCoupon(bypassWindow: false);
-        f._policy = f.MakeOpenPolicy();
-        // Capacity at 5/5 — coupon should still succeed (uncapped).
+        f._ticketedEvent = f.MakeActiveEventWithOpenWindow();
         f._catalog = f.MakeCatalog((f.TicketTypeSlug, "Speaker Pass", 5, 5));
         return f;
     }
@@ -43,10 +43,10 @@ internal sealed class RegisterWithCouponFixture
             .WithEventId(f.EventId)
             .WithRequestedTicketTypeSlugs(f.TicketTypeSlug)
             .WithAvailableTicketTypes(new TicketTypeInfo(f.TicketTypeSlug, false))
-            .WithExpiresAt(DateTimeOffset.UtcNow.AddMinutes(-1)) // expired
+            .WithExpiresAt(DateTimeOffset.UtcNow.AddMinutes(-1))
             .Build();
         f.CouponCodeString = f._coupon.Code.Value.ToString();
-        f._policy = f.MakeOpenPolicy();
+        f._ticketedEvent = f.MakeActiveEventWithOpenWindow();
         return f;
     }
 
@@ -56,7 +56,7 @@ internal sealed class RegisterWithCouponFixture
         f._coupon = f.BuildCoupon();
         f._coupon.Redeem();
         f.CouponCodeString = f._coupon.Code.Value.ToString();
-        f._policy = f.MakeOpenPolicy();
+        f._ticketedEvent = f.MakeActiveEventWithOpenWindow();
         return f;
     }
 
@@ -66,52 +66,19 @@ internal sealed class RegisterWithCouponFixture
         f._coupon = f.BuildCoupon();
         f._coupon.Revoke();
         f.CouponCodeString = f._coupon.Code.Value.ToString();
-        f._policy = f.MakeOpenPolicy();
+        f._ticketedEvent = f.MakeActiveEventWithOpenWindow();
         return f;
     }
 
     public static RegisterWithCouponFixture TicketTypeNotAllowlisted()
     {
         var f = new RegisterWithCouponFixture();
-        // Coupon only allows "speaker-pass", but test will try "general-admission".
         f._coupon = f.BuildCoupon();
         f.CouponCodeString = f._coupon.Code.Value.ToString();
-        f._policy = f.MakeOpenPolicy();
+        f._ticketedEvent = f.MakeActiveEventWithOpenWindow();
         f._catalog = f.MakeCatalog(
             ("general-admission", "General Admission", 100, 0),
             (f.TicketTypeSlug, "Speaker Pass", 100, 0));
-        return f;
-    }
-
-    public static RegisterWithCouponFixture BypassesWindow()
-    {
-        var f = new RegisterWithCouponFixture();
-        f._coupon = f.BuildCoupon(bypassWindow: true);
-        // Window is closed.
-        f._policy = EventRegistrationPolicy.Create(f.EventId);
-        f._policy.SetWindow(DateTimeOffset.UtcNow.AddDays(-30), DateTimeOffset.UtcNow.AddDays(-1));
-        f._catalog = f.MakeCatalog((f.TicketTypeSlug, "Speaker Pass", 10, 0));
-        return f;
-    }
-
-    public static RegisterWithCouponFixture RespectsWindow()
-    {
-        var f = new RegisterWithCouponFixture();
-        f._coupon = f.BuildCoupon(bypassWindow: false);
-        // Window is closed.
-        f._policy = EventRegistrationPolicy.Create(f.EventId);
-        f._policy.SetWindow(DateTimeOffset.UtcNow.AddDays(-30), DateTimeOffset.UtcNow.AddDays(-1));
-        f._catalog = f.MakeCatalog((f.TicketTypeSlug, "Speaker Pass", 10, 0));
-        return f;
-    }
-
-    public static RegisterWithCouponFixture BypassesDomainRestriction()
-    {
-        var f = new RegisterWithCouponFixture();
-        f._coupon = f.BuildCoupon(bypassWindow: false);
-        f._policy = f.MakeOpenPolicy();
-        f._policy.SetDomainRestriction("@acme.com");
-        f._catalog = f.MakeCatalog((f.TicketTypeSlug, "Speaker Pass", 10, 0));
         return f;
     }
 
@@ -119,9 +86,56 @@ internal sealed class RegisterWithCouponFixture
     {
         var f = new RegisterWithCouponFixture();
         f._coupon = f.BuildCoupon(bypassWindow: false);
-        f._policy = f.MakeOpenPolicy();
-        // MaxCapacity = null — self-service would reject this but coupon should bypass.
+        f._ticketedEvent = f.MakeActiveEventWithOpenWindow();
         f._catalog = f.MakeCatalog((f.TicketTypeSlug, "Speaker Pass", null, 0));
+        return f;
+    }
+
+    public static RegisterWithCouponFixture BypassesClosedWindow()
+    {
+        var f = new RegisterWithCouponFixture();
+        f._coupon = f.BuildCoupon(bypassWindow: true);
+        var closedPolicy = TicketedEventRegistrationPolicy.Create(
+            DateTimeOffset.UtcNow.AddDays(-7),
+            DateTimeOffset.UtcNow.AddDays(-1));
+        f._ticketedEvent = f.MakeActiveEvent(closedPolicy);
+        f._catalog = f.MakeCatalog((f.TicketTypeSlug, "Speaker Pass", 100, 0));
+        return f;
+    }
+
+    public static RegisterWithCouponFixture RespectsClosedWindow()
+    {
+        var f = new RegisterWithCouponFixture();
+        f._coupon = f.BuildCoupon(bypassWindow: false);
+        var closedPolicy = TicketedEventRegistrationPolicy.Create(
+            DateTimeOffset.UtcNow.AddDays(-7),
+            DateTimeOffset.UtcNow.AddDays(-1));
+        f._ticketedEvent = f.MakeActiveEvent(closedPolicy);
+        f._catalog = f.MakeCatalog((f.TicketTypeSlug, "Speaker Pass", 100, 0));
+        return f;
+    }
+
+    public static RegisterWithCouponFixture BypassesDomainRestriction()
+    {
+        var f = new RegisterWithCouponFixture();
+        f._coupon = f.BuildCoupon(bypassWindow: false);
+        var policy = TicketedEventRegistrationPolicy.Create(
+            DateTimeOffset.UtcNow.AddDays(-1),
+            DateTimeOffset.UtcNow.AddDays(30),
+            "@acme.com");
+        f._ticketedEvent = f.MakeActiveEvent(policy);
+        f._catalog = f.MakeCatalog((f.TicketTypeSlug, "Speaker Pass", 100, 0));
+        return f;
+    }
+
+    public static RegisterWithCouponFixture EventCancelled()
+    {
+        var f = new RegisterWithCouponFixture();
+        f._coupon = f.BuildCoupon(bypassWindow: true);
+        var ev = f.MakeActiveEventWithOpenWindow();
+        ev.Cancel();
+        f._ticketedEvent = ev;
+        f._catalog = f.MakeCatalog((f.TicketTypeSlug, "Speaker Pass", 100, 0));
         return f;
     }
 
@@ -129,14 +143,14 @@ internal sealed class RegisterWithCouponFixture
 
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
     {
-        if (_coupon is null && _policy is null && _catalog is null) return;
+        if (_coupon is null && _catalog is null && _ticketedEvent is null) return;
 
         await environment.Database.SeedAsync(dbContext =>
         {
             if (_coupon is not null)
                 dbContext.Coupons.Add(_coupon);
-            if (_policy is not null)
-                dbContext.EventRegistrationPolicies.Add(_policy);
+            if (_ticketedEvent is not null)
+                dbContext.TicketedEvents.Add(_ticketedEvent);
             if (_catalog is not null)
                 dbContext.TicketCatalogs.Add(_catalog);
         });
@@ -157,13 +171,28 @@ internal sealed class RegisterWithCouponFixture
         return coupon;
     }
 
-    private EventRegistrationPolicy MakeOpenPolicy()
+    private TicketedEvent MakeActiveEventWithOpenWindow()
     {
-        var policy = EventRegistrationPolicy.Create(EventId);
-        policy.SetWindow(
+        var policy = TicketedEventRegistrationPolicy.Create(
             DateTimeOffset.UtcNow.AddDays(-1),
             DateTimeOffset.UtcNow.AddDays(30));
-        return policy;
+        return MakeActiveEvent(policy);
+    }
+
+    private TicketedEvent MakeActiveEvent(TicketedEventRegistrationPolicy? policy)
+    {
+        var ev = TicketedEvent.Create(
+            EventId,
+            TeamId,
+            Slug.From("devconf"),
+            DisplayName.From("DevConf"),
+            AbsoluteUrl.From("https://example.com"),
+            AbsoluteUrl.From("https://tickets.example.com"),
+            DateTimeOffset.UtcNow.AddDays(60),
+            DateTimeOffset.UtcNow.AddDays(61));
+        if (policy is not null)
+            ev.ConfigureRegistrationPolicy(policy);
+        return ev;
     }
 
     private TicketCatalog MakeCatalog(params (string slug, string name, int? max, int used)[] ticketTypes)

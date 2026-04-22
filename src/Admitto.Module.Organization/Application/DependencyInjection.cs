@@ -25,6 +25,7 @@ public static class DependencyInjection
         services.AddCommandHandlersFromAssembly(executingAssembly, capabilities);
         services.AddDomainEventHandlersFromAssembly(executingAssembly);
         services.AddModuleEventHandlersFromAssembly(executingAssembly);
+        services.AddIntegrationEventHandlersFromAssembly(executingAssembly, OrganizationModuleKey.Value);
         services.AddQueryHandlersFromAssembly(executingAssembly);
         services.AddValidatorsFromAssembly(executingAssembly);
         
@@ -64,6 +65,18 @@ public static class DependencyInjection
                 .WithIdentity($"{DeprovisionUserIdpJob.Name}.trigger")
                 .WithSimpleSchedule(s => s
                     .WithIntervalInHours(1)
+                    .RepeatForever())
+                .StartNow());
+
+            options.AddJob<ExpireStaleEventCreationRequestsJob>(c => c
+                .StoreDurably()
+                .WithIdentity(ExpireStaleEventCreationRequestsJob.Name));
+
+            options.AddTrigger(t => t
+                .ForJob(ExpireStaleEventCreationRequestsJob.Name)
+                .WithIdentity($"{ExpireStaleEventCreationRequestsJob.Name}.trigger")
+                .WithSimpleSchedule(s => s
+                    .WithIntervalInMinutes(15)
                     .RepeatForever())
                 .StartNow());
         });

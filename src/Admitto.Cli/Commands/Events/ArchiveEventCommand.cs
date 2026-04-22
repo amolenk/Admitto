@@ -5,36 +5,19 @@ using Amolenk.Admitto.Cli.IO;
 
 namespace Amolenk.Admitto.Cli.Commands.Events;
 
-public class ArchiveEventSettings : TeamEventSettings
-{
-    [CommandOption("--expected-version <version>")]
-    [Description("The expected current version of the event (optimistic concurrency token)")]
-    public int? ExpectedVersion { get; init; }
-
-    public override ValidationResult Validate()
-    {
-        return base.Validate();
-    }
-}
-
 public class ArchiveEventCommand(IAdmittoService admittoService, IConfigService configService)
-    : AsyncCommand<ArchiveEventSettings>
+    : AsyncCommand<TeamEventSettings>
 {
     public override async Task<int> ExecuteAsync(
         CommandContext context,
-        ArchiveEventSettings settings,
+        TeamEventSettings settings,
         CancellationToken cancellationToken)
     {
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);
 
-        var request = new ArchiveTicketedEventHttpRequest
-        {
-            ExpectedVersion = settings.ExpectedVersion
-        };
-
         var success = await admittoService.SendAsync(
-            client => client.ArchiveTicketedEventAsync(teamSlug, eventSlug, request, cancellationToken));
+            client => client.ArchiveTicketedEventAsync(teamSlug, eventSlug, cancellationToken));
 
         if (!success) return 1;
 

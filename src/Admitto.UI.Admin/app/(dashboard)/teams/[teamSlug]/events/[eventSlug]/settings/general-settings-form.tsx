@@ -7,6 +7,7 @@ import { AlertCircle, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card } from "@/components/ui/card";
 import { useCustomForm } from "@/hooks/use-custom-form";
@@ -175,7 +176,7 @@ export function GeneralSettingsForm({ event }: { event: TicketedEventDto }) {
                                     <Field label="Starts at" hint="Event start date and time.">
                                         <FormItem className="space-y-1">
                                             <FormControl>
-                                                <Input type="datetime-local" {...field} />
+                                                <DateTimePicker {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -190,7 +191,7 @@ export function GeneralSettingsForm({ event }: { event: TicketedEventDto }) {
                                     <Field label="Ends at" hint="Event end date and time.">
                                         <FormItem className="space-y-1">
                                             <FormControl>
-                                                <Input type="datetime-local" {...field} />
+                                                <DateTimePicker {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>

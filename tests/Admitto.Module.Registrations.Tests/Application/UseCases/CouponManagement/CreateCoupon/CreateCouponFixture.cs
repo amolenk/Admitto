@@ -6,7 +6,6 @@ namespace Amolenk.Admitto.Module.Registrations.Tests.Application.UseCases.Coupon
 
 internal sealed class CreateCouponFixture
 {
-    private bool _eventCancelled;
     private bool _hasCancelledTicketType;
 
     public TicketedEventId EventId { get; } = TicketedEventId.New();
@@ -19,11 +18,6 @@ internal sealed class CreateCouponFixture
 
     public static CreateCouponFixture HappyFlow() => new();
 
-    public static CreateCouponFixture CancelledEvent() => new()
-    {
-        _eventCancelled = true
-    };
-
     public static CreateCouponFixture WithCancelledTicketType() => new()
     {
         _hasCancelledTicketType = true
@@ -31,15 +25,6 @@ internal sealed class CreateCouponFixture
 
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
     {
-        var guard = TicketedEventLifecycleGuard.Create(EventId);
-        if (_eventCancelled)
-        {
-            guard.SetCancelled();
-        }
-
-        var policy = EventRegistrationPolicy.Create(EventId);
-        policy.SetWindow(DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddDays(30));
-
         var catalog = TicketCatalog.Create(EventId);
         catalog.AddTicketType(
             Slug.From(TicketTypeSlug), DisplayName.From("General Admission"), [], 100);
@@ -53,8 +38,6 @@ internal sealed class CreateCouponFixture
 
         await environment.Database.SeedAsync(dbContext =>
         {
-            dbContext.TicketedEventLifecycleGuards.Add(guard);
-            dbContext.EventRegistrationPolicies.Add(policy);
             dbContext.TicketCatalogs.Add(catalog);
         });
     }

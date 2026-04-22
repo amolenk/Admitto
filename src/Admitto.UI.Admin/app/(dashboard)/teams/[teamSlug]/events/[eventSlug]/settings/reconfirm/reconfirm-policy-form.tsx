@@ -3,6 +3,7 @@
 import { useState } from "react";
 import * as z from "zod";
 import { AlertCircle } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
     Form,
@@ -13,10 +14,12 @@ import {
     FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useCustomForm } from "@/hooks/use-custom-form";
 import { apiClient } from "@/lib/api-client";
 import { FormError } from "@/components/form-error";
+import { TicketedEventDetails } from "../event-detail-types";
 
 const reconfirmSchema = z
     .object({
@@ -28,10 +31,7 @@ const reconfirmSchema = z
             .min(1, "Cadence must be at least 1 day"),
     })
     .refine(
-        (d) =>
-            !d.opensAt ||
-            !d.closesAt ||
-            new Date(d.closesAt) > new Date(d.opensAt),
+        (d) => new Date(d.closesAt) > new Date(d.opensAt),
         {
             path: ["closesAt"],
             message: "Close date must be after open date",
@@ -40,12 +40,6 @@ const reconfirmSchema = z
 
 type ReconfirmValues = z.infer<typeof reconfirmSchema>;
 
-interface ReconfirmPolicy {
-    opensAt: string;
-    closesAt: string;
-    cadenceDays: number;
-}
-
 function toDatetimeLocal(iso: string): string {
     const d = new Date(iso);
     const pad = (n: number) => String(n).padStart(2, "0");
@@ -53,22 +47,20 @@ function toDatetimeLocal(iso: string): string {
 }
 
 export function ReconfirmPolicyForm({
-    policy,
+    event,
     teamSlug,
     eventSlug,
     disabled,
-    onSaved,
 }: {
-    policy: ReconfirmPolicy | null;
+    event: TicketedEventDetails;
     teamSlug: string;
     eventSlug: string;
     disabled: boolean;
-    onSaved: () => void;
 }) {
-    const [removeError, setRemoveError] = useState<{
-        title: string;
-        detail: string;
-    } | null>(null);
+    const queryClient = useQueryClient();
+    const policy = event.reconfirmPolicy;
+
+    const [removeError, setRemoveError] = useState<{ title: string; detail: string } | null>(null);
     const [isRemoving, setIsRemoving] = useState(false);
 
     const form = useCustomForm<ReconfirmValues>(reconfirmSchema, {
@@ -78,25 +70,26 @@ export function ReconfirmPolicyForm({
     });
 
     async function onSubmit(values: ReconfirmValues) {
-        await apiClient.put(
-            `/api/teams/${teamSlug}/events/${eventSlug}/reconfirm-policy`,
-            {
-                opensAt: new Date(values.opensAt).toISOString(),
-                closesAt: new Date(values.closesAt).toISOString(),
-                cadenceDays: values.cadenceDays,
-            }
-        );
-        onSaved();
+        await apiClient.put(`/api/teams/${teamSlug}/events/${eventSlug}/reconfirm-policy`, {
+            opensAt: new Date(values.opensAt).toISOString(),
+            closesAt: new Date(values.closesAt).toISOString(),
+            cadenceDays: values.cadenceDays,
+            expectedVersion: Number(event.version),
+        });
+        await queryClient.invalidateQueries({ queryKey: ["event", teamSlug, eventSlug] });
     }
 
     async function handleRemove() {
         setRemoveError(null);
         setIsRemoving(true);
         try {
-            await apiClient.delete(
-                `/api/teams/${teamSlug}/events/${eventSlug}/reconfirm-policy`
-            );
-            onSaved();
+            await apiClient.put(`/api/teams/${teamSlug}/events/${eventSlug}/reconfirm-policy`, {
+                opensAt: null,
+                closesAt: null,
+                cadenceDays: null,
+                expectedVersion: Number(event.version),
+            });
+            await queryClient.invalidateQueries({ queryKey: ["event", teamSlug, eventSlug] });
         } catch (err) {
             if (err instanceof FormError) {
                 setRemoveError({ title: err.title, detail: err.detail });
@@ -118,9 +111,7 @@ export function ReconfirmPolicyForm({
                     <Alert variant="destructive">
                         <AlertCircle className="h-4 w-4" />
                         <AlertTitle>{form.generalError.title}</AlertTitle>
-                        <AlertDescription>
-                            {form.generalError.detail}
-                        </AlertDescription>
+                        <AlertDescription>{form.generalError.detail}</AlertDescription>
                     </Alert>
                 )}
 
@@ -139,11 +130,7 @@ export function ReconfirmPolicyForm({
                         <FormItem>
                             <FormLabel>Window opens at</FormLabel>
                             <FormControl>
-                                <Input
-                                    type="datetime-local"
-                                    disabled={disabled}
-                                    {...field}
-                                />
+                                <DateTimePicker disabled={disabled} {...field} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -157,11 +144,7 @@ export function ReconfirmPolicyForm({
                         <FormItem>
                             <FormLabel>Window closes at</FormLabel>
                             <FormControl>
-                                <Input
-                                    type="datetime-local"
-                                    disabled={disabled}
-                                    {...field}
-                                />
+                                <DateTimePicker disabled={disabled} {...field} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -195,10 +178,7 @@ export function ReconfirmPolicyForm({
                 />
 
                 <div className="flex gap-2">
-                    <Button
-                        type="submit"
-                        disabled={disabled || form.formState.isSubmitting}
-                    >
+                    <Button type="submit" disabled={disabled || form.formState.isSubmitting}>
                         {form.formState.isSubmitting ? "Saving…" : "Save policy"}
                     </Button>
                     {policy && (

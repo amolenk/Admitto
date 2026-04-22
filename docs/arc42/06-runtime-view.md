@@ -72,61 +72,113 @@ Example: Registrations module needs ticket types from Organization.
 
 The same facade is used by authorization handlers to resolve team membership roles.
 
-## 6.4 Org → Registrations event-creation sync
+## 6.4 Event creation (Organization → Registrations async flow)
 
-When an organizer creates a `TicketedEvent`, the new event must also exist in the Registrations module so that policy operations (set registration window, manage ticket types, configure cancellation/reconfirm policies) can find it. This happens via the standard module-event pipeline — there is no shared transaction between modules.
+Event creation is a two-phase async flow. Organization validates team-level invariants and acts as the creation **gatekeeper**; Registrations materialises the authoritative `TicketedEvent` and reports back with an outcome. The Admin UI submits the request and polls a creation-status endpoint until it sees a terminal state.
 
 ```mermaid
 sequenceDiagram
-  participant Endpoint as Organization endpoint
-  participant Aggregate as TicketedEvent
-  participant Interceptor as DomainEventsInterceptor
-  participant Policy as OrganizationMessagePolicy
-  participant Outbox as outbox table
-  participant Dispatcher as OutboxDispatcher
-  participant Bus as Module bus
-  participant Handler as TicketedEventCreatedModuleEventHandler (Registrations)
-  participant Mediator
-  participant Sync as HandleEventCreatedHandler
+  participant UI as Admin UI
+  participant OrgEp as Organization endpoint
+  participant Team as Team aggregate
+  participant OrgOutbox as Org outbox
+  participant RegHandler as Registrations integration-event handler
+  participant RegEvent as TicketedEvent aggregate
+  participant Catalog as TicketCatalog
+  participant RegOutbox as Reg outbox
+  participant OrgHandler as Organization integration-event handler
 
-  Endpoint->>Aggregate: TicketedEvent.Create(...)
-  Aggregate-->>Endpoint: raises TicketedEventCreatedDomainEvent (TeamId, TicketedEventId)
-  Endpoint->>Interceptor: SaveChangesAsync()
-  Interceptor->>Policy: map domain event
-  Policy-->>Outbox: TicketedEventCreatedModuleEvent (same transaction)
-  Dispatcher->>Bus: dispatch
-  Bus->>Handler: handle
-  Handler->>Mediator: HandleEventCreatedCommand (DeterministicCommandId)
-  Mediator->>Sync: HandleAsync
-  Sync-->>Sync: idempotent: no-op if guard exists, else create Active TicketedEventLifecycleGuard
+  UI->>OrgEp: POST /admin/teams/{teamSlug}/events
+  OrgEp->>Team: RequestCreation(slug, requester)
+  Team->>Team: EnsureNotArchived(); PendingEventCount++
+  Team->>Team: Add TeamEventCreationRequest (Pending)
+  OrgEp->>OrgOutbox: TicketedEventCreationRequested (CreationRequestId, TeamId, Slug)
+  OrgEp-->>UI: 202 Accepted + Location: /admin/teams/{slug}/event-creations/{id}
+  OrgOutbox->>RegHandler: deliver
+  RegHandler->>RegEvent: insert TicketedEvent (TeamId, Slug, ...)
+  alt success
+    RegHandler->>Catalog: create Active TicketCatalog
+    RegHandler->>RegOutbox: TicketedEventCreated
+  else duplicate slug
+    RegHandler->>RegOutbox: TicketedEventCreationRejected (reason=duplicate_slug)
+  end
+  RegOutbox->>OrgHandler: deliver (idempotent on CreationRequestId)
+  OrgHandler->>Team: RegisterEventCreated / RegisterEventRejected
+  Team->>Team: PendingEventCount--; Active/Rejected counter++
+  UI->>OrgEp: GET /admin/teams/{slug}/event-creations/{id} (poll)
+  OrgEp-->>UI: { status: Created | Rejected | Pending, link }
 ```
 
-The Created handler creates a `TicketedEventLifecycleGuard` (not a policy aggregate). Policy aggregates are created on demand when the operator configures them. Cancel and Archive follow the same shape, mapping `TicketedEventCancelledDomainEvent` / `TicketedEventArchivedDomainEvent` onto the corresponding module events — their handlers load-or-create the guard and set the lifecycle status (idempotent).
+Key properties:
 
-## 6.5 Policy mutation flow
+- Organization owns `PendingEventCount` and the `TeamEventCreationRequest` state; these are mutated in the same unit of work as the outbox write.
+- `CreationRequestId` is the idempotency key on every response event. Organization handlers are idempotent on redelivery and also tolerate out-of-order arrival of `TicketedEventCreated` vs the original request's own commit.
+- A Quartz job (`ExpireStaleEventCreationRequestsJob`) expires `Pending` requests older than a configurable timeout and rolls back `PendingEventCount`, so team-archive is never blocked indefinitely by lost or unprocessable requests.
 
-Every command that mutates a policy aggregate (registration, cancellation, reconfirm, ticket types) follows the lifecycle guard pattern (see [§8.14](08-crosscutting-concepts.md#814-lifecycle-guard-pattern)):
+## 6.5 Event cancel / archive (Registrations → Organization)
+
+`Cancel` and `Archive` operations target the authoritative `TicketedEvent` aggregate in Registrations. The lifecycle transition is projected atomically onto `TicketCatalog.EventStatus` (via an in-module domain event in the same unit of work), and propagated to Organization as an integration event so the team's counters can be updated.
+
+```mermaid
+sequenceDiagram
+  participant UI as Admin UI
+  participant RegEp as Registrations endpoint
+  participant Event as TicketedEvent
+  participant Catalog as TicketCatalog
+  participant RegOutbox as Reg outbox
+  participant OrgHandler as Organization integration-event handler
+  participant Team
+
+  UI->>RegEp: POST /admin/.../events/{eventSlug}/cancel (or /archive)
+  RegEp->>Event: Cancel() / Archive()
+  Event-->>Event: raises TicketedEventStatusChanged (in-module)
+  Event->>Catalog: project EventStatus (same UoW)
+  RegEp->>RegOutbox: TicketedEventCancelled / TicketedEventArchived (same UoW)
+  RegOutbox->>OrgHandler: deliver (idempotent on TicketedEventId + transition)
+  OrgHandler->>Team: RegisterEventCancelled / RegisterEventArchived
+  Team->>Team: ActiveEventCount-- ; CancelledEventCount++ (or Archived++)
+```
+
+Because `TicketCatalog.EventStatus` is updated in the same transaction as `TicketedEvent.Cancel/Archive`, any in-flight registration that has already loaded `TicketCatalog` at a prior version fails its claim with a `DbUpdateConcurrencyException` — no registration can slip past a lifecycle transition.
+
+## 6.6 Attendee registration (atomic status + capacity gate)
+
+The registration handler (self-service or coupon) loads both `TicketedEvent` (for window / domain / active-status policy checks) and `TicketCatalog` (for the atomic claim) in the same unit of work.
+
+```mermaid
+sequenceDiagram
+  participant Endpoint as Public endpoint
+  participant Handler
+  participant Event as TicketedEvent
+  participant Catalog as TicketCatalog
+
+  Endpoint->>Handler: Send(RegisterCommand)
+  Handler->>Event: load (policy invariants: window, domain, status)
+  Handler->>Catalog: load
+  Handler->>Catalog: Claim(...)  // atomic on EventStatus + capacity
+  Note over Catalog: Refuses when EventStatus != Active (mapped to "event not active")
+  Endpoint->>Endpoint: SaveChangesAsync (UoW)
+```
+
+Coupons bypass capacity / window / domain checks but do not bypass the active-status gate.
+
+## 6.7 Policy mutation flow
+
+Policy commands (`ConfigureRegistrationPolicyCommand`, `ConfigureCancellationPolicyCommand`, `ConfigureReconfirmPolicyCommand`) load the `TicketedEvent` aggregate and call the matching policy mutator directly. Each mutator refuses when the event's status is not Active, so there is no separate lifecycle guard. Optimistic concurrency is supplied by `TicketedEvent.Version`.
 
 ```mermaid
 sequenceDiagram
   participant Endpoint as Admin endpoint
-  participant Mediator
   participant Handler as Policy handler
-  participant Guard as TicketedEventLifecycleGuard
-  participant PolicyAgg as Policy aggregate
+  participant Event as TicketedEvent
   participant UoW as Module UnitOfWork
 
-  Endpoint->>Mediator: Send(command)
-  Mediator->>Handler: HandleAsync(command)
-  Handler->>Guard: LoadOrCreate(eventId)
-  Handler->>Guard: AssertActiveAndRegisterPolicyMutation()
-  Note over Guard: Throws if not Active; bumps PolicyMutationCount++
-  Handler->>PolicyAgg: Create or update policy
-  Endpoint->>UoW: SaveChangesAsync()
-  Note over UoW: Guard row version advances → concurrent lifecycle event conflicts
+  Endpoint->>Handler: Send(command, Version)
+  Handler->>Event: load with expected Version
+  Handler->>Event: ConfigureXxxPolicy(...)
+  Note over Event: Throws if Status != Active
+  Endpoint->>UoW: SaveChangesAsync
 ```
-
-Because `PolicyMutationCount++` writes the guard row, EF advances `Version`. A concurrent lifecycle handler that loaded the same guard will fail with a `DbUpdateConcurrencyException`, ensuring strong consistency between policy edits and lifecycle transitions.
 
 ## Done-when
 

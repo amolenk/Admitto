@@ -8,18 +8,18 @@ namespace Amolenk.Admitto.Cli.Commands.Events;
 public class ShowEventCommand(IAdmittoService admittoService, IConfigService configService)
     : AsyncCommand<TeamEventSettings>
 {
-    public override async Task<int> ExecuteAsync(CommandContext context, TeamEventSettings settings, CancellationToken cancellationToken)
+    public override async Task<int> ExecuteAsync(
+        CommandContext context,
+        TeamEventSettings settings,
+        CancellationToken cancellationToken)
     {
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);
 
         var response = await admittoService.QueryAsync(
-            client => client.GetTicketedEventAsync(teamSlug, eventSlug, cancellationToken));
+            client => client.GetTicketedEventDetailsAsync(teamSlug, eventSlug, cancellationToken));
 
         if (response is null) return 1;
-
-        var openStatus = await admittoService.QueryAsync(
-            client => client.GetRegistrationOpenStatusAsync(teamSlug, eventSlug, cancellationToken));
 
         AnsiConsole.Write(new Rule(response.Name) { Justification = Justify.Left, Style = Style.Parse("cyan") });
 
@@ -28,17 +28,13 @@ public class ShowEventCommand(IAdmittoService admittoService, IConfigService con
         grid.AddColumn();
 
         grid.AddRow("Slug:", response.Slug);
-        grid.AddRow("Status:", response.Status);
+        grid.AddRow("Status:", response.Status.ToString());
         grid.AddRow("Event starts:", response.StartsAt.Format(true));
         grid.AddRow("Event ends:", response.EndsAt.Format(true));
         grid.AddRow("Website URL:", response.WebsiteUrl);
         grid.AddRow("Base URL:", response.BaseUrl);
         grid.AddRow("Version:", response.Version.ToString());
-
-        if (openStatus is not null)
-        {
-            grid.AddRow("Registration:", openStatus.IsOpen ? "Open" : "Closed");
-        }
+        grid.AddRow("Registration:", response.IsRegistrationOpen ? "Open" : "Closed");
 
         AnsiConsole.Write(grid);
 

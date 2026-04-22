@@ -181,12 +181,13 @@ app.Configure(config =>
         {
             ticketedEvent.SetDescription("Manage events");
 
-            // Quarantined: CreateEventCommand depends on removed AdditionalDetailSchemaDto.
-            // ticketedEvent.AddCommand<CreateEventCommand>("create")
-            //     .WithDescription("Create a new event");
+            ticketedEvent.AddCommand<CreateEventCommand>("create")
+                .WithDescription("Request creation of a new event");
 
-            ticketedEvent.AddCommand<ListEventsCommand>("list")
-                .WithDescription("List all events for a team");
+            // Quarantined: backend no longer exposes a list-events admin endpoint.
+            // Restore once the API exposes a team-scoped event listing again.
+            // ticketedEvent.AddCommand<ListEventsCommand>("list")
+            //     .WithDescription("List all events for a team");
 
             ticketedEvent.AddCommand<ShowEventCommand>("show")
                 .WithDescription("Show the details of an event");
@@ -246,19 +247,25 @@ app.Configure(config =>
                     policy.SetDescription("Manage event policies");
 
                     policy.AddBranch(
+                        "registration",
+                        registration =>
+                        {
+                            registration.SetDescription("Manage registration policy");
+
+                            registration
+                                .AddCommand<Commands.Events.Policy.Registration.ConfigureRegistrationPolicyCommand>("configure")
+                                .WithDescription("Configure the registration policy");
+                        });
+
+                    policy.AddBranch(
                         "cancellation",
                         cancellation =>
                         {
                             cancellation.SetDescription("Manage cancellation policy");
 
-                            cancellation.AddCommand<Commands.Events.Policy.Cancellation.ShowCancellationPolicyCommand>("show")
-                                .WithDescription("Show the cancellation policy");
-
-                            cancellation.AddCommand<Commands.Events.Policy.Cancellation.SetCancellationPolicyCommand>("set")
-                                .WithDescription("Set the cancellation policy");
-
-                            cancellation.AddCommand<Commands.Events.Policy.Cancellation.RemoveCancellationPolicyCommand>("remove")
-                                .WithDescription("Remove the cancellation policy");
+                            cancellation
+                                .AddCommand<Commands.Events.Policy.Cancellation.ConfigureCancellationPolicyCommand>("configure")
+                                .WithDescription("Configure the cancellation policy");
                         });
 
                     policy.AddBranch(
@@ -267,25 +274,9 @@ app.Configure(config =>
                         {
                             reconfirm.SetDescription("Manage reconfirm policy");
 
-                            reconfirm.AddCommand<Commands.Events.Policy.Reconfirm.ShowReconfirmPolicyCommand>("show")
-                                .WithDescription("Show the reconfirm policy");
-
-                            reconfirm.AddCommand<Commands.Events.Policy.Reconfirm.SetReconfirmPolicyCommand>("set")
-                                .WithDescription("Set the reconfirm policy");
-
-                            reconfirm.AddCommand<Commands.Events.Policy.Reconfirm.RemoveReconfirmPolicyCommand>("remove")
-                                .WithDescription("Remove the reconfirm policy");
-                        });
-
-                    policy.AddBranch(
-                        "registration",
-                        registration =>
-                        {
-                            registration.SetDescription("Manage registration policy");
-
-                            registration
-                                .AddCommand<Commands.Events.Policy.Registration.SetRegistrationPolicyCommand>("set")
-                                .WithDescription("Set the registration policy");
+                            reconfirm
+                                .AddCommand<Commands.Events.Policy.Reconfirm.ConfigureReconfirmPolicyCommand>("configure")
+                                .WithDescription("Configure the reconfirm policy");
                         });
                 });
         });

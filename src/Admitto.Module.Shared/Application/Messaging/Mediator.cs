@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Amolenk.Admitto.Module.Shared.Kernel.DomainEvents;
 
 namespace Amolenk.Admitto.Module.Shared.Application.Messaging;
@@ -39,7 +40,12 @@ public partial class Mediator(IServiceProvider serviceProvider, ILogger<Mediator
 
         LogCommandHandling(logger, command.GetType().FullName!, handler.GetType().FullName!);
 
-        return handler.HandleAsync(command, cancellationToken);
+        return HandleWithActivityAsync(
+            "command",
+            command.GetType(),
+            handler.GetType(),
+            ct => handler.HandleAsync(command, ct),
+            cancellationToken);
     }
 
     public ValueTask<TResult> SendReceiveAsync<TCommand, TResult>(
@@ -56,7 +62,12 @@ public partial class Mediator(IServiceProvider serviceProvider, ILogger<Mediator
 
         LogCommandHandling(logger, command.GetType().FullName!, handler.GetType().FullName!);
 
-        return handler.HandleAsync(command, cancellationToken);
+        return HandleWithActivityAsync(
+            "command",
+            command.GetType(),
+            handler.GetType(),
+            ct => handler.HandleAsync(command, ct),
+            cancellationToken);
     }
 
     public ValueTask<TResult> QueryAsync<TQuery, TResult>(
@@ -73,7 +84,12 @@ public partial class Mediator(IServiceProvider serviceProvider, ILogger<Mediator
 
         LogQueryHandling(logger, query.GetType().FullName!, handler.GetType().FullName!);
 
-        return handler.HandleAsync(query, cancellationToken);
+        return HandleWithActivityAsync(
+            "query",
+            query.GetType(),
+            handler.GetType(),
+            ct => handler.HandleAsync(query, ct),
+            cancellationToken);
     }
 
     public async ValueTask PublishDomainEventAsync<TDomainEvent>(
@@ -89,8 +105,65 @@ public partial class Mediator(IServiceProvider serviceProvider, ILogger<Mediator
         {
             LogEventHandling(logger, domainEvent.GetType().FullName!, handler.GetType().FullName!);
 
-            await handler.HandleAsync(domainEvent, cancellationToken);
+            await HandleWithActivityAsync(
+                "domain-event",
+                domainEvent.GetType(),
+                handler.GetType(),
+                ct => handler.HandleAsync(domainEvent, ct),
+                cancellationToken);
         }
+    }
+
+    private static async ValueTask HandleWithActivityAsync(
+        string kind,
+        Type messageType,
+        Type handlerType,
+        Func<CancellationToken, ValueTask> handler,
+        CancellationToken cancellationToken)
+    {
+        using var activity = StartHandlerActivity(kind, messageType, handlerType);
+        try
+        {
+            await handler(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            activity?.AddTag("exception.type", ex.GetType().FullName);
+            throw;
+        }
+    }
+
+    private static async ValueTask<TResult> HandleWithActivityAsync<TResult>(
+        string kind,
+        Type messageType,
+        Type handlerType,
+        Func<CancellationToken, ValueTask<TResult>> handler,
+        CancellationToken cancellationToken)
+    {
+        using var activity = StartHandlerActivity(kind, messageType, handlerType);
+        try
+        {
+            return await handler(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            activity?.AddTag("exception.type", ex.GetType().FullName);
+            throw;
+        }
+    }
+
+    private static Activity? StartHandlerActivity(string kind, Type messageType, Type handlerType)
+    {
+        var activity = AdmittoActivitySource.ActivitySource.StartActivity(
+            $"{kind} {messageType.Name}",
+            ActivityKind.Internal);
+
+        activity?.AddTag("admitto.message.kind", kind);
+        activity?.AddTag("admitto.message.type", messageType.FullName);
+        activity?.AddTag("admitto.handler.type", handlerType.FullName);
+        return activity;
     }
 
     [LoggerMessage(LogLevel.Information, "Handling command of type '{CommandType}' with handler '{handlerType}'")]

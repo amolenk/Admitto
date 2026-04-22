@@ -109,12 +109,12 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
 
     // SC006: Coupon bypasses registration window when flag set
     [TestMethod]
-    public async ValueTask SC006_RegisterWithCoupon_BypassWindowFlag_SucceedsEvenWhenWindowClosed()
+    public async ValueTask SC006_RegisterWithCoupon_BypassesClosedWindow_Succeeds()
     {
-        var fixture = RegisterWithCouponFixture.BypassesWindow();
+        var fixture = RegisterWithCouponFixture.BypassesClosedWindow();
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture, "speaker@gmail.com");
+        var command = NewCommand(fixture, "attendee@example.com");
         var sut = NewHandler(fixture);
 
         await sut.HandleAsync(command, testContext.CancellationToken);
@@ -128,23 +128,23 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
 
     // SC007: Coupon respects registration window when flag not set
     [TestMethod]
-    public async ValueTask SC007_RegisterWithCoupon_NoBypassFlag_ThrowsRegistrationClosedWhenWindowClosed()
+    public async ValueTask SC007_RegisterWithCoupon_RespectsClosedWindow_ThrowsRegistrationClosed()
     {
-        var fixture = RegisterWithCouponFixture.RespectsWindow();
+        var fixture = RegisterWithCouponFixture.RespectsClosedWindow();
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture, "speaker@gmail.com");
+        var command = NewCommand(fixture, "attendee@example.com");
         var sut = NewHandler(fixture);
 
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.ShouldMatch(RegisterWithCouponHandler.Errors.RegistrationClosed);
+        result.Error.Code.ShouldBe("registration.closed");
     }
 
     // SC008: Coupon bypasses domain restriction
     [TestMethod]
-    public async ValueTask SC008_RegisterWithCoupon_BypassesDomainRestriction_SucceedsWithAnyEmail()
+    public async ValueTask SC008_RegisterWithCoupon_BypassesDomainRestriction_Succeeds()
     {
         var fixture = RegisterWithCouponFixture.BypassesDomainRestriction();
         await fixture.SetupAsync(Environment);
@@ -184,6 +184,22 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
             catalog.TicketTypes[0].UsedCapacity.ShouldBe(1);
             catalog.TicketTypes[0].MaxCapacity.ShouldBeNull();
         });
+    }
+
+    // SC010: Coupon does not bypass cancelled event — active-status gate still applies
+    [TestMethod]
+    public async ValueTask SC010_RegisterWithCoupon_EventCancelled_ThrowsEventNotActive()
+    {
+        var fixture = RegisterWithCouponFixture.EventCancelled();
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(fixture, "attendee@example.com");
+        var sut = NewHandler(fixture);
+
+        var result = await ErrorResult.CaptureAsync(
+            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
+
+        result.Error.Code.ShouldBe("registration.event_not_active");
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────

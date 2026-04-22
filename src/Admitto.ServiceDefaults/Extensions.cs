@@ -74,6 +74,7 @@ public static class Extensions
                 .WithTracing(tracing =>
                 {
                     tracing.AddSource(builder.Environment.ApplicationName)
+                        .AddSource("Admitto")
                         .AddAspNetCoreInstrumentation()
                         // Uncomment the following line to enable gRPC instrumentation (requires the OpenTelemetry.Instrumentation.GrpcNetClient package)
                         //.AddGrpcClientInstrumentation()

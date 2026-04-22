@@ -2,14 +2,17 @@
 
 import * as z from "zod";
 import { AlertCircle, Check } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card } from "@/components/ui/card";
 import { useCustomForm } from "@/hooks/use-custom-form";
 import { apiClient } from "@/lib/api-client";
+import { TicketedEventDetails } from "../event-detail-types";
 
 function Field({ label, hint, children }: {
     label: string;
@@ -29,11 +32,18 @@ function Field({ label, hint, children }: {
 
 const policySchema = z
     .object({
-        registrationWindowOpensAt: z.string().optional(),
-        registrationWindowClosesAt: z.string().optional(),
+        registrationWindowOpensAt: z.string().min(1, "Open date is required"),
+        registrationWindowClosesAt: z.string().min(1, "Close date is required"),
         restrictEmailDomain: z.boolean(),
         allowedEmailDomain: z.string().optional(),
     })
+    .refine(
+        (d) => new Date(d.registrationWindowClosesAt) > new Date(d.registrationWindowOpensAt),
+        {
+            path: ["registrationWindowClosesAt"],
+            message: "Close date must be after open date",
+        }
+    )
     .refine(
         (d) => !d.restrictEmailDomain || (d.allowedEmailDomain && d.allowedEmailDomain.length > 0),
         {
@@ -44,37 +54,49 @@ const policySchema = z
 
 type PolicyValues = z.infer<typeof policySchema>;
 
+function toLocalInput(iso: string | undefined): string {
+    if (!iso) return "";
+    const d = new Date(iso);
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
 export function RegistrationPolicyForm({
+    event,
     teamSlug,
     eventSlug,
+    disabled,
 }: {
+    event: TicketedEventDetails;
     teamSlug: string;
     eventSlug: string;
+    disabled: boolean;
 }) {
+    const queryClient = useQueryClient();
+    const policy = event.registrationPolicy;
+
     const form = useCustomForm<PolicyValues>(policySchema, {
-        registrationWindowOpensAt: "",
-        registrationWindowClosesAt: "",
-        restrictEmailDomain: false,
-        allowedEmailDomain: "",
+        registrationWindowOpensAt: toLocalInput(policy?.opensAt),
+        registrationWindowClosesAt: toLocalInput(policy?.closesAt),
+        restrictEmailDomain: !!policy?.allowedEmailDomain,
+        allowedEmailDomain: policy?.allowedEmailDomain ?? "",
     });
 
     const restrictEmailDomain = form.watch("restrictEmailDomain");
 
     async function onSubmit(values: PolicyValues) {
         const body = {
-            registrationWindowOpensAt: values.registrationWindowOpensAt
-                ? new Date(values.registrationWindowOpensAt).toISOString()
-                : null,
-            registrationWindowClosesAt: values.registrationWindowClosesAt
-                ? new Date(values.registrationWindowClosesAt).toISOString()
-                : null,
+            opensAt: new Date(values.registrationWindowOpensAt).toISOString(),
+            closesAt: new Date(values.registrationWindowClosesAt).toISOString(),
             allowedEmailDomain:
                 values.restrictEmailDomain && values.allowedEmailDomain
                     ? values.allowedEmailDomain
                     : null,
+            expectedVersion: Number(event.version),
         };
 
         await apiClient.put(`/api/teams/${teamSlug}/events/${eventSlug}/registration-policy`, body);
+        await queryClient.invalidateQueries({ queryKey: ["event", teamSlug, eventSlug] });
         form.reset(values);
     }
 
@@ -86,10 +108,14 @@ export function RegistrationPolicyForm({
                     <p className="text-[13.5px] text-muted-foreground">Control when and who can register for this event.</p>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="ghost" size="sm" type="button" onClick={() => form.reset()}>
+                    <Button variant="ghost" size="sm" type="button" onClick={() => form.reset()} disabled={disabled}>
                         Discard
                     </Button>
-                    <Button size="sm" onClick={form.submit(onSubmit)} disabled={form.formState.isSubmitting}>
+                    <Button
+                        size="sm"
+                        onClick={form.submit(onSubmit)}
+                        disabled={disabled || form.formState.isSubmitting}
+                    >
                         <Check className="size-3.5" />
                         {form.formState.isSubmitting ? "Saving\u2026" : "Save changes"}
                     </Button>
@@ -106,70 +132,72 @@ export function RegistrationPolicyForm({
 
             <Form {...form}>
                 <form onSubmit={form.submit(onSubmit)}>
-                    <Card>
-                        <div className="px-6 divide-y">
-                            <FormField
-                                control={form.control}
-                                name="registrationWindowOpensAt"
-                                render={({ field }) => (
-                                    <Field label="Window opens" hint="When attendees can start registering.">
-                                        <FormItem className="space-y-1">
-                                            <FormControl>
-                                                <Input type="datetime-local" {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    </Field>
-                                )}
-                            />
-
-                            <FormField
-                                control={form.control}
-                                name="registrationWindowClosesAt"
-                                render={({ field }) => (
-                                    <Field label="Window closes" hint="When registration stops accepting entries.">
-                                        <FormItem className="space-y-1">
-                                            <FormControl>
-                                                <Input type="datetime-local" {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    </Field>
-                                )}
-                            />
-
-                            <FormField
-                                control={form.control}
-                                name="restrictEmailDomain"
-                                render={({ field }) => (
-                                    <Field label="Restrict domain" hint="Only allow registrations from a specific email domain.">
-                                        <FormItem className="space-y-1">
-                                            <FormControl>
-                                                <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                            </FormControl>
-                                        </FormItem>
-                                    </Field>
-                                )}
-                            />
-
-                            {restrictEmailDomain && (
+                    <fieldset disabled={disabled} className="contents">
+                        <Card>
+                            <div className="px-6 divide-y">
                                 <FormField
                                     control={form.control}
-                                    name="allowedEmailDomain"
+                                    name="registrationWindowOpensAt"
                                     render={({ field }) => (
-                                        <Field label="Allowed domain" hint="e.g. acme.org">
+                                        <Field label="Window opens" hint="When attendees can start registering.">
                                             <FormItem className="space-y-1">
                                                 <FormControl>
-                                                    <Input placeholder="acme.org" {...field} />
+                                                    <DateTimePicker {...field} />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
                                         </Field>
                                     )}
                                 />
-                            )}
-                        </div>
-                    </Card>
+
+                                <FormField
+                                    control={form.control}
+                                    name="registrationWindowClosesAt"
+                                    render={({ field }) => (
+                                        <Field label="Window closes" hint="When registration stops accepting entries.">
+                                            <FormItem className="space-y-1">
+                                                <FormControl>
+                                                    <DateTimePicker {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        </Field>
+                                    )}
+                                />
+
+                                <FormField
+                                    control={form.control}
+                                    name="restrictEmailDomain"
+                                    render={({ field }) => (
+                                        <Field label="Restrict domain" hint="Only allow registrations from a specific email domain.">
+                                            <FormItem className="space-y-1">
+                                                <FormControl>
+                                                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                                </FormControl>
+                                            </FormItem>
+                                        </Field>
+                                    )}
+                                />
+
+                                {restrictEmailDomain && (
+                                    <FormField
+                                        control={form.control}
+                                        name="allowedEmailDomain"
+                                        render={({ field }) => (
+                                            <Field label="Allowed domain" hint="e.g. acme.org">
+                                                <FormItem className="space-y-1">
+                                                    <FormControl>
+                                                        <Input placeholder="acme.org" {...field} />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            </Field>
+                                        )}
+                                    />
+                                )}
+                            </div>
+                        </Card>
+                    </fieldset>
                 </form>
             </Form>
         </div>

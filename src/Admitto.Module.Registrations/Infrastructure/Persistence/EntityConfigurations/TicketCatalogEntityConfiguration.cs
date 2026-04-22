@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Module.Registrations.Domain.Entities;
+using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -21,6 +22,12 @@ public class TicketCatalogEntityConfiguration : IEntityTypeConfiguration<TicketC
         builder.Property(e => e.Version)
             .HasColumnName("xmin")
             .IsRowVersion();
+
+        builder.Property(e => e.EventStatus)
+            .HasColumnName("event_status")
+            .HasConversion<int>()
+            .IsRequired()
+            .HasDefaultValue(EventLifecycleStatus.Active);
 
         builder.OwnsMany(e => e.TicketTypes, b =>
         {

@@ -17,7 +17,6 @@ internal sealed class RegisterWithCouponHandler(
         RegisterWithCouponCommand command,
         CancellationToken cancellationToken)
     {
-        // Load and validate the coupon.
         if (!Guid.TryParse(command.CouponCode, out var codeGuid))
             throw new BusinessRuleViolationException(Errors.CouponNotFound);
 
@@ -42,38 +41,36 @@ internal sealed class RegisterWithCouponHandler(
                 throw new BusinessRuleViolationException(Errors.CouponRevoked);
         }
 
-        // Validate all requested slugs are allowlisted by the coupon.
         var notAllowlisted = command.TicketTypeSlugs
             .Where(s => !coupon.AllowedTicketTypeSlugs.Contains(s))
             .ToArray();
         if (notAllowlisted.Length > 0)
             throw new BusinessRuleViolationException(Errors.TicketTypeNotAllowlisted(notAllowlisted));
 
-        // Check lifecycle guard.
-        var guard = await writeStore.TicketedEventLifecycleGuards
-            .AsNoTracking()
-            .FirstOrDefaultAsync(g => g.Id == command.EventId, cancellationToken);
+        var ticketedEvent = await writeStore.TicketedEvents
+            .FirstOrDefaultAsync(e => e.Id == command.EventId, cancellationToken);
 
-        if (guard is not null && !guard.IsActive)
+        if (ticketedEvent is null)
+            throw new BusinessRuleViolationException(Errors.EventNotFound);
+
+        // Coupons bypass capacity/window/domain per the coupon rules, but SHALL NOT bypass
+        // the active-status gate.
+        if (!ticketedEvent.IsActive)
             throw new BusinessRuleViolationException(Errors.EventNotActive);
 
-        // Load registration policy and conditionally enforce window.
-        var policy = await writeStore.EventRegistrationPolicies
-            .AsNoTracking()
-            .FirstOrDefaultAsync(p => p.Id == command.EventId, cancellationToken);
-
-        if (!coupon.BypassRegistrationWindow && policy is not null)
+        if (!coupon.BypassRegistrationWindow)
         {
-            if (!policy.IsRegistrationOpen(now))
-            {
-                var isAfterWindow = policy.RegistrationWindowClosesAt.HasValue
-                                    && now >= policy.RegistrationWindowClosesAt;
-                throw new BusinessRuleViolationException(
-                    isAfterWindow ? Errors.RegistrationClosed : Errors.RegistrationNotOpen);
-            }
+            var policy = ticketedEvent.RegistrationPolicy;
+            if (policy is null)
+                throw new BusinessRuleViolationException(Errors.RegistrationNotOpen);
+
+            if (now < policy.OpensAt)
+                throw new BusinessRuleViolationException(Errors.RegistrationNotOpen);
+
+            if (now >= policy.ClosesAt)
+                throw new BusinessRuleViolationException(Errors.RegistrationClosed);
         }
 
-        // Load ticket catalog and validate the selection.
         var catalog = await writeStore.TicketCatalogs
             .FirstOrDefaultAsync(tc => tc.Id == command.EventId, cancellationToken);
 
@@ -84,7 +81,6 @@ internal sealed class RegisterWithCouponHandler(
                 command.TicketTypeSlugs, ticketTypeMap);
         }
 
-        // Build ticket snapshots.
         var tickets = command.TicketTypeSlugs
             .Select(slug =>
             {
@@ -94,16 +90,21 @@ internal sealed class RegisterWithCouponHandler(
             })
             .ToList();
 
-        // Claim uncapped — coupon-based registrations always count toward occupancy.
         if (catalog is not null)
         {
-            catalog.Claim(command.TicketTypeSlugs, enforce: false);
+            try
+            {
+                catalog.Claim(command.TicketTypeSlugs, enforce: false);
+            }
+            catch (BusinessRuleViolationException ex)
+                when (ex.Error.Code == TicketCatalog.Errors.EventNotActive.Code)
+            {
+                throw new BusinessRuleViolationException(Errors.EventNotActive);
+            }
         }
 
-        // Redeem the coupon (single-use).
         coupon.Redeem();
 
-        // Create the registration.
         var registration = Registration.Create(command.EventId, command.Email, tickets);
         await writeStore.Registrations.AddAsync(registration, cancellationToken);
 
@@ -136,6 +137,11 @@ internal sealed class RegisterWithCouponHandler(
             "coupon.ticket_type_not_allowed",
             "One or more ticket types are not allowed for this coupon.",
             Details: new Dictionary<string, object?> { ["slugs"] = slugs });
+
+        public static readonly Error EventNotFound = new(
+            "registration.event_not_found",
+            "The ticketed event could not be found.",
+            Type: ErrorType.NotFound);
 
         public static readonly Error EventNotActive = new(
             "registration.event_not_active",

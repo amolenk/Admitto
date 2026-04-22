@@ -16,32 +16,30 @@ internal sealed class SelfRegisterAttendeeHandler(
         SelfRegisterAttendeeCommand command,
         CancellationToken cancellationToken)
     {
-        // Load lifecycle guard and check event is active.
-        var guard = await writeStore.TicketedEventLifecycleGuards
-            .AsNoTracking()
-            .FirstOrDefaultAsync(g => g.Id == command.EventId, cancellationToken);
+        var ticketedEvent = await writeStore.TicketedEvents
+            .FirstOrDefaultAsync(e => e.Id == command.EventId, cancellationToken);
 
-        if (guard is not null && !guard.IsActive)
+        if (ticketedEvent is null)
+            throw new BusinessRuleViolationException(Errors.EventNotFound);
+
+        if (!ticketedEvent.IsActive)
             throw new BusinessRuleViolationException(Errors.EventNotActive);
 
-        // Load and enforce registration policy.
-        var policy = await writeStore.EventRegistrationPolicies
-            .AsNoTracking()
-            .FirstOrDefaultAsync(p => p.Id == command.EventId, cancellationToken);
-
+        var policy = ticketedEvent.RegistrationPolicy;
         var now = timeProvider.GetUtcNow();
-        if (policy is null || !policy.IsRegistrationOpen(now))
-        {
-            var isAfterWindow = policy?.RegistrationWindowClosesAt.HasValue == true
-                                && now >= policy.RegistrationWindowClosesAt;
-            throw new BusinessRuleViolationException(
-                isAfterWindow ? Errors.RegistrationClosed : Errors.RegistrationNotOpen);
-        }
+
+        if (policy is null)
+            throw new BusinessRuleViolationException(Errors.RegistrationNotOpen);
+
+        if (now < policy.OpensAt)
+            throw new BusinessRuleViolationException(Errors.RegistrationNotOpen);
+
+        if (now >= policy.ClosesAt)
+            throw new BusinessRuleViolationException(Errors.RegistrationClosed);
 
         if (!policy.IsEmailDomainAllowed(command.Email.Value))
             throw new BusinessRuleViolationException(Errors.EmailDomainNotAllowed);
 
-        // Load ticket catalog and validate the selection.
         var catalog = await writeStore.TicketCatalogs
             .FirstOrDefaultAsync(tc => tc.Id == command.EventId, cancellationToken);
 
@@ -51,17 +49,22 @@ internal sealed class SelfRegisterAttendeeHandler(
         var ticketTypeMap = catalog.TicketTypes.ToDictionary(t => t.Id);
         ValidateTicketTypeSelection(command.TicketTypeSlugs, ticketTypeMap);
 
-        // Build ticket snapshots.
         var tickets = command.TicketTypeSlugs
             .Select(slug => new TicketTypeSnapshot(
                 slug,
                 ticketTypeMap[slug].TimeSlots.Select(ts => ts.Slug.Value).ToArray()))
             .ToList();
 
-        // Claim capacity (enforced — self-service path).
-        catalog.Claim(command.TicketTypeSlugs, enforce: true);
+        try
+        {
+            catalog.Claim(command.TicketTypeSlugs, enforce: true);
+        }
+        catch (BusinessRuleViolationException ex)
+            when (ex.Error.Code == TicketCatalog.Errors.EventNotActive.Code)
+        {
+            throw new BusinessRuleViolationException(Errors.EventNotActive);
+        }
 
-        // Create the registration.
         var registration = Registration.Create(command.EventId, command.Email, tickets);
         await writeStore.Registrations.AddAsync(registration, cancellationToken);
 
@@ -94,6 +97,11 @@ internal sealed class SelfRegisterAttendeeHandler(
 
     internal static class Errors
     {
+        public static readonly Error EventNotFound = new(
+            "registration.event_not_found",
+            "The ticketed event could not be found.",
+            Type: ErrorType.NotFound);
+
         public static readonly Error EventNotActive = new(
             "registration.event_not_active",
             "Cannot register for a cancelled or archived event.",

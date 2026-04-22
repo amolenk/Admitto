@@ -17,7 +17,7 @@ public class ShowRegistrationStatusCommand(IAdmittoService admittoService, IConf
         var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);
 
         var response = await admittoService.QueryAsync(
-            client => client.GetRegistrationOpenStatusAsync(teamSlug, eventSlug, cancellationToken));
+            client => client.GetTicketedEventDetailsAsync(teamSlug, eventSlug, cancellationToken));
 
         if (response is null) return 1;
 
@@ -25,15 +25,20 @@ public class ShowRegistrationStatusCommand(IAdmittoService admittoService, IConf
         grid.AddColumn(new GridColumn { Width = 16 });
         grid.AddColumn();
 
-        grid.AddRow("Is open:", response.IsOpen ? "Yes" : "No");
-        grid.AddRow("Event active:", response.IsEventActive ? "Yes" : "No");
-        if (response.WindowOpensAt is not null)
+        grid.AddRow("Is open:", response.IsRegistrationOpen ? "Yes" : "No");
+        grid.AddRow("Event status:", response.Status.ToString());
+        if (response.RegistrationPolicy is { } policy)
         {
-            grid.AddRow("Window opens:", response.WindowOpensAt.Value.ToString("O"));
+            grid.AddRow("Window opens:", policy.OpensAt.ToString("O"));
+            grid.AddRow("Window closes:", policy.ClosesAt.ToString("O"));
+            if (!string.IsNullOrEmpty(policy.AllowedEmailDomain))
+            {
+                grid.AddRow("Allowed domain:", policy.AllowedEmailDomain);
+            }
         }
-        if (response.WindowClosesAt is not null)
+        else
         {
-            grid.AddRow("Window closes:", response.WindowClosesAt.Value.ToString("O"));
+            grid.AddRow("Policy:", "[yellow]not configured[/]");
         }
 
         AnsiConsole.Write(grid);

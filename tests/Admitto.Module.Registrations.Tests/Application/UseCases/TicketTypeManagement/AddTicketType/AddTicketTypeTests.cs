@@ -102,9 +102,10 @@ public sealed class AddTicketTypeTests(TestContext testContext) : AspireIntegrat
         result.Error.Code.ShouldBe("ticket_catalog.duplicate_slug");
     }
 
-    // SC-004: Reject when event is cancelled — throws BusinessRuleViolationException
+    // NOTE: SC-004 tests cover event-not-active rejection via TicketCatalog.EventStatus.
+
     [TestMethod]
-    public async ValueTask SC004_AddTicketType_CancelledEvent_ThrowsEventNotActiveError()
+    public async ValueTask SC004_AddTicketType_CancelledEvent_ThrowsEventNotActive()
     {
         // Arrange
         var fixture = AddTicketTypeFixture.CancelledEvent();
@@ -123,6 +124,29 @@ public sealed class AddTicketTypeTests(TestContext testContext) : AspireIntegrat
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
         // Assert
-        result.Error.ShouldMatch(TicketedEventLifecycleGuard.Errors.EventNotActive);
+        result.Error.Code.ShouldBe("ticket_catalog.event_not_active");
+    }
+
+    [TestMethod]
+    public async ValueTask SC005_AddTicketType_ArchivedEvent_ThrowsEventNotActive()
+    {
+        // Arrange
+        var fixture = AddTicketTypeFixture.ArchivedEvent();
+        await fixture.SetupAsync(Environment);
+
+        var command = new AddTicketTypeCommand(
+            fixture.EventId,
+            Slug.From("general-admission"),
+            DisplayName.From("General Admission"),
+            [],
+            100);
+        var sut = new AddTicketTypeHandler(Environment.Database.Context);
+
+        // Act
+        var result = await ErrorResult.CaptureAsync(
+            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
+
+        // Assert
+        result.Error.Code.ShouldBe("ticket_catalog.event_not_active");
     }
 }

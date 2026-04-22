@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Module.Registrations.Domain.Entities;
+using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Registrations.Tests.Application.Infrastructure.Hosting;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 
@@ -6,7 +7,7 @@ namespace Amolenk.Admitto.Module.Registrations.Tests.Application.UseCases.Ticket
 
 internal sealed class UpdateTicketTypeFixture
 {
-    private bool _eventCancelled;
+    private EventLifecycleStatus _eventStatus = EventLifecycleStatus.Active;
 
     public TicketedEventId EventId { get; } = TicketedEventId.New();
     public string TicketTypeSlug { get; } = "general-admission";
@@ -19,19 +20,13 @@ internal sealed class UpdateTicketTypeFixture
 
     public static UpdateTicketTypeFixture CancelledEvent() => new()
     {
-        _eventCancelled = true
+        _eventStatus = EventLifecycleStatus.Cancelled
     };
 
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
     {
         await environment.Database.SeedAsync(dbContext =>
         {
-            var guard = TicketedEventLifecycleGuard.Create(EventId);
-            if (_eventCancelled)
-            {
-                guard.SetCancelled();
-            }
-
             var catalog = TicketCatalog.Create(EventId);
             catalog.AddTicketType(
                 Slug.From(TicketTypeSlug),
@@ -39,7 +34,11 @@ internal sealed class UpdateTicketTypeFixture
                 [],
                 100);
 
-            dbContext.TicketedEventLifecycleGuards.Add(guard);
+            if (_eventStatus == EventLifecycleStatus.Cancelled)
+            {
+                catalog.MarkEventCancelled();
+            }
+
             dbContext.TicketCatalogs.Add(catalog);
         });
     }

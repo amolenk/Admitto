@@ -1,5 +1,7 @@
 using Amolenk.Admitto.Module.Email.Application;
 using Amolenk.Admitto.Module.Organization.Application;
+using Amolenk.Admitto.Module.Registrations.Application;
+using Amolenk.Admitto.Module.Registrations.Infrastructure;
 using Amolenk.Admitto.Module.Shared.Application.Auth;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Infrastructure;
@@ -20,6 +22,11 @@ builder
     .AddOrganizationInfrastructureServices()
     .AddOrganizationIdentityServices();
 
+// Add Registrations module services. The Worker hosts the queue consumer so it
+// must be able to handle integration and module events targeted at Registrations.
+builder.Services.AddRegistrationsApplicationServices(HostCapability.Jobs);
+builder.AddRegistrationsInfrastructureServices();
+
 // Add Email module services (needed by the worker for the IEventEmailFacade
 // and to keep encrypted secrets decryptable here).
 builder
@@ -28,7 +35,8 @@ builder
 
 // Add shared services.
 builder
-    .AddSharedInfrastructureMessagingServices();
+    .AddSharedInfrastructureMessagingServices()
+    .AddSharedInfrastructureQueueConsumer();
 
 builder.Services
     .AddMessagingApplicationServices()

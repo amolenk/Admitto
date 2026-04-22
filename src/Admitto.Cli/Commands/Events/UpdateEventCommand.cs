@@ -30,11 +30,6 @@ public class UpdateEventSettings : TeamEventSettings
     [CommandOption("--end")]
     [Description("New end date and time of the event")]
     public DateTimeOffset? EndsAt { get; init; }
-
-    public override ValidationResult Validate()
-    {
-        return base.Validate();
-    }
 }
 
 public class UpdateEventCommand(IAdmittoService admittoService, IConfigService configService)
@@ -48,18 +43,25 @@ public class UpdateEventCommand(IAdmittoService admittoService, IConfigService c
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
         var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);
 
-        var request = new UpdateTicketedEventHttpRequest
+        // The backend update endpoint requires the full event details. Fetch the current
+        // values first and merge any user-provided overrides on top.
+        var current = await admittoService.QueryAsync(client =>
+            client.GetTicketedEventDetailsAsync(teamSlug, eventSlug, cancellationToken));
+
+        if (current is null) return 1;
+
+        var request = new UpdateTicketedEventDetailsHttpRequest
         {
-            ExpectedVersion = settings.ExpectedVersion,
-            Name = settings.Name,
-            WebsiteUrl = settings.WebsiteUrl,
-            BaseUrl = settings.BaseUrl,
-            StartsAt = settings.StartsAt,
-            EndsAt = settings.EndsAt
+            ExpectedVersion = settings.ExpectedVersion ?? current.Version,
+            Name = settings.Name ?? current.Name,
+            WebsiteUrl = settings.WebsiteUrl ?? current.WebsiteUrl,
+            BaseUrl = settings.BaseUrl ?? current.BaseUrl,
+            StartsAt = settings.StartsAt ?? current.StartsAt,
+            EndsAt = settings.EndsAt ?? current.EndsAt
         };
 
         var success = await admittoService.SendAsync(
-            client => client.UpdateTicketedEventAsync(teamSlug, eventSlug, request, cancellationToken));
+            client => client.UpdateTicketedEventDetailsAsync(teamSlug, eventSlug, request, cancellationToken));
 
         if (!success) return 1;
 

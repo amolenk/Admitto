@@ -50,13 +50,14 @@ internal class OutboxWriter(IOutboxDbContext dbContext, IMessagePolicy messagePo
                  ?? throw new InvalidOperationException(
                      $"Domain event {type.Name} has no namespace.");
 
-        // Expected: Amolenk.Admitto.<ModuleName>.Application.ModuleEvents
+        // Expected: Amolenk.Admitto.Module.<ModuleName>.Application.ModuleEvents
         var parts = ns.Split('.');
 
         // Defensive validation so mistakes fail fast
-        if (parts.Length < 5 ||
+        if (parts.Length < 6 ||
             parts[0] != "Amolenk" ||
             parts[1] != "Admitto" ||
+            parts[2] != "Module" ||
             parts[^2] != "Application" ||
             parts[^1] != "ModuleEvents")
         {
@@ -64,7 +65,7 @@ internal class OutboxWriter(IOutboxDbContext dbContext, IMessagePolicy messagePo
                 $"Module event {type.FullName} does not follow the expected namespace convention.");
         }
 
-        var moduleName = parts[2];
+        var moduleName = parts[3];
         var eventName = type.Name;
 
         return $"{moduleName.Kebaberize()}.{eventName.Kebaberize()}";
@@ -79,13 +80,14 @@ internal class OutboxWriter(IOutboxDbContext dbContext, IMessagePolicy messagePo
                  ?? throw new InvalidOperationException(
                      $"Domain event {type.Name} has no namespace.");
 
-        // Expected: Amolenk.Admitto.<ModuleName>.Contracts.IntegrationEvents
+        // Expected: Amolenk.Admitto.Module.<ModuleName>.Contracts.IntegrationEvents
         var parts = ns.Split('.');
 
         // Defensive validation so mistakes fail fast
-        if (parts.Length < 5 ||
+        if (parts.Length < 6 ||
             parts[0] != "Amolenk" ||
             parts[1] != "Admitto" ||
+            parts[2] != "Module" ||
             parts[^2] != "Contracts" ||
             parts[^1] != "IntegrationEvents")
         {
@@ -93,7 +95,7 @@ internal class OutboxWriter(IOutboxDbContext dbContext, IMessagePolicy messagePo
                 $"Integration event {type.FullName} does not follow the expected namespace convention.");
         }
 
-        var moduleName = parts[2];
+        var moduleName = parts[3];
         var eventName = type.Name;
 
         return $"integration.{moduleName.Kebaberize()}.{eventName.Kebaberize()}";

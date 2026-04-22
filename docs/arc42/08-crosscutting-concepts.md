@@ -124,12 +124,14 @@ Each module declares a `MessagePolicy` that maps domain events to module and/or 
 
 ### Cross-module lifecycle events
 
-When a ticketed event is created, cancelled, or archived in the Organization module, the corresponding domain events (`TicketedEventCreatedDomainEvent`, `TicketedEventCancelledDomainEvent`, `TicketedEventArchivedDomainEvent`) are mapped via `OrganizationMessagePolicy` to module events (`TicketedEventCreatedModuleEvent`, `TicketedEventCancelledModuleEvent`, `TicketedEventArchivedModuleEvent`). The Registrations module handles these via the event→command→handler pattern (see §8.5):
+Event creation is a Registrations-owned operation *gated* by Organization. Organization emits `TicketedEventCreationRequested` (carrying a `CreationRequestId`) to request materialisation; Registrations inserts the authoritative `TicketedEvent`, creates an Active `TicketCatalog` in the same unit of work, and emits `TicketedEventCreated` or — on `(TeamId, Slug)` unique-violation or other validation failure — `TicketedEventCreationRejected`.
 
-- **Created** → `HandleEventCreatedHandler` creates a `TicketedEventLifecycleGuard` with `EventLifecycleStatus = Active`. Idempotent: re-delivery is a no-op. Policy aggregates are **not** auto-created — they are created on demand when the operator configures them.
-- **Cancelled** / **Archived** → load-or-create the guard and set the corresponding lifecycle status. Idempotent — no-op if already in the target state. Bumps `PolicyMutationCount` only on a real transition.
+Lifecycle transitions on the `TicketedEvent` aggregate (`Cancel`, `Archive`) raise an in-module `TicketedEventStatusChanged` domain event that projects onto `TicketCatalog.EventStatus` in the same transaction as the source-of-truth status change. In parallel, the same unit of work outboxes `TicketedEventCancelled` / `TicketedEventArchived` integration events so Organization can advance the team's counters (`ActiveEventCount`, `CancelledEventCount`, `ArchivedEventCount`).
 
-Registrations handlers that mutate policies load the guard, assert the event is Active, and bump `PolicyMutationCount` (see [§8.14 Lifecycle guard pattern](#814-lifecycle-guard-pattern)). This ensures strong consistency between policy edits and lifecycle transitions via optimistic concurrency on the guard row.
+All cross-module integration-event handlers are idempotent:
+
+- Organization's `TicketedEventCreated` / `TicketedEventCreationRejected` handlers key off `CreationRequestId`.
+- Organization's `TicketedEventCancelled` / `TicketedEventArchived` handlers key off `TicketedEventId` plus the observed transition (so redelivery after the counter has already moved is a no-op).
 
 Ticket type data is owned entirely by the Registrations module — no cross-module sync.
 
@@ -317,11 +319,11 @@ The `Version` property on all aggregates (`[Timestamp]`, `uint`) is the EF row-v
 
 ### Write-amplifier pattern
 
-When one aggregate must protect against concurrent modifications triggered by another aggregate, store a monotonically-incrementing counter on the first aggregate and increment it whenever the second is modified. This forces a write to the first aggregate's row, advancing its `Version` token, so any concurrent operation holding the old token fails at commit.
+When one aggregate must protect against concurrent modifications triggered by another aggregate, store a monotonically-incrementing counter (or equivalent bounded state) on the first aggregate and advance it whenever the second is modified. This forces a write to the first aggregate's row, advancing its `Version` token, so any concurrent operation holding the old token fails at commit.
 
-Example: `Team.TicketedEventScopeVersion` is incremented by `RegisterTicketedEventCreationHandler` each time a `TicketedEvent` is created under the team. This closes the TOCTOU window between the active-events guard in `ArchiveTeamHandler` and its commit: if a ticketed event is created concurrently, the team row changes, and the archive's optimistic concurrency check fails.
+Example: the `Team` aggregate's `ActiveEventCount` / `PendingEventCount` (advanced by integration-event handlers reacting to `TicketedEventCreationRequested` / `TicketedEventCreated` / `TicketedEventCancelled` / `TicketedEventArchived`) close the TOCTOU window between the active/pending-events guard in `Team.Archive()` and its commit: a concurrent event creation or lifecycle transition writes the team row, and the archive's optimistic concurrency check fails.
 
-Note: `TicketedEventScopeVersion` is a monotonically-increasing counter, not a count of currently-active events. It never decrements.
+A second example inside a single module: Registrations projects `TicketedEvent.Status` onto `TicketCatalog.EventStatus` in the *same* unit of work as a cancel/archive. An in-flight registration that loaded `TicketCatalog` at a prior version fails its claim with a `DbUpdateConcurrencyException`.
 
 ## 8.10 Domain event dispatch — in-process pattern
 
@@ -431,47 +433,27 @@ Because jobs own the transaction boundary, they are tested at the integration le
 
 A thin `DbContextUnitOfWork` adapter is used in tests to forward `SaveChangesAsync` to the underlying `DbContext`, replacing the keyed DI service that is not available in the test context.
 
-## 8.14 Lifecycle guard pattern
+## 8.14 In-aggregate lifecycle invariants
 
-When a module needs to enforce that a parent entity (e.g. a ticketed event) is in the correct lifecycle state before allowing policy mutations, and must prevent those mutations from racing with lifecycle transitions, the **lifecycle guard** pattern provides strong consistency without distributed locks.
+The Registrations module enforces "no policy edits / no registrations after cancel or archive" directly on the `TicketedEvent` aggregate (for policy mutators) and on the `TicketCatalog` aggregate (for the registration claim).
 
-### Structure
+### `TicketedEvent` policy mutators
 
-A dedicated guard aggregate sits between the lifecycle source (Organization module) and the policy aggregates (Registrations module):
+Every policy mutator (`ConfigureRegistrationPolicy`, `ConfigureCancellationPolicy`, `ConfigureReconfirmPolicy`, `UpdateDetails`) refuses when the aggregate's `Status` is not Active. Optimistic concurrency is supplied by the aggregate's own `Version` (EF `[Timestamp]` row-version). A concurrent `Cancel()` / `Archive()` on the same aggregate advances the row-version, so any policy edit loaded at the prior version fails its commit with a `DbUpdateConcurrencyException`.
+
+### `TicketCatalog.EventStatus` projection
+
+`TicketCatalog` stores a single read-only `EventStatus` field projected from `TicketedEvent` in the *same unit of work* as the lifecycle transition. `TicketCatalog.Claim(...)` refuses when `EventStatus` is Cancelled or Archived, giving an atomic status + capacity gate on ticket allocation:
 
 ```
-TicketedEventLifecycleGuard (one per event)
-├── LifecycleStatus : EventLifecycleStatus (Active / Cancelled / Archived)
-├── PolicyMutationCount : long (monotonically increasing)
+TicketCatalog
+├── EventStatus : EventStatus (Active / Cancelled / Archived)
+├── capacity / reservations (existing)
 └── Version : uint (EF [Timestamp] row-version)
 ```
 
-The guard is **not** embedded in any policy aggregate. This avoids giving any single policy a privileged role and ensures every policy sees the same access pattern.
+Because a `TicketedEvent.Cancel()` or `.Archive()` commits the projection onto `TicketCatalog` in the same transaction as the source-of-truth status change, an in-flight registration that loaded `TicketCatalog` at a prior version fails at `SaveChanges` — the write-amplifier mechanism described in §8.9.
 
-### Mutation protocol
+### Why not a separate lifecycle-guard aggregate?
 
-Every command that creates or updates a policy aggregate follows this protocol inside the handler:
-
-1. **Load** the guard via `LifecycleGuardStore.LoadOrCreateAsync(eventId)`.
-2. **Assert** by calling `guard.AssertActiveAndRegisterPolicyMutation()` — throws if status is not Active, otherwise increments `PolicyMutationCount`.
-3. **Mutate** the policy aggregate (create, update, or delete).
-4. **Commit** — the endpoint-owned UoW saves both the guard and the policy in one transaction.
-
-Because `PolicyMutationCount++` writes the guard row, EF advances `Version`. A concurrent lifecycle handler (cancel/archive) that loaded the same guard will fail `SaveChangesAsync` with a `DbUpdateConcurrencyException`.
-
-### Lifecycle handler protocol
-
-Lifecycle event handlers (Created, Cancelled, Archived) **load-or-create** the guard and set the status. They bump `PolicyMutationCount` only on a real state transition (idempotent — no-op if already in the target state). This means a re-delivered event does not cause spurious concurrency conflicts.
-
-### Relationship to write-amplifier
-
-The lifecycle guard is a specialisation of the [write-amplifier pattern](#write-amplifier-pattern) (§8.9). Where `Team.TicketedEventScopeVersion` protects against concurrent event creation during team archive, `TicketedEventLifecycleGuard.PolicyMutationCount` protects against concurrent policy edits during event cancellation/archive.
-
-### Where used
-
-| Guard | Module | Protects |
-| :---- | :----- | :------- |
-| `TicketedEventLifecycleGuard` | Registrations | `EventRegistrationPolicy`, `CancellationPolicy`, `ReconfirmPolicy`, ticket-type management |
-| `Team.TicketedEventScopeVersion` | Organization | `ArchiveTeam` vs concurrent `CreateTicketedEvent` |
-
-Reference: `src/Admitto.Module.Registrations/Domain/Entities/TicketedEventLifecycleGuard.cs`, `src/Admitto.Module.Registrations/Application/Services/LifecycleGuardStore.cs`.
+Previous designs used a dedicated `TicketedEventLifecycleGuard` aggregate to mirror event status from the Organization module into Registrations. That guard is gone: with `TicketedEvent` now owned by Registrations, the aggregate enforces its own invariants and the only out-of-aggregate projection is the single `EventStatus` field on `TicketCatalog`, which exists solely to make the status + capacity check atomic. See [ADR-008](../adrs/adr-008-ticketed-event-ownership-in-registrations.md).

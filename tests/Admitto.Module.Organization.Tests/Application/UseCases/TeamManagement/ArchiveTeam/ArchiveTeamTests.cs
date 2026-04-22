@@ -74,7 +74,7 @@ public sealed class ArchiveTeamTests(TestContext testContext) : AspireIntegratio
         var exception = await Should.ThrowAsync<BusinessRuleViolationException>(
             async () => await sut.HandleAsync(command, testContext.CancellationToken));
 
-        exception.Error.ShouldMatch(ArchiveTeamHandler.Errors.HasActiveEvents);
+        exception.Error.Code.ShouldBe("team.has_active_or_pending_events");
 
         // Verify the team remains active
         await Environment.Database.WithContextAsync(async dbContext =>
@@ -85,6 +85,35 @@ public sealed class ArchiveTeamTests(TestContext testContext) : AspireIntegratio
 
             team.ShouldNotBeNull();
             team.IsArchived.ShouldBeFalse();
+        });
+    }
+
+    [TestMethod]
+    public async ValueTask ArchiveTeam_HasPendingCreationRequest_ThrowsHasActiveOrPendingEvents()
+    {
+        // Arrange: team has a pending TicketedEventCreationRequested that Registrations
+        // has not yet acked. Archive must be blocked by PendingEventCount > 0.
+        var fixture = ArchiveTeamFixture.ActiveTeamWithPendingCreationRequest();
+        await fixture.SetupAsync(Environment);
+
+        var command = new ArchiveTeamCommand(fixture.TeamId, fixture.TeamVersion);
+        var sut = new ArchiveTeamHandler(Environment.Database.Context);
+
+        // Act & Assert
+        var exception = await Should.ThrowAsync<BusinessRuleViolationException>(
+            async () => await sut.HandleAsync(command, testContext.CancellationToken));
+
+        exception.Error.Code.ShouldBe("team.has_active_or_pending_events");
+
+        await Environment.Database.WithContextAsync(async dbContext =>
+        {
+            var team = await dbContext.Teams.FindAsync(
+                [TeamId.From(fixture.TeamId)],
+                testContext.CancellationToken);
+
+            team.ShouldNotBeNull();
+            team.IsArchived.ShouldBeFalse();
+            team.PendingEventCount.ShouldBe(1);
         });
     }
 }

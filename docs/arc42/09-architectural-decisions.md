@@ -10,7 +10,8 @@ Detailed ADRs are stored in [`/docs/adrs/`](../adrs/).
 | — | Azure Storage Queues for async messaging | Accepted | [ADR-004](../adrs/adr-004-azure-storage-queues.md) |
 | — | Capability gating for host-specific handlers | Accepted | [ADR-005](../adrs/adr-005-capability-gating.md) |
 | — | Admin UI technology stack | Accepted | [ADR-006](../adrs/adr-006-admin-ui-technology-stack.md) |
-| — | Lifecycle guard pattern in the Registrations module | Accepted | [ADR-007](../adrs/adr-007-lifecycle-guard-pattern.md) |
+| — | Lifecycle guard pattern in the Registrations module | Superseded by ADR-008 | [ADR-007](../adrs/adr-007-lifecycle-guard-pattern.md) |
+| — | TicketedEvent ownership moved to Registrations; EventStatus projected onto TicketCatalog | Accepted | [ADR-008](../adrs/adr-008-ticketed-event-ownership-in-registrations.md) |
 
 ## Done-when
 

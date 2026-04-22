@@ -31,15 +31,13 @@ public class CreateEventSettings : TeamSettings
     [Description("The base URL for event links (e.g. qr-codes, cancellations, etc.)")]
     public string? BaseUrl { get; init; }
 
-    [CommandOption("--requiredField")]
-    [Description(
-        "Required custom field (in the format '<FieldName>=<MaxLength>') to collect additional information from attendees during registration (e.g. dietary preferences, company name, etc.).")]
-    public string[]? RequiredAdditionalDetails { get; init; }
+    [CommandOption("--wait")]
+    [Description("Wait for the asynchronous creation request to reach a terminal status before returning.")]
+    public bool Wait { get; init; }
 
-    [CommandOption("--optionalField")]
-    [Description(
-        "Optional custom field (in the format '<FieldName>=<MaxLength>') to collect additional information from attendees during registration.")]
-    public string[]? OptionalAdditionalDetails { get; init; }
+    [CommandOption("--wait-timeout")]
+    [Description("Maximum time (in seconds) to wait when --wait is specified. Defaults to 60.")]
+    public int WaitTimeoutSeconds { get; init; } = 60;
 
     public override ValidationResult Validate()
     {
@@ -87,67 +85,88 @@ public class CreateEventCommand(IAdmittoService admittoService, IConfigService c
     {
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
 
-        var additionalDetailSchemas = ParseAdditionalDetailSchemas(
-            settings.RequiredAdditionalDetails,
-            settings.OptionalAdditionalDetails);
-
-        var request = new CreateTicketedEventRequest
+        var request = new RequestTicketedEventCreationHttpRequest
         {
             Slug = settings.EventSlug!.Kebaberize(),
-            Name = settings.Name,
-            Website = settings.Website,
-            BaseUrl = settings.BaseUrl,
+            Name = settings.Name!,
+            WebsiteUrl = settings.Website!,
+            BaseUrl = settings.BaseUrl!,
             StartsAt = settings.StartsAt!.Value,
-            EndsAt = settings.EndsAt!.Value,
-            AdditionalDetailSchemas = additionalDetailSchemas
+            EndsAt = settings.EndsAt!.Value
         };
 
-        var succes =
-            await admittoService.SendAsync(client =>
-                client.CreateTicketedEventAsync(teamSlug, request, cancellationToken));
-        if (!succes) return 1;
-
-        AnsiConsoleExt.WriteSuccesMessage($"Successfully created event '{settings.Name}'.");
-        return 0;
-    }
-
-    private static List<AdditionalDetailSchemaDto>? ParseAdditionalDetailSchemas(
-        string[]? requiredDetails,
-        string[]? optionalDetails)
-    {
-        var schemas = new List<AdditionalDetailSchemaDto>();
-
-        if (requiredDetails is not null)
+        var creationRequestId = await admittoService.QueryAsync<Guid>(async client =>
         {
-            schemas.AddRange(ParseAdditionalDetailSchemas(requiredDetails, true));
-        }
+            await client.RequestTicketedEventCreationAsync(teamSlug, request, cancellationToken);
 
-        if (optionalDetails is not null)
-        {
-            schemas.AddRange(ParseAdditionalDetailSchemas(optionalDetails, false));
-        }
+            var location = client.LastResponseLocation?.ToString()
+                ?? throw new InvalidOperationException(
+                    "Server accepted the request but did not return a Location header.");
 
-        return schemas.Count > 0 ? schemas : null;
-    }
-
-    private static IEnumerable<AdditionalDetailSchemaDto> ParseAdditionalDetailSchemas(string[] details, bool required)
-    {
-        foreach (var detail in details)
-        {
-            var parts = detail.Split('=', 2);
-            if (parts.Length != 2 || string.IsNullOrWhiteSpace(parts[0]) ||
-                !int.TryParse(parts[1], out var maxLength) || maxLength <= 0)
+            var lastSlash = location.LastIndexOf('/');
+            if (lastSlash < 0 || lastSlash == location.Length - 1
+                || !Guid.TryParse(location[(lastSlash + 1)..], out var id))
             {
-                throw new ArgumentException(
-                    $"Invalid additional detail format: '{detail}'. Expected format is 'DetailName=<max-length>'");
+                throw new InvalidOperationException(
+                    $"Server returned a Location header in an unexpected format: '{location}'.");
             }
 
-            yield return new AdditionalDetailSchemaDto
+            return id;
+        });
+
+        if (creationRequestId == Guid.Empty) return 1;
+
+        AnsiConsoleExt.WriteSuccesMessage(
+            $"Submitted creation request {creationRequestId} for event '{settings.EventSlug}'.");
+
+        if (!settings.Wait)
+        {
+            return 0;
+        }
+
+        return await WaitForCompletionAsync(teamSlug, creationRequestId, settings, cancellationToken);
+    }
+
+    private async Task<int> WaitForCompletionAsync(
+        string teamSlug,
+        Guid creationRequestId,
+        CreateEventSettings settings,
+        CancellationToken cancellationToken)
+    {
+        var deadline = DateTimeOffset.UtcNow.AddSeconds(settings.WaitTimeoutSeconds);
+        var pollInterval = TimeSpan.FromSeconds(1);
+
+        while (true)
+        {
+            var status = await admittoService.QueryAsync(client =>
+                client.GetEventCreationRequestAsync(teamSlug, creationRequestId, cancellationToken));
+
+            if (status is null) return 1;
+
+            if (!string.Equals(status.Status, "Pending", StringComparison.OrdinalIgnoreCase))
             {
-                Name = parts[0].Trim(),
-                MaxLength = maxLength.ToString(),
-                IsRequired = required
-            };
+                if (string.Equals(status.Status, "Created", StringComparison.OrdinalIgnoreCase))
+                {
+                    AnsiConsoleExt.WriteSuccesMessage(
+                        $"Event '{settings.EventSlug}' was created (event id: {status.TicketedEventId}).");
+                    return 0;
+                }
+
+                var reason = string.IsNullOrWhiteSpace(status.RejectionReason)
+                    ? status.Status
+                    : $"{status.Status}: {status.RejectionReason}";
+                AnsiConsoleExt.WriteErrorMessage($"Event creation did not succeed ({reason}).");
+                return 1;
+            }
+
+            if (DateTimeOffset.UtcNow >= deadline)
+            {
+                AnsiConsoleExt.WriteErrorMessage(
+                    $"Timed out after {settings.WaitTimeoutSeconds}s waiting for event creation to complete.");
+                return 1;
+            }
+
+            await Task.Delay(pollInterval, cancellationToken);
         }
     }
 }

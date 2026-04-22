@@ -1,5 +1,7 @@
 using System.Reflection;
 using Amolenk.Admitto.Module.Registrations.Application.Messaging;
+using Amolenk.Admitto.Module.Registrations.Application.UseCases;
+using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using FluentValidation;
 
@@ -16,11 +18,14 @@ public static class DependencyInjection
         services.AddCommandHandlersFromAssembly(executingAssembly, capabilities);
         services.AddDomainEventHandlersFromAssembly(executingAssembly);
         services.AddModuleEventHandlersFromAssembly(executingAssembly);
+        services.AddIntegrationEventHandlersFromAssembly(executingAssembly, RegistrationsModule.Key);
         services.AddQueryHandlersFromAssembly(executingAssembly);
         services.AddValidatorsFromAssembly(executingAssembly);
 
         services.AddKeyedSingleton<IMessagePolicy>(RegistrationsModule.Key, new RegistrationsMessagePolicy());
-        
+
+        services.AddScoped<ITicketedEventIdLookup, RegistrationsTicketedEventIdLookup>();
+
         return services;
     }
 }

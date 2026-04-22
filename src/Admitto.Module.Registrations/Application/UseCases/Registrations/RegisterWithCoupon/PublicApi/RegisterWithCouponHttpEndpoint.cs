@@ -1,5 +1,6 @@
 using Amolenk.Admitto.Module.Organization.Contracts;
 using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
+using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Application.Persistence;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
@@ -21,13 +22,14 @@ public static class RegisterWithCouponHttpEndpoint
         string eventSlug,
         RegisterWithCouponHttpRequest request,
         IOrganizationFacade facade,
+        ITicketedEventIdLookup ticketedEventIdLookup,
         IMediator mediator,
         [FromKeyedServices(RegistrationsModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
         var teamId = await facade.GetTeamIdAsync(teamSlug, cancellationToken);
-        var eventId = await facade.GetTicketedEventIdAsync(teamId, eventSlug, cancellationToken);
+        var eventId = await ticketedEventIdLookup.GetTicketedEventIdAsync(teamId, eventSlug, cancellationToken);
 
         var command = new RegisterWithCouponCommand(
             TicketedEventId.From(eventId),

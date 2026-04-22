@@ -1,17 +1,17 @@
-using Amolenk.Admitto.Module.Registrations.Application.UseCases.CancellationPolicy.GetCancellationPolicy.AdminApi;
-using Amolenk.Admitto.Module.Registrations.Application.UseCases.CancellationPolicy.RemoveCancellationPolicy.AdminApi;
-using Amolenk.Admitto.Module.Registrations.Application.UseCases.CancellationPolicy.SetCancellationPolicy.AdminApi;
-using Amolenk.Admitto.Module.Registrations.Application.UseCases.ReconfirmPolicy.GetReconfirmPolicy.AdminApi;
-using Amolenk.Admitto.Module.Registrations.Application.UseCases.ReconfirmPolicy.RemoveReconfirmPolicy.AdminApi;
-using Amolenk.Admitto.Module.Registrations.Application.UseCases.ReconfirmPolicy.SetReconfirmPolicy.AdminApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.CouponManagement.CreateCoupon.AdminApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.CouponManagement.GetCouponDetails.AdminApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.CouponManagement.ListCoupons.AdminApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.CouponManagement.RevokeCoupon.AdminApi;
-using Amolenk.Admitto.Module.Registrations.Application.UseCases.RegistrationPolicy.AdminApi;
-using Amolenk.Admitto.Module.Registrations.Application.UseCases.RegistrationPolicy.GetRegistrationOpenStatus.AdminApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.Registrations.RegisterWithCoupon.PublicApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.Registrations.SelfRegisterAttendee.PublicApi;
+using Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketedEventManagement.ArchiveTicketedEvent.AdminApi;
+using Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketedEventManagement.CancelTicketedEvent.AdminApi;
+using Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketedEventManagement.ConfigureCancellationPolicy.AdminApi;
+using Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketedEventManagement.ConfigureReconfirmPolicy.AdminApi;
+using Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketedEventManagement.ConfigureRegistrationPolicy.AdminApi;
+using Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketedEventManagement.GetTicketedEventDetails.AdminApi;
+using Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketedEventManagement.GetTicketedEvents.AdminApi;
+using Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketedEventManagement.UpdateTicketedEventDetails.AdminApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketTypeManagement.AddTicketType.AdminApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketTypeManagement.CancelTicketType.AdminApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketTypeManagement.GetTicketTypes.AdminApi;
@@ -25,22 +25,25 @@ public static class RegistrationsModule
 
     public static RouteGroupBuilder MapRegistrationsAdminEndpoints(this RouteGroupBuilder group)
     {
+        group
+            .MapGroup("/teams/{teamSlug}/events")
+            .MapGetTicketedEvents();
+
         var eventGroup = group
             .MapGroup("/teams/{teamSlug}/events/{eventSlug}");
 
         eventGroup
+            .MapGetTicketedEventDetails()
+            .MapUpdateTicketedEventDetails()
+            .MapCancelTicketedEvent()
+            .MapArchiveTicketedEvent()
+            .MapConfigureRegistrationPolicy()
+            .MapConfigureCancellationPolicy()
+            .MapConfigureReconfirmPolicy()
             .MapCreateCoupon()
             .MapListCoupons()
             .MapGetCouponDetails()
-            .MapRevokeCoupon()
-            .MapSetRegistrationPolicy()
-            .MapGetRegistrationOpenStatus()
-            .MapSetCancellationPolicy()
-            .MapRemoveCancellationPolicy()
-            .MapGetCancellationPolicy()
-            .MapSetReconfirmPolicy()
-            .MapRemoveReconfirmPolicy()
-            .MapGetReconfirmPolicy();
+            .MapRevokeCoupon();
 
         eventGroup
             .MapGroup("/ticket-types")

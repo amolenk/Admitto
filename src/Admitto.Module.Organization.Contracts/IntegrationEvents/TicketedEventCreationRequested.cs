@@ -1,0 +1,32 @@
+using Amolenk.Admitto.Module.Shared.Application.Messaging;
+
+namespace Amolenk.Admitto.Module.Organization.Contracts.IntegrationEvents;
+
+/// <summary>
+/// Published by the Organization module when a team owner has requested the
+/// creation of a new ticketed event and Organization has accepted the request
+/// (team is not archived, pending counter incremented). The Registrations module
+/// consumes this event to materialise the authoritative <c>TicketedEvent</c>
+/// aggregate and its <c>TicketCatalog</c>.
+/// </summary>
+/// <param name="CreationRequestId">
+/// Surrogate id assigned by Organization. Used to correlate the eventual
+/// <c>TicketedEventCreated</c> or <c>TicketedEventCreationRejected</c> response
+/// back to the originating <c>TeamEventCreationRequest</c>.
+/// </param>
+/// <param name="TeamId">Owning team.</param>
+/// <param name="Slug">Requested event slug (uniqueness is checked by Registrations).</param>
+/// <param name="Name">Display name.</param>
+/// <param name="WebsiteUrl">Public event website URL.</param>
+/// <param name="BaseUrl">Base URL used for event links (QR codes, cancellations, etc.).</param>
+/// <param name="StartsAt">Event start (UTC).</param>
+/// <param name="EndsAt">Event end (UTC).</param>
+public sealed record TicketedEventCreationRequested(
+    Guid CreationRequestId,
+    Guid TeamId,
+    string Slug,
+    string Name,
+    string WebsiteUrl,
+    string BaseUrl,
+    DateTimeOffset StartsAt,
+    DateTimeOffset EndsAt) : IntegrationEvent;

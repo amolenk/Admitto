@@ -3,16 +3,12 @@ using Amolenk.Admitto.Module.Organization.Application.UseCases.TeamManagement.Cr
 using Amolenk.Admitto.Module.Organization.Application.UseCases.TeamManagement.GetTeam.AdminApi;
 using Amolenk.Admitto.Module.Organization.Application.UseCases.TeamManagement.GetTeams.AdminApi;
 using Amolenk.Admitto.Module.Organization.Application.UseCases.TeamManagement.UpdateTeam.AdminApi;
-using Amolenk.Admitto.Module.Organization.Application.UseCases.TicketedEvents.ArchiveTicketedEvent.AdminApi;
-using Amolenk.Admitto.Module.Organization.Application.UseCases.TicketedEvents.CancelTicketedEvent.AdminApi;
-using Amolenk.Admitto.Module.Organization.Application.UseCases.TicketedEvents.CreateTicketedEvent.AdminApi;
-using Amolenk.Admitto.Module.Organization.Application.UseCases.TicketedEvents.GetTicketedEvent.AdminApi;
-using Amolenk.Admitto.Module.Organization.Application.UseCases.TicketedEvents.GetTicketedEvents.AdminApi;
-using Amolenk.Admitto.Module.Organization.Application.UseCases.TicketedEvents.UpdateTicketedEvent.AdminApi;
 using Amolenk.Admitto.Module.Organization.Application.UseCases.TeamMembershipManagement.AssignTeamMembership.AdminApi;
 using Amolenk.Admitto.Module.Organization.Application.UseCases.TeamMembershipManagement.ChangeTeamMembershipRole.AdminApi;
 using Amolenk.Admitto.Module.Organization.Application.UseCases.TeamMembershipManagement.ListTeamMembers.AdminApi;
 using Amolenk.Admitto.Module.Organization.Application.UseCases.TeamMembershipManagement.RemoveTeamMembership.AdminApi;
+using Amolenk.Admitto.Module.Organization.Application.UseCases.TicketedEventManagement.GetEventCreationRequest.AdminApi;
+using Amolenk.Admitto.Module.Organization.Application.UseCases.TicketedEventManagement.RequestTicketedEventCreation.AdminApi;
 
 namespace Amolenk.Admitto.Module.Organization.Application.UseCases;
 
@@ -33,25 +29,13 @@ public static class OrganizationApiEndpoints
             .MapUpdateTeam()
             .MapArchiveTeam()
             .MapListTeamMembers()
-            .MapAssignTeamMembership();
+            .MapAssignTeamMembership()
+            .MapRequestTicketedEventCreation()
+            .MapGetEventCreationRequest();
 
         team.MapGroup("/members")
             .MapChangeTeamMembershipRole()
             .MapRemoveTeamMembership();
-
-        var events = team.MapGroup("/events");
-
-        events
-            .MapCreateTicketedEvent()
-            .MapGetTicketedEvents();
-
-        var eventGroup = events.MapGroup("/{eventSlug}");
-
-        eventGroup
-            .MapGetTicketedEvent()
-            .MapUpdateTicketedEvent()
-            .MapCancelTicketedEvent()
-            .MapArchiveTicketedEvent();
 
         return group;
     }

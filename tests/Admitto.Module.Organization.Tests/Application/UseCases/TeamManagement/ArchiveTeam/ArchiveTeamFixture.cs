@@ -1,6 +1,5 @@
 using Amolenk.Admitto.Module.Organization.Tests.Application.Builders;
 using Amolenk.Admitto.Module.Organization.Tests.Application.Infrastructure.Hosting;
-using Amolenk.Admitto.Module.Organization.Domain.Entities;
 using Amolenk.Admitto.Module.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 
@@ -13,11 +12,13 @@ internal sealed class ArchiveTeamFixture
 
     private readonly bool _archived;
     private readonly bool _hasActiveEvent;
+    private readonly bool _hasPendingRequest;
 
-    private ArchiveTeamFixture(bool archived = false, bool hasActiveEvent = false)
+    private ArchiveTeamFixture(bool archived = false, bool hasActiveEvent = false, bool hasPendingRequest = false)
     {
         _archived = archived;
         _hasActiveEvent = hasActiveEvent;
+        _hasPendingRequest = hasPendingRequest;
     }
 
     public static ArchiveTeamFixture ActiveTeamWithNoEvents() => new();
@@ -25,6 +26,8 @@ internal sealed class ArchiveTeamFixture
     public static ArchiveTeamFixture AlreadyArchivedTeam() => new(archived: true);
 
     public static ArchiveTeamFixture ActiveTeamWithUpcomingEvent() => new(hasActiveEvent: true);
+
+    public static ArchiveTeamFixture ActiveTeamWithPendingCreationRequest() => new(hasPendingRequest: true);
 
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
     {
@@ -37,31 +40,32 @@ internal sealed class ArchiveTeamFixture
 
         var team = builder.Build();
 
+        if (_hasActiveEvent)
+        {
+            var request = team.RequestEventCreation(
+                Slug.From("upcoming-event"),
+                UserId.New(),
+                DateTimeOffset.UtcNow);
+            team.RegisterEventCreated(
+                request.Id,
+                TicketedEventId.New(),
+                DateTimeOffset.UtcNow);
+        }
+
+        if (_hasPendingRequest)
+        {
+            team.RequestEventCreation(
+                Slug.From("pending-event"),
+                UserId.New(),
+                DateTimeOffset.UtcNow);
+        }
+
         await environment.Database.SeedAsync(dbContext =>
         {
             dbContext.Teams.Add(team);
         });
 
-        // Capture team identity and EF-assigned version
         TeamId = team.Id.Value;
         TeamVersion = team.Version;
-
-        if (_hasActiveEvent)
-        {
-            var activeEvent = TicketedEvent.Create(
-                team.Id,
-                Slug.From("upcoming-event"),
-                DisplayName.From("Upcoming Event"),
-                AbsoluteUrl.From("https://example.com/events/upcoming"),
-                AbsoluteUrl.From("https://tickets.example.com"),
-                new TimeWindow(
-                    DateTimeOffset.UtcNow.AddDays(1),
-                    DateTimeOffset.UtcNow.AddDays(2)));
-
-            await environment.Database.SeedAsync(dbContext =>
-            {
-                dbContext.TicketedEvents.Add(activeEvent);
-            });
-        }
     }
 }

@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Module.Registrations.Application.Persistence;
-using Amolenk.Admitto.Module.Registrations.Application.Services;
 using Amolenk.Admitto.Module.Registrations.Domain.Entities;
 using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
@@ -16,16 +15,13 @@ internal sealed class AddTicketTypeHandler(IRegistrationsWriteStore writeStore)
         AddTicketTypeCommand command,
         CancellationToken cancellationToken)
     {
-        var guard = await LifecycleGuardStore.LoadOrCreateAsync(writeStore, command.EventId, cancellationToken);
-        guard.AssertActiveAndRegisterPolicyMutation();
-
         var catalog = await writeStore.TicketCatalogs
             .FirstOrDefaultAsync(tc => tc.Id == command.EventId, cancellationToken);
 
         if (catalog is null)
         {
-            catalog = TicketCatalog.Create(command.EventId);
-            await writeStore.TicketCatalogs.AddAsync(catalog, cancellationToken);
+            throw new BusinessRuleViolationException(
+                NotFoundError.Create<TicketCatalog>(command.EventId.Value));
         }
 
         var timeSlots = command.TimeSlots
@@ -35,3 +31,4 @@ internal sealed class AddTicketTypeHandler(IRegistrationsWriteStore writeStore)
         catalog.AddTicketType(command.Slug, command.Name, timeSlots, command.MaxCapacity);
     }
 }
+

@@ -1,6 +1,6 @@
 "use client";
 
-import { TicketedEventDto, TicketTypeDto, RegistrationOpenStatusDto } from "@/lib/admitto-api/generated";
+import { TicketedEventDto, TicketTypeDto } from "@/lib/admitto-api/generated";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, Globe, Copy } from "lucide-react";
@@ -64,13 +64,19 @@ function HeroStat({ label, value, sub, pct, muted }: HeroStatProps) {
 
 interface EventHeroCardProps {
     event: TicketedEventDto;
-    openStatus?: RegistrationOpenStatusDto | null;
+    openStatus?: { isOpen: boolean } | null;
     ticketTypes?: TicketTypeDto[] | null;
+}
+
+function statusLabel(status: string): string {
+    if (!status) return "";
+    return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
 }
 
 export function EventHeroCard({ event, openStatus, ticketTypes }: EventHeroCardProps) {
     const days = daysUntil(event.startsAt);
-    const isActive = event.status === "Active";
+    const normalizedStatus = (event.status ?? "").toLowerCase();
+    const isActive = normalizedStatus === "active";
     const isOpen = openStatus?.isOpen ?? false;
 
     const totalCapacity = ticketTypes
@@ -91,7 +97,7 @@ export function EventHeroCard({ event, openStatus, ticketTypes }: EventHeroCardP
                                     {isOpen ? "Registration open" : "Active"}
                                 </Badge>
                             ) : (
-                                <Badge variant="secondary">{event.status}</Badge>
+                                <Badge variant="secondary">{statusLabel(event.status)}</Badge>
                             )}
                             <Badge variant="outline" className="text-muted-foreground">
                                 <Clock className="size-3 mr-1" />

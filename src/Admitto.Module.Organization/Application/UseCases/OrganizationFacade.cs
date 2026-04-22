@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Module.Organization.Application.UseCases.TeamManagement.GetTeamId;
-using Amolenk.Admitto.Module.Organization.Application.UseCases.TicketedEvents.GetTicketedEventId;
 using Amolenk.Admitto.Module.Organization.Application.UseCases.Users.GetTeamMembershipRole;
 using Amolenk.Admitto.Module.Organization.Contracts;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
@@ -17,18 +16,6 @@ internal class OrganizationFacade(IMediator mediator) : IOrganizationFacade
             cancellationToken);
 
         return teamId;
-    }
-
-    public async ValueTask<Guid> GetTicketedEventIdAsync(
-        Guid teamId,
-        string eventSlug,
-        CancellationToken cancellationToken = default)
-    {
-        var ticketedEventId = await mediator.QueryAsync<GetTicketedEventIdQuery, Guid>(
-            new GetTicketedEventIdQuery(teamId, eventSlug),
-            cancellationToken);
-
-        return ticketedEventId;
     }
 
     public async ValueTask<TeamMembershipRoleDto?> GetTeamMembershipRoleAsync(

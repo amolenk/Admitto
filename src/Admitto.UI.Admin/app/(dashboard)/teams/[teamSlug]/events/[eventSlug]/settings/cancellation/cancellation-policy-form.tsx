@@ -3,6 +3,7 @@
 import { useState } from "react";
 import * as z from "zod";
 import { AlertCircle } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import {
     Form,
@@ -13,20 +14,18 @@ import {
     FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { DateTimePicker } from "@/components/ui/date-time-picker";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useCustomForm } from "@/hooks/use-custom-form";
 import { apiClient } from "@/lib/api-client";
 import { FormError } from "@/components/form-error";
+import { TicketedEventDetails } from "../event-detail-types";
 
 const cancellationSchema = z.object({
     lateCancellationCutoff: z.string().min(1, "Cutoff date is required"),
 });
 
 type CancellationValues = z.infer<typeof cancellationSchema>;
-
-interface CancellationPolicy {
-    lateCancellationCutoff: string;
-}
 
 function toDatetimeLocal(iso: string): string {
     const d = new Date(iso);
@@ -35,50 +34,43 @@ function toDatetimeLocal(iso: string): string {
 }
 
 export function CancellationPolicyForm({
-    policy,
+    event,
     teamSlug,
     eventSlug,
     disabled,
-    onSaved,
 }: {
-    policy: CancellationPolicy | null;
+    event: TicketedEventDetails;
     teamSlug: string;
     eventSlug: string;
     disabled: boolean;
-    onSaved: () => void;
 }) {
-    const [removeError, setRemoveError] = useState<{
-        title: string;
-        detail: string;
-    } | null>(null);
+    const queryClient = useQueryClient();
+    const policy = event.cancellationPolicy;
+
+    const [removeError, setRemoveError] = useState<{ title: string; detail: string } | null>(null);
     const [isRemoving, setIsRemoving] = useState(false);
 
     const form = useCustomForm<CancellationValues>(cancellationSchema, {
-        lateCancellationCutoff: policy
-            ? toDatetimeLocal(policy.lateCancellationCutoff)
-            : "",
+        lateCancellationCutoff: policy ? toDatetimeLocal(policy.lateCancellationCutoff) : "",
     });
 
     async function onSubmit(values: CancellationValues) {
-        await apiClient.put(
-            `/api/teams/${teamSlug}/events/${eventSlug}/cancellation-policy`,
-            {
-                lateCancellationCutoff: new Date(
-                    values.lateCancellationCutoff
-                ).toISOString(),
-            }
-        );
-        onSaved();
+        await apiClient.put(`/api/teams/${teamSlug}/events/${eventSlug}/cancellation-policy`, {
+            lateCancellationCutoff: new Date(values.lateCancellationCutoff).toISOString(),
+            expectedVersion: Number(event.version),
+        });
+        await queryClient.invalidateQueries({ queryKey: ["event", teamSlug, eventSlug] });
     }
 
     async function handleRemove() {
         setRemoveError(null);
         setIsRemoving(true);
         try {
-            await apiClient.delete(
-                `/api/teams/${teamSlug}/events/${eventSlug}/cancellation-policy`
-            );
-            onSaved();
+            await apiClient.put(`/api/teams/${teamSlug}/events/${eventSlug}/cancellation-policy`, {
+                lateCancellationCutoff: null,
+                expectedVersion: Number(event.version),
+            });
+            await queryClient.invalidateQueries({ queryKey: ["event", teamSlug, eventSlug] });
         } catch (err) {
             if (err instanceof FormError) {
                 setRemoveError({ title: err.title, detail: err.detail });
@@ -100,9 +92,7 @@ export function CancellationPolicyForm({
                     <Alert variant="destructive">
                         <AlertCircle className="h-4 w-4" />
                         <AlertTitle>{form.generalError.title}</AlertTitle>
-                        <AlertDescription>
-                            {form.generalError.detail}
-                        </AlertDescription>
+                        <AlertDescription>{form.generalError.detail}</AlertDescription>
                     </Alert>
                 )}
 
@@ -121,11 +111,7 @@ export function CancellationPolicyForm({
                         <FormItem>
                             <FormLabel>Late cancellation cutoff</FormLabel>
                             <FormControl>
-                                <Input
-                                    type="datetime-local"
-                                    disabled={disabled}
-                                    {...field}
-                                />
+                                <DateTimePicker disabled={disabled} {...field} />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -133,10 +119,7 @@ export function CancellationPolicyForm({
                 />
 
                 <div className="flex gap-2">
-                    <Button
-                        type="submit"
-                        disabled={disabled || form.formState.isSubmitting}
-                    >
+                    <Button type="submit" disabled={disabled || form.formState.isSubmitting}>
                         {form.formState.isSubmitting ? "Saving…" : "Save policy"}
                     </Button>
                     {policy && (

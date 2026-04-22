@@ -268,4 +268,187 @@ public sealed class TicketCatalogTests
         // Assert
         tt.ShouldBeNull();
     }
+
+    [TestMethod]
+    public void SC018_NewCatalog_EventStatusIsActive()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId);
+
+        // Assert
+        sut.EventStatus.ShouldBe(EventLifecycleStatus.Active);
+    }
+
+    [TestMethod]
+    public void SC019_MarkEventCancelled_FromActive_Transitions()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId);
+
+        // Act
+        sut.MarkEventCancelled();
+
+        // Assert
+        sut.EventStatus.ShouldBe(EventLifecycleStatus.Cancelled);
+    }
+
+    [TestMethod]
+    public void SC020_MarkEventCancelled_AlreadyCancelled_IsIdempotent()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId);
+        sut.MarkEventCancelled();
+
+        // Act
+        sut.MarkEventCancelled();
+
+        // Assert
+        sut.EventStatus.ShouldBe(EventLifecycleStatus.Cancelled);
+    }
+
+    [TestMethod]
+    public void SC021_MarkEventCancelled_FromArchived_Throws()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId);
+        sut.MarkEventArchived();
+
+        // Act
+        var result = ErrorResult.Capture(() => sut.MarkEventCancelled());
+
+        // Assert
+        result.Error.ShouldMatch(TicketCatalog.Errors.IllegalEventStatusTransition);
+    }
+
+    [TestMethod]
+    public void SC022_MarkEventArchived_FromActive_Transitions()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId);
+
+        // Act
+        sut.MarkEventArchived();
+
+        // Assert
+        sut.EventStatus.ShouldBe(EventLifecycleStatus.Archived);
+    }
+
+    [TestMethod]
+    public void SC023_MarkEventArchived_FromCancelled_Transitions()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId);
+        sut.MarkEventCancelled();
+
+        // Act
+        sut.MarkEventArchived();
+
+        // Assert
+        sut.EventStatus.ShouldBe(EventLifecycleStatus.Archived);
+    }
+
+    [TestMethod]
+    public void SC024_MarkEventArchived_AlreadyArchived_IsIdempotent()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId);
+        sut.MarkEventArchived();
+
+        // Act
+        sut.MarkEventArchived();
+
+        // Assert
+        sut.EventStatus.ShouldBe(EventLifecycleStatus.Archived);
+    }
+
+    [TestMethod]
+    public void SC025_Claim_EventCancelled_Throws()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId);
+        sut.AddTicketType(Slug.From("general"), DisplayName.From("General"), [], 10);
+        sut.MarkEventCancelled();
+
+        // Act
+        var result = ErrorResult.Capture(() => sut.Claim(["general"], enforce: true));
+
+        // Assert
+        result.Error.ShouldMatch(TicketCatalog.Errors.EventNotActive);
+    }
+
+    [TestMethod]
+    public void SC026_Claim_EventArchived_Throws()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId);
+        sut.AddTicketType(Slug.From("general"), DisplayName.From("General"), [], 10);
+        sut.MarkEventArchived();
+
+        // Act
+        var result = ErrorResult.Capture(() => sut.Claim(["general"], enforce: false));
+
+        // Assert
+        result.Error.ShouldMatch(TicketCatalog.Errors.EventNotActive);
+    }
+
+    [TestMethod]
+    public void SC027_AddTicketType_EventCancelled_Throws()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId);
+        sut.MarkEventCancelled();
+
+        // Act
+        var result = ErrorResult.Capture(() =>
+            sut.AddTicketType(Slug.From("vip"), DisplayName.From("VIP"), [], 100));
+
+        // Assert
+        result.Error.ShouldMatch(TicketCatalog.Errors.EventNotActive);
+    }
+
+    [TestMethod]
+    public void SC028_AddTicketType_EventArchived_Throws()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId);
+        sut.MarkEventArchived();
+
+        // Act
+        var result = ErrorResult.Capture(() =>
+            sut.AddTicketType(Slug.From("vip"), DisplayName.From("VIP"), [], 100));
+
+        // Assert
+        result.Error.ShouldMatch(TicketCatalog.Errors.EventNotActive);
+    }
+
+    [TestMethod]
+    public void SC029_UpdateTicketType_EventCancelled_Throws()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId);
+        sut.AddTicketType(Slug.From("vip"), DisplayName.From("VIP"), [], 100);
+        sut.MarkEventCancelled();
+
+        // Act
+        var result = ErrorResult.Capture(() =>
+            sut.UpdateTicketType(Slug.From("vip"), name: null, maxCapacity: 200));
+
+        // Assert
+        result.Error.ShouldMatch(TicketCatalog.Errors.EventNotActive);
+    }
+
+    [TestMethod]
+    public void SC030_CancelTicketType_EventCancelled_Throws()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId);
+        sut.AddTicketType(Slug.From("vip"), DisplayName.From("VIP"), [], 100);
+        sut.MarkEventCancelled();
+
+        // Act
+        var result = ErrorResult.Capture(() => sut.CancelTicketType(Slug.From("vip")));
+
+        // Assert
+        result.Error.ShouldMatch(TicketCatalog.Errors.EventNotActive);
+    }
 }

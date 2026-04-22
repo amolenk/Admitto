@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Module.Registrations.Application.Persistence;
-using Amolenk.Admitto.Module.Registrations.Application.Services;
 using Amolenk.Admitto.Module.Registrations.Domain.Entities;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
@@ -14,9 +13,6 @@ internal sealed class UpdateTicketTypeHandler(IRegistrationsWriteStore writeStor
         UpdateTicketTypeCommand command,
         CancellationToken cancellationToken)
     {
-        var guard = await LifecycleGuardStore.LoadOrCreateAsync(writeStore, command.EventId, cancellationToken);
-        guard.AssertActiveAndRegisterPolicyMutation();
-
         var catalog = await writeStore.TicketCatalogs
             .FirstOrDefaultAsync(tc => tc.Id == command.EventId, cancellationToken);
 
@@ -29,3 +25,4 @@ internal sealed class UpdateTicketTypeHandler(IRegistrationsWriteStore writeStor
         catalog.UpdateTicketType(command.Slug, command.Name, command.MaxCapacity);
     }
 }
+

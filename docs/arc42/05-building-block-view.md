@@ -108,21 +108,23 @@ The Contracts project (`*.Contracts`) holds DTOs, facade interfaces, and integra
 
 ### Organization module
 
-Manages teams, team membership and roles, and ticketed events (event metadata, lifecycle status, team ownership). Publishes lifecycle events (cancelled, archived) consumed by the Registrations module. Integrates with external identity providers (Keycloak, Microsoft Graph) for user provisioning.
+Manages teams, team membership and roles, and acts as the **gatekeeper** for ticketed-event creation. Does not own event metadata beyond a small set of per-team counters (`ActiveEventCount`, `CancelledEventCount`, `ArchivedEventCount`, `PendingEventCount`) and a bounded `TeamEventCreationRequest` child entity for in-flight creation requests. Publishes `TicketedEventCreationRequested` and consumes `TicketedEventCreated` / `TicketedEventCreationRejected` / `TicketedEventCancelled` / `TicketedEventArchived` integration events to keep the counters in sync. Integrates with external identity providers (Keycloak, Microsoft Graph) for user provisioning.
 
 ### Registrations module
 
-Handles attendee registration flows — both admin-initiated and public self-service — with capacity-aware ticket allocation. Owns ticket type configuration (the `TicketCatalog` aggregate) and event policies. Reacts to Organization lifecycle events to sync the event's lifecycle status into the Registrations module via a `TicketedEventLifecycleGuard` aggregate (see [§8.14 Lifecycle guard pattern](08-crosscutting-concepts.md#814-lifecycle-guard-pattern)).
+Owns the authoritative `TicketedEvent` aggregate (slug, name, dates, lifecycle status, and consolidated policy value objects) as well as attendee registration flows (both admin-initiated and public self-service) and ticket type configuration (the `TicketCatalog` aggregate).
 
-The module manages three independent policy aggregates per event:
+`TicketedEvent` consolidates three policy value objects:
 
-| Aggregate | Purpose |
-| :-------- | :------ |
-| `EventRegistrationPolicy` | Registration window (opens/closes at) and optional email-domain restriction. |
-| `CancellationPolicy` | Late-cancellation cutoff. Optional — absence means no cancellation is ever late. |
-| `ReconfirmPolicy` | Reconfirmation window (opens/closes at) and cadence. Optional — absence means no reconfirmation. |
+| Value object | Purpose |
+| :----------- | :------ |
+| `TicketedEventRegistrationPolicy` | Registration window (opens/closes at) and optional email-domain restriction. |
+| `TicketedEventCancellationPolicy` | Late-cancellation cutoff. Optional — absence means no cancellation is ever late. |
+| `TicketedEventReconfirmPolicy` | Reconfirmation window (opens/closes at) and cadence. Optional — absence means no reconfirmation. |
 
-Registration openness is derived from the registration window and the lifecycle guard — there is no explicit "open/close registration" toggle. Every policy-mutation command loads the lifecycle guard, asserts the event is Active, and bumps a mutation counter to protect against concurrent lifecycle transitions (see [§8.14](08-crosscutting-concepts.md#814-lifecycle-guard-pattern)).
+Policy mutators on `TicketedEvent` reject when the event's status is not Active, so there is no separate lifecycle-guard aggregate. The existing `TicketCatalog` aggregate is extended with a single `EventStatus` field that is projected from `TicketedEvent` in the same unit of work as any lifecycle transition, providing an atomic status + capacity gate on ticket claims. See [ADR-008](../adrs/adr-008-ticketed-event-ownership-in-registrations.md) for the ownership rationale.
+
+Registration openness is derived from `now ∈ [opensAt, closesAt)` combined with `TicketedEvent.Status == Active` — there is no explicit "open/close registration" toggle.
 
 ### Email module
 

@@ -133,26 +133,8 @@ public sealed class CreateCouponTests(TestContext testContext) : AspireIntegrati
         result.Error.ShouldMatch(Coupon.Errors.ExpiryMustBeInFuture);
     }
 
-    // SC-006: Rejected — cancelled event
-    [TestMethod]
-    public async ValueTask SC006_CreateCoupon_CancelledEvent_ThrowsEventNotActiveError()
-    {
-        // Arrange
-        var fixture = CreateCouponFixture.CancelledEvent();
-        await fixture.SetupAsync(Environment);
-
-        var command = NewCreateCouponCommand(
-            fixture.EventId,
-            allowedTicketTypeSlugs: [fixture.TicketTypeSlug]);
-        var sut = NewCreateCouponHandler(fixture);
-
-        // Act
-        var result = await ErrorResult.CaptureAsync(
-            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
-
-        // Assert
-        result.Error.ShouldMatch(TicketedEventLifecycleGuard.Errors.EventNotActive);
-    }
+    // NOTE: SC-006 (cancelled-event rejection) will be reintroduced against the new
+    // TicketedEvent aggregate in section 8 of redesign-ticketed-event-ownership.
 
     private static CreateCouponCommand NewCreateCouponCommand(
         TicketedEventId eventId,

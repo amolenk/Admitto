@@ -4,7 +4,8 @@ using Amolenk.Admitto.Module.Shared.Application.Http;
 namespace Amolenk.Admitto.Module.Organization.Application.Http;
 
 public sealed class OrganizationScopeResolver(
-    IOrganizationFacade organizationFacade)
+    IOrganizationFacade organizationFacade,
+    ITicketedEventIdLookup ticketedEventIdLookup)
     : IOrganizationScopeResolver
 {
     private OrganizationScope? _cachedScope;
@@ -21,7 +22,7 @@ public sealed class OrganizationScopeResolver(
         Guid? eventId = null;
         if (eventSlug is not null)
         {
-            eventId = await organizationFacade.GetTicketedEventIdAsync(teamId, eventSlug, cancellationToken);
+            eventId = await ticketedEventIdLookup.GetTicketedEventIdAsync(teamId, eventSlug, cancellationToken);
         }
 
         _cachedScope = new OrganizationScope(teamSlug, teamId, eventSlug, eventId);

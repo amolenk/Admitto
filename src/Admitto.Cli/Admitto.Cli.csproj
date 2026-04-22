@@ -31,7 +31,7 @@
       <Compile Remove="Commands/Email/Verification/**/*.cs" />
       <Compile Remove="Commands/Email/SendReconfirmEmailCommand.cs" />
       <Compile Remove="Commands/Email/TestEmailCommand.cs" />
-      <Compile Remove="Commands/Events/CreateEventCommand.cs" />
+      <Compile Remove="Commands/Events/ListEventsCommand.cs" />
       <Compile Remove="Commands/Team/Member/**/*.cs" />
       <Compile Remove="Api/ApiClientMemberExtensions.cs" />
     </ItemGroup>

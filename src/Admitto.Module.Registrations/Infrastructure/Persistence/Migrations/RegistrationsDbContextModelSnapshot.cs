@@ -24,41 +24,6 @@ namespace Amolenk.Admitto.Module.Registrations.Infrastructure.Persistence.Migrat
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("Amolenk.Admitto.Module.Registrations.Domain.Entities.CancellationPolicy", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("event_id");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<DateTimeOffset>("LastChangedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("last_changed_at");
-
-                    b.Property<string>("LastChangedBy")
-                        .IsRequired()
-                        .HasMaxLength(320)
-                        .HasColumnType("character varying(320)")
-                        .HasColumnName("last_changed_by");
-
-                    b.Property<DateTimeOffset>("LateCancellationCutoff")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("late_cancellation_cutoff");
-
-                    b.Property<uint>("Version")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("cancellation_policy", "registrations");
-                });
-
             modelBuilder.Entity("Amolenk.Admitto.Module.Registrations.Domain.Entities.Coupon", b =>
                 {
                     b.Property<Guid>("Id")
@@ -131,93 +96,6 @@ namespace Amolenk.Admitto.Module.Registrations.Infrastructure.Persistence.Migrat
                     b.ToTable("coupons", "registrations");
                 });
 
-            modelBuilder.Entity("Amolenk.Admitto.Module.Registrations.Domain.Entities.EventRegistrationPolicy", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("event_id");
-
-                    b.Property<string>("AllowedEmailDomain")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("allowed_email_domain");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<DateTimeOffset>("LastChangedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("last_changed_at");
-
-                    b.Property<string>("LastChangedBy")
-                        .IsRequired()
-                        .HasMaxLength(320)
-                        .HasColumnType("character varying(320)")
-                        .HasColumnName("last_changed_by");
-
-                    b.Property<DateTimeOffset?>("RegistrationWindowClosesAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("registration_window_closes_at");
-
-                    b.Property<DateTimeOffset?>("RegistrationWindowOpensAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("registration_window_opens_at");
-
-                    b.Property<uint>("Version")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("event_registration_policy", "registrations");
-                });
-
-            modelBuilder.Entity("Amolenk.Admitto.Module.Registrations.Domain.Entities.ReconfirmPolicy", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("event_id");
-
-                    b.Property<TimeSpan>("Cadence")
-                        .HasColumnType("interval")
-                        .HasColumnName("cadence");
-
-                    b.Property<DateTimeOffset>("ClosesAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("closes_at");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<DateTimeOffset>("LastChangedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("last_changed_at");
-
-                    b.Property<string>("LastChangedBy")
-                        .IsRequired()
-                        .HasMaxLength(320)
-                        .HasColumnType("character varying(320)")
-                        .HasColumnName("last_changed_by");
-
-                    b.Property<DateTimeOffset>("OpensAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("opens_at");
-
-                    b.Property<uint>("Version")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("reconfirm_policy", "registrations");
-                });
-
             modelBuilder.Entity("Amolenk.Admitto.Module.Registrations.Domain.Entities.Registration", b =>
                 {
                     b.Property<Guid>("Id")
@@ -273,6 +151,12 @@ namespace Amolenk.Admitto.Module.Registrations.Infrastructure.Persistence.Migrat
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
+                    b.Property<int>("EventStatus")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0)
+                        .HasColumnName("event_status");
+
                     b.Property<DateTimeOffset>("LastChangedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("last_changed_at");
@@ -294,15 +178,25 @@ namespace Amolenk.Admitto.Module.Registrations.Infrastructure.Persistence.Migrat
                     b.ToTable("ticket_catalog", "registrations");
                 });
 
-            modelBuilder.Entity("Amolenk.Admitto.Module.Registrations.Domain.Entities.TicketedEventLifecycleGuard", b =>
+            modelBuilder.Entity("Amolenk.Admitto.Module.Registrations.Domain.Entities.TicketedEvent", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
-                        .HasColumnName("event_id");
+                        .HasColumnName("id");
+
+                    b.Property<string>("BaseUrl")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)")
+                        .HasColumnName("base_url");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset>("EndsAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("ends_at");
 
                     b.Property<DateTimeOffset>("LastChangedAt")
                         .HasColumnType("timestamp with time zone")
@@ -314,19 +208,29 @@ namespace Amolenk.Admitto.Module.Registrations.Infrastructure.Persistence.Migrat
                         .HasColumnType("character varying(320)")
                         .HasColumnName("last_changed_by");
 
-                    b.Property<string>("LifecycleStatus")
+                    b.Property<string>("Name")
                         .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)")
-                        .HasDefaultValue("Active")
-                        .HasColumnName("lifecycle_status");
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("name");
 
-                    b.Property<long>("PolicyMutationCount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bigint")
-                        .HasDefaultValue(0L)
-                        .HasColumnName("policy_mutation_count");
+                    b.Property<string>("Slug")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("slug");
+
+                    b.Property<DateTimeOffset>("StartsAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("starts_at");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer")
+                        .HasColumnName("status");
+
+                    b.Property<Guid>("TeamId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("team_id");
 
                     b.Property<uint>("Version")
                         .IsConcurrencyToken()
@@ -334,9 +238,18 @@ namespace Amolenk.Admitto.Module.Registrations.Infrastructure.Persistence.Migrat
                         .HasColumnType("xid")
                         .HasColumnName("xmin");
 
+                    b.Property<string>("WebsiteUrl")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)")
+                        .HasColumnName("website_url");
+
                     b.HasKey("Id");
 
-                    b.ToTable("event_lifecycle_guard", "registrations");
+                    b.HasIndex("TeamId", "Slug")
+                        .IsUnique();
+
+                    b.ToTable("ticketed_events", "registrations");
                 });
 
             modelBuilder.Entity("Amolenk.Admitto.Module.Shared.Infrastructure.Persistence.Outbox.OutboxMessage", b =>
@@ -442,6 +355,83 @@ namespace Amolenk.Admitto.Module.Registrations.Infrastructure.Persistence.Migrat
                         });
 
                     b.Navigation("TicketTypes");
+                });
+
+            modelBuilder.Entity("Amolenk.Admitto.Module.Registrations.Domain.Entities.TicketedEvent", b =>
+                {
+                    b.OwnsOne("Amolenk.Admitto.Module.Registrations.Domain.ValueObjects.TicketedEventCancellationPolicy", "CancellationPolicy", b1 =>
+                        {
+                            b1.Property<Guid>("TicketedEventId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<DateTimeOffset>("LateCancellationCutoff")
+                                .HasColumnType("timestamp with time zone")
+                                .HasColumnName("cancellation_policy_late_cutoff");
+
+                            b1.HasKey("TicketedEventId");
+
+                            b1.ToTable("ticketed_events", "registrations");
+
+                            b1.WithOwner()
+                                .HasForeignKey("TicketedEventId");
+                        });
+
+                    b.OwnsOne("Amolenk.Admitto.Module.Registrations.Domain.ValueObjects.TicketedEventReconfirmPolicy", "ReconfirmPolicy", b1 =>
+                        {
+                            b1.Property<Guid>("TicketedEventId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<TimeSpan>("Cadence")
+                                .HasColumnType("interval")
+                                .HasColumnName("reconfirm_policy_cadence");
+
+                            b1.Property<DateTimeOffset>("ClosesAt")
+                                .HasColumnType("timestamp with time zone")
+                                .HasColumnName("reconfirm_policy_closes_at");
+
+                            b1.Property<DateTimeOffset>("OpensAt")
+                                .HasColumnType("timestamp with time zone")
+                                .HasColumnName("reconfirm_policy_opens_at");
+
+                            b1.HasKey("TicketedEventId");
+
+                            b1.ToTable("ticketed_events", "registrations");
+
+                            b1.WithOwner()
+                                .HasForeignKey("TicketedEventId");
+                        });
+
+                    b.OwnsOne("Amolenk.Admitto.Module.Registrations.Domain.ValueObjects.TicketedEventRegistrationPolicy", "RegistrationPolicy", b1 =>
+                        {
+                            b1.Property<Guid>("TicketedEventId")
+                                .HasColumnType("uuid");
+
+                            b1.Property<string>("AllowedEmailDomain")
+                                .HasMaxLength(253)
+                                .HasColumnType("character varying(253)")
+                                .HasColumnName("registration_policy_allowed_email_domain");
+
+                            b1.Property<DateTimeOffset>("ClosesAt")
+                                .HasColumnType("timestamp with time zone")
+                                .HasColumnName("registration_policy_closes_at");
+
+                            b1.Property<DateTimeOffset>("OpensAt")
+                                .HasColumnType("timestamp with time zone")
+                                .HasColumnName("registration_policy_opens_at");
+
+                            b1.HasKey("TicketedEventId");
+
+                            b1.ToTable("ticketed_events", "registrations");
+
+                            b1.WithOwner()
+                                .HasForeignKey("TicketedEventId");
+                        });
+
+                    b.Navigation("CancellationPolicy");
+
+                    b.Navigation("ReconfirmPolicy");
+
+                    b.Navigation("RegistrationPolicy");
                 });
 #pragma warning restore 612, 618
         }

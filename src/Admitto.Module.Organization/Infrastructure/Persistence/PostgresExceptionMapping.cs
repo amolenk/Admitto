@@ -16,12 +16,6 @@ internal sealed class PostgresExceptionMapping : IPostgresExceptionMapping
             return true;
         }
 
-        if (ex.ConstraintName == "IX_ticketed_events_team_id_slug")
-        {
-            error = AlreadyExistsError.Create<TicketedEvent>();
-            return true;
-        }
-
         error = null!;
         return false;
     }

@@ -121,35 +121,4 @@ public sealed class TeamTests
         // Assert
         result.Error.ShouldMatch(Team.Errors.TeamAlreadyArchived(sut.Id));
     }
-
-    // -------------------------------------------------------------------------
-    // RegisterTicketedEventCreation()
-    // -------------------------------------------------------------------------
-
-    [TestMethod]
-    public void RegisterTicketedEventCreation_ActiveTeam_IncrementsVersion()
-    {
-        // Arrange
-        var sut = new TeamBuilder().Build();
-        sut.TicketedEventScopeVersion.ShouldBe(0);
-
-        // Act
-        sut.RegisterTicketedEventCreation();
-
-        // Assert
-        sut.TicketedEventScopeVersion.ShouldBe(1);
-    }
-
-    [TestMethod]
-    public void RegisterTicketedEventCreation_ArchivedTeam_ThrowsTeamArchived()
-    {
-        // Arrange
-        var sut = new TeamBuilder().AsArchived().Build();
-
-        // Act
-        var result = ErrorResult.Capture(() => sut.RegisterTicketedEventCreation());
-
-        // Assert
-        result.Error.ShouldMatch(Team.Errors.TeamArchived(sut.Id));
-    }
 }

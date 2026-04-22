@@ -71,9 +71,8 @@ public sealed class UpdateTicketTypeTests(TestContext testContext) : AspireInteg
         });
     }
 
-    // SC-003: Reject on cancelled event — throws BusinessRuleViolationException
     [TestMethod]
-    public async ValueTask SC003_UpdateTicketType_CancelledEvent_ThrowsEventNotActiveError()
+    public async ValueTask SC003_UpdateTicketType_CancelledEvent_ThrowsEventNotActive()
     {
         // Arrange
         var fixture = UpdateTicketTypeFixture.CancelledEvent();
@@ -82,8 +81,8 @@ public sealed class UpdateTicketTypeTests(TestContext testContext) : AspireInteg
         var command = new UpdateTicketTypeCommand(
             fixture.EventId,
             Slug.From(fixture.TicketTypeSlug),
-            DisplayName.From("Updated Name"),
-            null);
+            null,
+            200);
         var sut = new UpdateTicketTypeHandler(Environment.Database.Context);
 
         // Act
@@ -91,6 +90,6 @@ public sealed class UpdateTicketTypeTests(TestContext testContext) : AspireInteg
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
         // Assert
-        result.Error.ShouldMatch(TicketedEventLifecycleGuard.Errors.EventNotActive);
+        result.Error.Code.ShouldBe("ticket_catalog.event_not_active");
     }
 }

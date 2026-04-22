@@ -15,11 +15,6 @@ public sealed class UnitOfWork<TDbContext>(
 {
     public async ValueTask SaveChangesAsync(CancellationToken cancellationToken = default)
     {
-        if (dbContext.ChangeTracker.HasChanges())
-        {
-
-        }
-
         try
         {
             var result = await dbContext.SaveChangesAsync(cancellationToken);

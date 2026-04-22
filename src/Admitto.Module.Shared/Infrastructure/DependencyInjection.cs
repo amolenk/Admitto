@@ -1,5 +1,7 @@
 using Amolenk.Admitto.Module.Shared.Application.Auth;
+using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Application.Persistence;
+using Amolenk.Admitto.Module.Shared.Infrastructure.Messaging;
 using Amolenk.Admitto.Module.Shared.Infrastructure.Persistence;
 using Amolenk.Admitto.Module.Shared.Infrastructure.Persistence.Interceptors;
 using Amolenk.Admitto.Module.Shared.Infrastructure.Persistence.Outbox;
@@ -29,11 +31,27 @@ public static class DependencyInjection
                 var queueServiceClient = serviceProvider.GetRequiredService<QueueServiceClient>();
                 return queueServiceClient.GetQueueClient("queue");
             });
-            
-            // builder.Services
-            //     .AddScoped<IMessageSender, MessageSender>()
-            //     .AddScoped<MessageOutbox>()
-            //     .AddScoped<IMessageOutbox>(sp => sp.GetRequiredService<MessageOutbox>());
+
+            return builder;
+        }
+
+        /// <summary>
+        /// Registers the queue consumer pipeline (message-type registry, routers, dispatcher
+        /// and the <see cref="BackgroundService"/> that polls the queue). Only hosts that
+        /// own queue consumption (the Worker) should call this.
+        /// </summary>
+        public IHostApplicationBuilder AddSharedInfrastructureQueueConsumer()
+        {
+            // Snapshot of currently-loaded assemblies; module assemblies are loaded
+            // by the time DI configuration runs so all event types are discoverable.
+            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+
+            builder.Services.AddSingleton(new MessageTypeRegistry(assemblies));
+            builder.Services.AddScoped<IntegrationEventRouter>();
+            builder.Services.AddScoped<ModuleEventRouter>();
+            builder.Services.AddScoped<QueueMessageDispatcher>();
+
+            builder.Services.AddHostedService<MessageQueueProcessor>();
 
             return builder;
         }
@@ -74,6 +92,12 @@ public static class DependencyInjection
                             outboxMessageSender,
                             postgresExceptionMapping);
                     });
+
+            if (typeof(IOutboxDbContext).IsAssignableFrom(typeof(TDbContext)))
+            {
+                builder.Services.AddScoped<IIntegrationEventOutbox>(sp =>
+                    new IntegrationEventOutbox((IOutboxDbContext)sp.GetRequiredService<TDbContext>()));
+            }
 
             return builder;
         }
