@@ -48,9 +48,7 @@ internal sealed class GetRegistrationsFixture
             team.Id,
             eventId,
             EmailAddress.From("alice@example.com"),
-            [new TicketTypeSnapshot(TicketTypeSlug, [])],
-            "Test Event",
-            "https://example.com/event");
+            [new TicketTypeSnapshot(TicketTypeSlug, [])]);
 
         await environment.OrganizationDatabase.SeedAsync(db => db.Teams.Add(team));
         await environment.RegistrationsDatabase.SeedAsync(db =>

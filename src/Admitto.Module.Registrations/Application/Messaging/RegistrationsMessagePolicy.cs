@@ -16,9 +16,7 @@ public class RegistrationsMessagePolicy : MessagePolicy
                 e.TicketedEventId.Value,
                 e.RegistrationId.Value,
                 e.RecipientEmail.Value,
-                e.RecipientName,
-                e.EventName,
-                e.EventWebsiteUrl));
+                e.RecipientName));
 
         Configure<CouponCreatedDomainEvent>()
             .PublishModuleEvent(e => new CouponCreatedModuleEvent

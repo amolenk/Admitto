@@ -1,6 +1,7 @@
 using Amolenk.Admitto.Module.Email.Application.Persistence;
 using Amolenk.Admitto.Module.Email.Application.UseCases.SendEmail;
 using Amolenk.Admitto.Module.Email.Domain.ValueObjects;
+using Amolenk.Admitto.Module.Registrations.Contracts;
 using Amolenk.Admitto.Module.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
@@ -16,9 +17,12 @@ namespace Amolenk.Admitto.Module.Email.Application.UseCases.SendEmail.EventHandl
 /// No capability gate — this handler runs in any host that processes the Registrations queue.
 /// The actual send is gated on <see cref="HostCapability.Email"/> inside <see cref="SendEmailCommandHandler"/>.
 /// Idempotency key: <c>attendee-registered:{registrationId}</c>.
+/// Event name and website URL are looked up live from the Registrations facade so they reflect
+/// the current event configuration at send time, not the registration time.
 /// </remarks>
 internal sealed class AttendeeRegisteredIntegrationEventHandler(
     IEmailWriteStore writeStore,
+    IRegistrationsFacade registrationsFacade,
     IMediator mediator)
     : IIntegrationEventHandler<AttendeeRegisteredIntegrationEvent>
 {
@@ -34,6 +38,10 @@ internal sealed class AttendeeRegisteredIntegrationEventHandler(
         if (alreadyHandled)
             return;
 
+        var eventContext = await registrationsFacade.GetTicketedEventEmailContextAsync(
+            integrationEvent.TicketedEventId,
+            cancellationToken);
+
         var command = new SendEmailCommand(
             TeamId: TeamId.From(integrationEvent.TeamId),
             TicketedEventId: TicketedEventId.From(integrationEvent.TicketedEventId),
@@ -44,8 +52,8 @@ internal sealed class AttendeeRegisteredIntegrationEventHandler(
             Parameters: new
             {
                 integrationEvent.RecipientName,
-                integrationEvent.EventName,
-                integrationEvent.EventWebsiteUrl
+                EventName = eventContext.Name,
+                EventWebsiteUrl = eventContext.WebsiteUrl
             });
 
         await mediator.SendAsync(command, cancellationToken);

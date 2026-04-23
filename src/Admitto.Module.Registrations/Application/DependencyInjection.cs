@@ -2,6 +2,7 @@ using System.Reflection;
 using Amolenk.Admitto.Module.Registrations.Application.Messaging;
 using Amolenk.Admitto.Module.Registrations.Application.Security;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases;
+using Amolenk.Admitto.Module.Registrations.Contracts;
 using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using FluentValidation;
@@ -26,6 +27,8 @@ public static class DependencyInjection
         services.AddKeyedSingleton<IMessagePolicy>(RegistrationsModule.Key, new RegistrationsMessagePolicy());
 
         services.AddScoped<ITicketedEventIdLookup, RegistrationsTicketedEventIdLookup>();
+
+        services.AddScoped<IRegistrationsFacade, RegistrationsFacade>();
 
         // Placeholder until the real email-verification token validator ships. Throws
         // NotImplementedException when a token is actually validated. The handler

@@ -154,8 +154,6 @@ internal sealed class RegisterAttendeeHandler(
             command.EventId,
             command.Email,
             tickets,
-            ticketedEvent.Name.Value,
-            ticketedEvent.WebsiteUrl.Value.ToString(),
             additionalDetails);
         await writeStore.Registrations.AddAsync(registration, cancellationToken);
 

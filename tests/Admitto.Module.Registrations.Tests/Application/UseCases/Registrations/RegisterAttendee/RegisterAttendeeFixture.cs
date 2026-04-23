@@ -336,9 +336,7 @@ internal sealed class RegisterAttendeeFixture
                     TeamId,
                     EventId,
                     EmailAddress.From("alice@example.com"),
-                    [new TicketTypeSnapshot(TicketTypeSlug, [])],
-                    "Test Event",
-                    "https://example.com/event");
+                    [new TicketTypeSnapshot(TicketTypeSlug, [])]);
                 dbContext.Registrations.Add(existing);
             });
         }

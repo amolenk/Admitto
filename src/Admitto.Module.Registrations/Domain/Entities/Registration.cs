@@ -18,9 +18,7 @@ public class Registration : Aggregate<RegistrationId>
         TicketedEventId eventId,
         EmailAddress email,
         IReadOnlyList<TicketTypeSnapshot> tickets,
-        AdditionalDetails additionalDetails,
-        string eventName,
-        string eventWebsiteUrl)
+        AdditionalDetails additionalDetails)
         : base(id)
     {
         TeamId = teamId;
@@ -29,8 +27,7 @@ public class Registration : Aggregate<RegistrationId>
         _tickets = tickets.ToList();
         AdditionalDetails = additionalDetails;
 
-        AddDomainEvent(new AttendeeRegisteredDomainEvent(
-            teamId, eventId, id, email, "Attendee", eventName, eventWebsiteUrl));
+        AddDomainEvent(new AttendeeRegisteredDomainEvent(teamId, eventId, id, email, "Attendee"));
     }
 
     public TeamId TeamId { get; private set; }
@@ -44,8 +41,6 @@ public class Registration : Aggregate<RegistrationId>
         TicketedEventId eventId,
         EmailAddress email,
         IReadOnlyList<TicketTypeSnapshot> tickets,
-        string eventName,
-        string eventWebsiteUrl,
         AdditionalDetails? additionalDetails = null)
     {
         EnsureNoDuplicateSlugs(tickets);
@@ -56,9 +51,7 @@ public class Registration : Aggregate<RegistrationId>
             eventId,
             email,
             tickets,
-            additionalDetails ?? AdditionalDetails.Empty,
-            eventName,
-            eventWebsiteUrl);
+            additionalDetails ?? AdditionalDetails.Empty);
     }
 
     private static void EnsureNoDuplicateSlugs(IReadOnlyList<TicketTypeSnapshot> tickets)
