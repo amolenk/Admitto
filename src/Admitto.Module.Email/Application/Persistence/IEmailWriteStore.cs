@@ -4,5 +4,7 @@ namespace Amolenk.Admitto.Module.Email.Application.Persistence;
 
 public interface IEmailWriteStore
 {
-    DbSet<EventEmailSettings> EventEmailSettings { get; }
+    DbSet<EmailSettings> EmailSettings { get; }
+    DbSet<EmailTemplate> EmailTemplates { get; }
+    DbSet<EmailLog> EmailLog { get; }
 }

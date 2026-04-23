@@ -45,6 +45,7 @@ internal sealed class GetRegistrationsFixture
         catalog.AddTicketType(Slug.From(TicketTypeSlug), DisplayName.From("General Admission"), [], 100);
 
         var registration = Registration.Create(
+            team.Id,
             eventId,
             EmailAddress.From("alice@example.com"),
             [new TicketTypeSnapshot(TicketTypeSlug, [])]);

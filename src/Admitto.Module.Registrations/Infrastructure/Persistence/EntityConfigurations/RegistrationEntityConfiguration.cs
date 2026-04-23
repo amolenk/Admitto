@@ -19,6 +19,11 @@ public class RegistrationEntityConfiguration : IEntityTypeConfiguration<Registra
             .IsRequired()
             .ValueGeneratedNever();
 
+        builder.Property(e => e.TeamId)
+            .HasColumnName("team_id")
+            .HasConversion(v => v.Value, v => TeamId.From(v))
+            .IsRequired();
+
         builder.Property(e => e.EventId)
             .HasColumnName("event_id")
             .HasConversion(v => v.Value, v => TicketedEventId.From(v))

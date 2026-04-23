@@ -3,17 +3,25 @@
     <ItemGroup>
       <ProjectReference Include="..\Admitto.Module.Email.Contracts\Admitto.Module.Email.Contracts.csproj" />
       <ProjectReference Include="..\Admitto.Module.Organization.Contracts\Admitto.Module.Organization.Contracts.csproj" />
+      <ProjectReference Include="..\Admitto.Module.Registrations.Contracts\Admitto.Module.Registrations.Contracts.csproj" />
       <ProjectReference Include="..\Admitto.Module.Shared\Admitto.Module.Shared.csproj" />
     </ItemGroup>
 
     <ItemGroup>
+      <EmbeddedResource Include="Application/Templating/Defaults/*.txt" />
+      <EmbeddedResource Include="Application/Templating/Defaults/*.html" />
+    </ItemGroup>
+
+    <ItemGroup>
       <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+      <PackageReference Include="MailKit" />
       <PackageReference Include="Microsoft.AspNetCore.DataProtection" />
       <PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
         <PrivateAssets>all</PrivateAssets>
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       </PackageReference>
+      <PackageReference Include="Scriban" />
     </ItemGroup>
 
 </Project>

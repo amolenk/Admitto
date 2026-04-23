@@ -1,4 +1,3 @@
-using Amolenk.Admitto.Module.Email.Domain.Entities;
 using Amolenk.Admitto.Module.Shared.Application.Auth;
 using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
@@ -34,7 +33,7 @@ public static class GetEventEmailSettingsHttpEndpoint
 
         if (dto is null)
             throw new BusinessRuleViolationException(
-                NotFoundError.Create<Domain.Entities.EventEmailSettings>(eventSlug));
+                NotFoundError.Create<Domain.Entities.EmailSettings>(eventSlug));
 
         return TypedResults.Ok(dto);
     }

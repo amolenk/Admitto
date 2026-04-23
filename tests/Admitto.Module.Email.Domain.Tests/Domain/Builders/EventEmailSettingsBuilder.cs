@@ -11,7 +11,8 @@ public class EventEmailSettingsBuilder
     public const int DefaultSmtpPort = 587;
     public static readonly EmailAddress DefaultFromAddress = EmailAddress.From("noreply@example.com");
 
-    private TicketedEventId _eventId = DefaultEventId;
+    private Guid _scopeId = DefaultEventId.Value;
+    private EmailSettingsScope _scope = EmailSettingsScope.Event;
     private Hostname _smtpHost = Hostname.From(DefaultSmtpHost);
     private Port _smtpPort = Port.From(DefaultSmtpPort);
     private EmailAddress _fromAddress = DefaultFromAddress;
@@ -19,7 +20,8 @@ public class EventEmailSettingsBuilder
     private SmtpUsername? _username;
     private ProtectedPassword? _protectedPassword;
 
-    public EventEmailSettingsBuilder ForEvent(TicketedEventId id) { _eventId = id; return this; }
+    public EventEmailSettingsBuilder ForEvent(TicketedEventId id) { _scopeId = id.Value; _scope = EmailSettingsScope.Event; return this; }
+    public EventEmailSettingsBuilder ForTeam(TeamId id) { _scopeId = id.Value; _scope = EmailSettingsScope.Team; return this; }
     public EventEmailSettingsBuilder WithSmtpHost(string host) { _smtpHost = Hostname.From(host); return this; }
     public EventEmailSettingsBuilder WithSmtpPort(int port) { _smtpPort = Port.From(port); return this; }
     public EventEmailSettingsBuilder WithFromAddress(string address) { _fromAddress = EmailAddress.From(address); return this; }
@@ -32,6 +34,6 @@ public class EventEmailSettingsBuilder
         return this;
     }
 
-    public EventEmailSettings Build() =>
-        EventEmailSettings.Create(_eventId, _smtpHost, _smtpPort, _fromAddress, _authMode, _username, _protectedPassword);
+    public EmailSettings Build() =>
+        EmailSettings.Create(_scope, _scopeId, _smtpHost, _smtpPort, _fromAddress, _authMode, _username, _protectedPassword);
 }

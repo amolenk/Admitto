@@ -27,11 +27,10 @@ builder
 builder.Services.AddRegistrationsApplicationServices(HostCapability.Jobs);
 builder.AddRegistrationsInfrastructureServices();
 
-// Add Email module services (needed by the worker for the IEventEmailFacade
-// and to keep encrypted secrets decryptable here).
+// Add Email module services (to keep encrypted secrets decryptable here).
 builder
-    .AddEmailApplicationServices(HostCapability.Jobs)
-    .AddEmailInfrastructureServices();
+    .AddEmailApplicationServices(HostCapability.Jobs | HostCapability.Email)
+    .AddEmailInfrastructureServices(HostCapability.Email);
 
 // Add shared services.
 builder

@@ -14,6 +14,7 @@ internal sealed class GetRegistrationsFixture
 
     public TicketedEventId EventId { get; } = TicketedEventId.New();
     public TicketedEventId OtherEventId { get; } = TicketedEventId.New();
+    public TeamId TeamId { get; } = TeamId.New();
 
     private bool _seedRegistrations;
     private bool _seedMultiTicketRegistration;
@@ -50,11 +51,13 @@ internal sealed class GetRegistrationsFixture
         if (_seedRegistrations)
         {
             var alice = Registration.Create(
+                TeamId,
                 EventId,
                 EmailAddress.From("alice@example.com"),
                 [new TicketTypeSnapshot(GeneralSlug, [])]);
 
             var bob = Registration.Create(
+                TeamId,
                 EventId,
                 EmailAddress.From("bob@example.com"),
                 [new TicketTypeSnapshot(GeneralSlug, [])]);
@@ -69,6 +72,7 @@ internal sealed class GetRegistrationsFixture
         if (_seedMultiTicketRegistration)
         {
             var multi = Registration.Create(
+                TeamId,
                 EventId,
                 EmailAddress.From("carol@example.com"),
                 [
@@ -85,6 +89,7 @@ internal sealed class GetRegistrationsFixture
             otherCatalog.AddTicketType(Slug.From(GeneralSlug), DisplayName.From(GeneralName), [], 100);
 
             var dave = Registration.Create(
+                TeamId,
                 OtherEventId,
                 EmailAddress.From("dave@example.com"),
                 [new TicketTypeSnapshot(GeneralSlug, [])]);

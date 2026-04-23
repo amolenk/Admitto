@@ -9,6 +9,7 @@ namespace Amolenk.Admitto.Module.Registrations.Domain.Tests.Entities;
 [TestClass]
 public sealed class RegistrationTests
 {
+    private static readonly TeamId DefaultTeamId = TeamId.New();
     private static readonly TicketedEventId DefaultEventId = TicketedEventId.New();
     private static readonly EmailAddress DefaultEmail = EmailAddress.From("test@example.com");
 
@@ -28,7 +29,7 @@ public sealed class RegistrationTests
         };
 
         // Act
-        var sut = Registration.Create(DefaultEventId, DefaultEmail, tickets);
+        var sut = Registration.Create(DefaultTeamId, DefaultEventId, DefaultEmail, tickets);
 
         // Assert
         sut.Tickets.Count.ShouldBe(2);
@@ -50,7 +51,7 @@ public sealed class RegistrationTests
 
         // Act
         var result = ErrorResult.Capture(() =>
-            Registration.Create(DefaultEventId, DefaultEmail, tickets));
+            Registration.Create(DefaultTeamId, DefaultEventId, DefaultEmail, tickets));
 
         // Assert
         result.Error.ShouldMatch(Registration.Errors.DuplicateTicketTypes([duplicateSlug]));

@@ -1,7 +1,6 @@
 using Amolenk.Admitto.Module.Email.Application.Persistence;
+using Amolenk.Admitto.Module.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
-using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
-using Microsoft.EntityFrameworkCore;
 
 namespace Amolenk.Admitto.Module.Email.Application.UseCases.EventEmailSettings.GetEventEmailSettings;
 
@@ -12,11 +11,13 @@ internal sealed class GetEventEmailSettingsHandler(IEmailWriteStore writeStore)
         GetEventEmailSettingsQuery query,
         CancellationToken cancellationToken)
     {
-        var ticketedEventId = TicketedEventId.From(query.TicketedEventId);
+        var eventId = query.TicketedEventId;
 
-        var settings = await writeStore.EventEmailSettings
+        var settings = await writeStore.EmailSettings
             .AsNoTracking()
-            .FirstOrDefaultAsync(s => s.Id == ticketedEventId, cancellationToken);
+            .FirstOrDefaultAsync(
+                s => s.Scope == EmailSettingsScope.Event && s.ScopeId == eventId,
+                cancellationToken);
 
         if (settings is null)
             return null;

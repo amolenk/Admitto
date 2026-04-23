@@ -10,6 +10,14 @@ public class RegistrationsMessagePolicy : MessagePolicy
 {
     public RegistrationsMessagePolicy()
     {
+        Configure<AttendeeRegisteredDomainEvent>()
+            .PublishIntegrationEvent(e => new AttendeeRegisteredIntegrationEvent(
+                e.TeamId.Value,
+                e.TicketedEventId.Value,
+                e.RegistrationId.Value,
+                e.RecipientEmail.Value,
+                e.RecipientName));
+
         Configure<CouponCreatedDomainEvent>()
             .PublishModuleEvent(e => new CouponCreatedModuleEvent
             {

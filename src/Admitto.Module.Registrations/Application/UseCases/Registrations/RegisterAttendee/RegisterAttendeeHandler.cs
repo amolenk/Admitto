@@ -150,6 +150,7 @@ internal sealed class RegisterAttendeeHandler(
 
         // 12. Create registration and persist.
         var registration = Registration.Create(
+            ticketedEvent.TeamId,
             command.EventId,
             command.Email,
             tickets,

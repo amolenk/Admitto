@@ -38,9 +38,9 @@ public sealed class CreateEventEmailSettingsTests(TestContext testContext) : Asp
         // Assert
         await Environment.Database.AssertAsync(async db =>
         {
-            var stored = await db.EventEmailSettings
+            var stored = await db.EmailSettings
                 .AsNoTracking()
-                .FirstOrDefaultAsync(s => s.Id == TicketedEventId.From(eventId), testContext.CancellationToken);
+                .FirstOrDefaultAsync(s => s.Scope == EmailSettingsScope.Event && s.ScopeId == eventId, testContext.CancellationToken);
 
             stored.ShouldNotBeNull();
             stored.ProtectedPassword.ShouldNotBeNull();
@@ -74,6 +74,6 @@ public sealed class CreateEventEmailSettingsTests(TestContext testContext) : Asp
             () => Environment.Database.Context.SaveChangesAsync(testContext.CancellationToken));
 
         var postgresException = exception.InnerException.ShouldBeOfType<PostgresException>();
-        postgresException.ConstraintName.ShouldBe("PK_event_email_settings");
+        postgresException.ConstraintName.ShouldBe("IX_email_settings_scope_scope_id");
     }
 }

@@ -42,6 +42,9 @@ public sealed class EndToEndTestAppHost() : DistributedApplicationFactory(typeof
                 return new AccessTokenHandler(accessTokenOptions, keycloakEndpoint);
             });
 
+        applicationBuilder.Services.AddHttpClient("MailDev")
+            .ConfigureHttpClient(client => { client.BaseAddress = Application.GetEndpoint("maildev"); });
+
         applicationBuilder.Services.AddHttpClient("AdmittoApiBob")
             .ConfigureHttpClient(client => { client.BaseAddress = Application.GetEndpoint("api"); })
             .AddHttpMessageHandler(() =>

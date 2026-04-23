@@ -20,7 +20,7 @@ internal static class EventEmailSettingsFixture
             .WithBasicAuth(protectedPassword: protectedPassword)
             .Build();
 
-        await environment.Database.SeedAsync(db => db.EventEmailSettings.Add(settings));
+        await environment.Database.SeedAsync(db => db.EmailSettings.Add(settings));
 
         return (id, settings.Version);
     }

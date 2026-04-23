@@ -11,5 +11,6 @@ public abstract class EndToEndTestBase
     {
         await Environment.OrganizationDatabase.ResetAsync();
         await Environment.RegistrationsDatabase.ResetAsync();
+        await Environment.EmailDatabase.ResetAsync();
     }
 }

@@ -15,7 +15,9 @@ public sealed class EmailDbContext(DbContextOptions<EmailDbContext> options)
 {
     public static string SchemaName => "email";
 
-    public DbSet<EventEmailSettings> EventEmailSettings => Set<EventEmailSettings>();
+    public DbSet<EmailSettings> EmailSettings => Set<EmailSettings>();
+    public DbSet<EmailTemplate> EmailTemplates => Set<EmailTemplate>();
+    public DbSet<EmailLog> EmailLog => Set<EmailLog>();
 
     public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
 

@@ -1,8 +1,10 @@
 using Amolenk.Admitto.Module.Email.Application;
 using Amolenk.Admitto.Module.Email.Application.Persistence;
-using Amolenk.Admitto.Module.Email.Contracts;
+using Amolenk.Admitto.Module.Email.Application.Sending;
 using Amolenk.Admitto.Module.Email.Infrastructure.Persistence;
 using Amolenk.Admitto.Module.Email.Infrastructure.Security;
+using Amolenk.Admitto.Module.Email.Infrastructure.Sending;
+using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Infrastructure;
 using Amolenk.Admitto.Module.Shared.Infrastructure.Persistence;
 using Microsoft.AspNetCore.DataProtection;
@@ -15,7 +17,8 @@ public static class EmailDependencyInjection
 {
     extension<TBuilder>(TBuilder builder) where TBuilder : IHostApplicationBuilder
     {
-        public IHostApplicationBuilder AddEmailInfrastructureServices()
+        public IHostApplicationBuilder AddEmailInfrastructureServices(
+            HostCapability capabilities = HostCapability.None)
         {
             builder.AddModuleDatabaseServices<IEmailWriteStore, EmailDbContext>(EmailModuleKey.Value);
 
@@ -30,6 +33,9 @@ public static class EmailDependencyInjection
                 .PersistKeysToDbContext<EmailDbContext>();
 
             builder.Services.AddSingleton<IProtectedSecret, ProtectedSecret>();
+
+            if (capabilities.HasFlag(HostCapability.Email))
+                builder.Services.AddSingleton<IEmailSender, MailKitEmailSender>();
 
             return builder;
         }

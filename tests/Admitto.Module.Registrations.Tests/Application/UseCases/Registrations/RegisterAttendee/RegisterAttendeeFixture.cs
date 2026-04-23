@@ -333,6 +333,7 @@ internal sealed class RegisterAttendeeFixture
             await environment.Database.SeedAsync(dbContext =>
             {
                 var existing = Registration.Create(
+                    TeamId,
                     EventId,
                     EmailAddress.From("alice@example.com"),
                     [new TicketTypeSnapshot(TicketTypeSlug, [])]);

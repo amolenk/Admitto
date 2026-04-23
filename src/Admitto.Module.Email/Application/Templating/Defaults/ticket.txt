@@ -1,0 +1,23 @@
+Your {{ event_name }} Ticket
+
+Hi {{ first_name }},
+
+Your registration has been confirmed. Here's your ticket for {{ event_name }}!
+
+Scan this QR code at the entrance:
+{{ qrcode_link }}
+
+You can present this QR code on your mobile device or bring a printed copy to the event.
+
+Can't make it?
+If you can't attend, please cancel in advance so someone else can take your spot and we don't waste food.
+Cancel your registration:
+{{ cancel_link }}
+
+For more details about the event, visit: {{ event_website }}
+
+We look forward to seeing you there!
+
+Best regards,
+The {{ event_name }} Team
+

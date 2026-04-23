@@ -133,6 +133,10 @@ namespace Amolenk.Admitto.Module.Registrations.Infrastructure.Persistence.Migrat
                         .HasColumnType("character varying(320)")
                         .HasColumnName("last_changed_by");
 
+                    b.Property<Guid>("TeamId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("team_id");
+
                     b.Property<uint>("Version")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()

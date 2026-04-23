@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Module.Registrations.Domain.DomainEvents;
 using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Kernel.Entities;
 using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
@@ -13,24 +14,30 @@ public class Registration : Aggregate<RegistrationId>
 
     private Registration(
         RegistrationId id,
+        TeamId teamId,
         TicketedEventId eventId,
         EmailAddress email,
         IReadOnlyList<TicketTypeSnapshot> tickets,
         AdditionalDetails additionalDetails)
         : base(id)
     {
+        TeamId = teamId;
         EventId = eventId;
         Email = email;
         _tickets = tickets.ToList();
         AdditionalDetails = additionalDetails;
+
+        AddDomainEvent(new AttendeeRegisteredDomainEvent(teamId, eventId, id, email, "Attendee"));
     }
 
+    public TeamId TeamId { get; private set; }
     public TicketedEventId EventId { get; private set; }
     public EmailAddress Email { get; private set; }
     public IReadOnlyList<TicketTypeSnapshot> Tickets => _tickets.AsReadOnly();
     public AdditionalDetails AdditionalDetails { get; private set; } = AdditionalDetails.Empty;
 
     public static Registration Create(
+        TeamId teamId,
         TicketedEventId eventId,
         EmailAddress email,
         IReadOnlyList<TicketTypeSnapshot> tickets,
@@ -40,6 +47,7 @@ public class Registration : Aggregate<RegistrationId>
 
         return new Registration(
             RegistrationId.New(),
+            teamId,
             eventId,
             email,
             tickets,

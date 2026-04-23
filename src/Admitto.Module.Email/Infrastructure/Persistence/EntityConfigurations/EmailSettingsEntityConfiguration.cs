@@ -6,18 +6,27 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Amolenk.Admitto.Module.Email.Infrastructure.Persistence.EntityConfigurations;
 
-internal sealed class EventEmailSettingsEntityConfiguration : IEntityTypeConfiguration<EventEmailSettings>
+internal sealed class EmailSettingsEntityConfiguration : IEntityTypeConfiguration<EmailSettings>
 {
-    public void Configure(EntityTypeBuilder<EventEmailSettings> builder)
+    public void Configure(EntityTypeBuilder<EmailSettings> builder)
     {
-        builder.ToTable("event_email_settings");
+        builder.ToTable("email_settings");
         builder.HasKey(e => e.Id);
 
         builder.Property(e => e.Id)
-            .HasColumnName("ticketed_event_id")
-            .HasConversion(v => v.Value, v => TicketedEventId.From(v))
+            .HasColumnName("id")
+            .HasConversion(v => v.Value, v => EmailSettingsId.From(v))
             .IsRequired()
             .ValueGeneratedNever();
+
+        builder.Property(e => e.Scope)
+            .HasColumnName("scope")
+            .HasConversion<int>()
+            .IsRequired();
+
+        builder.Property(e => e.ScopeId)
+            .HasColumnName("scope_id")
+            .IsRequired();
 
         builder.Property(e => e.SmtpHost)
             .HasColumnName("smtp_host")
@@ -44,5 +53,9 @@ internal sealed class EventEmailSettingsEntityConfiguration : IEntityTypeConfigu
 
         builder.Property(e => e.ProtectedPassword)
             .HasColumnName("protected_password");
+
+        builder.HasIndex(e => new { e.Scope, e.ScopeId })
+            .HasDatabaseName("IX_email_settings_scope_scope_id")
+            .IsUnique();
     }
 }

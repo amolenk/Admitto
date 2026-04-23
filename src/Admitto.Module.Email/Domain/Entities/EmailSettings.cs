@@ -6,30 +6,30 @@ using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 namespace Amolenk.Admitto.Module.Email.Domain.Entities;
 
 /// <summary>
-/// Per-event SMTP/email server settings owned by the Email module.
+/// Unified SMTP/email server settings aggregate keyed by <see cref="EmailSettingsScope"/> and
+/// <see cref="ScopeId"/>. Supports both team-scoped and event-scoped configurations.
 /// </summary>
-/// <remarks>
-/// The aggregate's identifier IS the owning <see cref="TicketedEventId"/>. There is at most one
-/// <see cref="EventEmailSettings"/> per event, so the database PK enforces the uniqueness invariant.
-/// </remarks>
-public class EventEmailSettings : Aggregate<TicketedEventId>
+public class EmailSettings : Aggregate<EmailSettingsId>
 {
-    // ReSharper disable once UnusedMember.Local
     // Required for EF Core
-    private EventEmailSettings()
+    private EmailSettings()
     {
     }
 
-    private EventEmailSettings(
-        TicketedEventId ticketedEventId,
+    private EmailSettings(
+        EmailSettingsId id,
+        EmailSettingsScope scope,
+        Guid scopeId,
         Hostname smtpHost,
         Port smtpPort,
         EmailAddress fromAddress,
         EmailAuthMode authMode,
         SmtpUsername? username,
         ProtectedPassword? protectedPassword)
-        : base(ticketedEventId)
+        : base(id)
     {
+        Scope = scope;
+        ScopeId = scopeId;
         SmtpHost = smtpHost;
         SmtpPort = smtpPort;
         FromAddress = fromAddress;
@@ -38,6 +38,8 @@ public class EventEmailSettings : Aggregate<TicketedEventId>
         ProtectedPassword = protectedPassword;
     }
 
+    public EmailSettingsScope Scope { get; private set; }
+    public Guid ScopeId { get; private set; }
     public Hostname SmtpHost { get; private set; }
     public Port SmtpPort { get; private set; }
     public EmailAddress FromAddress { get; private set; }
@@ -49,8 +51,9 @@ public class EventEmailSettings : Aggregate<TicketedEventId>
     /// </summary>
     public ProtectedPassword? ProtectedPassword { get; private set; }
 
-    public static EventEmailSettings Create(
-        TicketedEventId ticketedEventId,
+    public static EmailSettings Create(
+        EmailSettingsScope scope,
+        Guid scopeId,
         Hostname smtpHost,
         Port smtpPort,
         EmailAddress fromAddress,
@@ -60,8 +63,10 @@ public class EventEmailSettings : Aggregate<TicketedEventId>
     {
         EnsureBasicAuthHasCredentials(authMode, username, protectedPassword);
 
-        return new EventEmailSettings(
-            ticketedEventId,
+        return new EmailSettings(
+            EmailSettingsId.New(),
+            scope,
+            scopeId,
             smtpHost,
             smtpPort,
             fromAddress,
@@ -108,7 +113,6 @@ public class EventEmailSettings : Aggregate<TicketedEventId>
 
     /// <summary>
     /// Returns true when all minimum required fields for outbound mail are populated.
-    /// Used by <c>IEventEmailFacade.IsEmailConfiguredAsync</c>.
     /// </summary>
     public bool IsValid()
     {

@@ -38,8 +38,9 @@ public sealed class EventEmailSettingsTests
     public void Create_WithBasicAuthMissingPassword_ThrowsBasicAuthRequiresCredentials()
     {
         var ex = Should.Throw<BusinessRuleViolationException>(() =>
-            EventEmailSettings.Create(
-                TicketedEventId.New(),
+            EmailSettings.Create(
+                EmailSettingsScope.Event,
+                Guid.NewGuid(),
                 Hostname.From("smtp.example.com"),
                 Port.From(587),
                 EmailAddress.From("noreply@example.com"),
@@ -47,7 +48,7 @@ public sealed class EventEmailSettingsTests
                 username: SmtpUsername.From("alice"),
                 protectedPassword: null));
 
-        ex.Error.ShouldMatch(EventEmailSettings.Errors.BasicAuthRequiresCredentials);
+        ex.Error.ShouldMatch(EmailSettings.Errors.BasicAuthRequiresCredentials);
     }
 
     [TestMethod]
@@ -101,5 +102,25 @@ public sealed class EventEmailSettingsTests
         var settings = new EventEmailSettingsBuilder().WithBasicAuth().Build();
 
         settings.IsValid().ShouldBeTrue();
+    }
+
+    [TestMethod]
+    public void Create_WithTeamScope_SetsTeamScopeCorrectly()
+    {
+        var teamId = Guid.NewGuid();
+
+        var settings = EmailSettings.Create(
+            EmailSettingsScope.Team,
+            teamId,
+            Hostname.From("smtp.team.com"),
+            Port.From(587),
+            EmailAddress.From("team@example.com"),
+            EmailAuthMode.None,
+            username: null,
+            protectedPassword: null);
+
+        settings.Scope.ShouldBe(EmailSettingsScope.Team);
+        settings.ScopeId.ShouldBe(teamId);
+        settings.SmtpHost.Value.ShouldBe("smtp.team.com");
     }
 }

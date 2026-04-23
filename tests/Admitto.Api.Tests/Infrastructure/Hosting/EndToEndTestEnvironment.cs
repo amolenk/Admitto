@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Module.Email.Infrastructure.Persistence;
 using Amolenk.Admitto.Module.Organization.Infrastructure.Persistence;
 using Amolenk.Admitto.Module.Registrations.Infrastructure.Persistence;
 using Amolenk.Admitto.Testing.Infrastructure.TestContexts;
@@ -8,6 +9,8 @@ namespace Amolenk.Admitto.Api.Tests.Infrastructure.Hosting;
 public sealed record EndToEndTestEnvironment(
     DatabaseTestContext<OrganizationDbContext> OrganizationDatabase,
     DatabaseTestContext<RegistrationsDbContext> RegistrationsDatabase,
+    DatabaseTestContext<EmailDbContext> EmailDatabase,
+    HttpClient MailDevClient,
     HttpClient ApiClient,
     HttpClient BobApiClient)
 {
@@ -31,10 +34,16 @@ public sealed record EndToEndTestEnvironment(
                 databaseConnectionString,
                 cancellationToken);
 
+        var emailDatabase =
+            await DatabaseTestContext<EmailDbContext>.CreateAsync(
+                databaseConnectionString,
+                cancellationToken);
+
         var factory = appHost.Application.Services.GetRequiredService<IHttpClientFactory>();
         var apiClient = factory.CreateClient("AdmittoApi");
         var bobApiClient = factory.CreateClient("AdmittoApiBob");
+        var mailDevClient = factory.CreateClient("MailDev");
 
-        return new EndToEndTestEnvironment(organizationDatabase, registrationsDatabase, apiClient, bobApiClient);
+        return new EndToEndTestEnvironment(organizationDatabase, registrationsDatabase, emailDatabase, mailDevClient, apiClient, bobApiClient);
     }
 }

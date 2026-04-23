@@ -38,8 +38,8 @@ public sealed class UpdateEventEmailSettingsTests(TestContext testContext) : Asp
         await Environment.Database.AssertAsync(async db =>
         {
             Environment.Database.Context.ChangeTracker.Clear();
-            var stored = await db.EventEmailSettings.AsNoTracking()
-                .FirstAsync(s => s.Id == eventId, testContext.CancellationToken);
+            var stored = await db.EmailSettings.AsNoTracking()
+                .FirstAsync(s => s.Scope == EmailSettingsScope.Event && s.ScopeId == eventId.Value, testContext.CancellationToken);
             stored.SmtpHost.Value.ShouldBe("smtp.new.example.com");
             stored.SmtpPort.Value.ShouldBe(2525);
             // Password preserved

@@ -23,11 +23,89 @@ namespace Amolenk.Admitto.Module.Email.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("Amolenk.Admitto.Module.Email.Domain.Entities.EventEmailSettings", b =>
+            modelBuilder.Entity("Amolenk.Admitto.Module.Email.Domain.Entities.EmailLog", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("EmailType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("email_type");
+
+                    b.Property<string>("IdempotencyKey")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("idempotency_key");
+
+                    b.Property<string>("LastError")
+                        .HasColumnType("text")
+                        .HasColumnName("last_error");
+
+                    b.Property<string>("Provider")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("provider");
+
+                    b.Property<string>("ProviderMessageId")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("provider_message_id");
+
+                    b.Property<string>("Recipient")
+                        .IsRequired()
+                        .HasMaxLength(254)
+                        .HasColumnType("character varying(254)")
+                        .HasColumnName("recipient");
+
+                    b.Property<DateTimeOffset?>("SentAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("sent_at");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer")
+                        .HasColumnName("status");
+
+                    b.Property<DateTimeOffset>("StatusUpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("status_updated_at");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)")
+                        .HasColumnName("subject");
+
+                    b.Property<Guid>("TeamId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("team_id");
+
+                    b.Property<Guid>("TicketedEventId")
+                        .HasColumnType("uuid")
                         .HasColumnName("ticketed_event_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TicketedEventId", "SentAt")
+                        .IsDescending(false, true)
+                        .HasDatabaseName("IX_email_log_event_sent_at");
+
+                    b.HasIndex("TicketedEventId", "Recipient", "IdempotencyKey")
+                        .IsUnique()
+                        .HasDatabaseName("IX_email_log_event_recipient_idempotency");
+
+                    b.ToTable("email_log", "email");
+                });
+
+            modelBuilder.Entity("Amolenk.Admitto.Module.Email.Domain.Entities.EmailSettings", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.Property<int>("AuthMode")
                         .HasColumnType("integer")
@@ -57,6 +135,14 @@ namespace Amolenk.Admitto.Module.Email.Infrastructure.Persistence.Migrations
                         .HasColumnType("text")
                         .HasColumnName("protected_password");
 
+                    b.Property<int>("Scope")
+                        .HasColumnType("integer")
+                        .HasColumnName("scope");
+
+                    b.Property<Guid>("ScopeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("scope_id");
+
                     b.Property<string>("SmtpHost")
                         .IsRequired()
                         .HasMaxLength(255)
@@ -80,7 +166,76 @@ namespace Amolenk.Admitto.Module.Email.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("event_email_settings", "email");
+                    b.HasIndex("Scope", "ScopeId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_email_settings_scope_scope_id");
+
+                    b.ToTable("email_settings", "email");
+                });
+
+            modelBuilder.Entity("Amolenk.Admitto.Module.Email.Domain.Entities.EmailTemplate", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("HtmlBody")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("html_body");
+
+                    b.Property<DateTimeOffset>("LastChangedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_changed_at");
+
+                    b.Property<string>("LastChangedBy")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)")
+                        .HasColumnName("last_changed_by");
+
+                    b.Property<int>("Scope")
+                        .HasColumnType("integer")
+                        .HasColumnName("scope");
+
+                    b.Property<Guid>("ScopeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("scope_id");
+
+                    b.Property<string>("Subject")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("subject");
+
+                    b.Property<string>("TextBody")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("text_body");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("type");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Scope", "ScopeId", "Type")
+                        .IsUnique()
+                        .HasDatabaseName("IX_email_templates_scope_scope_id_type");
+
+                    b.ToTable("email_templates", "email");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.DataProtection.EntityFrameworkCore.DataProtectionKey", b =>
