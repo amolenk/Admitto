@@ -3,15 +3,22 @@
 ## Purpose
 
 Attendees register themselves for a ticketed event either via a public self-service endpoint (subject to capacity, registration window, and email-domain rules) or via a single-use coupon code (which can bypass select policies). Registration is gated by the event's lifecycle status on `TicketedEvent`, with `TicketCatalog.EventStatus` providing the atomic claim-time safety net.
-
 ## Requirements
-
 ### Requirement: Attendee can self-register
 The system SHALL allow attendees to register themselves via a public endpoint by
-providing their email, attendee info, and selected ticket types. Self-service
-registrations SHALL enforce per-ticket-type capacity (ticket types without an
-explicit capacity set SHALL be rejected as not available), the registration window,
-and optional email domain restrictions.
+providing their email, attendee info, selected ticket types, **and a valid
+email-verification token proving ownership of the supplied email address**.
+Self-service registrations SHALL enforce per-ticket-type capacity (ticket types
+without an explicit capacity set SHALL be rejected as not available), the
+registration window, and optional email domain restrictions.
+
+The system SHALL reject self-service requests that omit the verification token
+with reason "email verification required". The system SHALL reject self-service
+requests whose token fails signature verification, has expired, or whose embedded
+email does not match the supplied registration email, with reason "email
+verification invalid". The verification check SHALL run before any event,
+catalog, coupon, or ticket-type lookups so that token-related failures do not
+leak information about other resources.
 
 Whether registration is open SHALL be derived from the registration window
 (`now ∈ [opensAt, closesAt)`) combined with the event's lifecycle status read from
@@ -25,8 +32,16 @@ claim time SHALL fail the registration with reason "event not active" (the EF
 optimistic concurrency token on `TicketCatalog` is the safety net).
 
 #### Scenario: Successful self-service registration
-- **WHEN** an attendee self-registers as "dave@example.com" for "General Admission" on event "DevConf" with capacity 100 (50 used), `TicketedEvent.Status` Active, `TicketCatalog.EventStatus` Active, window "2025-01-01T00:00Z" / "2025-06-01T00:00Z" at current time "2025-03-15T12:00Z", and no domain restriction
+- **WHEN** an attendee self-registers as "dave@example.com" for "General Admission" on event "DevConf" with capacity 100 (50 used), `TicketedEvent.Status` Active, `TicketCatalog.EventStatus` Active, window "2025-01-01T00:00Z" / "2025-06-01T00:00Z" at current time "2025-03-15T12:00Z", no domain restriction, and a valid verification token bound to "dave@example.com"
 - **THEN** a registration is created for "dave@example.com" with ticket "General Admission" and capacity used increases to 51
+
+#### Scenario: Self-service rejected — verification token missing
+- **WHEN** an attendee self-registers without supplying a verification token
+- **THEN** the registration is rejected with reason "email verification required" and no event, catalog, or capacity lookup is performed
+
+#### Scenario: Self-service rejected — verification token invalid
+- **WHEN** an attendee self-registers with a token that fails signature verification, has expired, or is bound to a different email than the registration email
+- **THEN** the registration is rejected with reason "email verification invalid"
 
 #### Scenario: Self-service rejected — capacity full
 - **WHEN** an attendee self-registers for "Workshop" where capacity is 20/20 used and the window is open
@@ -53,7 +68,7 @@ optimistic concurrency token on `TicketCatalog` is the safety net).
 - **THEN** the registration is rejected with reason "email domain not allowed"
 
 #### Scenario: Self-service allowed — email domain matches
-- **WHEN** an attendee self-registers as "employee@acme.com" for event "CorpConf" which is restricted to "@acme.com" and the window is open
+- **WHEN** an attendee self-registers as "employee@acme.com" for event "CorpConf" which is restricted to "@acme.com", the window is open, and a valid verification token bound to "employee@acme.com"
 - **THEN** a registration is created for "employee@acme.com"
 
 #### Scenario: Concurrent cancel detected at claim time
@@ -65,19 +80,30 @@ optimistic concurrency token on `TicketCatalog` is the safety net).
 ### Requirement: Attendee can register using a coupon code
 The system SHALL allow attendees to register using a valid, unexpired, single-use
 coupon code via a dedicated public endpoint. Coupon-based registrations SHALL
-restrict ticket type selection to the coupon's allowlisted types. Coupon-based
-registrations SHALL bypass capacity enforcement, email domain restrictions, and the
-requirement for a capacity to be set. If the coupon has `bypassRegistrationWindow`
-set, the registration SHALL also bypass the registration window. Upon successful
-registration, the system SHALL mark the coupon as redeemed. The used capacity
-counter SHALL be incremented for each ticket type regardless of bypass. Coupon
-registrations SHALL NOT bypass the active-status gate: registrations are rejected
-when `TicketedEvent.Status` is Cancelled or Archived (with the `TicketCatalog.EventStatus`
-claim-time check as the safety net for concurrent transitions).
+restrict ticket type selection to the coupon's allowlisted types.
+**Coupon-based registrations SHALL reject any request whose supplied email does
+not match `coupon.TargetEmail`, with reason "coupon email mismatch".** This
+binds the bearer credential (the coupon code, delivered to the target email) to
+the address it was issued for, without requiring a separate verification token.
+
+Coupon-based registrations SHALL bypass capacity enforcement, email domain
+restrictions, and the requirement for a capacity to be set. If the coupon has
+`bypassRegistrationWindow` set, the registration SHALL also bypass the
+registration window. Upon successful registration, the system SHALL mark the
+coupon as redeemed. The used capacity counter SHALL be incremented for each
+ticket type regardless of bypass. Coupon registrations SHALL NOT bypass the
+active-status gate: registrations are rejected when `TicketedEvent.Status` is
+Cancelled or Archived (with the `TicketCatalog.EventStatus` claim-time check as
+the safety net for concurrent transitions). Coupon registrations SHALL NOT
+require an email-verification token.
 
 #### Scenario: Successful coupon registration
-- **WHEN** an attendee registers as "speaker@gmail.com" using valid coupon "INVITE-001" for "Speaker Pass" on event "DevConf" where capacity is 5/5 used and the window is open
+- **WHEN** an attendee registers as "speaker@gmail.com" using valid coupon "INVITE-001" issued to "speaker@gmail.com" for "Speaker Pass" on event "DevConf" where capacity is 5/5 used and the window is open
 - **THEN** a registration is created for "speaker@gmail.com", coupon "INVITE-001" is marked as redeemed, and capacity used increases to 6
+
+#### Scenario: Coupon rejected — email does not match coupon target
+- **WHEN** an attendee registers as "attacker@gmail.com" using valid coupon "INVITE-001" that was issued to "speaker@gmail.com"
+- **THEN** the registration is rejected with reason "coupon email mismatch" and the coupon remains unredeemed
 
 #### Scenario: Coupon rejected — expired
 - **WHEN** an attendee registers using coupon "INVITE-002" that expired yesterday
@@ -96,7 +122,7 @@ claim-time check as the safety net for concurrent transitions).
 - **THEN** the registration is rejected with reason "ticket type not allowed for this coupon"
 
 #### Scenario: Coupon bypasses registration window when flag set
-- **WHEN** an attendee registers using valid coupon "INVITE-006" with bypassRegistrationWindow enabled for an event whose window has closed
+- **WHEN** an attendee registers using valid coupon "INVITE-006" with bypassRegistrationWindow enabled for an event whose window has closed, and the supplied email matches the coupon target
 - **THEN** a registration is created
 
 #### Scenario: Coupon respects registration window when flag not set
@@ -104,18 +130,20 @@ claim-time check as the safety net for concurrent transitions).
 - **THEN** the registration is rejected with reason "registration closed"
 
 #### Scenario: Coupon bypasses domain restriction
-- **WHEN** an attendee registers as "external@gmail.com" using valid coupon "INVITE-008" for event "CorpConf" which is restricted to "@acme.com"
+- **WHEN** an attendee registers as "external@gmail.com" using valid coupon "INVITE-008" issued to "external@gmail.com" for event "CorpConf" which is restricted to "@acme.com"
 - **THEN** a registration is created for "external@gmail.com"
 
 #### Scenario: Coupon bypasses capacity requirement
-- **WHEN** an attendee registers using valid coupon "INVITE-009" for "Speaker Pass" which has no capacity configured
+- **WHEN** an attendee registers using valid coupon "INVITE-009" for "Speaker Pass" which has no capacity configured, with email matching the coupon target
 - **THEN** a registration is created
 
 #### Scenario: Coupon does not bypass cancelled/archived event
 - **WHEN** an attendee registers using valid coupon "INVITE-010" for an event with `TicketedEvent.Status` Cancelled
 - **THEN** the registration is rejected with reason "event not active"
 
----
+#### Scenario: Coupon does not require an email-verification token
+- **WHEN** an attendee registers using valid coupon "INVITE-011" with email matching the coupon target and no verification token supplied
+- **THEN** a registration is created
 
 ### Requirement: Ticket selection validation applies to all registration paths
 The system SHALL allow selecting multiple ticket types in a single registration.
@@ -209,3 +237,21 @@ The coupon registration command and public endpoint SHALL accept the same option
 #### Scenario: Coupon registration rejected — unknown key
 - **WHEN** an attendee redeems a coupon for "DevConf" with `{ "shoesize": "44" }` and the schema has no `shoesize` field
 - **THEN** the registration is rejected with reason "additional detail key not in schema"
+
+### Requirement: Successful attendee registration publishes an integration event
+The Registrations module SHALL publish an `AttendeeRegisteredIntegrationEvent` whenever an attendee registration is successfully persisted, regardless of whether the registration originated from self-service or an admin flow. The integration event SHALL be derived from the existing `AttendeeRegisteredDomainEvent` via the module's `MessagePolicy` and SHALL be enqueued through the existing outbox so that delivery is at-least-once and durable.
+
+The integration event SHALL carry at minimum: `TeamId`, `TicketedEventId`, `RegistrationId`, the recipient email address, and the recipient's display name. It SHALL be defined in `Admitto.Module.Registrations.Contracts.IntegrationEvents`.
+
+#### Scenario: Self-service registration publishes the event
+- **WHEN** an attendee successfully self-registers for event "DevConf" as "alice@example.com"
+- **THEN** an `AttendeeRegisteredIntegrationEvent` is enqueued in the Registrations module's outbox containing `TicketedEventId`, the new `RegistrationId`, recipient="alice@example.com", and the team id
+
+#### Scenario: Failed registration does not publish the event
+- **WHEN** a registration attempt is rejected (capacity full, window closed, domain mismatch, etc.)
+- **THEN** no `AttendeeRegisteredIntegrationEvent` is enqueued
+
+#### Scenario: Event delivery is at-least-once via the existing outbox + queue
+- **WHEN** a registration succeeds and the event is enqueued
+- **THEN** the event is delivered through the same outbox + queue infrastructure as other Registrations integration events, with the same retry semantics
+

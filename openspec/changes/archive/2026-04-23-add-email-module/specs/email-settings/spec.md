@@ -1,4 +1,4 @@
-## MODIFIED Requirements
+## ADDED Requirements
 
 ### Requirement: Email module owns email server settings as a single scope-keyed aggregate
 The system SHALL provide an Email module (`Admitto.Module.Email`) that owns email server settings as a single `EmailSettings` aggregate keyed by `(Scope, ScopeId)` where `Scope ∈ {Team, Event}`. Each settings record SHALL belong to exactly one scope (a specific team OR a specific event). Settings SHALL include at minimum: SMTP host, SMTP port, from-address, authentication mode (`none`, `basic`), and credentials when applicable. The aggregate SHALL carry a `Version` token for optimistic concurrency and SHALL be persisted in a dedicated `email` database schema. A unique index on `(scope, scope_id)` SHALL enforce at most one settings row per scope per scopeId.
@@ -24,6 +24,24 @@ The system SHALL provide an Email module (`Admitto.Module.Email`) that owns emai
 - **THEN** every prior row appears in the new `email_settings` table as `(scope='event', scope_id=<original ticketed_event_id>, …)` with all other fields preserved
 
 ---
+
+### Requirement: Email module exposes effective settings to its own send path
+The Email module SHALL provide an internal contract (not exposed to other modules) that returns the **effective** `EmailSettings` for an event — the resolved combination of event-scoped and team-scoped settings per the precedence rules above — including the decrypted credentials needed to open an SMTP connection. This contract SHALL only be available inside the Email module assembly and SHALL only be called by the email-sending command handler.
+
+#### Scenario: Send path resolves event-scoped over team-scoped
+- **WHEN** the send-email command handler resolves effective settings for an event with both scopes present
+- **THEN** the returned `EffectiveEmailSettings` carries the event-scoped host/port/from/credentials and ignores the team-scoped row
+
+#### Scenario: Send path resolves team-scoped when event-scoped absent
+- **WHEN** the send-email command handler resolves effective settings for an event with only team-scoped settings
+- **THEN** the returned `EffectiveEmailSettings` carries the team-scoped host/port/from/credentials
+
+#### Scenario: Send path returns null when neither scope has settings
+- **WHEN** the send-email command handler resolves effective settings for an event with no settings in either scope
+- **THEN** the contract returns null and the handler records a Failed log row with reason "email not configured" (per `email-sending`)
+---
+
+## MODIFIED Requirements
 
 ### Requirement: Organizers can update email settings via admin endpoints
 The Email module SHALL expose admin HTTP endpoints to read, create, update, and delete settings at both team and event scope, sharing one slice family. Updates SHALL accept the current `Version` for optimistic concurrency. Updates that omit a secret field SHALL preserve the existing stored value. Endpoints SHALL be authorized via team membership on the team that owns the scope (the team itself for team-scope, the event's owning team for event-scope).
@@ -86,19 +104,8 @@ The Email module SHALL encrypt secret fields (SMTP password and any future API t
 - **WHEN** code outside the Email module attempts to decrypt the protected blob using a different Data Protection purpose string
 - **THEN** decryption fails
 
-## ADDED Requirements
 
-### Requirement: Email module exposes effective settings to its own send path
-The Email module SHALL provide an internal contract (not exposed to other modules) that returns the **effective** `EmailSettings` for an event — the resolved combination of event-scoped and team-scoped settings per the precedence rules above — including the decrypted credentials needed to open an SMTP connection. This contract SHALL only be available inside the Email module assembly and SHALL only be called by the email-sending command handler.
+## REMOVED Requirements
 
-#### Scenario: Send path resolves event-scoped over team-scoped
-- **WHEN** the send-email command handler resolves effective settings for an event with both scopes present
-- **THEN** the returned `EffectiveEmailSettings` carries the event-scoped host/port/from/credentials and ignores the team-scoped row
-
-#### Scenario: Send path resolves team-scoped when event-scoped absent
-- **WHEN** the send-email command handler resolves effective settings for an event with only team-scoped settings
-- **THEN** the returned `EffectiveEmailSettings` carries the team-scoped host/port/from/credentials
-
-#### Scenario: Send path returns null when neither scope has settings
-- **WHEN** the send-email command handler resolves effective settings for an event with no settings in either scope
-- **THEN** the contract returns null and the handler records a Failed log row with reason "email not configured" (per `email-sending`)
+### Requirement: Email module owns per-event email server settings
+**Reason**: Replaced by the unified scope-keyed `EmailSettings` aggregate which supports both team-scope and event-scope settings under a single aggregate type.
