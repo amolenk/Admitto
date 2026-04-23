@@ -74,5 +74,5 @@
 ## 9. Verification
 
 - [x] 9.1 `openspec validate add-email-module --strict` passes.
-- [ ] 9.2 Manual smoke: run AppHost locally, register an attendee against MailDev, observe the rendered email, the `email_log` row, and that re-publishing the queue message does NOT produce a second email.
-- [ ] 9.3 Manual rollback rehearsal: unregister the email integration-event handler in DI; verify the integration event is acked as no-op and registration still succeeds.
+- [x] 9.2 Manual smoke: run AppHost locally, register an attendee against MailDev, observe the rendered email, the `email_log` row, and that re-publishing the queue message does NOT produce a second email.
+- [x] 9.3 Manual rollback rehearsal: unregister the email integration-event handler in DI; verify the integration event is acked as no-op and registration still succeeds.
