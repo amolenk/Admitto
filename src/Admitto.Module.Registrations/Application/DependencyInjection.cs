@@ -1,5 +1,6 @@
 using System.Reflection;
 using Amolenk.Admitto.Module.Registrations.Application.Messaging;
+using Amolenk.Admitto.Module.Registrations.Application.Security;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases;
 using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
@@ -25,6 +26,12 @@ public static class DependencyInjection
         services.AddKeyedSingleton<IMessagePolicy>(RegistrationsModule.Key, new RegistrationsMessagePolicy());
 
         services.AddScoped<ITicketedEventIdLookup, RegistrationsTicketedEventIdLookup>();
+
+        // Placeholder until the real email-verification token validator ships. Throws
+        // NotImplementedException when a token is actually validated. The handler
+        // short-circuits on a null token *before* calling this, so requests without a
+        // token still get a clean 400 (email.verification_required).
+        services.AddSingleton<IEmailVerificationTokenValidator, NotImplementedEmailVerificationTokenValidator>();
 
         return services;
     }
