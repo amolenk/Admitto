@@ -48,13 +48,15 @@ internal sealed class SendRegistrationEmailFixture
         catalog.AddTicketType(Slug.From(TicketTypeSlug), DisplayName.From("General Admission"), [], 100);
 
         // Seed team-scoped email settings pointing at MailDev SMTP.
-        // MailDev exposes SMTP on port 1025 (isExternal: true) — reachable at localhost:1025
-        // from the Worker process that Aspire launches on the host machine.
+        // Use the dynamic endpoint from the test environment to avoid port conflicts.
+        var smtpHost = environment.MailDevSmtpEndpoint.Host;
+        var smtpPort = environment.MailDevSmtpEndpoint.Port;
+
         var emailSettings = EmailSettings.Create(
             scope: EmailSettingsScope.Team,
             scopeId: team.Id.Value,
-            smtpHost: Hostname.From("localhost"),
-            smtpPort: Port.From(1025),
+            smtpHost: Hostname.From(smtpHost),
+            smtpPort: Port.From(smtpPort),
             fromAddress: EmailAddress.From("noreply@admitto.io"),
             authMode: EmailAuthMode.None,
             username: null,
