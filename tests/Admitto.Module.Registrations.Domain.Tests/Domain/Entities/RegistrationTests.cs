@@ -29,7 +29,7 @@ public sealed class RegistrationTests
         };
 
         // Act
-        var sut = Registration.Create(DefaultTeamId, DefaultEventId, DefaultEmail, tickets);
+        var sut = Registration.Create(DefaultTeamId, DefaultEventId, DefaultEmail, tickets, "Test Event", "https://example.com/event");
 
         // Assert
         sut.Tickets.Count.ShouldBe(2);
@@ -51,7 +51,7 @@ public sealed class RegistrationTests
 
         // Act
         var result = ErrorResult.Capture(() =>
-            Registration.Create(DefaultTeamId, DefaultEventId, DefaultEmail, tickets));
+            Registration.Create(DefaultTeamId, DefaultEventId, DefaultEmail, tickets, "Test Event", "https://example.com/event"));
 
         // Assert
         result.Error.ShouldMatch(Registration.Errors.DuplicateTicketTypes([duplicateSlug]));

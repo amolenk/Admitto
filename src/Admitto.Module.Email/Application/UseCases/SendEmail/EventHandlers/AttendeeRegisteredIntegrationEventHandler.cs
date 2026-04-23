@@ -44,7 +44,8 @@ internal sealed class AttendeeRegisteredIntegrationEventHandler(
             Parameters: new
             {
                 integrationEvent.RecipientName,
-                EventName = string.Empty
+                integrationEvent.EventName,
+                integrationEvent.EventWebsiteUrl
             });
 
         await mediator.SendAsync(command, cancellationToken);

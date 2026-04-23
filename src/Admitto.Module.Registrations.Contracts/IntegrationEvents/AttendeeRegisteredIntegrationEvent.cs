@@ -11,4 +11,6 @@ public sealed record AttendeeRegisteredIntegrationEvent(
     Guid TicketedEventId,
     Guid RegistrationId,
     string RecipientEmail,
-    string RecipientName) : IntegrationEvent;
+    string RecipientName,
+    string EventName,
+    string EventWebsiteUrl) : IntegrationEvent;

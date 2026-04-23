@@ -9,4 +9,6 @@ public record AttendeeRegisteredDomainEvent(
     TicketedEventId TicketedEventId,
     RegistrationId RegistrationId,
     EmailAddress RecipientEmail,
-    string RecipientName) : DomainEvent;
+    string RecipientName,
+    string EventName,
+    string EventWebsiteUrl) : DomainEvent;

@@ -54,13 +54,17 @@ internal sealed class GetRegistrationsFixture
                 TeamId,
                 EventId,
                 EmailAddress.From("alice@example.com"),
-                [new TicketTypeSnapshot(GeneralSlug, [])]);
+                [new TicketTypeSnapshot(GeneralSlug, [])],
+                "Test Event",
+                "https://example.com/event");
 
             var bob = Registration.Create(
                 TeamId,
                 EventId,
                 EmailAddress.From("bob@example.com"),
-                [new TicketTypeSnapshot(GeneralSlug, [])]);
+                [new TicketTypeSnapshot(GeneralSlug, [])],
+                "Test Event",
+                "https://example.com/event");
 
             await environment.Database.SeedAsync(db =>
             {
@@ -78,7 +82,9 @@ internal sealed class GetRegistrationsFixture
                 [
                     new TicketTypeSnapshot(GeneralSlug, []),
                     new TicketTypeSnapshot(VipSlug, []),
-                ]);
+                ],
+                "Test Event",
+                "https://example.com/event");
 
             await environment.Database.SeedAsync(db => db.Registrations.Add(multi));
         }
@@ -92,7 +98,9 @@ internal sealed class GetRegistrationsFixture
                 TeamId,
                 OtherEventId,
                 EmailAddress.From("dave@example.com"),
-                [new TicketTypeSnapshot(GeneralSlug, [])]);
+                [new TicketTypeSnapshot(GeneralSlug, [])],
+                "Test Event",
+                "https://example.com/event");
 
             await environment.Database.SeedAsync(db =>
             {
