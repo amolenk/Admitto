@@ -128,7 +128,14 @@ Registration openness is derived from `now ∈ [opensAt, closesAt)` combined wit
 
 ### Email module
 
-Owns per-event email-server configuration (SMTP host/port, from-address, auth mode, credentials). Exposes `IEventEmailFacade` via `Admitto.Module.Email.Contracts` so the Registrations module can check whether email is configured before allowing registration to open. SMTP passwords are protected at rest via ASP.NET Data Protection (see [§8.7.x Secret protection](08-crosscutting-concepts.md#secret-protection)).
+Owns all email concerns: server settings, customisable templates, outgoing-email log, and actual SMTP sending.
+
+- **Settings** — a unified `EmailSettings` aggregate keyed by `(Scope, ScopeId)` where `Scope ∈ {Team, Event}`. Settings store SMTP host/port, from-address, auth mode, and (encrypted) credentials. Effective settings for an event are resolved as: event-scoped row → team-scoped row → none.
+- **Templates** — an `EmailTemplate` aggregate also keyed by `(Scope, ScopeId, Type)`. Template lookup follows the same precedence: event-scoped → team-scoped → built-in default (embedded resource). Rendering uses the Scriban engine.
+- **Email log** — each send attempt is recorded as an `EmailLog` row for idempotency (redelivered integration events do not produce duplicate sends) and observability.
+- **Sending** — the Worker host handles `AttendeeRegistered` integration events by resolving effective settings and templates, rendering the email, and dispatching it via SMTP. This path requires `HostCapability.Email` (see capability gating, §5.4).
+
+Exposes `IEventEmailFacade` via `Admitto.Module.Email.Contracts` so the Registrations module can check whether email is configured before allowing registration to open. SMTP passwords are protected at rest via ASP.NET Data Protection (see [§8.7.x Secret protection](08-crosscutting-concepts.md#secret-protection)).
 
 ### Shared module
 

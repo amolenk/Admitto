@@ -6,9 +6,7 @@ using Amolenk.Admitto.Cli.Commands;
 // Quarantined namespaces (no matching admin endpoints in the regenerated API client).
 // Restore when the backend re-exposes the corresponding surface.
 // using Amolenk.Admitto.Cli.Commands.Attendee;
-// using Amolenk.Admitto.Cli.Commands.Email;
-// using Amolenk.Admitto.Cli.Commands.Email.Template.Event;
-// using Amolenk.Admitto.Cli.Commands.Email.Template.Team;
+// using Amolenk.Admitto.Cli.Commands.Email; (bulk, recipient lists, single-send, OTP verification)
 // using Amolenk.Admitto.Cli.Commands.Email.Verification;
 // using Amolenk.Admitto.Cli.Commands.Team.Member;
 using Amolenk.Admitto.Cli.Commands.Auth;
@@ -16,6 +14,7 @@ using Amolenk.Admitto.Cli.Commands.Coupon;
 using Amolenk.Admitto.Cli.Commands.Events;
 using Amolenk.Admitto.Cli.Commands.Events.TicketType;
 using Amolenk.Admitto.Cli.Commands.Team;
+using Amolenk.Admitto.Cli.Commands.Team.Email;
 using Amolenk.Admitto.Cli.Common;
 using Amolenk.Admitto.Cli.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -244,6 +243,25 @@ app.Configure(config =>
 
                     email.AddCommand<Commands.Events.Email.UpdateEventEmailCommand>("update")
                         .WithDescription("Create or update the email settings for the event");
+
+                    email.AddCommand<Commands.Events.Email.DeleteEventEmailCommand>("delete")
+                        .WithDescription("Delete the email settings for the event");
+
+                    email.AddBranch(
+                        "template",
+                        template =>
+                        {
+                            template.SetDescription("Manage event email templates");
+
+                            template.AddCommand<Commands.Events.Email.ShowEventEmailTemplateCommand>("show")
+                                .WithDescription("Show an email template for the event");
+
+                            template.AddCommand<Commands.Events.Email.UpsertEventEmailTemplateCommand>("upsert")
+                                .WithDescription("Create or update an email template for the event");
+
+                            template.AddCommand<Commands.Events.Email.DeleteEventEmailTemplateCommand>("delete")
+                                .WithDescription("Delete an email template for the event");
+                        });
                 });
 
             ticketedEvent.AddBranch(
@@ -327,6 +345,38 @@ app.Configure(config =>
 
             team.AddCommand<ArchiveTeamCommand>("archive")
                 .WithDescription("Archive a team");
+
+            team.AddBranch(
+                "email",
+                email =>
+                {
+                    email.SetDescription("Manage team email settings and templates");
+
+                    email.AddCommand<ShowTeamEmailCommand>("show")
+                        .WithDescription("Show the email settings for the team");
+
+                    email.AddCommand<UpdateTeamEmailCommand>("update")
+                        .WithDescription("Create or update the email settings for the team");
+
+                    email.AddCommand<DeleteTeamEmailCommand>("delete")
+                        .WithDescription("Delete the email settings for the team");
+
+                    email.AddBranch(
+                        "template",
+                        template =>
+                        {
+                            template.SetDescription("Manage team email templates");
+
+                            template.AddCommand<ShowTeamEmailTemplateCommand>("show")
+                                .WithDescription("Show an email template for the team");
+
+                            template.AddCommand<UpsertTeamEmailTemplateCommand>("upsert")
+                                .WithDescription("Create or update an email template for the team");
+
+                            template.AddCommand<DeleteTeamEmailTemplateCommand>("delete")
+                                .WithDescription("Delete an email template for the team");
+                        });
+                });
         });
 
     config.AddCommand<VersionCommand>("version")

@@ -180,6 +180,46 @@ sequenceDiagram
   Endpoint->>UoW: SaveChangesAsync
 ```
 
+## 6.8 Registration-confirmation email flow
+
+When an attendee registers successfully, the API handler emits an `AttendeeRegistered` integration event via the outbox. The Worker picks it up and attempts to send a confirmation email.
+
+```mermaid
+sequenceDiagram
+    participant Api as API host
+    participant Outbox as Integration-event outbox
+    participant Worker as Worker host
+    participant EmailHandler as AttendeeRegistered handler (Email module)
+    participant EmailOutbox as Email outbox
+    participant SMTP as SMTP server (MailDev / real)
+    participant EmailLog as email.email_log
+
+    Api->>Outbox: AttendeeRegistered (in same UoW transaction)
+    Worker->>Outbox: poll & dequeue
+    Worker->>EmailHandler: dispatch AttendeeRegistered
+    EmailHandler->>EmailLog: check idempotency key (attendee-registered:<registrationId>)
+    alt already Sent
+        EmailHandler-->>Worker: ack (no-op, idempotency guard)
+    else not yet sent
+        EmailHandler->>EmailHandler: resolve effective EmailSettings (event → team)
+        alt no settings
+            EmailHandler->>EmailLog: insert Failed (email not configured)
+        else settings found
+            EmailHandler->>EmailHandler: resolve EmailTemplate (event → team → built-in)
+            EmailHandler->>EmailHandler: render subject + bodies via Scriban
+            EmailHandler->>EmailOutbox: enqueue SendEmail command (in same UoW)
+            EmailHandler->>EmailLog: insert Pending
+            Worker->>EmailOutbox: poll & dequeue SendEmail
+            Worker->>SMTP: SMTP send
+            Worker->>EmailLog: update Sent (or Failed on SMTP error)
+        end
+    end
+```
+
+**Idempotency**: the `EmailLog` row with key `attendee-registered:<registrationId>` is checked before every send attempt. A re-delivered integration event that already produced a `Sent` log row is acked without a second send.
+
+**Degraded mode**: if no effective email settings exist for the event, a `Failed` log row is written with reason "email not configured" and the integration event is still acked — registration itself is unaffected.
+
 ## Done-when
 
 - [x] The most important end-to-end flow is documented.

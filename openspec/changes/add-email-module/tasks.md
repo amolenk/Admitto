@@ -55,16 +55,16 @@
 - [x] 7.4 Add admin endpoints for templates at team scope: `GET /admin/teams/{teamSlug}/email-templates/{type}`, `PUT` (upsert), `DELETE`.
 - [x] 7.5 Add admin endpoints for templates at event scope: `GET /admin/teams/{teamSlug}/events/{eventSlug}/email-templates/{type}`, `PUT` (upsert), `DELETE`.
 - [x] 7.6 Add FluentValidation validators for each admin request DTO; wire endpoints in the module's endpoint registration entry point.
-- [ ] 7.7 Add CLI commands in `src/Admitto.Cli/Commands/` for each new admin endpoint at both scopes (per `src/Admitto.Cli/AGENTS.md`).
-- [ ] 7.8 Add API endpoint tests for: settings CRUD at team scope, settings CRUD at event scope (must hit the same handler types), team template CRUD, event template CRUD, including 403 for non-team-members and 409 on stale `Version`.
+- [x] 7.7 Add CLI commands in `src/Admitto.Cli/Commands/` for each new admin endpoint at both scopes (per `src/Admitto.Cli/AGENTS.md`).
+- [x] 7.8 Add API endpoint tests for: settings CRUD at team scope, settings CRUD at event scope (must hit the same handler types), team template CRUD, event template CRUD, including 403 for non-team-members and 409 on stale `Version`.
 
 ## 8. Documentation & wiring
 
-- [ ] 8.1 Update `docs/arc42/05-building-block-view.md` Email-module description to note: actual sending, templates, log, and unified team/event-scoped settings (single `EmailSettings` aggregate keyed by `(Scope, ScopeId)`).
-- [ ] 8.2 Add a registration-confirmation runtime flow to `docs/arc42/06-runtime-view.md` (sequence: register → outbox → integration event → email handler → SendEmail command on email outbox → worker SMTP send → log).
-- [ ] 8.3 Confirm `Admitto.Worker/Program.cs` declares `HostCapability.Email`; if anything is missing (e.g. resolver wiring), add it.
-- [ ] 8.4 Update `aspire.config.json` / Aspire AppHost only if a MailDev resource is not already wired; verify local-dev SMTP works against MailDev.
-- [ ] 8.5 Run targeted tests:
+- [x] 8.1 Update `docs/arc42/05-building-block-view.md` Email-module description to note: actual sending, templates, log, and unified team/event-scoped settings (single `EmailSettings` aggregate keyed by `(Scope, ScopeId)`).
+- [x] 8.2 Add a registration-confirmation runtime flow to `docs/arc42/06-runtime-view.md` (sequence: register → outbox → integration event → email handler → SendEmail command on email outbox → worker SMTP send → log).
+- [x] 8.3 Confirm `Admitto.Worker/Program.cs` declares `HostCapability.Email`; if anything is missing (e.g. resolver wiring), add it.
+- [x] 8.4 Update `aspire.config.json` / Aspire AppHost only if a MailDev resource is not already wired; verify local-dev SMTP works against MailDev.
+- [x] 8.5 Run targeted tests:
   - `dotnet test tests/Admitto.Module.Email.Domain.Tests`
   - `dotnet test tests/Admitto.Module.Email.Tests`
   - `dotnet test tests/Admitto.Module.Registrations.Domain.Tests`
@@ -73,6 +73,6 @@
 
 ## 9. Verification
 
-- [ ] 9.1 `openspec validate add-email-module --strict` passes.
+- [x] 9.1 `openspec validate add-email-module --strict` passes.
 - [ ] 9.2 Manual smoke: run AppHost locally, register an attendee against MailDev, observe the rendered email, the `email_log` row, and that re-publishing the queue message does NOT produce a second email.
 - [ ] 9.3 Manual rollback rehearsal: unregister the email integration-event handler in DI; verify the integration event is acked as no-op and registration still succeeds.

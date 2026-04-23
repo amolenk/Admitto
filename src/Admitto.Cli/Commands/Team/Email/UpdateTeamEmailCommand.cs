@@ -3,9 +3,9 @@ using Amolenk.Admitto.Cli.Common;
 using Amolenk.Admitto.Cli.Configuration;
 using Amolenk.Admitto.Cli.IO;
 
-namespace Amolenk.Admitto.Cli.Commands.Events.Email;
+namespace Amolenk.Admitto.Cli.Commands.Team.Email;
 
-public class UpdateEventEmailSettings : TeamEventSettings
+public class UpdateTeamEmailSettings : TeamSettings
 {
     [CommandOption("--smtp-host")]
     [Description("SMTP server host name")]
@@ -66,16 +66,15 @@ public class UpdateEventEmailSettings : TeamEventSettings
     }
 }
 
-public class UpdateEventEmailCommand(IAdmittoService admittoService, IConfigService configService)
-    : AsyncCommand<UpdateEventEmailSettings>
+public class UpdateTeamEmailCommand(IAdmittoService admittoService, IConfigService configService)
+    : AsyncCommand<UpdateTeamEmailSettings>
 {
     public override async Task<int> ExecuteAsync(
         CommandContext context,
-        UpdateEventEmailSettings settings,
+        UpdateTeamEmailSettings settings,
         CancellationToken cancellationToken)
     {
         var teamSlug = InputHelper.ResolveTeamSlug(settings.TeamSlug, configService);
-        var eventSlug = InputHelper.ResolveEventSlug(settings.EventSlug, configService);
 
         var authMode = Enum.Parse<EmailAuthMode>(settings.AuthMode!, ignoreCase: true);
 
@@ -91,11 +90,11 @@ public class UpdateEventEmailCommand(IAdmittoService admittoService, IConfigServ
         };
 
         var success = await admittoService.SendAsync(
-            client => client.UpsertEventEmailSettingsAsync(teamSlug, eventSlug, request, cancellationToken));
+            client => client.UpsertTeamEmailSettingsAsync(teamSlug, null, request, cancellationToken));
 
         if (!success) return 1;
 
-        AnsiConsoleExt.WriteSuccesMessage($"Successfully updated email settings for event '{eventSlug}'.");
+        AnsiConsoleExt.WriteSuccesMessage($"Successfully updated email settings for team '{teamSlug}'.");
         return 0;
     }
 }
