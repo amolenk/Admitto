@@ -360,6 +360,8 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var command = new RegisterAttendeeCommand(
             TicketedEventId.New(),
             EmailAddress.From("dave@example.com"),
+            FirstName.From("Dave"),
+            LastName.From("Doe"),
             ["general-admission"],
             RegistrationMode.SelfService,
             CouponCode: null,
@@ -389,6 +391,8 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         => new(
             fixture.EventId,
             EmailAddress.From(email),
+            FirstName.From("Test"),
+            LastName.From("User"),
             ticketTypeSlugs,
             RegistrationMode.SelfService,
             CouponCode: null,

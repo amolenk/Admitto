@@ -20,6 +20,8 @@ public sealed class RegisterAttendeeOutboxTests(TestContext testContext) : Aspir
         var command = new RegisterAttendeeCommand(
             fixture.EventId,
             EmailAddress.From("dave@example.com"),
+            FirstName.From("Dave"),
+            LastName.From("Doe"),
             [fixture.TicketTypeSlug],
             RegistrationMode.AdminAdd,
             CouponCode: null,

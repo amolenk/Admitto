@@ -7,19 +7,14 @@ import { AlertCircle, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { DateTimePicker } from "@/components/ui/date-time-picker";
+import { ZonedDateTimePicker } from "@/components/ui/zoned-date-time-picker";
+import { TimeZoneSelector } from "@/components/ui/time-zone-selector";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card } from "@/components/ui/card";
 import { useCustomForm } from "@/hooks/use-custom-form";
 import { apiClient } from "@/lib/api-client";
 import { TicketedEventDetailsDto } from "@/lib/admitto-api/generated";
-
-function toLocalInput(iso: string): string {
-    if (!iso) return "";
-    const d = new Date(iso);
-    const pad = (n: number) => n.toString().padStart(2, "0");
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
+import { isValidTimeZone } from "@/lib/time-zones";
 
 function Field({ label, hint, badge, children }: {
     label: string;
@@ -50,6 +45,10 @@ const generalSchema = z
         name: z.string().min(1, "Name is required"),
         websiteUrl: z.string().url("Must be a valid URL").min(1, "Website URL is required"),
         baseUrl: z.string().url("Must be a valid URL").min(1, "Base URL is required"),
+        timeZone: z
+            .string()
+            .min(1, "Time zone is required")
+            .refine((v) => isValidTimeZone(v), "Unknown IANA time zone"),
         startsAt: z.string().min(1, "Start is required"),
         endsAt: z.string().min(1, "End is required"),
     })
@@ -68,23 +67,32 @@ export function GeneralSettingsForm({ event }: { event: TicketedEventDetailsDto 
         name: event.name,
         websiteUrl: event.websiteUrl,
         baseUrl: event.baseUrl,
-        startsAt: toLocalInput(event.startsAt),
-        endsAt: toLocalInput(event.endsAt),
+        timeZone: event.timeZone,
+        startsAt: event.startsAt,
+        endsAt: event.endsAt,
     });
 
     async function onSubmit(values: GeneralValues) {
-        const startsAt = new Date(values.startsAt).toISOString();
-        const endsAt = new Date(values.endsAt).toISOString();
         const body: Record<string, unknown> = {
             expectedVersion: Number(event.version),
         };
         if (values.name !== event.name) body.name = values.name;
         if (values.websiteUrl !== event.websiteUrl) body.websiteUrl = values.websiteUrl;
         if (values.baseUrl !== event.baseUrl) body.baseUrl = values.baseUrl;
-        if (startsAt !== event.startsAt) body.startsAt = startsAt;
-        if (endsAt !== event.endsAt) body.endsAt = endsAt;
+        if (values.startsAt !== event.startsAt) body.startsAt = values.startsAt;
+        if (values.endsAt !== event.endsAt) body.endsAt = values.endsAt;
 
-        await apiClient.put(`/api/teams/${teamSlug}/events/${eventSlug}`, body);
+        const detailsChanged = Object.keys(body).length > 1;
+        if (detailsChanged) {
+            await apiClient.put(`/api/teams/${teamSlug}/events/${eventSlug}`, body);
+        }
+
+        if (values.timeZone !== event.timeZone) {
+            await apiClient.put(`/api/teams/${teamSlug}/events/${eventSlug}/time-zone`, {
+                timeZone: values.timeZone,
+                expectedVersion: Number(event.version) + (detailsChanged ? 1 : 0),
+            });
+        }
 
         await queryClient.invalidateQueries({ queryKey: ["event", teamSlug, eventSlug] });
         await queryClient.invalidateQueries({ queryKey: ["events", teamSlug] });
@@ -171,12 +179,36 @@ export function GeneralSettingsForm({ event }: { event: TicketedEventDetailsDto 
 
                             <FormField
                                 control={form.control}
+                                name="timeZone"
+                                render={({ field }) => (
+                                    <Field label="Time zone" hint="Used for all event date/time fields.">
+                                        <FormItem className="space-y-1">
+                                            <FormControl>
+                                                <TimeZoneSelector
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    onBlur={field.onBlur}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    </Field>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
                                 name="startsAt"
                                 render={({ field }) => (
                                     <Field label="Starts at" hint="Event start date and time.">
                                         <FormItem className="space-y-1">
                                             <FormControl>
-                                                <DateTimePicker {...field} />
+                                                <ZonedDateTimePicker
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    onBlur={field.onBlur}
+                                                    timeZone={form.watch("timeZone")}
+                                                />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>
@@ -191,7 +223,12 @@ export function GeneralSettingsForm({ event }: { event: TicketedEventDetailsDto 
                                     <Field label="Ends at" hint="Event end date and time.">
                                         <FormItem className="space-y-1">
                                             <FormControl>
-                                                <DateTimePicker {...field} />
+                                                <ZonedDateTimePicker
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    onBlur={field.onBlur}
+                                                    timeZone={form.watch("timeZone")}
+                                                />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>

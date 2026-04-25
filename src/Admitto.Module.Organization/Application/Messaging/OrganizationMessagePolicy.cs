@@ -22,6 +22,7 @@ public class OrganizationMessagePolicy : MessagePolicy
                 e.WebsiteUrl.Value.ToString(),
                 e.BaseUrl.Value.ToString(),
                 e.StartsAt,
-                e.EndsAt));
+                e.EndsAt,
+                e.TimeZone.Value));
     }
 }

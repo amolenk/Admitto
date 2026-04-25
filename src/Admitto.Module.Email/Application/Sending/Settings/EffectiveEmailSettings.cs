@@ -1,7 +1,7 @@
 using Amolenk.Admitto.Module.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 
-namespace Amolenk.Admitto.Module.Email.Application.Settings;
+namespace Amolenk.Admitto.Module.Email.Application.Sending.Settings;
 
 /// <summary>
 /// Resolved and decrypted email settings ready for use by the send pipeline.

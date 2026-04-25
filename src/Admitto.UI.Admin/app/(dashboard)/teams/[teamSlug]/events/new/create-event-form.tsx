@@ -8,7 +8,8 @@ import { AlertCircle, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { DateTimePicker } from "@/components/ui/date-time-picker";
+import { ZonedDateTimePicker } from "@/components/ui/zoned-date-time-picker";
+import { TimeZoneSelector } from "@/components/ui/time-zone-selector";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -16,6 +17,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { useCustomForm } from "@/hooks/use-custom-form";
 import { apiClient } from "@/lib/api-client";
 import { FormError } from "@/components/form-error";
+import { detectBrowserTimeZone, isValidTimeZone } from "@/lib/time-zones";
 
 function Field({ label, hint, children }: {
     label: string;
@@ -44,6 +46,10 @@ const createEventSchema = z
         name: z.string().min(1, "Name is required"),
         websiteUrl: z.string().url("Must be a valid URL").min(1, "Website URL is required"),
         baseUrl: z.string().url("Must be a valid URL").min(1, "Base URL is required"),
+        timeZone: z
+            .string()
+            .min(1, "Time zone is required")
+            .refine((v) => isValidTimeZone(v), "Unknown IANA time zone"),
         startsAt: z.string().min(1, "Start date/time is required"),
         endsAt: z.string().min(1, "End date/time is required"),
     })
@@ -91,6 +97,7 @@ export function CreateEventForm() {
         name: "",
         websiteUrl: "",
         baseUrl: "",
+        timeZone: detectBrowserTimeZone(),
         startsAt: "",
         endsAt: "",
     });
@@ -197,8 +204,10 @@ export function CreateEventForm() {
             name: values.name,
             websiteUrl: values.websiteUrl,
             baseUrl: values.baseUrl,
-            startsAt: new Date(values.startsAt).toISOString(),
-            endsAt: new Date(values.endsAt).toISOString(),
+            timeZone: values.timeZone,
+            // ZonedDateTimePicker emits UTC ISO already; pass through.
+            startsAt: values.startsAt,
+            endsAt: values.endsAt,
         };
 
         const accepted = await apiClient.post<CreateEventAcceptedResponse>(
@@ -338,12 +347,36 @@ export function CreateEventForm() {
 
                                 <FormField
                                     control={form.control}
+                                    name="timeZone"
+                                    render={({ field }) => (
+                                        <Field label="Time zone" hint="Used for all event date/time fields. Defaults to your browser zone — please confirm.">
+                                            <FormItem className="space-y-1">
+                                                <FormControl>
+                                                    <TimeZoneSelector
+                                                        value={field.value}
+                                                        onChange={field.onChange}
+                                                        onBlur={field.onBlur}
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        </Field>
+                                    )}
+                                />
+
+                                <FormField
+                                    control={form.control}
                                     name="startsAt"
                                     render={({ field }) => (
                                         <Field label="Starts at" hint="Event start date and time.">
                                             <FormItem className="space-y-1">
                                                 <FormControl>
-                                                    <DateTimePicker {...field} />
+                                                    <ZonedDateTimePicker
+                                                        value={field.value}
+                                                        onChange={field.onChange}
+                                                        onBlur={field.onBlur}
+                                                        timeZone={form.watch("timeZone")}
+                                                    />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -358,7 +391,12 @@ export function CreateEventForm() {
                                         <Field label="Ends at" hint="Event end date and time.">
                                             <FormItem className="space-y-1">
                                                 <FormControl>
-                                                    <DateTimePicker {...field} />
+                                                    <ZonedDateTimePicker
+                                                        value={field.value}
+                                                        onChange={field.onChange}
+                                                        onBlur={field.onBlur}
+                                                        timeZone={form.watch("timeZone")}
+                                                    />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>

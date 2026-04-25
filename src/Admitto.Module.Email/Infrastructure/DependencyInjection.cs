@@ -1,6 +1,7 @@
 using Amolenk.Admitto.Module.Email.Application;
 using Amolenk.Admitto.Module.Email.Application.Persistence;
 using Amolenk.Admitto.Module.Email.Application.Sending;
+using Amolenk.Admitto.Module.Email.Application.Sending.Bulk;
 using Amolenk.Admitto.Module.Email.Infrastructure.Persistence;
 using Amolenk.Admitto.Module.Email.Infrastructure.Security;
 using Amolenk.Admitto.Module.Email.Infrastructure.Sending;
@@ -35,7 +36,10 @@ public static class EmailDependencyInjection
             builder.Services.AddSingleton<IProtectedSecret, ProtectedSecret>();
 
             if (capabilities.HasFlag(HostCapability.Email))
+            {
                 builder.Services.AddSingleton<IEmailSender, MailKitEmailSender>();
+                builder.Services.AddSingleton<IBulkSmtpSender, MailKitBulkSmtpSender>();
+            }
 
             return builder;
         }

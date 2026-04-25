@@ -5,19 +5,14 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, Globe, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { formatInEventZone, formatZoneCaption } from "@/lib/time-zones";
 
-function formatDate(iso: string): string {
-    return new Date(iso).toLocaleDateString("en-US", {
-        weekday: "long",
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-    });
+function formatDate(iso: string, zone: string): string {
+    return formatInEventZone(iso, zone, "EEEE, MMMM d, yyyy");
 }
 
-function formatTime(startsAt: string, endsAt: string): string {
-    const fmt = (iso: string) =>
-        new Date(iso).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
+function formatTime(startsAt: string, endsAt: string, zone: string): string {
+    const fmt = (iso: string) => formatInEventZone(iso, zone, "HH:mm");
     return `${fmt(startsAt)} \u2013 ${fmt(endsAt)}`;
 }
 
@@ -110,11 +105,12 @@ export function EventHeroCard({ event, openStatus, ticketTypes }: EventHeroCardP
                         <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-[13.5px]">
                             <div className="flex items-center gap-1.5">
                                 <Calendar className="size-3.5 text-muted-foreground" />
-                                <span>{formatDate(event.startsAt)}</span>
+                                <span>{formatDate(event.startsAt, event.timeZone)}</span>
                             </div>
                             <div className="flex items-center gap-1.5">
                                 <Clock className="size-3.5 text-muted-foreground" />
-                                <span>{formatTime(event.startsAt, event.endsAt)}</span>
+                                <span>{formatTime(event.startsAt, event.endsAt, event.timeZone)}</span>
+                                <span className="text-muted-foreground">&middot; {formatZoneCaption(event.timeZone)}</span>
                             </div>
                             {event.websiteUrl && (
                                 <a

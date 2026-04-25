@@ -2,5 +2,7 @@ namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.Registration
 
 public sealed record AdminRegisterAttendeeHttpRequest(
     string Email,
+    string FirstName,
+    string LastName,
     string[] TicketTypeSlugs,
     Dictionary<string, string>? AdditionalDetails = null);

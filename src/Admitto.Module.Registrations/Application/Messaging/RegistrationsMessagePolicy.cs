@@ -16,7 +16,24 @@ public class RegistrationsMessagePolicy : MessagePolicy
                 e.TicketedEventId.Value,
                 e.RegistrationId.Value,
                 e.RecipientEmail.Value,
-                e.RecipientName));
+                e.FirstName.Value,
+                e.LastName.Value));
+
+        Configure<RegistrationCancelledDomainEvent>()
+            .PublishIntegrationEvent(e => new RegistrationCancelledIntegrationEvent(
+                e.TeamId.Value,
+                e.TicketedEventId.Value,
+                e.RegistrationId.Value,
+                e.Email.Value,
+                e.Reason.ToString()));
+
+        Configure<RegistrationReconfirmedDomainEvent>()
+            .PublishIntegrationEvent(e => new RegistrationReconfirmedIntegrationEvent(
+                e.TeamId.Value,
+                e.TicketedEventId.Value,
+                e.RegistrationId.Value,
+                e.Email.Value,
+                e.ReconfirmedAt));
 
         Configure<CouponCreatedDomainEvent>()
             .PublishModuleEvent(e => new CouponCreatedModuleEvent
@@ -41,5 +58,22 @@ public class RegistrationsMessagePolicy : MessagePolicy
                     $"Unexpected {nameof(EventLifecycleStatus)} '{e.NewStatus}' for " +
                     $"{nameof(TicketedEventStatusChangedDomainEvent)}.")
             });
+
+        Configure<TicketedEventReconfirmPolicyChangedDomainEvent>()
+            .PublishIntegrationEvent(e => new TicketedEventReconfirmPolicyChangedIntegrationEvent(
+                e.TeamId.Value,
+                e.TicketedEventId.Value,
+                e.Policy is null
+                    ? null
+                    : new TicketedEventReconfirmPolicySnapshot(
+                        e.Policy.OpensAt,
+                        e.Policy.ClosesAt,
+                        (int)e.Policy.Cadence.TotalDays)));
+
+        Configure<TicketedEventTimeZoneChangedDomainEvent>()
+            .PublishIntegrationEvent(e => new TicketedEventTimeZoneChangedIntegrationEvent(
+                e.TeamId.Value,
+                e.TicketedEventId.Value,
+                e.TimeZone.Value));
     }
 }

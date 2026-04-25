@@ -34,6 +34,8 @@ public static class RegisterWithCouponHttpEndpoint
         var command = new RegisterAttendeeCommand(
             TicketedEventId.From(eventId),
             EmailAddress.From(request.Email),
+            FirstName.From(request.FirstName),
+            LastName.From(request.LastName),
             request.TicketTypeSlugs,
             RegistrationMode.Coupon,
             CouponCode: request.CouponCode,

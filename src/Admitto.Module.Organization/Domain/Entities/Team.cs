@@ -134,6 +134,7 @@ public class Team : Aggregate<TeamId>
         AbsoluteUrl baseUrl,
         DateTimeOffset startsAt,
         DateTimeOffset endsAt,
+        TimeZoneId timeZone,
         UserId requesterId,
         DateTimeOffset requestedAt)
     {
@@ -147,7 +148,8 @@ public class Team : Aggregate<TeamId>
             websiteUrl,
             baseUrl,
             startsAt,
-            endsAt));
+            endsAt,
+            timeZone));
 
         return request;
     }

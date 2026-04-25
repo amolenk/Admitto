@@ -7,4 +7,5 @@ public sealed record TicketedEventListItemDto(
     string Name,
     DateTimeOffset StartsAt,
     DateTimeOffset EndsAt,
+    string TimeZone,
     EventLifecycleStatus Status);

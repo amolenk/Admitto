@@ -183,8 +183,13 @@ export type RegisterWithCouponHttpRequest = {
 export type RegistrationListItemDto = {
     id: string;
     email: string;
+    firstName: string;
+    lastName: string;
     tickets: Array<TicketSummaryDto>;
     createdAt: string;
+    status: 'registered' | 'cancelled';
+    hasReconfirmed: boolean;
+    reconfirmedAt?: null | string;
 };
 
 export type RegistrationPolicyDto = {
@@ -200,6 +205,7 @@ export type RequestTicketedEventCreationHttpRequest = {
     baseUrl: string;
     startsAt: string;
     endsAt: string;
+    timeZone: string;
 };
 
 export type SelfRegisterAttendeeHttpRequest = {
@@ -240,6 +246,7 @@ export type TicketedEventDetailsDto = {
     baseUrl: string;
     startsAt: string;
     endsAt: string;
+    timeZone: string;
     status: EventLifecycleStatus;
     version: number | string;
     isRegistrationOpen: boolean;
@@ -254,6 +261,7 @@ export type TicketedEventListItemDto = {
     name: string;
     startsAt: string;
     endsAt: string;
+    timeZone: string;
     status: EventLifecycleStatus;
 };
 

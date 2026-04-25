@@ -35,7 +35,8 @@ internal sealed class GetRegistrationsFixture
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),
             DateTimeOffset.UtcNow.AddDays(60),
-            DateTimeOffset.UtcNow.AddDays(61));
+            DateTimeOffset.UtcNow.AddDays(61),
+                TimeZoneId.From("UTC"));
         ticketedEvent.ConfigureRegistrationPolicy(
             TicketedEventRegistrationPolicy.Create(
                 DateTimeOffset.UtcNow.AddDays(-1),
@@ -48,6 +49,8 @@ internal sealed class GetRegistrationsFixture
             team.Id,
             eventId,
             EmailAddress.From("alice@example.com"),
+            FirstName.From("Alice"),
+            LastName.From("Doe"),
             [new TicketTypeSnapshot(TicketTypeSlug, [])]);
 
         await environment.OrganizationDatabase.SeedAsync(db => db.Teams.Add(team));

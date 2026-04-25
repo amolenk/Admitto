@@ -14,7 +14,7 @@ import {
     FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { DateTimePicker } from "@/components/ui/date-time-picker";
+import { ZonedDateTimePicker } from "@/components/ui/zoned-date-time-picker";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useCustomForm } from "@/hooks/use-custom-form";
 import { apiClient } from "@/lib/api-client";
@@ -26,12 +26,6 @@ const cancellationSchema = z.object({
 });
 
 type CancellationValues = z.infer<typeof cancellationSchema>;
-
-function toDatetimeLocal(iso: string): string {
-    const d = new Date(iso);
-    const pad = (n: number) => String(n).padStart(2, "0");
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
 
 export function CancellationPolicyForm({
     event,
@@ -51,12 +45,12 @@ export function CancellationPolicyForm({
     const [isRemoving, setIsRemoving] = useState(false);
 
     const form = useCustomForm<CancellationValues>(cancellationSchema, {
-        lateCancellationCutoff: policy ? toDatetimeLocal(policy.lateCancellationCutoff) : "",
+        lateCancellationCutoff: policy?.lateCancellationCutoff ?? "",
     });
 
     async function onSubmit(values: CancellationValues) {
         await apiClient.put(`/api/teams/${teamSlug}/events/${eventSlug}/cancellation-policy`, {
-            lateCancellationCutoff: new Date(values.lateCancellationCutoff).toISOString(),
+            lateCancellationCutoff: values.lateCancellationCutoff,
             expectedVersion: Number(event.version),
         });
         await queryClient.invalidateQueries({ queryKey: ["event", teamSlug, eventSlug] });
@@ -111,7 +105,13 @@ export function CancellationPolicyForm({
                         <FormItem>
                             <FormLabel>Late cancellation cutoff</FormLabel>
                             <FormControl>
-                                <DateTimePicker disabled={disabled} {...field} />
+                                <ZonedDateTimePicker
+                                    disabled={disabled}
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    onBlur={field.onBlur}
+                                    timeZone={event.timeZone}
+                                />
                             </FormControl>
                             <FormMessage />
                         </FormItem>

@@ -23,7 +23,8 @@ public class EmailLog : Entity<EmailLogId>
         EmailLogStatus status,
         DateTimeOffset? sentAt,
         DateTimeOffset statusUpdatedAt,
-        string? lastError)
+        string? lastError,
+        BulkEmailJobId? bulkEmailJobId)
         : base(id)
     {
         TeamId = teamId;
@@ -38,6 +39,7 @@ public class EmailLog : Entity<EmailLogId>
         SentAt = sentAt;
         StatusUpdatedAt = statusUpdatedAt;
         LastError = lastError;
+        BulkEmailJobId = bulkEmailJobId;
     }
 
     public Guid TeamId { get; private set; }
@@ -53,6 +55,13 @@ public class EmailLog : Entity<EmailLogId>
     public DateTimeOffset StatusUpdatedAt { get; private set; }
     public string? LastError { get; private set; }
 
+    /// <summary>
+    /// When this log row was produced by a bulk-email fan-out, links back to
+    /// the originating <see cref="BulkEmailJob"/>. <c>null</c> for single-send
+    /// emails.
+    /// </summary>
+    public BulkEmailJobId? BulkEmailJobId { get; private set; }
+
     public static EmailLog Create(
         Guid teamId,
         Guid ticketedEventId,
@@ -65,7 +74,8 @@ public class EmailLog : Entity<EmailLogId>
         EmailLogStatus status,
         DateTimeOffset? sentAt,
         DateTimeOffset statusUpdatedAt,
-        string? lastError = null)
+        string? lastError = null,
+        BulkEmailJobId? bulkEmailJobId = null)
     {
         return new EmailLog(
             EmailLogId.New(),
@@ -80,6 +90,7 @@ public class EmailLog : Entity<EmailLogId>
             status,
             sentAt,
             statusUpdatedAt,
-            lastError);
+            lastError,
+            bulkEmailJobId);
     }
 }

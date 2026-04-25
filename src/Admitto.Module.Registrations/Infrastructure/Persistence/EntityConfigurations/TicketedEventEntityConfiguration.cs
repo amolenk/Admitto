@@ -53,6 +53,13 @@ public class TicketedEventEntityConfiguration : IEntityTypeConfiguration<Tickete
             .HasColumnName("ends_at")
             .IsRequired();
 
+        builder.Property(e => e.TimeZone)
+            .HasColumnName("time_zone")
+            .HasConversion(v => v.Value, v => TimeZoneId.From(v))
+            .HasMaxLength(TimeZoneId.MaxLength)
+            .HasDefaultValue(TimeZoneId.From("UTC"))
+            .IsRequired();
+
         builder.Property(e => e.Status)
             .HasColumnName("status")
             .HasConversion<int>()

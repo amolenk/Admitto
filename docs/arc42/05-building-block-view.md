@@ -112,7 +112,9 @@ Manages teams, team membership and roles, and acts as the **gatekeeper** for tic
 
 ### Registrations module
 
-Owns the authoritative `TicketedEvent` aggregate (slug, name, dates, lifecycle status, and consolidated policy value objects) as well as attendee registration flows (both admin-initiated and public self-service) and ticket type configuration (the `TicketCatalog` aggregate).
+Owns the authoritative `TicketedEvent` aggregate (slug, name, dates, IANA `TimeZone`, lifecycle status, and consolidated policy value objects) as well as attendee registration flows (both admin-initiated and public self-service) and ticket type configuration (the `TicketCatalog` aggregate). The `Registration` aggregate carries `FirstName`/`LastName`, a lifecycle `Status` (`Registered`/`Cancelled`), and a `HasReconfirmed`/`ReconfirmedAt?` pair — exposed to other modules via `IRegistrationsFacade.QueryRegistrationsAsync`.
+
+Publishes the `TicketedEventCreated` / `TicketedEventCancelled` / `TicketedEventArchived` lifecycle integration events plus `TicketedEventReconfirmPolicyChanged` and `TicketedEventTimeZoneChanged`, both consumed by the Email module to drive the per-event reconfirm Quartz trigger.
 
 `TicketedEvent` consolidates three policy value objects:
 
@@ -134,6 +136,8 @@ Owns all email concerns: server settings, customisable templates, outgoing-email
 - **Templates** — an `EmailTemplate` aggregate also keyed by `(Scope, ScopeId, Type)`. Template lookup follows the same precedence: event-scoped → team-scoped → built-in default (embedded resource). Rendering uses the Scriban engine.
 - **Email log** — each send attempt is recorded as an `EmailLog` row for idempotency (redelivered integration events do not produce duplicate sends) and observability.
 - **Sending** — the Worker host handles `AttendeeRegistered` integration events by resolving effective settings and templates, rendering the email, and dispatching it via SMTP. This path requires `HostCapability.Email` (see capability gating, §5.4).
+- **Bulk email** — the `BulkEmailJob` aggregate (in the `email` schema) tracks lifecycle, totals, and a frozen recipient snapshot for either an attendee source (resolved against Registrations via `IRegistrationsFacade.QueryRegistrationsAsync`) or an external list. A Quartz fan-out job (`BulkEmailFanOutJob`, gated on `HostCapability.Jobs | HostCapability.Email`) opens a single SMTP connection per pickup and streams all messages, writing one `EmailLog` row per recipient with key `bulk:{jobId}:{email}`. Per-recipient state on the snapshot drives resume-after-crash; cooperative cancellation is observed between recipients. See [ADR-009](../adrs/adr-009-bulk-email-design.md).
+- **Reconfirm sending** — `EvaluateReconfirmJob` is a per-event Quartz trigger derived from `TicketedEventReconfirmPolicy`; each tick creates a `BulkEmailJob` (`email_type='reconfirm'`) filtered to `Status=Registered AND HasReconfirmed=false`, evaluated in the event's IANA `TimeZone`. Triggers are (re)scheduled in response to `TicketedEventCreated`, `TicketedEventReconfirmPolicyChanged`, `TicketedEventTimeZoneChanged`, `TicketedEventCancelled`, and `TicketedEventArchived` integration events from Registrations.
 
 Exposes `IEventEmailFacade` via `Admitto.Module.Email.Contracts` so the Registrations module can check whether email is configured before allowing registration to open. SMTP passwords are protected at rest via ASP.NET Data Protection (see [§8.7.x Secret protection](08-crosscutting-concepts.md#secret-protection)).
 

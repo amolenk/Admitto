@@ -26,8 +26,8 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : EndToEn
             FirstName = "Alice",
             LastName = "Anderson",
             Email = "alice@example.com",
-            TicketTypes = new[] { new { Slug = SelfRegisterAttendeeFixture.TicketTypeSlug, Quantity = 1 } },
-            AdditionalDetails = Array.Empty<object>()
+            TicketTypeSlugs = new[] { SelfRegisterAttendeeFixture.TicketTypeSlug },
+            AdditionalDetails = new Dictionary<string, string>()
         };
 
         // No auth headers required for the public self-service endpoint, but the test HttpClient

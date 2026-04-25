@@ -6,7 +6,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { DateTimePicker } from "@/components/ui/date-time-picker";
+import { ZonedDateTimePicker } from "@/components/ui/zoned-date-time-picker";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card } from "@/components/ui/card";
@@ -54,13 +54,6 @@ const policySchema = z
 
 type PolicyValues = z.infer<typeof policySchema>;
 
-function toLocalInput(iso: string | undefined): string {
-    if (!iso) return "";
-    const d = new Date(iso);
-    const pad = (n: number) => String(n).padStart(2, "0");
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
 export function RegistrationPolicyForm({
     event,
     teamSlug,
@@ -76,8 +69,8 @@ export function RegistrationPolicyForm({
     const policy = event.registrationPolicy;
 
     const form = useCustomForm<PolicyValues>(policySchema, {
-        registrationWindowOpensAt: toLocalInput(policy?.opensAt),
-        registrationWindowClosesAt: toLocalInput(policy?.closesAt),
+        registrationWindowOpensAt: policy?.opensAt ?? "",
+        registrationWindowClosesAt: policy?.closesAt ?? "",
         restrictEmailDomain: !!policy?.allowedEmailDomain,
         allowedEmailDomain: policy?.allowedEmailDomain ?? "",
     });
@@ -86,8 +79,8 @@ export function RegistrationPolicyForm({
 
     async function onSubmit(values: PolicyValues) {
         const body = {
-            opensAt: new Date(values.registrationWindowOpensAt).toISOString(),
-            closesAt: new Date(values.registrationWindowClosesAt).toISOString(),
+            opensAt: values.registrationWindowOpensAt,
+            closesAt: values.registrationWindowClosesAt,
             allowedEmailDomain:
                 values.restrictEmailDomain && values.allowedEmailDomain
                     ? values.allowedEmailDomain
@@ -142,7 +135,12 @@ export function RegistrationPolicyForm({
                                         <Field label="Window opens" hint="When attendees can start registering.">
                                             <FormItem className="space-y-1">
                                                 <FormControl>
-                                                    <DateTimePicker {...field} />
+                                                    <ZonedDateTimePicker
+                                                        value={field.value}
+                                                        onChange={field.onChange}
+                                                        onBlur={field.onBlur}
+                                                        timeZone={event.timeZone}
+                                                    />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>
@@ -157,7 +155,12 @@ export function RegistrationPolicyForm({
                                         <Field label="Window closes" hint="When registration stops accepting entries.">
                                             <FormItem className="space-y-1">
                                                 <FormControl>
-                                                    <DateTimePicker {...field} />
+                                                    <ZonedDateTimePicker
+                                                        value={field.value}
+                                                        onChange={field.onChange}
+                                                        onBlur={field.onBlur}
+                                                        timeZone={event.timeZone}
+                                                    />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>

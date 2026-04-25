@@ -22,6 +22,7 @@ internal sealed class GetTicketedEventsHandler(IRegistrationsWriteStore writeSto
                 e.Name.Value,
                 e.StartsAt,
                 e.EndsAt,
+                e.TimeZone.Value,
                 e.Status))
             .ToListAsync(cancellationToken);
 

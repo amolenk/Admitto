@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/sidebar"
 import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
+import { formatInEventZone } from "@/lib/time-zones";
 
 async function fetchEvents(teamSlug: string): Promise<TicketedEventListItemDto[]> {
     return apiClient.get<TicketedEventListItemDto[]>(`/api/teams/${teamSlug}/events`);
@@ -38,10 +39,11 @@ export function NavEvents({
             <SidebarMenu>
                 {events.map((ticketedEvent) => {
                     const isActive = ticketedEvent.slug === activeEventSlug;
-                    const eventDate = new Date(ticketedEvent.startsAt);
-                    const dateLabel = eventDate
-                        .toLocaleDateString("en-US", { month: "short", day: "numeric" })
-                        .toUpperCase();
+                    const dateLabel = formatInEventZone(
+                        ticketedEvent.startsAt,
+                        ticketedEvent.timeZone,
+                        "MMM d",
+                    ).toUpperCase();
 
                     return (
                         <SidebarMenuItem key={ticketedEvent.slug}>

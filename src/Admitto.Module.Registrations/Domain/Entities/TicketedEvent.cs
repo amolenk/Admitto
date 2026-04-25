@@ -30,7 +30,8 @@ public class TicketedEvent : Aggregate<TicketedEventId>
         AbsoluteUrl websiteUrl,
         AbsoluteUrl baseUrl,
         DateTimeOffset startsAt,
-        DateTimeOffset endsAt)
+        DateTimeOffset endsAt,
+        TimeZoneId timeZone)
         : base(id)
     {
         TeamId = teamId;
@@ -40,6 +41,7 @@ public class TicketedEvent : Aggregate<TicketedEventId>
         BaseUrl = baseUrl;
         StartsAt = startsAt;
         EndsAt = endsAt;
+        TimeZone = timeZone;
         Status = EventLifecycleStatus.Active;
     }
 
@@ -50,6 +52,7 @@ public class TicketedEvent : Aggregate<TicketedEventId>
     public AbsoluteUrl BaseUrl { get; private set; }
     public DateTimeOffset StartsAt { get; private set; }
     public DateTimeOffset EndsAt { get; private set; }
+    public TimeZoneId TimeZone { get; private set; }
     public EventLifecycleStatus Status { get; private set; }
 
     public TicketedEventRegistrationPolicy? RegistrationPolicy { get; private set; }
@@ -67,12 +70,24 @@ public class TicketedEvent : Aggregate<TicketedEventId>
         AbsoluteUrl websiteUrl,
         AbsoluteUrl baseUrl,
         DateTimeOffset startsAt,
-        DateTimeOffset endsAt)
+        DateTimeOffset endsAt,
+        TimeZoneId timeZone)
     {
         if (endsAt < startsAt)
             throw new BusinessRuleViolationException(Errors.EndBeforeStart);
 
-        return new TicketedEvent(id, teamId, slug, name, websiteUrl, baseUrl, startsAt, endsAt);
+        return new TicketedEvent(id, teamId, slug, name, websiteUrl, baseUrl, startsAt, endsAt, timeZone);
+    }
+
+    public void ChangeTimeZone(TimeZoneId timeZone)
+    {
+        EnsureActive();
+
+        if (TimeZone == timeZone)
+            return;
+
+        TimeZone = timeZone;
+        AddDomainEvent(new TicketedEventTimeZoneChangedDomainEvent(TeamId, Id, timeZone));
     }
 
     public void UpdateDetails(
@@ -131,6 +146,7 @@ public class TicketedEvent : Aggregate<TicketedEventId>
     {
         EnsureActive();
         ReconfirmPolicy = policy;
+        AddDomainEvent(new TicketedEventReconfirmPolicyChangedDomainEvent(TeamId, Id, policy));
     }
 
     public void UpdateAdditionalDetailSchema(IReadOnlyList<AdditionalDetailField> fields)

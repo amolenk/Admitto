@@ -265,6 +265,25 @@ app.Configure(config =>
                 });
 
             ticketedEvent.AddBranch(
+                "bulk-email",
+                bulkEmail =>
+                {
+                    bulkEmail.SetDescription("Manage bulk email jobs for the event");
+
+                    bulkEmail.AddCommand<Commands.Events.BulkEmail.StartBulkEmailCommand>("start")
+                        .WithDescription("Start a new bulk-email job (saved template or ad-hoc content)");
+
+                    bulkEmail.AddCommand<Commands.Events.BulkEmail.ListBulkEmailsCommand>("list")
+                        .WithDescription("List bulk-email jobs for the event");
+
+                    bulkEmail.AddCommand<Commands.Events.BulkEmail.ShowBulkEmailCommand>("show")
+                        .WithDescription("Show audit detail for one bulk-email job");
+
+                    bulkEmail.AddCommand<Commands.Events.BulkEmail.CancelBulkEmailCommand>("cancel")
+                        .WithDescription("Cancel a pending or in-flight bulk-email job");
+                });
+
+            ticketedEvent.AddBranch(
                 "policy",
                 policy =>
                 {

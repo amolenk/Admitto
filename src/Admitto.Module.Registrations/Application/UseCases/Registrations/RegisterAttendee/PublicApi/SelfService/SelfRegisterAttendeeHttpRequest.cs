@@ -2,6 +2,8 @@ namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.Registration
 
 public sealed record SelfRegisterAttendeeHttpRequest(
     string Email,
+    string FirstName,
+    string LastName,
     string[] TicketTypeSlugs,
     string? EmailVerificationToken = null,
     Dictionary<string, string>? AdditionalDetails = null);

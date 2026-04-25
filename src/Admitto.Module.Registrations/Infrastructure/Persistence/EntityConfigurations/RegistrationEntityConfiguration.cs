@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Module.Registrations.Contracts;
 using Amolenk.Admitto.Module.Registrations.Domain.Entities;
 using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
@@ -34,6 +35,36 @@ public class RegistrationEntityConfiguration : IEntityTypeConfiguration<Registra
             .HasConversion<string>(v => v.Value, v => EmailAddress.From(v))
             .IsRequired()
             .HasMaxLength(EmailAddress.MaxLength);
+
+        builder.Property(e => e.FirstName)
+            .HasColumnName("first_name")
+            .HasConversion<string>(v => v.Value, v => FirstName.From(v))
+            .IsRequired()
+            .HasMaxLength(FirstName.MaxLength);
+
+        builder.Property(e => e.LastName)
+            .HasColumnName("last_name")
+            .HasConversion<string>(v => v.Value, v => LastName.From(v))
+            .IsRequired()
+            .HasMaxLength(LastName.MaxLength);
+
+        builder.Property(e => e.Status)
+            .HasColumnName("status")
+            .HasConversion<string>()
+            .IsRequired()
+            .HasMaxLength(16);
+
+        builder.Property(e => e.HasReconfirmed)
+            .HasColumnName("has_reconfirmed")
+            .IsRequired();
+
+        builder.Property(e => e.ReconfirmedAt)
+            .HasColumnName("reconfirmed_at");
+
+        builder.Property(e => e.CancellationReason)
+            .HasColumnName("cancellation_reason")
+            .HasConversion<string>()
+            .HasMaxLength(32);
 
         builder.HasIndex(e => new { e.EventId, e.Email })
             .HasDatabaseName("IX_registrations_event_id_email")

@@ -20,7 +20,9 @@ public sealed class RegistrationsMessagePolicyTests
         var eventId = TicketedEventId.New();
         var registrationId = RegistrationId.New();
         var email = EmailAddress.From("test@example.com");
-        var domainEvent = new AttendeeRegisteredDomainEvent(teamId, eventId, registrationId, email, "Attendee");
+        var firstName = FirstName.From("Test");
+        var lastName = LastName.From("Attendee");
+        var domainEvent = new AttendeeRegisteredDomainEvent(teamId, eventId, registrationId, email, firstName, lastName);
 
         // Act
         var shouldPublish = _sut.ShouldPublishIntegrationEvent(domainEvent);
@@ -32,6 +34,7 @@ public sealed class RegistrationsMessagePolicyTests
         integrationEvent.TicketedEventId.ShouldBe(eventId.Value);
         integrationEvent.RegistrationId.ShouldBe(registrationId.Value);
         integrationEvent.RecipientEmail.ShouldBe(email.Value);
-        integrationEvent.RecipientName.ShouldBe("Attendee");
+        integrationEvent.FirstName.ShouldBe("Test");
+        integrationEvent.LastName.ShouldBe("Attendee");
     }
 }

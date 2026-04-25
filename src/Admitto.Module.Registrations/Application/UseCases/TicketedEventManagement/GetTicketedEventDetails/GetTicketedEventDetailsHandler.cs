@@ -30,6 +30,7 @@ internal sealed class GetTicketedEventDetailsHandler(
             ticketedEvent.BaseUrl.Value.ToString(),
             ticketedEvent.StartsAt,
             ticketedEvent.EndsAt,
+            ticketedEvent.TimeZone.Value,
             ticketedEvent.Status,
             ticketedEvent.Version,
             ticketedEvent.IsRegistrationOpen(now),

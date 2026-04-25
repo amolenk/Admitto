@@ -85,7 +85,8 @@ internal sealed class AdminEmailSettingsFixture
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),
             DateTimeOffset.UtcNow.AddDays(60),
-            DateTimeOffset.UtcNow.AddDays(61));
+            DateTimeOffset.UtcNow.AddDays(61),
+                TimeZoneId.From("UTC"));
 
         var catalog = TicketCatalog.Create(eventId);
         catalog.AddTicketType(Slug.From("general"), DisplayName.From("General"), [], 100);

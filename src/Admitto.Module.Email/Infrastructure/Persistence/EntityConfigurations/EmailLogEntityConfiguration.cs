@@ -73,6 +73,17 @@ internal sealed class EmailLogEntityConfiguration : IEntityTypeConfiguration<Ema
             .HasColumnName("last_error")
             .HasColumnType("text");
 
+        builder.Property(e => e.BulkEmailJobId)
+            .HasColumnName("bulk_email_job_id")
+            .HasConversion(
+                v => v == null ? (Guid?)null : v.Value.Value,
+                v => v == null ? (Domain.ValueObjects.BulkEmailJobId?)null : Domain.ValueObjects.BulkEmailJobId.From(v.Value));
+
+        builder.HasOne<BulkEmailJob>()
+            .WithMany()
+            .HasForeignKey(e => e.BulkEmailJobId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         builder.HasIndex(e => new { e.TicketedEventId, e.Recipient, e.IdempotencyKey })
             .HasDatabaseName("IX_email_log_event_recipient_idempotency")
             .IsUnique();

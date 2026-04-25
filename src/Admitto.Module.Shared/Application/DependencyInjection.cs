@@ -56,13 +56,7 @@ public static class DependencyInjection
                 .AddClasses(
                     classes => classes
                         .AssignableTo<ICommandHandler>()
-                        .Where(c =>
-                        {
-                            var requiresCapabilityAttribute = c.GetCustomAttribute<RequiresCapabilityAttribute>();
-                            return requiresCapabilityAttribute is null
-                                   || (requiresCapabilityAttribute.Capability & capabilities) ==
-                                   requiresCapabilityAttribute.Capability;
-                        }),
+                        .Where(c => MatchesCapabilities(c, capabilities)),
                     publicOnly: false)
                 .As(t => t.GetInterfaces()
                     .Where(i => i.IsGenericType &&
@@ -88,12 +82,16 @@ public static class DependencyInjection
             return services;
         }
 
-        public IServiceCollection AddModuleEventHandlersFromAssembly(Assembly assembly)
+        public IServiceCollection AddModuleEventHandlersFromAssembly(
+            Assembly assembly,
+            HostCapability capabilities = HostCapability.None)
         {
             services.Scan(scan => scan
                 .FromAssemblies(assembly)
                 .AddClasses(
-                    classes => classes.AssignableTo(typeof(IModuleEventHandler<>)),
+                    classes => classes
+                        .AssignableTo(typeof(IModuleEventHandler<>))
+                        .Where(c => MatchesCapabilities(c, capabilities)),
                     publicOnly: false)
                 .As(t => t.GetInterfaces()
                     .Where(i => i.IsGenericType &&
@@ -103,12 +101,17 @@ public static class DependencyInjection
             return services;
         }
 
-        public IServiceCollection AddIntegrationEventHandlersFromAssembly(Assembly assembly, string moduleKey)
+        public IServiceCollection AddIntegrationEventHandlersFromAssembly(
+            Assembly assembly,
+            string moduleKey,
+            HostCapability capabilities = HostCapability.None)
         {
             services.Scan(scan => scan
                 .FromAssemblies(assembly)
                 .AddClasses(
-                    classes => classes.AssignableTo(typeof(IIntegrationEventHandler<>)),
+                    classes => classes
+                        .AssignableTo(typeof(IIntegrationEventHandler<>))
+                        .Where(c => MatchesCapabilities(c, capabilities)),
                     publicOnly: false)
                 .As(t => t.GetInterfaces()
                     .Where(i => i.IsGenericType &&
@@ -122,12 +125,16 @@ public static class DependencyInjection
             return services;
         }
 
-        public IServiceCollection AddQueryHandlersFromAssembly(Assembly assembly)
+        public IServiceCollection AddQueryHandlersFromAssembly(
+            Assembly assembly,
+            HostCapability capabilities = HostCapability.None)
         {
             services.Scan(scan => scan
                 .FromAssemblies(assembly)
                 .AddClasses(
-                    classes => classes.AssignableTo<IQueryHandler>(),
+                    classes => classes
+                        .AssignableTo<IQueryHandler>()
+                        .Where(c => MatchesCapabilities(c, capabilities)),
                     publicOnly: false)
                 .As(t => t.GetInterfaces()
                     .Where(i => i.IsGenericType &&
@@ -135,6 +142,14 @@ public static class DependencyInjection
                 .WithScopedLifetime());
 
             return services;
+        }
+
+        private static bool MatchesCapabilities(Type handlerType, HostCapability capabilities)
+        {
+            var requiresCapabilityAttribute = handlerType.GetCustomAttribute<RequiresCapabilityAttribute>();
+            return requiresCapabilityAttribute is null
+                   || (requiresCapabilityAttribute.Capability & capabilities) ==
+                   requiresCapabilityAttribute.Capability;
         }
     }
 }

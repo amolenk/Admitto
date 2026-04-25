@@ -11,6 +11,7 @@ public sealed record TicketedEventDetailsDto(
     string BaseUrl,
     DateTimeOffset StartsAt,
     DateTimeOffset EndsAt,
+    string TimeZone,
     EventLifecycleStatus Status,
     uint Version,
     bool IsRegistrationOpen,

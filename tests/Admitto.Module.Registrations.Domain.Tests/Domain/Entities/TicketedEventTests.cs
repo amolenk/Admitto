@@ -50,7 +50,8 @@ public sealed class TicketedEventTests
             DefaultWebsite,
             DefaultBaseUrl,
             DefaultEnd,
-            DefaultStart);
+            DefaultStart,
+                TimeZoneId.From("UTC"));
 
         var ex = Should.Throw<BusinessRuleViolationException>(act);
         ex.Error.Code.ShouldBe("ticketed_event.end_before_start");
@@ -556,7 +557,8 @@ public sealed class TicketedEventTests
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     private static TicketedEvent NewEvent() => TicketedEvent.Create(
-        DefaultEventId, DefaultTeamId, DefaultSlug, DefaultName, DefaultWebsite, DefaultBaseUrl, DefaultStart, DefaultEnd);
+        DefaultEventId, DefaultTeamId, DefaultSlug, DefaultName, DefaultWebsite, DefaultBaseUrl, DefaultStart, DefaultEnd,
+                TimeZoneId.From("UTC"));
 
     private static TicketedEventRegistrationPolicy NewRegistrationPolicy()
     {

@@ -19,9 +19,9 @@ public static class DependencyInjection
 
         services.AddCommandHandlersFromAssembly(executingAssembly, capabilities);
         services.AddDomainEventHandlersFromAssembly(executingAssembly);
-        services.AddModuleEventHandlersFromAssembly(executingAssembly);
-        services.AddIntegrationEventHandlersFromAssembly(executingAssembly, RegistrationsModule.Key);
-        services.AddQueryHandlersFromAssembly(executingAssembly);
+        services.AddModuleEventHandlersFromAssembly(executingAssembly, capabilities);
+        services.AddIntegrationEventHandlersFromAssembly(executingAssembly, RegistrationsModule.Key, capabilities);
+        services.AddQueryHandlersFromAssembly(executingAssembly, capabilities);
         services.AddValidatorsFromAssembly(executingAssembly);
 
         services.AddKeyedSingleton<IMessagePolicy>(RegistrationsModule.Key, new RegistrationsMessagePolicy());

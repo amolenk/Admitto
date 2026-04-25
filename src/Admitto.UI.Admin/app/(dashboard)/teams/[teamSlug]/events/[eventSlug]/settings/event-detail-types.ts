@@ -29,6 +29,7 @@ export interface TicketedEventDetails {
     name: string;
     startsAt: string;
     endsAt: string;
+    timeZone: string;
     status: EventLifecycleStatus | string;
     version: number | string;
     isRegistrationOpen: boolean;

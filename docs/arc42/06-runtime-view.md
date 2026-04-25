@@ -220,6 +220,82 @@ sequenceDiagram
 
 **Degraded mode**: if no effective email settings exist for the event, a `Failed` log row is written with reason "email not configured" and the integration event is still acked — registration itself is unaffected.
 
+## 6.9 Bulk-email fan-out (single SMTP connection)
+
+When an admin starts a bulk send (or the reconfirm scheduler ticks), a `BulkEmailJob` is created in `Pending` state and a Quartz trigger queues `BulkEmailFanOutJob`. The fan-out job opens **one** SMTP connection per pickup and streams every recipient through it; the single-send pipeline is bypassed deliberately to avoid one TLS handshake per recipient.
+
+```mermaid
+sequenceDiagram
+    participant Admin as Admin / Reconfirm tick
+    participant Endpoint as Admin endpoint / Reconfirm job
+    participant Job as BulkEmailJob
+    participant FanOut as BulkEmailFanOutJob (Worker)
+    participant Resolver as Recipient resolver
+    participant Facade as IRegistrationsFacade
+    participant SMTP as SMTP server
+    participant EmailLog as email.email_log
+
+    Admin->>Endpoint: start bulk send
+    Endpoint->>Job: create (Pending) with Source
+    Endpoint-->>Admin: 202 Accepted (jobId)
+    FanOut->>Job: pick up (DisallowConcurrentExecution per jobId)
+    Job->>Job: transition Pending → Resolving
+    alt AttendeeSource
+      Resolver->>Facade: QueryRegistrationsAsync(eventId, filters)
+      Facade-->>Resolver: projection rows
+    else ExternalListSource
+      Resolver->>Job: read embedded list
+    end
+    Resolver->>Job: persist frozen Recipients snapshot
+    Job->>Job: transition Resolving → Sending
+    FanOut->>SMTP: connect (single connection)
+    loop for each Pending recipient
+      FanOut->>FanOut: check CancellationRequestedAt
+      FanOut->>SMTP: MAIL FROM / RCPT TO / DATA
+      FanOut->>EmailLog: insert key=bulk:{jobId}:{email} (Sent or Failed)
+      FanOut->>Job: update per-recipient status + counters
+      FanOut->>FanOut: Task.Delay(PerMessageDelay, ct)
+    end
+    FanOut->>SMTP: QUIT
+    Job->>Job: finalise → Completed / PartiallyFailed / Cancelled / Failed
+```
+
+**Resume-after-crash**: only `Pending` rows on the snapshot are picked up on the next run; per-recipient `EmailLog` uniqueness on `(ticketed_event_id, recipient, idempotency_key)` is the second line of defence.
+
+**Cancellation**: `POST /admin/.../bulk-emails/{id}/cancel` sets `CancellationRequestedAt` on the aggregate; the worker observes it between recipients and during the per-message delay, transitions remaining `Pending` rows to `Cancelled`, and closes the SMTP session cleanly.
+
+## 6.10 Reconfirm scheduling (per-event Quartz trigger)
+
+The Email module owns one static Quartz job (`EvaluateReconfirmJob`) and registers a per-event trigger whose cron is derived from `TicketedEventReconfirmPolicy` and evaluated in `TicketedEvent.TimeZone`. Triggers are kept in sync with Registrations through integration events.
+
+```mermaid
+sequenceDiagram
+    participant RegOutbox as Reg outbox
+    participant ReconfirmHandlers as Reconfirm scheduler handlers
+    participant Quartz as Quartz scheduler
+    participant Eval as EvaluateReconfirmJob (per-event trigger)
+    participant Facade as IRegistrationsFacade
+    participant Job as BulkEmailJob (reconfirm)
+    participant FanOut as BulkEmailFanOutJob
+
+    RegOutbox->>ReconfirmHandlers: TicketedEventCreated / ReconfirmPolicyChanged / TimeZoneChanged / Cancelled / Archived
+    ReconfirmHandlers->>Quartz: upsert / remove per-event trigger (cron in event TZ)
+    Note over Quartz: fires per cadence inside reconfirm window
+    Quartz->>Eval: trigger fires (eventId)
+    Eval->>Facade: QueryRegistrationsAsync(Status=Registered, HasReconfirmed=false)
+    Facade-->>Eval: candidate projection
+    alt no candidates
+      Eval-->>Quartz: ack (no-op)
+    else candidates present
+      Eval->>Job: create BulkEmailJob (email_type=reconfirm, attendee snapshot)
+      Job->>FanOut: queued (see §6.9)
+    end
+```
+
+**Eligibility**: live `HasReconfirmed=false` is the only gate — no extra `email_log` cadence filter. The cron *is* the cadence; tightening the policy (e.g. 7d → 3d) immediately changes prompt frequency.
+
+**Lifecycle cleanup**: `TicketedEventCancelled` and `TicketedEventArchived` integration events remove the trigger so cancelled or archived events stop receiving reconfirm prompts.
+
 ## Done-when
 
 - [x] The most important end-to-end flow is documented.

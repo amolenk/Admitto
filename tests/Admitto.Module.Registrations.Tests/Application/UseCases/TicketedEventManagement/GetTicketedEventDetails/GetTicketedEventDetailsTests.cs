@@ -30,7 +30,8 @@ public sealed class GetTicketedEventDetailsTests(TestContext testContext) : Aspi
                 AbsoluteUrl.From("https://example.com"),
                 AbsoluteUrl.From("https://tickets.example.com"),
                 DateTimeOffset.UtcNow.AddDays(30),
-                DateTimeOffset.UtcNow.AddDays(31));
+                DateTimeOffset.UtcNow.AddDays(31),
+                TimeZoneId.From("UTC"));
 
             te.ConfigureRegistrationPolicy(
                 TicketedEventRegistrationPolicy.Create(opensAt, closesAt, "@example.com"));
@@ -83,7 +84,8 @@ public sealed class GetTicketedEventDetailsTests(TestContext testContext) : Aspi
                 AbsoluteUrl.From("https://example.com"),
                 AbsoluteUrl.From("https://tickets.example.com"),
                 DateTimeOffset.UtcNow.AddDays(30),
-                DateTimeOffset.UtcNow.AddDays(31));
+                DateTimeOffset.UtcNow.AddDays(31),
+                TimeZoneId.From("UTC"));
             ctx.TicketedEvents.Add(te);
         });
 

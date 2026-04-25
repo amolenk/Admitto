@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Clock, QrCode, Copy } from "lucide-react";
+import { formatInEventZone } from "@/lib/time-zones";
 
 function daysUntil(iso: string): number {
     const now = new Date();
@@ -12,8 +13,8 @@ function daysUntil(iso: string): number {
     return Math.max(0, Math.ceil((event.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
 }
 
-function formatTime(iso: string): string {
-    return new Date(iso).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit", hour12: false });
+function formatTime(iso: string, zone: string): string {
+    return formatInEventZone(iso, zone, "HH:mm");
 }
 
 interface CheckInCardProps {
@@ -47,7 +48,7 @@ export function CheckInCard({ event, ticketTypes }: CheckInCardProps) {
                     <div className="min-w-0 flex-1">
                         <p className="text-[13.5px] leading-relaxed">
                             Check-in opens automatically at{" "}
-                            <span className="font-mono font-medium">{formatTime(event.startsAt)}</span>{" "}
+                            <span className="font-mono font-medium">{formatTime(event.startsAt, event.timeZone)}</span>{" "}
                             on event day. Share the QR scanner link with your door team.
                         </p>
                         <div className="flex gap-2 mt-3">

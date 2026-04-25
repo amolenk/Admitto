@@ -35,6 +35,8 @@ public static class AdminRegisterAttendeeHttpEndpoint
         var command = new RegisterAttendeeCommand(
             TicketedEventId.From(scope.EventId!.Value),
             EmailAddress.From(request.Email),
+            FirstName.From(request.FirstName),
+            LastName.From(request.LastName),
             request.TicketTypeSlugs,
             RegistrationMode.AdminAdd,
             CouponCode: null,

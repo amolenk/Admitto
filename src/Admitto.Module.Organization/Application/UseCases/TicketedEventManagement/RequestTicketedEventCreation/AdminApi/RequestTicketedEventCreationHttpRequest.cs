@@ -9,8 +9,9 @@ public sealed record RequestTicketedEventCreationHttpRequest(
     string WebsiteUrl,
     string BaseUrl,
     DateTimeOffset StartsAt,
-    DateTimeOffset EndsAt)
+    DateTimeOffset EndsAt,
+    string TimeZone)
 {
     internal RequestTicketedEventCreationCommand ToCommand(Guid teamId, Guid requesterId) =>
-        new(teamId, requesterId, Slug, Name, WebsiteUrl, BaseUrl, StartsAt, EndsAt);
+        new(teamId, requesterId, Slug, Name, WebsiteUrl, BaseUrl, StartsAt, EndsAt, TimeZone);
 }

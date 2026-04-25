@@ -5,7 +5,19 @@ using Amolenk.Admitto.Module.Email.Infrastructure.Security;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 
-namespace Amolenk.Admitto.Module.Email.Application.Settings;
+namespace Amolenk.Admitto.Module.Email.Application.Sending.Settings;
+
+/// <summary>
+/// Email-module-internal contract for resolving effective SMTP settings for a given event,
+/// falling back to team-scoped settings when no event-scoped settings exist.
+/// </summary>
+internal interface IEffectiveEmailSettingsResolver
+{
+    ValueTask<EffectiveEmailSettings?> ResolveAsync(
+        TeamId teamId,
+        TicketedEventId eventId,
+        CancellationToken cancellationToken = default);
+}
 
 internal sealed class EffectiveEmailSettingsResolver(
     IEmailWriteStore writeStore,

@@ -153,6 +153,8 @@ internal sealed class RegisterAttendeeHandler(
             ticketedEvent.TeamId,
             command.EventId,
             command.Email,
+            command.FirstName,
+            command.LastName,
             tickets,
             additionalDetails);
         await writeStore.Registrations.AddAsync(registration, cancellationToken);

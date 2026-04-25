@@ -47,6 +47,8 @@ internal sealed class MaterializeTicketedEventIntegrationEventHandler(
 
         var ticketedEventId = TicketedEventId.New();
 
+        var timeZone = TimeZoneId.From(integrationEvent.TimeZone);
+
         var ticketedEvent = TicketedEvent.Create(
             ticketedEventId,
             teamId,
@@ -55,7 +57,8 @@ internal sealed class MaterializeTicketedEventIntegrationEventHandler(
             AbsoluteUrl.From(integrationEvent.WebsiteUrl),
             AbsoluteUrl.From(integrationEvent.BaseUrl),
             integrationEvent.StartsAt,
-            integrationEvent.EndsAt);
+            integrationEvent.EndsAt,
+            timeZone);
 
         var catalog = TicketCatalog.Create(ticketedEventId);
 
@@ -66,6 +69,7 @@ internal sealed class MaterializeTicketedEventIntegrationEventHandler(
             integrationEvent.CreationRequestId,
             integrationEvent.TeamId,
             ticketedEventId.Value,
-            integrationEvent.Slug));
+            integrationEvent.Slug,
+            timeZone.Value));
     }
 }

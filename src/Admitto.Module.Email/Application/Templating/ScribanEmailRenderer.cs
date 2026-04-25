@@ -7,10 +7,18 @@ namespace Amolenk.Admitto.Module.Email.Application.Templating;
 internal sealed class ScribanEmailRenderer : IEmailRenderer
 {
     public RenderedEmail Render(EmailTemplate template, object parameters)
+        => Render(template, parameters, null, null, null);
+
+    public RenderedEmail Render(
+        EmailTemplate template,
+        object parameters,
+        string? subjectOverride,
+        string? textBodyOverride,
+        string? htmlBodyOverride)
     {
-        var subject  = RenderString(template.Subject,  parameters);
-        var textBody = RenderString(template.TextBody, parameters);
-        var htmlBody = RenderString(template.HtmlBody, parameters);
+        var subject  = RenderString(subjectOverride  ?? template.Subject,  parameters);
+        var textBody = RenderString(textBodyOverride ?? template.TextBody, parameters);
+        var htmlBody = RenderString(htmlBodyOverride ?? template.HtmlBody, parameters);
         return new RenderedEmail(subject, textBody, htmlBody);
     }
 

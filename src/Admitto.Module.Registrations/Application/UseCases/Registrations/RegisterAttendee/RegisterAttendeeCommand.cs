@@ -7,6 +7,8 @@ namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.Registration
 internal sealed record RegisterAttendeeCommand(
     TicketedEventId EventId,
     EmailAddress Email,
+    FirstName FirstName,
+    LastName LastName,
     string[] TicketTypeSlugs,
     RegistrationMode Mode,
     string? CouponCode = null,

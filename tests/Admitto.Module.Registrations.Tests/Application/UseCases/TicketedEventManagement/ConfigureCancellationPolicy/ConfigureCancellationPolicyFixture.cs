@@ -34,7 +34,8 @@ internal sealed class ConfigureCancellationPolicyFixture
                 AbsoluteUrl.From("https://example.com"),
                 AbsoluteUrl.From("https://tickets.example.com"),
                 DateTimeOffset.UtcNow.AddDays(30),
-                DateTimeOffset.UtcNow.AddDays(31));
+                DateTimeOffset.UtcNow.AddDays(31),
+                TimeZoneId.From("UTC"));
 
             if (_seedExistingPolicy)
             {

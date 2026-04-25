@@ -3663,8 +3663,12 @@
         "required": [
           "id",
           "email",
+          "firstName",
+          "lastName",
           "tickets",
-          "createdAt"
+          "createdAt",
+          "status",
+          "hasReconfirmed"
         ],
         "type": "object",
         "properties": {
@@ -3675,6 +3679,12 @@
           "email": {
             "type": "string"
           },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
           "tickets": {
             "type": "array",
             "items": {
@@ -3683,6 +3693,17 @@
           },
           "createdAt": {
             "type": "string",
+            "format": "date-time"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["registered", "cancelled"]
+          },
+          "hasReconfirmed": {
+            "type": "boolean"
+          },
+          "reconfirmedAt": {
+            "type": ["null", "string"],
             "format": "date-time"
           }
         }
@@ -3718,7 +3739,8 @@
           "websiteUrl",
           "baseUrl",
           "startsAt",
-          "endsAt"
+          "endsAt",
+          "timeZone"
         ],
         "type": "object",
         "properties": {
@@ -3741,6 +3763,9 @@
           "endsAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "timeZone": {
+            "type": "string"
           }
         }
       },
@@ -3859,6 +3884,7 @@
           "baseUrl",
           "startsAt",
           "endsAt",
+          "timeZone",
           "status",
           "version",
           "isRegistrationOpen",
@@ -3896,6 +3922,9 @@
           "endsAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "timeZone": {
+            "type": "string"
           },
           "status": {
             "$ref": "#/components/schemas/EventLifecycleStatus"
@@ -3955,6 +3984,7 @@
           "name",
           "startsAt",
           "endsAt",
+          "timeZone",
           "status"
         ],
         "type": "object",
@@ -3972,6 +4002,9 @@
           "endsAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "timeZone": {
+            "type": "string"
           },
           "status": {
             "$ref": "#/components/schemas/EventLifecycleStatus"

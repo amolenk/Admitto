@@ -24,7 +24,8 @@ public sealed class MaterializeTicketedEventTests(TestContext testContext) : Asp
             "https://conf.example.com",
             "https://tickets.example.com",
             DateTimeOffset.UtcNow.AddDays(30),
-            DateTimeOffset.UtcNow.AddDays(31));
+            DateTimeOffset.UtcNow.AddDays(31),
+            "UTC");
 
         var sut = new MaterializeTicketedEventIntegrationEventHandler(
             Environment.Database.Context,
@@ -66,7 +67,8 @@ public sealed class MaterializeTicketedEventTests(TestContext testContext) : Asp
             "https://conf.example.com",
             "https://tickets.example.com",
             DateTimeOffset.UtcNow.AddDays(30),
-            DateTimeOffset.UtcNow.AddDays(31));
+            DateTimeOffset.UtcNow.AddDays(31),
+            "UTC");
 
         var sut = new MaterializeTicketedEventIntegrationEventHandler(
             Environment.Database.Context,
@@ -103,7 +105,8 @@ public sealed class MaterializeTicketedEventTests(TestContext testContext) : Asp
             "https://conf.example.com",
             "https://tickets.example.com",
             DateTimeOffset.UtcNow.AddDays(30),
-            DateTimeOffset.UtcNow.AddDays(31));
+            DateTimeOffset.UtcNow.AddDays(31),
+            "UTC");
 
         var sut = new MaterializeTicketedEventIntegrationEventHandler(
             Environment.Database.Context,

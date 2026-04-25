@@ -14,7 +14,7 @@ import {
     FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { DateTimePicker } from "@/components/ui/date-time-picker";
+import { ZonedDateTimePicker } from "@/components/ui/zoned-date-time-picker";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useCustomForm } from "@/hooks/use-custom-form";
 import { apiClient } from "@/lib/api-client";
@@ -40,12 +40,6 @@ const reconfirmSchema = z
 
 type ReconfirmValues = z.infer<typeof reconfirmSchema>;
 
-function toDatetimeLocal(iso: string): string {
-    const d = new Date(iso);
-    const pad = (n: number) => String(n).padStart(2, "0");
-    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
 export function ReconfirmPolicyForm({
     event,
     teamSlug,
@@ -64,15 +58,15 @@ export function ReconfirmPolicyForm({
     const [isRemoving, setIsRemoving] = useState(false);
 
     const form = useCustomForm<ReconfirmValues>(reconfirmSchema, {
-        opensAt: policy ? toDatetimeLocal(policy.opensAt) : "",
-        closesAt: policy ? toDatetimeLocal(policy.closesAt) : "",
+        opensAt: policy?.opensAt ?? "",
+        closesAt: policy?.closesAt ?? "",
         cadenceDays: policy?.cadenceDays ?? 1,
     });
 
     async function onSubmit(values: ReconfirmValues) {
         await apiClient.put(`/api/teams/${teamSlug}/events/${eventSlug}/reconfirm-policy`, {
-            opensAt: new Date(values.opensAt).toISOString(),
-            closesAt: new Date(values.closesAt).toISOString(),
+            opensAt: values.opensAt,
+            closesAt: values.closesAt,
             cadenceDays: values.cadenceDays,
             expectedVersion: Number(event.version),
         });
@@ -130,7 +124,13 @@ export function ReconfirmPolicyForm({
                         <FormItem>
                             <FormLabel>Window opens at</FormLabel>
                             <FormControl>
-                                <DateTimePicker disabled={disabled} {...field} />
+                                <ZonedDateTimePicker
+                                    disabled={disabled}
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    onBlur={field.onBlur}
+                                    timeZone={event.timeZone}
+                                />
                             </FormControl>
                             <FormMessage />
                         </FormItem>
@@ -144,7 +144,13 @@ export function ReconfirmPolicyForm({
                         <FormItem>
                             <FormLabel>Window closes at</FormLabel>
                             <FormControl>
-                                <DateTimePicker disabled={disabled} {...field} />
+                                <ZonedDateTimePicker
+                                    disabled={disabled}
+                                    value={field.value}
+                                    onChange={field.onChange}
+                                    onBlur={field.onBlur}
+                                    timeZone={event.timeZone}
+                                />
                             </FormControl>
                             <FormMessage />
                         </FormItem>

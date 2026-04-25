@@ -1,5 +1,5 @@
 using Amolenk.Admitto.Module.Email.Application.Sending;
-using Amolenk.Admitto.Module.Email.Application.Settings;
+using Amolenk.Admitto.Module.Email.Application.Sending.Settings;
 
 namespace Amolenk.Admitto.Module.Email.Tests.Application.UseCases.SendEmail;
 

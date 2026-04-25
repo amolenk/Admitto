@@ -1,5 +1,5 @@
 using Amolenk.Admitto.Module.Email.Application.Sending;
-using Amolenk.Admitto.Module.Email.Application.Settings;
+using Amolenk.Admitto.Module.Email.Application.Sending.Settings;
 using Amolenk.Admitto.Module.Email.Domain.ValueObjects;
 using MailKit.Net.Smtp;
 using MailKit.Security;

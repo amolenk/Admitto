@@ -97,6 +97,8 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         var command = new RegisterAttendeeCommand(
             fixture.EventId,
             fixture.CouponEmail,
+            FirstName.From("Coupon"),
+            LastName.From("User"),
             ["general-admission"],
             RegistrationMode.Coupon,
             CouponCode: fixture.CouponCodeString);
@@ -246,6 +248,8 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         => new(
             fixture.EventId,
             EmailAddress.From(email),
+            FirstName.From("Test"),
+            LastName.From("User"),
             [fixture.TicketTypeSlug],
             RegistrationMode.Coupon,
             CouponCode: fixture.CouponCodeString);

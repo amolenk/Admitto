@@ -70,6 +70,8 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : EndToE
 
         var request = new
         {
+            FirstName = "Alice",
+            LastName = "Anderson",
             Email = "alice@example.com",
             TicketTypeSlugs = new[] { AdminRegisterAttendeeFixture.TicketTypeSlug }
         };

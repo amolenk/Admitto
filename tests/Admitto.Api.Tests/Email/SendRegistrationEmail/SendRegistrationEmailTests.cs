@@ -26,6 +26,8 @@ public sealed class SendRegistrationEmailTests(TestContext testContext) : EndToE
 
         var request = new
         {
+            FirstName = "Alice",
+            LastName = "Anderson",
             Email = SendRegistrationEmailFixture.RecipientEmail,
             TicketTypeSlugs = new[] { SendRegistrationEmailFixture.TicketTypeSlug }
         };
@@ -63,6 +65,8 @@ public sealed class SendRegistrationEmailTests(TestContext testContext) : EndToE
 
         var request = new
         {
+            FirstName = "Bob",
+            LastName = "Builder",
             Email = "bob@example.com",
             TicketTypeSlugs = new[] { SendRegistrationEmailFixture.TicketTypeSlug }
         };

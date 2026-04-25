@@ -1,3 +1,7 @@
+using Amolenk.Admitto.Module.Email.Application.UseCases.BulkEmails.CancelBulkEmail.AdminApi;
+using Amolenk.Admitto.Module.Email.Application.UseCases.BulkEmails.CreateBulkEmail.AdminApi;
+using Amolenk.Admitto.Module.Email.Application.UseCases.BulkEmails.GetBulkEmail.AdminApi;
+using Amolenk.Admitto.Module.Email.Application.UseCases.BulkEmails.GetBulkEmails.AdminApi;
 using Amolenk.Admitto.Module.Email.Application.UseCases.EmailSettings.DeleteEmailSettings.AdminApi;
 using Amolenk.Admitto.Module.Email.Application.UseCases.EmailSettings.GetEmailSettings.AdminApi;
 using Amolenk.Admitto.Module.Email.Application.UseCases.EmailSettings.UpsertEmailSettings.AdminApi;
@@ -39,6 +43,14 @@ public static class EmailApiEndpoints
             .MapGetEmailTemplate(EmailSettingsScope.Event, s => s.EventId!.Value)
             .MapUpsertEmailTemplate(EmailSettingsScope.Event, s => s.EventId!.Value)
             .MapDeleteEmailTemplate(EmailSettingsScope.Event, s => s.EventId!.Value);
+
+        // Event-scoped bulk emails
+        group
+            .MapGroup("/teams/{teamSlug}/events/{eventSlug}/bulk-emails")
+            .MapCreateBulkEmail()
+            .MapGetBulkEmails()
+            .MapGetBulkEmail()
+            .MapCancelBulkEmail();
 
         return group;
     }

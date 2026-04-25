@@ -58,9 +58,15 @@ async function fetchTicketTypes(teamSlug: string, eventSlug: string) {
     );
 }
 
-function attendeeName(email: string) {
-    const at = email.indexOf("@");
-    return at > 0 ? email.slice(0, at) : email;
+function attendeeFullName(r: RegistrationListItemDto) {
+    const full = [r.firstName, r.lastName].filter(Boolean).join(" ").trim();
+    if (full) return full;
+    const at = r.email.indexOf("@");
+    return at > 0 ? r.email.slice(0, at) : r.email;
+}
+
+function attendeeSortKey(r: RegistrationListItemDto) {
+    return [r.lastName ?? "", r.firstName ?? "", r.email].join(" ").toLowerCase();
 }
 
 export default function RegistrationsPage() {
@@ -87,8 +93,8 @@ export default function RegistrationsPage() {
 
     const [search, setSearch] = useState("");
     const [ticketFilter, setTicketFilter] = useState<string>("all");
-    const [sortKey, setSortKey] = useState<SortKey>("registered");
-    const [sortDir, setSortDir] = useState<SortDir>("desc");
+    const [sortKey, setSortKey] = useState<SortKey>("attendee");
+    const [sortDir, setSortDir] = useState<SortDir>("asc");
     const [page, setPage] = useState(1);
 
     const registrations = registrationsQuery.data ?? [];
@@ -102,7 +108,14 @@ export default function RegistrationsPage() {
     const filtered = useMemo(() => {
         const needle = search.trim().toLowerCase();
         return registrations.filter((r) => {
-            if (needle && !r.email.toLowerCase().includes(needle)) return false;
+            if (needle) {
+                const haystack = [
+                    r.email,
+                    r.firstName ?? "",
+                    r.lastName ?? "",
+                ].join(" ").toLowerCase();
+                if (!haystack.includes(needle)) return false;
+            }
             if (ticketFilter !== "all" && !r.tickets.some((t) => t.slug === ticketFilter)) {
                 return false;
             }
@@ -116,7 +129,7 @@ export default function RegistrationsPage() {
         arr.sort((a, b) => {
             switch (sortKey) {
                 case "attendee":
-                    return a.email.localeCompare(b.email) * dir;
+                    return attendeeSortKey(a).localeCompare(attendeeSortKey(b)) * dir;
                 case "ticket": {
                     const an = a.tickets[0]?.name ?? "";
                     const bn = b.tickets[0]?.name ?? "";
@@ -283,32 +296,49 @@ export default function RegistrationsPage() {
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    pageRows.map((r) => (
-                                        <TableRow key={r.id}>
-                                            <TableCell>
-                                                <div className="font-medium">{attendeeName(r.email)}</div>
-                                                <div className="text-xs text-muted-foreground">{r.email}</div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <div className="flex flex-wrap gap-1">
-                                                    {r.tickets.map((t) => (
-                                                        <Badge key={t.slug} variant="outline">
-                                                            {t.name}
+                                    pageRows.map((r) => {
+                                        const isCancelled = r.status === "cancelled";
+                                        return (
+                                            <TableRow key={r.id}>
+                                                <TableCell>
+                                                    <div className="font-medium">{attendeeFullName(r)}</div>
+                                                    <div className="text-xs text-muted-foreground">{r.email}</div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    <div className="flex flex-wrap gap-1">
+                                                        {r.tickets.map((t) => (
+                                                            <Badge key={t.slug} variant="outline">
+                                                                {t.name}
+                                                            </Badge>
+                                                        ))}
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>
+                                                    {isCancelled ? (
+                                                        <Badge variant="outline" className="text-muted-foreground border-muted-foreground/30 bg-muted">
+                                                            Cancelled
                                                         </Badge>
-                                                    ))}
-                                                </div>
-                                            </TableCell>
-                                            <TableCell>
-                                                <Badge variant="outline" className="text-success border-success/30 bg-success/10">
-                                                    Confirmed
-                                                </Badge>
-                                            </TableCell>
-                                            <TableCell className="text-muted-foreground">—</TableCell>
-                                            <TableCell className="font-mono tabular-nums text-xs">
-                                                {new Date(r.createdAt).toLocaleString(undefined, { hour12: false })}
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
+                                                    ) : (
+                                                        <Badge variant="outline" className="text-success border-success/30 bg-success/10">
+                                                            Registered
+                                                        </Badge>
+                                                    )}
+                                                </TableCell>
+                                                <TableCell className="text-xs">
+                                                    {r.hasReconfirmed && r.reconfirmedAt ? (
+                                                        <span className="font-mono tabular-nums">
+                                                            {new Date(r.reconfirmedAt).toLocaleString(undefined, { hour12: false })}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-muted-foreground">—</span>
+                                                    )}
+                                                </TableCell>
+                                                <TableCell className="font-mono tabular-nums text-xs">
+                                                    {new Date(r.createdAt).toLocaleString(undefined, { hour12: false })}
+                                                </TableCell>
+                                            </TableRow>
+                                        );
+                                    })
                                 )}
                             </TableBody>
                         </Table>

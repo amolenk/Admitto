@@ -336,6 +336,8 @@ internal sealed class RegisterAttendeeFixture
                     TeamId,
                     EventId,
                     EmailAddress.From("alice@example.com"),
+                    FirstName.From("Alice"),
+                    LastName.From("Doe"),
                     [new TicketTypeSnapshot(TicketTypeSlug, [])]);
                 dbContext.Registrations.Add(existing);
             });
@@ -376,7 +378,8 @@ internal sealed class RegisterAttendeeFixture
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),
             DateTimeOffset.UtcNow.AddDays(60),
-            DateTimeOffset.UtcNow.AddDays(61));
+            DateTimeOffset.UtcNow.AddDays(61),
+                TimeZoneId.From("UTC"));
         if (policy is not null)
             ev.ConfigureRegistrationPolicy(policy);
         return ev;

@@ -17,4 +17,5 @@ internal sealed record RequestTicketedEventCreationCommand(
     string WebsiteUrl,
     string BaseUrl,
     DateTimeOffset StartsAt,
-    DateTimeOffset EndsAt) : Command<Guid>;
+    DateTimeOffset EndsAt,
+    string TimeZone) : Command<Guid>;

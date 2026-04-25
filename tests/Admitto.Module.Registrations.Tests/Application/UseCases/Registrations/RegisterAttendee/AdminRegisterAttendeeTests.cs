@@ -382,6 +382,8 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         => new(
             fixture.EventId,
             EmailAddress.From(email),
+            FirstName.From("Test"),
+            LastName.From("User"),
             ticketTypeSlugs,
             RegistrationMode.AdminAdd);
 
@@ -393,6 +395,8 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         => new(
             fixture.EventId,
             EmailAddress.From(email),
+            FirstName.From("Test"),
+            LastName.From("User"),
             ticketTypeSlugs,
             RegistrationMode.AdminAdd,
             CouponCode: null,

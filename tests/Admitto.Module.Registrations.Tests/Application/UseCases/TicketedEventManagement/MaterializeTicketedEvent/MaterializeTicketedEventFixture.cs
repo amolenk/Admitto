@@ -31,7 +31,8 @@ internal sealed class MaterializeTicketedEventFixture
                 AbsoluteUrl.From("https://example.com"),
                 AbsoluteUrl.From("https://tickets.example.com"),
                 DateTimeOffset.UtcNow.AddDays(1),
-                DateTimeOffset.UtcNow.AddDays(2));
+                DateTimeOffset.UtcNow.AddDays(2),
+                TimeZoneId.From("UTC"));
             dbContext.TicketedEvents.Add(existing);
         });
     }

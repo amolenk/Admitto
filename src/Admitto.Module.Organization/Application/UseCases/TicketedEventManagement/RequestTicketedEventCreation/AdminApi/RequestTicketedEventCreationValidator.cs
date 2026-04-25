@@ -13,6 +13,7 @@ public sealed class RequestTicketedEventCreationValidator
         RuleFor(x => x.Name).MustBeParseable(DisplayName.TryFrom);
         RuleFor(x => x.WebsiteUrl).MustBeParseable(AbsoluteUrl.TryFrom);
         RuleFor(x => x.BaseUrl).MustBeParseable(AbsoluteUrl.TryFrom);
+        RuleFor(x => x.TimeZone).MustBeParseable(TimeZoneId.TryFrom);
 
         RuleFor(x => x.EndsAt)
             .GreaterThanOrEqualTo(x => x.StartsAt)

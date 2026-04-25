@@ -21,6 +21,7 @@ namespace Amolenk.Admitto.Module.Organization.Contracts.IntegrationEvents;
 /// <param name="BaseUrl">Base URL used for event links (QR codes, cancellations, etc.).</param>
 /// <param name="StartsAt">Event start (UTC).</param>
 /// <param name="EndsAt">Event end (UTC).</param>
+/// <param name="TimeZone">IANA time-zone id used to render local times for this event (e.g. <c>Europe/Amsterdam</c>).</param>
 public sealed record TicketedEventCreationRequested(
     Guid CreationRequestId,
     Guid TeamId,
@@ -29,4 +30,5 @@ public sealed record TicketedEventCreationRequested(
     string WebsiteUrl,
     string BaseUrl,
     DateTimeOffset StartsAt,
-    DateTimeOffset EndsAt) : IntegrationEvent;
+    DateTimeOffset EndsAt,
+    string TimeZone) : IntegrationEvent;

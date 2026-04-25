@@ -27,7 +27,8 @@ public sealed class RequestTicketedEventCreationTests(TestContext testContext) :
             WebsiteUrl: "https://conf.example.com",
             BaseUrl: "https://tickets.example.com",
             StartsAt: DateTimeOffset.UtcNow.AddDays(7),
-            EndsAt: DateTimeOffset.UtcNow.AddDays(8));
+            EndsAt: DateTimeOffset.UtcNow.AddDays(8),
+            TimeZone: "UTC");
 
         var sut = new RequestTicketedEventCreationHandler(Environment.Database.Context);
 
@@ -68,7 +69,8 @@ public sealed class RequestTicketedEventCreationTests(TestContext testContext) :
             WebsiteUrl: "https://conf.example.com",
             BaseUrl: "https://tickets.example.com",
             StartsAt: DateTimeOffset.UtcNow.AddDays(7),
-            EndsAt: DateTimeOffset.UtcNow.AddDays(8));
+            EndsAt: DateTimeOffset.UtcNow.AddDays(8),
+            TimeZone: "UTC");
 
         var sut = new RequestTicketedEventCreationHandler(Environment.Database.Context);
 

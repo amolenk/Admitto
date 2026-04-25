@@ -18,6 +18,8 @@ import { FormHeading } from "@/components/form-heading";
 
 const formSchema = z.object({
     email: z.string().min(1, "Email is required").email("Enter a valid email"),
+    firstName: z.string().min(1, "First name is required").max(100, "First name must be 100 characters or fewer"),
+    lastName: z.string().min(1, "Last name is required").max(100, "Last name must be 100 characters or fewer"),
     ticketTypeSlugs: z.array(z.string()).min(1, "Select at least one ticket type"),
     additionalDetails: z.record(z.string(), z.string()).optional(),
 });
@@ -90,6 +92,8 @@ function AddRegistrationForm({
 }) {
     const form = useCustomForm<FormValues>(formSchema, {
         email: "",
+        firstName: "",
+        lastName: "",
         ticketTypeSlugs: [],
         additionalDetails: Object.fromEntries(additionalDetailSchema.map((f) => [f.key, ""])),
     });
@@ -104,6 +108,8 @@ function AddRegistrationForm({
 
         await apiClient.post(`/api/teams/${teamSlug}/events/${eventSlug}/registrations`, {
             email: values.email,
+            firstName: values.firstName,
+            lastName: values.lastName,
             ticketTypeSlugs: values.ticketTypeSlugs,
             additionalDetails,
         });
@@ -128,6 +134,32 @@ function AddRegistrationForm({
                 </FormItem>
 
                 <FormHeading text="Attendee" />
+                <FormField
+                    control={form.control}
+                    name="firstName"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>First name</FormLabel>
+                            <FormControl>
+                                <Input placeholder="Ada" maxLength={100} {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <FormField
+                    control={form.control}
+                    name="lastName"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Last name</FormLabel>
+                            <FormControl>
+                                <Input placeholder="Lovelace" maxLength={100} {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
                 <FormField
                     control={form.control}
                     name="email"

@@ -109,6 +109,11 @@ namespace Amolenk.Admitto.Module.Registrations.Infrastructure.Persistence.Migrat
                         .HasColumnName("additional_details")
                         .HasDefaultValueSql("'{}'::jsonb");
 
+                    b.Property<string>("CancellationReason")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("cancellation_reason");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -123,6 +128,16 @@ namespace Amolenk.Admitto.Module.Registrations.Infrastructure.Persistence.Migrat
                         .HasColumnType("uuid")
                         .HasColumnName("event_id");
 
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("first_name");
+
+                    b.Property<bool>("HasReconfirmed")
+                        .HasColumnType("boolean")
+                        .HasColumnName("has_reconfirmed");
+
                     b.Property<DateTimeOffset>("LastChangedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("last_changed_at");
@@ -132,6 +147,22 @@ namespace Amolenk.Admitto.Module.Registrations.Infrastructure.Persistence.Migrat
                         .HasMaxLength(320)
                         .HasColumnType("character varying(320)")
                         .HasColumnName("last_changed_by");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("last_name");
+
+                    b.Property<DateTimeOffset?>("ReconfirmedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("reconfirmed_at");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("status");
 
                     b.Property<Guid>("TeamId")
                         .HasColumnType("uuid")
@@ -249,6 +280,14 @@ namespace Amolenk.Admitto.Module.Registrations.Infrastructure.Persistence.Migrat
                     b.Property<Guid>("TeamId")
                         .HasColumnType("uuid")
                         .HasColumnName("team_id");
+
+                    b.Property<string>("TimeZone")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasDefaultValue("UTC")
+                        .HasColumnName("time_zone");
 
                     b.Property<uint>("Version")
                         .IsConcurrencyToken()

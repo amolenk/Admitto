@@ -31,12 +31,17 @@ internal sealed class GetRegistrationsHandler(IRegistrationsWriteStore writeStor
             .Select(r => new RegistrationListItemDto(
                 r.Id.Value,
                 r.Email.Value,
+                r.FirstName.Value,
+                r.LastName.Value,
                 r.Tickets
                     .Select(t => new TicketSummaryDto(
                         t.Slug,
                         nameBySlug.TryGetValue(t.Slug, out var name) ? name : t.Slug))
                     .ToList(),
-                r.CreatedAt))
+                r.CreatedAt,
+                r.Status,
+                r.HasReconfirmed,
+                r.ReconfirmedAt))
             .ToList();
     }
 }

@@ -42,16 +42,20 @@ internal sealed class AttendeeRegisteredIntegrationEventHandler(
             integrationEvent.TicketedEventId,
             cancellationToken);
 
+        var fullName = $"{integrationEvent.FirstName} {integrationEvent.LastName}".Trim();
+
         var command = new SendEmailCommand(
             TeamId: TeamId.From(integrationEvent.TeamId),
             TicketedEventId: TicketedEventId.From(integrationEvent.TicketedEventId),
             RecipientAddress: integrationEvent.RecipientEmail,
-            RecipientName: integrationEvent.RecipientName,
+            RecipientName: fullName,
             EmailType: EmailTemplateType.Ticket,
             IdempotencyKey: idempotencyKey,
             Parameters: new
             {
-                integrationEvent.RecipientName,
+                RecipientName = fullName,
+                integrationEvent.FirstName,
+                integrationEvent.LastName,
                 EventName = eventContext.Name,
                 EventWebsiteUrl = eventContext.WebsiteUrl
             });

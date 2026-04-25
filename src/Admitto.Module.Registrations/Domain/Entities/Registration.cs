@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Module.Registrations.Contracts;
 using Amolenk.Admitto.Module.Registrations.Domain.DomainEvents;
 using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Kernel.Entities;
@@ -17,6 +18,8 @@ public class Registration : Aggregate<RegistrationId>
         TeamId teamId,
         TicketedEventId eventId,
         EmailAddress email,
+        FirstName firstName,
+        LastName lastName,
         IReadOnlyList<TicketTypeSnapshot> tickets,
         AdditionalDetails additionalDetails)
         : base(id)
@@ -24,15 +27,26 @@ public class Registration : Aggregate<RegistrationId>
         TeamId = teamId;
         EventId = eventId;
         Email = email;
+        FirstName = firstName;
+        LastName = lastName;
+        Status = RegistrationStatus.Registered;
+        HasReconfirmed = false;
+        ReconfirmedAt = null;
         _tickets = tickets.ToList();
         AdditionalDetails = additionalDetails;
 
-        AddDomainEvent(new AttendeeRegisteredDomainEvent(teamId, eventId, id, email, "Attendee"));
+        AddDomainEvent(new AttendeeRegisteredDomainEvent(teamId, eventId, id, email, firstName, lastName));
     }
 
     public TeamId TeamId { get; private set; }
     public TicketedEventId EventId { get; private set; }
     public EmailAddress Email { get; private set; }
+    public FirstName FirstName { get; private set; }
+    public LastName LastName { get; private set; }
+    public RegistrationStatus Status { get; private set; }
+    public bool HasReconfirmed { get; private set; }
+    public DateTimeOffset? ReconfirmedAt { get; private set; }
+    public CancellationReason? CancellationReason { get; private set; }
     public IReadOnlyList<TicketTypeSnapshot> Tickets => _tickets.AsReadOnly();
     public AdditionalDetails AdditionalDetails { get; private set; } = AdditionalDetails.Empty;
 
@@ -40,6 +54,8 @@ public class Registration : Aggregate<RegistrationId>
         TeamId teamId,
         TicketedEventId eventId,
         EmailAddress email,
+        FirstName firstName,
+        LastName lastName,
         IReadOnlyList<TicketTypeSnapshot> tickets,
         AdditionalDetails? additionalDetails = null)
     {
@@ -50,8 +66,35 @@ public class Registration : Aggregate<RegistrationId>
             teamId,
             eventId,
             email,
+            firstName,
+            lastName,
             tickets,
             additionalDetails ?? AdditionalDetails.Empty);
+    }
+
+    public void Cancel(CancellationReason reason)
+    {
+        if (Status == RegistrationStatus.Cancelled)
+            throw new BusinessRuleViolationException(Errors.AlreadyCancelled);
+
+        Status = RegistrationStatus.Cancelled;
+        CancellationReason = reason;
+
+        AddDomainEvent(new RegistrationCancelledDomainEvent(TeamId, EventId, Id, Email, reason));
+    }
+
+    public void Reconfirm(DateTimeOffset now)
+    {
+        if (Status == RegistrationStatus.Cancelled)
+            throw new BusinessRuleViolationException(Errors.CannotReconfirmCancelled);
+
+        if (HasReconfirmed)
+            return;
+
+        HasReconfirmed = true;
+        ReconfirmedAt = now;
+
+        AddDomainEvent(new RegistrationReconfirmedDomainEvent(TeamId, EventId, Id, Email, now));
     }
 
     private static void EnsureNoDuplicateSlugs(IReadOnlyList<TicketTypeSnapshot> tickets)
@@ -71,5 +114,15 @@ public class Registration : Aggregate<RegistrationId>
         public static Error DuplicateTicketTypes(string[] slugs) =>
             new("duplicate_ticket_types", "One or more ticket types are duplicates.",
                 Details: new Dictionary<string, object?> { ["slugs"] = slugs });
+
+        public static readonly Error AlreadyCancelled = new(
+            "registration.already_cancelled",
+            "Registration is already cancelled.",
+            Type: ErrorType.Conflict);
+
+        public static readonly Error CannotReconfirmCancelled = new(
+            "registration.cannot_reconfirm_cancelled",
+            "A cancelled registration cannot be reconfirmed.",
+            Type: ErrorType.Conflict);
     }
 }

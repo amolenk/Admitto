@@ -25,6 +25,7 @@ internal sealed class RequestTicketedEventCreationHandler(IOrganizationWriteStor
             AbsoluteUrl.From(command.BaseUrl),
             command.StartsAt,
             command.EndsAt,
+            TimeZoneId.From(command.TimeZone),
             UserId.From(command.RequesterId),
             DateTimeOffset.UtcNow);
 

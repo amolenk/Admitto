@@ -1,4 +1,4 @@
-using Amolenk.Admitto.Module.Email.Application.Settings;
+using Amolenk.Admitto.Module.Email.Application.Sending.Settings;
 using Amolenk.Admitto.Module.Email.Domain.Tests.Builders;
 using Amolenk.Admitto.Module.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Email.Tests.Application.Infrastructure;

@@ -17,6 +17,8 @@
       <PackageReference Include="MailKit" />
       <PackageReference Include="Microsoft.AspNetCore.DataProtection" />
       <PackageReference Include="Microsoft.AspNetCore.DataProtection.EntityFrameworkCore" />
+      <PackageReference Include="Quartz" />
+      <PackageReference Include="Quartz.Extensions.Hosting" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
         <PrivateAssets>all</PrivateAssets>
         <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

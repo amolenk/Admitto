@@ -14,6 +14,12 @@ public sealed class RegisterWithCouponValidator : AbstractValidator<RegisterWith
         RuleFor(x => x.Email)
             .MustBeParseable(EmailAddress.TryFrom);
 
+        RuleFor(x => x.FirstName)
+            .MustBeParseable(FirstName.TryFrom);
+
+        RuleFor(x => x.LastName)
+            .MustBeParseable(LastName.TryFrom);
+
         RuleFor(x => x.TicketTypeSlugs)
             .NotNull()
             .NotEmpty();
