@@ -23,6 +23,8 @@ export type AddTicketTypeHttpResponse = {
 
 export type AdminRegisterAttendeeHttpRequest = {
     email: string;
+    firstName: string;
+    lastName: string;
     ticketTypeSlugs: Array<string>;
     additionalDetails?: null | {
         [key: string]: string;
@@ -40,6 +42,93 @@ export type ArchiveTeamHttpRequest = {
 export type AssignTeamMembershipHttpRequest = {
     email: string;
     role: TeamMembershipRoleDto;
+};
+
+export type AttendeeSourceHttpDto = {
+    ticketTypeSlugs?: null | Array<string>;
+    registrationStatus?: null | RegistrationStatus;
+    hasReconfirmed?: null | boolean;
+    registeredAfter?: null | string;
+    registeredBefore?: null | string;
+    additionalDetailEquals?: null | {
+        [key: string]: string;
+    };
+};
+
+export type BulkEmailJobDetailDto = {
+    id: string;
+    teamId: string;
+    ticketedEventId: string;
+    emailType: string;
+    subject: null | string;
+    textBody: null | string;
+    htmlBody: null | string;
+    source: BulkEmailJobSource;
+    status: BulkEmailJobStatus;
+    recipientCount: number | string;
+    sentCount: number | string;
+    failedCount: number | string;
+    cancelledCount: number | string;
+    lastError: null | string;
+    isSystemTriggered: boolean;
+    triggeredBy: null | string;
+    createdAt: string;
+    startedAt: null | string;
+    completedAt: null | string;
+    cancellationRequestedAt: null | string;
+    cancelledAt: null | string;
+    version: number | string;
+    recipients: Array<BulkEmailRecipientDto>;
+};
+
+export type BulkEmailJobSource = ({
+    $type?: 'attendee';
+} & BulkEmailJobSourceAttendeeSource) | ({
+    $type?: 'external_list';
+} & BulkEmailJobSourceExternalListSource);
+
+export type BulkEmailJobSourceAttendeeSource = {
+    $type?: 'attendee';
+    filter: QueryRegistrationsDto;
+};
+
+export type BulkEmailJobSourceExternalListSource = {
+    $type?: 'external_list';
+    items: Array<ExternalListItem>;
+};
+
+export type BulkEmailJobStatus = 'pending' | 'resolving' | 'sending' | 'completed' | 'partiallyFailed' | 'failed' | 'cancelled';
+
+export type BulkEmailListItemDto = {
+    id: string;
+    emailType: string;
+    status: BulkEmailJobStatus;
+    recipientCount: number | string;
+    sentCount: number | string;
+    failedCount: number | string;
+    cancelledCount: number | string;
+    isSystemTriggered: boolean;
+    triggeredBy: null | string;
+    createdAt: string;
+    startedAt: null | string;
+    completedAt: null | string;
+    cancellationRequestedAt: null | string;
+    cancelledAt: null | string;
+};
+
+export type BulkEmailRecipientDto = {
+    email: string;
+    displayName: null | string;
+    registrationId: null | string;
+    status: BulkEmailRecipientStatus;
+    lastError: null | string;
+};
+
+export type BulkEmailRecipientStatus = 'pending' | 'sent' | 'failed' | 'cancelled';
+
+export type BulkEmailSourceHttpDto = {
+    attendee?: null | AttendeeSourceHttpDto;
+    externalList?: null | ExternalListSourceHttpDto;
 };
 
 export type CancellationPolicyDto = {
@@ -93,6 +182,18 @@ export type CouponSummaryDto = {
     createdAt: string;
 };
 
+export type CreateBulkEmailHttpRequest = {
+    emailType: string;
+    subject: null | string;
+    textBody: null | string;
+    htmlBody: null | string;
+    source: BulkEmailSourceHttpDto;
+};
+
+export type CreateBulkEmailResponse = {
+    bulkEmailJobId: string;
+};
+
 export type CreateCouponHttpRequest = {
     email: string;
     allowedTicketTypeSlugs: Array<string>;
@@ -112,6 +213,23 @@ export type CreateTeamHttpRequest = {
 
 export type EmailAuthMode = 'none' | 'basic';
 
+export type EmailSettingsDto = {
+    smtpHost: string;
+    smtpPort: number | string;
+    fromAddress: string;
+    authMode: EmailAuthMode;
+    username: null | string;
+    hasPassword: boolean;
+    version: number | string;
+};
+
+export type EmailTemplateDto = {
+    subject: string;
+    textBody: string;
+    htmlBody: string;
+    version: number | string;
+};
+
 export type EventCreationRequestDto = {
     creationRequestId: string;
     teamId: string;
@@ -124,17 +242,21 @@ export type EventCreationRequestDto = {
     rejectionReason: null | string;
 };
 
-export type EventEmailSettingsDto = {
-    smtpHost: string;
-    smtpPort: number | string;
-    fromAddress: string;
-    authMode: EmailAuthMode;
-    username: null | string;
-    hasPassword: boolean;
-    version: number | string;
+export type EventLifecycleStatus = 'active' | 'cancelled' | 'archived';
+
+export type ExternalListItem = {
+    email: string;
+    displayName: null | string;
 };
 
-export type EventLifecycleStatus = 'active' | 'cancelled' | 'archived';
+export type ExternalListRecipientHttpDto = {
+    email: string;
+    displayName: null | string;
+};
+
+export type ExternalListSourceHttpDto = {
+    items: Array<ExternalListRecipientHttpDto>;
+};
 
 export type FieldDto = {
     key: string;
@@ -165,6 +287,17 @@ export type ProblemDetails = {
     instance?: null | string;
 };
 
+export type QueryRegistrationsDto = {
+    ticketTypeSlugs?: null | Array<string>;
+    registrationStatus?: null | RegistrationStatus;
+    hasReconfirmed?: null | boolean;
+    registeredAfter?: null | string;
+    registeredBefore?: null | string;
+    additionalDetailEquals?: null | {
+        [key: string]: string;
+    };
+};
+
 export type ReconfirmPolicyDto = {
     opensAt: string;
     closesAt: string;
@@ -174,6 +307,8 @@ export type ReconfirmPolicyDto = {
 export type RegisterWithCouponHttpRequest = {
     couponCode: string;
     email: string;
+    firstName: string;
+    lastName: string;
     ticketTypeSlugs: Array<string>;
     additionalDetails?: null | {
         [key: string]: string;
@@ -187,9 +322,9 @@ export type RegistrationListItemDto = {
     lastName: string;
     tickets: Array<TicketSummaryDto>;
     createdAt: string;
-    status: 'registered' | 'cancelled';
+    status: RegistrationStatus;
     hasReconfirmed: boolean;
-    reconfirmedAt?: null | string;
+    reconfirmedAt: null | string;
 };
 
 export type RegistrationPolicyDto = {
@@ -197,6 +332,8 @@ export type RegistrationPolicyDto = {
     closesAt: string;
     allowedEmailDomain: null | string;
 };
+
+export type RegistrationStatus = 'registered' | 'cancelled';
 
 export type RequestTicketedEventCreationHttpRequest = {
     slug: string;
@@ -210,7 +347,10 @@ export type RequestTicketedEventCreationHttpRequest = {
 
 export type SelfRegisterAttendeeHttpRequest = {
     email: string;
+    firstName: string;
+    lastName: string;
     ticketTypeSlugs: Array<string>;
+    emailVerificationToken?: null | string;
     additionalDetails?: null | {
         [key: string]: string;
     };
@@ -299,18 +439,30 @@ export type UpdateTicketedEventDetailsHttpRequest = {
     expectedVersion?: null | number | string;
 };
 
+export type UpdateTicketedEventTimeZoneHttpRequest = {
+    timeZone: string;
+    expectedVersion?: null | number | string;
+};
+
 export type UpdateTicketTypeHttpRequest = {
     name?: null | string;
     maxCapacity?: null | number | string;
 };
 
-export type UpsertEventEmailSettingsHttpRequest = {
+export type UpsertEmailSettingsHttpRequest = {
     smtpHost: string;
     smtpPort: number | string;
     fromAddress: string;
     authMode: EmailAuthMode;
     username: null | string;
     password: null | string;
+    version: null | number | string;
+};
+
+export type UpsertEmailTemplateHttpRequest = {
+    subject: string;
+    textBody: string;
+    htmlBody: string;
     version: null | number | string;
 };
 
@@ -815,6 +967,190 @@ export type ChangeTeamMembershipRoleResponses = {
     200: unknown;
 };
 
+export type DeleteTeamEmailSettingsData = {
+    body?: never;
+    path: {
+        teamSlug: string;
+    };
+    query: {
+        eventSlug?: string;
+        version: number | string;
+    };
+    url: '/admin/teams/{teamSlug}/email-settings';
+};
+
+export type DeleteTeamEmailSettingsErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type DeleteTeamEmailSettingsError = DeleteTeamEmailSettingsErrors[keyof DeleteTeamEmailSettingsErrors];
+
+export type DeleteTeamEmailSettingsResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteTeamEmailSettingsResponse = DeleteTeamEmailSettingsResponses[keyof DeleteTeamEmailSettingsResponses];
+
+export type GetTeamEmailSettingsData = {
+    body?: never;
+    path: {
+        teamSlug: string;
+    };
+    query?: {
+        eventSlug?: string;
+    };
+    url: '/admin/teams/{teamSlug}/email-settings';
+};
+
+export type GetTeamEmailSettingsErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetTeamEmailSettingsError = GetTeamEmailSettingsErrors[keyof GetTeamEmailSettingsErrors];
+
+export type GetTeamEmailSettingsResponses = {
+    /**
+     * OK
+     */
+    200: EmailSettingsDto;
+};
+
+export type GetTeamEmailSettingsResponse = GetTeamEmailSettingsResponses[keyof GetTeamEmailSettingsResponses];
+
+export type UpsertTeamEmailSettingsData = {
+    body: UpsertEmailSettingsHttpRequest;
+    path: {
+        teamSlug: string;
+    };
+    query?: {
+        eventSlug?: string;
+    };
+    url: '/admin/teams/{teamSlug}/email-settings';
+};
+
+export type UpsertTeamEmailSettingsErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type UpsertTeamEmailSettingsError = UpsertTeamEmailSettingsErrors[keyof UpsertTeamEmailSettingsErrors];
+
+export type UpsertTeamEmailSettingsResponses = {
+    /**
+     * OK
+     */
+    200: unknown;
+    /**
+     * Created
+     */
+    201: unknown;
+};
+
+export type DeleteEventEmailSettingsData = {
+    body?: never;
+    path: {
+        teamSlug: string;
+        eventSlug: string;
+    };
+    query: {
+        version: number | string;
+    };
+    url: '/admin/teams/{teamSlug}/events/{eventSlug}/email-settings';
+};
+
+export type DeleteEventEmailSettingsErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type DeleteEventEmailSettingsError = DeleteEventEmailSettingsErrors[keyof DeleteEventEmailSettingsErrors];
+
+export type DeleteEventEmailSettingsResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteEventEmailSettingsResponse = DeleteEventEmailSettingsResponses[keyof DeleteEventEmailSettingsResponses];
+
 export type GetEventEmailSettingsData = {
     body?: never;
     path: {
@@ -854,13 +1190,13 @@ export type GetEventEmailSettingsResponses = {
     /**
      * OK
      */
-    200: EventEmailSettingsDto;
+    200: EmailSettingsDto;
 };
 
 export type GetEventEmailSettingsResponse = GetEventEmailSettingsResponses[keyof GetEventEmailSettingsResponses];
 
 export type UpsertEventEmailSettingsData = {
-    body: UpsertEventEmailSettingsHttpRequest;
+    body: UpsertEmailSettingsHttpRequest;
     path: {
         teamSlug: string;
         eventSlug: string;
@@ -903,6 +1239,458 @@ export type UpsertEventEmailSettingsResponses = {
      * Created
      */
     201: unknown;
+};
+
+export type DeleteTeamEmailTemplateData = {
+    body?: never;
+    path: {
+        teamSlug: string;
+        type: string;
+    };
+    query: {
+        eventSlug?: string;
+        version: number | string;
+    };
+    url: '/admin/teams/{teamSlug}/email-templates/{type}';
+};
+
+export type DeleteTeamEmailTemplateErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type DeleteTeamEmailTemplateError = DeleteTeamEmailTemplateErrors[keyof DeleteTeamEmailTemplateErrors];
+
+export type DeleteTeamEmailTemplateResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteTeamEmailTemplateResponse = DeleteTeamEmailTemplateResponses[keyof DeleteTeamEmailTemplateResponses];
+
+export type GetTeamEmailTemplateData = {
+    body?: never;
+    path: {
+        teamSlug: string;
+        type: string;
+    };
+    query?: {
+        eventSlug?: string;
+    };
+    url: '/admin/teams/{teamSlug}/email-templates/{type}';
+};
+
+export type GetTeamEmailTemplateErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetTeamEmailTemplateError = GetTeamEmailTemplateErrors[keyof GetTeamEmailTemplateErrors];
+
+export type GetTeamEmailTemplateResponses = {
+    /**
+     * OK
+     */
+    200: EmailTemplateDto;
+};
+
+export type GetTeamEmailTemplateResponse = GetTeamEmailTemplateResponses[keyof GetTeamEmailTemplateResponses];
+
+export type UpsertTeamEmailTemplateData = {
+    body: UpsertEmailTemplateHttpRequest;
+    path: {
+        teamSlug: string;
+        type: string;
+    };
+    query?: {
+        eventSlug?: string;
+    };
+    url: '/admin/teams/{teamSlug}/email-templates/{type}';
+};
+
+export type UpsertTeamEmailTemplateErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type UpsertTeamEmailTemplateError = UpsertTeamEmailTemplateErrors[keyof UpsertTeamEmailTemplateErrors];
+
+export type UpsertTeamEmailTemplateResponses = {
+    /**
+     * OK
+     */
+    200: unknown;
+    /**
+     * Created
+     */
+    201: unknown;
+};
+
+export type DeleteEventEmailTemplateData = {
+    body?: never;
+    path: {
+        teamSlug: string;
+        eventSlug: string;
+        type: string;
+    };
+    query: {
+        version: number | string;
+    };
+    url: '/admin/teams/{teamSlug}/events/{eventSlug}/email-templates/{type}';
+};
+
+export type DeleteEventEmailTemplateErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type DeleteEventEmailTemplateError = DeleteEventEmailTemplateErrors[keyof DeleteEventEmailTemplateErrors];
+
+export type DeleteEventEmailTemplateResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type DeleteEventEmailTemplateResponse = DeleteEventEmailTemplateResponses[keyof DeleteEventEmailTemplateResponses];
+
+export type GetEventEmailTemplateData = {
+    body?: never;
+    path: {
+        teamSlug: string;
+        eventSlug: string;
+        type: string;
+    };
+    query?: never;
+    url: '/admin/teams/{teamSlug}/events/{eventSlug}/email-templates/{type}';
+};
+
+export type GetEventEmailTemplateErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetEventEmailTemplateError = GetEventEmailTemplateErrors[keyof GetEventEmailTemplateErrors];
+
+export type GetEventEmailTemplateResponses = {
+    /**
+     * OK
+     */
+    200: EmailTemplateDto;
+};
+
+export type GetEventEmailTemplateResponse = GetEventEmailTemplateResponses[keyof GetEventEmailTemplateResponses];
+
+export type UpsertEventEmailTemplateData = {
+    body: UpsertEmailTemplateHttpRequest;
+    path: {
+        teamSlug: string;
+        eventSlug: string;
+        type: string;
+    };
+    query?: never;
+    url: '/admin/teams/{teamSlug}/events/{eventSlug}/email-templates/{type}';
+};
+
+export type UpsertEventEmailTemplateErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type UpsertEventEmailTemplateError = UpsertEventEmailTemplateErrors[keyof UpsertEventEmailTemplateErrors];
+
+export type UpsertEventEmailTemplateResponses = {
+    /**
+     * OK
+     */
+    200: unknown;
+    /**
+     * Created
+     */
+    201: unknown;
+};
+
+export type GetBulkEmailsData = {
+    body?: never;
+    path: {
+        teamSlug: string;
+        eventSlug: string;
+    };
+    query?: never;
+    url: '/admin/teams/{teamSlug}/events/{eventSlug}/bulk-emails';
+};
+
+export type GetBulkEmailsErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetBulkEmailsError = GetBulkEmailsErrors[keyof GetBulkEmailsErrors];
+
+export type GetBulkEmailsResponses = {
+    /**
+     * OK
+     */
+    200: Array<BulkEmailListItemDto>;
+};
+
+export type GetBulkEmailsResponse = GetBulkEmailsResponses[keyof GetBulkEmailsResponses];
+
+export type CreateBulkEmailData = {
+    body: CreateBulkEmailHttpRequest;
+    path: {
+        teamSlug: string;
+        eventSlug: string;
+    };
+    query?: never;
+    url: '/admin/teams/{teamSlug}/events/{eventSlug}/bulk-emails';
+};
+
+export type CreateBulkEmailErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type CreateBulkEmailError = CreateBulkEmailErrors[keyof CreateBulkEmailErrors];
+
+export type CreateBulkEmailResponses = {
+    /**
+     * Created
+     */
+    201: CreateBulkEmailResponse;
+};
+
+export type CreateBulkEmailResponse2 = CreateBulkEmailResponses[keyof CreateBulkEmailResponses];
+
+export type GetBulkEmailData = {
+    body?: never;
+    path: {
+        bulkEmailJobId: string;
+    };
+    query?: never;
+    url: '/admin/teams/{teamSlug}/events/{eventSlug}/bulk-emails/{bulkEmailJobId}';
+};
+
+export type GetBulkEmailErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetBulkEmailError = GetBulkEmailErrors[keyof GetBulkEmailErrors];
+
+export type GetBulkEmailResponses = {
+    /**
+     * OK
+     */
+    200: BulkEmailJobDetailDto;
+};
+
+export type GetBulkEmailResponse = GetBulkEmailResponses[keyof GetBulkEmailResponses];
+
+export type CancelBulkEmailData = {
+    body?: never;
+    path: {
+        bulkEmailJobId: string;
+    };
+    query?: never;
+    url: '/admin/teams/{teamSlug}/events/{eventSlug}/bulk-emails/{bulkEmailJobId}/cancel';
+};
+
+export type CancelBulkEmailErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type CancelBulkEmailError = CancelBulkEmailErrors[keyof CancelBulkEmailErrors];
+
+export type CancelBulkEmailResponses = {
+    /**
+     * Accepted
+     */
+    202: unknown;
 };
 
 export type GetTicketedEventDetailsData = {
@@ -1216,6 +2004,50 @@ export type ConfigureReconfirmPolicyResponses = {
 };
 
 export type ConfigureReconfirmPolicyResponse = ConfigureReconfirmPolicyResponses[keyof ConfigureReconfirmPolicyResponses];
+
+export type UpdateTicketedEventTimeZoneData = {
+    body: UpdateTicketedEventTimeZoneHttpRequest;
+    path: {
+        teamSlug: string;
+        eventSlug: string;
+    };
+    query?: never;
+    url: '/admin/teams/{teamSlug}/events/{eventSlug}/time-zone';
+};
+
+export type UpdateTicketedEventTimeZoneErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type UpdateTicketedEventTimeZoneError = UpdateTicketedEventTimeZoneErrors[keyof UpdateTicketedEventTimeZoneErrors];
+
+export type UpdateTicketedEventTimeZoneResponses = {
+    /**
+     * No Content
+     */
+    204: void;
+};
+
+export type UpdateTicketedEventTimeZoneResponse = UpdateTicketedEventTimeZoneResponses[keyof UpdateTicketedEventTimeZoneResponses];
 
 export type UpdateAdditionalDetailSchemaData = {
     body: UpdateAdditionalDetailSchemaHttpRequest;

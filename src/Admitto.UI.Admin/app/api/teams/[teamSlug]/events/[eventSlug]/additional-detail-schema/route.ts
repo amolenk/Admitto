@@ -1,4 +1,5 @@
-import { proxyAdmittoApi } from "@/lib/admitto-api/admitto-client";
+import { callAdmittoApi } from "@/lib/admitto-api/admitto-client";
+import { updateAdditionalDetailSchema } from "@/lib/admitto-api/generated";
 
 export async function PUT(
     request: Request,
@@ -6,9 +7,5 @@ export async function PUT(
 ) {
     const { teamSlug, eventSlug } = await params;
     const body = await request.json();
-    return proxyAdmittoApi(
-        "PUT",
-        `/admin/teams/${encodeURIComponent(teamSlug)}/events/${encodeURIComponent(eventSlug)}/additional-detail-schema`,
-        body,
-    );
+    return callAdmittoApi(() => updateAdditionalDetailSchema({ path: { teamSlug, eventSlug }, body }));
 }

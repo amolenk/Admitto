@@ -44,6 +44,28 @@ dotnet test tests/Admitto.Module.Registrations.Tests/Admitto.Module.Registration
 dotnet test tests/Admitto.Api.Tests/Admitto.Api.Tests.csproj
 ```
 
+## Running the Application
+
+This is a .NET Aspire project. **Never run `Admitto.Api` or other services directly.**
+
+To start the full stack (API, Postgres, Keycloak, queues, etc.), ask the user to run:
+
+```
+! dotnet run --project src/Admitto.AppHost/Admitto.AppHost.csproj
+```
+
+The Aspire dashboard will show the dynamic URL assigned to the `api` service.
+
+### Regenerating the Admin UI SDK
+
+When backend endpoints change (new or updated), regenerate the generated SDK:
+
+1. Ask the user to start the AppHost (above) and provide the `api` service URL.
+2. Fetch the fresh spec: `curl <api-url>/openapi/v1.json -o src/Admitto.UI.Admin/openapi-spec.json`
+3. Regenerate: `cd src/Admitto.UI.Admin && pnpm run openapi-ts`
+4. Use the newly generated functions from `app/lib/admitto-api/generated/` in proxy routes.
+5. **Do not use `proxyAdmittoApi` for endpoints that exist in the generated SDK.**
+
 ## Documentation Hygiene
 - Architecture documentation lives in `docs/arc42/` (arc42 format, one file per chapter).
 - If a structural decision changes, update the relevant arc42 chapter and ADRs in `docs/adrs/`.

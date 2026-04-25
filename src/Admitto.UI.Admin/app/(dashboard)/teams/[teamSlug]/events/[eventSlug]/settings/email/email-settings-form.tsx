@@ -1,6 +1,5 @@
 "use client";
 
-import * as z from "zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -17,7 +16,7 @@ import {
 } from "@/components/ui/select";
 import { useCustomForm } from "@/hooks/use-custom-form";
 import { apiClient } from "@/lib/api-client";
-import { EmailAuthMode, EventEmailSettingsDto } from "@/lib/admitto-api/generated";
+import { emailSettingsSchema, EmailSettingsValues, EmailSettingsInitialValues } from "./email-settings-types";
 
 function Field({ label, hint, badge, children }: {
     label: string;
@@ -43,43 +42,31 @@ function Field({ label, hint, badge, children }: {
     );
 }
 
-const schema = z
-    .object({
-        smtpHost: z.string().min(1, "SMTP host is required"),
-        smtpPort: z.coerce.number().int().min(1).max(65535),
-        fromAddress: z.string().email(),
-        authMode: z.enum(["none", "basic"]),
-        username: z.string().optional(),
-        password: z.string().optional(),
-    })
-    .refine((d) => d.authMode === "none" || (d.username && d.username.length > 0), {
-        path: ["username"],
-        message: "Username is required when auth mode is basic",
-    });
-
-type Values = z.infer<typeof schema>;
-
 export function EmailSettingsForm({
-    teamSlug,
-    eventSlug,
-    settings,
+    apiUrl,
+    queryKey,
+    hasPassword = false,
+    version,
+    initialValues,
 }: {
-    teamSlug: string;
-    eventSlug: string;
-    settings: EventEmailSettingsDto | null;
+    apiUrl: string;
+    queryKey: unknown[];
+    hasPassword?: boolean;
+    version: number | null;
+    initialValues: EmailSettingsInitialValues;
 }) {
     const queryClient = useQueryClient();
 
-    const form = useCustomForm<Values>(schema, {
-        smtpHost: settings?.smtpHost ?? "",
-        smtpPort: settings ? Number(settings.smtpPort) : 587,
-        fromAddress: settings?.fromAddress ?? "",
-        authMode: (settings?.authMode as EmailAuthMode) ?? "none",
-        username: settings?.username ?? "",
+    const form = useCustomForm<EmailSettingsValues>(emailSettingsSchema, {
+        smtpHost: initialValues.smtpHost,
+        smtpPort: initialValues.smtpPort,
+        fromAddress: initialValues.fromAddress,
+        authMode: initialValues.authMode,
+        username: initialValues.username,
         password: "",
     });
 
-    async function onSubmit(values: Values) {
+    async function onSubmit(values: EmailSettingsValues) {
         const body = {
             smtpHost: values.smtpHost,
             smtpPort: values.smtpPort,
@@ -87,20 +74,12 @@ export function EmailSettingsForm({
             authMode: values.authMode,
             username: values.authMode === "basic" ? values.username || null : null,
             password: values.password ? values.password : null,
-            version: settings ? Number(settings.version) : null,
+            version,
         };
 
-        await apiClient.put(
-            `/api/teams/${teamSlug}/events/${eventSlug}/email-settings`,
-            body
-        );
+        await apiClient.put(apiUrl, body);
 
-        await queryClient.invalidateQueries({
-            queryKey: ["email-settings", teamSlug, eventSlug],
-        });
-        await queryClient.invalidateQueries({
-            queryKey: ["event", teamSlug, eventSlug],
-        });
+        await queryClient.invalidateQueries({ queryKey });
         form.reset({ ...values, password: "" });
     }
 
@@ -119,7 +98,7 @@ export function EmailSettingsForm({
                     </Button>
                     <Button size="sm" onClick={form.submit(onSubmit)} disabled={form.formState.isSubmitting}>
                         <Check className="size-3.5" />
-                        {form.formState.isSubmitting ? "Saving\u2026" : "Save changes"}
+                        {form.formState.isSubmitting ? "Saving…" : "Save changes"}
                     </Button>
                 </div>
             </div>
@@ -225,7 +204,7 @@ export function EmailSettingsForm({
                                         control={form.control}
                                         name="password"
                                         render={({ field }) => (
-                                            <Field label="Password" hint={settings?.hasPassword ? "Leave blank to keep existing." : "SMTP authentication password."}>
+                                            <Field label="Password" hint={hasPassword ? "Leave blank to keep existing." : "SMTP authentication password."}>
                                                 <FormItem className="space-y-1">
                                                     <FormControl>
                                                         <Input type="password" {...field} />

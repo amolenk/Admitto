@@ -5,11 +5,12 @@ import { useParams, usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { PageLayout } from "@/components/page-layout";
 import { useTeams } from "@/hooks/use-teams";
-import { Settings, Users, Trash2 } from "lucide-react";
+import { Settings, Users, Trash2, Mail } from "lucide-react";
 
 const navItems = [
     { label: "General", href: "", icon: Settings, desc: "Team name, email address" },
     { label: "Members", href: "/members", icon: Users, desc: "Roles and access" },
+    { label: "Email", href: "/email", icon: Mail, desc: "SMTP and sender identity" },
     { label: "Danger zone", href: "/danger", icon: Trash2, desc: "Archive team" },
 ];
 
