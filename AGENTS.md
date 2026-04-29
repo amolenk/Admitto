@@ -3,16 +3,12 @@
 ## Scope
 This file applies to the entire repository. Nested `AGENTS.md` files in subdirectories provide stricter local guidance.
 
-## Architecture guardrails
+## Architecture Guardrails
+Before proposing or implementing changes:
+- Read `docs/arc42/` — treat it as the source of truth for constraints, decisions, and concepts.
+- If a request conflicts with the docs, explain the conflict and propose an ADR, a code change, or both.
 
-Before you propose or implement changes:
-
-- Read the arc42 documentation in `docs/arc42/`.
-- Treat it as the source of truth for constraints, decisions, and concepts.
-- If a request conflicts with the docs, do not "pick a side".
-  Explain the conflict and propose a change to the docs (ADR), the code, or both.
-
-Focus on these sections when implementing changes:
+Key sections:
 - `docs/arc42/05-building-block-view.md` — module structure
 - `docs/arc42/06-runtime-view.md` — key runtime flows
 - `docs/arc42/08-crosscutting-concepts.md` — patterns and conventions
@@ -20,53 +16,52 @@ Focus on these sections when implementing changes:
 
 ## Project Boundaries
 - Use `Admitto.slnx` to determine active projects and module boundaries.
-- Module projects follow the `Admitto.Module.*` naming convention (e.g. `Admitto.Module.Organization`, `Admitto.Module.Registrations`).
-- Each module has one main project (with `Domain/`, `Application/`, `Infrastructure/` folders) and a separate Contracts project.
+- Modules follow `Admitto.Module.*` naming (e.g. `Admitto.Module.Organization`, `Admitto.Module.Registrations`).
+- Each module has one main project (`Domain/`, `Application/`, `Infrastructure/` folders) and a separate Contracts project.
 - Shared code lives in `Admitto.Module.Shared` and `Admitto.Module.Shared.Kernel`.
 
 ### Aggregate Ownership
-- `Admitto.Module.Organization` owns `Team` (and team membership). It only tracks the existence of a ticketed event for slug/id resolution and team-archive guards; it does not own per-event configuration.
-- `Admitto.Module.Registrations` owns the authoritative `TicketedEvent` aggregate (slug/name/dates, lifecycle status, and the registration/cancellation/reconfirm policies as value objects), as well as `TicketCatalog`, `Coupon`, and `Registration`. New per-event configuration and admin commands belong here.
+- `Admitto.Module.Organization` owns `Team` (and team membership). It only tracks ticketed event existence for slug/id resolution and team-archive guards.
+- `Admitto.Module.Registrations` owns `TicketedEvent` (slug/name/dates, lifecycle, registration/cancellation/reconfirm policies), `TicketCatalog`, `Coupon`, and `Registration`. New per-event configuration belongs here.
 
 ## Non-Negotiable Conventions
 - API endpoint handlers own the transaction boundary and commit the module unit of work.
 - Command handlers must not inject or commit unit-of-work objects.
-- For admin routes, FluentValidation runs in the endpoint filter before endpoint handler execution.
-- Cross-module communication should happen via contracts/facades, not cross-module DbContext access.
-- Domain events, module events, and integration events must follow the taxonomy in `docs/arc42/08-crosscutting-concepts.md`.
+- Admin routes run FluentValidation in the endpoint filter before handler execution.
+- Cross-module communication goes via contracts/facades, not cross-module DbContext access.
+- Events must follow the domain/module/integration taxonomy in `docs/arc42/08-crosscutting-concepts.md`.
 
-## Testing Expectations
-- Run targeted tests for the modules you changed.
-- Run broader suites when shared components or host wiring are changed.
+## Running the Application
+This is a .NET Aspire project. **Never run `Admitto.Api` or other services directly.**
 
-Suggested commands:
-```bash
-dotnet test tests/Admitto.Module.Organization.Domain.Tests/Admitto.Module.Organization.Domain.Tests.csproj
-dotnet test tests/Admitto.Module.Organization.Tests/Admitto.Module.Organization.Tests.csproj
-dotnet test tests/Admitto.Module.Registrations.Domain.Tests/Admitto.Module.Registrations.Domain.Tests.csproj
-dotnet test tests/Admitto.Module.Registrations.Tests/Admitto.Module.Registrations.Tests.csproj
-dotnet test tests/Admitto.Api.Tests/Admitto.Api.Tests.csproj
+Start the full stack (API, Postgres, Keycloak, queues, etc.) using the Aspire CLI/skill:
 ```
+aspire start
+```
+The Aspire dashboard shows the dynamic URL assigned to the `api` service.
+
+## Regenerating the Admin UI SDK
+When backend endpoints change, regenerate the generated SDK:
+1. Start the Aspire AppHost.
+2. Regenerate: `cd src/Admitto.UI.Admin && pnpm run openapi-ts`
+3. Use the newly generated functions from `app/lib/admitto-api/generated/` in proxy routes.
+
+## Testing
+Run targeted tests for the modules you changed. See `tests/AGENTS.md` for commands and suite selection.
 
 ## Documentation Hygiene
-- Architecture documentation lives in `docs/arc42/` (arc42 format, one file per chapter).
-- If a structural decision changes, update the relevant arc42 chapter and ADRs in `docs/adrs/`.
-- Link ADRs from `docs/arc42/09-architectural-decisions.md`.
+See `docs/AGENTS.md` for doc update rules.
 
 ## Admin UI Design
-
-- Keep design of new features in line with existing features.
-- The `design` directory contains the original UI design. Use it when designing UI for new/changed features.
+Keep design of new features in line with existing features. The `design` directory contains the original UI design.
 
 ## Feature Implementation Checklist
-
-Before declaring a feature complete, verify every item:
-
-- Read the full feature spec in `openspec/specs/` (use `openspec spec show <capability>` or view the file directly).
-- Each user story maps to one primary slice or implementation unit whenever possible. Follow only documented exceptions.
-- HTTP-exposed slices follow the standard file layout where applicable: command/query, handler, endpoint, and request/validator/response types as needed by the surface.
-- Internal event-driven work follows the event-handler pattern under `Application/UseCases/.../EventHandlers/`, and jobs live under `Application/Jobs/`.
-- Endpoint wiring is updated in the module's endpoint registration entry point.
+Before declaring a feature complete:
+- Read the full feature spec in `openspec/specs/` (view `openspec/specs/<capability>/spec.md` or use `openspec spec show <capability>`).
+- Each user story maps to one primary slice or implementation unit whenever possible.
+- HTTP-exposed slices: command/query, handler, endpoint, request/validator/response as needed.
+- Internal event-driven work: event-handler pattern under `Application/UseCases/.../EventHandlers/`; jobs under `Application/Jobs/`.
+- Endpoint wiring updated in the module's endpoint registration entry point.
 - Each admin API endpoint has a corresponding CLI command in `src/Admitto.Cli/Commands/` (see `src/Admitto.Cli/AGENTS.md`).
 - Each acceptance scenario (`SC-*`) has a corresponding test method with scenario ID prefix (`SC001_...`).
 - Tests use fixture/builder patterns, not inline setup.

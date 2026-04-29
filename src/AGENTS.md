@@ -32,10 +32,10 @@ This file applies to `/src`.
 
 ## Feature Implementation Workflow
 
-When implementing a feature from `docs/specs/FEAT-*.md`:
+When implementing a feature:
 
 ### 1. Read the Spec First
-Read `docs/specs/AGENTS.md` for interpretation rules, then read the full feature spec.
+Read the full feature spec at `openspec/specs/<capability>/spec.md` (or use `openspec spec show <capability>`).
 
 ### 2. Use Existing Capability Grouping First
 The top-level folder under `Application/UseCases/` should extend the existing

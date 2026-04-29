@@ -1,18 +1,16 @@
 # Admitto CLI — Agent Guide
 
 ## Scope
-
-This file applies to `src/Admitto.Cli/` and all CLI command implementation.
+This file applies to `src/Admitto.Cli/`.
 
 ## Architecture
-
 The CLI is a **thin HTTP client** — all business logic lives in the API backend. Commands are lightweight wrappers around the NSwag-generated `ApiClient`.
 
 ```
 User Input → Spectre.Console.Cli → IAdmittoService → ApiClient (NSwag) → REST API
 ```
 
-## File layout
+## File Layout
 
 ```
 src/Admitto.Cli/
@@ -29,18 +27,14 @@ src/Admitto.Cli/
 └── Program.cs                  # Command tree registration via Spectre.Console.Cli
 ```
 
-## Command patterns
+## Command Patterns
 
-### Settings classes
+### Settings Classes
+- **`TeamSettings`** — base for team-scoped commands; provides `-t|--team`.
+- **`TeamEventSettings`** — extends `TeamSettings` with `-e|--event`.
+- Custom settings classes for additional parameters; override `Validate()` for required fields.
 
-Commands declare settings (CLI arguments/options) as a class extending `CommandSettings`:
-
-- **`TeamSettings`** — base for team-scoped commands; provides `-t|--team` option.
-- **`TeamEventSettings`** — extends `TeamSettings` with `-e|--event` option.
-- Custom settings classes for commands with additional parameters; override `Validate()` for required fields.
-
-### Mutation commands
-
+### Mutation Commands
 Use `IAdmittoService.SendAsync()` for write operations:
 
 ```csharp
@@ -65,8 +59,7 @@ public class CreateCouponCommand(IAdmittoService admittoService, IConfigService 
 }
 ```
 
-### Query commands
-
+### Query Commands
 Use `IAdmittoService.QueryAsync()` for read operations. Format results as a Spectre.Console `Table`:
 
 ```csharp
@@ -94,9 +87,7 @@ public class ListCouponsCommand(IAdmittoService admittoService, IConfigService c
 }
 ```
 
-## Registering commands in Program.cs
-
-Add command branches in `Program.cs` using `config.AddBranch()`:
+## Registering Commands in Program.cs
 
 ```csharp
 config.AddBranch("coupon", coupon =>
@@ -109,45 +100,30 @@ config.AddBranch("coupon", coupon =>
 });
 ```
 
-## NSwag API client
+## NSwag API Client
+`ApiClient.g.cs` is auto-generated. **Do not edit it manually.** After adding new API endpoints, regenerate via the `cli-api-client-generation` skill or by running `./generate-api-client.sh`.
 
-`ApiClient.g.cs` is auto-generated from the API's OpenAPI spec. After adding new API endpoints:
+## Quarantining Commands When the API Surface Shrinks
+When the backend removes endpoints, regenerating `ApiClient.g.cs` can break existing commands. **Do not delete commands** — quarantine them instead.
 
-1. Run the API to generate the updated OpenAPI spec.
-2. Regenerate the client: `./generate-api-client.sh` (or `dotnet tool run nswag run nswag.json`).
-3. The new methods become available on the `ApiClient` class.
+Watch for: a failure in a shared file (e.g. `IO/InputHelper.cs`) suppresses downstream errors; fixing the shared file surfaces the full cascade.
 
-**Do not edit `ApiClient.g.cs` manually.**
-
-> See "Quarantining commands when the API surface shrinks" below for what to do when regeneration removes types that existing commands depend on.
-
-## Quarantining commands when the API surface shrinks
-
-When the backend admin API removes endpoints (or renames request/response types), regenerating `ApiClient.g.cs` can leave existing commands referencing types that no longer exist. **Do not delete the commands** — they still reflect intended functionality and may come back.
-
-Failure mode to watch for: when one transitively-shared file (e.g. `IO/InputHelper.cs`) fails to compile because of missing types, the C# compiler suppresses *downstream* type-resolution errors in every file that depends on it. The initial build may show only a handful of errors; after fixing the shared file, the true cascade surfaces.
-
-How to quarantine commands cleanly:
-
-1. Add a labeled `<ItemGroup>` to `Admitto.Cli.csproj` that excludes the affected files via `<Compile Remove="Commands/.../**/*.cs" />`. Example:
-
+How to quarantine:
+1. Exclude affected files via a labeled `<ItemGroup>` in `Admitto.Cli.csproj`:
    ```xml
    <ItemGroup Label="Quarantined: backend admin endpoints removed; restore once the API exposes ... again.">
      <Compile Remove="Commands/Attendee/**/*.cs" />
-     <Compile Remove="Commands/Events/Policy/Reconfirm/**/*.cs" />
    </ItemGroup>
    ```
+2. Comment out (don't delete) the corresponding `AddCommand` / `AddBranch` registrations in `Program.cs`.
+3. Comment out any `IAdmittoService` helper methods used only by quarantined commands.
+4. Build until clean; prefer fixing surviving files over expanding the quarantine.
 
-2. Comment out (do not delete) the corresponding `AddCommand` / `AddBranch` registrations in `Program.cs`, with a short note pointing back at the csproj entry and the missing endpoint.
-3. Comment out any helper methods on `IAdmittoService` (and its implementation) that only the quarantined commands used.
-4. Build until clean. If new errors appear in surviving files, prefer fixing them (rename `XxxRequest` → `XxxHttpRequest`, drop removed properties) over expanding the quarantine.
-
-Restoration (when the backend re-exposes the endpoints): regenerate `ApiClient.g.cs`, remove the `<Compile Remove>` entries, uncomment the `Program.cs` registrations, and rebuild.
+Restoration: regenerate `ApiClient.g.cs`, remove `<Compile Remove>` entries, uncomment `Program.cs` registrations, rebuild.
 
 ## Conventions
-
 - Return `0` on success, `1` on failure.
 - Use `InputHelper.ResolveTeamSlug/ResolveEventSlug` — never access `configService` defaults directly.
 - Use `AnsiConsoleExt.WriteSuccessMessage()` for success feedback.
-- Error handling is automatic via `IAdmittoService` wrappers — do not add try/catch in commands.
-- One file per command (Settings + Command class in the same file unless settings are shared).
+- Error handling is automatic via `IAdmittoService` — do not add try/catch in commands.
+- One file per command (Settings + Command class together unless settings are shared).
