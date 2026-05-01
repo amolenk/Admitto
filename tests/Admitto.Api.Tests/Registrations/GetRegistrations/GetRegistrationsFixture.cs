@@ -30,6 +30,7 @@ internal sealed class GetRegistrationsFixture
         var ticketedEvent = TicketedEvent.Create(
             eventId,
             team.Id,
+            Slug.From(TeamSlug),
             Slug.From(EventSlug),
             DisplayName.From("DevConf"),
             AbsoluteUrl.From("https://example.com"),

@@ -25,6 +25,7 @@ internal sealed class ArchiveTicketedEventFixture
             var ticketedEvent = TicketedEvent.Create(
                 EventId,
                 TeamId,
+                Slug.From("test-team"),
                 Slug.From("archive-event"),
                 DisplayName.From("Archive Event"),
                 AbsoluteUrl.From("https://example.com"),

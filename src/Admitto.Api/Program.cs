@@ -27,6 +27,7 @@ builder
     .Services
     .AddRegistrationsApplicationServices()
     .AddMessagingApplicationServices()
+    .AddCryptographyApplicationServices()
     .AddValidationApplicationServices();
 
 // Add infrastructure services.

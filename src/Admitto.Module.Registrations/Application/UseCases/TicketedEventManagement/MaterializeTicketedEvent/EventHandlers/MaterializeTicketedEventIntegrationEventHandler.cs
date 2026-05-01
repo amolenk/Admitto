@@ -31,6 +31,7 @@ internal sealed class MaterializeTicketedEventIntegrationEventHandler(
         CancellationToken cancellationToken)
     {
         var teamId = TeamId.From(integrationEvent.TeamId);
+        var teamSlug = Slug.From(integrationEvent.TeamSlug);
         var slug = Slug.From(integrationEvent.Slug);
 
         var slugAlreadyUsed = await writeStore.TicketedEvents
@@ -52,6 +53,7 @@ internal sealed class MaterializeTicketedEventIntegrationEventHandler(
         var ticketedEvent = TicketedEvent.Create(
             ticketedEventId,
             teamId,
+            teamSlug,
             slug,
             DisplayName.From(integrationEvent.Name),
             AbsoluteUrl.From(integrationEvent.WebsiteUrl),

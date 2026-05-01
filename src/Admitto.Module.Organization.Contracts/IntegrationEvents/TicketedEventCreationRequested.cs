@@ -15,6 +15,9 @@ namespace Amolenk.Admitto.Module.Organization.Contracts.IntegrationEvents;
 /// back to the originating <c>TeamEventCreationRequest</c>.
 /// </param>
 /// <param name="TeamId">Owning team.</param>
+/// <param name="TeamSlug">Slug of the owning team. Denormalised onto the materialised
+/// <c>TicketedEvent</c> so registration-bound URL composition (QR codes, signed links)
+/// stays inside the Registrations module without an Organization facade lookup.</param>
 /// <param name="Slug">Requested event slug (uniqueness is checked by Registrations).</param>
 /// <param name="Name">Display name.</param>
 /// <param name="WebsiteUrl">Public event website URL.</param>
@@ -25,6 +28,7 @@ namespace Amolenk.Admitto.Module.Organization.Contracts.IntegrationEvents;
 public sealed record TicketedEventCreationRequested(
     Guid CreationRequestId,
     Guid TeamId,
+    string TeamSlug,
     string Slug,
     string Name,
     string WebsiteUrl,

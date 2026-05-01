@@ -17,8 +17,8 @@ namespace Amolenk.Admitto.Module.Email.Application.UseCases.SendEmail.EventHandl
 /// No capability gate — this handler runs in any host that processes the Registrations queue.
 /// The actual send is gated on <see cref="HostCapability.Email"/> inside <see cref="SendEmailCommandHandler"/>.
 /// Idempotency key: <c>attendee-registered:{registrationId}</c>.
-/// Event name and website URL are looked up live from the Registrations facade so they reflect
-/// the current event configuration at send time, not the registration time.
+/// Event name, website URL, and pre-signed links are all returned by the Registrations facade
+/// so signing infra stays inside the Registrations module.
 /// </remarks>
 internal sealed class AttendeeRegisteredIntegrationEventHandler(
     IEmailWriteStore writeStore,
@@ -40,6 +40,7 @@ internal sealed class AttendeeRegisteredIntegrationEventHandler(
 
         var eventContext = await registrationsFacade.GetTicketedEventEmailContextAsync(
             integrationEvent.TicketedEventId,
+            integrationEvent.RegistrationId,
             cancellationToken);
 
         var fullName = $"{integrationEvent.FirstName} {integrationEvent.LastName}".Trim();
@@ -57,7 +58,8 @@ internal sealed class AttendeeRegisteredIntegrationEventHandler(
                 integrationEvent.FirstName,
                 integrationEvent.LastName,
                 EventName = eventContext.Name,
-                EventWebsiteUrl = eventContext.WebsiteUrl
+                EventWebsiteUrl = eventContext.WebsiteUrl,
+                QRCodeLink = eventContext.QRCodeLink
             });
 
         await mediator.SendAsync(command, cancellationToken);

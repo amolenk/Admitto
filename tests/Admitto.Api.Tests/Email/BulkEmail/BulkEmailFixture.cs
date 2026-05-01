@@ -79,6 +79,7 @@ internal sealed class BulkEmailFixture
         var ticketedEvent = TicketedEvent.Create(
             EventId,
             team.Id,
+            Slug.From(TeamSlug),
             Slug.From(EventSlug),
             DisplayName.From("Bulk Conf"),
             AbsoluteUrl.From("https://example.com"),

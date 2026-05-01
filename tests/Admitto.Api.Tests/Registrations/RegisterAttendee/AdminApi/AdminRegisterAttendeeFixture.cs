@@ -29,6 +29,7 @@ internal sealed class AdminRegisterAttendeeFixture
         var ticketedEvent = TicketedEvent.Create(
             eventId,
             team.Id,
+            Slug.From(TeamSlug),
             Slug.From(EventSlug),
             DisplayName.From("DevConf"),
             AbsoluteUrl.From("https://example.com"),

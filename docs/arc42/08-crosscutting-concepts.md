@@ -189,6 +189,19 @@ Per-event SMTP passwords (and similar at-rest secrets owned by a module) are pro
 
 The Data Protection key ring is **persisted to a stable backing store and shared across hosts** (API and Worker). Without a shared, persistent key ring, secrets written by one host would become unreadable after a restart or by another host. See `Admitto.Module.Email/Infrastructure/` for the reference implementation.
 
+### URL signing (per-event HMAC)
+
+Registration-bound public URLs (e.g. the QR-code endpoint) are protected by **HMAC-SHA256 signatures keyed per `TicketedEvent`**. Every `TicketedEvent` carries an internal `SigningKey` (32 random bytes, Base64-encoded) generated at aggregate creation. The key is owned by the Registrations module and never leaves the server: it does not appear in DTOs, integration events, structured logs, or admin read endpoints.
+
+The signing primitive lives in `Admitto.Module.Shared/Application/Cryptography/`:
+
+- `ISigningService` — stateless HMAC-SHA256 over a payload + key, encoded as URL-safe Base64 (`+`→`-`, `/`→`_`, `=` stripped). Verification uses `CryptographicOperations.FixedTimeEquals` to avoid timing leaks.
+- `IEventSigningKeyProvider` — contract for resolving an event's signing key. The Registrations module supplies the implementation (caching in `IMemoryCache`) so other modules (e.g. Email verification tokens, future) can sign per-event without crossing module DbContexts.
+
+Payload-shaping helpers (e.g. `RegistrationSigner`) compose the two for a specific consumer; the registration-id payload is the lowercase hex (`Guid.ToString("N")`) form.
+
+**Endpoint validation order** for signed public endpoints: resolve team slug (404) → resolve event slug (404) → verify signature (403 on missing or invalid, *before* any aggregate lookup) → load the aggregate and confirm scope (404 on missing/wrong event) → produce the response. Verifying before lookup prevents the endpoint from being used as an existence oracle for registration IDs.
+
 ## 8.8 Value objects
 
 Aggregates and validators express format and range invariants through small **value objects**, never raw `string` or `int` parameters. The same VO is the single owner of the rule, the constant (e.g. `MaxLength`), and the error returned when input is invalid; both EF and FluentValidation reference it.

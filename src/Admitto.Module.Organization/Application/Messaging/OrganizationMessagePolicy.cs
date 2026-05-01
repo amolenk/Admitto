@@ -17,6 +17,7 @@ public class OrganizationMessagePolicy : MessagePolicy
             .PublishIntegrationEvent(e => new TicketedEventCreationRequested(
                 e.CreationRequestId.Value,
                 e.TeamId.Value,
+                e.TeamSlug.Value,
                 e.Slug.Value,
                 e.Name.Value,
                 e.WebsiteUrl.Value.ToString(),

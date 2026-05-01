@@ -6,6 +6,7 @@ public interface IRegistrationsFacade
 {
     ValueTask<TicketedEventEmailContextDto> GetTicketedEventEmailContextAsync(
         Guid ticketedEventId,
+        Guid registrationId,
         CancellationToken cancellationToken = default);
 
     /// <summary>

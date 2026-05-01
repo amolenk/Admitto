@@ -143,6 +143,7 @@ public class Team : Aggregate<TeamId>
         AddDomainEvent(new TicketedEventCreationRequestedDomainEvent(
             request.Id,
             Id,
+            Slug,
             requestedSlug,
             name,
             websiteUrl,

@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using Amolenk.Admitto.Module.Registrations.Domain.DomainEvents;
 using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Kernel.Entities;
@@ -25,16 +26,19 @@ public class TicketedEvent : Aggregate<TicketedEventId>
     private TicketedEvent(
         TicketedEventId id,
         TeamId teamId,
+        Slug teamSlug,
         Slug slug,
         DisplayName name,
         AbsoluteUrl websiteUrl,
         AbsoluteUrl baseUrl,
         DateTimeOffset startsAt,
         DateTimeOffset endsAt,
-        TimeZoneId timeZone)
+        TimeZoneId timeZone,
+        string signingKey)
         : base(id)
     {
         TeamId = teamId;
+        TeamSlug = teamSlug;
         Slug = slug;
         Name = name;
         WebsiteUrl = websiteUrl;
@@ -43,9 +47,19 @@ public class TicketedEvent : Aggregate<TicketedEventId>
         EndsAt = endsAt;
         TimeZone = timeZone;
         Status = EventLifecycleStatus.Active;
+        SigningKey = signingKey;
     }
 
     public TeamId TeamId { get; private set; }
+
+    /// <summary>
+    /// Denormalised slug of the owning team, captured at event creation time. Stored on the
+    /// aggregate so registration-bound URL composition (QR codes, signed links) stays inside
+    /// this module without an Organization facade lookup. Team slugs are immutable, so this
+    /// value is set once and never updated.
+    /// </summary>
+    public Slug TeamSlug { get; private set; }
+
     public Slug Slug { get; private set; }
     public DisplayName Name { get; private set; }
     public AbsoluteUrl WebsiteUrl { get; private set; }
@@ -60,11 +74,20 @@ public class TicketedEvent : Aggregate<TicketedEventId>
     public TicketedEventReconfirmPolicy? ReconfirmPolicy { get; private set; }
     public AdditionalDetailSchema AdditionalDetailSchema { get; private set; } = AdditionalDetailSchema.Empty;
 
+    /// <summary>
+    /// Per-event HMAC key used to sign registration-bound URLs (QR codes, future
+    /// signed-link flows). Generated at creation time, never exposed via DTOs,
+    /// integration events, or logs. Visible only inside the Registrations module
+    /// so signing helpers can read it.
+    /// </summary>
+    public string SigningKey { get; private set; } = null!;
+
     public bool IsActive => Status == EventLifecycleStatus.Active;
 
     public static TicketedEvent Create(
         TicketedEventId id,
         TeamId teamId,
+        Slug teamSlug,
         Slug slug,
         DisplayName name,
         AbsoluteUrl websiteUrl,
@@ -76,7 +99,10 @@ public class TicketedEvent : Aggregate<TicketedEventId>
         if (endsAt < startsAt)
             throw new BusinessRuleViolationException(Errors.EndBeforeStart);
 
-        return new TicketedEvent(id, teamId, slug, name, websiteUrl, baseUrl, startsAt, endsAt, timeZone);
+        var signingKey = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
+
+        return new TicketedEvent(
+            id, teamId, teamSlug, slug, name, websiteUrl, baseUrl, startsAt, endsAt, timeZone, signingKey);
     }
 
     public void ChangeTimeZone(TimeZoneId timeZone)

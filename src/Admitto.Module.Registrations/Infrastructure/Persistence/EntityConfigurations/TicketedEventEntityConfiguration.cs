@@ -23,6 +23,11 @@ public class TicketedEventEntityConfiguration : IEntityTypeConfiguration<Tickete
             .HasConversion<Guid>(v => v.Value, v => TeamId.From(v))
             .IsRequired();
 
+        builder.Property(e => e.TeamSlug)
+            .HasColumnName("team_slug")
+            .IsRequired()
+            .HasMaxLength(Slug.MaxLength);
+
         builder.Property(e => e.Slug)
             .HasColumnName("slug")
             .IsRequired()
@@ -64,6 +69,11 @@ public class TicketedEventEntityConfiguration : IEntityTypeConfiguration<Tickete
             .HasColumnName("status")
             .HasConversion<int>()
             .IsRequired();
+
+        builder.Property(e => e.SigningKey)
+            .HasColumnName("signing_key")
+            .IsRequired()
+            .HasMaxLength(64);
 
         builder.Property(e => e.Version)
             .HasColumnName("xmin")

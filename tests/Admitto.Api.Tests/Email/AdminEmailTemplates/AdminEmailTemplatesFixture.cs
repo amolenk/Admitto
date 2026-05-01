@@ -79,6 +79,7 @@ internal sealed class AdminEmailTemplatesFixture
         var ticketedEvent = TicketedEvent.Create(
             eventId,
             team.Id,
+            Slug.From(TeamSlug),
             Slug.From(EventSlug),
             DisplayName.From("Templates Conf"),
             AbsoluteUrl.From("https://example.com"),

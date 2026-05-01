@@ -1,4 +1,5 @@
 using System.Reflection;
+using Amolenk.Admitto.Module.Shared.Application.Cryptography;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using FluentValidation;
 using FluentValidation.Internal;
@@ -14,6 +15,13 @@ public static class DependencyInjection
         public IServiceCollection AddMessagingApplicationServices()
         {
             services.AddScoped<IMediator, Mediator>();
+
+            return services;
+        }
+
+        public IServiceCollection AddCryptographyApplicationServices()
+        {
+            services.AddSingleton<ISigningService, SigningService>();
 
             return services;
         }

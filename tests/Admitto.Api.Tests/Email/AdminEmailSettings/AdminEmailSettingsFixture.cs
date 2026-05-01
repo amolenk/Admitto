@@ -124,6 +124,7 @@ internal sealed class AdminEmailSettingsFixture
         var ticketedEvent = TicketedEvent.Create(
             eventId,
             team.Id,
+            Slug.From(TeamSlug),
             Slug.From(EventSlug),
             DisplayName.From("Settings Conf"),
             AbsoluteUrl.From("https://example.com"),

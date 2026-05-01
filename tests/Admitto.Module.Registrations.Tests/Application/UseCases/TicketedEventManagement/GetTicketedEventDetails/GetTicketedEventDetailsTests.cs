@@ -25,6 +25,7 @@ public sealed class GetTicketedEventDetailsTests(TestContext testContext) : Aspi
             var te = TicketedEvent.Create(
                 eventId,
                 teamId,
+                Slug.From("test-team"),
                 Slug.From("conf-2026"),
                 DisplayName.From("Conf 2026"),
                 AbsoluteUrl.From("https://example.com"),
@@ -79,6 +80,7 @@ public sealed class GetTicketedEventDetailsTests(TestContext testContext) : Aspi
             var te = TicketedEvent.Create(
                 eventId,
                 teamId,
+                Slug.From("test-team"),
                 Slug.From("bare-event"),
                 DisplayName.From("Bare Event"),
                 AbsoluteUrl.From("https://example.com"),

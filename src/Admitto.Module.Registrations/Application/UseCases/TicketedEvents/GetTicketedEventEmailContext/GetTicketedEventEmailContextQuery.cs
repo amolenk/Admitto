@@ -3,5 +3,5 @@ using Amolenk.Admitto.Module.Shared.Application.Messaging;
 
 namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketedEvents.GetTicketedEventEmailContext;
 
-internal record GetTicketedEventEmailContextQuery(Guid TicketedEventId)
+internal record GetTicketedEventEmailContextQuery(Guid TicketedEventId, Guid RegistrationId)
     : Query<TicketedEventEmailContextDto>;

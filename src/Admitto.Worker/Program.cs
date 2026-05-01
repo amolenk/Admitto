@@ -39,6 +39,7 @@ builder
 
 builder.Services
     .AddMessagingApplicationServices()
+    .AddCryptographyApplicationServices()
     .AddSharedInfrastructureServices();
 
 var host = builder.Build();

@@ -26,6 +26,7 @@ internal sealed class MaterializeTicketedEventFixture
             var existing = TicketedEvent.Create(
                 TicketedEventId.New(),
                 TeamId,
+                Amolenk.Admitto.Module.Shared.Kernel.ValueObjects.Slug.From("test-team"),
                 Amolenk.Admitto.Module.Shared.Kernel.ValueObjects.Slug.From(Slug),
                 DisplayName.From("Existing"),
                 AbsoluteUrl.From("https://example.com"),

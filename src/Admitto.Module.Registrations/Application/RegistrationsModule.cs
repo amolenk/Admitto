@@ -2,6 +2,7 @@ using Amolenk.Admitto.Module.Registrations.Application.UseCases.CouponManagement
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.CouponManagement.GetCouponDetails.AdminApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.CouponManagement.ListCoupons.AdminApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.CouponManagement.RevokeCoupon.AdminApi;
+using Amolenk.Admitto.Module.Registrations.Application.UseCases.Registrations.GetQRCode.PublicApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.Registrations.GetRegistrations.AdminApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.Registrations.RegisterAttendee.AdminApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.Registrations.RegisterAttendee.PublicApi.Coupon;
@@ -68,7 +69,8 @@ public static class RegistrationsModule
         group
             .MapGroup("/teams/{teamSlug}/events/{eventSlug}")
             .MapSelfRegisterAttendee()
-            .MapRegisterWithCoupon();
+            .MapRegisterWithCoupon()
+            .MapGetQRCode();
 
         return group;
     }

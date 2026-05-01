@@ -12,10 +12,11 @@ internal sealed class RegistrationsFacade(IMediator mediator) : IRegistrationsFa
 {
     public async ValueTask<TicketedEventEmailContextDto> GetTicketedEventEmailContextAsync(
         Guid ticketedEventId,
+        Guid registrationId,
         CancellationToken cancellationToken = default)
     {
         return await mediator.QueryAsync<GetTicketedEventEmailContextQuery, TicketedEventEmailContextDto>(
-            new GetTicketedEventEmailContextQuery(ticketedEventId),
+            new GetTicketedEventEmailContextQuery(ticketedEventId, registrationId),
             cancellationToken);
     }
 

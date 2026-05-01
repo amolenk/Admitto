@@ -33,6 +33,7 @@ internal sealed class SendRegistrationEmailFixture
         var ticketedEvent = TicketedEvent.Create(
             eventId,
             team.Id,
+            Slug.From(TeamSlug),
             Slug.From(EventSlug),
             DisplayName.From("MailConf"),
             AbsoluteUrl.From("https://example.com"),

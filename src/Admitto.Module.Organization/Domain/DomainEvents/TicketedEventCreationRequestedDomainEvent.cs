@@ -13,6 +13,7 @@ namespace Amolenk.Admitto.Module.Organization.Domain.DomainEvents;
 public sealed record TicketedEventCreationRequestedDomainEvent(
     CreationRequestId CreationRequestId,
     TeamId TeamId,
+    Slug TeamSlug,
     Slug Slug,
     DisplayName Name,
     AbsoluteUrl WebsiteUrl,

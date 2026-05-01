@@ -29,6 +29,7 @@ internal sealed class ConfigureReconfirmPolicyFixture
             var ticketedEvent = TicketedEvent.Create(
                 EventId,
                 TeamId,
+                Slug.From("test-team"),
                 Slug.From("reconfirm-policy-event"),
                 DisplayName.From("Reconfirm Policy Event"),
                 AbsoluteUrl.From("https://example.com"),

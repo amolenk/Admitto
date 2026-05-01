@@ -42,7 +42,16 @@ public static class ResultHttpExtensions
                 {
                     ["code"] = error.Code
                 }),
-            
+
+            ErrorType.Forbidden => TypedResults.Problem(
+                title: "Forbidden",
+                detail: error.Message,
+                statusCode: StatusCodes.Status403Forbidden,
+                extensions: new Dictionary<string, object?>
+                {
+                    ["code"] = error.Code
+                }),
+
             ErrorType.Validation => TypedResults.Problem(
                 title: "Validation error",
                 detail: error.Message,

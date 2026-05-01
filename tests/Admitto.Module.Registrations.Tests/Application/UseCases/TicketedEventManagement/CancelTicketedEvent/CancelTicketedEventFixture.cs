@@ -25,6 +25,7 @@ internal sealed class CancelTicketedEventFixture
             var ticketedEvent = TicketedEvent.Create(
                 EventId,
                 TeamId,
+                Slug.From("test-team"),
                 Slug.From("cancel-event"),
                 DisplayName.From("Cancel Event"),
                 AbsoluteUrl.From("https://example.com"),

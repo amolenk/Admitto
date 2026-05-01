@@ -19,6 +19,7 @@ public sealed class MaterializeTicketedEventTests(TestContext testContext) : Asp
         var evt = new TicketedEventCreationRequested(
             fixture.CreationRequestId,
             fixture.TeamId.Value,
+            "test-team",
             fixture.Slug,
             "My Conference",
             "https://conf.example.com",
@@ -62,6 +63,7 @@ public sealed class MaterializeTicketedEventTests(TestContext testContext) : Asp
         var evt = new TicketedEventCreationRequested(
             fixture.CreationRequestId,
             fixture.TeamId.Value,
+            "test-team",
             fixture.Slug,
             "My Conference",
             "https://conf.example.com",
@@ -100,6 +102,7 @@ public sealed class MaterializeTicketedEventTests(TestContext testContext) : Asp
         var evt = new TicketedEventCreationRequested(
             fixture.CreationRequestId,
             fixture.TeamId.Value,
+            "test-team",
             fixture.Slug,
             "My Conference",
             "https://conf.example.com",
