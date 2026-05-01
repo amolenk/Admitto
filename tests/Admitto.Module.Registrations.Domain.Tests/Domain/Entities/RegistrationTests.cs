@@ -94,7 +94,7 @@ public sealed class RegistrationTests
         var sut = NewRegistration();
         sut.Cancel(CancellationReason.AttendeeRequest);
 
-        var result = ErrorResult.Capture(() => sut.Cancel(CancellationReason.Other));
+        var result = ErrorResult.Capture(() => sut.Cancel(CancellationReason.AttendeeRequest));
 
         result.Error.ShouldMatch(Registration.Errors.AlreadyCancelled);
     }

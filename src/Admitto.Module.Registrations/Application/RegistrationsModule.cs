@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Module.Registrations.Application.UseCases.Registrations.CancelRegistration.AdminApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.CouponManagement.CreateCoupon.AdminApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.CouponManagement.GetCouponDetails.AdminApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.CouponManagement.ListCoupons.AdminApi;
@@ -49,6 +50,7 @@ public static class RegistrationsModule
             .MapUpdateAdditionalDetailSchema()
             .MapAdminRegisterAttendee()
             .MapGetRegistrations()
+            .MapCancelRegistration()
             .MapCreateCoupon()
             .MapListCoupons()
             .MapGetCouponDetails()

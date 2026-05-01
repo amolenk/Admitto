@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "https://localhost:55755/"
+      "url": "http://localhost:61879/"
     }
   ],
   "paths": {
@@ -2296,6 +2296,104 @@
         }
       }
     },
+    "/admin/teams/{teamSlug}/events/{eventSlug}/bulk-emails/preview": {
+      "post": {
+        "tags": [
+          "Admitto.Api"
+        ],
+        "operationId": "PreviewBulkEmail",
+        "parameters": [
+          {
+            "name": "teamSlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "eventSlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreviewBulkEmailHttpRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreviewBulkEmailResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/admin/teams/{teamSlug}/events/{eventSlug}/bulk-emails": {
       "post": {
         "tags": [
@@ -3622,6 +3720,106 @@
         }
       }
     },
+    "/admin/teams/{teamSlug}/events/{eventSlug}/registrations/{registrationId}/cancel": {
+      "post": {
+        "tags": [
+          "CancelRegistrationHttpEndpoint"
+        ],
+        "operationId": "CancelRegistration",
+        "parameters": [
+          {
+            "name": "registrationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "teamSlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "eventSlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelRegistrationHttpRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
     "/admin/teams/{teamSlug}/events/{eventSlug}/coupons": {
       "post": {
         "tags": [
@@ -4503,6 +4701,80 @@
           }
         }
       }
+    },
+    "/teams/{teamSlug}/events/{eventSlug}/registrations/{registrationId}/qr-code": {
+      "get": {
+        "tags": [
+          "GetQRCodeHttpEndpoint"
+        ],
+        "operationId": "GetQRCodeHttpEndpoint",
+        "parameters": [
+          {
+            "name": "teamSlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "eventSlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "registrationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "signature",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -5077,6 +5349,24 @@
           }
         }
       },
+      "BulkEmailRecipientPreviewDto": {
+        "required": [
+          "email",
+          "displayName"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "displayName": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "BulkEmailRecipientStatus": {
         "enum": [
           "pending",
@@ -5119,6 +5409,20 @@
           "lateCancellationCutoff": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "CancelRegistrationHttpRequest": {
+        "required": [
+          "reason"
+        ],
+        "type": "object",
+        "properties": {
+          "reason": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -5714,6 +6018,40 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/CouponSummaryDto"
+            }
+          }
+        }
+      },
+      "PreviewBulkEmailHttpRequest": {
+        "required": [
+          "source"
+        ],
+        "type": "object",
+        "properties": {
+          "source": {
+            "$ref": "#/components/schemas/BulkEmailSourceHttpDto"
+          }
+        }
+      },
+      "PreviewBulkEmailResponse": {
+        "required": [
+          "count",
+          "sample"
+        ],
+        "type": "object",
+        "properties": {
+          "count": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "sample": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BulkEmailRecipientPreviewDto"
             }
           }
         }
@@ -6540,8 +6878,8 @@
         "type": "oauth2",
         "flows": {
           "authorizationCode": {
-            "authorizationUrl": "http://localhost:55746/realms/admitto/protocol/openid-connect/auth",
-            "tokenUrl": "http://localhost:55746/realms/admitto/protocol/openid-connect/token",
+            "authorizationUrl": "http://localhost:61882/realms/admitto/protocol/openid-connect/auth",
+            "tokenUrl": "http://localhost:61882/realms/admitto/protocol/openid-connect/token",
             "scopes": {
               "manage": "Access the Management API",
               "openid": "Access the OpenID Connect user profile",
@@ -6640,6 +6978,9 @@
       "name": "GetRegistrationsHttpEndpoint"
     },
     {
+      "name": "CancelRegistrationHttpEndpoint"
+    },
+    {
       "name": "CreateCouponHttpEndpoint"
     },
     {
@@ -6668,6 +7009,9 @@
     },
     {
       "name": "RegisterWithCouponHttpEndpoint"
+    },
+    {
+      "name": "GetQRCodeHttpEndpoint"
     }
   ]
 }

@@ -1,0 +1,12 @@
+Your {{ event_name }} Registration Has Been Cancelled
+
+Hi {{ first_name }},
+
+Thank you for expressing interest in attending {{ event_name }}. We appreciate your enthusiasm and the global interest our event has garnered.
+However, we regret to inform you that we are unable to provide business invitation letters for visa purposes. We have limited resources and must prioritize the immediate logistics of the conference.
+We understand this might be disappointing, and we apologize for any inconvenience this may cause. Your current registration will be canceled automatically.
+Thank you for your understanding.
+
+Best regards,
+The {{ event_name }} Team
+

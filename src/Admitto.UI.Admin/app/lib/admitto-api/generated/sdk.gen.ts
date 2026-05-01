@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AddTicketTypeData, AddTicketTypeErrors, AddTicketTypeResponses, AdminRegisterAttendeeData, AdminRegisterAttendeeErrors, AdminRegisterAttendeeResponses, ArchiveTeamData, ArchiveTeamErrors, ArchiveTeamResponses, ArchiveTicketedEventData, ArchiveTicketedEventErrors, ArchiveTicketedEventResponses, AssignTeamMembershipData, AssignTeamMembershipErrors, AssignTeamMembershipResponses, CancelBulkEmailData, CancelBulkEmailErrors, CancelBulkEmailResponses, CancelTicketedEventData, CancelTicketedEventErrors, CancelTicketedEventResponses, CancelTicketTypeData, CancelTicketTypeErrors, CancelTicketTypeResponses, ChangeTeamMembershipRoleData, ChangeTeamMembershipRoleErrors, ChangeTeamMembershipRoleResponses, ConfigureCancellationPolicyData, ConfigureCancellationPolicyErrors, ConfigureCancellationPolicyResponses, ConfigureReconfirmPolicyData, ConfigureReconfirmPolicyErrors, ConfigureReconfirmPolicyResponses, ConfigureRegistrationPolicyData, ConfigureRegistrationPolicyErrors, ConfigureRegistrationPolicyResponses, CreateBulkEmailData, CreateBulkEmailErrors, CreateBulkEmailResponses, CreateCouponData, CreateCouponErrors, CreateCouponResponses, CreateTeamData, CreateTeamErrors, CreateTeamResponses, DeleteEventEmailSettingsData, DeleteEventEmailSettingsErrors, DeleteEventEmailSettingsResponses, DeleteEventEmailTemplateData, DeleteEventEmailTemplateErrors, DeleteEventEmailTemplateResponses, DeleteTeamEmailSettingsData, DeleteTeamEmailSettingsErrors, DeleteTeamEmailSettingsResponses, DeleteTeamEmailTemplateData, DeleteTeamEmailTemplateErrors, DeleteTeamEmailTemplateResponses, GetBulkEmailData, GetBulkEmailErrors, GetBulkEmailResponses, GetBulkEmailsData, GetBulkEmailsErrors, GetBulkEmailsResponses, GetCouponDetailsData, GetCouponDetailsErrors, GetCouponDetailsResponses, GetEventCreationRequestData, GetEventCreationRequestErrors, GetEventCreationRequestResponses, GetEventEmailSettingsData, GetEventEmailSettingsErrors, GetEventEmailSettingsResponses, GetEventEmailTemplateData, GetEventEmailTemplateErrors, GetEventEmailTemplateResponses, GetRegistrationsData, GetRegistrationsErrors, GetRegistrationsResponses, GetTeamData, GetTeamEmailSettingsData, GetTeamEmailSettingsErrors, GetTeamEmailSettingsResponses, GetTeamEmailTemplateData, GetTeamEmailTemplateErrors, GetTeamEmailTemplateResponses, GetTeamErrors, GetTeamResponses, GetTeamsData, GetTeamsErrors, GetTeamsResponses, GetTicketedEventDetailsData, GetTicketedEventDetailsErrors, GetTicketedEventDetailsResponses, GetTicketedEventsData, GetTicketedEventsErrors, GetTicketedEventsResponses, GetTicketTypesData, GetTicketTypesErrors, GetTicketTypesResponses, ListCouponsData, ListCouponsErrors, ListCouponsResponses, ListTeamMembersData, ListTeamMembersErrors, ListTeamMembersResponses, RegisterWithCouponHttpEndpointData, RegisterWithCouponHttpEndpointErrors, RemoveTeamMembershipData, RemoveTeamMembershipErrors, RemoveTeamMembershipResponses, RequestTicketedEventCreationData, RequestTicketedEventCreationErrors, RequestTicketedEventCreationResponses, RevokeCouponData, RevokeCouponErrors, RevokeCouponResponses, SelfRegisterAttendeeHttpEndpointData, SelfRegisterAttendeeHttpEndpointErrors, TestEventEmailSettingsData, TestEventEmailSettingsErrors, TestEventEmailSettingsResponses, TestTeamEmailSettingsData, TestTeamEmailSettingsErrors, TestTeamEmailSettingsResponses, UpdateAdditionalDetailSchemaData, UpdateAdditionalDetailSchemaErrors, UpdateAdditionalDetailSchemaResponses, UpdateTeamData, UpdateTeamErrors, UpdateTeamResponses, UpdateTicketedEventDetailsData, UpdateTicketedEventDetailsErrors, UpdateTicketedEventDetailsResponses, UpdateTicketedEventTimeZoneData, UpdateTicketedEventTimeZoneErrors, UpdateTicketedEventTimeZoneResponses, UpdateTicketTypeData, UpdateTicketTypeErrors, UpdateTicketTypeResponses, UpsertEventEmailSettingsData, UpsertEventEmailSettingsErrors, UpsertEventEmailSettingsResponses, UpsertEventEmailTemplateData, UpsertEventEmailTemplateErrors, UpsertEventEmailTemplateResponses, UpsertTeamEmailSettingsData, UpsertTeamEmailSettingsErrors, UpsertTeamEmailSettingsResponses, UpsertTeamEmailTemplateData, UpsertTeamEmailTemplateErrors, UpsertTeamEmailTemplateResponses } from './types.gen';
+import type { AddTicketTypeData, AddTicketTypeErrors, AddTicketTypeResponses, AdminRegisterAttendeeData, AdminRegisterAttendeeErrors, AdminRegisterAttendeeResponses, ArchiveTeamData, ArchiveTeamErrors, ArchiveTeamResponses, ArchiveTicketedEventData, ArchiveTicketedEventErrors, ArchiveTicketedEventResponses, AssignTeamMembershipData, AssignTeamMembershipErrors, AssignTeamMembershipResponses, CancelBulkEmailData, CancelBulkEmailErrors, CancelBulkEmailResponses, CancelRegistrationData, CancelRegistrationErrors, CancelRegistrationResponses, CancelTicketedEventData, CancelTicketedEventErrors, CancelTicketedEventResponses, CancelTicketTypeData, CancelTicketTypeErrors, CancelTicketTypeResponses, ChangeTeamMembershipRoleData, ChangeTeamMembershipRoleErrors, ChangeTeamMembershipRoleResponses, ConfigureCancellationPolicyData, ConfigureCancellationPolicyErrors, ConfigureCancellationPolicyResponses, ConfigureReconfirmPolicyData, ConfigureReconfirmPolicyErrors, ConfigureReconfirmPolicyResponses, ConfigureRegistrationPolicyData, ConfigureRegistrationPolicyErrors, ConfigureRegistrationPolicyResponses, CreateBulkEmailData, CreateBulkEmailErrors, CreateBulkEmailResponses, CreateCouponData, CreateCouponErrors, CreateCouponResponses, CreateTeamData, CreateTeamErrors, CreateTeamResponses, DeleteEventEmailSettingsData, DeleteEventEmailSettingsErrors, DeleteEventEmailSettingsResponses, DeleteEventEmailTemplateData, DeleteEventEmailTemplateErrors, DeleteEventEmailTemplateResponses, DeleteTeamEmailSettingsData, DeleteTeamEmailSettingsErrors, DeleteTeamEmailSettingsResponses, DeleteTeamEmailTemplateData, DeleteTeamEmailTemplateErrors, DeleteTeamEmailTemplateResponses, GetBulkEmailData, GetBulkEmailErrors, GetBulkEmailResponses, GetBulkEmailsData, GetBulkEmailsErrors, GetBulkEmailsResponses, GetCouponDetailsData, GetCouponDetailsErrors, GetCouponDetailsResponses, GetEventCreationRequestData, GetEventCreationRequestErrors, GetEventCreationRequestResponses, GetEventEmailSettingsData, GetEventEmailSettingsErrors, GetEventEmailSettingsResponses, GetEventEmailTemplateData, GetEventEmailTemplateErrors, GetEventEmailTemplateResponses, GetQrCodeHttpEndpointData, GetQrCodeHttpEndpointErrors, GetRegistrationsData, GetRegistrationsErrors, GetRegistrationsResponses, GetTeamData, GetTeamEmailSettingsData, GetTeamEmailSettingsErrors, GetTeamEmailSettingsResponses, GetTeamEmailTemplateData, GetTeamEmailTemplateErrors, GetTeamEmailTemplateResponses, GetTeamErrors, GetTeamResponses, GetTeamsData, GetTeamsErrors, GetTeamsResponses, GetTicketedEventDetailsData, GetTicketedEventDetailsErrors, GetTicketedEventDetailsResponses, GetTicketedEventsData, GetTicketedEventsErrors, GetTicketedEventsResponses, GetTicketTypesData, GetTicketTypesErrors, GetTicketTypesResponses, ListCouponsData, ListCouponsErrors, ListCouponsResponses, ListTeamMembersData, ListTeamMembersErrors, ListTeamMembersResponses, PreviewBulkEmailData, PreviewBulkEmailErrors, PreviewBulkEmailResponses, RegisterWithCouponHttpEndpointData, RegisterWithCouponHttpEndpointErrors, RemoveTeamMembershipData, RemoveTeamMembershipErrors, RemoveTeamMembershipResponses, RequestTicketedEventCreationData, RequestTicketedEventCreationErrors, RequestTicketedEventCreationResponses, RevokeCouponData, RevokeCouponErrors, RevokeCouponResponses, SelfRegisterAttendeeHttpEndpointData, SelfRegisterAttendeeHttpEndpointErrors, TestEventEmailSettingsData, TestEventEmailSettingsErrors, TestEventEmailSettingsResponses, TestTeamEmailSettingsData, TestTeamEmailSettingsErrors, TestTeamEmailSettingsResponses, UpdateAdditionalDetailSchemaData, UpdateAdditionalDetailSchemaErrors, UpdateAdditionalDetailSchemaResponses, UpdateTeamData, UpdateTeamErrors, UpdateTeamResponses, UpdateTicketedEventDetailsData, UpdateTicketedEventDetailsErrors, UpdateTicketedEventDetailsResponses, UpdateTicketedEventTimeZoneData, UpdateTicketedEventTimeZoneErrors, UpdateTicketedEventTimeZoneResponses, UpdateTicketTypeData, UpdateTicketTypeErrors, UpdateTicketTypeResponses, UpsertEventEmailSettingsData, UpsertEventEmailSettingsErrors, UpsertEventEmailSettingsResponses, UpsertEventEmailTemplateData, UpsertEventEmailTemplateErrors, UpsertEventEmailTemplateResponses, UpsertTeamEmailSettingsData, UpsertTeamEmailSettingsErrors, UpsertTeamEmailSettingsResponses, UpsertTeamEmailTemplateData, UpsertTeamEmailTemplateErrors, UpsertTeamEmailTemplateResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -404,6 +404,23 @@ export const upsertEventEmailTemplate = <ThrowOnError extends boolean = false>(o
     });
 };
 
+export const previewBulkEmail = <ThrowOnError extends boolean = false>(options: Options<PreviewBulkEmailData, ThrowOnError>) => {
+    return (options.client ?? client).post<PreviewBulkEmailResponses, PreviewBulkEmailErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamSlug}/events/{eventSlug}/bulk-emails/preview',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
 export const getBulkEmails = <ThrowOnError extends boolean = false>(options: Options<GetBulkEmailsData, ThrowOnError>) => {
     return (options.client ?? client).get<GetBulkEmailsResponses, GetBulkEmailsErrors, ThrowOnError>({
         security: [
@@ -631,6 +648,23 @@ export const adminRegisterAttendee = <ThrowOnError extends boolean = false>(opti
     });
 };
 
+export const cancelRegistration = <ThrowOnError extends boolean = false>(options: Options<CancelRegistrationData, ThrowOnError>) => {
+    return (options.client ?? client).post<CancelRegistrationResponses, CancelRegistrationErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamSlug}/events/{eventSlug}/registrations/{registrationId}/cancel',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
 export const listCoupons = <ThrowOnError extends boolean = false>(options: Options<ListCouponsData, ThrowOnError>) => {
     return (options.client ?? client).get<ListCouponsResponses, ListCouponsErrors, ThrowOnError>({
         security: [
@@ -778,5 +812,18 @@ export const registerWithCouponHttpEndpoint = <ThrowOnError extends boolean = fa
             'Content-Type': 'application/json',
             ...options.headers
         }
+    });
+};
+
+export const getQrCodeHttpEndpoint = <ThrowOnError extends boolean = false>(options: Options<GetQrCodeHttpEndpointData, ThrowOnError>) => {
+    return (options.client ?? client).get<unknown, GetQrCodeHttpEndpointErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/teams/{teamSlug}/events/{eventSlug}/registrations/{registrationId}/qr-code',
+        ...options
     });
 };

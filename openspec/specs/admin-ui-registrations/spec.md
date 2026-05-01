@@ -56,10 +56,17 @@ The visual design SHALL match existing admin features in look-and-feel (form con
 ### Requirement: Admin UI displays a registrations list page for each event
 The Admin UI SHALL provide a page at `/teams/{teamSlug}/events/{eventSlug}/registrations` that loads all registrations of the event in a single fetch and renders them in a table.
 
+Each row in the table SHALL include a "Cancel" action that is visible and enabled only when the row's `status` is `Registered`. Activating the action SHALL open a confirmation dialog that:
+- Explains the action is irreversible.
+- Presents a required reason selector with the three options: `AttendeeRequest`, `VisaLetterDenied`, `TicketTypesRemoved` (human-readable labels).
+- Has a "Confirm" button that is disabled until a reason is selected.
+
+On confirmation, the UI SHALL call `POST /admin/…/registrations/{registrationId}/cancel` via `apiClient` with the selected reason. On success, the UI SHALL refresh the registration list so the row's status updates to `Cancelled`. On a 4xx/5xx response, the UI SHALL surface an error notification without navigating away.
+
 #### Scenario: SC001 Page loads and shows registrations
 - **GIVEN** an organizer is authenticated and viewing an event with registrations
 - **WHEN** they navigate to the registrations page
-- **THEN** the table displays one row per registration with columns Attendee, Ticket, Status, Reconfirm, Registered
+- **THEN** the table displays one row per registration with columns Attendee, Ticket, Status, Reconfirm, Registered, and Actions
 
 #### Scenario: SC002 Empty event shows an empty-state row
 - **GIVEN** an event has no registrations
@@ -86,6 +93,26 @@ The Admin UI SHALL provide a page at `/teams/{teamSlug}/events/{eventSlug}/regis
 - **WHEN** the page renders a row whose `hasReconfirmed=true` and `reconfirmedAt="2026-04-20T08:30Z"`
 - **THEN** the Reconfirm column shows a checkmark plus the formatted timestamp (event-zone aware per `admin-ui-event-management`)
 - **AND** when `hasReconfirmed=false` the Reconfirm column shows "—"
+
+#### Scenario: SC019 Cancel action is shown only for Registered rows
+- **GIVEN** a table with one `Registered` row and one `Cancelled` row
+- **WHEN** the page renders
+- **THEN** only the `Registered` row has an active "Cancel" action; the `Cancelled` row's action is absent or disabled
+
+#### Scenario: SC020 Cancel confirmation dialog requires a reason before confirming
+- **WHEN** an organizer activates the "Cancel" action on a `Registered` row
+- **THEN** a confirmation dialog opens with a reason selector and a disabled "Confirm" button
+- **AND** the "Confirm" button becomes enabled only after a reason is selected
+
+#### Scenario: SC021 Confirmed cancel with reason updates the row status
+- **GIVEN** an organizer selects "AttendeeRequest" in the confirmation dialog and clicks "Confirm"
+- **WHEN** the cancel endpoint returns 200
+- **THEN** the table refreshes and the row's status changes to `Cancelled`
+
+#### Scenario: SC022 Cancel API error surfaces a notification
+- **GIVEN** an organizer confirms cancellation but the cancel endpoint returns a 4xx or 5xx error
+- **WHEN** the response arrives
+- **THEN** an error notification is shown and the row's status is unchanged
 
 ### Requirement: Registrations page summarises totals against capacity
 The page SHALL display a single summary tile showing the total registration count, optionally followed by the event capacity.

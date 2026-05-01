@@ -10,27 +10,29 @@ using Microsoft.EntityFrameworkCore;
 namespace Amolenk.Admitto.Module.Email.Application.UseCases.SendEmail.EventHandlers;
 
 /// <summary>
-/// Handles <see cref="AttendeeRegisteredIntegrationEvent"/> by dispatching a
-/// <see cref="SendEmailCommand"/> to send a registration confirmation email.
+/// Handles <see cref="RegistrationCancelledIntegrationEvent"/> by dispatching a
+/// <see cref="SendEmailCommand"/> with the appropriate cancellation template.
 /// </summary>
 /// <remarks>
-/// No capability gate — this handler runs in any host that processes the Registrations queue.
-/// The actual send is gated on <see cref="HostCapability.Email"/> inside <see cref="SendEmailCommandHandler"/>.
-/// Idempotency key: <c>attendee-registered:{registrationId}</c>.
-/// Event name, website URL, and pre-signed links are all returned by the Registrations facade
-/// so signing infra stays inside the Registrations module.
+/// Template routing: AttendeeRequest → cancellation; VisaLetterDenied → visa-letter-denied.
+/// TicketTypesRemoved is a no-op (handled by a future change).
+/// Idempotency key: <c>registration-cancelled:{registrationId}</c>.
 /// </remarks>
-internal sealed class AttendeeRegisteredIntegrationEventHandler(
+internal sealed class RegistrationCancelledIntegrationEventHandler(
     IEmailWriteStore writeStore,
     IRegistrationsFacade registrationsFacade,
     IMediator mediator)
-    : IIntegrationEventHandler<AttendeeRegisteredIntegrationEvent>
+    : IIntegrationEventHandler<RegistrationCancelledIntegrationEvent>
 {
     public async ValueTask HandleAsync(
-        AttendeeRegisteredIntegrationEvent integrationEvent,
+        RegistrationCancelledIntegrationEvent integrationEvent,
         CancellationToken cancellationToken)
     {
-        var idempotencyKey = $"attendee-registered:{integrationEvent.RegistrationId}";
+        var emailType = ResolveEmailType(integrationEvent.Reason);
+        if (emailType is null)
+            return;
+
+        var idempotencyKey = $"registration-cancelled:{integrationEvent.RegistrationId}";
 
         var alreadyHandled = await writeStore.EmailLog
             .AnyAsync(l => l.IdempotencyKey == idempotencyKey, cancellationToken);
@@ -43,20 +45,20 @@ internal sealed class AttendeeRegisteredIntegrationEventHandler(
             integrationEvent.RegistrationId,
             cancellationToken);
 
-        var fullName = $"{integrationEvent.FirstName} {integrationEvent.LastName}".Trim();
+        var firstName = eventContext.FirstName ?? string.Empty;
+        var lastName = eventContext.LastName ?? string.Empty;
 
         var command = new SendEmailCommand(
             TeamId: TeamId.From(integrationEvent.TeamId),
             TicketedEventId: TicketedEventId.From(integrationEvent.TicketedEventId),
             RecipientAddress: integrationEvent.RecipientEmail,
-            RecipientName: fullName,
-            EmailType: EmailTemplateType.Ticket,
+            RecipientName: $"{firstName} {lastName}".Trim(),
+            EmailType: emailType,
             IdempotencyKey: idempotencyKey,
             Parameters: new
             {
-                RecipientName = fullName,
-                integrationEvent.FirstName,
-                integrationEvent.LastName,
+                FirstName = firstName,
+                LastName = lastName,
                 EventName = eventContext.Name,
                 EventWebsite = eventContext.WebsiteUrl,
                 QRCodeLink = eventContext.QRCodeLink
@@ -64,4 +66,11 @@ internal sealed class AttendeeRegisteredIntegrationEventHandler(
 
         await mediator.SendAsync(command, cancellationToken);
     }
+
+    private static string? ResolveEmailType(string reason) => reason switch
+    {
+        "AttendeeRequest" => EmailTemplateType.Cancellation,
+        "VisaLetterDenied" => EmailTemplateType.VisaLetterDenied,
+        _ => null
+    };
 }

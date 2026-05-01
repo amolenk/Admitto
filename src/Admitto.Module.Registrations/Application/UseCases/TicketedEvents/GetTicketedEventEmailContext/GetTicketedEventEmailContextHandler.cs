@@ -41,6 +41,22 @@ internal sealed class GetTicketedEventEmailContextHandler(
             $"{fields.BaseUrl.TrimEnd('/')}/teams/{fields.TeamSlug}/events/{fields.EventSlug}" +
             $"/registrations/{query.RegistrationId}/qr-code?signature={signature}";
 
-        return new TicketedEventEmailContextDto(fields.Name, fields.WebsiteUrl, qrCodeLink);
+        string? firstName = null;
+        string? lastName = null;
+
+        if (query.RegistrationId != Guid.Empty)
+        {
+            var registrationId = RegistrationId.From(query.RegistrationId);
+            var attendee = await writeStore.Registrations
+                .AsNoTracking()
+                .Where(r => r.Id == registrationId)
+                .Select(r => new { FirstName = r.FirstName.Value, LastName = r.LastName.Value })
+                .FirstOrDefaultAsync(cancellationToken);
+
+            firstName = attendee?.FirstName;
+            lastName = attendee?.LastName;
+        }
+
+        return new TicketedEventEmailContextDto(fields.Name, fields.WebsiteUrl, qrCodeLink, firstName, lastName);
     }
 }

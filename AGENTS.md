@@ -79,7 +79,6 @@ Before declaring a feature complete:
 - HTTP-exposed slices: command/query, handler, endpoint, request/validator/response as needed.
 - Internal event-driven work: event-handler pattern under `Application/UseCases/.../EventHandlers/`; jobs under `Application/Jobs/`.
 - Endpoint wiring updated in the module's endpoint registration entry point.
-- Each admin API endpoint has a corresponding CLI command in `src/Admitto.Cli/Commands/` (see `src/Admitto.Cli/AGENTS.md`).
 - Each acceptance scenario (`SC-*`) has a corresponding test method with scenario ID prefix (`SC001_...`).
 - Tests use fixture/builder patterns, not inline setup.
 - All new and existing tests pass.

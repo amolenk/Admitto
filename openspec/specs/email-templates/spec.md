@@ -6,7 +6,7 @@ TBD - created by archiving change add-email-module. Update Purpose after archive
 ### Requirement: Email templates are configurable per team and per event
 The Email module SHALL persist `EmailTemplate` records scoped to either a team or a specific ticketed event. Each template SHALL carry a `Type`, a `Subject`, a `TextBody`, and an `HtmlBody`. A team SHALL have at most one template per `Type`; an event SHALL have at most one template per `Type`.
 
-The supported `Type` values SHALL be: `ticket` (single registration confirmation), `cancellation` (single cancellation confirmation), `reconfirm` (recurring reconfirm-attendance prompt), and `bulk-custom` (catch-all type used when ad-hoc subject/body fully overrides the resolved template; see `bulk-email` capability).
+The supported `Type` values SHALL be: `ticket` (single registration confirmation), `cancellation` (attendee-request cancellation), `visa-letter-denied` (visa denial cancellation), `ticket-types-removed` (system/admin cancellation due to removed ticket types), `reconfirm` (recurring reconfirm-attendance prompt), and `bulk-custom` (catch-all type used when ad-hoc subject/body fully overrides the resolved template; see `bulk-email` capability).
 
 #### Scenario: Create a team-scoped template
 - **WHEN** an organizer creates a `ticket` template for team "acme" with subject "Welcome to {{ event_name }}", a text body, and an html body
@@ -23,6 +23,18 @@ The supported `Type` values SHALL be: `ticket` (single registration confirmation
 #### Scenario: Create a reconfirm template
 - **WHEN** an organizer creates a `reconfirm` team-scoped template for team "acme"
 - **THEN** an `EmailTemplate` is persisted with scope=team, type="reconfirm" and is used by the reconfirm scheduler for any of the team's events lacking an event-scoped override
+
+#### Scenario: Create a cancellation template
+- **WHEN** an organizer creates a `cancellation` template for team "acme"
+- **THEN** an `EmailTemplate` is persisted with scope=team, type="cancellation" and is used for attendee-request cancellations for any of the team's events lacking an event-scoped override
+
+#### Scenario: Create a visa-letter-denied template
+- **WHEN** an organizer creates a `visa-letter-denied` template for team "acme"
+- **THEN** an `EmailTemplate` is persisted with scope=team, type="visa-letter-denied"
+
+#### Scenario: Create a ticket-types-removed template
+- **WHEN** an organizer creates a `ticket-types-removed` template for team "acme"
+- **THEN** an `EmailTemplate` is persisted with scope=team, type="ticket-types-removed"
 
 #### Scenario: bulk-custom type cannot be persisted as a template
 - **WHEN** an organizer attempts to create or upsert a template with `type="bulk-custom"`
