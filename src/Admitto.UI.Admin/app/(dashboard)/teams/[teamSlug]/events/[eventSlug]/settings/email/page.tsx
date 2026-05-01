@@ -18,10 +18,14 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { EmailSettingsDto } from "@/lib/admitto-api/generated";
+import { EmailSettingsDto, TeamDto, TeamMemberListItemDto } from "@/lib/admitto-api/generated";
 import { apiClient } from "@/lib/api-client";
 import { FormError } from "@/components/form-error";
 import { EmailSettingsForm } from "./email-settings-form";
+import {
+    buildEmailRecipientOptions,
+    TestEmailField,
+} from "./test-email-settings-button";
 
 async function fetchEmailSettings(url: string): Promise<EmailSettingsDto | null> {
     try {
@@ -32,6 +36,14 @@ async function fetchEmailSettings(url: string): Promise<EmailSettingsDto | null>
         }
         throw err;
     }
+}
+
+async function fetchTeam(teamSlug: string): Promise<TeamDto> {
+    return apiClient.get<TeamDto>(`/api/teams/${teamSlug}`);
+}
+
+async function fetchTeamMembers(teamSlug: string): Promise<TeamMemberListItemDto[]> {
+    return apiClient.get<TeamMemberListItemDto[]>(`/api/teams/${teamSlug}/members`);
 }
 
 export default function EmailSettingsPage() {
@@ -48,19 +60,34 @@ export default function EmailSettingsPage() {
         retry: false,
     });
 
-    const teamQuery = useQuery({
+    const teamSettingsQuery = useQuery({
         queryKey: ["team-email-settings", teamSlug],
         queryFn: () => fetchEmailSettings(`/api/teams/${teamSlug}/email-settings`),
         throwOnError: false,
         retry: false,
     });
 
-    if (eventQuery.isLoading || teamQuery.isLoading) {
+    const teamQuery = useQuery({
+        queryKey: ["team", teamSlug],
+        queryFn: () => fetchTeam(teamSlug),
+        throwOnError: false,
+        retry: false,
+    });
+
+    const membersQuery = useQuery({
+        queryKey: ["team-members", teamSlug],
+        queryFn: () => fetchTeamMembers(teamSlug),
+        throwOnError: false,
+        retry: false,
+    });
+
+    if (eventQuery.isLoading || teamSettingsQuery.isLoading) {
         return <Skeleton className="h-64 w-full max-w-lg" />;
     }
 
     const eventSettings = eventQuery.data ?? null;
-    const teamSettings = teamQuery.data ?? null;
+    const teamSettings = teamSettingsQuery.data ?? null;
+    const recipientOptions = buildEmailRecipientOptions(teamQuery.data, membersQuery.data);
 
     const teamEmailPageHref = `/teams/${teamSlug}/settings/email`;
 
@@ -127,10 +154,18 @@ export default function EmailSettingsPage() {
                     authMode: (eventSettings?.authMode as "none" | "basic") ?? "none",
                     username: eventSettings?.username ?? "",
                 }}
+                renderTestEmail={eventSettings !== null
+                    ? () => (
+                        <TestEmailField
+                            apiUrl={`/api/teams/${teamSlug}/events/${eventSlug}/email-settings/test`}
+                            recipients={recipientOptions}
+                        />
+                    )
+                    : undefined}
             />
 
             {eventSettings !== null && (
-                <div className="mt-8">
+                <div className="mt-8 space-y-6">
                     {deleteError && (
                         <Alert variant="destructive" className="mb-4">
                             <AlertCircle className="h-4 w-4" />

@@ -17,10 +17,14 @@ import {
     AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { AlertCircle } from "lucide-react";
-import { EmailSettingsDto } from "@/lib/admitto-api/generated";
+import { EmailSettingsDto, TeamDto, TeamMemberListItemDto } from "@/lib/admitto-api/generated";
 import { apiClient } from "@/lib/api-client";
 import { FormError } from "@/components/form-error";
 import { EmailSettingsForm } from "../../events/[eventSlug]/settings/email/email-settings-form";
+import {
+    buildEmailRecipientOptions,
+    TestEmailField,
+} from "../../events/[eventSlug]/settings/email/test-email-settings-button";
 
 async function fetchTeamEmailSettings(teamSlug: string): Promise<EmailSettingsDto | null> {
     try {
@@ -31,6 +35,14 @@ async function fetchTeamEmailSettings(teamSlug: string): Promise<EmailSettingsDt
         }
         throw err;
     }
+}
+
+async function fetchTeam(teamSlug: string): Promise<TeamDto> {
+    return apiClient.get<TeamDto>(`/api/teams/${teamSlug}`);
+}
+
+async function fetchTeamMembers(teamSlug: string): Promise<TeamMemberListItemDto[]> {
+    return apiClient.get<TeamMemberListItemDto[]>(`/api/teams/${teamSlug}/members`);
 }
 
 export default function TeamEmailSettingsPage() {
@@ -47,12 +59,27 @@ export default function TeamEmailSettingsPage() {
         retry: false,
     });
 
+    const teamQuery = useQuery({
+        queryKey: ["team", teamSlug],
+        queryFn: () => fetchTeam(teamSlug),
+        throwOnError: false,
+        retry: false,
+    });
+
+    const membersQuery = useQuery({
+        queryKey: ["team-members", teamSlug],
+        queryFn: () => fetchTeamMembers(teamSlug),
+        throwOnError: false,
+        retry: false,
+    });
+
     if (query.isLoading) {
         return <Skeleton className="h-64 w-full max-w-lg" />;
     }
 
     const settings = query.data ?? null;
     const version = settings ? Number(settings.version) : null;
+    const recipientOptions = buildEmailRecipientOptions(teamQuery.data, membersQuery.data);
 
     async function handleDelete() {
         setIsDeleting(true);
@@ -84,10 +111,18 @@ export default function TeamEmailSettingsPage() {
                     authMode: (settings?.authMode as "none" | "basic") ?? "none",
                     username: settings?.username ?? "",
                 }}
+                renderTestEmail={settings !== null
+                    ? () => (
+                        <TestEmailField
+                            apiUrl={`/api/teams/${teamSlug}/email-settings/test`}
+                            recipients={recipientOptions}
+                        />
+                    )
+                    : undefined}
             />
 
             {settings !== null && (
-                <div className="mt-8">
+                <div className="mt-8 space-y-6">
                     {deleteError && (
                         <Alert variant="destructive" className="mb-4">
                             <AlertCircle className="h-4 w-4" />

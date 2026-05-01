@@ -48,12 +48,14 @@ export function EmailSettingsForm({
     hasPassword = false,
     version,
     initialValues,
+    renderTestEmail,
 }: {
     apiUrl: string;
     queryKey: unknown[];
     hasPassword?: boolean;
     version: number | null;
     initialValues: EmailSettingsInitialValues;
+    renderTestEmail?: () => React.ReactNode;
 }) {
     const queryClient = useQueryClient();
 
@@ -216,6 +218,8 @@ export function EmailSettingsForm({
                                     />
                                 </>
                             )}
+
+                            {renderTestEmail?.()}
                         </div>
                     </Card>
                 </form>

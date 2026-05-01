@@ -244,4 +244,84 @@ public sealed class AdminEmailSettingsTests(TestContext testContext) : EndToEndT
 
         response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
     }
+
+    // Scenario: Diagnostic send succeeds at team scope
+    // WHEN an organizer tests team-scoped email settings
+    // THEN the response is 200 OK and MailDev receives the diagnostic message
+    [TestMethod]
+    public async Task SC011_TestTeamSettings_ReturnsOkAndSendsDiagnostic()
+    {
+        var fixture = AdminEmailSettingsFixture.WithTeamSettings();
+        await fixture.SetupTeamSmtpSettingsAsync(Environment);
+        await Environment.ClearAsync(testContext.CancellationToken);
+
+        var response = await Environment.ApiClient.PostAsJsonAsync(
+            AdminEmailSettingsFixture.TeamSettingsTestRoute,
+            new { Recipient = "ops@acme.org" },
+            cancellationToken: testContext.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+
+        var messages = await Environment.PollAsync(1, TimeSpan.FromSeconds(10), testContext.CancellationToken);
+        messages.RecipientAddresses().ShouldContain("ops@acme.org");
+    }
+
+    // Scenario: Diagnostic send succeeds at event scope without consulting the team scope
+    // WHEN an organizer tests event-scoped email settings
+    // THEN the response is 200 OK and MailDev receives the diagnostic message
+    [TestMethod]
+    public async Task SC012_TestEventSettings_ReturnsOkAndSendsDiagnostic()
+    {
+        var fixture = AdminEmailSettingsFixture.WithBothSettings();
+        await fixture.SetupBothSmtpSettingsAsync(Environment);
+        await Environment.ClearAsync(testContext.CancellationToken);
+
+        var response = await Environment.ApiClient.PostAsJsonAsync(
+            AdminEmailSettingsFixture.EventSettingsTestRoute,
+            new { Recipient = "ops@acme.org" },
+            cancellationToken: testContext.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+
+        var messages = await Environment.PollAsync(1, TimeSpan.FromSeconds(10), testContext.CancellationToken);
+        messages.RecipientAddresses().ShouldContain("ops@acme.org");
+    }
+
+    // Scenario: Recipient validation
+    // WHEN an organizer submits an invalid recipient
+    // THEN the endpoint validator rejects the request with 400 Bad Request
+    [TestMethod]
+    public async Task SC013_TestEmailSettings_InvalidRecipient_ReturnsBadRequest()
+    {
+        var fixture = AdminEmailSettingsFixture.EmptySettings();
+        await fixture.SetupEmptyAsync(Environment);
+
+        var response = await Environment.ApiClient.PostAsJsonAsync(
+            AdminEmailSettingsFixture.TeamSettingsTestRoute,
+            new { Recipient = "not-an-email" },
+            cancellationToken: testContext.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+    }
+
+    // Scenario: Authorization
+    // WHEN a non-organizer tests email settings
+    // THEN the request is denied before a diagnostic email is sent
+    [TestMethod]
+    public async Task SC014_TestEmailSettings_NonOrganizer_ReturnsForbidden()
+    {
+        var fixture = AdminEmailSettingsFixture.WithTeamSettings();
+        await fixture.SetupTeamSmtpSettingsAsync(Environment);
+        await Environment.ClearAsync(testContext.CancellationToken);
+
+        var response = await Environment.BobApiClient.PostAsJsonAsync(
+            AdminEmailSettingsFixture.TeamSettingsTestRoute,
+            new { Recipient = "ops@acme.org" },
+            cancellationToken: testContext.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+
+        var messages = await Environment.PollAsync(1, TimeSpan.FromSeconds(2), testContext.CancellationToken);
+        messages.ShouldBeEmpty();
+    }
 }

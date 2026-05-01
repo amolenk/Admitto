@@ -10,6 +10,7 @@ The Admin UI lets team admins manage registrations for a ticketed event. This ca
 The Admin UI SHALL provide an "Add registration" affordance on the event's registrations area, reachable from the existing event navigation for a team's event. Activating it SHALL open a form (dialog or page) that lets a team admin submit a single new registration for that event.
 
 The form SHALL collect:
+- Attendee `firstName` and `lastName` (both required, validated client-side as non-empty)
 - Attendee email (required, validated client-side as a well-formed email)
 - One or more ticket-type selections, populated from the event's current ticket catalog (required, at least one selection)
 - Additional details, rendered from the event's `AdditionalDetailSchema` using the same field types and length limits the public registration form already uses (optional)
@@ -21,10 +22,18 @@ On success, the UI SHALL close the form, refresh the registrations list so the n
 The visual design SHALL match existing admin features in look-and-feel (form controls, spacing, validation messaging) per the repo's design conventions.
 
 #### Scenario: Successfully add a registration via the Admin UI
-- **WHEN** an admin on team "acme" opens the registrations area for event "devconf", clicks "Add registration", fills in `email = "speaker@example.com"`, selects ticket type "Speaker Pass", and submits
-- **THEN** the UI calls the admin-add endpoint, the form closes on success, and the registrations list shows "speaker@example.com" with ticket "Speaker Pass"
+- **WHEN** an admin on team "acme" opens the registrations area for event "devconf", clicks "Add registration", fills in `firstName="Speaker"`, `lastName="One"`, `email="speaker@example.com"`, selects ticket type "Speaker Pass", and submits
+- **THEN** the UI calls the admin-add endpoint with all four fields, the form closes on success, and the registrations list shows "Speaker One" / "speaker@example.com" with ticket "Speaker Pass"
 
-#### Scenario: Display client-side validation error on add
+#### Scenario: Display client-side validation error on add — missing first name
+- **WHEN** an admin submits the add-registration form with an empty `firstName`
+- **THEN** the form displays an inline validation error on the first-name field and does not call the backend
+
+#### Scenario: Display client-side validation error on add — missing last name
+- **WHEN** an admin submits the add-registration form with an empty `lastName`
+- **THEN** the form displays an inline validation error on the last-name field and does not call the backend
+
+#### Scenario: Display client-side validation error on add — missing email
 - **WHEN** an admin submits the add-registration form with an empty email
 - **THEN** the form displays an inline validation error on the email field and does not call the backend
 
@@ -57,23 +66,26 @@ The Admin UI SHALL provide a page at `/teams/{teamSlug}/events/{eventSlug}/regis
 - **WHEN** the organizer opens the registrations page
 - **THEN** the table shows an empty-state message (e.g. "No registrations yet.") instead of rows
 
-#### Scenario: SC003 Attendee column derives display name from email
-- **GIVEN** a registration with email `jane.doe@example.com`
+#### Scenario: SC003 Attendee column shows the registration's first and last name
+- **GIVEN** a registration with `firstName="Jane"`, `lastName="Doe"`, `email="jane.doe@example.com"`
 - **WHEN** the page renders that row
-- **THEN** the Attendee column shows `jane.doe` as the primary line and `jane.doe@example.com` as the secondary line
+- **THEN** the Attendee column shows "Jane Doe" as the primary line and "jane.doe@example.com" as the secondary line
 
 #### Scenario: SC004 Ticket column shows one badge per ticket
 - **GIVEN** a registration that holds two tickets
 - **WHEN** the page renders that row
 - **THEN** the Ticket column shows two badges with the ticket display names
 
-#### Scenario: SC005 Status column is hardcoded to "Confirmed"
-- **WHEN** the page renders any registration row
-- **THEN** the Status column shows the badge "Confirmed"
+#### Scenario: SC005 Status column reflects the registration's status
+- **GIVEN** a registration row whose `status` is `Registered`
+- **WHEN** the page renders the row
+- **THEN** the Status column shows a "Registered" badge styled as success
+- **AND** when `status` is `Cancelled` the Status column shows a "Cancelled" badge styled as muted
 
-#### Scenario: SC006 Reconfirm column is hardcoded to "—"
-- **WHEN** the page renders any registration row
-- **THEN** the Reconfirm column shows "—"
+#### Scenario: SC006 Reconfirm column reflects HasReconfirmed
+- **WHEN** the page renders a row whose `hasReconfirmed=true` and `reconfirmedAt="2026-04-20T08:30Z"`
+- **THEN** the Reconfirm column shows a checkmark plus the formatted timestamp (event-zone aware per `admin-ui-event-management`)
+- **AND** when `hasReconfirmed=false` the Reconfirm column shows "—"
 
 ### Requirement: Registrations page summarises totals against capacity
 The page SHALL display a single summary tile showing the total registration count, optionally followed by the event capacity.
@@ -91,24 +103,25 @@ The page SHALL display a single summary tile showing the total registration coun
 ### Requirement: Registrations page supports client-side search, filter, sort, and paging
 The page SHALL apply search, ticket-type filter, column sort, and pagination entirely on the client without re-fetching from the server.
 
-#### Scenario: SC009 Search filters by email substring
+#### Scenario: SC009 Search filters across name and email
 - **GIVEN** the search box contains "jane"
 - **WHEN** the table renders
-- **THEN** only rows whose email contains "jane" (case-insensitive) are shown
+- **THEN** only rows whose `firstName`, `lastName`, or `email` contain "jane" (case-insensitive substring match) are shown
 
 #### Scenario: SC010 Ticket-type filter narrows the rows
 - **GIVEN** the ticket-type filter is set to a specific ticket slug
 - **WHEN** the table renders
 - **THEN** only registrations holding at least one ticket with that slug are shown
 
-#### Scenario: SC011 Default sort is most-recent first
+#### Scenario: SC011 Default sort is by attendee name ascending
 - **WHEN** the page first loads
-- **THEN** rows are ordered by Registered timestamp descending
+- **THEN** rows are ordered by `lastName` ascending, tie-broken by `firstName` ascending
+- **AND** clicking the Registered column header re-sorts by registered timestamp descending
 
 #### Scenario: SC012 Clicking a sortable column header toggles sort direction
 - **GIVEN** the Attendee column is currently sorted ascending
 - **WHEN** the organizer clicks the Attendee column header
-- **THEN** the rows are reordered by Attendee descending
+- **THEN** the rows are reordered by `lastName` descending (then `firstName` descending)
 
 #### Scenario: SC013 Pagination shows 25 rows per page
 - **GIVEN** the filtered list contains 60 rows

@@ -3,26 +3,27 @@ import {headers} from 'next/headers';
 import {NextResponse} from "next/server";
 import {type CreateClientConfig} from './generated/client.gen';
 
+async function getAccessToken(): Promise<string> {
+    try {
+        const { accessToken } = await auth.api.getAccessToken({
+            body: {
+                providerId: "generic-oauth",
+            },
+            headers: await headers()
+        });
+
+        return accessToken ?? "";
+    } catch {
+        // Token expired and refresh failed — return empty so the backend
+        // returns 401, which callAdmittoApi forwards to the client.
+        return "";
+    }
+}
+
 export const createClientConfig: CreateClientConfig = (config) => ({
     ...config,
     baseUrl: process.env.ADMITTO_API_URL ?? "http://localhost:5100",
-    auth: async () => {
-
-        try {
-            const { accessToken } = await auth.api.getAccessToken({
-                body: {
-                    providerId: "generic-oauth",
-                },
-                headers: await headers()
-            });
-
-            return accessToken ?? "";
-        } catch {
-            // Token expired and refresh failed — return empty so the backend
-            // returns 401, which callAdmittoApi forwards to the client.
-            return "";
-        }
-    },
+    auth: getAccessToken,
 });
 
 export async function callAdmittoApi<T>(

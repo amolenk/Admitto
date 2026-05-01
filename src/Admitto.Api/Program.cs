@@ -11,6 +11,7 @@ using Amolenk.Admitto.Module.Registrations.Application;
 using Amolenk.Admitto.Module.Registrations.Infrastructure;
 using Amolenk.Admitto.Module.Shared.Application.Auth;
 using Amolenk.Admitto.Module.Shared.Application.Http;
+using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Infrastructure;
 using Scalar.AspNetCore;
 
@@ -32,7 +33,7 @@ builder
 builder
     .AddSharedInfrastructureMessagingServices()
     .AddOrganizationInfrastructureServices()
-    .AddEmailInfrastructureServices()
+    .AddEmailInfrastructureServices(HostCapability.Email)
     .AddRegistrationsInfrastructureServices()
     .Services
     .AddSharedInfrastructureServices();

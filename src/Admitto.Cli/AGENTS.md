@@ -3,6 +3,12 @@
 ## Scope
 This file applies to `src/Admitto.Cli/`.
 
+## Status: Legacy Project
+**This project is now considered legacy.** 
+- No further changes will be made to the CLI regardless of future breakage
+- All business logic lives in the API backend
+- The CLI is a thin HTTP client that wraps the NSwag-generated ApiClient
+
 ## Architecture
 The CLI is a **thin HTTP client** — all business logic lives in the API backend. Commands are lightweight wrappers around the NSwag-generated `ApiClient`.
 
@@ -102,6 +108,14 @@ config.AddBranch("coupon", coupon =>
 
 ## NSwag API Client
 `ApiClient.g.cs` is auto-generated. **Do not edit it manually.** After adding new API endpoints, regenerate via the `cli-api-client-generation` skill or by running `./generate-api-client.sh`.
+
+Do not add handwritten `ApiClient` partials as a substitute for regeneration when a new endpoint is missing. If the generated client cannot be refreshed, treat that as an environment or AppHost/spec-availability problem and fix that first.
+
+In this repository, the reliable path is:
+1. `aspire start --isolated`
+2. `aspire wait api`
+3. confirm the live spec is reachable at `/openapi/v1.json` on the `api` endpoint from `aspire describe`
+4. regenerate the CLI client
 
 ## Quarantining Commands When the API Surface Shrinks
 When the backend removes endpoints, regenerating `ApiClient.g.cs` can break existing commands. **Do not delete commands** — quarantine them instead.

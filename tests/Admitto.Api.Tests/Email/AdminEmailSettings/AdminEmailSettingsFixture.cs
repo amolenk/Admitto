@@ -14,6 +14,8 @@ internal sealed class AdminEmailSettingsFixture
 
     public static string TeamSettingsRoute => $"/admin/teams/{TeamSlug}/email-settings";
     public static string EventSettingsRoute => $"/admin/teams/{TeamSlug}/events/{EventSlug}/email-settings";
+    public static string TeamSettingsTestRoute => $"{TeamSettingsRoute}/test";
+    public static string EventSettingsTestRoute => $"{EventSettingsRoute}/test";
 
     private AdminEmailSettingsFixture() { }
 
@@ -45,6 +47,21 @@ internal sealed class AdminEmailSettingsFixture
         return settings.Version;
     }
 
+    public async ValueTask<uint> SetupTeamSmtpSettingsAsync(EndToEndTestEnvironment environment)
+    {
+        var (team, _) = await SeedTeamAndEventAsync(environment);
+
+        var settings = new EventEmailSettingsBuilder()
+            .ForTeam(team.Id)
+            .WithSmtpHost(environment.MailDevSmtpEndpoint.Host)
+            .WithSmtpPort(environment.MailDevSmtpEndpoint.Port)
+            .WithFromAddress("team@example.com")
+            .Build();
+
+        await environment.EmailDatabase.SeedAsync(db => db.EmailSettings.Add(settings));
+        return settings.Version;
+    }
+
     public async ValueTask<(uint TeamVersion, uint EventVersion)> SetupBothSettingsAsync(EndToEndTestEnvironment environment)
     {
         var (team, eventId) = await SeedTeamAndEventAsync(environment);
@@ -56,6 +73,33 @@ internal sealed class AdminEmailSettingsFixture
 
         var eventSettings = new EventEmailSettingsBuilder()
             .ForEvent(eventId)
+            .WithFromAddress("event@example.com")
+            .Build();
+
+        await environment.EmailDatabase.SeedAsync(db =>
+        {
+            db.EmailSettings.Add(teamSettings);
+            db.EmailSettings.Add(eventSettings);
+        });
+
+        return (teamSettings.Version, eventSettings.Version);
+    }
+
+    public async ValueTask<(uint TeamVersion, uint EventVersion)> SetupBothSmtpSettingsAsync(EndToEndTestEnvironment environment)
+    {
+        var (team, eventId) = await SeedTeamAndEventAsync(environment);
+
+        var teamSettings = new EventEmailSettingsBuilder()
+            .ForTeam(team.Id)
+            .WithSmtpHost(environment.MailDevSmtpEndpoint.Host)
+            .WithSmtpPort(environment.MailDevSmtpEndpoint.Port)
+            .WithFromAddress("team@example.com")
+            .Build();
+
+        var eventSettings = new EventEmailSettingsBuilder()
+            .ForEvent(eventId)
+            .WithSmtpHost(environment.MailDevSmtpEndpoint.Host)
+            .WithSmtpPort(environment.MailDevSmtpEndpoint.Port)
             .WithFromAddress("event@example.com")
             .Build();
 

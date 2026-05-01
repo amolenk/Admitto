@@ -7,7 +7,7 @@ This capability covers listing registrations of a single ticketed event for admi
 ## Requirements
 
 ### Requirement: Admin can list registrations for a ticketed event
-The system SHALL expose a query that returns every registration belonging to a single ticketed event, with enough information to identify the attendee, the tickets they hold, and when they registered.
+The system SHALL expose a query that returns every registration belonging to a single ticketed event, with enough information to identify the attendee, the tickets they hold, when they registered, the registration's lifecycle `Status`, and whether the attendee has reconfirmed.
 
 #### Scenario: SC001 Empty event returns empty list
 - **WHEN** an admin requests the registrations of an active event with no registrations
@@ -17,7 +17,7 @@ The system SHALL expose a query that returns every registration belonging to a s
 - **GIVEN** an event has three registrations
 - **WHEN** an admin requests the registrations of that event
 - **THEN** the system returns three items
-- **AND** each item exposes the registration id, the attendee email, the list of tickets (slug + display name), and the registered-at timestamp
+- **AND** each item exposes the registration id, the attendee `email`, `firstName`, `lastName`, the list of tickets (slug + display name), the registered-at timestamp, the registration `status` (`Registered`/`Cancelled`), and `hasReconfirmed` (with `reconfirmedAt` when true)
 
 #### Scenario: SC003 Multiple tickets are surfaced together
 - **GIVEN** a registration was created with two ticket types
@@ -36,6 +36,16 @@ The system SHALL expose a query that returns every registration belonging to a s
 #### Scenario: SC006 Unknown event returns 404
 - **WHEN** an admin requests registrations using a known team but unknown event slug
 - **THEN** the system returns a not-found result
+
+#### Scenario: SC010 Cancelled registrations are included with status=Cancelled
+- **GIVEN** an event has one `Registered` and one `Cancelled` registration
+- **WHEN** an admin requests the registrations of that event
+- **THEN** both items are returned and each carries its own `status`
+
+#### Scenario: SC011 Reconfirmed registration carries the timestamp
+- **GIVEN** an attendee has reconfirmed their registration at `2026-04-20T08:30Z`
+- **WHEN** an admin requests the registrations of the event
+- **THEN** the corresponding item carries `hasReconfirmed=true` and `reconfirmedAt="2026-04-20T08:30Z"`
 
 ### Requirement: Listing registrations is exposed via an admin HTTP endpoint
 The system SHALL expose the listing query at `GET /admin/teams/{teamSlug}/events/{eventSlug}/registrations`, restricted to authenticated members of the team.

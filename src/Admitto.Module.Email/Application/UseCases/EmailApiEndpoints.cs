@@ -2,8 +2,10 @@ using Amolenk.Admitto.Module.Email.Application.UseCases.BulkEmails.CancelBulkEma
 using Amolenk.Admitto.Module.Email.Application.UseCases.BulkEmails.CreateBulkEmail.AdminApi;
 using Amolenk.Admitto.Module.Email.Application.UseCases.BulkEmails.GetBulkEmail.AdminApi;
 using Amolenk.Admitto.Module.Email.Application.UseCases.BulkEmails.GetBulkEmails.AdminApi;
+using Amolenk.Admitto.Module.Email.Application.UseCases.BulkEmails.PreviewBulkEmail.AdminApi;
 using Amolenk.Admitto.Module.Email.Application.UseCases.EmailSettings.DeleteEmailSettings.AdminApi;
 using Amolenk.Admitto.Module.Email.Application.UseCases.EmailSettings.GetEmailSettings.AdminApi;
+using Amolenk.Admitto.Module.Email.Application.UseCases.EmailSettings.SendTestEmail.AdminApi;
 using Amolenk.Admitto.Module.Email.Application.UseCases.EmailSettings.UpsertEmailSettings.AdminApi;
 using Amolenk.Admitto.Module.Email.Application.UseCases.EmailTemplates.DeleteEmailTemplate.AdminApi;
 using Amolenk.Admitto.Module.Email.Application.UseCases.EmailTemplates.GetEmailTemplate.AdminApi;
@@ -21,14 +23,16 @@ public static class EmailApiEndpoints
             .MapGroup("/teams/{teamSlug}/email-settings")
             .MapGetEmailSettings(EmailSettingsScope.Team, s => s.TeamId)
             .MapUpsertEmailSettings(EmailSettingsScope.Team, s => s.TeamId)
-            .MapDeleteEmailSettings(EmailSettingsScope.Team, s => s.TeamId);
+            .MapDeleteEmailSettings(EmailSettingsScope.Team, s => s.TeamId)
+            .MapSendTestEmail(EmailSettingsScope.Team, s => s.TeamId);
 
         // Event-scoped email settings
         group
             .MapGroup("/teams/{teamSlug}/events/{eventSlug}/email-settings")
             .MapGetEmailSettings(EmailSettingsScope.Event, s => s.EventId!.Value)
             .MapUpsertEmailSettings(EmailSettingsScope.Event, s => s.EventId!.Value)
-            .MapDeleteEmailSettings(EmailSettingsScope.Event, s => s.EventId!.Value);
+            .MapDeleteEmailSettings(EmailSettingsScope.Event, s => s.EventId!.Value)
+            .MapSendTestEmail(EmailSettingsScope.Event, s => s.EventId!.Value);
 
         // Team-scoped email templates
         group
@@ -47,6 +51,7 @@ public static class EmailApiEndpoints
         // Event-scoped bulk emails
         group
             .MapGroup("/teams/{teamSlug}/events/{eventSlug}/bulk-emails")
+            .MapPreviewBulkEmail()
             .MapCreateBulkEmail()
             .MapGetBulkEmails()
             .MapGetBulkEmail()

@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:15000/"
+      "url": "https://localhost:55755/"
     }
   ],
   "paths": {
@@ -1254,6 +1254,96 @@
         }
       }
     },
+    "/admin/teams/{teamSlug}/email-settings/test": {
+      "post": {
+        "tags": [
+          "Handler"
+        ],
+        "operationId": "TestTeamEmailSettings",
+        "parameters": [
+          {
+            "name": "teamSlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "eventSlug",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendTestEmailHttpRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/admin/teams/{teamSlug}/events/{eventSlug}/email-settings": {
       "get": {
         "tags": [
@@ -1522,6 +1612,97 @@
           },
           "204": {
             "description": "No Content"
+          }
+        }
+      }
+    },
+    "/admin/teams/{teamSlug}/events/{eventSlug}/email-settings/test": {
+      "post": {
+        "tags": [
+          "Handler"
+        ],
+        "operationId": "TestEventEmailSettings",
+        "parameters": [
+          {
+            "name": "teamSlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "eventSlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendTestEmailHttpRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK"
           }
         }
       }
@@ -5854,6 +6035,17 @@
           }
         }
       },
+      "SendTestEmailHttpRequest": {
+        "required": [
+          "recipient"
+        ],
+        "type": "object",
+        "properties": {
+          "recipient": {
+            "type": "string"
+          }
+        }
+      },
       "TeamDto": {
         "required": [
           "slug",
@@ -6348,8 +6540,8 @@
         "type": "oauth2",
         "flows": {
           "authorizationCode": {
-            "authorizationUrl": "http://localhost:15001/realms/admitto/protocol/openid-connect/auth",
-            "tokenUrl": "http://localhost:15001/realms/admitto/protocol/openid-connect/token",
+            "authorizationUrl": "http://localhost:55746/realms/admitto/protocol/openid-connect/auth",
+            "tokenUrl": "http://localhost:55746/realms/admitto/protocol/openid-connect/token",
             "scopes": {
               "manage": "Access the Management API",
               "openid": "Access the OpenID Connect user profile",

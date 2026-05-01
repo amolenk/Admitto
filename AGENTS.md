@@ -29,6 +29,7 @@ Key sections:
 - Command handlers must not inject or commit unit-of-work objects.
 - Admin routes run FluentValidation in the endpoint filter before handler execution.
 - Cross-module communication goes via contracts/facades, not cross-module DbContext access.
+- **CLI is now a legacy project**: No further changes will be made to the CLI regardless of future breakage. All business logic lives in the API backend.
 - Events must follow the domain/module/integration taxonomy in `docs/arc42/08-crosscutting-concepts.md`.
 
 ## Running the Application
@@ -40,11 +41,27 @@ aspire start
 ```
 The Aspire dashboard shows the dynamic URL assigned to the `api` service.
 
+When working in a worktree or another concurrent agent session, prefer:
+```
+aspire start --isolated
+```
+
+Before relying on the API endpoint, wait for it explicitly:
+```
+aspire wait api
+aspire describe
+```
+
+In this Codex environment, sandboxed `curl` to the Aspire-published `localhost` endpoint can fail even when Aspire reports the resource as healthy. If you need to verify the live API spec or probe the running service, retry the local `curl` outside the sandbox and fetch `/openapi/v1.json` from the URL reported by `aspire describe`.
+
 ## Regenerating the Admin UI SDK
 When backend endpoints change, regenerate the generated SDK:
 1. Start the Aspire AppHost.
-2. Regenerate: `cd src/Admitto.UI.Admin && pnpm run openapi-ts`
-3. Use the newly generated functions from `app/lib/admitto-api/generated/` in proxy routes.
+2. Prefer `aspire start --isolated`, then `aspire wait api`, then confirm the live spec is reachable at `/openapi/v1.json` on the `api` endpoint from `aspire describe`.
+3. Regenerate: `cd src/Admitto.UI.Admin && pnpm run openapi-ts`
+4. Use the newly generated functions from `app/lib/admitto-api/generated/` in proxy routes.
+
+If generation is blocked, fix the Aspire/spec access problem first. Do not add handwritten replacements for generated Admin UI or CLI client operations as a shortcut around regeneration.
 
 ## Testing
 Run targeted tests for the modules you changed. See `tests/AGENTS.md` for commands and suite selection.
