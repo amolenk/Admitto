@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Module.Email.Application.UseCases.AttendeeEmails.GetAttendeeEmails.AdminApi;
 using Amolenk.Admitto.Module.Email.Application.UseCases.BulkEmails.CancelBulkEmail.AdminApi;
 using Amolenk.Admitto.Module.Email.Application.UseCases.BulkEmails.CreateBulkEmail.AdminApi;
 using Amolenk.Admitto.Module.Email.Application.UseCases.BulkEmails.GetBulkEmail.AdminApi;
@@ -56,6 +57,11 @@ public static class EmailApiEndpoints
             .MapGetBulkEmails()
             .MapGetBulkEmail()
             .MapCancelBulkEmail();
+
+        // Event-scoped attendee emails
+        group
+            .MapGroup("/teams/{teamSlug}/events/{eventSlug}/registrations/{registrationId:guid}")
+            .MapGetAttendeeEmails();
 
         return group;
     }

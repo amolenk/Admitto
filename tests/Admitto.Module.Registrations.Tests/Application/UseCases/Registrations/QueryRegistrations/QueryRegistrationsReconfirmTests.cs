@@ -137,7 +137,7 @@ public sealed class QueryRegistrationsReconfirmTests(TestContext testContext) : 
             EmailAddress.From(email),
             FirstName.From(Capitalize(emailParts[0])),
             LastName.From("Doe"),
-            [new TicketTypeSnapshot(Slug, [])]);
+            [new TicketTypeSnapshot(Slug, Slug, [])]);
 
         if (reconfirmed)
             registration.Reconfirm(DateTimeOffset.UtcNow);

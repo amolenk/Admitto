@@ -338,7 +338,7 @@ internal sealed class RegisterAttendeeFixture
                     EmailAddress.From("alice@example.com"),
                     FirstName.From("Alice"),
                     LastName.From("Doe"),
-                    [new TicketTypeSnapshot(TicketTypeSlug, [])]);
+                    [new TicketTypeSnapshot(TicketTypeSlug, TicketTypeSlug, [])]);
                 dbContext.Registrations.Add(existing);
             });
         }

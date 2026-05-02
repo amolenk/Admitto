@@ -10,4 +10,5 @@ public sealed record SendEmailCommand(
     string RecipientName,
     string EmailType,
     string IdempotencyKey,
-    object Parameters) : Command;
+    object Parameters,
+    Guid? RegistrationId = null) : Command;

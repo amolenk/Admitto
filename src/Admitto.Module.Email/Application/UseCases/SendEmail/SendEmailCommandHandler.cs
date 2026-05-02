@@ -46,7 +46,8 @@ internal sealed class SendEmailCommandHandler(
                 status: EmailLogStatus.Failed,
                 sentAt: null,
                 statusUpdatedAt: now,
-                lastError: "Email settings not configured or incomplete."));
+                lastError: "Email settings not configured or incomplete.",
+                registrationId: command.RegistrationId));
             return;
         }
 
@@ -72,7 +73,8 @@ internal sealed class SendEmailCommandHandler(
                 status: EmailLogStatus.Failed,
                 sentAt: null,
                 statusUpdatedAt: now,
-                lastError: ex.Message));
+                lastError: ex.Message,
+                registrationId: command.RegistrationId));
             return;
         }
 
@@ -99,7 +101,8 @@ internal sealed class SendEmailCommandHandler(
                 providerMessageId: providerMessageId,
                 status: EmailLogStatus.Sent,
                 sentAt: now,
-                statusUpdatedAt: now));
+                statusUpdatedAt: now,
+                registrationId: command.RegistrationId));
         }
         catch (Exception ex)
         {
@@ -115,7 +118,8 @@ internal sealed class SendEmailCommandHandler(
                 status: EmailLogStatus.Failed,
                 sentAt: null,
                 statusUpdatedAt: DateTimeOffset.UtcNow,
-                lastError: ex.Message));
+                lastError: ex.Message,
+                registrationId: command.RegistrationId));
 
             throw;
         }

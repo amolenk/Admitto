@@ -12,6 +12,7 @@ public sealed class RegistrationsDbContext(DbContextOptions<RegistrationsDbConte
 {
     public static string SchemaName => "registrations";
 
+    public DbSet<ActivityLog> ActivityLog => Set<ActivityLog>();
     public DbSet<Coupon> Coupons => Set<Coupon>();
     public DbSet<Registration> Registrations => Set<Registration>();
     public DbSet<TicketCatalog> TicketCatalogs => Set<TicketCatalog>();

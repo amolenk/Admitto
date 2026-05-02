@@ -74,6 +74,7 @@ public class RegistrationEntityConfiguration : IEntityTypeConfiguration<Registra
         {
             b.ToJson("tickets");
             b.Property(t => t.Slug).HasJsonPropertyName("slug").IsRequired();
+            b.Property(t => t.Name).HasJsonPropertyName("name").IsRequired();
             b.PrimitiveCollection(t => t.TimeSlots).HasJsonPropertyName("time_slots");
         });
 

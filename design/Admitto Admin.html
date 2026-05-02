@@ -641,6 +641,7 @@ function AppHeader({ page, setPage, showDark, setShowDark }) {
   const crumbs = {
     dashboard:     ["Azure Fest NL", "Azure Fest", "Dashboard"],
     registrations: ["Azure Fest NL", "Azure Fest", "Registrations"],
+    attendee:      ["Azure Fest NL", "Azure Fest", "Registrations", "Attendee"],
     tickets:       ["Azure Fest NL", "Azure Fest", "Ticket types"],
     settings:      ["Azure Fest NL", "Azure Fest", "Settings"],
   }[page];
@@ -1107,12 +1108,13 @@ function RegistrationsPage() {
                            onChange={() => toggleRow(a.id)}/>
                   </td>
                   <td className="px-3 py-3">
-                    <div className="flex items-center gap-2.5">
+                    <div className="flex items-center gap-2.5 cursor-pointer hover:opacity-80"
+                         onClick={() => window.__nav?.goto("attendee", {attendeeId: a.id})}>
                       <div className="h-7 w-7 rounded-full bg-muted grid place-items-center text-[11px] font-semibold text-muted-fg">
                         {a.name.split(" ").map(s=>s[0]).slice(0,2).join("")}
                       </div>
                       <div className="min-w-0">
-                        <div className="font-medium truncate">{a.name}</div>
+                        <div className="font-medium truncate hover:underline">{a.name}</div>
                         <div className="text-[12px] text-muted-fg truncate">{a.email}</div>
                       </div>
                     </div>
@@ -1162,6 +1164,230 @@ function HeadCell({ label, k, sortKey, sortDir, onSort }) {
 }
 
 window.RegistrationsPage = RegistrationsPage;
+
+
+//====== attendee.jsx ======
+// Attendee detail page — details, tickets, combined activity timeline
+function AttendeePage({ attendeeId }) {
+  const a = AZURE_FEST.attendees.find(x => x.id === attendeeId) || AZURE_FEST.attendees[0];
+
+  // Build a chronological activity feed combining registration events + emails.
+  // Times are mock — newest first.
+  const baseEvents = [
+    a.status === "Cancelled" && { kind: "cancelled",   t: "5h ago",      title: "Registration cancelled",     detail: `${a.ticket} ticket released back to the pool.` },
+    a.reconfirmed && { kind: "reconfirmed",            t: "2 days ago",  title: "Attendance reconfirmed",     detail: "Clicked the reconfirm link in the email." },
+    { kind: "email",                                    t: "3 days ago",  title: "Reconfirm reminder sent",    detail: "Subject: \"See you at Azure Fest — please reconfirm\"", emailId: 4 },
+    a.status === "Confirmed" && { kind: "confirmed",   t: "after registration", title: "Email verified",       detail: "Clicked the verification link." },
+    { kind: "email",                                    t: a.registered, title: "Ticket confirmation sent",   detail: "Subject: \"Your Azure Fest ticket is confirmed\"", emailId: 2 },
+    { kind: "email",                                    t: a.registered, title: "Verification email sent",    detail: "Subject: \"Verify your email to complete registration\"", emailId: 1 },
+    { kind: "registered",                               t: a.registered, title: "Started registration",       detail: `Selected the ${a.ticket} ticket type.` },
+  ].filter(Boolean);
+
+  const initials = a.name.split(" ").map(s=>s[0]).slice(0,2).join("");
+
+  return (
+    <div className="flex flex-col gap-5">
+      {/* Header */}
+      <div className="flex items-center gap-3 text-[13px]">
+        <button className="btn btn-ghost btn-sm" onClick={() => window.__nav?.goto("registrations")}>
+          <Icons.Chevron size={14} className="rotate-90"/> Registrations
+        </button>
+        <span className="text-muted-fg">/</span>
+        <span className="text-muted-fg">{a.name}</span>
+      </div>
+
+      <div className="card overflow-hidden">
+        <div className="p-6 flex items-start justify-between gap-6 flex-wrap">
+          <div className="flex items-center gap-4 min-w-0">
+            <div className="h-14 w-14 rounded-full bg-muted grid place-items-center text-[16px] font-semibold text-muted-fg flex-none">
+              {initials}
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 flex-wrap mb-1">
+                <h1 className="font-display text-[26px] font-semibold tracking-tight leading-none">{a.name}</h1>
+                {(() => {
+                  if (a.status === "Confirmed") return <span className="badge badge-success">{a.status}</span>;
+                  if (a.status === "Pending")   return <span className="badge badge-warning">{a.status}</span>;
+                  return <span className="badge badge-muted">{a.status}</span>;
+                })()}
+                {a.reconfirmed && <span className="badge badge-primary"><Icons.Check size={11}/>Reconfirmed</span>}
+              </div>
+              <div className="flex flex-wrap gap-x-5 gap-y-1 text-[13px] text-muted-fg">
+                <a className="flex items-center gap-1.5 hover:text-foreground" href={`mailto:${a.email}`}><Icons.Mail size={13}/>{a.email}</a>
+                <span className="flex items-center gap-1.5"><Icons.Users size={13}/>{a.company}</span>
+                <span className="flex items-center gap-1.5"><Icons.Clock size={13}/>Registered {a.registered}</span>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 flex-none">
+            <button className="btn btn-outline btn-sm"><Icons.Mail size={14}/>Email</button>
+            <button className="btn btn-outline btn-sm"><Icons.Copy size={14}/>Copy link</button>
+            {a.status !== "Cancelled" && <button className="btn btn-outline btn-sm text-destructive" style={{borderColor:"color-mix(in oklch, var(--destructive) 35%, var(--border))"}}><Icons.Trash size={14}/>Cancel</button>}
+            <button className="btn btn-ghost btn-sm h-8 w-8 p-0"><Icons.Dots size={16}/></button>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-12 gap-5">
+        {/* Left column: details + tickets */}
+        <div className="col-span-12 lg:col-span-5 flex flex-col gap-5">
+          <AttendeeDetails a={a}/>
+          <AttendeeTickets a={a}/>
+        </div>
+        {/* Right column: combined activity */}
+        <div className="col-span-12 lg:col-span-7">
+          <AttendeeActivity events={baseEvents}/>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AttendeeDetails({ a }) {
+  const items = [
+    ["Full name",   a.name],
+    ["Email",       <a href={`mailto:${a.email}`} className="text-primary hover:underline truncate inline-block max-w-full">{a.email}</a>],
+    ["Company",     a.company],
+    ["Registration ID", <span className="font-mono text-[12.5px]">reg_{String(a.id).padStart(6,"0")}</span>],
+    ["Status",      a.status],
+    ["Reconfirmed", a.reconfirmed ? "Yes" : "No"],
+    ["Checked in",  a.checkedIn ? "Yes" : "Not yet"],
+  ];
+  return (
+    <div className="card p-5">
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <div className="eyebrow">Attendee</div>
+          <h3 className="font-display text-[18px] font-semibold mt-0.5">Details</h3>
+        </div>
+        <button className="btn btn-ghost btn-sm text-muted-fg"><Icons.Edit size={14}/>Edit</button>
+      </div>
+      <dl className="divide-y divide-default">
+        {items.map(([k,v], i) => (
+          <div key={i} className="grid grid-cols-[130px_1fr] gap-3 py-2.5 text-[13.5px]">
+            <dt className="text-muted-fg">{k}</dt>
+            <dd className="min-w-0 truncate">{v}</dd>
+          </div>
+        ))}
+      </dl>
+    </div>
+  );
+}
+
+function AttendeeTickets({ a }) {
+  const ticketType = AZURE_FEST.ticketTypes.find(t => t.name === a.ticket);
+  const cancelled = a.status === "Cancelled";
+  return (
+    <div className="card p-5">
+      <div className="flex items-center justify-between mb-3">
+        <div>
+          <div className="eyebrow">Tickets</div>
+          <h3 className="font-display text-[18px] font-semibold mt-0.5">Selected</h3>
+        </div>
+        <button className="btn btn-ghost btn-sm text-muted-fg"><Icons.Edit size={14}/>Change</button>
+      </div>
+      <div className={"rounded-xl border border-default p-4 " + (cancelled ? "opacity-60" : "")}>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 flex-wrap mb-1">
+              <span className="font-display text-[16px] font-semibold">{a.ticket}</span>
+              {cancelled
+                ? <span className="badge badge-muted">Released</span>
+                : <span className="badge badge-success">Active</span>}
+            </div>
+            <div className="text-[12.5px] text-muted-fg font-mono">{ticketType?.slug || a.ticket.toLowerCase()}</div>
+          </div>
+          <div className="text-right flex-none">
+            <div className="num text-[18px] font-semibold">{ticketType?.price === 0 ? "Free" : `€${ticketType?.price ?? 0}`}</div>
+            <div className="text-[11.5px] text-muted-fg">per ticket</div>
+          </div>
+        </div>
+        <div className="hr my-3"></div>
+        <div className="grid grid-cols-3 text-[12px]">
+          <div>
+            <div className="eyebrow" style={{fontSize:"0.62rem"}}>Code</div>
+            <div className="font-mono mt-0.5">AZF-{String(a.id).padStart(4,"0")}</div>
+          </div>
+          <div>
+            <div className="eyebrow" style={{fontSize:"0.62rem"}}>Issued</div>
+            <div className="num mt-0.5">{a.registered}</div>
+          </div>
+          <div>
+            <div className="eyebrow" style={{fontSize:"0.62rem"}}>Check-in</div>
+            <div className="num mt-0.5 text-muted-fg">Pending</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AttendeeActivity({ events }) {
+  const meta = {
+    registered:   { label: "Registration", color: "var(--primary)",  icon: Icons.Sparkles },
+    confirmed:    { label: "Verified",     color: "var(--success)",  icon: Icons.CheckCircle },
+    reconfirmed:  { label: "Reconfirmed",  color: "var(--success)",  icon: Icons.Check },
+    cancelled:    { label: "Cancelled",    color: "var(--destructive)", icon: Icons.Trash },
+    email:        { label: "Email",        color: "var(--muted-foreground)", icon: Icons.Mail },
+  };
+  const [filter, setFilter] = useState("all");
+  const visible = events.filter(e => filter === "all" || (filter === "emails" ? e.kind === "email" : e.kind !== "email"));
+
+  return (
+    <div className="card p-5">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <div className="eyebrow">Timeline</div>
+          <h3 className="font-display text-[18px] font-semibold mt-0.5">Activity & emails</h3>
+        </div>
+        <div className="tab-group">
+          <button className="tab" data-active={filter==="all"?"true":"false"}    onClick={()=>setFilter("all")}>All</button>
+          <button className="tab" data-active={filter==="events"?"true":"false"} onClick={()=>setFilter("events")}>Events</button>
+          <button className="tab" data-active={filter==="emails"?"true":"false"} onClick={()=>setFilter("emails")}>Emails</button>
+        </div>
+      </div>
+
+      <ol className="relative">
+        {/* vertical track */}
+        <div className="absolute left-[15px] top-1 bottom-1 w-px bg-border" style={{background:"var(--border)"}}></div>
+        {visible.map((e, i) => {
+          const m = meta[e.kind] || meta.registered;
+          const Ic = m.icon;
+          return (
+            <li key={i} className="relative pl-11 pb-5 last:pb-0">
+              <span className="absolute left-0 top-0 h-8 w-8 rounded-full grid place-items-center bg-card border border-default"
+                    style={{color: m.color, borderColor: "color-mix(in oklch, " + m.color + " 25%, var(--border))",
+                            background: "color-mix(in oklch, " + m.color + " 6%, var(--card))"}}>
+                <Ic size={14}/>
+              </span>
+              <div className="flex items-baseline justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[14px] font-medium">{e.title}</span>
+                    <span className="badge badge-muted" style={{fontSize:"0.65rem"}}>{m.label}</span>
+                  </div>
+                  <div className="text-[12.5px] text-muted-fg mt-0.5">{e.detail}</div>
+                  {e.kind === "email" && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <button className="btn btn-ghost btn-sm h-7 text-[12px]"><Icons.Eye size={12}/>View</button>
+                      <button className="btn btn-ghost btn-sm h-7 text-[12px]"><Icons.Mail size={12}/>Resend</button>
+                    </div>
+                  )}
+                </div>
+                <span className="text-[11.5px] text-muted-fg num whitespace-nowrap flex-none">{e.t}</span>
+              </div>
+            </li>
+          );
+        })}
+        {visible.length === 0 && (
+          <li className="text-[13px] text-muted-fg pl-11 py-4">Nothing here yet.</li>
+        )}
+      </ol>
+    </div>
+  );
+}
+
+window.AttendeePage = AttendeePage;
 
 
 //====== settings.jsx ======
@@ -1655,7 +1881,14 @@ function App() {
   const [dark, setDark] = useState(() => localStorage.getItem("admitto.dark") === "1");
   const [density, setDensity] = useState(() => localStorage.getItem("admitto.density") || "comfortable");
   const [page, setPage] = useState(() => localStorage.getItem("admitto.page") || "dashboard");
+  const [attendeeId, setAttendeeId] = useState(null);
   const [tweaksOpen, setTweaksOpen] = useState(false);
+
+  const goto = React.useCallback((p, opts = {}) => {
+    if (opts.attendeeId !== undefined) setAttendeeId(opts.attendeeId);
+    setPage(p);
+  }, []);
+  React.useEffect(() => { window.__nav = { goto }; }, [goto]);
 
   React.useEffect(() => {
     document.body.className = `theme-${theme} density-${density}` + (dark ? " dark" : "");
@@ -1676,6 +1909,7 @@ function App() {
             {page==="tickets" && <TicketsPage/>}
             {page==="settings" && <SettingsHub/>}
             {page==="registrations" && <RegistrationsPage/>}
+            {page==="attendee" && <AttendeePage attendeeId={attendeeId}/>}
           </div>
         </main>
       </div>

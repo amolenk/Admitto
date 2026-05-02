@@ -230,7 +230,8 @@ internal sealed class SendBulkEmailJob(
                 status: EmailLogStatus.Sent,
                 sentAt: now,
                 statusUpdatedAt: now,
-                bulkEmailJobId: job.Id));
+                bulkEmailJobId: job.Id,
+                registrationId: recipient.RegistrationId));
 
             job.RecordSentRecipient(recipient.Email);
 
@@ -269,7 +270,8 @@ internal sealed class SendBulkEmailJob(
                 sentAt: null,
                 statusUpdatedAt: now,
                 lastError: ex.Message,
-                bulkEmailJobId: job.Id));
+                bulkEmailJobId: job.Id,
+                registrationId: recipient.RegistrationId));
 
             job.RecordFailedRecipient(recipient.Email, ex.Message);
 

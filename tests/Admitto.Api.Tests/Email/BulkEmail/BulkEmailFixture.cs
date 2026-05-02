@@ -98,7 +98,7 @@ internal sealed class BulkEmailFixture
 
         // Seed registrations directly via the aggregate so we control state
         // (cancelled / reconfirmed) deterministically without going through the API.
-        var ticketSnapshot = new TicketTypeSnapshot(TicketTypeSlug, []);
+        var ticketSnapshot = new TicketTypeSnapshot(TicketTypeSlug, TicketTypeSlug, []);
         foreach (var seed in _registrationSeeds)
         {
             var registration = Registration.Create(

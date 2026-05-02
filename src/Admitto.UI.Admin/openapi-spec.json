@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:61879/"
+      "url": "http://localhost:15000/"
     }
   ],
   "paths": {
@@ -2736,6 +2736,106 @@
         }
       }
     },
+    "/admin/teams/{teamSlug}/events/{eventSlug}/registrations/{registrationId}/emails": {
+      "get": {
+        "tags": [
+          "GetAttendeeEmailsHttpEndpoint"
+        ],
+        "operationId": "GetAttendeeEmails",
+        "parameters": [
+          {
+            "name": "teamSlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "eventSlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "registrationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/AttendeeEmailLogItemDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/admin/teams/{teamSlug}/events/{eventSlug}": {
       "get": {
         "tags": [
@@ -3716,6 +3816,106 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/admin/teams/{teamSlug}/events/{eventSlug}/registrations/{registrationId}": {
+      "get": {
+        "tags": [
+          "GetRegistrationDetailsHttpEndpoint"
+        ],
+        "operationId": "GetRegistrationDetails",
+        "parameters": [
+          {
+            "name": "teamSlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "eventSlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "registrationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RegistrationDetailDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
           }
         }
       }
@@ -4779,6 +4979,29 @@
   },
   "components": {
     "schemas": {
+      "ActivityLogEntryDto": {
+        "required": [
+          "activityType",
+          "occurredAt",
+          "metadata"
+        ],
+        "type": "object",
+        "properties": {
+          "activityType": {
+            "type": "string"
+          },
+          "occurredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "metadata": {
+            "type": [
+              "null",
+              "string"
+            ]
+          }
+        }
+      },
       "AdditionalDetailFieldDto": {
         "required": [
           "key",
@@ -4923,6 +5146,46 @@
           },
           "role": {
             "$ref": "#/components/schemas/TeamMembershipRoleDto"
+          }
+        }
+      },
+      "AttendeeEmailLogItemDto": {
+        "required": [
+          "id",
+          "subject",
+          "emailType",
+          "status",
+          "sentAt",
+          "bulkEmailJobId"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "subject": {
+            "type": "string"
+          },
+          "emailType": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "sentAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "bulkEmailJobId": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "uuid"
           }
         }
       },
@@ -6212,6 +6475,79 @@
           }
         }
       },
+      "RegistrationDetailDto": {
+        "required": [
+          "id",
+          "email",
+          "firstName",
+          "lastName",
+          "status",
+          "registeredAt",
+          "hasReconfirmed",
+          "reconfirmedAt",
+          "cancellationReason",
+          "tickets",
+          "additionalDetails",
+          "activities"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "email": {
+            "type": "string"
+          },
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/RegistrationStatus"
+          },
+          "registeredAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "hasReconfirmed": {
+            "type": "boolean"
+          },
+          "reconfirmedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "cancellationReason": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "tickets": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TicketDetailDto"
+            }
+          },
+          "additionalDetails": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "activities": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ActivityLogEntryDto"
+            }
+          }
+        }
+      },
       "RegistrationListItemDto": {
         "required": [
           "id",
@@ -6461,6 +6797,21 @@
           "organizer",
           "owner"
         ]
+      },
+      "TicketDetailDto": {
+        "required": [
+          "slug",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          }
+        }
       },
       "TicketedEventDetailsDto": {
         "required": [
@@ -6878,8 +7229,8 @@
         "type": "oauth2",
         "flows": {
           "authorizationCode": {
-            "authorizationUrl": "http://localhost:61882/realms/admitto/protocol/openid-connect/auth",
-            "tokenUrl": "http://localhost:61882/realms/admitto/protocol/openid-connect/token",
+            "authorizationUrl": "http://localhost:15001/realms/admitto/protocol/openid-connect/auth",
+            "tokenUrl": "http://localhost:15001/realms/admitto/protocol/openid-connect/token",
             "scopes": {
               "manage": "Access the Management API",
               "openid": "Access the OpenID Connect user profile",
@@ -6945,6 +7296,9 @@
       "name": "Handler"
     },
     {
+      "name": "GetAttendeeEmailsHttpEndpoint"
+    },
+    {
       "name": "GetTicketedEventDetailsHttpEndpoint"
     },
     {
@@ -6976,6 +7330,9 @@
     },
     {
       "name": "GetRegistrationsHttpEndpoint"
+    },
+    {
+      "name": "GetRegistrationDetailsHttpEndpoint"
     },
     {
       "name": "CancelRegistrationHttpEndpoint"

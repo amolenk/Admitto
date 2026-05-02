@@ -20,10 +20,13 @@ public interface IMediator
         CancellationToken cancellationToken = default)
         where TQuery : IQuery<TResult>;
 
-    ValueTask PublishDomainEventAsync<TDomainEvent>(
-        TDomainEvent domainEvent,
-        CancellationToken cancellationToken = default)
-        where TDomainEvent : IDomainEvent;
+    /// <summary>
+    /// Type-erased overload used by infrastructure (e.g., <see cref="DomainEventsInterceptor"/>)
+    /// when only the <see cref="IDomainEvent"/> interface type is known at compile time.
+    /// </summary>
+    ValueTask PublishDomainEventAsync(
+        IDomainEvent domainEvent,
+        CancellationToken cancellationToken = default);
 }
 
 public partial class Mediator(IServiceProvider serviceProvider, ILogger<Mediator> logger) : IMediator
@@ -92,22 +95,21 @@ public partial class Mediator(IServiceProvider serviceProvider, ILogger<Mediator
             cancellationToken);
     }
 
-    public async ValueTask PublishDomainEventAsync<TDomainEvent>(
-        TDomainEvent domainEvent,
+    public async ValueTask PublishDomainEventAsync(
+        IDomainEvent domainEvent,
         CancellationToken cancellationToken = default)
-        where TDomainEvent : IDomainEvent
     {
-        var handlers = serviceProvider
-            .GetServices<IDomainEventHandler<TDomainEvent>>()
-            .ToList();
+        var eventType = domainEvent.GetType();
+        var handlerType = typeof(IDomainEventHandler<>).MakeGenericType(eventType);
+        var handlers = serviceProvider.GetServices(handlerType).Cast<IDomainEventHandler>().ToList();
 
         foreach (var handler in handlers)
         {
-            LogEventHandling(logger, domainEvent.GetType().FullName!, handler.GetType().FullName!);
+            LogEventHandling(logger, eventType.FullName!, handler.GetType().FullName!);
 
             await HandleWithActivityAsync(
                 "domain-event",
-                domainEvent.GetType(),
+                eventType,
                 handler.GetType(),
                 ct => handler.HandleAsync(domainEvent, ct),
                 cancellationToken);

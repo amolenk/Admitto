@@ -28,8 +28,8 @@ public sealed class RegistrationTests
 
         var tickets = new List<TicketTypeSnapshot>
         {
-            new(slug1, timeSlots1),
-            new(slug2, timeSlots2)
+            new(slug1, slug1, timeSlots1),
+            new(slug2, slug2, timeSlots2)
         };
 
         // Act
@@ -49,8 +49,8 @@ public sealed class RegistrationTests
 
         var tickets = new List<TicketTypeSnapshot>
         {
-            new(duplicateSlug, []),
-            new(duplicateSlug, [])
+            new(duplicateSlug, duplicateSlug, []),
+            new(duplicateSlug, duplicateSlug, [])
         };
 
         // Act
@@ -145,7 +145,7 @@ public sealed class RegistrationTests
             DefaultEmail,
             DefaultFirstName,
             DefaultLastName,
-            [new TicketTypeSnapshot("general-admission", [])]);
+            [new TicketTypeSnapshot("general-admission", "general-admission", [])]);
 
     private static void ClearEvents(Registration r) => r.ClearDomainEvents();
 }

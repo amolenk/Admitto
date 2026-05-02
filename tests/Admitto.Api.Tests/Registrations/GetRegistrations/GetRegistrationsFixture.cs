@@ -52,7 +52,7 @@ internal sealed class GetRegistrationsFixture
             EmailAddress.From("alice@example.com"),
             FirstName.From("Alice"),
             LastName.From("Doe"),
-            [new TicketTypeSnapshot(TicketTypeSlug, [])]);
+            [new TicketTypeSnapshot(TicketTypeSlug, TicketTypeSlug, [])]);
 
         await environment.OrganizationDatabase.SeedAsync(db => db.Teams.Add(team));
         await environment.RegistrationsDatabase.SeedAsync(db =>

@@ -122,7 +122,10 @@ internal sealed class RegisterAttendeeHandler(
                 var timeSlots = ticketTypeMap is not null
                     ? ticketTypeMap[slug].TimeSlots.Select(ts => ts.Slug.Value).ToArray()
                     : Array.Empty<string>();
-                return new TicketTypeSnapshot(slug, timeSlots);
+                var name = ticketTypeMap is not null
+                    ? ticketTypeMap[slug].Name.Value
+                    : slug;
+                return new TicketTypeSnapshot(slug, name, timeSlots);
             })
             .ToList();
 

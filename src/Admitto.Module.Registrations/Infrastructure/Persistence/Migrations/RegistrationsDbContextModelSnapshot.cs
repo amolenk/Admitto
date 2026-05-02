@@ -24,6 +24,36 @@ namespace Amolenk.Admitto.Module.Registrations.Infrastructure.Persistence.Migrat
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Amolenk.Admitto.Module.Registrations.Domain.Entities.ActivityLog", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<int>("ActivityType")
+                        .HasColumnType("integer")
+                        .HasColumnName("activity_type");
+
+                    b.Property<string>("Metadata")
+                        .HasColumnType("text")
+                        .HasColumnName("metadata");
+
+                    b.Property<DateTimeOffset>("OccurredAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("occurred_at");
+
+                    b.Property<Guid>("RegistrationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("registration_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("RegistrationId", "ActivityType", "OccurredAt")
+                        .HasDatabaseName("IX_activity_log_registration_type_occurred");
+
+                    b.ToTable("activity_log", "registrations");
+                });
+
             modelBuilder.Entity("Amolenk.Admitto.Module.Registrations.Domain.Entities.Coupon", b =>
                 {
                     b.Property<Guid>("Id")
@@ -357,6 +387,10 @@ namespace Amolenk.Admitto.Module.Registrations.Infrastructure.Persistence.Migrat
 
                             b1.Property<int>("__synthesizedOrdinal")
                                 .ValueGeneratedOnAdd();
+
+                            b1.Property<string>("Name")
+                                .IsRequired()
+                                .HasJsonPropertyName("name");
 
                             b1.Property<string>("Slug")
                                 .IsRequired()

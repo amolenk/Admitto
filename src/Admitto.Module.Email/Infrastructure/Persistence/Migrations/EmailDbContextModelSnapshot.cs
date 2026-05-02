@@ -188,6 +188,10 @@ namespace Amolenk.Admitto.Module.Email.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(254)")
                         .HasColumnName("recipient");
 
+                    b.Property<Guid?>("RegistrationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("registration_id");
+
                     b.Property<DateTimeOffset?>("SentAt")
                         .HasColumnType("timestamptz")
                         .HasColumnName("sent_at");
@@ -217,6 +221,9 @@ namespace Amolenk.Admitto.Module.Email.Infrastructure.Persistence.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("BulkEmailJobId");
+
+                    b.HasIndex("TicketedEventId", "RegistrationId")
+                        .HasDatabaseName("IX_email_log_event_registration");
 
                     b.HasIndex("TicketedEventId", "SentAt")
                         .IsDescending(false, true)

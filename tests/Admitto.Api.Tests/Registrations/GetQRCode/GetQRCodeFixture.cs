@@ -83,7 +83,7 @@ internal sealed class GetQRCodeFixture
                 EmailAddress.From("alice@example.com"),
                 FirstName.From("Alice"),
                 LastName.From("Doe"),
-                [new TicketTypeSnapshot(TicketTypeSlug, [])]);
+                [new TicketTypeSnapshot(TicketTypeSlug, TicketTypeSlug, [])]);
 
             RegistrationId = primaryRegistration.Id.Value;
 

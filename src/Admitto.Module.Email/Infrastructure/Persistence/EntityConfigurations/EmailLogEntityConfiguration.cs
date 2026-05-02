@@ -91,5 +91,11 @@ internal sealed class EmailLogEntityConfiguration : IEntityTypeConfiguration<Ema
         builder.HasIndex(e => new { e.TicketedEventId, e.SentAt })
             .HasDatabaseName("IX_email_log_event_sent_at")
             .IsDescending(false, true);
+
+        builder.Property(e => e.RegistrationId)
+            .HasColumnName("registration_id");
+
+        builder.HasIndex(e => new { e.TicketedEventId, e.RegistrationId })
+            .HasDatabaseName("IX_email_log_event_registration");
     }
 }

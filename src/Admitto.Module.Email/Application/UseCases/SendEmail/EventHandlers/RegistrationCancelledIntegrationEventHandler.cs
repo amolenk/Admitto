@@ -51,6 +51,7 @@ internal sealed class RegistrationCancelledIntegrationEventHandler(
         var command = new SendEmailCommand(
             TeamId: TeamId.From(integrationEvent.TeamId),
             TicketedEventId: TicketedEventId.From(integrationEvent.TicketedEventId),
+            RegistrationId: integrationEvent.RegistrationId,
             RecipientAddress: integrationEvent.RecipientEmail,
             RecipientName: $"{firstName} {lastName}".Trim(),
             EmailType: emailType,

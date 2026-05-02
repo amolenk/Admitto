@@ -60,7 +60,8 @@ internal sealed class AttendeeRegisteredIntegrationEventHandler(
                 EventName = eventContext.Name,
                 EventWebsite = eventContext.WebsiteUrl,
                 QRCodeLink = eventContext.QRCodeLink
-            });
+            },
+            RegistrationId: integrationEvent.RegistrationId);
 
         await mediator.SendAsync(command, cancellationToken);
     }

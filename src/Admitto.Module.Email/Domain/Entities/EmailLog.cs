@@ -24,7 +24,8 @@ public class EmailLog : Entity<EmailLogId>
         DateTimeOffset? sentAt,
         DateTimeOffset statusUpdatedAt,
         string? lastError,
-        BulkEmailJobId? bulkEmailJobId)
+        BulkEmailJobId? bulkEmailJobId,
+        Guid? registrationId)
         : base(id)
     {
         TeamId = teamId;
@@ -40,6 +41,7 @@ public class EmailLog : Entity<EmailLogId>
         StatusUpdatedAt = statusUpdatedAt;
         LastError = lastError;
         BulkEmailJobId = bulkEmailJobId;
+        RegistrationId = registrationId;
     }
 
     public Guid TeamId { get; private set; }
@@ -62,6 +64,13 @@ public class EmailLog : Entity<EmailLogId>
     /// </summary>
     public BulkEmailJobId? BulkEmailJobId { get; private set; }
 
+    /// <summary>
+    /// The registration associated with this email send, when applicable.
+    /// <c>null</c> for external-list bulk sends and any send not tied to a
+    /// specific registration.
+    /// </summary>
+    public Guid? RegistrationId { get; private set; }
+
     public static EmailLog Create(
         Guid teamId,
         Guid ticketedEventId,
@@ -75,7 +84,8 @@ public class EmailLog : Entity<EmailLogId>
         DateTimeOffset? sentAt,
         DateTimeOffset statusUpdatedAt,
         string? lastError = null,
-        BulkEmailJobId? bulkEmailJobId = null)
+        BulkEmailJobId? bulkEmailJobId = null,
+        Guid? registrationId = null)
     {
         return new EmailLog(
             EmailLogId.New(),
@@ -91,6 +101,7 @@ public class EmailLog : Entity<EmailLogId>
             sentAt,
             statusUpdatedAt,
             lastError,
-            bulkEmailJobId);
+            bulkEmailJobId,
+            registrationId);
     }
 }

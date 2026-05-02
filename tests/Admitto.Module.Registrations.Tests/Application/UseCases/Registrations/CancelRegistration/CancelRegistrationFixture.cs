@@ -31,7 +31,7 @@ internal sealed class CancelRegistrationFixture
                 EmailAddress.From("alice@example.com"),
                 FirstName.From("Alice"),
                 LastName.From("Test"),
-                [new TicketTypeSnapshot("general-admission", [])]);
+                [new TicketTypeSnapshot("general-admission", "general-admission", [])]);
 
             RegistrationId = registration.Id;
 

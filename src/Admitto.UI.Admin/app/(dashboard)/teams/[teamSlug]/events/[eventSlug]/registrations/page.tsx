@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { ArrowDown, ArrowUp, ArrowUpDown, Download, Plus } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -34,15 +34,6 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import {
-    AlertDialog,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 const PAGE_SIZE = 25;
 
@@ -81,7 +72,6 @@ function attendeeSortKey(r: RegistrationListItemDto) {
 export default function RegistrationsPage() {
     const { teamSlug, eventSlug } = useParams<{ teamSlug: string; eventSlug: string }>();
     const { selectedTeam } = useTeams();
-    const queryClient = useQueryClient();
 
     const registrationsQuery = useQuery({
         queryKey: ["registrations", teamSlug, eventSlug],
@@ -106,29 +96,6 @@ export default function RegistrationsPage() {
     const [sortKey, setSortKey] = useState<SortKey>("attendee");
     const [sortDir, setSortDir] = useState<SortDir>("asc");
     const [page, setPage] = useState(1);
-
-    const [cancelTarget, setCancelTarget] = useState<RegistrationListItemDto | null>(null);
-    const [cancelReason, setCancelReason] = useState<string>("");
-    const [isCancelling, setIsCancelling] = useState(false);
-
-    async function handleCancelConfirm() {
-        if (!cancelTarget || !cancelReason) return;
-        setIsCancelling(true);
-        try {
-            await apiClient.post(
-                `/api/teams/${teamSlug}/events/${eventSlug}/registrations/${cancelTarget.id}/cancel`,
-                { reason: cancelReason },
-            );
-            await queryClient.invalidateQueries({ queryKey: ["registrations", teamSlug, eventSlug] });
-            toast.success("Registration cancelled successfully.");
-            setCancelTarget(null);
-            setCancelReason("");
-        } catch {
-            toast.error("Failed to cancel registration. Please try again.");
-        } finally {
-            setIsCancelling(false);
-        }
-    }
 
     const registrations = registrationsQuery.data ?? [];
     const ticketTypes = ticketTypesQuery.data ?? [];
@@ -319,13 +286,12 @@ export default function RegistrationsPage() {
                                         dir={sortDir}
                                         onClick={() => toggleSort("registered")}
                                     />
-                                    <TableHead className="w-16" />
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {pageRows.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={6} className="text-center text-sm text-muted-foreground py-8">
+                                        <TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-8">
                                             No registrations match the current filters.
                                         </TableCell>
                                     </TableRow>
@@ -335,8 +301,10 @@ export default function RegistrationsPage() {
                                         return (
                                             <TableRow key={r.id}>
                                                 <TableCell>
-                                                    <div className="font-medium">{attendeeFullName(r)}</div>
-                                                    <div className="text-xs text-muted-foreground">{r.email}</div>
+                                                    <Link href={`/teams/${teamSlug}/events/${eventSlug}/registrations/${r.id}`} className="hover:underline">
+                                                        <div className="font-medium">{attendeeFullName(r)}</div>
+                                                        <div className="text-xs text-muted-foreground">{r.email}</div>
+                                                    </Link>
                                                 </TableCell>
                                                 <TableCell>
                                                     <div className="flex flex-wrap gap-1">
@@ -369,21 +337,6 @@ export default function RegistrationsPage() {
                                                 </TableCell>
                                                 <TableCell className="font-mono tabular-nums text-xs">
                                                     {new Date(r.createdAt).toLocaleString(undefined, { hour12: false })}
-                                                </TableCell>
-                                                <TableCell className="text-right">
-                                                    {!isCancelled && (
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="sm"
-                                                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                                            onClick={() => {
-                                                                setCancelTarget(r);
-                                                                setCancelReason("");
-                                                            }}
-                                                        >
-                                                            Cancel
-                                                        </Button>
-                                                    )}
                                                 </TableCell>
                                             </TableRow>
                                         );
@@ -420,46 +373,6 @@ export default function RegistrationsPage() {
                     </>
                 )}
             </Card>
-
-            <AlertDialog
-                open={cancelTarget !== null}
-                onOpenChange={(open) => {
-                    if (!open) {
-                        setCancelTarget(null);
-                        setCancelReason("");
-                    }
-                }}
-            >
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Cancel registration</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            This will cancel the registration for{" "}
-                            <strong>{cancelTarget ? attendeeFullName(cancelTarget) : ""}</strong>.
-                            Please select a cancellation reason.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <Select value={cancelReason} onValueChange={setCancelReason}>
-                        <SelectTrigger>
-                            <SelectValue placeholder="Select a reason…" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="AttendeeRequest">Attendee request</SelectItem>
-                            <SelectItem value="VisaLetterDenied">Visa letter denied</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel disabled={isCancelling}>Cancel</AlertDialogCancel>
-                        <Button
-                            variant="destructive"
-                            disabled={!cancelReason || isCancelling}
-                            onClick={handleCancelConfirm}
-                        >
-                            {isCancelling ? "Cancelling…" : "Confirm cancellation"}
-                        </Button>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
         </PageLayout>
     );
 }
