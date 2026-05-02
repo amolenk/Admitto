@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Module.Registrations.Application.Persistence;
+using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,7 +16,7 @@ internal sealed class GetTicketedEventsHandler(IRegistrationsWriteStore writeSto
 
         var events = await writeStore.TicketedEvents
             .AsNoTracking()
-            .Where(e => e.TeamId == teamId)
+            .Where(e => e.TeamId == teamId && e.Status != EventLifecycleStatus.Archived)
             .OrderByDescending(e => e.StartsAt)
             .Select(e => new TicketedEventListItemDto(
                 e.Slug.Value,

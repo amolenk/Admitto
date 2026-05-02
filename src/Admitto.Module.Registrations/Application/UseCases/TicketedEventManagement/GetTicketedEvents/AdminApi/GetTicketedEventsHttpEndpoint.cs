@@ -8,7 +8,7 @@ namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketedEven
 
 /// <summary>
 /// GET /admin/teams/{teamSlug}/events — lists the team's ticketed events
-/// (active, cancelled and archived).
+/// (active and cancelled; archived events are excluded).
 /// </summary>
 public static class GetTicketedEventsHttpEndpoint
 {

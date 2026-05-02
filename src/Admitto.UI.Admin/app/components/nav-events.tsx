@@ -33,11 +33,13 @@ export function NavEvents({
         throwOnError: false,
     });
 
+    const visibleEvents = events.filter(e => e.status !== "archived");
+
     return (
         <SidebarGroup className="group-data-[collapsible=icon]:hidden">
             <SidebarGroupLabel className="uppercase tracking-wider">Events</SidebarGroupLabel>
             <SidebarMenu>
-                {events.map((ticketedEvent) => {
+                {visibleEvents.map((ticketedEvent) => {
                     const isActive = ticketedEvent.slug === activeEventSlug;
                     const dateLabel = formatInEventZone(
                         ticketedEvent.startsAt,

@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { apiClient } from "@/lib/api-client";
 import { TeamDto } from "@/lib/admitto-api/generated";
+import { FormError } from "@/components/form-error";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
@@ -68,7 +69,7 @@ export default function DangerZonePage() {
             setSelectedTeamSlug(null);
             router.push("/");
         } catch (err: unknown) {
-            const message = err instanceof Error ? err.message : "Failed to archive team.";
+            const message = err instanceof FormError ? err.detail : err instanceof Error ? err.message : "Failed to archive team.";
             setError(message);
         } finally {
             setIsArchiving(false);
