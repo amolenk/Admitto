@@ -127,6 +127,19 @@ public class TicketCatalog : Aggregate<TicketedEventId>
         }
     }
 
+    /// <summary>
+    /// Releases capacity for the given ticket type slugs. Unknown slugs are silently skipped.
+    /// UsedCapacity is clamped at zero.
+    /// </summary>
+    public void Release(IReadOnlyList<string> slugs)
+    {
+        foreach (var slug in slugs)
+        {
+            var ticketType = _ticketTypes.FirstOrDefault(tt => tt.Id == slug);
+            ticketType?.ReleaseCapacity();
+        }
+    }
+
     private TicketType FindTicketType(Slug slug)
     {
         var ticketType = _ticketTypes.FirstOrDefault(tt => tt.Id == slug.Value);

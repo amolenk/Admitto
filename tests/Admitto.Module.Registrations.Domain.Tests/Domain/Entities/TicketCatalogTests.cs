@@ -451,4 +451,52 @@ public sealed class TicketCatalogTests
         // Assert
         result.Error.ShouldMatch(TicketCatalog.Errors.EventNotActive);
     }
+
+    [TestMethod]
+    public void SC031_Release_MatchingSlugs_DecrementsUsedCapacity()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId);
+        sut.AddTicketType(Slug.From("general"), DisplayName.From("General"), [], 10);
+        sut.Claim(["general"], enforce: true);
+        sut.GetTicketType("general")!.UsedCapacity.ShouldBe(1);
+
+        // Act
+        sut.Release(["general"]);
+
+        // Assert
+        sut.GetTicketType("general")!.UsedCapacity.ShouldBe(0);
+    }
+
+    [TestMethod]
+    public void SC032_Release_UnknownSlug_IsSilentlySkipped()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId);
+        sut.AddTicketType(Slug.From("known"), DisplayName.From("Known"), [], 10);
+        sut.Claim(["known"], enforce: true);
+
+        // Act — releasing an unknown slug should not throw
+        sut.Release(["unknown", "known"]);
+
+        // Assert — known slug was released; unknown was skipped without error
+        sut.GetTicketType("known")!.UsedCapacity.ShouldBe(0);
+    }
+
+    [TestMethod]
+    public void SC033_Release_MultipleSlugs_AllDecrement()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId);
+        sut.AddTicketType(Slug.From("a"), DisplayName.From("A"), [], 10);
+        sut.AddTicketType(Slug.From("b"), DisplayName.From("B"), [], 10);
+        sut.Claim(["a", "b"], enforce: true);
+
+        // Act
+        sut.Release(["a", "b"]);
+
+        // Assert
+        sut.GetTicketType("a")!.UsedCapacity.ShouldBe(0);
+        sut.GetTicketType("b")!.UsedCapacity.ShouldBe(0);
+    }
 }

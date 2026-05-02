@@ -74,6 +74,14 @@ public class TicketType : Entity<string>
         UsedCapacity++;
     }
 
+    /// <summary>
+    /// Decrements used capacity by 1, clamped at zero.
+    /// </summary>
+    public void ReleaseCapacity()
+    {
+        UsedCapacity = Math.Max(0, UsedCapacity - 1);
+    }
+
     internal static class Errors
     {
         public static Error TicketTypeAlreadyCancelled(string slug) =>

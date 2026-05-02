@@ -56,12 +56,7 @@ The visual design SHALL match existing admin features in look-and-feel (form con
 ### Requirement: Admin UI displays a registrations list page for each event
 The Admin UI SHALL provide a page at `/teams/{teamSlug}/events/{eventSlug}/registrations` that loads all registrations of the event in a single fetch and renders them in a table.
 
-Each row in the table SHALL include a "Cancel" action that is visible and enabled only when the row's `status` is `Registered`. Activating the action SHALL open a confirmation dialog that:
-- Explains the action is irreversible.
-- Presents a required reason selector with the three options: `AttendeeRequest`, `VisaLetterDenied`, `TicketTypesRemoved` (human-readable labels).
-- Has a "Confirm" button that is disabled until a reason is selected.
-
-On confirmation, the UI SHALL call `POST /admin/…/registrations/{registrationId}/cancel` via `apiClient` with the selected reason. On success, the UI SHALL refresh the registration list so the row's status updates to `Cancelled`. On a 4xx/5xx response, the UI SHALL surface an error notification without navigating away.
+The table SHALL NOT include a per-row "Cancel" action. Cancel functionality has moved to the attendee detail page.
 
 #### Scenario: SC001 Page loads and shows registrations
 - **GIVEN** an organizer is authenticated and viewing an event with registrations
@@ -93,26 +88,6 @@ On confirmation, the UI SHALL call `POST /admin/…/registrations/{registrationI
 - **WHEN** the page renders a row whose `hasReconfirmed=true` and `reconfirmedAt="2026-04-20T08:30Z"`
 - **THEN** the Reconfirm column shows a checkmark plus the formatted timestamp (event-zone aware per `admin-ui-event-management`)
 - **AND** when `hasReconfirmed=false` the Reconfirm column shows "—"
-
-#### Scenario: SC019 Cancel action is shown only for Registered rows
-- **GIVEN** a table with one `Registered` row and one `Cancelled` row
-- **WHEN** the page renders
-- **THEN** only the `Registered` row has an active "Cancel" action; the `Cancelled` row's action is absent or disabled
-
-#### Scenario: SC020 Cancel confirmation dialog requires a reason before confirming
-- **WHEN** an organizer activates the "Cancel" action on a `Registered` row
-- **THEN** a confirmation dialog opens with a reason selector and a disabled "Confirm" button
-- **AND** the "Confirm" button becomes enabled only after a reason is selected
-
-#### Scenario: SC021 Confirmed cancel with reason updates the row status
-- **GIVEN** an organizer selects "AttendeeRequest" in the confirmation dialog and clicks "Confirm"
-- **WHEN** the cancel endpoint returns 200
-- **THEN** the table refreshes and the row's status changes to `Cancelled`
-
-#### Scenario: SC022 Cancel API error surfaces a notification
-- **GIVEN** an organizer confirms cancellation but the cancel endpoint returns a 4xx or 5xx error
-- **WHEN** the response arrives
-- **THEN** an error notification is shown and the row's status is unchanged
 
 ### Requirement: Registrations page summarises totals against capacity
 The page SHALL display a single summary tile showing the total registration count, optionally followed by the event capacity.
@@ -182,3 +157,13 @@ The page SHALL NOT show row-level multi-select checkboxes, bulk-action toolbars,
 #### Scenario: SC018 No status tabs above the table
 - **WHEN** the page renders
 - **THEN** there is no Confirmed/Pending/Cancelled tab strip
+
+### Requirement: Admin UI registrations table rows link to the attendee detail page
+
+Each row in the registrations table SHALL be clickable and navigate the admin to the attendee detail page at `/teams/{teamSlug}/events/{eventSlug}/registrations/{registrationId}`. The attendee name or email SHALL serve as the primary clickable element; the full row MAY additionally support click-through navigation.
+
+#### Scenario: SC023 Clicking a registration row navigates to the attendee detail page
+
+- **GIVEN** an organizer is on the registrations list page and the table has at least one row
+- **WHEN** they click on the attendee name in a row
+- **THEN** the browser navigates to the attendee detail page for that registration's ID
