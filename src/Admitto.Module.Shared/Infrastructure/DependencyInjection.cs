@@ -95,7 +95,7 @@ public static class DependencyInjection
 
             if (typeof(IOutboxDbContext).IsAssignableFrom(typeof(TDbContext)))
             {
-                builder.Services.AddScoped<IIntegrationEventOutbox>(sp =>
+                builder.Services.AddKeyedScoped<IIntegrationEventOutbox>(moduleKey, (sp, _) =>
                     new IntegrationEventOutbox((IOutboxDbContext)sp.GetRequiredService<TDbContext>()));
             }
 

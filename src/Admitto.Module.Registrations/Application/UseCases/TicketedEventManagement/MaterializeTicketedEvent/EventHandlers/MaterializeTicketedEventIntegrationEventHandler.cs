@@ -6,6 +6,7 @@ using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketedEventManagement.MaterializeTicketedEvent.EventHandlers;
 
@@ -23,7 +24,7 @@ namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketedEven
 /// </remarks>
 internal sealed class MaterializeTicketedEventIntegrationEventHandler(
     IRegistrationsWriteStore writeStore,
-    IIntegrationEventOutbox integrationEventOutbox)
+    [FromKeyedServices(RegistrationsModule.Key)] IIntegrationEventOutbox integrationEventOutbox)
     : IIntegrationEventHandler<TicketedEventCreationRequested>
 {
     public async ValueTask HandleAsync(

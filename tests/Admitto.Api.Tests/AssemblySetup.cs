@@ -1,5 +1,6 @@
 using Amolenk.Admitto.Api.Tests.Infrastructure;
 using Amolenk.Admitto.Api.Tests.Infrastructure.Hosting;
+using Aspire.Hosting.ApplicationModel;
 
 namespace Amolenk.Admitto.Api.Tests;
 
@@ -18,6 +19,11 @@ public static class AspireTestAssemblySetup
         
         await AppHost.Application.ResourceNotifications.WaitForResourceHealthyAsync(
             "api",
+            cancellationToken: cts.Token);
+
+        await AppHost.Application.ResourceNotifications.WaitForResourceAsync(
+            "worker",
+            KnownResourceStates.Running,
             cancellationToken: cts.Token);
         
         EndToEndTestBase.Environment = await EndToEndTestEnvironment.CreateAsync(AppHost, cts.Token);
