@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     ArrowLeft,
+    ArrowRightLeft,
     CheckCircle,
     Mail,
     Sparkles,
@@ -14,12 +15,15 @@ import {
     RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
+import { TicketTypeDto } from "@/lib/admitto-api/generated";
 import { apiClient } from "@/lib/api-client";
+import { FormError } from "@/components/form-error";
 import { PageLayout } from "@/components/page-layout";
 import { useTeams } from "@/hooks/use-teams";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
     Select,
@@ -97,6 +101,10 @@ async function fetchAttendeeEmails(
     );
 }
 
+async function fetchTicketTypes(teamSlug: string, eventSlug: string): Promise<TicketTypeDto[]> {
+    return apiClient.get<TicketTypeDto[]>(`/api/teams/${teamSlug}/events/${eventSlug}/ticket-types`);
+}
+
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function attendeeFullName(r: RegistrationDetailDto): string {
@@ -130,6 +138,13 @@ function formatRelative(iso: string): string {
     return `${days}d ago`;
 }
 
+function slugToLabel(slug: string): string {
+    return slug
+        .split("-")
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ");
+}
+
 function cancellationReasonLabel(reason?: string | null): string {
     if (reason === "AttendeeRequest") return "Attendee request";
     if (reason === "VisaLetterDenied") return "Visa letter denied";
@@ -139,7 +154,7 @@ function cancellationReasonLabel(reason?: string | null): string {
 
 // ── Timeline item definition ──────────────────────────────────────────────────
 
-type TimelineKind = "registered" | "reconfirmed" | "cancelled" | "email";
+type TimelineKind = "registered" | "reconfirmed" | "cancelled" | "ticketschanged" | "email";
 
 interface TimelineEntry {
     kind: TimelineKind;
@@ -167,6 +182,16 @@ function buildTimeline(
             const reason = cancellationReasonLabel(a.metadata);
             title = `Registration cancelled (${reason})`;
             detail = "Registration was cancelled.";
+        } else if (kind === "ticketschanged") {
+            title = "Tickets changed";
+            try {
+                const meta = JSON.parse(a.metadata ?? "{}") as { from?: string[]; to?: string[] };
+                const from = (meta.from ?? []).map(slugToLabel).join(", ") || "—";
+                const to = (meta.to ?? []).map(slugToLabel).join(", ") || "—";
+                detail = `${from} → ${to}`;
+            } catch {
+                detail = "Ticket selection was updated.";
+            }
         }
         return { kind, ts: a.occurredAt, title, detail };
     });
@@ -213,6 +238,11 @@ export default function AttendeeDetailPage() {
     const [cancelReason, setCancelReason] = useState("");
     const [isCancelling, setIsCancelling] = useState(false);
 
+    const [changeTicketsDialogOpen, setChangeTicketsDialogOpen] = useState(false);
+    const [selectedTicketSlugs, setSelectedTicketSlugs] = useState<string[]>([]);
+    const [isChangingTickets, setIsChangingTickets] = useState(false);
+    const [changeTicketsError, setChangeTicketsError] = useState<string | null>(null);
+
     const [timelineFilter, setTimelineFilter] = useState<"all" | "events" | "emails">("all");
 
     const registration = detailQuery.data;
@@ -230,6 +260,16 @@ export default function AttendeeDetailPage() {
         if (timelineFilter === "emails") return timeline.filter((e) => e.kind === "email");
         return timeline;
     }, [timeline, timelineFilter]);
+
+    const ticketTypesQuery = useQuery({
+        queryKey: ["ticket-types", teamSlug, eventSlug],
+        queryFn: () => fetchTicketTypes(teamSlug, eventSlug),
+        enabled: changeTicketsDialogOpen,
+        throwOnError: false,
+        retry: false,
+    });
+
+    const availableTicketTypes = (ticketTypesQuery.data ?? []).filter((t) => !t.isCancelled);
 
     async function handleCancelConfirm() {
         if (!cancelReason) return;
@@ -249,6 +289,28 @@ export default function AttendeeDetailPage() {
             toast.error("Failed to cancel registration. Please try again.");
         } finally {
             setIsCancelling(false);
+        }
+    }
+
+    async function handleChangeTicketsConfirm() {
+        setIsChangingTickets(true);
+        setChangeTicketsError(null);
+        try {
+            await apiClient.put(
+                `/api/teams/${teamSlug}/events/${eventSlug}/registrations/${registrationId}/tickets`,
+                { ticketTypeSlugs: selectedTicketSlugs },
+            );
+            await queryClient.invalidateQueries({
+                queryKey: ["registration-detail", teamSlug, eventSlug, registrationId],
+            });
+            toast.success("Ticket types updated successfully.");
+            setChangeTicketsDialogOpen(false);
+        } catch (err) {
+            setChangeTicketsError(
+                err instanceof FormError ? err.detail : "Failed to change ticket types. Please try again.",
+            );
+        } finally {
+            setIsChangingTickets(false);
         }
     }
 
@@ -367,7 +429,7 @@ export default function AttendeeDetailPage() {
                                 </div>
                             </div>
                             <div className="flex items-center gap-2 flex-none">
-                                {registration.status === "registered" && (
+                                 {registration.status === "registered" && (
                                     <Button
                                         variant="outline"
                                         size="sm"
@@ -380,18 +442,7 @@ export default function AttendeeDetailPage() {
                                         <Trash2 className="size-3.5" />
                                         Cancel registration
                                     </Button>
-                                )}
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() =>
-                                        toast.info("Coming soon", {
-                                            description: "Changing ticket types is not yet available.",
-                                        })
-                                    }
-                                >
-                                    Change ticket types
-                                </Button>
+                                 )}
                             </div>
                         </div>
                     </Card>
@@ -466,11 +517,11 @@ export default function AttendeeDetailPage() {
                                         variant="ghost"
                                         size="sm"
                                         className="text-muted-foreground"
-                                        onClick={() =>
-                                            toast.info("Coming soon", {
-                                                description: "Changing ticket types is not yet available.",
-                                            })
-                                        }
+                                        disabled={registration.status !== "registered"}
+                                        onClick={() => {
+                                            setSelectedTicketSlugs(registration.tickets.map((t) => t.slug));
+                                            setChangeTicketsDialogOpen(true);
+                                        }}
                                     >
                                         Change
                                     </Button>
@@ -595,6 +646,67 @@ export default function AttendeeDetailPage() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+            {/* Change tickets dialog */}
+            <AlertDialog
+                open={changeTicketsDialogOpen}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setChangeTicketsDialogOpen(false);
+                        setChangeTicketsError(null);
+                    }
+                }}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Change ticket types</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Select the ticket types for <strong>{name}</strong>.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    {ticketTypesQuery.isLoading ? (
+                        <div className="space-y-2">
+                            <Skeleton className="h-5 w-full" />
+                            <Skeleton className="h-5 w-full" />
+                            <Skeleton className="h-5 w-full" />
+                        </div>
+                    ) : availableTicketTypes.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">No ticket types available.</p>
+                    ) : (
+                        <div className="space-y-2 rounded-md border p-4">
+                            {availableTicketTypes.map((t) => {
+                                const checked = selectedTicketSlugs.includes(t.slug);
+                                return (
+                                    <label key={t.slug} className="flex items-center gap-2 text-sm cursor-pointer">
+                                        <Checkbox
+                                            checked={checked}
+                                            onCheckedChange={(value) => {
+                                                setSelectedTicketSlugs((prev) =>
+                                                    value
+                                                        ? [...prev, t.slug]
+                                                        : prev.filter((s) => s !== t.slug),
+                                                );
+                                            }}
+                                        />
+                                        {t.name}
+                                    </label>
+                                );
+                            })}
+                        </div>
+                    )}
+                    {changeTicketsError && (
+                        <p className="text-sm text-destructive">{changeTicketsError}</p>
+                    )}
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isChangingTickets}>Cancel</AlertDialogCancel>
+                        <Button
+                            disabled={selectedTicketSlugs.length === 0 || isChangingTickets}
+                            onClick={handleChangeTicketsConfirm}
+                        >
+                            {isChangingTickets ? "Saving…" : "Save changes"}
+                        </Button>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </PageLayout>
     );
 }
@@ -623,6 +735,12 @@ const kindMeta: Record<
         borderClass: "border-destructive/25",
         Icon: Trash2,
     },
+    ticketschanged: {
+        color: "text-amber-600",
+        bgClass: "bg-amber-50",
+        borderClass: "border-amber-200",
+        Icon: ArrowRightLeft,
+    },
     email: {
         color: "text-muted-foreground",
         bgClass: "bg-muted/60",
@@ -647,7 +765,7 @@ function TimelineItem({ entry }: { entry: TimelineEntry }) {
                     <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-[14px] font-medium">{entry.title}</span>
                         <Badge variant="outline" className="text-[0.65rem] text-muted-foreground capitalize">
-                            {entry.kind}
+                            {entry.kind === "ticketschanged" ? "tickets changed" : entry.kind}
                         </Badge>
                     </div>
                     <div className="text-[12.5px] text-muted-foreground mt-0.5">{entry.detail}</div>

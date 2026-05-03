@@ -35,7 +35,7 @@ public class Registration : Aggregate<RegistrationId>
         _tickets = tickets.ToList();
         AdditionalDetails = additionalDetails;
 
-        AddDomainEvent(new AttendeeRegisteredDomainEvent(teamId, eventId, id, email, firstName, lastName));
+        AddDomainEvent(new AttendeeRegisteredDomainEvent(teamId, eventId, id, email, firstName, lastName, tickets));
     }
 
     public TeamId TeamId { get; private set; }
@@ -59,8 +59,6 @@ public class Registration : Aggregate<RegistrationId>
         IReadOnlyList<TicketTypeSnapshot> tickets,
         AdditionalDetails? additionalDetails = null)
     {
-        EnsureNoDuplicateSlugs(tickets);
-
         return new Registration(
             RegistrationId.New(),
             teamId,
@@ -83,6 +81,20 @@ public class Registration : Aggregate<RegistrationId>
         AddDomainEvent(new RegistrationCancelledDomainEvent(TeamId, EventId, Id, Email, reason));
     }
 
+    public void ChangeTickets(IReadOnlyList<TicketTypeSnapshot> newTickets, DateTimeOffset changedAt)
+    {
+        if (Status == RegistrationStatus.Cancelled)
+            throw new BusinessRuleViolationException(Errors.RegistrationIsCancelled);
+
+        var oldTickets = _tickets.ToList();
+        _tickets.Clear();
+        _tickets.AddRange(newTickets);
+
+        AddDomainEvent(new TicketsChangedDomainEvent(
+            TeamId, EventId, Id, Email, FirstName, LastName,
+            oldTickets, newTickets, changedAt));
+    }
+
     public void Reconfirm(DateTimeOffset now)
     {
         if (Status == RegistrationStatus.Cancelled)
@@ -97,23 +109,12 @@ public class Registration : Aggregate<RegistrationId>
         AddDomainEvent(new RegistrationReconfirmedDomainEvent(TeamId, EventId, Id, Email, now));
     }
 
-    private static void EnsureNoDuplicateSlugs(IReadOnlyList<TicketTypeSnapshot> tickets)
-    {
-        var duplicates = tickets
-            .GroupBy(t => t.Slug)
-            .Where(g => g.Count() > 1)
-            .Select(g => g.Key)
-            .ToArray();
-
-        if (duplicates.Length > 0)
-            throw new BusinessRuleViolationException(Errors.DuplicateTicketTypes(duplicates));
-    }
-
     internal static class Errors
     {
-        public static Error DuplicateTicketTypes(string[] slugs) =>
-            new("duplicate_ticket_types", "One or more ticket types are duplicates.",
-                Details: new Dictionary<string, object?> { ["slugs"] = slugs });
+        public static readonly Error RegistrationIsCancelled = new(
+            "registration.is_cancelled",
+            "Registration is cancelled.",
+            Type: ErrorType.Conflict);
 
         public static readonly Error AlreadyCancelled = new(
             "registration.already_cancelled",

@@ -22,7 +22,7 @@ public sealed class RegistrationsMessagePolicyTests
         var email = EmailAddress.From("test@example.com");
         var firstName = FirstName.From("Test");
         var lastName = LastName.From("Attendee");
-        var domainEvent = new AttendeeRegisteredDomainEvent(teamId, eventId, registrationId, email, firstName, lastName);
+        var domainEvent = new AttendeeRegisteredDomainEvent(teamId, eventId, registrationId, email, firstName, lastName, []);
 
         // Act
         var shouldPublish = _sut.ShouldPublishIntegrationEvent(domainEvent);

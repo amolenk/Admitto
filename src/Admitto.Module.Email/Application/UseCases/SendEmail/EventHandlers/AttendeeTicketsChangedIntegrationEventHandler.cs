@@ -10,27 +10,25 @@ using Microsoft.EntityFrameworkCore;
 namespace Amolenk.Admitto.Module.Email.Application.UseCases.SendEmail.EventHandlers;
 
 /// <summary>
-/// Handles <see cref="AttendeeRegisteredIntegrationEvent"/> by dispatching a
-/// <see cref="SendEmailCommand"/> to send a registration confirmation email.
+/// Handles <see cref="AttendeeTicketsChangedIntegrationEvent"/> by dispatching a
+/// <see cref="SendEmailCommand"/> to send a ticket-change confirmation email.
 /// </summary>
 /// <remarks>
-/// No capability gate — this handler runs in any host that processes the Registrations queue.
-/// The actual send is gated on <see cref="HostCapability.Email"/> inside <see cref="SendEmailCommandHandler"/>.
-/// Idempotency key: <c>attendee-registered:{registrationId}</c>.
-/// Event name, website URL, and pre-signed links are all returned by the Registrations facade
-/// so signing infra stays inside the Registrations module.
+/// Idempotency key: <c>tickets-changed:{registrationId}:{changedAt-unix-ms}</c>.
+/// The <c>ticket_types</c> parameter lists the new ticket type names.
 /// </remarks>
-internal sealed class AttendeeRegisteredIntegrationEventHandler(
+internal sealed class AttendeeTicketsChangedIntegrationEventHandler(
     IEmailWriteStore writeStore,
     IRegistrationsFacade registrationsFacade,
     IMediator mediator)
-    : IIntegrationEventHandler<AttendeeRegisteredIntegrationEvent>
+    : IIntegrationEventHandler<AttendeeTicketsChangedIntegrationEvent>
 {
     public async ValueTask HandleAsync(
-        AttendeeRegisteredIntegrationEvent integrationEvent,
+        AttendeeTicketsChangedIntegrationEvent integrationEvent,
         CancellationToken cancellationToken)
     {
-        var idempotencyKey = $"attendee-registered:{integrationEvent.RegistrationId}";
+        var changedAtMs = integrationEvent.ChangedAt.ToUnixTimeMilliseconds();
+        var idempotencyKey = $"tickets-changed:{integrationEvent.RegistrationId}:{changedAtMs}";
 
         var alreadyHandled = await writeStore.EmailLog
             .AnyAsync(l => l.IdempotencyKey == idempotencyKey, cancellationToken);
@@ -44,7 +42,7 @@ internal sealed class AttendeeRegisteredIntegrationEventHandler(
             cancellationToken);
 
         var fullName = $"{integrationEvent.FirstName} {integrationEvent.LastName}".Trim();
-        var ticketTypeNames = integrationEvent.Tickets.Select(t => t.Name).ToArray();
+        var ticketTypeNames = integrationEvent.NewTickets.Select(t => t.Name).ToArray();
 
         var command = new SendEmailCommand(
             TeamId: TeamId.From(integrationEvent.TeamId),

@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:15000/"
+      "url": "http://localhost:62781/"
     }
   ],
   "paths": {
@@ -4020,6 +4020,106 @@
         }
       }
     },
+    "/admin/teams/{teamSlug}/events/{eventSlug}/registrations/{registrationId}/tickets": {
+      "put": {
+        "tags": [
+          "ChangeAttendeeTicketsHttpEndpoint"
+        ],
+        "operationId": "ChangeAttendeeTickets",
+        "parameters": [
+          {
+            "name": "registrationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "teamSlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "eventSlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChangeAttendeeTicketsHttpRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          }
+        }
+      }
+    },
     "/admin/teams/{teamSlug}/events/{eventSlug}/coupons": {
       "post": {
         "tags": [
@@ -5689,6 +5789,23 @@
           }
         }
       },
+      "ChangeAttendeeTicketsHttpRequest": {
+        "required": [
+          "ticketTypeSlugs"
+        ],
+        "type": "object",
+        "properties": {
+          "ticketTypeSlugs": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
       "ChangeTeamMembershipRoleHttpRequest": {
         "required": [
           "newRole"
@@ -7229,8 +7346,8 @@
         "type": "oauth2",
         "flows": {
           "authorizationCode": {
-            "authorizationUrl": "http://localhost:15001/realms/admitto/protocol/openid-connect/auth",
-            "tokenUrl": "http://localhost:15001/realms/admitto/protocol/openid-connect/token",
+            "authorizationUrl": "http://localhost:62778/realms/admitto/protocol/openid-connect/auth",
+            "tokenUrl": "http://localhost:62778/realms/admitto/protocol/openid-connect/token",
             "scopes": {
               "manage": "Access the Management API",
               "openid": "Access the OpenID Connect user profile",
@@ -7336,6 +7453,9 @@
     },
     {
       "name": "CancelRegistrationHttpEndpoint"
+    },
+    {
+      "name": "ChangeAttendeeTicketsHttpEndpoint"
     },
     {
       "name": "CreateCouponHttpEndpoint"

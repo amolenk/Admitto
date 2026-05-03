@@ -7,6 +7,12 @@ Your registration has been confirmed. Here's your ticket for {{ event_name }}!
 Scan this QR code at the entrance:
 {{ qrcode_link }}
 
+{{ if ticket_types && ticket_types.size > 0 }}
+Your ticket type(s):
+{{ for ticket_type in ticket_types }}
+- {{ ticket_type }}
+{{ end }}
+{{ end }}
 You can present this QR code on your mobile device or bring a printed copy to the event.
 
 Can't make it?

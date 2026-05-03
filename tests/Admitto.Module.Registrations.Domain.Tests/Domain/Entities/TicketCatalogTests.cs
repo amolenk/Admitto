@@ -238,7 +238,7 @@ public sealed class TicketCatalogTests
         var result = ErrorResult.Capture(() => sut.Claim(["unknown"], enforce: true));
 
         // Assert
-        result.Error.ShouldMatch(TicketCatalog.Errors.TicketTypeNotFound("unknown"));
+        result.Error.ShouldMatch(TicketCatalog.Errors.UnknownTicketTypes(["unknown"]));
     }
 
     [TestMethod]
@@ -498,5 +498,65 @@ public sealed class TicketCatalogTests
         // Assert
         sut.GetTicketType("a")!.UsedCapacity.ShouldBe(0);
         sut.GetTicketType("b")!.UsedCapacity.ShouldBe(0);
+    }
+
+    [TestMethod]
+    public void SC034_Claim_CancelledTicketType_Throws()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId);
+        sut.AddTicketType(Slug.From("vip"), DisplayName.From("VIP"), [], 10);
+        sut.CancelTicketType(Slug.From("vip"));
+
+        // Act
+        var result = ErrorResult.Capture(() => sut.Claim(["vip"], enforce: false));
+
+        // Assert
+        result.Error.ShouldMatch(TicketCatalog.Errors.CancelledTicketTypes(["vip"]));
+    }
+
+    [TestMethod]
+    public void SC035_Claim_DuplicateSlugs_Throws()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId);
+        sut.AddTicketType(Slug.From("general"), DisplayName.From("General"), [], 10);
+
+        // Act
+        var result = ErrorResult.Capture(() => sut.Claim(["general", "general"], enforce: false));
+
+        // Assert
+        result.Error.ShouldMatch(TicketCatalog.Errors.DuplicateTicketTypes(["general"]));
+    }
+
+    [TestMethod]
+    public void SC036_Claim_OverlappingTimeSlots_Throws()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId);
+        sut.AddTicketType(Slug.From("workshop-a"), DisplayName.From("Workshop A"),
+            [new TimeSlot(Slug.From("morning"))], 10);
+        sut.AddTicketType(Slug.From("workshop-b"), DisplayName.From("Workshop B"),
+            [new TimeSlot(Slug.From("morning"))], 10);
+
+        // Act
+        var result = ErrorResult.Capture(() => sut.Claim(["workshop-a", "workshop-b"], enforce: false));
+
+        // Assert
+        result.Error.ShouldMatch(TicketCatalog.Errors.OverlappingTimeSlots(["morning"]));
+    }
+
+    [TestMethod]
+    public void SC037_Claim_EmptyList_IsNoOp()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId);
+        sut.AddTicketType(Slug.From("general"), DisplayName.From("General"), [], 10);
+
+        // Act — empty claim should not throw
+        sut.Claim([], enforce: true);
+
+        // Assert — capacity unchanged
+        sut.GetTicketType("general")!.UsedCapacity.ShouldBe(0);
     }
 }

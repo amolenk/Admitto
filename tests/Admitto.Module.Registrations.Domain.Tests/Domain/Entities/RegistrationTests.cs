@@ -42,26 +42,6 @@ public sealed class RegistrationTests
     }
 
     [TestMethod]
-    public void SC002_Registration_Create_DuplicateSlugs_ThrowsBusinessRuleViolation()
-    {
-        // Arrange
-        var duplicateSlug = "general-admission";
-
-        var tickets = new List<TicketTypeSnapshot>
-        {
-            new(duplicateSlug, duplicateSlug, []),
-            new(duplicateSlug, duplicateSlug, [])
-        };
-
-        // Act
-        var result = ErrorResult.Capture(() =>
-            Registration.Create(DefaultTeamId, DefaultEventId, DefaultEmail, DefaultFirstName, DefaultLastName, tickets));
-
-        // Assert
-        result.Error.ShouldMatch(Registration.Errors.DuplicateTicketTypes([duplicateSlug]));
-    }
-
-    [TestMethod]
     public void SC003_Registration_Create_PopulatesIdentityAndDefaults()
     {
         var sut = NewRegistration();
@@ -148,4 +128,52 @@ public sealed class RegistrationTests
             [new TicketTypeSnapshot("general-admission", "general-admission", [])]);
 
     private static void ClearEvents(Registration r) => r.ClearDomainEvents();
+
+    [TestMethod]
+    public void SC009_Registration_ChangeTickets_HappyPath_UpdatesSnapshotAndRaisesEvent()
+    {
+        var sut = NewRegistration();
+        ClearEvents(sut);
+        var newTickets = new List<TicketTypeSnapshot>
+        {
+            new("workshop", "Workshop", []),
+            new("dinner", "Dinner", [])
+        };
+        var changedAt = DateTimeOffset.UtcNow;
+
+        sut.ChangeTickets(newTickets, changedAt);
+
+        sut.Tickets.Count.ShouldBe(2);
+        sut.Tickets.ShouldContain(t => t.Slug == "workshop");
+        sut.Tickets.ShouldContain(t => t.Slug == "dinner");
+        sut.GetDomainEvents().OfType<TicketsChangedDomainEvent>().ShouldHaveSingleItem();
+    }
+
+    [TestMethod]
+    public void SC010_Registration_ChangeTickets_SameSelection_StillRaisesEvent()
+    {
+        var sut = NewRegistration();
+        ClearEvents(sut);
+        var sameTickets = new List<TicketTypeSnapshot>
+        {
+            new("general-admission", "General Admission", [])
+        };
+
+        sut.ChangeTickets(sameTickets, DateTimeOffset.UtcNow);
+
+        sut.Tickets.Count.ShouldBe(1);
+        sut.GetDomainEvents().OfType<TicketsChangedDomainEvent>().ShouldHaveSingleItem();
+    }
+
+    [TestMethod]
+    public void SC011_Registration_ChangeTickets_Cancelled_Throws()
+    {
+        var sut = NewRegistration();
+        sut.Cancel(CancellationReason.AttendeeRequest);
+
+        var result = ErrorResult.Capture(() =>
+            sut.ChangeTickets([new("workshop", "Workshop", [])], DateTimeOffset.UtcNow));
+
+        result.Error.ShouldMatch(Registration.Errors.RegistrationIsCancelled);
+    }
 }

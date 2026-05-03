@@ -231,7 +231,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.Code.ShouldBe("registration.duplicate_ticket_types");
+        result.Error.Code.ShouldBe("ticket_catalog.duplicate_ticket_types");
     }
 
     // SC014: Admin-add rejected — unknown ticket type
@@ -247,7 +247,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.Code.ShouldBe("registration.unknown_ticket_types");
+        result.Error.Code.ShouldBe("ticket_catalog.unknown_ticket_types");
     }
 
     // SC015: Admin-add rejected — cancelled ticket type
@@ -263,7 +263,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.Code.ShouldBe("registration.cancelled_ticket_types");
+        result.Error.Code.ShouldBe("ticket_catalog.cancelled_ticket_types");
     }
 
     // SC016: Admin-add rejected — overlapping time slots
@@ -279,7 +279,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.Code.ShouldBe("registration.overlapping_time_slots");
+        result.Error.Code.ShouldBe("ticket_catalog.overlapping_time_slots");
     }
 
     // SC017: Admin-add rejected — additional detail key not in schema

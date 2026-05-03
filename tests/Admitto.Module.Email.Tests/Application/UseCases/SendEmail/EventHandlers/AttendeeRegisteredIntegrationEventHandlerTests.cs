@@ -21,7 +21,7 @@ public sealed class AttendeeRegisteredIntegrationEventHandlerTests(TestContext t
     private static readonly Guid RegId = Guid.NewGuid();
 
     private static AttendeeRegisteredIntegrationEvent Event() =>
-        new(TeamId, EventId, RegId, "alice@example.com", "Alice", "Anderson");
+        new(TeamId, EventId, RegId, "alice@example.com", "Alice", "Anderson", []);
 
     private static TicketedEventEmailContextDto Context() =>
         new("DevConf 2025", "https://devconf.example.com", "https://devconf.example.com/qr", "Alice", "Anderson");

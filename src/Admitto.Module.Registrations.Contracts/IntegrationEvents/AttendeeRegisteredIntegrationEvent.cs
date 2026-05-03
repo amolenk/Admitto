@@ -12,4 +12,5 @@ public sealed record AttendeeRegisteredIntegrationEvent(
     Guid RegistrationId,
     string RecipientEmail,
     string FirstName,
-    string LastName) : IntegrationEvent;
+    string LastName,
+    IReadOnlyList<TicketTypeItem> Tickets) : IntegrationEvent;

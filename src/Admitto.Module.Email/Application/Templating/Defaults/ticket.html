@@ -24,9 +24,17 @@
         <p style="margin-top: 10px; font-size: 14px; color: #666;">Show this QR code at the entrance</p>
     </div>
 
-    <div>
-        <p>You can present this QR code on your mobile device or bring a printed copy to the event.</p>
+    {{ if ticket_types && ticket_types.size > 0 }}
+    <div style="margin-bottom: 20px;">
+        <h2 style="font-size: 14px; color: #0e1b4d; font-weight: bold;">Your ticket type(s)</h2>
+        <ul style="margin: 0; padding-left: 20px;">
+            {{ for ticket_type in ticket_types }}
+            <li>{{ ticket_type }}</li>
+            {{ end }}
+        </ul>
     </div>
+    {{ end }}
+        <p>You can present this QR code on your mobile device or bring a printed copy to the event.</p>
 
     <div style="border-top: 1px solid #ddd; margin-top: 20px;">
         <h2 style="font-size: 14px; color: #0e1b4d; font-weight: bold;">Can't make it?</h2>
@@ -45,7 +53,7 @@
 
     <div style="border-top: 1px solid #ddd; margin-top: 20px;">
         <p>For more details about the event, visit <a
-                href="https://{{ event_website }}" target="_blank" rel="noopener noreferrer"
+                href="{{ event_website }}" target="_blank" rel="noopener noreferrer"
                 style="color: #0e1b4d; text-decoration: underline;">{{ event_website }}</a>.</p>
 
         <p>We look forward to seeing you there!</p>

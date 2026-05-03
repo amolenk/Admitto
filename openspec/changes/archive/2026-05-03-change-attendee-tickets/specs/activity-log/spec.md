@@ -1,10 +1,4 @@
-# Activity Log Specification
-
-## Purpose
-
-The ActivityLog is a read-side projection in the Registrations module that records immutable lifecycle milestones for each registration. It is driven by domain events and provides an accurate, append-only history of what happened to a registration over time — supporting future scenarios where the same registration can be cancelled and then re-activated (e.g. re-registration).
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: ActivityLog records lifecycle milestones for each registration
 
@@ -49,13 +43,3 @@ Each handler runs in the same database transaction as the aggregate change, so n
 
 - **WHEN** an admin changes the ticket selection on a registration, raising `TicketsChangedDomainEvent` with old slugs `["early-bird"]` and new slugs `["workshop","dinner"]`
 - **THEN** an `activity_log` row exists with `activity_type=TicketsChanged`, `occurred_at` set to the change timestamp, and `metadata` equal to `{"from":["early-bird"],"to":["workshop","dinner"]}`
-
-### Requirement: ActivityLog entries are queried as part of registration detail
-
-The system SHALL include `ActivityLog` entries for a given `registrationId` when responding to the `GetRegistrationDetails` query. Entries SHALL be returned ordered by `occurred_at` ascending.
-
-#### Scenario: SC006 Registration detail response includes activity entries
-
-- **GIVEN** a registration with Registered and Reconfirmed entries in the activity log
-- **WHEN** an admin queries the registration detail
-- **THEN** the response includes both activity entries ordered oldest-first

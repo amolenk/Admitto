@@ -80,6 +80,13 @@ HTTP-exposed use case subfolders typically contain:
 Internal event-driven slices omit the HTTP folder and keep event translation in
 `EventHandlers/`. Jobs live under `Application/Jobs/`.
 
+### 6. Domain Event Handler Naming
+Domain event handler classes are named after the **domain event they handle**, not the
+side-effect they produce. The intent is clear from the use-case folder.
+
+✅ `TicketsChangedDomainEventHandler` in `WriteActivityLog/EventHandlers/`  
+❌ `WriteTicketsChangedActivityLogHandler` — describes the side-effect instead
+
 ### 5. Wire the Endpoint
 Register the endpoint in the module's endpoint registration entry point.
 

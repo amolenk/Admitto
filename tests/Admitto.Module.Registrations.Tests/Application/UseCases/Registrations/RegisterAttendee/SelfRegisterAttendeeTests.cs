@@ -194,7 +194,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.Code.ShouldBe("registration.duplicate_ticket_types");
+        result.Error.Code.ShouldBe("ticket_catalog.duplicate_ticket_types");
     }
 
     // SC011: Rejected — non-existent ticket type
@@ -210,7 +210,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.Code.ShouldBe("registration.unknown_ticket_types");
+        result.Error.Code.ShouldBe("ticket_catalog.unknown_ticket_types");
     }
 
     // SC012: Rejected — cancelled ticket type
@@ -226,7 +226,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.Code.ShouldBe("registration.cancelled_ticket_types");
+        result.Error.Code.ShouldBe("ticket_catalog.cancelled_ticket_types");
     }
 
     // SC013: Rejected — overlapping time slots
@@ -242,7 +242,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.Code.ShouldBe("registration.overlapping_time_slots");
+        result.Error.Code.ShouldBe("ticket_catalog.overlapping_time_slots");
     }
 
     // SC014: Rejected — TicketedEvent status is Cancelled

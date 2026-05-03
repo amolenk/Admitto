@@ -3,7 +3,6 @@ using Amolenk.Admitto.Module.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Module.Registrations.Domain.DomainEvents;
 using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
-
 namespace Amolenk.Admitto.Module.Registrations.Application.Messaging;
 
 public class RegistrationsMessagePolicy : MessagePolicy
@@ -17,7 +16,8 @@ public class RegistrationsMessagePolicy : MessagePolicy
                 e.RegistrationId.Value,
                 e.RecipientEmail.Value,
                 e.FirstName.Value,
-                e.LastName.Value));
+                e.LastName.Value,
+                e.Tickets.Select(t => new TicketTypeItem(t.Slug, t.Name)).ToList()));
 
         Configure<RegistrationCancelledDomainEvent>()
             .PublishIntegrationEvent(e => new RegistrationCancelledIntegrationEvent(
@@ -42,6 +42,17 @@ public class RegistrationsMessagePolicy : MessagePolicy
                 TicketedEventId = e.TicketedEventId.Value,
                 Email = e.Email.Value
             });
+
+        Configure<TicketsChangedDomainEvent>()
+            .PublishIntegrationEvent(e => new AttendeeTicketsChangedIntegrationEvent(
+                e.TeamId.Value,
+                e.TicketedEventId.Value,
+                e.RegistrationId.Value,
+                e.RecipientEmail.Value,
+                e.FirstName.Value,
+                e.LastName.Value,
+                e.NewTickets.Select(t => new TicketTypeItem(t.Slug, t.Name)).ToList(),
+                e.ChangedAt));
 
         Configure<TicketedEventStatusChangedDomainEvent>()
             .PublishIntegrationEvent(e => e.NewStatus switch
@@ -69,7 +80,7 @@ public class RegistrationsMessagePolicy : MessagePolicy
                         e.Policy.OpensAt,
                         e.Policy.ClosesAt,
                         (int)e.Policy.Cadence.TotalDays)));
-
+            
         Configure<TicketedEventTimeZoneChangedDomainEvent>()
             .PublishIntegrationEvent(e => new TicketedEventTimeZoneChangedIntegrationEvent(
                 e.TeamId.Value,

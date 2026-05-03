@@ -107,19 +107,73 @@ public class TicketCatalog : Aggregate<TicketedEventId>
     }
 
     /// <summary>
-    /// Claims tickets for the given slugs. If enforce is true, capacity is enforced (self-service path).
-    /// If enforce is false, UsedCapacity is incremented without enforcement (coupon path).
+    /// Validates that the given slug selection has no duplicate slugs, unknown slugs,
+    /// cancelled slugs, or overlapping time slots. Does not modify capacity.
+    /// Use this before delta-based claim/release operations to enforce invariants
+    /// on the full new selection.
+    /// </summary>
+    public void ValidateSelection(IReadOnlyList<string> slugs)
+    {
+        if (slugs.Count == 0) return;
+
+        var ticketTypeMap = _ticketTypes.ToDictionary(t => t.Id);
+
+        var duplicates = slugs.GroupBy(s => s).Where(g => g.Count() > 1).Select(g => g.Key).ToArray();
+        if (duplicates.Length > 0)
+            throw new BusinessRuleViolationException(Errors.DuplicateTicketTypes(duplicates));
+
+        var unknownSlugs = slugs.Where(s => !ticketTypeMap.ContainsKey(s)).ToArray();
+        if (unknownSlugs.Length > 0)
+            throw new BusinessRuleViolationException(Errors.UnknownTicketTypes(unknownSlugs));
+
+        var cancelledSlugs = slugs.Where(s => ticketTypeMap[s].IsCancelled).ToArray();
+        if (cancelledSlugs.Length > 0)
+            throw new BusinessRuleViolationException(Errors.CancelledTicketTypes(cancelledSlugs));
+
+        var allTimeSlots = slugs
+            .SelectMany(s => ticketTypeMap[s].TimeSlots.Select(ts => ts.Slug.Value))
+            .ToList();
+        var overlapping = allTimeSlots.GroupBy(ts => ts).Where(g => g.Count() > 1).Select(g => g.Key).ToArray();
+        if (overlapping.Length > 0)
+            throw new BusinessRuleViolationException(Errors.OverlappingTimeSlots(overlapping));
+    }
+
+    /// <summary>
+    /// Claims tickets for the given slugs. Validates the selection (duplicate slugs,
+    /// unknown slugs, cancelled slugs, overlapping time slots) before claiming capacity.
+    /// If enforce is true, capacity is enforced (self-service path).
+    /// If enforce is false, UsedCapacity is incremented without enforcement (admin/coupon path).
     /// </summary>
     public void Claim(IReadOnlyList<string> slugs, bool enforce)
     {
         EnsureEventActive();
 
+        if (slugs.Count == 0) return;
+
+        var ticketTypeMap = _ticketTypes.ToDictionary(t => t.Id);
+
+        var duplicates = slugs.GroupBy(s => s).Where(g => g.Count() > 1).Select(g => g.Key).ToArray();
+        if (duplicates.Length > 0)
+            throw new BusinessRuleViolationException(Errors.DuplicateTicketTypes(duplicates));
+
+        var unknownSlugs = slugs.Where(s => !ticketTypeMap.ContainsKey(s)).ToArray();
+        if (unknownSlugs.Length > 0)
+            throw new BusinessRuleViolationException(Errors.UnknownTicketTypes(unknownSlugs));
+
+        var cancelledSlugs = slugs.Where(s => ticketTypeMap[s].IsCancelled).ToArray();
+        if (cancelledSlugs.Length > 0)
+            throw new BusinessRuleViolationException(Errors.CancelledTicketTypes(cancelledSlugs));
+
+        var allTimeSlots = slugs
+            .SelectMany(s => ticketTypeMap[s].TimeSlots.Select(ts => ts.Slug.Value))
+            .ToList();
+        var overlapping = allTimeSlots.GroupBy(ts => ts).Where(g => g.Count() > 1).Select(g => g.Key).ToArray();
+        if (overlapping.Length > 0)
+            throw new BusinessRuleViolationException(Errors.OverlappingTimeSlots(overlapping));
+
         foreach (var slug in slugs)
         {
-            var ticketType = _ticketTypes.FirstOrDefault(tt => tt.Id == slug);
-            if (ticketType is null)
-                throw new BusinessRuleViolationException(Errors.TicketTypeNotFound(slug));
-
+            var ticketType = ticketTypeMap[slug];
             if (enforce)
                 ticketType.ClaimWithEnforcement();
             else
@@ -151,6 +205,26 @@ public class TicketCatalog : Aggregate<TicketedEventId>
 
     internal static class Errors
     {
+        public static Error DuplicateTicketTypes(string[] slugs) =>
+            new("ticket_catalog.duplicate_ticket_types",
+                "Duplicate ticket types in selection.",
+                Details: new Dictionary<string, object?> { ["slugs"] = slugs });
+
+        public static Error UnknownTicketTypes(string[] slugs) =>
+            new("ticket_catalog.unknown_ticket_types",
+                "One or more ticket types do not exist.",
+                Details: new Dictionary<string, object?> { ["slugs"] = slugs });
+
+        public static Error CancelledTicketTypes(string[] slugs) =>
+            new("ticket_catalog.cancelled_ticket_types",
+                "One or more ticket types have been cancelled.",
+                Details: new Dictionary<string, object?> { ["slugs"] = slugs });
+
+        public static Error OverlappingTimeSlots(string[] slots) =>
+            new("ticket_catalog.overlapping_time_slots",
+                "Selected ticket types have overlapping time slots.",
+                Details: new Dictionary<string, object?> { ["slots"] = slots });
+
         public static Error DuplicateTicketTypeSlug(Slug slug) =>
             new("ticket_catalog.duplicate_slug",
                 "A ticket type with this slug already exists.",

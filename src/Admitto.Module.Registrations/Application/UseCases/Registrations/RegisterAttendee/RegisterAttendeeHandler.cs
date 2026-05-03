@@ -107,29 +107,8 @@ internal sealed class RegisterAttendeeHandler(
         if (catalog is null && command.Mode != RegistrationMode.Coupon)
             throw new BusinessRuleViolationException(Errors.NoTicketTypesConfigured);
 
-        // 7. Validate ticket-type selection (skipped only when coupon mode has no catalog).
-        Dictionary<string, TicketType>? ticketTypeMap = null;
-        if (catalog is not null)
-        {
-            ticketTypeMap = catalog.TicketTypes.ToDictionary(t => t.Id);
-            ValidateTicketTypeSelection(command.TicketTypeSlugs, ticketTypeMap);
-        }
-
-        // 8. Build snapshots (coupon-without-catalog yields empty time-slot arrays per legacy).
-        var tickets = command.TicketTypeSlugs
-            .Select(slug =>
-            {
-                var timeSlots = ticketTypeMap is not null
-                    ? ticketTypeMap[slug].TimeSlots.Select(ts => ts.Slug.Value).ToArray()
-                    : Array.Empty<string>();
-                var name = ticketTypeMap is not null
-                    ? ticketTypeMap[slug].Name.Value
-                    : slug;
-                return new TicketTypeSnapshot(slug, name, timeSlots);
-            })
-            .ToList();
-
-        // 9. Atomic claim. Capacity is enforced only in self-service.
+        // 7. Atomic claim. Validation (duplicates, unknown, cancelled, overlapping) is now
+        //    enforced inside Claim. Capacity enforcement applies only in self-service mode.
         if (catalog is not null)
         {
             try
@@ -143,15 +122,27 @@ internal sealed class RegisterAttendeeHandler(
             }
         }
 
-        // 10. Coupon redemption (after all gates pass).
+        // 8. Build snapshots (coupon-without-catalog yields empty time-slot arrays per legacy).
+        var tickets = command.TicketTypeSlugs
+            .Select(slug =>
+            {
+                var ticketType = catalog?.GetTicketType(slug);
+                var timeSlots = ticketType?.TimeSlots.Select(ts => ts.Slug.Value).ToArray()
+                    ?? Array.Empty<string>();
+                var name = ticketType?.Name.Value ?? slug;
+                return new TicketTypeSnapshot(slug, name, timeSlots);
+            })
+            .ToList();
+
+        // 9. Coupon redemption (after all gates pass).
         coupon?.Redeem();
 
-        // 11. Validate and apply additional details.
+        // 10. Validate and apply additional details.
         var additionalDetails = AdditionalDetails.Validate(
             command.AdditionalDetails,
             ticketedEvent.AdditionalDetailSchema);
 
-        // 12. Create registration and persist.
+        // 11. Create registration and persist.
         var registration = Registration.Create(
             ticketedEvent.TeamId,
             command.EventId,
@@ -190,30 +181,6 @@ internal sealed class RegisterAttendeeHandler(
             throw new BusinessRuleViolationException(Errors.EmailDomainNotAllowed);
     }
 
-    private static void ValidateTicketTypeSelection(
-        string[] slugs,
-        Dictionary<string, TicketType> ticketTypeMap)
-    {
-        var duplicates = slugs.GroupBy(s => s).Where(g => g.Count() > 1).Select(g => g.Key).ToArray();
-        if (duplicates.Length > 0)
-            throw new BusinessRuleViolationException(Errors.DuplicateTicketTypes(duplicates));
-
-        var unknownSlugs = slugs.Where(s => !ticketTypeMap.ContainsKey(s)).ToArray();
-        if (unknownSlugs.Length > 0)
-            throw new BusinessRuleViolationException(Errors.UnknownTicketTypes(unknownSlugs));
-
-        var cancelledSlugs = slugs.Where(s => ticketTypeMap[s].IsCancelled).ToArray();
-        if (cancelledSlugs.Length > 0)
-            throw new BusinessRuleViolationException(Errors.CancelledTicketTypes(cancelledSlugs));
-
-        var allTimeSlots = slugs
-            .SelectMany(s => ticketTypeMap[s].TimeSlots.Select(ts => ts.Slug.Value))
-            .ToList();
-        var overlapping = allTimeSlots.GroupBy(ts => ts).Where(g => g.Count() > 1).Select(g => g.Key).ToArray();
-        if (overlapping.Length > 0)
-            throw new BusinessRuleViolationException(Errors.OverlappingTimeSlots(overlapping));
-    }
-
     internal static class Errors
     {
         public static readonly Error EventNotFound = new(
@@ -245,26 +212,6 @@ internal sealed class RegisterAttendeeHandler(
             "registration.no_ticket_types",
             "No ticket types have been configured for this event.",
             Type: ErrorType.Validation);
-
-        public static Error DuplicateTicketTypes(string[] slugs) => new(
-            "registration.duplicate_ticket_types",
-            "Duplicate ticket types in selection.",
-            Details: new Dictionary<string, object?> { ["slugs"] = slugs });
-
-        public static Error UnknownTicketTypes(string[] slugs) => new(
-            "registration.unknown_ticket_types",
-            "One or more ticket types do not exist.",
-            Details: new Dictionary<string, object?> { ["slugs"] = slugs });
-
-        public static Error CancelledTicketTypes(string[] slugs) => new(
-            "registration.cancelled_ticket_types",
-            "One or more ticket types have been cancelled.",
-            Details: new Dictionary<string, object?> { ["slugs"] = slugs });
-
-        public static Error OverlappingTimeSlots(string[] slots) => new(
-            "registration.overlapping_time_slots",
-            "Selected ticket types have overlapping time slots.",
-            Details: new Dictionary<string, object?> { ["slots"] = slots });
 
         public static readonly Error CouponNotFound = new(
             "coupon.not_found",

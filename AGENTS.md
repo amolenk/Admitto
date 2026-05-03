@@ -55,13 +55,35 @@ aspire describe
 In this Codex environment, sandboxed `curl` to the Aspire-published `localhost` endpoint can fail even when Aspire reports the resource as healthy. If you need to verify the live API spec or probe the running service, retry the local `curl` outside the sandbox and fetch `/openapi/v1.json` from the URL reported by `aspire describe`.
 
 ## Regenerating the Admin UI SDK
-When backend endpoints change, regenerate the generated SDK:
-1. Start the Aspire AppHost.
-2. Prefer `aspire start --isolated`, then `aspire wait api`, then confirm the live spec is reachable at `/openapi/v1.json` on the `api` endpoint from `aspire describe`.
-3. Regenerate: `cd src/Admitto.UI.Admin && pnpm run openapi-ts`
-4. Use the newly generated functions from `app/lib/admitto-api/generated/` in proxy routes.
 
-If generation is blocked, fix the Aspire/spec access problem first. Do not add handwritten replacements for generated Admin UI or CLI client operations as a shortcut around regeneration.
+**⚠️ NON-NEGOTIABLE: Never write a manual proxy route or hand-code an API client call when the backend endpoint already exists or was just added. ALWAYS regenerate the SDK first and use the generated function.**
+
+Whenever a backend endpoint is added, removed, or its contract changes, regenerate the Admin UI SDK **before** writing any proxy route or UI code that calls it:
+
+1. `aspire start --isolated`
+2. `aspire wait api`
+3. Fetch the spec: `curl -sf http://<api-url>/openapi/v1.json -o src/Admitto.UI.Admin/openapi-spec.json`
+4. Regenerate: `cd src/Admitto.UI.Admin && pnpm openapi-ts`
+5. Use the newly generated functions from `app/lib/admitto-api/generated/` in proxy routes.
+
+Proxy routes must always use the generated SDK — pattern:
+
+```ts
+import { callAdmittoApi } from "@/lib/admitto-api/admitto-client";
+import { myGeneratedFunction } from "@/lib/admitto-api/generated/sdk.gen";
+import type { MyRequestType } from "@/lib/admitto-api/generated/types.gen";
+
+export async function PUT(
+    request: Request,
+    { params }: { params: Promise<{ teamSlug: string; ... }> },
+) {
+    const { teamSlug, ... } = await params;
+    const body = await request.json() as MyRequestType;
+    return callAdmittoApi(() => myGeneratedFunction({ path: { teamSlug, ... }, body }));
+}
+```
+
+If generation is blocked, fix the Aspire/spec access problem first. **Do not add handwritten replacements as a shortcut — not even temporarily.**
 
 ## Testing
 Run targeted tests for the modules you changed. See `tests/AGENTS.md` for commands and suite selection.

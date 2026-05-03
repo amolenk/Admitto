@@ -68,6 +68,8 @@ Templates SHALL be rendered with the Scriban templating engine. The renderer SHA
 
 When the calling code (the bulk-email composer) supplies an ad-hoc `Subject`, `TextBody`, or `HtmlBody`, the renderer SHALL use those strings instead of the corresponding template field. Ad-hoc strings SHALL be rendered through Scriban with the same parameter set as the resolved template would have been.
 
+The `ticket` template type SHALL receive a `ticket_types` parameter containing the list of ticket type names the attendee is registered for. This parameter SHALL be supplied by both the initial-registration email handler (`AttendeeRegisteredIntegrationEventHandler`) and the ticket-change email handler (`AttendeeTicketsChangedIntegrationEventHandler`). The built-in default `ticket` templates (HTML and text) SHALL display the ticket type list. Custom `ticket` templates that omit `{{ ticket_types }}` are unaffected because Scriban silently ignores unused variables.
+
 #### Scenario: Variables are substituted
 - **WHEN** a template subject is "Your {{ event_name }} Ticket" and the parameters provide `event_name = "DevConf"`
 - **THEN** the rendered subject is "Your DevConf Ticket"
@@ -83,6 +85,16 @@ When the calling code (the bulk-email composer) supplies an ad-hoc `Subject`, `T
 #### Scenario: Partial ad-hoc override falls back to template for missing fields
 - **WHEN** the composer supplies only an ad-hoc subject, and the resolved template provides text+html bodies
 - **THEN** the rendered text body and html body come from the template, rendered with the same parameters
+
+#### Scenario: ticket_types variable lists registered ticket names in confirmation email
+- **GIVEN** a registration for "alice@example.com" holding ticket types "Early Bird" and "Workshop"
+- **WHEN** a `ticket` confirmation email is rendered for either initial registration or ticket change
+- **THEN** the rendered output contains "Early Bird" and "Workshop"
+
+#### Scenario: ticket_types is empty list when no catalog exists
+- **GIVEN** a registration created via a coupon for an event with no ticket catalog and no ticket type snapshots
+- **WHEN** the `ticket` confirmation email is rendered
+- **THEN** rendering succeeds and the `{{ ticket_types }}` block renders as empty or is hidden by the template guard
 
 ---
 
@@ -100,4 +112,3 @@ The Email module SHALL expose admin HTTP endpoints to read, upsert, and delete t
 #### Scenario: Non-team-member denied
 - **WHEN** a user who is not a member of the owning team attempts to upsert a template
 - **THEN** the request is denied with a 403 response
-
