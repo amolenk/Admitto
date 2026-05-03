@@ -1,11 +1,13 @@
+using Amolenk.Admitto.Module.Registrations.Contracts;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.Registrations.RegisterAttendee;
+using Amolenk.Admitto.Module.Registrations.Domain.DomainEvents;
+using Amolenk.Admitto.Module.Registrations.Domain.Entities;
 using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Registrations.Tests.Application.Aspire;
+using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
-using Should = Shouldly.Should;
 
 namespace Amolenk.Admitto.Module.Registrations.Tests.Application.UseCases.Registrations.RegisterAttendee;
 
@@ -197,9 +199,9 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         result.Error.Code.ShouldBe("registration.no_ticket_types");
     }
 
-    // SC012: Admin-add rejected — duplicate email (DB constraint)
+    // SC012: Admin-add rejected — duplicate active email
     [TestMethod]
-    public async ValueTask SC012_AdminRegisterAttendee_DuplicateEmail_ThrowsDbConstraintViolation()
+    public async ValueTask SC012_AdminRegisterAttendee_DuplicateActiveEmail_ThrowsBusinessConflict()
     {
         var fixture = RegisterAttendeeFixture.WithExistingRegistration();
         await fixture.SetupAsync(Environment);
@@ -207,14 +209,52 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         var command = NewCommand(fixture, "alice@example.com", fixture.TicketTypeSlug);
         var sut = NewHandler();
 
-        await sut.HandleAsync(command, testContext.CancellationToken);
+        var result = await ErrorResult.CaptureAsync(
+            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        var exception = Should.Throw<DbUpdateException>(
-            () => Environment.Database.Context.SaveChangesAsync(testContext.CancellationToken));
+        result.Error.ShouldMatch(AlreadyExistsError.Create<Registration>());
+    }
 
-        exception.InnerException
-            .ShouldBeAssignableTo<PostgresException>()?
-            .ConstraintName.ShouldBe("IX_registrations_event_id_email");
+    // SC021: Admin-add resets a cancelled registration
+    [TestMethod]
+    public async ValueTask SC021_AdminRegisterAttendee_CancelledRegistration_ResetsExistingRegistration()
+    {
+        var fixture = RegisterAttendeeFixture
+            .OpenWindowWithCapacity(max: 5, used: 5)
+            .ConfigureAdditionalDetailSchema(("meal", "Meal", 20))
+            .WithCancelledExistingRegistration(
+                email: "alice@example.com",
+                additionalDetails: new Dictionary<string, string> { ["meal"] = "standard" });
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(
+            fixture,
+            "alice@example.com",
+            [fixture.TicketTypeSlug],
+            new Dictionary<string, string> { ["meal"] = "vegan" });
+        var sut = NewHandler();
+
+        var registrationId = await sut.HandleAsync(command, testContext.CancellationToken);
+
+        registrationId.ShouldBe(fixture.ExistingRegistrationId);
+        await Environment.Database.AssertAsync(async dbContext =>
+        {
+            var registration = await dbContext.Registrations.SingleAsync(testContext.CancellationToken);
+            registration.Id.ShouldBe(fixture.ExistingRegistrationId);
+            registration.Status.ShouldBe(RegistrationStatus.Registered);
+            registration.Email.Value.ShouldBe("alice@example.com");
+            registration.FirstName.ShouldBe(FirstName.From("Test"));
+            registration.LastName.ShouldBe(LastName.From("User"));
+            registration.CancellationReason.ShouldBeNull();
+            registration.HasReconfirmed.ShouldBeFalse();
+            registration.ReconfirmedAt.ShouldBeNull();
+            registration.Tickets.ShouldHaveSingleItem().Slug.ShouldBe(fixture.TicketTypeSlug);
+            registration.AdditionalDetails["meal"].ShouldBe("vegan");
+            AssertAttendeeRegisteredEvent(registration);
+
+            var catalog = await dbContext.TicketCatalogs.SingleAsync(testContext.CancellationToken);
+            catalog.TicketTypes.Single(tt => tt.Id == fixture.TicketTypeSlug).UsedCapacity.ShouldBe(6);
+        });
     }
 
     // SC013: Admin-add rejected — duplicate ticket types in selection
@@ -402,6 +442,18 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
             CouponCode: null,
             EmailVerificationToken: null,
             AdditionalDetails: additionalDetails);
+
+    private static void AssertAttendeeRegisteredEvent(Registration registration)
+    {
+        var domainEvent = registration.GetDomainEvents()
+            .OfType<AttendeeRegisteredDomainEvent>()
+            .ShouldHaveSingleItem();
+        domainEvent.RegistrationId.ShouldBe(registration.Id);
+        domainEvent.RecipientEmail.ShouldBe(registration.Email);
+        domainEvent.FirstName.ShouldBe(registration.FirstName);
+        domainEvent.LastName.ShouldBe(registration.LastName);
+        domainEvent.Tickets.ShouldBe(registration.Tickets);
+    }
 
     private static RegisterAttendeeHandler NewHandler()
         => new(Environment.Database.Context, TimeProvider.System, new StubEmailVerificationTokenValidator());

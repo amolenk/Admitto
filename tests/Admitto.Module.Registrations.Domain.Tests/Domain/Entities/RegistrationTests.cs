@@ -118,17 +118,6 @@ public sealed class RegistrationTests
         result.Error.ShouldMatch(Registration.Errors.CannotReconfirmCancelled);
     }
 
-    private static Registration NewRegistration() =>
-        Registration.Create(
-            DefaultTeamId,
-            DefaultEventId,
-            DefaultEmail,
-            DefaultFirstName,
-            DefaultLastName,
-            [new TicketTypeSnapshot("general-admission", "general-admission", [])]);
-
-    private static void ClearEvents(Registration r) => r.ClearDomainEvents();
-
     [TestMethod]
     public void SC009_Registration_ChangeTickets_HappyPath_UpdatesSnapshotAndRaisesEvent()
     {
@@ -176,4 +165,131 @@ public sealed class RegistrationTests
 
         result.Error.ShouldMatch(Registration.Errors.RegistrationIsCancelled);
     }
+
+    [TestMethod]
+    public void Reset_CancelledRegistration_PreservesIdentityAndRestoresRegisteredStatus()
+    {
+        var sut = NewRegistration();
+        var id = sut.Id;
+        var teamId = sut.TeamId;
+        var eventId = sut.EventId;
+        var email = sut.Email;
+        sut.Cancel(CancellationReason.AttendeeRequest);
+        ClearEvents(sut);
+
+        sut.Reset(
+            FirstName.From("Reset"),
+            LastName.From("User"),
+            [new TicketTypeSnapshot("workshop", "Workshop", ["morning"])],
+            AdditionalDetails.From(new Dictionary<string, string> { ["tshirt"] = "M" }));
+
+        sut.Id.ShouldBe(id);
+        sut.TeamId.ShouldBe(teamId);
+        sut.EventId.ShouldBe(eventId);
+        sut.Email.ShouldBe(email);
+        sut.Status.ShouldBe(RegistrationStatus.Registered);
+    }
+
+    [TestMethod]
+    public void Reset_ActiveRegistration_ThrowsCannotResetActive()
+    {
+        var sut = NewRegistration();
+
+        var result = ErrorResult.Capture(() => sut.Reset(
+            FirstName.From("Reset"),
+            LastName.From("User"),
+            [new TicketTypeSnapshot("workshop", "Workshop", [])],
+            AdditionalDetails.Empty));
+
+        result.Error.ShouldMatch(Registration.Errors.CannotResetActive);
+    }
+
+    [TestMethod]
+    public void Reset_CancelledAndReconfirmedRegistration_ClearsCancellationAndReconfirmationState()
+    {
+        var sut = NewRegistration();
+        sut.Reconfirm(DateTimeOffset.UtcNow);
+        sut.Cancel(CancellationReason.AttendeeRequest);
+
+        sut.Reset(
+            FirstName.From("Reset"),
+            LastName.From("User"),
+            [new TicketTypeSnapshot("workshop", "Workshop", [])],
+            AdditionalDetails.Empty);
+
+        sut.CancellationReason.ShouldBeNull();
+        sut.HasReconfirmed.ShouldBeFalse();
+        sut.ReconfirmedAt.ShouldBeNull();
+    }
+
+    [TestMethod]
+    public void Reset_CancelledRegistration_ReplacesAttendeeTicketsAndAdditionalDetails()
+    {
+        var sut = Registration.Create(
+            DefaultTeamId,
+            DefaultEventId,
+            DefaultEmail,
+            FirstName.From("Old"),
+            LastName.From("Name"),
+            [new TicketTypeSnapshot("old-ticket", "Old Ticket", ["old-slot"])],
+            AdditionalDetails.From(new Dictionary<string, string> { ["meal"] = "vegan" }));
+        sut.Cancel(CancellationReason.AttendeeRequest);
+
+        sut.Reset(
+            FirstName.From("New"),
+            LastName.From("Person"),
+            [
+                new TicketTypeSnapshot("workshop", "Workshop", ["morning"]),
+                new TicketTypeSnapshot("dinner", "Dinner", [])
+            ],
+            AdditionalDetails.From(new Dictionary<string, string> { ["tshirt"] = "M" }));
+
+        sut.FirstName.ShouldBe(FirstName.From("New"));
+        sut.LastName.ShouldBe(LastName.From("Person"));
+        sut.Tickets.Count.ShouldBe(2);
+        sut.Tickets.ShouldContain(t => t.Slug == "workshop" && t.Name == "Workshop");
+        sut.Tickets.ShouldContain(t => t.Slug == "dinner" && t.Name == "Dinner");
+        sut.AdditionalDetails.Count.ShouldBe(1);
+        sut.AdditionalDetails["tshirt"].ShouldBe("M");
+    }
+
+    [TestMethod]
+    public void Reset_CancelledRegistration_RaisesAttendeeRegisteredDomainEventWithCurrentData()
+    {
+        var sut = NewRegistration();
+        sut.Cancel(CancellationReason.AttendeeRequest);
+        ClearEvents(sut);
+        var tickets = new List<TicketTypeSnapshot>
+        {
+            new("workshop", "Workshop", ["morning"])
+        };
+
+        sut.Reset(
+            FirstName.From("Reset"),
+            LastName.From("User"),
+            tickets,
+            AdditionalDetails.Empty);
+
+        var domainEvent = sut.GetDomainEvents()
+            .OfType<AttendeeRegisteredDomainEvent>()
+            .ShouldHaveSingleItem();
+        domainEvent.TeamId.ShouldBe(sut.TeamId);
+        domainEvent.TicketedEventId.ShouldBe(sut.EventId);
+        domainEvent.RegistrationId.ShouldBe(sut.Id);
+        domainEvent.RecipientEmail.ShouldBe(sut.Email);
+        domainEvent.FirstName.ShouldBe(FirstName.From("Reset"));
+        domainEvent.LastName.ShouldBe(LastName.From("User"));
+        domainEvent.Tickets.ShouldBe(tickets);
+    }
+
+    private static Registration NewRegistration() =>
+        Registration.Create(
+            DefaultTeamId,
+            DefaultEventId,
+            DefaultEmail,
+            DefaultFirstName,
+            DefaultLastName,
+            [new TicketTypeSnapshot("general-admission", "general-admission", [])]);
+
+    private static void ClearEvents(Registration r) => r.ClearDomainEvents();
 }

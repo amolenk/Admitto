@@ -1,4 +1,7 @@
+using Amolenk.Admitto.Module.Registrations.Contracts;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.Registrations.RegisterAttendee;
+using Amolenk.Admitto.Module.Registrations.Domain.DomainEvents;
+using Amolenk.Admitto.Module.Registrations.Domain.Entities;
 using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Registrations.Tests.Application.Aspire;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
@@ -242,6 +245,50 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         });
     }
 
+    // SC013: Coupon registration resets a cancelled registration
+    [TestMethod]
+    public async ValueTask SC013_RegisterWithCoupon_CancelledRegistration_ResetsExistingRegistration()
+    {
+        var fixture = RegisterAttendeeFixture.CouponHappyFlow();
+        fixture
+            .ConfigureAdditionalDetailSchema(("badge", "Badge", 20))
+            .WithCancelledExistingRegistration(
+                email: fixture.CouponEmail.Value,
+                additionalDetails: new Dictionary<string, string> { ["badge"] = "old" });
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(
+            fixture,
+            fixture.CouponEmail.Value,
+            new Dictionary<string, string> { ["badge"] = "speaker" });
+        var sut = NewHandler();
+
+        var registrationId = await sut.HandleAsync(command, testContext.CancellationToken);
+
+        registrationId.ShouldBe(fixture.ExistingRegistrationId);
+        await Environment.Database.AssertAsync(async dbContext =>
+        {
+            var registration = await dbContext.Registrations.SingleAsync(testContext.CancellationToken);
+            registration.Id.ShouldBe(fixture.ExistingRegistrationId);
+            registration.Status.ShouldBe(RegistrationStatus.Registered);
+            registration.Email.ShouldBe(fixture.CouponEmail);
+            registration.FirstName.ShouldBe(FirstName.From("Test"));
+            registration.LastName.ShouldBe(LastName.From("User"));
+            registration.CancellationReason.ShouldBeNull();
+            registration.HasReconfirmed.ShouldBeFalse();
+            registration.ReconfirmedAt.ShouldBeNull();
+            registration.Tickets.ShouldHaveSingleItem().Slug.ShouldBe(fixture.TicketTypeSlug);
+            registration.AdditionalDetails["badge"].ShouldBe("speaker");
+            AssertAttendeeRegisteredEvent(registration);
+
+            var coupon = await dbContext.Coupons.SingleAsync(testContext.CancellationToken);
+            coupon.RedeemedAt.ShouldNotBeNull();
+
+            var catalog = await dbContext.TicketCatalogs.SingleAsync(testContext.CancellationToken);
+            catalog.TicketTypes.Single(tt => tt.Id == fixture.TicketTypeSlug).UsedCapacity.ShouldBe(6);
+        });
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     private static RegisterAttendeeCommand NewCommand(RegisterAttendeeFixture fixture, string email)
@@ -253,6 +300,32 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
             [fixture.TicketTypeSlug],
             RegistrationMode.Coupon,
             CouponCode: fixture.CouponCodeString);
+
+    private static RegisterAttendeeCommand NewCommand(
+        RegisterAttendeeFixture fixture,
+        string email,
+        IReadOnlyDictionary<string, string>? additionalDetails)
+        => new(
+            fixture.EventId,
+            EmailAddress.From(email),
+            FirstName.From("Test"),
+            LastName.From("User"),
+            [fixture.TicketTypeSlug],
+            RegistrationMode.Coupon,
+            CouponCode: fixture.CouponCodeString,
+            AdditionalDetails: additionalDetails);
+
+    private static void AssertAttendeeRegisteredEvent(Registration registration)
+    {
+        var domainEvent = registration.GetDomainEvents()
+            .OfType<AttendeeRegisteredDomainEvent>()
+            .ShouldHaveSingleItem();
+        domainEvent.RegistrationId.ShouldBe(registration.Id);
+        domainEvent.RecipientEmail.ShouldBe(registration.Email);
+        domainEvent.FirstName.ShouldBe(registration.FirstName);
+        domainEvent.LastName.ShouldBe(registration.LastName);
+        domainEvent.Tickets.ShouldBe(registration.Tickets);
+    }
 
     private static RegisterAttendeeHandler NewHandler()
         => new(Environment.Database.Context, TimeProvider.System, new StubEmailVerificationTokenValidator());

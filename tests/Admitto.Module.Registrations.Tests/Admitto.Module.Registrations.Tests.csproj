@@ -15,7 +15,6 @@
       <PackageReference Include="NSubstitute" />
       <PackageReference Include="Respawn" />
       <PackageReference Include="Shouldly" />
-      <PackageReference Update="Microsoft.Testing.Extensions.CodeCoverage" VersionOverride="18.5.2" />
     </ItemGroup>
 
 </Project>

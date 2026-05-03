@@ -1,11 +1,13 @@
+using Amolenk.Admitto.Module.Registrations.Contracts;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.Registrations.RegisterAttendee;
+using Amolenk.Admitto.Module.Registrations.Domain.DomainEvents;
+using Amolenk.Admitto.Module.Registrations.Domain.Entities;
 using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Registrations.Tests.Application.Aspire;
+using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Microsoft.EntityFrameworkCore;
-using Npgsql;
-using Should = Shouldly.Should;
 
 namespace Amolenk.Admitto.Module.Registrations.Tests.Application.UseCases.Registrations.RegisterAttendee;
 
@@ -300,9 +302,9 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         });
     }
 
-    // SC016: Rejected — duplicate email (DB constraint)
+    // SC016: Rejected — duplicate active email
     [TestMethod]
-    public async ValueTask SC016_SelfRegisterAttendee_DuplicateEmail_ThrowsDbConstraintViolation()
+    public async ValueTask SC016_SelfRegisterAttendee_DuplicateActiveEmail_ThrowsBusinessConflict()
     {
         var fixture = RegisterAttendeeFixture.WithExistingRegistration();
         await fixture.SetupAsync(Environment);
@@ -310,14 +312,79 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var command = NewCommand(fixture, "alice@example.com", fixture.TicketTypeSlug);
         var sut = NewHandler();
 
-        await sut.HandleAsync(command, testContext.CancellationToken);
+        var result = await ErrorResult.CaptureAsync(
+            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        var exception = Should.Throw<DbUpdateException>(
-            () => Environment.Database.Context.SaveChangesAsync(testContext.CancellationToken));
+        result.Error.ShouldMatch(AlreadyExistsError.Create<Registration>());
+    }
 
-        exception.InnerException
-            .ShouldBeAssignableTo<PostgresException>()?
-            .ConstraintName.ShouldBe("IX_registrations_event_id_email");
+    // SC020: Self-service resets a cancelled registration
+    [TestMethod]
+    public async ValueTask SC020_SelfRegisterAttendee_CancelledRegistration_ResetsExistingRegistration()
+    {
+        var fixture = RegisterAttendeeFixture
+            .WithAdditionalDetailSchema(("tshirt", "T-shirt size", 5))
+            .WithCancelledExistingRegistration(
+                email: "alice@example.com",
+                additionalDetails: new Dictionary<string, string> { ["tshirt"] = "L" });
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(
+            fixture,
+            "alice@example.com",
+            [fixture.TicketTypeSlug],
+            new Dictionary<string, string> { ["tshirt"] = "M" });
+        var sut = NewHandler();
+
+        var registrationId = await sut.HandleAsync(command, testContext.CancellationToken);
+
+        registrationId.ShouldBe(fixture.ExistingRegistrationId);
+        await Environment.Database.AssertAsync(async dbContext =>
+        {
+            var registration = await dbContext.Registrations.SingleAsync(testContext.CancellationToken);
+            registration.Id.ShouldBe(fixture.ExistingRegistrationId);
+            registration.Status.ShouldBe(RegistrationStatus.Registered);
+            registration.Email.Value.ShouldBe("alice@example.com");
+            registration.FirstName.ShouldBe(FirstName.From("Test"));
+            registration.LastName.ShouldBe(LastName.From("User"));
+            registration.CancellationReason.ShouldBeNull();
+            registration.HasReconfirmed.ShouldBeFalse();
+            registration.ReconfirmedAt.ShouldBeNull();
+            registration.Tickets.ShouldHaveSingleItem().Slug.ShouldBe(fixture.TicketTypeSlug);
+            registration.AdditionalDetails["tshirt"].ShouldBe("M");
+            AssertAttendeeRegisteredEvent(registration);
+
+            var catalog = await dbContext.TicketCatalogs.SingleAsync(testContext.CancellationToken);
+            catalog.TicketTypes.Single(tt => tt.Id == fixture.TicketTypeSlug).UsedCapacity.ShouldBe(1);
+        });
+    }
+
+    // SC021: Reset is not applied when self-service gates fail
+    [TestMethod]
+    public async ValueTask SC021_SelfRegisterAttendee_ResetGateFails_LeavesCancelledRegistrationAndCapacityUnchanged()
+    {
+        var fixture = RegisterAttendeeFixture
+            .WindowClosed()
+            .WithCancelledExistingRegistration(email: "alice@example.com");
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(fixture, "alice@example.com", "general-admission");
+        var sut = NewHandler();
+
+        var result = await ErrorResult.CaptureAsync(
+            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
+
+        result.Error.ShouldMatch(RegisterAttendeeHandler.Errors.RegistrationClosed);
+        await Environment.Database.AssertAsync(async dbContext =>
+        {
+            var registration = await dbContext.Registrations.SingleAsync(testContext.CancellationToken);
+            registration.Id.ShouldBe(fixture.ExistingRegistrationId);
+            registration.Status.ShouldBe(RegistrationStatus.Cancelled);
+            registration.CancellationReason.ShouldBe(CancellationReason.AttendeeRequest);
+
+            var catalog = await dbContext.TicketCatalogs.SingleAsync(testContext.CancellationToken);
+            catalog.TicketTypes.Single(tt => tt.Id == "general-admission").UsedCapacity.ShouldBe(0);
+        });
     }
 
     // SC017: Rejected — missing email-verification token
@@ -397,6 +464,34 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
             RegistrationMode.SelfService,
             CouponCode: null,
             EmailVerificationToken: token);
+
+    private static RegisterAttendeeCommand NewCommand(
+        RegisterAttendeeFixture fixture,
+        string email,
+        string[] ticketTypeSlugs,
+        IReadOnlyDictionary<string, string>? additionalDetails)
+        => new(
+            fixture.EventId,
+            EmailAddress.From(email),
+            FirstName.From("Test"),
+            LastName.From("User"),
+            ticketTypeSlugs,
+            RegistrationMode.SelfService,
+            CouponCode: null,
+            EmailVerificationToken: StubEmailVerificationTokenValidator.ValidTokenFor(email),
+            AdditionalDetails: additionalDetails);
+
+    private static void AssertAttendeeRegisteredEvent(Registration registration)
+    {
+        var domainEvent = registration.GetDomainEvents()
+            .OfType<AttendeeRegisteredDomainEvent>()
+            .ShouldHaveSingleItem();
+        domainEvent.RegistrationId.ShouldBe(registration.Id);
+        domainEvent.RecipientEmail.ShouldBe(registration.Email);
+        domainEvent.FirstName.ShouldBe(registration.FirstName);
+        domainEvent.LastName.ShouldBe(registration.LastName);
+        domainEvent.Tickets.ShouldBe(registration.Tickets);
+    }
 
     private static RegisterAttendeeHandler NewHandler()
         => new(Environment.Database.Context, TimeProvider.System, new StubEmailVerificationTokenValidator());

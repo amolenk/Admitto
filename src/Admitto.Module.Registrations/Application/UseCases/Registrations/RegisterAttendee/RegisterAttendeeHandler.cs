@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Module.Registrations.Contracts;
 using Amolenk.Admitto.Module.Registrations.Application.Persistence;
 using Amolenk.Admitto.Module.Registrations.Application.Security;
 using Amolenk.Admitto.Module.Registrations.Domain.Entities;
@@ -100,14 +101,24 @@ internal sealed class RegisterAttendeeHandler(
             EnforceRegistrationWindow(ticketedEvent.RegistrationPolicy, now);
         }
 
-        // 6. Load TicketCatalog.
+        // 6. Explicit duplicate resolution. Active rows are rejected before any capacity
+        //    claim; cancelled rows are reset after all remaining gates pass.
+        var existingRegistration = await writeStore.Registrations
+            .SingleOrDefaultAsync(
+                r => r.EventId == command.EventId && r.Email == command.Email,
+                cancellationToken);
+
+        if (existingRegistration?.Status == RegistrationStatus.Registered)
+            throw new BusinessRuleViolationException(AlreadyExistsError.Create<Registration>());
+
+        // 7. Load TicketCatalog.
         var catalog = await writeStore.TicketCatalogs
             .FirstOrDefaultAsync(tc => tc.Id == command.EventId, cancellationToken);
 
         if (catalog is null && command.Mode != RegistrationMode.Coupon)
             throw new BusinessRuleViolationException(Errors.NoTicketTypesConfigured);
 
-        // 7. Atomic claim. Validation (duplicates, unknown, cancelled, overlapping) is now
+        // 8. Atomic claim. Validation (duplicates, unknown, cancelled, overlapping) is now
         //    enforced inside Claim. Capacity enforcement applies only in self-service mode.
         if (catalog is not null)
         {
@@ -122,7 +133,7 @@ internal sealed class RegisterAttendeeHandler(
             }
         }
 
-        // 8. Build snapshots (coupon-without-catalog yields empty time-slot arrays per legacy).
+        // 9. Build snapshots (coupon-without-catalog yields empty time-slot arrays per legacy).
         var tickets = command.TicketTypeSlugs
             .Select(slug =>
             {
@@ -134,24 +145,36 @@ internal sealed class RegisterAttendeeHandler(
             })
             .ToList();
 
-        // 9. Coupon redemption (after all gates pass).
-        coupon?.Redeem();
-
         // 10. Validate and apply additional details.
         var additionalDetails = AdditionalDetails.Validate(
             command.AdditionalDetails,
             ticketedEvent.AdditionalDetailSchema);
 
-        // 11. Create registration and persist.
-        var registration = Registration.Create(
-            ticketedEvent.TeamId,
-            command.EventId,
-            command.Email,
-            command.FirstName,
-            command.LastName,
-            tickets,
-            additionalDetails);
-        await writeStore.Registrations.AddAsync(registration, cancellationToken);
+        // 11. Create or reset registration, then redeem the coupon after all gates pass.
+        Registration registration;
+        if (existingRegistration is null)
+        {
+            registration = Registration.Create(
+                ticketedEvent.TeamId,
+                command.EventId,
+                command.Email,
+                command.FirstName,
+                command.LastName,
+                tickets,
+                additionalDetails);
+            await writeStore.Registrations.AddAsync(registration, cancellationToken);
+        }
+        else
+        {
+            registration = existingRegistration;
+            registration.Reset(
+                command.FirstName,
+                command.LastName,
+                tickets,
+                additionalDetails);
+        }
+
+        coupon?.Redeem();
 
         return registration.Id;
     }

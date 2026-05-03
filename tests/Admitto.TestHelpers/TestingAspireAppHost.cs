@@ -20,6 +20,7 @@ public class TestingAspireAppHost()
     {
         RemoveAdminUI(applicationBuilder);
         ReplaceVolumeMounts(applicationBuilder);
+        ResetContainerLifetimes(applicationBuilder);
         ConfigureTestServices(applicationBuilder);
         
         base.OnBuilding(applicationBuilder);
@@ -68,7 +69,7 @@ public class TestingAspireAppHost()
 
     private static void ReplaceVolumeMounts(DistributedApplicationBuilder applicationBuilder)
     {
-        // Replace all volume mounts with the "-test" suffix.
+        // Replace all named volume mounts with anonymous volumes so data does not persist between test runs.
         foreach (var resource in applicationBuilder.Resources)
         {
             var volumes = resource.Annotations
@@ -78,13 +79,27 @@ public class TestingAspireAppHost()
 
             foreach (var volume in volumes)
             {
-                var name = volume.Source!;
-
-                if (name.EndsWith("-test")) continue;
-                
                 resource.Annotations.Remove(volume);
                 resource.Annotations.Add(new ContainerMountAnnotation(
-                    $"{name}-test", volume.Target, ContainerMountType.Volume, volume.IsReadOnly));
+                    null, volume.Target, ContainerMountType.Volume, volume.IsReadOnly));
+            }
+        }
+    }
+
+    private static void ResetContainerLifetimes(DistributedApplicationBuilder applicationBuilder)
+    {
+        // Remove Persistent lifetime annotations so containers use the default Session lifetime,
+        // meaning they are stopped and removed after each test run.
+        foreach (var resource in applicationBuilder.Resources)
+        {
+            var persistentLifetimes = resource.Annotations
+                .OfType<ContainerLifetimeAnnotation>()
+                .Where(a => a.Lifetime == ContainerLifetime.Persistent)
+                .ToList();
+
+            foreach (var annotation in persistentLifetimes)
+            {
+                resource.Annotations.Remove(annotation);
             }
         }
     }

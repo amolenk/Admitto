@@ -357,7 +357,7 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
     private static IJobExecutionContext JobContext(BulkEmailJobId jobId)
     {
         var data = new JobDataMap();
-        data.Put(SendBulkEmailJob.BulkEmailJobIdKey, jobId.Value.ToString());
+        data[SendBulkEmailJob.BulkEmailJobIdKey] = jobId.Value.ToString();
 
         var context = Substitute.For<IJobExecutionContext>();
         context.MergedJobDataMap.Returns(data);

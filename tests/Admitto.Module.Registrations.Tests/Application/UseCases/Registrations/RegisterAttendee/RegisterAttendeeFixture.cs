@@ -12,7 +12,8 @@ namespace Amolenk.Admitto.Module.Registrations.Tests.Application.UseCases.Regist
 /// </summary>
 internal sealed class RegisterAttendeeFixture
 {
-    private bool _seedExistingRegistration;
+    private ExistingRegistrationSeed? _existingRegistration;
+    private RegistrationId? _existingRegistrationId;
     private TicketedEvent? _ticketedEvent;
     private TicketCatalog? _catalog;
     private Coupon? _coupon;
@@ -22,6 +23,9 @@ internal sealed class RegisterAttendeeFixture
     public string TicketTypeSlug { get; private set; } = "general-admission";
     public string CouponCodeString { get; private set; } = string.Empty;
     public EmailAddress CouponEmail { get; private set; } = EmailAddress.From("speaker@gmail.com");
+    public RegistrationId ExistingRegistrationId =>
+        _existingRegistrationId
+        ?? throw new InvalidOperationException("No existing registration has been seeded.");
 
     private RegisterAttendeeFixture()
     {
@@ -91,7 +95,7 @@ internal sealed class RegisterAttendeeFixture
     public static RegisterAttendeeFixture WithExistingRegistration()
     {
         var f = OpenWindowWithCapacity(max: 100, used: 50);
-        f._seedExistingRegistration = true;
+        f.WithActiveExistingRegistration();
         return f;
     }
 
@@ -194,6 +198,58 @@ internal sealed class RegisterAttendeeFixture
         catalog.MarkEventCancelled();
         f._catalog = catalog;
         return f;
+    }
+
+    public RegisterAttendeeFixture WithActiveExistingRegistration(
+        string email = "alice@example.com",
+        string firstName = "Alice",
+        string lastName = "Doe",
+        IReadOnlyList<TicketTypeSnapshot>? tickets = null,
+        IReadOnlyDictionary<string, string>? additionalDetails = null)
+    {
+        _existingRegistration = new ExistingRegistrationSeed(
+            EmailAddress.From(email),
+            FirstName.From(firstName),
+            LastName.From(lastName),
+            tickets ?? [new TicketTypeSnapshot(TicketTypeSlug, TicketTypeSlug, [])],
+            AdditionalDetails.From(additionalDetails),
+            IsCancelled: false,
+            CancellationReason: CancellationReason.AttendeeRequest,
+            ReconfirmedAt: null);
+        return this;
+    }
+
+    public RegisterAttendeeFixture WithCancelledExistingRegistration(
+        string email = "alice@example.com",
+        string firstName = "Previous",
+        string lastName = "Attendee",
+        IReadOnlyList<TicketTypeSnapshot>? tickets = null,
+        IReadOnlyDictionary<string, string>? additionalDetails = null,
+        CancellationReason cancellationReason = CancellationReason.AttendeeRequest,
+        bool hasReconfirmed = true,
+        DateTimeOffset? reconfirmedAt = null)
+    {
+        _existingRegistration = new ExistingRegistrationSeed(
+            EmailAddress.From(email),
+            FirstName.From(firstName),
+            LastName.From(lastName),
+            tickets ?? [new TicketTypeSnapshot("previous-ticket", "Previous Ticket", [])],
+            AdditionalDetails.From(additionalDetails),
+            IsCancelled: true,
+            CancellationReason: cancellationReason,
+            ReconfirmedAt: hasReconfirmed ? reconfirmedAt ?? DateTimeOffset.UtcNow.AddHours(-1) : null);
+        return this;
+    }
+
+    public RegisterAttendeeFixture ConfigureAdditionalDetailSchema(
+        params (string key, string name, int maxLength)[] fields)
+    {
+        if (_ticketedEvent is null)
+            throw new InvalidOperationException("A ticketed event must exist before configuring its schema.");
+
+        _ticketedEvent.UpdateAdditionalDetailSchema(
+            fields.Select(x => AdditionalDetailField.Create(x.key, x.name, x.maxLength)).ToArray());
+        return this;
     }
 
     // ── Coupon-specific factories ────────────────────────────────────────────
@@ -328,17 +384,28 @@ internal sealed class RegisterAttendeeFixture
             });
         }
 
-        if (_seedExistingRegistration)
+        var existingSeed = _existingRegistration;
+        if (existingSeed is not null)
         {
             await environment.Database.SeedAsync(dbContext =>
             {
                 var existing = Registration.Create(
                     TeamId,
                     EventId,
-                    EmailAddress.From("alice@example.com"),
-                    FirstName.From("Alice"),
-                    LastName.From("Doe"),
-                    [new TicketTypeSnapshot(TicketTypeSlug, TicketTypeSlug, [])]);
+                    existingSeed.Email,
+                    existingSeed.FirstName,
+                    existingSeed.LastName,
+                    existingSeed.Tickets,
+                    existingSeed.AdditionalDetails);
+
+                if (existingSeed.ReconfirmedAt is not null)
+                    existing.Reconfirm(existingSeed.ReconfirmedAt.Value);
+
+                if (existingSeed.IsCancelled)
+                    existing.Cancel(existingSeed.CancellationReason);
+
+                existing.ClearDomainEvents();
+                _existingRegistrationId = existing.Id;
                 dbContext.Registrations.Add(existing);
             });
         }
@@ -400,4 +467,14 @@ internal sealed class RegisterAttendeeFixture
         }
         return catalog;
     }
+
+    private sealed record ExistingRegistrationSeed(
+        EmailAddress Email,
+        FirstName FirstName,
+        LastName LastName,
+        IReadOnlyList<TicketTypeSnapshot> Tickets,
+        AdditionalDetails AdditionalDetails,
+        bool IsCancelled,
+        CancellationReason CancellationReason,
+        DateTimeOffset? ReconfirmedAt);
 }

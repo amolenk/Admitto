@@ -21,7 +21,9 @@ public sealed class EndToEndTestAppHost() : DistributedApplicationFactory(typeof
 
     protected override void OnBuilding(DistributedApplicationBuilder applicationBuilder)
     {
-        applicationBuilder.AddTestSuffixToVolumeMounts();
+        applicationBuilder
+            .ReplaceVolumeMounts()
+            .ResetContainerLifetimes();
 
         applicationBuilder.Services.AddHttpClient("AdmittoApi")
             .ConfigureHttpClient(client => { client.BaseAddress = Application.GetEndpoint("api"); })

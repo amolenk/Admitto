@@ -81,6 +81,35 @@ public class Registration : Aggregate<RegistrationId>
         AddDomainEvent(new RegistrationCancelledDomainEvent(TeamId, EventId, Id, Email, reason));
     }
 
+    public void Reset(
+        FirstName firstName,
+        LastName lastName,
+        IReadOnlyList<TicketTypeSnapshot> tickets,
+        AdditionalDetails additionalDetails)
+    {
+        if (Status != RegistrationStatus.Cancelled)
+            throw new BusinessRuleViolationException(Errors.CannotResetActive);
+
+        FirstName = firstName;
+        LastName = lastName;
+        Status = RegistrationStatus.Registered;
+        HasReconfirmed = false;
+        ReconfirmedAt = null;
+        CancellationReason = null;
+        _tickets.Clear();
+        _tickets.AddRange(tickets);
+        AdditionalDetails = additionalDetails;
+
+        AddDomainEvent(new AttendeeRegisteredDomainEvent(
+            TeamId,
+            EventId,
+            Id,
+            Email,
+            FirstName,
+            LastName,
+            tickets));
+    }
+
     public void ChangeTickets(IReadOnlyList<TicketTypeSnapshot> newTickets, DateTimeOffset changedAt)
     {
         if (Status == RegistrationStatus.Cancelled)
@@ -124,6 +153,11 @@ public class Registration : Aggregate<RegistrationId>
         public static readonly Error CannotReconfirmCancelled = new(
             "registration.cannot_reconfirm_cancelled",
             "A cancelled registration cannot be reconfirmed.",
+            Type: ErrorType.Conflict);
+
+        public static readonly Error CannotResetActive = new(
+            "registration.cannot_reset_active",
+            "Only a cancelled registration can be reset.",
             Type: ErrorType.Conflict);
     }
 }

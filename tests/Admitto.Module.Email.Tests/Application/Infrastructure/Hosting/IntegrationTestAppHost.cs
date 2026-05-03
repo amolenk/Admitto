@@ -19,7 +19,9 @@ public sealed class IntegrationTestAppHost() : DistributedApplicationFactory(typ
 
     protected override void OnBuilding(DistributedApplicationBuilder applicationBuilder)
     {
-        applicationBuilder.AddTestSuffixToVolumeMounts();
+        applicationBuilder
+            .ReplaceVolumeMounts()
+            .ResetContainerLifetimes();
     }
 
     protected override void OnBuilt(DistributedApplication application)

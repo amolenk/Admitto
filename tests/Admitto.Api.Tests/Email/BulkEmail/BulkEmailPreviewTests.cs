@@ -61,7 +61,7 @@ public sealed class BulkEmailPreviewTests(TestContext testContext) : EndToEndTes
                     Items = new[]
                     {
                         new { Email = "external1@example.com", DisplayName = "Ext One" },
-                        new { Email = "external2@example.com", DisplayName = (string?)null }
+                        new { Email = "external2@example.com", DisplayName = (string?)null! }
                     }
                 }
             }
