@@ -9,20 +9,13 @@ public sealed class SelfCancelRegistrationTests(TestContext testContext) : EndTo
 {
     // SC001: Successful self-service cancellation returns 200
     [TestMethod]
-    public async Task SC001_SelfCancelRegistration_ValidToken_Returns200()
+    public async Task SC001_SelfCancelRegistration_WithoutToken_Returns200()
     {
         var fixture = SelfCancelRegistrationFixture.WithActiveRegistration();
         await fixture.SetupAsync(Environment);
 
-        var token = await fixture.GetVerificationTokenAsync(Environment, testContext.CancellationToken);
-
         using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
-        var request = new HttpRequestMessage(HttpMethod.Post, fixture.CancelRoute)
-        {
-            Headers = { Authorization = new("Bearer", token) }
-        };
-
-        var response = await client.SendAsync(request, testContext.CancellationToken);
+        var response = await client.PostAsync(fixture.CancelRoute, null, testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
     }
@@ -34,16 +27,10 @@ public sealed class SelfCancelRegistrationTests(TestContext testContext) : EndTo
         var fixture = SelfCancelRegistrationFixture.WithActiveRegistration();
         await fixture.SetupAsync(Environment);
 
-        var token = await fixture.GetVerificationTokenAsync(Environment, testContext.CancellationToken);
         var unknownRoute = $"/api/teams/{SelfCancelRegistrationFixture.TeamSlug}/events/{SelfCancelRegistrationFixture.EventSlug}/registrations/{Guid.NewGuid()}/cancel";
 
         using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
-        var request = new HttpRequestMessage(HttpMethod.Post, unknownRoute)
-        {
-            Headers = { Authorization = new("Bearer", token) }
-        };
-
-        var response = await client.SendAsync(request, testContext.CancellationToken);
+        var response = await client.PostAsync(unknownRoute, null, testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
     }
@@ -55,15 +42,8 @@ public sealed class SelfCancelRegistrationTests(TestContext testContext) : EndTo
         var fixture = SelfCancelRegistrationFixture.WithCancelledRegistration();
         await fixture.SetupAsync(Environment, alreadyCancelled: true);
 
-        var token = await fixture.GetVerificationTokenAsync(Environment, testContext.CancellationToken);
-
         using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
-        var request = new HttpRequestMessage(HttpMethod.Post, fixture.CancelRoute)
-        {
-            Headers = { Authorization = new("Bearer", token) }
-        };
-
-        var response = await client.SendAsync(request, testContext.CancellationToken);
+        var response = await client.PostAsync(fixture.CancelRoute, null, testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.Conflict);
     }

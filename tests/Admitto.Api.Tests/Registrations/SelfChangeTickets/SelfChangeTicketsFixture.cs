@@ -1,5 +1,3 @@
-using System.Net.Http.Json;
-using System.Text.Json;
 using Amolenk.Admitto.Api.Tests.Infrastructure;
 using Amolenk.Admitto.Api.Tests.Infrastructure.Hosting;
 using Amolenk.Admitto.Module.Registrations.Domain.Entities;
@@ -14,7 +12,6 @@ internal sealed class SelfChangeTicketsFixture
     public const string TeamSlug = "acme";
     public const string EventSlug = "devconf";
     public const string AttendeeEmail = "alice@example.com";
-    private const string KnownOtpCode = "111222";
 
     public TeamId TeamId { get; private set; } = TeamId.New();
     public TicketedEventId EventId { get; private set; } = TicketedEventId.New();
@@ -23,7 +20,6 @@ internal sealed class SelfChangeTicketsFixture
 
     public string ChangeTicketsRoute =>
         $"/api/teams/{TeamSlug}/events/{EventSlug}/registrations/{RegistrationId.Value}/tickets";
-    private string OtpVerifyRoute => $"/api/teams/{TeamSlug}/events/{EventSlug}/otp/verify";
 
     private SelfChangeTicketsFixture() { }
 
@@ -96,25 +92,5 @@ internal sealed class SelfChangeTicketsFixture
             db.TicketCatalogs.Add(catalog);
             db.Registrations.Add(registration);
         });
-    }
-
-    public async Task<string> GetVerificationTokenAsync(
-        EndToEndTestEnvironment environment,
-        CancellationToken cancellationToken = default)
-    {
-        var otpCode = OtpCode.Create(TeamId, EventId, "DevConf",
-            EmailAddress.From(AttendeeEmail), KnownOtpCode,
-            DateTimeOffset.UtcNow.AddMinutes(10));
-        await environment.RegistrationsDatabase.SeedAsync(db => db.OtpCodes.Add(otpCode));
-
-        using var client = environment.CreatePublicApiClient(ApiKeyTestHelper.TestRawKey);
-        var response = await client.PostAsJsonAsync(
-            OtpVerifyRoute,
-            new { Email = AttendeeEmail, Code = KnownOtpCode },
-            cancellationToken: cancellationToken);
-
-        response.EnsureSuccessStatusCode();
-        var body = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: cancellationToken);
-        return body.GetProperty("token").GetString()!;
     }
 }

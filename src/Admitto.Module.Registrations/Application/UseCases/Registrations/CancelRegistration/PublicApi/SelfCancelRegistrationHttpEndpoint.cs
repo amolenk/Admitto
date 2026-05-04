@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Module.Organization.Contracts;
-using Amolenk.Admitto.Module.Registrations.Application.Security;
 using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
@@ -22,10 +21,8 @@ public static class SelfCancelRegistrationHttpEndpoint
         string teamSlug,
         string eventSlug,
         Guid registrationId,
-        HttpRequest httpRequest,
         IOrganizationFacade facade,
         ITicketedEventIdLookup ticketedEventIdLookup,
-        IVerificationTokenService verificationTokenService,
         IMediator mediator,
         [FromKeyedServices(RegistrationsModule.Key)]
         IUnitOfWork unitOfWork,
@@ -33,14 +30,6 @@ public static class SelfCancelRegistrationHttpEndpoint
     {
         var teamId = await facade.GetTeamIdAsync(teamSlug, cancellationToken);
         var eventId = await ticketedEventIdLookup.GetTicketedEventIdAsync(teamId, eventSlug, cancellationToken);
-
-        var bearerToken = ExtractBearerToken(httpRequest);
-        if (bearerToken is null)
-            return Results.Unauthorized();
-
-        var claims = verificationTokenService.Validate(bearerToken, TicketedEventId.From(eventId));
-        if (claims is null)
-            return Results.Unauthorized();
 
         var command = new CancelRegistrationCommand(
             RegistrationId.From(registrationId),
@@ -51,13 +40,5 @@ public static class SelfCancelRegistrationHttpEndpoint
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Results.Ok();
-    }
-
-    private static string? ExtractBearerToken(HttpRequest request)
-    {
-        var authHeader = request.Headers.Authorization.FirstOrDefault();
-        if (authHeader is null || !authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
-            return null;
-        return authHeader["Bearer ".Length..].Trim();
     }
 }

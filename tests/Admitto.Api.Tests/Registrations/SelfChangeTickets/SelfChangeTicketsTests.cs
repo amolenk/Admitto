@@ -15,13 +15,10 @@ public sealed class SelfChangeTicketsTests(TestContext testContext) : EndToEndTe
         var fixture = SelfChangeTicketsFixture.WithOpenRegistration();
         await fixture.SetupAsync(Environment, workshopCapacity: 20, workshopUsed: 5);
 
-        var token = await fixture.GetVerificationTokenAsync(Environment, testContext.CancellationToken);
-
         using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
         var request = new HttpRequestMessage(HttpMethod.Put, fixture.ChangeTicketsRoute)
         {
-            Content = JsonContent.Create(new { TicketTypeSlugs = new[] { "workshop" } }),
-            Headers = { Authorization = new("Bearer", token) }
+            Content = JsonContent.Create(new { TicketTypeSlugs = new[] { "workshop" } })
         };
 
         var response = await client.SendAsync(request, testContext.CancellationToken);
@@ -36,14 +33,12 @@ public sealed class SelfChangeTicketsTests(TestContext testContext) : EndToEndTe
         var fixture = SelfChangeTicketsFixture.WithOpenRegistration();
         await fixture.SetupAsync(Environment);
 
-        var token = await fixture.GetVerificationTokenAsync(Environment, testContext.CancellationToken);
         var unknownRoute = $"/api/teams/{SelfChangeTicketsFixture.TeamSlug}/events/{SelfChangeTicketsFixture.EventSlug}/registrations/{Guid.NewGuid()}/tickets";
 
         using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
         var request = new HttpRequestMessage(HttpMethod.Put, unknownRoute)
         {
-            Content = JsonContent.Create(new { TicketTypeSlugs = new[] { "workshop" } }),
-            Headers = { Authorization = new("Bearer", token) }
+            Content = JsonContent.Create(new { TicketTypeSlugs = new[] { "workshop" } })
         };
 
         var response = await client.SendAsync(request, testContext.CancellationToken);
@@ -58,13 +53,10 @@ public sealed class SelfChangeTicketsTests(TestContext testContext) : EndToEndTe
         var fixture = SelfChangeTicketsFixture.WithOpenRegistration();
         await fixture.SetupAsync(Environment, workshopCapacity: 20, workshopUsed: 20);
 
-        var token = await fixture.GetVerificationTokenAsync(Environment, testContext.CancellationToken);
-
         using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
         var request = new HttpRequestMessage(HttpMethod.Put, fixture.ChangeTicketsRoute)
         {
-            Content = JsonContent.Create(new { TicketTypeSlugs = new[] { "workshop" } }),
-            Headers = { Authorization = new("Bearer", token) }
+            Content = JsonContent.Create(new { TicketTypeSlugs = new[] { "workshop" } })
         };
 
         var response = await client.SendAsync(request, testContext.CancellationToken);
@@ -79,13 +71,10 @@ public sealed class SelfChangeTicketsTests(TestContext testContext) : EndToEndTe
         var fixture = SelfChangeTicketsFixture.WithOpenRegistration();
         await fixture.SetupAsync(Environment, registrationWindowClosed: true);
 
-        var token = await fixture.GetVerificationTokenAsync(Environment, testContext.CancellationToken);
-
         using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
         var request = new HttpRequestMessage(HttpMethod.Put, fixture.ChangeTicketsRoute)
         {
-            Content = JsonContent.Create(new { TicketTypeSlugs = new[] { "workshop" } }),
-            Headers = { Authorization = new("Bearer", token) }
+            Content = JsonContent.Create(new { TicketTypeSlugs = new[] { "workshop" } })
         };
 
         var response = await client.SendAsync(request, testContext.CancellationToken);
@@ -100,13 +89,10 @@ public sealed class SelfChangeTicketsTests(TestContext testContext) : EndToEndTe
         var fixture = SelfChangeTicketsFixture.WithOpenRegistration();
         await fixture.SetupAsync(Environment, alreadyCancelled: true);
 
-        var token = await fixture.GetVerificationTokenAsync(Environment, testContext.CancellationToken);
-
         using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
         var request = new HttpRequestMessage(HttpMethod.Put, fixture.ChangeTicketsRoute)
         {
-            Content = JsonContent.Create(new { TicketTypeSlugs = new[] { "workshop" } }),
-            Headers = { Authorization = new("Bearer", token) }
+            Content = JsonContent.Create(new { TicketTypeSlugs = new[] { "workshop" } })
         };
 
         var response = await client.SendAsync(request, testContext.CancellationToken);
@@ -121,13 +107,10 @@ public sealed class SelfChangeTicketsTests(TestContext testContext) : EndToEndTe
         var fixture = SelfChangeTicketsFixture.WithOpenRegistration();
         await fixture.SetupAsync(Environment);
 
-        var token = await fixture.GetVerificationTokenAsync(Environment, testContext.CancellationToken);
-
         using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
         var request = new HttpRequestMessage(HttpMethod.Put, fixture.ChangeTicketsRoute)
         {
-            Content = JsonContent.Create(new { TicketTypeSlugs = new[] { "nonexistent-ticket" } }),
-            Headers = { Authorization = new("Bearer", token) }
+            Content = JsonContent.Create(new { TicketTypeSlugs = new[] { "nonexistent-ticket" } })
         };
 
         var response = await client.SendAsync(request, testContext.CancellationToken);
@@ -142,13 +125,10 @@ public sealed class SelfChangeTicketsTests(TestContext testContext) : EndToEndTe
         var fixture = SelfChangeTicketsFixture.WithOpenRegistration();
         await fixture.SetupAsync(Environment);
 
-        var token = await fixture.GetVerificationTokenAsync(Environment, testContext.CancellationToken);
-
         using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
         var request = new HttpRequestMessage(HttpMethod.Put, fixture.ChangeTicketsRoute)
         {
-            Content = JsonContent.Create(new { TicketTypeSlugs = new[] { "general-admission" } }),
-            Headers = { Authorization = new("Bearer", token) }
+            Content = JsonContent.Create(new { TicketTypeSlugs = new[] { "general-admission" } })
         };
 
         var response = await client.SendAsync(request, testContext.CancellationToken);
