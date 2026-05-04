@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Attendee can self-cancel their registration
-The system SHALL expose a public endpoint `POST /events/{teamSlug}/{eventSlug}/registrations/{registrationId}/cancel` that allows an attendee to cancel their own registration. The `registrationId` in the URL path serves as the bearer credential — possession of the ID proves authorization. No additional authentication token is required.
+The system SHALL expose a public endpoint `POST /events/{teamSlug}/{eventSlug}/registrations/{registrationId}/cancel` that allows an attendee to cancel their own registration. The `registrationId` in the URL path serves as the bearer credential — possession of the ID proves authorization. No additional authentication token is required. The endpoint SHALL NOT inspect the `Authorization` header and SHALL NOT require a bearer token of any kind.
 
 The handler SHALL:
 1. Look up the `Registration` by `registrationId` and verify it belongs to the given event; return HTTP 404 if not found or the registration does not belong to this event.
@@ -14,7 +14,7 @@ No reason field is accepted from the attendee; the reason is always recorded as 
 
 #### Scenario: SC001 Successful self-service cancellation returns 204
 - **GIVEN** a registration in state `Registered` with id "reg-abc" on event "devconf-2026"
-- **WHEN** the attendee posts to `/events/acme/devconf-2026/registrations/reg-abc/cancel`
+- **WHEN** the attendee posts to `/events/acme/devconf-2026/registrations/reg-abc/cancel` without an Authorization header
 - **THEN** the response is HTTP 204, the registration transitions to `Cancelled` with reason `AttendeeRequest`, and ticket capacity is released
 
 #### Scenario: SC002 Registration not found returns 404

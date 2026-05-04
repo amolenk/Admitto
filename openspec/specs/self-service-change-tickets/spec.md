@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Attendee can change their ticket selection via self-service
-The system SHALL expose a public endpoint `PUT /events/{teamSlug}/{eventSlug}/registrations/{registrationId}/tickets` that allows an attendee to change the ticket-type selection on their existing `Registered` registration. The `registrationId` in the URL path serves as the bearer credential. No additional authentication token is required.
+The system SHALL expose a public endpoint `PUT /events/{teamSlug}/{eventSlug}/registrations/{registrationId}/tickets` that allows an attendee to change the ticket-type selection on their existing `Registered` registration. The `registrationId` in the URL path serves as the bearer credential. No additional authentication token is required. The endpoint SHALL NOT inspect the `Authorization` header and SHALL NOT require a bearer token of any kind.
 
 The handler SHALL:
 1. Look up the `Registration` by `registrationId` and verify it belongs to the given event; return HTTP 404 if not found or the registration does not belong to this event.
@@ -18,7 +18,7 @@ The `TicketsChangedDomainEvent` carries the same fields as for admin ticket chan
 
 #### Scenario: SC001 Successful self-service ticket change returns 200
 - **GIVEN** a registration with id "reg-abc" holding ["Early Bird"] on event "devconf-2026" (Status Active, registration Open), "Workshop" has capacity 5/20 used
-- **WHEN** the attendee submits `{"tickets": ["Workshop"]}` to `/events/acme/devconf-2026/registrations/reg-abc/tickets`
+- **WHEN** the attendee submits `{"tickets": ["Workshop"]}` to `/events/acme/devconf-2026/registrations/reg-abc/tickets` without an Authorization header
 - **THEN** the response is HTTP 200, the registration's ticket snapshot is updated to ["Workshop"], "Early Bird" capacity decreases by 1, "Workshop" capacity increases by 1
 
 #### Scenario: SC002 Registration not found returns 404
@@ -47,5 +47,5 @@ The `TicketsChangedDomainEvent` carries the same fields as for admin ticket chan
 
 #### Scenario: SC007 Identical ticket set is a no-op success
 - **GIVEN** a registration holding ["General Admission"]
-- **WHEN** the attendee submits the same selection ["General Admission"]
+- **WHEN** the attendee submits the same selection ["General Admission"] without an Authorization header
 - **THEN** the response is HTTP 200, no capacity delta occurs, and a `TicketsChangedDomainEvent` is still raised
