@@ -9,6 +9,15 @@ public class RegistrationsMessagePolicy : MessagePolicy
 {
     public RegistrationsMessagePolicy()
     {
+        Configure<OtpCodeRequestedDomainEvent>()
+            .PublishIntegrationEvent(e => new OtpCodeRequestedIntegrationEvent(
+                e.OtpCodeId.Value,
+                e.TeamId.Value,
+                e.TicketedEventId.Value,
+                e.EventName,
+                e.RecipientEmail.Value,
+                e.PlainCode));
+
         Configure<AttendeeRegisteredDomainEvent>()
             .PublishIntegrationEvent(e => new AttendeeRegisteredIntegrationEvent(
                 e.TeamId.Value,

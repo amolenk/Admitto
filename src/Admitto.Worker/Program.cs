@@ -24,7 +24,7 @@ builder
 
 // Add Registrations module services. The Worker hosts the queue consumer so it
 // must be able to handle integration and module events targeted at Registrations.
-builder.Services.AddRegistrationsApplicationServices(HostCapability.Jobs);
+builder.AddRegistrationsApplicationServices(HostCapability.Jobs);
 builder.AddRegistrationsInfrastructureServices();
 
 // Add Email module services (to keep encrypted secrets decryptable here).

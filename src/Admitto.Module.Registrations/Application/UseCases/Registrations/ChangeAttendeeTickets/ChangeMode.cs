@@ -2,5 +2,6 @@ namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.Registration
 
 public enum ChangeMode
 {
-    Admin
+    Admin,
+    SelfService
 }

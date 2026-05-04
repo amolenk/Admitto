@@ -8,9 +8,6 @@ public sealed class SelfRegisterAttendeeValidator : AbstractValidator<SelfRegist
 {
     public SelfRegisterAttendeeValidator()
     {
-        RuleFor(x => x.Email)
-            .MustBeParseable(EmailAddress.TryFrom);
-
         RuleFor(x => x.FirstName)
             .MustBeParseable(FirstName.TryFrom);
 
@@ -20,10 +17,5 @@ public sealed class SelfRegisterAttendeeValidator : AbstractValidator<SelfRegist
         RuleFor(x => x.TicketTypeSlugs)
             .NotNull()
             .NotEmpty();
-
-        // EmailVerificationToken is intentionally NOT required at the FluentValidation
-        // layer so the handler can produce the canonical `email.verification_required`
-        // error and so token shape/signature checks remain the validator service's
-        // responsibility.
     }
 }

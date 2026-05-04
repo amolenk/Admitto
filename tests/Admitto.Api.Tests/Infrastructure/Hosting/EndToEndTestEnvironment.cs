@@ -14,7 +14,8 @@ public sealed record EndToEndTestEnvironment(
     HttpClient MailDevClient,
     Uri MailDevSmtpEndpoint,
     HttpClient ApiClient,
-    HttpClient BobApiClient)
+    HttpClient BobApiClient,
+    HttpClient PublicApiClient)
 {
     public static async ValueTask<EndToEndTestEnvironment> CreateAsync(
         EndToEndTestAppHost appHost,
@@ -44,9 +45,17 @@ public sealed record EndToEndTestEnvironment(
         var factory = appHost.Application.Services.GetRequiredService<IHttpClientFactory>();
         var apiClient = factory.CreateClient("AdmittoApi");
         var bobApiClient = factory.CreateClient("AdmittoApiBob");
+        var publicApiClient = factory.CreateClient("AdmittoApiPublic");
         var mailDevClient = factory.CreateClient("MailDev");
         var mailDevSmtpEndpoint = appHost.Application.GetEndpoint("maildev", "smtp");
 
-        return new EndToEndTestEnvironment(organizationDatabase, registrationsDatabase, emailDatabase, mailDevClient, mailDevSmtpEndpoint, apiClient, bobApiClient);
+        return new EndToEndTestEnvironment(organizationDatabase, registrationsDatabase, emailDatabase, mailDevClient, mailDevSmtpEndpoint, apiClient, bobApiClient, publicApiClient);
+    }
+
+    public HttpClient CreatePublicApiClient(string rawApiKey)
+    {
+        var client = new HttpClient { BaseAddress = PublicApiClient.BaseAddress };
+        client.DefaultRequestHeaders.Add("X-Api-Key", rawApiKey);
+        return client;
     }
 }

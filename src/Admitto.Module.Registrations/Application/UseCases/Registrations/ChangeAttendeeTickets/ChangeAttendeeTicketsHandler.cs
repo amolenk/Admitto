@@ -37,6 +37,15 @@ internal sealed class ChangeAttendeeTicketsHandler(
         if (ticketedEvent is null || !ticketedEvent.IsActive)
             throw new BusinessRuleViolationException(Errors.EventNotActive);
 
+        // 3b. For self-service, also enforce registration window.
+        if (command.Mode == ChangeMode.SelfService)
+        {
+            var now = timeProvider.GetUtcNow();
+            var policy = ticketedEvent.RegistrationPolicy;
+            if (policy is null || now < policy.OpensAt || now >= policy.ClosesAt)
+                throw new BusinessRuleViolationException(Errors.RegistrationWindowClosed);
+        }
+
         // 4. Load catalog.
         var catalog = await writeStore.TicketCatalogs
             .FirstOrDefaultAsync(tc => tc.Id == command.EventId, cancellationToken);
@@ -57,8 +66,8 @@ internal sealed class ChangeAttendeeTicketsHandler(
         // 7. Release freed capacity.
         catalog.Release(toRelease);
 
-        // 8. Claim added capacity (unenforced — admin path, validation runs inside Claim).
-        catalog.Claim(toClaim, enforce: false);
+        // 8. Claim added capacity (enforce for self-service, unenforced for admin).
+        catalog.Claim(toClaim, enforce: command.Mode == ChangeMode.SelfService);
 
         // 9. Build new ticket snapshots.
         var newTickets = command.TicketTypeSlugs
@@ -78,6 +87,11 @@ internal sealed class ChangeAttendeeTicketsHandler(
 
     internal static class Errors
     {
+        public static readonly Error RegistrationWindowClosed = new(
+            "change_tickets.registration_window_closed",
+            "The registration window is not open for this event.",
+            Type: ErrorType.Validation);
+
         public static readonly Error RegistrationIsCancelled = new(
             "registration.is_cancelled",
             "Registration is cancelled.",

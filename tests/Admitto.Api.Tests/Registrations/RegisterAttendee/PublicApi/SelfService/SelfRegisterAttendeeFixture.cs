@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Api.Tests.Infrastructure;
 using Amolenk.Admitto.Api.Tests.Infrastructure.Hosting;
 using Amolenk.Admitto.Module.Registrations.Domain.Entities;
 using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
@@ -12,7 +13,9 @@ internal sealed class SelfRegisterAttendeeFixture
     public const string EventSlug = "devconf";
     public const string TicketTypeSlug = "general-admission";
 
-    public static string Route => $"/teams/{TeamSlug}/events/{EventSlug}/registrations";
+    public string ApiKey => ApiKeyTestHelper.TestRawKey;
+
+    public static string Route => $"/api/teams/{TeamSlug}/events/{EventSlug}/registrations";
 
     private SelfRegisterAttendeeFixture() { }
 
@@ -45,7 +48,11 @@ internal sealed class SelfRegisterAttendeeFixture
         var catalog = TicketCatalog.Create(eventId);
         catalog.AddTicketType(Slug.From(TicketTypeSlug), DisplayName.From("General Admission"), [], 100);
 
-        await environment.OrganizationDatabase.SeedAsync(db => db.Teams.Add(team));
+        await environment.OrganizationDatabase.SeedAsync(db =>
+        {
+            db.Teams.Add(team);
+            db.ApiKeys.Add(ApiKeyTestHelper.CreateApiKeyEntity(team.Id));
+        });
         await environment.RegistrationsDatabase.SeedAsync(db =>
         {
             db.TicketedEvents.Add(ticketedEvent);

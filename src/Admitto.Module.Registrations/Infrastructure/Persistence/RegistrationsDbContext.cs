@@ -14,6 +14,7 @@ public sealed class RegistrationsDbContext(DbContextOptions<RegistrationsDbConte
 
     public DbSet<ActivityLog> ActivityLog => Set<ActivityLog>();
     public DbSet<Coupon> Coupons => Set<Coupon>();
+    public DbSet<OtpCode> OtpCodes => Set<OtpCode>();
     public DbSet<Registration> Registrations => Set<Registration>();
     public DbSet<TicketCatalog> TicketCatalogs => Set<TicketCatalog>();
     public DbSet<TicketedEvent> TicketedEvents => Set<TicketedEvent>();

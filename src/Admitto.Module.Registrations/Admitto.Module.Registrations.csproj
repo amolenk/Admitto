@@ -13,6 +13,7 @@
 
     <ItemGroup>
       <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
+      <PackageReference Include="Quartz.Extensions.Hosting" />
       <PackageReference Include="QRCoder" />
       <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
         <PrivateAssets>all</PrivateAssets>

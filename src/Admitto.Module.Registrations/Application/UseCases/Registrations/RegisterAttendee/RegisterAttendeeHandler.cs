@@ -12,7 +12,7 @@ namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.Registration
 internal sealed class RegisterAttendeeHandler(
     IRegistrationsWriteStore writeStore,
     TimeProvider timeProvider,
-    IEmailVerificationTokenValidator emailVerificationTokenValidator)
+    IVerificationTokenService verificationTokenService)
     : ICommandHandler<RegisterAttendeeCommand, RegistrationId>
 {
     public async ValueTask<RegistrationId> HandleAsync(
@@ -34,10 +34,9 @@ internal sealed class RegisterAttendeeHandler(
             if (command.EmailVerificationToken is null)
                 throw new BusinessRuleViolationException(Errors.EmailVerificationRequired);
 
-            var verification = await emailVerificationTokenValidator.ValidateAsync(
-                command.EmailVerificationToken, command.Email, cancellationToken);
+            var claims = verificationTokenService.Validate(command.EmailVerificationToken, command.EventId);
 
-            if (!verification.IsValid)
+            if (claims is null || claims.Email != command.Email)
                 throw new BusinessRuleViolationException(Errors.EmailVerificationInvalid);
         }
 

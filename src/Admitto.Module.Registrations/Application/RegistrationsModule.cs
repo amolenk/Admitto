@@ -1,5 +1,7 @@
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.Registrations.CancelRegistration.AdminApi;
+using Amolenk.Admitto.Module.Registrations.Application.UseCases.Registrations.CancelRegistration.PublicApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.Registrations.ChangeAttendeeTickets.AdminApi;
+using Amolenk.Admitto.Module.Registrations.Application.UseCases.Registrations.ChangeAttendeeTickets.PublicApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.CouponManagement.CreateCoupon.AdminApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.CouponManagement.GetCouponDetails.AdminApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.CouponManagement.ListCoupons.AdminApi;
@@ -10,6 +12,8 @@ using Amolenk.Admitto.Module.Registrations.Application.UseCases.Registrations.Ge
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.Registrations.RegisterAttendee.AdminApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.Registrations.RegisterAttendee.PublicApi.Coupon;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.Registrations.RegisterAttendee.PublicApi.SelfService;
+using Amolenk.Admitto.Module.Registrations.Application.UseCases.EmailVerification.RequestOtp.PublicApi;
+using Amolenk.Admitto.Module.Registrations.Application.UseCases.EmailVerification.VerifyOtp.PublicApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketedEventManagement.ArchiveTicketedEvent.AdminApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketedEventManagement.CancelTicketedEvent.AdminApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketedEventManagement.ConfigureCancellationPolicy.AdminApi;
@@ -74,9 +78,13 @@ public static class RegistrationsModule
     {
         group
             .MapGroup("/teams/{teamSlug}/events/{eventSlug}")
+            .MapRequestOtp()
+            .MapVerifyOtp()
             .MapSelfRegisterAttendee()
             .MapRegisterWithCoupon()
-            .MapGetQRCode();
+            .MapGetQRCode()
+            .MapSelfCancelRegistration()
+            .MapSelfChangeTickets();
 
         return group;
     }

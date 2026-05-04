@@ -30,4 +30,9 @@ internal class CachingOrganizationFacade(IOrganizationFacade innerFacade, IMemor
         Guid teamId,
         CancellationToken cancellationToken = default) =>
         innerFacade.GetTeamMembershipRoleAsync(userId, teamId, cancellationToken);
+
+    public ValueTask<Guid?> ValidateApiKeyAsync(
+        string keyHash,
+        CancellationToken cancellationToken = default) =>
+        innerFacade.ValidateApiKeyAsync(keyHash, cancellationToken);
 }

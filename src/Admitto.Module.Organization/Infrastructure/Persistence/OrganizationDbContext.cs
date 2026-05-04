@@ -17,6 +17,8 @@ public sealed class OrganizationDbContext(DbContextOptions<OrganizationDbContext
 
     public DbSet<User> Users => Set<User>();
 
+    public DbSet<ApiKey> ApiKeys => Set<ApiKey>();
+
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -34,6 +36,10 @@ public sealed class OrganizationDbContext(DbContextOptions<OrganizationDbContext
         configurationBuilder
             .Properties<UserId>()
             .HaveConversion<UserIdConverter>();
+
+        configurationBuilder
+            .Properties<ApiKeyId>()
+            .HaveConversion<ApiKeyIdConverter>();
 
         configurationBuilder
             .Properties<ExternalUserId>()

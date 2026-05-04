@@ -7,4 +7,6 @@ public interface IOrganizationWriteStore
     DbSet<Team> Teams { get; }
 
     DbSet<User> Users { get; }
+
+    DbSet<ApiKey> ApiKeys { get; }
 }

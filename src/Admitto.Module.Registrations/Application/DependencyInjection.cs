@@ -8,15 +8,18 @@ using Amolenk.Admitto.Module.Shared.Application.Cryptography;
 using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using FluentValidation;
+using Microsoft.Extensions.Hosting;
 
 namespace Amolenk.Admitto.Module.Registrations.Application;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddRegistrationsApplicationServices(
-        this IServiceCollection services,
+    public static IHostApplicationBuilder AddRegistrationsApplicationServices(
+        this IHostApplicationBuilder builder,
         HostCapability capabilities = HostCapability.None)
     {
+        var services = builder.Services;
+        var configuration = builder.Configuration;
         var executingAssembly = Assembly.GetExecutingAssembly();
 
         services.AddCommandHandlersFromAssembly(executingAssembly, capabilities);
@@ -36,12 +39,13 @@ public static class DependencyInjection
         services.AddScoped<IEventSigningKeyProvider, EventSigningKeyProvider>();
         services.AddScoped<RegistrationSigner>();
 
-        // Placeholder until the real email-verification token validator ships. Throws
-        // NotImplementedException when a token is actually validated. The handler
-        // short-circuits on a null token *before* calling this, so requests without a
-        // token still get a clean 400 (email.verification_required).
-        services.AddSingleton<IEmailVerificationTokenValidator, NotImplementedEmailVerificationTokenValidator>();
+        services.Configure<VerificationTokenOptions>(
+            configuration.GetSection(VerificationTokenOptions.SectionName));
+        services.AddScoped<IVerificationTokenService, HmacVerificationTokenService>();
 
-        return services;
+        services.Configure<OtpOptions>(
+            configuration.GetSection(OtpOptions.SectionName));
+
+        return builder;
     }
 }

@@ -1,0 +1,14 @@
+Your verification code for {{ event_name }}
+
+Hi,
+
+You requested a one-time verification code to register for {{ event_name }}.
+
+Your code is:
+
+{{ plain_code }}
+
+This code expires in 10 minutes. If you did not request this code, you can safely ignore this email.
+
+Best regards,
+The {{ event_name }} Team

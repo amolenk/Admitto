@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using Amolenk.Admitto.Api.Auth;
 using Amolenk.Admitto.Module.Shared.Application.Auth;
 using Amolenk.Admitto.Module.Shared.Contracts;
 
@@ -6,6 +7,11 @@ namespace Amolenk.Admitto.ApiService.Auth;
 
 public class HttpContextUserContextAccessor(IHttpContextAccessor httpContextAccessor) : IUserContextAccessor
 {
+    private static readonly UserContextDto ApiKeyUser = new(
+        Guid.Empty,
+        "api-key",
+        "apikey@system.local");
+
     public UserContextDto Current
     {
         get
@@ -14,6 +20,10 @@ public class HttpContextUserContextAccessor(IHttpContextAccessor httpContextAcce
                               ?? throw new InvalidOperationException("No HTTP context available.");
 
             var user = httpContext.User;
+
+            // API key requests have no human identity — return a fixed system user.
+            if (user.Identity?.AuthenticationType == ApiKeyAuthenticationHandler.SchemeName)
+                return ApiKeyUser;
 
             // TODO
             return new UserContextDto(GetUserId(user), GetUserName(user) ?? "Unknown", "todo@example.com");

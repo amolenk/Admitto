@@ -24,6 +24,58 @@ namespace Amolenk.Admitto.Module.Organization.Infrastructure.Persistence.Migrati
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Amolenk.Admitto.Module.Organization.Domain.Entities.ApiKey", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("CreatedBy")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("KeyHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("key_hash");
+
+                    b.Property<string>("KeyPrefix")
+                        .IsRequired()
+                        .HasMaxLength(8)
+                        .HasColumnType("character varying(8)")
+                        .HasColumnName("key_prefix");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)")
+                        .HasColumnName("name");
+
+                    b.Property<DateTimeOffset?>("RevokedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("revoked_at");
+
+                    b.Property<Guid>("TeamId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("team_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("KeyHash")
+                        .IsUnique();
+
+                    b.HasIndex("TeamId");
+
+                    b.ToTable("api_keys", "organization");
+                });
+
             modelBuilder.Entity("Amolenk.Admitto.Module.Organization.Domain.Entities.Team", b =>
                 {
                     b.Property<Guid>("Id")
@@ -178,6 +230,15 @@ namespace Amolenk.Admitto.Module.Organization.Infrastructure.Persistence.Migrati
                     b.HasKey("Id");
 
                     b.ToTable("outbox", "organization");
+                });
+
+            modelBuilder.Entity("Amolenk.Admitto.Module.Organization.Domain.Entities.ApiKey", b =>
+                {
+                    b.HasOne("Amolenk.Admitto.Module.Organization.Domain.Entities.Team", null)
+                        .WithMany()
+                        .HasForeignKey("TeamId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Amolenk.Admitto.Module.Organization.Domain.Entities.Team", b =>

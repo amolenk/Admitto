@@ -420,3 +420,4 @@ FodyWeavers.xsd
 .agents/skills/record-adr
 .agents/skills/repo-bootstrap
 .agents/skills/spec
+test.http

@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using Amolenk.Admitto.Api.Tests.Infrastructure;
 using Amolenk.Admitto.Api.Tests.Infrastructure.Hosting;
 using Amolenk.Admitto.Module.Registrations.Domain.Entities;
 using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
@@ -26,9 +27,11 @@ internal sealed class GetQRCodeFixture
         _seedSecondEvent = seedSecondEvent;
     }
 
+    public TeamId TeamId { get; private set; } = TeamId.New();
     public Guid RegistrationId { get; private set; }
     public string SigningKeyBase64 { get; private set; } = "";
     public string OtherEventSigningKeyBase64 { get; private set; } = "";
+    public string ApiKey => ApiKeyTestHelper.TestRawKey;
 
     public string ValidSignature => Sign(RegistrationId, SigningKeyBase64);
 
@@ -50,7 +53,7 @@ internal sealed class GetQRCodeFixture
         string teamSlug = TeamSlug,
         string eventSlug = EventSlug)
     {
-        var path = $"/teams/{teamSlug}/events/{eventSlug}/registrations/{registrationId}/qr-code";
+        var path = $"/api/teams/{teamSlug}/events/{eventSlug}/registrations/{registrationId}/qr-code";
         return signature is null ? path : $"{path}?signature={Uri.EscapeDataString(signature)}";
     }
 
@@ -59,6 +62,8 @@ internal sealed class GetQRCodeFixture
         var team = new TeamBuilder()
             .WithSlug(TeamSlug)
             .Build();
+
+        TeamId = team.Id;
 
         var primaryEvent = BuildEvent(team.Id, EventSlug, "DevConf");
         SigningKeyBase64 = primaryEvent.SigningKey;
@@ -91,7 +96,11 @@ internal sealed class GetQRCodeFixture
                 primaryRegistration.Cancel(CancellationReason.AttendeeRequest);
         }
 
-        await environment.OrganizationDatabase.SeedAsync(db => db.Teams.Add(team));
+        await environment.OrganizationDatabase.SeedAsync(db =>
+        {
+            db.Teams.Add(team);
+            db.ApiKeys.Add(ApiKeyTestHelper.CreateApiKeyEntity(team.Id));
+        });
         await environment.RegistrationsDatabase.SeedAsync(db =>
         {
             db.TicketedEvents.Add(primaryEvent);

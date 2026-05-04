@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Module.Organization.Application.UseCases.ApiKeyManagement.ValidateApiKey;
 using Amolenk.Admitto.Module.Organization.Application.UseCases.TeamManagement.GetTeamId;
 using Amolenk.Admitto.Module.Organization.Application.UseCases.Users.GetTeamMembershipRole;
 using Amolenk.Admitto.Module.Organization.Contracts;
@@ -28,5 +29,14 @@ internal class OrganizationFacade(IMediator mediator) : IOrganizationFacade
             cancellationToken);
 
         return teamMembershipRole;
+    }
+
+    public async ValueTask<Guid?> ValidateApiKeyAsync(
+        string keyHash,
+        CancellationToken cancellationToken = default)
+    {
+        return await mediator.QueryAsync<ValidateApiKeyQuery, Guid?>(
+            new ValidateApiKeyQuery(keyHash),
+            cancellationToken);
     }
 }

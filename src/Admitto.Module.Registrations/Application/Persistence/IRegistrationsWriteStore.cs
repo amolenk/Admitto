@@ -7,6 +7,7 @@ public interface IRegistrationsWriteStore
 {
     DbSet<ActivityLog> ActivityLog { get; }
     DbSet<Coupon> Coupons { get; }
+    DbSet<OtpCode> OtpCodes { get; }
     DbSet<Registration> Registrations { get; }
     DbSet<TicketCatalog> TicketCatalogs { get; }
     DbSet<TicketedEvent> TicketedEvents { get; }

@@ -100,7 +100,9 @@ public static class DependencyInjection
                             return context.Response.WriteAsJsonAsync(problem);
                         }
                     };
-                });
+                })
+                .AddScheme<ApiKeyAuthenticationOptions, ApiKeyAuthenticationHandler>(
+                    ApiKeyAuthenticationHandler.SchemeName, _ => { });
 
             builder.AddOrganizationIdentityServices();
 

@@ -10,4 +10,8 @@ public interface IOrganizationFacade
         Guid userId,
         Guid teamId,
         CancellationToken cancellationToken = default);
+
+    ValueTask<Guid?> ValidateApiKeyAsync(
+        string keyHash,
+        CancellationToken cancellationToken = default);
 }

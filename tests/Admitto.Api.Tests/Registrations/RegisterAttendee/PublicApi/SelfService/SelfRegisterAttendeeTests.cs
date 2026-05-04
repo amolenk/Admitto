@@ -16,7 +16,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : EndToEn
     // instantiate the handler directly with a StubEmailVerificationTokenValidator.
 
     [TestMethod]
-    public async Task SelfRegister_WithoutToken_Returns400EmailVerificationRequired()
+    public async Task SelfRegister_WithoutToken_Returns401EmailVerificationRequired()
     {
         var fixture = SelfRegisterAttendeeFixture.HappyFlow();
         await fixture.SetupAsync(Environment);
@@ -30,12 +30,10 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : EndToEn
             AdditionalDetails = new Dictionary<string, string>()
         };
 
-        // No auth headers required for the public self-service endpoint, but the test HttpClient
-        // adds them anyway. The endpoint allows anonymous access.
-        using var client = new HttpClient { BaseAddress = Environment.ApiClient.BaseAddress };
+        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
         var response = await client.PostAsJsonAsync(
             SelfRegisterAttendeeFixture.Route, request, cancellationToken: testContext.CancellationToken);
 
-        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
 }

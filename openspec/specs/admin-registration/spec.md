@@ -7,7 +7,7 @@ Team admins can directly add a registration to a ticketed event without going th
 ## Requirements
 
 ### Requirement: Admin can directly add a registration to a ticketed event
-The system SHALL provide an admin-only command and HTTP endpoint that creates a `Registration` for a given attendee email and ticket-type selection on a specific ticketed event, without requiring a coupon and without going through the public self-service flow.
+The system SHALL provide an admin-only command and HTTP endpoint that creates or resets a `Registration` for a given attendee email and ticket-type selection on a specific ticketed event, without requiring a coupon and without going through the public self-service flow.
 
 The admin path SHALL bypass the registration window, the per-ticket-type capacity limit, the requirement that selected ticket types have an explicit capacity configured, and any configured email-domain restriction.
 
@@ -16,12 +16,12 @@ The admin path SHALL still enforce all of the following:
 - `TicketedEvent.Status` MUST be Active; Cancelled or Archived events SHALL reject the registration with reason "event not active".
 - The event MUST have a `TicketCatalog` with at least one ticket type configured; otherwise the registration is rejected with reason "no ticket types configured".
 - Ticket-type selection rules from `attendee-registration` (no duplicates, no unknown types, no cancelled types, no overlapping time slots).
-- The duplicate-email guard (one registration per email per event), enforced by the existing unique constraint at persist time.
+- The duplicate-email guard: a `Registered` registration for the same event/email SHALL be rejected with reason "already registered"; a `Cancelled` registration for the same event/email SHALL be reset instead of creating a new row.
 - Validation of `additionalDetails` against the event's current `AdditionalDetailSchema` (unknown keys rejected, value-length limits enforced).
 
 The admin path SHALL increment the used capacity for each selected ticket type (using the same unenforced-claim mechanism that coupons use), so that attendance counts remain accurate even though the limit itself is not enforced. The atomic claim against `TicketCatalog` SHALL still trip the `TicketCatalog.EventStatus` safety net so a concurrent cancel/archive cannot leak a registration through.
 
-The admin path SHALL produce the same post-creation effects as the other registration paths (e.g. domain/module events that drive the standard confirmation email flow) — there is no "silent add" mode in this change.
+When the admin path resets a cancelled registration, it SHALL preserve the existing `RegistrationId`, transition the status to `Registered`, clear cancellation metadata, clear reconfirmation state, replace attendee details, replace ticket snapshots, replace additional details, and produce the same post-creation effects as the other successful registration paths. There is no "silent add" mode in this change.
 
 #### Scenario: Successful admin-add registration
 - **WHEN** an admin adds a registration as "speaker@example.com" for "Speaker Pass" on event "DevConf" with `TicketedEvent.Status` Active and "Speaker Pass" capacity 5/5 used
@@ -67,9 +67,13 @@ The admin path SHALL produce the same post-creation effects as the other registr
 - **WHEN** an admin attempts to add a registration for an event that has no `TicketCatalog` ticket types
 - **THEN** the registration is rejected with reason "no ticket types configured"
 
-#### Scenario: Admin-add rejected — duplicate email
+#### Scenario: Admin-add rejected — duplicate active email
 - **WHEN** "alice@example.com" is already registered for event "DevConf" and an admin attempts to add another registration for "alice@example.com" on the same event
 - **THEN** the registration is rejected with reason "already registered"
+
+#### Scenario: Admin-add resets a cancelled registration
+- **WHEN** "alice@example.com" has a `Cancelled` registration for event "DevConf" and an admin adds a registration for "alice@example.com" with new attendee details, selected tickets, and valid additional details
+- **THEN** the existing registration is reset to `Registered`, its original registration id is returned, its attendee details, ticket snapshots, and additional details match the new request, its cancellation metadata and reconfirmation state are cleared, capacity is claimed with admin bypass rules, and attendee-registered side effects are produced
 
 #### Scenario: Admin-add rejected — duplicate ticket types in selection
 - **WHEN** an admin attempts to add a registration selecting "General Admission" twice
@@ -102,7 +106,7 @@ The admin path SHALL produce the same post-creation effects as the other registr
 ---
 
 ### Requirement: Admin-add registration is exposed via an admin HTTP endpoint
-The system SHALL expose a `POST /admin/teams/{teamSlug}/events/{eventSlug}/registrations` admin HTTP endpoint that invokes the admin-add registration command. The endpoint SHALL be protected by the same team-admin authorisation policy used by the rest of the module's admin endpoints. Request validation (well-formed email, at least one non-empty ticket-type slug) SHALL run in the endpoint filter via FluentValidation before the handler executes. On success, the endpoint SHALL return `201 Created` with the new registration's identifier in the response body.
+The system SHALL expose a `POST /admin/teams/{teamSlug}/events/{eventSlug}/registrations` admin HTTP endpoint that invokes the admin-add registration command. The endpoint SHALL be protected by the same team-admin authorisation policy used by the rest of the module's admin endpoints. Request validation (well-formed email, first name, last name, at least one non-empty ticket-type slug) SHALL run in the endpoint filter via FluentValidation before the handler executes. On success, the endpoint SHALL return `201 Created` with the created or reset registration's identifier in the response body and `Location` header.
 
 #### Scenario: Endpoint requires admin authentication
 - **WHEN** an unauthenticated client calls `POST /admin/teams/acme/events/devconf/registrations`
@@ -117,8 +121,12 @@ The system SHALL expose a `POST /admin/teams/{teamSlug}/events/{eventSlug}/regis
 - **THEN** the endpoint responds with `400 Bad Request` and a validation error on the `ticketTypeSlugs` field, and no registration is created
 
 #### Scenario: Endpoint returns 201 with the new registration id
-- **WHEN** an admin calls the endpoint with a valid request for an Active event
+- **WHEN** an admin calls the endpoint with a valid request for an Active event and no existing registration for the same event/email
 - **THEN** the endpoint responds with `201 Created` and a body containing the new registration id
+
+#### Scenario: Endpoint returns 201 with the reset registration id
+- **WHEN** an admin calls the endpoint with a valid request for an Active event and an existing `Cancelled` registration for the same event/email
+- **THEN** the endpoint responds with `201 Created` and a body containing the existing registration id
 
 ---
 

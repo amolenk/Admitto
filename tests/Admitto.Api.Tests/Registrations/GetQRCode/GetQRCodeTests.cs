@@ -7,18 +7,13 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.GetQRCode;
 [TestClass]
 public sealed class GetQRCodeTests(TestContext testContext) : EndToEndTestBase
 {
-    // The public QR-code endpoint is unauthenticated, so we deliberately use a bare HttpClient
-    // (not the test environment's authenticated ApiClient) to confirm anonymous access works.
-    private HttpClient AnonymousClient =>
-        new() { BaseAddress = Environment.ApiClient.BaseAddress };
-
     [TestMethod]
     public async Task SC001_ValidSignature_Returns200WithExpectedPng()
     {
         var fixture = GetQRCodeFixture.HappyFlow();
         await fixture.SetupAsync(Environment);
 
-        using var client = AnonymousClient;
+        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
         var signature = fixture.ValidSignature;
         var response = await client.GetAsync(
             GetQRCodeFixture.Route(fixture.RegistrationId, signature),
@@ -43,7 +38,7 @@ public sealed class GetQRCodeTests(TestContext testContext) : EndToEndTestBase
         var fixture = GetQRCodeFixture.HappyFlow();
         await fixture.SetupAsync(Environment);
 
-        using var client = AnonymousClient;
+        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
         var bogus = GetQRCodeFixture.Sign(Guid.NewGuid(), fixture.SigningKeyBase64);
         var response = await client.GetAsync(
             GetQRCodeFixture.Route(fixture.RegistrationId, bogus),
@@ -58,7 +53,7 @@ public sealed class GetQRCodeTests(TestContext testContext) : EndToEndTestBase
         var fixture = GetQRCodeFixture.HappyFlow();
         await fixture.SetupAsync(Environment);
 
-        using var client = AnonymousClient;
+        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
         var response = await client.GetAsync(
             GetQRCodeFixture.Route(fixture.RegistrationId, signature: null),
             testContext.CancellationToken);
@@ -72,7 +67,7 @@ public sealed class GetQRCodeTests(TestContext testContext) : EndToEndTestBase
         var fixture = GetQRCodeFixture.HappyFlow();
         await fixture.SetupAsync(Environment);
 
-        using var client = AnonymousClient;
+        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
         var response = await client.GetAsync(
             GetQRCodeFixture.Route(
                 fixture.RegistrationId, fixture.ValidSignature, teamSlug: "ghost-team"),
@@ -87,7 +82,7 @@ public sealed class GetQRCodeTests(TestContext testContext) : EndToEndTestBase
         var fixture = GetQRCodeFixture.HappyFlow();
         await fixture.SetupAsync(Environment);
 
-        using var client = AnonymousClient;
+        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
         var response = await client.GetAsync(
             GetQRCodeFixture.Route(
                 fixture.RegistrationId, fixture.ValidSignature, eventSlug: "ghost-event"),
@@ -102,7 +97,7 @@ public sealed class GetQRCodeTests(TestContext testContext) : EndToEndTestBase
         var fixture = GetQRCodeFixture.WithoutRegistration();
         await fixture.SetupAsync(Environment);
 
-        using var client = AnonymousClient;
+        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
         var unknownId = Guid.NewGuid();
         var signature = GetQRCodeFixture.Sign(unknownId, fixture.SigningKeyBase64);
         var response = await client.GetAsync(
@@ -118,7 +113,7 @@ public sealed class GetQRCodeTests(TestContext testContext) : EndToEndTestBase
         var fixture = GetQRCodeFixture.WithSecondEvent();
         await fixture.SetupAsync(Environment);
 
-        using var client = AnonymousClient;
+        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
         // Sign the registration id under the OTHER event's key, then use the primary event's path.
         var crossEventSignature = GetQRCodeFixture.Sign(
             fixture.RegistrationId, fixture.OtherEventSigningKeyBase64);
@@ -135,7 +130,7 @@ public sealed class GetQRCodeTests(TestContext testContext) : EndToEndTestBase
         var fixture = GetQRCodeFixture.WithCancelledRegistration();
         await fixture.SetupAsync(Environment);
 
-        using var client = AnonymousClient;
+        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
         var response = await client.GetAsync(
             GetQRCodeFixture.Route(fixture.RegistrationId, fixture.ValidSignature),
             testContext.CancellationToken);

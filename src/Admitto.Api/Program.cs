@@ -24,8 +24,8 @@ builder.AddServiceDefaults();
 builder
     .AddOrganizationApplicationServices()
     .AddEmailApplicationServices()
-    .Services
-    .AddRegistrationsApplicationServices()
+    .AddRegistrationsApplicationServices();
+builder.Services
     .AddMessagingApplicationServices()
     .AddCryptographyApplicationServices()
     .AddValidationApplicationServices();
