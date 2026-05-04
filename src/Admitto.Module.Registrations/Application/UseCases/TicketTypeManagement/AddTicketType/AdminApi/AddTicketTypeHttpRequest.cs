@@ -6,6 +6,7 @@ namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketTypeMa
 public sealed record AddTicketTypeHttpRequest(
     string Slug,
     string Name,
+    bool SelfServiceEnabled = true,
     string[]? TimeSlots = null,
     int? MaxCapacity = null)
 {
@@ -14,5 +15,6 @@ public sealed record AddTicketTypeHttpRequest(
         SlugType.From(Slug),
         DisplayName.From(Name),
         TimeSlots ?? [],
-        MaxCapacity);
+        MaxCapacity,
+        SelfServiceEnabled);
 }

@@ -7,4 +7,5 @@ internal sealed record UpdateTicketTypeCommand(
     TicketedEventId EventId,
     Slug Slug,
     DisplayName? Name,
-    int? MaxCapacity) : Command;
+    int? MaxCapacity,
+    bool? SelfServiceEnabled = null) : Command;

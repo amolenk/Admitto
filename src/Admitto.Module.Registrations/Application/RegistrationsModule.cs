@@ -26,6 +26,7 @@ using Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketedEventMan
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketedEventManagement.UpdateTicketedEventTimeZone.AdminApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketTypeManagement.AddTicketType.AdminApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketTypeManagement.CancelTicketType.AdminApi;
+using Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketTypeManagement.GetPublicTicketTypes.PublicApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketTypeManagement.GetTicketTypes.AdminApi;
 using Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketTypeManagement.UpdateTicketType.AdminApi;
 
@@ -84,7 +85,8 @@ public static class RegistrationsModule
             .MapRegisterWithCoupon()
             .MapGetQRCode()
             .MapSelfCancelRegistration()
-            .MapSelfChangeTickets();
+            .MapSelfChangeTickets()
+            .MapGetPublicTicketTypes();
 
         return group;
     }

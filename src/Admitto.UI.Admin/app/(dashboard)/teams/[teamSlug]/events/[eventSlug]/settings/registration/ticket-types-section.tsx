@@ -3,10 +3,11 @@
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import * as z from "zod";
-import { AlertCircle, Plus, Trash2, Pencil, X, Check } from "lucide-react";
+import { AlertCircle, Globe, Lock, Plus, Trash2, Pencil, X, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useCustomForm } from "@/hooks/use-custom-form";
 import { apiClient } from "@/lib/api-client";
@@ -18,14 +19,18 @@ const slugRegex = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
 const addSchema = z.object({
     slug: z.string().min(1, "Slug is required").regex(slugRegex, "Lowercase letters, digits, hyphens"),
     name: z.string().min(1, "Name is required"),
-    maxCapacity: z.coerce.number().int().positive().optional(),
+    selfServiceEnabled: z.boolean(),
+    limitCapacity: z.boolean(),
+    maxCapacity: z.number().int().min(1).optional(),
 });
 
 type AddValues = z.infer<typeof addSchema>;
 
 const editSchema = z.object({
     name: z.string().min(1, "Name is required"),
-    maxCapacity: z.coerce.number().int().positive().optional(),
+    selfServiceEnabled: z.boolean(),
+    limitCapacity: z.boolean(),
+    maxCapacity: z.number().int().min(1).optional(),
 });
 
 type EditValues = z.infer<typeof editSchema>;
@@ -99,10 +104,19 @@ export function TicketTypesSection({
                             className="px-4 py-3 flex items-center gap-4 text-sm"
                         >
                             <div className="flex-1 min-w-0">
-                                <p className="font-medium">
+                                <p className="font-medium flex items-center gap-1.5">
                                     {tt.name}{" "}
                                     {tt.isCancelled && (
                                         <span className="text-xs text-muted-foreground">(cancelled)</span>
+                                    )}
+                                    {!tt.isCancelled && tt.selfServiceEnabled ? (
+                                        <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-blue-600 dark:text-blue-400">
+                                            <Globe className="h-3 w-3" /> Self-service
+                                        </span>
+                                    ) : !tt.isCancelled && (
+                                        <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-muted-foreground">
+                                            <Lock className="h-3 w-3" /> Admin only
+                                        </span>
                                     )}
                                 </p>
                                 <p className="text-xs text-muted-foreground">
@@ -170,14 +184,19 @@ function AddTicketTypeForm({
     const form = useCustomForm<AddValues>(addSchema, {
         slug: "",
         name: "",
+        selfServiceEnabled: true,
+        limitCapacity: false,
         maxCapacity: undefined,
     });
+
+    const limitCapacity = form.watch("limitCapacity");
 
     async function onSubmit(values: AddValues) {
         await apiClient.post(`/api/teams/${teamSlug}/events/${eventSlug}/ticket-types`, {
             slug: values.slug,
             name: values.name,
-            maxCapacity: values.maxCapacity ?? null,
+            selfServiceEnabled: values.selfServiceEnabled,
+            maxCapacity: values.limitCapacity ? (values.maxCapacity ?? null) : null,
             timeSlots: null,
         });
         onAdded();
@@ -196,7 +215,7 @@ function AddTicketTypeForm({
                         <AlertDescription>{form.generalError.detail}</AlertDescription>
                     </Alert>
                 )}
-                <div className="grid grid-cols-3 gap-3">
+                <div className="grid grid-cols-2 gap-3">
                     <FormField
                         control={form.control}
                         name="slug"
@@ -223,6 +242,34 @@ function AddTicketTypeForm({
                             </FormItem>
                         )}
                     />
+                </div>
+                <div className="flex gap-4">
+                    <FormField
+                        control={form.control}
+                        name="selfServiceEnabled"
+                        render={({ field }) => (
+                            <FormItem className="flex items-center gap-2">
+                                <FormControl>
+                                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                </FormControl>
+                                <FormLabel className="!mt-0 text-xs">Self-service</FormLabel>
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="limitCapacity"
+                        render={({ field }) => (
+                            <FormItem className="flex items-center gap-2">
+                                <FormControl>
+                                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                </FormControl>
+                                <FormLabel className="!mt-0 text-xs">Limit capacity</FormLabel>
+                            </FormItem>
+                        )}
+                    />
+                </div>
+                {limitCapacity && (
                     <FormField
                         control={form.control}
                         name="maxCapacity"
@@ -243,7 +290,7 @@ function AddTicketTypeForm({
                             </FormItem>
                         )}
                     />
-                </div>
+                )}
                 <div className="flex gap-2">
                     <Button type="submit" disabled={form.formState.isSubmitting}>
                         Add
@@ -270,18 +317,23 @@ function EditTicketTypeForm({
     onSaved: () => void;
     onCancel: () => void;
 }) {
+    const hasCapacity = ticketType.maxCapacity != null;
     const form = useCustomForm<EditValues>(editSchema, {
         name: ticketType.name,
-        maxCapacity:
-            ticketType.maxCapacity == null ? undefined : Number(ticketType.maxCapacity),
+        selfServiceEnabled: ticketType.selfServiceEnabled,
+        limitCapacity: hasCapacity,
+        maxCapacity: hasCapacity ? Number(ticketType.maxCapacity) : undefined,
     });
+
+    const limitCapacity = form.watch("limitCapacity");
 
     async function onSubmit(values: EditValues) {
         await apiClient.put(
             `/api/teams/${teamSlug}/events/${eventSlug}/ticket-types/${ticketType.slug}`,
             {
                 name: values.name,
-                maxCapacity: values.maxCapacity ?? null,
+                selfServiceEnabled: values.selfServiceEnabled,
+                maxCapacity: values.limitCapacity ? (values.maxCapacity ?? null) : null,
             }
         );
         onSaved();
@@ -297,20 +349,46 @@ function EditTicketTypeForm({
                         <AlertDescription>{form.generalError.detail}</AlertDescription>
                     </Alert>
                 )}
-                <div className="grid grid-cols-2 gap-3">
+                <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Name</FormLabel>
+                            <FormControl>
+                                <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
+                <div className="flex gap-4">
                     <FormField
                         control={form.control}
-                        name="name"
+                        name="selfServiceEnabled"
                         render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Name</FormLabel>
+                            <FormItem className="flex items-center gap-2">
                                 <FormControl>
-                                    <Input {...field} />
+                                    <Switch checked={field.value} onCheckedChange={field.onChange} />
                                 </FormControl>
-                                <FormMessage />
+                                <FormLabel className="!mt-0 text-xs">Self-service</FormLabel>
                             </FormItem>
                         )}
                     />
+                    <FormField
+                        control={form.control}
+                        name="limitCapacity"
+                        render={({ field }) => (
+                            <FormItem className="flex items-center gap-2">
+                                <FormControl>
+                                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                </FormControl>
+                                <FormLabel className="!mt-0 text-xs">Limit capacity</FormLabel>
+                            </FormItem>
+                        )}
+                    />
+                </div>
+                {limitCapacity && (
                     <FormField
                         control={form.control}
                         name="maxCapacity"
@@ -331,7 +409,7 @@ function EditTicketTypeForm({
                             </FormItem>
                         )}
                     />
-                </div>
+                )}
                 <div className="flex gap-2">
                     <Button type="submit" size="sm" disabled={form.formState.isSubmitting}>
                         <Check className="mr-1 h-4 w-4" /> Save

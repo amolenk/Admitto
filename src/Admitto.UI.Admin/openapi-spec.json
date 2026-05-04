@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:64090/"
+      "url": "http://localhost:49931/"
     }
   ],
   "paths": {
@@ -5748,6 +5748,97 @@
           }
         }
       }
+    },
+    "/api/teams/{teamSlug}/events/{eventSlug}/ticket-types": {
+      "get": {
+        "tags": [
+          "GetPublicTicketTypesHttpEndpoint"
+        ],
+        "operationId": "GetPublicTicketTypesHttpEndpoint",
+        "parameters": [
+          {
+            "name": "teamSlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "eventSlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PublicTicketTypeDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -5811,6 +5902,10 @@
           },
           "name": {
             "type": "string"
+          },
+          "selfServiceEnabled": {
+            "type": "boolean",
+            "default": true
           },
           "timeSlots": {
             "type": [
@@ -7219,6 +7314,47 @@
           }
         }
       },
+      "PublicTicketTypeDto": {
+        "required": [
+          "slug",
+          "name",
+          "timeSlots",
+          "maxCapacity",
+          "usedCapacity"
+        ],
+        "type": "object",
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "timeSlots": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "maxCapacity": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "usedCapacity": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
       "QueryRegistrationsDto": {
         "type": "object",
         "properties": {
@@ -7852,7 +7988,8 @@
           "timeSlots",
           "maxCapacity",
           "usedCapacity",
-          "isCancelled"
+          "isCancelled",
+          "selfServiceEnabled"
         ],
         "type": "object",
         "properties": {
@@ -7886,6 +8023,9 @@
             "format": "int32"
           },
           "isCancelled": {
+            "type": "boolean"
+          },
+          "selfServiceEnabled": {
             "type": "boolean"
           }
         }
@@ -8019,6 +8159,12 @@
               "string"
             ],
             "format": "int32"
+          },
+          "selfServiceEnabled": {
+            "type": [
+              "null",
+              "boolean"
+            ]
           }
         }
       },
@@ -8124,8 +8270,8 @@
         "type": "oauth2",
         "flows": {
           "authorizationCode": {
-            "authorizationUrl": "http://localhost:64092/realms/admitto/protocol/openid-connect/auth",
-            "tokenUrl": "http://localhost:64092/realms/admitto/protocol/openid-connect/token",
+            "authorizationUrl": "http://localhost:49940/realms/admitto/protocol/openid-connect/auth",
+            "tokenUrl": "http://localhost:49940/realms/admitto/protocol/openid-connect/token",
             "scopes": {
               "manage": "Access the Management API",
               "openid": "Access the OpenID Connect user profile",
@@ -8288,6 +8434,9 @@
     },
     {
       "name": "SelfChangeTicketsHttpEndpoint"
+    },
+    {
+      "name": "GetPublicTicketTypesHttpEndpoint"
     }
   ]
 }

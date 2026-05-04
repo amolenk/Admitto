@@ -22,7 +22,7 @@ internal sealed class UpdateTicketTypeHandler(IRegistrationsWriteStore writeStor
                 NotFoundError.Create<TicketCatalog>(command.EventId.Value));
         }
 
-        catalog.UpdateTicketType(command.Slug, command.Name, command.MaxCapacity);
+        catalog.UpdateTicketType(command.Slug, command.Name, command.MaxCapacity, command.SelfServiceEnabled);
     }
 }
 

@@ -17,7 +17,8 @@ public class TicketType : Entity<string>
         string slug,
         DisplayName name,
         TimeSlot[] timeSlots,
-        int? maxCapacity)
+        int? maxCapacity,
+        bool selfServiceEnabled = true)
         : base(slug)
     {
         Name = name;
@@ -25,6 +26,7 @@ public class TicketType : Entity<string>
         MaxCapacity = maxCapacity;
         UsedCapacity = 0;
         IsCancelled = false;
+        SelfServiceEnabled = selfServiceEnabled;
     }
 
     public DisplayName Name { get; private set; }
@@ -33,6 +35,7 @@ public class TicketType : Entity<string>
     public int? MaxCapacity { get; private set; }
     public int UsedCapacity { get; private set; }
     public bool IsCancelled { get; private set; }
+    public bool SelfServiceEnabled { get; private set; } = true;
 
     public void UpdateName(DisplayName name)
     {
@@ -44,6 +47,11 @@ public class TicketType : Entity<string>
         MaxCapacity = maxCapacity;
     }
 
+    public void UpdateSelfServiceEnabled(bool enabled)
+    {
+        SelfServiceEnabled = enabled;
+    }
+
     public void Cancel()
     {
         if (IsCancelled)
@@ -53,14 +61,11 @@ public class TicketType : Entity<string>
     }
 
     /// <summary>
-    /// Increments used capacity. Throws if MaxCapacity is null (not available) or if sold out.
+    /// Increments used capacity. Throws if sold out. Self-service availability is checked upstream at catalog level.
     /// </summary>
     public void ClaimWithEnforcement()
     {
-        if (MaxCapacity is null)
-            throw new BusinessRuleViolationException(Errors.TicketTypeNotAvailable(Id));
-
-        if (UsedCapacity >= MaxCapacity.Value)
+        if (MaxCapacity is not null && UsedCapacity >= MaxCapacity.Value)
             throw new BusinessRuleViolationException(Errors.TicketTypeAtCapacity(Id));
 
         UsedCapacity++;

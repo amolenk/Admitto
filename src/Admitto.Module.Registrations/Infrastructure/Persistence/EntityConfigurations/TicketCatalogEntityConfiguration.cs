@@ -53,6 +53,10 @@ public class TicketCatalogEntityConfiguration : IEntityTypeConfiguration<TicketC
                 .HasJsonPropertyName("is_cancelled")
                 .IsRequired();
 
+            b.Property(tt => tt.SelfServiceEnabled)
+                .HasJsonPropertyName("self_service_enabled")
+                .IsRequired();
+
             b.Property(tt => tt.TimeSlotSlugs)
                 .HasJsonPropertyName("time_slots");
 

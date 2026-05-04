@@ -9,4 +9,5 @@ internal sealed record AddTicketTypeCommand(
     Slug Slug,
     DisplayName Name,
     string[] TimeSlots,
-    int? MaxCapacity) : Command;
+    int? MaxCapacity,
+    bool SelfServiceEnabled = true) : Command;

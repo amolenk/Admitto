@@ -183,17 +183,17 @@ public sealed class TicketCatalogTests
     }
 
     [TestMethod]
-    public void SC012_Claim_Enforce_NullCapacity_Throws()
+    public void SC012_Claim_Enforce_NullCapacity_SelfServiceEnabled_Succeeds()
     {
-        // Arrange
+        // Arrange — null capacity + self-service enabled means unlimited self-service
         var sut = TicketCatalog.Create(DefaultEventId);
-        sut.AddTicketType(Slug.From("speaker"), DisplayName.From("Speaker"), [], null);
+        sut.AddTicketType(Slug.From("speaker"), DisplayName.From("Speaker"), [], null, selfServiceEnabled: true);
 
         // Act
-        var result = ErrorResult.Capture(() => sut.Claim(["speaker"], enforce: true));
+        sut.Claim(["speaker"], enforce: true);
 
         // Assert
-        result.Error.ShouldMatch(Registrations.Domain.Entities.TicketType.Errors.TicketTypeNotAvailable("speaker"));
+        sut.TicketTypes[0].UsedCapacity.ShouldBe(1);
     }
 
     [TestMethod]
@@ -558,5 +558,33 @@ public sealed class TicketCatalogTests
 
         // Assert — capacity unchanged
         sut.GetTicketType("general")!.UsedCapacity.ShouldBe(0);
+    }
+
+    [TestMethod]
+    public void SC038_Claim_Enforce_NonSelfServiceTicketType_Throws()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId);
+        sut.AddTicketType(Slug.From("vip"), DisplayName.From("VIP"), [], 50, selfServiceEnabled: false);
+
+        // Act
+        var result = ErrorResult.Capture(() => sut.Claim(["vip"], enforce: true));
+
+        // Assert
+        result.Error.ShouldMatch(TicketCatalog.Errors.TicketTypesNotSelfService(["vip"]));
+    }
+
+    [TestMethod]
+    public void SC039_Claim_NoEnforce_NonSelfServiceTicketType_Succeeds()
+    {
+        // Arrange — admin/coupon bypass: enforce=false skips self-service check
+        var sut = TicketCatalog.Create(DefaultEventId);
+        sut.AddTicketType(Slug.From("vip"), DisplayName.From("VIP"), [], 50, selfServiceEnabled: false);
+
+        // Act
+        sut.Claim(["vip"], enforce: false);
+
+        // Assert
+        sut.GetTicketType("vip")!.UsedCapacity.ShouldBe(1);
     }
 }

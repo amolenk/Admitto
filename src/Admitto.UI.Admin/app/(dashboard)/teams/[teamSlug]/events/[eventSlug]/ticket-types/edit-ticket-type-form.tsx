@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useCustomForm } from "@/hooks/use-custom-form";
 import { apiClient } from "@/lib/api-client";
@@ -14,7 +15,9 @@ import { TicketTypeDto } from "@/lib/admitto-api/generated";
 
 const editSchema = z.object({
     name: z.string().min(1, "Name is required"),
-    maxCapacity: z.coerce.number().int().positive().optional(),
+    selfServiceEnabled: z.boolean(),
+    limitCapacity: z.boolean(),
+    maxCapacity: z.number().int().min(1).optional(),
 });
 
 type EditValues = z.infer<typeof editSchema>;
@@ -33,17 +36,23 @@ export function EditTicketTypeForm({
     onCancel: () => void;
 }) {
     const queryClient = useQueryClient();
+    const hasCapacity = ticketType.maxCapacity != null;
     const form = useCustomForm<EditValues>(editSchema, {
         name: ticketType.name,
-        maxCapacity: ticketType.maxCapacity == null ? undefined : Number(ticketType.maxCapacity),
+        selfServiceEnabled: ticketType.selfServiceEnabled,
+        limitCapacity: hasCapacity,
+        maxCapacity: hasCapacity ? Number(ticketType.maxCapacity) : undefined,
     });
+
+    const limitCapacity = form.watch("limitCapacity");
 
     async function onSubmit(values: EditValues) {
         await apiClient.put(
             `/api/teams/${teamSlug}/events/${eventSlug}/ticket-types/${ticketType.slug}`,
             {
                 name: values.name,
-                maxCapacity: values.maxCapacity ?? null,
+                selfServiceEnabled: values.selfServiceEnabled,
+                maxCapacity: values.limitCapacity ? (values.maxCapacity ?? null) : null,
             }
         );
         await queryClient.invalidateQueries({ queryKey: ["ticket-types", teamSlug, eventSlug] });
@@ -79,25 +88,51 @@ export function EditTicketTypeForm({
                 />
                 <FormField
                     control={form.control}
-                    name="maxCapacity"
+                    name="selfServiceEnabled"
                     render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Max capacity (optional)</FormLabel>
+                        <FormItem className="flex items-center gap-3">
                             <FormControl>
-                                <Input
-                                    type="number"
-                                    min={1}
-                                    placeholder="Leave empty for unlimited"
-                                    value={field.value ?? ""}
-                                    onChange={(e) =>
-                                        field.onChange(e.target.value === "" ? undefined : e.target.valueAsNumber)
-                                    }
-                                />
+                                <Switch checked={field.value} onCheckedChange={field.onChange} />
                             </FormControl>
-                            <FormMessage />
+                            <FormLabel className="!mt-0">Enable self-service registration</FormLabel>
                         </FormItem>
                     )}
                 />
+                <FormField
+                    control={form.control}
+                    name="limitCapacity"
+                    render={({ field }) => (
+                        <FormItem className="flex items-center gap-3">
+                            <FormControl>
+                                <Switch checked={field.value} onCheckedChange={field.onChange} />
+                            </FormControl>
+                            <FormLabel className="!mt-0">Limit capacity</FormLabel>
+                        </FormItem>
+                    )}
+                />
+                {limitCapacity && (
+                    <FormField
+                        control={form.control}
+                        name="maxCapacity"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Max capacity</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        type="number"
+                                        min={1}
+                                        placeholder="e.g. 100"
+                                        value={field.value ?? ""}
+                                        onChange={(e) =>
+                                            field.onChange(e.target.value === "" ? undefined : e.target.valueAsNumber)
+                                        }
+                                    />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                )}
                 {ticketType.timeSlots && ticketType.timeSlots.length > 0 && (
                     <div className="space-y-2">
                         <label className="text-sm font-medium leading-none">Time slots</label>

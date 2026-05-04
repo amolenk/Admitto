@@ -133,4 +133,30 @@ public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBas
 
         response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
+
+    // SC: Attempting to self-register with an admin-only (non-self-service) ticket type returns 400
+    [TestMethod]
+    public async Task SC010_SelfRegister_NonSelfServiceTicketType_Returns400()
+    {
+        var fixture = SelfRegisterFixture.WithOpenRegistration();
+        await fixture.SetupAsync(Environment, selfServiceEnabled: false);
+
+        var token = await fixture.GetVerificationTokenAsync(Environment, testContext.CancellationToken);
+
+        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
+        var request = new HttpRequestMessage(HttpMethod.Post, fixture.RegisterRoute)
+        {
+            Content = JsonContent.Create(new
+            {
+                FirstName = "Dave",
+                LastName = "Smith",
+                TicketTypeSlugs = new[] { "general-admission" }
+            }),
+            Headers = { Authorization = new("Bearer", token) }
+        };
+
+        var response = await client.SendAsync(request, testContext.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+    }
 }

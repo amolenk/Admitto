@@ -64,6 +64,12 @@ The General tab SHALL show a form pre-filled with the event's name, start dateti
 ### Requirement: Registration tab manages registration policy and ticket types
 The Registration tab SHALL allow organizers to configure the registration window (open and close datetimes), an optional allowed-email-domain restriction, and the list of ticket types (name, capacity, price). The tab SHALL display the current registration status (Draft, Open, or Closed) and provide explicit "Open for registration" / "Close for registration" actions. Ticket type edits SHALL submit independently with their own concurrency tokens.
 
+The ticket type add and edit forms SHALL include:
+- An **"Enable self-service registration"** checkbox (default: checked). When unchecked, the ticket type is only accessible via admin registration or coupon.
+- A **"Limit capacity"** checkbox. When unchecked, the capacity is unlimited (null). When checked, a positive integer capacity input is revealed. This replaces the plain optional capacity number input, fixing the inability to clear a capacity once set.
+
+The ticket type list row SHALL display a visual indicator (e.g., a badge or icon) showing whether self-service is enabled or disabled for each ticket type.
+
 #### Scenario: Configure registration window
 - **WHEN** an organizer sets the registration window for "devconf-2026" from "2026-01-01T00:00Z" to "2026-05-15T00:00Z" and submits
 - **THEN** the window is saved and the form reflects the new values
@@ -75,6 +81,26 @@ The Registration tab SHALL allow organizers to configure the registration window
 #### Scenario: Registration status defaults to Draft for newly created events
 - **WHEN** an organizer opens the Registration tab for an event just created via the UI
 - **THEN** the status displayed is "Draft" and the "Open for registration" action is visible
+
+#### Scenario: Add ticket type with self-service enabled and capacity limit
+- **WHEN** an organizer checks "Enable self-service registration", checks "Limit capacity", enters 200, and submits
+- **THEN** the ticket type is created with `selfServiceEnabled: true` and `maxCapacity: 200`
+
+#### Scenario: Add ticket type with self-service disabled
+- **WHEN** an organizer unchecks "Enable self-service registration" and submits
+- **THEN** the ticket type is created with `selfServiceEnabled: false`
+
+#### Scenario: Add ticket type with unlimited self-service capacity
+- **WHEN** an organizer checks "Enable self-service registration", leaves "Limit capacity" unchecked, and submits
+- **THEN** the ticket type is created with `selfServiceEnabled: true` and `maxCapacity: null`
+
+#### Scenario: Remove capacity limit on existing ticket type
+- **WHEN** an organizer edits a ticket type that has a capacity of 200, unchecks "Limit capacity", and saves
+- **THEN** the ticket type is updated with `maxCapacity: null` (unlimited)
+
+#### Scenario: Self-service indicator shown in ticket type list
+- **WHEN** an organizer views the Registration tab with ticket types "general" (selfServiceEnabled: true) and "vip" (selfServiceEnabled: false)
+- **THEN** each row shows a distinct visual indicator for self-service status
 
 ---
 

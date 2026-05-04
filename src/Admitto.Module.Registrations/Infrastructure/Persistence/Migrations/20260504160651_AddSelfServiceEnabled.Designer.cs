@@ -4,6 +4,7 @@ using System.Text.Json;
 using Amolenk.Admitto.Module.Registrations.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -12,9 +13,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Amolenk.Admitto.Module.Registrations.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(RegistrationsDbContext))]
-    partial class RegistrationsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260504160651_AddSelfServiceEnabled")]
+    partial class AddSelfServiceEnabled
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

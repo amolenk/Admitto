@@ -59,20 +59,22 @@ public class TicketCatalog : Aggregate<TicketedEventId>
         Slug slug,
         DisplayName name,
         TimeSlot[] timeSlots,
-        int? maxCapacity)
+        int? maxCapacity,
+        bool selfServiceEnabled = true)
     {
         EnsureEventActive();
 
         if (_ticketTypes.Any(tt => tt.Id == slug.Value))
             throw new BusinessRuleViolationException(Errors.DuplicateTicketTypeSlug(slug));
 
-        _ticketTypes.Add(new TicketType(slug.Value, name, timeSlots, maxCapacity));
+        _ticketTypes.Add(new TicketType(slug.Value, name, timeSlots, maxCapacity, selfServiceEnabled));
     }
 
     public void UpdateTicketType(
         Slug slug,
         DisplayName? name,
-        int? maxCapacity)
+        int? maxCapacity,
+        bool? selfServiceEnabled = null)
     {
         EnsureEventActive();
 
@@ -85,6 +87,9 @@ public class TicketCatalog : Aggregate<TicketedEventId>
             ticketType.UpdateName(name.Value);
 
         ticketType.UpdateCapacity(maxCapacity);
+
+        if (selfServiceEnabled is not null)
+            ticketType.UpdateSelfServiceEnabled(selfServiceEnabled.Value);
     }
 
     public void CancelTicketType(Slug slug)
@@ -140,8 +145,8 @@ public class TicketCatalog : Aggregate<TicketedEventId>
 
     /// <summary>
     /// Claims tickets for the given slugs. Validates the selection (duplicate slugs,
-    /// unknown slugs, cancelled slugs, overlapping time slots) before claiming capacity.
-    /// If enforce is true, capacity is enforced (self-service path).
+    /// unknown slugs, cancelled slugs, self-service availability, overlapping time slots) before claiming capacity.
+    /// If enforce is true, capacity is enforced and self-service flag is checked (self-service path).
     /// If enforce is false, UsedCapacity is incremented without enforcement (admin/coupon path).
     /// </summary>
     public void Claim(IReadOnlyList<string> slugs, bool enforce)
@@ -163,6 +168,13 @@ public class TicketCatalog : Aggregate<TicketedEventId>
         var cancelledSlugs = slugs.Where(s => ticketTypeMap[s].IsCancelled).ToArray();
         if (cancelledSlugs.Length > 0)
             throw new BusinessRuleViolationException(Errors.CancelledTicketTypes(cancelledSlugs));
+
+        if (enforce)
+        {
+            var nonSelfService = slugs.Where(s => !ticketTypeMap[s].SelfServiceEnabled).ToArray();
+            if (nonSelfService.Length > 0)
+                throw new BusinessRuleViolationException(Errors.TicketTypesNotSelfService(nonSelfService));
+        }
 
         var allTimeSlots = slugs
             .SelectMany(s => ticketTypeMap[s].TimeSlots.Select(ts => ts.Slug.Value))
@@ -218,6 +230,11 @@ public class TicketCatalog : Aggregate<TicketedEventId>
         public static Error CancelledTicketTypes(string[] slugs) =>
             new("ticket_catalog.cancelled_ticket_types",
                 "One or more ticket types have been cancelled.",
+                Details: new Dictionary<string, object?> { ["slugs"] = slugs });
+
+        public static Error TicketTypesNotSelfService(string[] slugs) =>
+            new("ticket_type.not_self_service",
+                "One or more ticket types are not available for self-service registration.",
                 Details: new Dictionary<string, object?> { ["slugs"] = slugs });
 
         public static Error OverlappingTimeSlots(string[] slots) =>
