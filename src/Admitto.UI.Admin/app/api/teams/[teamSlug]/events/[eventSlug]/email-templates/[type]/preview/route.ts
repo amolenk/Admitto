@@ -1,0 +1,20 @@
+import { callAdmittoApi } from "@/lib/admitto-api/admitto-client";
+import { previewEventEmailTemplate, previewDraftEventEmailTemplate } from "@/lib/admitto-api/generated/sdk.gen";
+import type { PreviewDraftEmailTemplateHttpRequest } from "@/lib/admitto-api/generated/types.gen";
+
+export async function GET(
+    _request: Request,
+    { params }: { params: Promise<{ teamSlug: string; eventSlug: string; type: string }> },
+) {
+    const { teamSlug, eventSlug, type } = await params;
+    return callAdmittoApi(() => previewEventEmailTemplate({ path: { teamSlug, eventSlug, type } }));
+}
+
+export async function POST(
+    request: Request,
+    { params }: { params: Promise<{ teamSlug: string; eventSlug: string; type: string }> },
+) {
+    const { teamSlug, eventSlug, type } = await params;
+    const body = await request.json() as PreviewDraftEmailTemplateHttpRequest;
+    return callAdmittoApi(() => previewDraftEventEmailTemplate({ path: { teamSlug, eventSlug, type }, body }));
+}

@@ -57,8 +57,9 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
     }
 
     // SC003: Self-service rejected — ticket type has no capacity set
+    // SC003: Self-service rejected — ticket type has self-service disabled
     [TestMethod]
-    public async ValueTask SC003_SelfRegisterAttendee_NoCapacitySet_ThrowsNotAvailableError()
+    public async ValueTask SC003_SelfRegisterAttendee_SelfServiceDisabled_ThrowsNotAvailableError()
     {
         var fixture = RegisterAttendeeFixture.NoCapacitySet();
         await fixture.SetupAsync(Environment);
@@ -69,7 +70,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.Code.ShouldBe("ticket_type.not_available");
+        result.Error.Code.ShouldBe("ticket_type.not_self_service");
     }
 
     // SC004: Self-service rejected — before registration window opens

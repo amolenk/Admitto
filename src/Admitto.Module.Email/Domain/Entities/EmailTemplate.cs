@@ -15,14 +15,16 @@ public class EmailTemplate : Aggregate<EmailTemplateId>
         EmailSettingsScope scope,
         Guid scopeId,
         string type,
+        string? name,
         string subject,
         string textBody,
-        string htmlBody)
+        string? htmlBody)
         : base(id)
     {
         Scope = scope;
         ScopeId = scopeId;
         Type = type;
+        Name = name;
         Subject = subject;
         TextBody = textBody;
         HtmlBody = htmlBody;
@@ -31,9 +33,10 @@ public class EmailTemplate : Aggregate<EmailTemplateId>
     public EmailSettingsScope Scope { get; private set; }
     public Guid ScopeId { get; private set; }
     public string Type { get; private set; } = default!;
+    public string? Name { get; private set; }
     public string Subject { get; private set; } = default!;
     public string TextBody { get; private set; } = default!;
-    public string HtmlBody { get; private set; } = default!;
+    public string? HtmlBody { get; private set; }
 
     public static EmailTemplate Create(
         EmailSettingsScope scope,
@@ -41,20 +44,23 @@ public class EmailTemplate : Aggregate<EmailTemplateId>
         string type,
         string subject,
         string textBody,
-        string htmlBody)
+        string? htmlBody,
+        string? name = null)
     {
         return new EmailTemplate(
             EmailTemplateId.New(),
             scope,
             scopeId,
             type,
+            name,
             subject,
             textBody,
             htmlBody);
     }
 
-    public void Update(string subject, string textBody, string htmlBody)
+    public void Update(string subject, string textBody, string? htmlBody, string? name = null)
     {
+        Name = name;
         Subject = subject;
         TextBody = textBody;
         HtmlBody = htmlBody;

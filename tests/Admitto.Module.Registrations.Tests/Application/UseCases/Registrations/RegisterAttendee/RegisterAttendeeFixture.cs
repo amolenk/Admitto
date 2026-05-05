@@ -53,7 +53,7 @@ internal sealed class RegisterAttendeeFixture
     {
         var f = new RegisterAttendeeFixture { TicketTypeSlug = "speaker-pass" };
         f._ticketedEvent = f.MakeActiveEventWithOpenWindow();
-        f._catalog = f.MakeCatalog(("speaker-pass", "Speaker Pass", null, 0));
+        f._catalog = f.MakeCatalog(("speaker-pass", "Speaker Pass", null, 0, false));
         return f;
     }
 
@@ -453,12 +453,15 @@ internal sealed class RegisterAttendeeFixture
         return ev;
     }
 
-    private TicketCatalog MakeCatalog(params (string slug, string name, int? max, int used)[] ticketTypes)
+    private TicketCatalog MakeCatalog(params (string slug, string name, int? max, int used)[] ticketTypes) =>
+        MakeCatalog(ticketTypes.Select(t => (t.slug, t.name, t.max, t.used, true)).ToArray());
+
+    private TicketCatalog MakeCatalog(params (string slug, string name, int? max, int used, bool selfServiceEnabled)[] ticketTypes)
     {
         var catalog = TicketCatalog.Create(EventId);
-        foreach (var (slug, name, max, used) in ticketTypes)
+        foreach (var (slug, name, max, used, selfServiceEnabled) in ticketTypes)
         {
-            catalog.AddTicketType(Slug.From(slug), DisplayName.From(name), [], max);
+            catalog.AddTicketType(Slug.From(slug), DisplayName.From(name), [], max, selfServiceEnabled);
             if (used > 0)
             {
                 for (var i = 0; i < used; i++)

@@ -3,5 +3,6 @@ namespace Amolenk.Admitto.Module.Email.Application.UseCases.EmailTemplates.GetEm
 public sealed record EmailTemplateDto(
     string Subject,
     string TextBody,
-    string HtmlBody,
-    uint Version);
+    string? HtmlBody,
+    bool IsCustom,
+    uint? Version);

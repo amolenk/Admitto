@@ -135,7 +135,7 @@ public sealed class AdminEmailTemplatesTests(TestContext testContext) : EndToEnd
 
     // Scenario: DELETE team-scoped template
     // WHEN an organizer deletes a team-scoped template
-    // THEN the response is 204 No Content and a subsequent GET returns 404
+    // THEN the response is 204 No Content and a subsequent GET returns the built-in default (isCustom: false)
     [TestMethod]
     public async Task SC006_DeleteTeamTemplate_ReturnsNoContent()
     {
@@ -151,12 +151,16 @@ public sealed class AdminEmailTemplatesTests(TestContext testContext) : EndToEnd
         var getResponse = await Environment.ApiClient.GetAsync(
             AdminEmailTemplatesFixture.TeamTemplateRoute,
             testContext.CancellationToken);
-        getResponse.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        getResponse.StatusCode.ShouldBe(HttpStatusCode.OK);
+
+        var body = await getResponse.Content.ReadFromJsonAsync<JsonElement>(
+            cancellationToken: testContext.CancellationToken);
+        body.GetProperty("isCustom").GetBoolean().ShouldBeFalse();
     }
 
-    // Scenario: Delete event-scoped template falls back to team or default
+    // Scenario: Delete event-scoped template falls back to built-in default
     // WHEN an organizer deletes the event-scoped template while a team-scoped one still exists
-    // THEN the response is 204 No Content and a subsequent GET on the event scope still returns 404
+    // THEN the response is 204 No Content and a subsequent GET on the event scope returns the built-in default (isCustom: false)
     [TestMethod]
     public async Task SC007_DeleteEventTemplate_ReturnsNoContent()
     {
@@ -169,11 +173,14 @@ public sealed class AdminEmailTemplatesTests(TestContext testContext) : EndToEnd
 
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
 
-        // The event-scoped template is gone; GET returns 404 (no fall-through at HTTP layer)
         var getResponse = await Environment.ApiClient.GetAsync(
             AdminEmailTemplatesFixture.EventTemplateRoute,
             testContext.CancellationToken);
-        getResponse.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        getResponse.StatusCode.ShouldBe(HttpStatusCode.OK);
+
+        var body = await getResponse.Content.ReadFromJsonAsync<JsonElement>(
+            cancellationToken: testContext.CancellationToken);
+        body.GetProperty("isCustom").GetBoolean().ShouldBeFalse();
     }
 
     // Scenario: Non-team-member denied

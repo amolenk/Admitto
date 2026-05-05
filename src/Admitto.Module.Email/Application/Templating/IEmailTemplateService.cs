@@ -13,4 +13,12 @@ internal interface IEmailTemplateService
         TeamId teamId,
         TicketedEventId eventId,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Loads the effective template for a team scope, using team-scoped → built-in default precedence.
+    /// </summary>
+    ValueTask<EmailTemplate> LoadAsync(
+        string type,
+        TeamId teamId,
+        CancellationToken cancellationToken = default);
 }

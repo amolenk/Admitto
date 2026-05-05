@@ -7,4 +7,5 @@ public static class EmailTemplateType
     public const string Cancellation = "cancellation";
     public const string VisaLetterDenied = "visa-letter-denied";
     public const string OtpCode = "otp-code";
+    public const string BulkCustom = "bulk-custom";
 }

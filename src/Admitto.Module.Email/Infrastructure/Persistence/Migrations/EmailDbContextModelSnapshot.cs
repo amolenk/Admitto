@@ -319,7 +319,6 @@ namespace Amolenk.Admitto.Module.Email.Infrastructure.Persistence.Migrations
                         .HasColumnName("created_at");
 
                     b.Property<string>("HtmlBody")
-                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("html_body");
 
@@ -332,6 +331,11 @@ namespace Amolenk.Admitto.Module.Email.Infrastructure.Persistence.Migrations
                         .HasMaxLength(320)
                         .HasColumnType("character varying(320)")
                         .HasColumnName("last_changed_by");
+
+                    b.Property<string>("Name")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasColumnName("name");
 
                     b.Property<int>("Scope")
                         .HasColumnType("integer")
@@ -368,7 +372,8 @@ namespace Amolenk.Admitto.Module.Email.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("Scope", "ScopeId", "Type")
                         .IsUnique()
-                        .HasDatabaseName("IX_email_templates_scope_scope_id_type");
+                        .HasDatabaseName("IX_email_templates_scope_scope_id_type")
+                        .HasFilter("name IS NULL");
 
                     b.ToTable("email_templates", "email");
                 });

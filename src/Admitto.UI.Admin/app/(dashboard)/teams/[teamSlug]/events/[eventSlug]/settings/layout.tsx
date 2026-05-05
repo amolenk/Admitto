@@ -11,11 +11,12 @@ import { TicketedEventDetailsDto } from "@/lib/admitto-api/generated";
 import { Settings, Users, Mail, Zap, Trash2 } from "lucide-react";
 
 const navItems = [
-    { label: "General", href: "", icon: Settings, desc: "Name, date, venue, website" },
+    { label: "General", href: "", icon: Settings, desc: "Name, date, venue, website", exact: true },
     { label: "Registration", href: "/registration", icon: Users, desc: "Policy, windows, waitlist" },
     { label: "Cancellation", href: "/cancellation", icon: Zap, desc: "Late cancellation cutoff" },
     { label: "Reconfirmation", href: "/reconfirm", icon: Mail, desc: "Window and cadence" },
-    { label: "Email", href: "/email", icon: Mail, desc: "Templates, SMTP, sender" },
+    { label: "Email", href: "/email", icon: Mail, desc: "Templates, SMTP, sender", exact: true },
+    { label: "Email templates", href: "/email/templates", icon: Mail, desc: "Customize email content" },
     { label: "Danger zone", href: "/danger", icon: Trash2, desc: "Cancel or archive" },
 ];
 
@@ -56,7 +57,9 @@ export default function EventSettingsLayout({ children }: { children: React.Reac
                     <nav className="flex flex-col gap-1">
                         {navItems.map((item) => {
                             const fullHref = `${basePath}${item.href}`;
-                            const isActive = pathname === fullHref;
+                            const isActive = item.exact
+                                ? pathname === fullHref
+                                : pathname === fullHref || pathname.startsWith(`${fullHref}/`);
                             const Icon = item.icon;
                             return (
                                 <Link

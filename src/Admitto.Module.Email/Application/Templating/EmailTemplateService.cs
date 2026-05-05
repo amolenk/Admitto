@@ -31,4 +31,22 @@ internal sealed class EmailTemplateService(IEmailWriteStore writeStore) : IEmail
         return DefaultEmailTemplates.Get(type)
                ?? throw new InvalidOperationException($"No template found for type '{type}' and no built-in default exists.");
     }
+
+    public async ValueTask<EmailTemplate> LoadAsync(
+        string type,
+        TeamId teamId,
+        CancellationToken cancellationToken = default)
+    {
+        var template = await writeStore.EmailTemplates
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                t => t.Type == type && t.Scope == EmailSettingsScope.Team && t.ScopeId == teamId.Value,
+                cancellationToken);
+
+        if (template is not null)
+            return template;
+
+        return DefaultEmailTemplates.Get(type)
+               ?? throw new InvalidOperationException($"No template found for type '{type}' and no built-in default exists.");
+    }
 }

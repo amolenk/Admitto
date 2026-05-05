@@ -17,6 +17,13 @@ internal interface IEffectiveEmailSettingsResolver
         TeamId teamId,
         TicketedEventId eventId,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Resolves effective SMTP settings for a team scope (no event-level fallback).
+    /// </summary>
+    ValueTask<EffectiveEmailSettings?> ResolveAsync(
+        TeamId teamId,
+        CancellationToken cancellationToken = default);
 }
 
 internal sealed class EffectiveEmailSettingsResolver(
@@ -40,6 +47,19 @@ internal sealed class EffectiveEmailSettingsResolver(
                      ?? settings.FirstOrDefault(s => s.Scope == EmailSettingsScope.Team);
 
         return effective is null ? null : ToEffective(effective);
+    }
+
+    public async ValueTask<EffectiveEmailSettings?> ResolveAsync(
+        TeamId teamId,
+        CancellationToken cancellationToken = default)
+    {
+        var settings = await writeStore.EmailSettings
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                s => s.Scope == EmailSettingsScope.Team && s.ScopeId == teamId.Value,
+                cancellationToken);
+
+        return settings is null ? null : ToEffective(settings);
     }
 
     private EffectiveEmailSettings ToEffective(EmailSettings settings)

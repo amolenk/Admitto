@@ -22,7 +22,7 @@ const eventPages = [
     { label: "Dashboard", href: "", icon: LayoutDashboard },
     { label: "Registrations", href: "/registrations", icon: Users },
     { label: "Ticket types", href: "/ticket-types", icon: Ticket },
-    { label: "Emails", href: "/settings/email", icon: Mail },
+    { label: "Emails", href: "/emails", icon: Mail },
     { label: "Settings", href: "/settings", icon: Settings },
 ];
 
@@ -53,8 +53,7 @@ export function NavEventPages({ teamSlug }: { teamSlug: string }) {
             return pathname === basePath;
         }
         if (pageHref === "/settings") {
-            // Settings is active for /settings and all sub-pages except /settings/email
-            return pathname.startsWith(fullPath) && !pathname.startsWith(`${basePath}/settings/email`);
+            return pathname.startsWith(fullPath);
         }
         return pathname.startsWith(fullPath);
     }

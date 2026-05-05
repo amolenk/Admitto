@@ -32,6 +32,10 @@ internal sealed class EmailTemplateEntityConfiguration : IEntityTypeConfiguratio
             .HasMaxLength(100)
             .IsRequired();
 
+        builder.Property(e => e.Name)
+            .HasColumnName("name")
+            .HasMaxLength(200);
+
         builder.Property(e => e.Subject)
             .HasColumnName("subject")
             .HasMaxLength(200)
@@ -44,11 +48,12 @@ internal sealed class EmailTemplateEntityConfiguration : IEntityTypeConfiguratio
 
         builder.Property(e => e.HtmlBody)
             .HasColumnName("html_body")
-            .HasColumnType("text")
-            .IsRequired();
+            .HasColumnType("text");
 
+        // System templates (name IS NULL) enforce one row per scope+type
         builder.HasIndex(e => new { e.Scope, e.ScopeId, e.Type })
             .HasDatabaseName("IX_email_templates_scope_scope_id_type")
+            .HasFilter("name IS NULL")
             .IsUnique();
     }
 }
