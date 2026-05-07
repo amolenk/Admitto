@@ -15,7 +15,7 @@ internal sealed class EmailPostgresExceptionMapping : IPostgresExceptionMapping
             return true;
         }
 
-        if (ex.ConstraintName == "IX_email_templates_scope_scope_id_type")
+        if (ex.ConstraintName == "IX_email_templates_scope_scope_id_name")
         {
             error = AlreadyExistsError.Create<Domain.Entities.EmailTemplate>();
             return true;

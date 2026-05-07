@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Module.Email.Application.Persistence;
 using Amolenk.Admitto.Module.Email.Application.Sending;
 using Amolenk.Admitto.Module.Email.Application.Sending.Settings;
 using Amolenk.Admitto.Module.Email.Application.Templating;
@@ -8,8 +9,8 @@ using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
 namespace Amolenk.Admitto.Module.Email.Application.UseCases.EmailTemplates.TestSendEmailTemplate;
 
 internal sealed class TestSendEmailTemplateHandler(
+    IEmailWriteStore writeStore,
     IEffectiveEmailSettingsResolver settingsResolver,
-    IEmailTemplateService templateService,
     IEmailRenderer renderer,
     IEmailSender emailSender)
     : ICommandHandler<TestSendEmailTemplateCommand>
@@ -23,17 +24,10 @@ internal sealed class TestSendEmailTemplateHandler(
         if (settings is null || !settings.IsValid())
             throw new BusinessRuleViolationException(Errors.SettingsNotConfigured);
 
-        EmailTemplate template;
-        try
-        {
-            template = command.EventId.HasValue
-                ? await templateService.LoadAsync(command.Type, command.TeamId, command.EventId.Value, ct)
-                : await templateService.LoadAsync(command.Type, command.TeamId, ct);
-        }
-        catch (InvalidOperationException)
-        {
-            throw new BusinessRuleViolationException(Errors.TemplateNotAvailable);
-        }
+        var template = await writeStore.EmailTemplates
+            .AsNoTracking()
+            .FirstOrDefaultAsync(t => t.Id == command.TemplateId, ct)
+            ?? throw new BusinessRuleViolationException(Errors.TemplateNotFound);
 
         var parameters = EmailTemplateSampleParameters.Create();
 
@@ -74,9 +68,9 @@ internal sealed class TestSendEmailTemplateHandler(
             "email_settings.not_configured",
             "Email settings have not been configured for this scope.");
 
-        public static readonly Error TemplateNotAvailable = new(
-            "email_template.not_available",
-            "No template is available for this type. Configure a custom template first.");
+        public static readonly Error TemplateNotFound = new(
+            "email_template.not_found",
+            "The specified email template was not found.");
 
         public static Error SendFailed(string message) => new(
             "email_template.test_send_failed",

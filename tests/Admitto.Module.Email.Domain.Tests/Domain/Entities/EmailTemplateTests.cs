@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Module.Email.Application.Templating;
 using Amolenk.Admitto.Module.Email.Domain.Entities;
 using Amolenk.Admitto.Module.Email.Domain.ValueObjects;
 using Shouldly;
@@ -15,7 +16,7 @@ public sealed class EmailTemplateTests
         var template = EmailTemplate.Create(
             EmailSettingsScope.Event,
             scopeId,
-            EmailTemplateType.Ticket,
+            BuiltInEmailTemplateNames.TicketConfirmation,
             "Your ticket",
             "Text body",
             "<p>HTML body</p>");
@@ -23,7 +24,7 @@ public sealed class EmailTemplateTests
         template.Id.Value.ShouldNotBe(Guid.Empty);
         template.Scope.ShouldBe(EmailSettingsScope.Event);
         template.ScopeId.ShouldBe(scopeId);
-        template.Type.ShouldBe(EmailTemplateType.Ticket);
+        template.Name.ShouldBe(BuiltInEmailTemplateNames.TicketConfirmation);
         template.Subject.ShouldBe("Your ticket");
         template.TextBody.ShouldBe("Text body");
         template.HtmlBody.ShouldBe("<p>HTML body</p>");
@@ -37,7 +38,7 @@ public sealed class EmailTemplateTests
         var template = EmailTemplate.Create(
             EmailSettingsScope.Team,
             teamScopeId,
-            EmailTemplateType.Ticket,
+            BuiltInEmailTemplateNames.TicketConfirmation,
             "Subject",
             "Text",
             "<p>Html</p>");
@@ -49,8 +50,8 @@ public sealed class EmailTemplateTests
     [TestMethod]
     public void Create_TwoTemplates_HaveDistinctIds()
     {
-        var t1 = EmailTemplate.Create(EmailSettingsScope.Event, Guid.NewGuid(), EmailTemplateType.Ticket, "S1", "T1", "H1");
-        var t2 = EmailTemplate.Create(EmailSettingsScope.Event, Guid.NewGuid(), EmailTemplateType.Ticket, "S2", "T2", "H2");
+        var t1 = EmailTemplate.Create(EmailSettingsScope.Event, Guid.NewGuid(), BuiltInEmailTemplateNames.TicketConfirmation, "S1", "T1", "H1");
+        var t2 = EmailTemplate.Create(EmailSettingsScope.Event, Guid.NewGuid(), BuiltInEmailTemplateNames.Reconfirmation, "S2", "T2", "H2");
 
         t1.Id.ShouldNotBe(t2.Id);
     }
@@ -61,7 +62,7 @@ public sealed class EmailTemplateTests
         var template = EmailTemplate.Create(
             EmailSettingsScope.Event,
             Guid.NewGuid(),
-            EmailTemplateType.Ticket,
+            BuiltInEmailTemplateNames.TicketConfirmation,
             "Old subject",
             "Old text",
             "<p>Old html</p>");
@@ -77,7 +78,7 @@ public sealed class EmailTemplateTests
     public void Update_DoesNotChangeScope()
     {
         var scopeId = Guid.NewGuid();
-        var template = EmailTemplate.Create(EmailSettingsScope.Event, scopeId, EmailTemplateType.Ticket, "S", "T", "H");
+        var template = EmailTemplate.Create(EmailSettingsScope.Event, scopeId, BuiltInEmailTemplateNames.TicketConfirmation, "S", "T", "H");
 
         template.Update("New subject", "New text", "<p>New html</p>");
 

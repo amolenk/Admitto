@@ -23,7 +23,7 @@ public sealed class EmailTemplateServiceTests(TestContext testContext) : AspireI
         await Environment.Database.SeedAsync(db => db.EmailTemplates.Add(template));
 
         var service = new EmailTemplateService(Environment.Database.Context);
-        var result = await service.LoadAsync(EmailTemplateType.Ticket, teamId, eventId, testContext.CancellationToken);
+        var result = await service.LoadAsync(BuiltInEmailTemplateNames.TicketConfirmation, teamId, eventId, testContext.CancellationToken);
 
         result.Subject.ShouldBe("Event subject");
         result.Scope.ShouldBe(EmailSettingsScope.Event);
@@ -42,7 +42,7 @@ public sealed class EmailTemplateServiceTests(TestContext testContext) : AspireI
         await Environment.Database.SeedAsync(db => db.EmailTemplates.Add(template));
 
         var service = new EmailTemplateService(Environment.Database.Context);
-        var result = await service.LoadAsync(EmailTemplateType.Ticket, teamId, eventId, testContext.CancellationToken);
+        var result = await service.LoadAsync(BuiltInEmailTemplateNames.TicketConfirmation, teamId, eventId, testContext.CancellationToken);
 
         result.Subject.ShouldBe("Team subject");
         result.Scope.ShouldBe(EmailSettingsScope.Team);
@@ -69,7 +69,7 @@ public sealed class EmailTemplateServiceTests(TestContext testContext) : AspireI
         });
 
         var service = new EmailTemplateService(Environment.Database.Context);
-        var result = await service.LoadAsync(EmailTemplateType.Ticket, teamId, eventId, testContext.CancellationToken);
+        var result = await service.LoadAsync(BuiltInEmailTemplateNames.TicketConfirmation, teamId, eventId, testContext.CancellationToken);
 
         result.Subject.ShouldBe("Event subject");
         result.Scope.ShouldBe(EmailSettingsScope.Event);
@@ -82,7 +82,7 @@ public sealed class EmailTemplateServiceTests(TestContext testContext) : AspireI
         var eventId = TicketedEventId.New();
 
         var service = new EmailTemplateService(Environment.Database.Context);
-        var result = await service.LoadAsync(EmailTemplateType.Ticket, teamId, eventId, testContext.CancellationToken);
+        var result = await service.LoadAsync(BuiltInEmailTemplateNames.TicketConfirmation, teamId, eventId, testContext.CancellationToken);
 
         result.ShouldNotBeNull();
         result.TextBody.ShouldNotBeNullOrEmpty();

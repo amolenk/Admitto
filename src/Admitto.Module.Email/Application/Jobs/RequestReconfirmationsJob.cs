@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Module.Email.Application.Persistence;
+using Amolenk.Admitto.Module.Email.Application.Templating;
 using Amolenk.Admitto.Module.Email.Domain.Entities;
 using Amolenk.Admitto.Module.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Registrations.Contracts;
@@ -50,7 +51,7 @@ internal sealed class RequestReconfirmationsJob(
         var job = BulkEmailJob.CreateSystemTriggered(
             teamId,
             ticketedEventId,
-            EmailTemplateType.Reconfirm,
+            BuiltInEmailTemplateNames.Reconfirmation,
             subject: null,
             textBody: null,
             htmlBody: null,

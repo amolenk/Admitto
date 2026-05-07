@@ -29,7 +29,7 @@ public sealed class SendEmailCommandHandlerTests(TestContext testContext) : Aspi
         var command = new SendEmailCommand(
             teamId, eventId,
             "alice@example.com", "Alice",
-            EmailTemplateType.Ticket,
+            BuiltInEmailTemplateNames.TicketConfirmation,
             IdempotencyKey: "test-key-1",
             Parameters: new { FirstName = "Alice", EventName = "DevConf" });
 
@@ -62,7 +62,7 @@ public sealed class SendEmailCommandHandlerTests(TestContext testContext) : Aspi
         var command = new SendEmailCommand(
             teamId, eventId,
             "alice@example.com", "Alice",
-            EmailTemplateType.Ticket,
+            BuiltInEmailTemplateNames.TicketConfirmation,
             IdempotencyKey: "test-key-no-settings",
             Parameters: new { FirstName = "Alice", EventName = "DevConf" });
 
@@ -105,7 +105,7 @@ public sealed class SendEmailCommandHandlerTests(TestContext testContext) : Aspi
         var command = new SendEmailCommand(
             teamId, eventId,
             "alice@example.com", "Alice",
-            EmailTemplateType.Ticket,
+            BuiltInEmailTemplateNames.TicketConfirmation,
             IdempotencyKey: "test-key-render-error",
             Parameters: new { });
 
@@ -142,7 +142,7 @@ public sealed class SendEmailCommandHandlerTests(TestContext testContext) : Aspi
         var command = new SendEmailCommand(
             teamId, eventId,
             "alice@example.com", "Alice",
-            EmailTemplateType.Ticket,
+            BuiltInEmailTemplateNames.TicketConfirmation,
             IdempotencyKey: "test-key-dedup",
             Parameters: new { FirstName = "Alice", EventName = "DevConf" });
 

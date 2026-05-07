@@ -4,6 +4,4 @@ using Amolenk.Admitto.Module.Shared.Application.Messaging;
 namespace Amolenk.Admitto.Module.Email.Application.UseCases.EmailTemplates.GetEmailTemplate;
 
 internal sealed record GetEmailTemplateQuery(
-    EmailSettingsScope Scope,
-    Guid ScopeId,
-    string Type) : Query<EmailTemplateDto?>;
+    EmailTemplateId Id) : Query<EmailTemplateDto?>;

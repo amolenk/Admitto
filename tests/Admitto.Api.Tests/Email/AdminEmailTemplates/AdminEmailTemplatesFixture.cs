@@ -1,4 +1,6 @@
 using Amolenk.Admitto.Api.Tests.Infrastructure.Hosting;
+using Amolenk.Admitto.Module.Email.Application.Templating;
+using Amolenk.Admitto.Module.Email.Domain.Entities;
 using Amolenk.Admitto.Module.Email.Domain.Tests.Builders;
 using Amolenk.Admitto.Module.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Registrations.Domain.Entities;
@@ -12,10 +14,13 @@ internal sealed class AdminEmailTemplatesFixture
 {
     public const string TeamSlug = "acme-templates";
     public const string EventSlug = "templatesconf";
-    public const string TemplateType = EmailTemplateType.Ticket;
+    public const string TemplateName = BuiltInEmailTemplateNames.TicketConfirmation;
 
-    public static string TeamTemplateRoute => $"/admin/teams/{TeamSlug}/email-templates/{TemplateType}";
-    public static string EventTemplateRoute => $"/admin/teams/{TeamSlug}/events/{EventSlug}/email-templates/{TemplateType}";
+    public static string TeamTemplatesRoute => $"/admin/teams/{TeamSlug}/email-templates";
+    public static string EventTemplatesRoute => $"/admin/teams/{TeamSlug}/events/{EventSlug}/email-templates";
+
+    public static string TeamTemplateRoute(Guid id) => $"{TeamTemplatesRoute}/{id}";
+    public static string EventTemplateRoute(Guid id) => $"{EventTemplatesRoute}/{id}";
 
     private AdminEmailTemplatesFixture() { }
 
@@ -28,33 +33,33 @@ internal sealed class AdminEmailTemplatesFixture
         await SeedTeamAndEventAsync(environment);
     }
 
-    public async ValueTask<uint> SetupTeamTemplateAsync(EndToEndTestEnvironment environment)
+    public async ValueTask<(Guid Id, uint Version)> SetupTeamTemplateAsync(EndToEndTestEnvironment environment)
     {
         var (team, _) = await SeedTeamAndEventAsync(environment);
 
         var template = new EmailTemplateBuilder()
             .ForTeam(team.Id)
-            .WithType(TemplateType)
+            .WithName(TemplateName)
             .WithSubject("Team subject")
             .Build();
 
         await environment.EmailDatabase.SeedAsync(db => db.EmailTemplates.Add(template));
-        return template.Version;
+        return (template.Id.Value, template.Version);
     }
 
-    public async ValueTask<(uint TeamVersion, uint EventVersion)> SetupBothTemplatesAsync(EndToEndTestEnvironment environment)
+    public async ValueTask<(Guid TeamId, uint TeamVersion, Guid EventId, uint EventVersion)> SetupBothTemplatesAsync(EndToEndTestEnvironment environment)
     {
         var (team, eventId) = await SeedTeamAndEventAsync(environment);
 
         var teamTemplate = new EmailTemplateBuilder()
             .ForTeam(team.Id)
-            .WithType(TemplateType)
+            .WithName(TemplateName)
             .WithSubject("Team subject")
             .Build();
 
         var eventTemplate = new EmailTemplateBuilder()
             .ForEvent(eventId)
-            .WithType(TemplateType)
+            .WithName(TemplateName)
             .WithSubject("Event subject")
             .Build();
 
@@ -64,7 +69,7 @@ internal sealed class AdminEmailTemplatesFixture
             db.EmailTemplates.Add(eventTemplate);
         });
 
-        return (teamTemplate.Version, eventTemplate.Version);
+        return (teamTemplate.Id.Value, teamTemplate.Version, eventTemplate.Id.Value, eventTemplate.Version);
     }
 
     private async ValueTask<(global::Amolenk.Admitto.Module.Organization.Domain.Entities.Team Team, TicketedEventId EventId)> SeedTeamAndEventAsync(

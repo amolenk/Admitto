@@ -34,7 +34,7 @@ namespace Amolenk.Admitto.Module.Email.Tests.Application.Jobs;
 [TestClass]
 public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireIntegrationTestBase
 {
-    private const string DefaultEmailType = EmailTemplateType.Reconfirm;
+    private const string DefaultEmailType = BuiltInEmailTemplateNames.Reconfirmation;
 
     [TestMethod]
     public async ValueTask Execute_AllRecipientsSucceed_CompletesUsingSingleSmtpSession()
@@ -301,7 +301,7 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
             .Build();
         var template = new EmailTemplateBuilder()
             .ForEvent(eventId)
-            .WithType(DefaultEmailType)
+            .WithName(DefaultEmailType)
             .WithSubject("Hi {{ first_name }}")
             .WithTextBody("Hello {{ first_name }}")
             .WithHtmlBody("<p>Hello {{ first_name }}</p>")

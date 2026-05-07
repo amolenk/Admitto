@@ -5,9 +5,6 @@ import { useQueryClient } from "@tanstack/react-query";
 import {
     AlertCircle,
     Check,
-    ChevronDown,
-    ChevronUp,
-    RefreshCw,
     Send,
     Trash2,
     X,
@@ -18,7 +15,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
 import {
     AlertDialog,
     AlertDialogCancel,
@@ -51,7 +47,8 @@ import {
     buildEmailRecipientOptions,
     EmailRecipientOption,
 } from "../../../events/[eventSlug]/settings/email/test-email-settings-button";
-import { PreviewEmailTemplateDto, TeamDto, TeamMemberListItemDto } from "@/lib/admitto-api/generated";
+import { PreviewPanel } from "./preview-panel";
+import { TeamDto, TeamMemberListItemDto } from "@/lib/admitto-api/generated";
 
 const templateSchema = z.object({
     subject: z.string().min(1, "Subject is required"),
@@ -77,112 +74,6 @@ function Field({
                 {hint && <p className="text-[12px] text-muted-foreground mt-0.5 leading-snug">{hint}</p>}
             </div>
             <div className="min-w-0">{children}</div>
-        </div>
-    );
-}
-
-function PreviewPanel({
-    previewApiUrl,
-    formValues,
-}: {
-    previewApiUrl: string;
-    formValues: { subject: string; textBody: string; htmlBody: string };
-}) {
-    const [preview, setPreview] = useState<PreviewEmailTemplateDto | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [isOpen, setIsOpen] = useState(true);
-
-    async function loadPreview() {
-        setIsLoading(true);
-        setError(null);
-        try {
-            const data = await apiClient.post<PreviewEmailTemplateDto>(previewApiUrl, formValues);
-            setPreview(data);
-        } catch (err) {
-            const message = err instanceof FormError
-                ? err.detail
-                : err instanceof Error
-                    ? err.message
-                    : "Failed to load preview.";
-            setError(message);
-        } finally {
-            setIsLoading(false);
-        }
-    }
-
-    useEffect(() => {
-        loadPreview();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [previewApiUrl]);
-
-    return (
-        <div className="mt-6 border rounded-lg">
-            <button
-                type="button"
-                onClick={() => setIsOpen((v) => !v)}
-                className="w-full flex items-center justify-between px-4 py-3 text-left hover:bg-muted/50 transition-colors rounded-lg"
-            >
-                <span className="font-display text-[16px] font-semibold">Preview</span>
-                {isOpen ? <ChevronUp className="size-4" /> : <ChevronDown className="size-4" />}
-            </button>
-
-            {isOpen && (
-                <div className="px-4 pb-4">
-                    <div className="flex items-center justify-between mb-3">
-                        <p className="text-[12px] text-muted-foreground">
-                            Rendered with sample placeholder data.
-                        </p>
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            size="sm"
-                            onClick={loadPreview}
-                            disabled={isLoading}
-                        >
-                            <RefreshCw className={`size-3.5 ${isLoading ? "animate-spin" : ""}`} />
-                            Refresh
-                        </Button>
-                    </div>
-
-                    {error && (
-                        <Alert variant="destructive" className="mb-3">
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertDescription>{error}</AlertDescription>
-                        </Alert>
-                    )}
-
-                    {isLoading && !preview && (
-                        <div className="space-y-2">
-                            <Skeleton className="h-5 w-3/4" />
-                            <Skeleton className="h-48 w-full" />
-                        </div>
-                    )}
-
-                    {preview && (
-                        <div className="space-y-3">
-                            <div>
-                                <span className="text-[11px] uppercase tracking-widest text-muted-foreground font-semibold">
-                                    Subject
-                                </span>
-                                <p className="text-sm mt-1 font-medium">{preview.renderedSubject}</p>
-                            </div>
-                            <div>
-                                <span className="text-[11px] uppercase tracking-widest text-muted-foreground font-semibold">
-                                    HTML body
-                                </span>
-                                <iframe
-                                    className="mt-1 w-full border rounded-md"
-                                    style={{ minHeight: "400px" }}
-                                    srcDoc={preview.renderedHtmlBody}
-                                    sandbox=""
-                                    title="Email preview"
-                                />
-                            </div>
-                        </div>
-                    )}
-                </div>
-            )}
         </div>
     );
 }
@@ -307,7 +198,7 @@ export function EmailTemplateForm({
     queryKey,
     backHref,
     initialValues,
-    isCustom,
+    isCustomised,
     version,
     teamSlug,
 }: {
@@ -317,7 +208,7 @@ export function EmailTemplateForm({
     queryKey: unknown[];
     backHref: string;
     initialValues: { subject: string; textBody: string; htmlBody: string } | null;
-    isCustom: boolean;
+    isCustomised: boolean;
     version: number | string | null;
     teamSlug: string;
 }) {
@@ -342,6 +233,15 @@ export function EmailTemplateForm({
         textBody: initialValues?.textBody ?? "",
         htmlBody: initialValues?.htmlBody ?? "",
     });
+
+    useEffect(() => {
+        form.reset({
+            subject: initialValues?.subject ?? "",
+            textBody: initialValues?.textBody ?? "",
+            htmlBody: initialValues?.htmlBody ?? "",
+        });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [initialValues]);
 
     const { generalError, submit } = form;
 
@@ -452,7 +352,7 @@ export function EmailTemplateForm({
                             </Button>
                         </div>
 
-                        {isCustom && (
+                        {isCustomised && (
                             <AlertDialog
                                 open={deleteDialogOpen}
                                 onOpenChange={(open) => {
@@ -501,7 +401,12 @@ export function EmailTemplateForm({
                 </form>
             </Form>
 
-            <PreviewPanel previewApiUrl={previewApiUrl} formValues={formValues} />
+            <PreviewPanel
+                key={String(version)}
+                previewApiUrl={previewApiUrl}
+                formValues={formValues}
+                mountValues={initialValues ?? { subject: "", textBody: "", htmlBody: "" }}
+            />
 
             <Dialog open={testSendDialogOpen} onOpenChange={setTestSendDialogOpen}>
                 <SendTestEmailDialog

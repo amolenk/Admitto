@@ -27,14 +27,10 @@ internal sealed class EmailTemplateEntityConfiguration : IEntityTypeConfiguratio
             .HasColumnName("scope_id")
             .IsRequired();
 
-        builder.Property(e => e.Type)
-            .HasColumnName("type")
-            .HasMaxLength(100)
-            .IsRequired();
-
         builder.Property(e => e.Name)
             .HasColumnName("name")
-            .HasMaxLength(200);
+            .HasMaxLength(200)
+            .IsRequired();
 
         builder.Property(e => e.Subject)
             .HasColumnName("subject")
@@ -50,10 +46,9 @@ internal sealed class EmailTemplateEntityConfiguration : IEntityTypeConfiguratio
             .HasColumnName("html_body")
             .HasColumnType("text");
 
-        // System templates (name IS NULL) enforce one row per scope+type
-        builder.HasIndex(e => new { e.Scope, e.ScopeId, e.Type })
-            .HasDatabaseName("IX_email_templates_scope_scope_id_type")
-            .HasFilter("name IS NULL")
-            .IsUnique();
+        // Case-insensitive unique name per scope — enforced as a functional index
+        // (lower(name)) via raw SQL in the migration.
+        // EF is not aware of this index; duplicate detection is done in handlers
+        // before insert and surfaced via EmailPostgresExceptionMapping.
     }
 }

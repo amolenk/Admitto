@@ -1,6 +1,6 @@
 using Amolenk.Admitto.Module.Email.Application.Persistence;
+using Amolenk.Admitto.Module.Email.Application.Templating;
 using Amolenk.Admitto.Module.Email.Application.UseCases.SendEmail;
-using Amolenk.Admitto.Module.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
@@ -35,7 +35,7 @@ internal sealed class OtpCodeRequestedIntegrationEventHandler(
             TicketedEventId: TicketedEventId.From(integrationEvent.TicketedEventId),
             RecipientAddress: integrationEvent.RecipientEmail,
             RecipientName: integrationEvent.RecipientEmail,
-            EmailType: EmailTemplateType.OtpCode,
+            EmailType: BuiltInEmailTemplateNames.VerificationCode,
             IdempotencyKey: idempotencyKey,
             Parameters: new
             {

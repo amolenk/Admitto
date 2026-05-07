@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Module.Email.Application.Templating;
 using Amolenk.Admitto.Module.Email.Application.UseCases.SendEmail;
 using Amolenk.Admitto.Module.Email.Application.UseCases.SendEmail.EventHandlers;
 using Amolenk.Admitto.Module.Email.Domain.Entities;
@@ -41,7 +42,7 @@ public sealed class AttendeeRegisteredIntegrationEventHandlerTests(TestContext t
 
         await mediator.Received(1).SendAsync(
             Arg.Is<SendEmailCommand>(c =>
-                c.EmailType == EmailTemplateType.Ticket &&
+                c.EmailType == BuiltInEmailTemplateNames.TicketConfirmation &&
                 c.RecipientAddress == "alice@example.com" &&
                 c.IdempotencyKey == $"attendee-registered:{RegId}"),
             Arg.Any<CancellationToken>());
@@ -81,7 +82,7 @@ public sealed class AttendeeRegisteredIntegrationEventHandlerTests(TestContext t
         {
             var log = EmailLog.Create(
                 TeamId, EventId, idempotencyKey,
-                "alice@example.com", EmailTemplateType.Ticket,
+                "alice@example.com", BuiltInEmailTemplateNames.TicketConfirmation,
                 "Subject", "smtp", null, EmailLogStatus.Sent,
                 DateTimeOffset.UtcNow, DateTimeOffset.UtcNow);
             db.EmailLog.Add(log);

@@ -4,20 +4,17 @@ using Amolenk.Admitto.Module.Email.Application.UseCases.BulkEmails.CreateBulkEma
 using Amolenk.Admitto.Module.Email.Application.UseCases.BulkEmails.GetBulkEmail.AdminApi;
 using Amolenk.Admitto.Module.Email.Application.UseCases.BulkEmails.GetBulkEmails.AdminApi;
 using Amolenk.Admitto.Module.Email.Application.UseCases.BulkEmails.PreviewBulkEmail.AdminApi;
-using Amolenk.Admitto.Module.Email.Application.UseCases.CustomBulkTemplates.CreateCustomBulkTemplate.AdminApi;
-using Amolenk.Admitto.Module.Email.Application.UseCases.CustomBulkTemplates.DeleteCustomBulkTemplate.AdminApi;
-using Amolenk.Admitto.Module.Email.Application.UseCases.CustomBulkTemplates.GetCustomBulkTemplate.AdminApi;
-using Amolenk.Admitto.Module.Email.Application.UseCases.CustomBulkTemplates.GetCustomBulkTemplates.AdminApi;
-using Amolenk.Admitto.Module.Email.Application.UseCases.CustomBulkTemplates.UpdateCustomBulkTemplate.AdminApi;
 using Amolenk.Admitto.Module.Email.Application.UseCases.EmailSettings.DeleteEmailSettings.AdminApi;
 using Amolenk.Admitto.Module.Email.Application.UseCases.EmailSettings.GetEmailSettings.AdminApi;
 using Amolenk.Admitto.Module.Email.Application.UseCases.EmailSettings.SendTestEmail.AdminApi;
 using Amolenk.Admitto.Module.Email.Application.UseCases.EmailSettings.UpsertEmailSettings.AdminApi;
+using Amolenk.Admitto.Module.Email.Application.UseCases.EmailTemplates.CreateEmailTemplate.AdminApi;
 using Amolenk.Admitto.Module.Email.Application.UseCases.EmailTemplates.DeleteEmailTemplate.AdminApi;
 using Amolenk.Admitto.Module.Email.Application.UseCases.EmailTemplates.GetEmailTemplate.AdminApi;
+using Amolenk.Admitto.Module.Email.Application.UseCases.EmailTemplates.GetEmailTemplates.AdminApi;
 using Amolenk.Admitto.Module.Email.Application.UseCases.EmailTemplates.PreviewEmailTemplate.AdminApi;
 using Amolenk.Admitto.Module.Email.Application.UseCases.EmailTemplates.TestSendEmailTemplate.AdminApi;
-using Amolenk.Admitto.Module.Email.Application.UseCases.EmailTemplates.UpsertEmailTemplate.AdminApi;
+using Amolenk.Admitto.Module.Email.Application.UseCases.EmailTemplates.UpdateEmailTemplate.AdminApi;
 using Amolenk.Admitto.Module.Email.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Module.Email.Application.UseCases;
@@ -44,19 +41,23 @@ public static class EmailApiEndpoints
 
         // Team-scoped email templates
         group
-            .MapGroup("/teams/{teamSlug}/email-templates/{type}")
-            .MapGetEmailTemplate(EmailSettingsScope.Team, s => s.TeamId)
-            .MapUpsertEmailTemplate(EmailSettingsScope.Team, s => s.TeamId)
-            .MapDeleteEmailTemplate(EmailSettingsScope.Team, s => s.TeamId)
+            .MapGroup("/teams/{teamSlug}/email-templates")
+            .MapGetEmailTemplates(EmailSettingsScope.Team, s => s.TeamId)
+            .MapCreateEmailTemplate(EmailSettingsScope.Team, s => s.TeamId)
+            .MapGetEmailTemplate(EmailSettingsScope.Team)
+            .MapUpdateEmailTemplate(EmailSettingsScope.Team)
+            .MapDeleteEmailTemplate(EmailSettingsScope.Team)
             .MapPreviewEmailTemplate(isEventScoped: false)
             .MapTestSendEmailTemplate(isEventScoped: false);
 
         // Event-scoped email templates
         group
-            .MapGroup("/teams/{teamSlug}/events/{eventSlug}/email-templates/{type}")
-            .MapGetEmailTemplate(EmailSettingsScope.Event, s => s.EventId!.Value)
-            .MapUpsertEmailTemplate(EmailSettingsScope.Event, s => s.EventId!.Value)
-            .MapDeleteEmailTemplate(EmailSettingsScope.Event, s => s.EventId!.Value)
+            .MapGroup("/teams/{teamSlug}/events/{eventSlug}/email-templates")
+            .MapGetEmailTemplates(EmailSettingsScope.Event, s => s.EventId!.Value)
+            .MapCreateEmailTemplate(EmailSettingsScope.Event, s => s.EventId!.Value)
+            .MapGetEmailTemplate(EmailSettingsScope.Event)
+            .MapUpdateEmailTemplate(EmailSettingsScope.Event)
+            .MapDeleteEmailTemplate(EmailSettingsScope.Event)
             .MapPreviewEmailTemplate(isEventScoped: true)
             .MapTestSendEmailTemplate(isEventScoped: true);
 
@@ -68,24 +69,6 @@ public static class EmailApiEndpoints
             .MapGetBulkEmails()
             .MapGetBulkEmail()
             .MapCancelBulkEmail();
-
-        // Team-scoped custom bulk templates
-        group
-            .MapGroup("/teams/{teamSlug}/custom-bulk-templates")
-            .MapGetCustomBulkTemplates(EmailSettingsScope.Team, s => s.TeamId)
-            .MapCreateCustomBulkTemplate(EmailSettingsScope.Team, s => s.TeamId)
-            .MapGetCustomBulkTemplate(EmailSettingsScope.Team)
-            .MapUpdateCustomBulkTemplate(EmailSettingsScope.Team)
-            .MapDeleteCustomBulkTemplate(EmailSettingsScope.Team);
-
-        // Event-scoped custom bulk templates
-        group
-            .MapGroup("/teams/{teamSlug}/events/{eventSlug}/custom-bulk-templates")
-            .MapGetCustomBulkTemplates(EmailSettingsScope.Event, s => s.EventId!.Value)
-            .MapCreateCustomBulkTemplate(EmailSettingsScope.Event, s => s.EventId!.Value)
-            .MapGetCustomBulkTemplate(EmailSettingsScope.Event)
-            .MapUpdateCustomBulkTemplate(EmailSettingsScope.Event)
-            .MapDeleteCustomBulkTemplate(EmailSettingsScope.Event);
 
         // Event-scoped attendee emails
         group

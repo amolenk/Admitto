@@ -1,9 +1,11 @@
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
-using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Module.Email.Application.UseCases.EmailTemplates.PreviewEmailTemplate;
 
+/// <summary>
+/// Preview query that takes template content directly, supporting both saved templates and unsaved drafts.
+/// </summary>
 internal sealed record PreviewEmailTemplateQuery(
-    TeamId TeamId,
-    TicketedEventId? EventId,
-    string Type) : Query<PreviewEmailTemplateDto>;
+    string Subject,
+    string TextBody,
+    string? HtmlBody) : Query<PreviewEmailTemplateDto>;

@@ -1,6 +1,6 @@
 using Amolenk.Admitto.Module.Email.Application.Persistence;
+using Amolenk.Admitto.Module.Email.Application.Templating;
 using Amolenk.Admitto.Module.Email.Application.UseCases.SendEmail;
-using Amolenk.Admitto.Module.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Registrations.Contracts;
 using Amolenk.Admitto.Module.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
@@ -70,8 +70,8 @@ internal sealed class RegistrationCancelledIntegrationEventHandler(
 
     private static string? ResolveEmailType(string reason) => reason switch
     {
-        "AttendeeRequest" => EmailTemplateType.Cancellation,
-        "VisaLetterDenied" => EmailTemplateType.VisaLetterDenied,
+        "AttendeeRequest" => BuiltInEmailTemplateNames.Cancellation,
+        "VisaLetterDenied" => BuiltInEmailTemplateNames.VisaLetterDenied,
         _ => null
     };
 }

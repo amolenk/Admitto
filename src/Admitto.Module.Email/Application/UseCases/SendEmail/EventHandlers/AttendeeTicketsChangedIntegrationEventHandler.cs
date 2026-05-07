@@ -1,6 +1,6 @@
 using Amolenk.Admitto.Module.Email.Application.Persistence;
+using Amolenk.Admitto.Module.Email.Application.Templating;
 using Amolenk.Admitto.Module.Email.Application.UseCases.SendEmail;
-using Amolenk.Admitto.Module.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Registrations.Contracts;
 using Amolenk.Admitto.Module.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
@@ -49,7 +49,7 @@ internal sealed class AttendeeTicketsChangedIntegrationEventHandler(
             TicketedEventId: TicketedEventId.From(integrationEvent.TicketedEventId),
             RecipientAddress: integrationEvent.RecipientEmail,
             RecipientName: fullName,
-            EmailType: EmailTemplateType.Ticket,
+            EmailType: BuiltInEmailTemplateNames.TicketConfirmation,
             IdempotencyKey: idempotencyKey,
             Parameters: new
             {

@@ -9,7 +9,7 @@ namespace Amolenk.Admitto.Module.Email.Application.Templating;
 internal interface IEmailTemplateService
 {
     ValueTask<EmailTemplate> LoadAsync(
-        string type,
+        string name,
         TeamId teamId,
         TicketedEventId eventId,
         CancellationToken cancellationToken = default);
@@ -18,7 +18,7 @@ internal interface IEmailTemplateService
     /// Loads the effective template for a team scope, using team-scoped → built-in default precedence.
     /// </summary>
     ValueTask<EmailTemplate> LoadAsync(
-        string type,
+        string name,
         TeamId teamId,
         CancellationToken cancellationToken = default);
 }

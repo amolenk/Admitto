@@ -2,138 +2,145 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useMutation, useQueries, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Mail, Pencil, Plus } from "lucide-react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Mail, Pencil, Plus, Sparkles } from "lucide-react";
+import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+    Dialog,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog";
 import { apiClient } from "@/lib/api-client";
 import { FormError } from "@/components/form-error";
-import { EmailTemplateDto, CustomBulkTemplateListItemDto } from "@/lib/admitto-api/generated";
+import type { EmailTemplateListItemDto, CreateEmailTemplateResponse } from "@/lib/admitto-api/generated";
 
-const EMAIL_TEMPLATE_TYPES = [
-    { type: "ticket", name: "Ticket confirmation", description: "Sent after successful registration" },
-    { type: "reconfirm", name: "Reconfirmation", description: "One-week-out reconfirmation request" },
-    { type: "cancellation", name: "Cancellation", description: "Sent when an attendee cancels" },
-    { type: "visa-letter-denied", name: "Visa letter denied", description: "Sent when a visa letter request is declined" },
-    { type: "otp-code", name: "Verification code", description: "Sent when someone starts registration" },
-] as const;
+function NewTemplateDialog({
+    open,
+    onClose,
+    onConfirm,
+    isPending,
+    error,
+}: {
+    open: boolean;
+    onClose: () => void;
+    onConfirm: (name: string) => void;
+    isPending: boolean;
+    error?: string | null;
+}) {
+    const [name, setName] = useState("");
 
-async function fetchTemplate(apiUrl: string): Promise<EmailTemplateDto | null> {
-    try {
-        return await apiClient.get<EmailTemplateDto>(apiUrl);
-    } catch (err) {
-        if (err instanceof FormError && err.status === 404) {
-            return null;
-        }
-        throw err;
+    function handleSubmit(e: React.FormEvent) {
+        e.preventDefault();
+        if (name.trim()) onConfirm(name.trim());
     }
-}
 
-function CustomTemplatesSection({ teamSlug }: { teamSlug: string }) {
-    const router = useRouter();
-    const queryClient = useQueryClient();
-    const basePath = `/teams/${teamSlug}/settings/email/templates`;
-
-    const { data: templates, isLoading } = useQuery({
-        queryKey: ["team-custom-bulk-templates", teamSlug],
-        queryFn: () =>
-            apiClient.get<CustomBulkTemplateListItemDto[]>(
-                `/api/teams/${teamSlug}/custom-bulk-templates`
-            ),
-        throwOnError: false,
-    });
-
-    const createMutation = useMutation({
-        mutationFn: () =>
-            apiClient.post<{ id: string }>(
-                `/api/teams/${teamSlug}/custom-bulk-templates`,
-                { name: "New template", subject: "Subject", textBody: "Body", htmlBody: null }
-            ),
-        onSuccess: (data) => {
-            queryClient.invalidateQueries({ queryKey: ["team-custom-bulk-templates", teamSlug] });
-            router.push(`${basePath}/custom/${data.id}`);
-        },
-    });
+    function handleOpenChange(isOpen: boolean) {
+        if (!isOpen) { setName(""); onClose(); }
+    }
 
     return (
-        <div className="mt-8">
-            <div className="flex items-start justify-between mb-4">
-                <div>
-                    <h2 className="font-display text-[22px] font-semibold">Custom bulk templates</h2>
-                    <p className="text-[13.5px] text-muted-foreground">
-                        Reusable templates for bulk email campaigns at the team level.
-                    </p>
-                </div>
-                <Button
-                    size="sm"
-                    onClick={() => createMutation.mutate()}
-                    disabled={createMutation.isPending}
-                >
-                    <Plus className="size-3.5 mr-1" />
-                    {createMutation.isPending ? "Creating…" : "New template"}
-                </Button>
-            </div>
-
-            {isLoading ? (
-                <div className="space-y-2">
-                    {[1, 2].map((i) => <Skeleton key={i} className="h-14 w-full" />)}
-                </div>
-            ) : !templates || templates.length === 0 ? (
-                <div className="rounded-lg border border-dashed p-8 text-center">
-                    <p className="text-[13.5px] text-muted-foreground mb-3">
-                        No custom bulk templates yet. Create one to use in team bulk email campaigns.
-                    </p>
-                    <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => createMutation.mutate()}
-                        disabled={createMutation.isPending}
-                    >
-                        <Plus className="size-3.5 mr-1" />
-                        {createMutation.isPending ? "Creating…" : "New template"}
-                    </Button>
-                </div>
-            ) : (
-                <div className="card divide-y divide-border rounded-lg border">
-                    {templates.map((t) => (
-                        <div key={t.id} className="flex items-center gap-4 p-4">
-                            <div className="flex-1 min-w-0">
-                                <div className="text-[13.5px] font-medium">{t.name}</div>
-                                <div className="text-[12px] text-muted-foreground truncate">{t.subject}</div>
-                            </div>
-                            <Button variant="ghost" size="sm" asChild>
-                                <Link href={`${basePath}/custom/${t.id}`}>
-                                    <Pencil className="size-3.5 mr-1" />
-                                    Edit
-                                </Link>
-                            </Button>
-                        </div>
-                    ))}
-                </div>
-            )}
-        </div>
+        <Dialog open={open} onOpenChange={handleOpenChange}>
+            <DialogContent className="max-w-sm">
+                <DialogHeader>
+                    <DialogTitle>New custom template</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleSubmit} className="space-y-4">
+                    <div className="space-y-1.5">
+                        <label className="text-[13.5px] font-medium">Template name</label>
+                        <Input
+                            placeholder="e.g. Alumni invitation"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            autoFocus
+                        />
+                        {error && (
+                            <p className="text-[12px] text-destructive">{error}</p>
+                        )}
+                    </div>
+                    <DialogFooter>
+                        <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+                        <Button type="submit" disabled={!name.trim() || isPending}>
+                            {isPending ? "Creating…" : "Create"}
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
     );
 }
 
 export default function TeamEmailTemplatesPage() {
     const { teamSlug } = useParams<{ teamSlug: string }>();
+    const router = useRouter();
+    const queryClient = useQueryClient();
+    const basePath = `/teams/${teamSlug}/settings/email/templates`;
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const [createError, setCreateError] = useState<string | null>(null);
+    const [materialisingId, setMaterialisingId] = useState<string | null>(null);
 
-    const templateQueries = useQueries({
-        queries: EMAIL_TEMPLATE_TYPES.map(({ type }) => ({
-            queryKey: ["team-email-template", teamSlug, type],
-            queryFn: () =>
-                fetchTemplate(`/api/teams/${teamSlug}/email-templates/${type}`),
-            throwOnError: false,
-            retry: false,
-        })),
+    const { data: templates, isLoading } = useQuery({
+        queryKey: ["team-email-templates", teamSlug],
+        queryFn: () =>
+            apiClient.get<EmailTemplateListItemDto[]>(`/api/teams/${teamSlug}/email-templates`),
+        throwOnError: false,
     });
 
-    const isLoading = templateQueries.some((q) => q.isLoading);
-    const basePath = `/teams/${teamSlug}/settings/email/templates`;
+    const createMutation = useMutation({
+        mutationFn: (name: string) =>
+            apiClient.post<CreateEmailTemplateResponse>(
+                `/api/teams/${teamSlug}/email-templates`,
+                { name, subject: null, textBody: null, htmlBody: null }
+            ),
+        onSuccess: (data, name) => {
+            setDialogOpen(false);
+            setCreateError(null);
+            queryClient.invalidateQueries({ queryKey: ["team-email-templates", teamSlug] });
+            router.push(`${basePath}/${data.id}`);
+        },
+        onError: (err) => {
+            setCreateError(
+                err instanceof FormError ? (err.detail || err.title) : "Failed to create template."
+            );
+        },
+    });
+
+    async function handleEditBuiltIn(template: EmailTemplateListItemDto) {
+        if (template.id) {
+            router.push(`${basePath}/${template.id}`);
+            return;
+        }
+        // Materialise the built-in row using catalog defaults.
+        setMaterialisingId(template.name);
+        try {
+            const result = await apiClient.post<CreateEmailTemplateResponse>(
+                `/api/teams/${teamSlug}/email-templates`,
+                { name: template.name, subject: null, textBody: null, htmlBody: null }
+            );
+            await queryClient.invalidateQueries({ queryKey: ["team-email-templates", teamSlug] });
+            router.push(`${basePath}/${result.id}`);
+        } catch {
+            // Ignore errors — user can retry
+        } finally {
+            setMaterialisingId(null);
+        }
+    }
 
     return (
         <div>
+            <NewTemplateDialog
+                open={dialogOpen}
+                onClose={() => { setDialogOpen(false); setCreateError(null); }}
+                onConfirm={(name) => createMutation.mutate(name)}
+                isPending={createMutation.isPending}
+                error={createError}
+            />
+
             <div className="flex items-start justify-between mb-4">
                 <div>
                     <h2 className="font-display text-[22px] font-semibold">Email templates</h2>
@@ -141,44 +148,67 @@ export default function TeamEmailTemplatesPage() {
                         Customise the emails Admitto sends to attendees.
                     </p>
                 </div>
-                <Button variant="outline" size="sm" asChild>
-                    <Link href={`/teams/${teamSlug}/settings/email`}>← Back to email settings</Link>
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button size="sm" onClick={() => setDialogOpen(true)}>
+                        <Plus className="size-3.5 mr-1" />
+                        New template
+                    </Button>
+                </div>
             </div>
 
             <div className="card divide-y divide-border rounded-lg border">
-                {EMAIL_TEMPLATE_TYPES.map(({ type, name, description }, i) => {
-                    const query = templateQueries[i];
-                    const isCustom = query.data?.isCustom ?? false;
+                {isLoading ? (
+                    <>
+                        {[...Array(5)].map((_, i) => (
+                            <div key={i} className="p-4"><Skeleton className="h-8 w-full" /></div>
+                        ))}
+                    </>
+                ) : templates?.map((template) => {
+                    const isBuiltIn = template.kind === "builtin";
+                    const isMaterialising = materialisingId === template.name;
 
                     return (
-                        <div key={type} className="flex items-center gap-4 p-4">
+                        <div key={template.id ?? template.name} className="flex items-center gap-4 p-4">
                             <div className="h-8 w-8 rounded-md bg-muted grid place-items-center shrink-0">
-                                <Mail className="size-3.5 text-muted-foreground" />
+                                {isBuiltIn
+                                    ? <Mail className="size-3.5 text-muted-foreground" />
+                                    : <Sparkles className="size-3.5 text-muted-foreground" />
+                                }
                             </div>
                             <div className="flex-1 min-w-0">
-                                <div className="text-[13.5px] font-medium">{name}</div>
-                                <div className="text-[12px] text-muted-foreground">{description}</div>
+                                <div className="text-[13.5px] font-medium">{template.name}</div>
+                                <div className="text-[12px] text-muted-foreground truncate">
+                                    {isBuiltIn ? template.description : template.subject}
+                                </div>
                             </div>
-                            {isLoading ? (
-                                <Skeleton className="h-5 w-16" />
-                            ) : (
-                                <Badge variant={isCustom ? "default" : "secondary"}>
-                                    {isCustom ? "Custom" : "Default"}
+                            {isBuiltIn && (
+                                <Badge variant={template.isCustomised ? "default" : "secondary"}>
+                                    {template.isCustomised ? "Custom" : "Default"}
                                 </Badge>
                             )}
-                            <Button variant="ghost" size="sm" asChild>
-                                <Link href={`${basePath}/${type}`}>
+                            {isBuiltIn ? (
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    disabled={isMaterialising}
+                                    onClick={() => handleEditBuiltIn(template)}
+                                >
                                     <Pencil className="size-3.5 mr-1" />
-                                    Edit
-                                </Link>
-                            </Button>
+                                    {isMaterialising ? "Opening…" : "Edit"}
+                                </Button>
+                            ) : (
+                                <Button variant="ghost" size="sm" asChild>
+                                    <Link href={`${basePath}/${template.id}`}>
+                                        <Pencil className="size-3.5 mr-1" />
+                                        Edit
+                                    </Link>
+                                </Button>
+                            )}
                         </div>
                     );
                 })}
             </div>
-
-            <CustomTemplatesSection teamSlug={teamSlug} />
         </div>
     );
 }
+

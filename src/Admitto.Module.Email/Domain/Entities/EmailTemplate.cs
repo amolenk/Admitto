@@ -14,8 +14,7 @@ public class EmailTemplate : Aggregate<EmailTemplateId>
         EmailTemplateId id,
         EmailSettingsScope scope,
         Guid scopeId,
-        string type,
-        string? name,
+        string name,
         string subject,
         string textBody,
         string? htmlBody)
@@ -23,7 +22,6 @@ public class EmailTemplate : Aggregate<EmailTemplateId>
     {
         Scope = scope;
         ScopeId = scopeId;
-        Type = type;
         Name = name;
         Subject = subject;
         TextBody = textBody;
@@ -32,8 +30,14 @@ public class EmailTemplate : Aggregate<EmailTemplateId>
 
     public EmailSettingsScope Scope { get; private set; }
     public Guid ScopeId { get; private set; }
-    public string Type { get; private set; } = default!;
-    public string? Name { get; private set; }
+
+    /// <summary>
+    /// The template's unique name within its scope.
+    /// Names matching <see cref="BuiltInEmailTemplateNames"/> are reserved for built-in templates
+    /// and may not be used for custom templates or renamed.
+    /// </summary>
+    public string Name { get; private set; } = default!;
+
     public string Subject { get; private set; } = default!;
     public string TextBody { get; private set; } = default!;
     public string? HtmlBody { get; private set; }
@@ -41,28 +45,30 @@ public class EmailTemplate : Aggregate<EmailTemplateId>
     public static EmailTemplate Create(
         EmailSettingsScope scope,
         Guid scopeId,
-        string type,
+        string name,
         string subject,
         string textBody,
-        string? htmlBody,
-        string? name = null)
+        string? htmlBody)
     {
         return new EmailTemplate(
             EmailTemplateId.New(),
             scope,
             scopeId,
-            type,
             name,
             subject,
             textBody,
             htmlBody);
     }
 
-    public void Update(string subject, string textBody, string? htmlBody, string? name = null)
+    public void Update(string subject, string textBody, string? htmlBody)
     {
-        Name = name;
         Subject = subject;
         TextBody = textBody;
         HtmlBody = htmlBody;
+    }
+
+    public void Rename(string newName)
+    {
+        Name = newName;
     }
 }

@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Api.Tests.Infrastructure.Hosting;
+using Amolenk.Admitto.Module.Email.Application.Templating;
 using Amolenk.Admitto.Module.Email.Domain.Entities;
 using Amolenk.Admitto.Module.Email.Domain.Tests.Builders;
 using Amolenk.Admitto.Module.Email.Domain.ValueObjects;
@@ -19,8 +20,8 @@ internal sealed class BulkEmailFixture
     public const string TeamSlug = "acme-bulk";
     public const string EventSlug = "bulkconf";
     public const string TicketTypeSlug = "general-admission";
-    public const string EmailType = EmailTemplateType.Ticket;
-    public const string ReconfirmEmailType = EmailTemplateType.Reconfirm;
+    public const string EmailType = BuiltInEmailTemplateNames.TicketConfirmation;
+    public const string ReconfirmEmailType = BuiltInEmailTemplateNames.Reconfirmation;
 
     public static string PreviewRoute =>
         $"/admin/teams/{TeamSlug}/events/{EventSlug}/bulk-emails/preview";
@@ -148,7 +149,7 @@ internal sealed class BulkEmailFixture
             {
                 db.EmailTemplates.Add(new EmailTemplateBuilder()
                     .ForTeam(team.Id)
-                    .WithType(EmailType)
+                    .WithName(EmailType)
                     .WithSubject("Hello {{ first_name }}")
                     .WithTextBody("Hi {{ first_name }} {{ last_name }}")
                     .WithHtmlBody("<p>Hi {{ first_name }} {{ last_name }}</p>")
@@ -159,7 +160,7 @@ internal sealed class BulkEmailFixture
             {
                 db.EmailTemplates.Add(new EmailTemplateBuilder()
                     .ForTeam(team.Id)
-                    .WithType(ReconfirmEmailType)
+                    .WithName(ReconfirmEmailType)
                     .WithSubject("Please reconfirm")
                     .WithTextBody("Please reconfirm {{ first_name }}")
                     .WithHtmlBody("<p>Please reconfirm {{ first_name }}</p>")

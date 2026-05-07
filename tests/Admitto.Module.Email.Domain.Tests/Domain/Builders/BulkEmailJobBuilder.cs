@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Module.Email.Application.Templating;
 using Amolenk.Admitto.Module.Email.Domain.Entities;
 using Amolenk.Admitto.Module.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Registrations.Contracts;
@@ -9,7 +10,7 @@ public sealed class BulkEmailJobBuilder
 {
     private TeamId _teamId = TeamId.New();
     private TicketedEventId _eventId = TicketedEventId.New();
-    private string _emailType = EmailTemplateType.Reconfirm;
+    private string _emailType = BuiltInEmailTemplateNames.Reconfirmation;
     private string? _subject;
     private string? _textBody;
     private string? _htmlBody;

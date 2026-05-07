@@ -11,17 +11,23 @@ internal sealed class GetEmailTemplateHandler(IEmailWriteStore writeStore)
     {
         var template = await writeStore.EmailTemplates
             .AsNoTracking()
-            .FirstOrDefaultAsync(
-                t => t.Scope == query.Scope && t.ScopeId == query.ScopeId && t.Type == query.Type,
-                ct);
+            .FirstOrDefaultAsync(t => t.Id == query.Id, ct);
 
-        if (template is not null)
-            return new EmailTemplateDto(template.Subject, template.TextBody, template.HtmlBody, IsCustom: true, Version: template.Version);
+        if (template is null)
+            return null;
 
-        var defaultTemplate = DefaultEmailTemplates.Get(query.Type);
-        if (defaultTemplate is not null)
-            return new EmailTemplateDto(defaultTemplate.Subject, defaultTemplate.TextBody, defaultTemplate.HtmlBody, IsCustom: false, Version: null);
+        var catalogEntry = BuiltInEmailTemplateCatalog.GetByName(template.Name);
+        var kind = catalogEntry is not null ? "builtin" : "custom";
 
-        return null;
+        return new EmailTemplateDto(
+            Id: template.Id.Value,
+            Name: template.Name,
+            Kind: kind,
+            Description: catalogEntry?.Description,
+            Subject: template.Subject,
+            TextBody: template.TextBody,
+            HtmlBody: template.HtmlBody,
+            IsCustomised: catalogEntry is not null,
+            Version: template.Version);
     }
 }

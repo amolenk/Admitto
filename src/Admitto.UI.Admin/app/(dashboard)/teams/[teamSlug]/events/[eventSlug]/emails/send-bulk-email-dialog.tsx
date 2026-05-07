@@ -10,8 +10,8 @@ import { FormError } from "@/components/form-error";
 import {
     BulkEmailRecipientPreviewDto,
     CreateBulkEmailResponse,
-    CustomBulkTemplateListItemDto,
-    CustomBulkTemplateDto,
+    EmailTemplateListItemDto,
+    EmailTemplateDto,
     TicketTypeDto,
 } from "@/lib/admitto-api/generated";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -87,15 +87,30 @@ export function SendBulkEmailDialog({ teamSlug, eventSlug, open, onClose }: Send
 
     const [sendError, setSendError] = useState<string | null>(null);
 
-    const { data: templates } = useQuery({
-        queryKey: ["custom-bulk-templates", teamSlug, eventSlug],
+    const { data: eventTemplates } = useQuery({
+        queryKey: ["event-email-templates", teamSlug, eventSlug],
         queryFn: () =>
-            apiClient.get<CustomBulkTemplateListItemDto[]>(
-                `/api/teams/${teamSlug}/events/${eventSlug}/custom-bulk-templates`
+            apiClient.get<EmailTemplateListItemDto[]>(
+                `/api/teams/${teamSlug}/events/${eventSlug}/email-templates`
             ),
         enabled: open,
         throwOnError: false,
     });
+
+    const { data: teamTemplates } = useQuery({
+        queryKey: ["team-email-templates", teamSlug],
+        queryFn: () =>
+            apiClient.get<EmailTemplateListItemDto[]>(
+                `/api/teams/${teamSlug}/email-templates`
+            ),
+        enabled: open,
+        throwOnError: false,
+    });
+
+    const templates: (EmailTemplateListItemDto & { scope: "event" | "team" })[] = [
+        ...(eventTemplates ?? []).filter((t) => t.kind === "custom" && t.id).map((t) => ({ ...t, scope: "event" as const })),
+        ...(teamTemplates ?? []).filter((t) => t.kind === "custom" && t.id).map((t) => ({ ...t, scope: "team" as const })),
+    ].sort((a, b) => a.name.localeCompare(b.name));
 
     const { data: ticketTypes } = useQuery({
         queryKey: ["ticket-types", teamSlug, eventSlug],
@@ -107,9 +122,11 @@ export function SendBulkEmailDialog({ teamSlug, eventSlug, open, onClose }: Send
 
     const sendMutation = useMutation({
         mutationFn: async () => {
-            const template = await apiClient.get<CustomBulkTemplateDto>(
-                `/api/teams/${teamSlug}/events/${eventSlug}/custom-bulk-templates/${selectedTemplateId}`
-            );
+            const selectedTemplate = templates.find((t) => t.id === selectedTemplateId);
+            const templateApiUrl = selectedTemplate?.scope === "team"
+                ? `/api/teams/${teamSlug}/email-templates/${selectedTemplateId}`
+                : `/api/teams/${teamSlug}/events/${eventSlug}/email-templates/${selectedTemplateId}`;
+            const template = await apiClient.get<EmailTemplateDto>(templateApiUrl);
             const source =
                 recipientSource === "attendees"
                     ? {
@@ -260,8 +277,13 @@ export function SendBulkEmailDialog({ teamSlug, eventSlug, open, onClose }: Send
                                     </SelectTrigger>
                                     <SelectContent>
                                         {templates.map((t) => (
-                                            <SelectItem key={t.id} value={t.id}>
-                                                {t.name}
+                                            <SelectItem key={t.id!} value={t.id!}>
+                                                <span className="flex items-center gap-2">
+                                                    {t.name}
+                                                    {t.scope === "team" && (
+                                                        <span className="text-[10px] text-muted-foreground border rounded px-1">Team</span>
+                                                    )}
+                                                </span>
                                             </SelectItem>
                                         ))}
                                     </SelectContent>

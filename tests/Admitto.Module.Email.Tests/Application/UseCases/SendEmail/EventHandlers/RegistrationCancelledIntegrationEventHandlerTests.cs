@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Module.Email.Application.Templating;
 using Amolenk.Admitto.Module.Email.Application.UseCases.SendEmail;
 using Amolenk.Admitto.Module.Email.Application.UseCases.SendEmail.EventHandlers;
 using Amolenk.Admitto.Module.Email.Domain.Entities;
@@ -41,7 +42,7 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
 
         await mediator.Received(1).SendAsync(
             Arg.Is<SendEmailCommand>(c =>
-                c.EmailType == EmailTemplateType.Cancellation &&
+                c.EmailType == BuiltInEmailTemplateNames.Cancellation &&
                 c.RecipientAddress == "alice@example.com" &&
                 c.IdempotencyKey == $"registration-cancelled:{RegId}"),
             Arg.Any<CancellationToken>());
@@ -62,7 +63,7 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
 
         await mediator.Received(1).SendAsync(
             Arg.Is<SendEmailCommand>(c =>
-                c.EmailType == EmailTemplateType.VisaLetterDenied &&
+                c.EmailType == BuiltInEmailTemplateNames.VisaLetterDenied &&
                 c.RecipientAddress == "alice@example.com"),
             Arg.Any<CancellationToken>());
     }
@@ -92,7 +93,7 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
         {
             var log = EmailLog.Create(
                 TeamId, EventId, idempotencyKey,
-                "alice@example.com", EmailTemplateType.Cancellation,
+                "alice@example.com", BuiltInEmailTemplateNames.Cancellation,
                 "Subject", "smtp", null, EmailLogStatus.Sent,
                 DateTimeOffset.UtcNow, DateTimeOffset.UtcNow);
             db.EmailLog.Add(log);

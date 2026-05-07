@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Module.Email.Application.Templating;
 using Amolenk.Admitto.Module.Email.Domain.Entities;
 using Amolenk.Admitto.Module.Email.Domain.ValueObjects;
 using Shouldly;
@@ -20,7 +21,7 @@ public sealed class EmailLogTests
             eventId,
             idempotencyKey: "key-1",
             recipient: "attendee@example.com",
-            emailType: EmailTemplateType.Ticket,
+            emailType: BuiltInEmailTemplateNames.TicketConfirmation,
             subject: "Your ticket",
             provider: "smtp",
             providerMessageId: "msg-123",
@@ -33,7 +34,7 @@ public sealed class EmailLogTests
         log.TicketedEventId.ShouldBe(eventId);
         log.IdempotencyKey.ShouldBe("key-1");
         log.Recipient.ShouldBe("attendee@example.com");
-        log.EmailType.ShouldBe(EmailTemplateType.Ticket);
+        log.EmailType.ShouldBe(BuiltInEmailTemplateNames.TicketConfirmation);
         log.Subject.ShouldBe("Your ticket");
         log.Provider.ShouldBe("smtp");
         log.ProviderMessageId.ShouldBe("msg-123");
@@ -51,7 +52,7 @@ public sealed class EmailLogTests
             Guid.NewGuid(),
             idempotencyKey: "key-2",
             recipient: "attendee@example.com",
-            emailType: EmailTemplateType.Ticket,
+            emailType: BuiltInEmailTemplateNames.TicketConfirmation,
             subject: "Your ticket",
             provider: "smtp",
             providerMessageId: null,
@@ -69,8 +70,8 @@ public sealed class EmailLogTests
     [TestMethod]
     public void Create_TwoLogs_HaveDistinctIds()
     {
-        var log1 = EmailLog.Create(Guid.NewGuid(), Guid.NewGuid(), "k1", "a@b.com", EmailTemplateType.Ticket, "S", "smtp", null, EmailLogStatus.Sent, Now, Now);
-        var log2 = EmailLog.Create(Guid.NewGuid(), Guid.NewGuid(), "k2", "a@b.com", EmailTemplateType.Ticket, "S", "smtp", null, EmailLogStatus.Sent, Now, Now);
+        var log1 = EmailLog.Create(Guid.NewGuid(), Guid.NewGuid(), "k1", "a@b.com", BuiltInEmailTemplateNames.TicketConfirmation, "S", "smtp", null, EmailLogStatus.Sent, Now, Now);
+        var log2 = EmailLog.Create(Guid.NewGuid(), Guid.NewGuid(), "k2", "a@b.com", BuiltInEmailTemplateNames.TicketConfirmation, "S", "smtp", null, EmailLogStatus.Sent, Now, Now);
 
         log1.Id.ShouldNotBe(log2.Id);
     }

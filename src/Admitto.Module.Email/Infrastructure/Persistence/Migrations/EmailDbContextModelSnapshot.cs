@@ -333,6 +333,7 @@ namespace Amolenk.Admitto.Module.Email.Infrastructure.Persistence.Migrations
                         .HasColumnName("last_changed_by");
 
                     b.Property<string>("Name")
+                        .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)")
                         .HasColumnName("name");
@@ -356,12 +357,6 @@ namespace Amolenk.Admitto.Module.Email.Infrastructure.Persistence.Migrations
                         .HasColumnType("text")
                         .HasColumnName("text_body");
 
-                    b.Property<string>("Type")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("type");
-
                     b.Property<uint>("Version")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
@@ -369,11 +364,6 @@ namespace Amolenk.Admitto.Module.Email.Infrastructure.Persistence.Migrations
                         .HasColumnName("xmin");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("Scope", "ScopeId", "Type")
-                        .IsUnique()
-                        .HasDatabaseName("IX_email_templates_scope_scope_id_type")
-                        .HasFilter("name IS NULL");
 
                     b.ToTable("email_templates", "email");
                 });

@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Module.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Module.Email.Application.UseCases.EmailTemplates.TestSendEmailTemplate.AdminApi;
@@ -5,8 +6,8 @@ namespace Amolenk.Admitto.Module.Email.Application.UseCases.EmailTemplates.TestS
 public sealed record TestSendEmailTemplateHttpRequest(string Recipient)
 {
     internal TestSendEmailTemplateCommand ToCommand(
+        EmailTemplateId templateId,
         TeamId teamId,
-        TicketedEventId? eventId,
-        string type) =>
-        new(teamId, eventId, type, EmailAddress.From(Recipient));
+        TicketedEventId? eventId) =>
+        new(templateId, teamId, eventId, EmailAddress.From(Recipient));
 }
