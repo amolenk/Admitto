@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
 import {
     AlertCircle,
@@ -213,6 +214,7 @@ export function EmailTemplateForm({
     teamSlug: string;
 }) {
     const queryClient = useQueryClient();
+    const router = useRouter();
     const [isDeleting, setIsDeleting] = useState(false);
     const [deleteError, setDeleteError] = useState<string | null>(null);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -253,7 +255,7 @@ export function EmailTemplateForm({
         const body = { ...values, version };
         await apiClient.put(templateApiUrl, body);
         await queryClient.invalidateQueries({ queryKey });
-        form.reset(values);
+        router.push(backHref);
     }
 
     async function handleDelete() {
@@ -262,7 +264,7 @@ export function EmailTemplateForm({
         try {
             await apiClient.delete(`${templateApiUrl}?version=${version}`);
             await queryClient.invalidateQueries({ queryKey });
-            setDeleteDialogOpen(false);
+            router.push(backHref);
         } catch (err) {
             setDeleteError(err instanceof Error ? err.message : "Failed to delete template.");
         } finally {
