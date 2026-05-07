@@ -50,8 +50,8 @@ internal sealed class CreateEmailTemplateHandler(IEmailWriteStore writeStore)
         }
         else
         {
-            subject = command.Subject!;
-            textBody = command.TextBody!;
+            subject = command.Subject ?? command.Name;
+            textBody = command.TextBody ?? $"Hi,\n\nWe'd like to reach out to you.\n\nBest regards,\nThe team";
             htmlBody = command.HtmlBody;
         }
 

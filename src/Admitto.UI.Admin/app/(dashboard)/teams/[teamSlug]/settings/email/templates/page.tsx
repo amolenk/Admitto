@@ -105,7 +105,11 @@ export default function TeamEmailTemplatesPage() {
         },
         onError: (err) => {
             setCreateError(
-                err instanceof FormError ? (err.detail || err.title) : "Failed to create template."
+                err instanceof FormError
+                    ? (err.errors && Object.keys(err.errors).length > 0
+                        ? Object.values(err.errors).flat().join(" ")
+                        : err.detail || err.title)
+                    : "Failed to create template."
             );
         },
     });
