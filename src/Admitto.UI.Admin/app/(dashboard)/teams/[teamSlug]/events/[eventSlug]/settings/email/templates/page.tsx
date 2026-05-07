@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Mail, Pencil, Plus, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -78,7 +78,6 @@ function NewTemplateDialog({
 export default function EventEmailTemplatesPage() {
     const { teamSlug, eventSlug } = useParams<{ teamSlug: string; eventSlug: string }>();
     const router = useRouter();
-    const queryClient = useQueryClient();
     const eventBasePath = `/teams/${teamSlug}/events/${eventSlug}/settings/email/templates`;
     const [dialogOpen, setDialogOpen] = useState(false);
     const [createError, setCreateError] = useState<string | null>(null);
@@ -102,7 +101,6 @@ export default function EventEmailTemplatesPage() {
         onSuccess: (data) => {
             setDialogOpen(false);
             setCreateError(null);
-            queryClient.invalidateQueries({ queryKey: ["event-email-templates", teamSlug, eventSlug] });
             router.push(`${eventBasePath}/${data.id}`);
         },
         onError: (err) => {
@@ -127,7 +125,6 @@ export default function EventEmailTemplatesPage() {
                 `/api/teams/${teamSlug}/events/${eventSlug}/email-templates`,
                 { name: template.name, subject: null, textBody: null, htmlBody: null }
             );
-            await queryClient.invalidateQueries({ queryKey: ["event-email-templates", teamSlug, eventSlug] });
             router.push(`${eventBasePath}/${result.id}`);
         } catch {
             // ignore errors — user can retry
