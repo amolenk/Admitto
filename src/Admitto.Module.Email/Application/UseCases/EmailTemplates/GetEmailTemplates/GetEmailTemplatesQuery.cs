@@ -5,4 +5,5 @@ namespace Amolenk.Admitto.Module.Email.Application.UseCases.EmailTemplates.GetEm
 
 internal sealed record GetEmailTemplatesQuery(
     EmailSettingsScope Scope,
-    Guid ScopeId) : Query<IReadOnlyList<EmailTemplateListItemDto>>;
+    Guid ScopeId,
+    Guid? ParentScopeId = null) : Query<IReadOnlyList<EmailTemplateListItemDto>>;

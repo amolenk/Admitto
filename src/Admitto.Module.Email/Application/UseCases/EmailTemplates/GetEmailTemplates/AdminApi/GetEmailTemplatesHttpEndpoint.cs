@@ -38,9 +38,10 @@ public static class GetEmailTemplatesHttpEndpoint
         {
             var orgScope = await scopeResolver.ResolveAsync(teamSlug, eventSlug, ct);
             var scopeId = scopeIdSelector(orgScope);
+            var parentScopeId = scope == EmailSettingsScope.Event ? orgScope.TeamId : (Guid?)null;
 
             var rows = await mediator.QueryAsync<GetEmailTemplatesQuery, IReadOnlyList<EmailTemplateListItemDto>>(
-                new GetEmailTemplatesQuery(scope, scopeId), ct);
+                new GetEmailTemplatesQuery(scope, scopeId, parentScopeId), ct);
 
             return TypedResults.Ok(rows);
         }

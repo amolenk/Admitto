@@ -63,6 +63,36 @@ internal sealed class GetEmailTemplatesHandler(IEmailWriteStore writeStore)
                 Version: row.Version));
         }
 
+        // Custom templates from parent scope (e.g. team-level when listing for an event)
+        // that have not already been overridden at the current scope.
+        if (query.ParentScopeId.HasValue)
+        {
+            var parentCustomRows = await writeStore.EmailTemplates
+                .AsNoTracking()
+                .Where(t => t.Scope == EmailSettingsScope.Team &&
+                            t.ScopeId == query.ParentScopeId.Value &&
+                            !BuiltInEmailTemplateNames.IsReserved(t.Name))
+                .ToListAsync(ct);
+
+            foreach (var parentRow in parentCustomRows)
+            {
+                var alreadyOverridden = dbRows.Any(
+                    t => string.Equals(t.Name, parentRow.Name, StringComparison.OrdinalIgnoreCase));
+
+                if (!alreadyOverridden)
+                {
+                    result.Add(new EmailTemplateListItemDto(
+                        Id: null,
+                        Name: parentRow.Name,
+                        Kind: "custom",
+                        Description: null,
+                        Subject: parentRow.Subject,
+                        IsCustomised: false,
+                        Version: null));
+                }
+            }
+        }
+
         return result;
     }
 }

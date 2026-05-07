@@ -50,9 +50,25 @@ internal sealed class CreateEmailTemplateHandler(IEmailWriteStore writeStore)
         }
         else
         {
-            subject = command.Subject ?? command.Name;
-            textBody = command.TextBody ?? $"Hi,\n\nWe'd like to reach out to you.\n\nBest regards,\nThe team";
-            htmlBody = command.HtmlBody;
+            string? parentSubject = null, parentTextBody = null, parentHtmlBody = null;
+
+            if (command.ParentScopeId.HasValue)
+            {
+                var parentTemplate = await writeStore.EmailTemplates
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(
+                        t => t.ScopeId == command.ParentScopeId.Value &&
+                             t.Name.ToLower() == command.Name.ToLower(),
+                        ct);
+
+                parentSubject = parentTemplate?.Subject;
+                parentTextBody = parentTemplate?.TextBody;
+                parentHtmlBody = parentTemplate?.HtmlBody;
+            }
+
+            subject = command.Subject ?? parentSubject ?? command.Name;
+            textBody = command.TextBody ?? parentTextBody ?? $"Hi,\n\nWe'd like to reach out to you.\n\nBest regards,\nThe team";
+            htmlBody = command.HtmlBody ?? parentHtmlBody;
         }
 
         var template = EmailTemplate.Create(

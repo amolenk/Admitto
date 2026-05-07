@@ -168,6 +168,7 @@ export default function EventEmailTemplatesPage() {
                 ) : templates?.map((template) => {
                     const isBuiltIn = template.kind === "builtin";
                     const isMaterialising = materialisingId === template.name;
+                    const needsMaterialise = template.id === null;
 
                     return (
                         <div key={template.id ?? template.name} className="flex items-center gap-4 p-4">
@@ -188,7 +189,7 @@ export default function EventEmailTemplatesPage() {
                                     {template.isCustomised ? "Custom" : "Default"}
                                 </Badge>
                             )}
-                            {isBuiltIn ? (
+                            {needsMaterialise ? (
                                 <Button
                                     variant="ghost"
                                     size="sm"

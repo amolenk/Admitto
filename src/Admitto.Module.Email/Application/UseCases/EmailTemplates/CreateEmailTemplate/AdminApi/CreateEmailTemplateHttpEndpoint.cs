@@ -41,6 +41,7 @@ public static class CreateEmailTemplateHttpEndpoint
         {
             var orgScope = await scopeResolver.ResolveAsync(teamSlug, eventSlug, ct);
             var scopeId = scopeIdSelector(orgScope);
+            var parentScopeId = scope == EmailSettingsScope.Event ? orgScope.TeamId : (Guid?)null;
 
             var command = new CreateEmailTemplateCommand(
                 scope,
@@ -48,7 +49,8 @@ public static class CreateEmailTemplateHttpEndpoint
                 request.Name,
                 request.Subject,
                 request.TextBody,
-                request.HtmlBody);
+                request.HtmlBody,
+                parentScopeId);
 
             var id = await mediator
                 .SendReceiveAsync<CreateEmailTemplateCommand, EmailTemplateId>(command, ct);
