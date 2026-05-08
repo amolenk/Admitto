@@ -122,20 +122,35 @@ internal sealed class SendBulkEmailJob(
             }
 
             // Phase 2: stream the snapshot through a single SMTP session.
+            // Custom bulk emails embed their content inline; built-in types
+            // (e.g. reconfirm) load from the named-template store.
             EmailTemplate template;
-            try
+            if (job.Subject is not null && job.TextBody is not null)
             {
-                template = await templateService.LoadAsync(
-                    job.EmailType, job.TeamId, job.TicketedEventId, ct);
+                template = EmailTemplate.Create(
+                    EmailSettingsScope.Event,
+                    job.TicketedEventId.Value,
+                    job.EmailType,
+                    job.Subject,
+                    job.TextBody,
+                    job.HtmlBody);
             }
-            catch (Exception ex)
+            else
             {
-                logger.LogError(ex,
-                    "Failed to load template '{EmailType}' for bulk-email job {BulkEmailJobId}",
-                    job.EmailType, bulkJobIdValue);
-                job.Fail($"Template load failed: {ex.Message}", DateTimeOffset.UtcNow);
-                await unitOfWork.SaveChangesAsync(ct);
-                return;
+                try
+                {
+                    template = await templateService.LoadAsync(
+                        job.EmailType, job.TeamId, job.TicketedEventId, ct);
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex,
+                        "Failed to load template '{EmailType}' for bulk-email job {BulkEmailJobId}",
+                        job.EmailType, bulkJobIdValue);
+                    job.Fail($"Template load failed: {ex.Message}", DateTimeOffset.UtcNow);
+                    await unitOfWork.SaveChangesAsync(ct);
+                    return;
+                }
             }
 
             var pending = job.Recipients

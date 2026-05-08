@@ -29,6 +29,7 @@ internal sealed class GetBulkEmailHandler(IEmailWriteStore writeStore)
             job.TeamId.Value,
             job.TicketedEventId.Value,
             job.EmailType,
+            job.TemplateName,
             job.Subject,
             job.TextBody,
             job.HtmlBody,

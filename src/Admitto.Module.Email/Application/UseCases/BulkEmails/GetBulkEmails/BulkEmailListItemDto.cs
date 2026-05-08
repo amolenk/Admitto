@@ -5,6 +5,7 @@ namespace Amolenk.Admitto.Module.Email.Application.UseCases.BulkEmails.GetBulkEm
 public sealed record BulkEmailListItemDto(
     Guid Id,
     string EmailType,
+    string? TemplateName,
     BulkEmailJobStatus Status,
     int RecipientCount,
     int SentCount,

@@ -34,7 +34,7 @@ public sealed class BulkEmailJobBuilder
             ? BulkEmailJob.CreateSystemTriggered(
                 _teamId, _eventId, _emailType, _subject, _textBody, _htmlBody, _source, _now)
             : BulkEmailJob.Create(
-                _teamId, _eventId, _emailType, _subject, _textBody, _htmlBody, _source, _triggeredBy, _now);
+                _teamId, _eventId, _emailType, templateName: null, _subject, _textBody, _htmlBody, _source, _triggeredBy, _now);
 
     public static BulkEmailRecipient Recipient(string email, string? displayName = null) =>
         new(email, displayName, registrationId: null, parametersJson: "{}");

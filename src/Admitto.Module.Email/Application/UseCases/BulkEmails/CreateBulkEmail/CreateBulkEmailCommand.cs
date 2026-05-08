@@ -8,6 +8,7 @@ internal sealed record CreateBulkEmailCommand(
     TeamId TeamId,
     TicketedEventId TicketedEventId,
     string EmailType,
+    string? TemplateName,
     string? Subject,
     string? TextBody,
     string? HtmlBody,

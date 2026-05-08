@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:15000/"
+      "url": "http://localhost:64195/"
     }
   ],
   "paths": {
@@ -6858,6 +6858,7 @@
           "teamId",
           "ticketedEventId",
           "emailType",
+          "templateName",
           "subject",
           "textBody",
           "htmlBody",
@@ -6894,6 +6895,12 @@
           },
           "emailType": {
             "type": "string"
+          },
+          "templateName": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "subject": {
             "type": [
@@ -7085,6 +7092,7 @@
         "required": [
           "id",
           "emailType",
+          "templateName",
           "status",
           "recipientCount",
           "sentCount",
@@ -7106,6 +7114,12 @@
           },
           "emailType": {
             "type": "string"
+          },
+          "templateName": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "status": {
             "$ref": "#/components/schemas/BulkEmailJobStatus"
@@ -7562,6 +7576,7 @@
       "CreateBulkEmailHttpRequest": {
         "required": [
           "emailType",
+          "templateName",
           "subject",
           "textBody",
           "htmlBody",
@@ -7571,6 +7586,12 @@
         "properties": {
           "emailType": {
             "type": "string"
+          },
+          "templateName": {
+            "type": [
+              "null",
+              "string"
+            ]
           },
           "subject": {
             "type": [
@@ -9155,8 +9176,8 @@
         "type": "oauth2",
         "flows": {
           "authorizationCode": {
-            "authorizationUrl": "http://localhost:15001/realms/admitto/protocol/openid-connect/auth",
-            "tokenUrl": "http://localhost:15001/realms/admitto/protocol/openid-connect/token",
+            "authorizationUrl": "http://localhost:64205/realms/admitto/protocol/openid-connect/auth",
+            "tokenUrl": "http://localhost:64205/realms/admitto/protocol/openid-connect/token",
             "scopes": {
               "manage": "Access the Management API",
               "openid": "Access the OpenID Connect user profile",

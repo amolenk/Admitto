@@ -1,10 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Mail, Plus, Settings } from "lucide-react";
+import { Mail, Plus } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import { BulkEmailJobStatus, BulkEmailListItemDto } from "@/lib/admitto-api/generated";
 import { PageLayout } from "@/components/page-layout";
@@ -142,18 +141,7 @@ export default function BulkEmailsPage() {
                             Create reusable templates and track delivery here.
                         </p>
                     </div>
-                    <div className="flex items-center justify-center gap-2">
-                        <Button size="sm" onClick={() => setSendDialogOpen(true)}>
-                            <Plus className="size-3.5 mr-1" />
-                            Send bulk email
-                        </Button>
-                        <Button variant="outline" size="sm" asChild>
-                            <Link href={`/teams/${teamSlug}/events/${eventSlug}/settings/email`}>
-                                <Settings className="size-3.5 mr-1" />
-                                Configure email settings
-                            </Link>
-                        </Button>
-                    </div>
+
                 </div>
             ) : filtered.length === 0 ? (
                 <div className="rounded-lg border border-dashed p-8 text-center">
@@ -182,7 +170,7 @@ export default function BulkEmailsPage() {
                                         (window.location.href = `/teams/${teamSlug}/events/${eventSlug}/emails/${job.id}`)
                                     }
                                 >
-                                    <TableCell className="font-medium text-[13px]">{job.emailType}</TableCell>
+                                    <TableCell className="font-medium text-[13px]">{job.templateName ?? job.emailType}</TableCell>
                                     <TableCell>
                                         <Badge variant={STATUS_VARIANT[job.status]}>
                                             {STATUS_LABEL[job.status]}

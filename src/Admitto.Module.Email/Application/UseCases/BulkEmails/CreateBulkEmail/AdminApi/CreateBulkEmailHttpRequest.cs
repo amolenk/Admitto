@@ -8,6 +8,7 @@ namespace Amolenk.Admitto.Module.Email.Application.UseCases.BulkEmails.CreateBul
 /// </summary>
 public sealed record CreateBulkEmailHttpRequest(
     string EmailType,
+    string? TemplateName,
     string? Subject,
     string? TextBody,
     string? HtmlBody,

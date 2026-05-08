@@ -38,6 +38,10 @@ internal sealed class BulkEmailJobEntityConfiguration : IEntityTypeConfiguration
             .HasMaxLength(100)
             .IsRequired();
 
+        builder.Property(e => e.TemplateName)
+            .HasColumnName("template_name")
+            .HasMaxLength(500);
+
         builder.Property(e => e.Subject)
             .HasColumnName("subject")
             .HasMaxLength(500);

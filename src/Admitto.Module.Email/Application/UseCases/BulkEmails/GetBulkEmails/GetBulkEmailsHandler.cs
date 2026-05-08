@@ -20,6 +20,7 @@ internal sealed class GetBulkEmailsHandler(IEmailWriteStore writeStore)
             .Select(j => new BulkEmailListItemDto(
                 j.Id.Value,
                 j.EmailType,
+                j.TemplateName,
                 j.Status,
                 j.RecipientCount,
                 j.SentCount,

@@ -32,6 +32,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const CSV_ROW_LIMIT = 5000;
 
@@ -87,7 +88,7 @@ export function SendBulkEmailDialog({ teamSlug, eventSlug, open, onClose }: Send
 
     const [sendError, setSendError] = useState<string | null>(null);
 
-    const { data: eventTemplates } = useQuery({
+    const { data: eventTemplates, isLoading: isLoadingEventTemplates } = useQuery({
         queryKey: ["event-email-templates", teamSlug, eventSlug],
         queryFn: () =>
             apiClient.get<EmailTemplateListItemDto[]>(
@@ -97,7 +98,7 @@ export function SendBulkEmailDialog({ teamSlug, eventSlug, open, onClose }: Send
         throwOnError: false,
     });
 
-    const { data: teamTemplates } = useQuery({
+    const { data: teamTemplates, isLoading: isLoadingTeamTemplates } = useQuery({
         queryKey: ["team-email-templates", teamSlug],
         queryFn: () =>
             apiClient.get<EmailTemplateListItemDto[]>(
@@ -106,6 +107,8 @@ export function SendBulkEmailDialog({ teamSlug, eventSlug, open, onClose }: Send
         enabled: open,
         throwOnError: false,
     });
+
+    const isLoadingTemplates = isLoadingEventTemplates || isLoadingTeamTemplates;
 
     const templates: (EmailTemplateListItemDto & { scope: "event" | "team" })[] = [
         ...(eventTemplates ?? []).filter((t) => t.kind === "custom" && t.id).map((t) => ({ ...t, scope: "event" as const })),
@@ -147,6 +150,7 @@ export function SendBulkEmailDialog({ teamSlug, eventSlug, open, onClose }: Send
                 `/api/teams/${teamSlug}/events/${eventSlug}/bulk-emails`,
                 {
                     emailType: "bulk-custom",
+                    templateName: selectedTemplate?.name ?? null,
                     subject: template.subject,
                     textBody: template.textBody,
                     htmlBody: template.htmlBody,
@@ -255,7 +259,12 @@ export function SendBulkEmailDialog({ teamSlug, eventSlug, open, onClose }: Send
 
                 {step === 1 && (
                     <div className="space-y-4">
-                        {!templates || templates.length === 0 ? (
+                        {isLoadingTemplates ? (
+                            <div className="space-y-2">
+                                <Skeleton className="h-4 w-20" />
+                                <Skeleton className="h-9 w-full" />
+                            </div>
+                        ) : !templates || templates.length === 0 ? (
                             <div className="rounded-lg border border-dashed p-6 text-center space-y-2">
                                 <p className="text-[13.5px] text-muted-foreground">
                                     No custom templates yet.
@@ -326,12 +335,15 @@ export function SendBulkEmailDialog({ teamSlug, eventSlug, open, onClose }: Send
                             <div className="space-y-3">
                                 <div className="space-y-1.5">
                                     <Label>Ticket type</Label>
-                                    <Select value={attendeeTicketType} onValueChange={setAttendeeTicketType}>
+                                    <Select
+                                        value={attendeeTicketType || "__all__"}
+                                        onValueChange={(v) => setAttendeeTicketType(v === "__all__" ? "" : v)}
+                                    >
                                         <SelectTrigger>
                                             <SelectValue placeholder="All ticket types" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="">All ticket types</SelectItem>
+                                            <SelectItem value="__all__">All ticket types</SelectItem>
                                             {ticketTypes?.map((t) => (
                                                 <SelectItem key={t.slug} value={t.slug}>
                                                     {t.name}
@@ -342,12 +354,15 @@ export function SendBulkEmailDialog({ teamSlug, eventSlug, open, onClose }: Send
                                 </div>
                                 <div className="space-y-1.5">
                                     <Label>Registration status</Label>
-                                    <Select value={attendeeStatus} onValueChange={setAttendeeStatus}>
+                                    <Select
+                                        value={attendeeStatus || "__all__"}
+                                        onValueChange={(v) => setAttendeeStatus(v === "__all__" ? "" : v)}
+                                    >
                                         <SelectTrigger>
                                             <SelectValue placeholder="All statuses" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="">All statuses</SelectItem>
+                                            <SelectItem value="__all__">All statuses</SelectItem>
                                             <SelectItem value="registered">Registered</SelectItem>
                                             <SelectItem value="cancelled">Cancelled</SelectItem>
                                         </SelectContent>

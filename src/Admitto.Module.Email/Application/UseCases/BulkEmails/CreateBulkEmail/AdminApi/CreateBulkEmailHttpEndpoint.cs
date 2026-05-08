@@ -26,6 +26,7 @@ public static class CreateBulkEmailHttpEndpoint
                     TeamId.From(orgScope.TeamId),
                     TicketedEventId.From(orgScope.EventId!.Value),
                     request.EmailType,
+                    request.TemplateName,
                     request.Subject,
                     request.TextBody,
                     request.HtmlBody,
