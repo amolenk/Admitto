@@ -67,12 +67,13 @@ internal sealed class GetEmailTemplatesHandler(IEmailWriteStore writeStore)
         // that have not already been overridden at the current scope.
         if (query.ParentScopeId.HasValue)
         {
-            var parentCustomRows = await writeStore.EmailTemplates
+            var parentRows = await writeStore.EmailTemplates
                 .AsNoTracking()
                 .Where(t => t.Scope == EmailSettingsScope.Team &&
-                            t.ScopeId == query.ParentScopeId.Value &&
-                            !BuiltInEmailTemplateNames.IsReserved(t.Name))
+                            t.ScopeId == query.ParentScopeId.Value)
                 .ToListAsync(ct);
+
+            var parentCustomRows = parentRows.Where(t => !BuiltInEmailTemplateNames.IsReserved(t.Name));
 
             foreach (var parentRow in parentCustomRows)
             {
