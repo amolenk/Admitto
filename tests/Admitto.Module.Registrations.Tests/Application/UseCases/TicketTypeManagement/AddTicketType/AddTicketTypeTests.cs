@@ -19,9 +19,9 @@ public sealed class AddTicketTypeTests(TestContext testContext) : AspireIntegrat
         await fixture.SetupAsync(Environment);
 
         var command = new AddTicketTypeCommand(
-            fixture.EventId,
-            Slug.From("general-admission"),
-            DisplayName.From("General Admission"),
+            fixture.EventId.Value,
+            "general-admission",
+            "General Admission",
             ["morning"],
             100);
         var sut = new AddTicketTypeHandler(Environment.Database.Context);
@@ -56,9 +56,9 @@ public sealed class AddTicketTypeTests(TestContext testContext) : AspireIntegrat
         await fixture.SetupAsync(Environment);
 
         var command = new AddTicketTypeCommand(
-            fixture.EventId,
-            Slug.From("speaker-pass"),
-            DisplayName.From("Speaker Pass"),
+            fixture.EventId.Value,
+            "speaker-pass",
+            "Speaker Pass",
             [],
             null);
         var sut = new AddTicketTypeHandler(Environment.Database.Context);
@@ -87,9 +87,9 @@ public sealed class AddTicketTypeTests(TestContext testContext) : AspireIntegrat
         await fixture.SetupAsync(Environment);
 
         var command = new AddTicketTypeCommand(
-            fixture.EventId,
-            Slug.From("existing-type"),
-            DisplayName.From("Duplicate"),
+            fixture.EventId.Value,
+            "existing-type",
+            "Duplicate",
             [],
             50);
         var sut = new AddTicketTypeHandler(Environment.Database.Context);
@@ -112,9 +112,9 @@ public sealed class AddTicketTypeTests(TestContext testContext) : AspireIntegrat
         await fixture.SetupAsync(Environment);
 
         var command = new AddTicketTypeCommand(
-            fixture.EventId,
-            Slug.From("general-admission"),
-            DisplayName.From("General Admission"),
+            fixture.EventId.Value,
+            "general-admission",
+            "General Admission",
             [],
             100);
         var sut = new AddTicketTypeHandler(Environment.Database.Context);
@@ -135,9 +135,9 @@ public sealed class AddTicketTypeTests(TestContext testContext) : AspireIntegrat
         await fixture.SetupAsync(Environment);
 
         var command = new AddTicketTypeCommand(
-            fixture.EventId,
-            Slug.From("general-admission"),
-            DisplayName.From("General Admission"),
+            fixture.EventId.Value,
+            "general-admission",
+            "General Admission",
             [],
             100);
         var sut = new AddTicketTypeHandler(Environment.Database.Context);

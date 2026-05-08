@@ -48,15 +48,15 @@ public sealed class EmailDbContext(DbContextOptions<EmailDbContext> options)
 
         configurationBuilder
             .Properties<Hostname>()
-            .HaveConversion<HostnameConverter>();
+            .HaveConversion<Hostname.EfCoreValueConverter>();
 
         configurationBuilder
             .Properties<Port>()
-            .HaveConversion<PortConverter>();
+            .HaveConversion<Port.EfCoreValueConverter>();
 
         configurationBuilder
             .Properties<SmtpUsername>()
-            .HaveConversion<SmtpUsernameConverter>();
+            .HaveConversion<SmtpUsername.EfCoreValueConverter>();
 
         configurationBuilder
             .Properties<ProtectedPassword>()

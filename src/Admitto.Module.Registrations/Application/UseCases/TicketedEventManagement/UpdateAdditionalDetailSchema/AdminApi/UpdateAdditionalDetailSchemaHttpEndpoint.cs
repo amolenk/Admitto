@@ -2,7 +2,6 @@ using Amolenk.Admitto.Module.Shared.Application.Auth;
 using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Application.Persistence;
-using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketedEventManagement.UpdateAdditionalDetailSchema.AdminApi;
@@ -36,7 +35,7 @@ public static class UpdateAdditionalDetailSchemaHttpEndpoint
             .ToArray();
 
         var command = new UpdateAdditionalDetailSchemaCommand(
-            TicketedEventId.From(scope.EventId!.Value),
+            scope.EventId!.Value,
             request.ExpectedVersion,
             fields);
 

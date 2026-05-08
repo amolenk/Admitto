@@ -27,7 +27,7 @@ public sealed class SendEmailCommandHandlerTests(TestContext testContext) : Aspi
         await Environment.Database.SeedAsync(db => db.EmailSettings.Add(settings));
 
         var command = new SendEmailCommand(
-            teamId, eventId,
+            teamId.Value, eventId.Value,
             "alice@example.com", "Alice",
             BuiltInEmailTemplateNames.TicketConfirmation,
             IdempotencyKey: "test-key-1",
@@ -60,7 +60,7 @@ public sealed class SendEmailCommandHandlerTests(TestContext testContext) : Aspi
         var (teamId, eventId, _, _, handler) = BuildHandler();
 
         var command = new SendEmailCommand(
-            teamId, eventId,
+            teamId.Value, eventId.Value,
             "alice@example.com", "Alice",
             BuiltInEmailTemplateNames.TicketConfirmation,
             IdempotencyKey: "test-key-no-settings",
@@ -103,7 +103,7 @@ public sealed class SendEmailCommandHandlerTests(TestContext testContext) : Aspi
         });
 
         var command = new SendEmailCommand(
-            teamId, eventId,
+            teamId.Value, eventId.Value,
             "alice@example.com", "Alice",
             BuiltInEmailTemplateNames.TicketConfirmation,
             IdempotencyKey: "test-key-render-error",
@@ -140,7 +140,7 @@ public sealed class SendEmailCommandHandlerTests(TestContext testContext) : Aspi
         await Environment.Database.SeedAsync(db => db.EmailSettings.Add(settings));
 
         var command = new SendEmailCommand(
-            teamId, eventId,
+            teamId.Value, eventId.Value,
             "alice@example.com", "Alice",
             BuiltInEmailTemplateNames.TicketConfirmation,
             IdempotencyKey: "test-key-dedup",

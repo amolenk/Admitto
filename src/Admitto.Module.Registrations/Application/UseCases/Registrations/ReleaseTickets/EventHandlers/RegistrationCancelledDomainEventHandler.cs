@@ -12,8 +12,8 @@ internal sealed class RegistrationCancelledDomainEventHandler(IMediator mediator
     {
         await mediator.SendAsync(
             new ReleaseTicketsCommand(
-                domainEvent.RegistrationId,
-                domainEvent.TicketedEventId),
+                domainEvent.RegistrationId.Value,
+                domainEvent.TicketedEventId.Value),
             cancellationToken);
     }
 }

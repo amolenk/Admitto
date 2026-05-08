@@ -15,20 +15,24 @@ internal sealed class AddTicketTypeHandler(IRegistrationsWriteStore writeStore)
         AddTicketTypeCommand command,
         CancellationToken cancellationToken)
     {
+        TicketedEventId eventId = TicketedEventId.From(command.EventId);
+        Slug slug = Slug.From(command.Slug);
+        DisplayName name = DisplayName.From(command.Name);
+
         var catalog = await writeStore.TicketCatalogs
-            .FirstOrDefaultAsync(tc => tc.Id == command.EventId, cancellationToken);
+            .FirstOrDefaultAsync(tc => tc.Id == eventId, cancellationToken);
 
         if (catalog is null)
         {
             throw new BusinessRuleViolationException(
-                NotFoundError.Create<TicketCatalog>(command.EventId.Value));
+                NotFoundError.Create<TicketCatalog>(eventId.Value));
         }
 
         var timeSlots = command.TimeSlots
             .Select(s => new TimeSlot(Slug.From(s)))
             .ToArray();
 
-        catalog.AddTicketType(command.Slug, command.Name, timeSlots, command.MaxCapacity, command.SelfServiceEnabled);
+        catalog.AddTicketType(slug, name, timeSlots, command.MaxCapacity, command.SelfServiceEnabled);
     }
 }
 

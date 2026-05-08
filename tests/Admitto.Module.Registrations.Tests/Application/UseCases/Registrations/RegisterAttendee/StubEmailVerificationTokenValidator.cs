@@ -24,6 +24,6 @@ internal sealed class StubEmailVerificationTokenValidator : IVerificationTokenSe
 
         var emailValue = token[prefix.Length..];
         var emailResult = EmailAddress.TryFrom(emailValue);
-        return emailResult.IsSuccess ? new VerificationTokenClaims(emailResult.Value) : null;
+        return emailResult.IsSuccess ? new VerificationTokenClaims(emailResult.ValueObject) : null;
     }
 }

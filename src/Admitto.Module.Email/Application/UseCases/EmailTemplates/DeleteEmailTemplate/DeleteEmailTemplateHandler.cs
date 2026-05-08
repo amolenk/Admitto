@@ -1,5 +1,6 @@
 using Amolenk.Admitto.Module.Email.Application.Persistence;
 using Amolenk.Admitto.Module.Email.Domain.Entities;
+using Amolenk.Admitto.Module.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
 
@@ -10,10 +11,12 @@ internal sealed class DeleteEmailTemplateHandler(IEmailWriteStore writeStore)
 {
     public async ValueTask HandleAsync(DeleteEmailTemplateCommand command, CancellationToken cancellationToken)
     {
+        EmailTemplateId id = EmailTemplateId.From(command.Id);
+
         var template = await writeStore.EmailTemplates
-            .FirstOrDefaultAsync(t => t.Id == command.Id, cancellationToken)
+            .FirstOrDefaultAsync(t => t.Id == id, cancellationToken)
             ?? throw new BusinessRuleViolationException(
-                NotFoundError.Create<EmailTemplate>(command.Id.Value.ToString()));
+                NotFoundError.Create<EmailTemplate>(id.Value.ToString()));
 
         if (command.ExpectedVersion != template.Version)
         {

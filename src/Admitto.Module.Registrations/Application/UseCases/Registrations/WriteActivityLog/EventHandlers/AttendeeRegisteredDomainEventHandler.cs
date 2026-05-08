@@ -13,7 +13,7 @@ internal sealed class AttendeeRegisteredDomainEventHandler(IMediator mediator)
     {
         await mediator.SendAsync(
             new WriteActivityLogCommand(
-                domainEvent.RegistrationId,
+                domainEvent.RegistrationId.Value,
                 ActivityType.Registered,
                 domainEvent.OccurredOn),
             cancellationToken);

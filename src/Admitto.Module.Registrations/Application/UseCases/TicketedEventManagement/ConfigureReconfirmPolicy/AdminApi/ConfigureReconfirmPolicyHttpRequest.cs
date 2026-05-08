@@ -1,5 +1,3 @@
-using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
-
 namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketedEventManagement.ConfigureReconfirmPolicy.AdminApi;
 
 public sealed record ConfigureReconfirmPolicyHttpRequest(
@@ -8,7 +6,7 @@ public sealed record ConfigureReconfirmPolicyHttpRequest(
     int? CadenceDays = null,
     uint? ExpectedVersion = null)
 {
-    internal ConfigureReconfirmPolicyCommand ToCommand(TicketedEventId eventId) => new(
+    internal ConfigureReconfirmPolicyCommand ToCommand(Guid eventId) => new(
         eventId,
         ExpectedVersion,
         OpensAt,

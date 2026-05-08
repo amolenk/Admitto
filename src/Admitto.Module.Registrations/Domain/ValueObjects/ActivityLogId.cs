@@ -1,21 +1,13 @@
-using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
-using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
+using Vogen;
 
 namespace Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 
-public readonly record struct ActivityLogId : IGuidValueObject
+[ValueObject<Guid>]
+public partial struct ActivityLogId
 {
-    public Guid Value { get; }
+    public static ActivityLogId New() => From(Guid.NewGuid());
 
-    private ActivityLogId(Guid value) => Value = value;
-
-    public static ActivityLogId New() => new(Guid.NewGuid());
-
-    public static ValidationResult<ActivityLogId> TryFrom(Guid value)
-        => GuidValueObject.TryFrom(value, v => new ActivityLogId(v));
-
-    public static ActivityLogId From(Guid value)
-        => GuidValueObject.TryFrom(value, v => new ActivityLogId(v)).GetValueOrThrow();
-
-    public override string ToString() => Value.ToString();
+    private static Validation Validate(Guid value)
+        => value != Guid.Empty ? Validation.Ok : Validation.Invalid("Activity log ID cannot be empty.");
 }
+

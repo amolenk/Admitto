@@ -17,15 +17,17 @@ internal sealed class CreateBulkEmailHandler(
     IEmailWriteStore writeStore,
     IUserContextAccessor userContext,
     TimeProvider timeProvider)
-    : ICommandHandler<CreateBulkEmailCommand, BulkEmailJobId>
+    : ICommandHandler<CreateBulkEmailCommand, Guid>
 {
-    public ValueTask<BulkEmailJobId> HandleAsync(CreateBulkEmailCommand command, CancellationToken cancellationToken)
+    public ValueTask<Guid> HandleAsync(CreateBulkEmailCommand command, CancellationToken cancellationToken)
     {
+        TeamId teamId = TeamId.From(command.TeamId);
+        TicketedEventId ticketedEventId = TicketedEventId.From(command.TicketedEventId);
         var triggeredBy = EmailAddress.From(userContext.Current.EmailAddress);
 
         var job = BulkEmailJob.Create(
-            command.TeamId,
-            command.TicketedEventId,
+            teamId,
+            ticketedEventId,
             command.EmailType,
             command.TemplateName,
             command.Subject,
@@ -36,6 +38,6 @@ internal sealed class CreateBulkEmailHandler(
             timeProvider.GetUtcNow());
 
         writeStore.BulkEmailJobs.Add(job);
-        return ValueTask.FromResult(job.Id);
+        return ValueTask.FromResult(job.Id.Value);
     }
 }

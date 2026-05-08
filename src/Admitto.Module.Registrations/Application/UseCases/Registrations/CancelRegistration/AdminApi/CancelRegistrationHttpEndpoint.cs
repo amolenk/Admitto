@@ -3,7 +3,6 @@ using Amolenk.Admitto.Module.Shared.Application.Auth;
 using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Application.Persistence;
-using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.Registrations.CancelRegistration.AdminApi;
@@ -36,8 +35,8 @@ public static class CancelRegistrationHttpEndpoint
         var reason = Enum.Parse<CancellationReason>(request.Reason!);
 
         var command = new CancelRegistrationCommand(
-            RegistrationId.From(registrationId),
-            TicketedEventId.From(scope.EventId!.Value),
+            registrationId,
+            scope.EventId!.Value,
             reason);
 
         await mediator.SendAsync(command, cancellationToken);

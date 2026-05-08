@@ -3,8 +3,10 @@ using Amolenk.Admitto.Module.Email.Application.Sending;
 using Amolenk.Admitto.Module.Email.Application.Sending.Settings;
 using Amolenk.Admitto.Module.Email.Application.Templating;
 using Amolenk.Admitto.Module.Email.Domain.Entities;
+using Amolenk.Admitto.Module.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
+using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Module.Email.Application.UseCases.EmailTemplates.TestSendEmailTemplate;
 
@@ -17,16 +19,22 @@ internal sealed class TestSendEmailTemplateHandler(
 {
     public async ValueTask HandleAsync(TestSendEmailTemplateCommand command, CancellationToken ct)
     {
-        var settings = command.EventId.HasValue
-            ? await settingsResolver.ResolveAsync(command.TeamId, command.EventId.Value, ct)
-            : await settingsResolver.ResolveAsync(command.TeamId, ct);
+        EmailTemplateId templateId = EmailTemplateId.From(command.TemplateId);
+        TeamId teamId = TeamId.From(command.TeamId);
+        TicketedEventId? eventId = command.EventId.HasValue
+            ? TicketedEventId.From(command.EventId.Value)
+            : null;
+
+        var settings = eventId.HasValue
+            ? await settingsResolver.ResolveAsync(teamId, eventId.Value, ct)
+            : await settingsResolver.ResolveAsync(teamId, ct);
 
         if (settings is null || !settings.IsValid())
             throw new BusinessRuleViolationException(Errors.SettingsNotConfigured);
 
         var template = await writeStore.EmailTemplates
             .AsNoTracking()
-            .FirstOrDefaultAsync(t => t.Id == command.TemplateId, ct)
+            .FirstOrDefaultAsync(t => t.Id == templateId, ct)
             ?? throw new BusinessRuleViolationException(Errors.TemplateNotFound);
 
         var parameters = EmailTemplateSampleParameters.Create();
@@ -42,8 +50,8 @@ internal sealed class TestSendEmailTemplateHandler(
         }
 
         var message = new EmailMessage(
-            RecipientAddress: command.Recipient.Value,
-            RecipientName: command.Recipient.Value,
+            RecipientAddress: command.Recipient,
+            RecipientName: command.Recipient,
             Subject: rendered.Subject,
             TextBody: rendered.TextBody,
             HtmlBody: rendered.HtmlBody);

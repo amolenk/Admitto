@@ -1,23 +1,15 @@
-using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
-using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
+using Vogen;
 
 namespace Amolenk.Admitto.Module.Organization.Domain.ValueObjects;
 
 /// <summary>
 /// Represents the unique identifier for a user in the system.
 /// </summary>
-public readonly record struct UserId : IGuidValueObject
+[ValueObject<Guid>]
+public partial struct UserId
 {
-    public Guid Value { get; }
+    public static UserId New() => From(Guid.NewGuid());
 
-    private UserId(Guid value) => Value = value;
-
-    public static UserId New() => new(Guid.NewGuid());
-
-    public static ValidationResult<UserId> TryFrom(Guid value)
-        => GuidValueObject.TryFrom(value, v => new UserId(v));
-
-    public static UserId From(Guid value) => TryFrom(value).GetValueOrThrow();
-
-    public override string ToString() => Value.ToString();
+    private static Validation Validate(Guid value)
+        => value != Guid.Empty ? Validation.Ok : Validation.Invalid("User ID cannot be empty.");
 }

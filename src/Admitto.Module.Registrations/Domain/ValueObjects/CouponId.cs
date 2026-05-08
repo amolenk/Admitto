@@ -1,21 +1,13 @@
-using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
-using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
+using Vogen;
 
 namespace Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 
-public readonly record struct CouponId : IGuidValueObject
+[ValueObject<Guid>]
+public partial struct CouponId
 {
-    public Guid Value { get; }
-    
-    private CouponId(Guid value) => Value = value;
+    public static CouponId New() => From(Guid.NewGuid());
 
-    public static CouponId New() => new(Guid.NewGuid());
-
-    public static ValidationResult<CouponId> TryFrom(Guid value)
-        => GuidValueObject.TryFrom(value, v => new CouponId(v));
-
-    public static CouponId From(Guid value)
-        => GuidValueObject.TryFrom(value, v => new CouponId(v)).GetValueOrThrow();
-
-    public override string ToString() => Value.ToString();
+    private static Validation Validate(Guid value)
+        => value != Guid.Empty ? Validation.Ok : Validation.Invalid("Coupon ID cannot be empty.");
 }
+

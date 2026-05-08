@@ -1,6 +1,5 @@
 using Amolenk.Admitto.Module.Registrations.Contracts;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
-using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Module.Email.Application.UseCases.Reconfirmations.ScheduleReconfirmations;
 
@@ -12,5 +11,5 @@ namespace Amolenk.Admitto.Module.Email.Application.UseCases.Reconfirmations.Sche
 /// outbox redelivery or worker startup reconciliation).
 /// </summary>
 internal sealed record ScheduleReconfirmationsCommand(
-    TicketedEventId TicketedEventId,
+    Guid TicketedEventId,
     ReconfirmTriggerSpecDto? Spec) : Command;

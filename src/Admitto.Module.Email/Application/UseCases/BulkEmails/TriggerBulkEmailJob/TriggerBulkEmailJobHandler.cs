@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Module.Email.Application.Jobs;
+using Amolenk.Admitto.Module.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Microsoft.Extensions.Logging;
 using Quartz;
@@ -23,9 +24,11 @@ internal sealed class TriggerBulkEmailJobHandler(
         TriggerBulkEmailJobCommand command,
         CancellationToken cancellationToken)
     {
+        BulkEmailJobId bulkEmailJobId = BulkEmailJobId.From(command.BulkEmailJobId);
+
         var scheduler = await schedulerFactory.GetScheduler(cancellationToken);
 
-        var jobKey = new JobKey(command.BulkEmailJobId.Value.ToString("N"), JobGroup);
+        var jobKey = new JobKey(bulkEmailJobId.Value.ToString("N"), JobGroup);
         var triggerKey = new TriggerKey($"{jobKey.Name}.trigger", JobGroup);
 
         if (await scheduler.CheckExists(jobKey, cancellationToken))
@@ -39,7 +42,7 @@ internal sealed class TriggerBulkEmailJobHandler(
 
         var jobDetail = JobBuilder.Create<SendBulkEmailJob>()
             .WithIdentity(jobKey)
-            .UsingJobData(SendBulkEmailJob.BulkEmailJobIdKey, command.BulkEmailJobId.Value.ToString())
+            .UsingJobData(SendBulkEmailJob.BulkEmailJobIdKey, bulkEmailJobId.Value.ToString())
             .StoreDurably(false)
             .Build();
 

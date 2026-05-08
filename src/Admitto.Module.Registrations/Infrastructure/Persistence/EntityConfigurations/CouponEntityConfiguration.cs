@@ -27,7 +27,7 @@ public class CouponEntityConfiguration : IEntityTypeConfiguration<Coupon>
 
         builder.Property(e => e.Code)
             .HasColumnName("code")
-            .HasConversion(v => v.Value, v => new CouponCode(v))
+            .HasConversion(v => v.Value, v => CouponCode.From(v))
             .IsRequired();
 
         builder.HasIndex(e => e.Code).IsUnique();

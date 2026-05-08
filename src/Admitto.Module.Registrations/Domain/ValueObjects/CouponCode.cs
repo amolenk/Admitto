@@ -1,6 +1,12 @@
+using Vogen;
+
 namespace Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 
-public readonly record struct CouponCode(Guid Value) : IGuidValueObject
+[ValueObject<Guid>]
+public partial struct CouponCode
 {
-    public static CouponCode New() => new(Guid.NewGuid());
+    public static CouponCode New() => From(Guid.NewGuid());
+
+    private static Validation Validate(Guid value)
+        => value != Guid.Empty ? Validation.Ok : Validation.Invalid("Coupon code cannot be empty.");
 }

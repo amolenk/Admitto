@@ -22,8 +22,8 @@ internal sealed class VerifyOtpHandler(
         if (!emailResult.IsSuccess)
             throw new BusinessRuleViolationException(Errors.InvalidCode);
 
-        var email = emailResult.Value;
-        var emailHash = ComputeHash(email.Value.ToLowerInvariant());
+        var email = emailResult.ValueObject;
+        var emailHash = ComputeHash(email.Value);
         var now = timeProvider.GetUtcNow();
 
         // Load the latest non-superseded OTP code for this email+event.

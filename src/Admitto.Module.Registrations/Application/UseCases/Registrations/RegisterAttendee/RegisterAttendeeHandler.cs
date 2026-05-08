@@ -13,12 +13,17 @@ internal sealed class RegisterAttendeeHandler(
     IRegistrationsWriteStore writeStore,
     TimeProvider timeProvider,
     IVerificationTokenService verificationTokenService)
-    : ICommandHandler<RegisterAttendeeCommand, RegistrationId>
+    : ICommandHandler<RegisterAttendeeCommand, Guid>
 {
-    public async ValueTask<RegistrationId> HandleAsync(
+    public async ValueTask<Guid> HandleAsync(
         RegisterAttendeeCommand command,
         CancellationToken cancellationToken)
     {
+        TicketedEventId eventId = TicketedEventId.From(command.EventId);
+        EmailAddress email = EmailAddress.From(command.Email);
+        FirstName firstName = FirstName.From(command.FirstName);
+        LastName lastName = LastName.From(command.LastName);
+
         // Command invariants per design D1/D8.
         if (command.Mode == RegistrationMode.Coupon && command.CouponCode is null)
             throw new InvalidOperationException(
@@ -34,9 +39,9 @@ internal sealed class RegisterAttendeeHandler(
             if (command.EmailVerificationToken is null)
                 throw new BusinessRuleViolationException(Errors.EmailVerificationRequired);
 
-            var claims = verificationTokenService.Validate(command.EmailVerificationToken, command.EventId);
+            var claims = verificationTokenService.Validate(command.EmailVerificationToken, eventId);
 
-            if (claims is null || claims.Email != command.Email)
+            if (claims is null || claims.Email != email)
                 throw new BusinessRuleViolationException(Errors.EmailVerificationInvalid);
         }
 
@@ -49,7 +54,7 @@ internal sealed class RegisterAttendeeHandler(
 
             coupon = await writeStore.Coupons
                 .FirstOrDefaultAsync(
-                    c => c.EventId == command.EventId && c.Code == new CouponCode(codeGuid),
+                    c => c.EventId == eventId && c.Code == CouponCode.From(codeGuid),
                     cancellationToken);
 
             if (coupon is null)
@@ -73,13 +78,13 @@ internal sealed class RegisterAttendeeHandler(
                 throw new BusinessRuleViolationException(Errors.TicketTypeNotAllowlisted(notAllowlisted));
 
             // Bind the bearer credential to the email it was issued for (design D8).
-            if (coupon.Email != command.Email)
+            if (coupon.Email != email)
                 throw new BusinessRuleViolationException(Errors.CouponEmailMismatch);
         }
 
         // 3. Load TicketedEvent.
         var ticketedEvent = await writeStore.TicketedEvents
-            .FirstOrDefaultAsync(e => e.Id == command.EventId, cancellationToken);
+            .FirstOrDefaultAsync(e => e.Id == eventId, cancellationToken);
 
         if (ticketedEvent is null)
             throw new BusinessRuleViolationException(Errors.EventNotFound);
@@ -93,7 +98,7 @@ internal sealed class RegisterAttendeeHandler(
         if (command.Mode == RegistrationMode.SelfService)
         {
             EnforceRegistrationWindow(ticketedEvent.RegistrationPolicy, now);
-            EnforceEmailDomain(ticketedEvent.RegistrationPolicy, command.Email);
+            EnforceEmailDomain(ticketedEvent.RegistrationPolicy, email);
         }
         else if (command.Mode == RegistrationMode.Coupon && !coupon!.BypassRegistrationWindow)
         {
@@ -104,7 +109,7 @@ internal sealed class RegisterAttendeeHandler(
         //    claim; cancelled rows are reset after all remaining gates pass.
         var existingRegistration = await writeStore.Registrations
             .SingleOrDefaultAsync(
-                r => r.EventId == command.EventId && r.Email == command.Email,
+                r => r.EventId == eventId && r.Email == email,
                 cancellationToken);
 
         if (existingRegistration?.Status == RegistrationStatus.Registered)
@@ -112,7 +117,7 @@ internal sealed class RegisterAttendeeHandler(
 
         // 7. Load TicketCatalog.
         var catalog = await writeStore.TicketCatalogs
-            .FirstOrDefaultAsync(tc => tc.Id == command.EventId, cancellationToken);
+            .FirstOrDefaultAsync(tc => tc.Id == eventId, cancellationToken);
 
         if (catalog is null && command.Mode != RegistrationMode.Coupon)
             throw new BusinessRuleViolationException(Errors.NoTicketTypesConfigured);
@@ -155,10 +160,10 @@ internal sealed class RegisterAttendeeHandler(
         {
             registration = Registration.Create(
                 ticketedEvent.TeamId,
-                command.EventId,
-                command.Email,
-                command.FirstName,
-                command.LastName,
+                eventId,
+                email,
+                firstName,
+                lastName,
                 tickets,
                 additionalDetails);
             await writeStore.Registrations.AddAsync(registration, cancellationToken);
@@ -167,15 +172,15 @@ internal sealed class RegisterAttendeeHandler(
         {
             registration = existingRegistration;
             registration.Reset(
-                command.FirstName,
-                command.LastName,
+                firstName,
+                lastName,
                 tickets,
                 additionalDetails);
         }
 
         coupon?.Redeem();
 
-        return registration.Id;
+        return registration.Id.Value;
     }
 
     private static void EnforceRegistrationWindow(

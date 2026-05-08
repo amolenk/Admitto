@@ -2,7 +2,6 @@ using Amolenk.Admitto.Module.Shared.Application.Auth;
 using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Application.Persistence;
-using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketTypeManagement.CancelTicketType.AdminApi;
@@ -32,8 +31,8 @@ public static class CancelTicketTypeHttpEndpoint
         var scope = await scopeResolver.ResolveAsync(teamSlug, eventSlug, cancellationToken);
 
         var command = new CancelTicketTypeCommand(
-            TicketedEventId.From(scope.EventId!.Value),
-            Slug.From(ticketTypeSlug));
+            scope.EventId!.Value,
+            ticketTypeSlug);
 
         await mediator.SendAsync(command, cancellationToken);
 

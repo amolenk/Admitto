@@ -18,7 +18,7 @@ public sealed class ConfigureRegistrationPolicyTests(TestContext testContext) : 
         var closesAt = DateTimeOffset.UtcNow.AddDays(10);
 
         var command = new ConfigureRegistrationPolicyCommand(
-            fixture.EventId,
+            fixture.EventId.Value,
             fixture.SeededVersion,
             opensAt,
             closesAt,
@@ -47,7 +47,7 @@ public sealed class ConfigureRegistrationPolicyTests(TestContext testContext) : 
         await fixture.SetupAsync(Environment);
 
         var command = new ConfigureRegistrationPolicyCommand(
-            fixture.EventId,
+            fixture.EventId.Value,
             fixture.SeededVersion,
             DateTimeOffset.UtcNow.AddDays(1),
             DateTimeOffset.UtcNow.AddDays(10),
@@ -68,7 +68,7 @@ public sealed class ConfigureRegistrationPolicyTests(TestContext testContext) : 
         await fixture.SetupAsync(Environment);
 
         var command = new ConfigureRegistrationPolicyCommand(
-            fixture.EventId,
+            fixture.EventId.Value,
             fixture.SeededVersion,
             DateTimeOffset.UtcNow.AddDays(1),
             DateTimeOffset.UtcNow.AddDays(10),
@@ -89,7 +89,7 @@ public sealed class ConfigureRegistrationPolicyTests(TestContext testContext) : 
         await fixture.SetupAsync(Environment);
 
         var command = new ConfigureRegistrationPolicyCommand(
-            fixture.EventId,
+            fixture.EventId.Value,
             fixture.SeededVersion + 99u,
             DateTimeOffset.UtcNow.AddDays(1),
             DateTimeOffset.UtcNow.AddDays(10),

@@ -1,7 +1,9 @@
 using Amolenk.Admitto.Module.Registrations.Application.Persistence;
 using Amolenk.Admitto.Module.Registrations.Domain.Entities;
+using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
+using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 
 namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.CouponManagement.RevokeCoupon;
@@ -13,15 +15,18 @@ internal sealed class RevokeCouponHandler(IRegistrationsWriteStore writeStore)
         RevokeCouponCommand command,
         CancellationToken cancellationToken)
     {
+        TicketedEventId eventId = TicketedEventId.From(command.EventId);
+        CouponId couponId = CouponId.From(command.CouponId);
+
         var coupon = await writeStore.Coupons
             .FirstOrDefaultAsync(
-                c => c.Id == command.CouponId && c.EventId == command.EventId,
+                c => c.Id == couponId && c.EventId == eventId,
                 cancellationToken);
 
         if (coupon is null)
         {
             throw new BusinessRuleViolationException(
-                NotFoundError.Create<Coupon>(command.CouponId.Value));
+                NotFoundError.Create<Coupon>(couponId.Value));
         }
 
         coupon.Revoke();

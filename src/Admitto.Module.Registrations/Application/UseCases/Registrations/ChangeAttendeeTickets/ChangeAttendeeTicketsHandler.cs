@@ -4,6 +4,7 @@ using Amolenk.Admitto.Module.Registrations.Domain.Entities;
 using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
+using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.Registrations.ChangeAttendeeTickets;
 
@@ -16,15 +17,18 @@ internal sealed class ChangeAttendeeTicketsHandler(
         ChangeAttendeeTicketsCommand command,
         CancellationToken cancellationToken)
     {
+        TicketedEventId eventId = TicketedEventId.From(command.EventId);
+        RegistrationId registrationId = RegistrationId.From(command.RegistrationId);
+
         // 1. Load registration; reject if not found.
         var registration = await writeStore.Registrations
             .FirstOrDefaultAsync(
-                r => r.Id == command.RegistrationId && r.EventId == command.EventId,
+                r => r.Id == registrationId && r.EventId == eventId,
                 cancellationToken);
 
         if (registration is null)
             throw new BusinessRuleViolationException(
-                NotFoundError.Create<Registration>(command.RegistrationId.Value));
+                NotFoundError.Create<Registration>(registrationId.Value));
 
         // 2. Reject cancelled registrations.
         if (registration.Status == RegistrationStatus.Cancelled)
@@ -32,7 +36,7 @@ internal sealed class ChangeAttendeeTicketsHandler(
 
         // 3. Load event; reject if not Active.
         var ticketedEvent = await writeStore.TicketedEvents
-            .FirstOrDefaultAsync(e => e.Id == command.EventId, cancellationToken);
+            .FirstOrDefaultAsync(e => e.Id == eventId, cancellationToken);
 
         if (ticketedEvent is null || !ticketedEvent.IsActive)
             throw new BusinessRuleViolationException(Errors.EventNotActive);
@@ -48,7 +52,7 @@ internal sealed class ChangeAttendeeTicketsHandler(
 
         // 4. Load catalog.
         var catalog = await writeStore.TicketCatalogs
-            .FirstOrDefaultAsync(tc => tc.Id == command.EventId, cancellationToken);
+            .FirstOrDefaultAsync(tc => tc.Id == eventId, cancellationToken);
 
         if (catalog is null)
             throw new BusinessRuleViolationException(Errors.NoTicketTypesConfigured);

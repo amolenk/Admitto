@@ -22,7 +22,7 @@ internal sealed class RequestOtpHandler(
         if (!emailResult.IsSuccess)
             throw new BusinessRuleViolationException(Errors.InvalidEmail);
 
-        var email = emailResult.Value;
+        var email = emailResult.ValueObject;
 
         var ticketedEvent = await writeStore.TicketedEvents
             .FirstOrDefaultAsync(e => e.Id == command.EventId, cancellationToken);
@@ -33,7 +33,7 @@ internal sealed class RequestOtpHandler(
         var now = timeProvider.GetUtcNow();
         var rateLimitWindow = now.AddMinutes(-options.Value.RateLimitWindowMinutes);
 
-        var emailHash = OtpCode.ComputeEmailHash(email.Value.ToLowerInvariant());
+        var emailHash = OtpCode.ComputeEmailHash(email.Value);
 
         var recentCount = await writeStore.OtpCodes
             .CountAsync(

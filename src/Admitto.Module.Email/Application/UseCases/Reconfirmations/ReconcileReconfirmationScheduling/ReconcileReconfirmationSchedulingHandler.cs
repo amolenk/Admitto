@@ -1,7 +1,6 @@
 using Amolenk.Admitto.Module.Email.Application.UseCases.Reconfirmations.ScheduleReconfirmations;
 using Amolenk.Admitto.Module.Registrations.Contracts;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
-using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 using Microsoft.Extensions.Logging;
 
 namespace Amolenk.Admitto.Module.Email.Application.UseCases.Reconfirmations.ReconcileReconfirmationScheduling;
@@ -34,7 +33,7 @@ internal sealed class ReconcileReconfirmationSchedulingHandler(
 
             await mediator.SendAsync(
                 new ScheduleReconfirmationsCommand(
-                    TicketedEventId.From(spec.TicketedEventId),
+                    spec.TicketedEventId,
                     spec),
                 cancellationToken);
         }

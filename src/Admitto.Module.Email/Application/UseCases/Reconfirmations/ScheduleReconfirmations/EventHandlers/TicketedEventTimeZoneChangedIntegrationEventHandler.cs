@@ -29,7 +29,7 @@ internal sealed class TicketedEventTimeZoneChangedIntegrationEventHandler(
             return;
 
         await mediator.SendAsync(
-            new ScheduleReconfirmationsCommand(ticketedEventId, spec),
+            new ScheduleReconfirmationsCommand(integrationEvent.TicketedEventId, spec),
             cancellationToken);
     }
 }

@@ -1,21 +1,13 @@
-using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
-using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
+using Vogen;
 
 namespace Amolenk.Admitto.Module.Email.Domain.ValueObjects;
 
-public readonly record struct BulkEmailJobId : IGuidValueObject
+[ValueObject<Guid>]
+public partial struct BulkEmailJobId
 {
-    public Guid Value { get; }
+    public static BulkEmailJobId New() => From(Guid.NewGuid());
 
-    private BulkEmailJobId(Guid value) => Value = value;
-
-    public static BulkEmailJobId New() => new(Guid.NewGuid());
-
-    public static ValidationResult<BulkEmailJobId> TryFrom(Guid value)
-        => GuidValueObject.TryFrom(value, v => new BulkEmailJobId(v));
-
-    public static BulkEmailJobId From(Guid value)
-        => GuidValueObject.TryFrom(value, v => new BulkEmailJobId(v)).GetValueOrThrow();
-
-    public override string ToString() => Value.ToString();
+    private static Validation Validate(Guid value)
+        => value != Guid.Empty ? Validation.Ok : Validation.Invalid("Bulk email job ID cannot be empty.");
 }
+

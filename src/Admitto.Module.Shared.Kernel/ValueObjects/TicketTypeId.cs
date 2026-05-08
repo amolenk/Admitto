@@ -1,20 +1,13 @@
-using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
+using Vogen;
 
 namespace Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 
-public readonly record struct TicketTypeId : IGuidValueObject
+[ValueObject<Guid>]
+public partial struct TicketTypeId
 {
-    public Guid Value { get; }
-    
-    private TicketTypeId(Guid value) => Value = value;
+    public static TicketTypeId New() => From(Guid.NewGuid());
 
-    public static TicketTypeId New() => new(Guid.NewGuid());
-
-    public static ValidationResult<TicketTypeId> TryFrom(Guid value)
-        => GuidValueObject.TryFrom(value, v => new TicketTypeId(v));
-
-    public static TicketTypeId From(Guid value)
-        => GuidValueObject.TryFrom(value, v => new TicketTypeId(v)).GetValueOrThrow();
-
-    public override string ToString() => Value.ToString();
+    private static Validation Validate(Guid value)
+        => value != Guid.Empty ? Validation.Ok : Validation.Invalid("TicketType ID cannot be empty.");
 }
+

@@ -1,20 +1,12 @@
-using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
+using Vogen;
 
 namespace Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 
-public readonly record struct DomainEventId : IGuidValueObject
+[ValueObject<Guid>]
+public partial struct DomainEventId
 {
-    public Guid Value { get; }
-    
-    private DomainEventId(Guid value) => Value = value;
+    public static DomainEventId New() => From(Guid.NewGuid());
 
-    public static DomainEventId New() => new(Guid.NewGuid());
-
-    public static ValidationResult<DomainEventId> TryFrom(Guid value)
-        => GuidValueObject.TryFrom(value, v => new DomainEventId(v));
-
-    public static DomainEventId From(Guid value)
-        => GuidValueObject.TryFrom(value, v => new DomainEventId(v)).GetValueOrThrow();
-
-    public override string ToString() => Value.ToString();
+    private static Validation Validate(Guid value)
+        => value != Guid.Empty ? Validation.Ok : Validation.Invalid("DomainEvent ID cannot be empty.");
 }

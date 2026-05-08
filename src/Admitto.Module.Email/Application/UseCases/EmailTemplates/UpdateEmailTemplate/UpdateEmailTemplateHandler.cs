@@ -1,6 +1,7 @@
 using Amolenk.Admitto.Module.Email.Application.Persistence;
 using Amolenk.Admitto.Module.Email.Application.Templating;
 using Amolenk.Admitto.Module.Email.Domain.Entities;
+using Amolenk.Admitto.Module.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
 using Microsoft.EntityFrameworkCore;
@@ -24,10 +25,12 @@ internal sealed class UpdateEmailTemplateHandler(IEmailWriteStore writeStore)
 
     public async ValueTask HandleAsync(UpdateEmailTemplateCommand command, CancellationToken ct)
     {
+        EmailTemplateId id = EmailTemplateId.From(command.Id);
+
         var template = await writeStore.EmailTemplates
-            .FirstOrDefaultAsync(t => t.Id == command.Id, ct)
+            .FirstOrDefaultAsync(t => t.Id == id, ct)
             ?? throw new BusinessRuleViolationException(
-                NotFoundError.Create<EmailTemplate>(command.Id.Value.ToString()));
+                NotFoundError.Create<EmailTemplate>(id.Value.ToString()));
 
         if (command.Version != template.Version)
             throw new BusinessRuleViolationException(
@@ -45,7 +48,7 @@ internal sealed class UpdateEmailTemplateHandler(IEmailWriteStore writeStore)
                 throw new BusinessRuleViolationException(ReservedNameError);
 
             var alreadyExists = await writeStore.EmailTemplates.AnyAsync(
-                t => t.Id != command.Id &&
+                t => t.Id != id &&
                      t.Scope == template.Scope &&
                      t.ScopeId == template.ScopeId &&
                      t.Name.ToLower() == command.Name.ToLower(),

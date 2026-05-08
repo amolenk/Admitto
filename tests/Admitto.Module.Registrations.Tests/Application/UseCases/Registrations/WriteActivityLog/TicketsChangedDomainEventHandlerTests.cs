@@ -39,7 +39,7 @@ public sealed class TicketsChangedDomainEventHandlerTests
         await handler.HandleAsync(domainEvent, CancellationToken.None);
 
         captured.ShouldNotBeNull();
-        captured.RegistrationId.ShouldBe(registrationId);
+        captured.RegistrationId.ShouldBe(registrationId.Value);
         captured.ActivityType.ShouldBe(ActivityType.TicketsChanged);
         captured.OccurredAt.ShouldBe(changedAt);
 

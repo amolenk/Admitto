@@ -27,7 +27,7 @@ internal sealed class TicketedEventReconfirmPolicyChangedIntegrationEventHandler
         if (integrationEvent.Policy is null)
         {
             await mediator.SendAsync(
-                new ScheduleReconfirmationsCommand(ticketedEventId, Spec: null),
+                new ScheduleReconfirmationsCommand(integrationEvent.TicketedEventId, Spec: null),
                 cancellationToken);
             return;
         }
@@ -38,7 +38,7 @@ internal sealed class TicketedEventReconfirmPolicyChangedIntegrationEventHandler
             ticketedEventId, cancellationToken);
 
         await mediator.SendAsync(
-            new ScheduleReconfirmationsCommand(ticketedEventId, spec),
+            new ScheduleReconfirmationsCommand(integrationEvent.TicketedEventId, spec),
             cancellationToken);
     }
 }

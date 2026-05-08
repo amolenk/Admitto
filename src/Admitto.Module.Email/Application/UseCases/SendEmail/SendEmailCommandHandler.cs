@@ -5,6 +5,7 @@ using Amolenk.Admitto.Module.Email.Application.Templating;
 using Amolenk.Admitto.Module.Email.Domain.Entities;
 using Amolenk.Admitto.Module.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
+using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 
 namespace Amolenk.Admitto.Module.Email.Application.UseCases.SendEmail;
@@ -19,6 +20,9 @@ internal sealed class SendEmailCommandHandler(
 {
     public async ValueTask HandleAsync(SendEmailCommand command, CancellationToken cancellationToken)
     {
+        TeamId teamId = TeamId.From(command.TeamId);
+        TicketedEventId ticketedEventId = TicketedEventId.From(command.TicketedEventId);
+
         // Dedup: skip if already processed.
         var alreadySent = await writeStore.EmailLog
             .AnyAsync(l => l.IdempotencyKey == command.IdempotencyKey, cancellationToken);
@@ -30,13 +34,13 @@ internal sealed class SendEmailCommandHandler(
 
         // Resolve effective settings.
         var settings = await settingsResolver.ResolveAsync(
-            command.TeamId, command.TicketedEventId, cancellationToken);
+            teamId, ticketedEventId, cancellationToken);
 
         if (settings is null || !settings.IsValid())
         {
             writeStore.EmailLog.Add(EmailLog.Create(
-                teamId: command.TeamId.Value,
-                ticketedEventId: command.TicketedEventId.Value,
+                teamId: command.TeamId,
+                ticketedEventId: command.TicketedEventId,
                 idempotencyKey: command.IdempotencyKey,
                 recipient: command.RecipientAddress,
                 emailType: command.EmailType,
@@ -56,14 +60,14 @@ internal sealed class SendEmailCommandHandler(
         try
         {
             var template = await templateService.LoadAsync(
-                command.EmailType, command.TeamId, command.TicketedEventId, cancellationToken);
+                command.EmailType, teamId, ticketedEventId, cancellationToken);
             rendered = renderer.Render(template, command.Parameters);
         }
         catch (EmailRenderException ex)
         {
             writeStore.EmailLog.Add(EmailLog.Create(
-                teamId: command.TeamId.Value,
-                ticketedEventId: command.TicketedEventId.Value,
+                teamId: command.TeamId,
+                ticketedEventId: command.TicketedEventId,
                 idempotencyKey: command.IdempotencyKey,
                 recipient: command.RecipientAddress,
                 emailType: command.EmailType,
@@ -91,8 +95,8 @@ internal sealed class SendEmailCommandHandler(
             var providerMessageId = await emailSender.SendAsync(settings, message, cancellationToken);
 
             writeStore.EmailLog.Add(EmailLog.Create(
-                teamId: command.TeamId.Value,
-                ticketedEventId: command.TicketedEventId.Value,
+                teamId: command.TeamId,
+                ticketedEventId: command.TicketedEventId,
                 idempotencyKey: command.IdempotencyKey,
                 recipient: command.RecipientAddress,
                 emailType: command.EmailType,
@@ -107,8 +111,8 @@ internal sealed class SendEmailCommandHandler(
         catch (Exception ex)
         {
             writeStore.EmailLog.Add(EmailLog.Create(
-                teamId: command.TeamId.Value,
-                ticketedEventId: command.TicketedEventId.Value,
+                teamId: command.TeamId,
+                ticketedEventId: command.TicketedEventId,
                 idempotencyKey: command.IdempotencyKey,
                 recipient: command.RecipientAddress,
                 emailType: command.EmailType,

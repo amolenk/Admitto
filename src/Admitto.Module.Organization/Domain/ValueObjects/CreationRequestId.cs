@@ -1,5 +1,4 @@
-using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
-using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
+using Vogen;
 
 namespace Amolenk.Admitto.Module.Organization.Domain.ValueObjects;
 
@@ -9,18 +8,12 @@ namespace Amolenk.Admitto.Module.Organization.Domain.ValueObjects;
 /// integration event back to the originating create-event request, independently
 /// of the (potentially-not-yet-assigned) <c>TicketedEventId</c> or slug.
 /// </summary>
-public readonly record struct CreationRequestId : IGuidValueObject
+[ValueObject<Guid>]
+public partial struct CreationRequestId
 {
-    public Guid Value { get; }
+    public static CreationRequestId New() => From(Guid.NewGuid());
 
-    private CreationRequestId(Guid value) => Value = value;
-
-    public static CreationRequestId New() => new(Guid.NewGuid());
-
-    public static ValidationResult<CreationRequestId> TryFrom(Guid value)
-        => GuidValueObject.TryFrom(value, v => new CreationRequestId(v));
-
-    public static CreationRequestId From(Guid value) => TryFrom(value).GetValueOrThrow();
-
-    public override string ToString() => Value.ToString();
+    private static Validation Validate(Guid value)
+        => value != Guid.Empty ? Validation.Ok : Validation.Invalid("Creation request ID cannot be empty.");
 }
+

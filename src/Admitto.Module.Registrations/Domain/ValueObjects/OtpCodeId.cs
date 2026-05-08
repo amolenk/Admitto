@@ -1,21 +1,13 @@
-using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
-using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
+using Vogen;
 
 namespace Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 
-public readonly record struct OtpCodeId : IGuidValueObject
+[ValueObject<Guid>]
+public partial struct OtpCodeId
 {
-    public Guid Value { get; }
+    public static OtpCodeId New() => From(Guid.NewGuid());
 
-    private OtpCodeId(Guid value) => Value = value;
-
-    public static OtpCodeId New() => new(Guid.NewGuid());
-
-    public static ValidationResult<OtpCodeId> TryFrom(Guid value)
-        => GuidValueObject.TryFrom(value, v => new OtpCodeId(v));
-
-    public static OtpCodeId From(Guid value)
-        => GuidValueObject.TryFrom(value, v => new OtpCodeId(v)).GetValueOrThrow();
-
-    public override string ToString() => Value.ToString();
+    private static Validation Validate(Guid value)
+        => value != Guid.Empty ? Validation.Ok : Validation.Invalid("OTP code ID cannot be empty.");
 }
+

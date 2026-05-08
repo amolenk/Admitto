@@ -1,22 +1,21 @@
-using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
+using Vogen;
 
 namespace Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 
-public readonly record struct LastName : IStringValueObject
+[ValueObject<string>]
+public partial struct LastName
 {
     public const int MaxLength = 100;
 
-    public string Value { get; }
+    private static string NormalizeInput(string value) => value.Trim();
 
-    private LastName(string value) => Value = value;
-
-    public static ValidationResult<LastName> TryFrom(string? value)
-        => StringValueObject.TryFrom(
-            value,
-            MaxLength,
-            v => new LastName(v));
-
-    public static LastName From(string? value) => TryFrom(value).GetValueOrThrow();
-
-    public override string ToString() => Value;
+    private static Validation Validate(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return Validation.Invalid("Last name is required.");
+        if (value.Length > MaxLength)
+            return Validation.Invalid($"Last name must be at most {MaxLength} character(s).");
+        return Validation.Ok;
+    }
 }
+

@@ -1,20 +1,12 @@
-using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
+using Vogen;
 
 namespace Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 
-public readonly record struct TeamId : IGuidValueObject
+[ValueObject<Guid>]
+public partial struct TeamId
 {
-    public Guid Value { get; }
+    public static TeamId New() => From(Guid.NewGuid());
 
-    private TeamId(Guid value) => Value = value;
-
-    public static TeamId New() => new(Guid.NewGuid());
-
-    public static ValidationResult<TeamId> TryFrom(Guid value)
-        => GuidValueObject.TryFrom(value, v => new TeamId(v));
-
-    public static TeamId From(Guid value)
-        => GuidValueObject.TryFrom(value, v => new TeamId(v)).GetValueOrThrow();
-
-    public override string ToString() => Value.ToString();
+    private static Validation Validate(Guid value)
+        => value != Guid.Empty ? Validation.Ok : Validation.Invalid("Team ID cannot be empty.");
 }

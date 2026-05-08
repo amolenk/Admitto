@@ -19,7 +19,7 @@ public sealed class RevokeCouponTests(TestContext testContext) : AspireIntegrati
         var fixture = RevokeCouponFixture.ActiveCoupon();
         await fixture.SetupAsync(Environment);
 
-        var command = new RevokeCouponCommand(fixture.EventId, fixture.CouponId);
+        var command = new RevokeCouponCommand(fixture.EventId.Value, fixture.CouponId.Value);
         var sut = NewRevokeCouponHandler();
 
         // Act
@@ -41,7 +41,7 @@ public sealed class RevokeCouponTests(TestContext testContext) : AspireIntegrati
         var fixture = RevokeCouponFixture.ExpiredCoupon();
         await fixture.SetupAsync(Environment);
 
-        var command = new RevokeCouponCommand(fixture.EventId, fixture.CouponId);
+        var command = new RevokeCouponCommand(fixture.EventId.Value, fixture.CouponId.Value);
         var sut = NewRevokeCouponHandler();
 
         // Act
@@ -63,7 +63,7 @@ public sealed class RevokeCouponTests(TestContext testContext) : AspireIntegrati
         var fixture = RevokeCouponFixture.RedeemedCoupon();
         await fixture.SetupAsync(Environment);
 
-        var command = new RevokeCouponCommand(fixture.EventId, fixture.CouponId);
+        var command = new RevokeCouponCommand(fixture.EventId.Value, fixture.CouponId.Value);
         var sut = NewRevokeCouponHandler();
 
         // Act
@@ -82,7 +82,7 @@ public sealed class RevokeCouponTests(TestContext testContext) : AspireIntegrati
         var fixture = RevokeCouponFixture.AlreadyRevokedCoupon();
         await fixture.SetupAsync(Environment);
 
-        var command = new RevokeCouponCommand(fixture.EventId, fixture.CouponId);
+        var command = new RevokeCouponCommand(fixture.EventId.Value, fixture.CouponId.Value);
         var sut = NewRevokeCouponHandler();
 
         // Act — should not throw
@@ -103,7 +103,7 @@ public sealed class RevokeCouponTests(TestContext testContext) : AspireIntegrati
         var fixture = RevokeCouponFixture.NoCoupon();
         await fixture.SetupAsync(Environment);
 
-        var command = new RevokeCouponCommand(fixture.EventId, fixture.CouponId);
+        var command = new RevokeCouponCommand(fixture.EventId.Value, fixture.CouponId.Value);
         var sut = NewRevokeCouponHandler();
 
         // Act

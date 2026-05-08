@@ -3,7 +3,6 @@ using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Application.Persistence;
-using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.Registrations.ChangeAttendeeTickets.PublicApi;
 
@@ -33,8 +32,8 @@ public static class SelfChangeTicketsHttpEndpoint
         var eventId = await ticketedEventIdLookup.GetTicketedEventIdAsync(teamId, eventSlug, cancellationToken);
 
         var command = new ChangeAttendeeTicketsCommand(
-            TicketedEventId.From(eventId),
-            RegistrationId.From(registrationId),
+            eventId,
+            registrationId,
             request.TicketTypeSlugs ?? [],
             ChangeMode.SelfService);
 

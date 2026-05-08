@@ -1,7 +1,6 @@
 using Amolenk.Admitto.Module.Organization.Application.Persistence;
 using Amolenk.Admitto.Module.Organization.Domain.Entities;
 using Amolenk.Admitto.Module.Organization.Domain.ValueObjects;
-using Amolenk.Admitto.Module.Organization.Infrastructure.Persistence.ValueConverters;
 using Amolenk.Admitto.Module.Shared.Infrastructure.Persistence;
 using Amolenk.Admitto.Module.Shared.Infrastructure.Persistence.Outbox;
 using Microsoft.EntityFrameworkCore;
@@ -35,14 +34,14 @@ public sealed class OrganizationDbContext(DbContextOptions<OrganizationDbContext
 
         configurationBuilder
             .Properties<UserId>()
-            .HaveConversion<UserIdConverter>();
+            .HaveConversion<UserId.EfCoreValueConverter>();
 
         configurationBuilder
             .Properties<ApiKeyId>()
-            .HaveConversion<ApiKeyIdConverter>();
+            .HaveConversion<ApiKeyId.EfCoreValueConverter>();
 
         configurationBuilder
             .Properties<ExternalUserId>()
-            .HaveConversion<ExternalUserIdConverter>();
+            .HaveConversion<ExternalUserId.EfCoreValueConverter>();
     }
 }

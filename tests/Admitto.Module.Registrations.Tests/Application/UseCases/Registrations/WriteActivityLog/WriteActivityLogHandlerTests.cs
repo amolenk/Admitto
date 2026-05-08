@@ -17,7 +17,7 @@ public sealed class WriteActivityLogHandlerTests(TestContext testContext) : Aspi
 
         var handler = new WriteActivityLogHandler(Environment.Database.Context);
         await handler.HandleAsync(
-            new WriteActivityLogCommand(registrationId, ActivityType.Registered, occurredOn),
+            new WriteActivityLogCommand(registrationId.Value, ActivityType.Registered, occurredOn),
             testContext.CancellationToken);
 
         await Environment.Database.AssertAsync(async db =>
@@ -41,7 +41,7 @@ public sealed class WriteActivityLogHandlerTests(TestContext testContext) : Aspi
 
         var handler = new WriteActivityLogHandler(Environment.Database.Context);
         await handler.HandleAsync(
-            new WriteActivityLogCommand(registrationId, ActivityType.Reconfirmed, reconfirmedAt),
+            new WriteActivityLogCommand(registrationId.Value, ActivityType.Reconfirmed, reconfirmedAt),
             testContext.CancellationToken);
 
         await Environment.Database.AssertAsync(async db =>
@@ -66,7 +66,7 @@ public sealed class WriteActivityLogHandlerTests(TestContext testContext) : Aspi
         var handler = new WriteActivityLogHandler(Environment.Database.Context);
         await handler.HandleAsync(
             new WriteActivityLogCommand(
-                registrationId,
+                registrationId.Value,
                 ActivityType.Cancelled,
                 occurredOn,
                 Metadata: CancellationReason.VisaLetterDenied.ToString()),
@@ -93,10 +93,10 @@ public sealed class WriteActivityLogHandlerTests(TestContext testContext) : Aspi
 
         var handler = new WriteActivityLogHandler(Environment.Database.Context);
         await handler.HandleAsync(
-            new WriteActivityLogCommand(registrationId, ActivityType.Registered, now.AddMinutes(-10)),
+            new WriteActivityLogCommand(registrationId.Value, ActivityType.Registered, now.AddMinutes(-10)),
             testContext.CancellationToken);
         await handler.HandleAsync(
-            new WriteActivityLogCommand(registrationId, ActivityType.Reconfirmed, now.AddMinutes(-1)),
+            new WriteActivityLogCommand(registrationId.Value, ActivityType.Reconfirmed, now.AddMinutes(-1)),
             testContext.CancellationToken);
 
         await Environment.Database.AssertAsync(async db =>

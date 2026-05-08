@@ -23,8 +23,8 @@ public static class CreateBulkEmailHttpEndpoint
                 var orgScope = await scopeResolver.ResolveAsync(teamSlug, eventSlug, ct);
 
                 var command = new CreateBulkEmailCommand(
-                    TeamId.From(orgScope.TeamId),
-                    TicketedEventId.From(orgScope.EventId!.Value),
+                    orgScope.TeamId,
+                    orgScope.EventId!.Value,
                     request.EmailType,
                     request.TemplateName,
                     request.Subject,
@@ -33,14 +33,14 @@ public static class CreateBulkEmailHttpEndpoint
                     request.Source.ToDomain());
 
                 var bulkEmailJobId = await mediator
-                    .SendReceiveAsync<CreateBulkEmailCommand, Domain.ValueObjects.BulkEmailJobId>(command, ct);
+                    .SendReceiveAsync<CreateBulkEmailCommand, Guid>(command, ct);
 
                 await unitOfWork.SaveChangesAsync(ct);
 
                 var location =
-                    $"/admin/teams/{teamSlug}/events/{eventSlug}/bulk-emails/{bulkEmailJobId.Value}";
+                    $"/admin/teams/{teamSlug}/events/{eventSlug}/bulk-emails/{bulkEmailJobId}";
 
-                return TypedResults.Created(location, new CreateBulkEmailResponse(bulkEmailJobId.Value));
+                return TypedResults.Created(location, new CreateBulkEmailResponse(bulkEmailJobId));
             })
             .WithName("CreateBulkEmail")
             .RequireAuthorization(policy => policy.RequireTeamMembership(TeamMembershipRole.Organizer));

@@ -1,26 +1,24 @@
-using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
-using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
+using Vogen;
 
 namespace Amolenk.Admitto.Module.Email.Domain.ValueObjects;
 
 /// <summary>
 /// SMTP server hostname. Permissive: non-empty, trimmed, length-capped — no DNS or RFC parsing.
 /// </summary>
-public readonly record struct Hostname : IStringValueObject
+[ValueObject<string>]
+public partial struct Hostname
 {
     public const int MaxLength = 255;
 
-    public string Value { get; }
+    private static string NormalizeInput(string value) => value?.Trim() ?? string.Empty;
 
-    private Hostname(string value) => Value = value;
-
-    public static ValidationResult<Hostname> TryFrom(string? value)
-        => StringValueObject.TryFrom(
-            value,
-            MaxLength,
-            v => new Hostname(v));
-
-    public static Hostname From(string? value) => TryFrom(value).GetValueOrThrow();
-
-    public override string ToString() => Value;
+    private static Validation Validate(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return Validation.Invalid("Hostname is required.");
+        if (value.Length > MaxLength)
+            return Validation.Invalid($"Hostname must be at most {MaxLength} character(s).");
+        return Validation.Ok;
+    }
 }
+

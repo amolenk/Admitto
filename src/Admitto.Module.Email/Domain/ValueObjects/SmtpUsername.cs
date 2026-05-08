@@ -1,26 +1,24 @@
-using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
-using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
+using Vogen;
 
 namespace Amolenk.Admitto.Module.Email.Domain.ValueObjects;
 
 /// <summary>
 /// SMTP authentication username. The aggregate enforces presence when AuthMode = Basic.
 /// </summary>
-public readonly record struct SmtpUsername : IStringValueObject
+[ValueObject<string>]
+public partial struct SmtpUsername
 {
     public const int MaxLength = 255;
 
-    public string Value { get; }
+    private static string NormalizeInput(string value) => value?.Trim() ?? string.Empty;
 
-    private SmtpUsername(string value) => Value = value;
-
-    public static ValidationResult<SmtpUsername> TryFrom(string? value)
-        => StringValueObject.TryFrom(
-            value,
-            MaxLength,
-            v => new SmtpUsername(v));
-
-    public static SmtpUsername From(string? value) => TryFrom(value).GetValueOrThrow();
-
-    public override string ToString() => Value;
+    private static Validation Validate(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return Validation.Invalid("SMTP username is required.");
+        if (value.Length > MaxLength)
+            return Validation.Invalid($"SMTP username must be at most {MaxLength} character(s).");
+        return Validation.Ok;
+    }
 }
+

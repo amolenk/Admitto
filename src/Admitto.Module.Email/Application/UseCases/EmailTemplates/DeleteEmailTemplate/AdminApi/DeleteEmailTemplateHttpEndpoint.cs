@@ -26,7 +26,7 @@ public static class DeleteEmailTemplateHttpEndpoint
                 var unitOfWork = httpContext.RequestServices
                     .GetRequiredKeyedService<IUnitOfWork>(EmailModuleKey.Value);
 
-                await mediator.SendAsync(new DeleteEmailTemplateCommand(EmailTemplateId.From(id), version), ct);
+                await mediator.SendAsync(new DeleteEmailTemplateCommand(id, version), ct);
                 await unitOfWork.SaveChangesAsync(ct);
 
                 return TypedResults.NoContent();

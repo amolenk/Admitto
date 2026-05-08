@@ -1,7 +1,9 @@
 using Amolenk.Admitto.Module.Registrations.Application.Persistence;
 using Amolenk.Admitto.Module.Registrations.Domain.Entities;
+using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
+using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 
 namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.Registrations.ReleaseTickets;
@@ -13,20 +15,23 @@ internal sealed class ReleaseTicketsHandler(IRegistrationsWriteStore writeStore)
         ReleaseTicketsCommand command,
         CancellationToken cancellationToken)
     {
+        RegistrationId registrationId = RegistrationId.From(command.RegistrationId);
+        TicketedEventId ticketedEventId = TicketedEventId.From(command.TicketedEventId);
+
         var registration = await writeStore.Registrations
             .FirstOrDefaultAsync(
-                r => r.Id == command.RegistrationId && r.EventId == command.TicketedEventId,
+                r => r.Id == registrationId && r.EventId == ticketedEventId,
                 cancellationToken);
 
         if (registration is null)
         {
             throw new BusinessRuleViolationException(
-                NotFoundError.Create<Registration>(command.RegistrationId.Value));
+                NotFoundError.Create<Registration>(registrationId.Value));
         }
 
         var catalog = await writeStore.TicketCatalogs
             .FirstOrDefaultAsync(
-                c => c.Id == command.TicketedEventId,
+                c => c.Id == ticketedEventId,
                 cancellationToken);
 
         if (catalog is null)

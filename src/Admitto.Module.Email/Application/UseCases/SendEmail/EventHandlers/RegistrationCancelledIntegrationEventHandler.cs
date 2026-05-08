@@ -4,7 +4,6 @@ using Amolenk.Admitto.Module.Email.Application.UseCases.SendEmail;
 using Amolenk.Admitto.Module.Registrations.Contracts;
 using Amolenk.Admitto.Module.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
-using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 
 namespace Amolenk.Admitto.Module.Email.Application.UseCases.SendEmail.EventHandlers;
@@ -49,8 +48,8 @@ internal sealed class RegistrationCancelledIntegrationEventHandler(
         var lastName = eventContext.LastName ?? string.Empty;
 
         var command = new SendEmailCommand(
-            TeamId: TeamId.From(integrationEvent.TeamId),
-            TicketedEventId: TicketedEventId.From(integrationEvent.TicketedEventId),
+            TeamId: integrationEvent.TeamId,
+            TicketedEventId: integrationEvent.TicketedEventId,
             RegistrationId: integrationEvent.RegistrationId,
             RecipientAddress: integrationEvent.RecipientEmail,
             RecipientName: $"{firstName} {lastName}".Trim(),

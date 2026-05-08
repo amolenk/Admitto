@@ -50,7 +50,7 @@ public sealed class ScheduleReconfirmationsHandlerTests
         var eventId = TicketedEventId.New();
 
         await subject.HandleAsync(
-            new ScheduleReconfirmationsCommand(eventId, Spec(teamId.Value, eventId.Value, "Europe/Amsterdam")),
+            new ScheduleReconfirmationsCommand(eventId.Value, Spec(teamId.Value, eventId.Value, "Europe/Amsterdam")),
             default);
 
         var trigger = (ICronTrigger?)await scheduler.GetTrigger(TriggerKeyFor(eventId));
@@ -71,7 +71,7 @@ public sealed class ScheduleReconfirmationsHandlerTests
         var eventId = TicketedEventId.New();
 
         await subject.HandleAsync(
-            new ScheduleReconfirmationsCommand(eventId, Spec(Guid.NewGuid(), eventId.Value, "UTC", cadenceDays: 3)),
+            new ScheduleReconfirmationsCommand(eventId.Value, Spec(Guid.NewGuid(), eventId.Value, "UTC", cadenceDays: 3)),
             default);
 
         var trigger = (ICronTrigger?)await scheduler.GetTrigger(TriggerKeyFor(eventId));
@@ -89,9 +89,9 @@ public sealed class ScheduleReconfirmationsHandlerTests
         var eventId = TicketedEventId.New();
 
         await subject.HandleAsync(
-            new ScheduleReconfirmationsCommand(eventId, Spec(teamId, eventId.Value, "Europe/Amsterdam")), default);
+            new ScheduleReconfirmationsCommand(eventId.Value, Spec(teamId, eventId.Value, "Europe/Amsterdam")), default);
         await subject.HandleAsync(
-            new ScheduleReconfirmationsCommand(eventId, Spec(teamId, eventId.Value, "America/New_York")), default);
+            new ScheduleReconfirmationsCommand(eventId.Value, Spec(teamId, eventId.Value, "America/New_York")), default);
 
         var trigger = (ICronTrigger?)await scheduler.GetTrigger(TriggerKeyFor(eventId));
         trigger.ShouldNotBeNull();
@@ -107,7 +107,7 @@ public sealed class ScheduleReconfirmationsHandlerTests
         var eventId = TicketedEventId.New();
 
         await subject.HandleAsync(
-            new ScheduleReconfirmationsCommand(eventId, Spec(Guid.NewGuid(), eventId.Value, "Not/AReal_Zone")),
+            new ScheduleReconfirmationsCommand(eventId.Value, Spec(Guid.NewGuid(), eventId.Value, "Not/AReal_Zone")),
             default);
 
         (await scheduler.GetTrigger(TriggerKeyFor(eventId))).ShouldBeNull();
@@ -123,7 +123,7 @@ public sealed class ScheduleReconfirmationsHandlerTests
 
         await Should.ThrowAsync<ArgumentOutOfRangeException>(() =>
             subject.HandleAsync(
-                new ScheduleReconfirmationsCommand(eventId, Spec(Guid.NewGuid(), eventId.Value, "UTC", cadenceDays: 0)),
+                new ScheduleReconfirmationsCommand(eventId.Value, Spec(Guid.NewGuid(), eventId.Value, "UTC", cadenceDays: 0)),
                 default).AsTask());
 
         await scheduler.Shutdown();
@@ -137,7 +137,7 @@ public sealed class ScheduleReconfirmationsHandlerTests
         var bad = new ReconfirmTriggerSpecDto(Guid.NewGuid(), eventId.Value, "UTC", Closes, Opens, 1);
 
         await Should.ThrowAsync<ArgumentException>(() =>
-            subject.HandleAsync(new ScheduleReconfirmationsCommand(eventId, bad), default).AsTask());
+            subject.HandleAsync(new ScheduleReconfirmationsCommand(eventId.Value, bad), default).AsTask());
 
         await scheduler.Shutdown();
     }
@@ -149,10 +149,10 @@ public sealed class ScheduleReconfirmationsHandlerTests
         var eventId = TicketedEventId.New();
 
         await subject.HandleAsync(
-            new ScheduleReconfirmationsCommand(eventId, Spec(Guid.NewGuid(), eventId.Value, "UTC")), default);
+            new ScheduleReconfirmationsCommand(eventId.Value, Spec(Guid.NewGuid(), eventId.Value, "UTC")), default);
         (await scheduler.GetTrigger(TriggerKeyFor(eventId))).ShouldNotBeNull();
 
-        await subject.HandleAsync(new ScheduleReconfirmationsCommand(eventId, Spec: null), default);
+        await subject.HandleAsync(new ScheduleReconfirmationsCommand(eventId.Value, Spec: null), default);
 
         (await scheduler.GetTrigger(TriggerKeyFor(eventId))).ShouldBeNull();
 
@@ -165,7 +165,7 @@ public sealed class ScheduleReconfirmationsHandlerTests
         var (scheduler, subject) = await CreateAsync();
 
         await subject.HandleAsync(
-            new ScheduleReconfirmationsCommand(TicketedEventId.New(), Spec: null),
+            new ScheduleReconfirmationsCommand(TicketedEventId.New().Value, Spec: null),
             default);
 
         await scheduler.Shutdown();

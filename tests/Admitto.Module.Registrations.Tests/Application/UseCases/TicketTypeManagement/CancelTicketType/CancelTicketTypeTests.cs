@@ -19,8 +19,8 @@ public sealed class CancelTicketTypeTests(TestContext testContext) : AspireInteg
         await fixture.SetupAsync(Environment);
 
         var command = new CancelTicketTypeCommand(
-            fixture.EventId,
-            Slug.From(fixture.TicketTypeSlug));
+            fixture.EventId.Value,
+            fixture.TicketTypeSlug);
         var sut = new CancelTicketTypeHandler(Environment.Database.Context);
 
         // Act
@@ -47,8 +47,8 @@ public sealed class CancelTicketTypeTests(TestContext testContext) : AspireInteg
         await fixture.SetupAsync(Environment);
 
         var command = new CancelTicketTypeCommand(
-            fixture.EventId,
-            Slug.From(fixture.TicketTypeSlug));
+            fixture.EventId.Value,
+            fixture.TicketTypeSlug);
         var sut = new CancelTicketTypeHandler(Environment.Database.Context);
 
         // Act
@@ -67,8 +67,8 @@ public sealed class CancelTicketTypeTests(TestContext testContext) : AspireInteg
         await fixture.SetupAsync(Environment);
 
         var command = new CancelTicketTypeCommand(
-            fixture.EventId,
-            Slug.From(fixture.TicketTypeSlug));
+            fixture.EventId.Value,
+            fixture.TicketTypeSlug);
         var sut = new CancelTicketTypeHandler(Environment.Database.Context);
 
         // Act

@@ -1,9 +1,7 @@
-using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Application.Auth;
 using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Application.Persistence;
-using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.Registrations.RegisterAttendee.AdminApi;
@@ -33,23 +31,23 @@ public static class AdminRegisterAttendeeHttpEndpoint
         var scope = await scopeResolver.ResolveAsync(teamSlug, eventSlug, cancellationToken);
 
         var command = new RegisterAttendeeCommand(
-            TicketedEventId.From(scope.EventId!.Value),
-            EmailAddress.From(request.Email),
-            FirstName.From(request.FirstName),
-            LastName.From(request.LastName),
+            scope.EventId!.Value,
+            request.Email,
+            request.FirstName,
+            request.LastName,
             request.TicketTypeSlugs,
             RegistrationMode.AdminAdd,
             CouponCode: null,
             EmailVerificationToken: null,
             AdditionalDetails: request.AdditionalDetails);
 
-        var registrationId = await mediator.SendReceiveAsync<RegisterAttendeeCommand, RegistrationId>(
+        var registrationId = await mediator.SendReceiveAsync<RegisterAttendeeCommand, Guid>(
             command, cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return TypedResults.Created(
-            $"/admin/teams/{teamSlug}/events/{eventSlug}/registrations/{registrationId.Value}",
-            new AdminRegisterAttendeeHttpResponse(registrationId.Value));
+            $"/admin/teams/{teamSlug}/events/{eventSlug}/registrations/{registrationId}",
+            new AdminRegisterAttendeeHttpResponse(registrationId));
     }
 }

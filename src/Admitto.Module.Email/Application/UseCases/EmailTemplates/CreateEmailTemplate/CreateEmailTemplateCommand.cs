@@ -10,4 +10,4 @@ internal sealed record CreateEmailTemplateCommand(
     string? Subject,
     string? TextBody,
     string? HtmlBody,
-    Guid? ParentScopeId = null) : Command<EmailTemplateId>;
+    Guid? ParentScopeId = null) : Command<Guid>;

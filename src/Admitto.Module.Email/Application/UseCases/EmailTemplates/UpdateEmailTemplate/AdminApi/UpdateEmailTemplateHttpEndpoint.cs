@@ -25,7 +25,7 @@ public static class UpdateEmailTemplateHttpEndpoint
                 CancellationToken ct) =>
             {
                 var command = new UpdateEmailTemplateCommand(
-                    EmailTemplateId.From(id),
+                    id,
                     request.Name,
                     request.Subject,
                     request.TextBody,

@@ -21,7 +21,7 @@ public sealed class ConfigureReconfirmPolicyTests(TestContext testContext) : Asp
 
         await sut.HandleAsync(
             new ConfigureReconfirmPolicyCommand(
-                fixture.EventId, fixture.SeededVersion, opensAt, closesAt, CadenceDays: 7),
+                fixture.EventId.Value, fixture.SeededVersion, opensAt, closesAt, CadenceDays: 7),
             testContext.CancellationToken);
 
         await Environment.Database.AssertAsync(async ctx =>
@@ -46,7 +46,7 @@ public sealed class ConfigureReconfirmPolicyTests(TestContext testContext) : Asp
 
         await sut.HandleAsync(
             new ConfigureReconfirmPolicyCommand(
-                fixture.EventId, fixture.SeededVersion, OpensAt: null, ClosesAt: null, CadenceDays: null),
+                fixture.EventId.Value, fixture.SeededVersion, OpensAt: null, ClosesAt: null, CadenceDays: null),
             testContext.CancellationToken);
 
         await Environment.Database.AssertAsync(async ctx =>
@@ -69,7 +69,7 @@ public sealed class ConfigureReconfirmPolicyTests(TestContext testContext) : Asp
         var result = await ErrorResult.CaptureAsync(async () =>
             await sut.HandleAsync(
                 new ConfigureReconfirmPolicyCommand(
-                    fixture.EventId,
+                    fixture.EventId.Value,
                     fixture.SeededVersion,
                     DateTimeOffset.UtcNow.AddDays(5),
                     DateTimeOffset.UtcNow.AddDays(15),
@@ -90,7 +90,7 @@ public sealed class ConfigureReconfirmPolicyTests(TestContext testContext) : Asp
         var result = await ErrorResult.CaptureAsync(async () =>
             await sut.HandleAsync(
                 new ConfigureReconfirmPolicyCommand(
-                    fixture.EventId,
+                    fixture.EventId.Value,
                     fixture.SeededVersion,
                     OpensAt: DateTimeOffset.UtcNow.AddDays(5),
                     ClosesAt: null,

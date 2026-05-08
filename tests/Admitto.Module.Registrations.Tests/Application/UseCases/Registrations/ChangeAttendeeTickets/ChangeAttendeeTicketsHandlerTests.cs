@@ -25,8 +25,8 @@ public sealed class ChangeAttendeeTicketsHandlerTests(TestContext testContext) :
         await fixture.SetupAsync(Environment);
 
         var command = new ChangeAttendeeTicketsCommand(
-            fixture.EventId,
-            fixture.RegistrationId,
+            fixture.EventId.Value,
+            fixture.RegistrationId.Value,
             ["workshop"],
             ChangeMode.Admin);
 
@@ -57,8 +57,8 @@ public sealed class ChangeAttendeeTicketsHandlerTests(TestContext testContext) :
         await fixture.SetupAsync(Environment);
 
         var command = new ChangeAttendeeTicketsCommand(
-            fixture.EventId,
-            fixture.RegistrationId,
+            fixture.EventId.Value,
+            fixture.RegistrationId.Value,
             ["workshop"],
             ChangeMode.Admin);
 
@@ -82,8 +82,8 @@ public sealed class ChangeAttendeeTicketsHandlerTests(TestContext testContext) :
         await fixture.SetupAsync(Environment);
 
         var command = new ChangeAttendeeTicketsCommand(
-            fixture.EventId,
-            fixture.RegistrationId,
+            fixture.EventId.Value,
+            fixture.RegistrationId.Value,
             ["early-bird"],
             ChangeMode.Admin);
 
@@ -101,8 +101,8 @@ public sealed class ChangeAttendeeTicketsHandlerTests(TestContext testContext) :
         await fixture.SetupAsync(Environment);
 
         var command = new ChangeAttendeeTicketsCommand(
-            fixture.EventId,
-            fixture.RegistrationId,
+            fixture.EventId.Value,
+            fixture.RegistrationId.Value,
             ["early-bird"],
             ChangeMode.Admin);
 

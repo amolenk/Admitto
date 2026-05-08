@@ -19,8 +19,8 @@ public sealed class UpdateTicketTypeTests(TestContext testContext) : AspireInteg
         await fixture.SetupAsync(Environment);
 
         var command = new UpdateTicketTypeCommand(
-            fixture.EventId,
-            Slug.From(fixture.TicketTypeSlug),
+            fixture.EventId.Value,
+            fixture.TicketTypeSlug,
             null,
             200);
         var sut = new UpdateTicketTypeHandler(Environment.Database.Context);
@@ -50,9 +50,9 @@ public sealed class UpdateTicketTypeTests(TestContext testContext) : AspireInteg
         await fixture.SetupAsync(Environment);
 
         var command = new UpdateTicketTypeCommand(
-            fixture.EventId,
-            Slug.From(fixture.TicketTypeSlug),
-            DisplayName.From("VIP Admission"),
+            fixture.EventId.Value,
+            fixture.TicketTypeSlug,
+            "VIP Admission",
             null);
         var sut = new UpdateTicketTypeHandler(Environment.Database.Context);
 
@@ -79,8 +79,8 @@ public sealed class UpdateTicketTypeTests(TestContext testContext) : AspireInteg
         await fixture.SetupAsync(Environment);
 
         var command = new UpdateTicketTypeCommand(
-            fixture.EventId,
-            Slug.From(fixture.TicketTypeSlug),
+            fixture.EventId.Value,
+            fixture.TicketTypeSlug,
             null,
             200);
         var sut = new UpdateTicketTypeHandler(Environment.Database.Context);

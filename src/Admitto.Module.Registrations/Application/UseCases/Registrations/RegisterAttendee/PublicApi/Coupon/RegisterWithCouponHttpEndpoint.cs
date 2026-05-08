@@ -1,9 +1,7 @@
 using Amolenk.Admitto.Module.Organization.Contracts;
-using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Application.Persistence;
-using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.Registrations.RegisterAttendee.PublicApi.Coupon;
 
@@ -32,23 +30,23 @@ public static class RegisterWithCouponHttpEndpoint
         var eventId = await ticketedEventIdLookup.GetTicketedEventIdAsync(teamId, eventSlug, cancellationToken);
 
         var command = new RegisterAttendeeCommand(
-            TicketedEventId.From(eventId),
-            EmailAddress.From(request.Email),
-            FirstName.From(request.FirstName),
-            LastName.From(request.LastName),
+            eventId,
+            request.Email,
+            request.FirstName,
+            request.LastName,
             request.TicketTypeSlugs,
             RegistrationMode.Coupon,
             CouponCode: request.CouponCode,
             EmailVerificationToken: null,
             AdditionalDetails: request.AdditionalDetails);
 
-        var registrationId = await mediator.SendReceiveAsync<RegisterAttendeeCommand, RegistrationId>(
+        var registrationId = await mediator.SendReceiveAsync<RegisterAttendeeCommand, Guid>(
             command, cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Results.Created(
-            $"/teams/{teamSlug}/events/{eventSlug}/registrations/{registrationId.Value}",
+            $"/teams/{teamSlug}/events/{eventSlug}/registrations/{registrationId}",
             null);
     }
 }

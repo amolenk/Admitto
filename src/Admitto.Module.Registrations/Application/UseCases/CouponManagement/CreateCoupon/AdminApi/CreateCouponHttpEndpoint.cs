@@ -1,9 +1,7 @@
-using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Application.Auth;
 using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Application.Persistence;
-using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.CouponManagement.CreateCoupon.AdminApi;
@@ -32,15 +30,15 @@ public static class CreateCouponHttpEndpoint
     {
         var scope = await scopeResolver.ResolveAsync(teamSlug, eventSlug, cancellationToken);
 
-        var command = request.ToCommand(TicketedEventId.From(scope.EventId!.Value));
+        var command = request.ToCommand(scope.EventId!.Value);
 
-        var couponId = await mediator.SendReceiveAsync<CreateCouponCommand, CouponId>(
+        var couponId = await mediator.SendReceiveAsync<CreateCouponCommand, Guid>(
             command, cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return TypedResults.Created(
-            $"/teams/{teamSlug}/events/{eventSlug}/coupons/{couponId.Value}",
-            new CreateCouponHttpResponse(couponId.Value));
+            $"/teams/{teamSlug}/events/{eventSlug}/coupons/{couponId}",
+            new CreateCouponHttpResponse(couponId));
     }
 }

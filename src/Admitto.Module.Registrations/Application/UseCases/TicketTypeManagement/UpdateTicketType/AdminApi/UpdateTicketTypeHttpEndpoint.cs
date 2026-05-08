@@ -2,7 +2,6 @@ using Amolenk.Admitto.Module.Shared.Application.Auth;
 using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Application.Persistence;
-using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketTypeManagement.UpdateTicketType.AdminApi;
@@ -33,7 +32,7 @@ public static class UpdateTicketTypeHttpEndpoint
         var scope = await scopeResolver.ResolveAsync(teamSlug, eventSlug, cancellationToken);
 
         var command = request.ToCommand(
-            TicketedEventId.From(scope.EventId!.Value),
+            scope.EventId!.Value,
             ticketTypeSlug);
 
         await mediator.SendAsync(command, cancellationToken);

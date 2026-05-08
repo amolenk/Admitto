@@ -30,7 +30,7 @@ internal sealed class TicketedEventCreatedIntegrationEventHandler(
             return;
 
         await mediator.SendAsync(
-            new ScheduleReconfirmationsCommand(ticketedEventId, spec),
+            new ScheduleReconfirmationsCommand(integrationEvent.TicketedEventId, spec),
             cancellationToken);
     }
 }

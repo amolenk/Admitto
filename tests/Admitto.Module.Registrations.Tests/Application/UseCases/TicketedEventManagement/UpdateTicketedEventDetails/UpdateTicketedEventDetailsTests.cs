@@ -20,11 +20,11 @@ public sealed class UpdateTicketedEventDetailsTests(TestContext testContext) : A
         var newEnd = newStart.AddHours(4);
 
         var command = new UpdateTicketedEventDetailsCommand(
-            fixture.EventId,
+            fixture.EventId.Value,
             ExpectedVersion: fixture.SeededVersion,
-            DisplayName.From("New Name"),
-            AbsoluteUrl.From("https://example.com"),
-            AbsoluteUrl.From("https://tickets.example.com"),
+            "New Name",
+            "https://example.com",
+            "https://tickets.example.com",
             newStart,
             newEnd);
 
@@ -51,11 +51,11 @@ public sealed class UpdateTicketedEventDetailsTests(TestContext testContext) : A
         await fixture.SetupAsync(Environment);
 
         var command = new UpdateTicketedEventDetailsCommand(
-            fixture.EventId,
+            fixture.EventId.Value,
             ExpectedVersion: fixture.SeededVersion + 99u,
-            DisplayName.From("New Name"),
-            AbsoluteUrl.From("https://example.com"),
-            AbsoluteUrl.From("https://tickets.example.com"),
+            "New Name",
+            "https://example.com",
+            "https://tickets.example.com",
             DateTimeOffset.UtcNow.AddDays(10),
             DateTimeOffset.UtcNow.AddDays(11));
 
@@ -75,11 +75,11 @@ public sealed class UpdateTicketedEventDetailsTests(TestContext testContext) : A
         await fixture.SetupAsync(Environment);
 
         var command = new UpdateTicketedEventDetailsCommand(
-            fixture.EventId,
+            fixture.EventId.Value,
             ExpectedVersion: fixture.SeededVersion,
-            DisplayName.From("New Name"),
-            AbsoluteUrl.From("https://example.com"),
-            AbsoluteUrl.From("https://tickets.example.com"),
+            "New Name",
+            "https://example.com",
+            "https://tickets.example.com",
             DateTimeOffset.UtcNow.AddDays(10),
             DateTimeOffset.UtcNow.AddDays(11));
 

@@ -18,7 +18,7 @@ public sealed class CancelTicketedEventTests(TestContext testContext) : AspireIn
 
         var sut = new CancelTicketedEventHandler(Environment.Database.Context);
 
-        await sut.HandleAsync(new CancelTicketedEventCommand(fixture.EventId), testContext.CancellationToken);
+        await sut.HandleAsync(new CancelTicketedEventCommand(fixture.EventId.Value), testContext.CancellationToken);
 
         await Environment.Database.AssertAsync(async ctx =>
         {
@@ -39,7 +39,7 @@ public sealed class CancelTicketedEventTests(TestContext testContext) : AspireIn
         var sut = new CancelTicketedEventHandler(Environment.Database.Context);
 
         var result = await ErrorResult.CaptureAsync(async () =>
-            await sut.HandleAsync(new CancelTicketedEventCommand(fixture.EventId), testContext.CancellationToken));
+            await sut.HandleAsync(new CancelTicketedEventCommand(fixture.EventId.Value), testContext.CancellationToken));
 
         result.Error.Code.ShouldBe("ticketed_event.already_cancelled");
     }
@@ -54,7 +54,7 @@ public sealed class CancelTicketedEventTests(TestContext testContext) : AspireIn
         var sut = new CancelTicketedEventHandler(Environment.Database.Context);
 
         var result = await ErrorResult.CaptureAsync(async () =>
-            await sut.HandleAsync(new CancelTicketedEventCommand(fixture.EventId), testContext.CancellationToken));
+            await sut.HandleAsync(new CancelTicketedEventCommand(fixture.EventId.Value), testContext.CancellationToken));
 
         result.Error.Code.ShouldBe("ticketed_event.already_archived");
     }

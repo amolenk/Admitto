@@ -1,6 +1,5 @@
 using Amolenk.Admitto.Module.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
-using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Module.Email.Application.UseCases.Reconfirmations.ScheduleReconfirmations.EventHandlers;
 
@@ -18,7 +17,7 @@ internal sealed class TicketedEventArchivedReconfirmIntegrationEventHandler(IMed
     {
         await mediator.SendAsync(
             new ScheduleReconfirmationsCommand(
-                TicketedEventId.From(integrationEvent.TicketedEventId),
+                integrationEvent.TicketedEventId,
                 Spec: null),
             cancellationToken);
     }

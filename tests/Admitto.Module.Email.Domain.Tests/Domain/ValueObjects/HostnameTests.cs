@@ -1,6 +1,4 @@
 using Amolenk.Admitto.Module.Email.Domain.ValueObjects;
-using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
-using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Shouldly;
 
 namespace Amolenk.Admitto.Module.Email.Domain.Tests.ValueObjects;
@@ -14,27 +12,27 @@ public sealed class HostnameTests
         var result = Hostname.TryFrom("  smtp.example.com  ");
 
         result.IsSuccess.ShouldBeTrue();
-        result.Value.Value.ShouldBe("smtp.example.com");
+        result.ValueObject.Value.ShouldBe("smtp.example.com");
     }
 
     [TestMethod]
     [DataRow(null)]
     [DataRow("")]
     [DataRow("   ")]
-    public void TryFrom_WithEmpty_FailsTextEmpty(string? input)
+    public void TryFrom_WithEmpty_Fails(string? input)
     {
         var result = Hostname.TryFrom(input);
 
         result.IsSuccess.ShouldBeFalse();
-        result.Error.ShouldMatch(CommonErrors.TextEmpty);
+        result.Error.ErrorMessage.ShouldBe("Hostname is required.");
     }
 
     [TestMethod]
-    public void TryFrom_OverMaxLength_FailsTextTooLong()
+    public void TryFrom_OverMaxLength_Fails()
     {
         var result = Hostname.TryFrom(new string('a', Hostname.MaxLength + 1));
 
         result.IsSuccess.ShouldBeFalse();
-        result.Error.ShouldMatch(CommonErrors.TextTooLong(Hostname.MaxLength));
+        result.Error.ErrorMessage.ShouldBe($"Hostname must be at most {Hostname.MaxLength} character(s).");
     }
 }

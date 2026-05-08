@@ -29,7 +29,7 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         {
             var registration = await dbContext.Registrations.SingleOrDefaultAsync(testContext.CancellationToken);
             registration.ShouldNotBeNull();
-            registration.Id.ShouldBe(registrationId);
+            registration.Id.Value.ShouldBe(registrationId);
             registration.Email.ShouldBe(fixture.CouponEmail);
 
             var coupon = await dbContext.Coupons.SingleOrDefaultAsync(testContext.CancellationToken);
@@ -98,10 +98,10 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
 
         // Requesting "general-admission" but coupon only allows "speaker-pass".
         var command = new RegisterAttendeeCommand(
-            fixture.EventId,
-            fixture.CouponEmail,
-            FirstName.From("Coupon"),
-            LastName.From("User"),
+            fixture.EventId.Value,
+            fixture.CouponEmail.Value,
+            "Coupon",
+            "User",
             ["general-admission"],
             RegistrationMode.Coupon,
             CouponCode: fixture.CouponCodeString);
@@ -265,7 +265,7 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
 
         var registrationId = await sut.HandleAsync(command, testContext.CancellationToken);
 
-        registrationId.ShouldBe(fixture.ExistingRegistrationId);
+        registrationId.ShouldBe(fixture.ExistingRegistrationId.Value);
         await Environment.Database.AssertAsync(async dbContext =>
         {
             var registration = await dbContext.Registrations.SingleAsync(testContext.CancellationToken);
@@ -293,10 +293,10 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
 
     private static RegisterAttendeeCommand NewCommand(RegisterAttendeeFixture fixture, string email)
         => new(
-            fixture.EventId,
-            EmailAddress.From(email),
-            FirstName.From("Test"),
-            LastName.From("User"),
+            fixture.EventId.Value,
+            email,
+            "Test",
+            "User",
             [fixture.TicketTypeSlug],
             RegistrationMode.Coupon,
             CouponCode: fixture.CouponCodeString);
@@ -306,10 +306,10 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         string email,
         IReadOnlyDictionary<string, string>? additionalDetails)
         => new(
-            fixture.EventId,
-            EmailAddress.From(email),
-            FirstName.From("Test"),
-            LastName.From("User"),
+            fixture.EventId.Value,
+            email,
+            "Test",
+            "User",
             [fixture.TicketTypeSlug],
             RegistrationMode.Coupon,
             CouponCode: fixture.CouponCodeString,

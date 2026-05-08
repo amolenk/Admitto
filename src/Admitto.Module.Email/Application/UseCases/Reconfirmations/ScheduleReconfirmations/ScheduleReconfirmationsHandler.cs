@@ -22,13 +22,15 @@ internal sealed class ScheduleReconfirmationsHandler(
         ScheduleReconfirmationsCommand command,
         CancellationToken cancellationToken)
     {
+        TicketedEventId ticketedEventId = TicketedEventId.From(command.TicketedEventId);
+
         if (command.Spec is null)
         {
-            await RemoveAsync(command.TicketedEventId, cancellationToken);
+            await RemoveAsync(ticketedEventId, cancellationToken);
         }
         else
         {
-            await UpsertAsync(command.TicketedEventId, command.Spec, cancellationToken);
+            await UpsertAsync(ticketedEventId, command.Spec, cancellationToken);
         }
     }
 

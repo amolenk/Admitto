@@ -3,6 +3,7 @@ using Amolenk.Admitto.Module.Registrations.Domain.Entities;
 using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
+using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 
 namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.CouponManagement.CreateCoupon;
@@ -13,22 +14,25 @@ namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.CouponManage
 internal sealed class CreateCouponHandler(
     IRegistrationsWriteStore writeStore,
     TimeProvider timeProvider)
-    : ICommandHandler<CreateCouponCommand, CouponId>
+    : ICommandHandler<CreateCouponCommand, Guid>
 {
-    public async ValueTask<CouponId> HandleAsync(
+    public async ValueTask<Guid> HandleAsync(
         CreateCouponCommand command,
         CancellationToken cancellationToken)
     {
+        TicketedEventId eventId = TicketedEventId.From(command.EventId);
+        EmailAddress email = EmailAddress.From(command.Email);
+
         var catalog = await writeStore.TicketCatalogs
-            .FirstOrDefaultAsync(tc => tc.Id == command.EventId, cancellationToken);
+            .FirstOrDefaultAsync(tc => tc.Id == eventId, cancellationToken);
 
         var availableTicketTypes = catalog?.TicketTypes
             .Select(tt => new TicketTypeInfo(tt.Id, tt.IsCancelled))
             .ToList() ?? [];
 
         var coupon = Coupon.Create(
-            command.EventId,
-            command.Email,
+            eventId,
+            email,
             command.AllowedTicketTypeSlugs,
             command.ExpiresAt,
             command.BypassRegistrationWindow,
@@ -37,7 +41,7 @@ internal sealed class CreateCouponHandler(
 
         await writeStore.Coupons.AddAsync(coupon, cancellationToken);
 
-        return coupon.Id;
+        return coupon.Id.Value;
     }
 }
 

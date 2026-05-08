@@ -1,6 +1,3 @@
-using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
-using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
-
 namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.CouponManagement.CreateCoupon.AdminApi;
 
 public sealed record CreateCouponHttpRequest(
@@ -9,9 +6,9 @@ public sealed record CreateCouponHttpRequest(
     DateTimeOffset ExpiresAt,
     bool BypassRegistrationWindow = false)
 {
-    internal CreateCouponCommand ToCommand(TicketedEventId eventId) => new(
+    internal CreateCouponCommand ToCommand(Guid eventId) => new(
         eventId,
-        EmailAddress.From(Email),
+        Email,
         AllowedTicketTypeSlugs,
         ExpiresAt,
         BypassRegistrationWindow);

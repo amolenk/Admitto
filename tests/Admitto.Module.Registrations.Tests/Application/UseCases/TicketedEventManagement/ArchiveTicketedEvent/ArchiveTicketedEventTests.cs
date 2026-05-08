@@ -18,7 +18,7 @@ public sealed class ArchiveTicketedEventTests(TestContext testContext) : AspireI
 
         var sut = new ArchiveTicketedEventHandler(Environment.Database.Context);
 
-        await sut.HandleAsync(new ArchiveTicketedEventCommand(fixture.EventId), testContext.CancellationToken);
+        await sut.HandleAsync(new ArchiveTicketedEventCommand(fixture.EventId.Value), testContext.CancellationToken);
 
         await Environment.Database.AssertAsync(async ctx =>
         {
@@ -38,7 +38,7 @@ public sealed class ArchiveTicketedEventTests(TestContext testContext) : AspireI
 
         var sut = new ArchiveTicketedEventHandler(Environment.Database.Context);
 
-        await sut.HandleAsync(new ArchiveTicketedEventCommand(fixture.EventId), testContext.CancellationToken);
+        await sut.HandleAsync(new ArchiveTicketedEventCommand(fixture.EventId.Value), testContext.CancellationToken);
 
         await Environment.Database.AssertAsync(async ctx =>
         {
@@ -59,7 +59,7 @@ public sealed class ArchiveTicketedEventTests(TestContext testContext) : AspireI
         var sut = new ArchiveTicketedEventHandler(Environment.Database.Context);
 
         var result = await ErrorResult.CaptureAsync(async () =>
-            await sut.HandleAsync(new ArchiveTicketedEventCommand(fixture.EventId), testContext.CancellationToken));
+            await sut.HandleAsync(new ArchiveTicketedEventCommand(fixture.EventId.Value), testContext.CancellationToken));
 
         result.Error.Code.ShouldBe("ticketed_event.already_archived");
     }

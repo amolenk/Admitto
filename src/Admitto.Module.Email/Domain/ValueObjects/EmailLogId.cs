@@ -1,21 +1,13 @@
-using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
-using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
+using Vogen;
 
 namespace Amolenk.Admitto.Module.Email.Domain.ValueObjects;
 
-public readonly record struct EmailLogId : IGuidValueObject
+[ValueObject<Guid>]
+public partial struct EmailLogId
 {
-    public Guid Value { get; }
+    public static EmailLogId New() => From(Guid.NewGuid());
 
-    private EmailLogId(Guid value) => Value = value;
-
-    public static EmailLogId New() => new(Guid.NewGuid());
-
-    public static ValidationResult<EmailLogId> TryFrom(Guid value)
-        => GuidValueObject.TryFrom(value, v => new EmailLogId(v));
-
-    public static EmailLogId From(Guid value)
-        => GuidValueObject.TryFrom(value, v => new EmailLogId(v)).GetValueOrThrow();
-
-    public override string ToString() => Value.ToString();
+    private static Validation Validate(Guid value)
+        => value != Guid.Empty ? Validation.Ok : Validation.Invalid("Email log ID cannot be empty.");
 }
+

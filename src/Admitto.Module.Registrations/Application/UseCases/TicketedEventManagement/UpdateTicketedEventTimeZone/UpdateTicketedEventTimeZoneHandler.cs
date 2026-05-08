@@ -1,6 +1,7 @@
 using Amolenk.Admitto.Module.Registrations.Application.Persistence;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Application.Persistence;
+using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketedEventManagement.UpdateTicketedEventTimeZone;
 
@@ -11,11 +12,14 @@ internal sealed class UpdateTicketedEventTimeZoneHandler(IRegistrationsWriteStor
         UpdateTicketedEventTimeZoneCommand command,
         CancellationToken cancellationToken)
     {
+        TicketedEventId eventId = TicketedEventId.From(command.EventId);
+        TimeZoneId timeZone = TimeZoneId.From(command.TimeZone);
+
         var ticketedEvent = await writeStore.TicketedEvents.GetAsync(
-            command.EventId,
+            eventId,
             command.ExpectedVersion,
             cancellationToken);
 
-        ticketedEvent.ChangeTimeZone(command.TimeZone);
+        ticketedEvent.ChangeTimeZone(timeZone);
     }
 }

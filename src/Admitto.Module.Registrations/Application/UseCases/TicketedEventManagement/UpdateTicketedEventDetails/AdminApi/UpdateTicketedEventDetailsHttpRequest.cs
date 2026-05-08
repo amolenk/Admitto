@@ -1,5 +1,3 @@
-using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
-
 namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketedEventManagement.UpdateTicketedEventDetails.AdminApi;
 
 public sealed record UpdateTicketedEventDetailsHttpRequest(
@@ -10,12 +8,12 @@ public sealed record UpdateTicketedEventDetailsHttpRequest(
     DateTimeOffset EndsAt,
     uint? ExpectedVersion = null)
 {
-    internal UpdateTicketedEventDetailsCommand ToCommand(TicketedEventId eventId) => new(
+    internal UpdateTicketedEventDetailsCommand ToCommand(Guid eventId) => new(
         eventId,
         ExpectedVersion,
-        DisplayName.From(Name),
-        AbsoluteUrl.From(WebsiteUrl),
-        AbsoluteUrl.From(BaseUrl),
+        Name,
+        WebsiteUrl,
+        BaseUrl,
         StartsAt,
         EndsAt);
 }

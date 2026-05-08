@@ -1,21 +1,16 @@
-using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
-using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
+using Vogen;
 
 namespace Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 
-public readonly record struct Capacity : IInt32ValueObject
+[ValueObject<int>]
+public partial struct Capacity
 {
     private const int MinValue = 0;
     private const int MaxValue = 10000;
 
-    public int Value { get; }
-
-    private Capacity(int value) => Value = value;
-
-    public static ValidationResult<Capacity> TryFrom(int value)
-        => Int32ValueObject.TryFrom(value, MinValue, MaxValue, v => new Capacity(v));
-
-    public static Capacity From(int value) => TryFrom(value).GetValueOrThrow();
-
-    public override string ToString() => Value.ToString();
+    private static Validation Validate(int value)
+        => value is >= MinValue and <= MaxValue
+            ? Validation.Ok
+            : Validation.Invalid($"Capacity must be between {MinValue} and {MaxValue}.");
 }
+

@@ -36,8 +36,8 @@ internal sealed class SendTestEmailHandler(
         }
 
         var message = new EmailMessage(
-            RecipientAddress: command.Recipient.Value,
-            RecipientName: command.Recipient.Value,
+            RecipientAddress: command.Recipient,
+            RecipientName: command.Recipient,
             Subject: "Admitto SMTP settings test",
             TextBody:
                 "This is a test email from Admitto. If you received it, the saved SMTP settings for this scope can send email.",

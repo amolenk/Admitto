@@ -34,7 +34,7 @@ public sealed class CreateCouponTests(TestContext testContext) : AspireIntegrati
             var coupon = await dbContext.Coupons.SingleOrDefaultAsync(testContext.CancellationToken);
 
             coupon.ShouldNotBeNull();
-            coupon.Id.ShouldBe(couponId);
+            coupon.Id.Value.ShouldBe(couponId);
             coupon.EventId.ShouldBe(fixture.EventId);
             coupon.Email.Value.ShouldBe("speaker@example.com");
             coupon.AllowedTicketTypeSlugs.ShouldContain(fixture.TicketTypeSlug);
@@ -148,8 +148,8 @@ public sealed class CreateCouponTests(TestContext testContext) : AspireIntegrati
         allowedTicketTypeSlugs ??= ["general-admission"];
 
         return new CreateCouponCommand(
-            eventId,
-            EmailAddress.From(email),
+            eventId.Value,
+            email,
             allowedTicketTypeSlugs,
             expiresAt.Value,
             bypassRegistrationWindow);

@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Module.Email.Domain.ValueObjects;
-using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Module.Email.Application.UseCases.EmailSettings.SendTestEmail;
 
@@ -13,6 +12,6 @@ internal sealed record SendTestEmailHttpRequest(
         return new SendTestEmailCommand(
             scope,
             scopeId,
-            EmailAddress.From(Recipient));
+            Recipient);
     }
 }

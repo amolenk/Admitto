@@ -4,6 +4,6 @@ using Amolenk.Admitto.Module.Shared.Application.Messaging;
 namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.Registrations.CancelRegistration;
 
 internal sealed record CancelRegistrationCommand(
-    RegistrationId RegistrationId,
-    TicketedEventId TicketedEventId,
+    Guid RegistrationId,
+    Guid TicketedEventId,
     CancellationReason Reason) : Command;

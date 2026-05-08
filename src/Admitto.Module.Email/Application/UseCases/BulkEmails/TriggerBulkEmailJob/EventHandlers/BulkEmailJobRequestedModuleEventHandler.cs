@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Module.Email.Application.ModuleEvents;
-using Amolenk.Admitto.Module.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 
 namespace Amolenk.Admitto.Module.Email.Application.UseCases.BulkEmails.TriggerBulkEmailJob.EventHandlers;
@@ -21,7 +20,7 @@ internal sealed class BulkEmailJobRequestedModuleEventHandler(IMediator mediator
         CancellationToken cancellationToken)
     {
         var command = new TriggerBulkEmailJobCommand(
-            BulkEmailJobId.From(moduleEvent.BulkEmailJobId));
+            moduleEvent.BulkEmailJobId);
 
         return mediator.SendAsync(command, cancellationToken);
     }

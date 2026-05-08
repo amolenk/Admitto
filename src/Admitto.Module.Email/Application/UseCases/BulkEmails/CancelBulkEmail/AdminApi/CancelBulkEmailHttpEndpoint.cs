@@ -1,4 +1,3 @@
-using Amolenk.Admitto.Module.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Application.Auth;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Application.Persistence;
@@ -19,7 +18,7 @@ public static class CancelBulkEmailHttpEndpoint
                 CancellationToken ct) =>
             {
                 await mediator.SendAsync(
-                    new CancelBulkEmailCommand(BulkEmailJobId.From(bulkEmailJobId)), ct);
+                    new CancelBulkEmailCommand(bulkEmailJobId), ct);
 
                 await unitOfWork.SaveChangesAsync(ct);
 

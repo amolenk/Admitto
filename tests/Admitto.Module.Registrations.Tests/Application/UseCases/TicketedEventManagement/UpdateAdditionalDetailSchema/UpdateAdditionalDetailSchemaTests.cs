@@ -15,7 +15,7 @@ public sealed class UpdateAdditionalDetailSchemaTests(TestContext testContext) :
         await fixture.SetupAsync(Environment);
 
         var command = new UpdateAdditionalDetailSchemaCommand(
-            fixture.EventId,
+            fixture.EventId.Value,
             fixture.SeededVersion,
             [
                 new UpdateAdditionalDetailSchemaCommand.FieldInput("dietary", "Dietary requirements", 200),
@@ -46,7 +46,7 @@ public sealed class UpdateAdditionalDetailSchemaTests(TestContext testContext) :
         await fixture.SetupAsync(Environment);
 
         var command = new UpdateAdditionalDetailSchemaCommand(
-            fixture.EventId,
+            fixture.EventId.Value,
             fixture.SeededVersion,
             []);
 
@@ -70,7 +70,7 @@ public sealed class UpdateAdditionalDetailSchemaTests(TestContext testContext) :
         await fixture.SetupAsync(Environment);
 
         var command = new UpdateAdditionalDetailSchemaCommand(
-            fixture.EventId,
+            fixture.EventId.Value,
             fixture.SeededVersion,
             [new UpdateAdditionalDetailSchemaCommand.FieldInput("dietary", "Dietary", 100)]);
 
@@ -89,7 +89,7 @@ public sealed class UpdateAdditionalDetailSchemaTests(TestContext testContext) :
         await fixture.SetupAsync(Environment);
 
         var command = new UpdateAdditionalDetailSchemaCommand(
-            fixture.EventId,
+            fixture.EventId.Value,
             fixture.SeededVersion,
             [new UpdateAdditionalDetailSchemaCommand.FieldInput("dietary", "Dietary", 100)]);
 
@@ -108,7 +108,7 @@ public sealed class UpdateAdditionalDetailSchemaTests(TestContext testContext) :
         await fixture.SetupAsync(Environment);
 
         var command = new UpdateAdditionalDetailSchemaCommand(
-            fixture.EventId,
+            fixture.EventId.Value,
             fixture.SeededVersion + 99u,
             [new UpdateAdditionalDetailSchemaCommand.FieldInput("dietary", "Dietary", 100)]);
 

@@ -1,9 +1,7 @@
-using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Application.Auth;
 using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Application.Persistence;
-using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.CouponManagement.RevokeCoupon.AdminApi;
@@ -33,8 +31,8 @@ public static class RevokeCouponHttpEndpoint
         var scope = await scopeResolver.ResolveAsync(teamSlug, eventSlug, cancellationToken);
 
         var command = new RevokeCouponCommand(
-            TicketedEventId.From(scope.EventId!.Value),
-            CouponId.From(couponId));
+            scope.EventId!.Value,
+            couponId);
 
         await mediator.SendAsync(command, cancellationToken);
 

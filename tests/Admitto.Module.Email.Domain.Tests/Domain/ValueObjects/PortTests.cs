@@ -15,7 +15,7 @@ public sealed class PortTests
         var result = Port.TryFrom(port);
 
         result.IsSuccess.ShouldBeTrue();
-        result.Value.Value.ShouldBe(port);
+        result.ValueObject.Value.ShouldBe(port);
     }
 
     [TestMethod]
@@ -27,6 +27,6 @@ public sealed class PortTests
         var result = Port.TryFrom(port);
 
         result.IsSuccess.ShouldBeFalse();
-        result.Error.Code.ShouldBe("out_of_range");
+        result.Error.ErrorMessage.ShouldBe($"Port must be between {Port.MinValue} and {Port.MaxValue}.");
     }
 }

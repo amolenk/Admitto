@@ -20,7 +20,7 @@ internal sealed class TicketsChangedDomainEventHandler(IMediator mediator)
 
         await mediator.SendAsync(
             new WriteActivityLogCommand(
-                domainEvent.RegistrationId,
+                domainEvent.RegistrationId.Value,
                 ActivityType.TicketsChanged,
                 domainEvent.ChangedAt,
                 Metadata: metadata),

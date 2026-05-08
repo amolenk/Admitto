@@ -1,6 +1,5 @@
 using Amolenk.Admitto.Module.Organization.Contracts;
 using Amolenk.Admitto.Module.Registrations.Application.Security;
-using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Application.Persistence;
@@ -49,23 +48,23 @@ public static class SelfRegisterAttendeeHttpEndpoint
                 extensions: new Dictionary<string, object?> { ["code"] = "email.verification_invalid" });
 
         var command = new RegisterAttendeeCommand(
-            TicketedEventId.From(eventId),
-            claims.Email,
-            FirstName.From(request.FirstName),
-            LastName.From(request.LastName),
+            eventId,
+            claims.Email.Value,
+            request.FirstName,
+            request.LastName,
             request.TicketTypeSlugs,
             RegistrationMode.SelfService,
             CouponCode: null,
             EmailVerificationToken: bearerToken,
             AdditionalDetails: request.AdditionalDetails);
 
-        var registrationId = await mediator.SendReceiveAsync<RegisterAttendeeCommand, RegistrationId>(
+        var registrationId = await mediator.SendReceiveAsync<RegisterAttendeeCommand, Guid>(
             command, cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Results.Created(
-            $"/teams/{teamSlug}/events/{eventSlug}/registrations/{registrationId.Value}",
+            $"/teams/{teamSlug}/events/{eventSlug}/registrations/{registrationId}",
             null);
     }
 

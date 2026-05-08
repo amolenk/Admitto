@@ -20,8 +20,8 @@ public sealed class CancelRegistrationTests(TestContext testContext) : AspireInt
         await fixture.SetupAsync(Environment);
 
         var command = new CancelRegistrationCommand(
-            fixture.RegistrationId,
-            fixture.EventId,
+            fixture.RegistrationId.Value,
+            fixture.EventId.Value,
             CancellationReason.AttendeeRequest);
         var sut = new CancelRegistrationHandler(Environment.Database.Context);
 
@@ -44,8 +44,8 @@ public sealed class CancelRegistrationTests(TestContext testContext) : AspireInt
         await fixture.SetupAsync(Environment);
 
         var command = new CancelRegistrationCommand(
-            fixture.RegistrationId,
-            fixture.EventId,
+            fixture.RegistrationId.Value,
+            fixture.EventId.Value,
             CancellationReason.VisaLetterDenied);
         var sut = new CancelRegistrationHandler(Environment.Database.Context);
 
@@ -68,8 +68,8 @@ public sealed class CancelRegistrationTests(TestContext testContext) : AspireInt
         await fixture.SetupAsync(Environment);
 
         var command = new CancelRegistrationCommand(
-            fixture.RegistrationId,
-            fixture.EventId,
+            fixture.RegistrationId.Value,
+            fixture.EventId.Value,
             CancellationReason.AttendeeRequest);
         var sut = new CancelRegistrationHandler(Environment.Database.Context);
 
@@ -85,8 +85,8 @@ public sealed class CancelRegistrationTests(TestContext testContext) : AspireInt
     {
         var unknownId = RegistrationId.New();
         var command = new CancelRegistrationCommand(
-            unknownId,
-            TicketedEventId.New(),
+            unknownId.Value,
+            TicketedEventId.New().Value,
             CancellationReason.AttendeeRequest);
         var sut = new CancelRegistrationHandler(Environment.Database.Context);
 
@@ -104,8 +104,8 @@ public sealed class CancelRegistrationTests(TestContext testContext) : AspireInt
         await fixture.SetupAsync(Environment);
 
         var command = new CancelRegistrationCommand(
-            fixture.RegistrationId,
-            TicketedEventId.New(),   // wrong event
+            fixture.RegistrationId.Value,
+            TicketedEventId.New().Value,   // wrong event
             CancellationReason.AttendeeRequest);
         var sut = new CancelRegistrationHandler(Environment.Database.Context);
 

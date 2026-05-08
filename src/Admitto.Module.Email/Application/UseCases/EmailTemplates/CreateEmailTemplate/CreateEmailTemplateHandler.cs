@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Amolenk.Admitto.Module.Email.Application.UseCases.EmailTemplates.CreateEmailTemplate;
 
 internal sealed class CreateEmailTemplateHandler(IEmailWriteStore writeStore)
-    : ICommandHandler<CreateEmailTemplateCommand, EmailTemplateId>
+    : ICommandHandler<CreateEmailTemplateCommand, Guid>
 {
     private static readonly Error ReservedNameError = new(
         "email_template.reserved_name",
@@ -19,7 +19,7 @@ internal sealed class CreateEmailTemplateHandler(IEmailWriteStore writeStore)
         "email_template.already_exists",
         "A template with this name already exists in this scope.");
 
-    public async ValueTask<EmailTemplateId> HandleAsync(
+    public async ValueTask<Guid> HandleAsync(
         CreateEmailTemplateCommand command,
         CancellationToken ct)
     {
@@ -81,6 +81,6 @@ internal sealed class CreateEmailTemplateHandler(IEmailWriteStore writeStore)
 
         writeStore.EmailTemplates.Add(template);
 
-        return template.Id;
+        return template.Id.Value;
     }
 }

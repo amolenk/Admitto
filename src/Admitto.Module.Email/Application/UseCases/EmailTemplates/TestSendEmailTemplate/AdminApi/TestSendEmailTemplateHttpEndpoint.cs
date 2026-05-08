@@ -1,4 +1,3 @@
-using Amolenk.Admitto.Module.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Application.Auth;
 using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
@@ -29,14 +28,8 @@ public static class TestSendEmailTemplateHttpEndpoint
                 var orgScope = await scopeResolver.ResolveAsync(teamSlug, eventSlug, ct);
 
                 var command = isEventScoped
-                    ? request.ToCommand(
-                        EmailTemplateId.From(id),
-                        TeamId.From(orgScope.TeamId),
-                        TicketedEventId.From(orgScope.EventId!.Value))
-                    : request.ToCommand(
-                        EmailTemplateId.From(id),
-                        TeamId.From(orgScope.TeamId),
-                        null);
+                    ? request.ToCommand(id, orgScope.TeamId, orgScope.EventId!.Value)
+                    : request.ToCommand(id, orgScope.TeamId, null);
 
                 await mediator.SendAsync(command, ct);
                 return TypedResults.Ok();

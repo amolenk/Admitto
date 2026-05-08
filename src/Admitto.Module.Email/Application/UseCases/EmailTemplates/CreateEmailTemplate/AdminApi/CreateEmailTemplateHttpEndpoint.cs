@@ -53,15 +53,15 @@ public static class CreateEmailTemplateHttpEndpoint
                 parentScopeId);
 
             var id = await mediator
-                .SendReceiveAsync<CreateEmailTemplateCommand, EmailTemplateId>(command, ct);
+                .SendReceiveAsync<CreateEmailTemplateCommand, Guid>(command, ct);
 
             await unitOfWork.SaveChangesAsync(ct);
 
             var location = eventSlug is not null
-                ? $"/admin/teams/{teamSlug}/events/{eventSlug}/email-templates/{id.Value}"
-                : $"/admin/teams/{teamSlug}/email-templates/{id.Value}";
+                ? $"/admin/teams/{teamSlug}/events/{eventSlug}/email-templates/{id}"
+                : $"/admin/teams/{teamSlug}/email-templates/{id}";
 
-            return TypedResults.Created(location, new CreateEmailTemplateResponse(id.Value));
+            return TypedResults.Created(location, new CreateEmailTemplateResponse(id));
         }
     }
 }

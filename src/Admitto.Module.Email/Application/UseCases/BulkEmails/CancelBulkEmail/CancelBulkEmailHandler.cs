@@ -1,5 +1,6 @@
 using Amolenk.Admitto.Module.Email.Application.Persistence;
 using Amolenk.Admitto.Module.Email.Domain.Entities;
+using Amolenk.Admitto.Module.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
 
@@ -17,10 +18,12 @@ internal sealed class CancelBulkEmailHandler(
 {
     public async ValueTask HandleAsync(CancelBulkEmailCommand command, CancellationToken cancellationToken)
     {
+        BulkEmailJobId bulkEmailJobId = BulkEmailJobId.From(command.BulkEmailJobId);
+
         var job = await writeStore.BulkEmailJobs
-            .FirstOrDefaultAsync(j => j.Id == command.BulkEmailJobId, cancellationToken)
+            .FirstOrDefaultAsync(j => j.Id == bulkEmailJobId, cancellationToken)
             ?? throw new BusinessRuleViolationException(
-                NotFoundError.Create<BulkEmailJob>(command.BulkEmailJobId.Value.ToString()));
+                NotFoundError.Create<BulkEmailJob>(bulkEmailJobId.Value.ToString()));
 
         job.RequestCancellation(timeProvider.GetUtcNow());
     }

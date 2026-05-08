@@ -3,7 +3,6 @@ using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Application.Persistence;
-using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.Registrations.CancelRegistration.PublicApi;
 
@@ -32,8 +31,8 @@ public static class SelfCancelRegistrationHttpEndpoint
         var eventId = await ticketedEventIdLookup.GetTicketedEventIdAsync(teamId, eventSlug, cancellationToken);
 
         var command = new CancelRegistrationCommand(
-            RegistrationId.From(registrationId),
-            TicketedEventId.From(eventId),
+            registrationId,
+            eventId,
             CancellationReason.AttendeeRequest);
 
         await mediator.SendAsync(command, cancellationToken);

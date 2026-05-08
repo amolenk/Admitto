@@ -3,7 +3,6 @@ using Amolenk.Admitto.Module.Shared.Application.Auth;
 using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Application.Persistence;
-using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.Registrations.ChangeAttendeeTickets.AdminApi;
 
@@ -33,8 +32,8 @@ public static class ChangeAttendeeTicketsHttpEndpoint
         var scope = await scopeResolver.ResolveAsync(teamSlug, eventSlug, cancellationToken);
 
         var command = new ChangeAttendeeTicketsCommand(
-            TicketedEventId.From(scope.EventId!.Value),
-            RegistrationId.From(registrationId),
+            scope.EventId!.Value,
+            registrationId,
             request.TicketTypeSlugs!,
             ChangeMode.Admin);
 

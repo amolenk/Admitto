@@ -19,7 +19,7 @@ public sealed class ConfigureCancellationPolicyTests(TestContext testContext) : 
         var sut = new ConfigureCancellationPolicyHandler(Environment.Database.Context);
 
         await sut.HandleAsync(
-            new ConfigureCancellationPolicyCommand(fixture.EventId, fixture.SeededVersion, cutoff),
+            new ConfigureCancellationPolicyCommand(fixture.EventId.Value, fixture.SeededVersion, cutoff),
             testContext.CancellationToken);
 
         await Environment.Database.AssertAsync(async ctx =>
@@ -41,7 +41,7 @@ public sealed class ConfigureCancellationPolicyTests(TestContext testContext) : 
         var sut = new ConfigureCancellationPolicyHandler(Environment.Database.Context);
 
         await sut.HandleAsync(
-            new ConfigureCancellationPolicyCommand(fixture.EventId, fixture.SeededVersion, LateCancellationCutoff: null),
+            new ConfigureCancellationPolicyCommand(fixture.EventId.Value, fixture.SeededVersion, LateCancellationCutoff: null),
             testContext.CancellationToken);
 
         await Environment.Database.AssertAsync(async ctx =>
@@ -64,7 +64,7 @@ public sealed class ConfigureCancellationPolicyTests(TestContext testContext) : 
         var result = await ErrorResult.CaptureAsync(async () =>
             await sut.HandleAsync(
                 new ConfigureCancellationPolicyCommand(
-                    fixture.EventId,
+                    fixture.EventId.Value,
                     fixture.SeededVersion,
                     DateTimeOffset.UtcNow.AddDays(20)),
                 testContext.CancellationToken));

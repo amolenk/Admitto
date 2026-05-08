@@ -88,7 +88,7 @@ internal sealed class HmacVerificationTokenService(
         if (!emailResult.IsSuccess)
             return null;
 
-        return new VerificationTokenClaims(emailResult.Value);
+        return new VerificationTokenClaims(emailResult.ValueObject);
     }
 
     private string ComputeSignature(string input)

@@ -30,7 +30,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         {
             var registration = await dbContext.Registrations.SingleOrDefaultAsync(testContext.CancellationToken);
             registration.ShouldNotBeNull();
-            registration.Id.ShouldBe(registrationId);
+            registration.Id.Value.ShouldBe(registrationId);
             registration.Email.Value.ShouldBe("dave@example.com");
             registration.Tickets.ShouldHaveSingleItem().Slug.ShouldBe(fixture.TicketTypeSlug);
 
@@ -153,7 +153,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         {
             var registration = await dbContext.Registrations.SingleOrDefaultAsync(testContext.CancellationToken);
             registration.ShouldNotBeNull();
-            registration.Id.ShouldBe(registrationId);
+            registration.Id.Value.ShouldBe(registrationId);
             registration.Email.Value.ShouldBe("employee@acme.com");
         });
     }
@@ -339,7 +339,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
 
         var registrationId = await sut.HandleAsync(command, testContext.CancellationToken);
 
-        registrationId.ShouldBe(fixture.ExistingRegistrationId);
+        registrationId.ShouldBe(fixture.ExistingRegistrationId.Value);
         await Environment.Database.AssertAsync(async dbContext =>
         {
             var registration = await dbContext.Registrations.SingleAsync(testContext.CancellationToken);
@@ -426,10 +426,10 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
     {
         // No event seeded.
         var command = new RegisterAttendeeCommand(
-            TicketedEventId.New(),
-            EmailAddress.From("dave@example.com"),
-            FirstName.From("Dave"),
-            LastName.From("Doe"),
+            TicketedEventId.New().Value,
+            "dave@example.com",
+            "Dave",
+            "Doe",
             ["general-admission"],
             RegistrationMode.SelfService,
             CouponCode: null,
@@ -457,10 +457,10 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         string[] ticketTypeSlugs,
         string? token)
         => new(
-            fixture.EventId,
-            EmailAddress.From(email),
-            FirstName.From("Test"),
-            LastName.From("User"),
+            fixture.EventId.Value,
+            email,
+            "Test",
+            "User",
             ticketTypeSlugs,
             RegistrationMode.SelfService,
             CouponCode: null,
@@ -472,10 +472,10 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         string[] ticketTypeSlugs,
         IReadOnlyDictionary<string, string>? additionalDetails)
         => new(
-            fixture.EventId,
-            EmailAddress.From(email),
-            FirstName.From("Test"),
-            LastName.From("User"),
+            fixture.EventId.Value,
+            email,
+            "Test",
+            "User",
             ticketTypeSlugs,
             RegistrationMode.SelfService,
             CouponCode: null,
