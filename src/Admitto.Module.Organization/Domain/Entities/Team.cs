@@ -34,19 +34,16 @@ public class Team : Aggregate<TeamId>
 
     private Team(
         TeamId id,
-        Slug slug,
         DisplayName name,
         EmailAddress emailAddress,
         DateTimeOffset? archivedAt)
         : base(id)
     {
-        Slug = slug;
         Name = name;
         EmailAddress = emailAddress;
         ArchivedAt = archivedAt;
     }
 
-    public Slug Slug { get; private set; }
     public DisplayName Name { get; private set; }
     public EmailAddress EmailAddress { get; private set; }
     public DateTimeOffset? ArchivedAt { get; private set; }
@@ -62,12 +59,10 @@ public class Team : Aggregate<TeamId>
     public bool IsArchived => ArchivedAt.HasValue;
 
     public static Team Create(
-        Slug slug,
         DisplayName name,
         EmailAddress emailAddress) =>
         new(
             TeamId.New(),
-            slug,
             name,
             emailAddress,
             archivedAt: null);
@@ -108,13 +103,12 @@ public class Team : Aggregate<TeamId>
     /// Registrations.
     /// </summary>
     public TeamEventCreationRequest RequestEventCreation(
-        Slug requestedSlug,
         UserId requesterId,
         DateTimeOffset requestedAt)
     {
         EnsureNotArchived();
 
-        var request = TeamEventCreationRequest.Create(requestedSlug, requesterId, requestedAt);
+        var request = TeamEventCreationRequest.Create(requesterId, requestedAt);
         _eventCreationRequests.Add(request);
         PendingEventCount++;
 
@@ -125,10 +119,9 @@ public class Team : Aggregate<TeamId>
     /// Records a request to materialise a new ticketed event under this team and raises the
     /// <see cref="TicketedEventCreationRequestedDomainEvent"/> that outboxes the corresponding
     /// integration event for Registrations. Same invariants as
-    /// <see cref="RequestEventCreation(Slug,UserId,DateTimeOffset)"/>.
+    /// <see cref="RequestEventCreation(UserId,DateTimeOffset)"/>.
     /// </summary>
     public TeamEventCreationRequest RequestEventCreation(
-        Slug requestedSlug,
         DisplayName name,
         AbsoluteUrl websiteUrl,
         AbsoluteUrl baseUrl,
@@ -138,13 +131,11 @@ public class Team : Aggregate<TeamId>
         UserId requesterId,
         DateTimeOffset requestedAt)
     {
-        var request = RequestEventCreation(requestedSlug, requesterId, requestedAt);
+        var request = RequestEventCreation(requesterId, requestedAt);
 
         AddDomainEvent(new TicketedEventCreationRequestedDomainEvent(
             request.Id,
             Id,
-            Slug,
-            requestedSlug,
             name,
             websiteUrl,
             baseUrl,

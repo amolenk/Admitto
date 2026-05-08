@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Module.Shared.Application.Auth;
-using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -23,14 +22,11 @@ public static class GetTicketedEventsHttpEndpoint
     }
 
     private static async ValueTask<Ok<IReadOnlyList<TicketedEventListItemDto>>> GetTicketedEvents(
-        string teamSlug,
-        IOrganizationScopeResolver scopeResolver,
+        Guid teamId,
         IMediator mediator,
         CancellationToken cancellationToken)
     {
-        var scope = await scopeResolver.ResolveAsync(teamSlug, cancellationToken: cancellationToken);
-
-        var query = new GetTicketedEventsQuery(TeamId.From(scope.TeamId));
+        var query = new GetTicketedEventsQuery(TeamId.From(teamId));
 
         var result = await mediator.QueryAsync<GetTicketedEventsQuery, IReadOnlyList<TicketedEventListItemDto>>(
             query, cancellationToken);

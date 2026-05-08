@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Module.Shared.Application.Auth;
-using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 
@@ -11,16 +10,13 @@ public static class GetBulkEmailsHttpEndpoint
     {
         group
             .MapGet("/", async (
-                string teamSlug,
-                string eventSlug,
-                IOrganizationScopeResolver scopeResolver,
+                Guid teamId,
+                Guid eventId,
                 IMediator mediator,
                 CancellationToken ct) =>
             {
-                var orgScope = await scopeResolver.ResolveAsync(teamSlug, eventSlug, ct);
-
                 var rows = await mediator.QueryAsync<GetBulkEmailsQuery, IReadOnlyList<BulkEmailListItemDto>>(
-                    new GetBulkEmailsQuery(TicketedEventId.From(orgScope.EventId!.Value)), ct);
+                    new GetBulkEmailsQuery(TicketedEventId.From(eventId)), ct);
 
                 return TypedResults.Ok(rows);
             })

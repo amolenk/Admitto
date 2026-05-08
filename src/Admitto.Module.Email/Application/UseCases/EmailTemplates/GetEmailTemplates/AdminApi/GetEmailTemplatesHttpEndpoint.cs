@@ -10,14 +10,13 @@ public static class GetEmailTemplatesHttpEndpoint
 {
     public static RouteGroupBuilder MapGetEmailTemplates(
         this RouteGroupBuilder group,
-        EmailSettingsScope scope,
-        Func<OrganizationScope, Guid> scopeIdSelector)
+        EmailSettingsScope scope)
     {
         var endpointName = scope == EmailSettingsScope.Team
             ? "GetTeamEmailTemplates"
             : "GetEventEmailTemplates";
 
-        var handler = new Handler(scope, scopeIdSelector);
+        var handler = new Handler(scope);
 
         group
             .MapGet("/", handler.HandleAsync)
@@ -27,18 +26,16 @@ public static class GetEmailTemplatesHttpEndpoint
         return group;
     }
 
-    private sealed class Handler(EmailSettingsScope scope, Func<OrganizationScope, Guid> scopeIdSelector)
+    private sealed class Handler(EmailSettingsScope scope)
     {
         public async ValueTask<Ok<IReadOnlyList<EmailTemplateListItemDto>>> HandleAsync(
-            string teamSlug,
-            string? eventSlug,
-            IOrganizationScopeResolver scopeResolver,
+            Guid teamId,
+            Guid? eventId,
             IMediator mediator,
             CancellationToken ct)
         {
-            var orgScope = await scopeResolver.ResolveAsync(teamSlug, eventSlug, ct);
-            var scopeId = scopeIdSelector(orgScope);
-            var parentScopeId = scope == EmailSettingsScope.Event ? orgScope.TeamId : (Guid?)null;
+            var scopeId = scope == EmailSettingsScope.Event ? eventId!.Value : teamId;
+            var parentScopeId = scope == EmailSettingsScope.Event ? teamId : (Guid?)null;
 
             var rows = await mediator.QueryAsync<GetEmailTemplatesQuery, IReadOnlyList<EmailTemplateListItemDto>>(
                 new GetEmailTemplatesQuery(scope, scopeId, parentScopeId), ct);

@@ -11,14 +11,13 @@ public static class CreateEmailTemplateHttpEndpoint
 {
     public static RouteGroupBuilder MapCreateEmailTemplate(
         this RouteGroupBuilder group,
-        EmailSettingsScope scope,
-        Func<OrganizationScope, Guid> scopeIdSelector)
+        EmailSettingsScope scope)
     {
         var endpointName = scope == EmailSettingsScope.Team
             ? "CreateTeamEmailTemplate"
             : "CreateEventEmailTemplate";
 
-        var handler = new Handler(scope, scopeIdSelector);
+        var handler = new Handler(scope);
 
         group
             .MapPost("/", handler.HandleAsync)
@@ -28,20 +27,18 @@ public static class CreateEmailTemplateHttpEndpoint
         return group;
     }
 
-    private sealed class Handler(EmailSettingsScope scope, Func<OrganizationScope, Guid> scopeIdSelector)
+    private sealed class Handler(EmailSettingsScope scope)
     {
         public async ValueTask<Created<CreateEmailTemplateResponse>> HandleAsync(
-            string teamSlug,
-            string? eventSlug,
+            Guid teamId,
+            Guid? eventId,
             CreateEmailTemplateHttpRequest request,
-            IOrganizationScopeResolver scopeResolver,
             IMediator mediator,
             [FromKeyedServices(EmailModuleKey.Value)] IUnitOfWork unitOfWork,
             CancellationToken ct)
         {
-            var orgScope = await scopeResolver.ResolveAsync(teamSlug, eventSlug, ct);
-            var scopeId = scopeIdSelector(orgScope);
-            var parentScopeId = scope == EmailSettingsScope.Event ? orgScope.TeamId : (Guid?)null;
+            var scopeId = scope == EmailSettingsScope.Event ? eventId!.Value : teamId;
+            var parentScopeId = scope == EmailSettingsScope.Event ? teamId : (Guid?)null;
 
             var command = new CreateEmailTemplateCommand(
                 scope,
@@ -57,9 +54,9 @@ public static class CreateEmailTemplateHttpEndpoint
 
             await unitOfWork.SaveChangesAsync(ct);
 
-            var location = eventSlug is not null
-                ? $"/admin/teams/{teamSlug}/events/{eventSlug}/email-templates/{id}"
-                : $"/admin/teams/{teamSlug}/email-templates/{id}";
+            var location = eventId is not null
+                ? $"/admin/teams/{teamId}/events/{eventId}/email-templates/{id}"
+                : $"/admin/teams/{teamId}/email-templates/{id}";
 
             return TypedResults.Created(location, new CreateEmailTemplateResponse(id));
         }

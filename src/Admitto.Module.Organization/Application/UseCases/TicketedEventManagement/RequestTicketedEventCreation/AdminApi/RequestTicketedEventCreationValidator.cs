@@ -9,7 +9,6 @@ public sealed class RequestTicketedEventCreationValidator
 {
     public RequestTicketedEventCreationValidator()
     {
-        RuleFor(x => x.Slug).MustBeParseable(Slug.TryFrom);
         RuleFor(x => x.Name).MustBeParseable(DisplayName.TryFrom);
         RuleFor(x => x.WebsiteUrl).MustBeParseable(AbsoluteUrl.TryFrom);
         RuleFor(x => x.BaseUrl).MustBeParseable(AbsoluteUrl.TryFrom);

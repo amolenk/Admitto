@@ -4,7 +4,6 @@ namespace Amolenk.Admitto.Module.Organization.Application.UseCases.TicketedEvent
 /// HTTP request body for the request-event-creation endpoint.
 /// </summary>
 public sealed record RequestTicketedEventCreationHttpRequest(
-    string Slug,
     string Name,
     string WebsiteUrl,
     string BaseUrl,
@@ -13,5 +12,5 @@ public sealed record RequestTicketedEventCreationHttpRequest(
     string TimeZone)
 {
     internal RequestTicketedEventCreationCommand ToCommand(Guid teamId, Guid requesterId) =>
-        new(teamId, requesterId, Slug, Name, WebsiteUrl, BaseUrl, StartsAt, EndsAt, TimeZone);
+        new(teamId, requesterId, Name, WebsiteUrl, BaseUrl, StartsAt, EndsAt, TimeZone);
 }

@@ -25,25 +25,25 @@ public static class EmailApiEndpoints
     {
         // Team-scoped email settings
         group
-            .MapGroup("/teams/{teamSlug}/email-settings")
-            .MapGetEmailSettings(EmailSettingsScope.Team, s => s.TeamId)
-            .MapUpsertEmailSettings(EmailSettingsScope.Team, s => s.TeamId)
-            .MapDeleteEmailSettings(EmailSettingsScope.Team, s => s.TeamId)
-            .MapSendTestEmail(EmailSettingsScope.Team, s => s.TeamId);
+            .MapGroup("/teams/{teamId:guid}/email-settings")
+            .MapGetEmailSettings(EmailSettingsScope.Team)
+            .MapUpsertEmailSettings(EmailSettingsScope.Team)
+            .MapDeleteEmailSettings(EmailSettingsScope.Team)
+            .MapSendTestEmail(EmailSettingsScope.Team);
 
         // Event-scoped email settings
         group
-            .MapGroup("/teams/{teamSlug}/events/{eventSlug}/email-settings")
-            .MapGetEmailSettings(EmailSettingsScope.Event, s => s.EventId!.Value)
-            .MapUpsertEmailSettings(EmailSettingsScope.Event, s => s.EventId!.Value)
-            .MapDeleteEmailSettings(EmailSettingsScope.Event, s => s.EventId!.Value)
-            .MapSendTestEmail(EmailSettingsScope.Event, s => s.EventId!.Value);
+            .MapGroup("/teams/{teamId:guid}/events/{eventId:guid}/email-settings")
+            .MapGetEmailSettings(EmailSettingsScope.Event)
+            .MapUpsertEmailSettings(EmailSettingsScope.Event)
+            .MapDeleteEmailSettings(EmailSettingsScope.Event)
+            .MapSendTestEmail(EmailSettingsScope.Event);
 
         // Team-scoped email templates
         group
-            .MapGroup("/teams/{teamSlug}/email-templates")
-            .MapGetEmailTemplates(EmailSettingsScope.Team, s => s.TeamId)
-            .MapCreateEmailTemplate(EmailSettingsScope.Team, s => s.TeamId)
+            .MapGroup("/teams/{teamId:guid}/email-templates")
+            .MapGetEmailTemplates(EmailSettingsScope.Team)
+            .MapCreateEmailTemplate(EmailSettingsScope.Team)
             .MapGetEmailTemplate(EmailSettingsScope.Team)
             .MapUpdateEmailTemplate(EmailSettingsScope.Team)
             .MapDeleteEmailTemplate(EmailSettingsScope.Team)
@@ -52,9 +52,9 @@ public static class EmailApiEndpoints
 
         // Event-scoped email templates
         group
-            .MapGroup("/teams/{teamSlug}/events/{eventSlug}/email-templates")
-            .MapGetEmailTemplates(EmailSettingsScope.Event, s => s.EventId!.Value)
-            .MapCreateEmailTemplate(EmailSettingsScope.Event, s => s.EventId!.Value)
+            .MapGroup("/teams/{teamId:guid}/events/{eventId:guid}/email-templates")
+            .MapGetEmailTemplates(EmailSettingsScope.Event)
+            .MapCreateEmailTemplate(EmailSettingsScope.Event)
             .MapGetEmailTemplate(EmailSettingsScope.Event)
             .MapUpdateEmailTemplate(EmailSettingsScope.Event)
             .MapDeleteEmailTemplate(EmailSettingsScope.Event)
@@ -63,7 +63,7 @@ public static class EmailApiEndpoints
 
         // Event-scoped bulk emails
         group
-            .MapGroup("/teams/{teamSlug}/events/{eventSlug}/bulk-emails")
+            .MapGroup("/teams/{teamId:guid}/events/{eventId:guid}/bulk-emails")
             .MapPreviewBulkEmail()
             .MapCreateBulkEmail()
             .MapGetBulkEmails()
@@ -72,7 +72,7 @@ public static class EmailApiEndpoints
 
         // Event-scoped attendee emails
         group
-            .MapGroup("/teams/{teamSlug}/events/{eventSlug}/registrations/{registrationId:guid}")
+            .MapGroup("/teams/{teamId:guid}/events/{eventId:guid}/registrations/{registrationId:guid}")
             .MapGetAttendeeEmails();
 
         return group;

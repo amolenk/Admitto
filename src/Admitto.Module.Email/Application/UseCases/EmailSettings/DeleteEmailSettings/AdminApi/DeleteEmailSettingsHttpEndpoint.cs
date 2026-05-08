@@ -12,17 +12,15 @@ public static class DeleteEmailSettingsHttpEndpoint
 {
     public static RouteGroupBuilder MapDeleteEmailSettings(
         this RouteGroupBuilder group,
-        EmailSettingsScope scope,
-        Func<OrganizationScope, Guid> scopeIdSelector)
+        EmailSettingsScope scope)
     {
         var endpointName = scope == EmailSettingsScope.Team ? "DeleteTeamEmailSettings" : "DeleteEventEmailSettings";
 
         group
             .MapDelete("/", async (
-                string teamSlug,
-                string? eventSlug,
+                Guid teamId,
+                Guid? eventId,
                 [FromQuery] uint version,
-                IOrganizationScopeResolver scopeResolver,
                 IMediator mediator,
                 HttpContext httpContext,
                 CancellationToken ct) =>
@@ -30,8 +28,7 @@ public static class DeleteEmailSettingsHttpEndpoint
                 var unitOfWork = httpContext.RequestServices
                     .GetRequiredKeyedService<IUnitOfWork>(EmailModuleKey.Value);
 
-                var orgScope = await scopeResolver.ResolveAsync(teamSlug, eventSlug, ct);
-                var scopeId = scopeIdSelector(orgScope);
+                var scopeId = scope == EmailSettingsScope.Event ? eventId!.Value : teamId;
 
                 await mediator.SendAsync(new DeleteEmailSettingsCommand(scope, scopeId, version), ct);
                 await unitOfWork.SaveChangesAsync(ct);

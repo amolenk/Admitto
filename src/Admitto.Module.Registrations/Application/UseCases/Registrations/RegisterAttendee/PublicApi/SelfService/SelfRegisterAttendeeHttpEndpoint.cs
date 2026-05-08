@@ -1,6 +1,4 @@
-using Amolenk.Admitto.Module.Organization.Contracts;
 using Amolenk.Admitto.Module.Registrations.Application.Security;
-using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Application.Persistence;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
@@ -18,21 +16,16 @@ public static class SelfRegisterAttendeeHttpEndpoint
     }
 
     private static async ValueTask<IResult> HandleAsync(
-        string teamSlug,
-        string eventSlug,
+        Guid teamId,
+        Guid eventId,
         SelfRegisterAttendeeHttpRequest request,
         HttpRequest httpRequest,
-        IOrganizationFacade facade,
-        ITicketedEventIdLookup ticketedEventIdLookup,
         IVerificationTokenService verificationTokenService,
         IMediator mediator,
         [FromKeyedServices(RegistrationsModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
-        var teamId = await facade.GetTeamIdAsync(teamSlug, cancellationToken);
-        var eventId = await ticketedEventIdLookup.GetTicketedEventIdAsync(teamId, eventSlug, cancellationToken);
-
         var bearerToken = ExtractBearerToken(httpRequest);
         if (bearerToken is null)
             return Results.Problem(
@@ -64,7 +57,7 @@ public static class SelfRegisterAttendeeHttpEndpoint
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Results.Created(
-            $"/teams/{teamSlug}/events/{eventSlug}/registrations/{registrationId}",
+            $"/teams/{teamId}/events/{eventId}/registrations/{registrationId}",
             null);
     }
 

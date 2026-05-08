@@ -19,7 +19,6 @@ internal sealed class RequestTicketedEventCreationHandler(IOrganizationWriteStor
             ?? throw new BusinessRuleViolationException(NotFoundError.Create<Team>(command.TeamId));
 
         var request = team.RequestEventCreation(
-            Slug.From(command.Slug),
             DisplayName.From(command.Name),
             AbsoluteUrl.From(command.WebsiteUrl),
             AbsoluteUrl.From(command.BaseUrl),

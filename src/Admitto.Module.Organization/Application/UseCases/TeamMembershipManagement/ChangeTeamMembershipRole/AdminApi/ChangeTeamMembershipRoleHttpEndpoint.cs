@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Module.Shared.Application.Auth;
-using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Application.Persistence;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
@@ -19,8 +18,7 @@ public static class ChangeTeamMembershipRoleHttpEndpoint
     }
 
     private static async ValueTask<Ok> ChangeTeamMembershipRole(
-        string teamSlug,
-        IOrganizationScopeResolver scopeResolver,
+        Guid teamId,
         string email,
         ChangeTeamMembershipRoleHttpRequest request,
         IMediator mediator,
@@ -28,9 +26,7 @@ public static class ChangeTeamMembershipRoleHttpEndpoint
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
-        var scope = await scopeResolver.ResolveAsync(teamSlug, cancellationToken: cancellationToken);
-
-        var command = request.ToCommand(scope.TeamId, email);
+        var command = request.ToCommand(teamId, email);
 
         await mediator.SendAsync(command, cancellationToken);
 

@@ -11,28 +11,25 @@ public static class GetEmailSettingsHttpEndpoint
 {
     public static RouteGroupBuilder MapGetEmailSettings(
         this RouteGroupBuilder group,
-        EmailSettingsScope scope,
-        Func<OrganizationScope, Guid> scopeIdSelector)
+        EmailSettingsScope scope)
     {
         var endpointName = scope == EmailSettingsScope.Team ? "GetTeamEmailSettings" : "GetEventEmailSettings";
 
         group
             .MapGet("/", async (
-                string teamSlug,
-                string? eventSlug,
-                IOrganizationScopeResolver scopeResolver,
+                Guid teamId,
+                Guid? eventId,
                 IMediator mediator,
                 CancellationToken ct) =>
             {
-                var orgScope = await scopeResolver.ResolveAsync(teamSlug, eventSlug, ct);
-                var scopeId = scopeIdSelector(orgScope);
+                var scopeId = scope == EmailSettingsScope.Event ? eventId!.Value : teamId;
 
                 var dto = await mediator.QueryAsync<GetEmailSettingsQuery, EmailSettingsDto?>(
                     new GetEmailSettingsQuery(scope, scopeId), ct);
 
                 if (dto is null)
                     throw new BusinessRuleViolationException(
-                        NotFoundError.Create<Domain.Entities.EmailSettings>(teamSlug));
+                        NotFoundError.Create<Domain.Entities.EmailSettings>(teamId.ToString()));
 
                 return TypedResults.Ok(dto);
             })

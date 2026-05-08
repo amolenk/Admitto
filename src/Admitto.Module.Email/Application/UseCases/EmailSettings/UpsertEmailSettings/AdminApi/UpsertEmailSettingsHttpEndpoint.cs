@@ -11,11 +11,10 @@ public static class UpsertEmailSettingsHttpEndpoint
 {
     public static RouteGroupBuilder MapUpsertEmailSettings(
         this RouteGroupBuilder group,
-        EmailSettingsScope scope,
-        Func<OrganizationScope, Guid> scopeIdSelector)
+        EmailSettingsScope scope)
     {
         var endpointName = scope == EmailSettingsScope.Team ? "UpsertTeamEmailSettings" : "UpsertEventEmailSettings";
-        var handler = new Handler(scope, scopeIdSelector);
+        var handler = new Handler(scope);
 
         group
             .MapPut("/", handler.HandleAsync)
@@ -25,19 +24,17 @@ public static class UpsertEmailSettingsHttpEndpoint
         return group;
     }
 
-    private sealed class Handler(EmailSettingsScope scope, Func<OrganizationScope, Guid> scopeIdSelector)
+    private sealed class Handler(EmailSettingsScope scope)
     {
         public async ValueTask<Results<Ok, Created>> HandleAsync(
-            string teamSlug,
-            string? eventSlug,
-            IOrganizationScopeResolver scopeResolver,
+            Guid teamId,
+            Guid? eventId,
             UpsertEmailSettingsHttpRequest request,
             IMediator mediator,
             [FromKeyedServices(EmailModuleKey.Value)] IUnitOfWork unitOfWork,
             CancellationToken ct)
         {
-            var orgScope = await scopeResolver.ResolveAsync(teamSlug, eventSlug, ct);
-            var scopeId = scopeIdSelector(orgScope);
+            var scopeId = scope == EmailSettingsScope.Event ? eventId!.Value : teamId;
 
             if (request.Version is { } expectedVersion)
             {
@@ -49,9 +46,9 @@ public static class UpsertEmailSettingsHttpEndpoint
             await mediator.SendAsync(request.ToCreateCommand(scope, scopeId), ct);
             await unitOfWork.SaveChangesAsync(ct);
 
-            var location = eventSlug is not null
-                ? $"/admin/teams/{teamSlug}/events/{eventSlug}/email-settings"
-                : $"/admin/teams/{teamSlug}/email-settings";
+            var location = eventId is not null
+                ? $"/admin/teams/{teamId}/events/{eventId}/email-settings"
+                : $"/admin/teams/{teamId}/email-settings";
 
             return TypedResults.Created(location);
         }

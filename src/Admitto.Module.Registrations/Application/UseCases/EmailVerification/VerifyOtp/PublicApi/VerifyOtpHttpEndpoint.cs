@@ -1,5 +1,3 @@
-using Amolenk.Admitto.Module.Organization.Contracts;
-using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Application.Persistence;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
@@ -17,19 +15,14 @@ public static class VerifyOtpHttpEndpoint
     }
 
     private static async ValueTask<IResult> HandleAsync(
-        string teamSlug,
-        string eventSlug,
+        Guid teamId,
+        Guid eventId,
         VerifyOtpHttpRequest request,
-        IOrganizationFacade facade,
-        ITicketedEventIdLookup ticketedEventIdLookup,
         IMediator mediator,
         [FromKeyedServices(RegistrationsModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
-        var teamId = await facade.GetTeamIdAsync(teamSlug, cancellationToken);
-        var eventId = await ticketedEventIdLookup.GetTicketedEventIdAsync(teamId, eventSlug, cancellationToken);
-
         var command = new VerifyOtpCommand(
             TeamId.From(teamId),
             TicketedEventId.From(eventId),

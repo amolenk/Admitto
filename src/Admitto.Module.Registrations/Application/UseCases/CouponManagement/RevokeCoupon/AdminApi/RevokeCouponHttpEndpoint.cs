@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Module.Shared.Application.Auth;
-using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Application.Persistence;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -20,18 +19,15 @@ public static class RevokeCouponHttpEndpoint
 
     private static async ValueTask<Ok> RevokeCoupon(
         Guid couponId,
-        string teamSlug,
-        string eventSlug,
-        IOrganizationScopeResolver scopeResolver,
+        Guid teamId,
+        Guid eventId,
         IMediator mediator,
         [FromKeyedServices(RegistrationsModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
-        var scope = await scopeResolver.ResolveAsync(teamSlug, eventSlug, cancellationToken);
-
         var command = new RevokeCouponCommand(
-            scope.EventId!.Value,
+            eventId,
             couponId);
 
         await mediator.SendAsync(command, cancellationToken);

@@ -13,5 +13,4 @@ namespace Amolenk.Admitto.Module.Registrations.Domain.DomainEvents;
 public record TicketedEventStatusChangedDomainEvent(
     TicketedEventId TicketedEventId,
     TeamId TeamId,
-    Slug Slug,
     EventLifecycleStatus NewStatus) : DomainEvent;

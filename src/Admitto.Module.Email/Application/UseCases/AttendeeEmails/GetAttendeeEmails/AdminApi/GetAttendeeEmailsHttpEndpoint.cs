@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Module.Shared.Application.Auth;
-using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -19,18 +18,15 @@ public static class GetAttendeeEmailsHttpEndpoint
     }
 
     private static async ValueTask<Ok<IReadOnlyList<AttendeeEmailLogItemDto>>> GetAttendeeEmails(
-        string teamSlug,
-        string eventSlug,
+        Guid teamId,
+        Guid eventId,
         Guid registrationId,
-        IOrganizationScopeResolver scopeResolver,
         IMediator mediator,
         CancellationToken cancellationToken)
     {
-        var scope = await scopeResolver.ResolveAsync(teamSlug, eventSlug, cancellationToken);
-
         var query = new GetAttendeeEmailsQuery(
-            TeamId: scope.TeamId,
-            EventId: scope.EventId!.Value,
+            TeamId: teamId,
+            EventId: eventId,
             RegistrationId: registrationId);
 
         var result = await mediator.QueryAsync<GetAttendeeEmailsQuery, IReadOnlyList<AttendeeEmailLogItemDto>>(

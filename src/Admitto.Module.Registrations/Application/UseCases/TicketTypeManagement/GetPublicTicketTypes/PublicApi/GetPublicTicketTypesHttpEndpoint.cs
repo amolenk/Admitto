@@ -1,6 +1,4 @@
-using Amolenk.Admitto.Module.Organization.Contracts;
 using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
-using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Microsoft.AspNetCore.Http.HttpResults;
 
@@ -17,18 +15,12 @@ public static class GetPublicTicketTypesHttpEndpoint
     }
 
     private static async ValueTask<Ok<IReadOnlyList<PublicTicketTypeDto>>> HandleAsync(
-        string teamSlug,
-        string eventSlug,
-        IOrganizationFacade facade,
-        ITicketedEventIdLookup ticketedEventIdLookup,
+        Guid teamId,
+        Guid eventId,
         IMediator mediator,
         CancellationToken cancellationToken)
     {
-        var teamId = await facade.GetTeamIdAsync(teamSlug, cancellationToken);
-        var eventIdGuid = await ticketedEventIdLookup.GetTicketedEventIdAsync(teamId, eventSlug, cancellationToken);
-        var eventId = TicketedEventId.From(eventIdGuid);
-
-        var query = new GetPublicTicketTypesQuery(eventId);
+        var query = new GetPublicTicketTypesQuery(TicketedEventId.From(eventId));
 
         var result = await mediator.QueryAsync<GetPublicTicketTypesQuery, IReadOnlyList<PublicTicketTypeDto>>(
             query, cancellationToken);

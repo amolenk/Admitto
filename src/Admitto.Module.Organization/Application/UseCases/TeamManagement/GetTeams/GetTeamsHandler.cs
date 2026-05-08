@@ -20,7 +20,7 @@ internal sealed class GetTeamsHandler(IOrganizationWriteStore writeStore)
             return await writeStore.Teams
                 .AsNoTracking()
                 .Where(t => t.ArchivedAt == null)
-                .Select(t => new TeamListItemDto(                    t.Slug.Value,
+                .Select(t => new TeamListItemDto(                    t.Id.Value,
                     t.Name.Value,
                     t.EmailAddress.Value,
                     t.Version))
@@ -40,7 +40,7 @@ internal sealed class GetTeamsHandler(IOrganizationWriteStore writeStore)
             .AsNoTracking()
             .Where(t => t.ArchivedAt == null && memberTeamIds.Contains(t.Id))
             .Select(t => new TeamListItemDto(
-                t.Slug.Value,
+                t.Id.Value,
                 t.Name.Value,
                 t.EmailAddress.Value,
                 t.Version))

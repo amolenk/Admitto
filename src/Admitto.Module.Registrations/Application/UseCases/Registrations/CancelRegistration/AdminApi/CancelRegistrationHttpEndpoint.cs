@@ -1,6 +1,5 @@
 using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Application.Auth;
-using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Application.Persistence;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -21,22 +20,19 @@ public static class CancelRegistrationHttpEndpoint
 
     private static async ValueTask<NoContent> CancelRegistration(
         Guid registrationId,
-        string teamSlug,
-        string eventSlug,
+        Guid teamId,
+        Guid eventId,
         CancelRegistrationHttpRequest request,
-        IOrganizationScopeResolver scopeResolver,
         IMediator mediator,
         [FromKeyedServices(RegistrationsModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
-        var scope = await scopeResolver.ResolveAsync(teamSlug, eventSlug, cancellationToken);
-
         var reason = Enum.Parse<CancellationReason>(request.Reason!);
 
         var command = new CancelRegistrationCommand(
             registrationId,
-            scope.EventId!.Value,
+            eventId,
             reason);
 
         await mediator.SendAsync(command, cancellationToken);

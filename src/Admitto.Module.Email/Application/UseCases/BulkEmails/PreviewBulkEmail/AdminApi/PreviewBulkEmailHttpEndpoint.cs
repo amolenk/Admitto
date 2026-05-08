@@ -1,6 +1,5 @@
 using Amolenk.Admitto.Module.Email.Application.Sending.Bulk;
 using Amolenk.Admitto.Module.Shared.Application.Auth;
-using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Module.Email.Application.UseCases.BulkEmails.PreviewBulkEmail.AdminApi;
@@ -13,18 +12,15 @@ public static class PreviewBulkEmailHttpEndpoint
     {
         group
             .MapPost("/preview", async (
-                string teamSlug,
-                string eventSlug,
+                Guid teamId,
+                Guid eventId,
                 PreviewBulkEmailHttpRequest request,
-                IOrganizationScopeResolver scopeResolver,
                 IBulkEmailRecipientResolver recipientResolver,
                 CancellationToken ct) =>
             {
-                var orgScope = await scopeResolver.ResolveAsync(teamSlug, eventSlug, ct);
-
                 var source = request.Source.ToDomain();
                 var recipients = await recipientResolver.ResolveAsync(
-                    TicketedEventId.From(orgScope.EventId!.Value),
+                    TicketedEventId.From(eventId),
                     source,
                     ct);
 

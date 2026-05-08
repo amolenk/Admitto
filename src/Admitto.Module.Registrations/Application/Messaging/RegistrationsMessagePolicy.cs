@@ -68,12 +68,10 @@ public class RegistrationsMessagePolicy : MessagePolicy
             {
                 EventLifecycleStatus.Cancelled => new TicketedEventCancelled(
                     e.TeamId.Value,
-                    e.TicketedEventId.Value,
-                    e.Slug.Value),
+                    e.TicketedEventId.Value),
                 EventLifecycleStatus.Archived => new TicketedEventArchived(
                     e.TeamId.Value,
-                    e.TicketedEventId.Value,
-                    e.Slug.Value),
+                    e.TicketedEventId.Value),
                 _ => throw new InvalidOperationException(
                     $"Unexpected {nameof(EventLifecycleStatus)} '{e.NewStatus}' for " +
                     $"{nameof(TicketedEventStatusChangedDomainEvent)}.")

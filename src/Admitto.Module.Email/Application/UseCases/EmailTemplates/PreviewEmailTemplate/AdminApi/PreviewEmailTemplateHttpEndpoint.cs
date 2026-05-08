@@ -15,16 +15,12 @@ public static class PreviewEmailTemplateHttpEndpoint
 
         group
             .MapPost("/preview", async (
-                string teamSlug,
-                string? eventSlug,
+                Guid teamId,
+                Guid? eventId,
                 PreviewEmailTemplateHttpRequest request,
-                IOrganizationScopeResolver scopeResolver,
                 IMediator mediator,
                 CancellationToken ct) =>
             {
-                // Resolve scope to verify team access and authorization.
-                _ = await scopeResolver.ResolveAsync(teamSlug, eventSlug, ct);
-
                 var query = new PreviewEmailTemplateQuery(
                     request.Subject,
                     request.TextBody,

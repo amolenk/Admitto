@@ -16,5 +16,4 @@ public sealed record TicketedEventCreated(
     Guid CreationRequestId,
     Guid TeamId,
     Guid TicketedEventId,
-    string Slug,
     string TimeZone) : IntegrationEvent;

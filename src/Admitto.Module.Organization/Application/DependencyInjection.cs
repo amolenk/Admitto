@@ -7,7 +7,6 @@ using Amolenk.Admitto.Module.Organization.Contracts;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Infrastructure.Persistence;
 using FluentValidation;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Hosting;
 using Quartz;
 
@@ -37,8 +36,7 @@ public static class DependencyInjection
                 return sp.GetRequiredService<OrganizationFacade>();
 
             var inner = sp.GetRequiredService<OrganizationFacade>();
-            var memoryCache = sp.GetRequiredService<IMemoryCache>();
-            return new CachingOrganizationFacade(inner, memoryCache);
+            return new CachingOrganizationFacade(inner);
         });
 
         services.AddKeyedSingleton<IMessagePolicy, OrganizationMessagePolicy>(

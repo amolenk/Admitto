@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Module.Shared.Application.Auth;
-using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Application.Persistence;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
@@ -19,8 +18,7 @@ public static class CreateApiKeyHttpEndpoint
     }
 
     private static async ValueTask<Created<CreateApiKeyHttpResponse>> CreateApiKey(
-        string teamSlug,
-        IOrganizationScopeResolver scopeResolver,
+        Guid teamId,
         IUserContextAccessor userContextAccessor,
         CreateApiKeyHttpRequest request,
         IMediator mediator,
@@ -28,14 +26,12 @@ public static class CreateApiKeyHttpEndpoint
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
-        var scope = await scopeResolver.ResolveAsync(teamSlug, cancellationToken: cancellationToken);
-
-        var command = request.ToCommand(scope.TeamId, userContextAccessor.Current.UserName);
+        var command = request.ToCommand(teamId, userContextAccessor.Current.UserName);
         var result = await mediator.SendReceiveAsync<CreateApiKeyCommand, CreateApiKeyResult>(command, cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         var response = new CreateApiKeyHttpResponse(result.KeyId, request.Name, result.KeyPrefix, result.RawKey);
-        return TypedResults.Created($"/admin/teams/{teamSlug}/api-keys/{result.KeyId}", response);
+        return TypedResults.Created($"/admin/teams/{teamId}/api-keys/{result.KeyId}", response);
     }
 }

@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Module.Shared.Application.Auth;
-using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Application.Persistence;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
@@ -19,17 +18,14 @@ public static class AssignTeamMembershipHttpEndpoint
     }
 
     private static async ValueTask<Ok> AssignTeamMembership(
-        string teamSlug,
-        IOrganizationScopeResolver scopeResolver,
+        Guid teamId,
         AssignTeamMembershipHttpRequest request,
         IMediator mediator,
         [FromKeyedServices(OrganizationModuleKey.Value)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
-        var scope = await scopeResolver.ResolveAsync(teamSlug, cancellationToken: cancellationToken);
-
-        var command = request.ToCommand(scope.TeamId);
+        var command = request.ToCommand(teamId);
 
         await mediator.SendAsync(command, cancellationToken);
 

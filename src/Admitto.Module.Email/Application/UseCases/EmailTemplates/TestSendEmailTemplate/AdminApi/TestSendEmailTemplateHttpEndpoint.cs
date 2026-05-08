@@ -18,18 +18,15 @@ public static class TestSendEmailTemplateHttpEndpoint
         group
             .MapPost("/{id:guid}/test-send", async (
                 Guid id,
-                string teamSlug,
-                string? eventSlug,
-                IOrganizationScopeResolver scopeResolver,
+                Guid teamId,
+                Guid? eventId,
                 TestSendEmailTemplateHttpRequest request,
                 IMediator mediator,
                 CancellationToken ct) =>
             {
-                var orgScope = await scopeResolver.ResolveAsync(teamSlug, eventSlug, ct);
-
                 var command = isEventScoped
-                    ? request.ToCommand(id, orgScope.TeamId, orgScope.EventId!.Value)
-                    : request.ToCommand(id, orgScope.TeamId, null);
+                    ? request.ToCommand(id, teamId, eventId!.Value)
+                    : request.ToCommand(id, teamId, null);
 
                 await mediator.SendAsync(command, ct);
                 return TypedResults.Ok();

@@ -8,9 +8,6 @@ public sealed class CreateTeamValidator : AbstractValidator<CreateTeamHttpReques
 {
     public CreateTeamValidator()
     {
-        RuleFor(x => x.Slug)
-            .MustBeParseable(Slug.TryFrom);
-
         RuleFor(x => x.Name)
             .MustBeParseable(DisplayName.TryFrom);
 

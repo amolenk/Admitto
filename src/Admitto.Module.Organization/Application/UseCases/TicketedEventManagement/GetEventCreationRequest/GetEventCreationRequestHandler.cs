@@ -25,7 +25,6 @@ internal sealed class GetEventCreationRequestHandler(IOrganizationWriteStore wri
                    .Select(r => new EventCreationRequestDto(
                        r.Id.Value,
                        query.TeamId,
-                       r.RequestedSlug.Value,
                        r.RequesterId.Value,
                        r.RequestedAt,
                        r.Status.ToString(),

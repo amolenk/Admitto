@@ -19,7 +19,7 @@ internal class GetTeamHandler(IOrganizationWriteStore writeStore)
                    .AsNoTracking()
                    .Where(t => t.Id == teamId)
                    .Select(t => new TeamDto(
-                       t.Slug.Value,
+                       t.Id.Value,
                        t.Name.Value,
                        t.EmailAddress.Value,
                        t.Version))

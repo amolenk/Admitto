@@ -12,8 +12,8 @@ public static class GetBulkEmailHttpEndpoint
     {
         group
             .MapGet("/{bulkEmailJobId:guid}", async (
-                string teamSlug,
-                string eventSlug,
+                Guid teamId,
+                Guid eventId,
                 Guid bulkEmailJobId,
                 IMediator mediator,
                 CancellationToken ct) =>

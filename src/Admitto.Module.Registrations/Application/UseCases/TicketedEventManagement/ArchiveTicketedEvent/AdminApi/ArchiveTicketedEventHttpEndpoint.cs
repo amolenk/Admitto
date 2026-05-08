@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Module.Shared.Application.Auth;
-using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Application.Persistence;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -19,17 +18,14 @@ public static class ArchiveTicketedEventHttpEndpoint
     }
 
     private static async ValueTask<NoContent> ArchiveTicketedEvent(
-        string teamSlug,
-        string eventSlug,
-        IOrganizationScopeResolver scopeResolver,
+        Guid teamId,
+        Guid eventId,
         IMediator mediator,
         [FromKeyedServices(RegistrationsModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
-        var scope = await scopeResolver.ResolveAsync(teamSlug, eventSlug, cancellationToken);
-
-        var command = new ArchiveTicketedEventCommand(scope.EventId!.Value);
+        var command = new ArchiveTicketedEventCommand(eventId);
 
         await mediator.SendAsync(command, cancellationToken);
 

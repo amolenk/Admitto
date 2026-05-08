@@ -6,11 +6,9 @@ using Amolenk.Admitto.ApiService.Middleware;
 using Amolenk.Admitto.ApiService.OpenApi;
 using Amolenk.Admitto.Module.Email.Application;
 using Amolenk.Admitto.Module.Organization.Application;
-using Amolenk.Admitto.Module.Organization.Application.Http;
 using Amolenk.Admitto.Module.Registrations.Application;
 using Amolenk.Admitto.Module.Registrations.Infrastructure;
 using Amolenk.Admitto.Module.Shared.Application.Auth;
-using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Infrastructure;
 using Scalar.AspNetCore;
@@ -67,7 +65,6 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IUserContextAccessor, HttpContextUserContextAccessor>();
 builder.Services.AddScoped<IAdministratorRoleService, AdministratorRoleService>();
-builder.Services.AddScoped<IOrganizationScopeResolver, OrganizationScopeResolver>();
 
 // Configure CORS to allow all origins, methods, and headers.
 // TODO Can be removed once API keys are in place? Or still needed for UI?

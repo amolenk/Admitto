@@ -12,7 +12,6 @@ namespace Amolenk.Admitto.Module.Organization.Application.UseCases.TicketedEvent
 internal sealed record RequestTicketedEventCreationCommand(
     Guid TeamId,
     Guid RequesterId,
-    string Slug,
     string Name,
     string WebsiteUrl,
     string BaseUrl,

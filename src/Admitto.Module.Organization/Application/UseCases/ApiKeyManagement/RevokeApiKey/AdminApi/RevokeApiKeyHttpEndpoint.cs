@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Module.Shared.Application.Auth;
-using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Application.Persistence;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
@@ -19,16 +18,14 @@ public static class RevokeApiKeyHttpEndpoint
     }
 
     private static async ValueTask<NoContent> RevokeApiKey(
-        string teamSlug,
+        Guid teamId,
         Guid keyId,
-        IOrganizationScopeResolver scopeResolver,
         IMediator mediator,
         [FromKeyedServices(OrganizationModuleKey.Value)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
-        var scope = await scopeResolver.ResolveAsync(teamSlug, cancellationToken: cancellationToken);
-        var command = new RevokeApiKeyCommand(scope.TeamId, keyId);
+        var command = new RevokeApiKeyCommand(teamId, keyId);
 
         await mediator.SendAsync(command, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);

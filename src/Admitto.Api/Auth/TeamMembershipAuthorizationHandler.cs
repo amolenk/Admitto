@@ -1,7 +1,6 @@
 using Amolenk.Admitto.ApiService.Auth;
 using Amolenk.Admitto.Module.Organization.Contracts;
 using Amolenk.Admitto.Module.Shared.Application.Auth;
-using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 using Microsoft.AspNetCore.Authorization;
 
@@ -15,7 +14,6 @@ public class TeamMembershipAuthorizationHandler(
     IUserContextAccessor userContextAccessor,
     IOrganizationFacade organizationFacade,
     IAdministratorRoleService administratorRoleService,
-    IOrganizationScopeResolver organizationScopeResolver,
     IHttpContextAccessor httpContextAccessor)
     : AuthorizationHandler<TeamMembershipAuthorizationRequirement>
 {
@@ -32,21 +30,20 @@ public class TeamMembershipAuthorizationHandler(
             return;
         }
 
-        // Extract teamSlug from route values since authorization runs before endpoint binding.
+        // Extract teamId from route values since authorization runs before endpoint binding.
         var httpContext = httpContextAccessor.HttpContext;
         if (httpContext is null)
         {
             return;
         }
 
-        var teamSlug = httpContext.GetRouteValue("teamSlug")?.ToString();
-        if (string.IsNullOrWhiteSpace(teamSlug))
+        var teamIdValue = httpContext.GetRouteValue("teamId")?.ToString();
+        if (!Guid.TryParse(teamIdValue, out var teamId))
         {
             return;
         }
 
-        var organizationScope = await organizationScopeResolver.ResolveAsync(teamSlug);
-        var role = await organizationFacade.GetTeamMembershipRoleAsync(userId, organizationScope.TeamId);
+        var role = await organizationFacade.GetTeamMembershipRoleAsync(userId, teamId);
 
         if (role.HasValue && MapToTeamMembershipRole(role.Value) >= requirement.RequiredRole)
         {

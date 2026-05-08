@@ -23,16 +23,6 @@ public class TicketedEventEntityConfiguration : IEntityTypeConfiguration<Tickete
             .HasConversion<Guid>(v => v.Value, v => TeamId.From(v))
             .IsRequired();
 
-        builder.Property(e => e.TeamSlug)
-            .HasColumnName("team_slug")
-            .IsRequired()
-            .HasMaxLength(Slug.MaxLength);
-
-        builder.Property(e => e.Slug)
-            .HasColumnName("slug")
-            .IsRequired()
-            .HasMaxLength(Slug.MaxLength);
-
         builder.Property(e => e.Name)
             .HasColumnName("name")
             .IsRequired()
@@ -107,8 +97,5 @@ public class TicketedEventEntityConfiguration : IEntityTypeConfiguration<Tickete
             .HasConversion(AdditionalDetailJsonConverters.SchemaConverter)
             .HasDefaultValueSql("'[]'::jsonb")
             .IsRequired();
-
-        builder.HasIndex(e => new { e.TeamId, e.Slug })
-            .IsUnique();
     }
 }

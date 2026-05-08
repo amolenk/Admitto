@@ -10,8 +10,8 @@ public static class CancelBulkEmailHttpEndpoint
     {
         group
             .MapPost("/{bulkEmailJobId:guid}/cancel", async (
-                string teamSlug,
-                string eventSlug,
+                Guid teamId,
+                Guid eventId,
                 Guid bulkEmailJobId,
                 IMediator mediator,
                 [FromKeyedServices(EmailModuleKey.Value)] IUnitOfWork unitOfWork,

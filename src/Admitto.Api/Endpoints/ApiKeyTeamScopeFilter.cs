@@ -5,17 +5,17 @@ using Microsoft.AspNetCore.Mvc;
 namespace Amolenk.Admitto.Api.Endpoints;
 
 /// <summary>
-/// Verifies that the API key's team matches the {teamSlug} in the request path.
+/// Verifies that the API key's team matches the {teamId} in the request path.
 /// Returns 403 if there is a mismatch.
 /// </summary>
-public class ApiKeyTeamScopeFilter(IOrganizationFacade organizationFacade) : IEndpointFilter
+public class ApiKeyTeamScopeFilter : IEndpointFilter
 {
     public async ValueTask<object?> InvokeAsync(EndpointFilterInvocationContext context, EndpointFilterDelegate next)
     {
         var httpContext = context.HttpContext;
 
-        var teamSlug = httpContext.GetRouteValue("teamSlug")?.ToString();
-        if (string.IsNullOrWhiteSpace(teamSlug))
+        var teamIdValue = httpContext.GetRouteValue("teamId")?.ToString();
+        if (!Guid.TryParse(teamIdValue, out var routeTeamId))
         {
             return await next(context);
         }
@@ -25,8 +25,6 @@ public class ApiKeyTeamScopeFilter(IOrganizationFacade organizationFacade) : IEn
         {
             return await next(context);
         }
-
-        var routeTeamId = await organizationFacade.GetTeamIdAsync(teamSlug, httpContext.RequestAborted);
 
         if (routeTeamId != claimTeamId)
         {

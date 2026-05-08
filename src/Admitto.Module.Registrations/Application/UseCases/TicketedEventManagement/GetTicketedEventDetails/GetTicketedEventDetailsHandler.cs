@@ -24,7 +24,6 @@ internal sealed class GetTicketedEventDetailsHandler(
         return new TicketedEventDetailsDto(
             ticketedEvent.Id.Value,
             ticketedEvent.TeamId.Value,
-            ticketedEvent.Slug.Value,
             ticketedEvent.Name.Value,
             ticketedEvent.WebsiteUrl.Value.ToString(),
             ticketedEvent.BaseUrl.Value.ToString(),

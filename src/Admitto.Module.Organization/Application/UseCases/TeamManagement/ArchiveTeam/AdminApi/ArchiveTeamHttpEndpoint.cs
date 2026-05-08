@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Module.Shared.Application.Auth;
-using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Application.Persistence;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
@@ -7,11 +6,11 @@ using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 namespace Amolenk.Admitto.Module.Organization.Application.UseCases.TeamManagement.ArchiveTeam.AdminApi;
 
 /// <summary>
-/// POST /admin/teams/{teamSlug}/archive — archives the team (requires Owner membership).
+/// POST /admin/teams/{teamId}/archive — archives the team (requires Owner membership).
 /// </summary>
 public static class ArchiveTeamHttpEndpoint
 {
-    /// <summary>Maps the POST /{teamSlug}/archive endpoint onto the provided route group.</summary>
+    /// <summary>Maps the POST /{teamId}/archive endpoint onto the provided route group.</summary>
     public static RouteGroupBuilder MapArchiveTeam(this RouteGroupBuilder group)
     {
         group
@@ -23,17 +22,14 @@ public static class ArchiveTeamHttpEndpoint
     }
 
     private static async ValueTask<Ok> ArchiveTeam(
-        string teamSlug,
-        IOrganizationScopeResolver scopeResolver,
+        Guid teamId,
         ArchiveTeamHttpRequest request,
         IMediator mediator,
         [FromKeyedServices(OrganizationModuleKey.Value)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
-        var scope = await scopeResolver.ResolveAsync(teamSlug, cancellationToken: cancellationToken);
-
-        var command = request.ToCommand(scope.TeamId);
+        var command = request.ToCommand(teamId);
 
         await mediator.SendAsync(command, cancellationToken);
 

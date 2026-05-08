@@ -5,7 +5,6 @@ namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.TicketedEven
 public sealed record TicketedEventDetailsDto(
     Guid Id,
     Guid TeamId,
-    string Slug,
     string Name,
     string WebsiteUrl,
     string BaseUrl,

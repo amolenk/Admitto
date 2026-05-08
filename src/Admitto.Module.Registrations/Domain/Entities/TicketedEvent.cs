@@ -9,12 +9,11 @@ namespace Amolenk.Admitto.Module.Registrations.Domain.Entities;
 
 /// <summary>
 /// Authoritative aggregate for a ticketed event in the Registrations module.
-/// Owns the slug/name/dates, the lifecycle status, and the three policies
+/// Owns the name/dates, the lifecycle status, and the three policies
 /// (registration, cancellation, reconfirm) as value objects.
 /// </summary>
 /// <remarks>
-/// Slug uniqueness within a team is enforced by the unique index on
-/// <c>(TeamId, Slug)</c> defined in the EF configuration. Policy mutators
+/// Policy mutators
 /// reject when the aggregate is not Active; lifecycle transitions are
 /// one-way (Active → Cancelled → Archived, or Active → Archived directly).
 /// </remarks>
@@ -26,8 +25,6 @@ public class TicketedEvent : Aggregate<TicketedEventId>
     private TicketedEvent(
         TicketedEventId id,
         TeamId teamId,
-        Slug teamSlug,
-        Slug slug,
         DisplayName name,
         AbsoluteUrl websiteUrl,
         AbsoluteUrl baseUrl,
@@ -38,8 +35,6 @@ public class TicketedEvent : Aggregate<TicketedEventId>
         : base(id)
     {
         TeamId = teamId;
-        TeamSlug = teamSlug;
-        Slug = slug;
         Name = name;
         WebsiteUrl = websiteUrl;
         BaseUrl = baseUrl;
@@ -51,16 +46,6 @@ public class TicketedEvent : Aggregate<TicketedEventId>
     }
 
     public TeamId TeamId { get; private set; }
-
-    /// <summary>
-    /// Denormalised slug of the owning team, captured at event creation time. Stored on the
-    /// aggregate so registration-bound URL composition (QR codes, signed links) stays inside
-    /// this module without an Organization facade lookup. Team slugs are immutable, so this
-    /// value is set once and never updated.
-    /// </summary>
-    public Slug TeamSlug { get; private set; }
-
-    public Slug Slug { get; private set; }
     public DisplayName Name { get; private set; }
     public AbsoluteUrl WebsiteUrl { get; private set; }
     public AbsoluteUrl BaseUrl { get; private set; }
@@ -87,8 +72,6 @@ public class TicketedEvent : Aggregate<TicketedEventId>
     public static TicketedEvent Create(
         TicketedEventId id,
         TeamId teamId,
-        Slug teamSlug,
-        Slug slug,
         DisplayName name,
         AbsoluteUrl websiteUrl,
         AbsoluteUrl baseUrl,
@@ -102,7 +85,7 @@ public class TicketedEvent : Aggregate<TicketedEventId>
         var signingKey = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
 
         return new TicketedEvent(
-            id, teamId, teamSlug, slug, name, websiteUrl, baseUrl, startsAt, endsAt, timeZone, signingKey);
+            id, teamId, name, websiteUrl, baseUrl, startsAt, endsAt, timeZone, signingKey);
     }
 
     public void ChangeTimeZone(TimeZoneId timeZone)
@@ -144,7 +127,7 @@ public class TicketedEvent : Aggregate<TicketedEventId>
             throw new BusinessRuleViolationException(Errors.AlreadyArchived);
 
         Status = EventLifecycleStatus.Cancelled;
-        AddDomainEvent(new TicketedEventStatusChangedDomainEvent(Id, TeamId, Slug, Status));
+        AddDomainEvent(new TicketedEventStatusChangedDomainEvent(Id, TeamId, Status));
     }
 
     public void Archive()
@@ -153,7 +136,7 @@ public class TicketedEvent : Aggregate<TicketedEventId>
             throw new BusinessRuleViolationException(Errors.AlreadyArchived);
 
         Status = EventLifecycleStatus.Archived;
-        AddDomainEvent(new TicketedEventStatusChangedDomainEvent(Id, TeamId, Slug, Status));
+        AddDomainEvent(new TicketedEventStatusChangedDomainEvent(Id, TeamId, Status));
     }
 
     public void ConfigureRegistrationPolicy(TicketedEventRegistrationPolicy policy)
@@ -182,7 +165,7 @@ public class TicketedEvent : Aggregate<TicketedEventId>
         var schema = AdditionalDetailSchema.Create(fields);
         AdditionalDetailSchema = schema;
 
-        AddDomainEvent(new AdditionalDetailSchemaUpdatedDomainEvent(Id, TeamId, Slug, schema));
+        AddDomainEvent(new AdditionalDetailSchemaUpdatedDomainEvent(Id, TeamId, schema));
     }
 
     /// <summary>

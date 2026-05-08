@@ -1,5 +1,3 @@
-using Amolenk.Admitto.Module.Organization.Contracts;
-using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Application.Persistence;
 
@@ -16,19 +14,14 @@ public static class RegisterWithCouponHttpEndpoint
     }
 
     private static async ValueTask<IResult> HandleAsync(
-        string teamSlug,
-        string eventSlug,
+        Guid teamId,
+        Guid eventId,
         RegisterWithCouponHttpRequest request,
-        IOrganizationFacade facade,
-        ITicketedEventIdLookup ticketedEventIdLookup,
         IMediator mediator,
         [FromKeyedServices(RegistrationsModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
-        var teamId = await facade.GetTeamIdAsync(teamSlug, cancellationToken);
-        var eventId = await ticketedEventIdLookup.GetTicketedEventIdAsync(teamId, eventSlug, cancellationToken);
-
         var command = new RegisterAttendeeCommand(
             eventId,
             request.Email,
@@ -46,7 +39,7 @@ public static class RegisterWithCouponHttpEndpoint
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Results.Created(
-            $"/teams/{teamSlug}/events/{eventSlug}/registrations/{registrationId}",
+            $"/teams/{teamId}/events/{eventId}/registrations/{registrationId}",
             null);
     }
 }

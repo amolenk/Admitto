@@ -19,7 +19,7 @@ internal sealed class GetTicketedEventsHandler(IRegistrationsWriteStore writeSto
             .Where(e => e.TeamId == teamId && e.Status != EventLifecycleStatus.Archived)
             .OrderByDescending(e => e.StartsAt)
             .Select(e => new TicketedEventListItemDto(
-                e.Slug.Value,
+                e.Id.Value,
                 e.Name.Value,
                 e.StartsAt,
                 e.EndsAt,

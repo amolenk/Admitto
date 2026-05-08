@@ -1,8 +1,6 @@
-using Amolenk.Admitto.Module.Organization.Contracts;
 using Amolenk.Admitto.Module.Registrations.Application.Common.Cryptography;
 using Amolenk.Admitto.Module.Registrations.Application.Persistence;
 using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
-using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -22,22 +20,18 @@ public static class GetQRCodeHttpEndpoint
     }
 
     private static async ValueTask<FileContentHttpResult> HandleAsync(
-        string teamSlug,
-        string eventSlug,
+        Guid teamId,
+        Guid eventId,
         Guid registrationId,
         string? signature,
-        IOrganizationFacade facade,
-        ITicketedEventIdLookup ticketedEventIdLookup,
         RegistrationSigner registrationSigner,
         IRegistrationsWriteStore writeStore,
         CancellationToken cancellationToken)
     {
-        var teamId = await facade.GetTeamIdAsync(teamSlug, cancellationToken);
-        var eventIdGuid = await ticketedEventIdLookup.GetTicketedEventIdAsync(teamId, eventSlug, cancellationToken);
-        var eventId = TicketedEventId.From(eventIdGuid);
+        var typedEventId = TicketedEventId.From(eventId);
 
         if (string.IsNullOrEmpty(signature) ||
-            !await registrationSigner.IsValidAsync(registrationId, signature, eventId, cancellationToken))
+            !await registrationSigner.IsValidAsync(registrationId, signature, typedEventId, cancellationToken))
         {
             throw new BusinessRuleViolationException(Errors.InvalidSignature);
         }
@@ -47,7 +41,7 @@ public static class GetQRCodeHttpEndpoint
         var registrationExists = await writeStore.Registrations
             .AsNoTracking()
             .AnyAsync(
-                r => r.Id == typedRegistrationId && r.EventId == eventId,
+                r => r.Id == typedRegistrationId && r.EventId == typedEventId,
                 cancellationToken);
 
         if (!registrationExists)

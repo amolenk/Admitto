@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Module.Shared.Application.Auth;
-using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 
@@ -18,14 +17,12 @@ public static class GetApiKeysHttpEndpoint
     }
 
     private static async ValueTask<Ok<IReadOnlyList<ApiKeyListItemDto>>> GetApiKeys(
-        string teamSlug,
-        IOrganizationScopeResolver scopeResolver,
+        Guid teamId,
         IMediator mediator,
         CancellationToken cancellationToken)
     {
-        var scope = await scopeResolver.ResolveAsync(teamSlug, cancellationToken: cancellationToken);
         var keys = await mediator.QueryAsync<GetApiKeysQuery, IReadOnlyList<ApiKeyListItemDto>>(
-            new GetApiKeysQuery(scope.TeamId), cancellationToken);
+            new GetApiKeysQuery(teamId), cancellationToken);
 
         return TypedResults.Ok(keys);
     }

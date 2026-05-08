@@ -10,11 +10,10 @@ internal sealed class CreateTeamHandler(IOrganizationWriteStore writeStore)
 {
     public async ValueTask HandleAsync(CreateTeamCommand command, CancellationToken cancellationToken)
     {
-        var slug = Slug.From(command.Slug);
         var name = DisplayName.From(command.Name);
         var emailAddress = EmailAddress.From(command.EmailAddress);
         
-        var team = Team.Create(slug, name, emailAddress);
+        var team = Team.Create(name, emailAddress);
 
         await writeStore.Teams.AddAsync(team, cancellationToken);
     }

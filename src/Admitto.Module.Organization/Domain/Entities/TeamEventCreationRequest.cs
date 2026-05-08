@@ -20,18 +20,15 @@ public class TeamEventCreationRequest : Entity<CreationRequestId>
 
     private TeamEventCreationRequest(
         CreationRequestId id,
-        Slug requestedSlug,
         UserId requesterId,
         DateTimeOffset requestedAt)
         : base(id)
     {
-        RequestedSlug = requestedSlug;
         RequesterId = requesterId;
         RequestedAt = requestedAt;
         Status = TeamEventCreationRequestStatus.Pending;
     }
 
-    public Slug RequestedSlug { get; private set; }
     public UserId RequesterId { get; private set; }
     public DateTimeOffset RequestedAt { get; private set; }
     public TeamEventCreationRequestStatus Status { get; private set; }
@@ -50,10 +47,9 @@ public class TeamEventCreationRequest : Entity<CreationRequestId>
     public bool IsTerminal => Status != TeamEventCreationRequestStatus.Pending;
 
     internal static TeamEventCreationRequest Create(
-        Slug requestedSlug,
         UserId requesterId,
         DateTimeOffset requestedAt) =>
-        new(CreationRequestId.New(), requestedSlug, requesterId, requestedAt);
+        new(CreationRequestId.New(), requesterId, requestedAt);
 
     internal void MarkCreated(TicketedEventId ticketedEventId, DateTimeOffset at)
     {

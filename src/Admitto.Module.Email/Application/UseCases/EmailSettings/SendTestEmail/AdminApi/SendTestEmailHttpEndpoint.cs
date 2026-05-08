@@ -10,11 +10,10 @@ public static class SendTestEmailHttpEndpoint
 {
     public static RouteGroupBuilder MapSendTestEmail(
         this RouteGroupBuilder group,
-        EmailSettingsScope scope,
-        Func<OrganizationScope, Guid> scopeIdSelector)
+        EmailSettingsScope scope)
     {
         var endpointName = scope == EmailSettingsScope.Team ? "TestTeamEmailSettings" : "TestEventEmailSettings";
-        var handler = new Handler(scope, scopeIdSelector);
+        var handler = new Handler(scope);
 
         group
             .MapPost("/test", handler.HandleAsync)
@@ -24,18 +23,16 @@ public static class SendTestEmailHttpEndpoint
         return group;
     }
 
-    private sealed class Handler(EmailSettingsScope scope, Func<OrganizationScope, Guid> scopeIdSelector)
+    private sealed class Handler(EmailSettingsScope scope)
     {
         public async ValueTask<Ok> HandleAsync(
-            string teamSlug,
-            string? eventSlug,
-            IOrganizationScopeResolver scopeResolver,
+            Guid teamId,
+            Guid? eventId,
             SendTestEmailHttpRequest request,
             IMediator mediator,
             CancellationToken ct)
         {
-            var orgScope = await scopeResolver.ResolveAsync(teamSlug, eventSlug, ct);
-            var scopeId = scopeIdSelector(orgScope);
+            var scopeId = scope == EmailSettingsScope.Event ? eventId!.Value : teamId;
 
             await mediator.SendAsync(request.ToCommand(scope, scopeId), ct);
 

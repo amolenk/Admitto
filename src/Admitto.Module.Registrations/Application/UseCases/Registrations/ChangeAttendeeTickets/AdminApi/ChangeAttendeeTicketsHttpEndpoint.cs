@@ -1,6 +1,5 @@
 using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Application.Auth;
-using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Application.Persistence;
 
@@ -20,19 +19,16 @@ public static class ChangeAttendeeTicketsHttpEndpoint
 
     private static async ValueTask<NoContent> ChangeAttendeeTickets(
         Guid registrationId,
-        string teamSlug,
-        string eventSlug,
+        Guid teamId,
+        Guid eventId,
         ChangeAttendeeTicketsHttpRequest request,
-        IOrganizationScopeResolver scopeResolver,
         IMediator mediator,
         [FromKeyedServices(RegistrationsModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
-        var scope = await scopeResolver.ResolveAsync(teamSlug, eventSlug, cancellationToken);
-
         var command = new ChangeAttendeeTicketsCommand(
-            scope.EventId!.Value,
+            eventId,
             registrationId,
             request.TicketTypeSlugs!,
             ChangeMode.Admin);

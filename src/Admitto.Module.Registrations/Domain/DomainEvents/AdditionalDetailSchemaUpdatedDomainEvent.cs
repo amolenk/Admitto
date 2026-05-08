@@ -11,5 +11,4 @@ namespace Amolenk.Admitto.Module.Registrations.Domain.DomainEvents;
 public record AdditionalDetailSchemaUpdatedDomainEvent(
     TicketedEventId TicketedEventId,
     TeamId TeamId,
-    Slug Slug,
     AdditionalDetailSchema Schema) : DomainEvent;

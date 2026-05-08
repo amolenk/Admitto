@@ -18,11 +18,6 @@ public class TeamEntityConfiguration : IEntityTypeConfiguration<Team>
             .IsRequired()
             .ValueGeneratedNever();
 
-        builder.Property(e => e.Slug)
-            .HasColumnName("slug")
-            .IsRequired()
-            .HasMaxLength(Slug.MaxLength);
-
         builder.Property(e => e.Name)
             .HasColumnName("name")
             .IsRequired()
@@ -73,11 +68,6 @@ public class TeamEntityConfiguration : IEntityTypeConfiguration<Team>
                 req.Property<TeamId>("team_id")
                     .HasColumnName("team_id");
 
-                req.Property(r => r.RequestedSlug)
-                    .HasColumnName("requested_slug")
-                    .IsRequired()
-                    .HasMaxLength(Slug.MaxLength);
-
                 req.Property(r => r.RequesterId)
                     .HasColumnName("requester_id")
                     .IsRequired();
@@ -110,8 +100,5 @@ public class TeamEntityConfiguration : IEntityTypeConfiguration<Team>
 
                 req.HasIndex("team_id", nameof(TeamEventCreationRequest.Status));
             });
-
-        builder.HasIndex(e => e.Slug)
-            .IsUnique();
     }
 }

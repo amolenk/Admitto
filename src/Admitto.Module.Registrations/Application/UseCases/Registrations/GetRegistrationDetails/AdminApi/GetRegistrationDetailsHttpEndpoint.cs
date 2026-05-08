@@ -1,6 +1,5 @@
 using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Application.Auth;
-using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -20,18 +19,15 @@ public static class GetRegistrationDetailsHttpEndpoint
     }
 
     private static async ValueTask<Results<Ok<RegistrationDetailDto>, NotFound>> GetRegistrationDetails(
-        string teamSlug,
-        string eventSlug,
+        Guid teamId,
+        Guid eventId,
         Guid registrationId,
-        IOrganizationScopeResolver scopeResolver,
         IMediator mediator,
         CancellationToken cancellationToken)
     {
-        var scope = await scopeResolver.ResolveAsync(teamSlug, eventSlug, cancellationToken);
-
         var query = new GetRegistrationDetailsQuery(
-            TeamId: scope.TeamId,
-            EventId: TicketedEventId.From(scope.EventId!.Value),
+            TeamId: teamId,
+            EventId: TicketedEventId.From(eventId),
             RegistrationId: RegistrationId.From(registrationId));
 
         var result = await mediator.QueryAsync<GetRegistrationDetailsQuery, RegistrationDetailDto?>(

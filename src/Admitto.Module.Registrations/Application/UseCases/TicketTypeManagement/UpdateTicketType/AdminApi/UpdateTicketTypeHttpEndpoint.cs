@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Module.Shared.Application.Auth;
-using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Application.Persistence;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -20,19 +19,16 @@ public static class UpdateTicketTypeHttpEndpoint
 
     private static async ValueTask<NoContent> UpdateTicketType(
         string ticketTypeSlug,
-        string teamSlug,
-        string eventSlug,
-        IOrganizationScopeResolver scopeResolver,
+        Guid teamId,
+        Guid eventId,
         UpdateTicketTypeHttpRequest request,
         IMediator mediator,
         [FromKeyedServices(RegistrationsModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
-        var scope = await scopeResolver.ResolveAsync(teamSlug, eventSlug, cancellationToken);
-
         var command = request.ToCommand(
-            scope.EventId!.Value,
+            eventId,
             ticketTypeSlug);
 
         await mediator.SendAsync(command, cancellationToken);

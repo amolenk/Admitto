@@ -39,11 +39,11 @@ public static class RegistrationsModule
     public static RouteGroupBuilder MapRegistrationsAdminEndpoints(this RouteGroupBuilder group)
     {
         group
-            .MapGroup("/teams/{teamSlug}/events")
+            .MapGroup("/teams/{teamId:guid}/events")
             .MapGetTicketedEvents();
 
         var eventGroup = group
-            .MapGroup("/teams/{teamSlug}/events/{eventSlug}");
+            .MapGroup("/teams/{teamId:guid}/events/{eventId:guid}");
 
         eventGroup
             .MapGetTicketedEventDetails()
@@ -78,7 +78,7 @@ public static class RegistrationsModule
     public static RouteGroupBuilder MapRegistrationsPublicEndpoints(this RouteGroupBuilder group)
     {
         group
-            .MapGroup("/teams/{teamSlug}/events/{eventSlug}")
+            .MapGroup("/teams/{teamId:guid}/events/{eventId:guid}")
             .MapRequestOtp()
             .MapVerifyOtp()
             .MapSelfRegisterAttendee()

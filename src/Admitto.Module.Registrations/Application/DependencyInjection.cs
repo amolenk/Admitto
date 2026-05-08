@@ -31,8 +31,6 @@ public static class DependencyInjection
 
         services.AddKeyedSingleton<IMessagePolicy>(RegistrationsModule.Key, new RegistrationsMessagePolicy());
 
-        services.AddScoped<ITicketedEventIdLookup, RegistrationsTicketedEventIdLookup>();
-
         services.AddScoped<IRegistrationsFacade, RegistrationsFacade>();
 
         services.AddMemoryCache();

@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Module.Shared.Application.Auth;
-using Amolenk.Admitto.Module.Shared.Application.Http;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
 using Amolenk.Admitto.Module.Shared.Application.Persistence;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
@@ -12,19 +11,16 @@ public static class CreateBulkEmailHttpEndpoint
     {
         group
             .MapPost("/", async (
-                string teamSlug,
-                string eventSlug,
+                Guid teamId,
+                Guid eventId,
                 CreateBulkEmailHttpRequest request,
-                IOrganizationScopeResolver scopeResolver,
                 IMediator mediator,
                 [FromKeyedServices(EmailModuleKey.Value)] IUnitOfWork unitOfWork,
                 CancellationToken ct) =>
             {
-                var orgScope = await scopeResolver.ResolveAsync(teamSlug, eventSlug, ct);
-
                 var command = new CreateBulkEmailCommand(
-                    orgScope.TeamId,
-                    orgScope.EventId!.Value,
+                    teamId,
+                    eventId,
                     request.EmailType,
                     request.TemplateName,
                     request.Subject,
@@ -38,7 +34,7 @@ public static class CreateBulkEmailHttpEndpoint
                 await unitOfWork.SaveChangesAsync(ct);
 
                 var location =
-                    $"/admin/teams/{teamSlug}/events/{eventSlug}/bulk-emails/{bulkEmailJobId}";
+                    $"/admin/teams/{teamId}/events/{eventId}/bulk-emails/{bulkEmailJobId}";
 
                 return TypedResults.Created(location, new CreateBulkEmailResponse(bulkEmailJobId));
             })

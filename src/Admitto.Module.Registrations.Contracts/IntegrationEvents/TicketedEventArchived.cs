@@ -10,5 +10,4 @@ namespace Amolenk.Admitto.Module.Registrations.Contracts.IntegrationEvents;
 /// </summary>
 public sealed record TicketedEventArchived(
     Guid TeamId,
-    Guid TicketedEventId,
-    string Slug) : IntegrationEvent;
+    Guid TicketedEventId) : IntegrationEvent;

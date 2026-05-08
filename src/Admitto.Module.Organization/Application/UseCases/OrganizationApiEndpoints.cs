@@ -25,7 +25,7 @@ public static class OrganizationApiEndpoints
             .MapCreateTeam()
             .MapGetTeams();
 
-        var team = teams.MapGroup("/{teamSlug}");
+        var team = teams.MapGroup("/{teamId:guid}");
 
         team
             .MapGetTeam()

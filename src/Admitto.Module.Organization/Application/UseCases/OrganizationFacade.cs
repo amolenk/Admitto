@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Module.Organization.Application.UseCases.ApiKeyManagement.ValidateApiKey;
-using Amolenk.Admitto.Module.Organization.Application.UseCases.TeamManagement.GetTeamId;
 using Amolenk.Admitto.Module.Organization.Application.UseCases.Users.GetTeamMembershipRole;
 using Amolenk.Admitto.Module.Organization.Contracts;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
@@ -8,17 +7,6 @@ namespace Amolenk.Admitto.Module.Organization.Application.UseCases;
 
 internal class OrganizationFacade(IMediator mediator) : IOrganizationFacade
 {
-    public async ValueTask<Guid> GetTeamIdAsync(
-        string teamSlug,
-        CancellationToken cancellationToken = default)
-    {
-        var teamId = await mediator.QueryAsync<GetTeamIdQuery, Guid>(
-            new GetTeamIdQuery(teamSlug),
-            cancellationToken);
-
-        return teamId;
-    }
-
     public async ValueTask<TeamMembershipRoleDto?> GetTeamMembershipRoleAsync(
         Guid userId,
         Guid teamId,

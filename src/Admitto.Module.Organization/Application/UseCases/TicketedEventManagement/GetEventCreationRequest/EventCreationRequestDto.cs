@@ -6,7 +6,6 @@ namespace Amolenk.Admitto.Module.Organization.Application.UseCases.TicketedEvent
 public sealed record EventCreationRequestDto(
     Guid CreationRequestId,
     Guid TeamId,
-    string RequestedSlug,
     Guid RequesterId,
     DateTimeOffset RequestedAt,
     string Status,
