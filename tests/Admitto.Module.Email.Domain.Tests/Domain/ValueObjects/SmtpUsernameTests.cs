@@ -16,10 +16,17 @@ public sealed class SmtpUsernameTests
     }
 
     [TestMethod]
-    [DataRow(null)]
+    public void TryFrom_WithNull_Fails()
+    {
+        var result = SmtpUsername.TryFrom(null);
+
+        result.IsSuccess.ShouldBeFalse();
+    }
+
+    [TestMethod]
     [DataRow("")]
     [DataRow("   ")]
-    public void TryFrom_WithEmpty_Fails(string? input)
+    public void TryFrom_WithEmpty_Fails(string input)
     {
         var result = SmtpUsername.TryFrom(input);
 

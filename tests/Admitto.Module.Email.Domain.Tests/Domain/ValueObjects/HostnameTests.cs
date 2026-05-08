@@ -16,10 +16,17 @@ public sealed class HostnameTests
     }
 
     [TestMethod]
-    [DataRow(null)]
+    public void TryFrom_WithNull_Fails()
+    {
+        var result = Hostname.TryFrom(null);
+
+        result.IsSuccess.ShouldBeFalse();
+    }
+
+    [TestMethod]
     [DataRow("")]
     [DataRow("   ")]
-    public void TryFrom_WithEmpty_Fails(string? input)
+    public void TryFrom_WithEmpty_Fails(string input)
     {
         var result = Hostname.TryFrom(input);
 
