@@ -88,24 +88,24 @@ sequenceDiagram
   participant RegOutbox as Reg outbox
   participant OrgHandler as Organization integration-event handler
 
-  UI->>OrgEp: POST /admin/teams/{teamSlug}/events
-  OrgEp->>Team: RequestCreation(slug, requester)
+  UI->>OrgEp: POST /admin/teams/{teamId}/events
+  OrgEp->>Team: RequestCreation(requester)
   Team->>Team: EnsureNotArchived(); PendingEventCount++
   Team->>Team: Add TeamEventCreationRequest (Pending)
-  OrgEp->>OrgOutbox: TicketedEventCreationRequested (CreationRequestId, TeamId, Slug)
-  OrgEp-->>UI: 202 Accepted + Location: /admin/teams/{slug}/event-creations/{id}
+  OrgEp->>OrgOutbox: TicketedEventCreationRequested (CreationRequestId, TeamId, ...)
+  OrgEp-->>UI: 202 Accepted + Location: /admin/teams/{teamId}/event-creations/{id}
   OrgOutbox->>RegHandler: deliver
-  RegHandler->>RegEvent: insert TicketedEvent (TeamId, Slug, ...)
+  RegHandler->>RegEvent: insert TicketedEvent (TeamId, ...)
   alt success
     RegHandler->>Catalog: create Active TicketCatalog
     RegHandler->>RegOutbox: TicketedEventCreated
-  else duplicate slug
-    RegHandler->>RegOutbox: TicketedEventCreationRejected (reason=duplicate_slug)
+  else failure
+    RegHandler->>RegOutbox: TicketedEventCreationRejected
   end
   RegOutbox->>OrgHandler: deliver (idempotent on CreationRequestId)
   OrgHandler->>Team: RegisterEventCreated / RegisterEventRejected
   Team->>Team: PendingEventCount--; Active/Rejected counter++
-  UI->>OrgEp: GET /admin/teams/{slug}/event-creations/{id} (poll)
+  UI->>OrgEp: GET /admin/teams/{teamId}/event-creations/{id} (poll)
   OrgEp-->>UI: { status: Created | Rejected | Pending, link }
 ```
 

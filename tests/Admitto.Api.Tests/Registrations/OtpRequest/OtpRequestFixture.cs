@@ -8,15 +8,13 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.OtpRequest;
 
 internal sealed class OtpRequestFixture
 {
-    public const string TeamSlug = "acme";
-    public const string EventSlug = "devconf";
     public const string AttendeeEmail = "dave@example.com";
 
     public TeamId TeamId { get; private set; } = TeamId.New();
     public TicketedEventId EventId { get; private set; } = TicketedEventId.New();
     public string ApiKey => ApiKeyTestHelper.TestRawKey;
 
-    public string RequestOtpRoute => $"/api/teams/{TeamSlug}/events/{EventSlug}/otp/request";
+    public string RequestOtpRoute => $"/api/teams/{TeamId.Value}/events/{EventId.Value}/otp/request";
 
     private OtpRequestFixture() { }
 
@@ -25,7 +23,6 @@ internal sealed class OtpRequestFixture
     public async ValueTask SetupAsync(EndToEndTestEnvironment environment)
     {
         var team = new TeamBuilder()
-            .WithSlug(TeamSlug)
             .Build();
         TeamId = team.Id;
 
@@ -35,8 +32,6 @@ internal sealed class OtpRequestFixture
         var ticketedEvent = TicketedEvent.Create(
             eventId,
             team.Id,
-            Slug.From(TeamSlug),
-            Slug.From(EventSlug),
             DisplayName.From("DevConf"),
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),

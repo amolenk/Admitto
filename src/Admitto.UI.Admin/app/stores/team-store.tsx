@@ -1,14 +1,14 @@
 import { create } from "zustand";
 
 type TeamStore = {
-    selectedTeamSlug: string | null;
-    setSelectedTeamSlug: (teamSlug: string | null) => void;
+    selectedTeamId: string | null;
+    setSelectedTeamId: (teamId: string | null) => void;
 };
 
 export const useTeamStore = create<TeamStore>((set) => ({
-    selectedTeamSlug: null,
-    setSelectedTeamSlug: (teamSlug: string | null) =>
+    selectedTeamId: null,
+    setSelectedTeamId: (teamId: string | null) =>
     {
-        set({ selectedTeamSlug: teamSlug });
+        set({ selectedTeamId: teamId });
     },
 }));

@@ -101,11 +101,8 @@ public sealed class BulkEmailRecipientResolverTests
     public async Task ResolveAsync_AttendeeSource_NoMatches_ReturnsEmptyList()
     {
         var facade = Substitute.For<IRegistrationsFacade>();
-        facade.QueryRegistrationsAsync(
-                Arg.Any<TicketedEventId>(),
-                Arg.Any<QueryRegistrationsDto>(),
-                Arg.Any<CancellationToken>())
-            .Returns(Array.Empty<RegistrationListItemDto>());
+        facade.QueryRegistrationsAsync(TicketedEventId.New(), default, default)
+            .ReturnsForAnyArgs(Array.Empty<RegistrationListItemDto>());
 
         var resolver = new BulkEmailRecipientResolver(facade);
 

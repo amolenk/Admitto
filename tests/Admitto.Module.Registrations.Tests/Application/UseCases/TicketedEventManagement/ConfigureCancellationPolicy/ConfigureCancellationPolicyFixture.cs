@@ -29,8 +29,6 @@ internal sealed class ConfigureCancellationPolicyFixture
             var ticketedEvent = TicketedEvent.Create(
                 EventId,
                 TeamId,
-                Slug.From("test-team"),
-                Slug.From("cancel-policy-event"),
                 DisplayName.From("Cancel Policy Event"),
                 AbsoluteUrl.From("https://example.com"),
                 AbsoluteUrl.From("https://tickets.example.com"),

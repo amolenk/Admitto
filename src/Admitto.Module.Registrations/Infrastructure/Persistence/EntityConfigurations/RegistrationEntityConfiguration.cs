@@ -3,6 +3,7 @@ using Amolenk.Admitto.Module.Registrations.Domain.Entities;
 using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Amolenk.Admitto.Module.Registrations.Infrastructure.Persistence.EntityConfigurations;
@@ -14,11 +15,19 @@ public class RegistrationEntityConfiguration : IEntityTypeConfiguration<Registra
         builder.ToTable("registrations");
         builder.HasKey(e => e.Id);
 
-        builder.Property(e => e.Id)
+        var idProperty = builder.Property(e => e.Id)
             .HasColumnName("id")
             .HasConversion(v => v.Value, v => RegistrationId.From(v))
             .IsRequired()
             .ValueGeneratedNever();
+
+        // Vogen throws on GetHashCode() for uninitialized structs. EF Core calls GetHashCode()
+        // on the FK shadow property of owned entities (TicketTypeSnapshot) before FK propagation,
+        // so we register a safe comparer here. It propagates from the PK to FK shadow properties.
+        idProperty.Metadata.SetValueComparer(new ValueComparer<RegistrationId>(
+            (x, y) => x.IsInitialized() == y.IsInitialized() && (!x.IsInitialized() || x.Value == y.Value),
+            v => v.IsInitialized() ? v.GetHashCode() : 0,
+            v => v));
 
         builder.Property(e => e.TeamId)
             .HasColumnName("team_id")

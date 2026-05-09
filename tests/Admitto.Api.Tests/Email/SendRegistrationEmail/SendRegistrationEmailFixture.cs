@@ -10,13 +10,14 @@ namespace Amolenk.Admitto.Api.Tests.Email.SendRegistrationEmail;
 
 internal sealed class SendRegistrationEmailFixture
 {
-    public const string TeamSlug = "acme-email";
-    public const string EventSlug = "mailconf";
     public const string TicketTypeSlug = "general-admission";
     public const string RecipientEmail = "attendee@example.com";
 
-    public static string RegisterRoute =>
-        $"/admin/teams/{TeamSlug}/events/{EventSlug}/registrations";
+    public Guid TeamId { get; private set; }
+    public Guid EventId { get; private set; }
+
+    public string RegisterRoute =>
+        $"/admin/teams/{TeamId}/events/{EventId}/registrations";
 
     private SendRegistrationEmailFixture() { }
 
@@ -25,16 +26,16 @@ internal sealed class SendRegistrationEmailFixture
     public async ValueTask SetupAsync(EndToEndTestEnvironment environment)
     {
         var team = new TeamBuilder()
-            .WithSlug(TeamSlug)
             .Build();
 
         var eventId = TicketedEventId.New();
 
+        TeamId = team.Id.Value;
+        EventId = eventId.Value;
+
         var ticketedEvent = TicketedEvent.Create(
             eventId,
             team.Id,
-            Slug.From(TeamSlug),
-            Slug.From(EventSlug),
             DisplayName.From("MailConf"),
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),

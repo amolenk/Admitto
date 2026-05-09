@@ -13,10 +13,10 @@ public sealed class GetRegistrationsTests(TestContext testContext) : AspireInteg
         await fixture.SetupAsync(Environment);
 
         var result = await NewHandler().HandleAsync(
-            new GetRegistrationsQuery(fixture.EventId),
+            new GetRegistrationsQuery(fixture.TeamId, fixture.EventId),
             testContext.CancellationToken);
 
-        result.ShouldBeEmpty();
+        result.ShouldNotBeNull().ShouldBeEmpty();
     }
 
     [TestMethod]
@@ -26,9 +26,10 @@ public sealed class GetRegistrationsTests(TestContext testContext) : AspireInteg
         await fixture.SetupAsync(Environment);
 
         var result = await NewHandler().HandleAsync(
-            new GetRegistrationsQuery(fixture.EventId),
+            new GetRegistrationsQuery(fixture.TeamId, fixture.EventId),
             testContext.CancellationToken);
 
+        result.ShouldNotBeNull();
         result.Count.ShouldBe(2);
 
         var alice = result.SingleOrDefault(r => r.Email == "alice@example.com");
@@ -49,9 +50,10 @@ public sealed class GetRegistrationsTests(TestContext testContext) : AspireInteg
         await fixture.SetupAsync(Environment);
 
         var result = await NewHandler().HandleAsync(
-            new GetRegistrationsQuery(fixture.EventId),
+            new GetRegistrationsQuery(fixture.TeamId, fixture.EventId),
             testContext.CancellationToken);
 
+        result.ShouldNotBeNull();
         var carol = result.ShouldHaveSingleItem();
         carol.Email.ShouldBe("carol@example.com");
         carol.Tickets.Count.ShouldBe(2);
@@ -70,17 +72,18 @@ public sealed class GetRegistrationsTests(TestContext testContext) : AspireInteg
         await fixture.SetupAsync(Environment);
 
         var result = await NewHandler().HandleAsync(
-            new GetRegistrationsQuery(fixture.EventId),
+            new GetRegistrationsQuery(fixture.TeamId, fixture.EventId),
             testContext.CancellationToken);
 
+        result.ShouldNotBeNull();
         result.Count.ShouldBe(2);
         result.ShouldNotContain(r => r.Email == "dave@example.com");
 
         var otherResult = await NewHandler().HandleAsync(
-            new GetRegistrationsQuery(fixture.OtherEventId),
+            new GetRegistrationsQuery(fixture.TeamId, fixture.OtherEventId),
             testContext.CancellationToken);
 
-        otherResult.ShouldHaveSingleItem().Email.ShouldBe("dave@example.com");
+        otherResult.ShouldNotBeNull().ShouldHaveSingleItem().Email.ShouldBe("dave@example.com");
     }
 
     private static GetRegistrationsHandler NewHandler() =>

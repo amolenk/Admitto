@@ -14,8 +14,6 @@ public sealed class TicketedEventTests
 {
     private static readonly TicketedEventId DefaultEventId = TicketedEventId.New();
     private static readonly TeamId DefaultTeamId = TeamId.New();
-    private static readonly Slug DefaultTeamSlug = Slug.From("test-team");
-    private static readonly Slug DefaultSlug = Slug.From("my-event");
     private static readonly DisplayName DefaultName = DisplayName.From("My Event");
     private static readonly DateTimeOffset DefaultStart = new(2030, 6, 1, 9, 0, 0, TimeSpan.Zero);
     private static readonly DateTimeOffset DefaultEnd = new(2030, 6, 1, 17, 0, 0, TimeSpan.Zero);
@@ -31,8 +29,6 @@ public sealed class TicketedEventTests
 
         sut.Id.ShouldBe(DefaultEventId);
         sut.TeamId.ShouldBe(DefaultTeamId);
-        sut.TeamSlug.ShouldBe(DefaultTeamSlug);
-        sut.Slug.ShouldBe(DefaultSlug);
         sut.Name.ShouldBe(DefaultName);
         sut.Status.ShouldBe(EventLifecycleStatus.Active);
         sut.IsActive.ShouldBeTrue();
@@ -57,8 +53,6 @@ public sealed class TicketedEventTests
         var second = TicketedEvent.Create(
             TicketedEventId.New(),
             DefaultTeamId,
-            DefaultTeamSlug,
-            Slug.From("another-event"),
             DefaultName,
             DefaultWebsite,
             DefaultBaseUrl,
@@ -75,8 +69,6 @@ public sealed class TicketedEventTests
         var act = () => TicketedEvent.Create(
             DefaultEventId,
             DefaultTeamId,
-            DefaultTeamSlug,
-            DefaultSlug,
             DefaultName,
             DefaultWebsite,
             DefaultBaseUrl,
@@ -145,7 +137,6 @@ public sealed class TicketedEventTests
             .ShouldHaveSingleItem();
         raised.TicketedEventId.ShouldBe(DefaultEventId);
         raised.TeamId.ShouldBe(DefaultTeamId);
-        raised.Slug.ShouldBe(DefaultSlug);
         raised.NewStatus.ShouldBe(EventLifecycleStatus.Cancelled);
     }
 
@@ -588,7 +579,7 @@ public sealed class TicketedEventTests
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     private static TicketedEvent NewEvent() => TicketedEvent.Create(
-        DefaultEventId, DefaultTeamId, DefaultTeamSlug, DefaultSlug, DefaultName, DefaultWebsite, DefaultBaseUrl, DefaultStart, DefaultEnd,
+        DefaultEventId, DefaultTeamId, DefaultName, DefaultWebsite, DefaultBaseUrl, DefaultStart, DefaultEnd,
                 TimeZoneId.From("UTC"));
 
     private static TicketedEventRegistrationPolicy NewRegistrationPolicy()

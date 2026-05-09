@@ -43,7 +43,7 @@ public sealed class GetRegistrationDetailTests(TestContext testContext) : EndToE
         await fixture.SetupAsync(Environment);
 
         var response = await Environment.ApiClient.GetAsync(
-            GetRegistrationDetailFixture.Route(),
+            $"/admin/teams/{fixture.TeamId}/events/{fixture.EventId}/registrations/{Guid.NewGuid()}",
             testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -56,7 +56,7 @@ public sealed class GetRegistrationDetailTests(TestContext testContext) : EndToE
         await fixture.SetupAsync(Environment);
 
         var response = await Environment.ApiClient.GetAsync(
-            $"/admin/teams/ghost-team/events/{GetRegistrationDetailFixture.EventSlug}/registrations/{fixture.RegistrationId.Value}",
+            $"/admin/teams/{Guid.NewGuid()}/events/{fixture.EventId}/registrations/{fixture.RegistrationId.Value}",
             testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -69,7 +69,7 @@ public sealed class GetRegistrationDetailTests(TestContext testContext) : EndToE
         await fixture.SetupAsync(Environment);
 
         var response = await Environment.ApiClient.GetAsync(
-            $"/admin/teams/{GetRegistrationDetailFixture.TeamSlug}/events/ghost-event/registrations/{fixture.RegistrationId.Value}",
+            $"/admin/teams/{fixture.TeamId}/events/{Guid.NewGuid()}/registrations/{fixture.RegistrationId.Value}",
             testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);

@@ -32,7 +32,7 @@ public sealed class ReconfirmIntegrationEventHandlerTests
         var handler = new TicketedEventCreatedIntegrationEventHandler(facade, mediator);
 
         await handler.HandleAsync(
-            new TicketedEventCreated(Guid.NewGuid(), teamId, eventId, "slug", "UTC"),
+            new TicketedEventCreated(Guid.NewGuid(), teamId, eventId, "UTC"),
             default);
 
         await mediator.Received(1).SendAsync(
@@ -53,7 +53,7 @@ public sealed class ReconfirmIntegrationEventHandlerTests
         var handler = new TicketedEventCreatedIntegrationEventHandler(facade, mediator);
 
         await handler.HandleAsync(
-            new TicketedEventCreated(Guid.NewGuid(), Guid.NewGuid(), eventId, "slug", "UTC"),
+            new TicketedEventCreated(Guid.NewGuid(), Guid.NewGuid(), eventId, "UTC"),
             default);
 
         await mediator.DidNotReceive().SendAsync(
@@ -103,8 +103,7 @@ public sealed class ReconfirmIntegrationEventHandlerTests
             Arg.Is<ScheduleReconfirmationsCommand>(c =>
                 c.TicketedEventId == TicketedEventId.From(eventId) && c.Spec == null),
             Arg.Any<CancellationToken>());
-        await facade.DidNotReceive().GetReconfirmTriggerSpecAsync(
-            Arg.Any<TicketedEventId>(), Arg.Any<CancellationToken>());
+        await facade.DidNotReceiveWithAnyArgs().GetReconfirmTriggerSpecAsync(TicketedEventId.New(), default);
     }
 
     [TestMethod]
@@ -159,7 +158,7 @@ public sealed class ReconfirmIntegrationEventHandlerTests
         var handler = new TicketedEventArchivedReconfirmIntegrationEventHandler(mediator);
 
         await handler.HandleAsync(
-            new TicketedEventArchived(Guid.NewGuid(), eventId, "slug"),
+            new TicketedEventArchived(Guid.NewGuid(), eventId),
             default);
 
         await mediator.Received(1).SendAsync(
@@ -177,7 +176,7 @@ public sealed class ReconfirmIntegrationEventHandlerTests
         var handler = new TicketedEventCancelledReconfirmIntegrationEventHandler(mediator);
 
         await handler.HandleAsync(
-            new TicketedEventCancelled(Guid.NewGuid(), eventId, "slug"),
+            new TicketedEventCancelled(Guid.NewGuid(), eventId),
             default);
 
         await mediator.Received(1).SendAsync(

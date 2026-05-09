@@ -19,7 +19,6 @@ internal sealed class GetTeamFixture
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
     {
         var team = new TeamBuilder()
-            .WithSlug(TeamSlug)
             .WithName(TeamName)
             .WithEmail(TeamEmail)
             .Build();

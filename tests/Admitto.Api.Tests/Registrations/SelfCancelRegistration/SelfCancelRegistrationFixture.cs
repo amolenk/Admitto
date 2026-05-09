@@ -9,8 +9,6 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.SelfCancelRegistration;
 
 internal sealed class SelfCancelRegistrationFixture
 {
-    public const string TeamSlug = "acme";
-    public const string EventSlug = "devconf";
     public const string AttendeeEmail = "alice@example.com";
 
     public TeamId TeamId { get; private set; } = TeamId.New();
@@ -18,7 +16,7 @@ internal sealed class SelfCancelRegistrationFixture
     public RegistrationId RegistrationId { get; private set; } = RegistrationId.New();
     public string ApiKey => ApiKeyTestHelper.TestRawKey;
 
-    public string CancelRoute => $"/api/teams/{TeamSlug}/events/{EventSlug}/registrations/{RegistrationId.Value}/cancel";
+    public string CancelRoute => $"/api/teams/{TeamId.Value}/events/{EventId.Value}/registrations/{RegistrationId.Value}/cancel";
 
     private SelfCancelRegistrationFixture() { }
 
@@ -28,7 +26,6 @@ internal sealed class SelfCancelRegistrationFixture
     public async ValueTask SetupAsync(EndToEndTestEnvironment environment, bool alreadyCancelled = false)
     {
         var team = new TeamBuilder()
-            .WithSlug(TeamSlug)
             .Build();
         TeamId = team.Id;
 
@@ -38,8 +35,6 @@ internal sealed class SelfCancelRegistrationFixture
         var ticketedEvent = TicketedEvent.Create(
             eventId,
             team.Id,
-            Slug.From(TeamSlug),
-            Slug.From(EventSlug),
             DisplayName.From("DevConf"),
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),

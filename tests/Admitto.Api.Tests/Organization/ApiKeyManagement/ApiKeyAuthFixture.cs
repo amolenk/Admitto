@@ -27,14 +27,13 @@ internal sealed class ApiKeyAuthFixture
         _seedEvent = seedEvent;
     }
 
-    public const string TeamSlug = "team-a";
-    public const string EventSlug = "devconf";
-    public const string OtherTeamSlug = "team-b";
-    public const string OtherEventSlug = "otherconf";
-
     public string ApiKey => ApiKeyTestHelper.TestRawKey;
     public string OtherTeamApiKey => ApiKeyTestHelper.TestRawKey2;
 
+    public Guid TeamId { get; private set; }
+    public Guid OtherTeamId { get; private set; }
+    public Guid EventId { get; private set; }
+    public Guid OtherEventId { get; private set; }
     public Guid ApiKeyId { get; private set; }
     public Guid OtherTeamApiKeyId { get; private set; }
 
@@ -48,7 +47,8 @@ internal sealed class ApiKeyAuthFixture
 
     public async ValueTask SetupAsync(EndToEndTestEnvironment environment)
     {
-        var team = new TeamBuilder().WithSlug(TeamSlug).Build();
+        var team = new TeamBuilder().Build();
+        TeamId = team.Id.Value;
 
         ApiKey? teamAApiKey = null;
         if (_seedApiKey)
@@ -63,7 +63,8 @@ internal sealed class ApiKeyAuthFixture
         ApiKey? otherApiKey = null;
         if (_seedSecondTeam)
         {
-            otherTeam = new TeamBuilder().WithSlug(OtherTeamSlug).Build();
+            otherTeam = new TeamBuilder().Build();
+            OtherTeamId = otherTeam.Id.Value;
             otherApiKey = ApiKeyTestHelper.CreateApiKeyEntity2(otherTeam.Id);
             OtherTeamApiKeyId = otherApiKey.Id.Value;
         }
@@ -80,7 +81,8 @@ internal sealed class ApiKeyAuthFixture
         {
             await environment.RegistrationsDatabase.SeedAsync(db =>
             {
-                var primaryEvent = BuildEvent(team.Id, TeamSlug, EventSlug, "DevConf");
+                var primaryEvent = BuildEvent(team.Id, "DevConf");
+                EventId = primaryEvent.Id.Value;
                 var primaryCatalog = TicketCatalog.Create(primaryEvent.Id);
                 primaryCatalog.AddTicketType(
                     Slug.From("general-admission"), DisplayName.From("General Admission"), [], 100);
@@ -89,7 +91,8 @@ internal sealed class ApiKeyAuthFixture
 
                 if (otherTeam is not null)
                 {
-                    var otherEvent = BuildEvent(otherTeam.Id, OtherTeamSlug, OtherEventSlug, "OtherConf");
+                    var otherEvent = BuildEvent(otherTeam.Id, "OtherConf");
+                    OtherEventId = otherEvent.Id.Value;
                     var otherCatalog = TicketCatalog.Create(otherEvent.Id);
                     otherCatalog.AddTicketType(
                         Slug.From("general-admission"), DisplayName.From("General Admission"), [], 100);
@@ -100,13 +103,11 @@ internal sealed class ApiKeyAuthFixture
         }
     }
 
-    private static TicketedEvent BuildEvent(TeamId teamId, string teamSlug, string eventSlug, string displayName)
+    private static TicketedEvent BuildEvent(TeamId teamId, string displayName)
     {
         var ticketedEvent = TicketedEvent.Create(
             TicketedEventId.New(),
             teamId,
-            Slug.From(teamSlug),
-            Slug.From(eventSlug),
             DisplayName.From(displayName),
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),

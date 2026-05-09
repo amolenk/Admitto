@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:64195/"
+      "url": "http://localhost:60858/"
     }
   ],
   "paths": {
@@ -154,7 +154,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}": {
+    "/admin/teams/{teamId}": {
       "get": {
         "tags": [
           "GetTeamHttpEndpoint"
@@ -162,11 +162,12 @@
         "operationId": "GetTeam",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -240,11 +241,12 @@
         "operationId": "UpdateTeam",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -315,7 +317,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}/archive": {
+    "/admin/teams/{teamId}/archive": {
       "post": {
         "tags": [
           "ArchiveTeamHttpEndpoint"
@@ -323,11 +325,12 @@
         "operationId": "ArchiveTeam",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -398,7 +401,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}/members": {
+    "/admin/teams/{teamId}/members": {
       "get": {
         "tags": [
           "ListTeamMembersHttpEndpoint"
@@ -406,11 +409,12 @@
         "operationId": "ListTeamMembers",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -487,11 +491,12 @@
         "operationId": "AssignTeamMembership",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -562,7 +567,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}/events": {
+    "/admin/teams/{teamId}/events": {
       "post": {
         "tags": [
           "RequestTicketedEventCreationHttpEndpoint"
@@ -570,11 +575,12 @@
         "operationId": "RequestTicketedEventCreation",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -651,11 +657,12 @@
         "operationId": "GetTicketedEvents",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -726,7 +733,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}/event-creations/{creationRequestId}": {
+    "/admin/teams/{teamId}/event-creations/{creationRequestId}": {
       "get": {
         "tags": [
           "GetEventCreationRequestHttpEndpoint"
@@ -734,11 +741,12 @@
         "operationId": "GetEventCreationRequest",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
@@ -815,7 +823,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}/members/{email}": {
+    "/admin/teams/{teamId}/members/{email}": {
       "put": {
         "tags": [
           "ChangeTeamMembershipRoleHttpEndpoint"
@@ -823,11 +831,12 @@
         "operationId": "ChangeTeamMembershipRole",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
@@ -912,11 +921,12 @@
         "operationId": "RemoveTeamMembership",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
@@ -985,7 +995,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}/api-keys": {
+    "/admin/teams/{teamId}/api-keys": {
       "post": {
         "tags": [
           "CreateApiKeyHttpEndpoint"
@@ -993,11 +1003,12 @@
         "operationId": "CreateApiKey",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -1081,11 +1092,12 @@
         "operationId": "GetApiKeys",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -1156,7 +1168,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}/api-keys/{keyId}": {
+    "/admin/teams/{teamId}/api-keys/{keyId}": {
       "delete": {
         "tags": [
           "RevokeApiKeyHttpEndpoint"
@@ -1164,11 +1176,12 @@
         "operationId": "RevokeApiKey",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
@@ -1238,7 +1251,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}/email-settings": {
+    "/admin/teams/{teamId}/email-settings": {
       "get": {
         "tags": [
           "Admitto.Api"
@@ -1246,18 +1259,20 @@
         "operationId": "GetTeamEmailSettings",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "query",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -1331,18 +1346,20 @@
         "operationId": "UpsertTeamEmailSettings",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "query",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -1422,18 +1439,20 @@
         "operationId": "DeleteTeamEmailSettings",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "query",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
@@ -1507,7 +1526,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}/email-settings/test": {
+    "/admin/teams/{teamId}/email-settings/test": {
       "post": {
         "tags": [
           "Handler"
@@ -1515,18 +1534,20 @@
         "operationId": "TestTeamEmailSettings",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "query",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -1597,7 +1618,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}/events/{eventSlug}/email-settings": {
+    "/admin/teams/{teamId}/events/{eventId}/email-settings": {
       "get": {
         "tags": [
           "Admitto.Api"
@@ -1605,19 +1626,21 @@
         "operationId": "GetEventEmailSettings",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -1691,19 +1714,21 @@
         "operationId": "UpsertEventEmailSettings",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -1783,19 +1808,21 @@
         "operationId": "DeleteEventEmailSettings",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
@@ -1869,7 +1896,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}/events/{eventSlug}/email-settings/test": {
+    "/admin/teams/{teamId}/events/{eventId}/email-settings/test": {
       "post": {
         "tags": [
           "Handler"
@@ -1877,19 +1904,21 @@
         "operationId": "TestEventEmailSettings",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -1960,7 +1989,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}/email-templates": {
+    "/admin/teams/{teamId}/email-templates": {
       "get": {
         "tags": [
           "Handler"
@@ -1968,18 +1997,20 @@
         "operationId": "GetTeamEmailTemplates",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "query",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -2056,18 +2087,20 @@
         "operationId": "CreateTeamEmailTemplate",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "query",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -2145,7 +2178,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}/email-templates/{id}": {
+    "/admin/teams/{teamId}/email-templates/{id}": {
       "get": {
         "tags": [
           "Admitto.Api"
@@ -2393,7 +2426,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}/email-templates/preview": {
+    "/admin/teams/{teamId}/email-templates/preview": {
       "post": {
         "tags": [
           "Admitto.Api"
@@ -2401,18 +2434,20 @@
         "operationId": "PreviewTeamEmailTemplate",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "query",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -2490,7 +2525,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}/email-templates/{id}/test-send": {
+    "/admin/teams/{teamId}/email-templates/{id}/test-send": {
       "post": {
         "tags": [
           "Admitto.Api"
@@ -2507,18 +2542,20 @@
             }
           },
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "query",
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -2589,7 +2626,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}/events/{eventSlug}/email-templates": {
+    "/admin/teams/{teamId}/events/{eventId}/email-templates": {
       "get": {
         "tags": [
           "Handler"
@@ -2597,19 +2634,21 @@
         "operationId": "GetEventEmailTemplates",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -2686,19 +2725,21 @@
         "operationId": "CreateEventEmailTemplate",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -2776,7 +2817,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}/events/{eventSlug}/email-templates/{id}": {
+    "/admin/teams/{teamId}/events/{eventId}/email-templates/{id}": {
       "get": {
         "tags": [
           "Admitto.Api"
@@ -3024,7 +3065,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}/events/{eventSlug}/email-templates/preview": {
+    "/admin/teams/{teamId}/events/{eventId}/email-templates/preview": {
       "post": {
         "tags": [
           "Admitto.Api"
@@ -3032,19 +3073,21 @@
         "operationId": "PreviewEventEmailTemplate",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -3122,7 +3165,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}/events/{eventSlug}/email-templates/{id}/test-send": {
+    "/admin/teams/{teamId}/events/{eventId}/email-templates/{id}/test-send": {
       "post": {
         "tags": [
           "Admitto.Api"
@@ -3139,19 +3182,21 @@
             }
           },
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -3222,7 +3267,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}/events/{eventSlug}/bulk-emails/preview": {
+    "/admin/teams/{teamId}/events/{eventId}/bulk-emails/preview": {
       "post": {
         "tags": [
           "Admitto.Api"
@@ -3230,19 +3275,21 @@
         "operationId": "PreviewBulkEmail",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -3320,7 +3367,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}/events/{eventSlug}/bulk-emails": {
+    "/admin/teams/{teamId}/events/{eventId}/bulk-emails": {
       "post": {
         "tags": [
           "Admitto.Api"
@@ -3328,19 +3375,21 @@
         "operationId": "CreateBulkEmail",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -3424,19 +3473,21 @@
         "operationId": "GetBulkEmails",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -3507,7 +3558,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}/events/{eventSlug}/bulk-emails/{bulkEmailJobId}": {
+    "/admin/teams/{teamId}/events/{eventId}/bulk-emails/{bulkEmailJobId}": {
       "get": {
         "tags": [
           "Admitto.Api"
@@ -3515,19 +3566,21 @@
         "operationId": "GetBulkEmail",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
@@ -3604,7 +3657,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}/events/{eventSlug}/bulk-emails/{bulkEmailJobId}/cancel": {
+    "/admin/teams/{teamId}/events/{eventId}/bulk-emails/{bulkEmailJobId}/cancel": {
       "post": {
         "tags": [
           "Admitto.Api"
@@ -3612,19 +3665,21 @@
         "operationId": "CancelBulkEmail",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
@@ -3694,7 +3749,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}/events/{eventSlug}/registrations/{registrationId}/emails": {
+    "/admin/teams/{teamId}/events/{eventId}/registrations/{registrationId}/emails": {
       "get": {
         "tags": [
           "GetAttendeeEmailsHttpEndpoint"
@@ -3702,19 +3757,21 @@
         "operationId": "GetAttendeeEmails",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
@@ -3794,7 +3851,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}/events/{eventSlug}": {
+    "/admin/teams/{teamId}/events/{eventId}": {
       "get": {
         "tags": [
           "GetTicketedEventDetailsHttpEndpoint"
@@ -3802,19 +3859,21 @@
         "operationId": "GetTicketedEventDetails",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -3891,19 +3950,21 @@
         "operationId": "UpdateTicketedEventDetails",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -3974,7 +4035,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}/events/{eventSlug}/cancel": {
+    "/admin/teams/{teamId}/events/{eventId}/cancel": {
       "post": {
         "tags": [
           "CancelTicketedEventHttpEndpoint"
@@ -3982,19 +4043,21 @@
         "operationId": "CancelTicketedEvent",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -4055,7 +4118,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}/events/{eventSlug}/archive": {
+    "/admin/teams/{teamId}/events/{eventId}/archive": {
       "post": {
         "tags": [
           "ArchiveTicketedEventHttpEndpoint"
@@ -4063,19 +4126,21 @@
         "operationId": "ArchiveTicketedEvent",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -4136,7 +4201,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}/events/{eventSlug}/registration-policy": {
+    "/admin/teams/{teamId}/events/{eventId}/registration-policy": {
       "put": {
         "tags": [
           "ConfigureRegistrationPolicyHttpEndpoint"
@@ -4144,19 +4209,21 @@
         "operationId": "ConfigureRegistrationPolicy",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -4227,7 +4294,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}/events/{eventSlug}/cancellation-policy": {
+    "/admin/teams/{teamId}/events/{eventId}/cancellation-policy": {
       "put": {
         "tags": [
           "ConfigureCancellationPolicyHttpEndpoint"
@@ -4235,19 +4302,21 @@
         "operationId": "ConfigureCancellationPolicy",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -4318,7 +4387,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}/events/{eventSlug}/reconfirm-policy": {
+    "/admin/teams/{teamId}/events/{eventId}/reconfirm-policy": {
       "put": {
         "tags": [
           "ConfigureReconfirmPolicyHttpEndpoint"
@@ -4326,19 +4395,21 @@
         "operationId": "ConfigureReconfirmPolicy",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -4409,7 +4480,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}/events/{eventSlug}/time-zone": {
+    "/admin/teams/{teamId}/events/{eventId}/time-zone": {
       "put": {
         "tags": [
           "UpdateTicketedEventTimeZoneHttpEndpoint"
@@ -4417,19 +4488,21 @@
         "operationId": "UpdateTicketedEventTimeZone",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -4500,7 +4573,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}/events/{eventSlug}/additional-detail-schema": {
+    "/admin/teams/{teamId}/events/{eventId}/additional-detail-schema": {
       "put": {
         "tags": [
           "UpdateAdditionalDetailSchemaHttpEndpoint"
@@ -4508,19 +4581,21 @@
         "operationId": "UpdateAdditionalDetailSchema",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -4591,7 +4666,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}/events/{eventSlug}/registrations": {
+    "/admin/teams/{teamId}/events/{eventId}/registrations": {
       "post": {
         "tags": [
           "AdminRegisterAttendeeHttpEndpoint"
@@ -4599,19 +4674,21 @@
         "operationId": "AdminRegisterAttendee",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -4695,19 +4772,21 @@
         "operationId": "GetRegistrations",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -4778,7 +4857,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}/events/{eventSlug}/registrations/{registrationId}": {
+    "/admin/teams/{teamId}/events/{eventId}/registrations/{registrationId}": {
       "get": {
         "tags": [
           "GetRegistrationDetailsHttpEndpoint"
@@ -4786,19 +4865,21 @@
         "operationId": "GetRegistrationDetails",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
@@ -4878,7 +4959,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}/events/{eventSlug}/registrations/{registrationId}/cancel": {
+    "/admin/teams/{teamId}/events/{eventId}/registrations/{registrationId}/cancel": {
       "post": {
         "tags": [
           "CancelRegistrationHttpEndpoint"
@@ -4895,19 +4976,21 @@
             }
           },
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -4978,7 +5061,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}/events/{eventSlug}/registrations/{registrationId}/tickets": {
+    "/admin/teams/{teamId}/events/{eventId}/registrations/{registrationId}/tickets": {
       "put": {
         "tags": [
           "ChangeAttendeeTicketsHttpEndpoint"
@@ -4995,19 +5078,21 @@
             }
           },
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -5078,7 +5163,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}/events/{eventSlug}/coupons": {
+    "/admin/teams/{teamId}/events/{eventId}/coupons": {
       "post": {
         "tags": [
           "CreateCouponHttpEndpoint"
@@ -5086,19 +5171,21 @@
         "operationId": "CreateCoupon",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -5182,19 +5269,21 @@
         "operationId": "ListCoupons",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -5262,7 +5351,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}/events/{eventSlug}/coupons/{couponId}": {
+    "/admin/teams/{teamId}/events/{eventId}/coupons/{couponId}": {
       "get": {
         "tags": [
           "GetCouponDetailsHttpEndpoint"
@@ -5279,19 +5368,21 @@
             }
           },
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -5359,7 +5450,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}/events/{eventSlug}/coupons/{couponId}/revoke": {
+    "/admin/teams/{teamId}/events/{eventId}/coupons/{couponId}/revoke": {
       "post": {
         "tags": [
           "RevokeCouponHttpEndpoint"
@@ -5376,19 +5467,21 @@
             }
           },
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -5449,7 +5542,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}/events/{eventSlug}/ticket-types": {
+    "/admin/teams/{teamId}/events/{eventId}/ticket-types": {
       "post": {
         "tags": [
           "AddTicketTypeHttpEndpoint"
@@ -5457,19 +5550,21 @@
         "operationId": "AddTicketType",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -5553,19 +5648,21 @@
         "operationId": "GetTicketTypes",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -5636,7 +5733,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}/events/{eventSlug}/ticket-types/{ticketTypeSlug}": {
+    "/admin/teams/{teamId}/events/{eventId}/ticket-types/{ticketTypeSlug}": {
       "put": {
         "tags": [
           "UpdateTicketTypeHttpEndpoint"
@@ -5652,19 +5749,21 @@
             }
           },
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -5735,7 +5834,7 @@
         }
       }
     },
-    "/admin/teams/{teamSlug}/events/{eventSlug}/ticket-types/{ticketTypeSlug}/cancel": {
+    "/admin/teams/{teamId}/events/{eventId}/ticket-types/{ticketTypeSlug}/cancel": {
       "post": {
         "tags": [
           "CancelTicketTypeHttpEndpoint"
@@ -5751,19 +5850,21 @@
             }
           },
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -5824,7 +5925,7 @@
         }
       }
     },
-    "/api/teams/{teamSlug}/events/{eventSlug}/otp/request": {
+    "/api/teams/{teamId}/events/{eventId}/otp/request": {
       "post": {
         "tags": [
           "RequestOtpHttpEndpoint"
@@ -5832,19 +5933,21 @@
         "operationId": "RequestOtpHttpEndpoint",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -5912,7 +6015,7 @@
         }
       }
     },
-    "/api/teams/{teamSlug}/events/{eventSlug}/otp/verify": {
+    "/api/teams/{teamId}/events/{eventId}/otp/verify": {
       "post": {
         "tags": [
           "VerifyOtpHttpEndpoint"
@@ -5920,19 +6023,21 @@
         "operationId": "VerifyOtpHttpEndpoint",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -6000,7 +6105,7 @@
         }
       }
     },
-    "/api/teams/{teamSlug}/events/{eventSlug}/registrations": {
+    "/api/teams/{teamId}/events/{eventId}/registrations": {
       "post": {
         "tags": [
           "SelfRegisterAttendeeHttpEndpoint"
@@ -6008,19 +6113,21 @@
         "operationId": "SelfRegisterAttendeeHttpEndpoint",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -6088,7 +6195,7 @@
         }
       }
     },
-    "/api/teams/{teamSlug}/events/{eventSlug}/registrations/coupon": {
+    "/api/teams/{teamId}/events/{eventId}/registrations/coupon": {
       "post": {
         "tags": [
           "RegisterWithCouponHttpEndpoint"
@@ -6096,19 +6203,21 @@
         "operationId": "RegisterWithCouponHttpEndpoint",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -6176,7 +6285,7 @@
         }
       }
     },
-    "/api/teams/{teamSlug}/events/{eventSlug}/registrations/{registrationId}/qr-code": {
+    "/api/teams/{teamId}/events/{eventId}/registrations/{registrationId}/qr-code": {
       "get": {
         "tags": [
           "GetQRCodeHttpEndpoint"
@@ -6184,19 +6293,21 @@
         "operationId": "GetQRCodeHttpEndpoint",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
@@ -6270,7 +6381,7 @@
         }
       }
     },
-    "/api/teams/{teamSlug}/events/{eventSlug}/registrations/{registrationId}/cancel": {
+    "/api/teams/{teamId}/events/{eventId}/registrations/{registrationId}/cancel": {
       "post": {
         "tags": [
           "SelfCancelRegistrationHttpEndpoint"
@@ -6278,19 +6389,21 @@
         "operationId": "SelfCancelRegistrationHttpEndpoint",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
@@ -6357,7 +6470,7 @@
         }
       }
     },
-    "/api/teams/{teamSlug}/events/{eventSlug}/registrations/{registrationId}/tickets": {
+    "/api/teams/{teamId}/events/{eventId}/registrations/{registrationId}/tickets": {
       "put": {
         "tags": [
           "SelfChangeTicketsHttpEndpoint"
@@ -6365,19 +6478,21 @@
         "operationId": "SelfChangeTicketsHttpEndpoint",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
@@ -6454,7 +6569,7 @@
         }
       }
     },
-    "/api/teams/{teamSlug}/events/{eventSlug}/ticket-types": {
+    "/api/teams/{teamId}/events/{eventId}/ticket-types": {
       "get": {
         "tags": [
           "GetPublicTicketTypesHttpEndpoint"
@@ -6462,19 +6577,21 @@
         "operationId": "GetPublicTicketTypesHttpEndpoint",
         "parameters": [
           {
-            "name": "teamSlug",
+            "name": "teamId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
-            "name": "eventSlug",
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         ],
@@ -7713,15 +7830,11 @@
       },
       "CreateTeamHttpRequest": {
         "required": [
-          "slug",
           "name",
           "emailAddress"
         ],
         "type": "object",
         "properties": {
-          "slug": {
-            "type": "string"
-          },
           "name": {
             "type": "string"
           },
@@ -7891,7 +8004,6 @@
         "required": [
           "creationRequestId",
           "teamId",
-          "requestedSlug",
           "requesterId",
           "requestedAt",
           "status",
@@ -7908,9 +8020,6 @@
           "teamId": {
             "type": "string",
             "format": "uuid"
-          },
-          "requestedSlug": {
-            "type": "string"
           },
           "requesterId": {
             "type": "string",
@@ -8528,7 +8637,6 @@
       },
       "RequestTicketedEventCreationHttpRequest": {
         "required": [
-          "slug",
           "name",
           "websiteUrl",
           "baseUrl",
@@ -8538,9 +8646,6 @@
         ],
         "type": "object",
         "properties": {
-          "slug": {
-            "type": "string"
-          },
           "name": {
             "type": "string"
           },
@@ -8624,15 +8729,16 @@
       },
       "TeamDto": {
         "required": [
-          "slug",
+          "teamId",
           "name",
           "emailAddress",
           "version"
         ],
         "type": "object",
         "properties": {
-          "slug": {
-            "type": "string"
+          "teamId": {
+            "type": "string",
+            "format": "uuid"
           },
           "name": {
             "type": "string"
@@ -8652,15 +8758,16 @@
       },
       "TeamListItemDto": {
         "required": [
-          "slug",
+          "teamId",
           "name",
           "emailAddress",
           "version"
         ],
         "type": "object",
         "properties": {
-          "slug": {
-            "type": "string"
+          "teamId": {
+            "type": "string",
+            "format": "uuid"
           },
           "name": {
             "type": "string"
@@ -8730,7 +8837,6 @@
         "required": [
           "id",
           "teamId",
-          "slug",
           "name",
           "websiteUrl",
           "baseUrl",
@@ -8754,9 +8860,6 @@
           "teamId": {
             "type": "string",
             "format": "uuid"
-          },
-          "slug": {
-            "type": "string"
           },
           "name": {
             "type": "string"
@@ -8832,7 +8935,7 @@
       },
       "TicketedEventListItemDto": {
         "required": [
-          "slug",
+          "id",
           "name",
           "startsAt",
           "endsAt",
@@ -8841,8 +8944,9 @@
         ],
         "type": "object",
         "properties": {
-          "slug": {
-            "type": "string"
+          "id": {
+            "type": "string",
+            "format": "uuid"
           },
           "name": {
             "type": "string"
@@ -9176,8 +9280,8 @@
         "type": "oauth2",
         "flows": {
           "authorizationCode": {
-            "authorizationUrl": "http://localhost:64205/realms/admitto/protocol/openid-connect/auth",
-            "tokenUrl": "http://localhost:64205/realms/admitto/protocol/openid-connect/token",
+            "authorizationUrl": "http://localhost:60865/realms/admitto/protocol/openid-connect/auth",
+            "tokenUrl": "http://localhost:60865/realms/admitto/protocol/openid-connect/token",
             "scopes": {
               "manage": "Access the Management API",
               "openid": "Access the OpenID Connect user profile",

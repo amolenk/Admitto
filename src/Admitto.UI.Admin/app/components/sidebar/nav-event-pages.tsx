@@ -26,26 +26,26 @@ const eventPages = [
     { label: "Settings", href: "/settings", icon: Settings },
 ];
 
-async function fetchEvent(teamSlug: string, eventSlug: string): Promise<TicketedEventDetailsDto> {
-    return apiClient.get<TicketedEventDetailsDto>(`/api/teams/${teamSlug}/events/${eventSlug}`);
+async function fetchEvent(teamId: string, eventId: string): Promise<TicketedEventDetailsDto> {
+    return apiClient.get<TicketedEventDetailsDto>(`/api/teams/${teamId}/events/${eventId}`);
 }
 
-export function NavEventPages({ teamSlug }: { teamSlug: string }) {
+export function NavEventPages({ teamId }: { teamId: string }) {
     const router = useRouter();
-    const params = useParams<{ eventSlug?: string }>();
+    const params = useParams<{ eventId?: string }>();
     const pathname = usePathname();
-    const activeEventSlug = params.eventSlug ?? null;
+    const activeEventId = params.eventId ?? null;
 
     const { data: event } = useQuery({
-        queryKey: ["event", teamSlug, activeEventSlug],
-        queryFn: () => fetchEvent(teamSlug, activeEventSlug!),
-        enabled: !!activeEventSlug,
+        queryKey: ["event", teamId, activeEventId],
+        queryFn: () => fetchEvent(teamId, activeEventId!),
+        enabled: !!activeEventId,
         throwOnError: false,
     });
 
-    if (!activeEventSlug) return null;
+    if (!activeEventId) return null;
 
-    const basePath = `/teams/${teamSlug}/events/${activeEventSlug}`;
+    const basePath = `/teams/${teamId}/events/${activeEventId}`;
 
     function isPageActive(pageHref: string): boolean {
         const fullPath = `${basePath}${pageHref}`;
@@ -58,7 +58,7 @@ export function NavEventPages({ teamSlug }: { teamSlug: string }) {
         return pathname.startsWith(fullPath);
     }
 
-    const eventName = event?.name ?? activeEventSlug;
+    const eventName = event?.name ?? activeEventId;
 
     return (
         <SidebarGroup className="group-data-[collapsible=icon]:hidden">

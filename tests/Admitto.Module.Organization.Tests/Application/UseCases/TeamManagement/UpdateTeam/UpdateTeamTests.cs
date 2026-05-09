@@ -41,7 +41,6 @@ public sealed class UpdateTeamTests(TestContext testContext) : AspireIntegration
 
             team.ShouldNotBeNull();
             team.Name.Value.ShouldBe("Acme Corp");
-            team.Slug.Value.ShouldBe(fixture.OriginalSlug);
             team.EmailAddress.Value.ShouldBe(fixture.OriginalEmail);
             team.Version.ShouldBeGreaterThan(fixture.TeamVersion);
         });

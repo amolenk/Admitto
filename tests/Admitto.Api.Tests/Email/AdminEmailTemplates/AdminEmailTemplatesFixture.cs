@@ -12,15 +12,15 @@ namespace Amolenk.Admitto.Api.Tests.Email.AdminEmailTemplates;
 
 internal sealed class AdminEmailTemplatesFixture
 {
-    public const string TeamSlug = "acme-templates";
-    public const string EventSlug = "templatesconf";
+    public Guid TeamId { get; private set; }
+    public Guid EventId { get; private set; }
     public const string TemplateName = BuiltInEmailTemplateNames.TicketConfirmation;
 
-    public static string TeamTemplatesRoute => $"/admin/teams/{TeamSlug}/email-templates";
-    public static string EventTemplatesRoute => $"/admin/teams/{TeamSlug}/events/{EventSlug}/email-templates";
+    public string TeamTemplatesRoute => $"/admin/teams/{TeamId}/email-templates";
+    public string EventTemplatesRoute => $"/admin/teams/{TeamId}/events/{EventId}/email-templates";
 
-    public static string TeamTemplateRoute(Guid id) => $"{TeamTemplatesRoute}/{id}";
-    public static string EventTemplateRoute(Guid id) => $"{EventTemplatesRoute}/{id}";
+    public string TeamTemplateRoute(Guid id) => $"{TeamTemplatesRoute}/{id}";
+    public string EventTemplateRoute(Guid id) => $"{EventTemplatesRoute}/{id}";
 
     private AdminEmailTemplatesFixture() { }
 
@@ -76,16 +76,16 @@ internal sealed class AdminEmailTemplatesFixture
         EndToEndTestEnvironment environment)
     {
         var team = new TeamBuilder()
-            .WithSlug(TeamSlug)
             .Build();
 
         var eventId = TicketedEventId.New();
 
+        TeamId = team.Id.Value;
+        EventId = eventId.Value;
+
         var ticketedEvent = TicketedEvent.Create(
             eventId,
             team.Id,
-            Slug.From(TeamSlug),
-            Slug.From(EventSlug),
             DisplayName.From("Templates Conf"),
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),

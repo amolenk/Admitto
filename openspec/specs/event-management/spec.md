@@ -11,11 +11,11 @@ lifecycle integration events back to Organization.
 
 ### Requirement: Organizer can create a ticketed event
 The system SHALL allow organizers to request creation of a ticketed event with a
-slug, name, website URL, base URL, and start/end dates. Event creation is a
-two-phase asynchronous flow:
+name, website URL, base URL, and start/end dates. A slug is no longer required.
+Event creation remains a two-phase asynchronous flow:
 
 1. The **Organization** module receives the request at
-   `POST /admin/teams/{teamSlug}/events`, validates team-level preconditions
+   `POST /admin/teams/{teamId}/events`, validates team-level preconditions
    (team not archived, request payload well-formed, end date on or after start
    date), increments the team's `PendingEventCount`, records a
    `TeamEventCreationRequest` with a new `CreationRequestId`, outboxes a
@@ -23,26 +23,21 @@ two-phase asynchronous flow:
    `202 Accepted` with a `Location` header pointing to the creation-status
    endpoint.
 2. The **Registrations** module consumes the integration event and attempts
-   to create the `TicketedEvent` aggregate. Event slugs SHALL be unique within a
-   team, enforced by a unique index on `(TeamId, Slug)` in the Registrations
-   schema. On success it outboxes `TicketedEventCreated`; on slug conflict or
-   any other validation failure it outboxes `TicketedEventCreationRejected`
-   carrying the `CreationRequestId` and a reason.
+   to create the `TicketedEvent` aggregate. The system assigns an `EventId` (UUID)
+   on creation. On success it outboxes `TicketedEventCreated`; on validation
+   failure it outboxes `TicketedEventCreationRejected` carrying the
+   `CreationRequestId` and a reason.
 
 Organization handles both response events to advance team counters and to mark
 the `TeamEventCreationRequest` terminal (see team-management).
 
 #### Scenario: Successfully accept a creation request
-- **WHEN** an organizer of team "acme" posts a creation request for an event with slug "conf-2026", name "Acme Conf 2026", website "https://conf.acme.org", base URL "https://tickets.acme.org", starting 2026-06-01 and ending 2026-06-03
+- **WHEN** an organizer of team with ID "11111111-0000-0000-0000-000000000001" posts a creation request for an event with name "Acme Conf 2026", website "https://conf.acme.org", base URL "https://tickets.acme.org", starting 2026-06-01 and ending 2026-06-03
 - **THEN** the response is `202 Accepted`, the `Location` header points to the creation-status endpoint, the team's `PendingEventCount` is incremented, and a `TicketedEventCreationRequested` event is outboxed
 
 #### Scenario: Registrations materialises the event
-- **WHEN** Registrations processes a `TicketedEventCreationRequested` for slug "conf-2026" that does not conflict
-- **THEN** a `TicketedEvent` aggregate is created with the provided details, its status is Active, and a `TicketedEventCreated` integration event is outboxed
-
-#### Scenario: Reject duplicate event slug within a team (asynchronous)
-- **WHEN** team "acme" already has a `TicketedEvent` with slug "conf-2026" and Registrations processes a `TicketedEventCreationRequested` for slug "conf-2026"
-- **THEN** no new `TicketedEvent` is created and a `TicketedEventCreationRejected` event is outboxed with reason "duplicate slug"
+- **WHEN** Registrations processes a `TicketedEventCreationRequested` for name "Acme Conf 2026" that contains no validation errors
+- **THEN** a `TicketedEvent` aggregate is created with the provided details and a system-assigned UUID, its status is Active, and a `TicketedEventCreated` integration event is outboxed
 
 #### Scenario: Reject end date before start date (synchronous)
 - **WHEN** an organizer posts a creation request with start 2026-06-03 and end 2026-06-01
@@ -53,23 +48,22 @@ the `TeamEventCreationRequest` terminal (see team-management).
 - **THEN** Organization rejects the request with a `409` error because the team is archived and does not increment `PendingEventCount`
 
 #### Scenario: Crew member cannot create events
-- **WHEN** a Crew member of team "acme" posts a creation request
+- **WHEN** a Crew member posts a creation request
 - **THEN** Organization rejects the request as unauthorized
 
 ---
 
 ### Requirement: Team member can view event details
 The system SHALL allow team members with Crew role or above to view a ticketed
-event's details by event slug. The `TicketedEvent` aggregate lives in the
-Registrations module and the read is served from there. Ticket types continue
-to be served separately by the ticket-catalog read paths.
+event's details by event ID. The `TicketedEvent` aggregate lives in the
+Registrations module and the read is served from there.
 
 #### Scenario: View event details
-- **WHEN** a Crew member of team "acme" views event "conf-2026"
-- **THEN** the event's name, dates, URLs, and status are returned
+- **WHEN** a Crew member views the event with ID "22222222-0000-0000-0000-000000000001"
+- **THEN** the event's ID, name, dates, URLs, and status are returned
 
 #### Scenario: Non-member cannot view events
-- **WHEN** a user who is not a member of team "acme" attempts to view an event
+- **WHEN** a user who is not a member of the team owning the event attempts to view it
 - **THEN** the request is rejected as unauthorized
 
 ---
@@ -82,22 +76,20 @@ state (not yet materialised in Registrations) SHALL NOT appear in this list;
 they are discoverable through the creation-status endpoint instead.
 
 This requirement applies equally to the admin API endpoint
-(`GET /admin/teams/{teamSlug}/events`); both admin and non-admin callers receive
-only non-archived events. There is no endpoint today that returns archived
-events; a dedicated endpoint will be introduced if that need arises in the
-future.
+(`GET /admin/teams/{teamId}/events`); both admin and non-admin callers receive
+only non-archived events.
 
 #### Scenario: List active events excludes archived
-- **WHEN** a Crew member of team "acme" lists events and "conf-2026" (active), "meetup-q1" (cancelled), and "conf-2025" (archived) exist
-- **THEN** "conf-2026" and "meetup-q1" are returned and "conf-2025" is not included
+- **WHEN** a Crew member of team "Acme Events" lists events and "Acme Conf 2026" (active), "Q1 Meetup" (cancelled), and "Acme Conf 2025" (archived) exist
+- **THEN** "Acme Conf 2026" and "Q1 Meetup" are returned and "Acme Conf 2025" is not included
 
 #### Scenario: Pending creations are not listed
-- **WHEN** team "acme" has a pending creation request for slug "future-conf" and a materialised active event "conf-2026"
-- **THEN** only "conf-2026" is returned by the events list
+- **WHEN** a team has a pending creation request and a materialised active event "Acme Conf 2026"
+- **THEN** only "Acme Conf 2026" is returned by the events list
 
 #### Scenario: Admin listing also excludes archived events
-- **WHEN** an admin calls `GET /admin/teams/acme/events` and "conf-2026" (active), "meetup-q1" (cancelled), and "conf-2025" (archived) exist
-- **THEN** "conf-2026" and "meetup-q1" are returned and "conf-2025" is not included
+- **WHEN** an admin calls `GET /admin/teams/{teamId}/events` and events with active, cancelled, and archived status exist
+- **THEN** only active and cancelled events are returned
 
 ---
 
@@ -165,10 +157,10 @@ integration event to Organization.
 
 ### Requirement: Creation-status endpoint surfaces async creation outcome
 The Organization module SHALL expose
-`GET /admin/teams/{teamSlug}/events/creation-requests/{creationRequestId}` that
+`GET /admin/teams/{teamId}/event-creations/{creationRequestId}` that
 returns the current state of a `TeamEventCreationRequest`: `Pending`,
-`Created` (with the created event's slug), `Rejected` (with a structured
-reason such as `duplicate_slug`), or `Expired`. Responses SHALL include cache
+`Created` (with the created event's UUID), `Rejected` (with a structured
+reason), or `Expired`. Responses SHALL include cache
 headers appropriate for short-interval polling.
 
 #### Scenario: Pending creation request
@@ -177,11 +169,11 @@ headers appropriate for short-interval polling.
 
 #### Scenario: Successful creation
 - **WHEN** Organization has processed a `TicketedEventCreated` for the request
-- **THEN** the endpoint returns status `Created` with the event slug
+- **THEN** the endpoint returns status `Created` with the event's UUID
 
 #### Scenario: Rejected creation
-- **WHEN** Organization has processed a `TicketedEventCreationRejected` with reason "duplicate slug"
-- **THEN** the endpoint returns status `Rejected` with reason `duplicate_slug`
+- **WHEN** Organization has processed a `TicketedEventCreationRejected`
+- **THEN** the endpoint returns status `Rejected` with the rejection reason
 
 #### Scenario: Unknown request id
 - **WHEN** the `creationRequestId` does not exist for the team

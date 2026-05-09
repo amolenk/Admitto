@@ -22,8 +22,8 @@ public sealed class GetTicketedEventsTests(TestContext testContext) : AspireInte
 
         // Assert
         result.Count.ShouldBe(2);
-        result.ShouldContain(e => e.Slug == "conf-2026");
-        result.ShouldContain(e => e.Slug == "meetup-q1");
-        result.ShouldNotContain(e => e.Slug == "conf-2025");
+        result.ShouldContain(e => e.Name == "Conf 2026");
+        result.ShouldContain(e => e.Name == "Meetup Q1");
+        result.ShouldNotContain(e => e.Name == "Conf 2025");
     }
 }

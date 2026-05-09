@@ -34,7 +34,7 @@ public sealed class BulkEmailCancelTests(TestContext testContext) : EndToEndTest
             .ToArray();
 
         var createResponse = await Environment.ApiClient.PostAsJsonAsync(
-            BulkEmailFixture.CreateRoute,
+            fixture.CreateRoute,
             new
             {
                 EmailType = BulkEmailFixture.EmailType,
@@ -48,12 +48,12 @@ public sealed class BulkEmailCancelTests(TestContext testContext) : EndToEndTest
             .GetProperty("bulkEmailJobId").GetGuid();
 
         var cancelResponse = await Environment.ApiClient.PostAsync(
-            BulkEmailFixture.CancelRoute(bulkJobId),
+            fixture.CancelRoute(bulkJobId),
             content: null,
             cancellationToken: testContext.CancellationToken);
         cancelResponse.StatusCode.ShouldBe(HttpStatusCode.Accepted);
 
-        var detail = await PollUntilTerminalAsync(bulkJobId);
+        var detail = await PollUntilTerminalAsync(fixture, bulkJobId);
         detail.GetProperty("status").GetString().ShouldBe("cancelled");
         detail.GetProperty("cancelledCount").GetInt32().ShouldBeGreaterThan(0);
         // Some recipients may have been sent before the worker observed the
@@ -71,7 +71,7 @@ public sealed class BulkEmailCancelTests(TestContext testContext) : EndToEndTest
         await fixture.SetupAsync(Environment);
 
         var createResponse = await Environment.ApiClient.PostAsJsonAsync(
-            BulkEmailFixture.CreateRoute,
+            fixture.CreateRoute,
             new
             {
                 EmailType = BulkEmailFixture.EmailType,
@@ -85,24 +85,24 @@ public sealed class BulkEmailCancelTests(TestContext testContext) : EndToEndTest
 
         await Environment.PollAsync(1, TimeSpan.FromSeconds(45), testContext.CancellationToken);
         // Wait until the job rolls over to a terminal state in the DB.
-        var detail = await PollUntilTerminalAsync(bulkJobId);
+        var detail = await PollUntilTerminalAsync(fixture, bulkJobId);
         detail.GetProperty("status").GetString().ShouldBe("completed");
 
         var cancelResponse = await Environment.ApiClient.PostAsync(
-            BulkEmailFixture.CancelRoute(bulkJobId),
+            fixture.CancelRoute(bulkJobId),
             content: null,
             cancellationToken: testContext.CancellationToken);
         cancelResponse.StatusCode.ShouldBe(HttpStatusCode.Conflict);
     }
 
-    private async Task<JsonElement> PollUntilTerminalAsync(Guid bulkJobId)
+    private async Task<JsonElement> PollUntilTerminalAsync(BulkEmailFixture fixture, Guid bulkJobId)
     {
         var deadline = DateTimeOffset.UtcNow.AddSeconds(60);
         JsonElement last = default;
         while (DateTimeOffset.UtcNow < deadline)
         {
             var response = await Environment.ApiClient.GetAsync(
-                BulkEmailFixture.DetailRoute(bulkJobId),
+                fixture.DetailRoute(bulkJobId),
                 testContext.CancellationToken);
             if (response.IsSuccessStatusCode)
             {

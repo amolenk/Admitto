@@ -14,7 +14,8 @@ public sealed class RegisterTicketedEventCancelledTests(TestContext testContext)
     {
         // Arrange: team with a Created request in Active state.
         var team = new TeamBuilder().Build();
-        var pendingRequest = team.RequestEventCreation(Slug.From("e1"), UserId.New(), DateTimeOffset.UtcNow);
+        var pendingRequest = team.RequestEventCreation(
+                UserId.New(), DateTimeOffset.UtcNow);
         var ticketedEventId = TicketedEventId.New();
         team.RegisterEventCreated(pendingRequest.Id, ticketedEventId, DateTimeOffset.UtcNow);
 

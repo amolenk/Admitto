@@ -56,7 +56,7 @@ export const getTeam = <ThrowOnError extends boolean = false>(options: Options<G
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}',
+        url: '/admin/teams/{teamId}',
         ...options
     });
 };
@@ -69,7 +69,7 @@ export const updateTeam = <ThrowOnError extends boolean = false>(options: Option
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}',
+        url: '/admin/teams/{teamId}',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -86,7 +86,7 @@ export const archiveTeam = <ThrowOnError extends boolean = false>(options: Optio
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/archive',
+        url: '/admin/teams/{teamId}/archive',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -103,7 +103,7 @@ export const listTeamMembers = <ThrowOnError extends boolean = false>(options: O
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/members',
+        url: '/admin/teams/{teamId}/members',
         ...options
     });
 };
@@ -116,7 +116,7 @@ export const assignTeamMembership = <ThrowOnError extends boolean = false>(optio
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/members',
+        url: '/admin/teams/{teamId}/members',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -133,7 +133,7 @@ export const getTicketedEvents = <ThrowOnError extends boolean = false>(options:
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/events',
+        url: '/admin/teams/{teamId}/events',
         ...options
     });
 };
@@ -146,7 +146,7 @@ export const requestTicketedEventCreation = <ThrowOnError extends boolean = fals
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/events',
+        url: '/admin/teams/{teamId}/events',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -163,7 +163,7 @@ export const getEventCreationRequest = <ThrowOnError extends boolean = false>(op
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/event-creations/{creationRequestId}',
+        url: '/admin/teams/{teamId}/event-creations/{creationRequestId}',
         ...options
     });
 };
@@ -176,7 +176,7 @@ export const removeTeamMembership = <ThrowOnError extends boolean = false>(optio
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/members/{email}',
+        url: '/admin/teams/{teamId}/members/{email}',
         ...options
     });
 };
@@ -189,7 +189,7 @@ export const changeTeamMembershipRole = <ThrowOnError extends boolean = false>(o
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/members/{email}',
+        url: '/admin/teams/{teamId}/members/{email}',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -206,7 +206,7 @@ export const getApiKeys = <ThrowOnError extends boolean = false>(options: Option
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/api-keys',
+        url: '/admin/teams/{teamId}/api-keys',
         ...options
     });
 };
@@ -219,7 +219,7 @@ export const createApiKey = <ThrowOnError extends boolean = false>(options: Opti
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/api-keys',
+        url: '/admin/teams/{teamId}/api-keys',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -236,7 +236,7 @@ export const revokeApiKey = <ThrowOnError extends boolean = false>(options: Opti
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/api-keys/{keyId}',
+        url: '/admin/teams/{teamId}/api-keys/{keyId}',
         ...options
     });
 };
@@ -249,7 +249,7 @@ export const deleteTeamEmailSettings = <ThrowOnError extends boolean = false>(op
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/email-settings',
+        url: '/admin/teams/{teamId}/email-settings',
         ...options
     });
 };
@@ -262,7 +262,7 @@ export const getTeamEmailSettings = <ThrowOnError extends boolean = false>(optio
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/email-settings',
+        url: '/admin/teams/{teamId}/email-settings',
         ...options
     });
 };
@@ -275,7 +275,7 @@ export const upsertTeamEmailSettings = <ThrowOnError extends boolean = false>(op
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/email-settings',
+        url: '/admin/teams/{teamId}/email-settings',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -292,7 +292,7 @@ export const testTeamEmailSettings = <ThrowOnError extends boolean = false>(opti
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/email-settings/test',
+        url: '/admin/teams/{teamId}/email-settings/test',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -309,7 +309,7 @@ export const deleteEventEmailSettings = <ThrowOnError extends boolean = false>(o
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/events/{eventSlug}/email-settings',
+        url: '/admin/teams/{teamId}/events/{eventId}/email-settings',
         ...options
     });
 };
@@ -322,7 +322,7 @@ export const getEventEmailSettings = <ThrowOnError extends boolean = false>(opti
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/events/{eventSlug}/email-settings',
+        url: '/admin/teams/{teamId}/events/{eventId}/email-settings',
         ...options
     });
 };
@@ -335,7 +335,7 @@ export const upsertEventEmailSettings = <ThrowOnError extends boolean = false>(o
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/events/{eventSlug}/email-settings',
+        url: '/admin/teams/{teamId}/events/{eventId}/email-settings',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -352,7 +352,7 @@ export const testEventEmailSettings = <ThrowOnError extends boolean = false>(opt
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/events/{eventSlug}/email-settings/test',
+        url: '/admin/teams/{teamId}/events/{eventId}/email-settings/test',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -369,7 +369,7 @@ export const getTeamEmailTemplates = <ThrowOnError extends boolean = false>(opti
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/email-templates',
+        url: '/admin/teams/{teamId}/email-templates',
         ...options
     });
 };
@@ -382,7 +382,7 @@ export const createTeamEmailTemplate = <ThrowOnError extends boolean = false>(op
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/email-templates',
+        url: '/admin/teams/{teamId}/email-templates',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -399,7 +399,7 @@ export const deleteTeamEmailTemplate = <ThrowOnError extends boolean = false>(op
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/email-templates/{id}',
+        url: '/admin/teams/{teamId}/email-templates/{id}',
         ...options
     });
 };
@@ -412,7 +412,7 @@ export const getTeamEmailTemplate = <ThrowOnError extends boolean = false>(optio
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/email-templates/{id}',
+        url: '/admin/teams/{teamId}/email-templates/{id}',
         ...options
     });
 };
@@ -425,7 +425,7 @@ export const updateTeamEmailTemplate = <ThrowOnError extends boolean = false>(op
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/email-templates/{id}',
+        url: '/admin/teams/{teamId}/email-templates/{id}',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -442,7 +442,7 @@ export const previewTeamEmailTemplate = <ThrowOnError extends boolean = false>(o
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/email-templates/preview',
+        url: '/admin/teams/{teamId}/email-templates/preview',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -459,7 +459,7 @@ export const testSendTeamEmailTemplate = <ThrowOnError extends boolean = false>(
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/email-templates/{id}/test-send',
+        url: '/admin/teams/{teamId}/email-templates/{id}/test-send',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -476,7 +476,7 @@ export const getEventEmailTemplates = <ThrowOnError extends boolean = false>(opt
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/events/{eventSlug}/email-templates',
+        url: '/admin/teams/{teamId}/events/{eventId}/email-templates',
         ...options
     });
 };
@@ -489,7 +489,7 @@ export const createEventEmailTemplate = <ThrowOnError extends boolean = false>(o
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/events/{eventSlug}/email-templates',
+        url: '/admin/teams/{teamId}/events/{eventId}/email-templates',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -506,7 +506,7 @@ export const deleteEventEmailTemplate = <ThrowOnError extends boolean = false>(o
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/events/{eventSlug}/email-templates/{id}',
+        url: '/admin/teams/{teamId}/events/{eventId}/email-templates/{id}',
         ...options
     });
 };
@@ -519,7 +519,7 @@ export const getEventEmailTemplate = <ThrowOnError extends boolean = false>(opti
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/events/{eventSlug}/email-templates/{id}',
+        url: '/admin/teams/{teamId}/events/{eventId}/email-templates/{id}',
         ...options
     });
 };
@@ -532,7 +532,7 @@ export const updateEventEmailTemplate = <ThrowOnError extends boolean = false>(o
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/events/{eventSlug}/email-templates/{id}',
+        url: '/admin/teams/{teamId}/events/{eventId}/email-templates/{id}',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -549,7 +549,7 @@ export const previewEventEmailTemplate = <ThrowOnError extends boolean = false>(
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/events/{eventSlug}/email-templates/preview',
+        url: '/admin/teams/{teamId}/events/{eventId}/email-templates/preview',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -566,7 +566,7 @@ export const testSendEventEmailTemplate = <ThrowOnError extends boolean = false>
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/events/{eventSlug}/email-templates/{id}/test-send',
+        url: '/admin/teams/{teamId}/events/{eventId}/email-templates/{id}/test-send',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -583,7 +583,7 @@ export const previewBulkEmail = <ThrowOnError extends boolean = false>(options: 
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/events/{eventSlug}/bulk-emails/preview',
+        url: '/admin/teams/{teamId}/events/{eventId}/bulk-emails/preview',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -600,7 +600,7 @@ export const getBulkEmails = <ThrowOnError extends boolean = false>(options: Opt
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/events/{eventSlug}/bulk-emails',
+        url: '/admin/teams/{teamId}/events/{eventId}/bulk-emails',
         ...options
     });
 };
@@ -613,7 +613,7 @@ export const createBulkEmail = <ThrowOnError extends boolean = false>(options: O
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/events/{eventSlug}/bulk-emails',
+        url: '/admin/teams/{teamId}/events/{eventId}/bulk-emails',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -630,7 +630,7 @@ export const getBulkEmail = <ThrowOnError extends boolean = false>(options: Opti
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/events/{eventSlug}/bulk-emails/{bulkEmailJobId}',
+        url: '/admin/teams/{teamId}/events/{eventId}/bulk-emails/{bulkEmailJobId}',
         ...options
     });
 };
@@ -643,7 +643,7 @@ export const cancelBulkEmail = <ThrowOnError extends boolean = false>(options: O
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/events/{eventSlug}/bulk-emails/{bulkEmailJobId}/cancel',
+        url: '/admin/teams/{teamId}/events/{eventId}/bulk-emails/{bulkEmailJobId}/cancel',
         ...options
     });
 };
@@ -656,7 +656,7 @@ export const getAttendeeEmails = <ThrowOnError extends boolean = false>(options:
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/events/{eventSlug}/registrations/{registrationId}/emails',
+        url: '/admin/teams/{teamId}/events/{eventId}/registrations/{registrationId}/emails',
         ...options
     });
 };
@@ -669,7 +669,7 @@ export const getTicketedEventDetails = <ThrowOnError extends boolean = false>(op
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/events/{eventSlug}',
+        url: '/admin/teams/{teamId}/events/{eventId}',
         ...options
     });
 };
@@ -682,7 +682,7 @@ export const updateTicketedEventDetails = <ThrowOnError extends boolean = false>
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/events/{eventSlug}',
+        url: '/admin/teams/{teamId}/events/{eventId}',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -699,7 +699,7 @@ export const cancelTicketedEvent = <ThrowOnError extends boolean = false>(option
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/events/{eventSlug}/cancel',
+        url: '/admin/teams/{teamId}/events/{eventId}/cancel',
         ...options
     });
 };
@@ -712,7 +712,7 @@ export const archiveTicketedEvent = <ThrowOnError extends boolean = false>(optio
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/events/{eventSlug}/archive',
+        url: '/admin/teams/{teamId}/events/{eventId}/archive',
         ...options
     });
 };
@@ -725,7 +725,7 @@ export const configureRegistrationPolicy = <ThrowOnError extends boolean = false
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/events/{eventSlug}/registration-policy',
+        url: '/admin/teams/{teamId}/events/{eventId}/registration-policy',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -742,7 +742,7 @@ export const configureCancellationPolicy = <ThrowOnError extends boolean = false
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/events/{eventSlug}/cancellation-policy',
+        url: '/admin/teams/{teamId}/events/{eventId}/cancellation-policy',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -759,7 +759,7 @@ export const configureReconfirmPolicy = <ThrowOnError extends boolean = false>(o
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/events/{eventSlug}/reconfirm-policy',
+        url: '/admin/teams/{teamId}/events/{eventId}/reconfirm-policy',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -776,7 +776,7 @@ export const updateTicketedEventTimeZone = <ThrowOnError extends boolean = false
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/events/{eventSlug}/time-zone',
+        url: '/admin/teams/{teamId}/events/{eventId}/time-zone',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -793,7 +793,7 @@ export const updateAdditionalDetailSchema = <ThrowOnError extends boolean = fals
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/events/{eventSlug}/additional-detail-schema',
+        url: '/admin/teams/{teamId}/events/{eventId}/additional-detail-schema',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -810,7 +810,7 @@ export const getRegistrations = <ThrowOnError extends boolean = false>(options: 
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/events/{eventSlug}/registrations',
+        url: '/admin/teams/{teamId}/events/{eventId}/registrations',
         ...options
     });
 };
@@ -823,7 +823,7 @@ export const adminRegisterAttendee = <ThrowOnError extends boolean = false>(opti
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/events/{eventSlug}/registrations',
+        url: '/admin/teams/{teamId}/events/{eventId}/registrations',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -840,7 +840,7 @@ export const getRegistrationDetails = <ThrowOnError extends boolean = false>(opt
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/events/{eventSlug}/registrations/{registrationId}',
+        url: '/admin/teams/{teamId}/events/{eventId}/registrations/{registrationId}',
         ...options
     });
 };
@@ -853,7 +853,7 @@ export const cancelRegistration = <ThrowOnError extends boolean = false>(options
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/events/{eventSlug}/registrations/{registrationId}/cancel',
+        url: '/admin/teams/{teamId}/events/{eventId}/registrations/{registrationId}/cancel',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -870,7 +870,7 @@ export const changeAttendeeTickets = <ThrowOnError extends boolean = false>(opti
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/events/{eventSlug}/registrations/{registrationId}/tickets',
+        url: '/admin/teams/{teamId}/events/{eventId}/registrations/{registrationId}/tickets',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -887,7 +887,7 @@ export const listCoupons = <ThrowOnError extends boolean = false>(options: Optio
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/events/{eventSlug}/coupons',
+        url: '/admin/teams/{teamId}/events/{eventId}/coupons',
         ...options
     });
 };
@@ -900,7 +900,7 @@ export const createCoupon = <ThrowOnError extends boolean = false>(options: Opti
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/events/{eventSlug}/coupons',
+        url: '/admin/teams/{teamId}/events/{eventId}/coupons',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -917,7 +917,7 @@ export const getCouponDetails = <ThrowOnError extends boolean = false>(options: 
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/events/{eventSlug}/coupons/{couponId}',
+        url: '/admin/teams/{teamId}/events/{eventId}/coupons/{couponId}',
         ...options
     });
 };
@@ -930,7 +930,7 @@ export const revokeCoupon = <ThrowOnError extends boolean = false>(options: Opti
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/events/{eventSlug}/coupons/{couponId}/revoke',
+        url: '/admin/teams/{teamId}/events/{eventId}/coupons/{couponId}/revoke',
         ...options
     });
 };
@@ -943,7 +943,7 @@ export const getTicketTypes = <ThrowOnError extends boolean = false>(options: Op
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/events/{eventSlug}/ticket-types',
+        url: '/admin/teams/{teamId}/events/{eventId}/ticket-types',
         ...options
     });
 };
@@ -956,7 +956,7 @@ export const addTicketType = <ThrowOnError extends boolean = false>(options: Opt
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/events/{eventSlug}/ticket-types',
+        url: '/admin/teams/{teamId}/events/{eventId}/ticket-types',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -973,7 +973,7 @@ export const updateTicketType = <ThrowOnError extends boolean = false>(options: 
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/events/{eventSlug}/ticket-types/{ticketTypeSlug}',
+        url: '/admin/teams/{teamId}/events/{eventId}/ticket-types/{ticketTypeSlug}',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -990,7 +990,7 @@ export const cancelTicketType = <ThrowOnError extends boolean = false>(options: 
                 type: 'http'
             }
         ],
-        url: '/admin/teams/{teamSlug}/events/{eventSlug}/ticket-types/{ticketTypeSlug}/cancel',
+        url: '/admin/teams/{teamId}/events/{eventId}/ticket-types/{ticketTypeSlug}/cancel',
         ...options
     });
 };
@@ -1003,7 +1003,7 @@ export const requestOtpHttpEndpoint = <ThrowOnError extends boolean = false>(opt
                 type: 'http'
             }
         ],
-        url: '/api/teams/{teamSlug}/events/{eventSlug}/otp/request',
+        url: '/api/teams/{teamId}/events/{eventId}/otp/request',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -1020,7 +1020,7 @@ export const verifyOtpHttpEndpoint = <ThrowOnError extends boolean = false>(opti
                 type: 'http'
             }
         ],
-        url: '/api/teams/{teamSlug}/events/{eventSlug}/otp/verify',
+        url: '/api/teams/{teamId}/events/{eventId}/otp/verify',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -1037,7 +1037,7 @@ export const selfRegisterAttendeeHttpEndpoint = <ThrowOnError extends boolean = 
                 type: 'http'
             }
         ],
-        url: '/api/teams/{teamSlug}/events/{eventSlug}/registrations',
+        url: '/api/teams/{teamId}/events/{eventId}/registrations',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -1054,7 +1054,7 @@ export const registerWithCouponHttpEndpoint = <ThrowOnError extends boolean = fa
                 type: 'http'
             }
         ],
-        url: '/api/teams/{teamSlug}/events/{eventSlug}/registrations/coupon',
+        url: '/api/teams/{teamId}/events/{eventId}/registrations/coupon',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -1071,7 +1071,7 @@ export const getQrCodeHttpEndpoint = <ThrowOnError extends boolean = false>(opti
                 type: 'http'
             }
         ],
-        url: '/api/teams/{teamSlug}/events/{eventSlug}/registrations/{registrationId}/qr-code',
+        url: '/api/teams/{teamId}/events/{eventId}/registrations/{registrationId}/qr-code',
         ...options
     });
 };
@@ -1084,7 +1084,7 @@ export const selfCancelRegistrationHttpEndpoint = <ThrowOnError extends boolean 
                 type: 'http'
             }
         ],
-        url: '/api/teams/{teamSlug}/events/{eventSlug}/registrations/{registrationId}/cancel',
+        url: '/api/teams/{teamId}/events/{eventId}/registrations/{registrationId}/cancel',
         ...options
     });
 };
@@ -1097,7 +1097,7 @@ export const selfChangeTicketsHttpEndpoint = <ThrowOnError extends boolean = fal
                 type: 'http'
             }
         ],
-        url: '/api/teams/{teamSlug}/events/{eventSlug}/registrations/{registrationId}/tickets',
+        url: '/api/teams/{teamId}/events/{eventId}/registrations/{registrationId}/tickets',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -1114,7 +1114,7 @@ export const getPublicTicketTypesHttpEndpoint = <ThrowOnError extends boolean = 
                 type: 'http'
             }
         ],
-        url: '/api/teams/{teamSlug}/events/{eventSlug}/ticket-types',
+        url: '/api/teams/{teamId}/events/{eventId}/ticket-types',
         ...options
     });
 };

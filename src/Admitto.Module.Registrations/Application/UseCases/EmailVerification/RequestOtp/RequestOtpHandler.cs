@@ -27,7 +27,10 @@ internal sealed class RequestOtpHandler(
         var ticketedEvent = await writeStore.TicketedEvents
             .FirstOrDefaultAsync(e => e.Id == command.EventId, cancellationToken);
 
-        if (ticketedEvent is null || !ticketedEvent.IsActive)
+        if (ticketedEvent is null)
+            throw new BusinessRuleViolationException(Errors.EventNotFound);
+
+        if (!ticketedEvent.IsActive)
             throw new BusinessRuleViolationException(Errors.EventNotActive);
 
         var now = timeProvider.GetUtcNow();
@@ -74,6 +77,11 @@ internal sealed class RequestOtpHandler(
 
     internal static class Errors
     {
+        public static readonly Error EventNotFound = new(
+            "otp.event_not_found",
+            "The ticketed event could not be found.",
+            Type: ErrorType.NotFound);
+
         public static readonly Error EventNotActive = new(
             "otp.event_not_active",
             "The event is not accepting registrations.",

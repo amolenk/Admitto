@@ -17,23 +17,21 @@ namespace Amolenk.Admitto.Api.Tests.Email.BulkEmail;
 /// </summary>
 internal sealed class BulkEmailFixture
 {
-    public const string TeamSlug = "acme-bulk";
-    public const string EventSlug = "bulkconf";
     public const string TicketTypeSlug = "general-admission";
     public const string EmailType = BuiltInEmailTemplateNames.TicketConfirmation;
     public const string ReconfirmEmailType = BuiltInEmailTemplateNames.Reconfirmation;
 
-    public static string PreviewRoute =>
-        $"/admin/teams/{TeamSlug}/events/{EventSlug}/bulk-emails/preview";
+    public string PreviewRoute =>
+        $"/admin/teams/{TeamId.Value}/events/{EventId.Value}/bulk-emails/preview";
 
-    public static string CreateRoute =>
-        $"/admin/teams/{TeamSlug}/events/{EventSlug}/bulk-emails";
+    public string CreateRoute =>
+        $"/admin/teams/{TeamId.Value}/events/{EventId.Value}/bulk-emails";
 
-    public static string ListRoute => CreateRoute;
+    public string ListRoute => CreateRoute;
 
-    public static string DetailRoute(Guid id) => $"{CreateRoute}/{id}";
+    public string DetailRoute(Guid id) => $"{CreateRoute}/{id}";
 
-    public static string CancelRoute(Guid id) => $"{CreateRoute}/{id}/cancel";
+    public string CancelRoute(Guid id) => $"{CreateRoute}/{id}/cancel";
 
     public TeamId TeamId { get; private set; }
     public TicketedEventId EventId { get; private set; }
@@ -72,7 +70,7 @@ internal sealed class BulkEmailFixture
 
     public async ValueTask SetupAsync(EndToEndTestEnvironment environment)
     {
-        var team = new TeamBuilder().WithSlug(TeamSlug).Build();
+        var team = new TeamBuilder().Build();
         TeamId = team.Id;
 
         EventId = TicketedEventId.New();
@@ -80,8 +78,6 @@ internal sealed class BulkEmailFixture
         var ticketedEvent = TicketedEvent.Create(
             EventId,
             team.Id,
-            Slug.From(TeamSlug),
-            Slug.From(EventSlug),
             DisplayName.From("Bulk Conf"),
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),

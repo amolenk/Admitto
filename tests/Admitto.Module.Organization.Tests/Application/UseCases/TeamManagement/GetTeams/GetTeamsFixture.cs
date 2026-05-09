@@ -35,9 +35,9 @@ internal sealed class GetTeamsFixture
 
     public async ValueTask SetupAdminTeamsAsync(IntegrationTestEnvironment environment)
     {
-        var acme = new TeamBuilder().WithSlug("acme").WithName("Acme Events").Build();
-        var beta = new TeamBuilder().WithSlug("beta").WithName("Beta Events").Build();
-        var retired = new TeamBuilder().WithSlug("retired").WithName("Retired Team").AsArchived().Build();
+        var acme = new TeamBuilder().WithName("Acme Events").Build();
+        var beta = new TeamBuilder().WithName("Beta Events").Build();
+        var retired = new TeamBuilder().WithName("Retired Team").AsArchived().Build();
 
         await environment.Database.SeedAsync(dbContext =>
         {
@@ -53,11 +53,11 @@ internal sealed class GetTeamsFixture
 
     public async ValueTask SetupMemberTeamsAsync(IntegrationTestEnvironment environment)
     {
-        var acme = new TeamBuilder().WithSlug("acme").WithName("Acme Events").Build();
+        var acme = new TeamBuilder().WithName("Acme Events").Build();
         var beta = _includeArchivedMembership
-            ? new TeamBuilder().WithSlug("beta").WithName("Beta Events").AsArchived().Build()
-            : new TeamBuilder().WithSlug("beta").WithName("Beta Events").Build();
-        var gamma = new TeamBuilder().WithSlug("gamma").WithName("Gamma Events").Build();
+            ? new TeamBuilder().WithName("Beta Events").AsArchived().Build()
+            : new TeamBuilder().WithName("Beta Events").Build();
+        var gamma = new TeamBuilder().WithName("Gamma Events").Build();
 
         var user = User.Create(EmailAddress.From("member@example.com"));
         user.AddTeamMembership(acme.Id, TeamMembershipRole.Crew);

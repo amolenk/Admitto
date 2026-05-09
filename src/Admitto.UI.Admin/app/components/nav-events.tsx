@@ -14,22 +14,22 @@ import { useQuery } from "@tanstack/react-query";
 import { apiClient } from "@/lib/api-client";
 import { formatInEventZone } from "@/lib/time-zones";
 
-async function fetchEvents(teamSlug: string): Promise<TicketedEventListItemDto[]> {
-    return apiClient.get<TicketedEventListItemDto[]>(`/api/teams/${teamSlug}/events`);
+async function fetchEvents(teamId: string): Promise<TicketedEventListItemDto[]> {
+    return apiClient.get<TicketedEventListItemDto[]>(`/api/teams/${teamId}/events`);
 }
 
 export function NavEvents({
-                              teamSlug,
+                              teamId,
                           }: {
-    teamSlug: string,
+    teamId: string,
 }) {
     const router = useRouter()
-    const params = useParams<{ eventSlug?: string }>();
-    const activeEventSlug = params.eventSlug ?? null;
+    const params = useParams<{ eventId?: string }>();
+    const activeEventId = params.eventId ?? null;
 
     const { data: events = [] } = useQuery({
-        queryKey: ["events", teamSlug],
-        queryFn: () => fetchEvents(teamSlug),
+        queryKey: ["events", teamId],
+        queryFn: () => fetchEvents(teamId),
         throwOnError: false,
     });
 
@@ -40,7 +40,7 @@ export function NavEvents({
             <SidebarGroupLabel className="uppercase tracking-wider">Events</SidebarGroupLabel>
             <SidebarMenu>
                 {visibleEvents.map((ticketedEvent) => {
-                    const isActive = ticketedEvent.slug === activeEventSlug;
+                    const isActive = ticketedEvent.id === activeEventId;
                     const dateLabel = formatInEventZone(
                         ticketedEvent.startsAt,
                         ticketedEvent.timeZone,
@@ -48,9 +48,9 @@ export function NavEvents({
                     ).toUpperCase();
 
                     return (
-                        <SidebarMenuItem key={ticketedEvent.slug}>
+                        <SidebarMenuItem key={ticketedEvent.id}>
                             <button
-                                onClick={() => router.push(`/teams/${teamSlug}/events/${ticketedEvent.slug}`)}
+                                onClick={() => router.push(`/teams/${teamId}/events/${ticketedEvent.id}`)}
                                 data-active={isActive ? "true" : "false"}
                                 className="side-item"
                             >
@@ -73,7 +73,7 @@ export function NavEvents({
                 <SidebarMenuItem>
                     <button
                         className="side-item text-muted-foreground"
-                        onClick={() => router.push(`/teams/${teamSlug}/events/new`)}
+                        onClick={() => router.push(`/teams/${teamId}/events/new`)}
                     >
                         <Plus className="size-3.5" />
                         <span>New event</span>

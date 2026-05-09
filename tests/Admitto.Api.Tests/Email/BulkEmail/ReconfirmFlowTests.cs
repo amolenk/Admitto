@@ -41,7 +41,7 @@ public sealed class ReconfirmFlowTests(TestContext testContext) : EndToEndTestBa
         await fixture.SetupAsync(Environment);
 
         var createResponse = await Environment.ApiClient.PostAsJsonAsync(
-            BulkEmailFixture.CreateRoute,
+            fixture.CreateRoute,
             new
             {
                 EmailType = BulkEmailFixture.ReconfirmEmailType,

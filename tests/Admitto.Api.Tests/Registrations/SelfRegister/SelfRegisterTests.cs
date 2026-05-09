@@ -96,8 +96,6 @@ public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBas
         var secondEvent = TicketedEvent.Create(
             secondEventId,
             fixture.TeamId,
-            Slug.From(SelfRegisterFixture.TeamSlug),
-            Slug.From("other-event"),
             DisplayName.From("Other Event"),
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),
@@ -118,7 +116,7 @@ public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBas
         using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
         var request = new HttpRequestMessage(
             HttpMethod.Post,
-            $"/api/teams/{SelfRegisterFixture.TeamSlug}/events/other-event/registrations")
+            $"/api/teams/{fixture.TeamId.Value}/events/{Guid.NewGuid()}/registrations")
         {
             Content = JsonContent.Create(new
             {

@@ -440,8 +440,6 @@ internal sealed class RegisterAttendeeFixture
         var ev = TicketedEvent.Create(
             EventId,
             TeamId,
-            Slug.From("test-team"),
-            Slug.From("devconf"),
             DisplayName.From("DevConf"),
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),

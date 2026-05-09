@@ -8,13 +8,13 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.ChangeAttendeeTickets;
 
 internal sealed class ChangeAttendeeTicketsFixture
 {
-    public const string TeamSlug = "acme";
-    public const string EventSlug = "devconf";
+    public Guid TeamId { get; private set; }
+    public Guid EventId { get; private set; }
 
     public RegistrationId RegistrationId { get; private set; } = RegistrationId.New();
 
     public string Route =>
-        $"/admin/teams/{TeamSlug}/events/{EventSlug}/registrations/{RegistrationId.Value}/tickets";
+        $"/admin/teams/{TeamId}/events/{EventId}/registrations/{RegistrationId.Value}/tickets";
 
     private ChangeAttendeeTicketsFixture() { }
 
@@ -23,16 +23,15 @@ internal sealed class ChangeAttendeeTicketsFixture
     public async ValueTask SetupAsync(EndToEndTestEnvironment environment)
     {
         var team = new TeamBuilder()
-            .WithSlug(TeamSlug)
             .Build();
+        TeamId = team.Id.Value;
 
         var eventId = TicketedEventId.New();
+        EventId = eventId.Value;
 
         var ticketedEvent = TicketedEvent.Create(
             eventId,
             team.Id,
-            Slug.From(TeamSlug),
-            Slug.From(EventSlug),
             DisplayName.From("DevConf"),
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),

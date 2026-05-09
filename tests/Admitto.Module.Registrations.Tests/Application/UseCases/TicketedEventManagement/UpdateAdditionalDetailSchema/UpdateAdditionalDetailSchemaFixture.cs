@@ -28,8 +28,6 @@ internal sealed class UpdateAdditionalDetailSchemaFixture
             var ticketedEvent = TicketedEvent.Create(
                 EventId,
                 TeamId,
-                Slug.From("test-team"),
-                Slug.From("add-details-event"),
                 DisplayName.From("Add Details Event"),
                 AbsoluteUrl.From("https://example.com"),
                 AbsoluteUrl.From("https://tickets.example.com"),

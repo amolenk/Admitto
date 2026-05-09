@@ -31,7 +31,7 @@ internal sealed class ArchiveTeamFixture
 
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
     {
-        var builder = new TeamBuilder().WithSlug("acme").WithName("Acme Events");
+        var builder = new TeamBuilder().WithName("Acme Events");
 
         if (_archived)
         {
@@ -43,7 +43,6 @@ internal sealed class ArchiveTeamFixture
         if (_hasActiveEvent)
         {
             var request = team.RequestEventCreation(
-                Slug.From("upcoming-event"),
                 UserId.New(),
                 DateTimeOffset.UtcNow);
             team.RegisterEventCreated(
@@ -55,7 +54,6 @@ internal sealed class ArchiveTeamFixture
         if (_hasPendingRequest)
         {
             team.RequestEventCreation(
-                Slug.From("pending-event"),
                 UserId.New(),
                 DateTimeOffset.UtcNow);
         }

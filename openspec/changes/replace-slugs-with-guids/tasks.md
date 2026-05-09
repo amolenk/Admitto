@@ -38,32 +38,32 @@
 
 ## 6. Admin UI — Route Renaming
 
-- [ ] 6.1 Rename all Next.js dynamic route directories: `[teamSlug]` → `[teamId]`
-- [ ] 6.2 Rename all Next.js dynamic route directories: `[eventSlug]` → `[eventId]`
-- [ ] 6.3 Update all intra-app links and `router.push(...)` calls that reference team/event routes to use IDs
+- [x] 6.1 Rename all Next.js dynamic route directories: `[teamSlug]` → `[teamId]`
+- [x] 6.2 Rename all Next.js dynamic route directories: `[eventSlug]` → `[eventId]`
+- [x] 6.3 Update all intra-app links and `router.push(...)` calls that reference team/event routes to use IDs
 
 ## 7. Admin UI — Proxy Routes & SDK
 
-- [ ] 7.1 Update all proxy route files under `app/api/teams/[teamId]/...` to pass `teamId` (not `teamSlug`) to backend calls
-- [ ] 7.2 Update all proxy route files under `app/api/teams/[teamId]/events/[eventId]/...` to pass `eventId`
-- [ ] 7.3 Regenerate the Admin UI OpenAPI SDK after backend route changes are applied (`pnpm openapi-ts`)
+- [x] 7.1 Update all proxy route files under `app/api/teams/[teamId]/...` to pass `teamId` (not `teamSlug`) to backend calls
+- [x] 7.2 Update all proxy route files under `app/api/teams/[teamId]/events/[eventId]/...` to pass `eventId`
+- [x] 7.3 Regenerate the Admin UI OpenAPI SDK after backend route changes are applied (`pnpm openapi-ts`)
 
 ## 8. Admin UI — Forms
 
-- [ ] 8.1 Remove the slug input field from the "Create Team" form
-- [ ] 8.2 Remove the slug read-only display from the "Team Settings" page
-- [ ] 8.3 Remove the slug input field from the "Create Event" form
-- [ ] 8.4 Remove the slug read-only display from the event General-tab settings form
-- [ ] 8.5 Update post-creation redirect to use the team/event ID returned by the backend
+- [x] 8.1 Remove the slug input field from the "Create Team" form
+- [x] 8.2 Remove the slug read-only display from the "Team Settings" page
+- [x] 8.3 Remove the slug input field from the "Create Event" form
+- [x] 8.4 Remove the slug read-only display from the event General-tab settings form
+- [x] 8.5 Update post-creation redirect to use the team/event ID returned by the backend
 
 ## 9. Tests
 
-- [ ] 9.1 Update all end-to-end / integration tests that construct slug-based API paths to use ID-based paths
-- [ ] 9.2 Update test fixtures and builders that create teams/events with slugs
-- [ ] 9.3 Add or update acceptance scenario tests to cover the updated SC-* scenarios in the modified specs
-- [ ] 9.4 Verify no remaining compilation errors or runtime 404s from stale slug references
+- [x] 9.1 Update all end-to-end / integration tests that construct slug-based API paths to use ID-based paths
+- [x] 9.2 Update test fixtures and builders that create teams/events with slugs
+- [x] 9.3 Add or update acceptance scenario tests to cover the updated SC-* scenarios in the modified specs
+- [x] 9.4 Verify no remaining compilation errors or runtime 404s from stale slug references
 
 ## 10. Documentation
 
-- [ ] 10.1 Update `docs/arc42/` sections that reference slug-based routing or the Slug value object
-- [ ] 10.2 Sync updated delta specs to main specs via `openspec sync` (or archive the change)
+- [x] 10.1 Update `docs/arc42/` sections that reference slug-based routing or the Slug value object
+- [x] 10.2 Sync updated delta specs to main specs via `openspec sync` (or archive the change)

@@ -28,7 +28,7 @@ public sealed class BulkEmailPreviewTests(TestContext testContext) : EndToEndTes
         };
 
         var response = await Environment.ApiClient.PostAsJsonAsync(
-            BulkEmailFixture.PreviewRoute,
+            fixture.PreviewRoute,
             request,
             cancellationToken: testContext.CancellationToken);
 
@@ -68,7 +68,7 @@ public sealed class BulkEmailPreviewTests(TestContext testContext) : EndToEndTes
         };
 
         var response = await Environment.ApiClient.PostAsJsonAsync(
-            BulkEmailFixture.PreviewRoute,
+            fixture.PreviewRoute,
             request,
             cancellationToken: testContext.CancellationToken);
 
@@ -104,7 +104,7 @@ public sealed class BulkEmailPreviewTests(TestContext testContext) : EndToEndTes
         };
 
         var response = await Environment.ApiClient.PostAsJsonAsync(
-            BulkEmailFixture.PreviewRoute,
+            fixture.PreviewRoute,
             request,
             cancellationToken: testContext.CancellationToken);
 

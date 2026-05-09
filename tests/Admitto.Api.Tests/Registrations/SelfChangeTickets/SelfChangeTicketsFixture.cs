@@ -9,8 +9,6 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.SelfChangeTickets;
 
 internal sealed class SelfChangeTicketsFixture
 {
-    public const string TeamSlug = "acme";
-    public const string EventSlug = "devconf";
     public const string AttendeeEmail = "alice@example.com";
 
     public TeamId TeamId { get; private set; } = TeamId.New();
@@ -19,7 +17,7 @@ internal sealed class SelfChangeTicketsFixture
     public string ApiKey => ApiKeyTestHelper.TestRawKey;
 
     public string ChangeTicketsRoute =>
-        $"/api/teams/{TeamSlug}/events/{EventSlug}/registrations/{RegistrationId.Value}/tickets";
+        $"/api/teams/{TeamId.Value}/events/{EventId.Value}/registrations/{RegistrationId.Value}/tickets";
 
     private SelfChangeTicketsFixture() { }
 
@@ -33,7 +31,6 @@ internal sealed class SelfChangeTicketsFixture
         int workshopUsed = 0)
     {
         var team = new TeamBuilder()
-            .WithSlug(TeamSlug)
             .Build();
         TeamId = team.Id;
 
@@ -43,8 +40,6 @@ internal sealed class SelfChangeTicketsFixture
         var ticketedEvent = TicketedEvent.Create(
             eventId,
             team.Id,
-            Slug.From(TeamSlug),
-            Slug.From(EventSlug),
             DisplayName.From("DevConf"),
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),

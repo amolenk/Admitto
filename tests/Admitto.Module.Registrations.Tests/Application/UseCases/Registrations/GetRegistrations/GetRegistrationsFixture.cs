@@ -42,11 +42,24 @@ internal sealed class GetRegistrationsFixture
 
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
     {
+        var ticketedEvent = TicketedEvent.Create(
+            EventId, TeamId,
+            DisplayName.From("Test Event"),
+            AbsoluteUrl.From("https://example.com"),
+            AbsoluteUrl.From("https://tickets.example.com"),
+            DateTimeOffset.UtcNow.AddDays(30),
+            DateTimeOffset.UtcNow.AddDays(31),
+            TimeZoneId.From("UTC"));
+
         var catalog = TicketCatalog.Create(EventId);
         catalog.AddTicketType(Slug.From(GeneralSlug), DisplayName.From(GeneralName), [], 100);
         catalog.AddTicketType(Slug.From(VipSlug), DisplayName.From(VipName), [], 25);
 
-        await environment.Database.SeedAsync(db => db.TicketCatalogs.Add(catalog));
+        await environment.Database.SeedAsync(db =>
+        {
+            db.TicketedEvents.Add(ticketedEvent);
+            db.TicketCatalogs.Add(catalog);
+        });
 
         if (_seedRegistrations)
         {
@@ -91,6 +104,15 @@ internal sealed class GetRegistrationsFixture
 
         if (_seedOtherEventRegistration)
         {
+            var otherTicketedEvent = TicketedEvent.Create(
+                OtherEventId, TeamId,
+                DisplayName.From("Other Event"),
+                AbsoluteUrl.From("https://example.com"),
+                AbsoluteUrl.From("https://tickets.example.com"),
+                DateTimeOffset.UtcNow.AddDays(30),
+                DateTimeOffset.UtcNow.AddDays(31),
+                TimeZoneId.From("UTC"));
+
             var otherCatalog = TicketCatalog.Create(OtherEventId);
             otherCatalog.AddTicketType(Slug.From(GeneralSlug), DisplayName.From(GeneralName), [], 100);
 
@@ -104,6 +126,7 @@ internal sealed class GetRegistrationsFixture
 
             await environment.Database.SeedAsync(db =>
             {
+                db.TicketedEvents.Add(otherTicketedEvent);
                 db.TicketCatalogs.Add(otherCatalog);
                 db.Registrations.Add(dave);
             });

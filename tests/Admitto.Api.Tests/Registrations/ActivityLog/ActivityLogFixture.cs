@@ -8,18 +8,19 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.ActivityLog;
 
 internal sealed class ActivityLogFixture
 {
-    public const string TeamSlug = "acme-actlog";
-    public const string EventSlug = "devconf-actlog";
     public const string TicketTypeSlug = "general-admission";
 
-    public static string RegisterRoute =>
-        $"/admin/teams/{TeamSlug}/events/{EventSlug}/registrations";
+    public Guid TeamId { get; private set; }
+    public Guid EventId { get; private set; }
 
-    public static string RegistrationDetailRoute(Guid registrationId) =>
-        $"/admin/teams/{TeamSlug}/events/{EventSlug}/registrations/{registrationId}";
+    public string RegisterRoute =>
+        $"/admin/teams/{TeamId}/events/{EventId}/registrations";
 
-    public static string CancelRoute(Guid registrationId) =>
-        $"/admin/teams/{TeamSlug}/events/{EventSlug}/registrations/{registrationId}/cancel";
+    public string RegistrationDetailRoute(Guid registrationId) =>
+        $"/admin/teams/{TeamId}/events/{EventId}/registrations/{registrationId}";
+
+    public string CancelRoute(Guid registrationId) =>
+        $"/admin/teams/{TeamId}/events/{EventId}/registrations/{registrationId}/cancel";
 
     private ActivityLogFixture() { }
 
@@ -28,16 +29,16 @@ internal sealed class ActivityLogFixture
     public async ValueTask SetupAsync(EndToEndTestEnvironment environment)
     {
         var team = new TeamBuilder()
-            .WithSlug(TeamSlug)
             .Build();
 
         var eventId = TicketedEventId.New();
 
+        TeamId = team.Id.Value;
+        EventId = eventId.Value;
+
         var ticketedEvent = TicketedEvent.Create(
             eventId,
             team.Id,
-            Slug.From(TeamSlug),
-            Slug.From(EventSlug),
             DisplayName.From("DevConf ActivityLog"),
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),

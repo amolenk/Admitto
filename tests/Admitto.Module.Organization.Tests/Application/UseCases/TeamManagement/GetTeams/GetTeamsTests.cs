@@ -24,9 +24,9 @@ public sealed class GetTeamsTests(TestContext testContext) : AspireIntegrationTe
         // Assert
         result.ShouldNotBeNull();
         result.Count.ShouldBe(2);
-        result.ShouldContain(t => t.Slug == "acme");
-        result.ShouldContain(t => t.Slug == "beta");
-        result.ShouldNotContain(t => t.Slug == "retired");
+        result.ShouldContain(t => t.Name == "Acme Events");
+        result.ShouldContain(t => t.Name == "Beta Events");
+        result.ShouldNotContain(t => t.Name == "Retired Team");
     }
 
     [TestMethod]
@@ -47,9 +47,9 @@ public sealed class GetTeamsTests(TestContext testContext) : AspireIntegrationTe
         // Assert
         result.ShouldNotBeNull();
         result.Count.ShouldBe(2);
-        result.ShouldContain(t => t.Slug == "acme");
-        result.ShouldContain(t => t.Slug == "beta");
-        result.ShouldNotContain(t => t.Slug == "gamma");
+        result.ShouldContain(t => t.Name == "Acme Events");
+        result.ShouldContain(t => t.Name == "Beta Events");
+        result.ShouldNotContain(t => t.Name == "Gamma Events");
     }
 
     [TestMethod]
@@ -70,7 +70,7 @@ public sealed class GetTeamsTests(TestContext testContext) : AspireIntegrationTe
         // Assert
         result.ShouldNotBeNull();
         result.ShouldHaveSingleItem();
-        result[0].Slug.ShouldBe("acme");
-        result.ShouldNotContain(t => t.Slug == "beta");
+        result[0].Name.ShouldBe("Acme Events");
+        result.ShouldNotContain(t => t.Name == "Beta Events");
     }
 }

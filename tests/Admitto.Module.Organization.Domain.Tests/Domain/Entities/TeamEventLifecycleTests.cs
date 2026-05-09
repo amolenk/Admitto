@@ -26,16 +26,14 @@ public sealed class TeamEventLifecycleTests
     {
         // Arrange
         var sut = new TeamBuilder().Build();
-        var slug = Slug.From("my-event");
 
         // Act
-        var request = sut.RequestEventCreation(slug, Requester, Now);
+        var request = sut.RequestEventCreation(Requester, Now);
 
         // Assert
         sut.PendingEventCount.ShouldBe(1);
         sut.ActiveEventCount.ShouldBe(0);
         sut.EventCreationRequests.ShouldContain(request);
-        request.RequestedSlug.ShouldBe(slug);
         request.RequesterId.ShouldBe(Requester);
         request.RequestedAt.ShouldBe(Now);
         request.Status.ShouldBe(TeamEventCreationRequestStatus.Pending);
@@ -49,7 +47,7 @@ public sealed class TeamEventLifecycleTests
 
         // Act
         var result = ErrorResult.Capture(() =>
-            sut.RequestEventCreation(Slug.From("my-event"), Requester, Now));
+            sut.RequestEventCreation(Requester, Now));
 
         // Assert
         result.Error.ShouldMatch(Team.Errors.TeamArchived(sut.Id));
@@ -64,7 +62,7 @@ public sealed class TeamEventLifecycleTests
     {
         // Arrange
         var sut = new TeamBuilder().Build();
-        var request = sut.RequestEventCreation(Slug.From("e1"), Requester, Now);
+        var request = sut.RequestEventCreation(Requester, Now);
         var eventId = TicketedEventId.New();
 
         // Act
@@ -83,7 +81,7 @@ public sealed class TeamEventLifecycleTests
     {
         // Arrange
         var sut = new TeamBuilder().Build();
-        var request = sut.RequestEventCreation(Slug.From("e1"), Requester, Now);
+        var request = sut.RequestEventCreation(Requester, Now);
         var eventId = TicketedEventId.New();
         sut.RegisterEventCreated(request.Id, eventId, Now);
 
@@ -100,7 +98,7 @@ public sealed class TeamEventLifecycleTests
     {
         // Arrange
         var sut = new TeamBuilder().Build();
-        sut.RequestEventCreation(Slug.From("e1"), Requester, Now);
+        sut.RequestEventCreation(Requester, Now);
 
         // Act
         sut.RegisterEventCreated(CreationRequestId.New(), TicketedEventId.New(), Now);
@@ -119,7 +117,7 @@ public sealed class TeamEventLifecycleTests
     {
         // Arrange
         var sut = new TeamBuilder().Build();
-        var request = sut.RequestEventCreation(Slug.From("e1"), Requester, Now);
+        var request = sut.RequestEventCreation(Requester, Now);
 
         // Act
         sut.RegisterEventCreationRejected(request.Id, "duplicate_slug", Now.AddSeconds(2));
@@ -136,7 +134,7 @@ public sealed class TeamEventLifecycleTests
     {
         // Arrange
         var sut = new TeamBuilder().Build();
-        var request = sut.RequestEventCreation(Slug.From("e1"), Requester, Now);
+        var request = sut.RequestEventCreation(Requester, Now);
         sut.RegisterEventCreationRejected(request.Id, "duplicate_slug", Now);
 
         // Act
@@ -155,7 +153,7 @@ public sealed class TeamEventLifecycleTests
     {
         // Arrange
         var sut = new TeamBuilder().Build();
-        var request = sut.RequestEventCreation(Slug.From("e1"), Requester, Now);
+        var request = sut.RequestEventCreation(Requester, Now);
 
         // Act
         sut.ExpireEventCreationRequest(request.Id, Now.AddHours(25));
@@ -170,7 +168,7 @@ public sealed class TeamEventLifecycleTests
     {
         // Arrange
         var sut = new TeamBuilder().Build();
-        var request = sut.RequestEventCreation(Slug.From("e1"), Requester, Now);
+        var request = sut.RequestEventCreation(Requester, Now);
         sut.RegisterEventCreated(request.Id, TicketedEventId.New(), Now);
 
         // Act
@@ -192,7 +190,7 @@ public sealed class TeamEventLifecycleTests
         // Arrange
         var sut = new TeamBuilder().Build();
         var eventId = TicketedEventId.New();
-        var request = sut.RequestEventCreation(Slug.From("e1"), Requester, Now);
+        var request = sut.RequestEventCreation(Requester, Now);
         sut.RegisterEventCreated(request.Id, eventId, Now);
 
         // Act
@@ -211,7 +209,7 @@ public sealed class TeamEventLifecycleTests
         // Arrange
         var sut = new TeamBuilder().Build();
         var eventId = TicketedEventId.New();
-        var request = sut.RequestEventCreation(Slug.From("e1"), Requester, Now);
+        var request = sut.RequestEventCreation(Requester, Now);
         sut.RegisterEventCreated(request.Id, eventId, Now);
         sut.RegisterEventCancelled(eventId);
 
@@ -228,7 +226,7 @@ public sealed class TeamEventLifecycleTests
     {
         // Arrange
         var sut = new TeamBuilder().Build();
-        var request = sut.RequestEventCreation(Slug.From("e1"), Requester, Now);
+        var request = sut.RequestEventCreation(Requester, Now);
         sut.RegisterEventCreated(request.Id, TicketedEventId.New(), Now);
 
         // Act
@@ -249,7 +247,7 @@ public sealed class TeamEventLifecycleTests
         // Arrange
         var sut = new TeamBuilder().Build();
         var eventId = TicketedEventId.New();
-        var request = sut.RequestEventCreation(Slug.From("e1"), Requester, Now);
+        var request = sut.RequestEventCreation(Requester, Now);
         sut.RegisterEventCreated(request.Id, eventId, Now);
 
         // Act
@@ -268,7 +266,7 @@ public sealed class TeamEventLifecycleTests
         // Arrange
         var sut = new TeamBuilder().Build();
         var eventId = TicketedEventId.New();
-        var request = sut.RequestEventCreation(Slug.From("e1"), Requester, Now);
+        var request = sut.RequestEventCreation(Requester, Now);
         sut.RegisterEventCreated(request.Id, eventId, Now);
         sut.RegisterEventCancelled(eventId);
 
@@ -287,7 +285,7 @@ public sealed class TeamEventLifecycleTests
         // Arrange
         var sut = new TeamBuilder().Build();
         var eventId = TicketedEventId.New();
-        var request = sut.RequestEventCreation(Slug.From("e1"), Requester, Now);
+        var request = sut.RequestEventCreation(Requester, Now);
         sut.RegisterEventCreated(request.Id, eventId, Now);
         sut.RegisterEventArchived(eventId);
 
@@ -341,7 +339,7 @@ public sealed class TeamEventLifecycleTests
     {
         // Arrange
         var sut = new TeamBuilder().Build();
-        var request = sut.RequestEventCreation(Slug.From("e1"), Requester, Now);
+        var request = sut.RequestEventCreation(Requester, Now);
         sut.RegisterEventCreated(request.Id, TicketedEventId.New(), Now);
 
         // Act
@@ -356,7 +354,7 @@ public sealed class TeamEventLifecycleTests
     {
         // Arrange
         var sut = new TeamBuilder().Build();
-        sut.RequestEventCreation(Slug.From("e1"), Requester, Now);
+        sut.RequestEventCreation(Requester, Now);
 
         // Act
         var result = ErrorResult.Capture(() => sut.Archive(Now));
@@ -373,11 +371,11 @@ public sealed class TeamEventLifecycleTests
         var cancelledId = TicketedEventId.New();
         var archivedId = TicketedEventId.New();
 
-        var r1 = sut.RequestEventCreation(Slug.From("e1"), Requester, Now);
+        var r1 = sut.RequestEventCreation(Requester, Now);
         sut.RegisterEventCreated(r1.Id, cancelledId, Now);
         sut.RegisterEventCancelled(cancelledId);
 
-        var r2 = sut.RequestEventCreation(Slug.From("e2"), Requester, Now);
+        var r2 = sut.RequestEventCreation(Requester, Now);
         sut.RegisterEventCreated(r2.Id, archivedId, Now);
         sut.RegisterEventArchived(archivedId);
 

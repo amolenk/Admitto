@@ -15,7 +15,7 @@ public sealed class GetRegistrationsTests(TestContext testContext) : EndToEndTes
         await fixture.SetupAsync(Environment);
 
         var response = await Environment.ApiClient.GetAsync(
-            GetRegistrationsFixture.Route(teamSlug: "ghost-team"),
+            $"/admin/teams/{Guid.NewGuid()}/events/{Guid.NewGuid()}/registrations",
             testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -28,7 +28,7 @@ public sealed class GetRegistrationsTests(TestContext testContext) : EndToEndTes
         await fixture.SetupAsync(Environment);
 
         var response = await Environment.ApiClient.GetAsync(
-            GetRegistrationsFixture.Route(eventSlug: "ghost-event"),
+            $"/admin/teams/{fixture.TeamId}/events/{Guid.NewGuid()}/registrations",
             testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -41,7 +41,7 @@ public sealed class GetRegistrationsTests(TestContext testContext) : EndToEndTes
         await fixture.SetupAsync(Environment);
 
         var response = await Environment.ApiClient.GetAsync(
-            GetRegistrationsFixture.Route(),
+            fixture.Route,
             testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -62,7 +62,7 @@ public sealed class GetRegistrationsTests(TestContext testContext) : EndToEndTes
         await fixture.SetupAsync(Environment);
 
         var response = await Environment.BobApiClient.GetAsync(
-            GetRegistrationsFixture.Route(),
+            fixture.Route,
             testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);

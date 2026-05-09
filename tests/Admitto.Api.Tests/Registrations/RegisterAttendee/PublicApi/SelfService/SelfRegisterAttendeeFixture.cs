@@ -9,13 +9,14 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.RegisterAttendee.PublicApi.Sel
 
 internal sealed class SelfRegisterAttendeeFixture
 {
-    public const string TeamSlug = "acme";
-    public const string EventSlug = "devconf";
     public const string TicketTypeSlug = "general-admission";
 
     public string ApiKey => ApiKeyTestHelper.TestRawKey;
 
-    public static string Route => $"/api/teams/{TeamSlug}/events/{EventSlug}/registrations";
+    public Guid TeamId { get; private set; }
+    public Guid EventId { get; private set; }
+
+    public string Route => $"/api/teams/{TeamId}/events/{EventId}/registrations";
 
     private SelfRegisterAttendeeFixture() { }
 
@@ -24,16 +25,15 @@ internal sealed class SelfRegisterAttendeeFixture
     public async ValueTask SetupAsync(EndToEndTestEnvironment environment)
     {
         var team = new TeamBuilder()
-            .WithSlug(TeamSlug)
             .Build();
+        TeamId = team.Id.Value;
 
         var eventId = TicketedEventId.New();
+        EventId = eventId.Value;
 
         var ticketedEvent = TicketedEvent.Create(
             eventId,
             team.Id,
-            Slug.From(TeamSlug),
-            Slug.From(EventSlug),
             DisplayName.From("DevConf"),
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),

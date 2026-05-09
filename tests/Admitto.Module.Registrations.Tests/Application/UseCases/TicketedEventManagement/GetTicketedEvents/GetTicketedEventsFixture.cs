@@ -19,8 +19,6 @@ internal sealed class GetTicketedEventsFixture
             var active = TicketedEvent.Create(
                 TicketedEventId.New(),
                 TeamId,
-                Slug.From("test-team"),
-                Slug.From("conf-2026"),
                 DisplayName.From("Conf 2026"),
                 AbsoluteUrl.From("https://example.com"),
                 AbsoluteUrl.From("https://tickets.example.com"),
@@ -31,8 +29,6 @@ internal sealed class GetTicketedEventsFixture
             var cancelled = TicketedEvent.Create(
                 TicketedEventId.New(),
                 TeamId,
-                Slug.From("test-team"),
-                Slug.From("meetup-q1"),
                 DisplayName.From("Meetup Q1"),
                 AbsoluteUrl.From("https://example.com"),
                 AbsoluteUrl.From("https://tickets.example.com"),
@@ -44,8 +40,6 @@ internal sealed class GetTicketedEventsFixture
             var archived = TicketedEvent.Create(
                 TicketedEventId.New(),
                 TeamId,
-                Slug.From("test-team"),
-                Slug.From("conf-2025"),
                 DisplayName.From("Conf 2025"),
                 AbsoluteUrl.From("https://example.com"),
                 AbsoluteUrl.From("https://tickets.example.com"),

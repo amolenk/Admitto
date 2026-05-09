@@ -10,25 +10,6 @@ namespace Amolenk.Admitto.Module.Organization.Domain.Tests.Entities;
 public sealed class TeamTests
 {
     // -------------------------------------------------------------------------
-    // Create()
-    // -------------------------------------------------------------------------
-
-    [TestMethod]
-    public void Create_SetsSlugImmutably()
-    {
-        // Arrange & Act
-        var team = new TeamBuilder()
-            .WithSlug("my-team")
-            .Build();
-
-        // Assert — slug is set and there is no ChangeSlug method
-        team.Slug.ShouldBe(Slug.From("my-team"));
-
-        var changeSlugMethod = typeof(Team).GetMethod("ChangeSlug");
-        changeSlugMethod.ShouldBeNull("Team should not expose a ChangeSlug method");
-    }
-
-    // -------------------------------------------------------------------------
     // ChangeName()
     // -------------------------------------------------------------------------
 

@@ -12,11 +12,11 @@ internal sealed class ManageMembersAuthorizationFixture
     // Bob's Keycloak user ID from the test realm — must match the JWT sub claim for "bob".
     public static readonly Guid BobKeycloakId = Guid.Parse("6189cd5b-6b08-4ff1-a87d-4e434e8d1c79");
 
-    private const string TeamSlug = "acme";
+    public Guid TeamId { get; private set; }
 
     private ManageMembersAuthorizationFixture() { }
 
-    public static string MembersRoute => $"/admin/teams/{TeamSlug}/members";
+    public string MembersRoute => $"/admin/teams/{TeamId}/members";
 
     public static ManageMembersAuthorizationFixture BobIsCrewMember() => new();
 
@@ -25,8 +25,8 @@ internal sealed class ManageMembersAuthorizationFixture
     public async ValueTask SetupAsync(EndToEndTestEnvironment environment)
     {
         var team = new TeamBuilder()
-            .WithSlug(TeamSlug)
             .Build();
+        TeamId = team.Id.Value;
 
         var bob = new Module.Organization.Domain.Tests.Builders.UserBuilder()
             .WithEmailAddress(EmailAddress.From("bob@example.com"))
@@ -45,8 +45,8 @@ internal sealed class ManageMembersAuthorizationFixture
     public async ValueTask SetupTeamOnlyAsync(EndToEndTestEnvironment environment)
     {
         var team = new TeamBuilder()
-            .WithSlug(TeamSlug)
             .Build();
+        TeamId = team.Id.Value;
 
         await environment.OrganizationDatabase.SeedAsync(dbContext =>
         {

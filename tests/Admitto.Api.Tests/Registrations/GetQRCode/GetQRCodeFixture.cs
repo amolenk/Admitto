@@ -11,10 +11,11 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.GetQRCode;
 
 internal sealed class GetQRCodeFixture
 {
-    public const string TeamSlug = "acme";
-    public const string EventSlug = "devconf";
-    public const string OtherEventSlug = "otherconf";
     public const string TicketTypeSlug = "general-admission";
+
+    public Guid TeamId { get; private set; }
+    public Guid EventId { get; private set; }
+    public Guid OtherEventId { get; private set; }
 
     private readonly bool _seedRegistration;
     private readonly bool _cancelRegistration;
@@ -27,7 +28,6 @@ internal sealed class GetQRCodeFixture
         _seedSecondEvent = seedSecondEvent;
     }
 
-    public TeamId TeamId { get; private set; } = TeamId.New();
     public Guid RegistrationId { get; private set; }
     public string SigningKeyBase64 { get; private set; } = "";
     public string OtherEventSigningKeyBase64 { get; private set; } = "";
@@ -47,32 +47,33 @@ internal sealed class GetQRCodeFixture
     public static GetQRCodeFixture WithSecondEvent() => new(
         seedRegistration: true, cancelRegistration: false, seedSecondEvent: true);
 
-    public static string Route(
+    public string Route(
         Guid registrationId,
         string? signature,
-        string teamSlug = TeamSlug,
-        string eventSlug = EventSlug)
+        Guid? teamId = null,
+        Guid? eventId = null)
     {
-        var path = $"/api/teams/{teamSlug}/events/{eventSlug}/registrations/{registrationId}/qr-code";
+        var path = $"/api/teams/{teamId ?? TeamId}/events/{eventId ?? EventId}/registrations/{registrationId}/qr-code";
         return signature is null ? path : $"{path}?signature={Uri.EscapeDataString(signature)}";
     }
 
     public async ValueTask SetupAsync(EndToEndTestEnvironment environment)
     {
         var team = new TeamBuilder()
-            .WithSlug(TeamSlug)
             .Build();
 
-        TeamId = team.Id;
+        TeamId = team.Id.Value;
 
-        var primaryEvent = BuildEvent(team.Id, EventSlug, "DevConf");
+        var primaryEvent = BuildEvent(team.Id, "DevConf");
         SigningKeyBase64 = primaryEvent.SigningKey;
+        EventId = primaryEvent.Id.Value;
 
         TicketedEvent? otherEvent = null;
         if (_seedSecondEvent)
         {
-            otherEvent = BuildEvent(team.Id, OtherEventSlug, "OtherConf");
+            otherEvent = BuildEvent(team.Id, "OtherConf");
             OtherEventSigningKeyBase64 = otherEvent.SigningKey;
+            OtherEventId = otherEvent.Id.Value;
         }
 
         var primaryCatalog = TicketCatalog.Create(primaryEvent.Id);
@@ -144,13 +145,11 @@ internal sealed class GetQRCodeFixture
         return qrCode.GetGraphic(20);
     }
 
-    private static TicketedEvent BuildEvent(TeamId teamId, string slug, string displayName)
+    private static TicketedEvent BuildEvent(TeamId teamId, string displayName)
     {
         var ticketedEvent = TicketedEvent.Create(
             TicketedEventId.New(),
             teamId,
-            Slug.From(TeamSlug),
-            Slug.From(slug),
             DisplayName.From(displayName),
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),

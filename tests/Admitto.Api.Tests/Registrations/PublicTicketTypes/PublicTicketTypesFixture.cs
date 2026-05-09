@@ -9,14 +9,11 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.PublicTicketTypes;
 
 internal sealed class PublicTicketTypesFixture
 {
-    public const string TeamSlug = "acme";
-    public const string EventSlug = "devconf";
-
     public TeamId TeamId { get; private set; } = TeamId.New();
     public TicketedEventId EventId { get; private set; } = TicketedEventId.New();
     public string ApiKey => ApiKeyTestHelper.TestRawKey;
 
-    public string TicketTypesRoute => $"/api/teams/{TeamSlug}/events/{EventSlug}/ticket-types";
+    public string TicketTypesRoute => $"/api/teams/{TeamId.Value}/events/{EventId.Value}/ticket-types";
 
     private PublicTicketTypesFixture() { }
 
@@ -27,7 +24,6 @@ internal sealed class PublicTicketTypesFixture
         Action<TicketCatalog>? configureCatalog = null)
     {
         var team = new TeamBuilder()
-            .WithSlug(TeamSlug)
             .Build();
         TeamId = team.Id;
 
@@ -37,8 +33,6 @@ internal sealed class PublicTicketTypesFixture
         var ticketedEvent = TicketedEvent.Create(
             eventId,
             team.Id,
-            Slug.From(TeamSlug),
-            Slug.From(EventSlug),
             DisplayName.From("DevConf"),
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),

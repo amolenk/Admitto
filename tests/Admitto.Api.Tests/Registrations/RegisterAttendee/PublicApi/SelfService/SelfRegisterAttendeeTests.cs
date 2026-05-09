@@ -32,7 +32,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : EndToEn
 
         using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
         var response = await client.PostAsJsonAsync(
-            SelfRegisterAttendeeFixture.Route, request, cancellationToken: testContext.CancellationToken);
+            fixture.Route, request, cancellationToken: testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }

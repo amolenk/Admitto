@@ -16,8 +16,7 @@ public sealed class RegisterTicketedEventCreationRejectedTests(TestContext testC
         // Arrange
         var team = new TeamBuilder().Build();
         var pendingRequest = team.RequestEventCreation(
-            Slug.From("e1"),
-            UserId.New(),
+                UserId.New(),
             DateTimeOffset.UtcNow);
 
         await Environment.Database.SeedAsync(ctx => ctx.Teams.Add(team));

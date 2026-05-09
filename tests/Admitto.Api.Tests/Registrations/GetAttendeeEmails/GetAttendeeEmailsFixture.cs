@@ -10,8 +10,8 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.GetAttendeeEmails;
 
 internal sealed class GetAttendeeEmailsFixture
 {
-    public const string TeamSlug = "acme";
-    public const string EventSlug = "devconf";
+    public Guid TeamId { get; private set; }
+    public Guid EventId { get; private set; }
 
     public RegistrationId RegistrationId { get; private set; } = RegistrationId.New();
 
@@ -24,21 +24,20 @@ internal sealed class GetAttendeeEmailsFixture
     public static GetAttendeeEmailsFixture WithEmails() => new() { _withEmails = true };
 
     public string Route =>
-        $"/admin/teams/{TeamSlug}/events/{EventSlug}/registrations/{RegistrationId.Value}/emails";
+        $"/admin/teams/{TeamId}/events/{EventId}/registrations/{RegistrationId.Value}/emails";
 
     public async ValueTask SetupAsync(EndToEndTestEnvironment environment)
     {
         var team = new TeamBuilder()
-            .WithSlug(TeamSlug)
             .Build();
+        TeamId = team.Id.Value;
 
         var eventId = TicketedEventId.New();
+        EventId = eventId.Value;
 
         var ticketedEvent = TicketedEvent.Create(
             eventId,
             team.Id,
-            Slug.From(TeamSlug),
-            Slug.From(EventSlug),
             DisplayName.From("DevConf"),
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),

@@ -9,13 +9,13 @@ namespace Amolenk.Admitto.Api.Tests.Email.AdminEmailSettings;
 
 internal sealed class AdminEmailSettingsFixture
 {
-    public const string TeamSlug = "acme-settings";
-    public const string EventSlug = "settingsconf";
+    public Guid TeamId { get; private set; }
+    public Guid EventId { get; private set; }
 
-    public static string TeamSettingsRoute => $"/admin/teams/{TeamSlug}/email-settings";
-    public static string EventSettingsRoute => $"/admin/teams/{TeamSlug}/events/{EventSlug}/email-settings";
-    public static string TeamSettingsTestRoute => $"{TeamSettingsRoute}/test";
-    public static string EventSettingsTestRoute => $"{EventSettingsRoute}/test";
+    public string TeamSettingsRoute => $"/admin/teams/{TeamId}/email-settings";
+    public string EventSettingsRoute => $"/admin/teams/{TeamId}/events/{EventId}/email-settings";
+    public string TeamSettingsTestRoute => $"{TeamSettingsRoute}/test";
+    public string EventSettingsTestRoute => $"{EventSettingsRoute}/test";
 
     private AdminEmailSettingsFixture() { }
 
@@ -116,16 +116,16 @@ internal sealed class AdminEmailSettingsFixture
         EndToEndTestEnvironment environment)
     {
         var team = new TeamBuilder()
-            .WithSlug(TeamSlug)
             .Build();
 
         var eventId = TicketedEventId.New();
 
+        TeamId = team.Id.Value;
+        EventId = eventId.Value;
+
         var ticketedEvent = TicketedEvent.Create(
             eventId,
             team.Id,
-            Slug.From(TeamSlug),
-            Slug.From(EventSlug),
             DisplayName.From("Settings Conf"),
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),

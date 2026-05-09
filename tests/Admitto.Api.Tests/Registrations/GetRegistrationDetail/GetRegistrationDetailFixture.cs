@@ -8,38 +8,32 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.GetRegistrationDetail;
 
 internal sealed class GetRegistrationDetailFixture
 {
-    public const string TeamSlug = "acme";
-    public const string EventSlug = "devconf";
     public const string TicketTypeSlug = "general-admission";
 
-    public RegistrationId RegistrationId { get; private set; } = RegistrationId.New();
+    public Guid TeamId { get; private set; }
+    public Guid EventId { get; private set; }
 
-    public static string Route(
-        string teamSlug = TeamSlug,
-        string eventSlug = EventSlug,
-        string? registrationId = null) =>
-        $"/admin/teams/{teamSlug}/events/{eventSlug}/registrations/{registrationId ?? Guid.NewGuid().ToString()}";
+    public RegistrationId RegistrationId { get; private set; } = RegistrationId.New();
 
     private GetRegistrationDetailFixture() { }
 
     public static GetRegistrationDetailFixture WithActiveRegistration() => new();
 
     public string RegistrationRoute =>
-        $"/admin/teams/{TeamSlug}/events/{EventSlug}/registrations/{RegistrationId.Value}";
+        $"/admin/teams/{TeamId}/events/{EventId}/registrations/{RegistrationId.Value}";
 
     public async ValueTask SetupAsync(EndToEndTestEnvironment environment)
     {
         var team = new TeamBuilder()
-            .WithSlug(TeamSlug)
             .Build();
+        TeamId = team.Id.Value;
 
         var eventId = TicketedEventId.New();
+        EventId = eventId.Value;
 
         var ticketedEvent = TicketedEvent.Create(
             eventId,
             team.Id,
-            Slug.From(TeamSlug),
-            Slug.From(EventSlug),
             DisplayName.From("DevConf"),
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),

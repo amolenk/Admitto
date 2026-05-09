@@ -11,8 +11,6 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.SelfRegister;
 
 internal sealed class SelfRegisterFixture
 {
-    public const string TeamSlug = "acme";
-    public const string EventSlug = "devconf";
     public const string AttendeeEmail = "dave@example.com";
     private const string KnownOtpCode = "654321";
 
@@ -20,8 +18,8 @@ internal sealed class SelfRegisterFixture
     public TicketedEventId EventId { get; private set; } = TicketedEventId.New();
     public string ApiKey => ApiKeyTestHelper.TestRawKey;
 
-    public string RegisterRoute => $"/api/teams/{TeamSlug}/events/{EventSlug}/registrations";
-    public string OtpVerifyRoute => $"/api/teams/{TeamSlug}/events/{EventSlug}/otp/verify";
+    public string RegisterRoute => $"/api/teams/{TeamId.Value}/events/{EventId.Value}/registrations";
+    public string OtpVerifyRoute => $"/api/teams/{TeamId.Value}/events/{EventId.Value}/otp/verify";
 
     private SelfRegisterFixture() { }
 
@@ -30,7 +28,6 @@ internal sealed class SelfRegisterFixture
     public async ValueTask SetupAsync(EndToEndTestEnvironment environment, bool selfServiceEnabled = true)
     {
         var team = new TeamBuilder()
-            .WithSlug(TeamSlug)
             .Build();
         TeamId = team.Id;
 
@@ -40,8 +37,6 @@ internal sealed class SelfRegisterFixture
         var ticketedEvent = TicketedEvent.Create(
             eventId,
             team.Id,
-            Slug.From(TeamSlug),
-            Slug.From(EventSlug),
             DisplayName.From("DevConf"),
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),

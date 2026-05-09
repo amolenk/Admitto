@@ -24,7 +24,6 @@ public sealed class GetTeamTests(TestContext testContext) : AspireIntegrationTes
 
         // Assert
         result.ShouldNotBeNull();
-        result.Slug.ShouldBe(fixture.TeamSlug);
         result.Name.ShouldBe(fixture.TeamName);
         result.EmailAddress.ShouldBe(fixture.TeamEmail);
         result.Version.ShouldBeGreaterThan(0u);

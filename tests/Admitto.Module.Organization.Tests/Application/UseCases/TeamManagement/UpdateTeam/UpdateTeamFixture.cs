@@ -6,7 +6,6 @@ namespace Amolenk.Admitto.Module.Organization.Tests.Application.UseCases.TeamMan
 internal sealed class UpdateTeamFixture
 {
     public Guid TeamId { get; private set; }
-    public string OriginalSlug { get; } = "acme";
     public string OriginalName { get; } = "Acme Events";
     public string OriginalEmail { get; } = "info@acme.org";
     public uint TeamVersion { get; private set; }
@@ -25,7 +24,6 @@ internal sealed class UpdateTeamFixture
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
     {
         var builder = new TeamBuilder()
-            .WithSlug(OriginalSlug)
             .WithName(OriginalName)
             .WithEmail(OriginalEmail);
 

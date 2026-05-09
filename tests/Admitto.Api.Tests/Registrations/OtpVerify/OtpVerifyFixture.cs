@@ -8,8 +8,6 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.OtpVerify;
 
 internal sealed class OtpVerifyFixture
 {
-    public const string TeamSlug = "acme";
-    public const string EventSlug = "devconf";
     public const string AttendeeEmail = "dave@example.com";
     public const string KnownPlainCode = "123456";
 
@@ -17,7 +15,7 @@ internal sealed class OtpVerifyFixture
     public TicketedEventId EventId { get; private set; } = TicketedEventId.New();
     public string ApiKey => ApiKeyTestHelper.TestRawKey;
 
-    public string VerifyOtpRoute => $"/api/teams/{TeamSlug}/events/{EventSlug}/otp/verify";
+    public string VerifyOtpRoute => $"/api/teams/{TeamId.Value}/events/{EventId.Value}/otp/verify";
 
     private OtpVerifyFixture() { }
 
@@ -26,7 +24,6 @@ internal sealed class OtpVerifyFixture
     public async ValueTask SetupAsync(EndToEndTestEnvironment environment)
     {
         var team = new TeamBuilder()
-            .WithSlug(TeamSlug)
             .Build();
         TeamId = team.Id;
 
@@ -36,8 +33,6 @@ internal sealed class OtpVerifyFixture
         var ticketedEvent = TicketedEvent.Create(
             eventId,
             team.Id,
-            Slug.From(TeamSlug),
-            Slug.From(EventSlug),
             DisplayName.From("DevConf"),
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),

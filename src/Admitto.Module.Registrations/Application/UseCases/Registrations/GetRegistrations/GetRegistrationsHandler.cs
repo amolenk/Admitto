@@ -5,12 +5,18 @@ using Microsoft.EntityFrameworkCore;
 namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.Registrations.GetRegistrations;
 
 internal sealed class GetRegistrationsHandler(IRegistrationsWriteStore writeStore)
-    : IQueryHandler<GetRegistrationsQuery, IReadOnlyList<RegistrationListItemDto>>
+    : IQueryHandler<GetRegistrationsQuery, IReadOnlyList<RegistrationListItemDto>?>
 {
-    public async ValueTask<IReadOnlyList<RegistrationListItemDto>> HandleAsync(
+    public async ValueTask<IReadOnlyList<RegistrationListItemDto>?> HandleAsync(
         GetRegistrationsQuery query,
         CancellationToken cancellationToken)
     {
+        var eventExists = await writeStore.TicketedEvents
+            .AnyAsync(e => e.Id == query.EventId && e.TeamId == query.TeamId, cancellationToken);
+
+        if (!eventExists)
+            return null;
+
         var registrations = await writeStore.Registrations
             .Where(r => r.EventId == query.EventId)
             .OrderByDescending(r => r.CreatedAt)

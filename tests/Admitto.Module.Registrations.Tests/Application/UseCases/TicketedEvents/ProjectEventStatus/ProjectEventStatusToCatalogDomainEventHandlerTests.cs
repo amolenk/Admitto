@@ -25,7 +25,7 @@ public sealed class ProjectEventStatusToCatalogDomainEventHandlerTests(TestConte
 
         var handler = new ProjectEventStatusToCatalogDomainEventHandler(Environment.Database.Context);
         var domainEvent = new TicketedEventStatusChangedDomainEvent(
-            eventId, teamId, Slug.From("conf-2026"), EventLifecycleStatus.Cancelled);
+            eventId, teamId, EventLifecycleStatus.Cancelled);
 
         await handler.HandleAsync(domainEvent, testContext.CancellationToken);
 
@@ -51,7 +51,7 @@ public sealed class ProjectEventStatusToCatalogDomainEventHandlerTests(TestConte
 
         var handler = new ProjectEventStatusToCatalogDomainEventHandler(Environment.Database.Context);
         var domainEvent = new TicketedEventStatusChangedDomainEvent(
-            eventId, teamId, Slug.From("conf-2026"), EventLifecycleStatus.Archived);
+            eventId, teamId, EventLifecycleStatus.Archived);
 
         await handler.HandleAsync(domainEvent, testContext.CancellationToken);
 
@@ -72,7 +72,7 @@ public sealed class ProjectEventStatusToCatalogDomainEventHandlerTests(TestConte
 
         var handler = new ProjectEventStatusToCatalogDomainEventHandler(Environment.Database.Context);
         var domainEvent = new TicketedEventStatusChangedDomainEvent(
-            eventId, teamId, Slug.From("conf-2026"), EventLifecycleStatus.Cancelled);
+            eventId, teamId, EventLifecycleStatus.Cancelled);
 
         // Should complete without throwing even when no catalog exists yet.
         await handler.HandleAsync(domainEvent, testContext.CancellationToken);

@@ -9,10 +9,10 @@ import {
     SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
-export function NavSettings({ teamSlug }: { teamSlug: string }) {
+export function NavSettings({ teamId }: { teamId: string }) {
     const router = useRouter();
     const pathname = usePathname();
-    const isActive = pathname.startsWith(`/teams/${teamSlug}/settings`);
+    const isActive = pathname.startsWith(`/teams/${teamId}/settings`);
 
     return (
         <SidebarGroup className="group-data-[collapsible=icon]:hidden">
@@ -20,7 +20,7 @@ export function NavSettings({ teamSlug }: { teamSlug: string }) {
             <SidebarMenu>
                 <SidebarMenuItem>
                     <button
-                        onClick={() => router.push(`/teams/${teamSlug}/settings`)}
+                        onClick={() => router.push(`/teams/${teamId}/settings`)}
                         data-active={isActive ? "true" : "false"}
                         className="side-item"
                     >

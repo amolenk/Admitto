@@ -5,22 +5,22 @@ namespace Amolenk.Admitto.Api.Tests.Organization.TicketedEventManagement;
 
 internal sealed class CreateTicketedEventFixture
 {
-    private const string TeamSlug = "test-team";
+    public Guid TeamId { get; private set; }
 
     private CreateTicketedEventFixture() { }
 
-    public static string EventCreationsRoute => $"/admin/teams/{TeamSlug}/events";
+    public string EventCreationsRoute => $"/admin/teams/{TeamId}/events";
 
-    public static string EventCreationStatusRoute(string creationRequestId) =>
-        $"/admin/teams/{TeamSlug}/event-creations/{creationRequestId}";
+    public string EventCreationStatusRoute(string creationRequestId) =>
+        $"/admin/teams/{TeamId}/event-creations/{creationRequestId}";
 
     public static CreateTicketedEventFixture WithTeam() => new();
 
     public async ValueTask SetupAsync(EndToEndTestEnvironment environment)
     {
         var team = new TeamBuilder()
-            .WithSlug(TeamSlug)
             .Build();
+        TeamId = team.Id.Value;
 
         await environment.OrganizationDatabase.SeedAsync(dbContext =>
         {

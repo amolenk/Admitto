@@ -5,21 +5,21 @@ Admins create ticketed events and manage their core metadata, registration polic
 ## Requirements
 
 ### Requirement: Admin can create a ticketed event via the UI
-The Admin UI SHALL provide a "Create Event" page reachable from the team's events list. The form SHALL collect slug, name, start datetime, and end datetime. The form SHALL validate inputs client-side and surface server-side validation errors inline.
+The Admin UI SHALL provide a "Create Event" page reachable from the team's events list. The form SHALL collect name, start datetime, and end datetime (no slug field). The form SHALL validate inputs client-side and surface server-side validation errors inline.
 
-Submission SHALL `POST` to the Organization create-event endpoint, which responds `202 Accepted` with a `Location` header pointing to a creation-status URL (see event-management). The UI SHALL then poll that URL until status becomes `Created`, `Rejected`, or `Expired`. While polling, the UI SHALL display a non-blocking spinner and disable the form. On `Created`, the UI SHALL navigate to the new event's settings page (General tab). On `Rejected`, the UI SHALL render the rejection reason inline (e.g., "duplicate slug") so the user can edit and resubmit. On `Expired`, the UI SHALL render a generic "creation timed out, please try again" error.
+Submission SHALL `POST` to the Organization create-event endpoint, which responds `202 Accepted` with a `Location` header pointing to a creation-status URL (see event-management). The UI SHALL then poll that URL until status becomes `Created`, `Rejected`, or `Expired`. While polling, the UI SHALL display a non-blocking spinner and disable the form. On `Created`, the UI SHALL navigate to the new event's settings page (General tab) using the event's UUID. On `Rejected`, the UI SHALL render the rejection reason inline so the user can edit and resubmit. On `Expired`, the UI SHALL render a generic "creation timed out, please try again" error.
 
 #### Scenario: Successfully create an event (async)
-- **WHEN** an organizer on team "acme" submits the create event form for slug "devconf-2026", name "DevConf 2026", start "2026-06-01T09:00Z", end "2026-06-03T17:00Z" and the backend returns `202 Accepted` with a creation-status URL, then polling eventually returns status `Created`
-- **THEN** the organizer is redirected to `/teams/acme/events/devconf-2026/settings`
+- **WHEN** an organizer submits the create event form for name "DevConf 2026", start "2026-06-01T09:00Z", end "2026-06-03T17:00Z" and the backend returns `202 Accepted`, then polling eventually returns status `Created` with the new event's ID
+- **THEN** the organizer is redirected to `/teams/{teamId}/events/{eventId}/settings`
 
 #### Scenario: Display client-side validation error on create
 - **WHEN** an organizer submits the create event form with an empty name
 - **THEN** the form displays an inline validation error on the name field without calling the backend
 
 #### Scenario: Display rejection from polling
-- **WHEN** an organizer submits the create event form with slug "devconf-2026" and the polling endpoint reports status `Rejected` with reason `duplicate_slug`
-- **THEN** the form is re-enabled and a "duplicate slug" error is displayed inline against the slug field
+- **WHEN** the polling endpoint reports status `Rejected` with a reason
+- **THEN** the form is re-enabled and the rejection reason is displayed inline
 
 #### Scenario: Spinner shown while polling
 - **WHEN** the backend has returned `202 Accepted` and polling is in progress
@@ -32,7 +32,7 @@ Submission SHALL `POST` to the Organization create-event endpoint, which respond
 ---
 
 ### Requirement: Admin UI exposes event settings through tabbed navigation
-The Admin UI SHALL render event settings under `/teams/{teamSlug}/events/{eventSlug}/settings` with a side-navigation containing three tabs: **General**, **Registration**, and **Email**. The active tab SHALL be highlighted. Each tab SHALL be an independently routable page that loads only the data owned by its module.
+The Admin UI SHALL render event settings under `/teams/{teamId}/events/{eventId}/settings` with a side-navigation containing three tabs: **General**, **Registration**, and **Email**. The active tab SHALL be highlighted. Each tab SHALL be an independently routable page.
 
 #### Scenario: Navigate between tabs
 - **WHEN** an organizer is on the General tab and clicks the "Registration" tab
@@ -45,15 +45,11 @@ The Admin UI SHALL render event settings under `/teams/{teamSlug}/events/{eventS
 ---
 
 ### Requirement: General tab manages event metadata
-The General tab SHALL show a form pre-filled with the event's name, start datetime, and end datetime. The slug SHALL be displayed as read-only. The form SHALL submit partial updates with the event's current `Version` for optimistic concurrency. On a concurrency conflict the UI SHALL display an error and refetch the latest values.
+The General tab SHALL show a form pre-filled with the event's name, start datetime, and end datetime. There is no slug field. The form SHALL submit partial updates with the event's current `Version` for optimistic concurrency. On a concurrency conflict the UI SHALL display an error and refetch the latest values.
 
 #### Scenario: Successfully update event name
-- **WHEN** an organizer changes the event name from "DevConf 2026" to "DevConf Europe 2026" and submits
+- **WHEN** an organizer changes the event name and submits
 - **THEN** the event metadata is updated and a success message is shown
-
-#### Scenario: Slug is read-only
-- **WHEN** an organizer views the General tab for "devconf-2026"
-- **THEN** the slug field shows "devconf-2026" and cannot be edited
 
 #### Scenario: Display concurrency conflict
 - **WHEN** an organizer submits General-tab changes with a stale `Version`

@@ -30,35 +30,32 @@ function Field({ label, hint, children }: {
     );
 }
 
-const slugRegex = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
-
 const createTeamSchema = z.object({
-    slug: z
-        .string()
-        .min(1, "Slug is required")
-        .regex(slugRegex, "Slug must be lowercase alphanumeric with hyphens"),
     name: z.string().min(1, "Name is required"),
     emailAddress: z.string().min(1, "Email is required").email("Must be a valid email address"),
 });
 
 type CreateTeamValues = z.infer<typeof createTeamSchema>;
 
+type CreateTeamResponse = {
+    teamId: string;
+};
+
 export function CreateTeamForm() {
     const router = useRouter();
     const queryClient = useQueryClient();
-    const setSelectedTeamSlug = useTeamStore((s) => s.setSelectedTeamSlug);
+    const setSelectedTeamId = useTeamStore((s) => s.setSelectedTeamId);
 
     const form = useCustomForm<CreateTeamValues>(createTeamSchema, {
-        slug: "",
         name: "",
         emailAddress: "",
     });
 
     async function onSubmit(values: CreateTeamValues) {
-        await apiClient.post("/api/teams", values);
+        const result = await apiClient.post<CreateTeamResponse>("/api/teams", values);
         await queryClient.invalidateQueries({ queryKey: ["teams"] });
-        setSelectedTeamSlug(values.slug);
-        router.push("/");
+        setSelectedTeamId(result.teamId);
+        router.push(`/teams/${result.teamId}`);
     }
 
     const rootError = form.formState.errors.root?.message;
@@ -100,21 +97,6 @@ export function CreateTeamForm() {
                             <div className="px-6 divide-y">
                                 <FormField
                                     control={form.control}
-                                    name="slug"
-                                    render={({ field }) => (
-                                        <Field label="Slug" hint="Used in URLs. Cannot be changed later.">
-                                            <FormItem className="space-y-1">
-                                                <FormControl>
-                                                    <Input placeholder="e.g. my-team" className="max-w-sm font-mono" {...field} />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        </Field>
-                                    )}
-                                />
-
-                                <FormField
-                                    control={form.control}
                                     name="name"
                                     render={({ field }) => (
                                         <Field label="Team name" hint="Shown in the admin UI and on event pages.">
@@ -150,3 +132,4 @@ export function CreateTeamForm() {
         </div>
     );
 }
+

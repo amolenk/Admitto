@@ -36,7 +36,7 @@ public sealed class BulkEmailCreateTests(TestContext testContext) : EndToEndTest
         };
 
         var createResponse = await Environment.ApiClient.PostAsJsonAsync(
-            BulkEmailFixture.CreateRoute,
+            fixture.CreateRoute,
             request,
             cancellationToken: testContext.CancellationToken);
 
@@ -86,7 +86,7 @@ public sealed class BulkEmailCreateTests(TestContext testContext) : EndToEndTest
         };
 
         var createResponse = await Environment.ApiClient.PostAsJsonAsync(
-            BulkEmailFixture.CreateRoute,
+            fixture.CreateRoute,
             request,
             cancellationToken: testContext.CancellationToken);
 

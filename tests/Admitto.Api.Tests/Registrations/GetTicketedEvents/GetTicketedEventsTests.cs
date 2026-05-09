@@ -18,7 +18,7 @@ public sealed class GetTicketedEventsTests(TestContext testContext) : EndToEndTe
 
         // Act
         var response = await Environment.ApiClient.GetAsync(
-            GetTicketedEventsFixture.Route,
+            fixture.Route,
             testContext.CancellationToken);
 
         // Assert
@@ -28,13 +28,13 @@ public sealed class GetTicketedEventsTests(TestContext testContext) : EndToEndTe
             cancellationToken: testContext.CancellationToken);
         events.ShouldNotBeNull();
         events.Length.ShouldBe(2);
-        events.ShouldContain(e => e.Slug == "conf-2026");
-        events.ShouldContain(e => e.Slug == "meetup-q1");
-        events.ShouldNotContain(e => e.Slug == "conf-2025");
+        events.ShouldContain(e => e.Name == "Conf 2026");
+        events.ShouldContain(e => e.Name == "Meetup Q1");
+        events.ShouldNotContain(e => e.Name == "Conf 2025");
     }
 
     private sealed record EventListItemDto(
-        string Slug,
+        Guid Id,
         string Name,
         DateTimeOffset StartsAt,
         DateTimeOffset EndsAt,

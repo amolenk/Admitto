@@ -30,7 +30,7 @@ public sealed class AdminEmailSettingsTests(TestContext testContext) : EndToEndT
         };
 
         var response = await Environment.ApiClient.PutAsJsonAsync(
-            AdminEmailSettingsFixture.TeamSettingsRoute,
+            fixture.TeamSettingsRoute,
             request,
             cancellationToken: testContext.CancellationToken);
 
@@ -58,7 +58,7 @@ public sealed class AdminEmailSettingsTests(TestContext testContext) : EndToEndT
         };
 
         var response = await Environment.ApiClient.PutAsJsonAsync(
-            AdminEmailSettingsFixture.EventSettingsRoute,
+            fixture.EventSettingsRoute,
             request,
             cancellationToken: testContext.CancellationToken);
 
@@ -75,7 +75,7 @@ public sealed class AdminEmailSettingsTests(TestContext testContext) : EndToEndT
         await fixture.SetupTeamSettingsAsync(Environment);
 
         var response = await Environment.ApiClient.GetAsync(
-            AdminEmailSettingsFixture.TeamSettingsRoute,
+            fixture.TeamSettingsRoute,
             testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -98,7 +98,7 @@ public sealed class AdminEmailSettingsTests(TestContext testContext) : EndToEndT
         await fixture.SetupBothSettingsAsync(Environment);
 
         var response = await Environment.ApiClient.GetAsync(
-            AdminEmailSettingsFixture.EventSettingsRoute,
+            fixture.EventSettingsRoute,
             testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -129,7 +129,7 @@ public sealed class AdminEmailSettingsTests(TestContext testContext) : EndToEndT
         };
 
         var response = await Environment.ApiClient.PutAsJsonAsync(
-            AdminEmailSettingsFixture.TeamSettingsRoute,
+            fixture.TeamSettingsRoute,
             request,
             cancellationToken: testContext.CancellationToken);
 
@@ -157,7 +157,7 @@ public sealed class AdminEmailSettingsTests(TestContext testContext) : EndToEndT
         };
 
         var response = await Environment.ApiClient.PutAsJsonAsync(
-            AdminEmailSettingsFixture.EventSettingsRoute,
+            fixture.EventSettingsRoute,
             request,
             cancellationToken: testContext.CancellationToken);
 
@@ -174,13 +174,13 @@ public sealed class AdminEmailSettingsTests(TestContext testContext) : EndToEndT
         var version = await fixture.SetupTeamSettingsAsync(Environment);
 
         var response = await Environment.ApiClient.DeleteAsync(
-            $"{AdminEmailSettingsFixture.TeamSettingsRoute}?version={version}",
+            $"{fixture.TeamSettingsRoute}?version={version}",
             testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
 
         var getResponse = await Environment.ApiClient.GetAsync(
-            AdminEmailSettingsFixture.TeamSettingsRoute,
+            fixture.TeamSettingsRoute,
             testContext.CancellationToken);
         getResponse.StatusCode.ShouldBe(HttpStatusCode.NotFound);
     }
@@ -195,7 +195,7 @@ public sealed class AdminEmailSettingsTests(TestContext testContext) : EndToEndT
         var (_, eventVersion) = await fixture.SetupBothSettingsAsync(Environment);
 
         var response = await Environment.ApiClient.DeleteAsync(
-            $"{AdminEmailSettingsFixture.EventSettingsRoute}?version={eventVersion}",
+            $"{fixture.EventSettingsRoute}?version={eventVersion}",
             testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
@@ -222,7 +222,7 @@ public sealed class AdminEmailSettingsTests(TestContext testContext) : EndToEndT
         };
 
         var response = await Environment.ApiClient.PutAsJsonAsync(
-            AdminEmailSettingsFixture.TeamSettingsRoute,
+            fixture.TeamSettingsRoute,
             request,
             cancellationToken: testContext.CancellationToken);
 
@@ -239,7 +239,7 @@ public sealed class AdminEmailSettingsTests(TestContext testContext) : EndToEndT
         await fixture.SetupTeamSettingsAsync(Environment);
 
         var response = await Environment.BobApiClient.GetAsync(
-            AdminEmailSettingsFixture.TeamSettingsRoute,
+            fixture.TeamSettingsRoute,
             testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
@@ -256,7 +256,7 @@ public sealed class AdminEmailSettingsTests(TestContext testContext) : EndToEndT
         await Environment.ClearAsync(testContext.CancellationToken);
 
         var response = await Environment.ApiClient.PostAsJsonAsync(
-            AdminEmailSettingsFixture.TeamSettingsTestRoute,
+            fixture.TeamSettingsTestRoute,
             new { Recipient = "ops@acme.org" },
             cancellationToken: testContext.CancellationToken);
 
@@ -277,7 +277,7 @@ public sealed class AdminEmailSettingsTests(TestContext testContext) : EndToEndT
         await Environment.ClearAsync(testContext.CancellationToken);
 
         var response = await Environment.ApiClient.PostAsJsonAsync(
-            AdminEmailSettingsFixture.EventSettingsTestRoute,
+            fixture.EventSettingsTestRoute,
             new { Recipient = "ops@acme.org" },
             cancellationToken: testContext.CancellationToken);
 
@@ -297,7 +297,7 @@ public sealed class AdminEmailSettingsTests(TestContext testContext) : EndToEndT
         await fixture.SetupEmptyAsync(Environment);
 
         var response = await Environment.ApiClient.PostAsJsonAsync(
-            AdminEmailSettingsFixture.TeamSettingsTestRoute,
+            fixture.TeamSettingsTestRoute,
             new { Recipient = "not-an-email" },
             cancellationToken: testContext.CancellationToken);
 
@@ -315,7 +315,7 @@ public sealed class AdminEmailSettingsTests(TestContext testContext) : EndToEndT
         await Environment.ClearAsync(testContext.CancellationToken);
 
         var response = await Environment.BobApiClient.PostAsJsonAsync(
-            AdminEmailSettingsFixture.TeamSettingsTestRoute,
+            fixture.TeamSettingsTestRoute,
             new { Recipient = "ops@acme.org" },
             cancellationToken: testContext.CancellationToken);
 

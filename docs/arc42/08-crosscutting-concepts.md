@@ -26,11 +26,9 @@ Endpoints declare requirements with `policy.RequireAdminRole()` or `policy.Requi
 
 ## 8.4 Organization scope resolution and cross-module facades
 
-Admin endpoints declare `teamSlug` and `eventSlug` as explicit path parameters in their handler signatures. An `IOrganizationScopeResolver` is injected to translate slugs into IDs via the Organization facade. The resolver returns an `OrganizationScope` record containing the resolved team/event identity and caches the result per request.
+Admin endpoints declare `teamId` and `eventId` as explicit GUID path parameters in their handler signatures. No slug-to-ID translation is needed; the IDs from the route are used directly to load aggregates.
 
-Endpoints call `scopeResolver.ResolveAsync(teamSlug, eventSlug, cancellationToken)` to obtain the scope. The resolver itself is HTTP-agnostic — it receives slugs from its callers rather than extracting them from route values. This keeps path parameters visible to the OpenAPI generator and makes the resolver testable without an HTTP context.
-
-The `TeamMembershipAuthorizationHandler` extracts `teamSlug` from `HttpContext.GetRouteValue()` because authorization runs before endpoint binding.
+The `TeamMembershipAuthorizationHandler` extracts `teamId` from `HttpContext.GetRouteValue()` and resolves team membership by ID because authorization runs before endpoint binding.
 
 ### Synchronous cross-module facades
 
@@ -38,7 +36,7 @@ Some workflows need to consult another module's state inside the same request wi
 
 | Facade | Module | Used by | Purpose |
 | :----- | :----- | :------ | :------ |
-| `IOrganizationFacade` | Organization | Registrations, API auth | Resolve team/event slugs → IDs, check team membership |
+| `IOrganizationFacade` | Organization | Registrations, API auth | Check team membership, look up team by ID |
 | `IEventEmailFacade` | Email | Registrations | Check whether per-event SMTP credentials are configured before allowing registration to open |
 
 Facades are read-only and side-effect-free. Cross-module *writes* still go through module/integration events on the outbox (see §8.6).
@@ -102,10 +100,10 @@ var teams = group.MapGroup("/teams");
 teams.MapCreateTeam();   // POST /admin/teams
 teams.MapGetTeams();     // GET  /admin/teams
 
-var team = teams.MapGroup("/{teamSlug}");
-team.MapGetTeam();       // GET  /admin/teams/{teamSlug}
-team.MapUpdateTeam();    // PUT  /admin/teams/{teamSlug}
-team.MapArchiveTeam();   // POST /admin/teams/{teamSlug}/archive
+var team = teams.MapGroup("/{teamId:guid}");
+team.MapGetTeam();       // GET  /admin/teams/{teamId}
+team.MapUpdateTeam();    // PUT  /admin/teams/{teamId}
+team.MapArchiveTeam();   // POST /admin/teams/{teamId}/archive
 ```
 
 ## 8.6 Messaging and outbox
@@ -124,7 +122,7 @@ Each module declares a `MessagePolicy` that maps domain events to module and/or 
 
 ### Cross-module lifecycle events
 
-Event creation is a Registrations-owned operation *gated* by Organization. Organization emits `TicketedEventCreationRequested` (carrying a `CreationRequestId`) to request materialisation; Registrations inserts the authoritative `TicketedEvent`, creates an Active `TicketCatalog` in the same unit of work, and emits `TicketedEventCreated` or — on `(TeamId, Slug)` unique-violation or other validation failure — `TicketedEventCreationRejected`.
+Event creation is a Registrations-owned operation *gated* by Organization. Organization emits `TicketedEventCreationRequested` (carrying a `CreationRequestId`) to request materialisation; Registrations inserts the authoritative `TicketedEvent`, creates an Active `TicketCatalog` in the same unit of work, and emits `TicketedEventCreated` or — on other validation failure — `TicketedEventCreationRejected`.
 
 Lifecycle transitions on the `TicketedEvent` aggregate (`Cancel`, `Archive`) raise an in-module `TicketedEventStatusChanged` domain event that projects onto `TicketCatalog.EventStatus` in the same transaction as the source-of-truth status change. In parallel, the same unit of work outboxes `TicketedEventCancelled` / `TicketedEventArchived` integration events so Organization can advance the team's counters (`ActiveEventCount`, `CancelledEventCount`, `ArchivedEventCount`).
 
@@ -200,7 +198,7 @@ The signing primitive lives in `Admitto.Module.Shared/Application/Cryptography/`
 
 Payload-shaping helpers (e.g. `RegistrationSigner`) compose the two for a specific consumer; the registration-id payload is the lowercase hex (`Guid.ToString("N")`) form.
 
-**Endpoint validation order** for signed public endpoints: resolve team slug (404) → resolve event slug (404) → verify signature (403 on missing or invalid, *before* any aggregate lookup) → load the aggregate and confirm scope (404 on missing/wrong event) → produce the response. Verifying before lookup prevents the endpoint from being used as an existence oracle for registration IDs.
+**Endpoint validation order** for signed public endpoints: resolve team by ID (404) → resolve event by ID (404) → verify signature (403 on missing or invalid, *before* any aggregate lookup) → load the aggregate and confirm scope (404 on missing/wrong event) → produce the response. Verifying before lookup prevents the endpoint from being used as an existence oracle for registration IDs.
 
 ## 8.8 Value objects
 

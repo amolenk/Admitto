@@ -6,18 +6,18 @@ Provide Admin UI pages for creating teams and managing team settings, including 
 ## Requirements
 
 ### Requirement: Admin can create a team via the UI
-The Admin UI SHALL provide a "Create Team" page with a form for slug, name, and email address. The form SHALL validate inputs client-side and display server-side validation errors inline. On successful creation, the UI SHALL redirect to the new team's events page and update the team switcher to select the new team.
+The Admin UI SHALL provide a "Create Team" page with a form for name and email address (no slug field). The form SHALL validate inputs client-side and display server-side validation errors inline. On successful creation, the UI SHALL redirect to the new team's events page using the team's UUID and update the team switcher to select the new team.
 
 #### Scenario: Successfully create a team
-- **WHEN** an admin navigates to the "Create Team" page, fills in slug "acme", name "Acme Events", email "info@acme.org", and submits the form
-- **THEN** the team is created, the team switcher updates to show "Acme Events" as the selected team, and the admin is redirected to `/teams/acme/events`
+- **WHEN** an admin navigates to the "Create Team" page, fills in name "Acme Events" and email "info@acme.org", and submits the form
+- **THEN** the team is created, the team switcher updates to show "Acme Events" as the selected team, and the admin is redirected to `/teams/{teamId}/events`
 
 #### Scenario: Display validation errors on create
 - **WHEN** an admin submits the create team form with an empty name
 - **THEN** the form displays a validation error on the name field without submitting to the backend
 
 #### Scenario: Display server-side errors on create
-- **WHEN** an admin submits the create team form with a slug that already exists
+- **WHEN** an admin submits the create team form with an invalid email
 - **THEN** the form displays the server-side error message returned by the backend
 
 #### Scenario: Navigate to create team from team switcher
@@ -27,15 +27,11 @@ The Admin UI SHALL provide a "Create Team" page with a form for slug, name, and 
 ---
 
 ### Requirement: Team owner can update team details via the UI
-The Admin UI SHALL provide a "Team Settings" page with a form pre-filled with the team's current name and email address. The slug SHALL be displayed as a read-only field (visible but not editable). The form SHALL send partial updates (only changed fields) with the team's current version for optimistic concurrency. On successful update, the UI SHALL reflect the updated details in the team switcher and sidebar.
+The Admin UI SHALL provide a "Team Settings" page with a form pre-filled with the team's current name and email address. There is no slug field. The form SHALL send partial updates (only changed fields) with the team's current version for optimistic concurrency. On successful update, the UI SHALL reflect the updated details in the team switcher and sidebar.
 
 #### Scenario: Successfully update team name
-- **WHEN** a team owner navigates to the settings page for team "acme", changes the name to "Acme Corp", and submits
-- **THEN** the team name is updated, the team switcher reflects "Acme Corp", and a success message is shown
-
-#### Scenario: Slug is displayed as read-only
-- **WHEN** a team owner navigates to the settings page for team "acme"
-- **THEN** the slug field displays "acme" and is not editable
+- **WHEN** a team owner navigates to the settings page for a team, changes the name, and submits
+- **THEN** the team name is updated, the team switcher reflects the new name, and a success message is shown
 
 #### Scenario: Display concurrency conflict error
 - **WHEN** a team owner submits an update but the team's version in the database no longer matches the version that was loaded with the form
@@ -48,11 +44,11 @@ The Admin UI SHALL provide a "Team Settings" page with a form pre-filled with th
 ---
 
 ### Requirement: Team settings page is accessible from sidebar navigation
-The Admin UI sidebar SHALL include a "Settings" navigation entry under each team that links to the team's settings page.
+The Admin UI sidebar SHALL include a "Settings" navigation entry under each team that links to the team's settings page using the team's UUID.
 
 #### Scenario: Navigate to team settings from sidebar
-- **WHEN** a team owner clicks the "Settings" entry in the sidebar for team "acme"
-- **THEN** the admin is navigated to `/teams/acme/settings`
+- **WHEN** a team owner clicks the "Settings" entry in the sidebar
+- **THEN** the admin is navigated to `/teams/{teamId}/settings`
 
 ---
 
@@ -60,7 +56,7 @@ The Admin UI sidebar SHALL include a "Settings" navigation entry under each team
 The Admin UI SHALL navigate to the dashboard root (`/`) when the user selects a different team in the team switcher. This ensures the main content area does not show stale content from a previously selected team.
 
 #### Scenario: Switch team resets content
-- **WHEN** a user is viewing `/teams/acme/settings` and switches to team "beta" using the team switcher
+- **WHEN** a user is viewing a team settings page and switches to a different team using the team switcher
 - **THEN** the user is navigated to `/` and the main content area is empty
 
 #### Scenario: First team selection does not navigate

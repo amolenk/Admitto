@@ -7,9 +7,9 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.GetTicketedEvents;
 
 internal sealed class GetTicketedEventsFixture
 {
-    public const string TeamSlug = "acme";
+    public Guid TeamId { get; private set; }
 
-    public static string Route => $"/admin/teams/{TeamSlug}/events";
+    public string Route => $"/admin/teams/{TeamId}/events";
 
     private GetTicketedEventsFixture() { }
 
@@ -18,14 +18,12 @@ internal sealed class GetTicketedEventsFixture
     public async ValueTask SetupAsync(EndToEndTestEnvironment environment)
     {
         var team = new TeamBuilder()
-            .WithSlug(TeamSlug)
             .Build();
+        TeamId = team.Id.Value;
 
         var active = TicketedEvent.Create(
             TicketedEventId.New(),
             team.Id,
-            Slug.From(TeamSlug),
-            Slug.From("conf-2026"),
             DisplayName.From("Conf 2026"),
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),
@@ -36,8 +34,6 @@ internal sealed class GetTicketedEventsFixture
         var cancelled = TicketedEvent.Create(
             TicketedEventId.New(),
             team.Id,
-            Slug.From(TeamSlug),
-            Slug.From("meetup-q1"),
             DisplayName.From("Meetup Q1"),
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),
@@ -49,8 +45,6 @@ internal sealed class GetTicketedEventsFixture
         var archived = TicketedEvent.Create(
             TicketedEventId.New(),
             team.Id,
-            Slug.From(TeamSlug),
-            Slug.From("conf-2025"),
             DisplayName.From("Conf 2025"),
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),

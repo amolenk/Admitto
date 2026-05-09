@@ -60,7 +60,7 @@ public sealed class PublicTicketTypesTests(TestContext testContext) : EndToEndTe
 
         using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
         var response = await client.GetAsync(
-            $"/api/teams/{PublicTicketTypesFixture.TeamSlug}/events/nonexistent-event/ticket-types",
+            $"/api/teams/{fixture.TeamId.Value}/events/{Guid.NewGuid()}/ticket-types",
             testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);

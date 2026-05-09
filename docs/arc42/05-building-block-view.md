@@ -112,7 +112,7 @@ Manages teams, team membership and roles, and acts as the **gatekeeper** for tic
 
 ### Registrations module
 
-Owns the authoritative `TicketedEvent` aggregate (slug, name, dates, IANA `TimeZone`, lifecycle status, and consolidated policy value objects) as well as attendee registration flows (both admin-initiated and public self-service) and ticket type configuration (the `TicketCatalog` aggregate). The `Registration` aggregate carries `FirstName`/`LastName`, a lifecycle `Status` (`Registered`/`Cancelled`), and a `HasReconfirmed`/`ReconfirmedAt?` pair — exposed to other modules via `IRegistrationsFacade.QueryRegistrationsAsync`.
+Owns the authoritative `TicketedEvent` aggregate (name, dates, IANA `TimeZone`, lifecycle status, and consolidated policy value objects) as well as attendee registration flows (both admin-initiated and public self-service) and ticket type configuration (the `TicketCatalog` aggregate). The `Registration` aggregate carries `FirstName`/`LastName`, a lifecycle `Status` (`Registered`/`Cancelled`), and a `HasReconfirmed`/`ReconfirmedAt?` pair — exposed to other modules via `IRegistrationsFacade.QueryRegistrationsAsync`.
 
 Publishes the `TicketedEventCreated` / `TicketedEventCancelled` / `TicketedEventArchived` lifecycle integration events plus `TicketedEventReconfirmPolicyChanged` and `TicketedEventTimeZoneChanged`, both consumed by the Email module to drive the per-event reconfirm Quartz trigger.
 

@@ -17,7 +17,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
         await fixture.SetupAsync(Environment);
 
         var response = await Environment.ApiClient.PostAsJsonAsync(
-            $"/admin/teams/{ApiKeyAuthFixture.TeamSlug}/api-keys",
+            $"/admin/teams/{fixture.TeamId}/api-keys",
             new { Name = "My Key" },
             cancellationToken: testContext.CancellationToken);
 
@@ -39,7 +39,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
         await fixture.SetupAsync(Environment);
 
         var response = await Environment.ApiClient.PostAsJsonAsync(
-            $"/admin/teams/{ApiKeyAuthFixture.TeamSlug}/api-keys",
+            $"/admin/teams/{fixture.TeamId}/api-keys",
             new { Name = "" },
             cancellationToken: testContext.CancellationToken);
 
@@ -54,7 +54,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
         await fixture.SetupAsync(Environment);
 
         var response = await Environment.ApiClient.PostAsJsonAsync(
-            $"/admin/teams/{ApiKeyAuthFixture.TeamSlug}/api-keys",
+            $"/admin/teams/{fixture.TeamId}/api-keys",
             new { Name = new string('x', 101) },
             cancellationToken: testContext.CancellationToken);
 
@@ -69,7 +69,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
         await fixture.SetupAsync(Environment);
 
         var response = await Environment.ApiClient.GetAsync(
-            $"/admin/teams/{ApiKeyAuthFixture.TeamSlug}/api-keys",
+            $"/admin/teams/{fixture.TeamId}/api-keys",
             testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -90,7 +90,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
         await fixture.SetupAsync(Environment);
 
         var response = await Environment.ApiClient.DeleteAsync(
-            $"/admin/teams/{ApiKeyAuthFixture.TeamSlug}/api-keys/{fixture.ApiKeyId}",
+            $"/admin/teams/{fixture.TeamId}/api-keys/{fixture.ApiKeyId}",
             testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
@@ -104,7 +104,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
         await fixture.SetupAsync(Environment);
 
         var response = await Environment.ApiClient.DeleteAsync(
-            $"/admin/teams/{ApiKeyAuthFixture.TeamSlug}/api-keys/{fixture.ApiKeyId}",
+            $"/admin/teams/{fixture.TeamId}/api-keys/{fixture.ApiKeyId}",
             testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.Conflict);
@@ -119,7 +119,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
 
         // Try to revoke team-b's key via team-a's route
         var response = await Environment.ApiClient.DeleteAsync(
-            $"/admin/teams/{ApiKeyAuthFixture.TeamSlug}/api-keys/{fixture.OtherTeamApiKeyId}",
+            $"/admin/teams/{fixture.TeamId}/api-keys/{fixture.OtherTeamApiKeyId}",
             testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -135,7 +135,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
         // Use a bare HttpClient (no X-Api-Key header)
         using var bareClient = new HttpClient { BaseAddress = Environment.ApiClient.BaseAddress };
         var response = await bareClient.PostAsJsonAsync(
-            $"/api/teams/{ApiKeyAuthFixture.TeamSlug}/events/{ApiKeyAuthFixture.EventSlug}/otp/request",
+            $"/api/teams/{fixture.TeamId}/events/{fixture.EventId}/otp/request",
             new { Email = "test@example.com" },
             cancellationToken: testContext.CancellationToken);
 
@@ -151,7 +151,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
 
         using var client = Environment.CreatePublicApiClient("bogus-key-that-does-not-exist");
         var response = await client.PostAsJsonAsync(
-            $"/api/teams/{ApiKeyAuthFixture.TeamSlug}/events/{ApiKeyAuthFixture.EventSlug}/otp/request",
+            $"/api/teams/{fixture.TeamId}/events/{fixture.EventId}/otp/request",
             new { Email = "test@example.com" },
             cancellationToken: testContext.CancellationToken);
 
@@ -167,7 +167,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
 
         using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
         var response = await client.PostAsJsonAsync(
-            $"/api/teams/{ApiKeyAuthFixture.TeamSlug}/events/{ApiKeyAuthFixture.EventSlug}/otp/request",
+            $"/api/teams/{fixture.TeamId}/events/{fixture.EventId}/otp/request",
             new { Email = "test@example.com" },
             cancellationToken: testContext.CancellationToken);
 
@@ -184,7 +184,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
         // Use team-a's key against team-b's event route
         using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
         var response = await client.PostAsJsonAsync(
-            $"/api/teams/{ApiKeyAuthFixture.OtherTeamSlug}/events/{ApiKeyAuthFixture.OtherEventSlug}/otp/request",
+            $"/api/teams/{fixture.OtherTeamId}/events/{fixture.OtherEventId}/otp/request",
             new { Email = "test@example.com" },
             cancellationToken: testContext.CancellationToken);
 
@@ -200,7 +200,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
 
         using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
         var response = await client.PostAsJsonAsync(
-            $"/api/teams/{ApiKeyAuthFixture.TeamSlug}/events/{ApiKeyAuthFixture.EventSlug}/otp/request",
+            $"/api/teams/{fixture.TeamId}/events/{fixture.EventId}/otp/request",
             new { Email = "test@example.com" },
             cancellationToken: testContext.CancellationToken);
 

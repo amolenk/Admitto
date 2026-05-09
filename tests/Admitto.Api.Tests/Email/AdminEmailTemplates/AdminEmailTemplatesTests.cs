@@ -28,7 +28,7 @@ public sealed class AdminEmailTemplatesTests(TestContext testContext) : EndToEnd
         };
 
         var response = await Environment.ApiClient.PostAsJsonAsync(
-            AdminEmailTemplatesFixture.TeamTemplatesRoute,
+            fixture.TeamTemplatesRoute,
             request,
             cancellationToken: testContext.CancellationToken);
 
@@ -57,7 +57,7 @@ public sealed class AdminEmailTemplatesTests(TestContext testContext) : EndToEnd
         };
 
         var response = await Environment.ApiClient.PostAsJsonAsync(
-            AdminEmailTemplatesFixture.EventTemplatesRoute,
+            fixture.EventTemplatesRoute,
             request,
             cancellationToken: testContext.CancellationToken);
 
@@ -74,7 +74,7 @@ public sealed class AdminEmailTemplatesTests(TestContext testContext) : EndToEnd
         var (id, _) = await fixture.SetupTeamTemplateAsync(Environment);
 
         var response = await Environment.ApiClient.GetAsync(
-            AdminEmailTemplatesFixture.TeamTemplateRoute(id),
+            fixture.TeamTemplateRoute(id),
             testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -96,7 +96,7 @@ public sealed class AdminEmailTemplatesTests(TestContext testContext) : EndToEnd
         var (_, _, eventTemplateId, _) = await fixture.SetupBothTemplatesAsync(Environment);
 
         var response = await Environment.ApiClient.GetAsync(
-            AdminEmailTemplatesFixture.EventTemplateRoute(eventTemplateId),
+            fixture.EventTemplateRoute(eventTemplateId),
             testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -124,14 +124,14 @@ public sealed class AdminEmailTemplatesTests(TestContext testContext) : EndToEnd
         };
 
         var response = await Environment.ApiClient.PutAsJsonAsync(
-            AdminEmailTemplatesFixture.TeamTemplateRoute(id),
+            fixture.TeamTemplateRoute(id),
             request,
             cancellationToken: testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
 
         var getResponse = await Environment.ApiClient.GetAsync(
-            AdminEmailTemplatesFixture.TeamTemplateRoute(id),
+            fixture.TeamTemplateRoute(id),
             testContext.CancellationToken);
         var body = await getResponse.Content.ReadFromJsonAsync<JsonElement>(
             cancellationToken: testContext.CancellationToken);
@@ -148,14 +148,14 @@ public sealed class AdminEmailTemplatesTests(TestContext testContext) : EndToEnd
         var (id, version) = await fixture.SetupTeamTemplateAsync(Environment);
 
         var response = await Environment.ApiClient.DeleteAsync(
-            $"{AdminEmailTemplatesFixture.TeamTemplateRoute(id)}?version={version}",
+            $"{fixture.TeamTemplateRoute(id)}?version={version}",
             testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
 
         // After deletion the list should show the built-in as virtual (isCustomised: false)
         var listResponse = await Environment.ApiClient.GetAsync(
-            AdminEmailTemplatesFixture.TeamTemplatesRoute,
+            fixture.TeamTemplatesRoute,
             testContext.CancellationToken);
         listResponse.StatusCode.ShouldBe(HttpStatusCode.OK);
 
@@ -177,7 +177,7 @@ public sealed class AdminEmailTemplatesTests(TestContext testContext) : EndToEnd
         var (_, _, eventTemplateId, eventVersion) = await fixture.SetupBothTemplatesAsync(Environment);
 
         var response = await Environment.ApiClient.DeleteAsync(
-            $"{AdminEmailTemplatesFixture.EventTemplateRoute(eventTemplateId)}?version={eventVersion}",
+            $"{fixture.EventTemplateRoute(eventTemplateId)}?version={eventVersion}",
             testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
@@ -201,7 +201,7 @@ public sealed class AdminEmailTemplatesTests(TestContext testContext) : EndToEnd
         };
 
         var response = await Environment.BobApiClient.PostAsJsonAsync(
-            AdminEmailTemplatesFixture.TeamTemplatesRoute,
+            fixture.TeamTemplatesRoute,
             request,
             cancellationToken: testContext.CancellationToken);
 
@@ -226,7 +226,7 @@ public sealed class AdminEmailTemplatesTests(TestContext testContext) : EndToEnd
         };
 
         var response = await Environment.ApiClient.PutAsJsonAsync(
-            AdminEmailTemplatesFixture.TeamTemplateRoute(id),
+            fixture.TeamTemplateRoute(id),
             request,
             cancellationToken: testContext.CancellationToken);
 
@@ -243,7 +243,7 @@ public sealed class AdminEmailTemplatesTests(TestContext testContext) : EndToEnd
         await fixture.SetupEmptyAsync(Environment);
 
         var response = await Environment.ApiClient.GetAsync(
-            AdminEmailTemplatesFixture.TeamTemplatesRoute,
+            fixture.TeamTemplatesRoute,
             testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK);

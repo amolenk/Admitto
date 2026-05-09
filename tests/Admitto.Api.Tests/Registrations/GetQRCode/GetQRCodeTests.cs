@@ -16,7 +16,7 @@ public sealed class GetQRCodeTests(TestContext testContext) : EndToEndTestBase
         using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
         var signature = fixture.ValidSignature;
         var response = await client.GetAsync(
-            GetQRCodeFixture.Route(fixture.RegistrationId, signature),
+            fixture.Route(fixture.RegistrationId, signature),
             testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -41,7 +41,7 @@ public sealed class GetQRCodeTests(TestContext testContext) : EndToEndTestBase
         using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
         var bogus = GetQRCodeFixture.Sign(Guid.NewGuid(), fixture.SigningKeyBase64);
         var response = await client.GetAsync(
-            GetQRCodeFixture.Route(fixture.RegistrationId, bogus),
+            fixture.Route(fixture.RegistrationId, bogus),
             testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
@@ -55,25 +55,25 @@ public sealed class GetQRCodeTests(TestContext testContext) : EndToEndTestBase
 
         using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
         var response = await client.GetAsync(
-            GetQRCodeFixture.Route(fixture.RegistrationId, signature: null),
+            fixture.Route(fixture.RegistrationId, signature: null),
             testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
     }
 
     [TestMethod]
-    public async Task SC004a_UnknownTeamSlug_Returns404()
+    public async Task SC004a_UnknownTeamSlug_Returns403()
     {
         var fixture = GetQRCodeFixture.HappyFlow();
         await fixture.SetupAsync(Environment);
 
         using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
         var response = await client.GetAsync(
-            GetQRCodeFixture.Route(
-                fixture.RegistrationId, fixture.ValidSignature, teamSlug: "ghost-team"),
+            fixture.Route(
+                fixture.RegistrationId, fixture.ValidSignature, teamId: Guid.NewGuid()),
             testContext.CancellationToken);
 
-        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+        response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
     }
 
     [TestMethod]
@@ -84,8 +84,8 @@ public sealed class GetQRCodeTests(TestContext testContext) : EndToEndTestBase
 
         using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
         var response = await client.GetAsync(
-            GetQRCodeFixture.Route(
-                fixture.RegistrationId, fixture.ValidSignature, eventSlug: "ghost-event"),
+            fixture.Route(
+                fixture.RegistrationId, fixture.ValidSignature, eventId: Guid.NewGuid()),
             testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -101,7 +101,7 @@ public sealed class GetQRCodeTests(TestContext testContext) : EndToEndTestBase
         var unknownId = Guid.NewGuid();
         var signature = GetQRCodeFixture.Sign(unknownId, fixture.SigningKeyBase64);
         var response = await client.GetAsync(
-            GetQRCodeFixture.Route(unknownId, signature),
+            fixture.Route(unknownId, signature),
             testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -114,11 +114,10 @@ public sealed class GetQRCodeTests(TestContext testContext) : EndToEndTestBase
         await fixture.SetupAsync(Environment);
 
         using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
-        // Sign the registration id under the OTHER event's key, then use the primary event's path.
         var crossEventSignature = GetQRCodeFixture.Sign(
             fixture.RegistrationId, fixture.OtherEventSigningKeyBase64);
         var response = await client.GetAsync(
-            GetQRCodeFixture.Route(fixture.RegistrationId, crossEventSignature),
+            fixture.Route(fixture.RegistrationId, crossEventSignature),
             testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
@@ -132,7 +131,7 @@ public sealed class GetQRCodeTests(TestContext testContext) : EndToEndTestBase
 
         using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
         var response = await client.GetAsync(
-            GetQRCodeFixture.Route(fixture.RegistrationId, fixture.ValidSignature),
+            fixture.Route(fixture.RegistrationId, fixture.ValidSignature),
             testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK);

@@ -17,7 +17,7 @@ public sealed class BulkEmailAuthorizationTests(TestContext testContext) : EndTo
         await fixture.SetupAsync(Environment);
 
         var preview = await Environment.BobApiClient.PostAsJsonAsync(
-            BulkEmailFixture.PreviewRoute,
+            fixture.PreviewRoute,
             new
             {
                 Source = new
@@ -32,7 +32,7 @@ public sealed class BulkEmailAuthorizationTests(TestContext testContext) : EndTo
         preview.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
 
         var create = await Environment.BobApiClient.PostAsJsonAsync(
-            BulkEmailFixture.CreateRoute,
+            fixture.CreateRoute,
             new
             {
                 EmailType = BulkEmailFixture.EmailType,
@@ -48,16 +48,16 @@ public sealed class BulkEmailAuthorizationTests(TestContext testContext) : EndTo
         create.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
 
         var list = await Environment.BobApiClient.GetAsync(
-            BulkEmailFixture.ListRoute, testContext.CancellationToken);
+            fixture.ListRoute, testContext.CancellationToken);
         list.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
 
         var arbitraryId = Guid.NewGuid();
         var detail = await Environment.BobApiClient.GetAsync(
-            BulkEmailFixture.DetailRoute(arbitraryId), testContext.CancellationToken);
+            fixture.DetailRoute(arbitraryId), testContext.CancellationToken);
         detail.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
 
         var cancel = await Environment.BobApiClient.PostAsync(
-            BulkEmailFixture.CancelRoute(arbitraryId),
+            fixture.CancelRoute(arbitraryId),
             content: null,
             cancellationToken: testContext.CancellationToken);
         cancel.StatusCode.ShouldBe(HttpStatusCode.Forbidden);

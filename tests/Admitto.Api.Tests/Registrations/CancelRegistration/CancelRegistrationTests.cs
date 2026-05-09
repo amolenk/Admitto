@@ -75,7 +75,7 @@ public sealed class CancelRegistrationTests(TestContext testContext) : EndToEndT
         var fixture = CancelRegistrationFixture.ActiveRegistration();
         await fixture.SetupAsync(Environment);
 
-        var fakeRoute = $"/admin/teams/{CancelRegistrationFixture.TeamSlug}/events/{CancelRegistrationFixture.EventSlug}/registrations/{Guid.NewGuid()}/cancel";
+        var fakeRoute = $"/admin/teams/{fixture.TeamId}/events/{fixture.EventId}/registrations/{Guid.NewGuid()}/cancel";
         var request = new { Reason = "AttendeeRequest" };
 
         var response = await Environment.ApiClient.PostAsJsonAsync(

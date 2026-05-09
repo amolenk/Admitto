@@ -28,7 +28,7 @@ public sealed class BulkEmailListAndDetailTests(TestContext testContext) : EndTo
         await fixture.SetupAsync(Environment);
 
         var createResponse = await Environment.ApiClient.PostAsJsonAsync(
-            BulkEmailFixture.CreateRoute,
+            fixture.CreateRoute,
             new
             {
                 EmailType = BulkEmailFixture.EmailType,
@@ -43,7 +43,7 @@ public sealed class BulkEmailListAndDetailTests(TestContext testContext) : EndTo
         // Wait for fan-out to complete by watching MailDev.
         await Environment.PollAsync(2, TimeSpan.FromSeconds(45), testContext.CancellationToken);
 
-        var detail = await PollUntilTerminalAsync(bulkJobId);
+        var detail = await PollUntilTerminalAsync(fixture, bulkJobId);
         detail.GetProperty("status").GetString().ShouldBe("completed");
         detail.GetProperty("recipientCount").GetInt32().ShouldBe(2);
         detail.GetProperty("sentCount").GetInt32().ShouldBe(2);
@@ -56,7 +56,7 @@ public sealed class BulkEmailListAndDetailTests(TestContext testContext) : EndTo
 
         // List endpoint must include the job we just created.
         var listResponse = await Environment.ApiClient.GetAsync(
-            BulkEmailFixture.ListRoute, testContext.CancellationToken);
+            fixture.ListRoute, testContext.CancellationToken);
         listResponse.StatusCode.ShouldBe(HttpStatusCode.OK);
 
         var listBody = await listResponse.Content.ReadFromJsonAsync<JsonElement>(
@@ -67,14 +67,14 @@ public sealed class BulkEmailListAndDetailTests(TestContext testContext) : EndTo
         ids.ShouldContain(bulkJobId);
     }
 
-    private async Task<JsonElement> PollUntilTerminalAsync(Guid bulkJobId)
+    private async Task<JsonElement> PollUntilTerminalAsync(BulkEmailFixture fixture, Guid bulkJobId)
     {
         var deadline = DateTimeOffset.UtcNow.AddSeconds(60);
         JsonElement last = default;
         while (DateTimeOffset.UtcNow < deadline)
         {
             var response = await Environment.ApiClient.GetAsync(
-                BulkEmailFixture.DetailRoute(bulkJobId),
+                fixture.DetailRoute(bulkJobId),
                 testContext.CancellationToken);
             if (response.IsSuccessStatusCode)
             {

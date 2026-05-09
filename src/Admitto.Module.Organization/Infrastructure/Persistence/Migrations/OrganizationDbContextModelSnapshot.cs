@@ -136,12 +136,6 @@ namespace Amolenk.Admitto.Module.Organization.Infrastructure.Persistence.Migrati
                         .HasDefaultValue(0)
                         .HasColumnName("pending_event_count");
 
-                    b.Property<string>("Slug")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)")
-                        .HasColumnName("slug");
-
                     b.Property<uint>("Version")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
@@ -149,9 +143,6 @@ namespace Amolenk.Admitto.Module.Organization.Infrastructure.Persistence.Migrati
                         .HasColumnName("xmin");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("Slug")
-                        .IsUnique();
 
                     b.ToTable("teams", "organization");
                 });
@@ -265,12 +256,6 @@ namespace Amolenk.Admitto.Module.Organization.Infrastructure.Persistence.Migrati
                             b1.Property<DateTimeOffset>("RequestedAt")
                                 .HasColumnType("timestamp with time zone")
                                 .HasColumnName("requested_at");
-
-                            b1.Property<string>("RequestedSlug")
-                                .IsRequired()
-                                .HasMaxLength(64)
-                                .HasColumnType("character varying(64)")
-                                .HasColumnName("requested_slug");
 
                             b1.Property<Guid>("RequesterId")
                                 .HasColumnType("uuid")

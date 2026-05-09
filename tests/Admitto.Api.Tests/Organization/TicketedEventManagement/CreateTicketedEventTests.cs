@@ -32,7 +32,7 @@ public sealed class CreateTicketedEventTests(TestContext testContext) : EndToEnd
 
         // Act - submit creation request
         var postResponse = await Environment.ApiClient.PostAsJsonAsync(
-            CreateTicketedEventFixture.EventCreationsRoute,
+            fixture.EventCreationsRoute,
             ValidRequest,
             cancellationToken: testContext.CancellationToken);
 
@@ -51,7 +51,7 @@ public sealed class CreateTicketedEventTests(TestContext testContext) : EndToEnd
             await Task.Delay(500, testContext.CancellationToken);
 
             var getResponse = await Environment.ApiClient.GetAsync(
-                CreateTicketedEventFixture.EventCreationStatusRoute(creationRequestId),
+                fixture.EventCreationStatusRoute(creationRequestId),
                 testContext.CancellationToken);
 
             getResponse.StatusCode.ShouldBe(HttpStatusCode.OK);

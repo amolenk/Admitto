@@ -26,8 +26,6 @@ internal sealed class UpdateTicketedEventDetailsFixture
             var ticketedEvent = TicketedEvent.Create(
                 EventId,
                 TeamId,
-                Slug.From("test-team"),
-                Slug.From("update-event"),
                 DisplayName.From("Original Name"),
                 AbsoluteUrl.From("https://example.com"),
                 AbsoluteUrl.From("https://tickets.example.com"),

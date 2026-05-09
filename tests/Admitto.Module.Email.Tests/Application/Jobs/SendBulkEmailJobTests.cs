@@ -349,7 +349,7 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
     {
         var resolver = Substitute.For<IBulkEmailRecipientResolver>();
         resolver
-            .When(r => r.ResolveAsync(Arg.Any<TicketedEventId>(), Arg.Any<BulkEmailJobSource>(), Arg.Any<CancellationToken>()))
+            .WhenForAnyArgs(r => r.ResolveAsync(TicketedEventId.New(), default, default))
             .Do(_ => throw new InvalidOperationException("Resolver should not be called when resuming an in-flight job."));
         return resolver;
     }

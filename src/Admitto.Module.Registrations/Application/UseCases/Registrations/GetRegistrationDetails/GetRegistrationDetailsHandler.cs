@@ -1,6 +1,7 @@
 using Amolenk.Admitto.Module.Registrations.Application.Persistence;
 using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Module.Shared.Application.Messaging;
+using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 
 namespace Amolenk.Admitto.Module.Registrations.Application.UseCases.Registrations.GetRegistrationDetails;
@@ -13,7 +14,7 @@ internal sealed class GetRegistrationDetailsHandler(IRegistrationsWriteStore wri
         CancellationToken cancellationToken)
     {
         var registration = await writeStore.Registrations
-            .Where(r => r.Id == query.RegistrationId && r.EventId == query.EventId)
+            .Where(r => r.Id == query.RegistrationId && r.EventId == query.EventId && r.TeamId == TeamId.From(query.TeamId))
             .AsNoTracking()
             .FirstOrDefaultAsync(cancellationToken);
 

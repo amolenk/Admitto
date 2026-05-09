@@ -25,8 +25,6 @@ public sealed class GetTicketedEventDetailsTests(TestContext testContext) : Aspi
             var te = TicketedEvent.Create(
                 eventId,
                 teamId,
-                Slug.From("test-team"),
-                Slug.From("conf-2026"),
                 DisplayName.From("Conf 2026"),
                 AbsoluteUrl.From("https://example.com"),
                 AbsoluteUrl.From("https://tickets.example.com"),
@@ -52,7 +50,6 @@ public sealed class GetTicketedEventDetailsTests(TestContext testContext) : Aspi
         result.ShouldNotBeNull();
         result.Id.ShouldBe(eventId.Value);
         result.TeamId.ShouldBe(teamId.Value);
-        result.Slug.ShouldBe("conf-2026");
         result.Status.ShouldBe(EventLifecycleStatus.Active);
 
         result.RegistrationPolicy.ShouldNotBeNull();
@@ -80,8 +77,6 @@ public sealed class GetTicketedEventDetailsTests(TestContext testContext) : Aspi
             var te = TicketedEvent.Create(
                 eventId,
                 teamId,
-                Slug.From("test-team"),
-                Slug.From("bare-event"),
                 DisplayName.From("Bare Event"),
                 AbsoluteUrl.From("https://example.com"),
                 AbsoluteUrl.From("https://tickets.example.com"),

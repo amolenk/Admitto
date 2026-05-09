@@ -22,7 +22,7 @@ public sealed class ActivityLogTests(TestContext testContext) : EndToEndTestBase
         await fixture.SetupAsync(Environment);
 
         var registerResponse = await Environment.ApiClient.PostAsJsonAsync(
-            ActivityLogFixture.RegisterRoute,
+            fixture.RegisterRoute,
             new { FirstName = "Alice", LastName = "Doe", Email = "alice@example.com", TicketTypeSlugs = new[] { ActivityLogFixture.TicketTypeSlug } },
             cancellationToken: testContext.CancellationToken);
 
@@ -31,7 +31,7 @@ public sealed class ActivityLogTests(TestContext testContext) : EndToEndTestBase
             cancellationToken: testContext.CancellationToken)).GetProperty("registrationId").GetGuid();
 
         var detailResponse = await Environment.ApiClient.GetAsync(
-            ActivityLogFixture.RegistrationDetailRoute(registrationId),
+            fixture.RegistrationDetailRoute(registrationId),
             testContext.CancellationToken);
 
         detailResponse.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -51,7 +51,7 @@ public sealed class ActivityLogTests(TestContext testContext) : EndToEndTestBase
         await fixture.SetupAsync(Environment);
 
         var registerResponse = await Environment.ApiClient.PostAsJsonAsync(
-            ActivityLogFixture.RegisterRoute,
+            fixture.RegisterRoute,
             new { FirstName = "Alice", LastName = "Doe", Email = "alice@example.com", TicketTypeSlugs = new[] { ActivityLogFixture.TicketTypeSlug } },
             cancellationToken: testContext.CancellationToken);
 
@@ -60,14 +60,14 @@ public sealed class ActivityLogTests(TestContext testContext) : EndToEndTestBase
             cancellationToken: testContext.CancellationToken)).GetProperty("registrationId").GetGuid();
 
         var cancelResponse = await Environment.ApiClient.PostAsJsonAsync(
-            ActivityLogFixture.CancelRoute(registrationId),
+            fixture.CancelRoute(registrationId),
             new { Reason = "AttendeeRequest" },
             cancellationToken: testContext.CancellationToken);
 
         cancelResponse.StatusCode.ShouldBe(HttpStatusCode.NoContent);
 
         var detailResponse = await Environment.ApiClient.GetAsync(
-            ActivityLogFixture.RegistrationDetailRoute(registrationId),
+            fixture.RegistrationDetailRoute(registrationId),
             testContext.CancellationToken);
 
         detailResponse.StatusCode.ShouldBe(HttpStatusCode.OK);

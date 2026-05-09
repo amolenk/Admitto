@@ -5,17 +5,13 @@ Admins and team owners manage teams — the foundational organizational unit in 
 ## Requirements
 
 ### Requirement: Admin can create a team
-The system SHALL allow admins to create a team with a slug, name, and email address.
-Team slugs SHALL be globally unique. The slug, name, and email SHALL conform to their
-respective domain value object constraints.
+The system SHALL allow admins to create a team with a name and email address.
+The name and email SHALL conform to their respective domain value object constraints.
+A `TeamId` (UUID) is assigned by the system on creation.
 
 #### Scenario: Successfully create a team
-- **WHEN** an authenticated admin creates a team with slug "acme", name "Acme Events", and email "info@acme.org"
-- **THEN** the team is created with the provided details and is in an active state
-
-#### Scenario: Reject duplicate slug on create
-- **WHEN** a team with slug "acme" already exists and an admin creates another team with slug "acme"
-- **THEN** the request is rejected with a duplicate slug error and no new team is created
+- **WHEN** an authenticated admin creates a team with name "Acme Events" and email "info@acme.org"
+- **THEN** the team is created with the provided details, is in an active state, and a `TeamId` UUID is returned
 
 #### Scenario: Reject invalid input on create
 - **WHEN** an admin creates a team with an empty name
@@ -25,14 +21,14 @@ respective domain value object constraints.
 
 ### Requirement: Team member can view team details
 The system SHALL allow team members with Crew role or above to retrieve a team's
-details by slug.
+details by team ID.
 
-#### Scenario: View team details by slug
-- **WHEN** a user with Crew role requests the details of team "acme"
-- **THEN** the team's slug, name, email address, and version are returned
+#### Scenario: View team details by ID
+- **WHEN** a user with Crew role requests the details of team with ID "11111111-0000-0000-0000-000000000001"
+- **THEN** the team's ID, name, email address, and version are returned
 
 #### Scenario: Reject unauthorized team view
-- **WHEN** a user who is not a member of team "acme" requests its details
+- **WHEN** a user who is not a member of the requested team requests its details
 - **THEN** the request is rejected as unauthorized
 
 ---
@@ -63,13 +59,12 @@ Archived teams SHALL be excluded.
 
 ### Requirement: Team owner can update team details
 The system SHALL allow team owners to update a team's name and/or email
-address as a partial update. The system SHALL NOT allow updating a team's slug —
-slugs are immutable after creation. The system SHALL use optimistic concurrency
+address as a partial update. The system SHALL use optimistic concurrency
 (expected version) to prevent lost updates.
 
 #### Scenario: Update team details with partial fields
-- **WHEN** an owner of team "acme" at version 1 updates the name to "Acme Corp" with expected version 1
-- **THEN** the team name is changed to "Acme Corp", slug and email remain unchanged, and the version is incremented
+- **WHEN** an owner of team "Acme Events" at version 1 updates the name to "Acme Corp" with expected version 1
+- **THEN** the team name is changed to "Acme Corp" and the version is incremented
 
 #### Scenario: Concurrent update conflict
 - **WHEN** an owner of team "acme" at version 2 submits an update with expected version 1
@@ -147,10 +142,10 @@ through the `Team` aggregate and use its concurrency token.
 ---
 
 ### Requirement: Creation request increments PendingEventCount and records a request entity
-The system SHALL, when Organization accepts an event creation request from an organizer, increment `PendingEventCount` and persist a `TeamEventCreationRequest` entity under the `Team` aggregate capturing the `CreationRequestId`, the requested slug, the requester identity, and a `RequestedAt` timestamp. The entity SHALL start in state `Pending`. Both the counter update and the request persistence SHALL occur in the same unit of work as the `TicketedEventCreationRequested` integration event being outboxed.
+The system SHALL, when Organization accepts an event creation request from an organizer, increment `PendingEventCount` and persist a `TeamEventCreationRequest` entity under the `Team` aggregate capturing the `CreationRequestId`, the requester identity, and a `RequestedAt` timestamp. The entity SHALL start in state `Pending`. Both the counter update and the request persistence SHALL occur in the same unit of work as the `TicketedEventCreationRequested` integration event being outboxed.
 
 #### Scenario: Accepted creation request stores a Pending entity
-- **WHEN** an organizer of team "acme" posts a creation request for slug "conf-2026"
+- **WHEN** an organizer of team "Acme Events" posts a creation request for "Conf 2026"
 - **THEN** a `TeamEventCreationRequest` is stored in state `Pending` with the new `CreationRequestId`, `PendingEventCount` increases by one, and a `TicketedEventCreationRequested` event is outboxed in the same unit of work
 
 ---
@@ -165,9 +160,9 @@ keying off the `CreationRequestId` (for creation responses) or the
 
 The specific reactions:
 
-- **`TicketedEventCreated`** (carrying `CreationRequestId`, `TicketedEventId`, slug):
+- **`TicketedEventCreated`** (carrying `CreationRequestId`, `TicketedEventId`):
   mark the matching `TeamEventCreationRequest` as `Created` (storing the
-  `TicketedEventId` and slug), decrement `PendingEventCount` by one, and
+  `TicketedEventId`), decrement `PendingEventCount` by one, and
   increment `ActiveEventCount` by one.
 - **`TicketedEventCreationRejected`** (carrying `CreationRequestId`, reason):
   mark the matching `TeamEventCreationRequest` as `Rejected` (storing the
@@ -183,8 +178,8 @@ The specific reactions:
 - **THEN** the matching `TeamEventCreationRequest` is `Created`, `PendingEventCount` becomes 0, and `ActiveEventCount` becomes 1
 
 #### Scenario: Rejected creation rolls back pending
-- **WHEN** Organization processes `TicketedEventCreationRejected` for `CreationRequestId = R2` on team "acme" with `PendingEventCount = 1` with reason "duplicate_slug"
-- **THEN** the matching `TeamEventCreationRequest` is `Rejected` with reason `duplicate_slug` and `PendingEventCount` becomes 0
+- **WHEN** Organization processes `TicketedEventCreationRejected` for `CreationRequestId = R2` on team "Acme Events" with `PendingEventCount = 1`
+- **THEN** the matching `TeamEventCreationRequest` is `Rejected` and `PendingEventCount` becomes 0
 
 #### Scenario: Cancellation moves counter from active to cancelled
 - **WHEN** Organization processes `TicketedEventCancelled` for a team whose event was Active

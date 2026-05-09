@@ -33,7 +33,7 @@ public sealed class SendRegistrationEmailTests(TestContext testContext) : EndToE
         };
 
         var response = await Environment.ApiClient.PostAsJsonAsync(
-            SendRegistrationEmailFixture.RegisterRoute,
+            fixture.RegisterRoute,
             request,
             cancellationToken: testContext.CancellationToken);
 
@@ -73,7 +73,7 @@ public sealed class SendRegistrationEmailTests(TestContext testContext) : EndToE
 
         // Register and wait for the first email.
         var response = await Environment.ApiClient.PostAsJsonAsync(
-            SendRegistrationEmailFixture.RegisterRoute,
+            fixture.RegisterRoute,
             request,
             cancellationToken: testContext.CancellationToken);
 

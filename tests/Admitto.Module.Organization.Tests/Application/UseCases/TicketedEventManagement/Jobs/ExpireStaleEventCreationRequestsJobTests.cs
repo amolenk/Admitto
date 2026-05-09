@@ -21,8 +21,7 @@ public sealed class ExpireStaleEventCreationRequestsJobTests(TestContext testCon
         // Arrange: a team with a pending request older than the timeout.
         var team = new TeamBuilder().Build();
         var staleRequest = team.RequestEventCreation(
-            Slug.From("stale"),
-            UserId.New(),
+                UserId.New(),
             DateTimeOffset.UtcNow);
 
         await Environment.Database.SeedAsync(ctx => ctx.Teams.Add(team));
@@ -65,8 +64,7 @@ public sealed class ExpireStaleEventCreationRequestsJobTests(TestContext testCon
         // Arrange: a team with a recent pending request.
         var team = new TeamBuilder().Build();
         var freshRequest = team.RequestEventCreation(
-            Slug.From("fresh"),
-            UserId.New(),
+                UserId.New(),
             DateTimeOffset.UtcNow);
 
         await Environment.Database.SeedAsync(ctx => ctx.Teams.Add(team));

@@ -30,16 +30,16 @@ export function TeamSwitcher()
     const router = useRouter();
     const { isMobile } = useSidebar();
 
-    const { teams, selectedTeam, isLoading, setSelectedTeamSlug } = useTeams();
+    const { teams, selectedTeam, isLoading, setSelectedTeamId } = useTeams();
 
     if (isLoading)
     {
         return (<div></div>);
     }
 
-    function handleSelectTeam(slug: string) {
-        if (slug !== selectedTeam?.slug) {
-            setSelectedTeamSlug(slug);
+    function handleSelectTeam(teamId: string) {
+        if (teamId !== selectedTeam?.teamId) {
+            setSelectedTeamId(teamId);
             router.push("/");
         }
     }
@@ -73,7 +73,7 @@ export function TeamSwitcher()
                                 {teams.map((team: TeamListItemDto) => (
                                     <DropdownMenuItem
                                         key={team.name}
-                                        onClick={() => handleSelectTeam(team.slug)}
+                                        onClick={() => handleSelectTeam(team.teamId)}
                                         className="gap-2 p-2"
                                     >
                                         <div className="grid place-items-center h-6 w-6 rounded-md bg-primary/15 text-primary font-semibold text-[11px] shrink-0">

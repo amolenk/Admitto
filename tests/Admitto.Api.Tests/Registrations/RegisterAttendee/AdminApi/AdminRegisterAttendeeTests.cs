@@ -21,7 +21,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : EndToE
         };
 
         var response = await Environment.BobApiClient.PostAsJsonAsync(
-            AdminRegisterAttendeeFixture.Route, request, cancellationToken: testContext.CancellationToken);
+            fixture.Route, request, cancellationToken: testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
     }
@@ -39,7 +39,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : EndToE
         };
 
         var response = await Environment.ApiClient.PostAsJsonAsync(
-            AdminRegisterAttendeeFixture.Route, request, cancellationToken: testContext.CancellationToken);
+            fixture.Route, request, cancellationToken: testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
@@ -57,7 +57,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : EndToE
         };
 
         var response = await Environment.ApiClient.PostAsJsonAsync(
-            AdminRegisterAttendeeFixture.Route, request, cancellationToken: testContext.CancellationToken);
+            fixture.Route, request, cancellationToken: testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
@@ -77,7 +77,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : EndToE
         };
 
         var response = await Environment.ApiClient.PostAsJsonAsync(
-            AdminRegisterAttendeeFixture.Route, request, cancellationToken: testContext.CancellationToken);
+            fixture.Route, request, cancellationToken: testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.Created);
 

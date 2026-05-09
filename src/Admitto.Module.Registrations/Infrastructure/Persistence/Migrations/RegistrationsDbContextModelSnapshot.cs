@@ -354,12 +354,6 @@ namespace Amolenk.Admitto.Module.Registrations.Infrastructure.Persistence.Migrat
                         .HasColumnType("character varying(64)")
                         .HasColumnName("signing_key");
 
-                    b.Property<string>("Slug")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)")
-                        .HasColumnName("slug");
-
                     b.Property<DateTimeOffset>("StartsAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("starts_at");
@@ -371,12 +365,6 @@ namespace Amolenk.Admitto.Module.Registrations.Infrastructure.Persistence.Migrat
                     b.Property<Guid>("TeamId")
                         .HasColumnType("uuid")
                         .HasColumnName("team_id");
-
-                    b.Property<string>("TeamSlug")
-                        .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("character varying(64)")
-                        .HasColumnName("team_slug");
 
                     b.Property<string>("TimeZone")
                         .IsRequired()
@@ -399,9 +387,6 @@ namespace Amolenk.Admitto.Module.Registrations.Infrastructure.Persistence.Migrat
                         .HasColumnName("website_url");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("TeamId", "Slug")
-                        .IsUnique();
 
                     b.ToTable("ticketed_events", "registrations");
                 });

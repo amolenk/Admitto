@@ -16,13 +16,12 @@ public sealed class RequestTicketedEventCreationTests(TestContext testContext) :
     public async ValueTask AcceptsRequest_OnActiveTeam_PersistsPendingRequestAndIncrementsCounter()
     {
         // Arrange
-        var team = new TeamBuilder().WithSlug("acme").Build();
+        var team = new TeamBuilder().Build();
         await Environment.Database.SeedAsync(ctx => ctx.Teams.Add(team));
 
         var command = new RequestTicketedEventCreationCommand(
             team.Id.Value,
             RequesterId: Guid.NewGuid(),
-            Slug: "spring-conf",
             Name: "Spring Conference",
             WebsiteUrl: "https://conf.example.com",
             BaseUrl: "https://tickets.example.com",
@@ -50,7 +49,6 @@ public sealed class RequestTicketedEventCreationTests(TestContext testContext) :
             var request = persisted.EventCreationRequests.ShouldHaveSingleItem();
             request.Id.Value.ShouldBe(creationRequestId);
             request.Status.ShouldBe(TeamEventCreationRequestStatus.Pending);
-            request.RequestedSlug.Value.ShouldBe("spring-conf");
         });
     }
 
@@ -58,13 +56,12 @@ public sealed class RequestTicketedEventCreationTests(TestContext testContext) :
     public async ValueTask RejectsRequest_OnArchivedTeam_ThrowsTeamArchived()
     {
         // Arrange
-        var team = new TeamBuilder().WithSlug("acme").AsArchived().Build();
+        var team = new TeamBuilder().AsArchived().Build();
         await Environment.Database.SeedAsync(ctx => ctx.Teams.Add(team));
 
         var command = new RequestTicketedEventCreationCommand(
             team.Id.Value,
             RequesterId: Guid.NewGuid(),
-            Slug: "spring-conf",
             Name: "Spring Conference",
             WebsiteUrl: "https://conf.example.com",
             BaseUrl: "https://tickets.example.com",

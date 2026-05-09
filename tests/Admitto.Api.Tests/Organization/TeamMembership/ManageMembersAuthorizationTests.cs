@@ -23,7 +23,7 @@ public sealed class ManageMembersAuthorizationTests(TestContext testContext) : E
 
         // Act
         var response = await Environment.BobApiClient.PostAsJsonAsync(
-            ManageMembersAuthorizationFixture.MembersRoute,
+            fixture.MembersRoute,
             request,
             cancellationToken: testContext.CancellationToken);
 
@@ -45,7 +45,7 @@ public sealed class ManageMembersAuthorizationTests(TestContext testContext) : E
 
         // Act
         var response = await Environment.ApiClient.PostAsJsonAsync(
-            ManageMembersAuthorizationFixture.MembersRoute,
+            fixture.MembersRoute,
             request,
             cancellationToken: testContext.CancellationToken);
 

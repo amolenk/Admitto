@@ -28,8 +28,6 @@ internal sealed class ConfigureRegistrationPolicyFixture
             var ticketedEvent = TicketedEvent.Create(
                 EventId,
                 TeamId,
-                Slug.From("test-team"),
-                Slug.From("reg-policy-event"),
                 DisplayName.From("Reg Policy Event"),
                 AbsoluteUrl.From("https://example.com"),
                 AbsoluteUrl.From("https://tickets.example.com"),
