@@ -1,6 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
-using Amolenk.Admitto.Core.Module.Organization.Domain.Entities;
+using Amolenk.Admitto.Core.Organization.Domain.Entities;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Api.Tests.Infrastructure;

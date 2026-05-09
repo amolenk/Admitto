@@ -1,14 +1,14 @@
 using System.Text.Json;
-using Amolenk.Admitto.Core.Module.Registrations.Application.UseCases.Registrations.WriteActivityLog;
-using Amolenk.Admitto.Core.Module.Registrations.Application.UseCases.Registrations.WriteActivityLog.EventHandlers;
-using Amolenk.Admitto.Core.Module.Registrations.Domain.DomainEvents;
-using Amolenk.Admitto.Core.Module.Registrations.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.WriteActivityLog;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.WriteActivityLog.EventHandlers;
+using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
+using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using NSubstitute;
 using Shouldly;
 
-namespace Amolenk.Admitto.Core.Module.Registrations.Tests.Application.UseCases.Registrations.WriteActivityLog;
+namespace Amolenk.Admitto.Core.Registrations.Tests.Application.UseCases.Registrations.WriteActivityLog;
 
 [TestClass]
 public sealed class TicketsChangedDomainEventHandlerTests

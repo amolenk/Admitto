@@ -1,9 +1,9 @@
-using Amolenk.Admitto.Core.Module.Organization.Tests.Application.Infrastructure;
-using Amolenk.Admitto.Core.Module.Organization.Application.UseCases.Users.GetTeamMembershipRole;
-using Amolenk.Admitto.Core.Module.Organization.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Organization.Tests.Application.Infrastructure;
+using Amolenk.Admitto.Core.Organization.Application.UseCases.Users.GetTeamMembershipRole;
+using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
-namespace Amolenk.Admitto.Core.Module.Organization.Tests.Application.UseCases.Users.GetTeamMembershipRole;
+namespace Amolenk.Admitto.Core.Organization.Tests.Application.UseCases.Users.GetTeamMembershipRole;
 
 [TestClass]
 public sealed class GetTeamMembershipRoleTests(TestContext testContext) : AspireIntegrationTestBase

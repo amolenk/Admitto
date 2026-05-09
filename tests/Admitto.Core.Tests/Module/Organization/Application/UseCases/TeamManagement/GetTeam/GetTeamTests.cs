@@ -1,8 +1,8 @@
-using Amolenk.Admitto.Core.Module.Organization.Tests.Application.Infrastructure;
-using Amolenk.Admitto.Core.Module.Organization.Application.UseCases.TeamManagement.GetTeam;
+using Amolenk.Admitto.Core.Organization.Tests.Application.Infrastructure;
+using Amolenk.Admitto.Core.Organization.Application.UseCases.TeamManagement.GetTeam;
 using Should = Shouldly.Should;
 
-namespace Amolenk.Admitto.Core.Module.Organization.Tests.Application.UseCases.TeamManagement.GetTeam;
+namespace Amolenk.Admitto.Core.Organization.Tests.Application.UseCases.TeamManagement.GetTeam;
 
 [TestClass]
 public sealed class GetTeamTests(TestContext testContext) : AspireIntegrationTestBase

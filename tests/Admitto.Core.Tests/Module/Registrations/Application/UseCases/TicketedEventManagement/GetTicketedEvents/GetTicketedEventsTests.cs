@@ -1,7 +1,7 @@
-using Amolenk.Admitto.Core.Module.Registrations.Application.UseCases.TicketedEventManagement.GetTicketedEvents;
-using Amolenk.Admitto.Core.Module.Registrations.Tests.Application.Aspire;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEventManagement.GetTicketedEvents;
+using Amolenk.Admitto.Core.Registrations.Tests.Application.Aspire;
 
-namespace Amolenk.Admitto.Core.Module.Registrations.Tests.Application.UseCases.TicketedEventManagement.GetTicketedEvents;
+namespace Amolenk.Admitto.Core.Registrations.Tests.Application.UseCases.TicketedEventManagement.GetTicketedEvents;
 
 [TestClass]
 public sealed class GetTicketedEventsTests(TestContext testContext) : AspireIntegrationTestBase

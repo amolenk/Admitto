@@ -51,7 +51,7 @@ public class DependencyRulesTests
 
         foreach (var sourceModule in knownModules)
         {
-            var appPrefix = $"Amolenk.Admitto.Core.Module.{sourceModule}.Application.";
+            var appPrefix = $"Amolenk.Admitto.Core.{sourceModule}.Application.";
 
             var appClasses = Architecture.Classes
                 .Where(c => c.Namespace?.FullName?.StartsWith(appPrefix) == true)
@@ -68,7 +68,7 @@ public class DependencyRulesTests
                     {
                         if (targetModule == sourceModule) continue;
 
-                        var moduleNsPrefix = $"Amolenk.Admitto.Core.Module.{targetModule}.";
+                        var moduleNsPrefix = $"Amolenk.Admitto.Core.{targetModule}.";
                         if (!targetNs.StartsWith(moduleNsPrefix)) continue;
 
                         // Cross-module reference: only Contracts is allowed.
@@ -98,7 +98,7 @@ public class DependencyRulesTests
 
         foreach (var sourceModule in knownModules)
         {
-            var infraPrefix = $"Amolenk.Admitto.Core.Module.{sourceModule}.Infrastructure.";
+            var infraPrefix = $"Amolenk.Admitto.Core.{sourceModule}.Infrastructure.";
 
             var infraClasses = Architecture.Classes
                 .Where(c => c.Namespace?.FullName?.StartsWith(infraPrefix) == true)
@@ -115,7 +115,7 @@ public class DependencyRulesTests
                     {
                         if (targetModule == sourceModule) continue;
 
-                        var moduleNsPrefix = $"Amolenk.Admitto.Core.Module.{targetModule}.";
+                        var moduleNsPrefix = $"Amolenk.Admitto.Core.{targetModule}.";
                         if (!targetNs.StartsWith(moduleNsPrefix)) continue;
 
                         if (!targetNs.StartsWith($"{moduleNsPrefix}Contracts"))

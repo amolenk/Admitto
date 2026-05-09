@@ -1,8 +1,8 @@
-using Amolenk.Admitto.Core.Module.Registrations.Domain.Entities;
-using Amolenk.Admitto.Core.Module.Registrations.Tests.Application.Infrastructure.Hosting;
+using Amolenk.Admitto.Core.Registrations.Domain.Entities;
+using Amolenk.Admitto.Core.Registrations.Tests.Application.Infrastructure.Hosting;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
-namespace Amolenk.Admitto.Core.Module.Registrations.Tests.Application.UseCases.TicketedEventManagement.CancelTicketedEvent;
+namespace Amolenk.Admitto.Core.Registrations.Tests.Application.UseCases.TicketedEventManagement.CancelTicketedEvent;
 
 internal sealed class CancelTicketedEventFixture
 {

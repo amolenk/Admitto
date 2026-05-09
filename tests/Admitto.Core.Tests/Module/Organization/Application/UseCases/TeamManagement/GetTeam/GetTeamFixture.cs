@@ -1,7 +1,7 @@
-using Amolenk.Admitto.Core.Module.Organization.Tests.Application.Builders;
-using Amolenk.Admitto.Core.Module.Organization.Tests.Application.Infrastructure.Hosting;
+using Amolenk.Admitto.Core.Organization.Tests.Application.Builders;
+using Amolenk.Admitto.Core.Organization.Tests.Application.Infrastructure.Hosting;
 
-namespace Amolenk.Admitto.Core.Module.Organization.Tests.Application.UseCases.TeamManagement.GetTeam;
+namespace Amolenk.Admitto.Core.Organization.Tests.Application.UseCases.TeamManagement.GetTeam;
 
 internal sealed class GetTeamFixture
 {

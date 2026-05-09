@@ -1,13 +1,13 @@
-using Amolenk.Admitto.Core.Module.Email.Domain.Entities;
-using Amolenk.Admitto.Core.Module.Email.Domain.Tests.Builders;
-using Amolenk.Admitto.Core.Module.Email.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Email.Domain.Entities;
+using Amolenk.Admitto.Core.Email.Domain.Tests.Builders;
+using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Should = Shouldly.Should;
 using Shouldly;
 
-namespace Amolenk.Admitto.Core.Module.Email.Domain.Tests.Entities;
+namespace Amolenk.Admitto.Core.Email.Domain.Tests.Entities;
 
 [TestClass]
 public sealed class EventEmailSettingsTests

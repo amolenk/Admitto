@@ -1,8 +1,8 @@
-using Amolenk.Admitto.Core.Module.Registrations.Infrastructure.Persistence;
+using Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence;
 using Amolenk.Admitto.Testing.Infrastructure.TestContexts;
 using Aspire.Hosting.Testing;
 
-namespace Amolenk.Admitto.Core.Module.Registrations.Tests.Application.Infrastructure.Hosting;
+namespace Amolenk.Admitto.Core.Registrations.Tests.Application.Infrastructure.Hosting;
 
 public sealed record IntegrationTestEnvironment(DatabaseTestContext<RegistrationsDbContext> Database)
 {

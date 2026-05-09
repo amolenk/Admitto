@@ -1,8 +1,8 @@
-using Amolenk.Admitto.Core.Module.Registrations.Application.Common.Cryptography;
+using Amolenk.Admitto.Core.Registrations.Application.Common.Cryptography;
 using Amolenk.Admitto.Core.Shared.Application.Cryptography;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
-namespace Amolenk.Admitto.Core.Module.Registrations.Tests.Application.Common.Cryptography;
+namespace Amolenk.Admitto.Core.Registrations.Tests.Application.Common.Cryptography;
 
 [TestClass]
 public sealed class RegistrationSignerTests

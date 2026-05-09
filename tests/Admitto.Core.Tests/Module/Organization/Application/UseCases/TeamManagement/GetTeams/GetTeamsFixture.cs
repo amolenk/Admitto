@@ -1,10 +1,10 @@
-using Amolenk.Admitto.Core.Module.Organization.Tests.Application.Builders;
-using Amolenk.Admitto.Core.Module.Organization.Tests.Application.Infrastructure.Hosting;
-using Amolenk.Admitto.Core.Module.Organization.Domain.Entities;
-using Amolenk.Admitto.Core.Module.Organization.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Organization.Tests.Application.Builders;
+using Amolenk.Admitto.Core.Organization.Tests.Application.Infrastructure.Hosting;
+using Amolenk.Admitto.Core.Organization.Domain.Entities;
+using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
-namespace Amolenk.Admitto.Core.Module.Organization.Tests.Application.UseCases.TeamManagement.GetTeams;
+namespace Amolenk.Admitto.Core.Organization.Tests.Application.UseCases.TeamManagement.GetTeams;
 
 internal sealed class GetTeamsFixture
 {

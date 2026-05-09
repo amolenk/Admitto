@@ -1,8 +1,8 @@
-using Amolenk.Admitto.Core.Module.Email.Application.Sending;
-using Amolenk.Admitto.Core.Module.Email.Application.Sending.Bulk;
-using Amolenk.Admitto.Core.Module.Email.Application.Sending.Settings;
+using Amolenk.Admitto.Core.Email.Application.Sending;
+using Amolenk.Admitto.Core.Email.Application.Sending.Bulk;
+using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
 
-namespace Amolenk.Admitto.Core.Module.Email.Tests.Application.Jobs.Fakes;
+namespace Amolenk.Admitto.Core.Email.Tests.Application.Jobs.Fakes;
 
 /// <summary>
 /// Fake bulk SMTP sender used by <see cref="Application.Jobs.SendBulkEmailJob"/>

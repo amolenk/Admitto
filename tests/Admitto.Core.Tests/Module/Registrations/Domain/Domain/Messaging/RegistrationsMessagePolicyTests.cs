@@ -1,11 +1,11 @@
-using Amolenk.Admitto.Core.Module.Registrations.Application.Messaging;
-using Amolenk.Admitto.Core.Module.Registrations.Contracts.IntegrationEvents;
-using Amolenk.Admitto.Core.Module.Registrations.Domain.DomainEvents;
-using Amolenk.Admitto.Core.Module.Registrations.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Registrations.Application.Messaging;
+using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
+using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
+using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Shouldly;
 
-namespace Amolenk.Admitto.Core.Module.Registrations.Domain.Tests.Messaging;
+namespace Amolenk.Admitto.Core.Registrations.Domain.Tests.Messaging;
 
 [TestClass]
 public sealed class RegistrationsMessagePolicyTests

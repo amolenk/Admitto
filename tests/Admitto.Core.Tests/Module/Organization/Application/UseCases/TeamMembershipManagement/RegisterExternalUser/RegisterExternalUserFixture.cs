@@ -1,11 +1,11 @@
-using Amolenk.Admitto.Core.Module.Organization.Application.Services;
-using Amolenk.Admitto.Core.Module.Organization.Tests.Application.Infrastructure.Hosting;
-using Amolenk.Admitto.Core.Module.Organization.Domain.Tests.Builders;
-using Amolenk.Admitto.Core.Module.Organization.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Organization.Application.Services;
+using Amolenk.Admitto.Core.Organization.Tests.Application.Infrastructure.Hosting;
+using Amolenk.Admitto.Core.Organization.Domain.Tests.Builders;
+using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using NSubstitute;
 
-namespace Amolenk.Admitto.Core.Module.Organization.Tests.Application.UseCases.TeamMembershipManagement.RegisterExternalUser;
+namespace Amolenk.Admitto.Core.Organization.Tests.Application.UseCases.TeamMembershipManagement.RegisterExternalUser;
 
 internal sealed class RegisterExternalUserFixture
 {

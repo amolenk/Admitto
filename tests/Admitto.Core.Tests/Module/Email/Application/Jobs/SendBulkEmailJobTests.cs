@@ -1,16 +1,16 @@
-using Amolenk.Admitto.Core.Module.Email.Application.Jobs;
-using Amolenk.Admitto.Core.Module.Email.Application.Persistence;
-using Amolenk.Admitto.Core.Module.Email.Application.Sending;
-using Amolenk.Admitto.Core.Module.Email.Application.Sending.Bulk;
-using Amolenk.Admitto.Core.Module.Email.Application.Sending.Settings;
-using Amolenk.Admitto.Core.Module.Email.Application.Templating;
-using Amolenk.Admitto.Core.Module.Email.Domain.Entities;
-using Amolenk.Admitto.Core.Module.Email.Domain.Tests.Builders;
-using Amolenk.Admitto.Core.Module.Email.Domain.ValueObjects;
-using Amolenk.Admitto.Core.Module.Email.Infrastructure.Persistence;
-using Amolenk.Admitto.Core.Module.Email.Infrastructure.Security;
-using Amolenk.Admitto.Core.Module.Email.Tests.Application.Infrastructure;
-using Amolenk.Admitto.Core.Module.Email.Tests.Application.Jobs.Fakes;
+using Amolenk.Admitto.Core.Email.Application.Jobs;
+using Amolenk.Admitto.Core.Email.Application.Persistence;
+using Amolenk.Admitto.Core.Email.Application.Sending;
+using Amolenk.Admitto.Core.Email.Application.Sending.Bulk;
+using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
+using Amolenk.Admitto.Core.Email.Application.Templating;
+using Amolenk.Admitto.Core.Email.Domain.Entities;
+using Amolenk.Admitto.Core.Email.Domain.Tests.Builders;
+using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Email.Infrastructure.Persistence;
+using Amolenk.Admitto.Core.Email.Infrastructure.Security;
+using Amolenk.Admitto.Core.Email.Tests.Application.Infrastructure;
+using Amolenk.Admitto.Core.Email.Tests.Application.Jobs.Fakes;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
@@ -21,7 +21,7 @@ using NSubstitute;
 using Quartz;
 using Shouldly;
 
-namespace Amolenk.Admitto.Core.Module.Email.Tests.Application.Jobs;
+namespace Amolenk.Admitto.Core.Email.Tests.Application.Jobs;
 
 /// <summary>
 /// Integration tests for <see cref="SendBulkEmailJob"/> covering the

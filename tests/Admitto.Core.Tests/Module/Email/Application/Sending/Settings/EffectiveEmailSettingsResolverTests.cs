@@ -1,11 +1,11 @@
-using Amolenk.Admitto.Core.Module.Email.Application.Sending.Settings;
-using Amolenk.Admitto.Core.Module.Email.Domain.Tests.Builders;
-using Amolenk.Admitto.Core.Module.Email.Domain.ValueObjects;
-using Amolenk.Admitto.Core.Module.Email.Tests.Application.Infrastructure;
+using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
+using Amolenk.Admitto.Core.Email.Domain.Tests.Builders;
+using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Email.Tests.Application.Infrastructure;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Shouldly;
 
-namespace Amolenk.Admitto.Core.Module.Email.Tests.Application.Settings;
+namespace Amolenk.Admitto.Core.Email.Tests.Application.Settings;
 
 [TestClass]
 public sealed class EffectiveEmailSettingsResolverTests(TestContext testContext) : AspireIntegrationTestBase

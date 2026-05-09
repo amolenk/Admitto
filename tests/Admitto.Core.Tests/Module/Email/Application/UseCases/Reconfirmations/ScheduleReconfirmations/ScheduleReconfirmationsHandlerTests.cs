@@ -1,13 +1,13 @@
-using Amolenk.Admitto.Core.Module.Email.Application.Jobs;
-using Amolenk.Admitto.Core.Module.Email.Application.UseCases.Reconfirmations.ScheduleReconfirmations;
-using Amolenk.Admitto.Core.Module.Registrations.Contracts;
+using Amolenk.Admitto.Core.Email.Application.Jobs;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Reconfirmations.ScheduleReconfirmations;
+using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Quartz;
 using Shouldly;
 
-namespace Amolenk.Admitto.Core.Module.Email.Tests.Application.UseCases.Reconfirmations.ScheduleReconfirmations;
+namespace Amolenk.Admitto.Core.Email.Tests.Application.UseCases.Reconfirmations.ScheduleReconfirmations;
 
 [TestClass]
 public sealed class ScheduleReconfirmationsHandlerTests

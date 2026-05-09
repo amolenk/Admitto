@@ -1,7 +1,7 @@
-using Amolenk.Admitto.Core.Module.Email.Application.Sending;
-using Amolenk.Admitto.Core.Module.Email.Application.Sending.Settings;
+using Amolenk.Admitto.Core.Email.Application.Sending;
+using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
 
-namespace Amolenk.Admitto.Core.Module.Email.Tests.Application.UseCases.SendEmail;
+namespace Amolenk.Admitto.Core.Email.Tests.Application.UseCases.SendEmail;
 
 /// <summary>
 /// Fake email sender for integration tests. Captures sent messages.

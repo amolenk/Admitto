@@ -1,8 +1,8 @@
-using Amolenk.Admitto.Core.Module.Organization.Tests.Application.Infrastructure.Hosting;
-using Amolenk.Admitto.Core.Module.Organization.Domain.Tests.Builders;
+using Amolenk.Admitto.Core.Organization.Tests.Application.Infrastructure.Hosting;
+using Amolenk.Admitto.Core.Organization.Domain.Tests.Builders;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
-namespace Amolenk.Admitto.Core.Module.Organization.Tests.Application.UseCases.TeamMembershipManagement.RemoveTeamMembership;
+namespace Amolenk.Admitto.Core.Organization.Tests.Application.UseCases.TeamMembershipManagement.RemoveTeamMembership;
 
 internal sealed class RemoveTeamMembershipFixture
 {

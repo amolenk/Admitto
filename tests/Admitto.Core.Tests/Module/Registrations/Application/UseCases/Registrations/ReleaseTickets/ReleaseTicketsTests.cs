@@ -1,9 +1,9 @@
-using Amolenk.Admitto.Core.Module.Registrations.Application.UseCases.Registrations.ReleaseTickets;
-using Amolenk.Admitto.Core.Module.Registrations.Tests.Application.Aspire;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.ReleaseTickets;
+using Amolenk.Admitto.Core.Registrations.Tests.Application.Aspire;
 using Microsoft.EntityFrameworkCore;
 using Shouldly;
 
-namespace Amolenk.Admitto.Core.Module.Registrations.Tests.Application.UseCases.Registrations.ReleaseTickets;
+namespace Amolenk.Admitto.Core.Registrations.Tests.Application.UseCases.Registrations.ReleaseTickets;
 
 [TestClass]
 public sealed class ReleaseTicketsTests(TestContext testContext) : AspireIntegrationTestBase

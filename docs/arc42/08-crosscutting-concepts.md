@@ -6,7 +6,7 @@ API endpoints — not command handlers — own the transaction boundary. The end
 
 **Rule:** Command handlers must not inject or call `IUnitOfWork`.
 
-Reference: `IUnitOfWork` registered per module via `AddModuleDatabaseServices<TWriteModel, TDbContext>()` in `Admitto.Module.Shared/Infrastructure/DependencyInjection.cs`.
+Reference: `IUnitOfWork` registered per module via `AddModuleDatabaseServices<TWriteModel, TDbContext>()` in `Admitto.Core/Shared/Infrastructure/DependencyInjection.cs`.
 
 ## 8.2 Validation
 
@@ -468,3 +468,46 @@ Because a `TicketedEvent.Cancel()` or `.Archive()` commits the projection onto `
 ### Why not a separate lifecycle-guard aggregate?
 
 Previous designs used a dedicated `TicketedEventLifecycleGuard` aggregate to mirror event status from the Organization module into Registrations. That guard is gone: with `TicketedEvent` now owned by Registrations, the aggregate enforces its own invariants and the only out-of-aggregate projection is the single `EventStatus` field on `TicketCatalog`, which exists solely to make the status + capacity check atomic. See [ADR-008](../adrs/adr-008-ticketed-event-ownership-in-registrations.md).
+
+## 8.15 Architecture enforcement (ArchUnitNET)
+
+All architectural rules below are machine-checked by `tests/Admitto.Core.ArchTests` using [ArchUnitNET](https://github.com/TNG/ArchUnitNET). The suite is the **first test step** after `dotnet build` — if it fails, fix the violation before touching other tests.
+
+### Dependency direction rules (`DependencyRulesTests`)
+
+| Rule | Constraint |
+| :--- | :--------- |
+| `Shared.Kernel` isolation | `Admitto.Core.Shared.Kernel.*` must not reference any other `Admitto.Core.*` namespace |
+| Domain purity | `*.Module.X.Domain.*` must not reference `*.Module.X.Application.*` or `*.Module.X.Infrastructure.*` |
+| Application cross-module | `*.Module.X.Application.*` must not reference another module's `Domain`, `Application`, or `Infrastructure` — only `*.Contracts` |
+| Infrastructure cross-module | `*.Module.X.Infrastructure.*` must not reference another module's namespaces except via `*.Contracts` |
+
+### Naming conventions (`NamingRulesTests`)
+
+These are enforced via MSTest reflection checks on the loaded `Admitto.Core` assembly:
+
+| Interface | Required class name |
+| :-------- | :------------------ |
+| `IDomainEventHandler<T>` | `{T.Name}Handler` |
+| `IIntegrationEventHandler<T>` | `{T.Name}Handler` |
+| `IModuleEventHandler<T>` | `{T.Name}Handler` |
+| `ICommandHandler<T>` | `T` name with `Command` replaced by `Handler` (e.g. `CreateTeamCommand` → `CreateTeamHandler`) |
+| `IQueryHandler<T,R>` | `T` name with `Query` replaced by `Handler` |
+
+### Placement rules (`PlacementRulesTests`)
+
+| Class pattern | Required namespace suffix |
+| :------------ | :------------------------ |
+| `*DomainEventHandler`, `*IntegrationEventHandler`, `*ModuleEventHandler` | `…EventHandlers` |
+| `*HttpEndpoint` | `…AdminApi` or `…PublicApi` |
+| `AbstractValidator<T>` subclasses | `…AdminApi` or `…PublicApi` |
+| `*Command` or `*Query` | `*.Application.UseCases.*` |
+
+### Contracts namespace convention
+
+A module's **public surface** is its `Contracts` sub-namespace (e.g. `Admitto.Core.Module.Organization.Contracts`). This namespace holds:
+- Facade interfaces (`IOrganizationFacade`, `IEventEmailFacade`)
+- Integration event DTOs consumed by other modules
+- Response/request DTOs shared across module boundaries
+
+No other module may import from a sibling module's `Domain`, `Application`, or `Infrastructure` sub-namespaces. ArchUnitNET enforces this boundary automatically.

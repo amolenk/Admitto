@@ -1,17 +1,17 @@
-using Amolenk.Admitto.Core.Module.Email.Application.Templating;
-using Amolenk.Admitto.Core.Module.Email.Application.UseCases.SendEmail;
-using Amolenk.Admitto.Core.Module.Email.Application.UseCases.SendEmail.EventHandlers;
-using Amolenk.Admitto.Core.Module.Email.Domain.Entities;
-using Amolenk.Admitto.Core.Module.Email.Domain.ValueObjects;
-using Amolenk.Admitto.Core.Module.Email.Tests.Application.Infrastructure;
-using Amolenk.Admitto.Core.Module.Registrations.Contracts;
-using Amolenk.Admitto.Core.Module.Registrations.Contracts.IntegrationEvents;
+using Amolenk.Admitto.Core.Email.Application.Templating;
+using Amolenk.Admitto.Core.Email.Application.UseCases.SendEmail;
+using Amolenk.Admitto.Core.Email.Application.UseCases.SendEmail.EventHandlers;
+using Amolenk.Admitto.Core.Email.Domain.Entities;
+using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Email.Tests.Application.Infrastructure;
+using Amolenk.Admitto.Core.Registrations.Contracts;
+using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using NSubstitute;
 using Shouldly;
 
-namespace Amolenk.Admitto.Core.Module.Email.Tests.Application.UseCases.SendEmail.EventHandlers;
+namespace Amolenk.Admitto.Core.Email.Tests.Application.UseCases.SendEmail.EventHandlers;
 
 [TestClass]
 public sealed class AttendeeRegisteredIntegrationEventHandlerTests(TestContext testContext)

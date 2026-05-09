@@ -4,7 +4,7 @@
 // using Microsoft.EntityFrameworkCore;
 // using Respawn;
 //
-// namespace Amolenk.Admitto.Core.Module.Registrations.Tests.Application.UseCases;
+// namespace Amolenk.Admitto.Core.Registrations.Tests.Application.UseCases;
 //
 // public static class DistributedApplicationFactoryExtensions
 // {

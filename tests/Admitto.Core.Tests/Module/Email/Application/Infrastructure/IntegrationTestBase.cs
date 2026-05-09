@@ -1,6 +1,6 @@
-using Amolenk.Admitto.Core.Module.Email.Tests.Application.Infrastructure.Hosting;
+using Amolenk.Admitto.Core.Email.Tests.Application.Infrastructure.Hosting;
 
-namespace Amolenk.Admitto.Core.Module.Email.Tests.Application.Infrastructure;
+namespace Amolenk.Admitto.Core.Email.Tests.Application.Infrastructure;
 
 public abstract class AspireIntegrationTestBase
 {

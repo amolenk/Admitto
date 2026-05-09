@@ -1,6 +1,6 @@
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Outbox;
 
-namespace Amolenk.Admitto.Core.Module.Email.Tests.Application.Jobs.Fakes;
+namespace Amolenk.Admitto.Core.Email.Tests.Application.Jobs.Fakes;
 
 internal sealed class NoOpOutboxMessageSender : IOutboxMessageSender
 {

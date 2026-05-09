@@ -1,12 +1,12 @@
 using Amolenk.Admitto.Api.Tests.Infrastructure.Hosting;
-using Amolenk.Admitto.Core.Module.Email.Application.Templating;
-using Amolenk.Admitto.Core.Module.Email.Domain.Entities;
-using Amolenk.Admitto.Core.Module.Email.Domain.Tests.Builders;
-using Amolenk.Admitto.Core.Module.Email.Domain.ValueObjects;
-using Amolenk.Admitto.Core.Module.Registrations.Domain.Entities;
-using Amolenk.Admitto.Core.Module.Registrations.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Email.Application.Templating;
+using Amolenk.Admitto.Core.Email.Domain.Entities;
+using Amolenk.Admitto.Core.Email.Domain.Tests.Builders;
+using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Registrations.Domain.Entities;
+using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
-using TeamBuilder = Amolenk.Admitto.Core.Module.Organization.Tests.Application.Builders.TeamBuilder;
+using TeamBuilder = Amolenk.Admitto.Core.Organization.Tests.Application.Builders.TeamBuilder;
 
 namespace Amolenk.Admitto.Api.Tests.Email.AdminEmailTemplates;
 
@@ -72,7 +72,7 @@ internal sealed class AdminEmailTemplatesFixture
         return (teamTemplate.Id.Value, teamTemplate.Version, eventTemplate.Id.Value, eventTemplate.Version);
     }
 
-    private async ValueTask<(global::Amolenk.Admitto.Core.Module.Organization.Domain.Entities.Team Team, TicketedEventId EventId)> SeedTeamAndEventAsync(
+    private async ValueTask<(global::Amolenk.Admitto.Core.Organization.Domain.Entities.Team Team, TicketedEventId EventId)> SeedTeamAndEventAsync(
         EndToEndTestEnvironment environment)
     {
         var team = new TeamBuilder()

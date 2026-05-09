@@ -1,8 +1,8 @@
-using Amolenk.Admitto.Core.Module.Organization.Tests.Application.Infrastructure;
-using Amolenk.Admitto.Core.Module.Organization.Application.UseCases.TeamMembershipManagement.ListTeamMembers;
-using Amolenk.Admitto.Core.Module.Organization.Contracts;
+using Amolenk.Admitto.Core.Organization.Tests.Application.Infrastructure;
+using Amolenk.Admitto.Core.Organization.Application.UseCases.TeamMembershipManagement.ListTeamMembers;
+using Amolenk.Admitto.Core.Organization.Contracts;
 
-namespace Amolenk.Admitto.Core.Module.Organization.Tests.Application.UseCases.TeamMembershipManagement.ListTeamMembers;
+namespace Amolenk.Admitto.Core.Organization.Tests.Application.UseCases.TeamMembershipManagement.ListTeamMembers;
 
 [TestClass]
 public sealed class ListTeamMembersTests(TestContext testContext) : AspireIntegrationTestBase

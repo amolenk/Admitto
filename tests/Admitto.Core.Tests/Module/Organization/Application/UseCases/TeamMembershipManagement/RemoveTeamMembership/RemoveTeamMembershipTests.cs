@@ -1,13 +1,13 @@
-using Amolenk.Admitto.Core.Module.Organization.Tests.Application.Infrastructure;
-using Amolenk.Admitto.Core.Module.Organization.Application.UseCases.TeamMembershipManagement.RemoveTeamMembership;
-using Amolenk.Admitto.Core.Module.Organization.Domain.Entities;
-using Amolenk.Admitto.Core.Module.Organization.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Organization.Tests.Application.Infrastructure;
+using Amolenk.Admitto.Core.Organization.Application.UseCases.TeamMembershipManagement.RemoveTeamMembership;
+using Amolenk.Admitto.Core.Organization.Domain.Entities;
+using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Should = Shouldly.Should;
 
-namespace Amolenk.Admitto.Core.Module.Organization.Tests.Application.UseCases.TeamMembershipManagement.RemoveTeamMembership;
+namespace Amolenk.Admitto.Core.Organization.Tests.Application.UseCases.TeamMembershipManagement.RemoveTeamMembership;
 
 [TestClass]
 public sealed class RemoveTeamMembershipTests(TestContext testContext) : AspireIntegrationTestBase

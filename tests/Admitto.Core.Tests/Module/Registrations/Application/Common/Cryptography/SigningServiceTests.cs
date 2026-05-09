@@ -1,7 +1,7 @@
 using System.Text;
 using Amolenk.Admitto.Core.Shared.Application.Cryptography;
 
-namespace Amolenk.Admitto.Core.Module.Registrations.Tests.Application.Common.Cryptography;
+namespace Amolenk.Admitto.Core.Registrations.Tests.Application.Common.Cryptography;
 
 [TestClass]
 public sealed class SigningServiceTests

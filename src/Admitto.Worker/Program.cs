@@ -1,7 +1,7 @@
-using Amolenk.Admitto.Core.Module.Email.Application;
-using Amolenk.Admitto.Core.Module.Organization.Application;
-using Amolenk.Admitto.Core.Module.Registrations.Application;
-using Amolenk.Admitto.Core.Module.Registrations.Infrastructure;
+using Amolenk.Admitto.Core.Email.Application;
+using Amolenk.Admitto.Core.Organization.Application;
+using Amolenk.Admitto.Core.Registrations.Application;
+using Amolenk.Admitto.Core.Registrations.Infrastructure;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Infrastructure;

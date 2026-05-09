@@ -1,10 +1,10 @@
-using Amolenk.Admitto.Core.Module.Registrations.Domain.Entities;
-using Amolenk.Admitto.Core.Module.Registrations.Domain.ValueObjects;
-using Amolenk.Admitto.Core.Module.Registrations.Tests.Application.Infrastructure.Hosting;
+using Amolenk.Admitto.Core.Registrations.Domain.Entities;
+using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Registrations.Tests.Application.Infrastructure.Hosting;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
-using ActivityLogEntity = Amolenk.Admitto.Core.Module.Registrations.Domain.Entities.ActivityLog;
+using ActivityLogEntity = Amolenk.Admitto.Core.Registrations.Domain.Entities.ActivityLog;
 
-namespace Amolenk.Admitto.Core.Module.Registrations.Tests.Application.UseCases.Registrations.GetRegistrationDetails;
+namespace Amolenk.Admitto.Core.Registrations.Tests.Application.UseCases.Registrations.GetRegistrationDetails;
 
 internal sealed class GetRegistrationDetailsFixture
 {

@@ -1,9 +1,9 @@
-using Amolenk.Admitto.Core.Module.Registrations.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Shouldly;
 using Should = Shouldly.Should;
 
-namespace Amolenk.Admitto.Core.Module.Registrations.Domain.Tests.ValueObjects;
+namespace Amolenk.Admitto.Core.Registrations.Domain.Tests.ValueObjects;
 
 [TestClass]
 public sealed class AdditionalDetailsTests

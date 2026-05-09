@@ -1,13 +1,13 @@
-using Amolenk.Admitto.Core.Module.Organization.Application.UseCases.TicketedEventManagement.RequestTicketedEventCreation;
-using Amolenk.Admitto.Core.Module.Organization.Tests.Application.Builders;
-using Amolenk.Admitto.Core.Module.Organization.Tests.Application.Infrastructure;
-using Amolenk.Admitto.Core.Module.Organization.Domain.Entities;
-using Amolenk.Admitto.Core.Module.Organization.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Organization.Application.UseCases.TicketedEventManagement.RequestTicketedEventCreation;
+using Amolenk.Admitto.Core.Organization.Tests.Application.Builders;
+using Amolenk.Admitto.Core.Organization.Tests.Application.Infrastructure;
+using Amolenk.Admitto.Core.Organization.Domain.Entities;
+using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Should = Shouldly.Should;
 
-namespace Amolenk.Admitto.Core.Module.Organization.Tests.Application.UseCases.TicketedEventManagement.RequestTicketedEventCreation;
+namespace Amolenk.Admitto.Core.Organization.Tests.Application.UseCases.TicketedEventManagement.RequestTicketedEventCreation;
 
 [TestClass]
 public sealed class RequestTicketedEventCreationTests(TestContext testContext) : AspireIntegrationTestBase

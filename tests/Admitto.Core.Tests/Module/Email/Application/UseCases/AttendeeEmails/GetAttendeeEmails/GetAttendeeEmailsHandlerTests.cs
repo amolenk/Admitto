@@ -1,9 +1,9 @@
-using Amolenk.Admitto.Core.Module.Email.Application.UseCases.AttendeeEmails.GetAttendeeEmails;
-using Amolenk.Admitto.Core.Module.Email.Domain.Entities;
-using Amolenk.Admitto.Core.Module.Email.Domain.ValueObjects;
-using Amolenk.Admitto.Core.Module.Email.Tests.Application.Infrastructure;
+using Amolenk.Admitto.Core.Email.Application.UseCases.AttendeeEmails.GetAttendeeEmails;
+using Amolenk.Admitto.Core.Email.Domain.Entities;
+using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Email.Tests.Application.Infrastructure;
 
-namespace Amolenk.Admitto.Core.Module.Email.Tests.Application.UseCases.AttendeeEmails.GetAttendeeEmails;
+namespace Amolenk.Admitto.Core.Email.Tests.Application.UseCases.AttendeeEmails.GetAttendeeEmails;
 
 [TestClass]
 public sealed class GetAttendeeEmailsHandlerTests(TestContext testContext) : AspireIntegrationTestBase

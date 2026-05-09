@@ -1,7 +1,7 @@
-using Amolenk.Admitto.Core.Module.Registrations.Tests.Application.Infrastructure.Hosting;
+using Amolenk.Admitto.Core.Registrations.Tests.Application.Infrastructure.Hosting;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
-namespace Amolenk.Admitto.Core.Module.Registrations.Tests.Application.UseCases.TicketedEventManagement.MaterializeTicketedEvent;
+namespace Amolenk.Admitto.Core.Registrations.Tests.Application.UseCases.TicketedEventManagement.MaterializeTicketedEvent;
 
 internal sealed class MaterializeTicketedEventFixture
 {

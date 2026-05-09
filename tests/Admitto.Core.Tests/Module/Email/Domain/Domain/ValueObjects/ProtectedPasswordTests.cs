@@ -1,7 +1,7 @@
-using Amolenk.Admitto.Core.Module.Email.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Shouldly;
 
-namespace Amolenk.Admitto.Core.Module.Email.Domain.Tests.ValueObjects;
+namespace Amolenk.Admitto.Core.Email.Domain.Tests.ValueObjects;
 
 [TestClass]
 public sealed class ProtectedPasswordTests

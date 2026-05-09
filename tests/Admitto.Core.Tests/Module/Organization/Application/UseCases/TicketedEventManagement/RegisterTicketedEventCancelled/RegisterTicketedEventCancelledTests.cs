@@ -1,10 +1,10 @@
-using Amolenk.Admitto.Core.Module.Organization.Application.UseCases.TicketedEventManagement.RegisterTicketedEventCancelled;
-using Amolenk.Admitto.Core.Module.Organization.Tests.Application.Builders;
-using Amolenk.Admitto.Core.Module.Organization.Tests.Application.Infrastructure;
-using Amolenk.Admitto.Core.Module.Organization.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Organization.Application.UseCases.TicketedEventManagement.RegisterTicketedEventCancelled;
+using Amolenk.Admitto.Core.Organization.Tests.Application.Builders;
+using Amolenk.Admitto.Core.Organization.Tests.Application.Infrastructure;
+using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
-namespace Amolenk.Admitto.Core.Module.Organization.Tests.Application.UseCases.TicketedEventManagement.RegisterTicketedEventCancelled;
+namespace Amolenk.Admitto.Core.Organization.Tests.Application.UseCases.TicketedEventManagement.RegisterTicketedEventCancelled;
 
 [TestClass]
 public sealed class RegisterTicketedEventCancelledTests(TestContext testContext) : AspireIntegrationTestBase

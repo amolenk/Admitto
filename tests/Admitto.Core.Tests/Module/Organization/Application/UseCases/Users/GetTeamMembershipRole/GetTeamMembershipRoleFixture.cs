@@ -1,9 +1,9 @@
-using Amolenk.Admitto.Core.Module.Organization.Application.Mapping;
-using Amolenk.Admitto.Core.Module.Organization.Tests.Application.Infrastructure.Hosting;
-using Amolenk.Admitto.Core.Module.Organization.Contracts;
-using Amolenk.Admitto.Core.Module.Organization.Domain.Tests.Builders;
+using Amolenk.Admitto.Core.Organization.Application.Mapping;
+using Amolenk.Admitto.Core.Organization.Tests.Application.Infrastructure.Hosting;
+using Amolenk.Admitto.Core.Organization.Contracts;
+using Amolenk.Admitto.Core.Organization.Domain.Tests.Builders;
 
-namespace Amolenk.Admitto.Core.Module.Organization.Tests.Application.UseCases.Users.GetTeamMembershipRole;
+namespace Amolenk.Admitto.Core.Organization.Tests.Application.UseCases.Users.GetTeamMembershipRole;
 
 internal sealed class GetTeamMembershipRoleFixture
 {
@@ -25,7 +25,7 @@ internal sealed class GetTeamMembershipRoleFixture
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
     {
         var user = new UserBuilder().Build();
-        var externalUserId = Module.Organization.Domain.ValueObjects.ExternalUserId.New();
+        var externalUserId = Organization.Domain.ValueObjects.ExternalUserId.New();
         user.AssignExternalUserId(externalUserId);
 
         if (Role is not null)

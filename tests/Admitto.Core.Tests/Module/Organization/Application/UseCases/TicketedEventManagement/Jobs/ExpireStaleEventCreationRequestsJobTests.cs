@@ -1,16 +1,16 @@
-using Amolenk.Admitto.Core.Module.Organization.Application.Jobs;
-using Amolenk.Admitto.Core.Module.Organization.Tests.Application.Builders;
-using Amolenk.Admitto.Core.Module.Organization.Tests.Application.Infrastructure;
-using Amolenk.Admitto.Core.Module.Organization.Tests.Application.Jobs;
-using Amolenk.Admitto.Core.Module.Organization.Domain.Entities;
-using Amolenk.Admitto.Core.Module.Organization.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Organization.Application.Jobs;
+using Amolenk.Admitto.Core.Organization.Tests.Application.Builders;
+using Amolenk.Admitto.Core.Organization.Tests.Application.Infrastructure;
+using Amolenk.Admitto.Core.Organization.Tests.Application.Jobs;
+using Amolenk.Admitto.Core.Organization.Domain.Entities;
+using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 using Quartz;
 
-namespace Amolenk.Admitto.Core.Module.Organization.Tests.Application.UseCases.TicketedEventManagement.Jobs;
+namespace Amolenk.Admitto.Core.Organization.Tests.Application.UseCases.TicketedEventManagement.Jobs;
 
 [TestClass]
 public sealed class ExpireStaleEventCreationRequestsJobTests(TestContext testContext) : AspireIntegrationTestBase

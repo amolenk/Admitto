@@ -51,52 +51,77 @@ The diagram uses concept names. Actual implementations vary by environment:
 
 ## 5.2 Modules
 
-Modules are not owned by a single host — they are shared libraries that contain domain logic, application use cases, and infrastructure. Each module has two projects: one main project (with `Domain/`, `Application/`, and `Infrastructure/` folders) and a separate Contracts project. Cross-module dependencies only go through Contracts.
+All module code lives in a single assembly: **`Admitto.Core`** (`src/Admitto.Core/`). The three business modules (Organization, Registrations, Email) and the shared infrastructure are separated by namespace rather than by project. Cross-module dependencies are only permitted through `*.Contracts` namespaces. Architecture rules are enforced automatically by `Admitto.Core.ArchTests` (see §8.15).
+
+### Internal namespace structure
+
+```
+Admitto.Core
+├── Shared/
+│   ├── Kernel/          ← Admitto.Core.Shared.Kernel.*  (Entity, Aggregate, ValueObject, Error, base interfaces)
+│   └── (root)           ← Admitto.Core.Shared.*  (shared Application/ + Infrastructure/ helpers)
+└── Module/
+    ├── Organization/
+    │   ├── Domain/       ← Admitto.Core.Module.Organization.Domain.*
+    │   ├── Application/  ← Admitto.Core.Module.Organization.Application.*
+    │   ├── Infrastructure/ ← Admitto.Core.Module.Organization.Infrastructure.*
+    │   └── Contracts/    ← Admitto.Core.Module.Organization.Contracts.*  (IOrganizationFacade, DTOs, integration events)
+    ├── Registrations/
+    │   ├── Domain/       ← Admitto.Core.Module.Registrations.Domain.*
+    │   ├── Application/  ← Admitto.Core.Module.Registrations.Application.*
+    │   ├── Infrastructure/ ← Admitto.Core.Module.Registrations.Infrastructure.*
+    │   └── Contracts/    ← Admitto.Core.Module.Registrations.Contracts.*
+    └── Email/
+        ├── Domain/       ← Admitto.Core.Module.Email.Domain.*
+        ├── Application/  ← Admitto.Core.Module.Email.Application.*
+        ├── Infrastructure/ ← Admitto.Core.Module.Email.Infrastructure.*
+        └── Contracts/    ← Admitto.Core.Module.Email.Contracts.*  (IEventEmailFacade, DTOs, integration events)
+```
 
 ```mermaid
 flowchart TB
-  subgraph org["Organization module"]
+  subgraph core["Admitto.Core assembly"]
     direction TB
-    OrgContracts["Admitto.Module.Organization.Contracts<br/><small>IOrganizationFacade, DTOs</small>"]
-    OrgMain["Admitto.Module.Organization<br/><small>Domain/ · Application/ · Infrastructure/</small>"]
-    OrgMain -.->|implements| OrgContracts
+
+    subgraph shared["Shared"]
+      direction TB
+      Kernel["Admitto.Core.Shared.Kernel<br/><small>Entity, Aggregate, ValueObject, Error</small>"]
+      SharedApp["Admitto.Core.Shared<br/><small>Application/ · Infrastructure/</small>"]
+    end
+
+    subgraph org["Organization module (namespace)"]
+      direction TB
+      OrgContracts["…Organization.Contracts<br/><small>IOrganizationFacade, DTOs</small>"]
+      OrgMain["…Organization.{Domain,Application,Infrastructure}"]
+      OrgMain -.->|implements| OrgContracts
+    end
+
+    subgraph reg["Registrations module (namespace)"]
+      direction TB
+      RegContracts["…Registrations.Contracts"]
+      RegMain["…Registrations.{Domain,Application,Infrastructure}"]
+      RegMain -.->|implements| RegContracts
+    end
+
+    subgraph email["Email module (namespace)"]
+      direction TB
+      EmailContracts["…Email.Contracts<br/><small>IEventEmailFacade, DTOs</small>"]
+      EmailMain["…Email.{Domain,Application,Infrastructure}"]
+      EmailMain -.->|implements| EmailContracts
+    end
+
+    RegMain -->|uses| OrgContracts
+    RegMain -->|uses| EmailContracts
+    OrgMain --> Kernel
+    RegMain --> Kernel
+    EmailMain --> Kernel
+    OrgMain --> SharedApp
+    RegMain --> SharedApp
+    EmailMain --> SharedApp
   end
-
-  subgraph reg["Registrations module"]
-    direction TB
-    RegContracts["Admitto.Module.Registrations.Contracts"]
-    RegMain["Admitto.Module.Registrations ∗<br/><small>Domain/ · Application/ · Infrastructure/</small>"]
-    RegMain -.->|implements| RegContracts
-  end
-
-  subgraph email["Email module"]
-    direction TB
-    EmailContracts["Admitto.Module.Email.Contracts<br/><small>IEventEmailFacade, DTOs</small>"]
-    EmailMain["Admitto.Module.Email<br/><small>Domain/ · Application/ · Infrastructure/</small>"]
-    EmailMain -.->|implements| EmailContracts
-  end
-
-  subgraph shared["Shared"]
-    direction TB
-    Kernel["Admitto.Module.Shared.Kernel<br/><small>Entity, Aggregate, ValueObject, Error</small>"]
-    SharedMain["Admitto.Module.Shared<br/><small>Application/ · Infrastructure/</small>"]
-  end
-
-  RegMain -->|uses| OrgContracts
-  RegMain -->|uses| EmailContracts
-  OrgMain --> Kernel
-  RegMain --> Kernel
-  EmailMain --> Kernel
-  OrgMain --> SharedMain
-  RegMain --> SharedMain
-  EmailMain --> SharedMain
-
-  style RegMain stroke-dasharray: 5 5
 ```
 
-_∗ Dashed = scaffolded but not yet fully wired._
-
-Each module project uses folder-based layer separation internally:
+Each module uses folder-based layer separation internally:
 
 | Folder | Contains |
 | :----- | :------- |
@@ -104,7 +129,7 @@ Each module project uses folder-based layer separation internally:
 | `Application/` | Command/query handlers, validators, facades, message policies, module events |
 | `Infrastructure/` | EF Core DbContext, entity configurations, value converters, external adapters |
 
-The Contracts project (`*.Contracts`) holds DTOs, facade interfaces, and integration events — the module's public surface.
+The `Contracts/` sub-namespace within each module holds DTOs, facade interfaces, and integration events — the module's public surface. Cross-module code may only reference another module's `Contracts` namespace.
 
 ### Organization module
 
@@ -139,7 +164,7 @@ Owns all email concerns: server settings, customisable templates, outgoing-email
 - **Bulk email** — the `BulkEmailJob` aggregate (in the `email` schema) tracks lifecycle, totals, and a frozen recipient snapshot for either an attendee source (resolved against Registrations via `IRegistrationsFacade.QueryRegistrationsAsync`) or an external list. A Quartz fan-out job (`BulkEmailFanOutJob`, gated on `HostCapability.Jobs | HostCapability.Email`) opens a single SMTP connection per pickup and streams all messages, writing one `EmailLog` row per recipient with key `bulk:{jobId}:{email}`. Per-recipient state on the snapshot drives resume-after-crash; cooperative cancellation is observed between recipients. See [ADR-009](../adrs/adr-009-bulk-email-design.md).
 - **Reconfirm sending** — `EvaluateReconfirmJob` is a per-event Quartz trigger derived from `TicketedEventReconfirmPolicy`; each tick creates a `BulkEmailJob` (`email_type='reconfirm'`) filtered to `Status=Registered AND HasReconfirmed=false`, evaluated in the event's IANA `TimeZone`. Triggers are (re)scheduled in response to `TicketedEventCreated`, `TicketedEventReconfirmPolicyChanged`, `TicketedEventTimeZoneChanged`, `TicketedEventCancelled`, and `TicketedEventArchived` integration events from Registrations.
 
-Exposes `IEventEmailFacade` via `Admitto.Module.Email.Contracts` so the Registrations module can check whether email is configured before allowing registration to open. SMTP passwords are protected at rest via ASP.NET Data Protection (see [§8.7.x Secret protection](08-crosscutting-concepts.md#secret-protection)).
+Exposes `IEventEmailFacade` via `Admitto.Core.Module.Email.Contracts` so the Registrations module can check whether email is configured before allowing registration to open. SMTP passwords are protected at rest via ASP.NET Data Protection (see [§8.7.x Secret protection](08-crosscutting-concepts.md#secret-protection)).
 
 ### Shared module
 

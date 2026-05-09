@@ -57,7 +57,7 @@ public class PlacementRulesTests
     {
         AssertRule(Classes().That()
             .HaveNameEndingWith("Command")
-            .And().ResideInNamespace("Amolenk.Admitto.Core.Module")
+            .And().ResideInNamespace("Amolenk.Admitto.Core")
             .Should()
             .ResideInNamespaceMatching(".*\\.Application\\.UseCases\\..*")
             .WithoutRequiringPositiveResults());
@@ -68,7 +68,7 @@ public class PlacementRulesTests
     {
         AssertRule(Classes().That()
             .HaveNameEndingWith("Query")
-            .And().ResideInNamespace("Amolenk.Admitto.Core.Module")
+            .And().ResideInNamespace("Amolenk.Admitto.Core")
             .Should()
             .ResideInNamespaceMatching(".*\\.Application\\.UseCases\\..*")
             .WithoutRequiringPositiveResults());

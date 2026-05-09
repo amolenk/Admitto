@@ -1,15 +1,15 @@
-using Amolenk.Admitto.Core.Module.Email.Application.Sending.Settings;
-using Amolenk.Admitto.Core.Module.Email.Application.Templating;
-using Amolenk.Admitto.Core.Module.Email.Application.UseCases.SendEmail;
-using Amolenk.Admitto.Core.Module.Email.Domain.Tests.Builders;
-using Amolenk.Admitto.Core.Module.Email.Domain.ValueObjects;
-using Amolenk.Admitto.Core.Module.Email.Infrastructure.Security;
-using Amolenk.Admitto.Core.Module.Email.Tests.Application.Infrastructure;
+using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
+using Amolenk.Admitto.Core.Email.Application.Templating;
+using Amolenk.Admitto.Core.Email.Application.UseCases.SendEmail;
+using Amolenk.Admitto.Core.Email.Domain.Tests.Builders;
+using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Email.Infrastructure.Security;
+using Amolenk.Admitto.Core.Email.Tests.Application.Infrastructure;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Shouldly;
 
-namespace Amolenk.Admitto.Core.Module.Email.Tests.Application.UseCases.SendEmail;
+namespace Amolenk.Admitto.Core.Email.Tests.Application.UseCases.SendEmail;
 
 [TestClass]
 public sealed class SendEmailHandlerTests(TestContext testContext) : AspireIntegrationTestBase

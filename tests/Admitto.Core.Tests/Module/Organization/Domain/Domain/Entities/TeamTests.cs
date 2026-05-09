@@ -1,10 +1,10 @@
-using Amolenk.Admitto.Core.Module.Organization.Domain.Entities;
-using Amolenk.Admitto.Core.Module.Organization.Domain.Tests.Builders;
+using Amolenk.Admitto.Core.Organization.Domain.Entities;
+using Amolenk.Admitto.Core.Organization.Domain.Tests.Builders;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Shouldly;
 
-namespace Amolenk.Admitto.Core.Module.Organization.Domain.Tests.Entities;
+namespace Amolenk.Admitto.Core.Organization.Domain.Tests.Entities;
 
 [TestClass]
 public sealed class TeamTests

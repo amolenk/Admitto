@@ -1,13 +1,13 @@
-using Amolenk.Admitto.Core.Module.Registrations.Domain.DomainEvents;
-using Amolenk.Admitto.Core.Module.Registrations.Domain.Entities;
-using Amolenk.Admitto.Core.Module.Registrations.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
+using Amolenk.Admitto.Core.Registrations.Domain.Entities;
+using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Shouldly;
 using Should = Shouldly.Should;
 
-namespace Amolenk.Admitto.Core.Module.Registrations.Domain.Tests.Entities;
+namespace Amolenk.Admitto.Core.Registrations.Domain.Tests.Entities;
 
 [TestClass]
 public sealed class TicketedEventTests

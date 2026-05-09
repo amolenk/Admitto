@@ -1,9 +1,9 @@
-using Amolenk.Admitto.Core.Module.Email.Application.Templating;
-using Amolenk.Admitto.Core.Module.Email.Domain.Entities;
-using Amolenk.Admitto.Core.Module.Email.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Email.Application.Templating;
+using Amolenk.Admitto.Core.Email.Domain.Entities;
+using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Shouldly;
 
-namespace Amolenk.Admitto.Core.Module.Email.Domain.Tests.Entities;
+namespace Amolenk.Admitto.Core.Email.Domain.Tests.Entities;
 
 [TestClass]
 public sealed class EmailTemplateTests

@@ -1,8 +1,8 @@
-using Amolenk.Admitto.Core.Module.Email.Domain.Entities;
-using Amolenk.Admitto.Core.Module.Email.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Email.Domain.Entities;
+using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
-namespace Amolenk.Admitto.Core.Module.Email.Domain.Tests.Builders;
+namespace Amolenk.Admitto.Core.Email.Domain.Tests.Builders;
 
 public class EventEmailSettingsBuilder
 {

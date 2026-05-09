@@ -1,10 +1,10 @@
-using Amolenk.Admitto.Core.Module.Organization.Tests.Application.Builders;
-using Amolenk.Admitto.Core.Module.Organization.Tests.Application.Infrastructure.Hosting;
-using Amolenk.Admitto.Core.Module.Organization.Domain.Tests.Builders;
+using Amolenk.Admitto.Core.Organization.Tests.Application.Builders;
+using Amolenk.Admitto.Core.Organization.Tests.Application.Infrastructure.Hosting;
+using Amolenk.Admitto.Core.Organization.Domain.Tests.Builders;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
-using TeamBuilder = Amolenk.Admitto.Core.Module.Organization.Tests.Application.Builders.TeamBuilder;
+using TeamBuilder = Amolenk.Admitto.Core.Organization.Tests.Application.Builders.TeamBuilder;
 
-namespace Amolenk.Admitto.Core.Module.Organization.Tests.Application.UseCases.TeamMembershipManagement.AssignTeamMembership;
+namespace Amolenk.Admitto.Core.Organization.Tests.Application.UseCases.TeamMembershipManagement.AssignTeamMembership;
 
 internal sealed class AssignTeamMembershipFixture
 {

@@ -1,9 +1,9 @@
-using Amolenk.Admitto.Core.Module.Registrations.Domain.DomainEvents;
-using Amolenk.Admitto.Core.Module.Registrations.Domain.Entities;
+using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
+using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Shouldly;
 
-namespace Amolenk.Admitto.Core.Module.Registrations.Domain.Tests.Entities;
+namespace Amolenk.Admitto.Core.Registrations.Domain.Tests.Entities;
 
 [TestClass]
 public sealed class OtpCodeTests

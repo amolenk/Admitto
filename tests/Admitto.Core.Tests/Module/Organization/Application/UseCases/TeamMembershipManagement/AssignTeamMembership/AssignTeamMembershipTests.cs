@@ -1,19 +1,19 @@
-using Amolenk.Admitto.Core.Module.Organization.Application.Mapping;
-using Amolenk.Admitto.Core.Module.Organization.Tests.Application.Infrastructure;
-using Amolenk.Admitto.Core.Module.Organization.Application.UseCases.TeamMembershipManagement.AssignTeamMembership;
-using Amolenk.Admitto.Core.Module.Organization.Contracts;
-using Amolenk.Admitto.Core.Module.Organization.Domain.DomainEvents;
-using Amolenk.Admitto.Core.Module.Organization.Domain.Entities;
-using Amolenk.Admitto.Core.Module.Organization.Domain.Tests.Builders;
-using Amolenk.Admitto.Core.Module.Organization.Domain.ValueObjects;
-using Amolenk.Admitto.Core.Module.Organization.Tests.Application.Builders;
-using TeamBuilder = Amolenk.Admitto.Core.Module.Organization.Tests.Application.Builders.TeamBuilder;
+using Amolenk.Admitto.Core.Organization.Application.Mapping;
+using Amolenk.Admitto.Core.Organization.Tests.Application.Infrastructure;
+using Amolenk.Admitto.Core.Organization.Application.UseCases.TeamMembershipManagement.AssignTeamMembership;
+using Amolenk.Admitto.Core.Organization.Contracts;
+using Amolenk.Admitto.Core.Organization.Domain.DomainEvents;
+using Amolenk.Admitto.Core.Organization.Domain.Entities;
+using Amolenk.Admitto.Core.Organization.Domain.Tests.Builders;
+using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Organization.Tests.Application.Builders;
+using TeamBuilder = Amolenk.Admitto.Core.Organization.Tests.Application.Builders.TeamBuilder;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Should = Shouldly.Should;
 
-namespace Amolenk.Admitto.Core.Module.Organization.Tests.Application.UseCases.TeamMembershipManagement.AssignTeamMembership;
+namespace Amolenk.Admitto.Core.Organization.Tests.Application.UseCases.TeamMembershipManagement.AssignTeamMembership;
 
 [TestClass]
 public sealed class AssignTeamMembershipTests(TestContext testContext) : AspireIntegrationTestBase

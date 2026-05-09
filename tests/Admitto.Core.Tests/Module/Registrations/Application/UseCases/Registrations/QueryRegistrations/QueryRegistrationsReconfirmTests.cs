@@ -1,11 +1,11 @@
-using Amolenk.Admitto.Core.Module.Registrations.Application.UseCases.Registrations.QueryRegistrations;
-using Amolenk.Admitto.Core.Module.Registrations.Contracts;
-using Amolenk.Admitto.Core.Module.Registrations.Domain.Entities;
-using Amolenk.Admitto.Core.Module.Registrations.Domain.ValueObjects;
-using Amolenk.Admitto.Core.Module.Registrations.Tests.Application.Aspire;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.QueryRegistrations;
+using Amolenk.Admitto.Core.Registrations.Contracts;
+using Amolenk.Admitto.Core.Registrations.Domain.Entities;
+using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Registrations.Tests.Application.Aspire;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
-namespace Amolenk.Admitto.Core.Module.Registrations.Tests.Application.UseCases.Registrations.QueryRegistrations;
+namespace Amolenk.Admitto.Core.Registrations.Tests.Application.UseCases.Registrations.QueryRegistrations;
 
 /// <summary>
 /// Reconfirm-flow filter tests: validates that the

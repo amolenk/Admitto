@@ -1,7 +1,7 @@
-using Amolenk.Admitto.Core.Module.Organization.Tests.Application.Infrastructure;
-using Amolenk.Admitto.Core.Module.Organization.Application.UseCases.TeamManagement.GetTeams;
+using Amolenk.Admitto.Core.Organization.Tests.Application.Infrastructure;
+using Amolenk.Admitto.Core.Organization.Application.UseCases.TeamManagement.GetTeams;
 
-namespace Amolenk.Admitto.Core.Module.Organization.Tests.Application.UseCases.TeamManagement.GetTeams;
+namespace Amolenk.Admitto.Core.Organization.Tests.Application.UseCases.TeamManagement.GetTeams;
 
 [TestClass]
 public sealed class GetTeamsTests(TestContext testContext) : AspireIntegrationTestBase

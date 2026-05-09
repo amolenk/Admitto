@@ -1,11 +1,11 @@
-using Amolenk.Admitto.Core.Module.Organization.Tests.Application.Infrastructure;
-using Amolenk.Admitto.Core.Module.Organization.Application.UseCases.TeamManagement.CreateTeam;
+using Amolenk.Admitto.Core.Organization.Tests.Application.Infrastructure;
+using Amolenk.Admitto.Core.Organization.Application.UseCases.TeamManagement.CreateTeam;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Microsoft.EntityFrameworkCore;
 using Should = Shouldly.Should;
 
-namespace Amolenk.Admitto.Core.Module.Organization.Tests.Application.UseCases.TeamManagement.CreateTeam;
+namespace Amolenk.Admitto.Core.Organization.Tests.Application.UseCases.TeamManagement.CreateTeam;
 
 [TestClass]
 public sealed class CreateTeamTests(TestContext testContext) : AspireIntegrationTestBase

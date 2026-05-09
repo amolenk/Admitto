@@ -1,10 +1,10 @@
-// using Amolenk.Admitto.Core.Module.Organization.Contracts;
-// using Amolenk.Admitto.Core.Module.Registrations.Tests.Application.Builders;
-// using Amolenk.Admitto.Core.Module.Registrations.Tests.Application.Infrastructure.Hosting;
+// using Amolenk.Admitto.Core.Organization.Contracts;
+// using Amolenk.Admitto.Core.Registrations.Tests.Application.Builders;
+// using Amolenk.Admitto.Core.Registrations.Tests.Application.Infrastructure.Hosting;
 // using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 // using NSubstitute;
 //
-// namespace Amolenk.Admitto.Core.Module.Registrations.Tests.Application.UseCases.RegisterAttendee;
+// namespace Amolenk.Admitto.Core.Registrations.Tests.Application.UseCases.RegisterAttendee;
 //
 // internal sealed class RegisterAttendeeFixture
 // {

@@ -1,14 +1,14 @@
-// using Amolenk.Admitto.Core.Module.Organization.Contracts;
-// using Amolenk.Admitto.Core.Module.Registrations.Application.Persistence;
-// using Amolenk.Admitto.Core.Module.Registrations.Application.Services;
-// using Amolenk.Admitto.Core.Module.Registrations.Tests.Application.Aspire;
-// using Amolenk.Admitto.Core.Module.Registrations.Application.UseCases.RegisterAttendee;
-// using Amolenk.Admitto.Core.Module.Registrations.Domain.ValueObjects;
+// using Amolenk.Admitto.Core.Organization.Contracts;
+// using Amolenk.Admitto.Core.Registrations.Application.Persistence;
+// using Amolenk.Admitto.Core.Registrations.Application.Services;
+// using Amolenk.Admitto.Core.Registrations.Tests.Application.Aspire;
+// using Amolenk.Admitto.Core.Registrations.Application.UseCases.RegisterAttendee;
+// using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 // using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 // using Microsoft.EntityFrameworkCore;
 // using Shouldly;
 //
-// namespace Amolenk.Admitto.Core.Module.Registrations.Tests.Application.UseCases.RegisterAttendee;
+// namespace Amolenk.Admitto.Core.Registrations.Tests.Application.UseCases.RegisterAttendee;
 //
 // [TestClass]
 // public sealed class RegisterAttendeeTests(TestContext testContext) : AspireIntegrationTestBase

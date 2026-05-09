@@ -1,7 +1,7 @@
-using Amolenk.Admitto.Core.Module.Registrations.Application.UseCases.Registrations.GetRegistrations;
-using Amolenk.Admitto.Core.Module.Registrations.Tests.Application.Aspire;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.GetRegistrations;
+using Amolenk.Admitto.Core.Registrations.Tests.Application.Aspire;
 
-namespace Amolenk.Admitto.Core.Module.Registrations.Tests.Application.UseCases.Registrations.GetRegistrations;
+namespace Amolenk.Admitto.Core.Registrations.Tests.Application.UseCases.Registrations.GetRegistrations;
 
 [TestClass]
 public sealed class GetRegistrationsTests(TestContext testContext) : AspireIntegrationTestBase

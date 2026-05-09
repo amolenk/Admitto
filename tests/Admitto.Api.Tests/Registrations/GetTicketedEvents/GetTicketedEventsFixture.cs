@@ -1,6 +1,6 @@
 using Amolenk.Admitto.Api.Tests.Infrastructure.Hosting;
-using Amolenk.Admitto.Core.Module.Organization.Tests.Application.Builders;
-using Amolenk.Admitto.Core.Module.Registrations.Domain.Entities;
+using Amolenk.Admitto.Core.Organization.Tests.Application.Builders;
+using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Api.Tests.Registrations.GetTicketedEvents;

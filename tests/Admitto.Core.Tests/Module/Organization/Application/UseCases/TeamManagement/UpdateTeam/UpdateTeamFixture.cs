@@ -1,7 +1,7 @@
-using Amolenk.Admitto.Core.Module.Organization.Tests.Application.Builders;
-using Amolenk.Admitto.Core.Module.Organization.Tests.Application.Infrastructure.Hosting;
+using Amolenk.Admitto.Core.Organization.Tests.Application.Builders;
+using Amolenk.Admitto.Core.Organization.Tests.Application.Infrastructure.Hosting;
 
-namespace Amolenk.Admitto.Core.Module.Organization.Tests.Application.UseCases.TeamManagement.UpdateTeam;
+namespace Amolenk.Admitto.Core.Organization.Tests.Application.UseCases.TeamManagement.UpdateTeam;
 
 internal sealed class UpdateTeamFixture
 {

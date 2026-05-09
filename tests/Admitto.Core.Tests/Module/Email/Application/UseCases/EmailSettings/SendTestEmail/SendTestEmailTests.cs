@@ -1,9 +1,9 @@
-using Amolenk.Admitto.Core.Module.Email.Application.UseCases.EmailSettings.SendTestEmail;
-using Amolenk.Admitto.Core.Module.Email.Tests.Application.Infrastructure;
+using Amolenk.Admitto.Core.Email.Application.UseCases.EmailSettings.SendTestEmail;
+using Amolenk.Admitto.Core.Email.Tests.Application.Infrastructure;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Microsoft.EntityFrameworkCore;
 
-namespace Amolenk.Admitto.Core.Module.Email.Tests.Application.UseCases.EmailSettings.SendTestEmail;
+namespace Amolenk.Admitto.Core.Email.Tests.Application.UseCases.EmailSettings.SendTestEmail;
 
 [TestClass]
 public sealed class SendTestEmailTests(TestContext testContext) : AspireIntegrationTestBase

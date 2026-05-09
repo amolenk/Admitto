@@ -1,12 +1,12 @@
-using Amolenk.Admitto.Core.Module.Email.Application.UseCases.Reconfirmations.ScheduleReconfirmations;
-using Amolenk.Admitto.Core.Module.Email.Application.UseCases.Reconfirmations.ScheduleReconfirmations.EventHandlers;
-using Amolenk.Admitto.Core.Module.Registrations.Contracts;
-using Amolenk.Admitto.Core.Module.Registrations.Contracts.IntegrationEvents;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Reconfirmations.ScheduleReconfirmations;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Reconfirmations.ScheduleReconfirmations.EventHandlers;
+using Amolenk.Admitto.Core.Registrations.Contracts;
+using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using NSubstitute;
 
-namespace Amolenk.Admitto.Core.Module.Email.Tests.Application.UseCases.Reconfirmations.ScheduleReconfirmations.EventHandlers;
+namespace Amolenk.Admitto.Core.Email.Tests.Application.UseCases.Reconfirmations.ScheduleReconfirmations.EventHandlers;
 
 [TestClass]
 public sealed class ReconfirmIntegrationEventHandlerTests
@@ -18,7 +18,7 @@ public sealed class ReconfirmIntegrationEventHandlerTests
         new(teamId, eventId, "UTC", Opens, Closes, 1);
 
     [TestMethod]
-    public async Task TicketedEventCreated_WithExistingPolicy_DispatchesUpsertCommand()
+    public async Task TicketedEventCreatedIntegrationEvent_WithExistingPolicy_DispatchesUpsertCommand()
     {
         var teamId = Guid.NewGuid();
         var eventId = Guid.NewGuid();
@@ -32,7 +32,7 @@ public sealed class ReconfirmIntegrationEventHandlerTests
         var handler = new TicketedEventCreatedIntegrationEventHandler(facade, mediator);
 
         await handler.HandleAsync(
-            new TicketedEventCreated(Guid.NewGuid(), teamId, eventId, "UTC"),
+            new TicketedEventCreatedIntegrationEvent(Guid.NewGuid(), teamId, eventId, "UTC"),
             default);
 
         await mediator.Received(1).SendAsync(
@@ -42,7 +42,7 @@ public sealed class ReconfirmIntegrationEventHandlerTests
     }
 
     [TestMethod]
-    public async Task TicketedEventCreated_WithoutPolicy_DoesNotDispatch()
+    public async Task TicketedEventCreatedIntegrationEvent_WithoutPolicy_DoesNotDispatch()
     {
         var eventId = Guid.NewGuid();
         var facade = Substitute.For<IRegistrationsFacade>();
@@ -53,7 +53,7 @@ public sealed class ReconfirmIntegrationEventHandlerTests
         var handler = new TicketedEventCreatedIntegrationEventHandler(facade, mediator);
 
         await handler.HandleAsync(
-            new TicketedEventCreated(Guid.NewGuid(), Guid.NewGuid(), eventId, "UTC"),
+            new TicketedEventCreatedIntegrationEvent(Guid.NewGuid(), Guid.NewGuid(), eventId, "UTC"),
             default);
 
         await mediator.DidNotReceive().SendAsync(
@@ -150,7 +150,7 @@ public sealed class ReconfirmIntegrationEventHandlerTests
     }
 
     [TestMethod]
-    public async Task TicketedEventArchived_DispatchesRemoveCommand()
+    public async Task TicketedEventArchivedIntegrationEvent_DispatchesRemoveCommand()
     {
         var eventId = Guid.NewGuid();
         var mediator = Substitute.For<IMediator>();
@@ -158,7 +158,7 @@ public sealed class ReconfirmIntegrationEventHandlerTests
         var handler = new TicketedEventArchivedIntegrationEventHandler(mediator);
 
         await handler.HandleAsync(
-            new TicketedEventArchived(Guid.NewGuid(), eventId),
+            new TicketedEventArchivedIntegrationEvent(Guid.NewGuid(), eventId),
             default);
 
         await mediator.Received(1).SendAsync(
@@ -168,7 +168,7 @@ public sealed class ReconfirmIntegrationEventHandlerTests
     }
 
     [TestMethod]
-    public async Task TicketedEventCancelled_DispatchesRemoveCommand()
+    public async Task TicketedEventCancelledIntegrationEvent_DispatchesRemoveCommand()
     {
         var eventId = Guid.NewGuid();
         var mediator = Substitute.For<IMediator>();
@@ -176,7 +176,7 @@ public sealed class ReconfirmIntegrationEventHandlerTests
         var handler = new TicketedEventCancelledIntegrationEventHandler(mediator);
 
         await handler.HandleAsync(
-            new TicketedEventCancelled(Guid.NewGuid(), eventId),
+            new TicketedEventCancelledIntegrationEvent(Guid.NewGuid(), eventId),
             default);
 
         await mediator.Received(1).SendAsync(

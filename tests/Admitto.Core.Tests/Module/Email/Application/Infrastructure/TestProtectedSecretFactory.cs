@@ -1,8 +1,8 @@
-using Amolenk.Admitto.Core.Module.Email.Infrastructure.Security;
+using Amolenk.Admitto.Core.Email.Infrastructure.Security;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Amolenk.Admitto.Core.Module.Email.Tests.Application.Infrastructure;
+namespace Amolenk.Admitto.Core.Email.Tests.Application.Infrastructure;
 
 /// <summary>
 /// Provides an <see cref="IProtectedSecret"/> backed by ephemeral Data Protection keys for tests.

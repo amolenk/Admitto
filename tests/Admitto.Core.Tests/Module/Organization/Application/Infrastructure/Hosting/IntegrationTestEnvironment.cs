@@ -1,4 +1,4 @@
-using Amolenk.Admitto.Core.Module.Organization.Infrastructure.Persistence;
+using Amolenk.Admitto.Core.Organization.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence;
@@ -6,7 +6,7 @@ using Amolenk.Admitto.Testing.Infrastructure.TestContexts;
 using Aspire.Hosting.Testing;
 using Microsoft.EntityFrameworkCore;
 
-namespace Amolenk.Admitto.Core.Module.Organization.Tests.Application.Infrastructure.Hosting;
+namespace Amolenk.Admitto.Core.Organization.Tests.Application.Infrastructure.Hosting;
 
 public sealed record IntegrationTestEnvironment(DatabaseTestContext<OrganizationDbContext> Database)
 {

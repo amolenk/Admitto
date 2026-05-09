@@ -1,8 +1,8 @@
-using Amolenk.Admitto.Core.Module.Email.Infrastructure.Persistence;
+using Amolenk.Admitto.Core.Email.Infrastructure.Persistence;
 using Amolenk.Admitto.Testing.Infrastructure.TestContexts;
 using Aspire.Hosting.Testing;
 
-namespace Amolenk.Admitto.Core.Module.Email.Tests.Application.Infrastructure.Hosting;
+namespace Amolenk.Admitto.Core.Email.Tests.Application.Infrastructure.Hosting;
 
 public sealed record IntegrationTestEnvironment(DatabaseTestContext<EmailDbContext> Database)
 {

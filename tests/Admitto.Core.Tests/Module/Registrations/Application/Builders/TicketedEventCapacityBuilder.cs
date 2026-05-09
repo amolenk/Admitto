@@ -1,7 +1,7 @@
-// using Amolenk.Admitto.Core.Module.Registrations.Domain.Entities;
+// using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 // using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 //
-// namespace Amolenk.Admitto.Core.Module.Registrations.Tests.Application.Builders;
+// namespace Amolenk.Admitto.Core.Registrations.Tests.Application.Builders;
 //
 // public class TicketedEventCapacityBuilder
 // {

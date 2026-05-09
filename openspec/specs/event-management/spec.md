@@ -360,16 +360,15 @@ The Registrations module SHALL outbox a corresponding integration event for Orga
 `TicketedEventCreated` on creation, `TicketedEventCreationRejected` on a
 failed creation attempt, `TicketedEventCancelled` on cancel, and
 `TicketedEventArchived` on archive. Each event SHALL carry at minimum the
-`TeamId`, the `TicketedEventId` (when one exists), the event slug (when one
-exists), and — for the creation-response events — the originating
-`CreationRequestId` so Organization can correlate with its
-`TeamEventCreationRequest` record.
+`TeamId`, the `TicketedEventId` (when one exists), and — for the
+creation-response events — the originating `CreationRequestId` so Organization
+can correlate with its `TeamEventCreationRequest` record.
 
 Event consumers on the Organization side SHALL be idempotent against redelivery.
 
 #### Scenario: Cancellation emits an integration event
 - **WHEN** a `TicketedEvent` transitions to Cancelled
-- **THEN** a `TicketedEventCancelled` integration event is outboxed carrying the `TeamId`, `TicketedEventId`, and event slug
+- **THEN** a `TicketedEventCancelled` integration event is outboxed carrying the `TeamId` and `TicketedEventId`
 
 #### Scenario: Archival emits an integration event
 - **WHEN** a `TicketedEvent` transitions to Archived
@@ -378,10 +377,6 @@ Event consumers on the Organization side SHALL be idempotent against redelivery.
 #### Scenario: Creation success emits an integration event
 - **WHEN** Registrations successfully creates a `TicketedEvent` from a `TicketedEventCreationRequested`
 - **THEN** a `TicketedEventCreated` integration event is outboxed carrying the `CreationRequestId` and the new event's identity
-
-#### Scenario: Creation rejection emits an integration event
-- **WHEN** Registrations rejects a `TicketedEventCreationRequested` because of a duplicate slug
-- **THEN** a `TicketedEventCreationRejected` integration event is outboxed carrying the `CreationRequestId` and reason `duplicate_slug`
 
 #### Scenario: Redelivery of a lifecycle event is idempotent
 - **WHEN** the same `TicketedEventCancelled` integration event is delivered twice to Organization

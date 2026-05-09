@@ -1,14 +1,14 @@
-using Amolenk.Admitto.Core.Module.Registrations.Contracts;
-using Amolenk.Admitto.Core.Module.Registrations.Application.UseCases.Registrations.RegisterAttendee;
-using Amolenk.Admitto.Core.Module.Registrations.Domain.DomainEvents;
-using Amolenk.Admitto.Core.Module.Registrations.Domain.Entities;
-using Amolenk.Admitto.Core.Module.Registrations.Domain.ValueObjects;
-using Amolenk.Admitto.Core.Module.Registrations.Tests.Application.Aspire;
+using Amolenk.Admitto.Core.Registrations.Contracts;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendee;
+using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
+using Amolenk.Admitto.Core.Registrations.Domain.Entities;
+using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Registrations.Tests.Application.Aspire;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Microsoft.EntityFrameworkCore;
 
-namespace Amolenk.Admitto.Core.Module.Registrations.Tests.Application.UseCases.Registrations.RegisterAttendee;
+namespace Amolenk.Admitto.Core.Registrations.Tests.Application.UseCases.Registrations.RegisterAttendee;
 
 [TestClass]
 public sealed class RegisterWithCouponTests(TestContext testContext) : AspireIntegrationTestBase

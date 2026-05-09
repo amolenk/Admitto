@@ -1,10 +1,10 @@
-using Amolenk.Admitto.Core.Module.Organization.Tests.Application.Infrastructure;
-using Amolenk.Admitto.Core.Module.Organization.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Organization.Tests.Application.Infrastructure;
+using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using NSubstitute;
 using Quartz;
 
-namespace Amolenk.Admitto.Core.Module.Organization.Tests.Application.Jobs;
+namespace Amolenk.Admitto.Core.Organization.Tests.Application.Jobs;
 
 [TestClass]
 public sealed class DeprovisionUserIdpJobTests(TestContext testContext) : AspireIntegrationTestBase

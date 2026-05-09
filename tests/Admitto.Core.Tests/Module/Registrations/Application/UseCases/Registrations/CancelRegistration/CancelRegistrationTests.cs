@@ -1,13 +1,13 @@
-using Amolenk.Admitto.Core.Module.Registrations.Application.UseCases.Registrations.CancelRegistration;
-using Amolenk.Admitto.Core.Module.Registrations.Domain.Entities;
-using Amolenk.Admitto.Core.Module.Registrations.Domain.ValueObjects;
-using Amolenk.Admitto.Core.Module.Registrations.Tests.Application.Aspire;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.CancelRegistration;
+using Amolenk.Admitto.Core.Registrations.Domain.Entities;
+using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Registrations.Tests.Application.Aspire;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Microsoft.EntityFrameworkCore;
 
-namespace Amolenk.Admitto.Core.Module.Registrations.Tests.Application.UseCases.Registrations.CancelRegistration;
+namespace Amolenk.Admitto.Core.Registrations.Tests.Application.UseCases.Registrations.CancelRegistration;
 
 [TestClass]
 public sealed class CancelRegistrationTests(TestContext testContext) : AspireIntegrationTestBase

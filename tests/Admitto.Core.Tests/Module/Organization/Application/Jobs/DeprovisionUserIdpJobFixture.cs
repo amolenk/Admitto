@@ -1,15 +1,15 @@
-using Amolenk.Admitto.Core.Module.Organization.Application.Jobs;
-using Amolenk.Admitto.Core.Module.Organization.Application.Services;
-using Amolenk.Admitto.Core.Module.Organization.Domain.Tests.Builders;
-using Amolenk.Admitto.Core.Module.Organization.Domain.ValueObjects;
-using Amolenk.Admitto.Core.Module.Organization.Tests.Application.Infrastructure.Hosting;
+using Amolenk.Admitto.Core.Organization.Application.Jobs;
+using Amolenk.Admitto.Core.Organization.Application.Services;
+using Amolenk.Admitto.Core.Organization.Domain.Tests.Builders;
+using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Organization.Tests.Application.Infrastructure.Hosting;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 using NSubstitute;
 
-namespace Amolenk.Admitto.Core.Module.Organization.Tests.Application.Jobs;
+namespace Amolenk.Admitto.Core.Organization.Tests.Application.Jobs;
 
 internal sealed class DeprovisionUserIdpJobFixture
 {
@@ -31,7 +31,7 @@ internal sealed class DeprovisionUserIdpJobFixture
             .WithEmailAddress(Amolenk.Admitto.Core.Shared.Kernel.ValueObjects.EmailAddress.From(EmailAddress))
             .Build();
 
-        user.AssignExternalUserId(Amolenk.Admitto.Core.Module.Organization.Domain.ValueObjects.ExternalUserId.From(ExternalUserId));
+        user.AssignExternalUserId(Amolenk.Admitto.Core.Organization.Domain.ValueObjects.ExternalUserId.From(ExternalUserId));
 
         await environment.Database.SeedAsync(dbContext =>
         {

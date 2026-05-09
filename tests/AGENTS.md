@@ -3,17 +3,27 @@
 ## Scope
 This file applies to `/tests`. Test intent and layer boundaries are in `docs/arc42/10-quality-requirements.md`.
 
+## First: Architecture Tests
+Before any other test suite, verify architectural rules pass:
+```bash
+dotnet test tests/Admitto.Core.ArchTests/Admitto.Core.ArchTests.csproj
+```
+Architecture tests enforce dependency direction, naming conventions, and placement rules (see §8.15 in `docs/arc42/08-crosscutting-concepts.md`). Fix violations before running other suites.
+
 ## Choosing the Right Suite
-- Domain rule or value-object behavior → `Admitto.Module.*.Domain.Tests`
-- Handler, event-driven workflow, persistence, or job behavior → `Admitto.Module.*.Tests`
+- Domain rule or value-object behavior → `Admitto.Core.Tests` (under `Module/*/Domain/`)
+- Handler, event-driven workflow, persistence, or job behavior → `Admitto.Core.Tests` (under `Module/*/`)
 - API wiring, auth, or route pipeline → `Admitto.Api.Tests`
 
 ## Commands
 ```bash
-dotnet test tests/Admitto.Module.Organization.Domain.Tests/Admitto.Module.Organization.Domain.Tests.csproj
-dotnet test tests/Admitto.Module.Organization.Tests/Admitto.Module.Organization.Tests.csproj
-dotnet test tests/Admitto.Module.Registrations.Domain.Tests/Admitto.Module.Registrations.Domain.Tests.csproj
-dotnet test tests/Admitto.Module.Registrations.Tests/Admitto.Module.Registrations.Tests.csproj
+# Architecture tests (run first)
+dotnet test tests/Admitto.Core.ArchTests/Admitto.Core.ArchTests.csproj
+
+# All core module tests (domain + integration)
+dotnet test tests/Admitto.Core.Tests/Admitto.Core.Tests.csproj
+
+# API-level tests
 dotnet test tests/Admitto.Api.Tests/Admitto.Api.Tests.csproj
 ```
 
@@ -25,15 +35,16 @@ dotnet test tests/Admitto.Api.Tests/Admitto.Api.Tests.csproj
 Every acceptance scenario (`SC-*`) should have a corresponding test method. One scenario = one test by default; follow only documented exceptions.
 
 ### Folder Structure
-Mirror the source `Application/UseCases/{Feature}/{UseCaseName}/` structure:
+Mirror the source `Module/{Module}/Application/UseCases/{Feature}/{UseCaseName}/` structure under `Admitto.Core.Tests`:
 
 ```
-tests/Admitto.Module.Organization.Tests/
-└── Application/UseCases/
-    └── TeamManagement/
-        └── CreateTeam/
-            ├── CreateTeamTests.cs
-            └── CreateTeamFixture.cs
+tests/Admitto.Core.Tests/
+└── Module/Organization/
+    └── Application/UseCases/
+        └── TeamManagement/
+            └── CreateTeam/
+                ├── CreateTeamTests.cs
+                └── CreateTeamFixture.cs
 ```
 
 ### Test Method Naming
@@ -68,3 +79,4 @@ Domain tests use `{Method}_{Condition}_{ExpectedOutcome}` (no `SC-*` prefix).
 - Prefer builder/fixture helpers over repetitive setup.
 - Keep tests focused on observable behavior (domain error, HTTP result, persisted state).
 - Add or update tests in the same module layer as the behavior you changed.
+

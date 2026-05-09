@@ -1,13 +1,13 @@
-using Amolenk.Admitto.Core.Module.Organization.Tests.Application.Infrastructure;
-using Amolenk.Admitto.Core.Module.Organization.Application.UseCases.TeamManagement.UpdateTeam;
-using Amolenk.Admitto.Core.Module.Organization.Domain.Entities;
+using Amolenk.Admitto.Core.Organization.Tests.Application.Infrastructure;
+using Amolenk.Admitto.Core.Organization.Application.UseCases.TeamManagement.UpdateTeam;
+using Amolenk.Admitto.Core.Organization.Domain.Entities;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Microsoft.EntityFrameworkCore;
 using Should = Shouldly.Should;
 
-namespace Amolenk.Admitto.Core.Module.Organization.Tests.Application.UseCases.TeamManagement.UpdateTeam;
+namespace Amolenk.Admitto.Core.Organization.Tests.Application.UseCases.TeamManagement.UpdateTeam;
 
 [TestClass]
 public sealed class UpdateTeamTests(TestContext testContext) : AspireIntegrationTestBase

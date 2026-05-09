@@ -1,22 +1,22 @@
-using Amolenk.Admitto.Core.Module.Organization.Contracts.IntegrationEvents;
-using Amolenk.Admitto.Core.Module.Registrations.Application.UseCases.TicketedEventManagement.MaterializeTicketedEvent.EventHandlers;
-using Amolenk.Admitto.Core.Module.Registrations.Tests.Application.Aspire;
+using Amolenk.Admitto.Core.Organization.Contracts.IntegrationEvents;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEventManagement.MaterializeTicketedEvent.EventHandlers;
+using Amolenk.Admitto.Core.Registrations.Tests.Application.Aspire;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Outbox;
 using Microsoft.EntityFrameworkCore;
 
-namespace Amolenk.Admitto.Core.Module.Registrations.Tests.Application.UseCases.TicketedEventManagement.MaterializeTicketedEvent;
+namespace Amolenk.Admitto.Core.Registrations.Tests.Application.UseCases.TicketedEventManagement.MaterializeTicketedEvent;
 
 [TestClass]
 public sealed class MaterializeTicketedEventTests(TestContext testContext) : AspireIntegrationTestBase
 {
-    // SC-001: Happy-path materialisation creates aggregate + catalog and outboxes TicketedEventCreated
+    // SC-001: Happy-path materialisation creates aggregate + catalog and outboxes TicketedEventCreatedIntegrationEvent
     [TestMethod]
     public async ValueTask SC001_Materialize_NewRequest_CreatesAggregateAndOutboxesCreated()
     {
         var fixture = MaterializeTicketedEventFixture.New();
         await fixture.SetupAsync(Environment);
 
-        var evt = new TicketedEventCreationRequested(
+        var evt = new TicketedEventCreationRequestedIntegrationEvent(
             fixture.CreationRequestId,
             fixture.TeamId.Value,
             "My Conference",

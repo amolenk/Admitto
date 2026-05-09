@@ -1,0 +1,12 @@
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
+
+namespace Amolenk.Admitto.Core.Registrations.Application.ModuleEvents;
+
+public record CouponCreatedModuleEvent : ModuleEvent
+{
+    public required Guid CouponId { get; init; }
+
+    public required Guid TicketedEventId { get; init; }
+
+    public required string Email { get; init; }
+}

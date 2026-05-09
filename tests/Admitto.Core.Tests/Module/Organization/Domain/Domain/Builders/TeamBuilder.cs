@@ -1,7 +1,7 @@
-using Amolenk.Admitto.Core.Module.Organization.Domain.Entities;
+using Amolenk.Admitto.Core.Organization.Domain.Entities;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
-namespace Amolenk.Admitto.Core.Module.Organization.Domain.Tests.Builders;
+namespace Amolenk.Admitto.Core.Organization.Domain.Tests.Builders;
 
 public class TeamBuilder
 {

@@ -1,12 +1,12 @@
 using System.Text.Json;
-using Amolenk.Admitto.Core.Module.Email.Application.Sending.Bulk;
-using Amolenk.Admitto.Core.Module.Email.Domain.ValueObjects;
-using Amolenk.Admitto.Core.Module.Registrations.Contracts;
+using Amolenk.Admitto.Core.Email.Application.Sending.Bulk;
+using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using NSubstitute;
 using Shouldly;
 
-namespace Amolenk.Admitto.Core.Module.Email.Tests.Application.Sending.Bulk;
+namespace Amolenk.Admitto.Core.Email.Tests.Application.Sending.Bulk;
 
 [TestClass]
 public sealed class BulkEmailRecipientResolverTests

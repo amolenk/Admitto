@@ -88,6 +88,12 @@ If generation is blocked, fix the Aspire/spec access problem first. **Do not add
 ## Testing
 Run targeted tests for the modules you changed. See `tests/AGENTS.md` for commands and suite selection.
 
+**Always run architecture tests first:**
+```bash
+dotnet test tests/Admitto.Core.ArchTests/Admitto.Core.ArchTests.csproj
+```
+If ArchTests fail, fix the architectural violation before running other test suites.
+
 ## Documentation Hygiene
 See `docs/AGENTS.md` for doc update rules.
 

@@ -1,7 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using Amolenk.Admitto.Api.Tests.Infrastructure;
-using Amolenk.Admitto.Core.Module.Organization.Contracts;
+using Amolenk.Admitto.Core.Organization.Contracts;
 using Shouldly;
 
 namespace Amolenk.Admitto.Api.Tests.Organization.TeamMembership;

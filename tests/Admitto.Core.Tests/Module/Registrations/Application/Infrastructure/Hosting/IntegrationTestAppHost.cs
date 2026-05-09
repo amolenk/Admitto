@@ -3,7 +3,7 @@ using Aspire.Hosting;
 using Aspire.Hosting.Testing;
 using Microsoft.Extensions.Hosting;
 
-namespace Amolenk.Admitto.Core.Module.Registrations.Tests.Application.Infrastructure.Hosting;
+namespace Amolenk.Admitto.Core.Registrations.Tests.Application.Infrastructure.Hosting;
 
 public sealed class IntegrationTestAppHost() : DistributedApplicationFactory(typeof(Projects.Admitto_AppHost))
 {

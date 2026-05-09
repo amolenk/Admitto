@@ -1,11 +1,11 @@
-using Amolenk.Admitto.Core.Module.Email.Application.Templating;
-using Amolenk.Admitto.Core.Module.Email.Domain.Tests.Builders;
-using Amolenk.Admitto.Core.Module.Email.Domain.ValueObjects;
-using Amolenk.Admitto.Core.Module.Email.Tests.Application.Infrastructure;
+using Amolenk.Admitto.Core.Email.Application.Templating;
+using Amolenk.Admitto.Core.Email.Domain.Tests.Builders;
+using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Email.Tests.Application.Infrastructure;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Shouldly;
 
-namespace Amolenk.Admitto.Core.Module.Email.Tests.Application.Templating;
+namespace Amolenk.Admitto.Core.Email.Tests.Application.Templating;
 
 [TestClass]
 public sealed class EmailTemplateServiceTests(TestContext testContext) : AspireIntegrationTestBase

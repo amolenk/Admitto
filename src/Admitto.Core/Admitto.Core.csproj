@@ -27,7 +27,7 @@
     <PackageReference Include="Vogen" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="Module/Email/Application/Templating/Defaults/*.txt" />
-    <EmbeddedResource Include="Module/Email/Application/Templating/Defaults/*.html" />
+    <EmbeddedResource Include="Email/Application/Templating/Defaults/*.txt" />
+    <EmbeddedResource Include="Email/Application/Templating/Defaults/*.html" />
   </ItemGroup>
 </Project>

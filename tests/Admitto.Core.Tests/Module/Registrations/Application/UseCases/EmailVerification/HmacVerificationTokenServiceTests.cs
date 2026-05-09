@@ -1,10 +1,10 @@
-using Amolenk.Admitto.Core.Module.Registrations.Application.Security;
-using Amolenk.Admitto.Core.Module.Registrations.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Registrations.Application.Security;
+using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
 
-namespace Amolenk.Admitto.Core.Module.Registrations.Tests.Application.UseCases.EmailVerification;
+namespace Amolenk.Admitto.Core.Registrations.Tests.Application.UseCases.EmailVerification;
 
 [TestClass]
 public sealed class HmacVerificationTokenServiceTests

@@ -1,9 +1,9 @@
-using Amolenk.Admitto.Core.Module.Registrations.Domain.Tests.Builders;
-using Amolenk.Admitto.Core.Module.Registrations.Domain.ValueObjects;
-using Amolenk.Admitto.Core.Module.Registrations.Tests.Application.Infrastructure.Hosting;
+using Amolenk.Admitto.Core.Registrations.Domain.Tests.Builders;
+using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Registrations.Tests.Application.Infrastructure.Hosting;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
-namespace Amolenk.Admitto.Core.Module.Registrations.Tests.Application.UseCases.CouponManagement.RevokeCoupon;
+namespace Amolenk.Admitto.Core.Registrations.Tests.Application.UseCases.CouponManagement.RevokeCoupon;
 
 internal sealed class RevokeCouponFixture
 {

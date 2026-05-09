@@ -1,6 +1,6 @@
-// using Amolenk.Admitto.Core.Module.Organization.Application.Persistence;
+// using Amolenk.Admitto.Core.Organization.Application.Persistence;
 //
-// namespace Amolenk.Admitto.Core.Module.Organization.Tests.Application.Builders;
+// namespace Amolenk.Admitto.Core.Organization.Tests.Application.Builders;
 //
 // public class TicketTypeRecordBuilder
 // {

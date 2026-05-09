@@ -1,8 +1,8 @@
-using Amolenk.Admitto.Core.Module.Email.Application.Templating;
-using Amolenk.Admitto.Core.Module.Email.Domain.Tests.Builders;
+using Amolenk.Admitto.Core.Email.Application.Templating;
+using Amolenk.Admitto.Core.Email.Domain.Tests.Builders;
 using Shouldly;
 
-namespace Amolenk.Admitto.Core.Module.Email.Domain.Tests.Templating;
+namespace Amolenk.Admitto.Core.Email.Domain.Tests.Templating;
 
 [TestClass]
 public sealed class ScribanEmailRendererTests

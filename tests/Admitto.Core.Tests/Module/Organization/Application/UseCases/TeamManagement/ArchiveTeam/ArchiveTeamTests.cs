@@ -1,12 +1,12 @@
-using Amolenk.Admitto.Core.Module.Organization.Tests.Application.Infrastructure;
-using Amolenk.Admitto.Core.Module.Organization.Application.UseCases.TeamManagement.ArchiveTeam;
-using Amolenk.Admitto.Core.Module.Organization.Domain.Entities;
+using Amolenk.Admitto.Core.Organization.Tests.Application.Infrastructure;
+using Amolenk.Admitto.Core.Organization.Application.UseCases.TeamManagement.ArchiveTeam;
+using Amolenk.Admitto.Core.Organization.Domain.Entities;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Should = Shouldly.Should;
 
-namespace Amolenk.Admitto.Core.Module.Organization.Tests.Application.UseCases.TeamManagement.ArchiveTeam;
+namespace Amolenk.Admitto.Core.Organization.Tests.Application.UseCases.TeamManagement.ArchiveTeam;
 
 [TestClass]
 public sealed class ArchiveTeamTests(TestContext testContext) : AspireIntegrationTestBase
@@ -91,7 +91,7 @@ public sealed class ArchiveTeamTests(TestContext testContext) : AspireIntegratio
     [TestMethod]
     public async ValueTask ArchiveTeam_HasPendingCreationRequest_ThrowsHasActiveOrPendingEvents()
     {
-        // Arrange: team has a pending TicketedEventCreationRequested that Registrations
+        // Arrange: team has a pending TicketedEventCreationRequestedIntegrationEvent that Registrations
         // has not yet acked. Archive must be blocked by PendingEventCount > 0.
         var fixture = ArchiveTeamFixture.ActiveTeamWithPendingCreationRequest();
         await fixture.SetupAsync(Environment);
