@@ -9,9 +9,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\Admitto.Module.Email\Admitto.Module.Email.csproj" />
-      <ProjectReference Include="..\Admitto.Module.Organization\Admitto.Module.Organization.csproj" />
-      <ProjectReference Include="..\Admitto.Module.Registrations\Admitto.Module.Registrations.csproj" />
+      <ProjectReference Include="..\Admitto.Core\Admitto.Core.csproj" />
       <ProjectReference Include="..\Admitto.ServiceDefaults\Admitto.ServiceDefaults.csproj" />
     </ItemGroup>
 

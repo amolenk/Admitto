@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Amolenk.Admitto.Api.Tests.Infrastructure;
-using Amolenk.Admitto.Module.Email.Application.Templating;
+using Amolenk.Admitto.Core.Module.Email.Application.Templating;
 using Shouldly;
 
 namespace Amolenk.Admitto.Api.Tests.Email.AdminEmailTemplates;

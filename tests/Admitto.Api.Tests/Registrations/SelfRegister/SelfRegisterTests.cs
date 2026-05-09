@@ -1,9 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
 using Amolenk.Admitto.Api.Tests.Infrastructure;
-using Amolenk.Admitto.Module.Registrations.Domain.Entities;
-using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
-using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
+using Amolenk.Admitto.Core.Module.Registrations.Domain.Entities;
+using Amolenk.Admitto.Core.Module.Registrations.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Shouldly;
 
 namespace Amolenk.Admitto.Api.Tests.Registrations.SelfRegister;

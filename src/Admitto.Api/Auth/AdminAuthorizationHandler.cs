@@ -1,4 +1,4 @@
-using Amolenk.Admitto.Module.Shared.Application.Auth;
+using Amolenk.Admitto.Core.Shared.Application.Auth;
 using Microsoft.AspNetCore.Authorization;
 
 namespace Amolenk.Admitto.ApiService.Auth;

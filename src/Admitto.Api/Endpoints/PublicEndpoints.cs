@@ -1,6 +1,6 @@
 using Amolenk.Admitto.Api.Auth;
 using Amolenk.Admitto.ApiService.Middleware;
-using Amolenk.Admitto.Module.Registrations.Application;
+using Amolenk.Admitto.Core.Module.Registrations.Application;
 
 namespace Amolenk.Admitto.Api.Endpoints;
 

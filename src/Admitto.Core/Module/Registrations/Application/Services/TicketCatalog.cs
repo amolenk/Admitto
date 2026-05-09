@@ -1,0 +1,10 @@
+// using Amolenk.Admitto.Core.Module.Registrations.Domain.ValueObjects;
+//
+// namespace Amolenk.Admitto.Core.Module.Registrations.Domain.Services;
+//
+// public interface ITicketCatalog
+// {
+//     ValueTask<IReadOnlyDictionary<Slug, TicketTypeSnapshot>> GetAllAsync(
+//         TicketedEventId eventId,
+//         CancellationToken cancellationToken = default);
+// }

@@ -1,9 +1,9 @@
 using Amolenk.Admitto.Api.Tests.Infrastructure.Hosting;
-using Amolenk.Admitto.Module.Organization.Domain.Tests.Builders;
-using Amolenk.Admitto.Module.Organization.Domain.ValueObjects;
-using Amolenk.Admitto.Module.Organization.Tests.Application.Builders;
-using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
-using TeamBuilder = Amolenk.Admitto.Module.Organization.Tests.Application.Builders.TeamBuilder;
+using Amolenk.Admitto.Core.Module.Organization.Domain.Tests.Builders;
+using Amolenk.Admitto.Core.Module.Organization.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Module.Organization.Tests.Application.Builders;
+using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using TeamBuilder = Amolenk.Admitto.Core.Module.Organization.Tests.Application.Builders.TeamBuilder;
 
 namespace Amolenk.Admitto.Api.Tests.Organization.TeamMembership;
 
@@ -28,7 +28,7 @@ internal sealed class ManageMembersAuthorizationFixture
             .Build();
         TeamId = team.Id.Value;
 
-        var bob = new Module.Organization.Domain.Tests.Builders.UserBuilder()
+        var bob = new Core.Module.Organization.Domain.Tests.Builders.UserBuilder()
             .WithEmailAddress(EmailAddress.From("bob@example.com"))
             .WithMembership(team.Id, TeamMembershipRole.Crew)
             .Build();

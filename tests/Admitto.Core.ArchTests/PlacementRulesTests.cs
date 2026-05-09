@@ -1,0 +1,88 @@
+using ArchUnitNET.Domain;
+using ArchUnitNET.Fluent;
+using ArchUnitNET.Fluent.Syntax.Elements.Types.Classes;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using static ArchUnitNET.Fluent.ArchRuleDefinition;
+using Amolenk.Admitto.Core.Shared.Kernel.DomainEvents;
+
+namespace Amolenk.Admitto.Core.ArchTests;
+
+/// <summary>
+/// Verifies that classes reside in the correct namespaces:
+/// <list type="bullet">
+///   <item>*DomainEventHandler, *IntegrationEventHandler, *ModuleEventHandler → namespace must contain "EventHandlers"</item>
+///   <item>*HttpEndpoint → namespace must contain "AdminApi" or "PublicApi"</item>
+///   <item>AbstractValidator&lt;T&gt; subclasses → namespace must contain "AdminApi" or "PublicApi"</item>
+///   <item>*Command and *Query classes → namespace must match *.Application.UseCases.*</item>
+/// </list>
+/// </summary>
+[TestClass]
+public class PlacementRulesTests
+{
+    private static readonly Architecture Architecture = new ArchUnitNET.Loader.ArchLoader()
+        .LoadAssemblies(typeof(DomainEvent).Assembly)
+        .Build();
+
+    [TestMethod]
+    public void EventHandlers_MustResideInEventHandlersNamespace()
+    {
+        AssertRule(Classes().That()
+            .HaveNameEndingWith("DomainEventHandler")
+            .Or().HaveNameEndingWith("IntegrationEventHandler")
+            .Or().HaveNameEndingWith("ModuleEventHandler")
+            .Should().ResideInNamespaceMatching(".*\\.EventHandlers($|\\..*)"));
+    }
+
+    [TestMethod]
+    public void HttpEndpoints_MustResideInApiNamespace()
+    {
+        AssertRule(Classes().That()
+            .HaveNameEndingWith("HttpEndpoint")
+            .Should()
+            .ResideInNamespaceMatching(".*\\.(AdminApi|PublicApi)($|\\..*)"));
+    }
+
+    [TestMethod]
+    public void Validators_MustResideInApiNamespace()
+    {
+        AssertRule(Classes().That()
+            .AreAssignableTo(typeof(FluentValidation.AbstractValidator<>))
+            .And().DoNotHaveNameEndingWith("AbstractValidator")
+            .Should()
+            .ResideInNamespaceMatching(".*\\.(AdminApi|PublicApi)($|\\..*)"));
+    }
+
+    [TestMethod]
+    public void Commands_MustResideInUseCasesNamespace()
+    {
+        AssertRule(Classes().That()
+            .HaveNameEndingWith("Command")
+            .And().ResideInNamespace("Amolenk.Admitto.Core.Module")
+            .Should()
+            .ResideInNamespaceMatching(".*\\.Application\\.UseCases\\..*")
+            .WithoutRequiringPositiveResults());
+    }
+
+    [TestMethod]
+    public void Queries_MustResideInUseCasesNamespace()
+    {
+        AssertRule(Classes().That()
+            .HaveNameEndingWith("Query")
+            .And().ResideInNamespace("Amolenk.Admitto.Core.Module")
+            .Should()
+            .ResideInNamespaceMatching(".*\\.Application\\.UseCases\\..*")
+            .WithoutRequiringPositiveResults());
+    }
+
+    private static void AssertRule(IArchRule rule)
+    {
+        if (rule.HasNoViolations(Architecture)) return;
+
+        var failures = rule.Evaluate(Architecture)
+            .Where(r => !r.Passed)
+            .Select(r => r.Description)
+            .ToList();
+
+        Assert.Fail("Architecture violations:\n" + string.Join("\n", failures));
+    }
+}

@@ -1,5 +1,5 @@
-using Amolenk.Admitto.Module.Shared.Application.Auth;
-using Amolenk.Admitto.Module.Shared.Contracts;
+using Amolenk.Admitto.Core.Shared.Application.Auth;
+using Amolenk.Admitto.Core.Shared.Contracts;
 
 namespace Amolenk.Admitto.Worker;
 

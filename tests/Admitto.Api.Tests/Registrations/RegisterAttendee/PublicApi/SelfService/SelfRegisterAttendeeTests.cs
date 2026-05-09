@@ -12,7 +12,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : EndToEn
     // API layer because the test host runs the real out-of-process API and currently has no way
     // to substitute the placeholder NotImplementedEmailVerificationTokenValidator with a fake.
     // Those cases are covered by the in-module integration tests under
-    // Admitto.Module.Registrations.Tests/.../RegisterAttendee/SelfRegisterAttendeeTests.cs which
+    // Admitto.Core.Module.Registrations.Tests/.../RegisterAttendee/SelfRegisterAttendeeTests.cs which
     // instantiate the handler directly with a StubEmailVerificationTokenValidator.
 
     [TestMethod]

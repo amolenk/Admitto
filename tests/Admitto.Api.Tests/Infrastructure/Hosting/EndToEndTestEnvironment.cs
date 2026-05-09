@@ -1,6 +1,6 @@
-using Amolenk.Admitto.Module.Email.Infrastructure.Persistence;
-using Amolenk.Admitto.Module.Organization.Infrastructure.Persistence;
-using Amolenk.Admitto.Module.Registrations.Infrastructure.Persistence;
+using Amolenk.Admitto.Core.Module.Email.Infrastructure.Persistence;
+using Amolenk.Admitto.Core.Module.Organization.Infrastructure.Persistence;
+using Amolenk.Admitto.Core.Module.Registrations.Infrastructure.Persistence;
 using Amolenk.Admitto.Testing.Infrastructure.TestContexts;
 using Aspire.Hosting.Testing;
 using Microsoft.Extensions.DependencyInjection;

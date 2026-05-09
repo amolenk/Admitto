@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Amolenk.Admitto.Api.Tests.Infrastructure;
-using Amolenk.Admitto.Module.Email.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Module.Email.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Shouldly;
 

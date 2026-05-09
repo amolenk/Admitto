@@ -7,41 +7,15 @@
   <Folder Name="/src/">
     <Project Path="src/Admitto.Api/Admitto.Api.csproj" />
     <Project Path="src/Admitto.AppHost/Admitto.AppHost.csproj" />
+    <Project Path="src/Admitto.Core/Admitto.Core.csproj" />
     <Project Path="src/Admitto.Migrations/Admitto.Migrations.csproj" />
     <Project Path="src/Admitto.ServiceDefaults/Admitto.ServiceDefaults.csproj" />
     <Project Path="src/Admitto.Worker/Admitto.Worker.csproj" />
   </Folder>
-  <Folder Name="/src/Email/">
-    <Project Path="src/Admitto.Module.Email/Admitto.Module.Email.csproj" />
-    <Project Path="src/Admitto.Module.Email.Contracts/Admitto.Module.Email.Contracts.csproj" />
-  </Folder>
-  <Folder Name="/src/Organization/">
-    <Project Path="src/Admitto.Module.Organization/Admitto.Module.Organization.csproj" />
-    <Project Path="src/Admitto.Module.Organization.Contracts/Admitto.Module.Organization.Contracts.csproj" />
-  </Folder>
-  <Folder Name="/src/Registrations/">
-    <Project Path="src/Admitto.Module.Registrations/Admitto.Module.Registrations.csproj" />
-    <Project Path="src/Admitto.Module.Registrations.Contracts/Admitto.Module.Registrations.Contracts.csproj" />
-  </Folder>
-  <Folder Name="/src/Shared/">
-    <Project Path="src/Admitto.Module.Shared/Admitto.Module.Shared.csproj" />
-    <Project Path="src/Admitto.Module.Shared.Kernel/Admitto.Module.Shared.Kernel.csproj" />
-  </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Admitto.Api.Tests/Admitto.Api.Tests.csproj" />
+    <Project Path="tests/Admitto.Core.ArchTests/Admitto.Core.ArchTests.csproj" />
+    <Project Path="tests/Admitto.Core.Tests/Admitto.Core.Tests.csproj" />
     <Project Path="tests/Admitto.Testing/Admitto.Testing.csproj" />
-  </Folder>
-  <Folder Name="/tests/Modules/" />
-  <Folder Name="/tests/Modules/Email/">
-    <Project Path="tests/Admitto.Module.Email.Domain.Tests/Admitto.Module.Email.Domain.Tests.csproj" />
-    <Project Path="tests/Admitto.Module.Email.Tests/Admitto.Module.Email.Tests.csproj" />
-  </Folder>
-  <Folder Name="/tests/Modules/Organization/">
-    <Project Path="tests/Admitto.Module.Organization.Domain.Tests/Admitto.Module.Organization.Domain.Tests.csproj" />
-    <Project Path="tests/Admitto.Module.Organization.Tests/Admitto.Module.Organization.Tests.csproj" />
-  </Folder>
-  <Folder Name="/tests/Modules/Registrations/">
-    <Project Path="tests/Admitto.Module.Registrations.Domain.Tests/Admitto.Module.Registrations.Domain.Tests.csproj" />
-    <Project Path="tests/Admitto.Module.Registrations.Tests/Admitto.Module.Registrations.Tests.csproj" />
   </Folder>
 </Solution>

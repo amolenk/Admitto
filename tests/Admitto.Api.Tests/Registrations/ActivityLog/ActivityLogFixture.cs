@@ -1,8 +1,8 @@
 using Amolenk.Admitto.Api.Tests.Infrastructure.Hosting;
-using Amolenk.Admitto.Module.Registrations.Domain.Entities;
-using Amolenk.Admitto.Module.Registrations.Domain.ValueObjects;
-using Amolenk.Admitto.Module.Shared.Kernel.ValueObjects;
-using TeamBuilder = Amolenk.Admitto.Module.Organization.Tests.Application.Builders.TeamBuilder;
+using Amolenk.Admitto.Core.Module.Registrations.Domain.Entities;
+using Amolenk.Admitto.Core.Module.Registrations.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using TeamBuilder = Amolenk.Admitto.Core.Module.Organization.Tests.Application.Builders.TeamBuilder;
 
 namespace Amolenk.Admitto.Api.Tests.Registrations.ActivityLog;
 

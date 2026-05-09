@@ -1,0 +1,8 @@
+<Project Sdk="MSTest.Sdk">
+  <ItemGroup>
+    <PackageReference Include="TngTech.ArchUnitNET.MSTestV2" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Admitto.Core/Admitto.Core.csproj" />
+  </ItemGroup>
+</Project>

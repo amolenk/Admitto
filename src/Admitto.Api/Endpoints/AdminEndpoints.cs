@@ -1,7 +1,7 @@
 using Amolenk.Admitto.ApiService.Middleware;
-using Amolenk.Admitto.Module.Email.Application.UseCases;
-using Amolenk.Admitto.Module.Organization.Application.UseCases;
-using Amolenk.Admitto.Module.Registrations.Application;
+using Amolenk.Admitto.Core.Module.Email.Application.UseCases;
+using Amolenk.Admitto.Core.Module.Organization.Application.UseCases;
+using Amolenk.Admitto.Core.Module.Registrations.Application;
 
 namespace Amolenk.Admitto.Api.Endpoints;
 

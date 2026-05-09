@@ -1,10 +1,10 @@
-using Amolenk.Admitto.Module.Email.Application;
-using Amolenk.Admitto.Module.Organization.Application;
-using Amolenk.Admitto.Module.Registrations.Application;
-using Amolenk.Admitto.Module.Registrations.Infrastructure;
-using Amolenk.Admitto.Module.Shared.Application.Auth;
-using Amolenk.Admitto.Module.Shared.Application.Messaging;
-using Amolenk.Admitto.Module.Shared.Infrastructure;
+using Amolenk.Admitto.Core.Module.Email.Application;
+using Amolenk.Admitto.Core.Module.Organization.Application;
+using Amolenk.Admitto.Core.Module.Registrations.Application;
+using Amolenk.Admitto.Core.Module.Registrations.Infrastructure;
+using Amolenk.Admitto.Core.Shared.Application.Auth;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
+using Amolenk.Admitto.Core.Shared.Infrastructure;
 using Amolenk.Admitto.Worker;
 
 var builder = Host.CreateApplicationBuilder(args);

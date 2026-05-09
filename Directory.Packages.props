@@ -59,6 +59,7 @@
     <PackageVersion Include="Spectre.Console.Cli" Version="0.55.0" />
     <PackageVersion Include="Spectre.Console.Json" Version="0.55.2" />
     <PackageVersion Include="TextCopy" Version="6.2.1" />
+    <PackageVersion Include="TngTech.ArchUnitNET.MSTestV2" Version="0.13.3" />
     <PackageVersion Include="Vogen" Version="8.0.5" />
   </ItemGroup>
 </Project>

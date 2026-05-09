@@ -1,0 +1,10 @@
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
+
+namespace Amolenk.Admitto.Core.Module.Registrations.Application.UseCases.TicketedEventManagement.ConfigureReconfirmPolicy;
+
+internal sealed record ConfigureReconfirmPolicyCommand(
+    Guid EventId,
+    uint? ExpectedVersion,
+    DateTimeOffset? OpensAt,
+    DateTimeOffset? ClosesAt,
+    int? CadenceDays) : Command;

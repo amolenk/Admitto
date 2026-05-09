@@ -1,4 +1,4 @@
-using Amolenk.Admitto.Module.Shared.Application.Auth;
+using Amolenk.Admitto.Core.Shared.Application.Auth;
 
 namespace Amolenk.Admitto.ApiService.Auth;
 

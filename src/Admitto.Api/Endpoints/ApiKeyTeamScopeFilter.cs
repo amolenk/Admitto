@@ -1,5 +1,5 @@
 using Amolenk.Admitto.Api.Auth;
-using Amolenk.Admitto.Module.Organization.Contracts;
+using Amolenk.Admitto.Core.Module.Organization.Contracts;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Amolenk.Admitto.Api.Endpoints;

@@ -1,6 +1,6 @@
 using System.Collections;
 using System.Text.Json;
-using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
+using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Microsoft.AspNetCore.Mvc;
 using Shouldly;
 

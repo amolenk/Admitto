@@ -1,9 +1,9 @@
-﻿using Amolenk.Admitto.Module.Email.Infrastructure.Persistence;
-using Amolenk.Admitto.Module.Organization.Infrastructure.Persistence;
-using Amolenk.Admitto.Module.Registrations.Infrastructure;
-using Amolenk.Admitto.Module.Registrations.Infrastructure.Persistence;
-using Amolenk.Admitto.Module.Shared.Application.Auth;
-using Amolenk.Admitto.Module.Shared.Contracts;
+﻿using Amolenk.Admitto.Core.Module.Email.Infrastructure.Persistence;
+using Amolenk.Admitto.Core.Module.Organization.Infrastructure.Persistence;
+using Amolenk.Admitto.Core.Module.Registrations.Infrastructure;
+using Amolenk.Admitto.Core.Module.Registrations.Infrastructure.Persistence;
+using Amolenk.Admitto.Core.Shared.Application.Auth;
+using Amolenk.Admitto.Core.Shared.Contracts;
 using Microsoft.EntityFrameworkCore;
 
 var builder = Host.CreateApplicationBuilder(args);

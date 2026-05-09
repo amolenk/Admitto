@@ -1,5 +1,5 @@
-using Amolenk.Admitto.Module.Shared.Application.Http;
-using Amolenk.Admitto.Module.Shared.Kernel.ErrorHandling;
+using Amolenk.Admitto.Core.Shared.Application.Http;
+using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Microsoft.AspNetCore.Diagnostics;
 
 namespace Amolenk.Admitto.ApiService.Middleware;
