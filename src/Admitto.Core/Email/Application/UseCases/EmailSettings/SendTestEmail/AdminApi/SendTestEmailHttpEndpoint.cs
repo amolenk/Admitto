@@ -1,7 +1,7 @@
+using Amolenk.Admitto.Core.Email.Application.UseCases.EmailSettings.SendTestEmail;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
 using Amolenk.Admitto.Core.Shared.Application.Http;
-using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.EmailSettings.SendTestEmail.AdminApi;
@@ -29,12 +29,12 @@ public static class SendTestEmailHttpEndpoint
             Guid teamId,
             Guid? eventId,
             SendTestEmailHttpRequest request,
-            IMediator mediator,
+            SendTestEmailHandler handler,
             CancellationToken ct)
         {
             var scopeId = scope == EmailSettingsScope.Event ? eventId!.Value : teamId;
 
-            await mediator.SendAsync(request.ToCommand(scope, scopeId), ct);
+            await handler.HandleAsync(request.ToCommand(scope, scopeId), ct);
 
             return TypedResults.Ok();
         }

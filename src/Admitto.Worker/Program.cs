@@ -3,7 +3,6 @@ using Amolenk.Admitto.Core.Organization.Application;
 using Amolenk.Admitto.Core.Registrations.Application;
 using Amolenk.Admitto.Core.Registrations.Infrastructure;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
-using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Infrastructure;
 using Amolenk.Admitto.Worker;
 
@@ -16,21 +15,24 @@ builder.AddServiceDefaults();
 // for the AuditInterceptor used by EF Core.
 builder.Services.AddSingleton<IUserContextAccessor, SystemUserContextAccessor>();
 
-// Add Organization module services (with Jobs capability to register Quartz jobs).
+// Add Organization module services.
 builder
-    .AddOrganizationApplicationServices(HostCapability.Jobs)
+    .AddOrganizationModule()
+    .AddOrganizationModuleWorker()
     .AddOrganizationInfrastructureServices()
     .AddOrganizationIdentityServices();
 
-// Add Registrations module services. The Worker hosts the queue consumer so it
-// must be able to handle integration and module events targeted at Registrations.
-builder.AddRegistrationsApplicationServices(HostCapability.Jobs);
-builder.AddRegistrationsInfrastructureServices();
-
-// Add Email module services (to keep encrypted secrets decryptable here).
+// Add Registrations module services.
 builder
-    .AddEmailApplicationServices(HostCapability.Jobs | HostCapability.Email)
-    .AddEmailInfrastructureServices(HostCapability.Email);
+    .AddRegistrationsModule()
+    .AddRegistrationsModuleWorker()
+    .AddRegistrationsInfrastructureServices();
+
+// Add Email module services.
+builder
+    .AddEmailModule()
+    .AddEmailModuleWorker()
+    .AddEmailInfrastructureServices();
 
 // Add shared services.
 builder
@@ -38,9 +40,15 @@ builder
     .AddSharedInfrastructureQueueConsumer();
 
 builder.Services
-    .AddMessagingApplicationServices()
     .AddCryptographyApplicationServices()
     .AddSharedInfrastructureServices();
+
+builder.AddMessageTypeRegistry(b =>
+{
+    b.AddOrganizationMessageTypes();
+    b.AddRegistrationsMessageTypes();
+    b.AddEmailMessageTypes();
+});
 
 var host = builder.Build();
 host.Run();

@@ -1,4 +1,6 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Reflection;
 using System.Text.Json;
 using Amolenk.Admitto.Core.Shared.Application;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
@@ -15,9 +17,12 @@ namespace Amolenk.Admitto.Core.Shared.Infrastructure.Messaging;
 internal sealed partial class QueueMessageDispatcher(
     MessageTypeRegistry registry,
     IntegrationEventRouter integrationEventRouter,
-    IMediator mediator,
+    IServiceProvider serviceProvider,
     ILogger<QueueMessageDispatcher> logger)
 {
+    private static readonly ConcurrentDictionary<Type, Func<IServiceProvider, ICommand, CancellationToken, ValueTask>>
+        _commandDispatchers = new();
+
     public async ValueTask DispatchAsync(CloudEvent cloudEvent, CancellationToken cancellationToken)
     {
         if (!registry.TryResolve(cloudEvent.Type, out var entry))
@@ -69,7 +74,7 @@ internal sealed partial class QueueMessageDispatcher(
                         payload,
                         entry.ClrType,
                         JsonSerializerOptions.Web)!;
-                    await mediator.SendCommandAsync(command, cancellationToken);
+                    await SendCommandAsync(command, cancellationToken);
                     break;
                 }
             }
@@ -80,6 +85,30 @@ internal sealed partial class QueueMessageDispatcher(
             activity?.AddTag("exception.type", ex.GetType().FullName);
             throw;
         }
+    }
+
+    private ValueTask SendCommandAsync(ICommand command, CancellationToken cancellationToken)
+    {
+        var commandType = command.GetType();
+        var dispatcher = _commandDispatchers.GetOrAdd(commandType, static t =>
+        {
+            var method = typeof(QueueMessageDispatcher)
+                .GetMethod(nameof(DispatchCommandAsync), BindingFlags.NonPublic | BindingFlags.Static)!
+                .MakeGenericMethod(t);
+            return (Func<IServiceProvider, ICommand, CancellationToken, ValueTask>)
+                Delegate.CreateDelegate(
+                    typeof(Func<IServiceProvider, ICommand, CancellationToken, ValueTask>), method);
+        });
+
+        return dispatcher(serviceProvider, command, cancellationToken);
+    }
+
+    private static ValueTask DispatchCommandAsync<TCommand>(
+        IServiceProvider sp, ICommand cmd, CancellationToken ct)
+        where TCommand : ICommand
+    {
+        var handler = sp.GetRequiredService<ICommandHandler<TCommand>>();
+        return handler.HandleAsync((TCommand)cmd, ct);
     }
 
     [LoggerMessage(

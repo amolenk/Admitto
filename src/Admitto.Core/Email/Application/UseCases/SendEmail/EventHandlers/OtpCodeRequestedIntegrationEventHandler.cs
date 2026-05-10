@@ -14,7 +14,7 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.SendEmail.EventHandler
 /// </summary>
 internal sealed class OtpCodeRequestedIntegrationEventHandler(
     IEmailWriteStore writeStore,
-    IMediator mediator)
+    ICommandHandler<SendEmailCommand> sendEmailHandler)
     : IIntegrationEventHandler<OtpCodeRequestedIntegrationEvent>
 {
     public async ValueTask HandleAsync(
@@ -44,6 +44,6 @@ internal sealed class OtpCodeRequestedIntegrationEventHandler(
             },
             RegistrationId: null);
 
-        await mediator.SendAsync(command, cancellationToken);
+        await sendEmailHandler.HandleAsync(command, cancellationToken);
     }
 }

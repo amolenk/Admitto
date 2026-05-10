@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Core.Registrations.Application.Security;
-using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
@@ -21,7 +20,7 @@ public static class SelfRegisterAttendeeHttpEndpoint
         SelfRegisterAttendeeHttpRequest request,
         HttpRequest httpRequest,
         IVerificationTokenService verificationTokenService,
-        IMediator mediator,
+        RegisterAttendeeHandler handler,
         [FromKeyedServices(RegistrationsModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
@@ -51,8 +50,7 @@ public static class SelfRegisterAttendeeHttpEndpoint
             EmailVerificationToken: bearerToken,
             AdditionalDetails: request.AdditionalDetails);
 
-        var registrationId = await mediator.SendReceiveAsync<RegisterAttendeeCommand, Guid>(
-            command, cancellationToken);
+        var registrationId = await handler.HandleAsync(command, cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 

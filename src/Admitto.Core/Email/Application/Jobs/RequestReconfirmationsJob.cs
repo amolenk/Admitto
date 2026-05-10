@@ -3,7 +3,6 @@ using Amolenk.Admitto.Core.Email.Application.Templating;
 using Amolenk.Admitto.Core.Email.Domain.Entities;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Contracts;
-using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.Extensions.Logging;
@@ -18,7 +17,6 @@ namespace Amolenk.Admitto.Core.Email.Application.Jobs;
 /// The cron schedule of the per-event trigger encodes the cadence; this job
 /// performs no additional cadence filtering (per design D5).
 /// </summary>
-[RequiresCapability(HostCapability.Jobs | HostCapability.Email)]
 [DisallowConcurrentExecution]
 internal sealed class RequestReconfirmationsJob(
     IEmailWriteStore writeStore,

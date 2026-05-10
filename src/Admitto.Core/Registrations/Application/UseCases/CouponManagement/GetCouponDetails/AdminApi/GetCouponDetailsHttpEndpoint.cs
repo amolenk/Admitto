@@ -1,6 +1,5 @@
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
-using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.AspNetCore.Http.HttpResults;
 
@@ -22,15 +21,14 @@ public static class GetCouponDetailsHttpEndpoint
         Guid couponId,
         Guid teamId,
         Guid eventId,
-        IMediator mediator,
+        GetCouponDetailsHandler handler,
         CancellationToken cancellationToken)
     {
         var query = new GetCouponDetailsQuery(
             TicketedEventId.From(eventId),
             CouponId.From(couponId));
 
-        var result = await mediator.QueryAsync<GetCouponDetailsQuery, CouponDetailsDto>(
-            query, cancellationToken);
+        var result = await handler.HandleAsync(query, cancellationToken);
 
         return TypedResults.Ok(result);
     }

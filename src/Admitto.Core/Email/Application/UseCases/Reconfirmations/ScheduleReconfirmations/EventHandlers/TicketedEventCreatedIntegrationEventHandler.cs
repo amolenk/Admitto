@@ -11,10 +11,9 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.Reconfirmations.Schedu
 /// trigger spec rather than reading it off the event payload because the
 /// integration event does not carry the (optional) policy snapshot.
 /// </summary>
-[RequiresCapability(HostCapability.Jobs | HostCapability.Email)]
 internal sealed class TicketedEventCreatedIntegrationEventHandler(
     IRegistrationsFacade registrationsFacade,
-    IMediator mediator)
+    ICommandHandler<ScheduleReconfirmationsCommand> handler)
     : IIntegrationEventHandler<TicketedEventCreatedIntegrationEvent>
 {
     public async ValueTask HandleAsync(
@@ -29,7 +28,7 @@ internal sealed class TicketedEventCreatedIntegrationEventHandler(
         if (spec is null)
             return;
 
-        await mediator.SendAsync(
+        await handler.HandleAsync(
             new ScheduleReconfirmationsCommand(integrationEvent.TicketedEventId, spec),
             cancellationToken);
     }

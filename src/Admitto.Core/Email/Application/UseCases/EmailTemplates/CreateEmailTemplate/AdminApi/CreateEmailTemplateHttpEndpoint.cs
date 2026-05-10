@@ -1,7 +1,7 @@
+using Amolenk.Admitto.Core.Email.Application.UseCases.EmailTemplates.CreateEmailTemplate;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
 using Amolenk.Admitto.Core.Shared.Application.Http;
-using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
@@ -33,7 +33,7 @@ public static class CreateEmailTemplateHttpEndpoint
             Guid teamId,
             Guid? eventId,
             CreateEmailTemplateHttpRequest request,
-            IMediator mediator,
+            CreateEmailTemplateHandler handler,
             [FromKeyedServices(EmailModuleKey.Value)] IUnitOfWork unitOfWork,
             CancellationToken ct)
         {
@@ -49,8 +49,7 @@ public static class CreateEmailTemplateHttpEndpoint
                 request.HtmlBody,
                 parentScopeId);
 
-            var id = await mediator
-                .SendReceiveAsync<CreateEmailTemplateCommand, Guid>(command, ct);
+            var id = await handler.HandleAsync(command, ct);
 
             await unitOfWork.SaveChangesAsync(ct);
 

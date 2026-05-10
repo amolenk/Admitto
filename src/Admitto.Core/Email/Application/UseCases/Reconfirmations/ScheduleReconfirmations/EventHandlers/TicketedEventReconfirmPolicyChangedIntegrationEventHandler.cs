@@ -12,10 +12,9 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.Reconfirmations.Schedu
 /// the trigger is upserted using the current event time zone (looked up via
 /// the facade since the integration event does not carry the time zone).
 /// </summary>
-[RequiresCapability(HostCapability.Jobs | HostCapability.Email)]
 internal sealed class TicketedEventReconfirmPolicyChangedIntegrationEventHandler(
     IRegistrationsFacade registrationsFacade,
-    IMediator mediator)
+    ICommandHandler<ScheduleReconfirmationsCommand> handler)
     : IIntegrationEventHandler<TicketedEventReconfirmPolicyChangedIntegrationEvent>
 {
     public async ValueTask HandleAsync(
@@ -26,7 +25,7 @@ internal sealed class TicketedEventReconfirmPolicyChangedIntegrationEventHandler
 
         if (integrationEvent.Policy is null)
         {
-            await mediator.SendAsync(
+            await handler.HandleAsync(
                 new ScheduleReconfirmationsCommand(integrationEvent.TicketedEventId, Spec: null),
                 cancellationToken);
             return;
@@ -37,7 +36,7 @@ internal sealed class TicketedEventReconfirmPolicyChangedIntegrationEventHandler
         var spec = await registrationsFacade.GetReconfirmTriggerSpecAsync(
             ticketedEventId, cancellationToken);
 
-        await mediator.SendAsync(
+        await handler.HandleAsync(
             new ScheduleReconfirmationsCommand(integrationEvent.TicketedEventId, spec),
             cancellationToken);
     }

@@ -36,22 +36,25 @@ public static class DependencyInjection
         }
 
         /// <summary>
-        /// Registers the queue consumer pipeline (message-type registry, routers, dispatcher
-        /// and the <see cref="BackgroundService"/> that polls the queue). Only hosts that
-        /// own queue consumption (the Worker) should call this.
+        /// Registers the queue consumer pipeline (router, dispatcher and the
+        /// <see cref="BackgroundService"/> that polls the queue). Call
+        /// <see cref="AddMessageTypeRegistry"/> separately to register the message type registry.
         /// </summary>
         public IHostApplicationBuilder AddSharedInfrastructureQueueConsumer()
         {
-            // Snapshot of currently-loaded assemblies; module assemblies are loaded
-            // by the time DI configuration runs so all event types are discoverable.
-            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-
-            builder.Services.AddSingleton(new MessageTypeRegistry(assemblies));
             builder.Services.AddScoped<IntegrationEventRouter>();
             builder.Services.AddScoped<QueueMessageDispatcher>();
 
             builder.Services.AddHostedService<MessageQueueProcessor>();
 
+            return builder;
+        }
+
+        public IHostApplicationBuilder AddMessageTypeRegistry(Action<MessageTypeRegistryBuilder> configure)
+        {
+            var registryBuilder = new MessageTypeRegistryBuilder();
+            configure(registryBuilder);
+            builder.Services.AddSingleton(registryBuilder.Build());
             return builder;
         }
         
@@ -72,7 +75,7 @@ public static class DependencyInjection
             
                 options.AddInterceptors(
                     new AuditInterceptor(sp.GetRequiredService<IUserContextAccessor>()),
-                    new DomainEventsInterceptor(sp, moduleKey));
+                    new DomainEventsInterceptor(sp));
             });
 
             builder.EnrichNpgsqlDbContext<TDbContext>();

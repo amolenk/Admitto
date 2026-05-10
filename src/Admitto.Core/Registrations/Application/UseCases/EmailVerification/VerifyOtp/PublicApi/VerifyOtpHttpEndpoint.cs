@@ -1,4 +1,3 @@
-using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
@@ -18,7 +17,7 @@ public static class VerifyOtpHttpEndpoint
         Guid teamId,
         Guid eventId,
         VerifyOtpHttpRequest request,
-        IMediator mediator,
+        VerifyOtpHandler handler,
         [FromKeyedServices(RegistrationsModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
@@ -29,7 +28,7 @@ public static class VerifyOtpHttpEndpoint
             request.Email,
             request.Code);
 
-        var token = await mediator.SendReceiveAsync<VerifyOtpCommand, string>(command, cancellationToken);
+        var token = await handler.HandleAsync(command, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Results.Ok(new { token });

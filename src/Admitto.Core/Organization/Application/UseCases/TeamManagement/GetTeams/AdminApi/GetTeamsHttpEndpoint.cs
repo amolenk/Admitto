@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Core.Shared.Application.Auth;
-using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
 namespace Amolenk.Admitto.Core.Organization.Application.UseCases.TeamManagement.GetTeams.AdminApi;
 
@@ -22,15 +21,13 @@ public static class GetTeamsHttpEndpoint
     private static async ValueTask<Ok<IReadOnlyList<TeamListItemDto>>> GetTeams(
         IUserContextAccessor userContextAccessor,
         IAdministratorRoleService administratorRoleService,
-        IMediator mediator,
+        GetTeamsHandler handler,
         CancellationToken cancellationToken)
     {
         var callerId = userContextAccessor.Current.UserId;
         var callerIsAdmin = administratorRoleService.IsAdministrator(callerId);
 
-        var query = new GetTeamsQuery(callerId, callerIsAdmin);
-        var teams = await mediator.QueryAsync<GetTeamsQuery, IReadOnlyList<TeamListItemDto>>(
-            query, cancellationToken);
+        var teams = await handler.HandleAsync(new GetTeamsQuery(callerId, callerIsAdmin), cancellationToken);
 
         return TypedResults.Ok(teams);
     }

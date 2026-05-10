@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Core.Shared.Application.Auth;
-using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.AspNetCore.Http.HttpResults;
 
@@ -20,13 +19,12 @@ public static class GetTicketedEventDetailsHttpEndpoint
     private static async ValueTask<Results<Ok<TicketedEventDetailsDto>, NotFound>> GetTicketedEventDetails(
         Guid teamId,
         Guid eventId,
-        IMediator mediator,
+        GetTicketedEventDetailsHandler handler,
         CancellationToken cancellationToken)
     {
         var query = new GetTicketedEventDetailsQuery(TicketedEventId.From(eventId));
 
-        var result = await mediator.QueryAsync<GetTicketedEventDetailsQuery, TicketedEventDetailsDto?>(
-            query, cancellationToken);
+        var result = await handler.HandleAsync(query, cancellationToken);
 
         return result is null ? TypedResults.NotFound() : TypedResults.Ok(result);
     }

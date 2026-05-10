@@ -9,7 +9,6 @@ using Amolenk.Admitto.Core.Organization.Application;
 using Amolenk.Admitto.Core.Registrations.Application;
 using Amolenk.Admitto.Core.Registrations.Infrastructure;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
-using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Infrastructure;
 using Scalar.AspNetCore;
 
@@ -20,11 +19,10 @@ builder.AddServiceDefaults();
 
 // Add application services.
 builder
-    .AddOrganizationApplicationServices()
-    .AddEmailApplicationServices()
-    .AddRegistrationsApplicationServices();
+    .AddOrganizationModule()
+    .AddEmailModule()
+    .AddRegistrationsModule();
 builder.Services
-    .AddMessagingApplicationServices()
     .AddCryptographyApplicationServices()
     .AddValidationApplicationServices();
 
@@ -32,10 +30,17 @@ builder.Services
 builder
     .AddSharedInfrastructureMessagingServices()
     .AddOrganizationInfrastructureServices()
-    .AddEmailInfrastructureServices(HostCapability.Email)
+    .AddEmailInfrastructureServices()
     .AddRegistrationsInfrastructureServices()
     .Services
     .AddSharedInfrastructureServices();
+
+builder.AddMessageTypeRegistry(b =>
+{
+    b.AddOrganizationMessageTypes();
+    b.AddRegistrationsMessageTypes();
+    b.AddEmailMessageTypes();
+});
 
 // Add auth services.
 builder

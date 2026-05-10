@@ -23,7 +23,6 @@
     <PackageReference Include="Quartz" />
     <PackageReference Include="Quartz.Extensions.Hosting" />
     <PackageReference Include="Scriban" />
-    <PackageReference Include="Scrutor" />
     <PackageReference Include="Vogen" />
   </ItemGroup>
   <ItemGroup>

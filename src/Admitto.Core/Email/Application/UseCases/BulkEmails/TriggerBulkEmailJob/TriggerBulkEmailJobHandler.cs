@@ -12,7 +12,6 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.BulkEmails.TriggerBulk
 /// <see cref="DisallowConcurrentExecutionAttribute"/> only blocks parallel pickups
 /// of the same job, not unrelated bulk jobs (D10).
 /// </summary>
-[RequiresCapability(HostCapability.Jobs | HostCapability.Email)]
 internal sealed class TriggerBulkEmailJobHandler(
     ISchedulerFactory schedulerFactory,
     ILogger<TriggerBulkEmailJobHandler> logger)

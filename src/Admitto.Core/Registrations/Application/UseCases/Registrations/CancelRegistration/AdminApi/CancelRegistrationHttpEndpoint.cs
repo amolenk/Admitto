@@ -1,6 +1,5 @@
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
-using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Microsoft.AspNetCore.Http.HttpResults;
 
@@ -23,7 +22,7 @@ public static class CancelRegistrationHttpEndpoint
         Guid teamId,
         Guid eventId,
         CancelRegistrationHttpRequest request,
-        IMediator mediator,
+        CancelRegistrationHandler handler,
         [FromKeyedServices(RegistrationsModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
@@ -35,7 +34,7 @@ public static class CancelRegistrationHttpEndpoint
             eventId,
             reason);
 
-        await mediator.SendAsync(command, cancellationToken);
+        await handler.HandleAsync(command, cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 

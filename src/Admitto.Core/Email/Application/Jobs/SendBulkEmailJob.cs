@@ -6,7 +6,6 @@ using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
 using Amolenk.Admitto.Core.Email.Application.Templating;
 using Amolenk.Admitto.Core.Email.Domain.Entities;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
-using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -32,7 +31,6 @@ namespace Amolenk.Admitto.Core.Email.Application.Jobs;
 /// <see cref="DisallowConcurrentExecutionAttribute"/> then blocks parallel
 /// pickups of the same job (the create endpoint in section 5 wires this up).
 /// </summary>
-[RequiresCapability(HostCapability.Jobs | HostCapability.Email)]
 [DisallowConcurrentExecution]
 internal sealed class SendBulkEmailJob(
     IEmailWriteStore writeStore,

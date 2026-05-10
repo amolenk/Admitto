@@ -20,7 +20,7 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.SendEmail.EventHandler
 internal sealed class RegistrationCancelledIntegrationEventHandler(
     IEmailWriteStore writeStore,
     IRegistrationsFacade registrationsFacade,
-    IMediator mediator)
+    ICommandHandler<SendEmailCommand> sendEmailHandler)
     : IIntegrationEventHandler<RegistrationCancelledIntegrationEvent>
 {
     public async ValueTask HandleAsync(
@@ -64,7 +64,7 @@ internal sealed class RegistrationCancelledIntegrationEventHandler(
                 QRCodeLink = eventContext.QRCodeLink
             });
 
-        await mediator.SendAsync(command, cancellationToken);
+        await sendEmailHandler.HandleAsync(command, cancellationToken);
     }
 
     private static string? ResolveEmailType(string reason) => reason switch

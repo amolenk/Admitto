@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Core.Shared.Application.Auth;
-using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Core.Organization.Application.UseCases.TicketedEventManagement.GetEventCreationRequest.AdminApi;
@@ -23,13 +22,10 @@ public static class GetEventCreationRequestHttpEndpoint
     private static async ValueTask<Ok<EventCreationRequestDto>> GetEventCreationRequest(
         Guid teamId,
         Guid creationRequestId,
-        IMediator mediator,
+        GetEventCreationRequestHandler handler,
         CancellationToken cancellationToken)
     {
-        var query = new GetEventCreationRequestQuery(teamId, creationRequestId);
-
-        var dto = await mediator.QueryAsync<GetEventCreationRequestQuery, EventCreationRequestDto>(
-            query, cancellationToken);
+        var dto = await handler.HandleAsync(new GetEventCreationRequestQuery(teamId, creationRequestId), cancellationToken);
 
         return TypedResults.Ok(dto);
     }

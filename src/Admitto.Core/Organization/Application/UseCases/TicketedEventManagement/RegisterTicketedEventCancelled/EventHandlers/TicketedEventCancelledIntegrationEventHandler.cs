@@ -4,7 +4,7 @@ using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Core.Organization.Application.UseCases.TicketedEventManagement.RegisterTicketedEventCancelled.EventHandlers;
 
-internal sealed class TicketedEventCancelledIntegrationEventHandler(IMediator mediator)
+internal sealed class TicketedEventCancelledIntegrationEventHandler(RegisterTicketedEventCancelledHandler handler)
     : IIntegrationEventHandler<TicketedEventCancelledIntegrationEvent>
 {
     public ValueTask HandleAsync(TicketedEventCancelledIntegrationEvent integrationEvent, CancellationToken cancellationToken)
@@ -16,6 +16,6 @@ internal sealed class TicketedEventCancelledIntegrationEventHandler(IMediator me
             CommandId = DeterministicGuid.Create($"{integrationEvent.IntegrationEventId}:{nameof(TicketedEventCancelledIntegrationEvent)}")
         };
 
-        return mediator.SendAsync(command, cancellationToken);
+        return handler.HandleAsync(command, cancellationToken);
     }
 }

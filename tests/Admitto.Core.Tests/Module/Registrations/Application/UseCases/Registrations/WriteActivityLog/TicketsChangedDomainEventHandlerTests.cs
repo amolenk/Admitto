@@ -31,11 +31,12 @@ public sealed class TicketsChangedDomainEventHandlerTests
             ChangedAt: changedAt);
 
         WriteActivityLogCommand? captured = null;
-        var mediator = Substitute.For<IMediator>();
-        mediator.When(m => m.SendAsync(Arg.Any<WriteActivityLogCommand>(), Arg.Any<CancellationToken>()))
-            .Do(ci => captured = ci.Arg<WriteActivityLogCommand>());
+        var commandHandler = Substitute.For<ICommandHandler<WriteActivityLogCommand>>();
+        commandHandler
+            .HandleAsync(Arg.Do<WriteActivityLogCommand>(c => captured = c), Arg.Any<CancellationToken>())
+            .Returns(ValueTask.CompletedTask);
 
-        var handler = new TicketsChangedDomainEventHandler(mediator);
+        var handler = new TicketsChangedDomainEventHandler(commandHandler);
         await handler.HandleAsync(domainEvent, CancellationToken.None);
 
         captured.ShouldNotBeNull();

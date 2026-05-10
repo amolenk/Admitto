@@ -1,4 +1,3 @@
-using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendee.PublicApi.Coupon;
@@ -17,7 +16,7 @@ public static class RegisterWithCouponHttpEndpoint
         Guid teamId,
         Guid eventId,
         RegisterWithCouponHttpRequest request,
-        IMediator mediator,
+        RegisterAttendeeHandler handler,
         [FromKeyedServices(RegistrationsModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
@@ -33,8 +32,7 @@ public static class RegisterWithCouponHttpEndpoint
             EmailVerificationToken: null,
             AdditionalDetails: request.AdditionalDetails);
 
-        var registrationId = await mediator.SendReceiveAsync<RegisterAttendeeCommand, Guid>(
-            command, cancellationToken);
+        var registrationId = await handler.HandleAsync(command, cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 

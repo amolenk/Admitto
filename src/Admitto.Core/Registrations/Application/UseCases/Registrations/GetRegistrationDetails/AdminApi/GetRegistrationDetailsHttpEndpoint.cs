@@ -1,6 +1,5 @@
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
-using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.AspNetCore.Http.HttpResults;
 
@@ -22,7 +21,7 @@ public static class GetRegistrationDetailsHttpEndpoint
         Guid teamId,
         Guid eventId,
         Guid registrationId,
-        IMediator mediator,
+        GetRegistrationDetailsHandler handler,
         CancellationToken cancellationToken)
     {
         var query = new GetRegistrationDetailsQuery(
@@ -30,8 +29,7 @@ public static class GetRegistrationDetailsHttpEndpoint
             EventId: TicketedEventId.From(eventId),
             RegistrationId: RegistrationId.From(registrationId));
 
-        var result = await mediator.QueryAsync<GetRegistrationDetailsQuery, RegistrationDetailDto?>(
-            query, cancellationToken);
+        var result = await handler.HandleAsync(query, cancellationToken);
 
         if (result is null)
             return TypedResults.NotFound();

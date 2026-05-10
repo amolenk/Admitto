@@ -27,15 +27,15 @@ public sealed class ReconfirmIntegrationEventHandlerTests
         var facade = Substitute.For<IRegistrationsFacade>();
         facade.GetReconfirmTriggerSpecAsync(TicketedEventId.From(eventId), Arg.Any<CancellationToken>())
             .Returns(spec);
-        var mediator = Substitute.For<IMediator>();
+        var scheduleHandler = Substitute.For<ICommandHandler<ScheduleReconfirmationsCommand>>();
 
-        var handler = new TicketedEventCreatedIntegrationEventHandler(facade, mediator);
+        var handler = new TicketedEventCreatedIntegrationEventHandler(facade, scheduleHandler);
 
         await handler.HandleAsync(
             new TicketedEventCreatedIntegrationEvent(Guid.NewGuid(), teamId, eventId, "UTC"),
             default);
 
-        await mediator.Received(1).SendAsync(
+        await scheduleHandler.Received(1).HandleAsync(
             Arg.Is<ScheduleReconfirmationsCommand>(c =>
                 c.TicketedEventId == TicketedEventId.From(eventId) && c.Spec == spec),
             Arg.Any<CancellationToken>());
@@ -48,15 +48,15 @@ public sealed class ReconfirmIntegrationEventHandlerTests
         var facade = Substitute.For<IRegistrationsFacade>();
         facade.GetReconfirmTriggerSpecAsync(TicketedEventId.From(eventId), Arg.Any<CancellationToken>())
             .Returns((ReconfirmTriggerSpecDto?)null);
-        var mediator = Substitute.For<IMediator>();
+        var scheduleHandler = Substitute.For<ICommandHandler<ScheduleReconfirmationsCommand>>();
 
-        var handler = new TicketedEventCreatedIntegrationEventHandler(facade, mediator);
+        var handler = new TicketedEventCreatedIntegrationEventHandler(facade, scheduleHandler);
 
         await handler.HandleAsync(
             new TicketedEventCreatedIntegrationEvent(Guid.NewGuid(), Guid.NewGuid(), eventId, "UTC"),
             default);
 
-        await mediator.DidNotReceive().SendAsync(
+        await scheduleHandler.DidNotReceive().HandleAsync(
             Arg.Any<ScheduleReconfirmationsCommand>(), Arg.Any<CancellationToken>());
     }
 
@@ -70,9 +70,9 @@ public sealed class ReconfirmIntegrationEventHandlerTests
         var facade = Substitute.For<IRegistrationsFacade>();
         facade.GetReconfirmTriggerSpecAsync(TicketedEventId.From(eventId), Arg.Any<CancellationToken>())
             .Returns(spec);
-        var mediator = Substitute.For<IMediator>();
+        var scheduleHandler = Substitute.For<ICommandHandler<ScheduleReconfirmationsCommand>>();
 
-        var handler = new TicketedEventReconfirmPolicyChangedIntegrationEventHandler(facade, mediator);
+        var handler = new TicketedEventReconfirmPolicyChangedIntegrationEventHandler(facade, scheduleHandler);
 
         await handler.HandleAsync(
             new TicketedEventReconfirmPolicyChangedIntegrationEvent(
@@ -80,7 +80,7 @@ public sealed class ReconfirmIntegrationEventHandlerTests
                 new TicketedEventReconfirmPolicySnapshot(Opens, Closes, 1)),
             default);
 
-        await mediator.Received(1).SendAsync(
+        await scheduleHandler.Received(1).HandleAsync(
             Arg.Is<ScheduleReconfirmationsCommand>(c =>
                 c.TicketedEventId == TicketedEventId.From(eventId) && c.Spec == spec),
             Arg.Any<CancellationToken>());
@@ -91,15 +91,15 @@ public sealed class ReconfirmIntegrationEventHandlerTests
     {
         var eventId = Guid.NewGuid();
         var facade = Substitute.For<IRegistrationsFacade>();
-        var mediator = Substitute.For<IMediator>();
+        var scheduleHandler = Substitute.For<ICommandHandler<ScheduleReconfirmationsCommand>>();
 
-        var handler = new TicketedEventReconfirmPolicyChangedIntegrationEventHandler(facade, mediator);
+        var handler = new TicketedEventReconfirmPolicyChangedIntegrationEventHandler(facade, scheduleHandler);
 
         await handler.HandleAsync(
             new TicketedEventReconfirmPolicyChangedIntegrationEvent(Guid.NewGuid(), eventId, Policy: null),
             default);
 
-        await mediator.Received(1).SendAsync(
+        await scheduleHandler.Received(1).HandleAsync(
             Arg.Is<ScheduleReconfirmationsCommand>(c =>
                 c.TicketedEventId == TicketedEventId.From(eventId) && c.Spec == null),
             Arg.Any<CancellationToken>());
@@ -116,15 +116,15 @@ public sealed class ReconfirmIntegrationEventHandlerTests
         var facade = Substitute.For<IRegistrationsFacade>();
         facade.GetReconfirmTriggerSpecAsync(TicketedEventId.From(eventId), Arg.Any<CancellationToken>())
             .Returns(spec);
-        var mediator = Substitute.For<IMediator>();
+        var scheduleHandler = Substitute.For<ICommandHandler<ScheduleReconfirmationsCommand>>();
 
-        var handler = new TicketedEventTimeZoneChangedIntegrationEventHandler(facade, mediator);
+        var handler = new TicketedEventTimeZoneChangedIntegrationEventHandler(facade, scheduleHandler);
 
         await handler.HandleAsync(
             new TicketedEventTimeZoneChangedIntegrationEvent(teamId, eventId, "Europe/Amsterdam"),
             default);
 
-        await mediator.Received(1).SendAsync(
+        await scheduleHandler.Received(1).HandleAsync(
             Arg.Is<ScheduleReconfirmationsCommand>(c =>
                 c.TicketedEventId == TicketedEventId.From(eventId) && c.Spec == spec),
             Arg.Any<CancellationToken>());
@@ -137,15 +137,15 @@ public sealed class ReconfirmIntegrationEventHandlerTests
         var facade = Substitute.For<IRegistrationsFacade>();
         facade.GetReconfirmTriggerSpecAsync(TicketedEventId.From(eventId), Arg.Any<CancellationToken>())
             .Returns((ReconfirmTriggerSpecDto?)null);
-        var mediator = Substitute.For<IMediator>();
+        var scheduleHandler = Substitute.For<ICommandHandler<ScheduleReconfirmationsCommand>>();
 
-        var handler = new TicketedEventTimeZoneChangedIntegrationEventHandler(facade, mediator);
+        var handler = new TicketedEventTimeZoneChangedIntegrationEventHandler(facade, scheduleHandler);
 
         await handler.HandleAsync(
             new TicketedEventTimeZoneChangedIntegrationEvent(Guid.NewGuid(), eventId, "UTC"),
             default);
 
-        await mediator.DidNotReceive().SendAsync(
+        await scheduleHandler.DidNotReceive().HandleAsync(
             Arg.Any<ScheduleReconfirmationsCommand>(), Arg.Any<CancellationToken>());
     }
 
@@ -153,15 +153,15 @@ public sealed class ReconfirmIntegrationEventHandlerTests
     public async Task TicketedEventArchivedIntegrationEvent_DispatchesRemoveCommand()
     {
         var eventId = Guid.NewGuid();
-        var mediator = Substitute.For<IMediator>();
+        var scheduleHandler = Substitute.For<ICommandHandler<ScheduleReconfirmationsCommand>>();
 
-        var handler = new TicketedEventArchivedIntegrationEventHandler(mediator);
+        var handler = new TicketedEventArchivedIntegrationEventHandler(scheduleHandler);
 
         await handler.HandleAsync(
             new TicketedEventArchivedIntegrationEvent(Guid.NewGuid(), eventId),
             default);
 
-        await mediator.Received(1).SendAsync(
+        await scheduleHandler.Received(1).HandleAsync(
             Arg.Is<ScheduleReconfirmationsCommand>(c =>
                 c.TicketedEventId == TicketedEventId.From(eventId) && c.Spec == null),
             Arg.Any<CancellationToken>());
@@ -171,15 +171,15 @@ public sealed class ReconfirmIntegrationEventHandlerTests
     public async Task TicketedEventCancelledIntegrationEvent_DispatchesRemoveCommand()
     {
         var eventId = Guid.NewGuid();
-        var mediator = Substitute.For<IMediator>();
+        var scheduleHandler = Substitute.For<ICommandHandler<ScheduleReconfirmationsCommand>>();
 
-        var handler = new TicketedEventCancelledIntegrationEventHandler(mediator);
+        var handler = new TicketedEventCancelledIntegrationEventHandler(scheduleHandler);
 
         await handler.HandleAsync(
             new TicketedEventCancelledIntegrationEvent(Guid.NewGuid(), eventId),
             default);
 
-        await mediator.Received(1).SendAsync(
+        await scheduleHandler.Received(1).HandleAsync(
             Arg.Is<ScheduleReconfirmationsCommand>(c =>
                 c.TicketedEventId == TicketedEventId.From(eventId) && c.Spec == null),
             Arg.Any<CancellationToken>());

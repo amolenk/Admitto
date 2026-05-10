@@ -22,9 +22,9 @@ internal sealed class ReconcileReconfirmationSchedulingStartupService(
         try
         {
             using var scope = scopeFactory.CreateScope();
-            var mediator = scope.ServiceProvider.GetRequiredService<IMediator>();
+            var handler = scope.ServiceProvider.GetRequiredService<ReconcileReconfirmationSchedulingHandler>();
 
-            await mediator.SendAsync(
+            await handler.HandleAsync(
                 new ReconcileReconfirmationSchedulingCommand(),
                 stoppingToken);
         }

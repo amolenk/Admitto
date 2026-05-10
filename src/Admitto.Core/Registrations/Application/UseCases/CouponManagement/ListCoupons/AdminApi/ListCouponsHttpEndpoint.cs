@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Core.Shared.Application.Auth;
-using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.AspNetCore.Http.HttpResults;
 
@@ -20,13 +19,10 @@ public static class ListCouponsHttpEndpoint
     private static async ValueTask<Ok<ListCouponsResult>> ListCoupons(
         Guid teamId,
         Guid eventId,
-        IMediator mediator,
+        ListCouponsHandler handler,
         CancellationToken cancellationToken)
     {
-        var query = new ListCouponsQuery(TicketedEventId.From(eventId));
-
-        var result = await mediator.QueryAsync<ListCouponsQuery, ListCouponsResult>(
-            query, cancellationToken);
+        var result = await handler.HandleAsync(new ListCouponsQuery(TicketedEventId.From(eventId)), cancellationToken);
 
         return TypedResults.Ok(result);
     }

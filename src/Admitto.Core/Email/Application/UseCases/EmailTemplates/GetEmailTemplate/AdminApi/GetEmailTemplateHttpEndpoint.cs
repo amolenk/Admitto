@@ -1,6 +1,6 @@
+using Amolenk.Admitto.Core.Email.Application.UseCases.EmailTemplates.GetEmailTemplate;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
-using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
@@ -13,25 +13,31 @@ public static class GetEmailTemplateHttpEndpoint
         EmailSettingsScope scope)
     {
         var endpointName = scope == EmailSettingsScope.Team ? "GetTeamEmailTemplate" : "GetEventEmailTemplate";
+        var handler = new Handler(scope);
 
         group
-            .MapGet("/{id:guid}", async (
-                Guid id,
-                IMediator mediator,
-                CancellationToken ct) =>
-            {
-                var dto = await mediator.QueryAsync<GetEmailTemplateQuery, EmailTemplateDto?>(
-                    new GetEmailTemplateQuery(EmailTemplateId.From(id)), ct);
-
-                if (dto is null)
-                    throw new BusinessRuleViolationException(
-                        NotFoundError.Create<Domain.Entities.EmailTemplate>(id.ToString()));
-
-                return TypedResults.Ok(dto);
-            })
+            .MapGet("/{id:guid}", handler.HandleAsync)
             .WithName(endpointName)
             .RequireAuthorization(policy => policy.RequireTeamMembership(TeamMembershipRole.Organizer));
 
         return group;
+    }
+
+    private sealed class Handler(EmailSettingsScope scope)
+    {
+        public async ValueTask<Ok<EmailTemplateDto>> HandleAsync(
+            Guid id,
+            GetEmailTemplateHandler handler,
+            CancellationToken ct)
+        {
+            var dto = await handler.HandleAsync(
+                new GetEmailTemplateQuery(EmailTemplateId.From(id)), ct);
+
+            if (dto is null)
+                throw new BusinessRuleViolationException(
+                    NotFoundError.Create<Domain.Entities.EmailTemplate>(id.ToString()));
+
+            return TypedResults.Ok(dto);
+        }
     }
 }

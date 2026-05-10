@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Core.Shared.Application.Auth;
-using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
@@ -21,13 +20,13 @@ public static class CreateApiKeyHttpEndpoint
         Guid teamId,
         IUserContextAccessor userContextAccessor,
         CreateApiKeyHttpRequest request,
-        IMediator mediator,
+        CreateApiKeyHandler handler,
         [FromKeyedServices(OrganizationModuleKey.Value)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
         var command = request.ToCommand(teamId, userContextAccessor.Current.UserName);
-        var result = await mediator.SendReceiveAsync<CreateApiKeyCommand, CreateApiKeyResult>(command, cancellationToken);
+        var result = await handler.HandleAsync(command, cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 

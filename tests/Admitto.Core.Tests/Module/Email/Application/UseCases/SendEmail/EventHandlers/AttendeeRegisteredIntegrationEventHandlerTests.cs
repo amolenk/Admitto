@@ -33,14 +33,14 @@ public sealed class AttendeeRegisteredIntegrationEventHandlerTests(TestContext t
         var facade = Substitute.For<IRegistrationsFacade>();
         facade.GetTicketedEventEmailContextAsync(EventId, RegId, Arg.Any<CancellationToken>())
             .Returns(Context());
-        var mediator = Substitute.For<IMediator>();
+        var sendEmailHandler = Substitute.For<ICommandHandler<SendEmailCommand>>();
 
         var sut = new AttendeeRegisteredIntegrationEventHandler(
-            Environment.Database.Context, facade, mediator);
+            Environment.Database.Context, facade, sendEmailHandler);
 
         await sut.HandleAsync(Event(), testContext.CancellationToken);
 
-        await mediator.Received(1).SendAsync(
+        await sendEmailHandler.Received(1).HandleAsync(
             Arg.Is<SendEmailCommand>(c =>
                 c.EmailType == BuiltInEmailTemplateNames.TicketConfirmation &&
                 c.RecipientAddress == "alice@example.com" &&
@@ -54,15 +54,15 @@ public sealed class AttendeeRegisteredIntegrationEventHandlerTests(TestContext t
         var facade = Substitute.For<IRegistrationsFacade>();
         facade.GetTicketedEventEmailContextAsync(EventId, RegId, Arg.Any<CancellationToken>())
             .Returns(Context());
-        var mediator = Substitute.For<IMediator>();
+        var sendEmailHandler = Substitute.For<ICommandHandler<SendEmailCommand>>();
 
         SendEmailCommand? captured = null;
-        await mediator.SendAsync(
-            Arg.Do<SendEmailCommand>(c => captured = c),
-            Arg.Any<CancellationToken>());
+        sendEmailHandler
+            .HandleAsync(Arg.Do<SendEmailCommand>(c => captured = c), Arg.Any<CancellationToken>())
+            .Returns(ValueTask.CompletedTask);
 
         var sut = new AttendeeRegisteredIntegrationEventHandler(
-            Environment.Database.Context, facade, mediator);
+            Environment.Database.Context, facade, sendEmailHandler);
 
         await sut.HandleAsync(Event(), testContext.CancellationToken);
 
@@ -89,14 +89,14 @@ public sealed class AttendeeRegisteredIntegrationEventHandlerTests(TestContext t
         });
 
         var facade = Substitute.For<IRegistrationsFacade>();
-        var mediator = Substitute.For<IMediator>();
+        var sendEmailHandler = Substitute.For<ICommandHandler<SendEmailCommand>>();
 
         var sut = new AttendeeRegisteredIntegrationEventHandler(
-            Environment.Database.Context, facade, mediator);
+            Environment.Database.Context, facade, sendEmailHandler);
 
         await sut.HandleAsync(Event(), testContext.CancellationToken);
 
-        await mediator.DidNotReceive().SendAsync(
+        await sendEmailHandler.DidNotReceive().HandleAsync(
             Arg.Any<SendEmailCommand>(), Arg.Any<CancellationToken>());
     }
 

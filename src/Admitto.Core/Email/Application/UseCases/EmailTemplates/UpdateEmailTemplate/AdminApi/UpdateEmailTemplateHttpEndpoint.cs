@@ -1,6 +1,6 @@
+using Amolenk.Admitto.Core.Email.Application.UseCases.EmailTemplates.UpdateEmailTemplate;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
-using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
@@ -17,29 +17,31 @@ public static class UpdateEmailTemplateHttpEndpoint
             : "UpdateEventEmailTemplate";
 
         group
-            .MapPut("/{id:guid}", async (
-                Guid id,
-                UpdateEmailTemplateHttpRequest request,
-                IMediator mediator,
-                [FromKeyedServices(EmailModuleKey.Value)] IUnitOfWork unitOfWork,
-                CancellationToken ct) =>
-            {
-                var command = new UpdateEmailTemplateCommand(
-                    id,
-                    request.Name,
-                    request.Subject,
-                    request.TextBody,
-                    request.HtmlBody,
-                    request.Version);
-
-                await mediator.SendAsync(command, ct);
-                await unitOfWork.SaveChangesAsync(ct);
-
-                return TypedResults.Ok();
-            })
+            .MapPut("/{id:guid}", UpdateEmailTemplate)
             .WithName(endpointName)
             .RequireAuthorization(policy => policy.RequireTeamMembership(TeamMembershipRole.Organizer));
 
         return group;
+    }
+
+    private static async ValueTask<Ok> UpdateEmailTemplate(
+        Guid id,
+        UpdateEmailTemplateHttpRequest request,
+        UpdateEmailTemplateHandler handler,
+        [FromKeyedServices(EmailModuleKey.Value)] IUnitOfWork unitOfWork,
+        CancellationToken ct)
+    {
+        var command = new UpdateEmailTemplateCommand(
+            id,
+            request.Name,
+            request.Subject,
+            request.TextBody,
+            request.HtmlBody,
+            request.Version);
+
+        await handler.HandleAsync(command, ct);
+        await unitOfWork.SaveChangesAsync(ct);
+
+        return TypedResults.Ok();
     }
 }

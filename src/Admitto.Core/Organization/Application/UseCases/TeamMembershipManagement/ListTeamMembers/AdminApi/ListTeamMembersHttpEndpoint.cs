@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Core.Shared.Application.Auth;
-using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Core.Organization.Application.UseCases.TeamMembershipManagement.ListTeamMembers.AdminApi;
@@ -18,13 +17,10 @@ public static class ListTeamMembersHttpEndpoint
 
     private static async ValueTask<Ok<IReadOnlyList<TeamMemberListItemDto>>> ListTeamMembers(
         Guid teamId,
-        IMediator mediator,
+        GetTeamMembersHandler handler,
         CancellationToken cancellationToken)
     {
-        var query = new GetTeamMembersQuery(teamId);
-
-        var members = await mediator.QueryAsync<GetTeamMembersQuery, IReadOnlyList<TeamMemberListItemDto>>(
-            query, cancellationToken);
+        var members = await handler.HandleAsync(new GetTeamMembersQuery(teamId), cancellationToken);
 
         return TypedResults.Ok(members);
     }

@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Core.Shared.Application.Auth;
-using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
@@ -20,14 +19,14 @@ public static class RemoveTeamMembershipHttpEndpoint
     private static async ValueTask<Ok> RemoveTeamMembership(
         Guid teamId,
         string email,
-        IMediator mediator,
+        RemoveTeamMembershipHandler handler,
         [FromKeyedServices(OrganizationModuleKey.Value)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
         var command = new RemoveTeamMembershipCommand(teamId, email);
 
-        await mediator.SendAsync(command, cancellationToken);
+        await handler.HandleAsync(command, cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 

@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Core.Shared.Application.Auth;
-using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Microsoft.AspNetCore.Http.HttpResults;
 
@@ -21,7 +20,7 @@ public static class AdminRegisterAttendeeHttpEndpoint
         Guid teamId,
         Guid eventId,
         AdminRegisterAttendeeHttpRequest request,
-        IMediator mediator,
+        RegisterAttendeeHandler handler,
         [FromKeyedServices(RegistrationsModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
@@ -37,8 +36,7 @@ public static class AdminRegisterAttendeeHttpEndpoint
             EmailVerificationToken: null,
             AdditionalDetails: request.AdditionalDetails);
 
-        var registrationId = await mediator.SendReceiveAsync<RegisterAttendeeCommand, Guid>(
-            command, cancellationToken);
+        var registrationId = await handler.HandleAsync(command, cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 

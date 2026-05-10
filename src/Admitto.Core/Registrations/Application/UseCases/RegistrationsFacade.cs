@@ -3,19 +3,22 @@ using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.Get
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.GetReconfirmTriggerSpec;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.GetTicketedEventEmailContext;
 using Amolenk.Admitto.Core.Registrations.Contracts;
-using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases;
 
-internal sealed class RegistrationsFacade(IMediator mediator) : IRegistrationsFacade
+internal sealed class RegistrationsFacade(
+    GetTicketedEventEmailContextHandler getEmailContextHandler,
+    QueryRegistrationsHandler queryRegistrationsHandler,
+    GetReconfirmTriggerSpecHandler getReconfirmTriggerSpecHandler,
+    GetActiveReconfirmTriggerSpecsHandler getActiveReconfirmTriggerSpecsHandler) : IRegistrationsFacade
 {
     public async ValueTask<TicketedEventEmailContextDto> GetTicketedEventEmailContextAsync(
         Guid ticketedEventId,
         Guid registrationId,
         CancellationToken cancellationToken = default)
     {
-        return await mediator.QueryAsync<GetTicketedEventEmailContextQuery, TicketedEventEmailContextDto>(
+        return await getEmailContextHandler.HandleAsync(
             new GetTicketedEventEmailContextQuery(ticketedEventId, registrationId),
             cancellationToken);
     }
@@ -25,7 +28,7 @@ internal sealed class RegistrationsFacade(IMediator mediator) : IRegistrationsFa
         QueryRegistrationsDto query,
         CancellationToken cancellationToken = default)
     {
-        return await mediator.QueryAsync<QueryRegistrationsQuery, IReadOnlyList<RegistrationListItemDto>>(
+        return await queryRegistrationsHandler.HandleAsync(
             new QueryRegistrationsQuery(eventId, query),
             cancellationToken);
     }
@@ -34,7 +37,7 @@ internal sealed class RegistrationsFacade(IMediator mediator) : IRegistrationsFa
         TicketedEventId eventId,
         CancellationToken cancellationToken = default)
     {
-        return await mediator.QueryAsync<GetReconfirmTriggerSpecQuery, ReconfirmTriggerSpecDto?>(
+        return await getReconfirmTriggerSpecHandler.HandleAsync(
             new GetReconfirmTriggerSpecQuery(eventId.Value),
             cancellationToken);
     }
@@ -42,7 +45,7 @@ internal sealed class RegistrationsFacade(IMediator mediator) : IRegistrationsFa
     public async Task<IReadOnlyList<ReconfirmTriggerSpecDto>> GetActiveReconfirmTriggerSpecsAsync(
         CancellationToken cancellationToken = default)
     {
-        return await mediator.QueryAsync<GetActiveReconfirmTriggerSpecsQuery, IReadOnlyList<ReconfirmTriggerSpecDto>>(
+        return await getActiveReconfirmTriggerSpecsHandler.HandleAsync(
             new GetActiveReconfirmTriggerSpecsQuery(),
             cancellationToken);
     }

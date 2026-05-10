@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Core.Shared.Application.Auth;
-using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Microsoft.AspNetCore.Http.HttpResults;
 
@@ -21,15 +20,14 @@ public static class CreateCouponHttpEndpoint
         Guid teamId,
         Guid eventId,
         CreateCouponHttpRequest request,
-        IMediator mediator,
+        CreateCouponHandler handler,
         [FromKeyedServices(RegistrationsModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
         var command = request.ToCommand(eventId);
 
-        var couponId = await mediator.SendReceiveAsync<CreateCouponCommand, Guid>(
-            command, cancellationToken);
+        var couponId = await handler.HandleAsync(command, cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 

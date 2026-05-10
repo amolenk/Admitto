@@ -5,7 +5,7 @@ using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.WriteActivityLog.EventHandlers;
 
-internal sealed class TicketsChangedDomainEventHandler(IMediator mediator)
+internal sealed class TicketsChangedDomainEventHandler(ICommandHandler<WriteActivityLogCommand> handler)
     : IDomainEventHandler<TicketsChangedDomainEvent>
 {
     public async ValueTask HandleAsync(
@@ -18,7 +18,7 @@ internal sealed class TicketsChangedDomainEventHandler(IMediator mediator)
             to = domainEvent.NewTickets.Select(t => t.Slug).ToArray()
         });
 
-        await mediator.SendAsync(
+        await handler.HandleAsync(
             new WriteActivityLogCommand(
                 domainEvent.RegistrationId.Value,
                 ActivityType.TicketsChanged,

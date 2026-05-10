@@ -1,5 +1,5 @@
+using Amolenk.Admitto.Core.Email.Application.UseCases.BulkEmails.CancelBulkEmail;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
-using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.BulkEmails.CancelBulkEmail.AdminApi;
@@ -9,24 +9,23 @@ public static class CancelBulkEmailHttpEndpoint
     public static RouteGroupBuilder MapCancelBulkEmail(this RouteGroupBuilder group)
     {
         group
-            .MapPost("/{bulkEmailJobId:guid}/cancel", async (
-                Guid teamId,
-                Guid eventId,
-                Guid bulkEmailJobId,
-                IMediator mediator,
-                [FromKeyedServices(EmailModuleKey.Value)] IUnitOfWork unitOfWork,
-                CancellationToken ct) =>
-            {
-                await mediator.SendAsync(
-                    new CancelBulkEmailCommand(bulkEmailJobId), ct);
-
-                await unitOfWork.SaveChangesAsync(ct);
-
-                return TypedResults.Accepted((string?)null);
-            })
+            .MapPost("/{bulkEmailJobId:guid}/cancel", CancelBulkEmail)
             .WithName("CancelBulkEmail")
             .RequireAuthorization(policy => policy.RequireTeamMembership(TeamMembershipRole.Organizer));
 
         return group;
+    }
+
+    private static async ValueTask<Accepted> CancelBulkEmail(
+        Guid teamId,
+        Guid eventId,
+        Guid bulkEmailJobId,
+        CancelBulkEmailHandler handler,
+        [FromKeyedServices(EmailModuleKey.Value)] IUnitOfWork unitOfWork,
+        CancellationToken ct)
+    {
+        await handler.HandleAsync(new CancelBulkEmailCommand(bulkEmailJobId), ct);
+        await unitOfWork.SaveChangesAsync(ct);
+        return TypedResults.Accepted((string?)null);
     }
 }

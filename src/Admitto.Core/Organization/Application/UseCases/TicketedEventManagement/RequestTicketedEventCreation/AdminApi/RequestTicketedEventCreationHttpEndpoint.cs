@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Core.Shared.Application.Auth;
-using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
@@ -26,15 +25,14 @@ public static class RequestTicketedEventCreationHttpEndpoint
         Guid teamId,
         IUserContextAccessor userContextAccessor,
         RequestTicketedEventCreationHttpRequest request,
-        IMediator mediator,
+        RequestTicketedEventCreationHandler handler,
         [FromKeyedServices(OrganizationModuleKey.Value)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
         var command = request.ToCommand(teamId, userContextAccessor.Current.UserId);
 
-        var creationRequestId = await mediator.SendReceiveAsync<RequestTicketedEventCreationCommand, Guid>(
-            command, cancellationToken);
+        var creationRequestId = await handler.HandleAsync(command, cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 

@@ -10,10 +10,9 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.Reconfirmations.Schedu
 /// time zone changes, so the cron continues to fire at the same local hour.
 /// No-ops when the event has no active reconfirm policy.
 /// </summary>
-[RequiresCapability(HostCapability.Jobs | HostCapability.Email)]
 internal sealed class TicketedEventTimeZoneChangedIntegrationEventHandler(
     IRegistrationsFacade registrationsFacade,
-    IMediator mediator)
+    ICommandHandler<ScheduleReconfirmationsCommand> handler)
     : IIntegrationEventHandler<TicketedEventTimeZoneChangedIntegrationEvent>
 {
     public async ValueTask HandleAsync(
@@ -28,7 +27,7 @@ internal sealed class TicketedEventTimeZoneChangedIntegrationEventHandler(
         if (spec is null)
             return;
 
-        await mediator.SendAsync(
+        await handler.HandleAsync(
             new ScheduleReconfirmationsCommand(integrationEvent.TicketedEventId, spec),
             cancellationToken);
     }

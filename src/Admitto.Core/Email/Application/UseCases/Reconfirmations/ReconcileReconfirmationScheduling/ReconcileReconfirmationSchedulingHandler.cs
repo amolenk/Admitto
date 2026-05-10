@@ -11,10 +11,9 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.Reconfirmations.Reconc
 /// any drift between Quartz state and the source of truth (e.g. after a
 /// worker redeploy with a fresh Quartz store, or after missed events).
 /// </summary>
-[RequiresCapability(HostCapability.Jobs | HostCapability.Email)]
 internal sealed class ReconcileReconfirmationSchedulingHandler(
     IRegistrationsFacade registrationsFacade,
-    IMediator mediator,
+    ScheduleReconfirmationsHandler scheduleReconfirmationsHandler,
     ILogger<ReconcileReconfirmationSchedulingHandler> logger)
     : ICommandHandler<ReconcileReconfirmationSchedulingCommand>
 {
@@ -31,7 +30,7 @@ internal sealed class ReconcileReconfirmationSchedulingHandler(
         {
             cancellationToken.ThrowIfCancellationRequested();
 
-            await mediator.SendAsync(
+            await scheduleReconfirmationsHandler.HandleAsync(
                 new ScheduleReconfirmationsCommand(
                     spec.TicketedEventId,
                     spec),

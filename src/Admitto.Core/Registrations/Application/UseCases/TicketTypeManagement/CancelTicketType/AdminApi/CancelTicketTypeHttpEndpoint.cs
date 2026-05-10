@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Core.Shared.Application.Auth;
-using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Microsoft.AspNetCore.Http.HttpResults;
 
@@ -21,7 +20,7 @@ public static class CancelTicketTypeHttpEndpoint
         string ticketTypeSlug,
         Guid teamId,
         Guid eventId,
-        IMediator mediator,
+        CancelTicketTypeHandler handler,
         [FromKeyedServices(RegistrationsModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
@@ -30,7 +29,7 @@ public static class CancelTicketTypeHttpEndpoint
             eventId,
             ticketTypeSlug);
 
-        await mediator.SendAsync(command, cancellationToken);
+        await handler.HandleAsync(command, cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 

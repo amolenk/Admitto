@@ -4,14 +4,14 @@ using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.WriteActivityLog.EventHandlers;
 
-internal sealed class RegistrationReconfirmedDomainEventHandler(IMediator mediator)
+internal sealed class RegistrationReconfirmedDomainEventHandler(WriteActivityLogHandler handler)
     : IDomainEventHandler<RegistrationReconfirmedDomainEvent>
 {
     public async ValueTask HandleAsync(
         RegistrationReconfirmedDomainEvent domainEvent,
         CancellationToken cancellationToken)
     {
-        await mediator.SendAsync(
+        await handler.HandleAsync(
             new WriteActivityLogCommand(
                 domainEvent.RegistrationId.Value,
                 ActivityType.Reconfirmed,

@@ -1,4 +1,3 @@
-using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
@@ -18,7 +17,7 @@ public static class RequestOtpHttpEndpoint
         Guid teamId,
         Guid eventId,
         RequestOtpHttpRequest request,
-        IMediator mediator,
+        RequestOtpHandler handler,
         [FromKeyedServices(RegistrationsModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
@@ -28,7 +27,7 @@ public static class RequestOtpHttpEndpoint
             TicketedEventId.From(eventId),
             request.Email);
 
-        await mediator.SendAsync(command, cancellationToken);
+        await handler.HandleAsync(command, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Results.Accepted();

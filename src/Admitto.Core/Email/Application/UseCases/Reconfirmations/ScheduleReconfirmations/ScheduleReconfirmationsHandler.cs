@@ -11,7 +11,6 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.Reconfirmations.Schedu
 /// Owns the lifecycle of the per-event Quartz trigger that fires
 /// <see cref="RequestReconfirmationsJob"/> on the policy cadence (per design D6).
 /// </summary>
-[RequiresCapability(HostCapability.Jobs | HostCapability.Email)]
 internal sealed class ScheduleReconfirmationsHandler(
     ISchedulerFactory schedulerFactory,
     ILogger<ScheduleReconfirmationsHandler> logger)

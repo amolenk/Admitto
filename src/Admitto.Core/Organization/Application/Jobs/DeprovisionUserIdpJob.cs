@@ -1,7 +1,6 @@
 using Amolenk.Admitto.Core.Organization.Application.Persistence;
 using Amolenk.Admitto.Core.Organization.Application.Services;
 using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
-using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Microsoft.Extensions.Logging;
 using Quartz;
@@ -14,7 +13,6 @@ namespace Amolenk.Admitto.Core.Organization.Application.Jobs;
 /// <c>DeprovisionAfter &lt;= now</c>, removes their IdP account, and clears the user's
 /// <c>ExternalUserId</c> and <c>DeprovisionAfter</c> fields.
 /// </summary>
-[RequiresCapability(HostCapability.Jobs)]
 [DisallowConcurrentExecution]
 public sealed class DeprovisionUserIdpJob(
     IOrganizationWriteStore writeStore,

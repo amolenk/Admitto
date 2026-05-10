@@ -10,7 +10,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.SendEmail;
 
-[RequiresCapability(HostCapability.Email)]
 internal sealed class SendEmailHandler(
     IEmailWriteStore writeStore,
     IEffectiveEmailSettingsResolver settingsResolver,

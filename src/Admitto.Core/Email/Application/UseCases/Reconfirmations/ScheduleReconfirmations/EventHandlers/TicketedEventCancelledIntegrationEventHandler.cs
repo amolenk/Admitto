@@ -7,15 +7,14 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.Reconfirmations.Schedu
 /// Removes the per-event reconfirm trigger when the ticketed event is
 /// cancelled. Idempotent: no-op when no trigger exists.
 /// </summary>
-[RequiresCapability(HostCapability.Jobs | HostCapability.Email)]
-internal sealed class TicketedEventCancelledIntegrationEventHandler(IMediator mediator)
+internal sealed class TicketedEventCancelledIntegrationEventHandler(ICommandHandler<ScheduleReconfirmationsCommand> handler)
     : IIntegrationEventHandler<TicketedEventCancelledIntegrationEvent>
 {
     public async ValueTask HandleAsync(
         TicketedEventCancelledIntegrationEvent integrationEvent,
         CancellationToken cancellationToken)
     {
-        await mediator.SendAsync(
+        await handler.HandleAsync(
             new ScheduleReconfirmationsCommand(
                 integrationEvent.TicketedEventId,
                 Spec: null),

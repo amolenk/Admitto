@@ -1,7 +1,8 @@
+using Amolenk.Admitto.Core.Email.Application.UseCases.EmailSettings.CreateEmailSettings;
+using Amolenk.Admitto.Core.Email.Application.UseCases.EmailSettings.UpdateEmailSettings;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
 using Amolenk.Admitto.Core.Shared.Application.Http;
-using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
@@ -30,7 +31,8 @@ public static class UpsertEmailSettingsHttpEndpoint
             Guid teamId,
             Guid? eventId,
             UpsertEmailSettingsHttpRequest request,
-            IMediator mediator,
+            CreateEmailSettingsHandler createHandler,
+            UpdateEmailSettingsHandler updateHandler,
             [FromKeyedServices(EmailModuleKey.Value)] IUnitOfWork unitOfWork,
             CancellationToken ct)
         {
@@ -38,12 +40,12 @@ public static class UpsertEmailSettingsHttpEndpoint
 
             if (request.Version is { } expectedVersion)
             {
-                await mediator.SendAsync(request.ToUpdateCommand(scope, scopeId, expectedVersion), ct);
+                await updateHandler.HandleAsync(request.ToUpdateCommand(scope, scopeId, expectedVersion), ct);
                 await unitOfWork.SaveChangesAsync(ct);
                 return TypedResults.Ok();
             }
 
-            await mediator.SendAsync(request.ToCreateCommand(scope, scopeId), ct);
+            await createHandler.HandleAsync(request.ToCreateCommand(scope, scopeId), ct);
             await unitOfWork.SaveChangesAsync(ct);
 
             var location = eventId is not null

@@ -1,6 +1,5 @@
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
-using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.ChangeAttendeeTickets.AdminApi;
@@ -22,7 +21,7 @@ public static class ChangeAttendeeTicketsHttpEndpoint
         Guid teamId,
         Guid eventId,
         ChangeAttendeeTicketsHttpRequest request,
-        IMediator mediator,
+        ChangeAttendeeTicketsHandler handler,
         [FromKeyedServices(RegistrationsModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
@@ -33,7 +32,7 @@ public static class ChangeAttendeeTicketsHttpEndpoint
             request.TicketTypeSlugs!,
             ChangeMode.Admin);
 
-        await mediator.SendAsync(command, cancellationToken);
+        await handler.HandleAsync(command, cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 

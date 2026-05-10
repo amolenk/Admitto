@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
-using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.CancelRegistration.PublicApi;
@@ -18,7 +17,7 @@ public static class SelfCancelRegistrationHttpEndpoint
         Guid teamId,
         Guid eventId,
         Guid registrationId,
-        IMediator mediator,
+        CancelRegistrationHandler handler,
         [FromKeyedServices(RegistrationsModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
@@ -28,7 +27,7 @@ public static class SelfCancelRegistrationHttpEndpoint
             eventId,
             CancellationReason.AttendeeRequest);
 
-        await mediator.SendAsync(command, cancellationToken);
+        await handler.HandleAsync(command, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Results.Ok();

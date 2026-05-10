@@ -19,7 +19,7 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.SendEmail.EventHandler
 internal sealed class AttendeeTicketsChangedIntegrationEventHandler(
     IEmailWriteStore writeStore,
     IRegistrationsFacade registrationsFacade,
-    IMediator mediator)
+    ICommandHandler<SendEmailCommand> sendEmailHandler)
     : IIntegrationEventHandler<AttendeeTicketsChangedIntegrationEvent>
 {
     public async ValueTask HandleAsync(
@@ -62,6 +62,6 @@ internal sealed class AttendeeTicketsChangedIntegrationEventHandler(
             },
             RegistrationId: integrationEvent.RegistrationId);
 
-        await mediator.SendAsync(command, cancellationToken);
+        await sendEmailHandler.HandleAsync(command, cancellationToken);
     }
 }

@@ -1,6 +1,6 @@
+using Amolenk.Admitto.Core.Email.Application.UseCases.EmailTemplates.TestSendEmailTemplate;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
 using Amolenk.Admitto.Core.Shared.Application.Http;
-using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.EmailTemplates.TestSendEmailTemplate.AdminApi;
@@ -15,25 +15,32 @@ public static class TestSendEmailTemplateHttpEndpoint
             ? "TestSendEventEmailTemplate"
             : "TestSendTeamEmailTemplate";
 
-        group
-            .MapPost("/{id:guid}/test-send", async (
-                Guid id,
-                Guid teamId,
-                Guid? eventId,
-                TestSendEmailTemplateHttpRequest request,
-                IMediator mediator,
-                CancellationToken ct) =>
-            {
-                var command = isEventScoped
-                    ? request.ToCommand(id, teamId, eventId!.Value)
-                    : request.ToCommand(id, teamId, null);
+        var handler = new Handler(isEventScoped);
 
-                await mediator.SendAsync(command, ct);
-                return TypedResults.Ok();
-            })
+        group
+            .MapPost("/{id:guid}/test-send", handler.HandleAsync)
             .WithName(endpointName)
             .RequireAuthorization(policy => policy.RequireTeamMembership(TeamMembershipRole.Organizer));
 
         return group;
+    }
+
+    private sealed class Handler(bool isEventScoped)
+    {
+        public async ValueTask<Ok> HandleAsync(
+            Guid id,
+            Guid teamId,
+            Guid? eventId,
+            TestSendEmailTemplateHttpRequest request,
+            TestSendEmailTemplateHandler handler,
+            CancellationToken ct)
+        {
+            var command = isEventScoped
+                ? request.ToCommand(id, teamId, eventId!.Value)
+                : request.ToCommand(id, teamId, null);
+
+            await handler.HandleAsync(command, ct);
+            return TypedResults.Ok();
+        }
     }
 }

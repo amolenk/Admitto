@@ -1,5 +1,5 @@
+using Amolenk.Admitto.Core.Email.Application.UseCases.AttendeeEmails.GetAttendeeEmails;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
-using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.AspNetCore.Http.HttpResults;
 
@@ -21,7 +21,7 @@ public static class GetAttendeeEmailsHttpEndpoint
         Guid teamId,
         Guid eventId,
         Guid registrationId,
-        IMediator mediator,
+        GetAttendeeEmailsHandler handler,
         CancellationToken cancellationToken)
     {
         var query = new GetAttendeeEmailsQuery(
@@ -29,8 +29,7 @@ public static class GetAttendeeEmailsHttpEndpoint
             EventId: eventId,
             RegistrationId: registrationId);
 
-        var result = await mediator.QueryAsync<GetAttendeeEmailsQuery, IReadOnlyList<AttendeeEmailLogItemDto>>(
-            query, cancellationToken);
+        var result = await handler.HandleAsync(query, cancellationToken);
 
         return TypedResults.Ok(result);
     }
