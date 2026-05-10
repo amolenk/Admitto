@@ -1,6 +1,5 @@
 using System.Reflection;
 using Amolenk.Admitto.Core.Registrations.Application.Common.Cryptography;
-using Amolenk.Admitto.Core.Registrations.Application.Messaging;
 using Amolenk.Admitto.Core.Registrations.Application.Security;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases;
 using Amolenk.Admitto.Core.Registrations.Contracts;
@@ -22,14 +21,11 @@ public static class DependencyInjection
         var configuration = builder.Configuration;
         var executingAssembly = Assembly.GetExecutingAssembly();
 
-        services.AddCommandHandlersFromAssembly(executingAssembly, capabilities);
-        services.AddDomainEventHandlersFromAssembly(executingAssembly);
-        services.AddModuleEventHandlersFromAssembly(executingAssembly, capabilities);
-        services.AddIntegrationEventHandlersFromAssembly(executingAssembly, RegistrationsModule.Key, capabilities);
-        services.AddQueryHandlersFromAssembly(executingAssembly, capabilities);
+        services.AddCommandHandlersFromAssembly(executingAssembly, capabilities, typeof(DependencyInjection));
+        services.AddDomainEventHandlersFromAssembly(executingAssembly, typeof(DependencyInjection));
+        services.AddIntegrationEventHandlersFromAssembly(executingAssembly, RegistrationsModule.Key, capabilities, typeof(DependencyInjection));
+        services.AddQueryHandlersFromAssembly(executingAssembly, capabilities, typeof(DependencyInjection));
         services.AddValidatorsFromAssembly(executingAssembly);
-
-        services.AddKeyedSingleton<IMessagePolicy>(RegistrationsModule.Key, new RegistrationsMessagePolicy());
 
         services.AddScoped<IRegistrationsFacade, RegistrationsFacade>();
 

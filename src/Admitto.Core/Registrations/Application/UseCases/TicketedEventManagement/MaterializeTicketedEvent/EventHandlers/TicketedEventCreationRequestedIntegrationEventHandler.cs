@@ -17,7 +17,7 @@ namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEventM
 /// </summary>
 internal sealed class TicketedEventCreationRequestedIntegrationEventHandler(
     IRegistrationsWriteStore writeStore,
-    [FromKeyedServices(RegistrationsModule.Key)] IIntegrationEventOutbox integrationEventOutbox)
+    [FromKeyedServices(RegistrationsModule.Key)] IOutbox outbox)
     : IIntegrationEventHandler<TicketedEventCreationRequestedIntegrationEvent>
 {
     public async ValueTask HandleAsync(
@@ -43,7 +43,7 @@ internal sealed class TicketedEventCreationRequestedIntegrationEventHandler(
         writeStore.TicketedEvents.Add(ticketedEvent);
         writeStore.TicketCatalogs.Add(catalog);
 
-        integrationEventOutbox.Enqueue(new TicketedEventCreatedIntegrationEvent(
+        outbox.Enqueue(new TicketedEventCreatedIntegrationEvent(
             integrationEvent.CreationRequestId,
             integrationEvent.TeamId,
             ticketedEventId.Value,

@@ -39,7 +39,7 @@ Some workflows need to consult another module's state inside the same request wi
 | `IOrganizationFacade` | Organization | Registrations, API auth | Check team membership, look up team by ID |
 | `IEventEmailFacade` | Email | Registrations | Check whether per-event SMTP credentials are configured before allowing registration to open |
 
-Facades are read-only and side-effect-free. Cross-module *writes* still go through module/integration events on the outbox (see §8.6).
+Facades are read-only and side-effect-free. Cross-module *writes* still go through commands and integration events on the outbox (see §8.6).
 
 ## 8.5 Use case slice layout
 
@@ -108,23 +108,27 @@ team.MapArchiveTeam();   // POST /admin/teams/{teamId}/archive
 
 ## 8.6 Messaging and outbox
 
-Three event tiers, each with distinct scope:
+Two event tiers, each with distinct scope:
 
 | Tier | Scope | Persistence | Location |
 | :--- | :---- | :---------- | :------- |
 | Domain event | In-transaction, synchronous | Not persisted separately | `Domain/DomainEvents/` |
-| Module event | Async, within/between modules | Outbox table | `Application/ModuleEvents/` |
-| Integration event | Async, external contracts | Outbox table | `*.Contracts/IntegrationEvents/` |
+| Command / Integration event | Async, via outbox | Outbox table | `Application/…/` or `*.Contracts/IntegrationEvents/` |
 
-**Why three tiers?** Domain events are dispatched synchronously within the same transaction — they don't need the message bus. When an event does need async processing, we distinguish between module events and integration events. Module events are defined inside the module's `Application/ModuleEvents/` folder, so internal workflows can evolve without affecting other modules. Integration events live in the module's Contracts project (`*.Contracts/IntegrationEvents/`) as a public, versioned surface for external consumers.
+**Why two tiers?** Domain events are dispatched synchronously within the same transaction via `IDomainEventHandler<T>` — they don't cross the message bus. Handlers that need async processing (fan-out, cross-module writes) inject `IOutbox` and call `outbox.Enqueue(command)` or `outbox.Enqueue(integrationEvent)` inside the same handler. The `DomainEventsInterceptor` publishes domain events after `SaveChanges`; the outbox message was already inserted in the same transaction.
 
-Each module declares a `MessagePolicy` that maps domain events to module and/or integration events. The `DomainEventsInterceptor` calls the policy during `SaveChanges`; mapped events are written to the outbox table in the same transaction. `OutboxDispatcher` attempts best-effort dispatch immediately, with background retry via the Worker host.
+**Commands vs integration events on the outbox**
+
+- `ICommand` — used for internal, within-module async work (e.g. a scheduled Quartz fan-out triggered by a domain event). Type key: `command.{module-kebab}.{command-name-kebab}` (strips `-command` suffix). The `QueueMessageDispatcher` deserialises and routes these to the module's `IMediator`.
+- `IIntegrationEvent` — used for cross-module contracts. Type key: `integration.{module-kebab}.{event-name-kebab}` (strips `-integration-event` suffix). Lives in `*.Contracts/IntegrationEvents/`.
+
+`OutboxDispatcher` attempts best-effort dispatch immediately, with background retry via the Worker host.
 
 ### Cross-module lifecycle events
 
 Event creation is a Registrations-owned operation *gated* by Organization. Organization emits `TicketedEventCreationRequested` (carrying a `CreationRequestId`) to request materialisation; Registrations inserts the authoritative `TicketedEvent`, creates an Active `TicketCatalog` in the same unit of work, and emits `TicketedEventCreated` or — on other validation failure — `TicketedEventCreationRejected`.
 
-Lifecycle transitions on the `TicketedEvent` aggregate (`Cancel`, `Archive`) raise an in-module `TicketedEventStatusChanged` domain event that projects onto `TicketCatalog.EventStatus` in the same transaction as the source-of-truth status change. In parallel, the same unit of work outboxes `TicketedEventCancelled` / `TicketedEventArchived` integration events so Organization can advance the team's counters (`ActiveEventCount`, `CancelledEventCount`, `ArchivedEventCount`).
+Lifecycle transitions on the `TicketedEvent` aggregate (`Cancel`, `Archive`) raise an in-module `TicketedEventStatusChanged` domain event that projects onto `TicketCatalog.EventStatus` in the same transaction as the source-of-truth status change. In parallel, a separate `IDomainEventHandler<TicketedEventStatusChangedDomainEvent>` outboxes `TicketedEventCancelled` / `TicketedEventArchived` integration events so Organization can advance the team's counters (`ActiveEventCount`, `CancelledEventCount`, `ArchivedEventCount`).
 
 All cross-module integration-event handlers are idempotent:
 
@@ -278,7 +282,7 @@ public readonly record struct ProtectedPassword
 
 - EF Core `DbContext` per module, each targeting a separate PostgreSQL schema.
 - `AuditInterceptor` populates `CreatedAt`, `LastChangedAt`, `LastChangedBy` on auditable entities.
-- `DomainEventsInterceptor` dispatches domain events and writes outbox messages during `SaveChanges`.
+- `DomainEventsInterceptor` dispatches domain events after `SaveChanges`; outbox messages are written inside `IDomainEventHandler<T>` implementations in the same transaction.
 - Value converters bridge value objects (§8.8) to their primitive column types.
 
 ### Value converter wiring
@@ -363,14 +367,13 @@ team.EnsureNotArchived();   // fast-fail here
 
 ## 8.11 Handler and event handler DI registration
 
-Command handlers, query handlers, domain event handlers, module event handlers, and integration event handlers are all auto-discovered by Scrutor assembly scan. No manual registration is needed.
+Command handlers, query handlers, domain event handlers, and integration event handlers are all auto-discovered by Scrutor assembly scan. No manual registration is needed.
 
 | Handler type | Registration method | Scrutor selector |
 | :----------- | :------------------ | :--------------- |
 | `ICommandHandler<T>` / `ICommandHandler<T,R>` | `AddCommandHandlersFromAssembly` | `AssignableTo<ICommandHandler>()` (marker interface) |
 | `IQueryHandler<T,R>` | `AddQueryHandlersFromAssembly` | `AssignableTo(typeof(IQueryHandler<,>))` |
 | `IDomainEventHandler<T>` | `AddDomainEventHandlersFromAssembly` | `AssignableTo(typeof(IDomainEventHandler<>))` |
-| `IModuleEventHandler<T>` | `AddModuleEventHandlersFromAssembly` | `AssignableTo(typeof(IModuleEventHandler<>))` |
 | `IIntegrationEventHandler<T>` | `AddIntegrationEventHandlersFromAssembly` | `AssignableTo(typeof(IIntegrationEventHandler<>))` |
 
 **Rule:** Place the handler class anywhere in the module assembly and implement the correct interface. Do not use `Where(t => t.IsGenericType …)` as a filter — this matches only open generic types and never selects a concrete handler.
@@ -490,7 +493,6 @@ These are enforced via MSTest reflection checks on the loaded `Admitto.Core` ass
 | :-------- | :------------------ |
 | `IDomainEventHandler<T>` | `{T.Name}Handler` |
 | `IIntegrationEventHandler<T>` | `{T.Name}Handler` |
-| `IModuleEventHandler<T>` | `{T.Name}Handler` |
 | `ICommandHandler<T>` | `T` name with `Command` replaced by `Handler` (e.g. `CreateTeamCommand` → `CreateTeamHandler`) |
 | `IQueryHandler<T,R>` | `T` name with `Query` replaced by `Handler` |
 
@@ -498,7 +500,7 @@ These are enforced via MSTest reflection checks on the loaded `Admitto.Core` ass
 
 | Class pattern | Required namespace suffix |
 | :------------ | :------------------------ |
-| `*DomainEventHandler`, `*IntegrationEventHandler`, `*ModuleEventHandler` | `…EventHandlers` |
+| `*DomainEventHandler`, `*IntegrationEventHandler` | `…EventHandlers` |
 | `*HttpEndpoint` | `…AdminApi` or `…PublicApi` |
 | `AbstractValidator<T>` subclasses | `…AdminApi` or `…PublicApi` |
 | `*Command` or `*Query` | `*.Application.UseCases.*` |

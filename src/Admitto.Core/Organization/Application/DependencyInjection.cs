@@ -1,7 +1,6 @@
 using System.Reflection;
 using Amolenk.Admitto.Core.Organization.Application.Jobs;
 using Amolenk.Admitto.Core.Organization.Application.Mapping;
-using Amolenk.Admitto.Core.Organization.Application.Messaging;
 using Amolenk.Admitto.Core.Organization.Application.UseCases;
 using Amolenk.Admitto.Core.Organization.Contracts;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
@@ -21,26 +20,21 @@ public static class DependencyInjection
         var services = builder.Services;
         var executingAssembly = Assembly.GetExecutingAssembly();
 
-        services.AddCommandHandlersFromAssembly(executingAssembly, capabilities);
-        services.AddDomainEventHandlersFromAssembly(executingAssembly);
-        services.AddModuleEventHandlersFromAssembly(executingAssembly, capabilities);
-        services.AddIntegrationEventHandlersFromAssembly(executingAssembly, OrganizationModuleKey.Value, capabilities);
-        services.AddQueryHandlersFromAssembly(executingAssembly, capabilities);
+        services.AddCommandHandlersFromAssembly(executingAssembly, capabilities, typeof(DependencyInjection));
+        services.AddDomainEventHandlersFromAssembly(executingAssembly, typeof(DependencyInjection));
+        services.AddIntegrationEventHandlersFromAssembly(executingAssembly, OrganizationModuleKey.Value, capabilities, typeof(DependencyInjection));
+        services.AddQueryHandlersFromAssembly(executingAssembly, capabilities, typeof(DependencyInjection));
         services.AddValidatorsFromAssembly(executingAssembly);
         
         services.AddScoped<OrganizationFacade>();
         services.AddScoped<IOrganizationFacade>(sp =>
         {
-            // TODO Options?
             if (builder.Configuration["ORGANIZATION__CACHING__ENABLED"] != "true")
                 return sp.GetRequiredService<OrganizationFacade>();
 
             var inner = sp.GetRequiredService<OrganizationFacade>();
             return new CachingOrganizationFacade(inner);
         });
-
-        services.AddKeyedSingleton<IMessagePolicy, OrganizationMessagePolicy>(
-            OrganizationModuleKey.Value);
 
         if (capabilities.HasFlag(HostCapability.Jobs))
         {

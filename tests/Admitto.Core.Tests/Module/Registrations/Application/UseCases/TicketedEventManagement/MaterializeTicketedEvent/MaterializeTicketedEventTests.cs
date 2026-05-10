@@ -28,7 +28,7 @@ public sealed class MaterializeTicketedEventTests(TestContext testContext) : Asp
 
         var sut = new TicketedEventCreationRequestedIntegrationEventHandler(
             Environment.Database.Context,
-            new IntegrationEventOutbox(Environment.Database.Context));
+            new Outbox(Environment.Database.Context));
 
         await sut.HandleAsync(evt, testContext.CancellationToken);
 

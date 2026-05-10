@@ -1,6 +1,5 @@
 using System.Reflection;
 using Amolenk.Admitto.Core.Email.Application.Jobs;
-using Amolenk.Admitto.Core.Email.Application.Messaging;
 using Amolenk.Admitto.Core.Email.Application.Sending;
 using Amolenk.Admitto.Core.Email.Application.Sending.Bulk;
 using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
@@ -22,14 +21,11 @@ public static class DependencyInjection
         var services = builder.Services;
         var executingAssembly = Assembly.GetExecutingAssembly();
 
-        services.AddCommandHandlersFromAssembly(executingAssembly, capabilities);
-        services.AddDomainEventHandlersFromAssembly(executingAssembly);
-        services.AddModuleEventHandlersFromAssembly(executingAssembly, capabilities);
-        services.AddIntegrationEventHandlersFromAssembly(executingAssembly, EmailModuleKey.Value, capabilities);
-        services.AddQueryHandlersFromAssembly(executingAssembly, capabilities);
+        services.AddCommandHandlersFromAssembly(executingAssembly, capabilities, typeof(DependencyInjection));
+        services.AddDomainEventHandlersFromAssembly(executingAssembly, typeof(DependencyInjection));
+        services.AddIntegrationEventHandlersFromAssembly(executingAssembly, EmailModuleKey.Value, capabilities, typeof(DependencyInjection));
+        services.AddQueryHandlersFromAssembly(executingAssembly, capabilities, typeof(DependencyInjection));
         services.AddValidatorsFromAssembly(executingAssembly);
-
-        services.AddKeyedSingleton<IMessagePolicy, EmailMessagePolicy>(EmailModuleKey.Value);
 
         services.AddScoped<IEffectiveEmailSettingsResolver, EffectiveEmailSettingsResolver>();
         services.AddScoped<IEmailTemplateService, EmailTemplateService>();

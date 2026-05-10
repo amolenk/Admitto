@@ -6,9 +6,8 @@ using Humanizer;
 namespace Amolenk.Admitto.Core.Shared.Infrastructure.Messaging;
 
 /// <summary>
-/// Maps the kebab-cased message type strings written to the queue
-/// (see <c>OutboxWriter.GetMessageType</c>) back to their CLR <see cref="Type"/>
-/// so the consumer can deserialize the payload.
+/// Maps the kebab-cased message type strings written to the queue back to their CLR
+/// <see cref="Type"/> so the consumer can deserialize the payload.
 /// </summary>
 internal sealed class MessageTypeRegistry
 {
@@ -29,10 +28,10 @@ internal sealed class MessageTypeRegistry
                     var key = BuildIntegrationKey(type);
                     _byMessageType[key] = new Entry(type, MessageKind.IntegrationEvent, ModuleNameFor(type));
                 }
-                else if (typeof(IModuleEvent).IsAssignableFrom(type))
+                else if (typeof(ICommand).IsAssignableFrom(type))
                 {
-                    var key = BuildModuleEventKey(type);
-                    _byMessageType[key] = new Entry(type, MessageKind.ModuleEvent, ModuleNameFor(type));
+                    var key = BuildCommandKey(type);
+                    _byMessageType[key] = new Entry(type, MessageKind.Command, ModuleNameFor(type));
                 }
             }
         }
@@ -48,25 +47,42 @@ internal sealed class MessageTypeRegistry
     public enum MessageKind
     {
         IntegrationEvent,
-        ModuleEvent
+        Command
     }
 
     private static string BuildIntegrationKey(Type type) =>
-        $"integration.{ModuleNameFor(type).Kebaberize()}.{type.Name.Kebaberize()}";
+        $"integration.{ModuleNameFor(type).Kebaberize()}.{BuildIntegrationEventName(type).Kebaberize()}";
 
-    private static string BuildModuleEventKey(Type type) =>
-        $"{ModuleNameFor(type).Kebaberize()}.{type.Name.Kebaberize()}";
+    private static string BuildCommandKey(Type type) =>
+        $"command.{ModuleNameFor(type).Kebaberize()}.{BuildCommandName(type).Kebaberize()}";
+
+    private static string BuildIntegrationEventName(Type type)
+    {
+        const string suffix = "IntegrationEvent";
+        return type.Name.EndsWith(suffix, StringComparison.Ordinal)
+            ? type.Name[..^suffix.Length]
+            : type.Name;
+    }
+
+    private static string BuildCommandName(Type type)
+    {
+        const string suffix = "Command";
+        return type.Name.EndsWith(suffix, StringComparison.Ordinal)
+            ? type.Name[..^suffix.Length]
+            : type.Name;
+    }
 
     private static string ModuleNameFor(Type type)
     {
-        // Expected: Amolenk.Admitto.Module.<ModuleName>.(Contracts.IntegrationEvents|Application.ModuleEvents)
+        // Expected: Amolenk.Admitto.Core.<ModuleName>.(Contracts.IntegrationEvents|Application.*)
         var ns = type.Namespace
                  ?? throw new InvalidOperationException($"Type {type.FullName} has no namespace.");
         var parts = ns.Split('.');
-        if (parts.Length < 4 || parts[0] != "Amolenk" || parts[1] != "Admitto" || parts[2] != "Module")
+        if (parts.Length < 4 || parts[0] != "Amolenk" || parts[1] != "Admitto" || parts[2] != "Core")
         {
             throw new InvalidOperationException(
-                $"Type {type.FullName} does not follow the expected module namespace convention.");
+                $"Type {type.FullName} does not follow the expected module namespace convention " +
+                $"(Amolenk.Admitto.Core.<Module>.*).");
         }
 
         return parts[3];

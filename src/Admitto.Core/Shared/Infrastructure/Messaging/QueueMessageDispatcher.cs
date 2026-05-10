@@ -15,7 +15,7 @@ namespace Amolenk.Admitto.Core.Shared.Infrastructure.Messaging;
 internal sealed partial class QueueMessageDispatcher(
     MessageTypeRegistry registry,
     IntegrationEventRouter integrationEventRouter,
-    ModuleEventRouter moduleEventRouter,
+    IMediator mediator,
     ILogger<QueueMessageDispatcher> logger)
 {
     public async ValueTask DispatchAsync(CloudEvent cloudEvent, CancellationToken cancellationToken)
@@ -63,13 +63,13 @@ internal sealed partial class QueueMessageDispatcher(
                     await integrationEventRouter.DispatchAsync(integrationEvent, cancellationToken);
                     break;
                 }
-                case MessageTypeRegistry.MessageKind.ModuleEvent:
+                case MessageTypeRegistry.MessageKind.Command:
                 {
-                    var moduleEvent = (IModuleEvent)JsonSerializer.Deserialize(
+                    var command = (ICommand)JsonSerializer.Deserialize(
                         payload,
                         entry.ClrType,
                         JsonSerializerOptions.Web)!;
-                    await moduleEventRouter.DispatchAsync(moduleEvent, entry.ModuleName, cancellationToken);
+                    await mediator.SendCommandAsync(command, cancellationToken);
                     break;
                 }
             }

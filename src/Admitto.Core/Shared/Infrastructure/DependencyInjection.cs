@@ -48,7 +48,6 @@ public static class DependencyInjection
 
             builder.Services.AddSingleton(new MessageTypeRegistry(assemblies));
             builder.Services.AddScoped<IntegrationEventRouter>();
-            builder.Services.AddScoped<ModuleEventRouter>();
             builder.Services.AddScoped<QueueMessageDispatcher>();
 
             builder.Services.AddHostedService<MessageQueueProcessor>();
@@ -95,8 +94,8 @@ public static class DependencyInjection
 
             if (typeof(IOutboxDbContext).IsAssignableFrom(typeof(TDbContext)))
             {
-                builder.Services.AddKeyedScoped<IIntegrationEventOutbox>(moduleKey, (sp, _) =>
-                    new IntegrationEventOutbox((IOutboxDbContext)sp.GetRequiredService<TDbContext>()));
+                builder.Services.AddKeyedScoped<IOutbox>(moduleKey, (sp, _) =>
+                    new Outbox((IOutboxDbContext)sp.GetRequiredService<TDbContext>()));
             }
 
             return builder;

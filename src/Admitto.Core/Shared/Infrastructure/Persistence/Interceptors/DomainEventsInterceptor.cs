@@ -1,8 +1,6 @@
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
-using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Outbox;
 using Amolenk.Admitto.Core.Shared.Kernel.DomainEvents;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using Microsoft.EntityFrameworkCore.Infrastructure;
 
 namespace Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Interceptors;
 
@@ -16,17 +14,7 @@ public sealed class DomainEventsInterceptor(IServiceProvider serviceProvider, st
         var dbContext = eventData.Context;
         if (dbContext is null) return result;
 
-        // var serviceProvider = dbContext.GetInfrastructure();
         var mediator = serviceProvider.GetRequiredService<IMediator>();
-
-        // Create an outbox writer if the DbContext supports outbox persistence.
-        OutboxWriter? outboxWriter = null;
-        if (dbContext is IOutboxDbContext outboxDbContext)
-        {
-            outboxWriter = new OutboxWriter(
-                outboxDbContext, 
-                messagePolicy: serviceProvider.GetRequiredKeyedService<IMessagePolicy>(moduleKey));
-        }
 
         foreach (var entry in dbContext.ChangeTracker.Entries().ToList())
         {
@@ -38,11 +26,8 @@ public sealed class DomainEventsInterceptor(IServiceProvider serviceProvider, st
             foreach (var domainEvent in events)
             {
                 // Publish domain events immediately so the handlers can run within the current transaction.
+                // Handlers that need deferred/cross-module delivery inject IOutbox and call Enqueue().
                 await mediator.PublishDomainEventAsync(domainEvent, cancellationToken);
-
-                // If an outbox writer is available, process the domain event for possible outbox persistence.
-                // Exact behavior is determined by the message policy implemented in the module.
-                outboxWriter?.TryEnqueue(domainEvent);
             }
 
             provider.ClearDomainEvents();

@@ -27,6 +27,14 @@ public interface IMediator
     ValueTask PublishDomainEventAsync(
         IDomainEvent domainEvent,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Type-erased overload used by infrastructure (e.g., <see cref="QueueMessageDispatcher"/>)
+    /// when only the <see cref="ICommand"/> interface type is known at compile time.
+    /// </summary>
+    ValueTask SendCommandAsync(
+        ICommand command,
+        CancellationToken cancellationToken = default);
 }
 
 public partial class Mediator(IServiceProvider serviceProvider, ILogger<Mediator> logger) : IMediator
@@ -114,6 +122,27 @@ public partial class Mediator(IServiceProvider serviceProvider, ILogger<Mediator
                 ct => handler.HandleAsync(domainEvent, ct),
                 cancellationToken);
         }
+    }
+
+    public ValueTask SendCommandAsync(ICommand command, CancellationToken cancellationToken = default)
+    {
+        var commandType = command.GetType();
+        var handlerType = typeof(ICommandHandler<>).MakeGenericType(commandType);
+        var handler = serviceProvider.GetService(handlerType) as ICommandHandler;
+        if (handler is null)
+        {
+            throw new InvalidOperationException(
+                $"No handler registered for command of type '{commandType.FullName}'");
+        }
+
+        LogCommandHandling(logger, commandType.FullName!, handler.GetType().FullName!);
+
+        return HandleWithActivityAsync(
+            "command",
+            commandType,
+            handler.GetType(),
+            ct => handler.HandleAsync(command, ct),
+            cancellationToken);
     }
 
     private static async ValueTask HandleWithActivityAsync(

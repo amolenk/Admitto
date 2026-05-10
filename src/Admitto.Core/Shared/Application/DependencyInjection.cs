@@ -4,6 +4,8 @@ using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using FluentValidation;
 using FluentValidation.Internal;
 using Humanizer;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using Scrutor;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection;
@@ -57,15 +59,20 @@ public static class SharedApplicationExtensions
 
         public IServiceCollection AddCommandHandlersFromAssembly(
             Assembly assembly,
-            HostCapability capabilities = HostCapability.None)
+            HostCapability capabilities = HostCapability.None,
+            Type? namespaceAnchor = null)
         {
             services.Scan(scan => scan
                 .FromAssemblies(assembly)
                 .AddClasses(
-                    classes => classes
-                        .AssignableTo<ICommandHandler>()
-                        .Where(c => MatchesCapabilities(c, capabilities)),
+                    classes =>
+                    {
+                        var filtered = classes.AssignableTo<ICommandHandler>();
+                        if (namespaceAnchor is not null) filtered = filtered.InNamespaceOf(namespaceAnchor);
+                        filtered.Where(c => MatchesCapabilities(c, capabilities));
+                    },
                     publicOnly: false)
+                .UsingRegistrationStrategy(new TryAddEnumerableStrategy())
                 .As(t => t.GetInterfaces()
                     .Where(i => i.IsGenericType &&
                                 (i.GetGenericTypeDefinition() == typeof(ICommandHandler<>)
@@ -75,13 +82,18 @@ public static class SharedApplicationExtensions
             return services;
         }
 
-        public IServiceCollection AddDomainEventHandlersFromAssembly(Assembly assembly)
+        public IServiceCollection AddDomainEventHandlersFromAssembly(Assembly assembly, Type? namespaceAnchor = null)
         {
             services.Scan(scan => scan
                 .FromAssemblies(assembly)
                 .AddClasses(
-                    classes => classes.AssignableTo(typeof(IDomainEventHandler<>)),
+                    classes =>
+                    {
+                        var filtered = classes.AssignableTo(typeof(IDomainEventHandler<>));
+                        if (namespaceAnchor is not null) filtered = filtered.InNamespaceOf(namespaceAnchor);
+                    },
                     publicOnly: false)
+                .UsingRegistrationStrategy(new TryAddEnumerableStrategy())
                 .As(t => t.GetInterfaces()
                     .Where(i => i.IsGenericType &&
                                 i.GetGenericTypeDefinition() == typeof(IDomainEventHandler<>)))
@@ -90,37 +102,23 @@ public static class SharedApplicationExtensions
             return services;
         }
 
-        public IServiceCollection AddModuleEventHandlersFromAssembly(
-            Assembly assembly,
-            HostCapability capabilities = HostCapability.None)
-        {
-            services.Scan(scan => scan
-                .FromAssemblies(assembly)
-                .AddClasses(
-                    classes => classes
-                        .AssignableTo(typeof(IModuleEventHandler<>))
-                        .Where(c => MatchesCapabilities(c, capabilities)),
-                    publicOnly: false)
-                .As(t => t.GetInterfaces()
-                    .Where(i => i.IsGenericType &&
-                                i.GetGenericTypeDefinition() == typeof(IModuleEventHandler<>)))
-                .WithScopedLifetime());
-
-            return services;
-        }
-
         public IServiceCollection AddIntegrationEventHandlersFromAssembly(
             Assembly assembly,
             string moduleKey,
-            HostCapability capabilities = HostCapability.None)
+            HostCapability capabilities = HostCapability.None,
+            Type? namespaceAnchor = null)
         {
             services.Scan(scan => scan
                 .FromAssemblies(assembly)
                 .AddClasses(
-                    classes => classes
-                        .AssignableTo(typeof(IIntegrationEventHandler<>))
-                        .Where(c => MatchesCapabilities(c, capabilities)),
+                    classes =>
+                    {
+                        var filtered = classes.AssignableTo(typeof(IIntegrationEventHandler<>));
+                        if (namespaceAnchor is not null) filtered = filtered.InNamespaceOf(namespaceAnchor);
+                        filtered.Where(c => MatchesCapabilities(c, capabilities));
+                    },
                     publicOnly: false)
+                .UsingRegistrationStrategy(new TryAddEnumerableStrategy())
                 .As(t => t.GetInterfaces()
                     .Where(i => i.IsGenericType &&
                                 i.GetGenericTypeDefinition() == typeof(IIntegrationEventHandler<>)))
@@ -135,15 +133,20 @@ public static class SharedApplicationExtensions
 
         public IServiceCollection AddQueryHandlersFromAssembly(
             Assembly assembly,
-            HostCapability capabilities = HostCapability.None)
+            HostCapability capabilities = HostCapability.None,
+            Type? namespaceAnchor = null)
         {
             services.Scan(scan => scan
                 .FromAssemblies(assembly)
                 .AddClasses(
-                    classes => classes
-                        .AssignableTo<IQueryHandler>()
-                        .Where(c => MatchesCapabilities(c, capabilities)),
+                    classes =>
+                    {
+                        var filtered = classes.AssignableTo<IQueryHandler>();
+                        if (namespaceAnchor is not null) filtered = filtered.InNamespaceOf(namespaceAnchor);
+                        filtered.Where(c => MatchesCapabilities(c, capabilities));
+                    },
                     publicOnly: false)
+                .UsingRegistrationStrategy(new TryAddEnumerableStrategy())
                 .As(t => t.GetInterfaces()
                     .Where(i => i.IsGenericType &&
                                 i.GetGenericTypeDefinition() == typeof(IQueryHandler<,>)))
@@ -158,6 +161,14 @@ public static class SharedApplicationExtensions
             return requiresCapabilityAttribute is null
                    || (requiresCapabilityAttribute.Capability & capabilities) ==
                    requiresCapabilityAttribute.Capability;
+        }
+    }
+
+    private sealed class TryAddEnumerableStrategy : RegistrationStrategy
+    {
+        public override void Apply(IServiceCollection services, ServiceDescriptor descriptor)
+        {
+            services.TryAddEnumerable(descriptor);
         }
     }
 }

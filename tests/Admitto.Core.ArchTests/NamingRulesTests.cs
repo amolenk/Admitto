@@ -13,7 +13,6 @@ namespace Amolenk.Admitto.Core.ArchTests;
 /// <list type="bullet">
 ///   <item>IDomainEventHandler&lt;T&gt; implementors → {T.Name}Handler</item>
 ///   <item>IIntegrationEventHandler&lt;T&gt; implementors → {T.Name}Handler or {T.Name}IntegrationEventHandler</item>
-///   <item>IModuleEventHandler&lt;T&gt; implementors → {T.Name}Handler</item>
 ///   <item>ICommandHandler&lt;T&gt; implementors → command name with "Command" suffix replaced by "Handler"</item>
 ///   <item>IQueryHandler&lt;T,R&gt; implementors → query name with "Query" suffix replaced by "Handler"</item>
 /// </list>
@@ -54,20 +53,6 @@ public class NamingRulesTests
         if (violations.Count > 0)
             Assert.Fail(
                 $"IntegrationEventHandler naming violations (expected {{EventType}}Handler or {{EventType}}IntegrationEventHandler):\n" +
-                string.Join("\n", violations));
-    }
-
-    [TestMethod]
-    public void ModuleEventHandlers_FollowNamingConvention()
-    {
-        // All module event types end in "ModuleEvent", so {T.Name}Handler ends in "ModuleEventHandler".
-        var violations = CheckHandlerNaming(
-            typeof(IModuleEventHandler<>),
-            (eventTypeName, className) => className == $"{eventTypeName}Handler");
-
-        if (violations.Count > 0)
-            Assert.Fail(
-                $"ModuleEventHandler naming violations (expected {{EventType}}Handler):\n" +
                 string.Join("\n", violations));
     }
 
