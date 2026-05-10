@@ -1,4 +1,4 @@
-using Amolenk.Admitto.Core.Organization.Application.UseCases.TicketedEventManagement.RequestTicketedEventCreation.EventHandlers;
+using Amolenk.Admitto.Core.Organization.Application.Messaging;
 using Amolenk.Admitto.Core.Organization.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Organization.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
@@ -6,10 +6,10 @@ using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using NSubstitute;
 
-namespace Amolenk.Admitto.Core.Organization.Tests.Application.UseCases.TicketedEventManagement.RequestTicketedEventCreation.EventHandlers;
+namespace Amolenk.Admitto.Core.Organization.Tests.Application.Messaging;
 
 [TestClass]
-public sealed class TicketedEventCreationRequestedDomainEventHandlerTests
+public sealed class OrganizationIntegrationEventPublisherTests
 {
     [TestMethod]
     public async ValueTask SC001_TicketedEventCreationRequested_EnqueuesIntegrationEvent()
@@ -33,8 +33,8 @@ public sealed class TicketedEventCreationRequestedDomainEventHandlerTests
         var outbox = Substitute.For<IOutbox>();
         outbox.When(o => o.Enqueue(Arg.Any<IIntegrationEvent>())).Do(ci => captured = ci.Arg<IIntegrationEvent>());
 
-        var handler = new TicketedEventCreationRequestedDomainEventHandler(outbox);
-        await handler.HandleAsync(domainEvent, CancellationToken.None);
+        var publisher = new OrganizationIntegrationEventPublisher(outbox);
+        await publisher.HandleAsync(domainEvent, CancellationToken.None);
 
         captured.ShouldNotBeNull();
         var evt = captured.ShouldBeOfType<TicketedEventCreationRequestedIntegrationEvent>();

@@ -1,4 +1,6 @@
+using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Reflection;
 using Amolenk.Admitto.Core.Shared.Kernel.DomainEvents;
 
 namespace Amolenk.Admitto.Core.Shared.Application.Messaging;
@@ -39,6 +41,12 @@ public interface IMediator
 
 public partial class Mediator(IServiceProvider serviceProvider, ILogger<Mediator> logger) : IMediator
 {
+    private static readonly ConcurrentDictionary<Type, Func<IServiceProvider, ICommand, CancellationToken, ValueTask>>
+        _commandDispatchers = new();
+
+    private static readonly ConcurrentDictionary<Type, Func<IServiceProvider, IDomainEvent, CancellationToken, ValueTask>>
+        _domainEventDispatchers = new();
+
     public ValueTask SendAsync<TCommand>(TCommand command, CancellationToken cancellationToken = default)
         where TCommand : ICommand
     {
@@ -108,41 +116,81 @@ public partial class Mediator(IServiceProvider serviceProvider, ILogger<Mediator
         CancellationToken cancellationToken = default)
     {
         var eventType = domainEvent.GetType();
-        var handlerType = typeof(IDomainEventHandler<>).MakeGenericType(eventType);
-        var handlers = serviceProvider.GetServices(handlerType).Cast<IDomainEventHandler>().ToList();
-
-        foreach (var handler in handlers)
+        var dispatcher = _domainEventDispatchers.GetOrAdd(eventType, static t =>
         {
-            LogEventHandling(logger, eventType.FullName!, handler.GetType().FullName!);
+            var method = typeof(Mediator)
+                .GetMethod(nameof(DispatchDomainEventAsync), BindingFlags.NonPublic | BindingFlags.Static)!
+                .MakeGenericMethod(t);
+            return (Func<IServiceProvider, IDomainEvent, CancellationToken, ValueTask>)
+                Delegate.CreateDelegate(
+                    typeof(Func<IServiceProvider, IDomainEvent, CancellationToken, ValueTask>), method);
+        });
 
-            await HandleWithActivityAsync(
-                "domain-event",
-                eventType,
-                handler.GetType(),
-                ct => handler.HandleAsync(domainEvent, ct),
-                cancellationToken);
-        }
+        LogEventHandling(logger, eventType.FullName!);
+
+        await HandleWithActivityAsync(
+            "domain-event",
+            eventType,
+            ct => dispatcher(serviceProvider, domainEvent, ct),
+            cancellationToken);
     }
 
     public ValueTask SendCommandAsync(ICommand command, CancellationToken cancellationToken = default)
     {
         var commandType = command.GetType();
-        var handlerType = typeof(ICommandHandler<>).MakeGenericType(commandType);
-        var handler = serviceProvider.GetService(handlerType) as ICommandHandler;
-        if (handler is null)
+        var dispatcher = _commandDispatchers.GetOrAdd(commandType, static t =>
         {
-            throw new InvalidOperationException(
-                $"No handler registered for command of type '{commandType.FullName}'");
-        }
+            var method = typeof(Mediator)
+                .GetMethod(nameof(DispatchCommandAsync), BindingFlags.NonPublic | BindingFlags.Static)!
+                .MakeGenericMethod(t);
+            return (Func<IServiceProvider, ICommand, CancellationToken, ValueTask>)
+                Delegate.CreateDelegate(
+                    typeof(Func<IServiceProvider, ICommand, CancellationToken, ValueTask>), method);
+        });
 
-        LogCommandHandling(logger, commandType.FullName!, handler.GetType().FullName!);
+        LogCommandHandling(logger, commandType.FullName!, commandType.FullName!);
 
         return HandleWithActivityAsync(
             "command",
             commandType,
-            handler.GetType(),
-            ct => handler.HandleAsync(command, ct),
+            ct => dispatcher(serviceProvider, command, ct),
             cancellationToken);
+    }
+
+    private static ValueTask DispatchCommandAsync<TCommand>(
+        IServiceProvider sp, ICommand cmd, CancellationToken ct)
+        where TCommand : ICommand
+    {
+        var handler = sp.GetRequiredService<ICommandHandler<TCommand>>();
+        return handler.HandleAsync((TCommand)cmd, ct);
+    }
+
+    private static async ValueTask DispatchDomainEventAsync<TDomainEvent>(
+        IServiceProvider sp, IDomainEvent evt, CancellationToken ct)
+        where TDomainEvent : IDomainEvent
+    {
+        var handlers = sp.GetServices<IDomainEventHandler<TDomainEvent>>();
+        foreach (var handler in handlers)
+            await handler.HandleAsync((TDomainEvent)evt, ct);
+    }
+
+    private static async ValueTask HandleWithActivityAsync(
+        string kind,
+        Type messageType,
+        Func<CancellationToken, ValueTask> handler,
+        CancellationToken cancellationToken)
+    {
+        using var activity = StartHandlerActivity(kind, messageType, null);
+        try
+        {
+            await handler(cancellationToken);
+        }
+        catch (Exception ex)
+        {
+            activity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+            activity?.AddTag("exception.type", ex.GetType().FullName);
+            throw;
+        }
     }
 
     private static async ValueTask HandleWithActivityAsync(
@@ -185,7 +233,7 @@ public partial class Mediator(IServiceProvider serviceProvider, ILogger<Mediator
         }
     }
 
-    private static Activity? StartHandlerActivity(string kind, Type messageType, Type handlerType)
+    private static Activity? StartHandlerActivity(string kind, Type messageType, Type? handlerType)
     {
         var activity = AdmittoActivitySource.ActivitySource.StartActivity(
             $"{kind} {messageType.Name}",
@@ -193,15 +241,16 @@ public partial class Mediator(IServiceProvider serviceProvider, ILogger<Mediator
 
         activity?.AddTag("admitto.message.kind", kind);
         activity?.AddTag("admitto.message.type", messageType.FullName);
-        activity?.AddTag("admitto.handler.type", handlerType.FullName);
+        if (handlerType is not null)
+            activity?.AddTag("admitto.handler.type", handlerType.FullName);
         return activity;
     }
 
     [LoggerMessage(LogLevel.Information, "Handling command of type '{CommandType}' with handler '{handlerType}'")]
     static partial void LogCommandHandling(ILogger<Mediator> logger, string commandType, string handlerType);
 
-    [LoggerMessage(LogLevel.Information, "Handling event of type '{EventType}' with handler '{handlerType}'")]
-    static partial void LogEventHandling(ILogger<Mediator> logger, string eventType, string handlerType);
+    [LoggerMessage(LogLevel.Information, "Handling event of type '{EventType}'")]
+    static partial void LogEventHandling(ILogger<Mediator> logger, string eventType);
 
     [LoggerMessage(LogLevel.Information, "Handling query of type '{QueryType}' with handler '{handlerType}'")]
     static partial void LogQueryHandling(ILogger<Mediator> logger, string queryType, string handlerType);

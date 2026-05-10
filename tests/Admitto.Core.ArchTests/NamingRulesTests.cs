@@ -29,13 +29,17 @@ public class NamingRulesTests
     [TestMethod]
     public void DomainEventHandlers_FollowNamingConvention()
     {
+        // Single-event handlers: {EventType}Handler.
+        // Multi-event publisher classes (implementing 2+ IDomainEventHandler<T>): {Module}IntegrationEventPublisher.
         var violations = CheckHandlerNaming(
             typeof(IDomainEventHandler<>),
-            (eventTypeName, className) => className == $"{eventTypeName}Handler");
+            (eventTypeName, className) =>
+                className == $"{eventTypeName}Handler" ||
+                className.EndsWith("Publisher"));
 
         if (violations.Count > 0)
             Assert.Fail(
-                $"DomainEventHandler naming violations (expected {{EventType}}Handler):\n" +
+                $"DomainEventHandler naming violations (expected {{EventType}}Handler or *Publisher):\n" +
                 string.Join("\n", violations));
     }
 

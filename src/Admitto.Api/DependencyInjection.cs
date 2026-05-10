@@ -36,7 +36,7 @@ public static class DependencyInjection
             services.Scan(scan => scan
                 .FromAssemblies(Assembly.GetExecutingAssembly())
                 .AddClasses(classes => classes
-                    .AssignableTo<ICommandHandler>()
+                    .AssignableTo(typeof(ICommandHandler<>))
                     .Where(c =>
                     {
                         var requiresCapabilityAttribute = c.GetCustomAttribute<RequiresCapabilityAttribute>();

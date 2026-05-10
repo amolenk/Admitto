@@ -1,11 +1,10 @@
 using Amolenk.Admitto.Core.Organization.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Organization.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
-using Microsoft.Extensions.DependencyInjection;
 
-namespace Amolenk.Admitto.Core.Organization.Application.UseCases.TicketedEventManagement.RequestTicketedEventCreation.EventHandlers;
+namespace Amolenk.Admitto.Core.Organization.Application.Messaging;
 
-internal sealed class TicketedEventCreationRequestedDomainEventHandler(
+internal sealed class OrganizationIntegrationEventPublisher(
     [FromKeyedServices(OrganizationModuleKey.Value)] IOutbox outbox)
     : IDomainEventHandler<TicketedEventCreationRequestedDomainEvent>
 {

@@ -67,7 +67,7 @@ public static class SharedApplicationExtensions
                 .AddClasses(
                     classes =>
                     {
-                        var filtered = classes.AssignableTo<ICommandHandler>();
+                        var filtered = classes.AssignableTo(typeof(ICommandHandler<>));
                         if (namespaceAnchor is not null) filtered = filtered.InNamespaceOf(namespaceAnchor);
                         filtered.Where(c => MatchesCapabilities(c, capabilities));
                     },
