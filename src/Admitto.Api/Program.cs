@@ -4,12 +4,7 @@ using Amolenk.Admitto.Api.Endpoints;
 using Amolenk.Admitto.ApiService.Auth;
 using Amolenk.Admitto.ApiService.Middleware;
 using Amolenk.Admitto.ApiService.OpenApi;
-using Amolenk.Admitto.Core.Email.Application;
-using Amolenk.Admitto.Core.Organization.Application;
-using Amolenk.Admitto.Core.Registrations.Application;
-using Amolenk.Admitto.Core.Registrations.Infrastructure;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
-using Amolenk.Admitto.Core.Shared.Infrastructure;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,23 +12,19 @@ var builder = WebApplication.CreateBuilder(args);
 // Add default services.
 builder.AddServiceDefaults();
 
-// Add application services.
+// Add modules (application + infrastructure).
 builder
     .AddOrganizationModule()
     .AddEmailModule()
     .AddRegistrationsModule();
-builder.Services
-    .AddCryptographyApplicationServices()
-    .AddValidationApplicationServices();
 
-// Add infrastructure services.
+// Add shared services.
 builder
     .AddSharedInfrastructureMessagingServices()
-    .AddOrganizationInfrastructureServices()
-    .AddEmailInfrastructureServices()
-    .AddRegistrationsInfrastructureServices()
     .Services
-    .AddSharedInfrastructureServices();
+    .AddSharedInfrastructureServices()
+    .AddCryptographyApplicationServices()
+    .AddValidationApplicationServices();
 
 builder.AddMessageTypeRegistry(b =>
 {

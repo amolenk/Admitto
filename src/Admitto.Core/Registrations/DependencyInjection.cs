@@ -1,33 +1,37 @@
 using System.Reflection;
+using Amolenk.Admitto.Core.Registrations.Application;
 using Amolenk.Admitto.Core.Registrations.Application.Common.Cryptography;
+using Amolenk.Admitto.Core.Registrations.Application.Persistence;
 using Amolenk.Admitto.Core.Registrations.Application.Security;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases;
 using Amolenk.Admitto.Core.Registrations.Contracts;
+using Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.Shared.Application.Cryptography;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Messaging;
+using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence;
 using FluentValidation;
-using Microsoft.Extensions.Hosting;
 
-namespace Amolenk.Admitto.Core.Registrations.Application;
+// ReSharper disable once CheckNamespace
+namespace Microsoft.Extensions.DependencyInjection;
 
-public static class DependencyInjection
+public static class RegistrationsModuleExtensions
 {
     public static IHostApplicationBuilder AddRegistrationsModule(this IHostApplicationBuilder builder)
     {
         var services = builder.Services;
         var configuration = builder.Configuration;
-        var executingAssembly = Assembly.GetExecutingAssembly();
+        var assembly = Assembly.GetExecutingAssembly();
 
         // Command handlers
-        services.AddConcreteCommandHandlersFromAssembly(executingAssembly, "Amolenk.Admitto.Core.Registrations");
+        services.AddConcreteCommandHandlersFromAssembly(assembly, "Amolenk.Admitto.Core.Registrations");
 
         // Query handlers
-        services.AddConcreteQueryHandlersFromAssembly(executingAssembly, "Amolenk.Admitto.Core.Registrations");
+        services.AddConcreteQueryHandlersFromAssembly(assembly, "Amolenk.Admitto.Core.Registrations");
 
         // Domain event handlers
-        services.AddDomainEventHandlersFromAssembly(executingAssembly, "Amolenk.Admitto.Core.Registrations");
+        services.AddDomainEventHandlersFromAssembly(assembly, "Amolenk.Admitto.Core.Registrations");
 
-        services.AddValidatorsFromAssembly(executingAssembly);
+        services.AddValidatorsFromAssembly(assembly);
 
         services.AddScoped<IRegistrationsFacade, RegistrationsFacade>();
 
@@ -41,6 +45,13 @@ public static class DependencyInjection
 
         services.Configure<OtpOptions>(
             configuration.GetSection(OtpOptions.SectionName));
+
+        // Infrastructure
+        builder.AddModuleDatabaseServices<IRegistrationsWriteStore, RegistrationsDbContext>(
+            RegistrationsModule.Key);
+
+        services.AddKeyedScoped<IPostgresExceptionMapping, RegistrationsPostgresExceptionMapping>(
+            RegistrationsModule.Key);
 
         return builder;
     }

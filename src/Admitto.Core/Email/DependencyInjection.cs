@@ -1,5 +1,7 @@
 using System.Reflection;
+using Amolenk.Admitto.Core.Email.Application;
 using Amolenk.Admitto.Core.Email.Application.Jobs;
+using Amolenk.Admitto.Core.Email.Application.Persistence;
 using Amolenk.Admitto.Core.Email.Application.Sending;
 using Amolenk.Admitto.Core.Email.Application.Sending.Bulk;
 using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
@@ -8,20 +10,25 @@ using Amolenk.Admitto.Core.Email.Application.UseCases.BulkEmails.TriggerBulkEmai
 using Amolenk.Admitto.Core.Email.Application.UseCases.Reconfirmations.ReconcileReconfirmationScheduling;
 using Amolenk.Admitto.Core.Email.Application.UseCases.Reconfirmations.ScheduleReconfirmations;
 using Amolenk.Admitto.Core.Email.Application.UseCases.SendEmail;
+using Amolenk.Admitto.Core.Email.Infrastructure.Persistence;
+using Amolenk.Admitto.Core.Email.Infrastructure.Security;
+using Amolenk.Admitto.Core.Email.Infrastructure.Sending;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Messaging;
+using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence;
 using FluentValidation;
-using Microsoft.Extensions.Hosting;
+using Microsoft.AspNetCore.DataProtection;
 using Quartz;
 
-namespace Amolenk.Admitto.Core.Email.Application;
+// ReSharper disable once CheckNamespace
+namespace Microsoft.Extensions.DependencyInjection;
 
-public static class DependencyInjection
+public static class EmailModuleExtensions
 {
     public static IHostApplicationBuilder AddEmailModule(this IHostApplicationBuilder builder)
     {
         var services = builder.Services;
-        var executingAssembly = Assembly.GetExecutingAssembly();
+        var assembly = Assembly.GetExecutingAssembly();
 
         // Quartz infrastructure is needed by handlers that schedule/trigger jobs
         // (ScheduleReconfirmationsHandler, TriggerBulkEmailJobHandler). Job
@@ -29,15 +36,15 @@ public static class DependencyInjection
         services.AddQuartz();
 
         // Command handlers
-        services.AddConcreteCommandHandlersFromAssembly(executingAssembly, "Amolenk.Admitto.Core.Email");
+        services.AddConcreteCommandHandlersFromAssembly(assembly, "Amolenk.Admitto.Core.Email");
 
         // Query handlers
-        services.AddConcreteQueryHandlersFromAssembly(executingAssembly, "Amolenk.Admitto.Core.Email");
+        services.AddConcreteQueryHandlersFromAssembly(assembly, "Amolenk.Admitto.Core.Email");
 
         // Domain event handlers
-        services.AddDomainEventHandlersFromAssembly(executingAssembly, "Amolenk.Admitto.Core.Email");
+        services.AddDomainEventHandlersFromAssembly(assembly, "Amolenk.Admitto.Core.Email");
 
-        services.AddValidatorsFromAssembly(executingAssembly);
+        services.AddValidatorsFromAssembly(assembly);
 
         services.AddScoped<IEffectiveEmailSettingsResolver, EffectiveEmailSettingsResolver>();
         services.AddScoped<IEmailTemplateService, EmailTemplateService>();
@@ -47,16 +54,33 @@ public static class DependencyInjection
         services.Configure<BulkEmailOptions>(
             builder.Configuration.GetSection(BulkEmailOptions.SectionName));
 
+        // Infrastructure
+        builder.AddModuleDatabaseServices<IEmailWriteStore, EmailDbContext>(EmailModuleKey.Value);
+
+        services.AddKeyedScoped<IPostgresExceptionMapping, EmailPostgresExceptionMapping>(
+            EmailModuleKey.Value);
+
+        // Shared Data Protection key ring persisted to the email schema so the API and Worker hosts
+        // can decrypt secrets written by either side.
+        services
+            .AddDataProtection()
+            .SetApplicationName("Admitto")
+            .PersistKeysToDbContext<EmailDbContext>();
+
+        services.AddSingleton<IProtectedSecret, ProtectedSecret>();
+        services.AddSingleton<IEmailSender, MailKitEmailSender>();
+        services.AddSingleton<IBulkSmtpSender, MailKitBulkSmtpSender>();
+
         return builder;
     }
 
     public static IHostApplicationBuilder AddEmailModuleWorker(this IHostApplicationBuilder builder)
     {
         var services = builder.Services;
-        var executingAssembly = Assembly.GetExecutingAssembly();
+        var assembly = Assembly.GetExecutingAssembly();
 
         // Integration event handlers
-        services.AddIntegrationEventHandlersFromAssembly(executingAssembly, "Amolenk.Admitto.Core.Email");
+        services.AddIntegrationEventHandlersFromAssembly(assembly, "Amolenk.Admitto.Core.Email");
 
         // Worker-only interface mappings — concretes already registered by AddEmailModule scan;
         // integration event handlers and the queue dispatcher resolve these by interface.
@@ -67,6 +91,7 @@ public static class DependencyInjection
         services.AddScoped<ICommandHandler<TriggerBulkEmailJobCommand>, TriggerBulkEmailJobHandler>(
             sp => sp.GetRequiredService<TriggerBulkEmailJobHandler>());
 
+        // Quartz job registrations (hosted service is started once by AddSharedInfrastructureQueueConsumer)
         services.AddQuartz(options =>
         {
             // RequestReconfirmationsJob is registered statically; per-event

@@ -1,6 +1,5 @@
 ﻿using Amolenk.Admitto.Core.Email.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.Organization.Infrastructure.Persistence;
-using Amolenk.Admitto.Core.Registrations.Infrastructure;
 using Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
 using Amolenk.Admitto.Core.Shared.Contracts;
@@ -14,9 +13,9 @@ builder.AddServiceDefaults();
 // to satisfy the AuditInterceptor dependency.
 builder.Services.AddSingleton<IUserContextAccessor>(new MigrationUserContextAccessor());
 
-builder.AddOrganizationInfrastructureServices();
-builder.AddEmailInfrastructureServices();
-builder.AddRegistrationsInfrastructureServices();
+builder.AddOrganizationModule();
+builder.AddEmailModule();
+builder.AddRegistrationsModule();
 
 var app = builder.Build();
 
