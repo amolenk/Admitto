@@ -5,7 +5,7 @@ using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.WriteActivityLog.EventHandlers;
 
-internal sealed class TicketsChangedDomainEventHandler(ICommandHandler<WriteActivityLogCommand> handler)
+internal sealed class TicketsChangedDomainEventHandler(WriteActivityLogHandler handler)
     : IDomainEventHandler<TicketsChangedDomainEvent>
 {
     public async ValueTask HandleAsync(

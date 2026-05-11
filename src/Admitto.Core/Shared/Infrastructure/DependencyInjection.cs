@@ -36,13 +36,12 @@ public static class DependencyInjection
         }
 
         /// <summary>
-        /// Registers the queue consumer pipeline (router, dispatcher and the
+        /// Registers the queue consumer pipeline (dispatcher and the
         /// <see cref="BackgroundService"/> that polls the queue). Call
         /// <see cref="AddMessageTypeRegistry"/> separately to register the message type registry.
         /// </summary>
         public IHostApplicationBuilder AddSharedInfrastructureQueueConsumer()
         {
-            builder.Services.AddScoped<IntegrationEventRouter>();
             builder.Services.AddScoped<QueueMessageDispatcher>();
 
             builder.Services.AddHostedService<MessageQueueProcessor>();

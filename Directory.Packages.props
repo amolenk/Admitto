@@ -54,7 +54,6 @@
     <PackageVersion Include="Respawn" Version="7.0.0" />
     <PackageVersion Include="Scalar.AspNetCore" Version="2.14.9" />
     <PackageVersion Include="Scriban" Version="7.1.0" />
-    <PackageVersion Include="Scrutor" Version="7.0.0" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="Spectre.Console.Cli" Version="0.55.0" />
     <PackageVersion Include="Spectre.Console.Json" Version="0.55.2" />

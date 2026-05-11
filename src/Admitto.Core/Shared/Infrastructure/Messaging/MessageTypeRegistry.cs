@@ -21,6 +21,20 @@ internal sealed class MessageTypeRegistry
 
     public IReadOnlyDictionary<string, Entry> All => _byMessageType;
 
+    /// <summary>
+    /// Extracts the module key from a type's namespace using the project's
+    /// <c>Amolenk.Admitto.Core.&lt;Module&gt;</c> convention.
+    /// </summary>
+    internal static string GetModuleKey(Type type)
+    {
+        var ns = type.Namespace ?? throw new InvalidOperationException($"Type {type.FullName} has no namespace.");
+        var parts = ns.Split('.');
+        if (parts.Length >= 4 && parts[0] == "Amolenk" && parts[1] == "Admitto" && parts[2] == "Core")
+            return parts[3];
+        throw new InvalidOperationException(
+            $"Type {type.FullName} does not follow the expected module namespace convention.");
+    }
+
     public sealed record Entry(Type ClrType, MessageKind Kind, string ModuleName);
 
     public enum MessageKind

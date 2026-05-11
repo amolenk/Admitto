@@ -1,10 +1,12 @@
 using System.Text.Json;
+using Amolenk.Admitto.Core.Registrations.Application.Persistence;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.WriteActivityLog;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.WriteActivityLog.EventHandlers;
 using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
+using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
-using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using Microsoft.EntityFrameworkCore;
 using NSubstitute;
 using Shouldly;
 
@@ -30,12 +32,15 @@ public sealed class TicketsChangedDomainEventHandlerTests
             NewTickets: [new TicketTypeSnapshot("workshop", "Workshop", [])],
             ChangedAt: changedAt);
 
-        WriteActivityLogCommand? captured = null;
-        var commandHandler = Substitute.For<ICommandHandler<WriteActivityLogCommand>>();
-        commandHandler
-            .HandleAsync(Arg.Do<WriteActivityLogCommand>(c => captured = c), Arg.Any<CancellationToken>())
-            .Returns(ValueTask.CompletedTask);
+        ActivityLog? captured = null;
+        var activityLogDbSet = Substitute.For<DbSet<ActivityLog>>();
+        activityLogDbSet.When(s => s.Add(Arg.Any<ActivityLog>()))
+            .Do(ci => captured = ci.Arg<ActivityLog>());
 
+        var writeStore = Substitute.For<IRegistrationsWriteStore>();
+        writeStore.ActivityLog.Returns(activityLogDbSet);
+
+        var commandHandler = new WriteActivityLogHandler(writeStore);
         var handler = new TicketsChangedDomainEventHandler(commandHandler);
         await handler.HandleAsync(domainEvent, CancellationToken.None);
 

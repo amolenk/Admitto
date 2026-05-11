@@ -1,9 +1,9 @@
 using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Reflection;
 using System.Text.Json;
 using Amolenk.Admitto.Core.Shared.Application;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
+using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Contracts;
 using Azure.Messaging;
 
@@ -12,16 +12,16 @@ namespace Amolenk.Admitto.Core.Shared.Infrastructure.Messaging;
 /// <summary>
 /// Parses a CloudEvent pulled from the Azure Storage Queue, restores the
 /// W3C trace context written by <c>OutboxMessageSender</c>, deserializes the
-/// payload to its CLR type and routes it to the matching router.
+/// payload to its CLR type and dispatches it to all registered handlers,
+/// committing each handler's module unit of work after a successful invocation.
 /// </summary>
 internal sealed partial class QueueMessageDispatcher(
     MessageTypeRegistry registry,
-    IntegrationEventRouter integrationEventRouter,
     IServiceProvider serviceProvider,
     ILogger<QueueMessageDispatcher> logger)
 {
-    private static readonly ConcurrentDictionary<Type, Func<IServiceProvider, ICommand, CancellationToken, ValueTask>>
-        _commandDispatchers = new();
+    private static readonly ConcurrentDictionary<Type, Func<object, object, CancellationToken, ValueTask>>
+        _handlerInvokers = new();
 
     public async ValueTask DispatchAsync(CloudEvent cloudEvent, CancellationToken cancellationToken)
     {
@@ -57,27 +57,8 @@ internal sealed partial class QueueMessageDispatcher(
 
         try
         {
-            switch (entry.Kind)
-            {
-                case MessageTypeRegistry.MessageKind.IntegrationEvent:
-                {
-                    var integrationEvent = (IIntegrationEvent)JsonSerializer.Deserialize(
-                        payload,
-                        entry.ClrType,
-                        JsonSerializerOptions.Web)!;
-                    await integrationEventRouter.DispatchAsync(integrationEvent, cancellationToken);
-                    break;
-                }
-                case MessageTypeRegistry.MessageKind.Command:
-                {
-                    var command = (ICommand)JsonSerializer.Deserialize(
-                        payload,
-                        entry.ClrType,
-                        JsonSerializerOptions.Web)!;
-                    await SendCommandAsync(command, cancellationToken);
-                    break;
-                }
-            }
+            var message = JsonSerializer.Deserialize(payload, entry.ClrType, JsonSerializerOptions.Web)!;
+            await DispatchToHandlersAsync(message, entry, cloudEvent.Type, cancellationToken);
         }
         catch (Exception ex)
         {
@@ -87,32 +68,68 @@ internal sealed partial class QueueMessageDispatcher(
         }
     }
 
-    private ValueTask SendCommandAsync(ICommand command, CancellationToken cancellationToken)
+    private async ValueTask DispatchToHandlersAsync(
+        object message,
+        MessageTypeRegistry.Entry entry,
+        string messageType,
+        CancellationToken cancellationToken)
     {
-        var commandType = command.GetType();
-        var dispatcher = _commandDispatchers.GetOrAdd(commandType, static t =>
+        var handlerOpenType = entry.Kind == MessageTypeRegistry.MessageKind.Command
+            ? typeof(ICommandHandler<>)
+            : typeof(IIntegrationEventHandler<>);
+
+        var handlerInterfaceType = handlerOpenType.MakeGenericType(entry.ClrType);
+        var handlers = serviceProvider.GetServices(handlerInterfaceType).ToList();
+
+        if (handlers.Count == 0)
         {
-            var method = typeof(QueueMessageDispatcher)
-                .GetMethod(nameof(DispatchCommandAsync), BindingFlags.NonPublic | BindingFlags.Static)!
-                .MakeGenericMethod(t);
-            return (Func<IServiceProvider, ICommand, CancellationToken, ValueTask>)
-                Delegate.CreateDelegate(
-                    typeof(Func<IServiceProvider, ICommand, CancellationToken, ValueTask>), method);
+            LogNoHandlersFound(logger, messageType);
+            return;
+        }
+
+        var invoker = _handlerInvokers.GetOrAdd(handlerInterfaceType, static t =>
+        {
+            var method = t.GetMethod("HandleAsync")!;
+            return (handler, msg, ct) => (ValueTask)method.Invoke(handler, [msg, ct])!;
         });
 
-        return dispatcher(serviceProvider, command, cancellationToken);
-    }
+        var kindLabel = entry.Kind == MessageTypeRegistry.MessageKind.Command ? "command" : "integration-event";
 
-    private static ValueTask DispatchCommandAsync<TCommand>(
-        IServiceProvider sp, ICommand cmd, CancellationToken ct)
-        where TCommand : ICommand
-    {
-        var handler = sp.GetRequiredService<ICommandHandler<TCommand>>();
-        return handler.HandleAsync((TCommand)cmd, ct);
+        foreach (var handler in handlers)
+        {
+            var moduleKey = MessageTypeRegistry.GetModuleKey(handler!.GetType());
+
+            using var handlerActivity = AdmittoActivitySource.ActivitySource.StartActivity(
+                $"{kindLabel} {entry.ClrType.Name}",
+                ActivityKind.Internal);
+            handlerActivity?.AddTag("admitto.message.kind", kindLabel);
+            handlerActivity?.AddTag("admitto.message.type", entry.ClrType.FullName);
+            handlerActivity?.AddTag("admitto.handler.type", handler.GetType().FullName);
+            handlerActivity?.AddTag("admitto.module.key", moduleKey);
+
+            try
+            {
+                await invoker(handler, message, cancellationToken);
+
+                var unitOfWork = serviceProvider.GetRequiredKeyedService<IUnitOfWork>(moduleKey);
+                await unitOfWork.SaveChangesAsync(cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                handlerActivity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+                handlerActivity?.AddTag("exception.type", ex.GetType().FullName);
+                throw;
+            }
+        }
     }
 
     [LoggerMessage(
         LogLevel.Warning,
         "Received message of unknown type '{MessageType}'; discarding.")]
     static partial void LogUnknownMessageType(ILogger<QueueMessageDispatcher> logger, string messageType);
+
+    [LoggerMessage(
+        LogLevel.Warning,
+        "No handlers registered for message type '{MessageType}'; discarding.")]
+    static partial void LogNoHandlersFound(ILogger<QueueMessageDispatcher> logger, string messageType);
 }
