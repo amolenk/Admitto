@@ -5,6 +5,7 @@ using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Email.Infrastructure.Persistence.ValueConverters;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Outbox;
+using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.AspNetCore.DataProtection.KeyManagement;
 using Microsoft.EntityFrameworkCore;
@@ -45,7 +46,9 @@ public sealed class EmailDbContext(DbContextOptions<EmailDbContext> options)
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
-        configurationBuilder.ConfigureSharedConventions();
+        configurationBuilder
+            .Properties<EmailAddress>()
+            .HaveConversion<EmailAddress.EfCoreValueConverter>();
 
         configurationBuilder
             .Properties<Hostname>()

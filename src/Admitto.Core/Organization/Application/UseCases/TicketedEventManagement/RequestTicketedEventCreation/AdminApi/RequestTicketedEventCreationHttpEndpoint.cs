@@ -26,7 +26,7 @@ public static class RequestTicketedEventCreationHttpEndpoint
         IUserContextAccessor userContextAccessor,
         RequestTicketedEventCreationHttpRequest request,
         RequestTicketedEventCreationHandler handler,
-        [FromKeyedServices(OrganizationModuleKey.Value)]
+        [FromKeyedServices(OrganizationModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {

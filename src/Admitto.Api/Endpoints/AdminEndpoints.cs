@@ -1,7 +1,7 @@
 using Amolenk.Admitto.ApiService.Middleware;
-using Amolenk.Admitto.Core.Email.Application.UseCases;
-using Amolenk.Admitto.Core.Organization.Application.UseCases;
-using Amolenk.Admitto.Core.Registrations.Application;
+using Amolenk.Admitto.Core.Email;
+using Amolenk.Admitto.Core.Organization;
+using Amolenk.Admitto.Core.Registrations;
 
 namespace Amolenk.Admitto.Api.Endpoints;
 
@@ -19,8 +19,8 @@ public static class AdminEndpoints
             .RequireAuthorization();
 
         adminGroup
-            .MapOrganizationAdminEndpoints()
             .MapEmailAdminEndpoints()
+            .MapOrganizationAdminEndpoints()
             .MapRegistrationsAdminEndpoints();
     }
 }

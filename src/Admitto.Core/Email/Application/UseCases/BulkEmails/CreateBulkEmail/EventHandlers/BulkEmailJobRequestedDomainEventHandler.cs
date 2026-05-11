@@ -9,7 +9,7 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.BulkEmails.CreateBulkE
 /// so the Worker host can schedule the Quartz fan-out outside the current transaction.
 /// </summary>
 internal sealed class BulkEmailJobRequestedDomainEventHandler(
-    [FromKeyedServices(EmailModuleKey.Value)] IOutbox outbox)
+    [FromKeyedServices(EmailModule.Key)] IOutbox outbox)
     : IDomainEventHandler<BulkEmailJobRequestedDomainEvent>
 {
     public ValueTask HandleAsync(

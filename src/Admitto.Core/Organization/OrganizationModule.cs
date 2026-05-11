@@ -13,10 +13,12 @@ using Amolenk.Admitto.Core.Organization.Application.UseCases.ApiKeyManagement.Cr
 using Amolenk.Admitto.Core.Organization.Application.UseCases.ApiKeyManagement.GetApiKeys.AdminApi;
 using Amolenk.Admitto.Core.Organization.Application.UseCases.ApiKeyManagement.RevokeApiKey.AdminApi;
 
-namespace Amolenk.Admitto.Core.Organization.Application.UseCases;
+namespace Amolenk.Admitto.Core.Organization;
 
-public static class OrganizationApiEndpoints
+public static class OrganizationModule
 {
+    public const string Key = nameof(Organization);
+
     public static RouteGroupBuilder MapOrganizationAdminEndpoints(this RouteGroupBuilder group)
     {
         var teams = group.MapGroup("/teams");

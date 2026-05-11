@@ -17,10 +17,12 @@ using Amolenk.Admitto.Core.Email.Application.UseCases.EmailTemplates.TestSendEma
 using Amolenk.Admitto.Core.Email.Application.UseCases.EmailTemplates.UpdateEmailTemplate.AdminApi;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 
-namespace Amolenk.Admitto.Core.Email.Application.UseCases;
+namespace Amolenk.Admitto.Core.Email;
 
-public static class EmailApiEndpoints
+public static class EmailModule
 {
+    public const string Key = nameof(Email);
+
     public static RouteGroupBuilder MapEmailAdminEndpoints(this RouteGroupBuilder group)
     {
         // Team-scoped email settings

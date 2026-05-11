@@ -20,7 +20,7 @@ public static class UpdateTeamHttpEndpoint
         Guid teamId,
         UpdateTeamHttpRequest request,
         UpdateTeamHandler handler,
-        [FromKeyedServices(OrganizationModuleKey.Value)]
+        [FromKeyedServices(OrganizationModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {

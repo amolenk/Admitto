@@ -20,7 +20,7 @@ public static class RemoveTeamMembershipHttpEndpoint
         Guid teamId,
         string email,
         RemoveTeamMembershipHandler handler,
-        [FromKeyedServices(OrganizationModuleKey.Value)]
+        [FromKeyedServices(OrganizationModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {

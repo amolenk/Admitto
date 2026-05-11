@@ -1,4 +1,5 @@
 using System.Reflection;
+using Amolenk.Admitto.Core.Organization;
 using Amolenk.Admitto.Core.Organization.Application;
 using Amolenk.Admitto.Core.Organization.Application.Jobs;
 using Amolenk.Admitto.Core.Organization.Application.Persistence;
@@ -54,10 +55,10 @@ public static class OrganizationModuleExtensions
 
         // Infrastructure
         builder.AddModuleDatabaseServices<IOrganizationWriteStore, OrganizationDbContext>(
-            OrganizationModuleKey.Value);
+            OrganizationModule.Key);
 
         services.AddKeyedScoped<IPostgresExceptionMapping, PostgresExceptionMapping>(
-            OrganizationModuleKey.Value);
+            OrganizationModule.Key);
 
         return builder;
     }

@@ -32,7 +32,7 @@ public static class DeleteEmailSettingsHttpEndpoint
             Guid? eventId,
             [FromQuery] uint version,
             DeleteEmailSettingsHandler handler,
-            [FromKeyedServices(EmailModuleKey.Value)] IUnitOfWork unitOfWork,
+            [FromKeyedServices(EmailModule.Key)] IUnitOfWork unitOfWork,
             CancellationToken ct)
         {
             var scopeId = scope == EmailSettingsScope.Event ? eventId!.Value : teamId;

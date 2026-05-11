@@ -3,6 +3,7 @@ using Amolenk.Admitto.Core.Organization.Domain.Entities;
 using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Outbox;
+using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 
 namespace Amolenk.Admitto.Core.Organization.Infrastructure.Persistence;
@@ -31,7 +32,17 @@ public sealed class OrganizationDbContext(DbContextOptions<OrganizationDbContext
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
-        configurationBuilder.ConfigureSharedConventions();
+        configurationBuilder
+            .Properties<DisplayName>()
+            .HaveConversion<DisplayName.EfCoreValueConverter>();
+
+        configurationBuilder
+            .Properties<EmailAddress>()
+            .HaveConversion<EmailAddress.EfCoreValueConverter>();
+
+        configurationBuilder
+            .Properties<TeamId>()
+            .HaveConversion<TeamId.EfCoreValueConverter>();
 
         configurationBuilder
             .Properties<UserId>()

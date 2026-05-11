@@ -28,7 +28,7 @@ public static class UpdateEmailTemplateHttpEndpoint
         Guid id,
         UpdateEmailTemplateHttpRequest request,
         UpdateEmailTemplateHandler handler,
-        [FromKeyedServices(EmailModuleKey.Value)] IUnitOfWork unitOfWork,
+        [FromKeyedServices(EmailModule.Key)] IUnitOfWork unitOfWork,
         CancellationToken ct)
     {
         var command = new UpdateEmailTemplateCommand(

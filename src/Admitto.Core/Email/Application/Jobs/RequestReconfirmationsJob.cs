@@ -20,7 +20,7 @@ namespace Amolenk.Admitto.Core.Email.Application.Jobs;
 [DisallowConcurrentExecution]
 internal sealed class RequestReconfirmationsJob(
     IEmailWriteStore writeStore,
-    [FromKeyedServices(EmailModuleKey.Value)] IUnitOfWork unitOfWork,
+    [FromKeyedServices(EmailModule.Key)] IUnitOfWork unitOfWork,
     TimeProvider timeProvider,
     ILogger<RequestReconfirmationsJob> logger)
     : IJob

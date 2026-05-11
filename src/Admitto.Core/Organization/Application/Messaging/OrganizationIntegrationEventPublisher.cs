@@ -5,7 +5,7 @@ using Amolenk.Admitto.Core.Shared.Application.Messaging;
 namespace Amolenk.Admitto.Core.Organization.Application.Messaging;
 
 internal sealed class OrganizationIntegrationEventPublisher(
-    [FromKeyedServices(OrganizationModuleKey.Value)] IOutbox outbox)
+    [FromKeyedServices(OrganizationModule.Key)] IOutbox outbox)
     : IDomainEventHandler<TicketedEventCreationRequestedDomainEvent>
 {
     public ValueTask HandleAsync(

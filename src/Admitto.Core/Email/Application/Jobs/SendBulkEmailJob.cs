@@ -39,7 +39,7 @@ internal sealed class SendBulkEmailJob(
     IEmailTemplateService templateService,
     IEmailRenderer renderer,
     IBulkSmtpSender bulkSmtpSender,
-    [FromKeyedServices(EmailModuleKey.Value)] IUnitOfWork unitOfWork,
+    [FromKeyedServices(EmailModule.Key)] IUnitOfWork unitOfWork,
     IOptionsMonitor<BulkEmailOptions> options,
     ILogger<SendBulkEmailJob> logger)
     : IJob

@@ -20,7 +20,7 @@ public static class RevokeApiKeyHttpEndpoint
         Guid teamId,
         Guid keyId,
         RevokeApiKeyHandler handler,
-        [FromKeyedServices(OrganizationModuleKey.Value)]
+        [FromKeyedServices(OrganizationModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {

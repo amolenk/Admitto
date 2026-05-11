@@ -30,7 +30,7 @@ public static class DeleteEmailTemplateHttpEndpoint
             Guid id,
             [FromQuery] uint version,
             DeleteEmailTemplateHandler handler,
-            [FromKeyedServices(EmailModuleKey.Value)] IUnitOfWork unitOfWork,
+            [FromKeyedServices(EmailModule.Key)] IUnitOfWork unitOfWork,
             CancellationToken ct)
         {
             await handler.HandleAsync(new DeleteEmailTemplateCommand(id, version), ct);

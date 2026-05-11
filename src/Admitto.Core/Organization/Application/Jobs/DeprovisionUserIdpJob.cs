@@ -17,7 +17,7 @@ namespace Amolenk.Admitto.Core.Organization.Application.Jobs;
 public sealed class DeprovisionUserIdpJob(
     IOrganizationWriteStore writeStore,
     IExternalUserDirectory userDirectory,
-    [FromKeyedServices(OrganizationModuleKey.Value)] IUnitOfWork unitOfWork,
+    [FromKeyedServices(OrganizationModule.Key)] IUnitOfWork unitOfWork,
     ILogger<DeprovisionUserIdpJob> logger)
     : IJob
 {

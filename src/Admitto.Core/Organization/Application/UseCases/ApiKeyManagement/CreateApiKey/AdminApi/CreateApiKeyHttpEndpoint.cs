@@ -21,7 +21,7 @@ public static class CreateApiKeyHttpEndpoint
         IUserContextAccessor userContextAccessor,
         CreateApiKeyHttpRequest request,
         CreateApiKeyHandler handler,
-        [FromKeyedServices(OrganizationModuleKey.Value)]
+        [FromKeyedServices(OrganizationModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {

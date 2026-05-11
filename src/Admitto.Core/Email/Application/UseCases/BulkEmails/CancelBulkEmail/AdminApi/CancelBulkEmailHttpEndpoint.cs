@@ -21,7 +21,7 @@ public static class CancelBulkEmailHttpEndpoint
         Guid eventId,
         Guid bulkEmailJobId,
         CancelBulkEmailHandler handler,
-        [FromKeyedServices(EmailModuleKey.Value)] IUnitOfWork unitOfWork,
+        [FromKeyedServices(EmailModule.Key)] IUnitOfWork unitOfWork,
         CancellationToken ct)
     {
         await handler.HandleAsync(new CancelBulkEmailCommand(bulkEmailJobId), ct);

@@ -30,7 +30,7 @@ using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypeManageme
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypeManagement.GetTicketTypes.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypeManagement.UpdateTicketType.AdminApi;
 
-namespace Amolenk.Admitto.Core.Registrations.Application;
+namespace Amolenk.Admitto.Core.Registrations;
 
 public static class RegistrationsModule
 {

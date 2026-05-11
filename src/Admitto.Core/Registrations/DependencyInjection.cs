@@ -1,4 +1,5 @@
 using System.Reflection;
+using Amolenk.Admitto.Core.Registrations;
 using Amolenk.Admitto.Core.Registrations.Application;
 using Amolenk.Admitto.Core.Registrations.Application.Common.Cryptography;
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;

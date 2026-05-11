@@ -24,7 +24,7 @@ public static class ArchiveTeamHttpEndpoint
         Guid teamId,
         ArchiveTeamHttpRequest request,
         ArchiveTeamHandler handler,
-        [FromKeyedServices(OrganizationModuleKey.Value)]
+        [FromKeyedServices(OrganizationModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {

@@ -18,7 +18,7 @@ public static class CreateTeamHttpEndpoint
     private static async ValueTask<Ok> CreateTeam(
         CreateTeamHttpRequest request,
         CreateTeamHandler handler,
-        [FromKeyedServices(OrganizationModuleKey.Value)]
+        [FromKeyedServices(OrganizationModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {

@@ -33,7 +33,7 @@ public static class UpsertEmailSettingsHttpEndpoint
             UpsertEmailSettingsHttpRequest request,
             CreateEmailSettingsHandler createHandler,
             UpdateEmailSettingsHandler updateHandler,
-            [FromKeyedServices(EmailModuleKey.Value)] IUnitOfWork unitOfWork,
+            [FromKeyedServices(EmailModule.Key)] IUnitOfWork unitOfWork,
             CancellationToken ct)
         {
             var scopeId = scope == EmailSettingsScope.Event ? eventId!.Value : teamId;

@@ -22,7 +22,7 @@ public static class CreateBulkEmailHttpEndpoint
         Guid eventId,
         CreateBulkEmailHttpRequest request,
         CreateBulkEmailHandler handler,
-        [FromKeyedServices(EmailModuleKey.Value)] IUnitOfWork unitOfWork,
+        [FromKeyedServices(EmailModule.Key)] IUnitOfWork unitOfWork,
         CancellationToken ct)
     {
         var command = new CreateBulkEmailCommand(

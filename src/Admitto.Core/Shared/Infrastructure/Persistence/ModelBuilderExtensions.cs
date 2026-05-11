@@ -1,4 +1,3 @@
-using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.ValueConverters;
 using Amolenk.Admitto.Core.Shared.Kernel.Abstractions;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
@@ -39,28 +38,6 @@ public static class ModelBuilderExtensions
                         .IsRequired();
                 }
             }
-        }
-    }
-    
-    extension(ModelConfigurationBuilder modelConfigurationBuilder)
-    {
-        public void ConfigureSharedConventions()
-        {
-            modelConfigurationBuilder
-                .Properties<DisplayName>()
-                .HaveConversion<DisplayNameConverter>();
-
-            modelConfigurationBuilder
-                .Properties<EmailAddress>()
-                .HaveConversion<EmailAddressConverter>();
-
-            modelConfigurationBuilder
-                .Properties<Slug>()
-                .HaveConversion<SlugConverter>();
-
-            modelConfigurationBuilder
-                .Properties<TeamId>()
-                .HaveConversion<TeamIdConverter>();
         }
     }
 }

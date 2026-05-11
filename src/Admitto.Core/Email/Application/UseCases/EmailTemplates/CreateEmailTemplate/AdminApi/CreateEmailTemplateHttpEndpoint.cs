@@ -34,7 +34,7 @@ public static class CreateEmailTemplateHttpEndpoint
             Guid? eventId,
             CreateEmailTemplateHttpRequest request,
             CreateEmailTemplateHandler handler,
-            [FromKeyedServices(EmailModuleKey.Value)] IUnitOfWork unitOfWork,
+            [FromKeyedServices(EmailModule.Key)] IUnitOfWork unitOfWork,
             CancellationToken ct)
         {
             var scopeId = scope == EmailSettingsScope.Event ? eventId!.Value : teamId;

@@ -20,7 +20,7 @@ public static class AssignTeamMembershipHttpEndpoint
         Guid teamId,
         AssignTeamMembershipHttpRequest request,
         AssignTeamMembershipHandler handler,
-        [FromKeyedServices(OrganizationModuleKey.Value)]
+        [FromKeyedServices(OrganizationModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {

@@ -5,7 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Amolenk.Admitto.Core.Organization.Application.UseCases.TeamMembershipManagement.RegisterExternalUser.EventHandlers;
 
 internal sealed class UserCreatedDomainEventHandler(
-    [FromKeyedServices(OrganizationModuleKey.Value)] IOutbox outbox)
+    [FromKeyedServices(OrganizationModule.Key)] IOutbox outbox)
     : IDomainEventHandler<UserCreatedDomainEvent>
 {
     public ValueTask HandleAsync(UserCreatedDomainEvent domainEvent, CancellationToken cancellationToken)

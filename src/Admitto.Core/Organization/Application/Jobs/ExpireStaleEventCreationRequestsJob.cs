@@ -23,7 +23,7 @@ namespace Amolenk.Admitto.Core.Organization.Application.Jobs;
 [DisallowConcurrentExecution]
 public sealed class ExpireStaleEventCreationRequestsJob(
     IOrganizationWriteStore writeStore,
-    [FromKeyedServices(OrganizationModuleKey.Value)] IUnitOfWork unitOfWork,
+    [FromKeyedServices(OrganizationModule.Key)] IUnitOfWork unitOfWork,
     ILogger<ExpireStaleEventCreationRequestsJob> logger)
     : IJob
 {

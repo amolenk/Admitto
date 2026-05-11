@@ -21,7 +21,7 @@ public static class ChangeTeamMembershipRoleHttpEndpoint
         string email,
         ChangeTeamMembershipRoleHttpRequest request,
         ChangeTeamMembershipRoleHandler handler,
-        [FromKeyedServices(OrganizationModuleKey.Value)]
+        [FromKeyedServices(OrganizationModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {

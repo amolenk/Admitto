@@ -1,4 +1,5 @@
 using System.Reflection;
+using Amolenk.Admitto.Core.Email;
 using Amolenk.Admitto.Core.Email.Application;
 using Amolenk.Admitto.Core.Email.Application.Jobs;
 using Amolenk.Admitto.Core.Email.Application.Persistence;
@@ -55,10 +56,10 @@ public static class EmailModuleExtensions
             builder.Configuration.GetSection(BulkEmailOptions.SectionName));
 
         // Infrastructure
-        builder.AddModuleDatabaseServices<IEmailWriteStore, EmailDbContext>(EmailModuleKey.Value);
+        builder.AddModuleDatabaseServices<IEmailWriteStore, EmailDbContext>(EmailModule.Key);
 
         services.AddKeyedScoped<IPostgresExceptionMapping, EmailPostgresExceptionMapping>(
-            EmailModuleKey.Value);
+            EmailModule.Key);
 
         // Shared Data Protection key ring persisted to the email schema so the API and Worker hosts
         // can decrypt secrets written by either side.

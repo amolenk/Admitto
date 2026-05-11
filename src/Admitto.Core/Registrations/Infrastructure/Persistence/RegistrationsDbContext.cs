@@ -3,6 +3,7 @@ using Amolenk.Admitto.Core.Registrations.Application.Persistence;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Outbox;
+using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 
 namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence;
@@ -32,6 +33,12 @@ public sealed class RegistrationsDbContext(DbContextOptions<RegistrationsDbConte
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
-        configurationBuilder.ConfigureSharedConventions();
+        configurationBuilder
+            .Properties<DisplayName>()
+            .HaveConversion<DisplayName.EfCoreValueConverter>();
+
+        configurationBuilder
+            .Properties<EmailAddress>()
+            .HaveConversion<EmailAddress.EfCoreValueConverter>();
     }
 }
