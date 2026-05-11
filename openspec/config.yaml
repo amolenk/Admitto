@@ -7,9 +7,6 @@ context: |
   Treat it as the source of truth for constraints, decisions, and concepts
   If a request conflicts with the docs, do not "pick a side".
   Explain the conflict and propose a change to the docs (ADR), the code, or both.
-  The repository contains a legacy codebase that is being refactored.
-  Legacy projects: Admitto.Application, Admitto.Domain, Admitto.Infrastructure
-
 
 # Per-artifact rules (optional)
 # Add custom rules for specific artifacts.

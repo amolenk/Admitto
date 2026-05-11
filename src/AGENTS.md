@@ -91,8 +91,8 @@ side-effect they produce. The intent is clear from the use-case folder.
 Register the endpoint in the module's endpoint registration entry point.
 
 ### Canonical Examples
-- **Command:** `UseCases/TeamManagement/CreateTeam/` in `Admitto.Module.Organization`
-- **Query:** `UseCases/TeamManagement/GetTeam/` in `Admitto.Module.Organization`
+- **Command:** `UseCases/TeamManagement/CreateTeam/` in `Admitto.Core` (Organization module)
+- **Query:** `UseCases/TeamManagement/GetTeam/` in `Admitto.Core` (Organization module)
 
 ## When You Change Architecture
 - Update the relevant chapter in `docs/arc42/`.

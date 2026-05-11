@@ -16,20 +16,19 @@ Key sections:
 
 ## Project Boundaries
 - Use `Admitto.slnx` to determine active projects and module boundaries.
-- Modules follow `Admitto.Module.*` naming (e.g. `Admitto.Module.Organization`, `Admitto.Module.Registrations`).
-- Each module has one main project (`Domain/`, `Application/`, `Infrastructure/` folders) and a separate Contracts project.
-- Shared code lives in `Admitto.Module.Shared` and `Admitto.Module.Shared.Kernel`.
+- All domain modules live as folders inside the single `Admitto.Core` project: `Organization/`, `Registrations/`, `Email/`, and `Shared/`.
+- Each module folder contains `Domain/`, `Application/`, and `Infrastructure/` sub-folders. Modules that expose cross-module contracts also have a `Contracts/` sub-folder (Organization, Registrations, Shared).
+- Shared utilities and primitives live in `Admitto.Core/Shared/`, with a `Kernel/` sub-folder for the lowest-level building blocks.
 
 ### Aggregate Ownership
-- `Admitto.Module.Organization` owns `Team` (and team membership). It only tracks ticketed event existence for slug/id resolution and team-archive guards.
-- `Admitto.Module.Registrations` owns `TicketedEvent` (slug/name/dates, lifecycle, registration/cancellation/reconfirm policies), `TicketCatalog`, `Coupon`, and `Registration`. New per-event configuration belongs here.
+- The **Organization module** (`Admitto.Core/Organization`) owns `Team` (and team membership). It only tracks ticketed event existence for slug/id resolution and team-archive guards.
+- The **Registrations module** (`Admitto.Core/Registrations`) owns `TicketedEvent` (slug/name/dates, lifecycle, registration/cancellation/reconfirm policies), `TicketCatalog`, `Coupon`, and `Registration`. New per-event configuration belongs here.
 
 ## Non-Negotiable Conventions
 - API endpoint handlers own the transaction boundary and commit the module unit of work.
 - Command handlers must not inject or commit unit-of-work objects.
 - Admin routes run FluentValidation in the endpoint filter before handler execution.
 - Cross-module communication goes via contracts/facades, not cross-module DbContext access.
-- **CLI is now a legacy project**: No further changes will be made to the CLI regardless of future breakage. All business logic lives in the API backend.
 - Events must follow the domain/module/integration taxonomy in `docs/arc42/08-crosscutting-concepts.md`.
 
 ## Running the Application
