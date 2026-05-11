@@ -43,6 +43,7 @@ internal sealed class GetRegistrationsFixture
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
     {
         var ticketedEvent = TicketedEvent.Create(
+            Guid.NewGuid(),
             EventId, TeamId,
             DisplayName.From("Test Event"),
             AbsoluteUrl.From("https://example.com"),
@@ -105,6 +106,7 @@ internal sealed class GetRegistrationsFixture
         if (_seedOtherEventRegistration)
         {
             var otherTicketedEvent = TicketedEvent.Create(
+                Guid.NewGuid(),
                 OtherEventId, TeamId,
                 DisplayName.From("Other Event"),
                 AbsoluteUrl.From("https://example.com"),

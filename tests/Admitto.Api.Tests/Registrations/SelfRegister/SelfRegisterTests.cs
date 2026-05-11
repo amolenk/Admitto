@@ -94,6 +94,7 @@ public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBas
         // Seed a second event (same team, different slug) with registration policy open
         var secondEventId = TicketedEventId.New();
         var secondEvent = TicketedEvent.Create(
+            Guid.NewGuid(),
             secondEventId,
             fixture.TeamId,
             DisplayName.From("Other Event"),

@@ -35,6 +35,7 @@ internal sealed class SelfRegisterFixture
         EventId = eventId;
 
         var ticketedEvent = TicketedEvent.Create(
+            Guid.NewGuid(),
             eventId,
             team.Id,
             DisplayName.From("DevConf"),

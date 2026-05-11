@@ -29,6 +29,7 @@ internal sealed class GetRegistrationsFixture
         EventId = eventId.Value;
 
         var ticketedEvent = TicketedEvent.Create(
+            Guid.NewGuid(),
             eventId,
             team.Id,
             DisplayName.From("DevConf"),

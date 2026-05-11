@@ -76,6 +76,7 @@ internal sealed class BulkEmailFixture
         EventId = TicketedEventId.New();
 
         var ticketedEvent = TicketedEvent.Create(
+            Guid.NewGuid(),
             EventId,
             team.Id,
             DisplayName.From("Bulk Conf"),

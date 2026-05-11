@@ -1,20 +1,20 @@
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.QueryRegistrations;
+using GetRegistrationsNs = Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.GetRegistrations;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Tests.Application.Aspire;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
-namespace Amolenk.Admitto.Core.Registrations.Tests.Application.UseCases.Registrations.QueryRegistrations;
+namespace Amolenk.Admitto.Core.Registrations.Tests.Application.UseCases.Registrations.GetRegistrations;
 
 /// <summary>
 /// Reconfirm-flow filter tests: validates that the
-/// <see cref="QueryRegistrationsHandler"/> projection used by the Email
+/// <see cref="GetRegistrationsHandler"/> projection used by the Email
 /// module's resolver/scheduler produces the right recipient set across the
-/// reconfirm tick lifecycle (per design D5).
+/// reconfirm tick lifecycle.
 /// </summary>
 [TestClass]
-public sealed class QueryRegistrationsReconfirmTests(TestContext testContext) : AspireIntegrationTestBase
+public sealed class GetRegistrationsReconfirmTests(TestContext testContext) : AspireIntegrationTestBase
 {
     private const string Slug = "general-admission";
 
@@ -148,8 +148,8 @@ public sealed class QueryRegistrationsReconfirmTests(TestContext testContext) : 
     private static string Capitalize(string s) =>
         s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s[1..];
 
-    private async ValueTask<IReadOnlyList<RegistrationListItemDto>> Query(TicketedEventId eventId) =>
-        await new QueryRegistrationsHandler(Environment.Database.Context).HandleAsync(
-            new QueryRegistrationsQuery(eventId, ReconfirmFilter),
-            testContext.CancellationToken);
+    private async ValueTask<IReadOnlyList<GetRegistrationsNs.RegistrationListItemDto>> Query(TicketedEventId eventId) =>
+        (await new GetRegistrationsNs.GetRegistrationsHandler(Environment.Database.Context).HandleAsync(
+            new GetRegistrationsNs.GetRegistrationsQuery(eventId, Filter: ReconfirmFilter),
+            testContext.CancellationToken)) ?? [];
 }

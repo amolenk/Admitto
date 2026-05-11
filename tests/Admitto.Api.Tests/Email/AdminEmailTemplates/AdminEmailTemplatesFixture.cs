@@ -84,6 +84,7 @@ internal sealed class AdminEmailTemplatesFixture
         EventId = eventId.Value;
 
         var ticketedEvent = TicketedEvent.Create(
+            Guid.NewGuid(),
             eventId,
             team.Id,
             DisplayName.From("Templates Conf"),

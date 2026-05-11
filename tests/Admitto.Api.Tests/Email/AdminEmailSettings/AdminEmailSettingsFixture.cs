@@ -124,6 +124,7 @@ internal sealed class AdminEmailSettingsFixture
         EventId = eventId.Value;
 
         var ticketedEvent = TicketedEvent.Create(
+            Guid.NewGuid(),
             eventId,
             team.Id,
             DisplayName.From("Settings Conf"),

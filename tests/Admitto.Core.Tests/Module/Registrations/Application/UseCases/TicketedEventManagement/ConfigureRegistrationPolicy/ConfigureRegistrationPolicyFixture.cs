@@ -26,6 +26,7 @@ internal sealed class ConfigureRegistrationPolicyFixture
         await environment.Database.SeedAsync(dbContext =>
         {
             var ticketedEvent = TicketedEvent.Create(
+                Guid.NewGuid(),
                 EventId,
                 TeamId,
                 DisplayName.From("Reg Policy Event"),

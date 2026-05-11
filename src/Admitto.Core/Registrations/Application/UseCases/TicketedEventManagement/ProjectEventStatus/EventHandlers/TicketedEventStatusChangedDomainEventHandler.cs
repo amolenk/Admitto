@@ -4,7 +4,7 @@ using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Microsoft.EntityFrameworkCore;
 
-namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.ProjectEventStatus.EventHandlers;
+namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEventManagement.ProjectEventStatus.EventHandlers;
 
 /// <summary>
 /// Projects a <see cref="TicketedEventStatusChangedDomainEvent"/> onto the owning event's

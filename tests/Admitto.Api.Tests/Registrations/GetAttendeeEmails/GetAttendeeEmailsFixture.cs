@@ -36,6 +36,7 @@ internal sealed class GetAttendeeEmailsFixture
         EventId = eventId.Value;
 
         var ticketedEvent = TicketedEvent.Create(
+            Guid.NewGuid(),
             eventId,
             team.Id,
             DisplayName.From("DevConf"),

@@ -438,6 +438,7 @@ internal sealed class RegisterAttendeeFixture
     private TicketedEvent MakeActiveEvent(TicketedEventRegistrationPolicy? policy)
     {
         var ev = TicketedEvent.Create(
+            Guid.NewGuid(),
             EventId,
             TeamId,
             DisplayName.From("DevConf"),

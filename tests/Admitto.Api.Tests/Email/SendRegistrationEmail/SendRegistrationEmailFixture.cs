@@ -34,6 +34,7 @@ internal sealed class SendRegistrationEmailFixture
         EventId = eventId.Value;
 
         var ticketedEvent = TicketedEvent.Create(
+            Guid.NewGuid(),
             eventId,
             team.Id,
             DisplayName.From("MailConf"),

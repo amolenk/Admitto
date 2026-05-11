@@ -23,6 +23,7 @@ internal sealed class ArchiveTicketedEventFixture
         await environment.Database.SeedAsync(dbContext =>
         {
             var ticketedEvent = TicketedEvent.Create(
+                Guid.NewGuid(),
                 EventId,
                 TeamId,
                 DisplayName.From("Archive Event"),

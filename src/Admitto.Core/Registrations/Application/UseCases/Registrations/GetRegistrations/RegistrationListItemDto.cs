@@ -8,6 +8,7 @@ public sealed record RegistrationListItemDto(
     string FirstName,
     string LastName,
     IReadOnlyList<TicketSummaryDto> Tickets,
+    IReadOnlyDictionary<string, string> AdditionalDetails,
     DateTimeOffset CreatedAt,
     RegistrationStatus Status,
     bool HasReconfirmed,

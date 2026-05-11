@@ -24,6 +24,7 @@ internal sealed class UpdateTicketedEventDetailsFixture
         await environment.Database.SeedAsync(dbContext =>
         {
             var ticketedEvent = TicketedEvent.Create(
+                Guid.NewGuid(),
                 EventId,
                 TeamId,
                 DisplayName.From("Original Name"),

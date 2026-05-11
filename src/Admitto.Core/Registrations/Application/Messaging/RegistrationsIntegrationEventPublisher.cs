@@ -11,11 +11,13 @@ internal sealed class RegistrationsIntegrationEventPublisher(
       IDomainEventHandler<OtpCodeRequestedDomainEvent>,
       IDomainEventHandler<RegistrationCancelledDomainEvent>,
       IDomainEventHandler<RegistrationReconfirmedDomainEvent>,
+      IDomainEventHandler<TicketedEventCreatedDomainEvent>,
       IDomainEventHandler<TicketedEventReconfirmPolicyChangedDomainEvent>,
       IDomainEventHandler<TicketedEventStatusChangedDomainEvent>,
       IDomainEventHandler<TicketedEventTimeZoneChangedDomainEvent>,
       IDomainEventHandler<TicketsChangedDomainEvent>
-{    public ValueTask HandleAsync(AttendeeRegisteredDomainEvent domainEvent, CancellationToken cancellationToken)
+{
+    public ValueTask HandleAsync(AttendeeRegisteredDomainEvent domainEvent, CancellationToken cancellationToken)
     {
         outbox.Enqueue(new AttendeeRegisteredIntegrationEvent(
             domainEvent.TeamId.Value,
@@ -62,6 +64,17 @@ internal sealed class RegistrationsIntegrationEventPublisher(
             domainEvent.RegistrationId.Value,
             domainEvent.Email.Value,
             domainEvent.ReconfirmedAt));
+
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask HandleAsync(TicketedEventCreatedDomainEvent domainEvent, CancellationToken cancellationToken)
+    {
+        outbox.Enqueue(new TicketedEventCreatedIntegrationEvent(
+            domainEvent.CreationRequestId,
+            domainEvent.TeamId.Value,
+            domainEvent.TicketedEventId.Value,
+            domainEvent.TimeZone.Value));
 
         return ValueTask.CompletedTask;
     }

@@ -78,6 +78,7 @@ internal sealed class ChangeAttendeeTicketsFixture
 
     private TicketedEvent MakeActiveEvent() =>
         TicketedEvent.Create(
+            Guid.NewGuid(),
             EventId,
             TeamId,
             DisplayName.From("DevConf"),

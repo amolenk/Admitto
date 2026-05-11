@@ -70,6 +70,7 @@ public class TicketedEvent : Aggregate<TicketedEventId>
     public bool IsActive => Status == EventLifecycleStatus.Active;
 
     public static TicketedEvent Create(
+        Guid creationRequestId,
         TicketedEventId id,
         TeamId teamId,
         DisplayName name,
@@ -84,8 +85,13 @@ public class TicketedEvent : Aggregate<TicketedEventId>
 
         var signingKey = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
 
-        return new TicketedEvent(
+        var ticketedEvent = new TicketedEvent(
             id, teamId, name, websiteUrl, baseUrl, startsAt, endsAt, timeZone, signingKey);
+
+        ticketedEvent.AddDomainEvent(
+            new TicketedEventCreatedDomainEvent(creationRequestId, teamId, id, timeZone));
+
+        return ticketedEvent;
     }
 
     public void ChangeTimeZone(TimeZoneId timeZone)

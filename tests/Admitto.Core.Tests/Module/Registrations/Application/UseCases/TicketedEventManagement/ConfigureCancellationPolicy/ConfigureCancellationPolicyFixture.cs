@@ -27,6 +27,7 @@ internal sealed class ConfigureCancellationPolicyFixture
         await environment.Database.SeedAsync(dbContext =>
         {
             var ticketedEvent = TicketedEvent.Create(
+                Guid.NewGuid(),
                 EventId,
                 TeamId,
                 DisplayName.From("Cancel Policy Event"),

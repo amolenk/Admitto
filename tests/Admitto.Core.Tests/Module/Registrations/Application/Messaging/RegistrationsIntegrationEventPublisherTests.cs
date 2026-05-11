@@ -130,6 +130,29 @@ public sealed class RegistrationsIntegrationEventPublisherTests
     }
 
     [TestMethod]
+    public async ValueTask SC001_TicketedEventCreated_EnqueuesTicketedEventCreatedIntegrationEvent()
+    {
+        var creationRequestId = Guid.NewGuid();
+        var teamId = TeamId.New();
+        var eventId = TicketedEventId.New();
+
+        var domainEvent = new TicketedEventCreatedDomainEvent(
+            creationRequestId,
+            teamId,
+            eventId,
+            TimeZoneId.From("Europe/Amsterdam"));
+
+        await _publisher.HandleAsync(domainEvent, CancellationToken.None);
+
+        _captured.ShouldNotBeNull();
+        var evt = _captured.ShouldBeOfType<TicketedEventCreatedIntegrationEvent>();
+        evt.CreationRequestId.ShouldBe(creationRequestId);
+        evt.TeamId.ShouldBe(teamId.Value);
+        evt.TicketedEventId.ShouldBe(eventId.Value);
+        evt.TimeZone.ShouldBe("Europe/Amsterdam");
+    }
+
+    [TestMethod]
     public async ValueTask SC001_TicketedEventReconfirmPolicyChanged_EnqueuesIntegrationEvent()
     {
         var teamId = TeamId.New();

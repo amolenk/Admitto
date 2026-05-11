@@ -29,6 +29,7 @@ internal sealed class CancelRegistrationFixture
         EventId = eventId.Value;
 
         var ticketedEvent = TicketedEvent.Create(
+            Guid.NewGuid(),
             eventId,
             team.Id,
             DisplayName.From("DevConf"),

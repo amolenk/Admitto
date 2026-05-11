@@ -1,0 +1,17 @@
+using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Shared.Kernel.DomainEvents;
+using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+
+namespace Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
+
+/// <summary>
+/// Raised by <see cref="Entities.TicketedEvent"/> when it is first created.
+/// Carries the <paramref name="CreationRequestId"/> correlation id so that
+/// <c>RegistrationsIntegrationEventPublisher</c> can include it in the outbound
+/// <c>TicketedEventCreatedIntegrationEvent</c> without persisting it on the aggregate.
+/// </summary>
+public record TicketedEventCreatedDomainEvent(
+    Guid CreationRequestId,
+    TeamId TeamId,
+    TicketedEventId TicketedEventId,
+    TimeZoneId TimeZone) : DomainEvent;

@@ -23,6 +23,7 @@ public sealed class GetTicketedEventDetailsTests(TestContext testContext) : Aspi
         await Environment.Database.SeedAsync(ctx =>
         {
             var te = TicketedEvent.Create(
+                Guid.NewGuid(),
                 eventId,
                 teamId,
                 DisplayName.From("Conf 2026"),
@@ -75,6 +76,7 @@ public sealed class GetTicketedEventDetailsTests(TestContext testContext) : Aspi
         await Environment.Database.SeedAsync(ctx =>
         {
             var te = TicketedEvent.Create(
+                Guid.NewGuid(),
                 eventId,
                 teamId,
                 DisplayName.From("Bare Event"),

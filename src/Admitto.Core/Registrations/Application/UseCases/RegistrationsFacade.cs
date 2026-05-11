@@ -1,7 +1,7 @@
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.QueryRegistrations;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.GetActiveReconfirmTriggerSpecs;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.GetReconfirmTriggerSpec;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.GetTicketedEventEmailContext;
+using GetRegistrationsNs = Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.GetRegistrations;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEventManagement.GetActiveReconfirmTriggerSpecs;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEventManagement.GetReconfirmTriggerSpec;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEventManagement.GetTicketedEventEmailContext;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
@@ -9,7 +9,7 @@ namespace Amolenk.Admitto.Core.Registrations.Application.UseCases;
 
 internal sealed class RegistrationsFacade(
     GetTicketedEventEmailContextHandler getEmailContextHandler,
-    QueryRegistrationsHandler queryRegistrationsHandler,
+    GetRegistrationsNs.GetRegistrationsHandler getRegistrationsHandler,
     GetReconfirmTriggerSpecHandler getReconfirmTriggerSpecHandler,
     GetActiveReconfirmTriggerSpecsHandler getActiveReconfirmTriggerSpecsHandler) : IRegistrationsFacade
 {
@@ -28,9 +28,24 @@ internal sealed class RegistrationsFacade(
         QueryRegistrationsDto query,
         CancellationToken cancellationToken = default)
     {
-        return await queryRegistrationsHandler.HandleAsync(
-            new QueryRegistrationsQuery(eventId, query),
+        var result = await getRegistrationsHandler.HandleAsync(
+            new GetRegistrationsNs.GetRegistrationsQuery(eventId, Filter: query),
             cancellationToken);
+
+        // No TeamId guard — event existence is assumed by cross-module callers.
+        // Map to Contracts DTO (slugs only; names are available but not part of the contract).
+        return (result ?? [])
+            .Select(r => new RegistrationListItemDto(
+                r.Id,
+                r.Email,
+                r.FirstName,
+                r.LastName,
+                r.Tickets.Select(t => t.Slug).ToArray(),
+                r.AdditionalDetails,
+                r.Status,
+                r.HasReconfirmed,
+                r.ReconfirmedAt))
+            .ToList();
     }
 
     public async Task<ReconfirmTriggerSpecDto?> GetReconfirmTriggerSpecAsync(

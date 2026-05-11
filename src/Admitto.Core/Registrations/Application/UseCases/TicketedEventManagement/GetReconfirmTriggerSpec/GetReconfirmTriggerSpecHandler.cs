@@ -4,18 +4,22 @@ using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Microsoft.EntityFrameworkCore;
 
-namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.GetActiveReconfirmTriggerSpecs;
+namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEventManagement.GetReconfirmTriggerSpec;
 
-internal sealed class GetActiveReconfirmTriggerSpecsHandler(IRegistrationsWriteStore writeStore)
-    : IQueryHandler<GetActiveReconfirmTriggerSpecsQuery, IReadOnlyList<ReconfirmTriggerSpecDto>>
+internal sealed class GetReconfirmTriggerSpecHandler(IRegistrationsWriteStore writeStore)
+    : IQueryHandler<GetReconfirmTriggerSpecQuery, ReconfirmTriggerSpecDto?>
 {
-    public async ValueTask<IReadOnlyList<ReconfirmTriggerSpecDto>> HandleAsync(
-        GetActiveReconfirmTriggerSpecsQuery query,
+    public async ValueTask<ReconfirmTriggerSpecDto?> HandleAsync(
+        GetReconfirmTriggerSpecQuery query,
         CancellationToken cancellationToken)
     {
+        var ticketedEventId = TicketedEventId.From(query.TicketedEventId);
+
         return await writeStore.TicketedEvents
             .AsNoTracking()
-            .Where(e => e.Status == EventLifecycleStatus.Active && e.ReconfirmPolicy != null)
+            .Where(e => e.Id == ticketedEventId
+                        && e.Status == EventLifecycleStatus.Active
+                        && e.ReconfirmPolicy != null)
             .Select(e => new ReconfirmTriggerSpecDto(
                 e.TeamId.Value,
                 e.Id.Value,
@@ -23,6 +27,6 @@ internal sealed class GetActiveReconfirmTriggerSpecsHandler(IRegistrationsWriteS
                 e.ReconfirmPolicy!.OpensAt,
                 e.ReconfirmPolicy.ClosesAt,
                 (int)e.ReconfirmPolicy.Cadence.TotalDays))
-            .ToListAsync(cancellationToken);
+            .FirstOrDefaultAsync(cancellationToken);
     }
 }

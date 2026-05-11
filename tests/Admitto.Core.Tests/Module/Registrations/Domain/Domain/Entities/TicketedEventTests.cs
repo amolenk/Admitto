@@ -51,6 +51,7 @@ public sealed class TicketedEventTests
     {
         var first = NewEvent();
         var second = TicketedEvent.Create(
+            Guid.NewGuid(),
             TicketedEventId.New(),
             DefaultTeamId,
             DefaultName,
@@ -67,6 +68,7 @@ public sealed class TicketedEventTests
     public void SC002_Create_EndBeforeStart_Throws()
     {
         var act = () => TicketedEvent.Create(
+            Guid.NewGuid(),
             DefaultEventId,
             DefaultTeamId,
             DefaultName,
@@ -579,6 +581,7 @@ public sealed class TicketedEventTests
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     private static TicketedEvent NewEvent() => TicketedEvent.Create(
+        Guid.NewGuid(),
         DefaultEventId, DefaultTeamId, DefaultName, DefaultWebsite, DefaultBaseUrl, DefaultStart, DefaultEnd,
                 TimeZoneId.From("UTC"));
 

@@ -106,6 +106,7 @@ internal sealed class ApiKeyAuthFixture
     private static TicketedEvent BuildEvent(TeamId teamId, string displayName)
     {
         var ticketedEvent = TicketedEvent.Create(
+            Guid.NewGuid(),
             TicketedEventId.New(),
             teamId,
             DisplayName.From(displayName),

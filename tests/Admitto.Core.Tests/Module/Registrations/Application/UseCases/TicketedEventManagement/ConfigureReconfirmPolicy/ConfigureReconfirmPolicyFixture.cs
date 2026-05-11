@@ -27,6 +27,7 @@ internal sealed class ConfigureReconfirmPolicyFixture
         await environment.Database.SeedAsync(dbContext =>
         {
             var ticketedEvent = TicketedEvent.Create(
+                Guid.NewGuid(),
                 EventId,
                 TeamId,
                 DisplayName.From("Reconfirm Policy Event"),

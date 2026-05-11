@@ -24,7 +24,9 @@ public static class GetRegistrationsHttpEndpoint
         CancellationToken cancellationToken)
     {
         var result = await handler.HandleAsync(
-            new GetRegistrationsQuery(TeamId.From(teamId), TicketedEventId.From(eventId)),
+            new GetRegistrationsQuery(
+                TicketedEventId.From(eventId),
+                TeamId.From(teamId)),
             cancellationToken);
 
         if (result is null)

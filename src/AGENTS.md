@@ -25,7 +25,6 @@ This file applies to `/src`.
 - Domain events live in `Domain/DomainEvents/` within each module project.
 - Module events live in `Application/ModuleEvents/` within each module project.
 - Integration events live in `*.Contracts` projects under `IntegrationEvents/`.
-- Map domain events via module `*MessagePolicy` classes; do not hand-roll ad hoc event translation in handlers.
 
 ## Cross-Module Rule
 - Cross-module reads should go through contracts/facades (for example `IOrganizationFacade`), not direct DbContext access across modules.

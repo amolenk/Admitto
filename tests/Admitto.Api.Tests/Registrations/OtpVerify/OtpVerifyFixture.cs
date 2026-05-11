@@ -31,6 +31,7 @@ internal sealed class OtpVerifyFixture
         EventId = eventId;
 
         var ticketedEvent = TicketedEvent.Create(
+            Guid.NewGuid(),
             eventId,
             team.Id,
             DisplayName.From("DevConf"),

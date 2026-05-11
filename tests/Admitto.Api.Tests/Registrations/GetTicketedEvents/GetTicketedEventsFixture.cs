@@ -22,6 +22,7 @@ internal sealed class GetTicketedEventsFixture
         TeamId = team.Id.Value;
 
         var active = TicketedEvent.Create(
+            Guid.NewGuid(),
             TicketedEventId.New(),
             team.Id,
             DisplayName.From("Conf 2026"),
@@ -32,6 +33,7 @@ internal sealed class GetTicketedEventsFixture
             TimeZoneId.From("UTC"));
 
         var cancelled = TicketedEvent.Create(
+            Guid.NewGuid(),
             TicketedEventId.New(),
             team.Id,
             DisplayName.From("Meetup Q1"),
@@ -43,6 +45,7 @@ internal sealed class GetTicketedEventsFixture
         cancelled.Cancel();
 
         var archived = TicketedEvent.Create(
+            Guid.NewGuid(),
             TicketedEventId.New(),
             team.Id,
             DisplayName.From("Conf 2025"),

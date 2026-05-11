@@ -13,7 +13,7 @@ public sealed class GetRegistrationsTests(TestContext testContext) : AspireInteg
         await fixture.SetupAsync(Environment);
 
         var result = await NewHandler().HandleAsync(
-            new GetRegistrationsQuery(fixture.TeamId, fixture.EventId),
+            new GetRegistrationsQuery(fixture.EventId, fixture.TeamId),
             testContext.CancellationToken);
 
         result.ShouldNotBeNull().ShouldBeEmpty();
@@ -26,7 +26,7 @@ public sealed class GetRegistrationsTests(TestContext testContext) : AspireInteg
         await fixture.SetupAsync(Environment);
 
         var result = await NewHandler().HandleAsync(
-            new GetRegistrationsQuery(fixture.TeamId, fixture.EventId),
+            new GetRegistrationsQuery(fixture.EventId, fixture.TeamId),
             testContext.CancellationToken);
 
         result.ShouldNotBeNull();
@@ -50,7 +50,7 @@ public sealed class GetRegistrationsTests(TestContext testContext) : AspireInteg
         await fixture.SetupAsync(Environment);
 
         var result = await NewHandler().HandleAsync(
-            new GetRegistrationsQuery(fixture.TeamId, fixture.EventId),
+            new GetRegistrationsQuery(fixture.EventId, fixture.TeamId),
             testContext.CancellationToken);
 
         result.ShouldNotBeNull();
@@ -72,7 +72,7 @@ public sealed class GetRegistrationsTests(TestContext testContext) : AspireInteg
         await fixture.SetupAsync(Environment);
 
         var result = await NewHandler().HandleAsync(
-            new GetRegistrationsQuery(fixture.TeamId, fixture.EventId),
+            new GetRegistrationsQuery(fixture.EventId, fixture.TeamId),
             testContext.CancellationToken);
 
         result.ShouldNotBeNull();
@@ -80,7 +80,7 @@ public sealed class GetRegistrationsTests(TestContext testContext) : AspireInteg
         result.ShouldNotContain(r => r.Email == "dave@example.com");
 
         var otherResult = await NewHandler().HandleAsync(
-            new GetRegistrationsQuery(fixture.TeamId, fixture.OtherEventId),
+            new GetRegistrationsQuery(fixture.OtherEventId, fixture.TeamId),
             testContext.CancellationToken);
 
         otherResult.ShouldNotBeNull().ShouldHaveSingleItem().Email.ShouldBe("dave@example.com");
