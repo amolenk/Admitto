@@ -13,7 +13,7 @@ public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBas
 {
     // Successful self-service registration returns 201 Created
     [TestMethod]
-    public async Task SC001_SelfRegister_ValidToken_Returns201()
+    public async Task SelfRegister_ValidToken_Returns201()
     {
         var fixture = SelfRegisterFixture.WithOpenRegistration();
         await fixture.SetupAsync(Environment);
@@ -39,7 +39,7 @@ public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBas
 
     // Token missing returns 401
     [TestMethod]
-    public async Task SC002_SelfRegister_MissingToken_Returns401()
+    public async Task SelfRegister_MissingToken_Returns401()
     {
         var fixture = SelfRegisterFixture.WithOpenRegistration();
         await fixture.SetupAsync(Environment);
@@ -60,7 +60,7 @@ public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBas
 
     // Invalid/tampered token returns 401
     [TestMethod]
-    public async Task SC003_SelfRegister_InvalidToken_Returns401()
+    public async Task SelfRegister_InvalidToken_Returns401()
     {
         var fixture = SelfRegisterFixture.WithOpenRegistration();
         await fixture.SetupAsync(Environment);
@@ -84,7 +84,7 @@ public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBas
 
     // Token bound to different event returns 401 — uses one team with two events
     [TestMethod]
-    public async Task SC004_SelfRegister_TokenForDifferentEvent_Returns401()
+    public async Task SelfRegister_TokenForDifferentEvent_Returns401()
     {
         var fixture = SelfRegisterFixture.WithOpenRegistration();
         await fixture.SetupAsync(Environment);
@@ -135,7 +135,7 @@ public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBas
 
     // SC: Attempting to self-register with an admin-only (non-self-service) ticket type returns 400
     [TestMethod]
-    public async Task SC010_SelfRegister_NonSelfServiceTicketType_Returns400()
+    public async Task SelfRegister_NonSelfServiceTicketType_Returns400()
     {
         var fixture = SelfRegisterFixture.WithOpenRegistration();
         await fixture.SetupAsync(Environment, selfServiceEnabled: false);

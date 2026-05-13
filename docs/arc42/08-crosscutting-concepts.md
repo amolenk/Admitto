@@ -355,7 +355,7 @@ When a command handler loads an aggregate and a domain event handler (running du
 Business rules that need test coverage must be enforced as an explicit guard in the command handler *before* the save, in addition to any enforcement inside a domain event handler. The command handler guard provides testability; the domain event handler provides defence in depth in production.
 
 ```csharp
-// In CreateTicketedEventHandler — explicit guard so SC-015 is testable
+// In CreateTicketedEventHandler — explicit guard keeps handler behavior testable
 var team = await writeStore.Teams.GetAsync(TeamId.From(command.TeamId), cancellationToken);
 team.EnsureNotArchived();   // fast-fail here
 

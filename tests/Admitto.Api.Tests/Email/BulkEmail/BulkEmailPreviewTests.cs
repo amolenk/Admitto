@@ -11,7 +11,7 @@ public sealed class BulkEmailPreviewTests(TestContext testContext) : EndToEndTes
 {
     // SC-8.1: POST /preview returns expected count + sample for the attendee source shape.
     [TestMethod]
-    public async Task SC001_Preview_AttendeeSource_ReturnsCountAndSample()
+    public async Task Preview_AttendeeSource_ReturnsCountAndSample()
     {
         var fixture = BulkEmailFixture.Empty()
             .WithRegistration("alice@example.com", "Alice", "Anderson")
@@ -47,7 +47,7 @@ public sealed class BulkEmailPreviewTests(TestContext testContext) : EndToEndTes
 
     // SC-8.1: POST /preview returns expected count + sample for the external-list source shape.
     [TestMethod]
-    public async Task SC002_Preview_ExternalListSource_ReturnsCountAndSample()
+    public async Task Preview_ExternalListSource_ReturnsCountAndSample()
     {
         var fixture = BulkEmailFixture.Empty();
         await fixture.SetupAsync(Environment);
@@ -86,7 +86,7 @@ public sealed class BulkEmailPreviewTests(TestContext testContext) : EndToEndTes
 
     // Validator: requests carrying both source shapes must be rejected.
     [TestMethod]
-    public async Task SC003_Preview_BothSourcesProvided_ReturnsBadRequest()
+    public async Task Preview_BothSourcesProvided_ReturnsBadRequest()
     {
         var fixture = BulkEmailFixture.Empty();
         await fixture.SetupAsync(Environment);

@@ -24,7 +24,7 @@ public sealed class CreateTicketedEventTests(TestContext testContext) : EndToEnd
     //         then the creation request transitions to status "Created"
     //         and the response contains the new event's ID.
     [TestMethod]
-    public async Task SC001_ValidRequest_EventReachesCreatedStatus()
+    public async Task ValidRequest_EventReachesCreatedStatus()
     {
         // Arrange
         var fixture = CreateTicketedEventFixture.WithTeam();

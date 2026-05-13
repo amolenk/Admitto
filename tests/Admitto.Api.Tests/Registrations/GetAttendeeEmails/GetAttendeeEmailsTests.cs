@@ -10,7 +10,7 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.GetAttendeeEmails;
 public sealed class GetAttendeeEmailsTests(TestContext testContext) : EndToEndTestBase
 {
     [TestMethod]
-    public async Task SC001_Organizer_ReturnsEmailList()
+    public async Task Organizer_ReturnsEmailList()
     {
         var fixture = GetAttendeeEmailsFixture.WithEmails();
         await fixture.SetupAsync(Environment);
@@ -30,7 +30,7 @@ public sealed class GetAttendeeEmailsTests(TestContext testContext) : EndToEndTe
     }
 
     [TestMethod]
-    public async Task SC002_NoEmails_ReturnsEmptyList()
+    public async Task NoEmails_ReturnsEmptyList()
     {
         var fixture = GetAttendeeEmailsFixture.Empty();
         await fixture.SetupAsync(Environment);
@@ -47,7 +47,7 @@ public sealed class GetAttendeeEmailsTests(TestContext testContext) : EndToEndTe
     }
 
     [TestMethod]
-    public async Task SC003_NonMember_Returns403()
+    public async Task NonMember_Returns403()
     {
         var fixture = GetAttendeeEmailsFixture.Empty();
         await fixture.SetupAsync(Environment);

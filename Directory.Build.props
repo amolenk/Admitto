@@ -10,7 +10,9 @@
 
     <ItemGroup>
         <InternalsVisibleTo Include="$(MSBuildProjectName).Tests" />
-        <InternalsVisibleTo Include="$(MSBuildProjectName).Domain.Tests" />
+        <InternalsVisibleTo Include="$(MSBuildProjectName).DomainTests" />
+        <InternalsVisibleTo Include="$(MSBuildProjectName).IntegrationTests" />
+        <InternalsVisibleTo Include="Admitto.Testing" />
         <InternalsVisibleTo Include="DynamicProxyGenAssembly2" />
     </ItemGroup>
 

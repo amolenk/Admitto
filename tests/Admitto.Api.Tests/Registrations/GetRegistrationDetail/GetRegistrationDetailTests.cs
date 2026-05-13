@@ -10,7 +10,7 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.GetRegistrationDetail;
 public sealed class GetRegistrationDetailTests(TestContext testContext) : EndToEndTestBase
 {
     [TestMethod]
-    public async Task SC001_Organizer_ReturnsFullRegistrationDetail()
+    public async Task Organizer_ReturnsFullRegistrationDetail()
     {
         var fixture = GetRegistrationDetailFixture.WithActiveRegistration();
         await fixture.SetupAsync(Environment);
@@ -37,7 +37,7 @@ public sealed class GetRegistrationDetailTests(TestContext testContext) : EndToE
     }
 
     [TestMethod]
-    public async Task SC002_RegistrationNotFound_Returns404()
+    public async Task RegistrationNotFound_Returns404()
     {
         var fixture = GetRegistrationDetailFixture.WithActiveRegistration();
         await fixture.SetupAsync(Environment);
@@ -50,7 +50,7 @@ public sealed class GetRegistrationDetailTests(TestContext testContext) : EndToE
     }
 
     [TestMethod]
-    public async Task SC003_UnknownTeamSlug_Returns404()
+    public async Task UnknownTeamSlug_Returns404()
     {
         var fixture = GetRegistrationDetailFixture.WithActiveRegistration();
         await fixture.SetupAsync(Environment);
@@ -63,7 +63,7 @@ public sealed class GetRegistrationDetailTests(TestContext testContext) : EndToE
     }
 
     [TestMethod]
-    public async Task SC004_UnknownEventSlug_Returns404()
+    public async Task UnknownEventSlug_Returns404()
     {
         var fixture = GetRegistrationDetailFixture.WithActiveRegistration();
         await fixture.SetupAsync(Environment);
@@ -76,7 +76,7 @@ public sealed class GetRegistrationDetailTests(TestContext testContext) : EndToE
     }
 
     [TestMethod]
-    public async Task SC005_NonMember_Returns403()
+    public async Task NonMember_Returns403()
     {
         var fixture = GetRegistrationDetailFixture.WithActiveRegistration();
         await fixture.SetupAsync(Environment);

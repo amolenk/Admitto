@@ -21,7 +21,7 @@ public sealed class BulkEmailCancelTests(TestContext testContext) : EndToEndTest
     // SC-8.3: cancelling while still Pending (before fan-out picks up) ends the
     // job in Cancelled with zero sends and no MailDev traffic.
     [TestMethod]
-    public async Task SC001_CancelFromPending_EndsCancelledWithZeroSent()
+    public async Task CancelFromPending_EndsCancelledWithZeroSent()
     {
         var fixture = BulkEmailFixture.Empty().WithTicketTemplate();
         await fixture.SetupAsync(Environment);
@@ -63,7 +63,7 @@ public sealed class BulkEmailCancelTests(TestContext testContext) : EndToEndTest
 
     // SC-8.3: cancelling a job that is already in a terminal state is a 409.
     [TestMethod]
-    public async Task SC002_CancelFromTerminalState_ReturnsConflict()
+    public async Task CancelFromTerminalState_ReturnsConflict()
     {
         var fixture = BulkEmailFixture.Empty()
             .WithTicketTemplate()

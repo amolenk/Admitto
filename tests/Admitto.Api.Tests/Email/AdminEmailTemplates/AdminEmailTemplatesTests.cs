@@ -14,7 +14,7 @@ public sealed class AdminEmailTemplatesTests(TestContext testContext) : EndToEnd
     // WHEN an organizer POSTs a new built-in template for team "acme-templates"
     // THEN the response is 201 Created and returns a GUID id
     [TestMethod]
-    public async Task SC001_CreateTeamTemplate_ReturnsCreated()
+    public async Task CreateTeamTemplate_ReturnsCreated()
     {
         var fixture = AdminEmailTemplatesFixture.EmptyTemplates();
         await fixture.SetupEmptyAsync(Environment);
@@ -43,7 +43,7 @@ public sealed class AdminEmailTemplatesTests(TestContext testContext) : EndToEnd
     // WHEN an organizer POSTs a new built-in template for event "templatesconf"
     // THEN the response is 201 Created
     [TestMethod]
-    public async Task SC002_CreateEventTemplate_ReturnsCreated()
+    public async Task CreateEventTemplate_ReturnsCreated()
     {
         var fixture = AdminEmailTemplatesFixture.EmptyTemplates();
         await fixture.SetupEmptyAsync(Environment);
@@ -68,7 +68,7 @@ public sealed class AdminEmailTemplatesTests(TestContext testContext) : EndToEnd
     // WHEN an organizer reads a team-scoped ticket template
     // THEN the response is 200 OK with the stored subject and bodies
     [TestMethod]
-    public async Task SC003_GetTeamTemplate_ReturnsOk()
+    public async Task GetTeamTemplate_ReturnsOk()
     {
         var fixture = AdminEmailTemplatesFixture.WithTeamTemplate();
         var (id, _) = await fixture.SetupTeamTemplateAsync(Environment);
@@ -90,7 +90,7 @@ public sealed class AdminEmailTemplatesTests(TestContext testContext) : EndToEnd
     // WHEN an organizer reads an event-scoped ticket template
     // THEN the response is 200 OK with the event-scoped subject
     [TestMethod]
-    public async Task SC004_GetEventTemplate_ReturnsOk()
+    public async Task GetEventTemplate_ReturnsOk()
     {
         var fixture = AdminEmailTemplatesFixture.WithBothTemplates();
         var (_, _, eventTemplateId, _) = await fixture.SetupBothTemplatesAsync(Environment);
@@ -110,7 +110,7 @@ public sealed class AdminEmailTemplatesTests(TestContext testContext) : EndToEnd
     // WHEN an organizer submits an update with the correct version
     // THEN the response is 200 OK and a subsequent GET returns the updated content
     [TestMethod]
-    public async Task SC005_UpdateTeamTemplate_WithCorrectVersion_ReturnsOk()
+    public async Task UpdateTeamTemplate_WithCorrectVersion_ReturnsOk()
     {
         var fixture = AdminEmailTemplatesFixture.WithTeamTemplate();
         var (id, version) = await fixture.SetupTeamTemplateAsync(Environment);
@@ -142,7 +142,7 @@ public sealed class AdminEmailTemplatesTests(TestContext testContext) : EndToEnd
     // WHEN an organizer deletes a team-scoped template
     // THEN the response is 204 No Content and the list shows the built-in as not customised
     [TestMethod]
-    public async Task SC006_DeleteTeamTemplate_ReturnsNoContent()
+    public async Task DeleteTeamTemplate_ReturnsNoContent()
     {
         var fixture = AdminEmailTemplatesFixture.WithTeamTemplate();
         var (id, version) = await fixture.SetupTeamTemplateAsync(Environment);
@@ -171,7 +171,7 @@ public sealed class AdminEmailTemplatesTests(TestContext testContext) : EndToEnd
     // WHEN an organizer deletes the event-scoped template
     // THEN the response is 204 No Content
     [TestMethod]
-    public async Task SC007_DeleteEventTemplate_ReturnsNoContent()
+    public async Task DeleteEventTemplate_ReturnsNoContent()
     {
         var fixture = AdminEmailTemplatesFixture.WithBothTemplates();
         var (_, _, eventTemplateId, eventVersion) = await fixture.SetupBothTemplatesAsync(Environment);
@@ -187,7 +187,7 @@ public sealed class AdminEmailTemplatesTests(TestContext testContext) : EndToEnd
     // WHEN a user who is not a member of team "acme-templates" attempts to create a template
     // THEN the request is denied with a 403 Forbidden
     [TestMethod]
-    public async Task SC008_NonMember_Denied_Returns403()
+    public async Task NonMember_Denied_Returns403()
     {
         var fixture = AdminEmailTemplatesFixture.EmptyTemplates();
         await fixture.SetupEmptyAsync(Environment);
@@ -212,7 +212,7 @@ public sealed class AdminEmailTemplatesTests(TestContext testContext) : EndToEnd
     // WHEN an organizer submits an update with a Version older than the stored value
     // THEN the request is rejected with a 409 Conflict
     [TestMethod]
-    public async Task SC009_UpdateWithStaleVersion_ReturnsConflict()
+    public async Task UpdateWithStaleVersion_ReturnsConflict()
     {
         var fixture = AdminEmailTemplatesFixture.WithTeamTemplate();
         var (id, _) = await fixture.SetupTeamTemplateAsync(Environment);
@@ -237,7 +237,7 @@ public sealed class AdminEmailTemplatesTests(TestContext testContext) : EndToEnd
     // WHEN an organizer lists templates for a team with no customisations
     // THEN the list includes all built-in templates with isCustomised: false and no id
     [TestMethod]
-    public async Task SC010_ListTemplates_IncludesVirtualBuiltIns()
+    public async Task ListTemplates_IncludesVirtualBuiltIns()
     {
         var fixture = AdminEmailTemplatesFixture.EmptyTemplates();
         await fixture.SetupEmptyAsync(Environment);

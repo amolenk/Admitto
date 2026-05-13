@@ -13,7 +13,7 @@ public sealed class AdminEmailSettingsTests(TestContext testContext) : EndToEndT
     // WHEN an organizer creates email settings for team "acme-settings" with no version
     // THEN the response is 201 Created and a subsequent GET returns the settings
     [TestMethod]
-    public async Task SC001_CreateTeamSettings_ReturnsCreated()
+    public async Task CreateTeamSettings_ReturnsCreated()
     {
         var fixture = AdminEmailSettingsFixture.EmptySettings();
         await fixture.SetupEmptyAsync(Environment);
@@ -41,7 +41,7 @@ public sealed class AdminEmailSettingsTests(TestContext testContext) : EndToEndT
     // WHEN an organizer creates email settings for event "settingsconf" with no version
     // THEN the response is 201 Created
     [TestMethod]
-    public async Task SC002_CreateEventSettings_ReturnsCreated()
+    public async Task CreateEventSettings_ReturnsCreated()
     {
         var fixture = AdminEmailSettingsFixture.EmptySettings();
         await fixture.SetupEmptyAsync(Environment);
@@ -69,7 +69,7 @@ public sealed class AdminEmailSettingsTests(TestContext testContext) : EndToEndT
     // WHEN an organizer reads team-scoped settings
     // THEN the response contains HasPassword and does not expose the plaintext password field
     [TestMethod]
-    public async Task SC003_GetTeamSettings_ReturnsMaskedResponse()
+    public async Task GetTeamSettings_ReturnsMaskedResponse()
     {
         var fixture = AdminEmailSettingsFixture.WithTeamSettings();
         await fixture.SetupTeamSettingsAsync(Environment);
@@ -92,7 +92,7 @@ public sealed class AdminEmailSettingsTests(TestContext testContext) : EndToEndT
     // WHEN an organizer reads event-scoped settings
     // THEN the response is 200 OK with the expected fields
     [TestMethod]
-    public async Task SC004_GetEventSettings_ReturnsMaskedResponse()
+    public async Task GetEventSettings_ReturnsMaskedResponse()
     {
         var fixture = AdminEmailSettingsFixture.WithBothSettings();
         await fixture.SetupBothSettingsAsync(Environment);
@@ -112,7 +112,7 @@ public sealed class AdminEmailSettingsTests(TestContext testContext) : EndToEndT
     // WHEN an organizer submits an update with the correct Version
     // THEN the response is 200 OK
     [TestMethod]
-    public async Task SC005_UpdateTeamSettings_WithCorrectVersion_ReturnsOk()
+    public async Task UpdateTeamSettings_WithCorrectVersion_ReturnsOk()
     {
         var fixture = AdminEmailSettingsFixture.WithTeamSettings();
         var version = await fixture.SetupTeamSettingsAsync(Environment);
@@ -140,7 +140,7 @@ public sealed class AdminEmailSettingsTests(TestContext testContext) : EndToEndT
     // WHEN an organizer submits an update to event-scoped settings with the correct Version
     // THEN the response is 200 OK
     [TestMethod]
-    public async Task SC006_UpdateEventSettings_WithCorrectVersion_ReturnsOk()
+    public async Task UpdateEventSettings_WithCorrectVersion_ReturnsOk()
     {
         var fixture = AdminEmailSettingsFixture.WithBothSettings();
         var (_, eventVersion) = await fixture.SetupBothSettingsAsync(Environment);
@@ -168,7 +168,7 @@ public sealed class AdminEmailSettingsTests(TestContext testContext) : EndToEndT
     // WHEN an organizer deletes team-scoped settings
     // THEN the response is 204 No Content and a subsequent GET returns 404
     [TestMethod]
-    public async Task SC007_DeleteTeamSettings_ReturnsNoContent()
+    public async Task DeleteTeamSettings_ReturnsNoContent()
     {
         var fixture = AdminEmailSettingsFixture.WithTeamSettings();
         var version = await fixture.SetupTeamSettingsAsync(Environment);
@@ -189,7 +189,7 @@ public sealed class AdminEmailSettingsTests(TestContext testContext) : EndToEndT
     // WHEN an organizer deletes event-scoped settings
     // THEN the response is 204 No Content
     [TestMethod]
-    public async Task SC008_DeleteEventSettings_ReturnsNoContent()
+    public async Task DeleteEventSettings_ReturnsNoContent()
     {
         var fixture = AdminEmailSettingsFixture.WithBothSettings();
         var (_, eventVersion) = await fixture.SetupBothSettingsAsync(Environment);
@@ -205,7 +205,7 @@ public sealed class AdminEmailSettingsTests(TestContext testContext) : EndToEndT
     // WHEN an organizer submits an update with a Version older than the stored value
     // THEN the request is rejected with a 409 Conflict
     [TestMethod]
-    public async Task SC009_UpdateWithStaleVersion_ReturnsConflict()
+    public async Task UpdateWithStaleVersion_ReturnsConflict()
     {
         var fixture = AdminEmailSettingsFixture.WithTeamSettings();
         await fixture.SetupTeamSettingsAsync(Environment);
@@ -233,7 +233,7 @@ public sealed class AdminEmailSettingsTests(TestContext testContext) : EndToEndT
     // WHEN a user who is not a member of team "acme-settings" attempts to read or update settings
     // THEN the request is denied with a 403 Forbidden
     [TestMethod]
-    public async Task SC010_NonMember_Denied_Returns403()
+    public async Task NonMember_Denied_Returns403()
     {
         var fixture = AdminEmailSettingsFixture.WithTeamSettings();
         await fixture.SetupTeamSettingsAsync(Environment);
@@ -249,7 +249,7 @@ public sealed class AdminEmailSettingsTests(TestContext testContext) : EndToEndT
     // WHEN an organizer tests team-scoped email settings
     // THEN the response is 200 OK and MailDev receives the diagnostic message
     [TestMethod]
-    public async Task SC011_TestTeamSettings_ReturnsOkAndSendsDiagnostic()
+    public async Task TestTeamSettings_ReturnsOkAndSendsDiagnostic()
     {
         var fixture = AdminEmailSettingsFixture.WithTeamSettings();
         await fixture.SetupTeamSmtpSettingsAsync(Environment);
@@ -270,7 +270,7 @@ public sealed class AdminEmailSettingsTests(TestContext testContext) : EndToEndT
     // WHEN an organizer tests event-scoped email settings
     // THEN the response is 200 OK and MailDev receives the diagnostic message
     [TestMethod]
-    public async Task SC012_TestEventSettings_ReturnsOkAndSendsDiagnostic()
+    public async Task TestEventSettings_ReturnsOkAndSendsDiagnostic()
     {
         var fixture = AdminEmailSettingsFixture.WithBothSettings();
         await fixture.SetupBothSmtpSettingsAsync(Environment);
@@ -291,7 +291,7 @@ public sealed class AdminEmailSettingsTests(TestContext testContext) : EndToEndT
     // WHEN an organizer submits an invalid recipient
     // THEN the endpoint validator rejects the request with 400 Bad Request
     [TestMethod]
-    public async Task SC013_TestEmailSettings_InvalidRecipient_ReturnsBadRequest()
+    public async Task TestEmailSettings_InvalidRecipient_ReturnsBadRequest()
     {
         var fixture = AdminEmailSettingsFixture.EmptySettings();
         await fixture.SetupEmptyAsync(Environment);
@@ -308,7 +308,7 @@ public sealed class AdminEmailSettingsTests(TestContext testContext) : EndToEndT
     // WHEN a non-organizer tests email settings
     // THEN the request is denied before a diagnostic email is sent
     [TestMethod]
-    public async Task SC014_TestEmailSettings_NonOrganizer_ReturnsForbidden()
+    public async Task TestEmailSettings_NonOrganizer_ReturnsForbidden()
     {
         var fixture = AdminEmailSettingsFixture.WithTeamSettings();
         await fixture.SetupTeamSmtpSettingsAsync(Environment);

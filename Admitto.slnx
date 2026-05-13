@@ -15,7 +15,8 @@
   <Folder Name="/tests/">
     <Project Path="tests/Admitto.Api.Tests/Admitto.Api.Tests.csproj" />
     <Project Path="tests/Admitto.Core.ArchTests/Admitto.Core.ArchTests.csproj" />
-    <Project Path="tests/Admitto.Core.Tests/Admitto.Core.Tests.csproj" />
+    <Project Path="tests/Admitto.Core.DomainTests/Admitto.Core.DomainTests.csproj" />
+    <Project Path="tests/Admitto.Core.IntegrationTests/Admitto.Core.IntegrationTests.csproj" />
     <Project Path="tests/Admitto.Testing/Admitto.Testing.csproj" />
   </Folder>
 </Solution>

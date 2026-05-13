@@ -11,7 +11,7 @@ public sealed class OtpVerifyTests(TestContext testContext) : EndToEndTestBase
 {
     // SC006: Successful OTP verification returns 200 with token
     [TestMethod]
-    public async Task SC006_VerifyOtp_CorrectCode_Returns200WithToken()
+    public async Task VerifyOtp_CorrectCode_Returns200WithToken()
     {
         var fixture = OtpVerifyFixture.WithActiveCode();
         await fixture.SetupAsync(Environment);
@@ -33,7 +33,7 @@ public sealed class OtpVerifyTests(TestContext testContext) : EndToEndTestBase
 
     // SC007: Wrong OTP code returns 400 and increments failed attempts
     [TestMethod]
-    public async Task SC007_VerifyOtp_WrongCode_Returns400()
+    public async Task VerifyOtp_WrongCode_Returns400()
     {
         var fixture = OtpVerifyFixture.WithActiveCode();
         await fixture.SetupAsync(Environment);
@@ -50,7 +50,7 @@ public sealed class OtpVerifyTests(TestContext testContext) : EndToEndTestBase
 
     // SC008: Code locked after 5 failed attempts returns 400
     [TestMethod]
-    public async Task SC008_VerifyOtp_FifthFailedAttempt_LocksCode_Returns400()
+    public async Task VerifyOtp_FifthFailedAttempt_LocksCode_Returns400()
     {
         var fixture = OtpVerifyFixture.WithActiveCode();
         await fixture.SetupAsync(Environment);
@@ -68,7 +68,7 @@ public sealed class OtpVerifyTests(TestContext testContext) : EndToEndTestBase
 
     // SC009: Expired code returns 400
     [TestMethod]
-    public async Task SC009_VerifyOtp_ExpiredCode_Returns400()
+    public async Task VerifyOtp_ExpiredCode_Returns400()
     {
         var fixture = OtpVerifyFixture.WithActiveCode();
         await fixture.SetupAsync(Environment);
@@ -85,7 +85,7 @@ public sealed class OtpVerifyTests(TestContext testContext) : EndToEndTestBase
 
     // SC010: Already-used code returns 400
     [TestMethod]
-    public async Task SC010_VerifyOtp_AlreadyUsedCode_Returns400()
+    public async Task VerifyOtp_AlreadyUsedCode_Returns400()
     {
         var fixture = OtpVerifyFixture.WithActiveCode();
         await fixture.SetupAsync(Environment);
@@ -102,7 +102,7 @@ public sealed class OtpVerifyTests(TestContext testContext) : EndToEndTestBase
 
     // SC011: No code exists for email+event returns 400
     [TestMethod]
-    public async Task SC011_VerifyOtp_NoCodeForEmail_Returns400()
+    public async Task VerifyOtp_NoCodeForEmail_Returns400()
     {
         var fixture = OtpVerifyFixture.WithActiveCode();
         await fixture.SetupAsync(Environment);

@@ -1,5 +1,5 @@
 using Amolenk.Admitto.Api.Tests.Infrastructure.Hosting;
-using Amolenk.Admitto.Core.Organization.Tests.Application.Builders;
+using Amolenk.Admitto.Testing.Builders.Organization.Application;
 
 namespace Amolenk.Admitto.Api.Tests.Organization.TicketedEventManagement;
 

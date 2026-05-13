@@ -11,7 +11,7 @@ public sealed class BulkEmailAuthorizationTests(TestContext testContext) : EndTo
     // SC-8.6: every bulk-email admin endpoint requires Organizer team membership.
     // Bob is authenticated but not a member of the team — every call must 403.
     [TestMethod]
-    public async Task SC001_NonOrganizer_GetsForbiddenOnEveryEndpoint()
+    public async Task NonOrganizer_GetsForbiddenOnEveryEndpoint()
     {
         var fixture = BulkEmailFixture.Empty().WithTicketTemplate();
         await fixture.SetupAsync(Environment);

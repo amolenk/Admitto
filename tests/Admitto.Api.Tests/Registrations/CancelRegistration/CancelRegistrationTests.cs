@@ -10,7 +10,7 @@ public sealed class CancelRegistrationTests(TestContext testContext) : EndToEndT
 {
     // SC-C01: Admin cancels active registration with AttendeeRequest — returns 204
     [TestMethod]
-    public async Task SC001_CancelRegistration_AttendeeRequest_Returns204()
+    public async Task CancelRegistration_AttendeeRequest_Returns204()
     {
         var fixture = CancelRegistrationFixture.ActiveRegistration();
         await fixture.SetupAsync(Environment);
@@ -25,7 +25,7 @@ public sealed class CancelRegistrationTests(TestContext testContext) : EndToEndT
 
     // SC-C02: Admin cancels active registration with VisaLetterDenied — returns 204
     [TestMethod]
-    public async Task SC002_CancelRegistration_VisaLetterDenied_Returns204()
+    public async Task CancelRegistration_VisaLetterDenied_Returns204()
     {
         var fixture = CancelRegistrationFixture.ActiveRegistration();
         await fixture.SetupAsync(Environment);
@@ -40,7 +40,7 @@ public sealed class CancelRegistrationTests(TestContext testContext) : EndToEndT
 
     // SC-C03: Admin supplies TicketTypesRemoved reason — returns 400 (invalid)
     [TestMethod]
-    public async Task SC003_CancelRegistration_InvalidReason_Returns400()
+    public async Task CancelRegistration_InvalidReason_Returns400()
     {
         var fixture = CancelRegistrationFixture.ActiveRegistration();
         await fixture.SetupAsync(Environment);
@@ -55,7 +55,7 @@ public sealed class CancelRegistrationTests(TestContext testContext) : EndToEndT
 
     // SC-C04: Crew member (Bob) cannot cancel — returns 403
     [TestMethod]
-    public async Task SC004_CancelRegistration_CrewMember_Returns403()
+    public async Task CancelRegistration_CrewMember_Returns403()
     {
         var fixture = CancelRegistrationFixture.ActiveRegistration();
         await fixture.SetupAsync(Environment);
@@ -70,7 +70,7 @@ public sealed class CancelRegistrationTests(TestContext testContext) : EndToEndT
 
     // SC-C05: Cancel non-existent registration — returns 404
     [TestMethod]
-    public async Task SC005_CancelRegistration_NotFound_Returns404()
+    public async Task CancelRegistration_NotFound_Returns404()
     {
         var fixture = CancelRegistrationFixture.ActiveRegistration();
         await fixture.SetupAsync(Environment);

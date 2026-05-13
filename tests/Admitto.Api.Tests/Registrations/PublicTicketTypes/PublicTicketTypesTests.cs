@@ -12,7 +12,7 @@ public sealed class PublicTicketTypesTests(TestContext testContext) : EndToEndTe
 {
     // SC001: Only active + self-service-enabled ticket types are returned
     [TestMethod]
-    public async Task SC001_GetPublicTicketTypes_ReturnsOnlySelfServiceEnabledAndActiveTypes()
+    public async Task GetPublicTicketTypes_ReturnsOnlySelfServiceEnabledAndActiveTypes()
     {
         var fixture = PublicTicketTypesFixture.Create();
         await fixture.SetupAsync(Environment, catalog =>
@@ -35,7 +35,7 @@ public sealed class PublicTicketTypesTests(TestContext testContext) : EndToEndTe
 
     // SC002: Empty list returned when no self-service ticket types exist
     [TestMethod]
-    public async Task SC002_GetPublicTicketTypes_NoSelfServiceTypes_ReturnsEmptyList()
+    public async Task GetPublicTicketTypes_NoSelfServiceTypes_ReturnsEmptyList()
     {
         var fixture = PublicTicketTypesFixture.Create();
         await fixture.SetupAsync(Environment, catalog =>
@@ -53,7 +53,7 @@ public sealed class PublicTicketTypesTests(TestContext testContext) : EndToEndTe
 
     // SC003: 404 when event does not exist
     [TestMethod]
-    public async Task SC003_GetPublicTicketTypes_NonExistentEvent_Returns404()
+    public async Task GetPublicTicketTypes_NonExistentEvent_Returns404()
     {
         var fixture = PublicTicketTypesFixture.Create();
         await fixture.SetupAsync(Environment);

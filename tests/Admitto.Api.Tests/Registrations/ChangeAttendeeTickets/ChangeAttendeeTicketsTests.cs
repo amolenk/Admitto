@@ -10,7 +10,7 @@ public sealed class ChangeAttendeeTicketsTests(TestContext testContext) : EndToE
 {
     // SC013: Authenticated organizer changes ticket types — returns 200 OK
     [TestMethod]
-    public async Task SC013_ChangeAttendeeTickets_Organizer_Returns200()
+    public async Task ChangeAttendeeTickets_Organizer_Returns200()
     {
         var fixture = ChangeAttendeeTicketsFixture.WithActiveRegistration();
         await fixture.SetupAsync(Environment);
@@ -25,7 +25,7 @@ public sealed class ChangeAttendeeTicketsTests(TestContext testContext) : EndToE
 
     // SC014: Non-member (Bob) attempts to change ticket types — returns 403
     [TestMethod]
-    public async Task SC014_ChangeAttendeeTickets_NonMember_Returns403()
+    public async Task ChangeAttendeeTickets_NonMember_Returns403()
     {
         var fixture = ChangeAttendeeTicketsFixture.WithActiveRegistration();
         await fixture.SetupAsync(Environment);

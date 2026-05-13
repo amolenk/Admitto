@@ -16,7 +16,7 @@ public sealed class ActivityLogTests(TestContext testContext) : EndToEndTestBase
 {
     // SC001: Registering an attendee via the API produces a single Registered activity entry.
     [TestMethod]
-    public async Task SC001_AdminRegisterAttendee_CreatesRegisteredActivityEntry()
+    public async Task AdminRegisterAttendee_CreatesRegisteredActivityEntry()
     {
         var fixture = ActivityLogFixture.HappyFlow();
         await fixture.SetupAsync(Environment);
@@ -45,7 +45,7 @@ public sealed class ActivityLogTests(TestContext testContext) : EndToEndTestBase
 
     // SC002: Cancelling a registration via the API appends a Cancelled activity entry.
     [TestMethod]
-    public async Task SC002_CancelRegistration_AppendsCancelledActivityEntry()
+    public async Task CancelRegistration_AppendsCancelledActivityEntry()
     {
         var fixture = ActivityLogFixture.HappyFlow();
         await fixture.SetupAsync(Environment);

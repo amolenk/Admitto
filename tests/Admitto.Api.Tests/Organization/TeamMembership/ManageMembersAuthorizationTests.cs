@@ -13,7 +13,7 @@ public sealed class ManageMembersAuthorizationTests(TestContext testContext) : E
     //         when they attempt to add a new member to team "acme",
     //         then the request is rejected as unauthorized.
     [TestMethod]
-    public async Task SC014_CrewMember_CannotManageMembers_Returns403Forbidden()
+    public async Task CrewMember_CannotManageMembers_Returns403Forbidden()
     {
         // Arrange
         var fixture = ManageMembersAuthorizationFixture.BobIsCrewMember();
@@ -35,7 +35,7 @@ public sealed class ManageMembersAuthorizationTests(TestContext testContext) : E
     //         when they add "alice@example.com" as a Crew member of team "acme",
     //         then "alice@example.com" has a Crew membership in team "acme".
     [TestMethod]
-    public async Task SC015_Admin_BypassesOwnershipCheck_Returns200Ok()
+    public async Task Admin_BypassesOwnershipCheck_Returns200Ok()
     {
         // Arrange
         var fixture = ManageMembersAuthorizationFixture.NoTeamMembers();

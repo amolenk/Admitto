@@ -2,7 +2,7 @@ using Amolenk.Admitto.Api.Tests.Infrastructure.Hosting;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
-using TeamBuilder = Amolenk.Admitto.Core.Organization.Tests.Application.Builders.TeamBuilder;
+using TeamBuilder = Amolenk.Admitto.Testing.Builders.Organization.Application.TeamBuilder;
 
 namespace Amolenk.Admitto.Api.Tests.Registrations.GetRegistrations;
 

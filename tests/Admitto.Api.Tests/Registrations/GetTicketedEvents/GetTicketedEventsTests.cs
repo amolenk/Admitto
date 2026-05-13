@@ -10,7 +10,7 @@ public sealed class GetTicketedEventsTests(TestContext testContext) : EndToEndTe
 {
     // SC002: Admin listing excludes archived events — active and cancelled returned, archived excluded
     [TestMethod]
-    public async Task SC002_AdminListingExcludesArchivedEvents_ActiveAndCancelledReturned_ArchivedExcluded()
+    public async Task AdminListingExcludesArchivedEvents_ActiveAndCancelledReturned_ArchivedExcluded()
     {
         // Arrange
         var fixture = GetTicketedEventsFixture.WithMixedStatuses();

@@ -10,7 +10,7 @@ public sealed class OtpRequestTests(TestContext testContext) : EndToEndTestBase
 {
     // SC001: Successful OTP request returns 202 Accepted
     [TestMethod]
-    public async Task SC001_RequestOtp_ValidEmail_Returns202()
+    public async Task RequestOtp_ValidEmail_Returns202()
     {
         var fixture = OtpRequestFixture.ActiveEvent();
         await fixture.SetupAsync(Environment);
@@ -26,7 +26,7 @@ public sealed class OtpRequestTests(TestContext testContext) : EndToEndTestBase
 
     // SC002: Unknown email still returns 202 (no enumeration)
     [TestMethod]
-    public async Task SC002_RequestOtp_UnknownEmail_Returns202()
+    public async Task RequestOtp_UnknownEmail_Returns202()
     {
         var fixture = OtpRequestFixture.ActiveEvent();
         await fixture.SetupAsync(Environment);
@@ -42,7 +42,7 @@ public sealed class OtpRequestTests(TestContext testContext) : EndToEndTestBase
 
     // SC003: Second request supersedes previous pending code and returns 202
     [TestMethod]
-    public async Task SC003_RequestOtp_SupersedesPreviousCode_Returns202()
+    public async Task RequestOtp_SupersedesPreviousCode_Returns202()
     {
         var fixture = OtpRequestFixture.ActiveEvent();
         await fixture.SetupAsync(Environment);
@@ -61,7 +61,7 @@ public sealed class OtpRequestTests(TestContext testContext) : EndToEndTestBase
 
     // SC004: Rate limit exceeded returns 400 (TooManyRequests maps to Validation → 400)
     [TestMethod]
-    public async Task SC004_RequestOtp_RateLimitExceeded_Returns400()
+    public async Task RequestOtp_RateLimitExceeded_Returns400()
     {
         var fixture = OtpRequestFixture.ActiveEvent();
         await fixture.SetupAsync(Environment);
@@ -78,7 +78,7 @@ public sealed class OtpRequestTests(TestContext testContext) : EndToEndTestBase
 
     // SC005: Unknown event slug returns 404
     [TestMethod]
-    public async Task SC005_RequestOtp_UnknownEvent_Returns404()
+    public async Task RequestOtp_UnknownEvent_Returns404()
     {
         var fixture = OtpRequestFixture.ActiveEvent();
         await fixture.SetupAsync(Environment);

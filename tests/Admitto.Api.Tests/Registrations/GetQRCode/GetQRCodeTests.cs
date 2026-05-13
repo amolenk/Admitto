@@ -8,7 +8,7 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.GetQRCode;
 public sealed class GetQRCodeTests(TestContext testContext) : EndToEndTestBase
 {
     [TestMethod]
-    public async Task SC001_ValidSignature_Returns200WithExpectedPng()
+    public async Task ValidSignature_Returns200WithExpectedPng()
     {
         var fixture = GetQRCodeFixture.HappyFlow();
         await fixture.SetupAsync(Environment);
@@ -30,7 +30,7 @@ public sealed class GetQRCodeTests(TestContext testContext) : EndToEndTestBase
     }
 
     [TestMethod]
-    public async Task SC002_InvalidSignature_Returns403()
+    public async Task InvalidSignature_Returns403()
     {
         // Endpoint construction guarantees no Registration row is read when the signature check
         // fails (verify-before-load order). End-to-end coverage of "no row read" is asserted
@@ -48,7 +48,7 @@ public sealed class GetQRCodeTests(TestContext testContext) : EndToEndTestBase
     }
 
     [TestMethod]
-    public async Task SC003_MissingSignature_Returns403()
+    public async Task MissingSignature_Returns403()
     {
         var fixture = GetQRCodeFixture.HappyFlow();
         await fixture.SetupAsync(Environment);
@@ -92,7 +92,7 @@ public sealed class GetQRCodeTests(TestContext testContext) : EndToEndTestBase
     }
 
     [TestMethod]
-    public async Task SC005_ValidSignatureUnknownRegistration_Returns404()
+    public async Task ValidSignatureUnknownRegistration_Returns404()
     {
         var fixture = GetQRCodeFixture.WithoutRegistration();
         await fixture.SetupAsync(Environment);
@@ -108,7 +108,7 @@ public sealed class GetQRCodeTests(TestContext testContext) : EndToEndTestBase
     }
 
     [TestMethod]
-    public async Task SC006_SignatureFromOtherEvent_Returns403()
+    public async Task SignatureFromOtherEvent_Returns403()
     {
         var fixture = GetQRCodeFixture.WithSecondEvent();
         await fixture.SetupAsync(Environment);
@@ -124,7 +124,7 @@ public sealed class GetQRCodeTests(TestContext testContext) : EndToEndTestBase
     }
 
     [TestMethod]
-    public async Task SC007_CancelledRegistration_Returns200()
+    public async Task CancelledRegistration_Returns200()
     {
         var fixture = GetQRCodeFixture.WithCancelledRegistration();
         await fixture.SetupAsync(Environment);

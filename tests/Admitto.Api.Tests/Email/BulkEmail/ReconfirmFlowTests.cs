@@ -31,7 +31,7 @@ public sealed class ReconfirmFlowTests(TestContext testContext) : EndToEndTestBa
     /// in section 7.4.
     /// </summary>
     [TestMethod]
-    public async Task SC001_ReconfirmFanOut_OnlyMailsRegisteredAndNotReconfirmedAttendees()
+    public async Task ReconfirmFanOut_OnlyMailsRegisteredAndNotReconfirmedAttendees()
     {
         var fixture = BulkEmailFixture.Empty()
             .WithReconfirmTemplate()

@@ -11,7 +11,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
 {
     // SC001: Create API key via admin endpoint returns 201 with raw key
     [TestMethod]
-    public async Task SC001_CreateApiKey_ValidRequest_Returns201WithRawKey()
+    public async Task CreateApiKey_ValidRequest_Returns201WithRawKey()
     {
         var fixture = ApiKeyAuthFixture.WithTeam();
         await fixture.SetupAsync(Environment);
@@ -33,7 +33,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
 
     // SC002: Create API key without a name returns 422
     [TestMethod]
-    public async Task SC002_CreateApiKey_MissingName_Returns400()
+    public async Task CreateApiKey_MissingName_Returns400()
     {
         var fixture = ApiKeyAuthFixture.WithTeam();
         await fixture.SetupAsync(Environment);
@@ -48,7 +48,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
 
     // SC003: Create API key with name too long returns 400
     [TestMethod]
-    public async Task SC003_CreateApiKey_NameTooLong_Returns400()
+    public async Task CreateApiKey_NameTooLong_Returns400()
     {
         var fixture = ApiKeyAuthFixture.WithTeam();
         await fixture.SetupAsync(Environment);
@@ -63,7 +63,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
 
     // SC004: List API keys returns 200 with array
     [TestMethod]
-    public async Task SC004_GetApiKeys_ReturnsListWithSeededKey()
+    public async Task GetApiKeys_ReturnsListWithSeededKey()
     {
         var fixture = ApiKeyAuthFixture.WithSeededApiKey();
         await fixture.SetupAsync(Environment);
@@ -84,7 +84,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
 
     // SC005: Revoke API key returns 204
     [TestMethod]
-    public async Task SC005_RevokeApiKey_ActiveKey_Returns204()
+    public async Task RevokeApiKey_ActiveKey_Returns204()
     {
         var fixture = ApiKeyAuthFixture.WithSeededApiKey();
         await fixture.SetupAsync(Environment);
@@ -98,7 +98,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
 
     // SC006: Revoke already-revoked API key returns 409
     [TestMethod]
-    public async Task SC006_RevokeApiKey_AlreadyRevoked_Returns409()
+    public async Task RevokeApiKey_AlreadyRevoked_Returns409()
     {
         var fixture = ApiKeyAuthFixture.WithRevokedApiKey();
         await fixture.SetupAsync(Environment);
@@ -112,7 +112,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
 
     // SC007: Revoke a key that belongs to a different team returns 404
     [TestMethod]
-    public async Task SC007_RevokeApiKey_KeyFromDifferentTeam_Returns404()
+    public async Task RevokeApiKey_KeyFromDifferentTeam_Returns404()
     {
         var fixture = ApiKeyAuthFixture.WithTwoTeams();
         await fixture.SetupAsync(Environment);
@@ -127,7 +127,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
 
     // SC008: No X-Api-Key header returns 401
     [TestMethod]
-    public async Task SC008_PublicEndpoint_NoApiKey_Returns401()
+    public async Task PublicEndpoint_NoApiKey_Returns401()
     {
         var fixture = ApiKeyAuthFixture.WithTeamAndEvent();
         await fixture.SetupAsync(Environment);
@@ -144,7 +144,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
 
     // SC009: Bogus/unknown API key returns 401
     [TestMethod]
-    public async Task SC009_PublicEndpoint_BogusApiKey_Returns401()
+    public async Task PublicEndpoint_BogusApiKey_Returns401()
     {
         var fixture = ApiKeyAuthFixture.WithTeamAndEvent();
         await fixture.SetupAsync(Environment);
@@ -160,7 +160,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
 
     // SC010: Revoked API key returns 401
     [TestMethod]
-    public async Task SC010_PublicEndpoint_RevokedApiKey_Returns401()
+    public async Task PublicEndpoint_RevokedApiKey_Returns401()
     {
         var fixture = ApiKeyAuthFixture.WithTeamAndRevokedApiKey();
         await fixture.SetupAsync(Environment);
@@ -176,7 +176,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
 
     // SC011: API key for Team A used against Team B's route returns 403
     [TestMethod]
-    public async Task SC011_PublicEndpoint_ApiKeyForOtherTeam_Returns403()
+    public async Task PublicEndpoint_ApiKeyForOtherTeam_Returns403()
     {
         var fixture = ApiKeyAuthFixture.WithTwoTeamsAndEvents();
         await fixture.SetupAsync(Environment);
@@ -193,7 +193,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
 
     // SC012: Valid API key for correct team returns 202
     [TestMethod]
-    public async Task SC012_PublicEndpoint_ValidApiKey_Returns202()
+    public async Task PublicEndpoint_ValidApiKey_Returns202()
     {
         var fixture = ApiKeyAuthFixture.WithTeamAndEvent();
         await fixture.SetupAsync(Environment);

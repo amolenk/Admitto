@@ -9,7 +9,7 @@ public sealed class SelfCancelRegistrationTests(TestContext testContext) : EndTo
 {
     // SC001: Successful self-service cancellation returns 200
     [TestMethod]
-    public async Task SC001_SelfCancelRegistration_WithoutToken_Returns200()
+    public async Task SelfCancelRegistration_WithoutToken_Returns200()
     {
         var fixture = SelfCancelRegistrationFixture.WithActiveRegistration();
         await fixture.SetupAsync(Environment);
@@ -22,7 +22,7 @@ public sealed class SelfCancelRegistrationTests(TestContext testContext) : EndTo
 
     // SC002: Registration not found returns 404
     [TestMethod]
-    public async Task SC002_SelfCancelRegistration_NotFound_Returns404()
+    public async Task SelfCancelRegistration_NotFound_Returns404()
     {
         var fixture = SelfCancelRegistrationFixture.WithActiveRegistration();
         await fixture.SetupAsync(Environment);
@@ -37,7 +37,7 @@ public sealed class SelfCancelRegistrationTests(TestContext testContext) : EndTo
 
     // SC003: Already cancelled registration returns 409 Conflict
     [TestMethod]
-    public async Task SC003_SelfCancelRegistration_AlreadyCancelled_Returns409()
+    public async Task SelfCancelRegistration_AlreadyCancelled_Returns409()
     {
         var fixture = SelfCancelRegistrationFixture.WithCancelledRegistration();
         await fixture.SetupAsync(Environment, alreadyCancelled: true);

@@ -19,7 +19,7 @@ public sealed class SendRegistrationEmailTests(TestContext testContext) : EndToE
     }
 
     [TestMethod]
-    public async Task SC001_RegisterAttendee_WithEmailSettings_SendsExactlyOneEmailAndLogsIt()
+    public async Task RegisterAttendee_WithEmailSettings_SendsExactlyOneEmailAndLogsIt()
     {
         var fixture = SendRegistrationEmailFixture.HappyFlow();
         await fixture.SetupAsync(Environment);
@@ -58,7 +58,7 @@ public sealed class SendRegistrationEmailTests(TestContext testContext) : EndToE
     }
 
     [TestMethod]
-    public async Task SC002_RegisterAttendee_WithEmailSettings_RedeliveredEventDoesNotDoubleSend()
+    public async Task RegisterAttendee_WithEmailSettings_RedeliveredEventDoesNotDoubleSend()
     {
         var fixture = SendRegistrationEmailFixture.HappyFlow();
         await fixture.SetupAsync(Environment);

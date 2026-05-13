@@ -19,7 +19,7 @@ public sealed class BulkEmailListAndDetailTests(TestContext testContext) : EndTo
     // SC-8.4: GET / returns the job in the list, GET /{id} returns full detail with
     // per-recipient status visible after fan-out completes.
     [TestMethod]
-    public async Task SC001_ListAndDetail_ReturnPerRecipientStatus()
+    public async Task ListAndDetail_ReturnPerRecipientStatus()
     {
         var fixture = BulkEmailFixture.Empty()
             .WithTicketTemplate()

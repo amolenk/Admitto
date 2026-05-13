@@ -21,7 +21,7 @@ public sealed class BulkEmailCreateTests(TestContext testContext) : EndToEndTest
     // SC-8.2: saved-template path creates a job that fans out, hits MailDev, and produces
     // EmailLog rows tagged with the bulk-job id.
     [TestMethod]
-    public async Task SC001_CreateWithSavedTemplate_FansOutAndLogsEachRecipient()
+    public async Task CreateWithSavedTemplate_FansOutAndLogsEachRecipient()
     {
         var fixture = BulkEmailFixture.Empty()
             .WithTicketTemplate()
@@ -69,7 +69,7 @@ public sealed class BulkEmailCreateTests(TestContext testContext) : EndToEndTest
 
     // SC-8.2: ad-hoc path (no template, subject + bodies on the request) also fans out and logs.
     [TestMethod]
-    public async Task SC002_CreateWithAdHocOverrides_FansOutAndLogsEachRecipient()
+    public async Task CreateWithAdHocOverrides_FansOutAndLogsEachRecipient()
     {
         var fixture = BulkEmailFixture.Empty()
             .WithTicketTemplate() // template still required, ad-hoc only overrides

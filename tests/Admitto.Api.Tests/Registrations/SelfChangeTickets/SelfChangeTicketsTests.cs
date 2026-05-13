@@ -10,7 +10,7 @@ public sealed class SelfChangeTicketsTests(TestContext testContext) : EndToEndTe
 {
     // SC001: Successful self-service ticket change returns 200
     [TestMethod]
-    public async Task SC001_SelfChangeTickets_ValidChange_Returns200()
+    public async Task SelfChangeTickets_ValidChange_Returns200()
     {
         var fixture = SelfChangeTicketsFixture.WithOpenRegistration();
         await fixture.SetupAsync(Environment, workshopCapacity: 20, workshopUsed: 5);
@@ -28,7 +28,7 @@ public sealed class SelfChangeTicketsTests(TestContext testContext) : EndToEndTe
 
     // SC002: Registration not found returns 404
     [TestMethod]
-    public async Task SC002_SelfChangeTickets_NotFound_Returns404()
+    public async Task SelfChangeTickets_NotFound_Returns404()
     {
         var fixture = SelfChangeTicketsFixture.WithOpenRegistration();
         await fixture.SetupAsync(Environment);
@@ -48,7 +48,7 @@ public sealed class SelfChangeTicketsTests(TestContext testContext) : EndToEndTe
 
     // SC003: Workshop at capacity returns 400
     [TestMethod]
-    public async Task SC003_SelfChangeTickets_CapacityFull_Returns400()
+    public async Task SelfChangeTickets_CapacityFull_Returns400()
     {
         var fixture = SelfChangeTicketsFixture.WithOpenRegistration();
         await fixture.SetupAsync(Environment, workshopCapacity: 20, workshopUsed: 20);
@@ -66,7 +66,7 @@ public sealed class SelfChangeTicketsTests(TestContext testContext) : EndToEndTe
 
     // SC004: Registration window closed returns 400
     [TestMethod]
-    public async Task SC004_SelfChangeTickets_RegistrationWindowClosed_Returns400()
+    public async Task SelfChangeTickets_RegistrationWindowClosed_Returns400()
     {
         var fixture = SelfChangeTicketsFixture.WithOpenRegistration();
         await fixture.SetupAsync(Environment, registrationWindowClosed: true);
@@ -84,7 +84,7 @@ public sealed class SelfChangeTicketsTests(TestContext testContext) : EndToEndTe
 
     // SC005: Cancelled registration returns 409
     [TestMethod]
-    public async Task SC005_SelfChangeTickets_AlreadyCancelled_Returns409()
+    public async Task SelfChangeTickets_AlreadyCancelled_Returns409()
     {
         var fixture = SelfChangeTicketsFixture.WithOpenRegistration();
         await fixture.SetupAsync(Environment, alreadyCancelled: true);
@@ -102,7 +102,7 @@ public sealed class SelfChangeTicketsTests(TestContext testContext) : EndToEndTe
 
     // SC006: Unknown ticket type slug returns 400
     [TestMethod]
-    public async Task SC006_SelfChangeTickets_UnknownTicketType_Returns400()
+    public async Task SelfChangeTickets_UnknownTicketType_Returns400()
     {
         var fixture = SelfChangeTicketsFixture.WithOpenRegistration();
         await fixture.SetupAsync(Environment);
@@ -120,7 +120,7 @@ public sealed class SelfChangeTicketsTests(TestContext testContext) : EndToEndTe
 
     // SC007: Identical ticket set is a no-op success returning 200
     [TestMethod]
-    public async Task SC007_SelfChangeTickets_SameSelection_Returns200()
+    public async Task SelfChangeTickets_SameSelection_Returns200()
     {
         var fixture = SelfChangeTicketsFixture.WithOpenRegistration();
         await fixture.SetupAsync(Environment);

@@ -20,8 +20,8 @@ Admitto uses three complementary test suites:
 
 | Project | Tests | Database | Dependencies |
 | :------ | :---- | :------- | :----------- |
-| `*.Domain.Tests` | Aggregate invariants, value objects, domain logic | None (pure in-memory) | Direct entity construction via builders |
-| `*.Tests` | Handler integration, query results, event-driven workflows, jobs, persistence | Real PostgreSQL via Aspire | Aspire AppHost, Respawn, NSubstitute for cross-module facades |
+| `Admitto.Core.DomainTests` | Aggregate invariants, value objects, domain logic | None (pure in-memory) | Direct entity construction via builders |
+| `Admitto.Core.IntegrationTests` | Handler integration, query results, event-driven workflows, jobs, persistence | Real PostgreSQL via Aspire | Aspire AppHost, Respawn, NSubstitute for cross-module facades |
 | `Admitto.Api.Tests` | Routing, validation, authorization, and full HTTP pipeline behavior | Real PostgreSQL via Aspire | Aspire AppHost, real HTTP pipeline, test auth helpers |
 
 **Guiding principle:** Domain tests verify *business rules* in isolation; module integration tests verify *application orchestration* with real infrastructure; API tests verify the *full HTTP pipeline*.
@@ -41,7 +41,7 @@ Test classes inherit `AspireIntegrationTestBase` and receive `TestContext` via p
 public sealed class CreateCouponTests(TestContext testContext) : AspireIntegrationTestBase
 {
     [TestMethod]
-    public async ValueTask SC001_CreateCoupon_ValidInput_PersistsCouponAndRaisesDomainEvent()
+    public async ValueTask CreateCoupon_ValidInput_PersistsCouponAndRaisesDomainEvent()
     {
         // Arrange — fixture + handler
         // Act — handler.HandleAsync(command, testContext.CancellationToken)
@@ -76,7 +76,7 @@ internal sealed class RevokeCouponFixture
 
 ### Builder reuse
 
-Domain builders (e.g. `CouponBuilder`) live in `*.Domain.Tests` and are reused by `*.Tests` via a project reference. This ensures test data construction is consistent across both tiers.
+Builders (e.g. `CouponBuilder`) live in `Admitto.Testing` and are shared across all test projects. This ensures test data construction is consistent across all test tiers.
 
 **Important:** When seeding coupons or other time-sensitive entities for integration tests, always set explicit future expiry dates (e.g. `DateTimeOffset.UtcNow.AddDays(30)`). The builder defaults use fixed past dates that work for domain tests (which control `now`) but cause status mismatches in integration tests that use `DateTimeOffset.UtcNow`.
 
@@ -102,17 +102,15 @@ private static CreateCouponHandler NewCreateCouponHandler(CreateCouponFixture fi
 
 ### Test naming convention
 
-**Domain tests** (`*.Domain.Tests`) use: `{Method}_{Condition}_{ExpectedOutcome}`
+All tests use: `{Method}_{Condition}_{ExpectedOutcome}`
 
-Domain tests describe aggregate invariants — business rules that hold regardless of which feature exercises them. They must **never** reference feature-specific IDs like `SC-001` or `NFR-003`.
+Domain tests describe aggregate invariants — business rules that hold regardless of which feature exercises them. They must **never** reference feature-specific IDs.
 
 Examples: `Create_UnknownTicketType_ThrowsUnknownTicketTypesError`, `Revoke_RedeemedCoupon_ThrowsCouponAlreadyRedeemedError`
 
-**Integration and API tests** (`*.Tests`, `Admitto.Api.Tests`) use: `{ScenarioId}_{UseCase}_{Condition}_{ExpectedOutcome}`
+**Integration and API tests** (`Admitto.Core.IntegrationTests`, `Admitto.Api.Tests`) use the same convention, focussing on the use-case entry point and observable outcome:
 
-These tests map to acceptance scenarios from a feature spec, so the `SC-*` prefix creates traceability back to the spec. Keep one scenario = one test whenever possible, and use only documented exceptions.
-
-Example: `SC001_CreateCoupon_ValidInput_PersistsCouponAndRaisesDomainEvent`
+Example: `CreateCoupon_ValidInput_PersistsCouponAndRaisesDomainEvent`
 
 ### Error assertion pattern
 

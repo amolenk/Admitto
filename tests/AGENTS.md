@@ -11,8 +11,8 @@ dotnet test tests/Admitto.Core.ArchTests/Admitto.Core.ArchTests.csproj
 Architecture tests enforce dependency direction, naming conventions, and placement rules (see §8.15 in `docs/arc42/08-crosscutting-concepts.md`). Fix violations before running other suites.
 
 ## Choosing the Right Suite
-- Domain rule or value-object behavior → `Admitto.Core.Tests` (under `Module/*/Domain/`)
-- Handler, event-driven workflow, persistence, or job behavior → `Admitto.Core.Tests` (under `Module/*/`)
+- Domain rule or value-object behavior → `Admitto.Core.DomainTests`
+- Handler, event-driven workflow, persistence, or job behavior → `Admitto.Core.IntegrationTests`
 - API wiring, auth, or route pipeline → `Admitto.Api.Tests`
 
 ## Commands
@@ -20,10 +20,13 @@ Architecture tests enforce dependency direction, naming conventions, and placeme
 # Architecture tests (run first)
 dotnet test tests/Admitto.Core.ArchTests/Admitto.Core.ArchTests.csproj
 
-# All core module tests (domain + integration)
-dotnet test tests/Admitto.Core.Tests/Admitto.Core.Tests.csproj
+# Domain unit tests
+dotnet test tests/Admitto.Core.DomainTests/Admitto.Core.DomainTests.csproj
 
-# API-level tests
+# Core integration tests (requires container runtime)
+dotnet test tests/Admitto.Core.IntegrationTests/Admitto.Core.IntegrationTests.csproj
+
+# API-level tests (requires container runtime)
 dotnet test tests/Admitto.Api.Tests/Admitto.Api.Tests.csproj
 ```
 
@@ -31,38 +34,39 @@ dotnet test tests/Admitto.Api.Tests/Admitto.Api.Tests.csproj
 - Aspire-backed integration/end-to-end suites start a distributed app host and require container runtime support.
 - These suites reset databases between tests through shared base classes/fixtures; preserve that behavior when adding tests.
 
-## Feature Scenario Coverage
-Every acceptance scenario (`SC-*`) should have a corresponding test method. One scenario = one test by default; follow only documented exceptions.
-
 ### Folder Structure
-Mirror the source `Module/{Module}/Application/UseCases/{Feature}/{UseCaseName}/` structure under `Admitto.Core.Tests`:
+Mirror the source structure under the appropriate test project:
 
 ```
-tests/Admitto.Core.Tests/
-└── Module/Organization/
-    └── Application/UseCases/
-        └── TeamManagement/
-            └── CreateTeam/
-                ├── CreateTeamTests.cs
-                └── CreateTeamFixture.cs
+tests/Admitto.Core.DomainTests/
+└── Organization/Domain/Entities/
+    └── TeamTests.cs
+
+tests/Admitto.Core.IntegrationTests/
+└── Organization/Application/UseCases/
+    └── TeamManagement/
+        └── CreateTeam/
+            ├── CreateTeamTests.cs
+            └── CreateTeamFixture.cs
 ```
 
 ### Test Method Naming
-Prefix scenario-mapped integration and API test methods with the scenario ID:
+All tests use `{Method}_{Condition}_{ExpectedOutcome}`:
 
 ```csharp
 [TestMethod]
-public async Task SC001_CreateTeam_ValidInput_CreatesTeam() { ... }
+public async Task CreateTeam_ValidInput_CreatesTeam() { ... }
 
 [TestMethod]
-public async Task SC002_CreateTeam_DuplicateName_ReturnsError() { ... }
+public async Task CreateTeam_DuplicateName_ReturnsError() { ... }
 ```
 
-Domain tests use `{Method}_{Condition}_{ExpectedOutcome}` (no `SC-*` prefix).
+### Builders
+Builders (e.g., `TeamBuilder`, `CouponBuilder`) live in `Admitto.Testing/Builders/` and are shared across all test projects. Add new builders there.
 
 ### Fixture Pattern
 - One `*Fixture.cs` per use case with static factory methods for scenario variants.
-- Use builder helpers (e.g., `TeamBuilder`, `UserBuilder`) for domain entities.
+- Use builder helpers for domain entities.
 - `CreateTeamFixture` is the canonical example.
 
 ### Coverage Rules
