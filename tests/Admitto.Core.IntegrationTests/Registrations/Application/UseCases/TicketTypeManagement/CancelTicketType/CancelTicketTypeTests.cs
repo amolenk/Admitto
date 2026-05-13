@@ -1,0 +1,78 @@
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypeManagement.CancelTicketType;
+using Amolenk.Admitto.Testing.Infrastructure.Assertions;
+using Microsoft.EntityFrameworkCore;
+
+namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCases.TicketTypeManagement.CancelTicketType;
+
+[TestClass]
+public sealed class CancelTicketTypeTests(TestContext testContext) : AspireIntegrationTestBase
+{
+    // SC-001: Cancel active ticket type — succeeds, IsCancelled is true
+    [TestMethod]
+    public async ValueTask CancelTicketType_ActiveTicketType_SetsIsCancelledTrue()
+    {
+        // Arrange
+        var fixture = CancelTicketTypeFixture.ActiveEvent();
+        await fixture.SetupAsync(Environment);
+
+        var command = new CancelTicketTypeCommand(
+            fixture.EventId.Value,
+            fixture.TicketTypeSlug);
+        var sut = new CancelTicketTypeHandler(Environment.RegistrationsDatabase.Context);
+
+        // Act
+        await sut.HandleAsync(command, testContext.CancellationToken);
+
+        // Assert
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var catalog = await dbContext.TicketCatalogs
+                .FirstOrDefaultAsync(tc => tc.Id == fixture.EventId, testContext.CancellationToken);
+
+            catalog.ShouldNotBeNull();
+            var ticketType = catalog.TicketTypes.ShouldHaveSingleItem();
+            ticketType.IsCancelled.ShouldBeTrue();
+        });
+    }
+
+    // SC-002: Reject double-cancel — throws BusinessRuleViolationException
+    [TestMethod]
+    public async ValueTask CancelTicketType_AlreadyCancelled_ThrowsAlreadyCancelledError()
+    {
+        // Arrange
+        var fixture = CancelTicketTypeFixture.AlreadyCancelled();
+        await fixture.SetupAsync(Environment);
+
+        var command = new CancelTicketTypeCommand(
+            fixture.EventId.Value,
+            fixture.TicketTypeSlug);
+        var sut = new CancelTicketTypeHandler(Environment.RegistrationsDatabase.Context);
+
+        // Act
+        var result = await ErrorResult.CaptureAsync(
+            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
+
+        // Assert
+        result.Error.Code.ShouldBe("ticket_type.already_cancelled");
+    }
+
+    [TestMethod]
+    public async ValueTask CancelTicketType_CancelledEvent_ThrowsEventNotActive()
+    {
+        // Arrange
+        var fixture = CancelTicketTypeFixture.CancelledEvent();
+        await fixture.SetupAsync(Environment);
+
+        var command = new CancelTicketTypeCommand(
+            fixture.EventId.Value,
+            fixture.TicketTypeSlug);
+        var sut = new CancelTicketTypeHandler(Environment.RegistrationsDatabase.Context);
+
+        // Act
+        var result = await ErrorResult.CaptureAsync(
+            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
+
+        // Assert
+        result.Error.Code.ShouldBe("ticket_catalog.event_not_active");
+    }
+}

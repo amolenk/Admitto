@@ -1,0 +1,459 @@
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendee;
+using Amolenk.Admitto.Core.Registrations.Contracts;
+using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
+using Amolenk.Admitto.Core.Registrations.Domain.Entities;
+using Amolenk.Admitto.Core.Registrations.Tests.Application.UseCases.Registrations.RegisterAttendee;
+using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
+using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using Amolenk.Admitto.Testing.Infrastructure.Assertions;
+using Microsoft.EntityFrameworkCore;
+
+namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCases.Registrations.RegisterAttendee;
+
+[TestClass]
+public sealed class AdminRegisterAttendeeTests(TestContext testContext) : AspireIntegrationTestBase
+{
+    // SC001: Successful admin-add registration (capacity at limit still allowed)
+    [TestMethod]
+    public async ValueTask AdminRegisterAttendee_Success_CreatesRegistrationAndIncrementsCapacity()
+    {
+        var fixture = RegisterAttendeeFixture.OpenWindowWithCapacity(max: 5, used: 5);
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(fixture, "speaker@example.com", fixture.TicketTypeSlug);
+        var sut = NewHandler();
+
+        var registrationId = await sut.HandleAsync(command, testContext.CancellationToken);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var registration = await dbContext.Registrations.SingleOrDefaultAsync(testContext.CancellationToken);
+            registration.ShouldNotBeNull();
+            registration.Id.Value.ShouldBe(registrationId);
+            registration.Email.Value.ShouldBe("speaker@example.com");
+            registration.Tickets.ShouldHaveSingleItem().Slug.ShouldBe(fixture.TicketTypeSlug);
+
+            var catalog = await dbContext.TicketCatalogs.SingleOrDefaultAsync(testContext.CancellationToken);
+            catalog.ShouldNotBeNull();
+            catalog.TicketTypes[0].UsedCapacity.ShouldBe(6);
+        });
+    }
+
+    // SC002: Admin-add bypasses registration window — before opens
+    [TestMethod]
+    public async ValueTask AdminRegisterAttendee_BeforeWindowOpens_CreatesRegistration()
+    {
+        var fixture = RegisterAttendeeFixture.WindowNotYetOpen();
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(fixture, "speaker@example.com", "general-admission");
+        var sut = NewHandler();
+
+        await sut.HandleAsync(command, testContext.CancellationToken);
+
+        await AssertSingleRegistrationAsync("speaker@example.com");
+    }
+
+    // SC003: Admin-add bypasses registration window — already closed
+    [TestMethod]
+    public async ValueTask AdminRegisterAttendee_AfterWindowCloses_CreatesRegistration()
+    {
+        var fixture = RegisterAttendeeFixture.WindowClosed();
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(fixture, "speaker@example.com", "general-admission");
+        var sut = NewHandler();
+
+        await sut.HandleAsync(command, testContext.CancellationToken);
+
+        await AssertSingleRegistrationAsync("speaker@example.com");
+    }
+
+    // SC004: Admin-add bypasses registration window — never configured
+    [TestMethod]
+    public async ValueTask AdminRegisterAttendee_NoRegistrationPolicy_CreatesRegistration()
+    {
+        var fixture = RegisterAttendeeFixture.WithoutRegistrationPolicy();
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(fixture, "speaker@example.com", "general-admission");
+        var sut = NewHandler();
+
+        await sut.HandleAsync(command, testContext.CancellationToken);
+
+        await AssertSingleRegistrationAsync("speaker@example.com");
+    }
+
+    // SC005: Admin-add bypasses email-domain restriction
+    [TestMethod]
+    public async ValueTask AdminRegisterAttendee_DomainMismatch_CreatesRegistration()
+    {
+        var fixture = RegisterAttendeeFixture.WithEmailDomainRestriction("@acme.com");
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(fixture, "external@gmail.com", "general-admission");
+        var sut = NewHandler();
+
+        await sut.HandleAsync(command, testContext.CancellationToken);
+
+        await AssertSingleRegistrationAsync("external@gmail.com");
+    }
+
+    // SC006: Admin-add bypasses capacity limit
+    [TestMethod]
+    public async ValueTask AdminRegisterAttendee_CapacityFull_CreatesRegistrationAndExceedsLimit()
+    {
+        var fixture = RegisterAttendeeFixture.CapacityFull();
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(fixture, "speaker@example.com", "workshop");
+        var sut = NewHandler();
+
+        await sut.HandleAsync(command, testContext.CancellationToken);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var catalog = await dbContext.TicketCatalogs.SingleOrDefaultAsync(testContext.CancellationToken);
+            catalog.ShouldNotBeNull();
+            catalog.TicketTypes[0].UsedCapacity.ShouldBe(21);
+        });
+    }
+
+    // SC007: Admin-add bypasses missing capacity configuration
+    [TestMethod]
+    public async ValueTask AdminRegisterAttendee_NoCapacitySet_CreatesRegistration()
+    {
+        var fixture = RegisterAttendeeFixture.NoCapacitySet();
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(fixture, "speaker@example.com", "speaker-pass");
+        var sut = NewHandler();
+
+        await sut.HandleAsync(command, testContext.CancellationToken);
+
+        await AssertSingleRegistrationAsync("speaker@example.com");
+    }
+
+    // SC008: Admin-add rejected — event not active (Cancelled)
+    [TestMethod]
+    public async ValueTask AdminRegisterAttendee_EventCancelled_ThrowsEventNotActive()
+    {
+        var fixture = RegisterAttendeeFixture.EventCancelled();
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(fixture, "speaker@example.com", "general-admission");
+        var sut = NewHandler();
+
+        var result = await ErrorResult.CaptureAsync(
+            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
+
+        result.Error.Code.ShouldBe("registration.event_not_active");
+    }
+
+    // SC009: Admin-add rejected — event not active (Archived)
+    [TestMethod]
+    public async ValueTask AdminRegisterAttendee_EventArchived_ThrowsEventNotActive()
+    {
+        var fixture = RegisterAttendeeFixture.EventArchived();
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(fixture, "speaker@example.com", "general-admission");
+        var sut = NewHandler();
+
+        var result = await ErrorResult.CaptureAsync(
+            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
+
+        result.Error.Code.ShouldBe("registration.event_not_active");
+    }
+
+    // SC010: Admin-add rejected — event not found
+    [TestMethod]
+    public async ValueTask AdminRegisterAttendee_EventNotFound_ThrowsEventNotFound()
+    {
+        var fixture = RegisterAttendeeFixture.EventNotFound();
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(fixture, "speaker@example.com", "general-admission");
+        var sut = NewHandler();
+
+        var result = await ErrorResult.CaptureAsync(
+            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
+
+        result.Error.Code.ShouldBe("registration.event_not_found");
+    }
+
+    // SC011: Admin-add rejected — no ticket types configured
+    [TestMethod]
+    public async ValueTask AdminRegisterAttendee_NoTicketCatalog_ThrowsNoTicketTypesConfigured()
+    {
+        var fixture = RegisterAttendeeFixture.EventWithoutTicketCatalog();
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(fixture, "speaker@example.com", "general-admission");
+        var sut = NewHandler();
+
+        var result = await ErrorResult.CaptureAsync(
+            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
+
+        result.Error.Code.ShouldBe("registration.no_ticket_types");
+    }
+
+    // SC012: Admin-add rejected — duplicate active email
+    [TestMethod]
+    public async ValueTask AdminRegisterAttendee_DuplicateActiveEmail_ThrowsBusinessConflict()
+    {
+        var fixture = RegisterAttendeeFixture.WithExistingRegistration();
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(fixture, "alice@example.com", fixture.TicketTypeSlug);
+        var sut = NewHandler();
+
+        var result = await ErrorResult.CaptureAsync(
+            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
+
+        result.Error.ShouldMatch(AlreadyExistsError.Create<Registration>());
+    }
+
+    // SC021: Admin-add resets a cancelled registration
+    [TestMethod]
+    public async ValueTask AdminRegisterAttendee_CancelledRegistration_ResetsExistingRegistration()
+    {
+        var fixture = RegisterAttendeeFixture
+            .OpenWindowWithCapacity(max: 5, used: 5)
+            .ConfigureAdditionalDetailSchema(("meal", "Meal", 20))
+            .WithCancelledExistingRegistration(
+                email: "alice@example.com",
+                additionalDetails: new Dictionary<string, string> { ["meal"] = "standard" });
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(
+            fixture,
+            "alice@example.com",
+            [fixture.TicketTypeSlug],
+            new Dictionary<string, string> { ["meal"] = "vegan" });
+        var sut = NewHandler();
+
+        var registrationId = await sut.HandleAsync(command, testContext.CancellationToken);
+
+        registrationId.ShouldBe(fixture.ExistingRegistrationId.Value);
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var registration = await dbContext.Registrations.SingleAsync(testContext.CancellationToken);
+            registration.Id.ShouldBe(fixture.ExistingRegistrationId);
+            registration.Status.ShouldBe(RegistrationStatus.Registered);
+            registration.Email.Value.ShouldBe("alice@example.com");
+            registration.FirstName.ShouldBe(FirstName.From("Test"));
+            registration.LastName.ShouldBe(LastName.From("User"));
+            registration.CancellationReason.ShouldBeNull();
+            registration.HasReconfirmed.ShouldBeFalse();
+            registration.ReconfirmedAt.ShouldBeNull();
+            registration.Tickets.ShouldHaveSingleItem().Slug.ShouldBe(fixture.TicketTypeSlug);
+            registration.AdditionalDetails["meal"].ShouldBe("vegan");
+            AssertAttendeeRegisteredEvent(registration);
+
+            var catalog = await dbContext.TicketCatalogs.SingleAsync(testContext.CancellationToken);
+            catalog.TicketTypes.Single(tt => tt.Id == fixture.TicketTypeSlug).UsedCapacity.ShouldBe(6);
+        });
+    }
+
+    // SC013: Admin-add rejected — duplicate ticket types in selection
+    [TestMethod]
+    public async ValueTask AdminRegisterAttendee_DuplicateTickets_ThrowsDuplicateError()
+    {
+        var fixture = RegisterAttendeeFixture.OpenWindowWithCapacity();
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(fixture, "speaker@example.com",
+            fixture.TicketTypeSlug, fixture.TicketTypeSlug);
+        var sut = NewHandler();
+
+        var result = await ErrorResult.CaptureAsync(
+            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
+
+        result.Error.Code.ShouldBe("ticket_catalog.duplicate_ticket_types");
+    }
+
+    // SC014: Admin-add rejected — unknown ticket type
+    [TestMethod]
+    public async ValueTask AdminRegisterAttendee_UnknownTicketType_ThrowsUnknownTicketTypesError()
+    {
+        var fixture = RegisterAttendeeFixture.OpenWindowWithCapacity();
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(fixture, "speaker@example.com", "premium-vip");
+        var sut = NewHandler();
+
+        var result = await ErrorResult.CaptureAsync(
+            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
+
+        result.Error.Code.ShouldBe("ticket_catalog.unknown_ticket_types");
+    }
+
+    // SC015: Admin-add rejected — cancelled ticket type
+    [TestMethod]
+    public async ValueTask AdminRegisterAttendee_CancelledTicketType_ThrowsCancelledError()
+    {
+        var fixture = RegisterAttendeeFixture.WithCancelledTicketType();
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(fixture, "speaker@example.com", "workshop-a");
+        var sut = NewHandler();
+
+        var result = await ErrorResult.CaptureAsync(
+            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
+
+        result.Error.Code.ShouldBe("ticket_catalog.cancelled_ticket_types");
+    }
+
+    // SC016: Admin-add rejected — overlapping time slots
+    [TestMethod]
+    public async ValueTask AdminRegisterAttendee_OverlappingTimeSlots_ThrowsOverlappingError()
+    {
+        var fixture = RegisterAttendeeFixture.WithOverlappingTimeSlots();
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(fixture, "speaker@example.com", "workshop-a", "workshop-b");
+        var sut = NewHandler();
+
+        var result = await ErrorResult.CaptureAsync(
+            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
+
+        result.Error.Code.ShouldBe("ticket_catalog.overlapping_time_slots");
+    }
+
+    // SC017: Admin-add rejected — additional detail key not in schema
+    [TestMethod]
+    public async ValueTask AdminRegisterAttendee_UnknownAdditionalDetailKey_ThrowsKeyNotInSchema()
+    {
+        var fixture = RegisterAttendeeFixture.WithAdditionalDetailSchema(
+            ("tshirt", "T-shirt size", 5));
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(
+            fixture,
+            "speaker@example.com",
+            new[] { "general-admission" },
+            new Dictionary<string, string> { ["shoesize"] = "44" });
+        var sut = NewHandler();
+
+        var result = await ErrorResult.CaptureAsync(
+            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
+
+        result.Error.Code.ShouldBe("additional_details.key_not_in_schema");
+    }
+
+    // SC018: Admin-add rejected — additional detail value too long
+    [TestMethod]
+    public async ValueTask AdminRegisterAttendee_AdditionalDetailValueTooLong_ThrowsValueTooLong()
+    {
+        var fixture = RegisterAttendeeFixture.WithAdditionalDetailSchema(
+            ("tshirt", "T-shirt size", 5));
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(
+            fixture,
+            "speaker@example.com",
+            new[] { "general-admission" },
+            new Dictionary<string, string> { ["tshirt"] = "XXXXL-extra-long" });
+        var sut = NewHandler();
+
+        var result = await ErrorResult.CaptureAsync(
+            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
+
+        result.Error.Code.ShouldBe("additional_details.value_too_long");
+    }
+
+    // SC019: Concurrent cancel detected at claim time
+    [TestMethod]
+    public async ValueTask AdminRegisterAttendee_ConcurrentCancelAtClaim_ThrowsEventNotActive()
+    {
+        var fixture = RegisterAttendeeFixture.ConcurrentCancelDetectedAtClaim();
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(fixture, "speaker@example.com", "general-admission");
+        var sut = NewHandler();
+
+        var result = await ErrorResult.CaptureAsync(
+            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
+
+        result.Error.Code.ShouldBe("registration.event_not_active");
+
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var catalog = await dbContext.TicketCatalogs.SingleOrDefaultAsync(testContext.CancellationToken);
+            catalog.ShouldNotBeNull();
+            catalog.TicketTypes[0].UsedCapacity.ShouldBe(0);
+        });
+    }
+
+    // SC020: Admin-add does NOT require an email-verification token
+    [TestMethod]
+    public async ValueTask AdminRegisterAttendee_NoTokenRequired_Succeeds()
+    {
+        var fixture = RegisterAttendeeFixture.OpenWindowWithCapacity();
+        await fixture.SetupAsync(Environment);
+
+        // Token deliberately omitted; admin mode must not invoke the verifier.
+        var command = NewCommand(fixture, "speaker@example.com", fixture.TicketTypeSlug);
+        var sut = NewHandler();
+
+        await sut.HandleAsync(command, testContext.CancellationToken);
+
+        await AssertSingleRegistrationAsync("speaker@example.com");
+    }
+
+    // ── Helpers ──────────────────────────────────────────────────────────────
+
+    private async ValueTask AssertSingleRegistrationAsync(string expectedEmail)
+    {
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var registration = await dbContext.Registrations.SingleOrDefaultAsync(testContext.CancellationToken);
+            registration.ShouldNotBeNull();
+            registration.Email.Value.ShouldBe(expectedEmail);
+        });
+    }
+
+    private static RegisterAttendeeCommand NewCommand(
+        RegisterAttendeeFixture fixture,
+        string email,
+        params string[] ticketTypeSlugs)
+        => new(
+            fixture.EventId.Value,
+            email,
+            "Test",
+            "User",
+            ticketTypeSlugs,
+            RegistrationMode.AdminAdd);
+
+    private static RegisterAttendeeCommand NewCommand(
+        RegisterAttendeeFixture fixture,
+        string email,
+        string[] ticketTypeSlugs,
+        IReadOnlyDictionary<string, string>? additionalDetails)
+        => new(
+            fixture.EventId.Value,
+            email,
+            "Test",
+            "User",
+            ticketTypeSlugs,
+            RegistrationMode.AdminAdd,
+            CouponCode: null,
+            EmailVerificationToken: null,
+            AdditionalDetails: additionalDetails);
+
+    private static void AssertAttendeeRegisteredEvent(Registration registration)
+    {
+        var domainEvent = registration.GetDomainEvents()
+            .OfType<AttendeeRegisteredDomainEvent>()
+            .ShouldHaveSingleItem();
+        domainEvent.RegistrationId.ShouldBe(registration.Id);
+        domainEvent.RecipientEmail.ShouldBe(registration.Email);
+        domainEvent.FirstName.ShouldBe(registration.FirstName);
+        domainEvent.LastName.ShouldBe(registration.LastName);
+        domainEvent.Tickets.ShouldBe(registration.Tickets);
+    }
+
+    private static RegisterAttendeeHandler NewHandler()
+        => new(Environment.RegistrationsDatabase.Context, TimeProvider.System, new StubEmailVerificationTokenValidator());
+}
