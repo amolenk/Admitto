@@ -23,7 +23,7 @@ internal sealed class GetRegistrationDetailsHandler(IRegistrationsWriteStore wri
             return null;
 
         var activities = await writeStore.ActivityLog
-            .Where(a => a.RegistrationId == query.RegistrationId.Value)
+            .Where(a => a.RegistrationId == query.RegistrationId)
             .OrderBy(a => a.OccurredAt)
             .AsNoTracking()
             .ToListAsync(cancellationToken);

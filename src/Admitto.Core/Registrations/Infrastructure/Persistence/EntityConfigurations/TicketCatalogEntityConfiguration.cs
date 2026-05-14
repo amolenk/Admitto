@@ -29,7 +29,7 @@ public class TicketCatalogEntityConfiguration : IEntityTypeConfiguration<TicketC
             .IsRequired()
             .HasDefaultValue(EventLifecycleStatus.Active);
 
-        builder.OwnsMany(e => e.TicketTypes, b =>
+        builder.OwnsMany(e => e.TicketTypes, (OwnedNavigationBuilder<TicketCatalog, TicketType> b) =>
         {
             b.ToJson("ticket_types");
 
@@ -39,7 +39,6 @@ public class TicketCatalogEntityConfiguration : IEntityTypeConfiguration<TicketC
 
             b.Property(tt => tt.Name)
                 .HasJsonPropertyName("name")
-                .HasConversion(v => v.Value, v => TicketTypeName.From(v))
                 .IsRequired();
 
             b.Property(tt => tt.MaxCapacity)
@@ -57,8 +56,9 @@ public class TicketCatalogEntityConfiguration : IEntityTypeConfiguration<TicketC
                 .HasJsonPropertyName("self_service_enabled")
                 .IsRequired();
 
-            b.Property(tt => tt.TimeSlotSlugs)
-                .HasJsonPropertyName("time_slots");
+            b.PrimitiveCollection(tt => tt.TimeSlotSlugs)
+                .HasJsonPropertyName("time_slots")
+                .ElementType(et => et.HasConversion<Slug.EfCoreValueConverter>());
 
             b.Ignore(tt => tt.TimeSlots);
         });

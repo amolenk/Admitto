@@ -80,12 +80,18 @@ public class RegistrationEntityConfiguration : IEntityTypeConfiguration<Registra
             .HasDatabaseName("IX_registrations_event_id_email")
             .IsUnique();
 
-        builder.OwnsMany(e => e.Tickets, b =>
+        builder.OwnsMany(e => e.Tickets, (OwnedNavigationBuilder<Registration, TicketTypeSnapshot> b) =>
         {
             b.ToJson("tickets");
-            b.Property(t => t.Slug).HasJsonPropertyName("slug").IsRequired();
-            b.Property(t => t.Name).HasJsonPropertyName("name").IsRequired();
-            b.PrimitiveCollection(t => t.TimeSlots).HasJsonPropertyName("time_slots");
+            b.Property(t => t.Slug)
+                .HasJsonPropertyName("slug")
+                .IsRequired();
+            b.Property(t => t.Name)
+                .HasJsonPropertyName("name")
+                .IsRequired();
+            b.PrimitiveCollection(t => t.TimeSlots)
+                .HasJsonPropertyName("time_slots")
+                .ElementType(et => et.HasConversion<Slug.EfCoreValueConverter>());
         });
 
         builder.Property(e => e.AdditionalDetails)

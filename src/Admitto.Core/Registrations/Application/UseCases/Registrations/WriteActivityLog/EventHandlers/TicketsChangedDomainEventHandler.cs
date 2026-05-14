@@ -15,8 +15,8 @@ internal sealed class TicketsChangedDomainEventHandler(WriteActivityLogHandler h
     {
         var metadata = JsonSerializer.Serialize(new
         {
-            from = domainEvent.OldTickets.Select(t => t.Slug).ToArray(),
-            to = domainEvent.NewTickets.Select(t => t.Slug).ToArray()
+            from = domainEvent.OldTickets.Select(t => t.Slug.Value).ToArray(),
+            to = domainEvent.NewTickets.Select(t => t.Slug.Value).ToArray()
         });
 
         await handler.HandleAsync(

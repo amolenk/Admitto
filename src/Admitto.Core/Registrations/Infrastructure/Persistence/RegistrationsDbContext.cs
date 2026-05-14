@@ -40,6 +40,10 @@ public sealed class RegistrationsDbContext(DbContextOptions<RegistrationsDbConte
             .HaveConversion<EventName.EfCoreValueConverter>();
 
         configurationBuilder
+            .Properties<Slug>()
+            .HaveConversion<Slug.EfCoreValueConverter>();
+
+        configurationBuilder
             .Properties<TicketTypeName>()
             .HaveConversion<TicketTypeName.EfCoreValueConverter>();
 
