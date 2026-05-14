@@ -42,7 +42,7 @@ internal sealed class AddTicketTypeFixture
             {
                 catalog.AddTicketType(
                     Slug.From("existing-type"),
-                    DisplayName.From("Existing Type"),
+                    TicketTypeName.From("Existing Type"),
                     [],
                     100);
             }

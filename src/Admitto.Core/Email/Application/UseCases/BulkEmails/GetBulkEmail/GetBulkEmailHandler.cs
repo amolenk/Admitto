@@ -17,9 +17,9 @@ internal sealed class GetBulkEmailHandler(IEmailWriteStore writeStore)
 
         var recipients = job.Recipients
             .Select(r => new BulkEmailRecipientDto(
-                r.Email,
+                r.Email.Value,
                 r.DisplayName,
-                r.RegistrationId,
+                r.RegistrationId?.Value,
                 r.Status,
                 r.LastError))
             .ToList();

@@ -57,7 +57,7 @@ public class TicketCatalog : Aggregate<TicketedEventId>
 
     public void AddTicketType(
         Slug slug,
-        DisplayName name,
+        TicketTypeName name,
         TimeSlot[] timeSlots,
         int? maxCapacity,
         bool selfServiceEnabled = true)
@@ -72,7 +72,7 @@ public class TicketCatalog : Aggregate<TicketedEventId>
 
     public void UpdateTicketType(
         Slug slug,
-        DisplayName? name,
+        TicketTypeName? name,
         int? maxCapacity,
         bool? selfServiceEnabled = null)
     {

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Contracts;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Core.Email.Application.Sending.Bulk;
@@ -62,9 +63,9 @@ internal sealed class BulkEmailRecipientResolver(IRegistrationsFacade registrati
             var displayName = string.Concat(row.FirstName, " ", row.LastName).Trim();
 
             recipients.Add(new BulkEmailRecipient(
-                email: row.Email,
+                email: EmailAddress.From(row.Email),
                 displayName: string.IsNullOrWhiteSpace(displayName) ? null : displayName,
-                registrationId: row.RegistrationId,
+                registrationId: RegistrationId.From(row.RegistrationId),
                 parametersJson: JsonSerializer.Serialize(parameters, ParametersJsonOptions)));
         }
 
@@ -78,7 +79,7 @@ internal sealed class BulkEmailRecipientResolver(IRegistrationsFacade registrati
         {
             var parameters = new Dictionary<string, object?>
             {
-                ["email"] = item.Email,
+                ["email"] = item.Email.Value,
                 ["display_name"] = item.DisplayName
             };
 

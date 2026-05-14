@@ -1,6 +1,8 @@
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
+using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCases.Registrations.ChangeAttendeeTickets;
 
@@ -68,7 +70,7 @@ internal sealed class ChangeAttendeeTicketsFixture
                 EmailAddress.From("alice@example.com"),
                 FirstName.From("Alice"),
                 LastName.From("Test"),
-                [new TicketTypeSnapshot("early-bird", "Early Bird", [])]);
+                [new TicketTypeSnapshot(Slug.From("early-bird"), TicketTypeName.From("Early Bird"), [])]);
             RegistrationId = registration.Id;
             if (_preCancel) registration.Cancel(CancellationReason.AttendeeRequest);
             dbContext.Registrations.Add(registration);
@@ -77,10 +79,10 @@ internal sealed class ChangeAttendeeTicketsFixture
 
     private TicketedEvent MakeActiveEvent() =>
         TicketedEvent.Create(
-            Guid.NewGuid(),
+            CreationRequestId.From(Guid.NewGuid()),
             EventId,
             TeamId,
-            DisplayName.From("DevConf"),
+            EventName.From("DevConf"),
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),
             DateTimeOffset.UtcNow.AddDays(60),
@@ -92,7 +94,7 @@ internal sealed class ChangeAttendeeTicketsFixture
         var catalog = TicketCatalog.Create(EventId);
         foreach (var (slug, name, max, used) in ticketTypes)
         {
-            catalog.AddTicketType(Slug.From(slug), DisplayName.From(name), [], max);
+            catalog.AddTicketType(Slug.From(slug), TicketTypeName.From(name), [], max);
             for (var i = 0; i < used; i++) catalog.Claim([slug], enforce: false);
         }
         return catalog;

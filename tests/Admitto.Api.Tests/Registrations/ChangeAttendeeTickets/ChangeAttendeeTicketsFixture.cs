@@ -2,7 +2,9 @@ using Amolenk.Admitto.Api.Tests.Infrastructure.Hosting;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using TeamBuilder = Amolenk.Admitto.Testing.Builders.Organization.Application.TeamBuilder;
+using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Api.Tests.Registrations.ChangeAttendeeTickets;
 
@@ -30,10 +32,10 @@ internal sealed class ChangeAttendeeTicketsFixture
         EventId = eventId.Value;
 
         var ticketedEvent = TicketedEvent.Create(
-            Guid.NewGuid(),
+            CreationRequestId.From(Guid.NewGuid()),
             eventId,
             team.Id,
-            DisplayName.From("DevConf"),
+            EventName.From("DevConf"),
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),
             DateTimeOffset.UtcNow.AddDays(60),
@@ -41,8 +43,8 @@ internal sealed class ChangeAttendeeTicketsFixture
             TimeZoneId.From("UTC"));
 
         var catalog = TicketCatalog.Create(eventId);
-        catalog.AddTicketType(Slug.From("general-admission"), DisplayName.From("General Admission"), [], 100);
-        catalog.AddTicketType(Slug.From("workshop"), DisplayName.From("Workshop"), [], 20);
+        catalog.AddTicketType(Slug.From("general-admission"), TicketTypeName.From("General Admission"), [], 100);
+        catalog.AddTicketType(Slug.From("workshop"), TicketTypeName.From("Workshop"), [], 20);
 
         var registration = Registration.Create(
             team.Id,
@@ -50,7 +52,7 @@ internal sealed class ChangeAttendeeTicketsFixture
             EmailAddress.From("alice@example.com"),
             FirstName.From("Alice"),
             LastName.From("Test"),
-            [new TicketTypeSnapshot("general-admission", "General Admission", [])]);
+            [new TicketTypeSnapshot(Slug.From("general-admission"), TicketTypeName.From("General Admission"), [])]);
         RegistrationId = registration.Id;
 
         await environment.OrganizationDatabase.SeedAsync(db => db.Teams.Add(team));

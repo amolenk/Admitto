@@ -7,7 +7,7 @@ internal sealed record SendTestEmailHttpRequest(
 {
     public SendTestEmailCommand ToCommand(
         EmailSettingsScope scope,
-        Guid scopeId)
+        EmailScopeId scopeId)
     {
         return new SendTestEmailCommand(
             scope,

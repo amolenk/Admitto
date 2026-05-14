@@ -17,7 +17,7 @@ internal sealed class AddTicketTypeHandler(IRegistrationsWriteStore writeStore)
     {
         TicketedEventId eventId = TicketedEventId.From(command.EventId);
         Slug slug = Slug.From(command.Slug);
-        DisplayName name = DisplayName.From(command.Name);
+        TicketTypeName name = TicketTypeName.From(command.Name);
 
         var catalog = await writeStore.TicketCatalogs
             .FirstOrDefaultAsync(tc => tc.Id == eventId, cancellationToken);

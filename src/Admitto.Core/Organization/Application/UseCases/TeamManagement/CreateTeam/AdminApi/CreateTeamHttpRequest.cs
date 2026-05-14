@@ -1,8 +1,7 @@
 namespace Amolenk.Admitto.Core.Organization.Application.UseCases.TeamManagement.CreateTeam.AdminApi;
 
 public sealed record CreateTeamHttpRequest(
-    string Name,
-    string EmailAddress)
+    string Name)
 {
-    internal CreateTeamCommand ToCommand() => new(Name, EmailAddress);
+    internal CreateTeamCommand ToCommand() => new(Name);
 }

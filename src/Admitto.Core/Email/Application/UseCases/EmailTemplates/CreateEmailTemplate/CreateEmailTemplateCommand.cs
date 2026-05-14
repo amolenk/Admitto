@@ -5,9 +5,9 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.EmailTemplates.CreateE
 
 internal sealed record CreateEmailTemplateCommand(
     EmailSettingsScope Scope,
-    Guid ScopeId,
+    EmailScopeId ScopeId,
     string Name,
     string? Subject,
     string? TextBody,
     string? HtmlBody,
-    Guid? ParentScopeId = null) : Command<Guid>;
+    EmailScopeId? ParentScopeId = null) : Command<Guid>;

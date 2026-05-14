@@ -1,5 +1,6 @@
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
+using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
@@ -16,7 +17,7 @@ internal sealed class UpdateTicketTypeHandler(IRegistrationsWriteStore writeStor
     {
         TicketedEventId eventId = TicketedEventId.From(command.EventId);
         Slug slug = Slug.From(command.Slug);
-        DisplayName? name = command.Name is not null ? DisplayName.From(command.Name) : null;
+        TicketTypeName? name = command.Name is not null ? TicketTypeName.From(command.Name) : null;
 
         var catalog = await writeStore.TicketCatalogs
             .FirstOrDefaultAsync(tc => tc.Id == eventId, cancellationToken);

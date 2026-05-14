@@ -1,11 +1,11 @@
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
-
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.ChangeAttendeeTickets;
 
 internal sealed class ChangeAttendeeTicketsHandler(
@@ -61,7 +61,7 @@ internal sealed class ChangeAttendeeTicketsHandler(
         catalog.ValidateSelection(command.TicketTypeSlugs);
 
         // 6. Compute delta: toRelease = current ∖ new, toClaim = new ∖ current.
-        var currentSlugs = registration.Tickets.Select(t => t.Slug).ToHashSet();
+        var currentSlugs = registration.Tickets.Select(t => t.Slug.Value).ToHashSet();
         var newSlugsSet = command.TicketTypeSlugs.ToHashSet();
 
         var toRelease = currentSlugs.Except(newSlugsSet).ToList();
@@ -78,10 +78,9 @@ internal sealed class ChangeAttendeeTicketsHandler(
             .Select(slug =>
             {
                 var ticketType = catalog.GetTicketType(slug);
-                var timeSlots = ticketType?.TimeSlots.Select(ts => ts.Slug.Value).ToArray()
-                    ?? [];
-                var name = ticketType?.Name.Value ?? slug;
-                return new TicketTypeSnapshot(slug, name, timeSlots);
+                var timeSlots = ticketType?.TimeSlots.Select(ts => ts.Slug).ToArray() ?? [];
+                var name = ticketType?.Name ?? TicketTypeName.From(slug);
+                return new TicketTypeSnapshot(Slug.From(slug), name, timeSlots);
             })
             .ToList();
 

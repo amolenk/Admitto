@@ -26,7 +26,7 @@ public static class PreviewBulkEmailHttpEndpoint
 
                 var sample = recipients
                     .Take(SampleSize)
-                    .Select(r => new BulkEmailRecipientPreviewDto(r.Email, r.DisplayName))
+                    .Select(r => new BulkEmailRecipientPreviewDto(r.Email.Value, r.DisplayName))
                     .ToList();
 
                 return TypedResults.Ok(new PreviewBulkEmailResponse(recipients.Count, sample));

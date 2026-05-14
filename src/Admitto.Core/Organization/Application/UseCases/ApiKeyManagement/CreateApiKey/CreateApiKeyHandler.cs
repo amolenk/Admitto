@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Amolenk.Admitto.Core.Organization.Application.Persistence;
 using Amolenk.Admitto.Core.Organization.Domain.Entities;
+using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
@@ -20,7 +21,7 @@ internal sealed class CreateApiKeyHandler(IOrganizationWriteStore writeStore)
 
         var apiKey = ApiKey.Create(
             TeamId.From(command.TeamId),
-            command.Name,
+            ApiKeyName.From(command.Name),
             keyPrefix,
             keyHash,
             DateTimeOffset.UtcNow,

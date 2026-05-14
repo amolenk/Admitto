@@ -6,6 +6,7 @@ using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using TeamBuilder = Amolenk.Admitto.Testing.Builders.Organization.Application.TeamBuilder;
+using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Api.Tests.Registrations.SelfRegister;
 
@@ -35,10 +36,10 @@ internal sealed class SelfRegisterFixture
         EventId = eventId;
 
         var ticketedEvent = TicketedEvent.Create(
-            Guid.NewGuid(),
+            CreationRequestId.From(Guid.NewGuid()),
             eventId,
             team.Id,
-            DisplayName.From("DevConf"),
+            EventName.From("DevConf"),
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),
             DateTimeOffset.UtcNow.AddDays(60),
@@ -50,7 +51,7 @@ internal sealed class SelfRegisterFixture
             DateTimeOffset.UtcNow.AddDays(30)));
 
         var catalog = TicketCatalog.Create(eventId);
-        catalog.AddTicketType(Slug.From("general-admission"), DisplayName.From("General Admission"), [], 100,
+        catalog.AddTicketType(Slug.From("general-admission"), TicketTypeName.From("General Admission"), [], 100,
             selfServiceEnabled: selfServiceEnabled);
 
         await environment.OrganizationDatabase.SeedAsync(db =>
@@ -73,7 +74,7 @@ internal sealed class SelfRegisterFixture
     {
         email ??= AttendeeEmail;
 
-        var otpCode = OtpCode.Create(TeamId, EventId, "DevConf",
+        var otpCode = OtpCode.Create(TeamId, EventId, EventName.From("DevConf"),
             EmailAddress.From(email), KnownOtpCode,
             DateTimeOffset.UtcNow.AddMinutes(10));
         await environment.RegistrationsDatabase.SeedAsync(db => db.OtpCodes.Add(otpCode));

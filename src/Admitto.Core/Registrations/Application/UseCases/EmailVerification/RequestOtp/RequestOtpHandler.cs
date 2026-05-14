@@ -65,7 +65,7 @@ internal sealed class RequestOtpHandler(
         var plainCode = GenerateSixDigitCode();
         var expiresAt = now.AddMinutes(options.Value.ExpiryMinutes);
 
-        var otpCode = OtpCode.Create(command.TeamId, command.EventId, ticketedEvent.Name.Value, email, plainCode, expiresAt);
+        var otpCode = OtpCode.Create(command.TeamId, command.EventId, ticketedEvent.Name, email, plainCode, expiresAt);
         await writeStore.OtpCodes.AddAsync(otpCode, cancellationToken);
     }
 

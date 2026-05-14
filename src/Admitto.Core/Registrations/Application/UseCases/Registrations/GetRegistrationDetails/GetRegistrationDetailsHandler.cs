@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
@@ -38,7 +39,7 @@ internal sealed class GetRegistrationDetailsHandler(IRegistrationsWriteStore wri
             ReconfirmedAt: registration.ReconfirmedAt,
             CancellationReason: registration.CancellationReason?.ToString(),
             Tickets: registration.Tickets
-                .Select(t => new TicketDetailDto(t.Slug, t.Name))
+                .Select(t => new TicketDetailDto(t.Slug.Value, t.Name.Value))
                 .ToList(),
             AdditionalDetails: registration.AdditionalDetails
                 .ToDictionary(kvp => kvp.Key, kvp => kvp.Value),

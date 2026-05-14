@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
@@ -14,7 +15,7 @@ public sealed class TicketedEventTests
 {
     private static readonly TicketedEventId DefaultEventId = TicketedEventId.New();
     private static readonly TeamId DefaultTeamId = TeamId.New();
-    private static readonly DisplayName DefaultName = DisplayName.From("My Event");
+    private static readonly EventName DefaultName = EventName.From("My Event");
     private static readonly DateTimeOffset DefaultStart = new(2030, 6, 1, 9, 0, 0, TimeSpan.Zero);
     private static readonly DateTimeOffset DefaultEnd = new(2030, 6, 1, 17, 0, 0, TimeSpan.Zero);
     private static readonly AbsoluteUrl DefaultWebsite = AbsoluteUrl.From("https://example.com");
@@ -51,7 +52,7 @@ public sealed class TicketedEventTests
     {
         var first = NewEvent();
         var second = TicketedEvent.Create(
-            Guid.NewGuid(),
+        CreationRequestId.From(Guid.NewGuid()),
             TicketedEventId.New(),
             DefaultTeamId,
             DefaultName,
@@ -68,7 +69,7 @@ public sealed class TicketedEventTests
     public void SC002_Create_EndBeforeStart_Throws()
     {
         var act = () => TicketedEvent.Create(
-            Guid.NewGuid(),
+        CreationRequestId.From(Guid.NewGuid()),
             DefaultEventId,
             DefaultTeamId,
             DefaultName,
@@ -88,7 +89,7 @@ public sealed class TicketedEventTests
     public void SC010_UpdateDetails_Active_UpdatesFields()
     {
         var sut = NewEvent();
-        var newName = DisplayName.From("Renamed Event");
+        var newName = EventName.From("Renamed Event");
         var newStart = DefaultStart.AddDays(1);
         var newEnd = DefaultEnd.AddDays(1);
 
@@ -581,7 +582,7 @@ public sealed class TicketedEventTests
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     private static TicketedEvent NewEvent() => TicketedEvent.Create(
-        Guid.NewGuid(),
+        CreationRequestId.From(Guid.NewGuid()),
         DefaultEventId, DefaultTeamId, DefaultName, DefaultWebsite, DefaultBaseUrl, DefaultStart, DefaultEnd,
                 TimeZoneId.From("UTC"));
 

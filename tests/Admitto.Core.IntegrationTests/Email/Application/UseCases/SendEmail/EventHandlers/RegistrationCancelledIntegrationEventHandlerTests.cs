@@ -7,6 +7,7 @@ using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using NSubstitute;
+using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.UseCases.SendEmail.EventHandlers;
 
@@ -14,12 +15,12 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.UseCases.SendE
 public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContext testContext)
     : AspireIntegrationTestBase
 {
-    private static readonly Guid TeamId = Guid.NewGuid();
-    private static readonly Guid EventId = Guid.NewGuid();
+    private static readonly TeamId TeamGuid = TeamId.New();
+    private static readonly TicketedEventId EventGuid = TicketedEventId.New();
     private static readonly Guid RegId = Guid.NewGuid();
 
     private static RegistrationCancelledIntegrationEvent Event(string reason) =>
-        new(TeamId, EventId, RegId, "alice@example.com", reason);
+        new(TeamGuid.Value, EventGuid.Value, RegId, "alice@example.com", reason);
 
     private static TicketedEventEmailContextDto Context() =>
         new("DevConf 2025", "https://devconf.example.com", "https://devconf.example.com/qr", "Alice", "Test");
@@ -28,7 +29,7 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
     public async Task AttendeeRequest_DispatchesCancellationEmail()
     {
         var facade = Substitute.For<IRegistrationsFacade>();
-        facade.GetTicketedEventEmailContextAsync(EventId, RegId, Arg.Any<CancellationToken>())
+        facade.GetTicketedEventEmailContextAsync(EventGuid.Value, RegId, Arg.Any<CancellationToken>())
             .Returns(Context());
         var sendEmailHandler = Substitute.For<ICommandHandler<SendEmailCommand>>();
 
@@ -49,7 +50,7 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
     public async Task VisaLetterDenied_DispatchesVisaLetterDeniedEmail()
     {
         var facade = Substitute.For<IRegistrationsFacade>();
-        facade.GetTicketedEventEmailContextAsync(EventId, RegId, Arg.Any<CancellationToken>())
+        facade.GetTicketedEventEmailContextAsync(EventGuid.Value, RegId, Arg.Any<CancellationToken>())
             .Returns(Context());
         var sendEmailHandler = Substitute.For<ICommandHandler<SendEmailCommand>>();
 
@@ -89,8 +90,8 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
         await Environment.EmailDatabase.SeedAsync(db =>
         {
             var log = EmailLog.Create(
-                TeamId, EventId, idempotencyKey,
-                "alice@example.com", BuiltInEmailTemplateNames.Cancellation,
+                TeamGuid, EventGuid, idempotencyKey,
+                EmailAddress.From("alice@example.com"), BuiltInEmailTemplateNames.Cancellation,
                 "Subject", "smtp", null, EmailLogStatus.Sent,
                 DateTimeOffset.UtcNow, DateTimeOffset.UtcNow);
             db.EmailLog.Add(log);
@@ -112,7 +113,7 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
     public async Task AttendeeRequest_PassesFirstNameFromContext()
     {
         var facade = Substitute.For<IRegistrationsFacade>();
-        facade.GetTicketedEventEmailContextAsync(EventId, RegId, Arg.Any<CancellationToken>())
+        facade.GetTicketedEventEmailContextAsync(EventGuid.Value, RegId, Arg.Any<CancellationToken>())
             .Returns(Context());
         var sendEmailHandler = Substitute.For<ICommandHandler<SendEmailCommand>>();
 
@@ -131,7 +132,7 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
     public async Task AttendeeRequest_ParametersIncludeEventWebsite()
     {
         var facade = Substitute.For<IRegistrationsFacade>();
-        facade.GetTicketedEventEmailContextAsync(EventId, RegId, Arg.Any<CancellationToken>())
+        facade.GetTicketedEventEmailContextAsync(EventGuid.Value, RegId, Arg.Any<CancellationToken>())
             .Returns(Context());
         var sendEmailHandler = Substitute.For<ICommandHandler<SendEmailCommand>>();
 

@@ -16,7 +16,7 @@ public class ApiKey : Entity<ApiKeyId>
     private ApiKey(
         ApiKeyId id,
         TeamId teamId,
-        string name,
+        ApiKeyName name,
         string keyPrefix,
         string keyHash,
         DateTimeOffset createdAt,
@@ -32,7 +32,7 @@ public class ApiKey : Entity<ApiKeyId>
     }
 
     public TeamId TeamId { get; private set; }
-    public string Name { get; private set; } = string.Empty;
+    public ApiKeyName Name { get; private set; }
     public string KeyPrefix { get; private set; } = string.Empty;
     public string KeyHash { get; private set; } = string.Empty;
     public DateTimeOffset CreatedAt { get; private set; }
@@ -43,7 +43,7 @@ public class ApiKey : Entity<ApiKeyId>
 
     public static ApiKey Create(
         TeamId teamId,
-        string name,
+        ApiKeyName name,
         string keyPrefix,
         string keyHash,
         DateTimeOffset createdAt,

@@ -18,8 +18,8 @@ internal sealed class EmailTemplateService(IEmailWriteStore writeStore) : IEmail
         var candidates = await writeStore.EmailTemplates
             .AsNoTracking()
             .Where(t => t.Name == name &&
-                        ((t.Scope == EmailSettingsScope.Event && t.ScopeId == eventId.Value) ||
-                         (t.Scope == EmailSettingsScope.Team  && t.ScopeId == teamId.Value)))
+                        ((t.Scope == EmailSettingsScope.Event && t.ScopeId == EmailScopeId.From(eventId.Value)) ||
+                         (t.Scope == EmailSettingsScope.Team  && t.ScopeId == EmailScopeId.From(teamId.Value))))
             .ToListAsync(cancellationToken);
 
         var template = candidates.FirstOrDefault(t => t.Scope == EmailSettingsScope.Event)
@@ -39,7 +39,7 @@ internal sealed class EmailTemplateService(IEmailWriteStore writeStore) : IEmail
         var template = await writeStore.EmailTemplates
             .AsNoTracking()
             .FirstOrDefaultAsync(
-                t => t.Name == name && t.Scope == EmailSettingsScope.Team && t.ScopeId == teamId.Value,
+                t => t.Name == name && t.Scope == EmailSettingsScope.Team && t.ScopeId == EmailScopeId.From(teamId.Value),
                 cancellationToken);
 
         if (template is not null)
@@ -55,7 +55,7 @@ internal sealed class EmailTemplateService(IEmailWriteStore writeStore) : IEmail
 
         return EmailTemplate.Create(
             EmailSettingsScope.Team,
-            Guid.Empty,
+            EmailScopeId.From(Guid.Empty),
             entry.Name,
             entry.DefaultSubject,
             entry.DefaultTextBody,

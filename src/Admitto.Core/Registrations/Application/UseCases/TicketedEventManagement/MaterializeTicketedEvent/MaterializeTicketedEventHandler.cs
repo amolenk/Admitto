@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
@@ -18,10 +19,10 @@ internal sealed class MaterializeTicketedEventHandler(IRegistrationsWriteStore w
         var timeZone = TimeZoneId.From(command.TimeZone);
 
         var ticketedEvent = TicketedEvent.Create(
-            command.CreationRequestId,
+            CreationRequestId.From(command.CreationRequestId),
             ticketedEventId,
             teamId,
-            DisplayName.From(command.Name),
+            EventName.From(command.Name),
             AbsoluteUrl.From(command.WebsiteUrl),
             AbsoluteUrl.From(command.BaseUrl),
             command.StartsAt,

@@ -37,7 +37,6 @@ export function buildEmailRecipientOptions(
         options.push({ value: normalized, label: normalized });
     }
 
-    add(team?.emailAddress);
     members?.forEach((member) => add(member.email));
 
     return options;

@@ -1,3 +1,6 @@
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
+using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+
 namespace Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 
 /// <summary>
@@ -11,14 +14,16 @@ public sealed class BulkEmailRecipient
 {
     private BulkEmailRecipient()
     {
+#pragma warning disable VOG009
         Email = default!;
+#pragma warning restore VOG009
         ParametersJson = "{}";
     }
 
     public BulkEmailRecipient(
-        string email,
+        EmailAddress email,
         string? displayName,
-        Guid? registrationId,
+        RegistrationId? registrationId,
         string parametersJson)
     {
         Email = email;
@@ -29,9 +34,9 @@ public sealed class BulkEmailRecipient
         LastError = null;
     }
 
-    public string Email { get; private set; }
+    public EmailAddress Email { get; private set; }
     public string? DisplayName { get; private set; }
-    public Guid? RegistrationId { get; private set; }
+    public RegistrationId? RegistrationId { get; private set; }
     public string ParametersJson { get; private set; }
     public BulkEmailRecipientStatus Status { get; private set; }
     public string? LastError { get; private set; }

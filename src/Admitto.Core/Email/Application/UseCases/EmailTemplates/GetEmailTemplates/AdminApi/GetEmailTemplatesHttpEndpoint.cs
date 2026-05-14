@@ -34,8 +34,8 @@ public static class GetEmailTemplatesHttpEndpoint
             GetEmailTemplatesHandler handler,
             CancellationToken ct)
         {
-            var scopeId = scope == EmailSettingsScope.Event ? eventId!.Value : teamId;
-            var parentScopeId = scope == EmailSettingsScope.Event ? teamId : (Guid?)null;
+            var scopeId = EmailScopeId.From(scope == EmailSettingsScope.Event ? eventId!.Value : teamId);
+            var parentScopeId = scope == EmailSettingsScope.Event ? EmailScopeId.From(teamId) : (EmailScopeId?)null;
 
             var rows = await handler.HandleAsync(
                 new GetEmailTemplatesQuery(scope, scopeId, parentScopeId), ct);

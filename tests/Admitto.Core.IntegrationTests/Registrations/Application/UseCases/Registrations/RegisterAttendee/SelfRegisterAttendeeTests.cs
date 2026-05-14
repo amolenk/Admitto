@@ -6,6 +6,7 @@ using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Tests.Application.UseCases.Registrations.RegisterAttendee;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Microsoft.EntityFrameworkCore;
 
@@ -32,7 +33,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
             registration.ShouldNotBeNull();
             registration.Id.Value.ShouldBe(registrationId);
             registration.Email.Value.ShouldBe("dave@example.com");
-            registration.Tickets.ShouldHaveSingleItem().Slug.ShouldBe(fixture.TicketTypeSlug);
+            registration.Tickets.ShouldHaveSingleItem().Slug.ShouldBe(Slug.From(fixture.TicketTypeSlug));
 
             var catalog = await dbContext.TicketCatalogs.SingleOrDefaultAsync(testContext.CancellationToken);
             catalog.ShouldNotBeNull();
@@ -351,7 +352,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
             registration.CancellationReason.ShouldBeNull();
             registration.HasReconfirmed.ShouldBeFalse();
             registration.ReconfirmedAt.ShouldBeNull();
-            registration.Tickets.ShouldHaveSingleItem().Slug.ShouldBe(fixture.TicketTypeSlug);
+            registration.Tickets.ShouldHaveSingleItem().Slug.ShouldBe(Slug.From(fixture.TicketTypeSlug));
             registration.AdditionalDetails["tshirt"].ShouldBe("M");
             AssertAttendeeRegisteredEvent(registration);
 

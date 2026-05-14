@@ -1,6 +1,8 @@
 using System.Reflection;
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
+using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Outbox;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
@@ -34,8 +36,16 @@ public sealed class RegistrationsDbContext(DbContextOptions<RegistrationsDbConte
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
         configurationBuilder
-            .Properties<DisplayName>()
-            .HaveConversion<DisplayName.EfCoreValueConverter>();
+            .Properties<EventName>()
+            .HaveConversion<EventName.EfCoreValueConverter>();
+
+        configurationBuilder
+            .Properties<TicketTypeName>()
+            .HaveConversion<TicketTypeName.EfCoreValueConverter>();
+
+        configurationBuilder
+            .Properties<RegistrationId>()
+            .HaveConversion<RegistrationId.EfCoreValueConverter>();
 
         configurationBuilder
             .Properties<EmailAddress>()

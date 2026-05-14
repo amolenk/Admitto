@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.DomainEvents;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
@@ -11,7 +12,7 @@ namespace Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 /// <c>TicketedEventCreatedIntegrationEvent</c> without persisting it on the aggregate.
 /// </summary>
 public record TicketedEventCreatedDomainEvent(
-    Guid CreationRequestId,
+    CreationRequestId CreationRequestId,
     TeamId TeamId,
     TicketedEventId TicketedEventId,
     TimeZoneId TimeZone) : DomainEvent;

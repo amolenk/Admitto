@@ -2,6 +2,7 @@ using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEventManag
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCases.TicketedEventManagement.GetTicketedEventDetails;
 
@@ -22,10 +23,10 @@ public sealed class GetTicketedEventDetailsTests(TestContext testContext) : Aspi
         await Environment.RegistrationsDatabase.SeedAsync(ctx =>
         {
             var te = TicketedEvent.Create(
-                Guid.NewGuid(),
+                CreationRequestId.From(Guid.NewGuid()),
                 eventId,
                 teamId,
-                DisplayName.From("Conf 2026"),
+                EventName.From("Conf 2026"),
                 AbsoluteUrl.From("https://example.com"),
                 AbsoluteUrl.From("https://tickets.example.com"),
                 DateTimeOffset.UtcNow.AddDays(30),
@@ -75,10 +76,10 @@ public sealed class GetTicketedEventDetailsTests(TestContext testContext) : Aspi
         await Environment.RegistrationsDatabase.SeedAsync(ctx =>
         {
             var te = TicketedEvent.Create(
-                Guid.NewGuid(),
+                CreationRequestId.From(Guid.NewGuid()),
                 eventId,
                 teamId,
-                DisplayName.From("Bare Event"),
+                EventName.From("Bare Event"),
                 AbsoluteUrl.From("https://example.com"),
                 AbsoluteUrl.From("https://tickets.example.com"),
                 DateTimeOffset.UtcNow.AddDays(30),

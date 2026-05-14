@@ -13,7 +13,7 @@ public class EmailTemplate : Aggregate<EmailTemplateId>
     private EmailTemplate(
         EmailTemplateId id,
         EmailSettingsScope scope,
-        Guid scopeId,
+        EmailScopeId scopeId,
         string name,
         string subject,
         string textBody,
@@ -29,7 +29,7 @@ public class EmailTemplate : Aggregate<EmailTemplateId>
     }
 
     public EmailSettingsScope Scope { get; private set; }
-    public Guid ScopeId { get; private set; }
+    public EmailScopeId ScopeId { get; private set; }
 
     /// <summary>
     /// The template's unique name within its scope.
@@ -44,7 +44,7 @@ public class EmailTemplate : Aggregate<EmailTemplateId>
 
     public static EmailTemplate Create(
         EmailSettingsScope scope,
-        Guid scopeId,
+        EmailScopeId scopeId,
         string name,
         string subject,
         string textBody,

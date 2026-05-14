@@ -21,12 +21,7 @@ public class TeamEntityConfiguration : IEntityTypeConfiguration<Team>
         builder.Property(e => e.Name)
             .HasColumnName("name")
             .IsRequired()
-            .HasMaxLength(DisplayName.MaxLength);
-
-        builder.Property(e => e.EmailAddress)
-            .HasColumnName("email_address")
-            .IsRequired()
-            .HasMaxLength(EmailAddress.MaxLength);
+            .HasMaxLength(TeamName.MaxLength);
 
         builder.Property(e => e.ArchivedAt)
             .HasColumnName("archived_at");

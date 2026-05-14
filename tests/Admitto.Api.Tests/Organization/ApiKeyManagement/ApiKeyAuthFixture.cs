@@ -5,6 +5,7 @@ using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using TeamBuilder = Amolenk.Admitto.Testing.Builders.Organization.Application.TeamBuilder;
+using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Api.Tests.Organization.ApiKeyManagement;
 
@@ -85,7 +86,7 @@ internal sealed class ApiKeyAuthFixture
                 EventId = primaryEvent.Id.Value;
                 var primaryCatalog = TicketCatalog.Create(primaryEvent.Id);
                 primaryCatalog.AddTicketType(
-                    Slug.From("general-admission"), DisplayName.From("General Admission"), [], 100);
+                    Slug.From("general-admission"), TicketTypeName.From("General Admission"), [], 100);
                 db.TicketedEvents.Add(primaryEvent);
                 db.TicketCatalogs.Add(primaryCatalog);
 
@@ -95,7 +96,7 @@ internal sealed class ApiKeyAuthFixture
                     OtherEventId = otherEvent.Id.Value;
                     var otherCatalog = TicketCatalog.Create(otherEvent.Id);
                     otherCatalog.AddTicketType(
-                        Slug.From("general-admission"), DisplayName.From("General Admission"), [], 100);
+                        Slug.From("general-admission"), TicketTypeName.From("General Admission"), [], 100);
                     db.TicketedEvents.Add(otherEvent);
                     db.TicketCatalogs.Add(otherCatalog);
                 }
@@ -106,10 +107,10 @@ internal sealed class ApiKeyAuthFixture
     private static TicketedEvent BuildEvent(TeamId teamId, string displayName)
     {
         var ticketedEvent = TicketedEvent.Create(
-            Guid.NewGuid(),
+            CreationRequestId.From(Guid.NewGuid()),
             TicketedEventId.New(),
             teamId,
-            DisplayName.From(displayName),
+            EventName.From(displayName),
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),
             DateTimeOffset.UtcNow.AddDays(60),

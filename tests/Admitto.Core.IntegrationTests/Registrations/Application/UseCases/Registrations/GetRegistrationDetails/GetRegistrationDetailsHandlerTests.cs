@@ -1,6 +1,7 @@
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.GetRegistrationDetails;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCases.Registrations.GetRegistrationDetails;
 
@@ -27,7 +28,7 @@ public sealed class GetRegistrationDetailsHandlerTests(TestContext testContext) 
         result.ReconfirmedAt.ShouldBeNull();
         result.CancellationReason.ShouldBeNull();
         result.Tickets.ShouldHaveSingleItem().Slug.ShouldBe(GetRegistrationDetailsFixture.TicketTypeSlug);
-        result.Tickets[0].Name.ShouldBe(GetRegistrationDetailsFixture.TicketTypeName);
+        result.Tickets[0].Name.ShouldBe(GetRegistrationDetailsFixture.TicketTypeNameStr);
         result.Activities.ShouldHaveSingleItem().ActivityType.ShouldBe(nameof(ActivityType.Registered));
     }
 

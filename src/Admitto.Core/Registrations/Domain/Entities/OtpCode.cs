@@ -70,7 +70,7 @@ public class OtpCode : Entity<OtpCodeId>, IIsVersioned, IDomainEventsProvider
     public static OtpCode Create(
         TeamId teamId,
         TicketedEventId eventId,
-        string eventName,
+        EventName eventName,
         EmailAddress recipientEmail,
         string plainCode,
         DateTimeOffset expiresAt)

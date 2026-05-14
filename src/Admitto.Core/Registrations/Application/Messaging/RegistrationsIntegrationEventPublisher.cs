@@ -1,5 +1,6 @@
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
@@ -26,7 +27,7 @@ internal sealed class RegistrationsIntegrationEventPublisher(
             domainEvent.RecipientEmail.Value,
             domainEvent.FirstName.Value,
             domainEvent.LastName.Value,
-            domainEvent.Tickets.Select(t => new TicketTypeItem(t.Slug, t.Name)).ToList()));
+            domainEvent.Tickets.Select(t => new TicketTypeItem(t.Slug.Value, t.Name.Value)).ToList()));
 
         return ValueTask.CompletedTask;
     }
@@ -37,7 +38,7 @@ internal sealed class RegistrationsIntegrationEventPublisher(
             domainEvent.OtpCodeId.Value,
             domainEvent.TeamId.Value,
             domainEvent.TicketedEventId.Value,
-            domainEvent.EventName,
+            domainEvent.EventName.Value,
             domainEvent.RecipientEmail.Value,
             domainEvent.PlainCode));
 
@@ -71,7 +72,7 @@ internal sealed class RegistrationsIntegrationEventPublisher(
     public ValueTask HandleAsync(TicketedEventCreatedDomainEvent domainEvent, CancellationToken cancellationToken)
     {
         outbox.Enqueue(new TicketedEventCreatedIntegrationEvent(
-            domainEvent.CreationRequestId,
+            domainEvent.CreationRequestId.Value,
             domainEvent.TeamId.Value,
             domainEvent.TicketedEventId.Value,
             domainEvent.TimeZone.Value));
@@ -137,7 +138,7 @@ internal sealed class RegistrationsIntegrationEventPublisher(
             domainEvent.RecipientEmail.Value,
             domainEvent.FirstName.Value,
             domainEvent.LastName.Value,
-            domainEvent.NewTickets.Select(t => new TicketTypeItem(t.Slug, t.Name)).ToList(),
+            domainEvent.NewTickets.Select(t => new TicketTypeItem(t.Slug.Value, t.Name.Value)).ToList(),
             domainEvent.ChangedAt));
 
         return ValueTask.CompletedTask;

@@ -31,12 +31,12 @@ internal sealed class GetTicketTypesFixture
             var catalog = TicketCatalog.Create(EventId);
             catalog.AddTicketType(
                 Slug.From("general-admission"),
-                DisplayName.From("General Admission"),
+                TicketTypeName.From("General Admission"),
                 [new TimeSlot(Slug.From("morning"))],
                 100);
             catalog.AddTicketType(
                 Slug.From("vip-pass"),
-                DisplayName.From("VIP Pass"),
+                TicketTypeName.From("VIP Pass"),
                 [],
                 50);
             catalog.CancelTicketType(Slug.From("vip-pass"));

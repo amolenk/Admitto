@@ -26,7 +26,7 @@ internal sealed class GetPublicTicketTypesHandler(IRegistrationsWriteStore write
             .Select(tt => new PublicTicketTypeDto(
                 tt.Id,
                 tt.Name.Value,
-                tt.TimeSlotSlugs,
+                tt.TimeSlotSlugs.Select(s => s.Value).ToArray(),
                 tt.MaxCapacity,
                 tt.UsedCapacity))
             .ToList();

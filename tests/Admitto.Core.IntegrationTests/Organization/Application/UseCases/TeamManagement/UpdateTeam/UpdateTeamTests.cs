@@ -22,7 +22,6 @@ public sealed class UpdateTeamTests(TestContext testContext) : AspireIntegration
         var command = new UpdateTeamCommand(
             fixture.TeamId,
             Name: "Acme Corp",
-            EmailAddress: null,
             ExpectedVersion: fixture.TeamVersion);
 
         var sut = new UpdateTeamHandler(Environment.OrganizationDatabase.Context);
@@ -39,7 +38,6 @@ public sealed class UpdateTeamTests(TestContext testContext) : AspireIntegration
 
             team.ShouldNotBeNull();
             team.Name.Value.ShouldBe("Acme Corp");
-            team.EmailAddress.Value.ShouldBe(fixture.OriginalEmail);
             team.Version.ShouldBeGreaterThan(fixture.TeamVersion);
         });
     }
@@ -60,7 +58,6 @@ public sealed class UpdateTeamTests(TestContext testContext) : AspireIntegration
         var command = new UpdateTeamCommand(
             fixture.TeamId,
             Name: "Acme Corp",
-            EmailAddress: null,
             ExpectedVersion: wrongVersion);
         var sut = new UpdateTeamHandler(Environment.OrganizationDatabase.Context);
 
@@ -83,7 +80,6 @@ public sealed class UpdateTeamTests(TestContext testContext) : AspireIntegration
         var command = new UpdateTeamCommand(
             fixture.TeamId,
             Name: "Acme Corp",
-            EmailAddress: null,
             ExpectedVersion: fixture.TeamVersion);
         var sut = new UpdateTeamHandler(Environment.OrganizationDatabase.Context);
 

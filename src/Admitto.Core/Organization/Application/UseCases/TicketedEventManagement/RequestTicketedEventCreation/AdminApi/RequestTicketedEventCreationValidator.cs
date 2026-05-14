@@ -9,7 +9,7 @@ public sealed class RequestTicketedEventCreationValidator
 {
     public RequestTicketedEventCreationValidator()
     {
-        RuleFor(x => x.Name).MustBeParseable(DisplayName.TryFrom);
+        RuleFor(x => x.Name).MustBeParseable(EventName.TryFrom);
         RuleFor(x => x.WebsiteUrl).MustBeParseable(AbsoluteUrl.TryFrom);
         RuleFor(x => x.BaseUrl).MustBeParseable(AbsoluteUrl.TryFrom);
         RuleFor(x => x.TimeZone).MustBeParseable(TimeZoneId.TryFrom);

@@ -1,7 +1,9 @@
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Testing.Builders.Registrations.Domain;
+using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCases.Registrations.RegisterAttendee;
 
@@ -71,8 +73,8 @@ internal sealed class RegisterAttendeeFixture
         var f = new RegisterAttendeeFixture();
         f._ticketedEvent = f.MakeActiveEventWithOpenWindow();
         var catalog = TicketCatalog.Create(f.EventId);
-        catalog.AddTicketType(Slug.From("general-admission"), DisplayName.From("General Admission"), [], 100);
-        catalog.AddTicketType(Slug.From("workshop-a"), DisplayName.From("Workshop A"), [], null);
+        catalog.AddTicketType(Slug.From("general-admission"), TicketTypeName.From("General Admission"), [], 100);
+        catalog.AddTicketType(Slug.From("workshop-a"), TicketTypeName.From("Workshop A"), [], null);
         catalog.CancelTicketType(Slug.From("workshop-a"));
         f._catalog = catalog;
         return f;
@@ -83,9 +85,9 @@ internal sealed class RegisterAttendeeFixture
         var f = new RegisterAttendeeFixture();
         f._ticketedEvent = f.MakeActiveEventWithOpenWindow();
         var catalog = TicketCatalog.Create(f.EventId);
-        catalog.AddTicketType(Slug.From("workshop-a"), DisplayName.From("Workshop A"),
+        catalog.AddTicketType(Slug.From("workshop-a"), TicketTypeName.From("Workshop A"),
             [new TimeSlot(Slug.From("morning"))], 20);
-        catalog.AddTicketType(Slug.From("workshop-b"), DisplayName.From("Workshop B"),
+        catalog.AddTicketType(Slug.From("workshop-b"), TicketTypeName.From("Workshop B"),
             [new TimeSlot(Slug.From("morning"))], 20);
         f._catalog = catalog;
         return f;
@@ -147,7 +149,7 @@ internal sealed class RegisterAttendeeFixture
         ev.Cancel();
         f._ticketedEvent = ev;
         var catalog = TicketCatalog.Create(f.EventId);
-        catalog.AddTicketType(Slug.From("general-admission"), DisplayName.From("General Admission"), [], 100);
+        catalog.AddTicketType(Slug.From("general-admission"), TicketTypeName.From("General Admission"), [], 100);
         f._catalog = catalog;
         return f;
     }
@@ -159,7 +161,7 @@ internal sealed class RegisterAttendeeFixture
         ev.Archive();
         f._ticketedEvent = ev;
         var catalog = TicketCatalog.Create(f.EventId);
-        catalog.AddTicketType(Slug.From("general-admission"), DisplayName.From("General Admission"), [], 100);
+        catalog.AddTicketType(Slug.From("general-admission"), TicketTypeName.From("General Admission"), [], 100);
         f._catalog = catalog;
         return f;
     }
@@ -193,7 +195,7 @@ internal sealed class RegisterAttendeeFixture
         var f = new RegisterAttendeeFixture();
         f._ticketedEvent = f.MakeActiveEventWithOpenWindow();
         var catalog = TicketCatalog.Create(f.EventId);
-        catalog.AddTicketType(Slug.From("general-admission"), DisplayName.From("General Admission"), [], 100);
+        catalog.AddTicketType(Slug.From("general-admission"), TicketTypeName.From("General Admission"), [], 100);
         catalog.MarkEventCancelled();
         f._catalog = catalog;
         return f;
@@ -210,7 +212,7 @@ internal sealed class RegisterAttendeeFixture
             EmailAddress.From(email),
             FirstName.From(firstName),
             LastName.From(lastName),
-            tickets ?? [new TicketTypeSnapshot(TicketTypeSlug, TicketTypeSlug, [])],
+            tickets ?? [new TicketTypeSnapshot(Slug.From(TicketTypeSlug), TicketTypeName.From(TicketTypeSlug), [])],
             AdditionalDetails.From(additionalDetails),
             IsCancelled: false,
             CancellationReason: CancellationReason.AttendeeRequest,
@@ -232,7 +234,7 @@ internal sealed class RegisterAttendeeFixture
             EmailAddress.From(email),
             FirstName.From(firstName),
             LastName.From(lastName),
-            tickets ?? [new TicketTypeSnapshot("previous-ticket", "Previous Ticket", [])],
+            tickets ?? [new TicketTypeSnapshot(Slug.From("previous-ticket"), TicketTypeName.From("Previous Ticket"), [])],
             AdditionalDetails.From(additionalDetails),
             IsCancelled: true,
             CancellationReason: cancellationReason,
@@ -437,10 +439,10 @@ internal sealed class RegisterAttendeeFixture
     private TicketedEvent MakeActiveEvent(TicketedEventRegistrationPolicy? policy)
     {
         var ev = TicketedEvent.Create(
-            Guid.NewGuid(),
+            CreationRequestId.From(Guid.NewGuid()),
             EventId,
             TeamId,
-            DisplayName.From("DevConf"),
+            EventName.From("DevConf"),
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),
             DateTimeOffset.UtcNow.AddDays(60),
@@ -459,7 +461,7 @@ internal sealed class RegisterAttendeeFixture
         var catalog = TicketCatalog.Create(EventId);
         foreach (var (slug, name, max, used, selfServiceEnabled) in ticketTypes)
         {
-            catalog.AddTicketType(Slug.From(slug), DisplayName.From(name), [], max, selfServiceEnabled);
+            catalog.AddTicketType(Slug.From(slug), TicketTypeName.From(name), [], max, selfServiceEnabled);
             if (used > 0)
             {
                 for (var i = 0; i < used; i++)

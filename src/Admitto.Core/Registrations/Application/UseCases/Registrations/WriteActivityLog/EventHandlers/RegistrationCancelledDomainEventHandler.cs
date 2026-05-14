@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
@@ -13,7 +14,7 @@ internal sealed class RegistrationCancelledDomainEventHandler(WriteActivityLogHa
     {
         await handler.HandleAsync(
             new WriteActivityLogCommand(
-                domainEvent.RegistrationId.Value,
+                domainEvent.RegistrationId,
                 ActivityType.Cancelled,
                 domainEvent.OccurredOn,
                 Metadata: domainEvent.Reason.ToString()),

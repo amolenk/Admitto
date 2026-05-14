@@ -5,5 +5,5 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.EmailSettings.DeleteEm
 
 internal sealed record DeleteEmailSettingsCommand(
     EmailSettingsScope Scope,
-    Guid ScopeId,
+    EmailScopeId ScopeId,
     uint ExpectedVersion) : Command;

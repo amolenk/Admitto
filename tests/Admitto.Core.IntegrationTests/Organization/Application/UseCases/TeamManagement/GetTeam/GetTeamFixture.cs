@@ -7,7 +7,6 @@ internal sealed class GetTeamFixture
     public Guid TeamId { get; private set; }
     public string TeamSlug { get; } = "acme";
     public string TeamName { get; } = "Acme Events";
-    public string TeamEmail { get; } = "info@acme.org";
 
     private GetTeamFixture()
     {
@@ -19,7 +18,6 @@ internal sealed class GetTeamFixture
     {
         var team = new TeamBuilder()
             .WithName(TeamName)
-            .WithEmail(TeamEmail)
             .Build();
 
         await environment.OrganizationDatabase.SeedAsync(dbContext =>

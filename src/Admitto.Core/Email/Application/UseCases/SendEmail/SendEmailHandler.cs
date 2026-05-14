@@ -4,6 +4,7 @@ using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
 using Amolenk.Admitto.Core.Email.Application.Templating;
 using Amolenk.Admitto.Core.Email.Domain.Entities;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
@@ -21,6 +22,10 @@ internal sealed class SendEmailHandler(
     {
         TeamId teamId = TeamId.From(command.TeamId);
         TicketedEventId ticketedEventId = TicketedEventId.From(command.TicketedEventId);
+        EmailAddress recipient = EmailAddress.From(command.RecipientAddress);
+        RegistrationId? registrationId = command.RegistrationId.HasValue
+            ? RegistrationId.From(command.RegistrationId.Value)
+            : null;
 
         // Dedup: skip if already processed.
         var alreadySent = await writeStore.EmailLog
@@ -38,10 +43,10 @@ internal sealed class SendEmailHandler(
         if (settings is null || !settings.IsValid())
         {
             writeStore.EmailLog.Add(EmailLog.Create(
-                teamId: command.TeamId,
-                ticketedEventId: command.TicketedEventId,
+                teamId: teamId,
+                ticketedEventId: ticketedEventId,
                 idempotencyKey: command.IdempotencyKey,
-                recipient: command.RecipientAddress,
+                recipient: recipient,
                 emailType: command.EmailType,
                 subject: string.Empty,
                 provider: emailSender.Provider,
@@ -50,7 +55,7 @@ internal sealed class SendEmailHandler(
                 sentAt: null,
                 statusUpdatedAt: now,
                 lastError: "Email settings not configured or incomplete.",
-                registrationId: command.RegistrationId));
+                registrationId: registrationId));
             return;
         }
 
@@ -65,10 +70,10 @@ internal sealed class SendEmailHandler(
         catch (EmailRenderException ex)
         {
             writeStore.EmailLog.Add(EmailLog.Create(
-                teamId: command.TeamId,
-                ticketedEventId: command.TicketedEventId,
+                teamId: teamId,
+                ticketedEventId: ticketedEventId,
                 idempotencyKey: command.IdempotencyKey,
-                recipient: command.RecipientAddress,
+                recipient: recipient,
                 emailType: command.EmailType,
                 subject: string.Empty,
                 provider: emailSender.Provider,
@@ -77,7 +82,7 @@ internal sealed class SendEmailHandler(
                 sentAt: null,
                 statusUpdatedAt: now,
                 lastError: ex.Message,
-                registrationId: command.RegistrationId));
+                registrationId: registrationId));
             return;
         }
 
@@ -94,10 +99,10 @@ internal sealed class SendEmailHandler(
             var providerMessageId = await emailSender.SendAsync(settings, message, cancellationToken);
 
             writeStore.EmailLog.Add(EmailLog.Create(
-                teamId: command.TeamId,
-                ticketedEventId: command.TicketedEventId,
+                teamId: teamId,
+                ticketedEventId: ticketedEventId,
                 idempotencyKey: command.IdempotencyKey,
-                recipient: command.RecipientAddress,
+                recipient: recipient,
                 emailType: command.EmailType,
                 subject: rendered.Subject,
                 provider: emailSender.Provider,
@@ -105,15 +110,15 @@ internal sealed class SendEmailHandler(
                 status: EmailLogStatus.Sent,
                 sentAt: now,
                 statusUpdatedAt: now,
-                registrationId: command.RegistrationId));
+                registrationId: registrationId));
         }
         catch (Exception ex)
         {
             writeStore.EmailLog.Add(EmailLog.Create(
-                teamId: command.TeamId,
-                ticketedEventId: command.TicketedEventId,
+                teamId: teamId,
+                ticketedEventId: ticketedEventId,
                 idempotencyKey: command.IdempotencyKey,
-                recipient: command.RecipientAddress,
+                recipient: recipient,
                 emailType: command.EmailType,
                 subject: rendered.Subject,
                 provider: emailSender.Provider,
@@ -122,7 +127,7 @@ internal sealed class SendEmailHandler(
                 sentAt: null,
                 statusUpdatedAt: DateTimeOffset.UtcNow,
                 lastError: ex.Message,
-                registrationId: command.RegistrationId));
+                registrationId: registrationId));
 
             throw;
         }

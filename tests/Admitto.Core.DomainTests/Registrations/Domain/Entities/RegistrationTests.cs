@@ -3,6 +3,7 @@ using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Shouldly;
 
@@ -21,15 +22,15 @@ public sealed class RegistrationTests
     public void SC001_Registration_Create_ValidInput_CreatesWithCorrectSnapshots()
     {
         // Arrange
-        var slug1 = "general-admission";
-        var slug2 = "vip-pass";
-        var timeSlots1 = new[] { "morning", "afternoon" };
-        var timeSlots2 = new[] { "evening" };
+        var slug1 = Slug.From("general-admission");
+        var slug2 = Slug.From("vip-pass");
+        var timeSlots1 = new[] { Slug.From("morning"), Slug.From("afternoon") };
+        var timeSlots2 = new[] { Slug.From("evening") };
 
         var tickets = new List<TicketTypeSnapshot>
         {
-            new(slug1, slug1, timeSlots1),
-            new(slug2, slug2, timeSlots2)
+            new(slug1, TicketTypeName.From("general-admission"), timeSlots1),
+            new(slug2, TicketTypeName.From("vip-pass"), timeSlots2)
         };
 
         // Act
@@ -125,16 +126,16 @@ public sealed class RegistrationTests
         ClearEvents(sut);
         var newTickets = new List<TicketTypeSnapshot>
         {
-            new("workshop", "Workshop", []),
-            new("dinner", "Dinner", [])
+            new(Slug.From("workshop"), TicketTypeName.From("Workshop"), []),
+            new(Slug.From("dinner"), TicketTypeName.From("Dinner"), [])
         };
         var changedAt = DateTimeOffset.UtcNow;
 
         sut.ChangeTickets(newTickets, changedAt);
 
         sut.Tickets.Count.ShouldBe(2);
-        sut.Tickets.ShouldContain(t => t.Slug == "workshop");
-        sut.Tickets.ShouldContain(t => t.Slug == "dinner");
+        sut.Tickets.ShouldContain(t => t.Slug.Value == "workshop");
+        sut.Tickets.ShouldContain(t => t.Slug.Value == "dinner");
         sut.GetDomainEvents().OfType<TicketsChangedDomainEvent>().ShouldHaveSingleItem();
     }
 
@@ -145,7 +146,7 @@ public sealed class RegistrationTests
         ClearEvents(sut);
         var sameTickets = new List<TicketTypeSnapshot>
         {
-            new("general-admission", "General Admission", [])
+            new(Slug.From("general-admission"), TicketTypeName.From("General Admission"), [])
         };
 
         sut.ChangeTickets(sameTickets, DateTimeOffset.UtcNow);
@@ -161,7 +162,7 @@ public sealed class RegistrationTests
         sut.Cancel(CancellationReason.AttendeeRequest);
 
         var result = ErrorResult.Capture(() =>
-            sut.ChangeTickets([new("workshop", "Workshop", [])], DateTimeOffset.UtcNow));
+            sut.ChangeTickets([new(Slug.From("workshop"), TicketTypeName.From("Workshop"), [])], DateTimeOffset.UtcNow));
 
         result.Error.ShouldMatch(Registration.Errors.RegistrationIsCancelled);
     }
@@ -180,7 +181,7 @@ public sealed class RegistrationTests
         sut.Reset(
             FirstName.From("Reset"),
             LastName.From("User"),
-            [new TicketTypeSnapshot("workshop", "Workshop", ["morning"])],
+            [new TicketTypeSnapshot(Slug.From("workshop"), TicketTypeName.From("Workshop"), [Slug.From("morning")])],
             AdditionalDetails.From(new Dictionary<string, string> { ["tshirt"] = "M" }));
 
         sut.Id.ShouldBe(id);
@@ -198,7 +199,7 @@ public sealed class RegistrationTests
         var result = ErrorResult.Capture(() => sut.Reset(
             FirstName.From("Reset"),
             LastName.From("User"),
-            [new TicketTypeSnapshot("workshop", "Workshop", [])],
+            [new TicketTypeSnapshot(Slug.From("workshop"), TicketTypeName.From("Workshop"), [])],
             AdditionalDetails.Empty));
 
         result.Error.ShouldMatch(Registration.Errors.CannotResetActive);
@@ -214,7 +215,7 @@ public sealed class RegistrationTests
         sut.Reset(
             FirstName.From("Reset"),
             LastName.From("User"),
-            [new TicketTypeSnapshot("workshop", "Workshop", [])],
+            [new TicketTypeSnapshot(Slug.From("workshop"), TicketTypeName.From("Workshop"), [])],
             AdditionalDetails.Empty);
 
         sut.CancellationReason.ShouldBeNull();
@@ -231,7 +232,7 @@ public sealed class RegistrationTests
             DefaultEmail,
             FirstName.From("Old"),
             LastName.From("Name"),
-            [new TicketTypeSnapshot("old-ticket", "Old Ticket", ["old-slot"])],
+            [new TicketTypeSnapshot(Slug.From("old-ticket"), TicketTypeName.From("Old Ticket"), [Slug.From("old-slot")])],
             AdditionalDetails.From(new Dictionary<string, string> { ["meal"] = "vegan" }));
         sut.Cancel(CancellationReason.AttendeeRequest);
 
@@ -239,16 +240,16 @@ public sealed class RegistrationTests
             FirstName.From("New"),
             LastName.From("Person"),
             [
-                new TicketTypeSnapshot("workshop", "Workshop", ["morning"]),
-                new TicketTypeSnapshot("dinner", "Dinner", [])
+                new TicketTypeSnapshot(Slug.From("workshop"), TicketTypeName.From("Workshop"), [Slug.From("morning")]),
+                new TicketTypeSnapshot(Slug.From("dinner"), TicketTypeName.From("Dinner"), [])
             ],
             AdditionalDetails.From(new Dictionary<string, string> { ["tshirt"] = "M" }));
 
         sut.FirstName.ShouldBe(FirstName.From("New"));
         sut.LastName.ShouldBe(LastName.From("Person"));
         sut.Tickets.Count.ShouldBe(2);
-        sut.Tickets.ShouldContain(t => t.Slug == "workshop" && t.Name == "Workshop");
-        sut.Tickets.ShouldContain(t => t.Slug == "dinner" && t.Name == "Dinner");
+        sut.Tickets.ShouldContain(t => t.Slug.Value == "workshop" && t.Name.Value == "Workshop");
+        sut.Tickets.ShouldContain(t => t.Slug.Value == "dinner" && t.Name.Value == "Dinner");
         sut.AdditionalDetails.Count.ShouldBe(1);
         sut.AdditionalDetails["tshirt"].ShouldBe("M");
     }
@@ -261,7 +262,7 @@ public sealed class RegistrationTests
         ClearEvents(sut);
         var tickets = new List<TicketTypeSnapshot>
         {
-            new("workshop", "Workshop", ["morning"])
+            new(Slug.From("workshop"), TicketTypeName.From("Workshop"), [Slug.From("morning")])
         };
 
         sut.Reset(
@@ -289,7 +290,7 @@ public sealed class RegistrationTests
             DefaultEmail,
             DefaultFirstName,
             DefaultLastName,
-            [new TicketTypeSnapshot("general-admission", "general-admission", [])]);
+            [new TicketTypeSnapshot(Slug.From("general-admission"), TicketTypeName.From("general-admission"), [])]);
 
     private static void ClearEvents(Registration r) => r.ClearDomainEvents();
 }

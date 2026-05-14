@@ -7,6 +7,7 @@ using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using TeamBuilder = Amolenk.Admitto.Testing.Builders.Organization.Application.TeamBuilder;
+using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Api.Tests.Email.BulkEmail;
 
@@ -76,10 +77,10 @@ internal sealed class BulkEmailFixture
         EventId = TicketedEventId.New();
 
         var ticketedEvent = TicketedEvent.Create(
-            Guid.NewGuid(),
+            CreationRequestId.From(Guid.NewGuid()),
             EventId,
             team.Id,
-            DisplayName.From("Bulk Conf"),
+            EventName.From("Bulk Conf"),
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),
             DateTimeOffset.UtcNow.AddDays(60),
@@ -92,11 +93,11 @@ internal sealed class BulkEmailFixture
                 DateTimeOffset.UtcNow.AddDays(30)));
 
         var catalog = TicketCatalog.Create(EventId);
-        catalog.AddTicketType(Slug.From(TicketTypeSlug), DisplayName.From("General Admission"), [], 100);
+        catalog.AddTicketType(Slug.From(TicketTypeSlug), TicketTypeName.From("General Admission"), [], 100);
 
         // Seed registrations directly via the aggregate so we control state
         // (cancelled / reconfirmed) deterministically without going through the API.
-        var ticketSnapshot = new TicketTypeSnapshot(TicketTypeSlug, TicketTypeSlug, []);
+        var ticketSnapshot = new TicketTypeSnapshot(Slug.From(TicketTypeSlug), TicketTypeName.From(TicketTypeSlug), []);
         foreach (var seed in _registrationSeeds)
         {
             var registration = Registration.Create(
@@ -121,7 +122,7 @@ internal sealed class BulkEmailFixture
 
         var emailSettings = EmailSettings.Create(
             scope: EmailSettingsScope.Team,
-            scopeId: team.Id.Value,
+            scopeId: EmailScopeId.From(team.Id.Value),
             smtpHost: Hostname.From(smtpHost),
             smtpPort: Port.From(smtpPort),
             fromAddress: EmailAddress.From("noreply@admitto.io"),

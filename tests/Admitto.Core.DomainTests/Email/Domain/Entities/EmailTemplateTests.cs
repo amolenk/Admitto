@@ -11,7 +11,7 @@ public sealed class EmailTemplateTests
     [TestMethod]
     public void Create_WithEventScope_SetsAllFields()
     {
-        var scopeId = Guid.NewGuid();
+        var scopeId = EmailScopeId.From(Guid.NewGuid());
 
         var template = EmailTemplate.Create(
             EmailSettingsScope.Event,
@@ -33,7 +33,7 @@ public sealed class EmailTemplateTests
     [TestMethod]
     public void Create_WithTeamScope_SetsScope()
     {
-        var teamScopeId = Guid.NewGuid();
+        var teamScopeId = EmailScopeId.From(Guid.NewGuid());
 
         var template = EmailTemplate.Create(
             EmailSettingsScope.Team,
@@ -50,8 +50,8 @@ public sealed class EmailTemplateTests
     [TestMethod]
     public void Create_TwoTemplates_HaveDistinctIds()
     {
-        var t1 = EmailTemplate.Create(EmailSettingsScope.Event, Guid.NewGuid(), BuiltInEmailTemplateNames.TicketConfirmation, "S1", "T1", "H1");
-        var t2 = EmailTemplate.Create(EmailSettingsScope.Event, Guid.NewGuid(), BuiltInEmailTemplateNames.Reconfirmation, "S2", "T2", "H2");
+        var t1 = EmailTemplate.Create(EmailSettingsScope.Event, EmailScopeId.From(Guid.NewGuid()), BuiltInEmailTemplateNames.TicketConfirmation, "S1", "T1", "H1");
+        var t2 = EmailTemplate.Create(EmailSettingsScope.Event, EmailScopeId.From(Guid.NewGuid()), BuiltInEmailTemplateNames.Reconfirmation, "S2", "T2", "H2");
 
         t1.Id.ShouldNotBe(t2.Id);
     }
@@ -61,7 +61,7 @@ public sealed class EmailTemplateTests
     {
         var template = EmailTemplate.Create(
             EmailSettingsScope.Event,
-            Guid.NewGuid(),
+            EmailScopeId.From(Guid.NewGuid()),
             BuiltInEmailTemplateNames.TicketConfirmation,
             "Old subject",
             "Old text",
@@ -77,7 +77,7 @@ public sealed class EmailTemplateTests
     [TestMethod]
     public void Update_DoesNotChangeScope()
     {
-        var scopeId = Guid.NewGuid();
+        var scopeId = EmailScopeId.From(Guid.NewGuid());
         var template = EmailTemplate.Create(EmailSettingsScope.Event, scopeId, BuiltInEmailTemplateNames.TicketConfirmation, "S", "T", "H");
 
         template.Update("New subject", "New text", "<p>New html</p>");

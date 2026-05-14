@@ -30,7 +30,7 @@ public sealed record BulkEmailSourceHttpDto(
         if (ExternalList is not null)
         {
             var items = ExternalList.Items
-                .Select(i => new ExternalListItem(i.Email, i.DisplayName))
+                .Select(i => new ExternalListItem(EmailAddress.From(i.Email), i.DisplayName))
                 .ToList();
 
             return new ExternalListSource(items);

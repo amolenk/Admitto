@@ -168,10 +168,10 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
 
         var idempotencyKey = $"bulk:{job.Id.Value:N}:alice@example.com";
         var preExisting = EmailLog.Create(
-            teamId: job.TeamId.Value,
-            ticketedEventId: job.TicketedEventId.Value,
+            teamId: job.TeamId,
+            ticketedEventId: job.TicketedEventId,
             idempotencyKey: idempotencyKey,
-            recipient: "alice@example.com",
+            recipient: EmailAddress.From("alice@example.com"),
             emailType: DefaultEmailType,
             subject: "Pre-existing",
             provider: "FakeBulk",

@@ -1,6 +1,7 @@
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypeManagement.AddTicketType;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Microsoft.EntityFrameworkCore;
+using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCases.TicketTypeManagement.AddTicketType;
 
@@ -38,7 +39,7 @@ public sealed class AddTicketTypeTests(TestContext testContext) : AspireIntegrat
             var ticketType = catalog.TicketTypes[0];
             ticketType.Id.ShouldBe("general-admission");
             ticketType.Name.Value.ShouldBe("General Admission");
-            ticketType.TimeSlotSlugs.ShouldContain("morning");
+            ticketType.TimeSlotSlugs.ShouldContain(Slug.From("morning"));
             ticketType.MaxCapacity.ShouldBe(100);
             ticketType.IsCancelled.ShouldBeFalse();
         });

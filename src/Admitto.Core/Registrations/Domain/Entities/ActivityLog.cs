@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.Entities;
 
@@ -10,7 +11,7 @@ public class ActivityLog : Entity<ActivityLogId>
 
     private ActivityLog(
         ActivityLogId id,
-        Guid registrationId,
+        RegistrationId registrationId,
         ActivityType activityType,
         DateTimeOffset occurredAt,
         string? metadata)
@@ -22,13 +23,13 @@ public class ActivityLog : Entity<ActivityLogId>
         Metadata = metadata;
     }
 
-    public Guid RegistrationId { get; private set; }
+    public RegistrationId RegistrationId { get; private set; }
     public ActivityType ActivityType { get; private set; }
     public DateTimeOffset OccurredAt { get; private set; }
     public string? Metadata { get; private set; }
 
     public static ActivityLog Create(
-        Guid registrationId,
+        RegistrationId registrationId,
         ActivityType activityType,
         DateTimeOffset occurredAt,
         string? metadata = null)

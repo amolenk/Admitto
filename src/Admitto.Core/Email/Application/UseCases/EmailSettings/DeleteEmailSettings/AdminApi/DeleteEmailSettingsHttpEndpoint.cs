@@ -35,7 +35,7 @@ public static class DeleteEmailSettingsHttpEndpoint
             [FromKeyedServices(EmailModule.Key)] IUnitOfWork unitOfWork,
             CancellationToken ct)
         {
-            var scopeId = scope == EmailSettingsScope.Event ? eventId!.Value : teamId;
+            var scopeId = EmailScopeId.From(scope == EmailSettingsScope.Event ? eventId!.Value : teamId);
 
             await handler.HandleAsync(new DeleteEmailSettingsCommand(scope, scopeId, version), ct);
             await unitOfWork.SaveChangesAsync(ct);

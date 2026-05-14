@@ -3,6 +3,7 @@ using Amolenk.Admitto.Core.Email.Application.Persistence;
 using Amolenk.Admitto.Core.Email.Domain.Entities;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Email.Infrastructure.Persistence.ValueConverters;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Outbox;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
@@ -46,6 +47,22 @@ public sealed class EmailDbContext(DbContextOptions<EmailDbContext> options)
 
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
+        configurationBuilder
+            .Properties<TeamId>()
+            .HaveConversion<TeamId.EfCoreValueConverter>();
+
+        configurationBuilder
+            .Properties<TicketedEventId>()
+            .HaveConversion<TicketedEventId.EfCoreValueConverter>();
+
+        configurationBuilder
+            .Properties<EmailScopeId>()
+            .HaveConversion<EmailScopeId.EfCoreValueConverter>();
+
+        configurationBuilder
+            .Properties<RegistrationId>()
+            .HaveConversion<RegistrationId.EfCoreValueConverter>();
+
         configurationBuilder
             .Properties<EmailAddress>()
             .HaveConversion<EmailAddress.EfCoreValueConverter>();

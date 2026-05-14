@@ -1,6 +1,8 @@
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.ChangeAttendeeTickets;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Microsoft.EntityFrameworkCore;
+using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCases.Registrations.ChangeAttendeeTickets;
 
@@ -32,7 +34,7 @@ public sealed class ChangeAttendeeTicketsHandlerTests(TestContext testContext) :
                 .FirstOrDefaultAsync(r => r.Id == fixture.RegistrationId, testContext.CancellationToken);
             registration.ShouldNotBeNull();
             registration.Tickets.Count.ShouldBe(1);
-            registration.Tickets[0].Slug.ShouldBe("workshop");
+            registration.Tickets[0].Slug.ShouldBe(Slug.From("workshop"));
 
             // Capacity: early-bird released (50→49), workshop claimed (10→11)
             var catalog = await dbContext.TicketCatalogs

@@ -20,7 +20,7 @@ internal sealed class GetApiKeysHandler(IOrganizationWriteStore writeStore)
             .OrderByDescending(k => k.CreatedAt)
             .Select(k => new ApiKeyListItemDto(
                 k.Id.Value,
-                k.Name,
+                k.Name.Value,
                 k.KeyPrefix,
                 k.CreatedAt,
                 k.CreatedBy,

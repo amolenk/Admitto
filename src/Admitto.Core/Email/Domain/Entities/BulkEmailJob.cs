@@ -278,7 +278,7 @@ public sealed class BulkEmailJob : Aggregate<BulkEmailJobId>
     private BulkEmailRecipient FindPendingRecipient(string email)
     {
         var recipient = _recipients.FirstOrDefault(r =>
-            string.Equals(r.Email, email, StringComparison.OrdinalIgnoreCase));
+            string.Equals(r.Email.Value, email, StringComparison.OrdinalIgnoreCase));
 
         if (recipient is null)
             throw new BusinessRuleViolationException(Errors.RecipientNotFound(email));

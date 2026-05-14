@@ -33,8 +33,12 @@ public sealed class OrganizationDbContext(DbContextOptions<OrganizationDbContext
     protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
     {
         configurationBuilder
-            .Properties<DisplayName>()
-            .HaveConversion<DisplayName.EfCoreValueConverter>();
+            .Properties<TeamName>()
+            .HaveConversion<TeamName.EfCoreValueConverter>();
+
+        configurationBuilder
+            .Properties<ApiKeyName>()
+            .HaveConversion<ApiKeyName.EfCoreValueConverter>();
 
         configurationBuilder
             .Properties<EmailAddress>()

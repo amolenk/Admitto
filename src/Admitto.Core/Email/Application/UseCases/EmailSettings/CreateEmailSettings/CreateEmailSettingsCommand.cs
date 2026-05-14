@@ -5,7 +5,7 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.EmailSettings.CreateEm
 
 internal sealed record CreateEmailSettingsCommand(
     EmailSettingsScope Scope,
-    Guid ScopeId,
+    EmailScopeId ScopeId,
     string SmtpHost,
     int SmtpPort,
     string FromAddress,

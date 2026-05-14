@@ -6,7 +6,6 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Organization.Application.UseCase
 internal sealed class CreateTeamFixture
 {
     public string ExistingTeamName { get; } = "Existing Team";
-    public string ExistingTeamEmailAddress { get; } = "existing@example.com";
 
     private CreateTeamFixture()
     {
@@ -17,8 +16,7 @@ internal sealed class CreateTeamFixture
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
     {
         var existingTeam = Team.Create(
-            DisplayName.From(ExistingTeamName),
-            EmailAddress.From(ExistingTeamEmailAddress));
+            TeamName.From(ExistingTeamName));
 
         await environment.OrganizationDatabase.SeedAsync(dbContext =>
         {

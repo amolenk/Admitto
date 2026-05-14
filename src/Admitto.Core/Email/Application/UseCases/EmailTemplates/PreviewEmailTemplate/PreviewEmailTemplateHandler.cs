@@ -15,7 +15,7 @@ internal sealed class PreviewEmailTemplateHandler(IEmailRenderer renderer)
     {
         var draftTemplate = EmailTemplate.Create(
             EmailSettingsScope.Team,
-            Guid.Empty,
+            EmailScopeId.From(Guid.Empty),
             "preview",
             query.Subject,
             query.TextBody,

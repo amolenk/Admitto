@@ -4,7 +4,9 @@ using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using NSubstitute;
+using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Core.Registrations.Tests.Application.Messaging;
 
@@ -37,7 +39,7 @@ public sealed class RegistrationsIntegrationEventPublisherTests
             EmailAddress.From("bob@example.com"),
             FirstName.From("Bob"),
             LastName.From("Smith"),
-            [new TicketTypeSnapshot("early-bird", "Early Bird", [])]);
+            [new TicketTypeSnapshot(Slug.From("early-bird"), TicketTypeName.From("Early Bird"), [])]);
 
         await _publisher.HandleAsync(domainEvent, CancellationToken.None);
 
@@ -62,7 +64,7 @@ public sealed class RegistrationsIntegrationEventPublisherTests
             otpCodeId,
             teamId,
             eventId,
-            EventName: "Spring Conf",
+            EventName: EventName.From("Spring Conf"),
             RecipientEmail: EmailAddress.From("alice@example.com"),
             PlainCode: "123456");
 
@@ -132,7 +134,7 @@ public sealed class RegistrationsIntegrationEventPublisherTests
     [TestMethod]
     public async ValueTask TicketedEventCreated_EnqueuesTicketedEventCreatedIntegrationEvent()
     {
-        var creationRequestId = Guid.NewGuid();
+        var creationRequestId = CreationRequestId.From(Guid.NewGuid());
         var teamId = TeamId.New();
         var eventId = TicketedEventId.New();
 
@@ -146,7 +148,7 @@ public sealed class RegistrationsIntegrationEventPublisherTests
 
         _captured.ShouldNotBeNull();
         var evt = _captured.ShouldBeOfType<TicketedEventCreatedIntegrationEvent>();
-        evt.CreationRequestId.ShouldBe(creationRequestId);
+        evt.CreationRequestId.ShouldBe(creationRequestId.Value);
         evt.TeamId.ShouldBe(teamId.Value);
         evt.TicketedEventId.ShouldBe(eventId.Value);
         evt.TimeZone.ShouldBe("Europe/Amsterdam");
@@ -256,7 +258,7 @@ public sealed class RegistrationsIntegrationEventPublisherTests
             FirstName.From("Eve"),
             LastName.From("Adams"),
             [],
-            [new TicketTypeSnapshot("vip", "VIP", [])],
+            [new TicketTypeSnapshot(Slug.From("vip"), TicketTypeName.From("VIP"), [])],
             changedAt);
 
         await _publisher.HandleAsync(domainEvent, CancellationToken.None);

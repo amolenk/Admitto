@@ -10,14 +10,14 @@ public class EmailTemplateBuilder
     public static readonly TicketedEventId DefaultEventId = TicketedEventId.New();
 
     private EmailSettingsScope _scope = EmailSettingsScope.Event;
-    private Guid _scopeId = DefaultEventId.Value;
+    private EmailScopeId _scopeId = EmailScopeId.From(DefaultEventId.Value);
     private string _name = BuiltInEmailTemplateNames.TicketConfirmation;
     private string _subject = "Your ticket";
     private string _textBody = "Hello {{ first_name }}";
     private string _htmlBody = "<p>Hello {{ first_name }}</p>";
 
-    public EmailTemplateBuilder ForEvent(TicketedEventId id) { _scopeId = id.Value; _scope = EmailSettingsScope.Event; return this; }
-    public EmailTemplateBuilder ForTeam(TeamId id) { _scopeId = id.Value; _scope = EmailSettingsScope.Team; return this; }
+    public EmailTemplateBuilder ForEvent(TicketedEventId id) { _scopeId = EmailScopeId.From(id.Value); _scope = EmailSettingsScope.Event; return this; }
+    public EmailTemplateBuilder ForTeam(TeamId id) { _scopeId = EmailScopeId.From(id.Value); _scope = EmailSettingsScope.Team; return this; }
     public EmailTemplateBuilder WithName(string name) { _name = name; return this; }
     public EmailTemplateBuilder WithSubject(string subject) { _subject = subject; return this; }
     public EmailTemplateBuilder WithTextBody(string body) { _textBody = body; return this; }

@@ -1,5 +1,6 @@
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
@@ -37,7 +38,7 @@ internal sealed class ReleaseTicketsHandler(IRegistrationsWriteStore writeStore)
         if (catalog is null)
             return;
 
-        var ticketSlugs = registration.Tickets.Select(t => t.Slug).ToList();
+        var ticketSlugs = registration.Tickets.Select(t => t.Slug.Value).ToList();
         catalog.Release(ticketSlugs);
     }
 }

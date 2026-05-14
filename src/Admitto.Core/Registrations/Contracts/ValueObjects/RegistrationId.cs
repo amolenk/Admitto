@@ -1,6 +1,6 @@
 using Vogen;
 
-namespace Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
+namespace Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 
 [ValueObject<Guid>]
 public partial struct RegistrationId

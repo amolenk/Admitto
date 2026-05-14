@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
+using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Shouldly;
 
@@ -10,7 +11,7 @@ public sealed class TicketTypeTests
     private static TicketType CreateTicketType(int? maxCapacity = 10, int usedCapacity = 0)
     {
         var catalog = TicketCatalog.Create(TicketedEventId.New());
-        catalog.AddTicketType(Slug.From("general"), DisplayName.From("General"), [], maxCapacity);
+        catalog.AddTicketType(Slug.From("general"), TicketTypeName.From("General"), [], maxCapacity);
         var tt = catalog.GetTicketType("general")!;
         for (var i = 0; i < usedCapacity; i++)
             tt.ClaimUncapped();

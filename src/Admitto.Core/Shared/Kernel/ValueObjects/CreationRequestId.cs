@@ -1,6 +1,6 @@
 using Vogen;
 
-namespace Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
+namespace Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
 /// <summary>
 /// Surrogate identifier for a <c>TeamEventCreationRequest</c>. Used to correlate

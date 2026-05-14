@@ -127,7 +127,7 @@ internal sealed class SendBulkEmailJob(
             {
                 template = EmailTemplate.Create(
                     EmailSettingsScope.Event,
-                    job.TicketedEventId.Value,
+                    EmailScopeId.From(job.TicketedEventId.Value),
                     job.EmailType,
                     job.Subject,
                     job.TextBody,
@@ -207,7 +207,7 @@ internal sealed class SendBulkEmailJob(
         IBulkSmtpSession session,
         CancellationToken ct)
     {
-        var idempotencyKey = $"bulk:{job.Id.Value:N}:{recipient.Email.ToLowerInvariant()}";
+        var idempotencyKey = $"bulk:{job.Id.Value:N}:{recipient.Email.Value.ToLowerInvariant()}";
         var now = DateTimeOffset.UtcNow;
 
         try
@@ -223,8 +223,8 @@ internal sealed class SendBulkEmailJob(
                 htmlBodyOverride: job.HtmlBody);
 
             var message = new EmailMessage(
-                RecipientAddress: recipient.Email,
-                RecipientName: recipient.DisplayName ?? recipient.Email,
+                RecipientAddress: recipient.Email.Value,
+                RecipientName: recipient.DisplayName ?? recipient.Email.Value,
                 Subject: rendered.Subject,
                 TextBody: rendered.TextBody,
                 HtmlBody: rendered.HtmlBody);
@@ -232,8 +232,8 @@ internal sealed class SendBulkEmailJob(
             var providerMessageId = await session.SendAsync(message, ct);
 
             writeStore.EmailLog.Add(EmailLog.Create(
-                teamId: job.TeamId.Value,
-                ticketedEventId: job.TicketedEventId.Value,
+                teamId: job.TeamId,
+                ticketedEventId: job.TicketedEventId,
                 idempotencyKey: idempotencyKey,
                 recipient: recipient.Email,
                 emailType: job.EmailType,
@@ -246,7 +246,7 @@ internal sealed class SendBulkEmailJob(
                 bulkEmailJobId: job.Id,
                 registrationId: recipient.RegistrationId));
 
-            job.RecordSentRecipient(recipient.Email);
+            job.RecordSentRecipient(recipient.Email.Value);
 
             try
             {
@@ -271,8 +271,8 @@ internal sealed class SendBulkEmailJob(
                 job.Id.Value, recipient.Email);
 
             writeStore.EmailLog.Add(EmailLog.Create(
-                teamId: job.TeamId.Value,
-                ticketedEventId: job.TicketedEventId.Value,
+                teamId: job.TeamId,
+                ticketedEventId: job.TicketedEventId,
                 idempotencyKey: idempotencyKey,
                 recipient: recipient.Email,
                 emailType: job.EmailType,
@@ -286,7 +286,7 @@ internal sealed class SendBulkEmailJob(
                 bulkEmailJobId: job.Id,
                 registrationId: recipient.RegistrationId));
 
-            job.RecordFailedRecipient(recipient.Email, ex.Message);
+            job.RecordFailedRecipient(recipient.Email.Value, ex.Message);
 
             try
             {

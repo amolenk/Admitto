@@ -142,10 +142,10 @@ internal sealed class RegisterAttendeeHandler(
             .Select(slug =>
             {
                 var ticketType = catalog?.GetTicketType(slug);
-                var timeSlots = ticketType?.TimeSlots.Select(ts => ts.Slug.Value).ToArray()
-                    ?? Array.Empty<string>();
-                var name = ticketType?.Name.Value ?? slug;
-                return new TicketTypeSnapshot(slug, name, timeSlots);
+                var timeSlots = ticketType?.TimeSlots.Select(ts => ts.Slug).ToArray()
+                    ?? Array.Empty<Slug>();
+                var name = ticketType?.Name ?? TicketTypeName.From(slug);
+                return new TicketTypeSnapshot(Slug.From(slug), name, timeSlots);
             })
             .ToList();
 

@@ -4,19 +4,12 @@ namespace Amolenk.Admitto.Testing.Builders.Organization.Application;
 
 public class TeamBuilder
 {
-    private DisplayName _name = DisplayName.From("Test Team");
-    private EmailAddress _email = EmailAddress.From("team@example.com");
+    private TeamName _name = TeamName.From("Test Team");
     private bool _archived;
 
     public TeamBuilder WithName(string name)
     {
-        _name = DisplayName.From(name);
-        return this;
-    }
-
-    public TeamBuilder WithEmail(string email)
-    {
-        _email = EmailAddress.From(email);
+        _name = TeamName.From(name);
         return this;
     }
 
@@ -28,7 +21,7 @@ public class TeamBuilder
 
     public Team Build()
     {
-        var team = Team.Create(_name, _email);
+        var team = Team.Create(_name);
         if (_archived)
         {
             team.Archive(DateTimeOffset.UtcNow);

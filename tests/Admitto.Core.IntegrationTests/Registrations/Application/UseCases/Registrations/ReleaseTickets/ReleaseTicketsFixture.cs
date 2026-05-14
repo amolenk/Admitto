@@ -1,6 +1,7 @@
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCases.Registrations.ReleaseTickets;
 
@@ -22,7 +23,7 @@ internal sealed class ReleaseTicketsFixture
     {
         var f = new ReleaseTicketsFixture { TicketTypeSlug = ticketTypeSlug };
         var catalog = TicketCatalog.Create(f.EventId);
-        catalog.AddTicketType(Slug.From(ticketTypeSlug), DisplayName.From("General Admission"), [], maxCapacity);
+        catalog.AddTicketType(Slug.From(ticketTypeSlug), TicketTypeName.From("General Admission"), [], maxCapacity);
         for (var i = 0; i < usedCapacity; i++)
             catalog.Claim([ticketTypeSlug], enforce: false);
         f._catalog = catalog;
@@ -35,7 +36,7 @@ internal sealed class ReleaseTicketsFixture
     {
         var f = new ReleaseTicketsFixture { TicketTypeSlug = ticketTypeSlug };
         var catalog = TicketCatalog.Create(f.EventId);
-        catalog.AddTicketType(Slug.From(ticketTypeSlug), DisplayName.From("General Admission"), [], 10);
+        catalog.AddTicketType(Slug.From(ticketTypeSlug), TicketTypeName.From("General Admission"), [], 10);
         f._catalog = catalog;
         return f;
     }
@@ -44,7 +45,7 @@ internal sealed class ReleaseTicketsFixture
     {
         var f = new ReleaseTicketsFixture { TicketTypeSlug = "ghost-ticket" };
         var catalog = TicketCatalog.Create(f.EventId);
-        catalog.AddTicketType(Slug.From("known-ticket"), DisplayName.From("Known Ticket"), [], 10);
+        catalog.AddTicketType(Slug.From("known-ticket"), TicketTypeName.From("Known Ticket"), [], 10);
         catalog.Claim(["known-ticket"], enforce: false);
         f._catalog = catalog;
         return f;
@@ -63,7 +64,7 @@ internal sealed class ReleaseTicketsFixture
                 EmailAddress.From("alice@example.com"),
                 FirstName.From("Alice"),
                 LastName.From("Test"),
-                [new TicketTypeSnapshot(TicketTypeSlug, TicketTypeSlug, [])]);
+                [new TicketTypeSnapshot(Slug.From(TicketTypeSlug), TicketTypeName.From(TicketTypeSlug), [])]);
 
             RegistrationId = registration.Id;
             dbContext.Registrations.Add(registration);

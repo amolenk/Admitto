@@ -29,7 +29,7 @@ internal sealed class UpdateTicketTypeFixture
             var catalog = TicketCatalog.Create(EventId);
             catalog.AddTicketType(
                 Slug.From(TicketTypeSlug),
-                DisplayName.From("General Admission"),
+                TicketTypeName.From("General Admission"),
                 [],
                 100);
 

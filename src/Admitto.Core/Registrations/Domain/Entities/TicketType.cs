@@ -15,29 +15,29 @@ public class TicketType : Entity<string>
 
     internal TicketType(
         string slug,
-        DisplayName name,
+        TicketTypeName name,
         TimeSlot[] timeSlots,
         int? maxCapacity,
         bool selfServiceEnabled = true)
         : base(slug)
     {
         Name = name;
-        TimeSlotSlugs = timeSlots.Select(ts => ts.Slug.Value).ToArray();
+        TimeSlotSlugs = timeSlots.Select(ts => ts.Slug).ToArray();
         MaxCapacity = maxCapacity;
         UsedCapacity = 0;
         IsCancelled = false;
         SelfServiceEnabled = selfServiceEnabled;
     }
 
-    public DisplayName Name { get; private set; }
-    public string[] TimeSlotSlugs { get; private set; } = [];
-    public TimeSlot[] TimeSlots => TimeSlotSlugs.Select(s => new TimeSlot(Slug.From(s))).ToArray();
+    public TicketTypeName Name { get; private set; }
+    public Slug[] TimeSlotSlugs { get; private set; } = [];
+    public TimeSlot[] TimeSlots => TimeSlotSlugs.Select(s => new TimeSlot(s)).ToArray();
     public int? MaxCapacity { get; private set; }
     public int UsedCapacity { get; private set; }
     public bool IsCancelled { get; private set; }
     public bool SelfServiceEnabled { get; private set; } = true;
 
-    public void UpdateName(DisplayName name)
+    public void UpdateName(TicketTypeName name)
     {
         Name = name;
     }

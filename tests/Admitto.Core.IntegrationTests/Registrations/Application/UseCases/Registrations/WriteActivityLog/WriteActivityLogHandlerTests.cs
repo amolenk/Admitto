@@ -1,5 +1,6 @@
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.WriteActivityLog;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCases.Registrations.WriteActivityLog;
@@ -15,14 +16,14 @@ public sealed class WriteActivityLogHandlerTests(TestContext testContext) : Aspi
 
         var handler = new WriteActivityLogHandler(Environment.RegistrationsDatabase.Context);
         await handler.HandleAsync(
-            new WriteActivityLogCommand(registrationId.Value, ActivityType.Registered, occurredOn),
+            new WriteActivityLogCommand(registrationId, ActivityType.Registered, occurredOn),
             testContext.CancellationToken);
 
         await Environment.RegistrationsDatabase.AssertAsync(async db =>
         {
             var entry = await db.ActivityLog
                 .SingleOrDefaultAsync(
-                    a => a.RegistrationId == registrationId.Value,
+                    a => a.RegistrationId == registrationId,
                     testContext.CancellationToken);
             entry.ShouldNotBeNull();
             entry.ActivityType.ShouldBe(ActivityType.Registered);
@@ -39,14 +40,14 @@ public sealed class WriteActivityLogHandlerTests(TestContext testContext) : Aspi
 
         var handler = new WriteActivityLogHandler(Environment.RegistrationsDatabase.Context);
         await handler.HandleAsync(
-            new WriteActivityLogCommand(registrationId.Value, ActivityType.Reconfirmed, reconfirmedAt),
+            new WriteActivityLogCommand(registrationId, ActivityType.Reconfirmed, reconfirmedAt),
             testContext.CancellationToken);
 
         await Environment.RegistrationsDatabase.AssertAsync(async db =>
         {
             var entry = await db.ActivityLog
                 .SingleOrDefaultAsync(
-                    a => a.RegistrationId == registrationId.Value,
+                    a => a.RegistrationId == registrationId,
                     testContext.CancellationToken);
             entry.ShouldNotBeNull();
             entry.ActivityType.ShouldBe(ActivityType.Reconfirmed);
@@ -64,7 +65,7 @@ public sealed class WriteActivityLogHandlerTests(TestContext testContext) : Aspi
         var handler = new WriteActivityLogHandler(Environment.RegistrationsDatabase.Context);
         await handler.HandleAsync(
             new WriteActivityLogCommand(
-                registrationId.Value,
+                registrationId,
                 ActivityType.Cancelled,
                 occurredOn,
                 Metadata: CancellationReason.VisaLetterDenied.ToString()),
@@ -74,7 +75,7 @@ public sealed class WriteActivityLogHandlerTests(TestContext testContext) : Aspi
         {
             var entry = await db.ActivityLog
                 .SingleOrDefaultAsync(
-                    a => a.RegistrationId == registrationId.Value,
+                    a => a.RegistrationId == registrationId,
                     testContext.CancellationToken);
             entry.ShouldNotBeNull();
             entry.ActivityType.ShouldBe(ActivityType.Cancelled);
@@ -91,16 +92,16 @@ public sealed class WriteActivityLogHandlerTests(TestContext testContext) : Aspi
 
         var handler = new WriteActivityLogHandler(Environment.RegistrationsDatabase.Context);
         await handler.HandleAsync(
-            new WriteActivityLogCommand(registrationId.Value, ActivityType.Registered, now.AddMinutes(-10)),
+            new WriteActivityLogCommand(registrationId, ActivityType.Registered, now.AddMinutes(-10)),
             testContext.CancellationToken);
         await handler.HandleAsync(
-            new WriteActivityLogCommand(registrationId.Value, ActivityType.Reconfirmed, now.AddMinutes(-1)),
+            new WriteActivityLogCommand(registrationId, ActivityType.Reconfirmed, now.AddMinutes(-1)),
             testContext.CancellationToken);
 
         await Environment.RegistrationsDatabase.AssertAsync(async db =>
         {
             var entries = await db.ActivityLog
-                .Where(a => a.RegistrationId == registrationId.Value)
+                .Where(a => a.RegistrationId == registrationId)
                 .ToListAsync(testContext.CancellationToken);
             entries.Count.ShouldBe(2);
             entries.ShouldContain(a => a.ActivityType == ActivityType.Registered);

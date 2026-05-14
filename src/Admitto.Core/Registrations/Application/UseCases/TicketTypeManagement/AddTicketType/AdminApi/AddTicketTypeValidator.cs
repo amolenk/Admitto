@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Validation;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using FluentValidation;
@@ -12,7 +13,7 @@ public sealed class AddTicketTypeValidator : AbstractValidator<AddTicketTypeHttp
             .MustBeParseable(Slug.TryFrom);
 
         RuleFor(x => x.Name)
-            .MustBeParseable(DisplayName.TryFrom);
+            .MustBeParseable(TicketTypeName.TryFrom);
 
         When(x => x.TimeSlots is not null, () =>
         {

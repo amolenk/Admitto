@@ -13,7 +13,7 @@ internal sealed class UpdateTicketedEventDetailsHandler(IRegistrationsWriteStore
         CancellationToken cancellationToken)
     {
         TicketedEventId eventId = TicketedEventId.From(command.EventId);
-        DisplayName name = DisplayName.From(command.Name);
+        EventName name = EventName.From(command.Name);
         AbsoluteUrl websiteUrl = AbsoluteUrl.From(command.WebsiteUrl);
         AbsoluteUrl baseUrl = AbsoluteUrl.From(command.BaseUrl);
 

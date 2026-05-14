@@ -3,6 +3,7 @@ using Amolenk.Admitto.Api.Tests.Infrastructure.Hosting;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using TeamBuilder = Amolenk.Admitto.Testing.Builders.Organization.Application.TeamBuilder;
+using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Api.Tests.Registrations.OtpRequest;
 
@@ -30,10 +31,10 @@ internal sealed class OtpRequestFixture
         EventId = eventId;
 
         var ticketedEvent = TicketedEvent.Create(
-            Guid.NewGuid(),
+            CreationRequestId.From(Guid.NewGuid()),
             eventId,
             team.Id,
-            DisplayName.From("DevConf"),
+            EventName.From("DevConf"),
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),
             DateTimeOffset.UtcNow.AddDays(60),
@@ -55,7 +56,7 @@ internal sealed class OtpRequestFixture
         // Seed 3 OTP codes within the rate limit window to trigger the limit
         for (var i = 0; i < 3; i++)
         {
-            var code = OtpCode.Create(TeamId, EventId, "DevConf", EmailAddress.From(email), "123456",
+            var code = OtpCode.Create(TeamId, EventId, EventName.From("DevConf"), EmailAddress.From(email), "123456",
                 DateTimeOffset.UtcNow.AddMinutes(10));
             await environment.RegistrationsDatabase.SeedAsync(db => db.OtpCodes.Add(code));
         }

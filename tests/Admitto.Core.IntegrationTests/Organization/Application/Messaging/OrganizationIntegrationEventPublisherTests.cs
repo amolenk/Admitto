@@ -22,7 +22,7 @@ public sealed class OrganizationIntegrationEventPublisherTests
         var domainEvent = new TicketedEventCreationRequestedDomainEvent(
             creationRequestId,
             teamId,
-            DisplayName.From("My Conference"),
+            EventName.From("My Conference"),
             AbsoluteUrl.From("https://conf.example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),
             startsAt,

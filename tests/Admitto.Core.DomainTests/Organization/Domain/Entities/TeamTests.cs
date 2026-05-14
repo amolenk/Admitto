@@ -18,7 +18,7 @@ public sealed class TeamTests
     {
         // Arrange
         var sut = new TeamBuilder().Build();
-        var newName = DisplayName.From("Updated Name");
+        var newName = TeamName.From("Updated Name");
 
         // Act
         sut.ChangeName(newName);
@@ -34,38 +34,7 @@ public sealed class TeamTests
         var sut = new TeamBuilder().AsArchived().Build();
 
         // Act
-        var result = ErrorResult.Capture(() => sut.ChangeName(DisplayName.From("New Name")));
-
-        // Assert
-        result.Error.ShouldMatch(Team.Errors.TeamArchived(sut.Id));
-    }
-
-    // -------------------------------------------------------------------------
-    // ChangeEmailAddress()
-    // -------------------------------------------------------------------------
-
-    [TestMethod]
-    public void ChangeEmailAddress_ActiveTeam_UpdatesEmail()
-    {
-        // Arrange
-        var sut = new TeamBuilder().Build();
-        var newEmail = EmailAddress.From("new@example.com");
-
-        // Act
-        sut.ChangeEmailAddress(newEmail);
-
-        // Assert
-        sut.EmailAddress.ShouldBe(newEmail);
-    }
-
-    [TestMethod]
-    public void ChangeEmailAddress_ArchivedTeam_ThrowsTeamArchived()
-    {
-        // Arrange
-        var sut = new TeamBuilder().AsArchived().Build();
-
-        // Act
-        var result = ErrorResult.Capture(() => sut.ChangeEmailAddress(EmailAddress.From("new@example.com")));
+        var result = ErrorResult.Capture(() => sut.ChangeName(TeamName.From("New Name")));
 
         // Assert
         result.Error.ShouldMatch(Team.Errors.TeamArchived(sut.Id));

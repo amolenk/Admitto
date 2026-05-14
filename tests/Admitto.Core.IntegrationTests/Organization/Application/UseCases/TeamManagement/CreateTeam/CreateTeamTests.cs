@@ -14,8 +14,7 @@ public sealed class CreateTeamTests(TestContext testContext) : AspireIntegration
     {
         // Arrange
         const string name = "Team Bravo";
-        const string emailAddress = "team-bravo@example.com";
-        var command = NewCreateTeamCommand(name, emailAddress);
+        var command = NewCreateTeamCommand(name);
         var sut = NewCreateTeamHandler();
 
         // Act
@@ -29,18 +28,15 @@ public sealed class CreateTeamTests(TestContext testContext) : AspireIntegration
 
             team.ShouldNotBeNull();
             team.Name.Value.ShouldBe(command.Name);
-            team.EmailAddress.Value.ShouldBe(command.EmailAddress);
         });
     }
 
     private static CreateTeamCommand NewCreateTeamCommand(
-        string? name = null,
-        string? emailAddress = null)
+        string? name = null)
     {
         name ??= "Team Charlie";
-        emailAddress ??= "team-charlie@example.com";
 
-        return new CreateTeamCommand(name, emailAddress);
+        return new CreateTeamCommand(name);
     }
 
     private static CreateTeamHandler NewCreateTeamHandler() =>
@@ -54,7 +50,7 @@ public sealed class CreateTeamTests(TestContext testContext) : AspireIntegration
         var sut = NewCreateTeamHandler();
 
         // Act & Assert
-        // DisplayName.From("") throws BusinessRuleViolationException with code "text.empty"
+        // EventName.From("") throws BusinessRuleViolationException with code "text.empty"
         // because the value object enforces a non-empty, non-whitespace constraint.
         var exception = await Should.ThrowAsync<BusinessRuleViolationException>(
             async () => await sut.HandleAsync(command, testContext.CancellationToken));

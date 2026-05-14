@@ -12,19 +12,17 @@ internal sealed class CreateTeamHandler(IOrganizationWriteStore writeStore)
 {
     public async ValueTask HandleAsync(CreateTeamCommand command, CancellationToken cancellationToken)
     {
-        DisplayName name;
+        TeamName name;
         try
         {
-            name = DisplayName.From(command.Name);
+            name = TeamName.From(command.Name);
         }
         catch (ValueObjectValidationException)
         {
             throw new BusinessRuleViolationException(CommonErrors.TextEmpty);
         }
 
-        var emailAddress = EmailAddress.From(command.EmailAddress);
-        
-        var team = Team.Create(name, emailAddress);
+        var team = Team.Create(name);
 
         await writeStore.Teams.AddAsync(team, cancellationToken);
     }

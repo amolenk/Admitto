@@ -3,4 +3,4 @@ namespace Amolenk.Admitto.Core.Organization.Application.UseCases.TeamManagement.
 /// <summary>
 /// Lightweight team summary returned by the list-teams endpoint.
 /// </summary>
-internal sealed record TeamListItemDto(Guid TeamId, string Name, string EmailAddress, uint Version);
+internal sealed record TeamListItemDto(Guid TeamId, string Name, uint Version);

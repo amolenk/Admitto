@@ -9,9 +9,6 @@ public sealed class UpdateTeamValidator : AbstractValidator<UpdateTeamHttpReques
     public UpdateTeamValidator()
     {
         RuleFor(x => x.Name)
-            .MustBeNullOrParseable(DisplayName.TryFrom);
-
-        RuleFor(x => x.EmailAddress)
-            .MustBeNullOrParseable(EmailAddress.TryFrom);
+            .MustBeNullOrParseable(TeamName.TryFrom);
     }
 }

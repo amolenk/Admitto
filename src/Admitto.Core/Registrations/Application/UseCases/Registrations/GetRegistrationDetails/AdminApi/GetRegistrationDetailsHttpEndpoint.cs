@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;

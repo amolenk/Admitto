@@ -5,22 +5,14 @@ namespace Amolenk.Admitto.Testing.Builders.Organization.Domain;
 
 public class TeamBuilder
 {
-    public static readonly DisplayName DefaultName = DisplayName.From("Test Team");
-    public static readonly EmailAddress DefaultEmailAddress = EmailAddress.From("team@example.com");
+    public static readonly TeamName DefaultName = TeamName.From("Test Team");
 
-    private DisplayName _name = DefaultName;
-    private EmailAddress _emailAddress = DefaultEmailAddress;
+    private TeamName _name = DefaultName;
     private bool _archived;
 
     public TeamBuilder WithName(string name)
     {
-        _name = DisplayName.From(name);
-        return this;
-    }
-
-    public TeamBuilder WithEmailAddress(string emailAddress)
-    {
-        _emailAddress = EmailAddress.From(emailAddress);
+        _name = TeamName.From(name);
         return this;
     }
 
@@ -32,7 +24,7 @@ public class TeamBuilder
 
     public Team Build()
     {
-        var team = Team.Create(_name, _emailAddress);
+        var team = Team.Create(_name);
 
         if (_archived)
         {

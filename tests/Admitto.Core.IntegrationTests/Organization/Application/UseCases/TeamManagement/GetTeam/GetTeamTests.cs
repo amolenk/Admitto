@@ -10,7 +10,7 @@ public sealed class GetTeamTests(TestContext testContext) : AspireIntegrationTes
     {
         // Arrange
         // SC-004: Given a team "acme" exists, when a member requests it,
-        // the team's slug, name, email address, and version are returned.
+        // the team's slug, name, and version are returned.
         var fixture = GetTeamFixture.TeamExists();
         await fixture.SetupAsync(Environment);
 
@@ -23,7 +23,6 @@ public sealed class GetTeamTests(TestContext testContext) : AspireIntegrationTes
         // Assert
         result.ShouldNotBeNull();
         result.Name.ShouldBe(fixture.TeamName);
-        result.EmailAddress.ShouldBe(fixture.TeamEmail);
         result.Version.ShouldBeGreaterThan(0u);
     }
 }

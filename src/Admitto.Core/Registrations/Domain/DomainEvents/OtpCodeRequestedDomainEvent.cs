@@ -8,6 +8,6 @@ public record OtpCodeRequestedDomainEvent(
     OtpCodeId OtpCodeId,
     TeamId TeamId,
     TicketedEventId TicketedEventId,
-    string EventName,
+    EventName EventName,
     EmailAddress RecipientEmail,
     string PlainCode) : DomainEvent;

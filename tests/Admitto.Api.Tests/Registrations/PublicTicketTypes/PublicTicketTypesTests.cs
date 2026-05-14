@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Amolenk.Admitto.Api.Tests.Infrastructure;
+using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Shouldly;
 
@@ -17,9 +18,9 @@ public sealed class PublicTicketTypesTests(TestContext testContext) : EndToEndTe
         var fixture = PublicTicketTypesFixture.Create();
         await fixture.SetupAsync(Environment, catalog =>
         {
-            catalog.AddTicketType(Slug.From("general"), DisplayName.From("General Admission"), [], 200, selfServiceEnabled: true);
-            catalog.AddTicketType(Slug.From("vip"), DisplayName.From("VIP Pass"), [], 50, selfServiceEnabled: false);
-            catalog.AddTicketType(Slug.From("early-bird"), DisplayName.From("Early Bird"), [], 100, selfServiceEnabled: true);
+            catalog.AddTicketType(Slug.From("general"), TicketTypeName.From("General Admission"), [], 200, selfServiceEnabled: true);
+            catalog.AddTicketType(Slug.From("vip"), TicketTypeName.From("VIP Pass"), [], 50, selfServiceEnabled: false);
+            catalog.AddTicketType(Slug.From("early-bird"), TicketTypeName.From("Early Bird"), [], 100, selfServiceEnabled: true);
             catalog.CancelTicketType(Slug.From("early-bird")); // cancelled
         });
 
@@ -40,7 +41,7 @@ public sealed class PublicTicketTypesTests(TestContext testContext) : EndToEndTe
         var fixture = PublicTicketTypesFixture.Create();
         await fixture.SetupAsync(Environment, catalog =>
         {
-            catalog.AddTicketType(Slug.From("vip"), DisplayName.From("VIP Pass"), [], 50, selfServiceEnabled: false);
+            catalog.AddTicketType(Slug.From("vip"), TicketTypeName.From("VIP Pass"), [], 50, selfServiceEnabled: false);
         });
 
         using var client = Environment.CreatePublicApiClient(fixture.ApiKey);

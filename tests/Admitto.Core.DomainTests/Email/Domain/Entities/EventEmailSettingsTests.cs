@@ -40,7 +40,7 @@ public sealed class EventEmailSettingsTests
         var ex = Should.Throw<BusinessRuleViolationException>(() =>
             EmailSettings.Create(
                 EmailSettingsScope.Event,
-                Guid.NewGuid(),
+                EmailScopeId.From(Guid.NewGuid()),
                 Hostname.From("smtp.example.com"),
                 Port.From(587),
                 EmailAddress.From("noreply@example.com"),
@@ -107,7 +107,7 @@ public sealed class EventEmailSettingsTests
     [TestMethod]
     public void Create_WithTeamScope_SetsTeamScopeCorrectly()
     {
-        var teamId = Guid.NewGuid();
+        var teamId = EmailScopeId.From(Guid.NewGuid());
 
         var settings = EmailSettings.Create(
             EmailSettingsScope.Team,

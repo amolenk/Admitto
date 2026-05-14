@@ -37,5 +37,5 @@ public sealed class BulkEmailJobBuilder
                 _teamId, _eventId, _emailType, templateName: null, _subject, _textBody, _htmlBody, _source, _triggeredBy, _now);
 
     public static BulkEmailRecipient Recipient(string email, string? displayName = null) =>
-        new(email, displayName, registrationId: null, parametersJson: "{}");
+        new(EmailAddress.From(email), displayName, registrationId: null, parametersJson: "{}");
 }

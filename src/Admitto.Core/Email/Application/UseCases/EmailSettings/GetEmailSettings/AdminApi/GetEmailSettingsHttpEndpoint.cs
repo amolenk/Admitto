@@ -32,7 +32,7 @@ public static class GetEmailSettingsHttpEndpoint
             GetEmailSettingsHandler handler,
             CancellationToken ct)
         {
-            var scopeId = scope == EmailSettingsScope.Event ? eventId!.Value : teamId;
+            var scopeId = EmailScopeId.From(scope == EmailSettingsScope.Event ? eventId!.Value : teamId);
 
             var dto = await handler.HandleAsync(
                 new GetEmailSettingsQuery(scope, scopeId), ct);

@@ -4,6 +4,7 @@ using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using TeamBuilder = Amolenk.Admitto.Testing.Builders.Organization.Application.TeamBuilder;
+using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Api.Tests.Email.AdminEmailSettings;
 
@@ -124,10 +125,10 @@ internal sealed class AdminEmailSettingsFixture
         EventId = eventId.Value;
 
         var ticketedEvent = TicketedEvent.Create(
-            Guid.NewGuid(),
+            CreationRequestId.From(Guid.NewGuid()),
             eventId,
             team.Id,
-            DisplayName.From("Settings Conf"),
+            EventName.From("Settings Conf"),
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),
             DateTimeOffset.UtcNow.AddDays(60),
@@ -135,7 +136,7 @@ internal sealed class AdminEmailSettingsFixture
                 TimeZoneId.From("UTC"));
 
         var catalog = TicketCatalog.Create(eventId);
-        catalog.AddTicketType(Slug.From("general"), DisplayName.From("General"), [], 100);
+        catalog.AddTicketType(Slug.From("general"), TicketTypeName.From("General"), [], 100);
 
         await environment.OrganizationDatabase.SeedAsync(db => db.Teams.Add(team));
         await environment.RegistrationsDatabase.SeedAsync(db =>

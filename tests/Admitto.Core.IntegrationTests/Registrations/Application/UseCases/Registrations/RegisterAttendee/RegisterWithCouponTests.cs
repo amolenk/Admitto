@@ -4,6 +4,7 @@ using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Tests.Application.UseCases.Registrations.RegisterAttendee;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Microsoft.EntityFrameworkCore;
 
@@ -276,7 +277,7 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
             registration.CancellationReason.ShouldBeNull();
             registration.HasReconfirmed.ShouldBeFalse();
             registration.ReconfirmedAt.ShouldBeNull();
-            registration.Tickets.ShouldHaveSingleItem().Slug.ShouldBe(fixture.TicketTypeSlug);
+            registration.Tickets.ShouldHaveSingleItem().Slug.ShouldBe(Slug.From(fixture.TicketTypeSlug));
             registration.AdditionalDetails["badge"].ShouldBe("speaker");
             AssertAttendeeRegisteredEvent(registration);
 

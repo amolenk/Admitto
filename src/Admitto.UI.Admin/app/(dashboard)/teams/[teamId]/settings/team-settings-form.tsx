@@ -4,7 +4,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import * as z from "zod";
 import { Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card } from "@/components/ui/card";
@@ -15,7 +15,6 @@ import { TeamDto } from "@/lib/admitto-api/generated";
 
 const teamSettingsSchema = z.object({
     name: z.string().min(1, "Name is required"),
-    emailAddress: z.string().min(1, "Email is required").email("Must be a valid email address"),
 });
 
 type TeamSettingsValues = z.infer<typeof teamSettingsSchema>;
@@ -53,7 +52,6 @@ export function TeamSettingsForm({ team }: TeamSettingsFormProps) {
 
     const form = useCustomForm<TeamSettingsValues>(teamSettingsSchema, {
         name: team.name,
-        emailAddress: team.emailAddress,
     });
 
     async function onSubmit(values: TeamSettingsValues) {
@@ -62,7 +60,6 @@ export function TeamSettingsForm({ team }: TeamSettingsFormProps) {
         };
 
         if (values.name !== team.name) body.name = values.name;
-        if (values.emailAddress !== team.emailAddress) body.emailAddress = values.emailAddress;
 
         await apiClient.put(`/api/teams/${team.teamId}`, body);
 
@@ -108,21 +105,6 @@ export function TeamSettingsForm({ team }: TeamSettingsFormProps) {
                                         <FormItem className="space-y-1">
                                             <FormControl>
                                                 <Input placeholder="e.g. My Team" {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    </Field>
-                                )}
-                            />
-
-                            <FormField
-                                control={form.control}
-                                name="emailAddress"
-                                render={({ field }) => (
-                                    <Field label="Email address" hint="Team contact email.">
-                                        <FormItem className="space-y-1">
-                                            <FormControl>
-                                                <Input type="email" placeholder="e.g. team@example.com" {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>

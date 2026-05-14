@@ -1,6 +1,7 @@
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using ActivityLogEntity = Amolenk.Admitto.Core.Registrations.Domain.Entities.ActivityLog;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCases.Registrations.GetRegistrationDetails;
@@ -8,7 +9,7 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 internal sealed class GetRegistrationDetailsFixture
 {
     public const string TicketTypeSlug = "general-admission";
-    public const string TicketTypeName = "General Admission";
+    public const string TicketTypeNameStr = "General Admission";
     public const string VipSlug = "vip-pass";
     public const string VipName = "VIP Pass";
 
@@ -77,10 +78,10 @@ internal sealed class GetRegistrationDetailsFixture
         var tickets = _withMultipleTickets
             ? new[]
             {
-                new TicketTypeSnapshot(TicketTypeSlug, TicketTypeName, []),
-                new TicketTypeSnapshot(VipSlug, VipName, []),
+                new TicketTypeSnapshot(Slug.From(TicketTypeSlug), TicketTypeName.From(TicketTypeNameStr), []),
+                new TicketTypeSnapshot(Slug.From(VipSlug), TicketTypeName.From(VipName), []),
             }
-            : new[] { new TicketTypeSnapshot(TicketTypeSlug, TicketTypeName, []) };
+            : new[] { new TicketTypeSnapshot(Slug.From(TicketTypeSlug), TicketTypeName.From(TicketTypeNameStr), []) };
 
         AdditionalDetails? additionalDetails = null;
         if (_withAdditionalDetails)
@@ -108,7 +109,7 @@ internal sealed class GetRegistrationDetailsFixture
         if (_withRegisteredActivity)
         {
             var registeredEntry = ActivityLogEntity.Create(
-                registration.Id.Value,
+                registration.Id,
                 ActivityType.Registered,
                 RegisteredAt);
             await environment.RegistrationsDatabase.SeedAsync(db => db.ActivityLog.Add(registeredEntry));
@@ -117,7 +118,7 @@ internal sealed class GetRegistrationDetailsFixture
         if (_withReconfirmedActivity)
         {
             var reconfirmedEntry = ActivityLogEntity.Create(
-                registration.Id.Value,
+                registration.Id,
                 ActivityType.Reconfirmed,
                 ReconfirmedAt);
             await environment.RegistrationsDatabase.SeedAsync(db => db.ActivityLog.Add(reconfirmedEntry));
@@ -126,7 +127,7 @@ internal sealed class GetRegistrationDetailsFixture
         if (_withCancelledActivity)
         {
             var cancelledEntry = ActivityLogEntity.Create(
-                registration.Id.Value,
+                registration.Id,
                 ActivityType.Cancelled,
                 DateTimeOffset.UtcNow.AddDays(-1),
                 CancellationReason.AttendeeRequest.ToString());

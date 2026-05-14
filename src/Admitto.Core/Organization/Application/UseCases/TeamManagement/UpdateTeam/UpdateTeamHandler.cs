@@ -17,12 +17,7 @@ internal sealed class UpdateTeamHandler(IOrganizationWriteStore writeStore)
 
         if (command.Name is not null)
         {
-            team.ChangeName(DisplayName.From(command.Name));
-        }
-
-        if (command.EmailAddress is not null)
-        {
-            team.ChangeEmailAddress(EmailAddress.From(command.EmailAddress));
+            team.ChangeName(TeamName.From(command.Name));
         }
     }
 }

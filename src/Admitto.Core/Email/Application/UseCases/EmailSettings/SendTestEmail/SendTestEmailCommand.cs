@@ -5,5 +5,5 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.EmailSettings.SendTest
 
 internal sealed record SendTestEmailCommand(
     EmailSettingsScope Scope,
-    Guid ScopeId,
+    EmailScopeId ScopeId,
     string Recipient) : Command;

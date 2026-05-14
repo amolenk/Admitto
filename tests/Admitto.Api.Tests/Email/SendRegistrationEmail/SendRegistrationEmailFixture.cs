@@ -5,6 +5,7 @@ using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using TeamBuilder = Amolenk.Admitto.Testing.Builders.Organization.Application.TeamBuilder;
+using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Api.Tests.Email.SendRegistrationEmail;
 
@@ -34,10 +35,10 @@ internal sealed class SendRegistrationEmailFixture
         EventId = eventId.Value;
 
         var ticketedEvent = TicketedEvent.Create(
-            Guid.NewGuid(),
+            CreationRequestId.From(Guid.NewGuid()),
             eventId,
             team.Id,
-            DisplayName.From("MailConf"),
+            EventName.From("MailConf"),
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),
             DateTimeOffset.UtcNow.AddDays(60),
@@ -49,7 +50,7 @@ internal sealed class SendRegistrationEmailFixture
                 DateTimeOffset.UtcNow.AddDays(30)));
 
         var catalog = TicketCatalog.Create(eventId);
-        catalog.AddTicketType(Slug.From(TicketTypeSlug), DisplayName.From("General Admission"), [], 100);
+        catalog.AddTicketType(Slug.From(TicketTypeSlug), TicketTypeName.From("General Admission"), [], 100);
 
         // Seed team-scoped email settings pointing at MailDev SMTP.
         // Use the dynamic endpoint from the test environment to avoid port conflicts.
@@ -58,7 +59,7 @@ internal sealed class SendRegistrationEmailFixture
 
         var emailSettings = EmailSettings.Create(
             scope: EmailSettingsScope.Team,
-            scopeId: team.Id.Value,
+            scopeId: EmailScopeId.From(team.Id.Value),
             smtpHost: Hostname.From(smtpHost),
             smtpPort: Port.From(smtpPort),
             fromAddress: EmailAddress.From("noreply@admitto.io"),

@@ -108,12 +108,6 @@ namespace Amolenk.Admitto.Core.Organization.Infrastructure.Persistence.Migration
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
-                    b.Property<string>("EmailAddress")
-                        .IsRequired()
-                        .HasMaxLength(320)
-                        .HasColumnType("character varying(320)")
-                        .HasColumnName("email_address");
-
                     b.Property<DateTimeOffset>("LastChangedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("last_changed_at");

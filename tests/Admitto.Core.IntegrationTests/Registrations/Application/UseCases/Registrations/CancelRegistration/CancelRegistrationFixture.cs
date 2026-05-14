@@ -1,6 +1,7 @@
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCases.Registrations.CancelRegistration;
 
@@ -30,7 +31,7 @@ internal sealed class CancelRegistrationFixture
                 EmailAddress.From("alice@example.com"),
                 FirstName.From("Alice"),
                 LastName.From("Test"),
-                [new TicketTypeSnapshot("general-admission", "general-admission", [])]);
+                [new TicketTypeSnapshot(Slug.From("general-admission"), TicketTypeName.From("general-admission"), [])]);
 
             RegistrationId = registration.Id;
 

@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Validation;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using FluentValidation;
@@ -9,7 +10,7 @@ public sealed class UpdateTicketTypeValidator : AbstractValidator<UpdateTicketTy
     public UpdateTicketTypeValidator()
     {
         RuleFor(x => x.Name)
-            .MustBeNullOrParseable(DisplayName.TryFrom);
+            .MustBeNullOrParseable(TicketTypeName.TryFrom);
 
         When(x => x.MaxCapacity is not null, () =>
         {

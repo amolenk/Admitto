@@ -5,7 +5,9 @@ using Amolenk.Admitto.Api.Tests.Infrastructure.Hosting;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using TeamBuilder = Amolenk.Admitto.Testing.Builders.Organization.Application.TeamBuilder;
+using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Api.Tests.Registrations.GetQRCode;
 
@@ -78,7 +80,7 @@ internal sealed class GetQRCodeFixture
 
         var primaryCatalog = TicketCatalog.Create(primaryEvent.Id);
         primaryCatalog.AddTicketType(
-            Slug.From(TicketTypeSlug), DisplayName.From("General Admission"), [], 100);
+            Slug.From(TicketTypeSlug), TicketTypeName.From("General Admission"), [], 100);
 
         Registration? primaryRegistration = null;
         if (_seedRegistration)
@@ -89,7 +91,7 @@ internal sealed class GetQRCodeFixture
                 EmailAddress.From("alice@example.com"),
                 FirstName.From("Alice"),
                 LastName.From("Doe"),
-                [new TicketTypeSnapshot(TicketTypeSlug, TicketTypeSlug, [])]);
+                [new TicketTypeSnapshot(Slug.From(TicketTypeSlug), TicketTypeName.From(TicketTypeSlug), [])]);
 
             RegistrationId = primaryRegistration.Id.Value;
 
@@ -114,7 +116,7 @@ internal sealed class GetQRCodeFixture
                 db.TicketedEvents.Add(otherEvent);
                 var otherCatalog = TicketCatalog.Create(otherEvent.Id);
                 otherCatalog.AddTicketType(
-                    Slug.From(TicketTypeSlug), DisplayName.From("General Admission"), [], 100);
+                    Slug.From(TicketTypeSlug), TicketTypeName.From("General Admission"), [], 100);
                 db.TicketCatalogs.Add(otherCatalog);
             }
         });
@@ -148,10 +150,10 @@ internal sealed class GetQRCodeFixture
     private static TicketedEvent BuildEvent(TeamId teamId, string displayName)
     {
         var ticketedEvent = TicketedEvent.Create(
-            Guid.NewGuid(),
+            CreationRequestId.From(Guid.NewGuid()),
             TicketedEventId.New(),
             teamId,
-            DisplayName.From(displayName),
+            EventName.From(displayName),
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),
             DateTimeOffset.UtcNow.AddDays(60),

@@ -9,9 +9,6 @@ public sealed class CreateTeamValidator : AbstractValidator<CreateTeamHttpReques
     public CreateTeamValidator()
     {
         RuleFor(x => x.Name)
-            .MustBeParseable(DisplayName.TryFrom);
-
-        RuleFor(x => x.EmailAddress)
-            .MustBeParseable(EmailAddress.TryFrom);
+            .MustBeParseable(TeamName.TryFrom);
     }
 }

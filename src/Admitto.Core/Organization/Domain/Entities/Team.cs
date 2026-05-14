@@ -34,18 +34,15 @@ public class Team : Aggregate<TeamId>
 
     private Team(
         TeamId id,
-        DisplayName name,
-        EmailAddress emailAddress,
+        TeamName name,
         DateTimeOffset? archivedAt)
         : base(id)
     {
         Name = name;
-        EmailAddress = emailAddress;
         ArchivedAt = archivedAt;
     }
 
-    public DisplayName Name { get; private set; }
-    public EmailAddress EmailAddress { get; private set; }
+    public TeamName Name { get; private set; }
     public DateTimeOffset? ArchivedAt { get; private set; }
 
     public int ActiveEventCount { get; private set; }
@@ -58,25 +55,16 @@ public class Team : Aggregate<TeamId>
 
     public bool IsArchived => ArchivedAt.HasValue;
 
-    public static Team Create(
-        DisplayName name,
-        EmailAddress emailAddress) =>
+    public static Team Create(TeamName name) =>
         new(
             TeamId.New(),
             name,
-            emailAddress,
             archivedAt: null);
 
-    public void ChangeName(DisplayName name)
+    public void ChangeName(TeamName name)
     {
         EnsureNotArchived();
         Name = name;
-    }
-
-    public void ChangeEmailAddress(EmailAddress emailAddress)
-    {
-        EnsureNotArchived();
-        EmailAddress = emailAddress;
     }
 
     public void Archive(DateTimeOffset archivedAt)
@@ -122,7 +110,7 @@ public class Team : Aggregate<TeamId>
     /// <see cref="RequestEventCreation(UserId,DateTimeOffset)"/>.
     /// </summary>
     public TeamEventCreationRequest RequestEventCreation(
-        DisplayName name,
+        EventName name,
         AbsoluteUrl websiteUrl,
         AbsoluteUrl baseUrl,
         DateTimeOffset startsAt,

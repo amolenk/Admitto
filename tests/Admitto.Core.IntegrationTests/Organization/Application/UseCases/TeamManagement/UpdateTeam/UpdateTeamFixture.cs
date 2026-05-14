@@ -6,7 +6,6 @@ internal sealed class UpdateTeamFixture
 {
     public Guid TeamId { get; private set; }
     public string OriginalName { get; } = "Acme Events";
-    public string OriginalEmail { get; } = "info@acme.org";
     public uint TeamVersion { get; private set; }
 
     private readonly bool _archived;
@@ -23,8 +22,7 @@ internal sealed class UpdateTeamFixture
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
     {
         var builder = new TeamBuilder()
-            .WithName(OriginalName)
-            .WithEmail(OriginalEmail);
+            .WithName(OriginalName);
 
         if (_archived)
         {

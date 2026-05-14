@@ -1,5 +1,6 @@
 using Amolenk.Admitto.Core.Registrations.Application.Common.Cryptography;
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;

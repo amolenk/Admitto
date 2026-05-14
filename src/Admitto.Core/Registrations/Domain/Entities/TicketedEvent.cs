@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.Entities;
@@ -25,7 +26,7 @@ public class TicketedEvent : Aggregate<TicketedEventId>
     private TicketedEvent(
         TicketedEventId id,
         TeamId teamId,
-        DisplayName name,
+        EventName name,
         AbsoluteUrl websiteUrl,
         AbsoluteUrl baseUrl,
         DateTimeOffset startsAt,
@@ -46,7 +47,7 @@ public class TicketedEvent : Aggregate<TicketedEventId>
     }
 
     public TeamId TeamId { get; private set; }
-    public DisplayName Name { get; private set; }
+    public EventName Name { get; private set; }
     public AbsoluteUrl WebsiteUrl { get; private set; }
     public AbsoluteUrl BaseUrl { get; private set; }
     public DateTimeOffset StartsAt { get; private set; }
@@ -70,10 +71,10 @@ public class TicketedEvent : Aggregate<TicketedEventId>
     public bool IsActive => Status == EventLifecycleStatus.Active;
 
     public static TicketedEvent Create(
-        Guid creationRequestId,
+        CreationRequestId creationRequestId,
         TicketedEventId id,
         TeamId teamId,
-        DisplayName name,
+        EventName name,
         AbsoluteUrl websiteUrl,
         AbsoluteUrl baseUrl,
         DateTimeOffset startsAt,
@@ -106,7 +107,7 @@ public class TicketedEvent : Aggregate<TicketedEventId>
     }
 
     public void UpdateDetails(
-        DisplayName name,
+        EventName name,
         AbsoluteUrl websiteUrl,
         AbsoluteUrl baseUrl,
         DateTimeOffset startsAt,

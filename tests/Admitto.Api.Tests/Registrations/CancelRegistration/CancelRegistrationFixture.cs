@@ -2,7 +2,9 @@ using Amolenk.Admitto.Api.Tests.Infrastructure.Hosting;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using TeamBuilder = Amolenk.Admitto.Testing.Builders.Organization.Application.TeamBuilder;
+using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Api.Tests.Registrations.CancelRegistration;
 
@@ -29,10 +31,10 @@ internal sealed class CancelRegistrationFixture
         EventId = eventId.Value;
 
         var ticketedEvent = TicketedEvent.Create(
-            Guid.NewGuid(),
+            CreationRequestId.From(Guid.NewGuid()),
             eventId,
             team.Id,
-            DisplayName.From("DevConf"),
+            EventName.From("DevConf"),
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),
             DateTimeOffset.UtcNow.AddDays(60),
@@ -45,7 +47,7 @@ internal sealed class CancelRegistrationFixture
             EmailAddress.From("alice@example.com"),
             FirstName.From("Alice"),
             LastName.From("Test"),
-            [new TicketTypeSnapshot("general-admission", "general-admission", [])]);
+            [new TicketTypeSnapshot(Slug.From("general-admission"), TicketTypeName.From("general-admission"), [])]);
         RegistrationId = registration.Id;
 
         await environment.OrganizationDatabase.SeedAsync(db => db.Teams.Add(team));

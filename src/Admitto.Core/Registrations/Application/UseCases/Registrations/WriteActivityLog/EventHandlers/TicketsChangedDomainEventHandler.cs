@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
@@ -20,7 +21,7 @@ internal sealed class TicketsChangedDomainEventHandler(WriteActivityLogHandler h
 
         await handler.HandleAsync(
             new WriteActivityLogCommand(
-                domainEvent.RegistrationId.Value,
+                domainEvent.RegistrationId,
                 ActivityType.TicketsChanged,
                 domainEvent.ChangedAt,
                 Metadata: metadata),

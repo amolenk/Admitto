@@ -6,6 +6,7 @@ using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using NSubstitute;
 
@@ -27,8 +28,8 @@ public sealed class TicketsChangedDomainEventHandlerTests
             EmailAddress.From("alice@example.com"),
             FirstName.From("Alice"),
             LastName.From("Test"),
-            OldTickets: [new TicketTypeSnapshot("early-bird", "Early Bird", [])],
-            NewTickets: [new TicketTypeSnapshot("workshop", "Workshop", [])],
+            OldTickets: [new TicketTypeSnapshot(Slug.From("early-bird"), TicketTypeName.From("Early Bird"), [])],
+            NewTickets: [new TicketTypeSnapshot(Slug.From("workshop"), TicketTypeName.From("Workshop"), [])],
             ChangedAt: changedAt);
 
         ActivityLog? captured = null;
@@ -44,7 +45,7 @@ public sealed class TicketsChangedDomainEventHandlerTests
         await handler.HandleAsync(domainEvent, CancellationToken.None);
 
         captured.ShouldNotBeNull();
-        captured.RegistrationId.ShouldBe(registrationId.Value);
+        captured.RegistrationId.ShouldBe(registrationId);
         captured.ActivityType.ShouldBe(ActivityType.TicketsChanged);
         captured.OccurredAt.ShouldBe(changedAt);
 

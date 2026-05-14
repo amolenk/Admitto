@@ -21,7 +21,6 @@ internal class GetTeamHandler(IOrganizationWriteStore writeStore)
                    .Select(t => new TeamDto(
                        t.Id.Value,
                        t.Name.Value,
-                       t.EmailAddress.Value,
                        t.Version))
                    .FirstOrDefaultAsync(cancellationToken)
                ?? throw new BusinessRuleViolationException(NotFoundError.Create<Team>(query.TeamId));

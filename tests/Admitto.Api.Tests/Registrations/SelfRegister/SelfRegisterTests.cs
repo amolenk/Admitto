@@ -5,6 +5,7 @@ using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Shouldly;
+using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Api.Tests.Registrations.SelfRegister;
 
@@ -94,10 +95,10 @@ public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBas
         // Seed a second event (same team, different slug) with registration policy open
         var secondEventId = TicketedEventId.New();
         var secondEvent = TicketedEvent.Create(
-            Guid.NewGuid(),
+            CreationRequestId.From(Guid.NewGuid()),
             secondEventId,
             fixture.TeamId,
-            DisplayName.From("Other Event"),
+            EventName.From("Other Event"),
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),
             DateTimeOffset.UtcNow.AddDays(60),
@@ -107,7 +108,7 @@ public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBas
             DateTimeOffset.UtcNow.AddDays(-1),
             DateTimeOffset.UtcNow.AddDays(30)));
         var secondCatalog = TicketCatalog.Create(secondEventId);
-        secondCatalog.AddTicketType(Slug.From("general-admission"), DisplayName.From("General Admission"), [], 100);
+        secondCatalog.AddTicketType(Slug.From("general-admission"), TicketTypeName.From("General Admission"), [], 100);
         await Environment.RegistrationsDatabase.SeedAsync(db =>
         {
             db.TicketedEvents.Add(secondEvent);

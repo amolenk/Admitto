@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Email.Application.UseCases.AttendeeEmails.GetAttendeeEmails;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -25,9 +26,9 @@ public static class GetAttendeeEmailsHttpEndpoint
         CancellationToken cancellationToken)
     {
         var query = new GetAttendeeEmailsQuery(
-            TeamId: teamId,
-            EventId: eventId,
-            RegistrationId: registrationId);
+            TeamId: TeamId.From(teamId),
+            EventId: TicketedEventId.From(eventId),
+            RegistrationId: RegistrationId.From(registrationId));
 
         var result = await handler.HandleAsync(query, cancellationToken);
 

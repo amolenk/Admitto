@@ -3,6 +3,7 @@ using Amolenk.Admitto.Core.Email.Application.Sending.Bulk;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using NSubstitute;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.Sending.Bulk;
@@ -60,9 +61,9 @@ public sealed class BulkEmailRecipientResolverTests
         recipients.Count.ShouldBe(2);
 
         var alice = recipients[0];
-        alice.Email.ShouldBe("Alice@Example.com");
+        alice.Email.ShouldBe(EmailAddress.From("Alice@Example.com"));
         alice.DisplayName.ShouldBe("Alice Smith");
-        alice.RegistrationId.ShouldBe(rows[0].RegistrationId);
+        alice.RegistrationId.ShouldBe(RegistrationId.From(rows[0].RegistrationId));
         var aliceParams = JsonSerializer.Deserialize<JsonElement>(alice.ParametersJson);
         aliceParams.GetProperty("first_name").GetString().ShouldBe("Alice");
         aliceParams.GetProperty("last_name").GetString().ShouldBe("Smith");
@@ -78,15 +79,15 @@ public sealed class BulkEmailRecipientResolverTests
         var resolver = new BulkEmailRecipientResolver(Substitute.For<IRegistrationsFacade>());
         var source = new ExternalListSource(
         [
-            new ExternalListItem("alice@example.com", "Alice"),
-            new ExternalListItem("bob@example.com", DisplayName: null),
+            new ExternalListItem(EmailAddress.From("alice@example.com"), "Alice"),
+            new ExternalListItem(EmailAddress.From("bob@example.com"), DisplayName: null),
         ]);
 
         var recipients = await resolver.ResolveAsync(
             TicketedEventId.New(), source, CancellationToken.None);
 
         recipients.Count.ShouldBe(2);
-        recipients[0].Email.ShouldBe("alice@example.com");
+        recipients[0].Email.ShouldBe(EmailAddress.From("alice@example.com"));
         recipients[0].DisplayName.ShouldBe("Alice");
         recipients[0].RegistrationId.ShouldBeNull();
         recipients[1].DisplayName.ShouldBeNull();

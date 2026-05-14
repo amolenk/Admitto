@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Amolenk.Admitto.Core.Organization.Domain.Entities;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Api.Tests.Infrastructure;
 
@@ -20,7 +21,7 @@ internal static class ApiKeyTestHelper
     public static ApiKey CreateApiKeyEntity(TeamId teamId) =>
         ApiKey.Create(
             teamId,
-            "Test Key",
+            ApiKeyName.From("Test Key"),
             TestRawKey[..8],
             ComputeHash(TestRawKey),
             DateTimeOffset.UtcNow,
@@ -29,7 +30,7 @@ internal static class ApiKeyTestHelper
     public static ApiKey CreateApiKeyEntity2(TeamId teamId) =>
         ApiKey.Create(
             teamId,
-            "Test Key 2",
+            ApiKeyName.From("Test Key 2"),
             TestRawKey2[..8],
             ComputeHash(TestRawKey2),
             DateTimeOffset.UtcNow,

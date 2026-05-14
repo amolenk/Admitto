@@ -1,6 +1,7 @@
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
+using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.GetRegistrations;
@@ -41,7 +42,7 @@ internal sealed class GetRegistrationsHandler(IRegistrationsWriteStore writeStor
 
             if (filter.TicketTypeSlugs is { Count: > 0 } slugs)
             {
-                var slugList = slugs.ToArray();
+                var slugList = slugs.Select(Slug.From).ToArray();
                 q = q.Where(r => r.Tickets.Any(t => slugList.Contains(t.Slug)));
             }
         }
@@ -77,8 +78,8 @@ internal sealed class GetRegistrationsHandler(IRegistrationsWriteStore writeStor
                 r.LastName.Value,
                 r.Tickets
                     .Select(t => new TicketSummaryDto(
-                        t.Slug,
-                        nameBySlug.TryGetValue(t.Slug, out var name) ? name : t.Slug))
+                        t.Slug.Value,
+                        nameBySlug.TryGetValue(t.Slug.Value, out var name) ? name : t.Slug.Value))
                     .ToList(),
                 r.AdditionalDetails.ToDictionary(kvp => kvp.Key, kvp => kvp.Value),
                 r.CreatedAt,

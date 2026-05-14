@@ -1,9 +1,9 @@
 using Vogen;
 
-namespace Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+namespace Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 
 [ValueObject<string>]
-public partial struct DisplayName
+public partial struct TicketTypeName
 {
     public const int MaxLength = 64;
 
@@ -12,9 +12,9 @@ public partial struct DisplayName
     private static Validation Validate(string value)
     {
         if (string.IsNullOrWhiteSpace(value))
-            return Validation.Invalid("Display name is required.");
+            return Validation.Invalid("Ticket type name is required.");
         if (value.Length > MaxLength)
-            return Validation.Invalid($"Display name must be at most {MaxLength} character(s).");
+            return Validation.Invalid($"Ticket type name must be at most {MaxLength} character(s).");
         return Validation.Ok;
     }
 }

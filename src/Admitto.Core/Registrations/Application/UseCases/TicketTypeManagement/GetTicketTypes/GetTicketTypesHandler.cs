@@ -24,7 +24,7 @@ internal sealed class GetTicketTypesHandler(IRegistrationsWriteStore writeStore)
             .Select(tt => new TicketTypeDto(
                 tt.Id,
                 tt.Name.Value,
-                tt.TimeSlotSlugs,
+                tt.TimeSlotSlugs.Select(s => s.Value).ToArray(),
                 tt.MaxCapacity,
                 tt.UsedCapacity,
                 tt.IsCancelled,

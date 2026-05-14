@@ -2,6 +2,7 @@ using Amolenk.Admitto.Api.Tests.Infrastructure.Hosting;
 using Amolenk.Admitto.Testing.Builders.Organization.Application;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Api.Tests.Registrations.GetTicketedEvents;
 
@@ -22,10 +23,10 @@ internal sealed class GetTicketedEventsFixture
         TeamId = team.Id.Value;
 
         var active = TicketedEvent.Create(
-            Guid.NewGuid(),
+            CreationRequestId.From(Guid.NewGuid()),
             TicketedEventId.New(),
             team.Id,
-            DisplayName.From("Conf 2026"),
+            EventName.From("Conf 2026"),
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),
             DateTimeOffset.UtcNow.AddDays(30),
@@ -33,10 +34,10 @@ internal sealed class GetTicketedEventsFixture
             TimeZoneId.From("UTC"));
 
         var cancelled = TicketedEvent.Create(
-            Guid.NewGuid(),
+            CreationRequestId.From(Guid.NewGuid()),
             TicketedEventId.New(),
             team.Id,
-            DisplayName.From("Meetup Q1"),
+            EventName.From("Meetup Q1"),
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),
             DateTimeOffset.UtcNow.AddDays(10),
@@ -45,10 +46,10 @@ internal sealed class GetTicketedEventsFixture
         cancelled.Cancel();
 
         var archived = TicketedEvent.Create(
-            Guid.NewGuid(),
+            CreationRequestId.From(Guid.NewGuid()),
             TicketedEventId.New(),
             team.Id,
-            DisplayName.From("Conf 2025"),
+            EventName.From("Conf 2025"),
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),
             DateTimeOffset.UtcNow.AddDays(-60),

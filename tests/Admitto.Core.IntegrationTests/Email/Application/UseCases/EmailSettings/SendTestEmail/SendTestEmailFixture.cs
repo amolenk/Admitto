@@ -86,10 +86,10 @@ internal sealed class SendTestEmailFixture
         new(environment.EmailDatabase.Context, ProtectedSecret, EmailSender);
 
     public SendTestEmailCommand TeamCommand(string recipient = "ops@acme.org") =>
-        new(EmailSettingsScope.Team, TeamId.Value, recipient);
+        new(EmailSettingsScope.Team, EmailScopeId.From(TeamId.Value), recipient);
 
     public SendTestEmailCommand EventCommand(string recipient = "ops@acme.org") =>
-        new(EmailSettingsScope.Event, EventId.Value, recipient);
+        new(EmailSettingsScope.Event, EmailScopeId.From(EventId.Value), recipient);
 }
 
 internal sealed class FakeTestEmailSender : IEmailSender

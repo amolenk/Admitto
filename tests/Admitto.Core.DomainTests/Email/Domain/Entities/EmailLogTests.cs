@@ -1,6 +1,7 @@
 using Amolenk.Admitto.Core.Email.Application.Templating;
 using Amolenk.Admitto.Core.Email.Domain.Entities;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Shouldly;
 
 namespace Amolenk.Admitto.Core.Email.Domain.Tests.Entities;
@@ -13,14 +14,14 @@ public sealed class EmailLogTests
     [TestMethod]
     public void Create_SetsAllFields()
     {
-        var teamId = Guid.NewGuid();
-        var eventId = Guid.NewGuid();
+        var teamId = TeamId.New();
+        var eventId = TicketedEventId.New();
 
         var log = EmailLog.Create(
             teamId,
             eventId,
             idempotencyKey: "key-1",
-            recipient: "attendee@example.com",
+            recipient: EmailAddress.From("attendee@example.com"),
             emailType: BuiltInEmailTemplateNames.TicketConfirmation,
             subject: "Your ticket",
             provider: "smtp",
@@ -33,7 +34,7 @@ public sealed class EmailLogTests
         log.TeamId.ShouldBe(teamId);
         log.TicketedEventId.ShouldBe(eventId);
         log.IdempotencyKey.ShouldBe("key-1");
-        log.Recipient.ShouldBe("attendee@example.com");
+        log.Recipient.ShouldBe(EmailAddress.From("attendee@example.com"));
         log.EmailType.ShouldBe(BuiltInEmailTemplateNames.TicketConfirmation);
         log.Subject.ShouldBe("Your ticket");
         log.Provider.ShouldBe("smtp");
@@ -48,10 +49,10 @@ public sealed class EmailLogTests
     public void Create_WithNullOptionals_SetsNulls()
     {
         var log = EmailLog.Create(
-            Guid.NewGuid(),
-            Guid.NewGuid(),
+            TeamId.New(),
+            TicketedEventId.New(),
             idempotencyKey: "key-2",
-            recipient: "attendee@example.com",
+            recipient: EmailAddress.From("attendee@example.com"),
             emailType: BuiltInEmailTemplateNames.TicketConfirmation,
             subject: "Your ticket",
             provider: "smtp",
@@ -70,8 +71,8 @@ public sealed class EmailLogTests
     [TestMethod]
     public void Create_TwoLogs_HaveDistinctIds()
     {
-        var log1 = EmailLog.Create(Guid.NewGuid(), Guid.NewGuid(), "k1", "a@b.com", BuiltInEmailTemplateNames.TicketConfirmation, "S", "smtp", null, EmailLogStatus.Sent, Now, Now);
-        var log2 = EmailLog.Create(Guid.NewGuid(), Guid.NewGuid(), "k2", "a@b.com", BuiltInEmailTemplateNames.TicketConfirmation, "S", "smtp", null, EmailLogStatus.Sent, Now, Now);
+        var log1 = EmailLog.Create(TeamId.New(), TicketedEventId.New(), "k1", EmailAddress.From("a@b.com"), BuiltInEmailTemplateNames.TicketConfirmation, "S", "smtp", null, EmailLogStatus.Sent, Now, Now);
+        var log2 = EmailLog.Create(TeamId.New(), TicketedEventId.New(), "k2", EmailAddress.From("a@b.com"), BuiltInEmailTemplateNames.TicketConfirmation, "S", "smtp", null, EmailLogStatus.Sent, Now, Now);
 
         log1.Id.ShouldNotBe(log2.Id);
     }

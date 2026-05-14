@@ -4,7 +4,9 @@ using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using TeamBuilder = Amolenk.Admitto.Testing.Builders.Organization.Application.TeamBuilder;
+using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Api.Tests.Registrations.GetAttendeeEmails;
 
@@ -36,10 +38,10 @@ internal sealed class GetAttendeeEmailsFixture
         EventId = eventId.Value;
 
         var ticketedEvent = TicketedEvent.Create(
-            Guid.NewGuid(),
+            CreationRequestId.From(Guid.NewGuid()),
             eventId,
             team.Id,
-            DisplayName.From("DevConf"),
+            EventName.From("DevConf"),
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),
             DateTimeOffset.UtcNow.AddDays(60),
@@ -52,7 +54,7 @@ internal sealed class GetAttendeeEmailsFixture
             EmailAddress.From("alice@example.com"),
             FirstName.From("Alice"),
             LastName.From("Doe"),
-            [new TicketTypeSnapshot("general-admission", "General Admission", [])]);
+            [new TicketTypeSnapshot(Slug.From("general-admission"), TicketTypeName.From("General Admission"), [])]);
         RegistrationId = registration.Id;
 
         await environment.OrganizationDatabase.SeedAsync(db => db.Teams.Add(team));
@@ -66,10 +68,10 @@ internal sealed class GetAttendeeEmailsFixture
         {
             var sentAt = DateTimeOffset.UtcNow.AddHours(-1);
             var emailLog = EmailLog.Create(
-                teamId: team.Id.Value,
-                ticketedEventId: eventId.Value,
+                teamId: team.Id,
+                ticketedEventId: eventId,
                 idempotencyKey: "confirmation-key",
-                recipient: "alice@example.com",
+                recipient: EmailAddress.From("alice@example.com"),
                 emailType: "Confirmation",
                 subject: "Your DevConf registration",
                 provider: "test",
@@ -77,7 +79,7 @@ internal sealed class GetAttendeeEmailsFixture
                 status: EmailLogStatus.Sent,
                 sentAt: sentAt,
                 statusUpdatedAt: sentAt,
-                registrationId: registration.Id.Value);
+                registrationId: registration.Id);
 
             await environment.EmailDatabase.SeedAsync(db => db.EmailLog.Add(emailLog));
         }

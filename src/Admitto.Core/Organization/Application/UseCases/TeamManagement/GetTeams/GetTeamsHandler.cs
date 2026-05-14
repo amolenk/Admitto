@@ -22,7 +22,6 @@ internal sealed class GetTeamsHandler(IOrganizationWriteStore writeStore)
                 .Where(t => t.ArchivedAt == null)
                 .Select(t => new TeamListItemDto(                    t.Id.Value,
                     t.Name.Value,
-                    t.EmailAddress.Value,
                     t.Version))
                 .ToListAsync(cancellationToken);
         }
@@ -42,7 +41,6 @@ internal sealed class GetTeamsHandler(IOrganizationWriteStore writeStore)
             .Select(t => new TeamListItemDto(
                 t.Id.Value,
                 t.Name.Value,
-                t.EmailAddress.Value,
                 t.Version))
             .ToListAsync(cancellationToken);
     }

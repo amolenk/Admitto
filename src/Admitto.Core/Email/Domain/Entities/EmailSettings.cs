@@ -19,7 +19,7 @@ public class EmailSettings : Aggregate<EmailSettingsId>
     private EmailSettings(
         EmailSettingsId id,
         EmailSettingsScope scope,
-        Guid scopeId,
+        EmailScopeId scopeId,
         Hostname smtpHost,
         Port smtpPort,
         EmailAddress fromAddress,
@@ -39,7 +39,7 @@ public class EmailSettings : Aggregate<EmailSettingsId>
     }
 
     public EmailSettingsScope Scope { get; private set; }
-    public Guid ScopeId { get; private set; }
+    public EmailScopeId ScopeId { get; private set; }
     public Hostname SmtpHost { get; private set; }
     public Port SmtpPort { get; private set; }
     public EmailAddress FromAddress { get; private set; }
@@ -53,7 +53,7 @@ public class EmailSettings : Aggregate<EmailSettingsId>
 
     public static EmailSettings Create(
         EmailSettingsScope scope,
-        Guid scopeId,
+        EmailScopeId scopeId,
         Hostname smtpHost,
         Port smtpPort,
         EmailAddress fromAddress,

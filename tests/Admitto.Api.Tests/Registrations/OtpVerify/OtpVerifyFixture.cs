@@ -3,6 +3,7 @@ using Amolenk.Admitto.Api.Tests.Infrastructure.Hosting;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using TeamBuilder = Amolenk.Admitto.Testing.Builders.Organization.Application.TeamBuilder;
+using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Api.Tests.Registrations.OtpVerify;
 
@@ -31,10 +32,10 @@ internal sealed class OtpVerifyFixture
         EventId = eventId;
 
         var ticketedEvent = TicketedEvent.Create(
-            Guid.NewGuid(),
+            CreationRequestId.From(Guid.NewGuid()),
             eventId,
             team.Id,
-            DisplayName.From("DevConf"),
+            EventName.From("DevConf"),
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),
             DateTimeOffset.UtcNow.AddDays(60),
@@ -52,7 +53,7 @@ internal sealed class OtpVerifyFixture
     public async ValueTask SeedValidCodeAsync(EndToEndTestEnvironment environment, string? email = null)
     {
         email ??= AttendeeEmail;
-        var otpCode = OtpCode.Create(TeamId, EventId, "DevConf",
+        var otpCode = OtpCode.Create(TeamId, EventId, EventName.From("DevConf"),
             EmailAddress.From(email), KnownPlainCode,
             DateTimeOffset.UtcNow.AddMinutes(10));
 
@@ -61,7 +62,7 @@ internal sealed class OtpVerifyFixture
 
     public async ValueTask SeedExpiredCodeAsync(EndToEndTestEnvironment environment)
     {
-        var otpCode = OtpCode.Create(TeamId, EventId, "DevConf",
+        var otpCode = OtpCode.Create(TeamId, EventId, EventName.From("DevConf"),
             EmailAddress.From(AttendeeEmail), KnownPlainCode,
             DateTimeOffset.UtcNow.AddMinutes(-1));
 
@@ -70,7 +71,7 @@ internal sealed class OtpVerifyFixture
 
     public async ValueTask SeedUsedCodeAsync(EndToEndTestEnvironment environment)
     {
-        var otpCode = OtpCode.Create(TeamId, EventId, "DevConf",
+        var otpCode = OtpCode.Create(TeamId, EventId, EventName.From("DevConf"),
             EmailAddress.From(AttendeeEmail), KnownPlainCode,
             DateTimeOffset.UtcNow.AddMinutes(10));
         otpCode.MarkUsed(DateTimeOffset.UtcNow);
@@ -80,7 +81,7 @@ internal sealed class OtpVerifyFixture
 
     public async ValueTask SeedLockedCodeAsync(EndToEndTestEnvironment environment)
     {
-        var otpCode = OtpCode.Create(TeamId, EventId, "DevConf",
+        var otpCode = OtpCode.Create(TeamId, EventId, EventName.From("DevConf"),
             EmailAddress.From(AttendeeEmail), KnownPlainCode,
             DateTimeOffset.UtcNow.AddMinutes(10));
 

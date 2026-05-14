@@ -4,6 +4,7 @@ using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEventManag
 using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCases.TicketedEventManagement.MaterializeTicketedEvent;
 
@@ -40,7 +41,7 @@ public sealed class MaterializeTicketedEventTests(TestContext testContext) : Asp
             .Single();
         var domainEvents = addedEntry.Entity.GetDomainEvents();
         var domainEvent = domainEvents.ShouldHaveSingleItem().ShouldBeOfType<TicketedEventCreatedDomainEvent>();
-        domainEvent.CreationRequestId.ShouldBe(fixture.CreationRequestId);
+        domainEvent.CreationRequestId.Value.ShouldBe(fixture.CreationRequestId);
         domainEvent.TeamId.ShouldBe(fixture.TeamId);
 
         await Environment.RegistrationsDatabase.Context.SaveChangesAsync(testContext.CancellationToken);

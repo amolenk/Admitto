@@ -26,7 +26,7 @@ public class TicketedEventEntityConfiguration : IEntityTypeConfiguration<Tickete
         builder.Property(e => e.Name)
             .HasColumnName("name")
             .IsRequired()
-            .HasMaxLength(DisplayName.MaxLength);
+            .HasMaxLength(EventName.MaxLength);
 
         builder.Property(e => e.WebsiteUrl)
             .HasColumnName("website_url")

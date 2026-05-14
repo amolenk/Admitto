@@ -3,6 +3,7 @@ using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using TeamBuilder = Amolenk.Admitto.Testing.Builders.Organization.Application.TeamBuilder;
+using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Api.Tests.Registrations.RegisterAttendee.AdminApi;
 
@@ -29,10 +30,10 @@ internal sealed class AdminRegisterAttendeeFixture
         EventId = eventId.Value;
 
         var ticketedEvent = TicketedEvent.Create(
-            Guid.NewGuid(),
+            CreationRequestId.From(Guid.NewGuid()),
             eventId,
             team.Id,
-            DisplayName.From("DevConf"),
+            EventName.From("DevConf"),
             AbsoluteUrl.From("https://example.com"),
             AbsoluteUrl.From("https://tickets.example.com"),
             DateTimeOffset.UtcNow.AddDays(60),
@@ -44,7 +45,7 @@ internal sealed class AdminRegisterAttendeeFixture
                 DateTimeOffset.UtcNow.AddDays(30)));
 
         var catalog = TicketCatalog.Create(eventId);
-        catalog.AddTicketType(Slug.From(TicketTypeSlug), DisplayName.From("General Admission"), [], 100);
+        catalog.AddTicketType(Slug.From(TicketTypeSlug), TicketTypeName.From("General Admission"), [], 100);
 
         await environment.OrganizationDatabase.SeedAsync(db => db.Teams.Add(team));
         await environment.RegistrationsDatabase.SeedAsync(db =>

@@ -32,7 +32,6 @@ function Field({ label, hint, children }: {
 
 const createTeamSchema = z.object({
     name: z.string().min(1, "Name is required"),
-    emailAddress: z.string().min(1, "Email is required").email("Must be a valid email address"),
 });
 
 type CreateTeamValues = z.infer<typeof createTeamSchema>;
@@ -48,7 +47,6 @@ export function CreateTeamForm() {
 
     const form = useCustomForm<CreateTeamValues>(createTeamSchema, {
         name: "",
-        emailAddress: "",
     });
 
     async function onSubmit(values: CreateTeamValues) {
@@ -103,21 +101,6 @@ export function CreateTeamForm() {
                                             <FormItem className="space-y-1">
                                                 <FormControl>
                                                     <Input placeholder="e.g. My Team" {...field} />
-                                                </FormControl>
-                                                <FormMessage />
-                                            </FormItem>
-                                        </Field>
-                                    )}
-                                />
-
-                                <FormField
-                                    control={form.control}
-                                    name="emailAddress"
-                                    render={({ field }) => (
-                                        <Field label="Email address" hint="From-address used for attendee emails.">
-                                            <FormItem className="space-y-1">
-                                                <FormControl>
-                                                    <Input type="email" placeholder="e.g. team@example.com" {...field} />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>

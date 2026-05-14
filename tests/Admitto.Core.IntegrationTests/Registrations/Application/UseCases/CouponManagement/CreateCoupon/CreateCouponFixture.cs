@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
+using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCases.CouponManagement.CreateCoupon;
@@ -26,12 +27,12 @@ internal sealed class CreateCouponFixture
     {
         var catalog = TicketCatalog.Create(EventId);
         catalog.AddTicketType(
-            Slug.From(TicketTypeSlug), DisplayName.From("General Admission"), [], 100);
+            Slug.From(TicketTypeSlug), TicketTypeName.From("General Admission"), [], 100);
 
         if (_hasCancelledTicketType)
         {
             catalog.AddTicketType(
-                Slug.From(CancelledTicketTypeSlug), DisplayName.From("VIP Pass"), [], 50);
+                Slug.From(CancelledTicketTypeSlug), TicketTypeName.From("VIP Pass"), [], 50);
             catalog.CancelTicketType(Slug.From(CancelledTicketTypeSlug));
         }
 

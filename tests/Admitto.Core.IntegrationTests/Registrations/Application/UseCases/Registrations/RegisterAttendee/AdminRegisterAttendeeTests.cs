@@ -5,6 +5,7 @@ using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Tests.Application.UseCases.Registrations.RegisterAttendee;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Microsoft.EntityFrameworkCore;
 
@@ -31,7 +32,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
             registration.ShouldNotBeNull();
             registration.Id.Value.ShouldBe(registrationId);
             registration.Email.Value.ShouldBe("speaker@example.com");
-            registration.Tickets.ShouldHaveSingleItem().Slug.ShouldBe(fixture.TicketTypeSlug);
+            registration.Tickets.ShouldHaveSingleItem().Slug.ShouldBe(Slug.From(fixture.TicketTypeSlug));
 
             var catalog = await dbContext.TicketCatalogs.SingleOrDefaultAsync(testContext.CancellationToken);
             catalog.ShouldNotBeNull();
@@ -247,7 +248,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
             registration.CancellationReason.ShouldBeNull();
             registration.HasReconfirmed.ShouldBeFalse();
             registration.ReconfirmedAt.ShouldBeNull();
-            registration.Tickets.ShouldHaveSingleItem().Slug.ShouldBe(fixture.TicketTypeSlug);
+            registration.Tickets.ShouldHaveSingleItem().Slug.ShouldBe(Slug.From(fixture.TicketTypeSlug));
             registration.AdditionalDetails["meal"].ShouldBe("vegan");
             AssertAttendeeRegisteredEvent(registration);
 

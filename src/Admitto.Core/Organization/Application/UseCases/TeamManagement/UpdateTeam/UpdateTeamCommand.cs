@@ -5,6 +5,5 @@ namespace Amolenk.Admitto.Core.Organization.Application.UseCases.TeamManagement.
 internal sealed record UpdateTeamCommand(
     Guid TeamId,
     string? Name,
-    string? EmailAddress,
     uint? ExpectedVersion)
     : Command;

@@ -5,7 +5,7 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.EmailSettings.UpdateEm
 
 internal sealed record UpdateEmailSettingsCommand(
     EmailSettingsScope Scope,
-    Guid ScopeId,
+    EmailScopeId ScopeId,
     string? SmtpHost,
     int? SmtpPort,
     string? FromAddress,

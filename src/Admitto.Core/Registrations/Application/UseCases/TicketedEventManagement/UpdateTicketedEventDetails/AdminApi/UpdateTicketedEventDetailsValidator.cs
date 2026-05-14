@@ -9,7 +9,7 @@ public sealed class UpdateTicketedEventDetailsValidator : AbstractValidator<Upda
     public UpdateTicketedEventDetailsValidator()
     {
         RuleFor(x => x.Name)
-            .MustBeParseable(DisplayName.TryFrom);
+            .MustBeParseable(EventName.TryFrom);
 
         RuleFor(x => x.WebsiteUrl)
             .MustBeParseable(AbsoluteUrl.TryFrom);

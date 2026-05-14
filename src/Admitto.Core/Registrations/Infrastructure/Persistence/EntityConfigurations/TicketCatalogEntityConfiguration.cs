@@ -39,7 +39,7 @@ public class TicketCatalogEntityConfiguration : IEntityTypeConfiguration<TicketC
 
             b.Property(tt => tt.Name)
                 .HasJsonPropertyName("name")
-                .HasConversion(v => v.Value, v => DisplayName.From(v))
+                .HasConversion(v => v.Value, v => TicketTypeName.From(v))
                 .IsRequired();
 
             b.Property(tt => tt.MaxCapacity)
