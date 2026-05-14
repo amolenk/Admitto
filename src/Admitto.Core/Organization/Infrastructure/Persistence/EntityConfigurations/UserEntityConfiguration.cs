@@ -18,10 +18,16 @@ public class UserEntityConfiguration : IEntityTypeConfiguration<User>
             .ValueGeneratedNever();
 
         builder.Property(e => e.ExternalUserId)
-            .HasColumnName("external_user_id");
+            .HasColumnName("external_user_id")
+            .HasColumnType("varchar(255)");
 
         builder.Property(e => e.DeprovisionAfter)
             .HasColumnName("deprovision_after");
+
+        builder.Property(e => e.IsAdmin)
+            .HasColumnName("is_admin")
+            .IsRequired()
+            .HasDefaultValue(false);
 
         builder.Property(e => e.EmailAddress)
             .HasColumnName("email_address")

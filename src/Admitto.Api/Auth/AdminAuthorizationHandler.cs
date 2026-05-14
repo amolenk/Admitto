@@ -11,16 +11,14 @@ public class AdminAuthorizationHandler(
     IAdministratorRoleService administratorRoleService)
     : AuthorizationHandler<AdminAuthorizationRequirement>
 {
-    protected override Task HandleRequirementAsync(
+    protected override async Task HandleRequirementAsync(
         AuthorizationHandlerContext context,
         AdminAuthorizationRequirement requirement)
     {
         var userId = userContextAccessor.Current.UserId;
-        if (administratorRoleService.IsAdministrator(userId))
+        if (await administratorRoleService.IsAdministratorAsync(userId))
         {
             context.Succeed(requirement);
         }
-        
-        return Task.CompletedTask;
     }
 }

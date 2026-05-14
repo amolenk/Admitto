@@ -9,8 +9,8 @@ namespace Amolenk.Admitto.Api.Tests.Organization.TeamMembership;
 
 internal sealed class ManageMembersAuthorizationFixture
 {
-    // Bob's Keycloak user ID from the test realm — must match the JWT sub claim for "bob".
-    public static readonly Guid BobKeycloakId = Guid.Parse("6189cd5b-6b08-4ff1-a87d-4e434e8d1c79");
+    // Bob's Keycloak sub (JWT "sub" claim) from the test realm.
+    public static readonly string BobKeycloakSub = "6189cd5b-6b08-4ff1-a87d-4e434e8d1c79";
 
     public Guid TeamId { get; private set; }
 
@@ -33,7 +33,7 @@ internal sealed class ManageMembersAuthorizationFixture
             .WithMembership(team.Id, TeamMembershipRole.Crew)
             .Build();
 
-        bob.AssignExternalUserId(ExternalUserId.From(BobKeycloakId));
+        bob.AssignExternalUserId(ExternalUserId.From(BobKeycloakSub));
 
         await environment.OrganizationDatabase.SeedAsync(dbContext =>
         {

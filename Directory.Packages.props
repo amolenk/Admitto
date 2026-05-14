@@ -3,6 +3,7 @@
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>
   <ItemGroup>
+    <PackageVersion Include="Auth0.ManagementApi" Version="8.3.0" />
     <PackageVersion Include="Azure.Extensions.AspNetCore.DataProtection.Blobs" Version="1.5.2" />
     <PackageVersion Include="Aspire.Azure.Storage.Queues" Version="13.2.4" />
     <PackageVersion Include="Aspire.Hosting.Azure.PostgreSQL" Version="13.2.4" />

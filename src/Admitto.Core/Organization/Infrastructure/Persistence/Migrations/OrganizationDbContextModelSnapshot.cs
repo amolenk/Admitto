@@ -167,9 +167,15 @@ namespace Amolenk.Admitto.Core.Organization.Infrastructure.Persistence.Migration
                         .HasColumnType("character varying(320)")
                         .HasColumnName("email_address");
 
-                    b.Property<Guid?>("ExternalUserId")
-                        .HasColumnType("uuid")
+                    b.Property<string>("ExternalUserId")
+                        .HasColumnType("varchar(255)")
                         .HasColumnName("external_user_id");
+
+                    b.Property<bool>("IsAdmin")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("is_admin");
 
                     b.Property<DateTimeOffset>("LastChangedAt")
                         .HasColumnType("timestamp with time zone")

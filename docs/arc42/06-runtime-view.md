@@ -296,6 +296,56 @@ sequenceDiagram
 
 **Lifecycle cleanup**: `TicketedEventCancelled` and `TicketedEventArchived` integration events remove the trigger so cancelled or archived events stop receiving reconfirm prompts.
 
+## 6.11 User sign-in and ExternalUserId binding
+
+On every authenticated request the `UserContextResolver` maps the incoming JWT `sub` claim to an application `User` entity. The binding is established lazily on first sign-in and is permanent thereafter.
+
+```mermaid
+sequenceDiagram
+  participant Client
+  participant API as API Endpoint
+  participant Resolver as UserContextResolver
+  participant DB as OrganizationDbContext
+
+  Client->>API: request with Bearer token (sub, email)
+  API->>Resolver: ResolveAsync(sub, email)
+  Resolver->>DB: SELECT user WHERE ExternalUserId = sub
+  alt known sub
+    DB-->>Resolver: User found
+    Resolver-->>API: UserContext
+  else unknown sub
+    Resolver->>DB: SELECT user WHERE Email = email AND ExternalUserId IS NULL
+    alt email match, no ExternalUserId
+      DB-->>Resolver: User found
+      Resolver->>DB: UPDATE User SET ExternalUserId = sub
+      Resolver-->>API: UserContext
+    else email match, different ExternalUserId
+      Resolver-->>API: 403 (potential account takeover)
+    else no email match
+      Resolver-->>API: 403 (unknown identity)
+    end
+  end
+  API-->>Client: response
+```
+
+**First sign-in**: the JWT arrives with a `sub` the system has not seen before. `UserContextResolver` falls back to an email lookup. If the email matches a `User` that has no `ExternalUserId` yet, the resolver sets `ExternalUserId = sub` and persists — all within the request's unit of work. Subsequent requests resolve directly by `ExternalUserId`.
+
+**Account-takeover guard**: if the email matches a user that already has a *different* `ExternalUserId`, the resolver returns 403. This prevents a compromised or recycled IdP account from silently taking over an existing application user.
+
+**Unknown identity**: if neither `sub` nor `email` matches any user, the resolver returns 403. The user must be provisioned before they can authenticate.
+
+## 6.12 Bootstrap admin provisioning
+
+On API startup, `BootstrapAdminInitializer` ensures the first admin account exists without requiring manual IdP console steps.
+
+1. Reads `Organization:BootstrapAdmin:EmailAddress` from configuration.
+2. Queries `OrganizationDbContext` for a `User` with that email.
+3. **If the user does not exist**: creates a `User` entity, calls `IUserDirectoryService.InviteUserAsync` to provision an IdP account and generate a passkey-enrollment invitation ticket, and stores the returned `ExternalUserId` on the entity.
+4. **If the user already exists and has an `ExternalUserId`**: skips silently (idempotent).
+5. **If the user exists but has no `ExternalUserId`**: calls `InviteUserAsync` and stores the result (handles the case where a previous startup run created the user but failed before persisting the `sub`).
+
+The initialiser runs once per process start and is safe to run on every rolling deployment — repeated calls are no-ops when the bootstrap admin is already fully provisioned.
+
 ## Done-when
 
 - [x] The most important end-to-end flow is documented.

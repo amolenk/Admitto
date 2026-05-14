@@ -11,7 +11,7 @@ internal sealed class RegisterExternalUserFixture
 
     public string EmailAddress { get; } = "test@example.com";
     public Guid UserId { get; private set; }
-    public Guid ExternalUserId { get; } = Guid.NewGuid();
+    public string ExternalUserId { get; } = Guid.NewGuid().ToString();
     public IExternalUserDirectory ExternalUserDirectory { get; } = Substitute.For<IExternalUserDirectory>();
 
     private RegisterExternalUserFixture()
@@ -34,7 +34,7 @@ internal sealed class RegisterExternalUserFixture
         if (_ensureUserExistsInExternalDirectory)
         {
             ExternalUserDirectory
-                .UpsertUserAsync(EmailAddress, Arg.Any<CancellationToken>())
+                .InviteUserAsync(EmailAddress, Arg.Any<CancellationToken>())
                 .Returns(ExternalUserId);
         }
 

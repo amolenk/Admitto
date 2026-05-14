@@ -13,3 +13,5 @@ The core strategic decisions:
 - **EF Core directly from the application model.** No repository abstraction layer — handlers and use cases work directly with `DbContext`. This fits feature-slicing and keeps data access simple. PostgreSQL backs the storage with schema-per-module isolation ([ADR-003](../adrs/adr-003-ef-core-postgresql.md)).
 
 - **Transport layer owns the transaction boundary.** API endpoints — not command handlers — call `SaveChangesAsync`. This keeps handlers framework-agnostic and lets the endpoint decide when to commit (see [chapter 8](08-crosscutting-concepts.md)).
+
+- **External identity provider chosen by configuration.** The API authenticates bearer tokens using OIDC discovery against `Authentication:Bearer:Authority`. Which IdP backs the system is selected by configuration: `Authentication:Auth0` activates Auth0 (production passkeys); `Authentication:Keycloak` activates Keycloak (local development). See [ADR-011](../adrs/adr-011-auth0-passkeys.md).

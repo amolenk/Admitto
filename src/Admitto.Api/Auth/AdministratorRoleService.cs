@@ -1,14 +1,17 @@
+using Amolenk.Admitto.Core.Organization.Application.Persistence;
+using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
+using Microsoft.EntityFrameworkCore;
 
 namespace Amolenk.Admitto.ApiService.Auth;
 
 /// <summary>
-/// Reads administrator user IDs from configuration and implements <see cref="IAdministratorRoleService"/>.
+/// DB-backed administrator role service that checks the <c>IsAdmin</c> flag on the domain <see cref="User"/> entity.
 /// </summary>
-public class AdministratorRoleService(IConfiguration configuration) : IAdministratorRoleService
+public class AdministratorRoleService(IOrganizationWriteStore store) : IAdministratorRoleService
 {
-    private readonly Guid[] _adminUserIds = configuration.GetSection("Authentication:AdminUserIds").Get<Guid[]>()
-                                            ?? [];
-
-    public bool IsAdministrator(Guid userId) => _adminUserIds.Contains(userId);
+    public async ValueTask<bool> IsAdministratorAsync(Guid userId, CancellationToken cancellationToken = default) =>
+        await store.Users
+            .Where(u => u.Id == UserId.From(userId) && u.IsAdmin)
+            .AnyAsync(cancellationToken);
 }

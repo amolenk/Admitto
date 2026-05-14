@@ -24,7 +24,7 @@ internal sealed class GetTeamMembershipRoleFixture
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
     {
         var user = new UserBuilder().Build();
-        var externalUserId = Core.Organization.Domain.ValueObjects.ExternalUserId.New();
+        var externalUserId = Core.Organization.Domain.ValueObjects.ExternalUserId.From(Guid.NewGuid().ToString());
         user.AssignExternalUserId(externalUserId);
 
         if (Role is not null)
@@ -39,6 +39,6 @@ internal sealed class GetTeamMembershipRoleFixture
             dbContext.Users.Add(user);
         });
 
-        UserId = externalUserId.Value;
+        UserId = user.Id.Value;
     }
 }

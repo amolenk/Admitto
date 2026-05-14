@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using Amolenk.Admitto.Api.Auth;
 using Amolenk.Admitto.Api.Endpoints;
 using Amolenk.Admitto.ApiService.Auth;
 using Amolenk.Admitto.ApiService.Middleware;
@@ -61,6 +62,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IUserContextAccessor, HttpContextUserContextAccessor>();
 builder.Services.AddScoped<IAdministratorRoleService, AdministratorRoleService>();
+builder.Services.AddScoped<UserContextResolver>();
 
 // Configure CORS to allow all origins, methods, and headers.
 // TODO Can be removed once API keys are in place? Or still needed for UI?
@@ -79,6 +81,7 @@ builder.Services.AddCors(options =>
 var app = builder.Build();
 
 app.UseAuthentication();
+app.UseMiddleware<UserContextResolutionMiddleware>();
 app.UseAuthorization();
 
 app.UseExceptionHandler();

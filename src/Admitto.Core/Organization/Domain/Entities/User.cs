@@ -24,15 +24,19 @@ public class User : Aggregate<UserId>
 
     private User(
         UserId id,
-        EmailAddress email)
+        EmailAddress email,
+        bool isAdmin = false)
         : base(id)
     {
         EmailAddress = email;
+        IsAdmin = isAdmin;
     }
 
     public ExternalUserId? ExternalUserId { get; private set; }
     
     public EmailAddress EmailAddress { get; private set; }
+
+    public bool IsAdmin { get; private set; }
     
     public IReadOnlyList<TeamMembership> Memberships => _memberships.AsReadOnly();
 
@@ -48,6 +52,19 @@ public class User : Aggregate<UserId>
         var user = new User(
             UserId.New(),
             email);
+
+        user.AddDomainEvent(new UserCreatedDomainEvent(user.Id, email));
+
+        return user;
+    }
+
+    public static User CreateAdmin(
+        EmailAddress email)
+    {
+        var user = new User(
+            UserId.New(),
+            email,
+            isAdmin: true);
 
         user.AddDomainEvent(new UserCreatedDomainEvent(user.Id, email));
 

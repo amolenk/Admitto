@@ -2038,7 +2038,15 @@
     "xXSSProtection": "1; mode=block",
     "strictTransportSecurity": "max-age=31536000; includeSubDomains"
   },
-  "smtpServer": {},
+  "smtpServer": {
+    "host": "host.docker.internal",
+    "port": "1025",
+    "from": "noreply@admitto.local",
+    "fromDisplayName": "Admitto",
+    "ssl": "false",
+    "starttls": "false",
+    "auth": "false"
+  },
   "eventsEnabled": false,
   "eventsListeners": [
     "jboss-logging"
@@ -2931,7 +2939,7 @@
       "name": "Webauthn Register Passwordless",
       "providerId": "webauthn-register-passwordless",
       "enabled": true,
-      "defaultAction": false,
+      "defaultAction": true,
       "priority": 80,
       "config": {}
     },

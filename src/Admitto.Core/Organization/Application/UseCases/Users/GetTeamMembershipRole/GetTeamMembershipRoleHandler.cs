@@ -14,12 +14,12 @@ internal sealed class GetTeamMembershipRoleHandler(IOrganizationWriteStore write
         GetTeamMembershipRoleQuery query,
         CancellationToken cancellationToken)
     {
-        var externalUserId = ExternalUserId.From(query.UserId);
+        var userId = UserId.From(query.UserId);
         var teamId = TeamId.From(query.TeamId);
         
         var role = await writeStore.Users
             .AsNoTracking()
-            .Where(u => u.ExternalUserId == externalUserId)
+            .Where(u => u.Id == userId)
             .SelectMany(u => u.Memberships)
             .Where(m => m.Id == teamId)
             .Select(m => (TeamMembershipRole?)m.Role)

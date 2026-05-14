@@ -1,5 +1,6 @@
 <Project Sdk="MSTest.Sdk">
   <ItemGroup>
+    <PackageReference Include="NSubstitute" />
     <PackageReference Include="Shouldly" />
   </ItemGroup>
   <ItemGroup>

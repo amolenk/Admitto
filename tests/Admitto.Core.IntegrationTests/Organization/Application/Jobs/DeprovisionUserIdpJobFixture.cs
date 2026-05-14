@@ -11,7 +11,7 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Organization.Application.Jobs;
 internal sealed class DeprovisionUserIdpJobFixture
 {
     public string EmailAddress { get; } = "alice@example.com";
-    public Guid ExternalUserId { get; } = Guid.NewGuid();
+    public string ExternalUserId { get; } = Guid.NewGuid().ToString();
     public Guid UserId { get; private set; }
 
     public IExternalUserDirectory ExternalUserDirectory { get; } = Substitute.For<IExternalUserDirectory>();
@@ -56,12 +56,3 @@ internal sealed class DeprovisionUserIdpJobFixture
     }
 }
 
-/// <summary>
-/// Simple IUnitOfWork adapter that delegates SaveChangesAsync to the underlying DbContext.
-/// Used in tests to avoid the full DI infrastructure needed for keyed service injection.
-/// </summary>
-internal sealed class DbContextUnitOfWork(DbContext context) : IUnitOfWork
-{
-    public async ValueTask SaveChangesAsync(CancellationToken cancellationToken = default)
-        => await context.SaveChangesAsync(cancellationToken);
-}

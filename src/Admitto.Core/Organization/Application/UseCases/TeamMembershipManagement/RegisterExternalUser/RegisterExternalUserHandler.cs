@@ -18,7 +18,7 @@ internal sealed class RegisterExternalUserHandler(
 
         if (user.ExternalUserId is null)
         {
-            var externalUserId = await userDirectory.UpsertUserAsync(user.EmailAddress.Value, cancellationToken);
+            var externalUserId = await userDirectory.InviteUserAsync(user.EmailAddress.Value, cancellationToken);
 
             user.AssignExternalUserId(ExternalUserId.From(externalUserId));
         }

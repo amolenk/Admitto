@@ -14,7 +14,6 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 
-import { authClient } from "@/lib/auth-client"
 import { User } from "better-auth"
 import { useRouter } from "next/navigation";
 
@@ -63,13 +62,7 @@ export function NavUser({
                         </div>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem
-                            onClick={async () => await authClient.signOut({
-                                fetchOptions: {
-                                    onSuccess: () => {
-                                        router.push("/signin");
-                                    },
-                                },
-                            })}
+                            onClick={() => router.push("/api/auth/signout")}
                         >
                             <LogOut className="size-3.5 mr-2" />
                             Sign out

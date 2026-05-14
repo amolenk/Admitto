@@ -187,7 +187,7 @@ public sealed class UserTests
     public void AssignExternalUserId_NotYetAssigned_SetsExternalUserId()
     {
         // Arrange
-        var externalUserId = ExternalUserId.New();
+        var externalUserId = ExternalUserId.From("external-user-1");
         
         var sut = new UserBuilder().Build();
         
@@ -202,8 +202,8 @@ public sealed class UserTests
     public void AssignExternalUserId_AlreadyAssigned_OverwritesExistingExternalUserId()
     {
         // Arrange
-        var existingExternalUserId = ExternalUserId.New();
-        var newExternalUserId = ExternalUserId.New();
+        var existingExternalUserId = ExternalUserId.From("external-user-1");
+        var newExternalUserId = ExternalUserId.From("external-user-2");
         
         var sut = new UserBuilder().Build();
         sut.AssignExternalUserId(existingExternalUserId);

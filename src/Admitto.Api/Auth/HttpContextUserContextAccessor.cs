@@ -12,12 +12,20 @@ public class HttpContextUserContextAccessor(IHttpContextAccessor httpContextAcce
         "api-key",
         "apikey@system.local");
 
+    private static readonly UserContextDto SystemUser = new(
+        Guid.Empty,
+        "system",
+        "system@system.local");
+
     public UserContextDto Current
     {
         get
         {
-            var httpContext = httpContextAccessor.HttpContext
-                              ?? throw new InvalidOperationException("No HTTP context available.");
+            var httpContext = httpContextAccessor.HttpContext;
+
+            // No HTTP context — running in a background/hosted-service context.
+            if (httpContext is null)
+                return SystemUser;
 
             var user = httpContext.User;
 
@@ -25,46 +33,12 @@ public class HttpContextUserContextAccessor(IHttpContextAccessor httpContextAcce
             if (user.Identity?.AuthenticationType == ApiKeyAuthenticationHandler.SchemeName)
                 return ApiKeyUser;
 
-            // TODO
-            return new UserContextDto(GetUserId(user), GetUserName(user) ?? "Unknown", "todo@example.com");
+            // The UserContextResolutionMiddleware pre-resolves and caches the domain user identity.
+            if (httpContext.Items[UserContextResolutionMiddleware.UserContextItemKey] is UserContextDto cached)
+                return cached;
+
+            throw new InvalidOperationException(
+                "User context has not been resolved. Ensure UserContextResolutionMiddleware is registered.");
         }
-    }
-
-    private static Guid GetUserId(ClaimsPrincipal user)
-    {
-        // Entra
-        var objectIdentifierClaim = user.FindFirst("http://schemas.microsoft.com/identity/claims/objectidentifier");
-        if (objectIdentifierClaim is not null) return Guid.Parse(objectIdentifierClaim.Value);
-
-        // Keycloak
-        var nameClaim = user.FindFirst(ClaimTypes.NameIdentifier);
-        if (nameClaim is not null && Guid.TryParse(nameClaim.Value, out var userId))
-        {
-            return userId;
-        }
-
-        throw new ArgumentException(
-            "Cannot find user ID in principal. Ensure the user is authenticated and has the correct claims.");
-    }
-    //
-    // public string? GetUserEmail()
-    // {
-    //     var claim = user.FindFirst(ClaimTypes.Email);
-    //     if (claim is not null) return claim.Value;
-    //
-    //     claim = user.FindFirst("preferred_username");
-    //     if (claim is not null) return claim.Value;
-    //
-    //     throw new ArgumentException(
-    //         "Cannot find user email in principal. Ensure the user is authenticated and has the correct claims.");
-    // }
-
-    private static string? GetUserName(ClaimsPrincipal user)
-    {
-        var claim = user.FindFirst("name");
-        if (claim is not null) return claim.Value;
-
-        throw new ArgumentException(
-            "Cannot find user name in principal. Ensure the user is authenticated and has the correct claims.");
     }
 }

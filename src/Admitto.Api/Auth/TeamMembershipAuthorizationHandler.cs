@@ -24,7 +24,7 @@ public class TeamMembershipAuthorizationHandler(
         var userId = userContextAccessor.Current.UserId;
 
         // If the user is an administrator, they automatically satisfy the requirement.
-        if (administratorRoleService.IsAdministrator(userId))
+        if (await administratorRoleService.IsAdministratorAsync(userId))
         {
             context.Succeed(requirement);
             return;

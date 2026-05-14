@@ -16,6 +16,8 @@ public static class DependencyInjection
     {
         public void AddApiOpenApiServices()
         {
+            services.AddHttpClient();
+
             // Add OpenAPI/Swagger generation with Bearer token security scheme.
             services.AddOpenApi(options =>
             {

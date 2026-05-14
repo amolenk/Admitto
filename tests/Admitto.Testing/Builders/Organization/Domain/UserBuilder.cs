@@ -9,6 +9,7 @@ public class UserBuilder
     
     private EmailAddress _emailAddress = DefaultEmail;
     private readonly List<(TeamId TeamId, TeamMembershipRole Role)> _memberships = [];
+    private bool _isAdmin;
     
     public UserBuilder WithEmailAddress(EmailAddress emailAddress)
     {
@@ -22,9 +23,17 @@ public class UserBuilder
         return this;
     }
 
+    public UserBuilder WithIsAdmin()
+    {
+        _isAdmin = true;
+        return this;
+    }
+
     public User Build()
     {
-        var user = User.Create(_emailAddress);
+        var user = _isAdmin
+            ? User.CreateAdmin(_emailAddress)
+            : User.Create(_emailAddress);
 
         foreach (var (teamId, role) in _memberships)
         {

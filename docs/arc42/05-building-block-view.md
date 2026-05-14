@@ -46,7 +46,7 @@ The diagram uses concept names. Actual implementations vary by environment:
 | :------ | :----------------- | :--------- |
 | Relational database | PostgreSQL container | Azure Database for PostgreSQL |
 | Message queue | Azure Storage Queue emulator (Azurite) | Azure Storage Queues |
-| Identity provider | Keycloak container | Microsoft Entra External ID |
+| Identity provider | Keycloak container | Auth0 (passkeys) |
 | SMTP service | MailDev | 3rd Party SMTP service of choice |
 
 ## 5.2 Modules
@@ -133,7 +133,7 @@ The `Contracts/` sub-namespace within each module holds DTOs, facade interfaces,
 
 ### Organization module
 
-Manages teams, team membership and roles, and acts as the **gatekeeper** for ticketed-event creation. Does not own event metadata beyond a small set of per-team counters (`ActiveEventCount`, `CancelledEventCount`, `ArchivedEventCount`, `PendingEventCount`) and a bounded `TeamEventCreationRequest` child entity for in-flight creation requests. Publishes `TicketedEventCreationRequested` and consumes `TicketedEventCreated` / `TicketedEventCreationRejected` / `TicketedEventCancelled` / `TicketedEventArchived` integration events to keep the counters in sync. Integrates with external identity providers (Keycloak, Microsoft Graph) for user provisioning.
+Manages teams, team membership and roles, and acts as the **gatekeeper** for ticketed-event creation. Does not own event metadata beyond a small set of per-team counters (`ActiveEventCount`, `CancelledEventCount`, `ArchivedEventCount`, `PendingEventCount`) and a bounded `TeamEventCreationRequest` child entity for in-flight creation requests. Publishes `TicketedEventCreationRequested` and consumes `TicketedEventCreated` / `TicketedEventCreationRejected` / `TicketedEventCancelled` / `TicketedEventArchived` integration events to keep the counters in sync. Integrates with external identity providers (Keycloak, Auth0) for user provisioning.
 
 ### Registrations module
 

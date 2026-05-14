@@ -1,6 +1,7 @@
 using System.Reflection;
 using Amolenk.Admitto.Core.Organization;
 using Amolenk.Admitto.Core.Organization.Application;
+using Amolenk.Admitto.Core.Organization.Application.Bootstrap;
 using Amolenk.Admitto.Core.Organization.Application.Jobs;
 using Amolenk.Admitto.Core.Organization.Application.Persistence;
 using Amolenk.Admitto.Core.Organization.Application.Services;
@@ -8,16 +9,13 @@ using Amolenk.Admitto.Core.Organization.Application.UseCases;
 using Amolenk.Admitto.Core.Organization.Application.UseCases.TeamMembershipManagement.RegisterExternalUser;
 using Amolenk.Admitto.Core.Organization.Contracts;
 using Amolenk.Admitto.Core.Organization.Infrastructure.Persistence;
+using Amolenk.Admitto.Core.Organization.Infrastructure.UserDirectories.Auth0;
 using Amolenk.Admitto.Core.Organization.Infrastructure.UserDirectories.Keycloak;
-using Amolenk.Admitto.Core.Organization.Infrastructure.UserDirectories.MicrosoftGraph;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Messaging;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence;
-using Azure.Identity;
 using FluentValidation;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Options;
-using Microsoft.Graph;
 using Quartz;
 
 // ReSharper disable once CheckNamespace
@@ -59,6 +57,15 @@ public static class OrganizationModuleExtensions
 
         services.AddKeyedScoped<IPostgresExceptionMapping, PostgresExceptionMapping>(
             OrganizationModule.Key);
+
+        // Bootstrap admin (only when configured)
+        var bootstrapEmail = builder.Configuration[$"{BootstrapAdminOptions.SectionName}:EmailAddress"];
+        if (!string.IsNullOrWhiteSpace(bootstrapEmail))
+        {
+            services.Configure<BootstrapAdminOptions>(
+                builder.Configuration.GetSection(BootstrapAdminOptions.SectionName));
+            services.AddHostedService<BootstrapAdminInitializer>();
+        }
 
         return builder;
     }
@@ -108,13 +115,13 @@ public static class OrganizationModuleExtensions
 
     public static IHostApplicationBuilder AddOrganizationIdentityServices(this IHostApplicationBuilder builder)
     {
-        if (builder.Configuration.GetSection(MicrosoftGraphOptions.SectionName).Exists())
-            builder.AddMicrosoftGraphServices();
+        if (builder.Configuration.GetSection(Auth0Options.SectionName).Exists())
+            builder.AddAuth0Services();
         else if (builder.Configuration.GetSection(KeycloakOptions.SectionName).Exists())
             builder.AddKeycloakServices();
         else
             throw new InvalidOperationException(
-                "No user management service configured. Please configure either Microsoft Graph or Keycloak settings.");
+                "No user management service configured. Please configure either Auth0 or Keycloak settings.");
 
         return builder;
     }
@@ -124,29 +131,17 @@ public static class OrganizationModuleExtensions
         builder.AddFromAssembly(Assembly.GetExecutingAssembly(), "Amolenk.Admitto.Core.Organization");
     }
 
-    private static void AddMicrosoftGraphServices(this IHostApplicationBuilder builder)
+    private static void AddAuth0Services(this IHostApplicationBuilder builder)
     {
         var services = builder.Services;
 
-        services.Configure<MicrosoftGraphOptions>(
-            builder.Configuration.GetSection(MicrosoftGraphOptions.SectionName));
-        services.AddOptions<MicrosoftGraphOptions>()
+        services.Configure<Auth0Options>(builder.Configuration.GetSection(Auth0Options.SectionName));
+        services.AddOptions<Auth0Options>()
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
-        services.AddScoped<GraphServiceClient>(serviceProvider =>
-        {
-            var options = serviceProvider.GetRequiredService<IOptions<MicrosoftGraphOptions>>().Value;
-
-            var credential = new ClientSecretCredential(
-                options.TenantId,
-                options.ClientId,
-                options.ClientSecret);
-
-            return new GraphServiceClient(credential);
-        });
-
-        services.AddScoped<IExternalUserDirectory, MicrosoftGraphUserManagementService>();
+        services.AddScoped<IAuth0ManagementApiClient, Auth0ManagementApiAdapter>();
+        services.AddScoped<IExternalUserDirectory, Auth0UserDirectory>();
     }
 
     private static void AddKeycloakServices(this IHostApplicationBuilder builder)
@@ -158,7 +153,7 @@ public static class OrganizationModuleExtensions
             .ValidateDataAnnotations()
             .ValidateOnStart();
 
-        services.AddSingleton<KeycloakAccessTokenHandler>();
+        services.AddTransient<KeycloakAccessTokenHandler>();
 
         var settings = builder.Configuration.GetSection(KeycloakOptions.SectionName).Get<KeycloakOptions>();
         services.AddHttpClient<IExternalUserDirectory, KeycloakUserManagementService>(client =>

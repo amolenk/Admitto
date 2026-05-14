@@ -25,7 +25,7 @@ public static class GetTeamsHttpEndpoint
         CancellationToken cancellationToken)
     {
         var callerId = userContextAccessor.Current.UserId;
-        var callerIsAdmin = administratorRoleService.IsAdministrator(callerId);
+        var callerIsAdmin = await administratorRoleService.IsAdministratorAsync(callerId, cancellationToken);
 
         var teams = await handler.HandleAsync(new GetTeamsQuery(callerId, callerIsAdmin), cancellationToken);
 

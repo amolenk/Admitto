@@ -13,17 +13,17 @@ public class KeycloakUserManagementService(HttpClient client) : IExternalUserDir
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
     
-    public async ValueTask<Guid> UpsertUserAsync(string emailAddress, CancellationToken cancellationToken = default)
+    public async ValueTask<string> InviteUserAsync(string emailAddress, CancellationToken cancellationToken = default)
     {
         var userId = await GetUserByEmailAsync(emailAddress, cancellationToken);
-        if (userId.HasValue) return userId.Value;
+        if (userId is not null) return userId;
         
         return await AddUserAsync(emailAddress, cancellationToken);
     }
 
-    public async ValueTask DeleteUserAsync(Guid userId, CancellationToken cancellationToken = default)
+    public async ValueTask DeleteUserAsync(string externalUserId, CancellationToken cancellationToken = default)
     {
-        var response = await client.DeleteAsync($"/admin/realms/{Realm}/users/{userId}", cancellationToken);
+        var response = await client.DeleteAsync($"/admin/realms/{Realm}/users/{externalUserId}", cancellationToken);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -32,7 +32,7 @@ public class KeycloakUserManagementService(HttpClient client) : IExternalUserDir
         }
     }
 
-    private async ValueTask<Guid?> GetUserByEmailAsync(
+    private async ValueTask<string?> GetUserByEmailAsync(
         string emailAddress,
         CancellationToken cancellationToken = default)
     {
@@ -53,26 +53,16 @@ public class KeycloakUserManagementService(HttpClient client) : IExternalUserDir
         return users.Select(u => u.Id).FirstOrDefault();
     }
 
-    private async ValueTask<Guid> AddUserAsync(
+    private async ValueTask<string> AddUserAsync(
         string email,
         CancellationToken cancellationToken = default)
     {
-        // Create a user with a fixed password that doesn't require changing
         var newUser = new
         {
             username = email,
             email,
             enabled = true,
-            emailVerified = true,
-            credentials = new[]
-            {
-                new
-                {
-                    type = "password",
-                    value = "Password123!", // Fixed password for dev/test
-                    temporary = false // Not requiring password change
-                }
-            }
+            requiredActions = new[] { "webauthn-register-passwordless" }
         };
 
         var content = new StringContent(
@@ -96,8 +86,36 @@ public class KeycloakUserManagementService(HttpClient client) : IExternalUserDir
         }
 
         // The Location header format is "/admin/realms/{realm}/users/{userId}"
-        return Guid.Parse(locationHeader.Split('/').Last());
+        var userId = locationHeader.Split('/').Last();
+
+        // Send the execute-actions email so the user can register their passkey
+        await SendExecuteActionsEmailAsync(userId, cancellationToken);
+
+        return userId;
     }
 
-    private sealed record KeycloakUser(Guid Id);
+    private async ValueTask SendExecuteActionsEmailAsync(
+        string userId,
+        CancellationToken cancellationToken = default)
+    {
+        var actions = new[] { "webauthn-register-passwordless" };
+
+        var content = new StringContent(
+            JsonSerializer.Serialize(actions, JsonOptions),
+            System.Text.Encoding.UTF8,
+            "application/json");
+
+        var response = await client.PutAsync(
+            $"/admin/realms/{Realm}/users/{userId}/execute-actions-email",
+            content,
+            cancellationToken);
+
+        if (!response.IsSuccessStatusCode)
+        {
+            var error = await response.Content.ReadAsStringAsync(cancellationToken);
+            throw new HttpRequestException($"Failed to send execute-actions email: {error}", null, response.StatusCode);
+        }
+    }
+
+    private sealed record KeycloakUser(string Id);
 }

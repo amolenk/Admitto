@@ -6,5 +6,5 @@ namespace Amolenk.Admitto.Core.Shared.Application.Auth;
 public interface IAdministratorRoleService
 {
     /// <summary>Returns <c>true</c> if the given user is an administrator.</summary>
-    bool IsAdministrator(Guid userId);
+    ValueTask<bool> IsAdministratorAsync(Guid userId, CancellationToken cancellationToken = default);
 }

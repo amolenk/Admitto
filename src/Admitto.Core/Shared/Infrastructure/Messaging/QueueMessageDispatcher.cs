@@ -5,6 +5,7 @@ using Amolenk.Admitto.Core.Shared.Application;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Contracts;
+using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Azure.Messaging;
 
 namespace Amolenk.Admitto.Core.Shared.Infrastructure.Messaging;
@@ -113,6 +114,17 @@ internal sealed partial class QueueMessageDispatcher(
 
                 var unitOfWork = serviceProvider.GetRequiredKeyedService<IUnitOfWork>(moduleKey);
                 await unitOfWork.SaveChangesAsync(cancellationToken);
+            }
+            catch (BusinessRuleViolationException ex)
+            {
+                // No use re-throwing, the retry will also fail.
+                handlerActivity?.SetStatus(ActivityStatusCode.Error, ex.Message);
+                handlerActivity?.AddTag("exception.type", ex.GetType().FullName);
+
+                logger.LogError(ex, "Business rule violation while handling {MessageKind} of type {MessageType} with handler {HandlerType}. " +
+                    "This likely indicates a data issue that needs to be resolved manually; the message will be discarded. " +
+                    "Error details: {ErrorDetails}",
+                    kindLabel, entry.ClrType.FullName, handler.GetType().FullName, ex.Error);
             }
             catch (Exception ex)
             {
