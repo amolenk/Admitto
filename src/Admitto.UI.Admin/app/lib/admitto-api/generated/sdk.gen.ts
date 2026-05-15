@@ -20,6 +20,12 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
 
 export const deleteTeamEmailSettings = <ThrowOnError extends boolean = false>(options: Options<DeleteTeamEmailSettingsData, ThrowOnError>) => {
     return (options.client ?? client).delete<DeleteTeamEmailSettingsResponses, DeleteTeamEmailSettingsErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/email-settings',
         ...options
     });
@@ -27,6 +33,12 @@ export const deleteTeamEmailSettings = <ThrowOnError extends boolean = false>(op
 
 export const getTeamEmailSettings = <ThrowOnError extends boolean = false>(options: Options<GetTeamEmailSettingsData, ThrowOnError>) => {
     return (options.client ?? client).get<GetTeamEmailSettingsResponses, GetTeamEmailSettingsErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/email-settings',
         ...options
     });
@@ -34,6 +46,12 @@ export const getTeamEmailSettings = <ThrowOnError extends boolean = false>(optio
 
 export const upsertTeamEmailSettings = <ThrowOnError extends boolean = false>(options: Options<UpsertTeamEmailSettingsData, ThrowOnError>) => {
     return (options.client ?? client).put<UpsertTeamEmailSettingsResponses, UpsertTeamEmailSettingsErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/email-settings',
         ...options,
         headers: {
@@ -45,6 +63,12 @@ export const upsertTeamEmailSettings = <ThrowOnError extends boolean = false>(op
 
 export const testTeamEmailSettings = <ThrowOnError extends boolean = false>(options: Options<TestTeamEmailSettingsData, ThrowOnError>) => {
     return (options.client ?? client).post<TestTeamEmailSettingsResponses, TestTeamEmailSettingsErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/email-settings/test',
         ...options,
         headers: {
@@ -56,6 +80,12 @@ export const testTeamEmailSettings = <ThrowOnError extends boolean = false>(opti
 
 export const deleteEventEmailSettings = <ThrowOnError extends boolean = false>(options: Options<DeleteEventEmailSettingsData, ThrowOnError>) => {
     return (options.client ?? client).delete<DeleteEventEmailSettingsResponses, DeleteEventEmailSettingsErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/events/{eventId}/email-settings',
         ...options
     });
@@ -63,6 +93,12 @@ export const deleteEventEmailSettings = <ThrowOnError extends boolean = false>(o
 
 export const getEventEmailSettings = <ThrowOnError extends boolean = false>(options: Options<GetEventEmailSettingsData, ThrowOnError>) => {
     return (options.client ?? client).get<GetEventEmailSettingsResponses, GetEventEmailSettingsErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/events/{eventId}/email-settings',
         ...options
     });
@@ -70,6 +106,12 @@ export const getEventEmailSettings = <ThrowOnError extends boolean = false>(opti
 
 export const upsertEventEmailSettings = <ThrowOnError extends boolean = false>(options: Options<UpsertEventEmailSettingsData, ThrowOnError>) => {
     return (options.client ?? client).put<UpsertEventEmailSettingsResponses, UpsertEventEmailSettingsErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/events/{eventId}/email-settings',
         ...options,
         headers: {
@@ -81,6 +123,12 @@ export const upsertEventEmailSettings = <ThrowOnError extends boolean = false>(o
 
 export const testEventEmailSettings = <ThrowOnError extends boolean = false>(options: Options<TestEventEmailSettingsData, ThrowOnError>) => {
     return (options.client ?? client).post<TestEventEmailSettingsResponses, TestEventEmailSettingsErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/events/{eventId}/email-settings/test',
         ...options,
         headers: {
@@ -92,6 +140,12 @@ export const testEventEmailSettings = <ThrowOnError extends boolean = false>(opt
 
 export const getTeamEmailTemplates = <ThrowOnError extends boolean = false>(options: Options<GetTeamEmailTemplatesData, ThrowOnError>) => {
     return (options.client ?? client).get<GetTeamEmailTemplatesResponses, GetTeamEmailTemplatesErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/email-templates',
         ...options
     });
@@ -99,6 +153,12 @@ export const getTeamEmailTemplates = <ThrowOnError extends boolean = false>(opti
 
 export const createTeamEmailTemplate = <ThrowOnError extends boolean = false>(options: Options<CreateTeamEmailTemplateData, ThrowOnError>) => {
     return (options.client ?? client).post<CreateTeamEmailTemplateResponses, CreateTeamEmailTemplateErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/email-templates',
         ...options,
         headers: {
@@ -110,6 +170,12 @@ export const createTeamEmailTemplate = <ThrowOnError extends boolean = false>(op
 
 export const deleteTeamEmailTemplate = <ThrowOnError extends boolean = false>(options: Options<DeleteTeamEmailTemplateData, ThrowOnError>) => {
     return (options.client ?? client).delete<DeleteTeamEmailTemplateResponses, DeleteTeamEmailTemplateErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/email-templates/{id}',
         ...options
     });
@@ -117,6 +183,12 @@ export const deleteTeamEmailTemplate = <ThrowOnError extends boolean = false>(op
 
 export const getTeamEmailTemplate = <ThrowOnError extends boolean = false>(options: Options<GetTeamEmailTemplateData, ThrowOnError>) => {
     return (options.client ?? client).get<GetTeamEmailTemplateResponses, GetTeamEmailTemplateErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/email-templates/{id}',
         ...options
     });
@@ -124,6 +196,12 @@ export const getTeamEmailTemplate = <ThrowOnError extends boolean = false>(optio
 
 export const updateTeamEmailTemplate = <ThrowOnError extends boolean = false>(options: Options<UpdateTeamEmailTemplateData, ThrowOnError>) => {
     return (options.client ?? client).put<UpdateTeamEmailTemplateResponses, UpdateTeamEmailTemplateErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/email-templates/{id}',
         ...options,
         headers: {
@@ -135,6 +213,12 @@ export const updateTeamEmailTemplate = <ThrowOnError extends boolean = false>(op
 
 export const previewTeamEmailTemplate = <ThrowOnError extends boolean = false>(options: Options<PreviewTeamEmailTemplateData, ThrowOnError>) => {
     return (options.client ?? client).post<PreviewTeamEmailTemplateResponses, PreviewTeamEmailTemplateErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/email-templates/preview',
         ...options,
         headers: {
@@ -146,6 +230,12 @@ export const previewTeamEmailTemplate = <ThrowOnError extends boolean = false>(o
 
 export const testSendTeamEmailTemplate = <ThrowOnError extends boolean = false>(options: Options<TestSendTeamEmailTemplateData, ThrowOnError>) => {
     return (options.client ?? client).post<TestSendTeamEmailTemplateResponses, TestSendTeamEmailTemplateErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/email-templates/{id}/test-send',
         ...options,
         headers: {
@@ -157,6 +247,12 @@ export const testSendTeamEmailTemplate = <ThrowOnError extends boolean = false>(
 
 export const getEventEmailTemplates = <ThrowOnError extends boolean = false>(options: Options<GetEventEmailTemplatesData, ThrowOnError>) => {
     return (options.client ?? client).get<GetEventEmailTemplatesResponses, GetEventEmailTemplatesErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/events/{eventId}/email-templates',
         ...options
     });
@@ -164,6 +260,12 @@ export const getEventEmailTemplates = <ThrowOnError extends boolean = false>(opt
 
 export const createEventEmailTemplate = <ThrowOnError extends boolean = false>(options: Options<CreateEventEmailTemplateData, ThrowOnError>) => {
     return (options.client ?? client).post<CreateEventEmailTemplateResponses, CreateEventEmailTemplateErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/events/{eventId}/email-templates',
         ...options,
         headers: {
@@ -175,6 +277,12 @@ export const createEventEmailTemplate = <ThrowOnError extends boolean = false>(o
 
 export const deleteEventEmailTemplate = <ThrowOnError extends boolean = false>(options: Options<DeleteEventEmailTemplateData, ThrowOnError>) => {
     return (options.client ?? client).delete<DeleteEventEmailTemplateResponses, DeleteEventEmailTemplateErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/events/{eventId}/email-templates/{id}',
         ...options
     });
@@ -182,6 +290,12 @@ export const deleteEventEmailTemplate = <ThrowOnError extends boolean = false>(o
 
 export const getEventEmailTemplate = <ThrowOnError extends boolean = false>(options: Options<GetEventEmailTemplateData, ThrowOnError>) => {
     return (options.client ?? client).get<GetEventEmailTemplateResponses, GetEventEmailTemplateErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/events/{eventId}/email-templates/{id}',
         ...options
     });
@@ -189,6 +303,12 @@ export const getEventEmailTemplate = <ThrowOnError extends boolean = false>(opti
 
 export const updateEventEmailTemplate = <ThrowOnError extends boolean = false>(options: Options<UpdateEventEmailTemplateData, ThrowOnError>) => {
     return (options.client ?? client).put<UpdateEventEmailTemplateResponses, UpdateEventEmailTemplateErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/events/{eventId}/email-templates/{id}',
         ...options,
         headers: {
@@ -200,6 +320,12 @@ export const updateEventEmailTemplate = <ThrowOnError extends boolean = false>(o
 
 export const previewEventEmailTemplate = <ThrowOnError extends boolean = false>(options: Options<PreviewEventEmailTemplateData, ThrowOnError>) => {
     return (options.client ?? client).post<PreviewEventEmailTemplateResponses, PreviewEventEmailTemplateErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/events/{eventId}/email-templates/preview',
         ...options,
         headers: {
@@ -211,6 +337,12 @@ export const previewEventEmailTemplate = <ThrowOnError extends boolean = false>(
 
 export const testSendEventEmailTemplate = <ThrowOnError extends boolean = false>(options: Options<TestSendEventEmailTemplateData, ThrowOnError>) => {
     return (options.client ?? client).post<TestSendEventEmailTemplateResponses, TestSendEventEmailTemplateErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/events/{eventId}/email-templates/{id}/test-send',
         ...options,
         headers: {
@@ -222,6 +354,12 @@ export const testSendEventEmailTemplate = <ThrowOnError extends boolean = false>
 
 export const previewBulkEmail = <ThrowOnError extends boolean = false>(options: Options<PreviewBulkEmailData, ThrowOnError>) => {
     return (options.client ?? client).post<PreviewBulkEmailResponses, PreviewBulkEmailErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/events/{eventId}/bulk-emails/preview',
         ...options,
         headers: {
@@ -233,6 +371,12 @@ export const previewBulkEmail = <ThrowOnError extends boolean = false>(options: 
 
 export const getBulkEmails = <ThrowOnError extends boolean = false>(options: Options<GetBulkEmailsData, ThrowOnError>) => {
     return (options.client ?? client).get<GetBulkEmailsResponses, GetBulkEmailsErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/events/{eventId}/bulk-emails',
         ...options
     });
@@ -240,6 +384,12 @@ export const getBulkEmails = <ThrowOnError extends boolean = false>(options: Opt
 
 export const createBulkEmail = <ThrowOnError extends boolean = false>(options: Options<CreateBulkEmailData, ThrowOnError>) => {
     return (options.client ?? client).post<CreateBulkEmailResponses, CreateBulkEmailErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/events/{eventId}/bulk-emails',
         ...options,
         headers: {
@@ -251,6 +401,12 @@ export const createBulkEmail = <ThrowOnError extends boolean = false>(options: O
 
 export const getBulkEmail = <ThrowOnError extends boolean = false>(options: Options<GetBulkEmailData, ThrowOnError>) => {
     return (options.client ?? client).get<GetBulkEmailResponses, GetBulkEmailErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/events/{eventId}/bulk-emails/{bulkEmailJobId}',
         ...options
     });
@@ -258,6 +414,12 @@ export const getBulkEmail = <ThrowOnError extends boolean = false>(options: Opti
 
 export const cancelBulkEmail = <ThrowOnError extends boolean = false>(options: Options<CancelBulkEmailData, ThrowOnError>) => {
     return (options.client ?? client).post<CancelBulkEmailResponses, CancelBulkEmailErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/events/{eventId}/bulk-emails/{bulkEmailJobId}/cancel',
         ...options
     });
@@ -265,6 +427,12 @@ export const cancelBulkEmail = <ThrowOnError extends boolean = false>(options: O
 
 export const getAttendeeEmails = <ThrowOnError extends boolean = false>(options: Options<GetAttendeeEmailsData, ThrowOnError>) => {
     return (options.client ?? client).get<GetAttendeeEmailsResponses, GetAttendeeEmailsErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/events/{eventId}/registrations/{registrationId}/emails',
         ...options
     });
@@ -272,6 +440,12 @@ export const getAttendeeEmails = <ThrowOnError extends boolean = false>(options:
 
 export const getTeams = <ThrowOnError extends boolean = false>(options?: Options<GetTeamsData, ThrowOnError>) => {
     return (options?.client ?? client).get<GetTeamsResponses, GetTeamsErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams',
         ...options
     });
@@ -279,6 +453,12 @@ export const getTeams = <ThrowOnError extends boolean = false>(options?: Options
 
 export const createTeam = <ThrowOnError extends boolean = false>(options: Options<CreateTeamData, ThrowOnError>) => {
     return (options.client ?? client).post<CreateTeamResponses, CreateTeamErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams',
         ...options,
         headers: {
@@ -290,6 +470,12 @@ export const createTeam = <ThrowOnError extends boolean = false>(options: Option
 
 export const getTeam = <ThrowOnError extends boolean = false>(options: Options<GetTeamData, ThrowOnError>) => {
     return (options.client ?? client).get<GetTeamResponses, GetTeamErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}',
         ...options
     });
@@ -297,6 +483,12 @@ export const getTeam = <ThrowOnError extends boolean = false>(options: Options<G
 
 export const updateTeam = <ThrowOnError extends boolean = false>(options: Options<UpdateTeamData, ThrowOnError>) => {
     return (options.client ?? client).put<UpdateTeamResponses, UpdateTeamErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}',
         ...options,
         headers: {
@@ -308,6 +500,12 @@ export const updateTeam = <ThrowOnError extends boolean = false>(options: Option
 
 export const archiveTeam = <ThrowOnError extends boolean = false>(options: Options<ArchiveTeamData, ThrowOnError>) => {
     return (options.client ?? client).post<ArchiveTeamResponses, ArchiveTeamErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/archive',
         ...options,
         headers: {
@@ -319,6 +517,12 @@ export const archiveTeam = <ThrowOnError extends boolean = false>(options: Optio
 
 export const listTeamMembers = <ThrowOnError extends boolean = false>(options: Options<ListTeamMembersData, ThrowOnError>) => {
     return (options.client ?? client).get<ListTeamMembersResponses, ListTeamMembersErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/members',
         ...options
     });
@@ -326,6 +530,12 @@ export const listTeamMembers = <ThrowOnError extends boolean = false>(options: O
 
 export const assignTeamMembership = <ThrowOnError extends boolean = false>(options: Options<AssignTeamMembershipData, ThrowOnError>) => {
     return (options.client ?? client).post<AssignTeamMembershipResponses, AssignTeamMembershipErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/members',
         ...options,
         headers: {
@@ -337,6 +547,12 @@ export const assignTeamMembership = <ThrowOnError extends boolean = false>(optio
 
 export const getTicketedEvents = <ThrowOnError extends boolean = false>(options: Options<GetTicketedEventsData, ThrowOnError>) => {
     return (options.client ?? client).get<GetTicketedEventsResponses, GetTicketedEventsErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/events',
         ...options
     });
@@ -344,6 +560,12 @@ export const getTicketedEvents = <ThrowOnError extends boolean = false>(options:
 
 export const requestTicketedEventCreation = <ThrowOnError extends boolean = false>(options: Options<RequestTicketedEventCreationData, ThrowOnError>) => {
     return (options.client ?? client).post<RequestTicketedEventCreationResponses, RequestTicketedEventCreationErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/events',
         ...options,
         headers: {
@@ -355,6 +577,12 @@ export const requestTicketedEventCreation = <ThrowOnError extends boolean = fals
 
 export const getEventCreationRequest = <ThrowOnError extends boolean = false>(options: Options<GetEventCreationRequestData, ThrowOnError>) => {
     return (options.client ?? client).get<GetEventCreationRequestResponses, GetEventCreationRequestErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/event-creations/{creationRequestId}',
         ...options
     });
@@ -362,6 +590,12 @@ export const getEventCreationRequest = <ThrowOnError extends boolean = false>(op
 
 export const removeTeamMembership = <ThrowOnError extends boolean = false>(options: Options<RemoveTeamMembershipData, ThrowOnError>) => {
     return (options.client ?? client).delete<RemoveTeamMembershipResponses, RemoveTeamMembershipErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/members/{email}',
         ...options
     });
@@ -369,6 +603,12 @@ export const removeTeamMembership = <ThrowOnError extends boolean = false>(optio
 
 export const changeTeamMembershipRole = <ThrowOnError extends boolean = false>(options: Options<ChangeTeamMembershipRoleData, ThrowOnError>) => {
     return (options.client ?? client).put<ChangeTeamMembershipRoleResponses, ChangeTeamMembershipRoleErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/members/{email}',
         ...options,
         headers: {
@@ -380,6 +620,12 @@ export const changeTeamMembershipRole = <ThrowOnError extends boolean = false>(o
 
 export const getApiKeys = <ThrowOnError extends boolean = false>(options: Options<GetApiKeysData, ThrowOnError>) => {
     return (options.client ?? client).get<GetApiKeysResponses, GetApiKeysErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/api-keys',
         ...options
     });
@@ -387,6 +633,12 @@ export const getApiKeys = <ThrowOnError extends boolean = false>(options: Option
 
 export const createApiKey = <ThrowOnError extends boolean = false>(options: Options<CreateApiKeyData, ThrowOnError>) => {
     return (options.client ?? client).post<CreateApiKeyResponses, CreateApiKeyErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/api-keys',
         ...options,
         headers: {
@@ -398,6 +650,12 @@ export const createApiKey = <ThrowOnError extends boolean = false>(options: Opti
 
 export const revokeApiKey = <ThrowOnError extends boolean = false>(options: Options<RevokeApiKeyData, ThrowOnError>) => {
     return (options.client ?? client).delete<RevokeApiKeyResponses, RevokeApiKeyErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/api-keys/{keyId}',
         ...options
     });
@@ -405,6 +663,12 @@ export const revokeApiKey = <ThrowOnError extends boolean = false>(options: Opti
 
 export const getTicketedEventDetails = <ThrowOnError extends boolean = false>(options: Options<GetTicketedEventDetailsData, ThrowOnError>) => {
     return (options.client ?? client).get<GetTicketedEventDetailsResponses, GetTicketedEventDetailsErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/events/{eventId}',
         ...options
     });
@@ -412,6 +676,12 @@ export const getTicketedEventDetails = <ThrowOnError extends boolean = false>(op
 
 export const updateTicketedEventDetails = <ThrowOnError extends boolean = false>(options: Options<UpdateTicketedEventDetailsData, ThrowOnError>) => {
     return (options.client ?? client).put<UpdateTicketedEventDetailsResponses, UpdateTicketedEventDetailsErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/events/{eventId}',
         ...options,
         headers: {
@@ -423,6 +693,12 @@ export const updateTicketedEventDetails = <ThrowOnError extends boolean = false>
 
 export const cancelTicketedEvent = <ThrowOnError extends boolean = false>(options: Options<CancelTicketedEventData, ThrowOnError>) => {
     return (options.client ?? client).post<CancelTicketedEventResponses, CancelTicketedEventErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/events/{eventId}/cancel',
         ...options
     });
@@ -430,6 +706,12 @@ export const cancelTicketedEvent = <ThrowOnError extends boolean = false>(option
 
 export const archiveTicketedEvent = <ThrowOnError extends boolean = false>(options: Options<ArchiveTicketedEventData, ThrowOnError>) => {
     return (options.client ?? client).post<ArchiveTicketedEventResponses, ArchiveTicketedEventErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/events/{eventId}/archive',
         ...options
     });
@@ -437,6 +719,12 @@ export const archiveTicketedEvent = <ThrowOnError extends boolean = false>(optio
 
 export const configureRegistrationPolicy = <ThrowOnError extends boolean = false>(options: Options<ConfigureRegistrationPolicyData, ThrowOnError>) => {
     return (options.client ?? client).put<ConfigureRegistrationPolicyResponses, ConfigureRegistrationPolicyErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/events/{eventId}/registration-policy',
         ...options,
         headers: {
@@ -448,6 +736,12 @@ export const configureRegistrationPolicy = <ThrowOnError extends boolean = false
 
 export const configureCancellationPolicy = <ThrowOnError extends boolean = false>(options: Options<ConfigureCancellationPolicyData, ThrowOnError>) => {
     return (options.client ?? client).put<ConfigureCancellationPolicyResponses, ConfigureCancellationPolicyErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/events/{eventId}/cancellation-policy',
         ...options,
         headers: {
@@ -459,6 +753,12 @@ export const configureCancellationPolicy = <ThrowOnError extends boolean = false
 
 export const configureReconfirmPolicy = <ThrowOnError extends boolean = false>(options: Options<ConfigureReconfirmPolicyData, ThrowOnError>) => {
     return (options.client ?? client).put<ConfigureReconfirmPolicyResponses, ConfigureReconfirmPolicyErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/events/{eventId}/reconfirm-policy',
         ...options,
         headers: {
@@ -470,6 +770,12 @@ export const configureReconfirmPolicy = <ThrowOnError extends boolean = false>(o
 
 export const updateTicketedEventTimeZone = <ThrowOnError extends boolean = false>(options: Options<UpdateTicketedEventTimeZoneData, ThrowOnError>) => {
     return (options.client ?? client).put<UpdateTicketedEventTimeZoneResponses, UpdateTicketedEventTimeZoneErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/events/{eventId}/time-zone',
         ...options,
         headers: {
@@ -481,6 +787,12 @@ export const updateTicketedEventTimeZone = <ThrowOnError extends boolean = false
 
 export const updateAdditionalDetailSchema = <ThrowOnError extends boolean = false>(options: Options<UpdateAdditionalDetailSchemaData, ThrowOnError>) => {
     return (options.client ?? client).put<UpdateAdditionalDetailSchemaResponses, UpdateAdditionalDetailSchemaErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/events/{eventId}/additional-detail-schema',
         ...options,
         headers: {
@@ -492,6 +804,12 @@ export const updateAdditionalDetailSchema = <ThrowOnError extends boolean = fals
 
 export const getRegistrations = <ThrowOnError extends boolean = false>(options: Options<GetRegistrationsData, ThrowOnError>) => {
     return (options.client ?? client).get<GetRegistrationsResponses, GetRegistrationsErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/events/{eventId}/registrations',
         ...options
     });
@@ -499,6 +817,12 @@ export const getRegistrations = <ThrowOnError extends boolean = false>(options: 
 
 export const adminRegisterAttendee = <ThrowOnError extends boolean = false>(options: Options<AdminRegisterAttendeeData, ThrowOnError>) => {
     return (options.client ?? client).post<AdminRegisterAttendeeResponses, AdminRegisterAttendeeErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/events/{eventId}/registrations',
         ...options,
         headers: {
@@ -510,6 +834,12 @@ export const adminRegisterAttendee = <ThrowOnError extends boolean = false>(opti
 
 export const getRegistrationDetails = <ThrowOnError extends boolean = false>(options: Options<GetRegistrationDetailsData, ThrowOnError>) => {
     return (options.client ?? client).get<GetRegistrationDetailsResponses, GetRegistrationDetailsErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/events/{eventId}/registrations/{registrationId}',
         ...options
     });
@@ -517,6 +847,12 @@ export const getRegistrationDetails = <ThrowOnError extends boolean = false>(opt
 
 export const cancelRegistration = <ThrowOnError extends boolean = false>(options: Options<CancelRegistrationData, ThrowOnError>) => {
     return (options.client ?? client).post<CancelRegistrationResponses, CancelRegistrationErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/events/{eventId}/registrations/{registrationId}/cancel',
         ...options,
         headers: {
@@ -528,6 +864,12 @@ export const cancelRegistration = <ThrowOnError extends boolean = false>(options
 
 export const changeAttendeeTickets = <ThrowOnError extends boolean = false>(options: Options<ChangeAttendeeTicketsData, ThrowOnError>) => {
     return (options.client ?? client).put<ChangeAttendeeTicketsResponses, ChangeAttendeeTicketsErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/events/{eventId}/registrations/{registrationId}/tickets',
         ...options,
         headers: {
@@ -539,6 +881,12 @@ export const changeAttendeeTickets = <ThrowOnError extends boolean = false>(opti
 
 export const listCoupons = <ThrowOnError extends boolean = false>(options: Options<ListCouponsData, ThrowOnError>) => {
     return (options.client ?? client).get<ListCouponsResponses, ListCouponsErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/events/{eventId}/coupons',
         ...options
     });
@@ -546,6 +894,12 @@ export const listCoupons = <ThrowOnError extends boolean = false>(options: Optio
 
 export const createCoupon = <ThrowOnError extends boolean = false>(options: Options<CreateCouponData, ThrowOnError>) => {
     return (options.client ?? client).post<CreateCouponResponses, CreateCouponErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/events/{eventId}/coupons',
         ...options,
         headers: {
@@ -557,6 +911,12 @@ export const createCoupon = <ThrowOnError extends boolean = false>(options: Opti
 
 export const getCouponDetails = <ThrowOnError extends boolean = false>(options: Options<GetCouponDetailsData, ThrowOnError>) => {
     return (options.client ?? client).get<GetCouponDetailsResponses, GetCouponDetailsErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/events/{eventId}/coupons/{couponId}',
         ...options
     });
@@ -564,6 +924,12 @@ export const getCouponDetails = <ThrowOnError extends boolean = false>(options: 
 
 export const revokeCoupon = <ThrowOnError extends boolean = false>(options: Options<RevokeCouponData, ThrowOnError>) => {
     return (options.client ?? client).post<RevokeCouponResponses, RevokeCouponErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/events/{eventId}/coupons/{couponId}/revoke',
         ...options
     });
@@ -571,6 +937,12 @@ export const revokeCoupon = <ThrowOnError extends boolean = false>(options: Opti
 
 export const getTicketTypes = <ThrowOnError extends boolean = false>(options: Options<GetTicketTypesData, ThrowOnError>) => {
     return (options.client ?? client).get<GetTicketTypesResponses, GetTicketTypesErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/events/{eventId}/ticket-types',
         ...options
     });
@@ -578,6 +950,12 @@ export const getTicketTypes = <ThrowOnError extends boolean = false>(options: Op
 
 export const addTicketType = <ThrowOnError extends boolean = false>(options: Options<AddTicketTypeData, ThrowOnError>) => {
     return (options.client ?? client).post<AddTicketTypeResponses, AddTicketTypeErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/admin/teams/{teamId}/events/{eventId}/ticket-types',
         ...options,
         headers: {
@@ -589,7 +967,13 @@ export const addTicketType = <ThrowOnError extends boolean = false>(options: Opt
 
 export const updateTicketType = <ThrowOnError extends boolean = false>(options: Options<UpdateTicketTypeData, ThrowOnError>) => {
     return (options.client ?? client).put<UpdateTicketTypeResponses, UpdateTicketTypeErrors, ThrowOnError>({
-        url: '/admin/teams/{teamId}/events/{eventId}/ticket-types/{ticketTypeSlug}',
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}/ticket-types/{ticketTypeId}',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -600,13 +984,25 @@ export const updateTicketType = <ThrowOnError extends boolean = false>(options: 
 
 export const cancelTicketType = <ThrowOnError extends boolean = false>(options: Options<CancelTicketTypeData, ThrowOnError>) => {
     return (options.client ?? client).post<CancelTicketTypeResponses, CancelTicketTypeErrors, ThrowOnError>({
-        url: '/admin/teams/{teamId}/events/{eventId}/ticket-types/{ticketTypeSlug}/cancel',
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}/ticket-types/{ticketTypeId}/cancel',
         ...options
     });
 };
 
 export const requestOtpHttpEndpoint = <ThrowOnError extends boolean = false>(options: Options<RequestOtpHttpEndpointData, ThrowOnError>) => {
     return (options.client ?? client).post<unknown, RequestOtpHttpEndpointErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/api/teams/{teamId}/events/{eventId}/otp/request',
         ...options,
         headers: {
@@ -618,6 +1014,12 @@ export const requestOtpHttpEndpoint = <ThrowOnError extends boolean = false>(opt
 
 export const verifyOtpHttpEndpoint = <ThrowOnError extends boolean = false>(options: Options<VerifyOtpHttpEndpointData, ThrowOnError>) => {
     return (options.client ?? client).post<unknown, VerifyOtpHttpEndpointErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/api/teams/{teamId}/events/{eventId}/otp/verify',
         ...options,
         headers: {
@@ -629,6 +1031,12 @@ export const verifyOtpHttpEndpoint = <ThrowOnError extends boolean = false>(opti
 
 export const selfRegisterAttendeeHttpEndpoint = <ThrowOnError extends boolean = false>(options: Options<SelfRegisterAttendeeHttpEndpointData, ThrowOnError>) => {
     return (options.client ?? client).post<unknown, SelfRegisterAttendeeHttpEndpointErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/api/teams/{teamId}/events/{eventId}/registrations',
         ...options,
         headers: {
@@ -640,6 +1048,12 @@ export const selfRegisterAttendeeHttpEndpoint = <ThrowOnError extends boolean = 
 
 export const registerWithCouponHttpEndpoint = <ThrowOnError extends boolean = false>(options: Options<RegisterWithCouponHttpEndpointData, ThrowOnError>) => {
     return (options.client ?? client).post<unknown, RegisterWithCouponHttpEndpointErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/api/teams/{teamId}/events/{eventId}/registrations/coupon',
         ...options,
         headers: {
@@ -651,6 +1065,12 @@ export const registerWithCouponHttpEndpoint = <ThrowOnError extends boolean = fa
 
 export const getQrCodeHttpEndpoint = <ThrowOnError extends boolean = false>(options: Options<GetQrCodeHttpEndpointData, ThrowOnError>) => {
     return (options.client ?? client).get<unknown, GetQrCodeHttpEndpointErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/api/teams/{teamId}/events/{eventId}/registrations/{registrationId}/qr-code',
         ...options
     });
@@ -658,6 +1078,12 @@ export const getQrCodeHttpEndpoint = <ThrowOnError extends boolean = false>(opti
 
 export const selfCancelRegistrationHttpEndpoint = <ThrowOnError extends boolean = false>(options: Options<SelfCancelRegistrationHttpEndpointData, ThrowOnError>) => {
     return (options.client ?? client).post<unknown, SelfCancelRegistrationHttpEndpointErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/api/teams/{teamId}/events/{eventId}/registrations/{registrationId}/cancel',
         ...options
     });
@@ -665,6 +1091,12 @@ export const selfCancelRegistrationHttpEndpoint = <ThrowOnError extends boolean 
 
 export const selfChangeTicketsHttpEndpoint = <ThrowOnError extends boolean = false>(options: Options<SelfChangeTicketsHttpEndpointData, ThrowOnError>) => {
     return (options.client ?? client).put<unknown, SelfChangeTicketsHttpEndpointErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/api/teams/{teamId}/events/{eventId}/registrations/{registrationId}/tickets',
         ...options,
         headers: {
@@ -676,6 +1108,12 @@ export const selfChangeTicketsHttpEndpoint = <ThrowOnError extends boolean = fal
 
 export const getPublicTicketTypesHttpEndpoint = <ThrowOnError extends boolean = false>(options: Options<GetPublicTicketTypesHttpEndpointData, ThrowOnError>) => {
     return (options.client ?? client).get<GetPublicTicketTypesHttpEndpointResponses, GetPublicTicketTypesHttpEndpointErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
         url: '/api/teams/{teamId}/events/{eventId}/ticket-types',
         ...options
     });

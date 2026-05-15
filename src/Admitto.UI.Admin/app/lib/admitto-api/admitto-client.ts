@@ -13,7 +13,7 @@ async function getAccessToken(): Promise<string> {
         });
 
         return accessToken ?? "";
-    } catch {
+    } catch (err: unknown) {
         // Token expired and refresh failed — return empty so the backend
         // returns 401, which callAdmittoApi forwards to the client.
         return "";

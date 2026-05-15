@@ -69,5 +69,14 @@ internal sealed class BearerSecuritySchemeTransformer(
                 }
             }
         };
+
+        document.Security = [
+            new OpenApiSecurityRequirement
+            {
+                [new OpenApiSecuritySchemeReference(JwtBearerDefaults.AuthenticationScheme)] = []
+            }
+        ];
+
+        document.SetReferenceHostDocument();
     }
 }

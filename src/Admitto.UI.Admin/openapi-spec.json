@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "https://localhost:53932/"
+      "url": "http://localhost:15000/"
     }
   ],
   "paths": {
@@ -5736,7 +5736,7 @@
         }
       }
     },
-    "/admin/teams/{teamId}/events/{eventId}/ticket-types/{ticketTypeSlug}": {
+    "/admin/teams/{teamId}/events/{eventId}/ticket-types/{ticketTypeId}": {
       "put": {
         "tags": [
           "UpdateTicketTypeHttpEndpoint"
@@ -5744,11 +5744,12 @@
         "operationId": "UpdateTicketType",
         "parameters": [
           {
-            "name": "ticketTypeSlug",
+            "name": "ticketTypeId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
@@ -5837,7 +5838,7 @@
         }
       }
     },
-    "/admin/teams/{teamId}/events/{eventId}/ticket-types/{ticketTypeSlug}/cancel": {
+    "/admin/teams/{teamId}/events/{eventId}/ticket-types/{ticketTypeId}/cancel": {
       "post": {
         "tags": [
           "CancelTicketTypeHttpEndpoint"
@@ -5845,11 +5846,12 @@
         "operationId": "CancelTicketType",
         "parameters": [
           {
-            "name": "ticketTypeSlug",
+            "name": "ticketTypeId",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
@@ -6717,14 +6719,10 @@
       },
       "AddTicketTypeHttpRequest": {
         "required": [
-          "slug",
           "name"
         ],
         "type": "object",
         "properties": {
-          "slug": {
-            "type": "string"
-          },
           "name": {
             "type": "string"
           },
@@ -6754,12 +6752,13 @@
       },
       "AddTicketTypeHttpResponse": {
         "required": [
-          "slug"
+          "id"
         ],
         "type": "object",
         "properties": {
-          "slug": {
-            "type": "string"
+          "id": {
+            "type": "string",
+            "format": "uuid"
           }
         }
       },
@@ -6768,7 +6767,7 @@
           "email",
           "firstName",
           "lastName",
-          "ticketTypeSlugs"
+          "ticketTypeIds"
         ],
         "type": "object",
         "properties": {
@@ -6781,10 +6780,11 @@
           "lastName": {
             "type": "string"
           },
-          "ticketTypeSlugs": {
+          "ticketTypeIds": {
             "type": "array",
             "items": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           "additionalDetails": {
@@ -6922,13 +6922,14 @@
       "AttendeeSourceHttpDto": {
         "type": "object",
         "properties": {
-          "ticketTypeSlugs": {
+          "ticketTypeIds": {
             "type": [
               "null",
               "array"
             ],
             "items": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           "registrationStatus": {
@@ -7435,17 +7436,18 @@
       },
       "ChangeAttendeeTicketsHttpRequest": {
         "required": [
-          "ticketTypeSlugs"
+          "ticketTypeIds"
         ],
         "type": "object",
         "properties": {
-          "ticketTypeSlugs": {
+          "ticketTypeIds": {
             "type": [
               "null",
               "array"
             ],
             "items": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         }
@@ -7557,7 +7559,7 @@
           "code",
           "email",
           "status",
-          "allowedTicketTypeSlugs",
+          "allowedTicketTypeIds",
           "expiresAt",
           "bypassRegistrationWindow",
           "redeemedAt",
@@ -7580,10 +7582,11 @@
           "status": {
             "$ref": "#/components/schemas/CouponStatus"
           },
-          "allowedTicketTypeSlugs": {
+          "allowedTicketTypeIds": {
             "type": "array",
             "items": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           "expiresAt": {
@@ -7626,7 +7629,7 @@
           "id",
           "email",
           "status",
-          "allowedTicketTypeSlugs",
+          "allowedTicketTypeIds",
           "expiresAt",
           "createdAt"
         ],
@@ -7642,10 +7645,11 @@
           "status": {
             "$ref": "#/components/schemas/CouponStatus"
           },
-          "allowedTicketTypeSlugs": {
+          "allowedTicketTypeIds": {
             "type": "array",
             "items": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           "expiresAt": {
@@ -7751,7 +7755,7 @@
       "CreateCouponHttpRequest": {
         "required": [
           "email",
-          "allowedTicketTypeSlugs",
+          "allowedTicketTypeIds",
           "expiresAt"
         ],
         "type": "object",
@@ -7759,10 +7763,11 @@
           "email": {
             "type": "string"
           },
-          "allowedTicketTypeSlugs": {
+          "allowedTicketTypeIds": {
             "type": "array",
             "items": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           "expiresAt": {
@@ -7842,6 +7847,7 @@
           }
         }
       },
+      "EmailAddress": { },
       "EmailAuthMode": {
         "enum": [
           "none",
@@ -8068,7 +8074,7 @@
         "type": "object",
         "properties": {
           "email": {
-            "type": "string"
+            "$ref": "#/components/schemas/EmailAddress"
           },
           "displayName": {
             "type": [
@@ -8310,7 +8316,7 @@
       },
       "PublicTicketTypeDto": {
         "required": [
-          "slug",
+          "id",
           "name",
           "timeSlots",
           "maxCapacity",
@@ -8318,8 +8324,9 @@
         ],
         "type": "object",
         "properties": {
-          "slug": {
-            "type": "string"
+          "id": {
+            "type": "string",
+            "format": "uuid"
           },
           "name": {
             "type": "string"
@@ -8352,13 +8359,14 @@
       "QueryRegistrationsDto": {
         "type": "object",
         "properties": {
-          "ticketTypeSlugs": {
+          "ticketTypeIds": {
             "type": [
               "null",
               "array"
             ],
             "items": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           "registrationStatus": {
@@ -8434,7 +8442,7 @@
           "email",
           "firstName",
           "lastName",
-          "ticketTypeSlugs"
+          "ticketTypeIds"
         ],
         "type": "object",
         "properties": {
@@ -8450,10 +8458,11 @@
           "lastName": {
             "type": "string"
           },
-          "ticketTypeSlugs": {
+          "ticketTypeIds": {
             "type": "array",
             "items": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           "additionalDetails": {
@@ -8676,17 +8685,18 @@
       },
       "SelfChangeTicketsHttpRequest": {
         "required": [
-          "ticketTypeSlugs"
+          "ticketTypeIds"
         ],
         "type": "object",
         "properties": {
-          "ticketTypeSlugs": {
+          "ticketTypeIds": {
             "type": [
               "null",
               "array"
             ],
             "items": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           }
         }
@@ -8695,7 +8705,7 @@
         "required": [
           "firstName",
           "lastName",
-          "ticketTypeSlugs"
+          "ticketTypeIds"
         ],
         "type": "object",
         "properties": {
@@ -8705,10 +8715,11 @@
           "lastName": {
             "type": "string"
           },
-          "ticketTypeSlugs": {
+          "ticketTypeIds": {
             "type": "array",
             "items": {
-              "type": "string"
+              "type": "string",
+              "format": "uuid"
             }
           },
           "additionalDetails": {
@@ -8818,13 +8829,14 @@
       },
       "TicketDetailDto": {
         "required": [
-          "slug",
+          "id",
           "name"
         ],
         "type": "object",
         "properties": {
-          "slug": {
-            "type": "string"
+          "id": {
+            "type": "string",
+            "format": "uuid"
           },
           "name": {
             "type": "string"
@@ -8967,13 +8979,14 @@
       },
       "TicketSummaryDto": {
         "required": [
-          "slug",
+          "id",
           "name"
         ],
         "type": "object",
         "properties": {
-          "slug": {
-            "type": "string"
+          "id": {
+            "type": "string",
+            "format": "uuid"
           },
           "name": {
             "type": "string"
@@ -8982,7 +8995,7 @@
       },
       "TicketTypeDto": {
         "required": [
-          "slug",
+          "id",
           "name",
           "timeSlots",
           "maxCapacity",
@@ -8992,8 +9005,9 @@
         ],
         "type": "object",
         "properties": {
-          "slug": {
-            "type": "string"
+          "id": {
+            "type": "string",
+            "format": "uuid"
           },
           "name": {
             "type": "string"
@@ -9271,8 +9285,8 @@
         "type": "oauth2",
         "flows": {
           "authorizationCode": {
-            "authorizationUrl": "http://localhost:53934/realms/admitto/protocol/openid-connect/auth",
-            "tokenUrl": "http://localhost:53934/realms/admitto/protocol/openid-connect/token",
+            "authorizationUrl": "http://localhost:15001/realms/admitto/protocol/openid-connect/auth",
+            "tokenUrl": "http://localhost:15001/realms/admitto/protocol/openid-connect/token",
             "scopes": {
               "openid": "OpenID Connect",
               "profile": "User profile",
@@ -9283,6 +9297,11 @@
       }
     }
   },
+  "security": [
+    {
+      "Bearer": [ ]
+    }
+  ],
   "tags": [
     {
       "name": "Handler"
