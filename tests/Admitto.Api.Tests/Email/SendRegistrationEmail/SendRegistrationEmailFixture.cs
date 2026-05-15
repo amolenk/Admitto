@@ -11,7 +11,7 @@ namespace Amolenk.Admitto.Api.Tests.Email.SendRegistrationEmail;
 
 internal sealed class SendRegistrationEmailFixture
 {
-    public const string TicketTypeSlug = "general-admission";
+    public static readonly TicketTypeId TicketTypeId = TicketTypeId.From(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
     public const string RecipientEmail = "attendee@example.com";
 
     public Guid TeamId { get; private set; }
@@ -50,7 +50,7 @@ internal sealed class SendRegistrationEmailFixture
                 DateTimeOffset.UtcNow.AddDays(30)));
 
         var catalog = TicketCatalog.Create(eventId);
-        catalog.AddTicketType(Slug.From(TicketTypeSlug), TicketTypeName.From("General Admission"), [], 100);
+        catalog.AddTicketType(TicketTypeId, TicketTypeName.From("General Admission"), [], 100);
 
         // Seed team-scoped email settings pointing at MailDev SMTP.
         // Use the dynamic endpoint from the test environment to avoid port conflicts.

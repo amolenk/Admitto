@@ -71,8 +71,8 @@ internal sealed class RegisterAttendeeHandler(
                     throw new BusinessRuleViolationException(Errors.CouponRevoked);
             }
 
-            var notAllowlisted = command.TicketTypeSlugs
-                .Where(s => !coupon.AllowedTicketTypeSlugs.Contains(s))
+            var notAllowlisted = command.TicketTypeIds
+                .Where(id => !coupon.AllowedTicketTypeIds.Any(allowed => allowed.Value == id))
                 .ToArray();
             if (notAllowlisted.Length > 0)
                 throw new BusinessRuleViolationException(Errors.TicketTypeNotAllowlisted(notAllowlisted));
@@ -126,9 +126,10 @@ internal sealed class RegisterAttendeeHandler(
         //    enforced inside Claim. Capacity enforcement applies only in self-service mode.
         if (catalog is not null)
         {
+            var ticketTypeIds = command.TicketTypeIds.Select(TicketTypeId.From).ToList();
             try
             {
-                catalog.Claim(command.TicketTypeSlugs, enforce: command.Mode == RegistrationMode.SelfService);
+                catalog.Claim(ticketTypeIds, enforce: command.Mode == RegistrationMode.SelfService);
             }
             catch (BusinessRuleViolationException ex)
                 when (ex.Error.Code == TicketCatalog.Errors.EventNotActive.Code)
@@ -138,14 +139,14 @@ internal sealed class RegisterAttendeeHandler(
         }
 
         // 9. Build snapshots (coupon-without-catalog yields empty time-slot arrays per legacy).
-        var tickets = command.TicketTypeSlugs
-            .Select(slug =>
+        var tickets = command.TicketTypeIds
+            .Select(id =>
             {
-                var ticketType = catalog?.GetTicketType(slug);
-                var timeSlots = ticketType?.TimeSlots.Select(ts => ts.Slug).ToArray()
-                    ?? Array.Empty<Slug>();
-                var name = ticketType?.Name ?? TicketTypeName.From(slug);
-                return new TicketTypeSnapshot(Slug.From(slug), name, timeSlots);
+                var ticketTypeId = TicketTypeId.From(id);
+                var ticketType = catalog?.GetTicketType(ticketTypeId);
+                var timeSlots = ticketType?.TimeSlots ?? [];
+                var name = ticketType?.Name ?? TicketTypeName.From(id.ToString());
+                return new TicketTypeSnapshot(ticketTypeId, name, timeSlots);
             })
             .ToList();
 
@@ -260,10 +261,10 @@ internal sealed class RegisterAttendeeHandler(
             "This coupon has been revoked.",
             Type: ErrorType.Conflict);
 
-        public static Error TicketTypeNotAllowlisted(string[] slugs) => new(
+        public static Error TicketTypeNotAllowlisted(Guid[] ids) => new(
             "coupon.ticket_type_not_allowed",
             "One or more ticket types are not allowed for this coupon.",
-            Details: new Dictionary<string, object?> { ["slugs"] = slugs });
+            Details: new Dictionary<string, object?> { ["ids"] = ids });
 
         public static readonly Error CouponEmailMismatch = new(
             "coupon.email_mismatch",

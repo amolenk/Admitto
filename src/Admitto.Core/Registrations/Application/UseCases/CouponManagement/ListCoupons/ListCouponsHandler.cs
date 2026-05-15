@@ -24,7 +24,7 @@ internal sealed class ListCouponsHandler(IRegistrationsWriteStore writeStore)
                 c.Id.Value,
                 c.Email.Value,
                 c.GetStatus(now),
-                c.AllowedTicketTypeSlugs.ToArray(),
+                c.AllowedTicketTypeIds.Select(id => id.Value).ToArray(),
                 c.ExpiresAt,
                 c.CreatedAt))
             .ToList();

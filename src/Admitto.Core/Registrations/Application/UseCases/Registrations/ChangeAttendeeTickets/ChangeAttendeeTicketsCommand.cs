@@ -7,5 +7,5 @@ namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.
 internal sealed record ChangeAttendeeTicketsCommand(
     Guid EventId,
     Guid RegistrationId,
-    IReadOnlyList<string> TicketTypeSlugs,
+    IReadOnlyList<Guid> TicketTypeIds,
     ChangeMode Mode) : Command;

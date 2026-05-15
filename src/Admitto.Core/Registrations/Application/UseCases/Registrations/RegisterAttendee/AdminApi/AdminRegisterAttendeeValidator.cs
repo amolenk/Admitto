@@ -17,11 +17,8 @@ public sealed class AdminRegisterAttendeeValidator : AbstractValidator<AdminRegi
         RuleFor(x => x.LastName)
             .MustBeParseable(LastName.TryFrom);
 
-        RuleFor(x => x.TicketTypeSlugs)
+        RuleFor(x => x.TicketTypeIds)
             .NotNull()
             .NotEmpty();
-
-        RuleForEach(x => x.TicketTypeSlugs)
-            .MustBeParseable(Slug.TryFrom);
     }
 }

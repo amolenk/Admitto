@@ -18,7 +18,7 @@ public sealed class SelfChangeTicketsTests(TestContext testContext) : EndToEndTe
         using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
         var request = new HttpRequestMessage(HttpMethod.Put, fixture.ChangeTicketsRoute)
         {
-            Content = JsonContent.Create(new { TicketTypeSlugs = new[] { "workshop" } })
+            Content = JsonContent.Create(new { TicketTypeIds = new[] { SelfChangeTicketsFixture.WorkshopId.Value } })
         };
 
         var response = await client.SendAsync(request, testContext.CancellationToken);
@@ -38,7 +38,7 @@ public sealed class SelfChangeTicketsTests(TestContext testContext) : EndToEndTe
         using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
         var request = new HttpRequestMessage(HttpMethod.Put, unknownRoute)
         {
-            Content = JsonContent.Create(new { TicketTypeSlugs = new[] { "workshop" } })
+            Content = JsonContent.Create(new { TicketTypeIds = new[] { SelfChangeTicketsFixture.WorkshopId.Value } })
         };
 
         var response = await client.SendAsync(request, testContext.CancellationToken);
@@ -56,7 +56,7 @@ public sealed class SelfChangeTicketsTests(TestContext testContext) : EndToEndTe
         using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
         var request = new HttpRequestMessage(HttpMethod.Put, fixture.ChangeTicketsRoute)
         {
-            Content = JsonContent.Create(new { TicketTypeSlugs = new[] { "workshop" } })
+            Content = JsonContent.Create(new { TicketTypeIds = new[] { SelfChangeTicketsFixture.WorkshopId.Value } })
         };
 
         var response = await client.SendAsync(request, testContext.CancellationToken);
@@ -74,7 +74,7 @@ public sealed class SelfChangeTicketsTests(TestContext testContext) : EndToEndTe
         using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
         var request = new HttpRequestMessage(HttpMethod.Put, fixture.ChangeTicketsRoute)
         {
-            Content = JsonContent.Create(new { TicketTypeSlugs = new[] { "workshop" } })
+            Content = JsonContent.Create(new { TicketTypeIds = new[] { SelfChangeTicketsFixture.WorkshopId.Value } })
         };
 
         var response = await client.SendAsync(request, testContext.CancellationToken);
@@ -92,7 +92,7 @@ public sealed class SelfChangeTicketsTests(TestContext testContext) : EndToEndTe
         using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
         var request = new HttpRequestMessage(HttpMethod.Put, fixture.ChangeTicketsRoute)
         {
-            Content = JsonContent.Create(new { TicketTypeSlugs = new[] { "workshop" } })
+            Content = JsonContent.Create(new { TicketTypeIds = new[] { SelfChangeTicketsFixture.WorkshopId.Value } })
         };
 
         var response = await client.SendAsync(request, testContext.CancellationToken);
@@ -110,7 +110,7 @@ public sealed class SelfChangeTicketsTests(TestContext testContext) : EndToEndTe
         using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
         var request = new HttpRequestMessage(HttpMethod.Put, fixture.ChangeTicketsRoute)
         {
-            Content = JsonContent.Create(new { TicketTypeSlugs = new[] { "nonexistent-ticket" } })
+            Content = JsonContent.Create(new { TicketTypeIds = new[] { Guid.NewGuid() } })
         };
 
         var response = await client.SendAsync(request, testContext.CancellationToken);
@@ -128,7 +128,7 @@ public sealed class SelfChangeTicketsTests(TestContext testContext) : EndToEndTe
         using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
         var request = new HttpRequestMessage(HttpMethod.Put, fixture.ChangeTicketsRoute)
         {
-            Content = JsonContent.Create(new { TicketTypeSlugs = new[] { "general-admission" } })
+            Content = JsonContent.Create(new { TicketTypeIds = new[] { SelfChangeTicketsFixture.GeneralAdmissionId.Value } })
         };
 
         var response = await client.SendAsync(request, testContext.CancellationToken);

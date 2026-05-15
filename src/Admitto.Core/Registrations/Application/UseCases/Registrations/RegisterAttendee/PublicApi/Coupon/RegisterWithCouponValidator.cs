@@ -20,7 +20,7 @@ public sealed class RegisterWithCouponValidator : AbstractValidator<RegisterWith
         RuleFor(x => x.LastName)
             .MustBeParseable(LastName.TryFrom);
 
-        RuleFor(x => x.TicketTypeSlugs)
+        RuleFor(x => x.TicketTypeIds)
             .NotNull()
             .NotEmpty();
     }

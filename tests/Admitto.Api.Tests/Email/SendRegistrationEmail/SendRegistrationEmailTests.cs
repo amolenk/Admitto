@@ -29,7 +29,7 @@ public sealed class SendRegistrationEmailTests(TestContext testContext) : EndToE
             FirstName = "Alice",
             LastName = "Anderson",
             Email = SendRegistrationEmailFixture.RecipientEmail,
-            TicketTypeSlugs = new[] { SendRegistrationEmailFixture.TicketTypeSlug }
+            TicketTypeIds = new[] { SendRegistrationEmailFixture.TicketTypeId.Value }
         };
 
         var response = await Environment.ApiClient.PostAsJsonAsync(
@@ -68,7 +68,7 @@ public sealed class SendRegistrationEmailTests(TestContext testContext) : EndToE
             FirstName = "Bob",
             LastName = "Builder",
             Email = "bob@example.com",
-            TicketTypeSlugs = new[] { SendRegistrationEmailFixture.TicketTypeSlug }
+            TicketTypeIds = new[] { SendRegistrationEmailFixture.TicketTypeId.Value }
         };
 
         // Register and wait for the first email.

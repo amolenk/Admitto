@@ -13,6 +13,7 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 /// </summary>
 internal sealed class RegisterAttendeeFixture
 {
+    private readonly Dictionary<string, TicketTypeId> _ticketTypeIdsBySlug = new();
     private ExistingRegistrationSeed? _existingRegistration;
     private RegistrationId? _existingRegistrationId;
     private TicketedEvent? _ticketedEvent;
@@ -27,6 +28,9 @@ internal sealed class RegisterAttendeeFixture
     public RegistrationId ExistingRegistrationId =>
         _existingRegistrationId
         ?? throw new InvalidOperationException("No existing registration has been seeded.");
+
+    public TicketTypeId GetTicketTypeId(string slug) => _ticketTypeIdsBySlug[slug];
+    public TicketTypeId TicketTypeId => GetTicketTypeId(TicketTypeSlug);
 
     private RegisterAttendeeFixture()
     {
@@ -73,9 +77,13 @@ internal sealed class RegisterAttendeeFixture
         var f = new RegisterAttendeeFixture();
         f._ticketedEvent = f.MakeActiveEventWithOpenWindow();
         var catalog = TicketCatalog.Create(f.EventId);
-        catalog.AddTicketType(Slug.From("general-admission"), TicketTypeName.From("General Admission"), [], 100);
-        catalog.AddTicketType(Slug.From("workshop-a"), TicketTypeName.From("Workshop A"), [], null);
-        catalog.CancelTicketType(Slug.From("workshop-a"));
+        var generalId = TicketTypeId.New();
+        var workshopAId = TicketTypeId.New();
+        f._ticketTypeIdsBySlug["general-admission"] = generalId;
+        f._ticketTypeIdsBySlug["workshop-a"] = workshopAId;
+        catalog.AddTicketType(generalId, TicketTypeName.From("General Admission"), [], 100);
+        catalog.AddTicketType(workshopAId, TicketTypeName.From("Workshop A"), [], null);
+        catalog.CancelTicketType(workshopAId);
         f._catalog = catalog;
         return f;
     }
@@ -85,10 +93,14 @@ internal sealed class RegisterAttendeeFixture
         var f = new RegisterAttendeeFixture();
         f._ticketedEvent = f.MakeActiveEventWithOpenWindow();
         var catalog = TicketCatalog.Create(f.EventId);
-        catalog.AddTicketType(Slug.From("workshop-a"), TicketTypeName.From("Workshop A"),
-            [new TimeSlot(Slug.From("morning"))], 20);
-        catalog.AddTicketType(Slug.From("workshop-b"), TicketTypeName.From("Workshop B"),
-            [new TimeSlot(Slug.From("morning"))], 20);
+        var workshopAId = TicketTypeId.New();
+        var workshopBId = TicketTypeId.New();
+        f._ticketTypeIdsBySlug["workshop-a"] = workshopAId;
+        f._ticketTypeIdsBySlug["workshop-b"] = workshopBId;
+        catalog.AddTicketType(workshopAId, TicketTypeName.From("Workshop A"),
+            [TimeSlot.From("morning")], 20);
+        catalog.AddTicketType(workshopBId, TicketTypeName.From("Workshop B"),
+            [TimeSlot.From("morning")], 20);
         f._catalog = catalog;
         return f;
     }
@@ -149,7 +161,9 @@ internal sealed class RegisterAttendeeFixture
         ev.Cancel();
         f._ticketedEvent = ev;
         var catalog = TicketCatalog.Create(f.EventId);
-        catalog.AddTicketType(Slug.From("general-admission"), TicketTypeName.From("General Admission"), [], 100);
+        var generalId = TicketTypeId.New();
+        f._ticketTypeIdsBySlug["general-admission"] = generalId;
+        catalog.AddTicketType(generalId, TicketTypeName.From("General Admission"), [], 100);
         f._catalog = catalog;
         return f;
     }
@@ -161,7 +175,9 @@ internal sealed class RegisterAttendeeFixture
         ev.Archive();
         f._ticketedEvent = ev;
         var catalog = TicketCatalog.Create(f.EventId);
-        catalog.AddTicketType(Slug.From("general-admission"), TicketTypeName.From("General Admission"), [], 100);
+        var generalId = TicketTypeId.New();
+        f._ticketTypeIdsBySlug["general-admission"] = generalId;
+        catalog.AddTicketType(generalId, TicketTypeName.From("General Admission"), [], 100);
         f._catalog = catalog;
         return f;
     }
@@ -195,7 +211,9 @@ internal sealed class RegisterAttendeeFixture
         var f = new RegisterAttendeeFixture();
         f._ticketedEvent = f.MakeActiveEventWithOpenWindow();
         var catalog = TicketCatalog.Create(f.EventId);
-        catalog.AddTicketType(Slug.From("general-admission"), TicketTypeName.From("General Admission"), [], 100);
+        var generalId = TicketTypeId.New();
+        f._ticketTypeIdsBySlug["general-admission"] = generalId;
+        catalog.AddTicketType(generalId, TicketTypeName.From("General Admission"), [], 100);
         catalog.MarkEventCancelled();
         f._catalog = catalog;
         return f;
@@ -212,7 +230,7 @@ internal sealed class RegisterAttendeeFixture
             EmailAddress.From(email),
             FirstName.From(firstName),
             LastName.From(lastName),
-            tickets ?? [new TicketTypeSnapshot(Slug.From(TicketTypeSlug), TicketTypeName.From(TicketTypeSlug), [])],
+            tickets ?? [new TicketTypeSnapshot(TicketTypeId, TicketTypeName.From(TicketTypeSlug), [])],
             AdditionalDetails.From(additionalDetails),
             IsCancelled: false,
             CancellationReason: CancellationReason.AttendeeRequest,
@@ -234,7 +252,7 @@ internal sealed class RegisterAttendeeFixture
             EmailAddress.From(email),
             FirstName.From(firstName),
             LastName.From(lastName),
-            tickets ?? [new TicketTypeSnapshot(Slug.From("previous-ticket"), TicketTypeName.From("Previous Ticket"), [])],
+            tickets ?? [new TicketTypeSnapshot(TicketTypeId.New(), TicketTypeName.From("Previous Ticket"), [])],
             AdditionalDetails.From(additionalDetails),
             IsCancelled: true,
             CancellationReason: cancellationReason,
@@ -258,20 +276,22 @@ internal sealed class RegisterAttendeeFixture
     public static RegisterAttendeeFixture CouponHappyFlow()
     {
         var f = new RegisterAttendeeFixture { TicketTypeSlug = "speaker-pass" };
+        f._catalog = f.MakeCatalog(("speaker-pass", "Speaker Pass", 5, 5));
         f._coupon = f.BuildCoupon(bypassWindow: false);
         f._ticketedEvent = f.MakeActiveEventWithOpenWindow();
-        f._catalog = f.MakeCatalog(("speaker-pass", "Speaker Pass", 5, 5));
         return f;
     }
 
     public static RegisterAttendeeFixture CouponExpired()
     {
         var f = new RegisterAttendeeFixture { TicketTypeSlug = "speaker-pass" };
+        f._catalog = f.MakeCatalog(("speaker-pass", "Speaker Pass", 5, 5));
+        var ticketTypeId = f.GetTicketTypeId("speaker-pass");
         f._coupon = new CouponBuilder()
             .WithEventId(f.EventId)
             .WithEmail(f.CouponEmail)
-            .WithRequestedTicketTypeSlugs(f.TicketTypeSlug)
-            .WithAvailableTicketTypes(new TicketTypeInfo(f.TicketTypeSlug, false))
+            .WithRequestedTicketTypeIds(ticketTypeId)
+            .WithAvailableTicketTypes(new TicketTypeInfo(ticketTypeId, false))
             .WithExpiresAt(DateTimeOffset.UtcNow.AddMinutes(-1))
             .Build();
         f.CouponCodeString = f._coupon.Code.Value.ToString();
@@ -282,6 +302,7 @@ internal sealed class RegisterAttendeeFixture
     public static RegisterAttendeeFixture CouponRedeemed()
     {
         var f = new RegisterAttendeeFixture { TicketTypeSlug = "speaker-pass" };
+        f._catalog = f.MakeCatalog(("speaker-pass", "Speaker Pass", 5, 5));
         f._coupon = f.BuildCoupon();
         f._coupon.Redeem();
         f.CouponCodeString = f._coupon.Code.Value.ToString();
@@ -292,6 +313,7 @@ internal sealed class RegisterAttendeeFixture
     public static RegisterAttendeeFixture CouponRevoked()
     {
         var f = new RegisterAttendeeFixture { TicketTypeSlug = "speaker-pass" };
+        f._catalog = f.MakeCatalog(("speaker-pass", "Speaker Pass", 5, 5));
         f._coupon = f.BuildCoupon();
         f._coupon.Revoke();
         f.CouponCodeString = f._coupon.Code.Value.ToString();
@@ -302,69 +324,69 @@ internal sealed class RegisterAttendeeFixture
     public static RegisterAttendeeFixture CouponTicketTypeNotAllowlisted()
     {
         var f = new RegisterAttendeeFixture { TicketTypeSlug = "speaker-pass" };
+        f._catalog = f.MakeCatalog(
+            ("general-admission", "General Admission", 100, 0),
+            ("speaker-pass", "Speaker Pass", 100, 0));
         f._coupon = f.BuildCoupon();
         f.CouponCodeString = f._coupon.Code.Value.ToString();
         f._ticketedEvent = f.MakeActiveEventWithOpenWindow();
-        f._catalog = f.MakeCatalog(
-            ("general-admission", "General Admission", 100, 0),
-            (f.TicketTypeSlug, "Speaker Pass", 100, 0));
         return f;
     }
 
     public static RegisterAttendeeFixture CouponBypassesNullCapacity()
     {
         var f = new RegisterAttendeeFixture { TicketTypeSlug = "speaker-pass" };
+        f._catalog = f.MakeCatalog(("speaker-pass", "Speaker Pass", null, 0));
         f._coupon = f.BuildCoupon(bypassWindow: false);
         f._ticketedEvent = f.MakeActiveEventWithOpenWindow();
-        f._catalog = f.MakeCatalog((f.TicketTypeSlug, "Speaker Pass", null, 0));
         return f;
     }
 
     public static RegisterAttendeeFixture CouponBypassesClosedWindow()
     {
         var f = new RegisterAttendeeFixture { TicketTypeSlug = "speaker-pass" };
+        f._catalog = f.MakeCatalog(("speaker-pass", "Speaker Pass", 100, 0));
         f._coupon = f.BuildCoupon(bypassWindow: true);
         var closedPolicy = TicketedEventRegistrationPolicy.Create(
             DateTimeOffset.UtcNow.AddDays(-7),
             DateTimeOffset.UtcNow.AddDays(-1));
         f._ticketedEvent = f.MakeActiveEvent(closedPolicy);
-        f._catalog = f.MakeCatalog((f.TicketTypeSlug, "Speaker Pass", 100, 0));
         return f;
     }
 
     public static RegisterAttendeeFixture CouponRespectsClosedWindow()
     {
         var f = new RegisterAttendeeFixture { TicketTypeSlug = "speaker-pass" };
+        f._catalog = f.MakeCatalog(("speaker-pass", "Speaker Pass", 100, 0));
         f._coupon = f.BuildCoupon(bypassWindow: false);
         var closedPolicy = TicketedEventRegistrationPolicy.Create(
             DateTimeOffset.UtcNow.AddDays(-7),
             DateTimeOffset.UtcNow.AddDays(-1));
         f._ticketedEvent = f.MakeActiveEvent(closedPolicy);
-        f._catalog = f.MakeCatalog((f.TicketTypeSlug, "Speaker Pass", 100, 0));
         return f;
     }
 
     public static RegisterAttendeeFixture CouponBypassesDomainRestriction()
     {
         var f = new RegisterAttendeeFixture { TicketTypeSlug = "speaker-pass" };
+        f._catalog = f.MakeCatalog(("speaker-pass", "Speaker Pass", 100, 0));
         f._coupon = f.BuildCoupon(bypassWindow: false);
         var policy = TicketedEventRegistrationPolicy.Create(
             DateTimeOffset.UtcNow.AddDays(-1),
             DateTimeOffset.UtcNow.AddDays(30),
             "@acme.com");
         f._ticketedEvent = f.MakeActiveEvent(policy);
-        f._catalog = f.MakeCatalog((f.TicketTypeSlug, "Speaker Pass", 100, 0));
         return f;
     }
 
     public static RegisterAttendeeFixture CouponEventCancelled()
     {
         var f = new RegisterAttendeeFixture { TicketTypeSlug = "speaker-pass" };
+        f._catalog = f.MakeCatalog(("speaker-pass", "Speaker Pass", 100, 0));
         f._coupon = f.BuildCoupon(bypassWindow: true);
         var ev = f.MakeActiveEventWithOpenWindow();
         ev.Cancel();
         f._ticketedEvent = ev;
-        f._catalog = f.MakeCatalog((f.TicketTypeSlug, "Speaker Pass", 100, 0));
         return f;
     }
 
@@ -416,11 +438,12 @@ internal sealed class RegisterAttendeeFixture
 
     private Coupon BuildCoupon(bool bypassWindow = false)
     {
+        var ticketTypeId = GetTicketTypeId(TicketTypeSlug);
         var coupon = new CouponBuilder()
             .WithEventId(EventId)
             .WithEmail(CouponEmail)
-            .WithRequestedTicketTypeSlugs(TicketTypeSlug)
-            .WithAvailableTicketTypes(new TicketTypeInfo(TicketTypeSlug, false))
+            .WithRequestedTicketTypeIds(ticketTypeId)
+            .WithAvailableTicketTypes(new TicketTypeInfo(ticketTypeId, false))
             .WithExpiresAt(DateTimeOffset.UtcNow.AddDays(30))
             .WithBypassRegistrationWindow(bypassWindow)
             .Build();
@@ -461,12 +484,11 @@ internal sealed class RegisterAttendeeFixture
         var catalog = TicketCatalog.Create(EventId);
         foreach (var (slug, name, max, used, selfServiceEnabled) in ticketTypes)
         {
-            catalog.AddTicketType(Slug.From(slug), TicketTypeName.From(name), [], max, selfServiceEnabled);
-            if (used > 0)
-            {
-                for (var i = 0; i < used; i++)
-                    catalog.Claim([slug], enforce: false);
-            }
+            var id = TicketTypeId.New();
+            _ticketTypeIdsBySlug[slug] = id;
+            catalog.AddTicketType(id, TicketTypeName.From(name), [], max, selfServiceEnabled);
+            for (var i = 0; i < used; i++)
+                catalog.Claim([id], enforce: false);
         }
         return catalog;
     }

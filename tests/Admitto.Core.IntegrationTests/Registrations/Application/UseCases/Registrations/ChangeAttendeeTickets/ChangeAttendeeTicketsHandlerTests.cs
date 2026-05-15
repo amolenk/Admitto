@@ -23,7 +23,7 @@ public sealed class ChangeAttendeeTicketsHandlerTests(TestContext testContext) :
         var command = new ChangeAttendeeTicketsCommand(
             fixture.EventId.Value,
             fixture.RegistrationId.Value,
-            ["workshop"],
+            [fixture.GetTicketTypeId("workshop").Value],
             ChangeMode.Admin);
 
         await CreateSut().HandleAsync(command, testContext.CancellationToken);
@@ -34,14 +34,14 @@ public sealed class ChangeAttendeeTicketsHandlerTests(TestContext testContext) :
                 .FirstOrDefaultAsync(r => r.Id == fixture.RegistrationId, testContext.CancellationToken);
             registration.ShouldNotBeNull();
             registration.Tickets.Count.ShouldBe(1);
-            registration.Tickets[0].Slug.ShouldBe(Slug.From("workshop"));
+            registration.Tickets[0].Id.ShouldBe(fixture.GetTicketTypeId("workshop"));
 
             // Capacity: early-bird released (50→49), workshop claimed (10→11)
             var catalog = await dbContext.TicketCatalogs
                 .FirstOrDefaultAsync(c => c.Id == fixture.EventId, testContext.CancellationToken);
             catalog.ShouldNotBeNull();
-            catalog.GetTicketType("early-bird")!.UsedCapacity.ShouldBe(49);
-            catalog.GetTicketType("workshop")!.UsedCapacity.ShouldBe(11);
+            catalog.GetTicketType(fixture.GetTicketTypeId("early-bird"))!.UsedCapacity.ShouldBe(49);
+            catalog.GetTicketType(fixture.GetTicketTypeId("workshop"))!.UsedCapacity.ShouldBe(11);
         });
     }
 
@@ -55,7 +55,7 @@ public sealed class ChangeAttendeeTicketsHandlerTests(TestContext testContext) :
         var command = new ChangeAttendeeTicketsCommand(
             fixture.EventId.Value,
             fixture.RegistrationId.Value,
-            ["workshop"],
+            [fixture.GetTicketTypeId("workshop").Value],
             ChangeMode.Admin);
 
         // Should NOT throw
@@ -66,7 +66,7 @@ public sealed class ChangeAttendeeTicketsHandlerTests(TestContext testContext) :
             var registration = await dbContext.Registrations
                 .FirstOrDefaultAsync(r => r.Id == fixture.RegistrationId, testContext.CancellationToken);
             registration.ShouldNotBeNull();
-            registration.Tickets.ShouldContain(t => t.Slug == "workshop");
+            registration.Tickets.ShouldContain(t => t.Id == fixture.GetTicketTypeId("workshop"));
         });
     }
 
@@ -80,7 +80,7 @@ public sealed class ChangeAttendeeTicketsHandlerTests(TestContext testContext) :
         var command = new ChangeAttendeeTicketsCommand(
             fixture.EventId.Value,
             fixture.RegistrationId.Value,
-            ["early-bird"],
+            [fixture.GetTicketTypeId("early-bird").Value],
             ChangeMode.Admin);
 
         var result = await ErrorResult.CaptureAsync(
@@ -99,7 +99,7 @@ public sealed class ChangeAttendeeTicketsHandlerTests(TestContext testContext) :
         var command = new ChangeAttendeeTicketsCommand(
             fixture.EventId.Value,
             fixture.RegistrationId.Value,
-            ["early-bird"],
+            [fixture.GetTicketTypeId("early-bird").Value],
             ChangeMode.Admin);
 
         var result = await ErrorResult.CaptureAsync(

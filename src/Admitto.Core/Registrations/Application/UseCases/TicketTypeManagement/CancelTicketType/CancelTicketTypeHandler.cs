@@ -15,7 +15,7 @@ internal sealed class CancelTicketTypeHandler(IRegistrationsWriteStore writeStor
         CancellationToken cancellationToken)
     {
         TicketedEventId eventId = TicketedEventId.From(command.EventId);
-        Slug slug = Slug.From(command.Slug);
+        TicketTypeId ticketTypeId = TicketTypeId.From(command.TicketTypeId);
 
         var catalog = await writeStore.TicketCatalogs
             .FirstOrDefaultAsync(tc => tc.Id == eventId, cancellationToken);
@@ -26,7 +26,7 @@ internal sealed class CancelTicketTypeHandler(IRegistrationsWriteStore writeStor
                 NotFoundError.Create<TicketCatalog>(eventId.Value));
         }
 
-        catalog.CancelTicketType(slug);
+        catalog.CancelTicketType(ticketTypeId);
     }
 }
 

@@ -9,7 +9,7 @@ internal sealed class UpdateTicketTypeFixture
     private EventLifecycleStatus _eventStatus = EventLifecycleStatus.Active;
 
     public TicketedEventId EventId { get; } = TicketedEventId.New();
-    public string TicketTypeSlug { get; } = "general-admission";
+    public TicketTypeId TicketTypeId { get; } = TicketTypeId.New();
 
     private UpdateTicketTypeFixture()
     {
@@ -28,7 +28,7 @@ internal sealed class UpdateTicketTypeFixture
         {
             var catalog = TicketCatalog.Create(EventId);
             catalog.AddTicketType(
-                Slug.From(TicketTypeSlug),
+                TicketTypeId,
                 TicketTypeName.From("General Admission"),
                 [],
                 100);

@@ -9,44 +9,64 @@ internal sealed class ReleaseTicketsFixture
 {
     private TicketCatalog? _catalog;
 
+    // The ticket type ID that the registration holds.
+    // For UnknownTicketType scenario this is a ghost ID (not in catalog).
+    private TicketTypeId _registrationTicketTypeId = TicketTypeId.New();
+
     public TicketedEventId EventId { get; } = TicketedEventId.New();
     public TeamId TeamId { get; } = TeamId.New();
     public RegistrationId RegistrationId { get; private set; } = RegistrationId.New();
-    public string TicketTypeSlug { get; private set; } = "general-admission";
+
+    // The ticket type that IS in the catalog (may equal _registrationTicketTypeId or not).
+    public TicketTypeId TicketTypeId { get; private set; } = TicketTypeId.New();
+
+    // Only set in WithCatalogAndUnknownTicketTypeInRegistration: the catalog's known ticket type.
+    public TicketTypeId KnownTicketTypeId { get; private set; }
 
     private ReleaseTicketsFixture() { }
 
     public static ReleaseTicketsFixture WithCatalogAndRegistration(
         int maxCapacity = 10,
-        int usedCapacity = 3,
-        string ticketTypeSlug = "general-admission")
+        int usedCapacity = 3)
     {
-        var f = new ReleaseTicketsFixture { TicketTypeSlug = ticketTypeSlug };
+        var f = new ReleaseTicketsFixture();
+        f._registrationTicketTypeId = f.TicketTypeId;
         var catalog = TicketCatalog.Create(f.EventId);
-        catalog.AddTicketType(Slug.From(ticketTypeSlug), TicketTypeName.From("General Admission"), [], maxCapacity);
+        catalog.AddTicketType(f.TicketTypeId, TicketTypeName.From("General Admission"), [], maxCapacity);
         for (var i = 0; i < usedCapacity; i++)
-            catalog.Claim([ticketTypeSlug], enforce: false);
+            catalog.Claim([f.TicketTypeId], enforce: false);
         f._catalog = catalog;
         return f;
     }
 
     public static ReleaseTicketsFixture WithoutCatalog() => new();
 
-    public static ReleaseTicketsFixture WithCatalogAtZeroCapacity(string ticketTypeSlug = "general-admission")
+    public static ReleaseTicketsFixture WithCatalogAtZeroCapacity()
     {
-        var f = new ReleaseTicketsFixture { TicketTypeSlug = ticketTypeSlug };
+        var f = new ReleaseTicketsFixture();
+        f._registrationTicketTypeId = f.TicketTypeId;
         var catalog = TicketCatalog.Create(f.EventId);
-        catalog.AddTicketType(Slug.From(ticketTypeSlug), TicketTypeName.From("General Admission"), [], 10);
+        catalog.AddTicketType(f.TicketTypeId, TicketTypeName.From("General Admission"), [], 10);
         f._catalog = catalog;
         return f;
     }
 
-    public static ReleaseTicketsFixture WithCatalogAndUnknownSlugInRegistration()
+    public static ReleaseTicketsFixture WithCatalogAndUnknownTicketTypeInRegistration()
     {
-        var f = new ReleaseTicketsFixture { TicketTypeSlug = "ghost-ticket" };
+        var ghostId = TicketTypeId.New();
+        var knownId = TicketTypeId.New();
+        var f = new ReleaseTicketsFixture
+        {
+            KnownTicketTypeId = knownId,
+        };
+        // The registration will hold ghostId (unknown in catalog)
+        f._registrationTicketTypeId = ghostId;
+        // TicketTypeId points to the catalog's known ticket type for assertions
+        f.TicketTypeId = knownId;
+
         var catalog = TicketCatalog.Create(f.EventId);
-        catalog.AddTicketType(Slug.From("known-ticket"), TicketTypeName.From("Known Ticket"), [], 10);
-        catalog.Claim(["known-ticket"], enforce: false);
+        catalog.AddTicketType(knownId, TicketTypeName.From("Known Ticket"), [], 10);
+        catalog.Claim([knownId], enforce: false);
         f._catalog = catalog;
         return f;
     }
@@ -64,7 +84,7 @@ internal sealed class ReleaseTicketsFixture
                 EmailAddress.From("alice@example.com"),
                 FirstName.From("Alice"),
                 LastName.From("Test"),
-                [new TicketTypeSnapshot(Slug.From(TicketTypeSlug), TicketTypeName.From(TicketTypeSlug), [])]);
+                [new TicketTypeSnapshot(_registrationTicketTypeId, TicketTypeName.From("General Admission"), [])]);
 
             RegistrationId = registration.Id;
             dbContext.Registrations.Add(registration);

@@ -10,6 +10,9 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.ChangeAttendeeTickets;
 
 internal sealed class ChangeAttendeeTicketsFixture
 {
+    public static readonly TicketTypeId GeneralAdmissionId = TicketTypeId.From(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
+    public static readonly TicketTypeId WorkshopId = TicketTypeId.From(new Guid("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"));
+
     public Guid TeamId { get; private set; }
     public Guid EventId { get; private set; }
 
@@ -43,8 +46,8 @@ internal sealed class ChangeAttendeeTicketsFixture
             TimeZoneId.From("UTC"));
 
         var catalog = TicketCatalog.Create(eventId);
-        catalog.AddTicketType(Slug.From("general-admission"), TicketTypeName.From("General Admission"), [], 100);
-        catalog.AddTicketType(Slug.From("workshop"), TicketTypeName.From("Workshop"), [], 20);
+        catalog.AddTicketType(GeneralAdmissionId, TicketTypeName.From("General Admission"), [], 100);
+        catalog.AddTicketType(WorkshopId, TicketTypeName.From("Workshop"), [], 20);
 
         var registration = Registration.Create(
             team.Id,
@@ -52,7 +55,7 @@ internal sealed class ChangeAttendeeTicketsFixture
             EmailAddress.From("alice@example.com"),
             FirstName.From("Alice"),
             LastName.From("Test"),
-            [new TicketTypeSnapshot(Slug.From("general-admission"), TicketTypeName.From("General Admission"), [])]);
+            [new TicketTypeSnapshot(GeneralAdmissionId, TicketTypeName.From("General Admission"), [])]);
         RegistrationId = registration.Id;
 
         await environment.OrganizationDatabase.SeedAsync(db => db.Teams.Add(team));

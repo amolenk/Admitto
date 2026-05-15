@@ -27,12 +27,12 @@ public static class AddTicketTypeHttpEndpoint
     {
         var command = request.ToCommand(eventId);
 
-        await handler.HandleAsync(command, cancellationToken);
+        var id = await handler.HandleAsync(command, cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return TypedResults.Created(
-            $"/teams/{teamId}/events/{eventId}/ticket-types/{request.Slug}",
-            new AddTicketTypeHttpResponse(request.Slug));
+            $"/teams/{teamId}/events/{eventId}/ticket-types/{id}",
+            new AddTicketTypeHttpResponse(id));
     }
 }

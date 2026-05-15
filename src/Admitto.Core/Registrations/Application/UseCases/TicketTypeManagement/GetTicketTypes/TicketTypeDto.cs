@@ -1,7 +1,7 @@
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypeManagement.GetTicketTypes;
 
 internal sealed record TicketTypeDto(
-    string Slug,
+    Guid Id,
     string Name,
     string[] TimeSlots,
     int? MaxCapacity,

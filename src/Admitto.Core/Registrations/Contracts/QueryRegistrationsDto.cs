@@ -7,10 +7,10 @@ namespace Amolenk.Admitto.Core.Registrations.Contracts;
 /// optional; an empty <see cref="QueryRegistrationsDto"/> matches every
 /// registration on the target ticketed event.
 /// </summary>
-/// <param name="TicketTypeSlugs">
-/// Optional any-of match against the slugs of the ticket types held by the
+/// <param name="TicketTypeIds">
+/// Optional any-of match against the IDs of the ticket types held by the
 /// registration. A registration matches when at least one of its ticket
-/// snapshots has a slug in this set.
+/// snapshots has an ID in this set.
 /// </param>
 /// <param name="RegistrationStatus">Optional registration status filter.</param>
 /// <param name="HasReconfirmed">
@@ -28,7 +28,7 @@ namespace Amolenk.Admitto.Core.Registrations.Contracts;
 /// <c>AdditionalDetails</c> map. Each key/value pair must match exactly.
 /// </param>
 public sealed record QueryRegistrationsDto(
-    IReadOnlyCollection<string>? TicketTypeSlugs = null,
+    IReadOnlyCollection<Guid>? TicketTypeIds = null,
     RegistrationStatus? RegistrationStatus = null,
     bool? HasReconfirmed = null,
     DateTimeOffset? RegisteredAfter = null,

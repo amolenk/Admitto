@@ -5,9 +5,9 @@ public sealed record UpdateTicketTypeHttpRequest(
     int? MaxCapacity = null,
     bool? SelfServiceEnabled = null)
 {
-    internal UpdateTicketTypeCommand ToCommand(Guid eventId, string ticketTypeSlug) => new(
+    internal UpdateTicketTypeCommand ToCommand(Guid eventId, Guid ticketTypeId) => new(
         eventId,
-        ticketTypeSlug,
+        ticketTypeId,
         Name,
         MaxCapacity,
         SelfServiceEnabled);

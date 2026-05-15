@@ -47,7 +47,7 @@ internal sealed class CancelRegistrationFixture
             EmailAddress.From("alice@example.com"),
             FirstName.From("Alice"),
             LastName.From("Test"),
-            [new TicketTypeSnapshot(Slug.From("general-admission"), TicketTypeName.From("general-admission"), [])]);
+            [new TicketTypeSnapshot(TicketTypeId.From(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")), TicketTypeName.From("General Admission"), [])]);
         RegistrationId = registration.Id;
 
         await environment.OrganizationDatabase.SeedAsync(db => db.Teams.Add(team));

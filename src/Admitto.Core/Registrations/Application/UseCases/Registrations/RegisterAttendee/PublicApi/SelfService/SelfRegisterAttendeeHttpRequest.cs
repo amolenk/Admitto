@@ -3,6 +3,6 @@ namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.
 public sealed record SelfRegisterAttendeeHttpRequest(
     string FirstName,
     string LastName,
-    string[] TicketTypeSlugs,
+    Guid[] TicketTypeIds,
     Dictionary<string, string>? AdditionalDetails = null);
 

@@ -58,14 +58,15 @@ internal sealed class ChangeAttendeeTicketsHandler(
             throw new BusinessRuleViolationException(Errors.NoTicketTypesConfigured);
 
         // 5. Validate the full new selection (duplicates, unknown, cancelled, time slot conflicts).
-        catalog.ValidateSelection(command.TicketTypeSlugs);
+        var newTicketTypeIds = command.TicketTypeIds.Select(TicketTypeId.From).ToList();
+        catalog.ValidateSelection(newTicketTypeIds);
 
         // 6. Compute delta: toRelease = current ∖ new, toClaim = new ∖ current.
-        var currentSlugs = registration.Tickets.Select(t => t.Slug.Value).ToHashSet();
-        var newSlugsSet = command.TicketTypeSlugs.ToHashSet();
+        var currentIds = registration.Tickets.Select(t => t.Id.Value).ToHashSet();
+        var newIdsSet = command.TicketTypeIds.ToHashSet();
 
-        var toRelease = currentSlugs.Except(newSlugsSet).ToList();
-        var toClaim = command.TicketTypeSlugs.Where(s => !currentSlugs.Contains(s)).ToList();
+        var toRelease = currentIds.Except(newIdsSet).Select(TicketTypeId.From).ToList();
+        var toClaim = newTicketTypeIds.Where(id => !currentIds.Contains(id.Value)).ToList();
 
         // 7. Release freed capacity.
         catalog.Release(toRelease);
@@ -74,13 +75,13 @@ internal sealed class ChangeAttendeeTicketsHandler(
         catalog.Claim(toClaim, enforce: command.Mode == ChangeMode.SelfService);
 
         // 9. Build new ticket snapshots.
-        var newTickets = command.TicketTypeSlugs
-            .Select(slug =>
+        var newTickets = newTicketTypeIds
+            .Select(id =>
             {
-                var ticketType = catalog.GetTicketType(slug);
-                var timeSlots = ticketType?.TimeSlots.Select(ts => ts.Slug).ToArray() ?? [];
-                var name = ticketType?.Name ?? TicketTypeName.From(slug);
-                return new TicketTypeSnapshot(Slug.From(slug), name, timeSlots);
+                var ticketType = catalog.GetTicketType(id);
+                var timeSlots = ticketType?.TimeSlots ?? [];
+                var name = ticketType?.Name ?? TicketTypeName.From(id.Value.ToString());
+                return new TicketTypeSnapshot(id, name, timeSlots);
             })
             .ToList();
 

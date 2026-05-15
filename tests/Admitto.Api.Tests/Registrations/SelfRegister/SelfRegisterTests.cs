@@ -28,7 +28,7 @@ public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBas
             {
                 FirstName = "Dave",
                 LastName = "Smith",
-                TicketTypeSlugs = new[] { "general-admission" }
+                TicketTypeIds = new[] { SelfRegisterFixture.TicketTypeId.Value }
             }),
             Headers = { Authorization = new("Bearer", token) }
         };
@@ -52,7 +52,7 @@ public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBas
             {
                 FirstName = "Dave",
                 LastName = "Smith",
-                TicketTypeSlugs = new[] { "general-admission" }
+                TicketTypeIds = new[] { SelfRegisterFixture.TicketTypeId.Value }
             },
             cancellationToken: testContext.CancellationToken);
 
@@ -73,7 +73,7 @@ public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBas
             {
                 FirstName = "Dave",
                 LastName = "Smith",
-                TicketTypeSlugs = new[] { "general-admission" }
+                TicketTypeIds = new[] { SelfRegisterFixture.TicketTypeId.Value }
             }),
             Headers = { Authorization = new("Bearer", "this.is.not.a.valid.token") }
         };
@@ -108,7 +108,7 @@ public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBas
             DateTimeOffset.UtcNow.AddDays(-1),
             DateTimeOffset.UtcNow.AddDays(30)));
         var secondCatalog = TicketCatalog.Create(secondEventId);
-        secondCatalog.AddTicketType(Slug.From("general-admission"), TicketTypeName.From("General Admission"), [], 100);
+        secondCatalog.AddTicketType(TicketTypeId.From(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")), TicketTypeName.From("General Admission"), [], 100);
         await Environment.RegistrationsDatabase.SeedAsync(db =>
         {
             db.TicketedEvents.Add(secondEvent);
@@ -124,7 +124,7 @@ public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBas
             {
                 FirstName = "Dave",
                 LastName = "Smith",
-                TicketTypeSlugs = new[] { "general-admission" }
+                TicketTypeIds = new[] { SelfRegisterFixture.TicketTypeId.Value }
             }),
             Headers = { Authorization = new("Bearer", tokenForFirstEvent) }
         };
@@ -150,7 +150,7 @@ public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBas
             {
                 FirstName = "Dave",
                 LastName = "Smith",
-                TicketTypeSlugs = new[] { "general-admission" }
+                TicketTypeIds = new[] { SelfRegisterFixture.TicketTypeId.Value }
             }),
             Headers = { Authorization = new("Bearer", token) }
         };

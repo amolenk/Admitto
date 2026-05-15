@@ -26,7 +26,7 @@ public static class RegisterWithCouponHttpEndpoint
             request.Email,
             request.FirstName,
             request.LastName,
-            request.TicketTypeSlugs,
+            request.TicketTypeIds,
             RegistrationMode.Coupon,
             CouponCode: request.CouponCode,
             EmailVerificationToken: null,

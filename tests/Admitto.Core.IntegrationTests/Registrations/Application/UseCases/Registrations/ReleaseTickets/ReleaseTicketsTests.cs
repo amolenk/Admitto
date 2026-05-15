@@ -24,7 +24,7 @@ public sealed class ReleaseTicketsTests(TestContext testContext) : AspireIntegra
             var catalog = await dbContext.TicketCatalogs
                 .FirstOrDefaultAsync(c => c.Id == fixture.EventId, testContext.CancellationToken);
             catalog.ShouldNotBeNull();
-            catalog.GetTicketType(fixture.TicketTypeSlug)!.UsedCapacity.ShouldBe(2);
+            catalog.GetTicketType(fixture.TicketTypeId)!.UsedCapacity.ShouldBe(2);
         });
     }
 
@@ -59,21 +59,21 @@ public sealed class ReleaseTicketsTests(TestContext testContext) : AspireIntegra
             var catalog = await dbContext.TicketCatalogs
                 .FirstOrDefaultAsync(c => c.Id == fixture.EventId, testContext.CancellationToken);
             catalog.ShouldNotBeNull();
-            catalog.GetTicketType(fixture.TicketTypeSlug)!.UsedCapacity.ShouldBe(0);
+            catalog.GetTicketType(fixture.TicketTypeId)!.UsedCapacity.ShouldBe(0);
         });
     }
 
-    // SC004: Unknown ticket type slugs are silently skipped
+    // SC004: Unknown ticket type IDs are silently skipped
     [TestMethod]
     public async ValueTask ReleaseTickets_UnknownSlug_IsSkippedWithoutError()
     {
-        var fixture = ReleaseTicketsFixture.WithCatalogAndUnknownSlugInRegistration();
+        var fixture = ReleaseTicketsFixture.WithCatalogAndUnknownTicketTypeInRegistration();
         await fixture.SetupAsync(Environment);
 
         var command = new ReleaseTicketsCommand(fixture.RegistrationId.Value, fixture.EventId.Value);
         var sut = new ReleaseTicketsHandler(Environment.RegistrationsDatabase.Context);
 
-        // Should complete without throwing; unknown slug is silently skipped
+        // Should complete without throwing; unknown ticket type is silently skipped
         await sut.HandleAsync(command, testContext.CancellationToken);
 
         await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
@@ -82,7 +82,7 @@ public sealed class ReleaseTicketsTests(TestContext testContext) : AspireIntegra
                 .FirstOrDefaultAsync(c => c.Id == fixture.EventId, testContext.CancellationToken);
             catalog.ShouldNotBeNull();
             // The known ticket type's capacity was not affected
-            catalog.GetTicketType("known-ticket")!.UsedCapacity.ShouldBe(1);
+            catalog.GetTicketType(fixture.KnownTicketTypeId)!.UsedCapacity.ShouldBe(1);
         });
     }
 }

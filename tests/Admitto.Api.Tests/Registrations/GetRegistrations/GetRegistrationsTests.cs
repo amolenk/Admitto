@@ -52,7 +52,7 @@ public sealed class GetRegistrationsTests(TestContext testContext) : EndToEndTes
         body.Length.ShouldBe(1);
         body[0].Email.ShouldBe("alice@example.com");
         body[0].Tickets.Length.ShouldBe(1);
-        body[0].Tickets[0].Slug.ShouldBe(GetRegistrationsFixture.TicketTypeSlug);
+        body[0].Tickets[0].Id.ShouldBe(GetRegistrationsFixture.TicketTypeId.Value);
     }
 
     [TestMethod]
@@ -74,5 +74,5 @@ public sealed class GetRegistrationsTests(TestContext testContext) : EndToEndTes
         TicketDto[] Tickets,
         DateTimeOffset CreatedAt);
 
-    private sealed record TicketDto(string Slug, string Name);
+    private sealed record TicketDto(Guid Id, string Name);
 }

@@ -12,6 +12,8 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.SelfChangeTickets;
 internal sealed class SelfChangeTicketsFixture
 {
     public const string AttendeeEmail = "alice@example.com";
+    public static readonly TicketTypeId GeneralAdmissionId = TicketTypeId.From(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
+    public static readonly TicketTypeId WorkshopId = TicketTypeId.From(new Guid("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"));
 
     public TeamId TeamId { get; private set; } = TeamId.New();
     public TicketedEventId EventId { get; private set; } = TicketedEventId.New();
@@ -58,13 +60,13 @@ internal sealed class SelfChangeTicketsFixture
         }
 
         var catalog = TicketCatalog.Create(eventId);
-        catalog.AddTicketType(Slug.From("general-admission"), TicketTypeName.From("General Admission"), [], 100);
-        catalog.AddTicketType(Slug.From("workshop"), TicketTypeName.From("Workshop"), [], workshopCapacity);
+        catalog.AddTicketType(GeneralAdmissionId, TicketTypeName.From("General Admission"), [], 100);
+        catalog.AddTicketType(WorkshopId, TicketTypeName.From("Workshop"), [], workshopCapacity);
 
         // Simulate used capacity for workshop
         for (var i = 0; i < workshopUsed; i++)
         {
-            catalog.Claim(["workshop"], enforce: true);
+            catalog.Claim([WorkshopId], enforce: true);
         }
 
         var registration = Registration.Create(
@@ -73,7 +75,7 @@ internal sealed class SelfChangeTicketsFixture
             EmailAddress.From(AttendeeEmail),
             FirstName.From("Alice"),
             LastName.From("Test"),
-            [new TicketTypeSnapshot(Slug.From("general-admission"), TicketTypeName.From("General Admission"), [])]);
+            [new TicketTypeSnapshot(GeneralAdmissionId, TicketTypeName.From("General Admission"), [])]);
         RegistrationId = registration.Id;
 
         if (alreadyCancelled)

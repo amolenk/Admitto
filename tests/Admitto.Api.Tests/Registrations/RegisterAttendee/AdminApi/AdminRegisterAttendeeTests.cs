@@ -17,7 +17,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : EndToE
         var request = new
         {
             Email = "alice@example.com",
-            TicketTypeSlugs = new[] { AdminRegisterAttendeeFixture.TicketTypeSlug }
+            TicketTypeIds = new[] { AdminRegisterAttendeeFixture.TicketTypeId.Value }
         };
 
         var response = await Environment.BobApiClient.PostAsJsonAsync(
@@ -35,7 +35,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : EndToE
         var request = new
         {
             Email = "not-an-email",
-            TicketTypeSlugs = new[] { AdminRegisterAttendeeFixture.TicketTypeSlug }
+            TicketTypeIds = new[] { AdminRegisterAttendeeFixture.TicketTypeId.Value }
         };
 
         var response = await Environment.ApiClient.PostAsJsonAsync(
@@ -45,7 +45,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : EndToE
     }
 
     [TestMethod]
-    public async Task EmptyTicketTypeSlugs_Returns400BadRequest()
+    public async Task EmptyTicketTypeIds_Returns400BadRequest()
     {
         var fixture = AdminRegisterAttendeeFixture.HappyFlow();
         await fixture.SetupAsync(Environment);
@@ -53,7 +53,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : EndToE
         var request = new
         {
             Email = "alice@example.com",
-            TicketTypeSlugs = Array.Empty<string>()
+            TicketTypeIds = Array.Empty<Guid>()
         };
 
         var response = await Environment.ApiClient.PostAsJsonAsync(
@@ -73,7 +73,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : EndToE
             FirstName = "Alice",
             LastName = "Anderson",
             Email = "alice@example.com",
-            TicketTypeSlugs = new[] { AdminRegisterAttendeeFixture.TicketTypeSlug }
+            TicketTypeIds = new[] { AdminRegisterAttendeeFixture.TicketTypeId.Value }
         };
 
         var response = await Environment.ApiClient.PostAsJsonAsync(

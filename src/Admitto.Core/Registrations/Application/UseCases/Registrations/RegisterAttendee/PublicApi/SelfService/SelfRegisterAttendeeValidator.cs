@@ -14,7 +14,7 @@ public sealed class SelfRegisterAttendeeValidator : AbstractValidator<SelfRegist
         RuleFor(x => x.LastName)
             .MustBeParseable(LastName.TryFrom);
 
-        RuleFor(x => x.TicketTypeSlugs)
+        RuleFor(x => x.TicketTypeIds)
             .NotNull()
             .NotEmpty();
     }

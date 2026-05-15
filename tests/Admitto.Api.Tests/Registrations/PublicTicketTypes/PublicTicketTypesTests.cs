@@ -16,12 +16,15 @@ public sealed class PublicTicketTypesTests(TestContext testContext) : EndToEndTe
     public async Task GetPublicTicketTypes_ReturnsOnlySelfServiceEnabledAndActiveTypes()
     {
         var fixture = PublicTicketTypesFixture.Create();
+        var generalId = TicketTypeId.From(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
+        var vipId = TicketTypeId.From(new Guid("cccccccc-cccc-cccc-cccc-cccccccccccc"));
+        var earlyBirdId = TicketTypeId.From(new Guid("dddddddd-dddd-dddd-dddd-dddddddddddd"));
         await fixture.SetupAsync(Environment, catalog =>
         {
-            catalog.AddTicketType(Slug.From("general"), TicketTypeName.From("General Admission"), [], 200, selfServiceEnabled: true);
-            catalog.AddTicketType(Slug.From("vip"), TicketTypeName.From("VIP Pass"), [], 50, selfServiceEnabled: false);
-            catalog.AddTicketType(Slug.From("early-bird"), TicketTypeName.From("Early Bird"), [], 100, selfServiceEnabled: true);
-            catalog.CancelTicketType(Slug.From("early-bird")); // cancelled
+            catalog.AddTicketType(generalId, TicketTypeName.From("General Admission"), [], 200, selfServiceEnabled: true);
+            catalog.AddTicketType(vipId, TicketTypeName.From("VIP Pass"), [], 50, selfServiceEnabled: false);
+            catalog.AddTicketType(earlyBirdId, TicketTypeName.From("Early Bird"), [], 100, selfServiceEnabled: true);
+            catalog.CancelTicketType(earlyBirdId); // cancelled
         });
 
         using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
@@ -31,7 +34,7 @@ public sealed class PublicTicketTypesTests(TestContext testContext) : EndToEndTe
         var body = await response.Content.ReadFromJsonAsync<JsonElement>(cancellationToken: testContext.CancellationToken);
         var items = body.EnumerateArray().ToList();
         items.Count.ShouldBe(1);
-        items[0].GetProperty("slug").GetString().ShouldBe("general");
+        items[0].GetProperty("name").GetString().ShouldBe("General Admission");
     }
 
     // SC002: Empty list returned when no self-service ticket types exist
@@ -39,9 +42,10 @@ public sealed class PublicTicketTypesTests(TestContext testContext) : EndToEndTe
     public async Task GetPublicTicketTypes_NoSelfServiceTypes_ReturnsEmptyList()
     {
         var fixture = PublicTicketTypesFixture.Create();
+        var vipId2 = TicketTypeId.From(new Guid("cccccccc-cccc-cccc-cccc-cccccccccccc"));
         await fixture.SetupAsync(Environment, catalog =>
         {
-            catalog.AddTicketType(Slug.From("vip"), TicketTypeName.From("VIP Pass"), [], 50, selfServiceEnabled: false);
+            catalog.AddTicketType(vipId2, TicketTypeName.From("VIP Pass"), [], 50, selfServiceEnabled: false);
         });
 
         using var client = Environment.CreatePublicApiClient(fixture.ApiKey);

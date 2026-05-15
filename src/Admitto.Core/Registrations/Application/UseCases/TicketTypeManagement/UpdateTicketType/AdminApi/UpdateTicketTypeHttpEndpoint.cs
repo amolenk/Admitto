@@ -9,7 +9,7 @@ public static class UpdateTicketTypeHttpEndpoint
     public static RouteGroupBuilder MapUpdateTicketType(this RouteGroupBuilder group)
     {
         group
-            .MapPut("/{ticketTypeSlug}", UpdateTicketType)
+            .MapPut("/{ticketTypeId:guid}", UpdateTicketType)
             .WithName(nameof(UpdateTicketType))
             .RequireAuthorization(policy => policy.RequireTeamMembership(TeamMembershipRole.Organizer));
 
@@ -17,7 +17,7 @@ public static class UpdateTicketTypeHttpEndpoint
     }
 
     private static async ValueTask<NoContent> UpdateTicketType(
-        string ticketTypeSlug,
+        Guid ticketTypeId,
         Guid teamId,
         Guid eventId,
         UpdateTicketTypeHttpRequest request,
@@ -28,7 +28,7 @@ public static class UpdateTicketTypeHttpEndpoint
     {
         var command = request.ToCommand(
             eventId,
-            ticketTypeSlug);
+            ticketTypeId);
 
         await handler.HandleAsync(command, cancellationToken);
 

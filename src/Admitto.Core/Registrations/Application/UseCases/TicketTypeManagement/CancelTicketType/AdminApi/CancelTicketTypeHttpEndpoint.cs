@@ -9,7 +9,7 @@ public static class CancelTicketTypeHttpEndpoint
     public static RouteGroupBuilder MapCancelTicketType(this RouteGroupBuilder group)
     {
         group
-            .MapPost("/{ticketTypeSlug}/cancel", CancelTicketType)
+            .MapPost("/{ticketTypeId:guid}/cancel", CancelTicketType)
             .WithName(nameof(CancelTicketType))
             .RequireAuthorization(policy => policy.RequireTeamMembership(TeamMembershipRole.Organizer));
 
@@ -17,7 +17,7 @@ public static class CancelTicketTypeHttpEndpoint
     }
 
     private static async ValueTask<NoContent> CancelTicketType(
-        string ticketTypeSlug,
+        Guid ticketTypeId,
         Guid teamId,
         Guid eventId,
         CancelTicketTypeHandler handler,
@@ -27,7 +27,7 @@ public static class CancelTicketTypeHttpEndpoint
     {
         var command = new CancelTicketTypeCommand(
             eventId,
-            ticketTypeSlug);
+            ticketTypeId);
 
         await handler.HandleAsync(command, cancellationToken);
 

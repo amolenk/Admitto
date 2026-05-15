@@ -23,13 +23,16 @@ public sealed class TicketsChangedDomainEventHandlerTests
         var eventId = TicketedEventId.New();
         var changedAt = DateTimeOffset.UtcNow;
 
+        var earlyBirdId = TicketTypeId.New();
+        var workshopId = TicketTypeId.New();
+
         var domainEvent = new TicketsChangedDomainEvent(
             teamId, eventId, registrationId,
             EmailAddress.From("alice@example.com"),
             FirstName.From("Alice"),
             LastName.From("Test"),
-            OldTickets: [new TicketTypeSnapshot(Slug.From("early-bird"), TicketTypeName.From("Early Bird"), [])],
-            NewTickets: [new TicketTypeSnapshot(Slug.From("workshop"), TicketTypeName.From("Workshop"), [])],
+            OldTickets: [new TicketTypeSnapshot(earlyBirdId, TicketTypeName.From("Early Bird"), [])],
+            NewTickets: [new TicketTypeSnapshot(workshopId, TicketTypeName.From("Workshop"), [])],
             ChangedAt: changedAt);
 
         ActivityLog? captured = null;
@@ -49,11 +52,11 @@ public sealed class TicketsChangedDomainEventHandlerTests
         captured.ActivityType.ShouldBe(ActivityType.TicketsChanged);
         captured.OccurredAt.ShouldBe(changedAt);
 
-        // Metadata must be {"from":["early-bird"],"to":["workshop"]}
+        // Metadata must contain the ticket type GUIDs as from/to arrays.
         using var doc = JsonDocument.Parse(captured.Metadata!);
-        var from = doc.RootElement.GetProperty("from").EnumerateArray().Select(e => e.GetString()!).ToArray();
-        var to = doc.RootElement.GetProperty("to").EnumerateArray().Select(e => e.GetString()!).ToArray();
-        from.ShouldBe(["early-bird"]);
-        to.ShouldBe(["workshop"]);
+        var from = doc.RootElement.GetProperty("from").EnumerateArray().Select(e => e.GetGuid()).ToArray();
+        var to = doc.RootElement.GetProperty("to").EnumerateArray().Select(e => e.GetGuid()).ToArray();
+        from.ShouldBe([earlyBirdId.Value]);
+        to.ShouldBe([workshopId.Value]);
     }
 }

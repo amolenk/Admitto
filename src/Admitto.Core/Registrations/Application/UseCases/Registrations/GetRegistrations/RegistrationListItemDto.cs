@@ -14,4 +14,4 @@ public sealed record RegistrationListItemDto(
     bool HasReconfirmed,
     DateTimeOffset? ReconfirmedAt);
 
-public sealed record TicketSummaryDto(string Slug, string Name);
+public sealed record TicketSummaryDto(Guid Id, string Name);

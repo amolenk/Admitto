@@ -9,7 +9,7 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.RegisterAttendee.AdminApi;
 
 internal sealed class AdminRegisterAttendeeFixture
 {
-    public const string TicketTypeSlug = "general-admission";
+    public static readonly TicketTypeId TicketTypeId = TicketTypeId.From(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
 
     public Guid TeamId { get; private set; }
     public Guid EventId { get; private set; }
@@ -45,7 +45,7 @@ internal sealed class AdminRegisterAttendeeFixture
                 DateTimeOffset.UtcNow.AddDays(30)));
 
         var catalog = TicketCatalog.Create(eventId);
-        catalog.AddTicketType(Slug.From(TicketTypeSlug), TicketTypeName.From("General Admission"), [], 100);
+        catalog.AddTicketType(TicketTypeId, TicketTypeName.From("General Admission"), [], 100);
 
         await environment.OrganizationDatabase.SeedAsync(db => db.Teams.Add(team));
         await environment.RegistrationsDatabase.SeedAsync(db =>

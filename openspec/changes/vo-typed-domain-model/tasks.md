@@ -37,6 +37,6 @@
 
 - [x] 5.1 Run architecture tests: `dotnet test tests/Admitto.Core.ArchTests/Admitto.Core.ArchTests.csproj`
 - [x] 5.2 Run domain tests: `dotnet test tests/Admitto.Core.DomainTests/Admitto.Core.DomainTests.csproj`
-- [ ] 5.3 Run integration tests: `dotnet test tests/Admitto.Core.IntegrationTests/Admitto.Core.IntegrationTests.csproj`
-- [ ] 5.4 Run API tests: `tests/Admitto.Api.Tests/bin/Debug/net10.0/Admitto.Api.Tests`
-- [ ] 5.5 Regenerate Admin UI SDK and verify TypeScript build: `aspire start --isolated && aspire wait api && curl -sf http://<api-url>/openapi/v1.json -o src/Admitto.UI.Admin/openapi-spec.json && cd src/Admitto.UI.Admin && pnpm openapi-ts && pnpm build`
+- [x] 5.3 Run integration tests: `dotnet test tests/Admitto.Core.IntegrationTests/Admitto.Core.IntegrationTests.csproj`
+- [x] 5.4 Run API tests: `tests/Admitto.Api.Tests/bin/Debug/net10.0/Admitto.Api.Tests`
+- [x] 5.5 Regenerate Admin UI SDK and verify TypeScript build: `aspire start --isolated && aspire wait api && curl -sf http://<api-url>/openapi/v1.json -o src/Admitto.UI.Admin/openapi-spec.json && cd src/Admitto.UI.Admin && pnpm openapi-ts && pnpm build`

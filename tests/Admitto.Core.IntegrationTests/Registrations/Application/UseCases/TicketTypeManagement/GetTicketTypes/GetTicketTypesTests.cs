@@ -22,13 +22,13 @@ public sealed class GetTicketTypesTests(TestContext testContext) : AspireIntegra
         // Assert
         result.Count.ShouldBe(2);
 
-        var active = result.Single(tt => tt.Slug == "general-admission");
+        var active = result.Single(tt => tt.Id == fixture.GeneralAdmissionId.Value);
         active.Name.ShouldBe("General Admission");
         active.TimeSlots.ShouldContain("morning");
         active.MaxCapacity.ShouldBe(100);
         active.IsCancelled.ShouldBeFalse();
 
-        var cancelled = result.Single(tt => tt.Slug == "vip-pass");
+        var cancelled = result.Single(tt => tt.Id == fixture.VipPassId.Value);
         cancelled.Name.ShouldBe("VIP Pass");
         cancelled.IsCancelled.ShouldBeTrue();
     }

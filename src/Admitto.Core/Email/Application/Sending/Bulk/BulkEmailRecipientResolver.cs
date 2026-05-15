@@ -56,7 +56,7 @@ internal sealed class BulkEmailRecipientResolver(IRegistrationsFacade registrati
                 ["last_name"] = row.LastName,
                 ["email"] = row.Email,
                 ["registration_id"] = row.RegistrationId,
-                ["ticket_type_slugs"] = row.TicketTypeSlugs,
+                ["ticket_type_ids"] = row.TicketTypeIds,
                 ["additional_details"] = row.AdditionalDetails
             };
 

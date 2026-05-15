@@ -19,6 +19,8 @@ internal sealed class SelfRegisterFixture
     public TicketedEventId EventId { get; private set; } = TicketedEventId.New();
     public string ApiKey => ApiKeyTestHelper.TestRawKey;
 
+    public static readonly TicketTypeId TicketTypeId = TicketTypeId.From(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
+
     public string RegisterRoute => $"/api/teams/{TeamId.Value}/events/{EventId.Value}/registrations";
     public string OtpVerifyRoute => $"/api/teams/{TeamId.Value}/events/{EventId.Value}/otp/verify";
 
@@ -51,7 +53,7 @@ internal sealed class SelfRegisterFixture
             DateTimeOffset.UtcNow.AddDays(30)));
 
         var catalog = TicketCatalog.Create(eventId);
-        catalog.AddTicketType(Slug.From("general-admission"), TicketTypeName.From("General Admission"), [], 100,
+        catalog.AddTicketType(TicketTypeId, TicketTypeName.From("General Admission"), [], 100,
             selfServiceEnabled: selfServiceEnabled);
 
         await environment.OrganizationDatabase.SeedAsync(db =>

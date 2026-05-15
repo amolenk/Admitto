@@ -29,7 +29,7 @@ public sealed class GetCouponDetailsTests(TestContext testContext) : AspireInteg
             () => result.Code.ShouldNotBe(Guid.Empty),
             () => result.Email.ShouldBe("speaker@example.com"),
             () => result.Status.ShouldBe(CouponStatus.Active),
-            () => result.AllowedTicketTypeSlugs.ShouldContain(fixture.TicketTypeSlug),
+            () => result.AllowedTicketTypeIds.ShouldContain(fixture.TicketTypeId.Value),
             () => result.BypassRegistrationWindow.ShouldBeTrue(),
             () => result.RedeemedAt.ShouldBeNull(),
             () => result.RevokedAt.ShouldBeNull());

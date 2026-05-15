@@ -35,7 +35,7 @@ public sealed class GetRegistrationsTests(TestContext testContext) : AspireInteg
         alice.ShouldNotBeNull();
         alice.Id.ShouldNotBe(Guid.Empty);
         alice.Tickets.Count.ShouldBe(1);
-        alice.Tickets[0].Slug.ShouldBe(GetRegistrationsFixture.GeneralSlug);
+        alice.Tickets[0].Id.ShouldBe(fixture.GeneralId.Value);
         alice.Tickets[0].Name.ShouldBe(GetRegistrationsFixture.GeneralName);
         alice.CreatedAt.ShouldNotBe(default);
 
@@ -57,10 +57,10 @@ public sealed class GetRegistrationsTests(TestContext testContext) : AspireInteg
         carol.Email.ShouldBe("carol@example.com");
         carol.Tickets.Count.ShouldBe(2);
 
-        var general = carol.Tickets.SingleOrDefault(t => t.Slug == GetRegistrationsFixture.GeneralSlug);
+        var general = carol.Tickets.SingleOrDefault(t => t.Id == fixture.GeneralId.Value);
         general.ShouldNotBeNull().Name.ShouldBe(GetRegistrationsFixture.GeneralName);
 
-        var vip = carol.Tickets.SingleOrDefault(t => t.Slug == GetRegistrationsFixture.VipSlug);
+        var vip = carol.Tickets.SingleOrDefault(t => t.Id == fixture.VipId.Value);
         vip.ShouldNotBeNull().Name.ShouldBe(GetRegistrationsFixture.VipName);
     }
 

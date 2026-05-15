@@ -19,7 +19,7 @@ public sealed class CreateCouponTests(TestContext testContext) : AspireIntegrati
 
         var command = NewCreateCouponCommand(
             fixture.EventId,
-            allowedTicketTypeSlugs: [fixture.TicketTypeSlug]);
+            allowedTicketTypeIds: [fixture.TicketTypeId.Value]);
         var sut = NewCreateCouponHandler(fixture);
 
         // Act
@@ -34,7 +34,7 @@ public sealed class CreateCouponTests(TestContext testContext) : AspireIntegrati
             coupon.Id.Value.ShouldBe(couponId);
             coupon.EventId.ShouldBe(fixture.EventId);
             coupon.Email.Value.ShouldBe("speaker@example.com");
-            coupon.AllowedTicketTypeSlugs.ShouldContain(fixture.TicketTypeSlug);
+            coupon.AllowedTicketTypeIds.ShouldContain(fixture.TicketTypeId);
             coupon.Code.Value.ShouldNotBe(Guid.Empty);
             coupon.BypassRegistrationWindow.ShouldBeFalse();
         });
@@ -50,7 +50,7 @@ public sealed class CreateCouponTests(TestContext testContext) : AspireIntegrati
 
         var command = NewCreateCouponCommand(
             fixture.EventId,
-            allowedTicketTypeSlugs: [fixture.TicketTypeSlug],
+            allowedTicketTypeIds: [fixture.TicketTypeId.Value],
             bypassRegistrationWindow: true);
         var sut = NewCreateCouponHandler(fixture);
 
@@ -73,10 +73,10 @@ public sealed class CreateCouponTests(TestContext testContext) : AspireIntegrati
         var fixture = CreateCouponFixture.HappyFlow();
         await fixture.SetupAsync(Environment);
 
-        var unknownSlug = "unknown-type";
+        var unknownId = Guid.NewGuid();
         var command = NewCreateCouponCommand(
             fixture.EventId,
-            allowedTicketTypeSlugs: [unknownSlug]);
+            allowedTicketTypeIds: [unknownId]);
         var sut = NewCreateCouponHandler(fixture);
 
         // Act
@@ -84,7 +84,7 @@ public sealed class CreateCouponTests(TestContext testContext) : AspireIntegrati
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
         // Assert
-        result.Error.ShouldMatch(Coupon.Errors.UnknownTicketTypes([unknownSlug]));
+        result.Error.ShouldMatch(Coupon.Errors.UnknownTicketTypes([unknownId]));
     }
 
     // SC-004: Rejected — ticket type is cancelled
@@ -97,7 +97,7 @@ public sealed class CreateCouponTests(TestContext testContext) : AspireIntegrati
 
         var command = NewCreateCouponCommand(
             fixture.EventId,
-            allowedTicketTypeSlugs: [fixture.CancelledTicketTypeSlug]);
+            allowedTicketTypeIds: [fixture.CancelledTicketTypeId.Value]);
         var sut = NewCreateCouponHandler(fixture);
 
         // Act
@@ -105,7 +105,7 @@ public sealed class CreateCouponTests(TestContext testContext) : AspireIntegrati
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
         // Assert
-        result.Error.ShouldMatch(Coupon.Errors.CancelledTicketTypes([fixture.CancelledTicketTypeSlug]));
+        result.Error.ShouldMatch(Coupon.Errors.CancelledTicketTypes([fixture.CancelledTicketTypeId.Value]));
     }
 
     // SC-005: Rejected — expiry in the past
@@ -118,7 +118,7 @@ public sealed class CreateCouponTests(TestContext testContext) : AspireIntegrati
 
         var command = NewCreateCouponCommand(
             fixture.EventId,
-            allowedTicketTypeSlugs: [fixture.TicketTypeSlug],
+            allowedTicketTypeIds: [fixture.TicketTypeId.Value],
             expiresAt: new DateTimeOffset(2020, 1, 1, 0, 0, 0, TimeSpan.Zero));
         var sut = NewCreateCouponHandler(fixture);
 
@@ -135,19 +135,19 @@ public sealed class CreateCouponTests(TestContext testContext) : AspireIntegrati
 
     private static CreateCouponCommand NewCreateCouponCommand(
         TicketedEventId eventId,
-        string[]? allowedTicketTypeSlugs = null,
+        Guid[]? allowedTicketTypeIds = null,
         string? email = null,
         DateTimeOffset? expiresAt = null,
         bool bypassRegistrationWindow = false)
     {
         email ??= "speaker@example.com";
         expiresAt ??= DateTimeOffset.UtcNow.AddDays(30);
-        allowedTicketTypeSlugs ??= ["general-admission"];
+        allowedTicketTypeIds ??= [Guid.NewGuid()];
 
         return new CreateCouponCommand(
             eventId.Value,
             email,
-            allowedTicketTypeSlugs,
+            allowedTicketTypeIds,
             expiresAt.Value,
             bypassRegistrationWindow);
     }

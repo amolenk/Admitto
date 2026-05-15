@@ -4,7 +4,7 @@ namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypeMana
 
 internal sealed record UpdateTicketTypeCommand(
     Guid EventId,
-    string Slug,
+    Guid TicketTypeId,
     string? Name,
     int? MaxCapacity,
     bool? SelfServiceEnabled = null) : Command;

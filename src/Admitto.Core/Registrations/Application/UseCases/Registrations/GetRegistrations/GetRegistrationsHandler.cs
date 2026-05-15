@@ -1,5 +1,6 @@
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
 using Amolenk.Admitto.Core.Registrations.Contracts;
+using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
@@ -40,10 +41,10 @@ internal sealed class GetRegistrationsHandler(IRegistrationsWriteStore writeStor
             if (filter.RegisteredBefore is { } before)
                 q = q.Where(r => r.CreatedAt < before);
 
-            if (filter.TicketTypeSlugs is { Count: > 0 } slugs)
+            if (filter.TicketTypeIds is { Count: > 0 } ids)
             {
-                var slugList = slugs.Select(Slug.From).ToArray();
-                q = q.Where(r => r.Tickets.Any(t => slugList.Contains(t.Slug)));
+                var idList = ids.Select(TicketTypeId.From).ToArray();
+                q = q.Where(r => r.Tickets.Any(t => idList.Contains(t.Id)));
             }
         }
 
@@ -67,8 +68,8 @@ internal sealed class GetRegistrationsHandler(IRegistrationsWriteStore writeStor
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == query.EventId, cancellationToken);
 
-        var nameBySlug = catalog?.TicketTypes.ToDictionary(t => t.Id, t => t.Name.Value)
-                         ?? new Dictionary<string, string>();
+        var nameById = catalog?.TicketTypes.ToDictionary(t => t.Id.Value, t => t.Name.Value)
+                         ?? new Dictionary<Guid, string>();
 
         return filtered
             .Select(r => new RegistrationListItemDto(
@@ -78,8 +79,8 @@ internal sealed class GetRegistrationsHandler(IRegistrationsWriteStore writeStor
                 r.LastName.Value,
                 r.Tickets
                     .Select(t => new TicketSummaryDto(
-                        t.Slug.Value,
-                        nameBySlug.TryGetValue(t.Slug.Value, out var name) ? name : t.Slug.Value))
+                        t.Id.Value,
+                        nameById.TryGetValue(t.Id.Value, out var name) ? name : t.Name.Value))
                     .ToList(),
                 r.AdditionalDetails.ToDictionary(kvp => kvp.Key, kvp => kvp.Value),
                 r.CreatedAt,

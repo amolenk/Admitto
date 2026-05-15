@@ -16,4 +16,4 @@ public sealed record AttendeeTicketsChangedIntegrationEvent(
     IReadOnlyList<TicketTypeItem> NewTickets,
     DateTimeOffset ChangedAt) : IntegrationEvent;
 
-public sealed record TicketTypeItem(string Slug, string Name);
+public sealed record TicketTypeItem(Guid Id, string Name);

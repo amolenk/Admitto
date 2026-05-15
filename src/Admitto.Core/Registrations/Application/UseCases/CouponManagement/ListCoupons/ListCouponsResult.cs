@@ -8,6 +8,6 @@ public sealed record CouponSummaryDto(
     Guid Id,
     string Email,
     CouponStatus Status,
-    string[] AllowedTicketTypeSlugs,
+    Guid[] AllowedTicketTypeIds,
     DateTimeOffset ExpiresAt,
     DateTimeOffset CreatedAt);

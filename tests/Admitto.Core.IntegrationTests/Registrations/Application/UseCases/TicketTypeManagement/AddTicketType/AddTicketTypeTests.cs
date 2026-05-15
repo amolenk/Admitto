@@ -1,7 +1,7 @@
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypeManagement.AddTicketType;
+using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Microsoft.EntityFrameworkCore;
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCases.TicketTypeManagement.AddTicketType;
 
@@ -18,14 +18,13 @@ public sealed class AddTicketTypeTests(TestContext testContext) : AspireIntegrat
 
         var command = new AddTicketTypeCommand(
             fixture.EventId.Value,
-            "general-admission",
             "General Admission",
             ["morning"],
             100);
         var sut = new AddTicketTypeHandler(Environment.RegistrationsDatabase.Context);
 
         // Act
-        await sut.HandleAsync(command, testContext.CancellationToken);
+        var ticketTypeId = await sut.HandleAsync(command, testContext.CancellationToken);
 
         // Assert
         await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
@@ -37,9 +36,9 @@ public sealed class AddTicketTypeTests(TestContext testContext) : AspireIntegrat
             catalog.TicketTypes.ShouldHaveSingleItem();
 
             var ticketType = catalog.TicketTypes[0];
-            ticketType.Id.ShouldBe("general-admission");
+            ticketType.Id.Value.ShouldBe(ticketTypeId);
             ticketType.Name.Value.ShouldBe("General Admission");
-            ticketType.TimeSlotSlugs.ShouldContain(Slug.From("morning"));
+            ticketType.TimeSlots.ShouldContain(TimeSlot.From("morning"));
             ticketType.MaxCapacity.ShouldBe(100);
             ticketType.IsCancelled.ShouldBeFalse();
         });
@@ -55,7 +54,6 @@ public sealed class AddTicketTypeTests(TestContext testContext) : AspireIntegrat
 
         var command = new AddTicketTypeCommand(
             fixture.EventId.Value,
-            "speaker-pass",
             "Speaker Pass",
             [],
             null);
@@ -76,9 +74,9 @@ public sealed class AddTicketTypeTests(TestContext testContext) : AspireIntegrat
         });
     }
 
-    // SC-003: Reject duplicate slug — throws BusinessRuleViolationException
+    // SC-003: Reject duplicate name — throws BusinessRuleViolationException
     [TestMethod]
-    public async ValueTask AddTicketType_DuplicateSlug_ThrowsDuplicateSlugError()
+    public async ValueTask AddTicketType_DuplicateName_ThrowsDuplicateNameError()
     {
         // Arrange
         var fixture = AddTicketTypeFixture.ActiveEventWithCatalog();
@@ -86,8 +84,7 @@ public sealed class AddTicketTypeTests(TestContext testContext) : AspireIntegrat
 
         var command = new AddTicketTypeCommand(
             fixture.EventId.Value,
-            "existing-type",
-            "Duplicate",
+            "Existing Type",
             [],
             50);
         var sut = new AddTicketTypeHandler(Environment.RegistrationsDatabase.Context);
@@ -97,7 +94,7 @@ public sealed class AddTicketTypeTests(TestContext testContext) : AspireIntegrat
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
         // Assert
-        result.Error.Code.ShouldBe("ticket_catalog.duplicate_slug");
+        result.Error.Code.ShouldBe("ticket_catalog.duplicate_name");
     }
 
     // NOTE: SC-004 tests cover event-not-active rejection via TicketCatalog.EventStatus.
@@ -111,7 +108,6 @@ public sealed class AddTicketTypeTests(TestContext testContext) : AspireIntegrat
 
         var command = new AddTicketTypeCommand(
             fixture.EventId.Value,
-            "general-admission",
             "General Admission",
             [],
             100);
@@ -134,7 +130,6 @@ public sealed class AddTicketTypeTests(TestContext testContext) : AspireIntegrat
 
         var command = new AddTicketTypeCommand(
             fixture.EventId.Value,
-            "general-admission",
             "General Admission",
             [],
             100);

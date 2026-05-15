@@ -26,7 +26,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : EndToEn
             FirstName = "Alice",
             LastName = "Anderson",
             Email = "alice@example.com",
-            TicketTypeSlugs = new[] { SelfRegisterAttendeeFixture.TicketTypeSlug },
+            TicketTypeIds = new[] { SelfRegisterAttendeeFixture.TicketTypeId.Value },
             AdditionalDetails = new Dictionary<string, string>()
         };
 

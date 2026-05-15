@@ -12,7 +12,7 @@ namespace Amolenk.Admitto.Core.Registrations.Domain.Entities;
 /// </summary>
 public class Coupon : Aggregate<CouponId>
 {
-    private readonly List<string> _allowedTicketTypeSlugs = [];
+    private readonly List<TicketTypeId> _allowedTicketTypeIds = [];
 
     // Required for EF Core
     // ReSharper disable once UnusedMember.Local
@@ -25,7 +25,7 @@ public class Coupon : Aggregate<CouponId>
         TicketedEventId eventId,
         CouponCode code,
         EmailAddress email,
-        IReadOnlyList<string> allowedTicketTypeSlugs,
+        IReadOnlyList<TicketTypeId> allowedTicketTypeIds,
         DateTimeOffset expiresAt,
         bool bypassRegistrationWindow)
         : base(id)
@@ -36,13 +36,13 @@ public class Coupon : Aggregate<CouponId>
         ExpiresAt = expiresAt;
         BypassRegistrationWindow = bypassRegistrationWindow;
 
-        _allowedTicketTypeSlugs = allowedTicketTypeSlugs.ToList();
+        _allowedTicketTypeIds = allowedTicketTypeIds.ToList();
     }
 
     public TicketedEventId EventId { get; private set; }
     public CouponCode Code { get; private set; }
     public EmailAddress Email { get; private set; }
-    public IReadOnlyList<string> AllowedTicketTypeSlugs => _allowedTicketTypeSlugs.AsReadOnly();
+    public IReadOnlyList<TicketTypeId> AllowedTicketTypeIds => _allowedTicketTypeIds.AsReadOnly();
     public DateTimeOffset ExpiresAt { get; private set; }
     public bool BypassRegistrationWindow { get; private set; }
     public DateTimeOffset? RedeemedAt { get; private set; }
@@ -59,43 +59,43 @@ public class Coupon : Aggregate<CouponId>
     public static Coupon Create(
         TicketedEventId eventId,
         EmailAddress email,
-        IReadOnlyList<string> requestedTicketTypeSlugs,
+        IReadOnlyList<TicketTypeId> requestedTicketTypeIds,
         DateTimeOffset expiresAt,
         bool bypassRegistrationWindow,
         IReadOnlyList<TicketTypeInfo> availableTicketTypes,
         DateTimeOffset now)
     {
         // Validate at least one ticket type.
-        if (requestedTicketTypeSlugs.Count == 0)
+        if (requestedTicketTypeIds.Count == 0)
         {
             throw new BusinessRuleViolationException(Errors.NoTicketTypes);
         }
 
         // Validate all requested ticket types exist and are not cancelled.
-        var availableLookup = availableTicketTypes.ToDictionary(t => t.Slug);
-        var unknownSlugs = new List<string>();
-        var cancelledSlugs = new List<string>();
+        var availableLookup = availableTicketTypes.ToDictionary(t => t.Id);
+        var unknownIds = new List<Guid>();
+        var cancelledIds = new List<Guid>();
 
-        foreach (var slug in requestedTicketTypeSlugs)
+        foreach (var id in requestedTicketTypeIds)
         {
-            if (!availableLookup.TryGetValue(slug, out var ticketType))
+            if (!availableLookup.TryGetValue(id, out var ticketType))
             {
-                unknownSlugs.Add(slug);
+                unknownIds.Add(id.Value);
             }
             else if (ticketType.IsCancelled)
             {
-                cancelledSlugs.Add(slug);
+                cancelledIds.Add(id.Value);
             }
         }
 
-        if (unknownSlugs.Count > 0)
+        if (unknownIds.Count > 0)
         {
-            throw new BusinessRuleViolationException(Errors.UnknownTicketTypes(unknownSlugs));
+            throw new BusinessRuleViolationException(Errors.UnknownTicketTypes(unknownIds));
         }
 
-        if (cancelledSlugs.Count > 0)
+        if (cancelledIds.Count > 0)
         {
-            throw new BusinessRuleViolationException(Errors.CancelledTicketTypes(cancelledSlugs));
+            throw new BusinessRuleViolationException(Errors.CancelledTicketTypes(cancelledIds));
         }
 
         // Validate expiry is in the future.
@@ -109,7 +109,7 @@ public class Coupon : Aggregate<CouponId>
             eventId,
             CouponCode.New(),
             email,
-            requestedTicketTypeSlugs,
+            requestedTicketTypeIds,
             expiresAt,
             bypassRegistrationWindow);
 
@@ -149,15 +149,15 @@ public class Coupon : Aggregate<CouponId>
             "coupon.no_ticket_types",
             "At least one ticket type must be specified.");
 
-        public static Error UnknownTicketTypes(IReadOnlyList<string> slugs) => new(
+        public static Error UnknownTicketTypes(IReadOnlyList<Guid> ids) => new(
             "coupon.unknown_ticket_types",
             "One or more ticket types do not exist.",
-            new Dictionary<string, object?> { ["ticketTypeSlugs"] = slugs });
+            new Dictionary<string, object?> { ["ticketTypeIds"] = ids });
 
-        public static Error CancelledTicketTypes(IReadOnlyList<string> slugs) => new(
+        public static Error CancelledTicketTypes(IReadOnlyList<Guid> ids) => new(
             "coupon.cancelled_ticket_types",
             "One or more ticket types are cancelled.",
-            new Dictionary<string, object?> { ["ticketTypeSlugs"] = slugs });
+            new Dictionary<string, object?> { ["ticketTypeIds"] = ids });
 
         public static readonly Error ExpiryMustBeInFuture = new(
             "coupon.expiry_must_be_in_future",

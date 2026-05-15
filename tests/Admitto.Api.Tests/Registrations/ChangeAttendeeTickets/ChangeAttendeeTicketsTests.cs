@@ -15,7 +15,7 @@ public sealed class ChangeAttendeeTicketsTests(TestContext testContext) : EndToE
         var fixture = ChangeAttendeeTicketsFixture.WithActiveRegistration();
         await fixture.SetupAsync(Environment);
 
-        var request = new { TicketTypeSlugs = new[] { "workshop" } };
+        var request = new { TicketTypeIds = new[] { ChangeAttendeeTicketsFixture.WorkshopId.Value } };
 
         var response = await Environment.ApiClient.PutAsJsonAsync(
             fixture.Route, request, cancellationToken: testContext.CancellationToken);
@@ -30,7 +30,7 @@ public sealed class ChangeAttendeeTicketsTests(TestContext testContext) : EndToE
         var fixture = ChangeAttendeeTicketsFixture.WithActiveRegistration();
         await fixture.SetupAsync(Environment);
 
-        var request = new { TicketTypeSlugs = new[] { "workshop" } };
+        var request = new { TicketTypeIds = new[] { ChangeAttendeeTicketsFixture.WorkshopId.Value } };
 
         var response = await Environment.BobApiClient.PutAsJsonAsync(
             fixture.Route, request, cancellationToken: testContext.CancellationToken);

@@ -16,18 +16,19 @@ public sealed class TicketCatalogTests
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
+        var id = TicketTypeId.New();
 
         // Act
         sut.AddTicketType(
-            Slug.From("vip"),
+            id,
             TicketTypeName.From("VIP Pass"),
-            [new TimeSlot(Slug.From("morning"))],
+            [TimeSlot.From("morning")],
             100);
 
         // Assert
         sut.TicketTypes.Count.ShouldBe(1);
         var tt = sut.TicketTypes[0];
-        tt.Id.ShouldBe("vip");
+        tt.Id.ShouldBe(id);
         tt.Name.ShouldBe(TicketTypeName.From("VIP Pass"));
         tt.MaxCapacity.ShouldBe(100);
         tt.UsedCapacity.ShouldBe(0);
@@ -42,7 +43,7 @@ public sealed class TicketCatalogTests
 
         // Act
         sut.AddTicketType(
-            Slug.From("speaker"),
+            TicketTypeId.New(),
             TicketTypeName.From("Speaker Pass"),
             [],
             maxCapacity: null);
@@ -52,18 +53,18 @@ public sealed class TicketCatalogTests
     }
 
     [TestMethod]
-    public void SC003_AddTicketType_DuplicateSlug_Throws()
+    public void SC003_AddTicketType_DuplicateName_Throws()
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
-        sut.AddTicketType(Slug.From("vip"), TicketTypeName.From("VIP"), [], 100);
+        sut.AddTicketType(TicketTypeId.New(), TicketTypeName.From("VIP"), [], 100);
 
         // Act
         var result = ErrorResult.Capture(() =>
-            sut.AddTicketType(Slug.From("vip"), TicketTypeName.From("VIP 2"), [], 50));
+            sut.AddTicketType(TicketTypeId.New(), TicketTypeName.From("VIP"), [], 50));
 
         // Assert
-        result.Error.ShouldMatch(TicketCatalog.Errors.DuplicateTicketTypeSlug(Slug.From("vip")));
+        result.Error.ShouldMatch(TicketCatalog.Errors.DuplicateTicketTypeName(TicketTypeName.From("VIP")));
     }
 
     [TestMethod]
@@ -71,10 +72,11 @@ public sealed class TicketCatalogTests
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
-        sut.AddTicketType(Slug.From("vip"), TicketTypeName.From("VIP"), [], 100);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("VIP"), [], 100);
 
         // Act
-        sut.UpdateTicketType(Slug.From("vip"), name: null, maxCapacity: 200);
+        sut.UpdateTicketType(id, name: null, maxCapacity: 200);
 
         // Assert
         sut.TicketTypes[0].MaxCapacity.ShouldBe(200);
@@ -85,10 +87,11 @@ public sealed class TicketCatalogTests
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
-        sut.AddTicketType(Slug.From("vip"), TicketTypeName.From("VIP"), [], 100);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("VIP"), [], 100);
 
         // Act
-        sut.UpdateTicketType(Slug.From("vip"), name: TicketTypeName.From("VIP Access"), maxCapacity: 100);
+        sut.UpdateTicketType(id, name: TicketTypeName.From("VIP Access"), maxCapacity: 100);
 
         // Assert
         sut.TicketTypes[0].Name.ShouldBe(TicketTypeName.From("VIP Access"));
@@ -99,13 +102,14 @@ public sealed class TicketCatalogTests
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
+        var unknownId = TicketTypeId.New();
 
         // Act
         var result = ErrorResult.Capture(() =>
-            sut.UpdateTicketType(Slug.From("nonexistent"), name: null, maxCapacity: 100));
+            sut.UpdateTicketType(unknownId, name: null, maxCapacity: 100));
 
         // Assert
-        result.Error.ShouldMatch(TicketCatalog.Errors.TicketTypeNotFound("nonexistent"));
+        result.Error.ShouldMatch(TicketCatalog.Errors.TicketTypeNotFound(unknownId));
     }
 
     [TestMethod]
@@ -113,15 +117,16 @@ public sealed class TicketCatalogTests
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
-        sut.AddTicketType(Slug.From("vip"), TicketTypeName.From("VIP"), [], 100);
-        sut.CancelTicketType(Slug.From("vip"));
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("VIP"), [], 100);
+        sut.CancelTicketType(id);
 
         // Act
         var result = ErrorResult.Capture(() =>
-            sut.UpdateTicketType(Slug.From("vip"), name: null, maxCapacity: 200));
+            sut.UpdateTicketType(id, name: null, maxCapacity: 200));
 
         // Assert
-        result.Error.ShouldMatch(TicketCatalog.Errors.TicketTypeAlreadyCancelled(Slug.From("vip")));
+        result.Error.ShouldMatch(TicketCatalog.Errors.TicketTypeAlreadyCancelled(id));
     }
 
     [TestMethod]
@@ -129,10 +134,11 @@ public sealed class TicketCatalogTests
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
-        sut.AddTicketType(Slug.From("vip"), TicketTypeName.From("VIP"), [], 100);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("VIP"), [], 100);
 
         // Act
-        sut.CancelTicketType(Slug.From("vip"));
+        sut.CancelTicketType(id);
 
         // Assert
         sut.TicketTypes[0].IsCancelled.ShouldBeTrue();
@@ -143,14 +149,15 @@ public sealed class TicketCatalogTests
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
-        sut.AddTicketType(Slug.From("vip"), TicketTypeName.From("VIP"), [], 100);
-        sut.CancelTicketType(Slug.From("vip"));
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("VIP"), [], 100);
+        sut.CancelTicketType(id);
 
         // Act
-        var result = ErrorResult.Capture(() => sut.CancelTicketType(Slug.From("vip")));
+        var result = ErrorResult.Capture(() => sut.CancelTicketType(id));
 
         // Assert
-        result.Error.ShouldMatch(Registrations.Domain.Entities.TicketType.Errors.TicketTypeAlreadyCancelled("vip"));
+        result.Error.ShouldMatch(Registrations.Domain.Entities.TicketType.Errors.TicketTypeAlreadyCancelled(id));
     }
 
     [TestMethod]
@@ -158,10 +165,11 @@ public sealed class TicketCatalogTests
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
-        sut.AddTicketType(Slug.From("general"), TicketTypeName.From("General"), [], 10);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], 10);
 
         // Act
-        sut.Claim(["general"], enforce: true);
+        sut.Claim([id], enforce: true);
 
         // Assert
         sut.TicketTypes[0].UsedCapacity.ShouldBe(1);
@@ -172,14 +180,15 @@ public sealed class TicketCatalogTests
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
-        sut.AddTicketType(Slug.From("general"), TicketTypeName.From("General"), [], 1);
-        sut.Claim(["general"], enforce: true);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], 1);
+        sut.Claim([id], enforce: true);
 
         // Act
-        var result = ErrorResult.Capture(() => sut.Claim(["general"], enforce: true));
+        var result = ErrorResult.Capture(() => sut.Claim([id], enforce: true));
 
         // Assert
-        result.Error.ShouldMatch(Registrations.Domain.Entities.TicketType.Errors.TicketTypeAtCapacity("general"));
+        result.Error.ShouldMatch(Registrations.Domain.Entities.TicketType.Errors.TicketTypeAtCapacity(id));
     }
 
     [TestMethod]
@@ -187,10 +196,11 @@ public sealed class TicketCatalogTests
     {
         // Arrange — null capacity + self-service enabled means unlimited self-service
         var sut = TicketCatalog.Create(DefaultEventId);
-        sut.AddTicketType(Slug.From("speaker"), TicketTypeName.From("Speaker"), [], null, selfServiceEnabled: true);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("Speaker"), [], null, selfServiceEnabled: true);
 
         // Act
-        sut.Claim(["speaker"], enforce: true);
+        sut.Claim([id], enforce: true);
 
         // Assert
         sut.TicketTypes[0].UsedCapacity.ShouldBe(1);
@@ -201,44 +211,49 @@ public sealed class TicketCatalogTests
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
-        sut.AddTicketType(Slug.From("vip"), TicketTypeName.From("VIP"), [], 1);
-        sut.Claim(["vip"], enforce: false); // at capacity
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("VIP"), [], 1);
+        sut.Claim([id], enforce: false); // at capacity
 
         // Act
-        sut.Claim(["vip"], enforce: false); // should still work
+        sut.Claim([id], enforce: false); // should still work
 
         // Assert
         sut.TicketTypes[0].UsedCapacity.ShouldBe(2);
     }
 
     [TestMethod]
-    public void SC014_Claim_MultipleSlugs_AllIncrement()
+    public void SC014_Claim_MultipleIds_AllIncrement()
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
-        sut.AddTicketType(Slug.From("a"), TicketTypeName.From("A"), [], 10);
-        sut.AddTicketType(Slug.From("b"), TicketTypeName.From("B"), [], 10);
+        var idA = TicketTypeId.New();
+        var idB = TicketTypeId.New();
+        sut.AddTicketType(idA, TicketTypeName.From("A"), [], 10);
+        sut.AddTicketType(idB, TicketTypeName.From("B"), [], 10);
 
         // Act
-        sut.Claim(["a", "b"], enforce: true);
+        sut.Claim([idA, idB], enforce: true);
 
         // Assert
-        sut.TicketTypes.Single(t => t.Id == "a").UsedCapacity.ShouldBe(1);
-        sut.TicketTypes.Single(t => t.Id == "b").UsedCapacity.ShouldBe(1);
+        sut.TicketTypes.Single(t => t.Id == idA).UsedCapacity.ShouldBe(1);
+        sut.TicketTypes.Single(t => t.Id == idB).UsedCapacity.ShouldBe(1);
     }
 
     [TestMethod]
-    public void SC015_Claim_UnknownSlug_Throws()
+    public void SC015_Claim_UnknownId_Throws()
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
-        sut.AddTicketType(Slug.From("known"), TicketTypeName.From("Known"), [], 10);
+        var knownId = TicketTypeId.New();
+        var unknownId = TicketTypeId.New();
+        sut.AddTicketType(knownId, TicketTypeName.From("Known"), [], 10);
 
         // Act
-        var result = ErrorResult.Capture(() => sut.Claim(["unknown"], enforce: true));
+        var result = ErrorResult.Capture(() => sut.Claim([unknownId], enforce: true));
 
         // Assert
-        result.Error.ShouldMatch(TicketCatalog.Errors.UnknownTicketTypes(["unknown"]));
+        result.Error.ShouldMatch(TicketCatalog.Errors.UnknownTicketTypes([unknownId.Value]));
     }
 
     [TestMethod]
@@ -246,14 +261,15 @@ public sealed class TicketCatalogTests
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
-        sut.AddTicketType(Slug.From("vip"), TicketTypeName.From("VIP"), [], 100);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("VIP"), [], 100);
 
         // Act
-        var tt = sut.GetTicketType("vip");
+        var tt = sut.GetTicketType(id);
 
         // Assert
         tt.ShouldNotBeNull();
-        tt.Id.ShouldBe("vip");
+        tt.Id.ShouldBe(id);
     }
 
     [TestMethod]
@@ -261,9 +277,10 @@ public sealed class TicketCatalogTests
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
+        var unknownId = TicketTypeId.New();
 
         // Act
-        var tt = sut.GetTicketType("nonexistent");
+        var tt = sut.GetTicketType(unknownId);
 
         // Assert
         tt.ShouldBeNull();
@@ -366,11 +383,12 @@ public sealed class TicketCatalogTests
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
-        sut.AddTicketType(Slug.From("general"), TicketTypeName.From("General"), [], 10);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], 10);
         sut.MarkEventCancelled();
 
         // Act
-        var result = ErrorResult.Capture(() => sut.Claim(["general"], enforce: true));
+        var result = ErrorResult.Capture(() => sut.Claim([id], enforce: true));
 
         // Assert
         result.Error.ShouldMatch(TicketCatalog.Errors.EventNotActive);
@@ -381,11 +399,12 @@ public sealed class TicketCatalogTests
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
-        sut.AddTicketType(Slug.From("general"), TicketTypeName.From("General"), [], 10);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], 10);
         sut.MarkEventArchived();
 
         // Act
-        var result = ErrorResult.Capture(() => sut.Claim(["general"], enforce: false));
+        var result = ErrorResult.Capture(() => sut.Claim([id], enforce: false));
 
         // Assert
         result.Error.ShouldMatch(TicketCatalog.Errors.EventNotActive);
@@ -400,7 +419,7 @@ public sealed class TicketCatalogTests
 
         // Act
         var result = ErrorResult.Capture(() =>
-            sut.AddTicketType(Slug.From("vip"), TicketTypeName.From("VIP"), [], 100));
+            sut.AddTicketType(TicketTypeId.New(), TicketTypeName.From("VIP"), [], 100));
 
         // Assert
         result.Error.ShouldMatch(TicketCatalog.Errors.EventNotActive);
@@ -415,7 +434,7 @@ public sealed class TicketCatalogTests
 
         // Act
         var result = ErrorResult.Capture(() =>
-            sut.AddTicketType(Slug.From("vip"), TicketTypeName.From("VIP"), [], 100));
+            sut.AddTicketType(TicketTypeId.New(), TicketTypeName.From("VIP"), [], 100));
 
         // Assert
         result.Error.ShouldMatch(TicketCatalog.Errors.EventNotActive);
@@ -426,12 +445,13 @@ public sealed class TicketCatalogTests
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
-        sut.AddTicketType(Slug.From("vip"), TicketTypeName.From("VIP"), [], 100);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("VIP"), [], 100);
         sut.MarkEventCancelled();
 
         // Act
         var result = ErrorResult.Capture(() =>
-            sut.UpdateTicketType(Slug.From("vip"), name: null, maxCapacity: 200));
+            sut.UpdateTicketType(id, name: null, maxCapacity: 200));
 
         // Assert
         result.Error.ShouldMatch(TicketCatalog.Errors.EventNotActive);
@@ -442,62 +462,68 @@ public sealed class TicketCatalogTests
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
-        sut.AddTicketType(Slug.From("vip"), TicketTypeName.From("VIP"), [], 100);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("VIP"), [], 100);
         sut.MarkEventCancelled();
 
         // Act
-        var result = ErrorResult.Capture(() => sut.CancelTicketType(Slug.From("vip")));
+        var result = ErrorResult.Capture(() => sut.CancelTicketType(id));
 
         // Assert
         result.Error.ShouldMatch(TicketCatalog.Errors.EventNotActive);
     }
 
     [TestMethod]
-    public void SC031_Release_MatchingSlugs_DecrementsUsedCapacity()
+    public void SC031_Release_MatchingIds_DecrementsUsedCapacity()
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
-        sut.AddTicketType(Slug.From("general"), TicketTypeName.From("General"), [], 10);
-        sut.Claim(["general"], enforce: true);
-        sut.GetTicketType("general")!.UsedCapacity.ShouldBe(1);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], 10);
+        sut.Claim([id], enforce: true);
+        sut.GetTicketType(id)!.UsedCapacity.ShouldBe(1);
 
         // Act
-        sut.Release(["general"]);
+        sut.Release([id]);
 
         // Assert
-        sut.GetTicketType("general")!.UsedCapacity.ShouldBe(0);
+        sut.GetTicketType(id)!.UsedCapacity.ShouldBe(0);
     }
 
     [TestMethod]
-    public void SC032_Release_UnknownSlug_IsSilentlySkipped()
+    public void SC032_Release_UnknownId_IsSilentlySkipped()
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
-        sut.AddTicketType(Slug.From("known"), TicketTypeName.From("Known"), [], 10);
-        sut.Claim(["known"], enforce: true);
+        var knownId = TicketTypeId.New();
+        var unknownId = TicketTypeId.New();
+        sut.AddTicketType(knownId, TicketTypeName.From("Known"), [], 10);
+        sut.Claim([knownId], enforce: true);
 
-        // Act — releasing an unknown slug should not throw
-        sut.Release(["unknown", "known"]);
+        // Act — releasing an unknown ID should not throw
+        sut.Release([unknownId, knownId]);
 
-        // Assert — known slug was released; unknown was skipped without error
-        sut.GetTicketType("known")!.UsedCapacity.ShouldBe(0);
+        // Assert — known was released; unknown was skipped without error
+        sut.GetTicketType(knownId)!.UsedCapacity.ShouldBe(0);
     }
 
     [TestMethod]
-    public void SC033_Release_MultipleSlugs_AllDecrement()
+    public void SC033_Release_MultipleIds_AllDecrement()
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
-        sut.AddTicketType(Slug.From("a"), TicketTypeName.From("A"), [], 10);
-        sut.AddTicketType(Slug.From("b"), TicketTypeName.From("B"), [], 10);
-        sut.Claim(["a", "b"], enforce: true);
+        var idA = TicketTypeId.New();
+        var idB = TicketTypeId.New();
+        sut.AddTicketType(idA, TicketTypeName.From("A"), [], 10);
+        sut.AddTicketType(idB, TicketTypeName.From("B"), [], 10);
+        sut.Claim([idA, idB], enforce: true);
 
         // Act
-        sut.Release(["a", "b"]);
+        sut.Release([idA, idB]);
 
         // Assert
-        sut.GetTicketType("a")!.UsedCapacity.ShouldBe(0);
-        sut.GetTicketType("b")!.UsedCapacity.ShouldBe(0);
+        sut.GetTicketType(idA)!.UsedCapacity.ShouldBe(0);
+        sut.GetTicketType(idB)!.UsedCapacity.ShouldBe(0);
     }
 
     [TestMethod]
@@ -505,28 +531,30 @@ public sealed class TicketCatalogTests
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
-        sut.AddTicketType(Slug.From("vip"), TicketTypeName.From("VIP"), [], 10);
-        sut.CancelTicketType(Slug.From("vip"));
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("VIP"), [], 10);
+        sut.CancelTicketType(id);
 
         // Act
-        var result = ErrorResult.Capture(() => sut.Claim(["vip"], enforce: false));
+        var result = ErrorResult.Capture(() => sut.Claim([id], enforce: false));
 
         // Assert
-        result.Error.ShouldMatch(TicketCatalog.Errors.CancelledTicketTypes(["vip"]));
+        result.Error.ShouldMatch(TicketCatalog.Errors.CancelledTicketTypes([id.Value]));
     }
 
     [TestMethod]
-    public void SC035_Claim_DuplicateSlugs_Throws()
+    public void SC035_Claim_DuplicateIds_Throws()
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
-        sut.AddTicketType(Slug.From("general"), TicketTypeName.From("General"), [], 10);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], 10);
 
         // Act
-        var result = ErrorResult.Capture(() => sut.Claim(["general", "general"], enforce: false));
+        var result = ErrorResult.Capture(() => sut.Claim([id, id], enforce: false));
 
         // Assert
-        result.Error.ShouldMatch(TicketCatalog.Errors.DuplicateTicketTypes(["general"]));
+        result.Error.ShouldMatch(TicketCatalog.Errors.DuplicateTicketTypes([id.Value]));
     }
 
     [TestMethod]
@@ -534,13 +562,15 @@ public sealed class TicketCatalogTests
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
-        sut.AddTicketType(Slug.From("workshop-a"), TicketTypeName.From("Workshop A"),
-            [new TimeSlot(Slug.From("morning"))], 10);
-        sut.AddTicketType(Slug.From("workshop-b"), TicketTypeName.From("Workshop B"),
-            [new TimeSlot(Slug.From("morning"))], 10);
+        var idA = TicketTypeId.New();
+        var idB = TicketTypeId.New();
+        sut.AddTicketType(idA, TicketTypeName.From("Workshop A"),
+            [TimeSlot.From("morning")], 10);
+        sut.AddTicketType(idB, TicketTypeName.From("Workshop B"),
+            [TimeSlot.From("morning")], 10);
 
         // Act
-        var result = ErrorResult.Capture(() => sut.Claim(["workshop-a", "workshop-b"], enforce: false));
+        var result = ErrorResult.Capture(() => sut.Claim([idA, idB], enforce: false));
 
         // Assert
         result.Error.ShouldMatch(TicketCatalog.Errors.OverlappingTimeSlots(["morning"]));
@@ -551,13 +581,14 @@ public sealed class TicketCatalogTests
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
-        sut.AddTicketType(Slug.From("general"), TicketTypeName.From("General"), [], 10);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], 10);
 
         // Act — empty claim should not throw
         sut.Claim([], enforce: true);
 
         // Assert — capacity unchanged
-        sut.GetTicketType("general")!.UsedCapacity.ShouldBe(0);
+        sut.GetTicketType(id)!.UsedCapacity.ShouldBe(0);
     }
 
     [TestMethod]
@@ -565,13 +596,14 @@ public sealed class TicketCatalogTests
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
-        sut.AddTicketType(Slug.From("vip"), TicketTypeName.From("VIP"), [], 50, selfServiceEnabled: false);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("VIP"), [], 50, selfServiceEnabled: false);
 
         // Act
-        var result = ErrorResult.Capture(() => sut.Claim(["vip"], enforce: true));
+        var result = ErrorResult.Capture(() => sut.Claim([id], enforce: true));
 
         // Assert
-        result.Error.ShouldMatch(TicketCatalog.Errors.TicketTypesNotSelfService(["vip"]));
+        result.Error.ShouldMatch(TicketCatalog.Errors.TicketTypesNotSelfService([id.Value]));
     }
 
     [TestMethod]
@@ -579,12 +611,13 @@ public sealed class TicketCatalogTests
     {
         // Arrange — admin/coupon bypass: enforce=false skips self-service check
         var sut = TicketCatalog.Create(DefaultEventId);
-        sut.AddTicketType(Slug.From("vip"), TicketTypeName.From("VIP"), [], 50, selfServiceEnabled: false);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("VIP"), [], 50, selfServiceEnabled: false);
 
         // Act
-        sut.Claim(["vip"], enforce: false);
+        sut.Claim([id], enforce: false);
 
         // Assert
-        sut.GetTicketType("vip")!.UsedCapacity.ShouldBe(1);
+        sut.GetTicketType(id)!.UsedCapacity.ShouldBe(1);
     }
 }

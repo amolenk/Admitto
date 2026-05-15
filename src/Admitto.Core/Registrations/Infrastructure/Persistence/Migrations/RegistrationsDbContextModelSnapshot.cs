@@ -60,11 +60,10 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
-                    b.PrimitiveCollection<string[]>("AllowedTicketTypeSlugs")
+                    b.PrimitiveCollection<Guid[]>("AllowedTicketTypeIds")
                         .IsRequired()
-                        .HasMaxLength(64)
-                        .HasColumnType("text[]")
-                        .HasColumnName("allowed_ticket_type_slugs");
+                        .HasColumnType("uuid[]")
+                        .HasColumnName("allowed_ticket_type_ids");
 
                     b.Property<bool>("BypassRegistrationWindow")
                         .HasColumnType("boolean")
@@ -428,13 +427,12 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
                             b1.Property<int>("__synthesizedOrdinal")
                                 .ValueGeneratedOnAdd();
 
+                            b1.Property<Guid>("Id")
+                                .HasJsonPropertyName("id");
+
                             b1.Property<string>("Name")
                                 .IsRequired()
                                 .HasJsonPropertyName("name");
-
-                            b1.Property<string>("Slug")
-                                .IsRequired()
-                                .HasJsonPropertyName("slug");
 
                             b1.PrimitiveCollection<string>("TimeSlots")
                                 .IsRequired()
@@ -464,9 +462,8 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
                             b1.Property<int>("__synthesizedOrdinal")
                                 .ValueGeneratedOnAdd();
 
-                            b1.Property<string>("Id")
-                                .IsRequired()
-                                .HasJsonPropertyName("slug");
+                            b1.Property<Guid>("Id")
+                                .HasJsonPropertyName("id");
 
                             b1.Property<bool>("IsCancelled")
                                 .HasJsonPropertyName("is_cancelled");
@@ -481,7 +478,7 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
                             b1.Property<bool>("SelfServiceEnabled")
                                 .HasJsonPropertyName("self_service_enabled");
 
-                            b1.PrimitiveCollection<string>("TimeSlotSlugs")
+                            b1.PrimitiveCollection<string>("TimeSlots")
                                 .IsRequired()
                                 .HasJsonPropertyName("time_slots");
 

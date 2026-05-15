@@ -6,13 +6,9 @@ public sealed class ChangeAttendeeTicketsValidator : AbstractValidator<ChangeAtt
 {
     public ChangeAttendeeTicketsValidator()
     {
-        RuleFor(x => x.TicketTypeSlugs)
+        RuleFor(x => x.TicketTypeIds)
             .NotNull()
             .NotEmpty()
-            .WithMessage("'TicketTypeSlugs' must contain at least one ticket type.");
-
-        RuleForEach(x => x.TicketTypeSlugs)
-            .NotEmpty()
-            .WithMessage("Ticket type slugs must not be blank.");
+            .WithMessage("'TicketTypeIds' must contain at least one ticket type.");
     }
 }

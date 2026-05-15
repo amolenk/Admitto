@@ -24,9 +24,9 @@ internal sealed class GetPublicTicketTypesHandler(IRegistrationsWriteStore write
         return catalog.TicketTypes
             .Where(tt => !tt.IsCancelled && tt.SelfServiceEnabled)
             .Select(tt => new PublicTicketTypeDto(
-                tt.Id,
+                tt.Id.Value,
                 tt.Name.Value,
-                tt.TimeSlotSlugs.Select(s => s.Value).ToArray(),
+                tt.TimeSlots.Select(ts => ts.Value).ToArray(),
                 tt.MaxCapacity,
                 tt.UsedCapacity))
             .ToList();

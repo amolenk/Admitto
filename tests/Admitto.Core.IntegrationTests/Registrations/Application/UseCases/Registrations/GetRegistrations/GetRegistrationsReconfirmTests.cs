@@ -16,7 +16,6 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 [TestClass]
 public sealed class GetRegistrationsReconfirmTests(TestContext testContext) : AspireIntegrationTestBase
 {
-    private const string TicketTypeSlug = "general-admission";
 
     private static readonly QueryRegistrationsDto ReconfirmFilter = new(
         RegistrationStatus: RegistrationStatus.Registered,
@@ -137,7 +136,7 @@ public sealed class GetRegistrationsReconfirmTests(TestContext testContext) : As
             EmailAddress.From(email),
             FirstName.From(Capitalize(emailParts[0])),
             LastName.From("Doe"),
-            [new TicketTypeSnapshot(Slug.From(TicketTypeSlug), TicketTypeName.From(TicketTypeSlug), [])]);
+            [new TicketTypeSnapshot(TicketTypeId.New(), TicketTypeName.From("General Admission"), [])]);
 
         if (reconfirmed)
             registration.Reconfirm(DateTimeOffset.UtcNow);

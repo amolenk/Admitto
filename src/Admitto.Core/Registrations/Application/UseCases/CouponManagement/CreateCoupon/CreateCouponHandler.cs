@@ -33,7 +33,7 @@ internal sealed class CreateCouponHandler(
         var coupon = Coupon.Create(
             eventId,
             email,
-            command.AllowedTicketTypeSlugs,
+            command.AllowedTicketTypeIds.Select(TicketTypeId.From).ToList(),
             command.ExpiresAt,
             command.BypassRegistrationWindow,
             availableTicketTypes,

@@ -32,6 +32,7 @@ public sealed class RegistrationsIntegrationEventPublisherTests
         var eventId = TicketedEventId.New();
         var registrationId = RegistrationId.New();
 
+        var earlyBirdId = TicketTypeId.New();
         var domainEvent = new AttendeeRegisteredDomainEvent(
             teamId,
             eventId,
@@ -39,7 +40,7 @@ public sealed class RegistrationsIntegrationEventPublisherTests
             EmailAddress.From("bob@example.com"),
             FirstName.From("Bob"),
             LastName.From("Smith"),
-            [new TicketTypeSnapshot(Slug.From("early-bird"), TicketTypeName.From("Early Bird"), [])]);
+            [new TicketTypeSnapshot(earlyBirdId, TicketTypeName.From("Early Bird"), [])]);
 
         await _publisher.HandleAsync(domainEvent, CancellationToken.None);
 
@@ -50,7 +51,7 @@ public sealed class RegistrationsIntegrationEventPublisherTests
         evt.RecipientEmail.ShouldBe("bob@example.com");
         evt.FirstName.ShouldBe("Bob");
         evt.LastName.ShouldBe("Smith");
-        evt.Tickets.ShouldHaveSingleItem().Slug.ShouldBe("early-bird");
+        evt.Tickets.ShouldHaveSingleItem().Id.ShouldBe(earlyBirdId.Value);
     }
 
     [TestMethod]
@@ -250,6 +251,7 @@ public sealed class RegistrationsIntegrationEventPublisherTests
         var registrationId = RegistrationId.New();
         var changedAt = DateTimeOffset.UtcNow;
 
+        var vipId = TicketTypeId.New();
         var domainEvent = new TicketsChangedDomainEvent(
             teamId,
             eventId,
@@ -258,7 +260,7 @@ public sealed class RegistrationsIntegrationEventPublisherTests
             FirstName.From("Eve"),
             LastName.From("Adams"),
             [],
-            [new TicketTypeSnapshot(Slug.From("vip"), TicketTypeName.From("VIP"), [])],
+            [new TicketTypeSnapshot(vipId, TicketTypeName.From("VIP"), [])],
             changedAt);
 
         await _publisher.HandleAsync(domainEvent, CancellationToken.None);
@@ -271,7 +273,7 @@ public sealed class RegistrationsIntegrationEventPublisherTests
         evt.RecipientEmail.ShouldBe("eve@example.com");
         evt.FirstName.ShouldBe("Eve");
         evt.LastName.ShouldBe("Adams");
-        evt.NewTickets.ShouldHaveSingleItem().Slug.ShouldBe("vip");
+        evt.NewTickets.ShouldHaveSingleItem().Id.ShouldBe(vipId.Value);
         evt.ChangedAt.ShouldBe(changedAt);
     }
 }

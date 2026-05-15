@@ -18,7 +18,7 @@ namespace Amolenk.Admitto.Api.Tests.Email.BulkEmail;
 /// </summary>
 internal sealed class BulkEmailFixture
 {
-    public const string TicketTypeSlug = "general-admission";
+    public static readonly TicketTypeId TicketTypeId = TicketTypeId.From(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
     public const string EmailType = BuiltInEmailTemplateNames.TicketConfirmation;
     public const string ReconfirmEmailType = BuiltInEmailTemplateNames.Reconfirmation;
 
@@ -93,11 +93,11 @@ internal sealed class BulkEmailFixture
                 DateTimeOffset.UtcNow.AddDays(30)));
 
         var catalog = TicketCatalog.Create(EventId);
-        catalog.AddTicketType(Slug.From(TicketTypeSlug), TicketTypeName.From("General Admission"), [], 100);
+        catalog.AddTicketType(TicketTypeId, TicketTypeName.From("General Admission"), [], 100);
 
         // Seed registrations directly via the aggregate so we control state
         // (cancelled / reconfirmed) deterministically without going through the API.
-        var ticketSnapshot = new TicketTypeSnapshot(Slug.From(TicketTypeSlug), TicketTypeName.From(TicketTypeSlug), []);
+        var ticketSnapshot = new TicketTypeSnapshot(TicketTypeId, TicketTypeName.From("General Admission"), []);
         foreach (var seed in _registrationSeeds)
         {
             var registration = Registration.Create(

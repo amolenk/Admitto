@@ -22,9 +22,9 @@ internal sealed class GetTicketTypesHandler(IRegistrationsWriteStore writeStore)
 
         return catalog.TicketTypes
             .Select(tt => new TicketTypeDto(
-                tt.Id,
+                tt.Id.Value,
                 tt.Name.Value,
-                tt.TimeSlotSlugs.Select(s => s.Value).ToArray(),
+                tt.TimeSlots.Select(ts => ts.Value).ToArray(),
                 tt.MaxCapacity,
                 tt.UsedCapacity,
                 tt.IsCancelled,

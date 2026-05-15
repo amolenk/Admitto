@@ -17,7 +17,7 @@ public sealed record BulkEmailSourceHttpDto(
         if (Attendee is not null)
         {
             var filter = new QueryRegistrationsDto(
-                TicketTypeSlugs: Attendee.TicketTypeSlugs,
+                TicketTypeIds: Attendee.TicketTypeIds,
                 RegistrationStatus: Attendee.RegistrationStatus,
                 HasReconfirmed: Attendee.HasReconfirmed,
                 RegisteredAfter: Attendee.RegisteredAfter,
@@ -43,7 +43,7 @@ public sealed record BulkEmailSourceHttpDto(
 }
 
 public sealed record AttendeeSourceHttpDto(
-    IReadOnlyCollection<string>? TicketTypeSlugs = null,
+    IReadOnlyCollection<Guid>? TicketTypeIds = null,
     RegistrationStatus? RegistrationStatus = null,
     bool? HasReconfirmed = null,
     DateTimeOffset? RegisteredAfter = null,

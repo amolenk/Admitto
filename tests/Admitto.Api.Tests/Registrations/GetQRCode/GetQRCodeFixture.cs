@@ -13,7 +13,7 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.GetQRCode;
 
 internal sealed class GetQRCodeFixture
 {
-    public const string TicketTypeSlug = "general-admission";
+    public static readonly TicketTypeId TicketTypeId = TicketTypeId.From(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
 
     public Guid TeamId { get; private set; }
     public Guid EventId { get; private set; }
@@ -80,7 +80,7 @@ internal sealed class GetQRCodeFixture
 
         var primaryCatalog = TicketCatalog.Create(primaryEvent.Id);
         primaryCatalog.AddTicketType(
-            Slug.From(TicketTypeSlug), TicketTypeName.From("General Admission"), [], 100);
+            TicketTypeId, TicketTypeName.From("General Admission"), [], 100);
 
         Registration? primaryRegistration = null;
         if (_seedRegistration)
@@ -91,7 +91,7 @@ internal sealed class GetQRCodeFixture
                 EmailAddress.From("alice@example.com"),
                 FirstName.From("Alice"),
                 LastName.From("Doe"),
-                [new TicketTypeSnapshot(Slug.From(TicketTypeSlug), TicketTypeName.From(TicketTypeSlug), [])]);
+                [new TicketTypeSnapshot(TicketTypeId, TicketTypeName.From("General Admission"), [])]);
 
             RegistrationId = primaryRegistration.Id.Value;
 
@@ -116,7 +116,7 @@ internal sealed class GetQRCodeFixture
                 db.TicketedEvents.Add(otherEvent);
                 var otherCatalog = TicketCatalog.Create(otherEvent.Id);
                 otherCatalog.AddTicketType(
-                    Slug.From(TicketTypeSlug), TicketTypeName.From("General Admission"), [], 100);
+                    TicketTypeId, TicketTypeName.From("General Admission"), [], 100);
                 db.TicketCatalogs.Add(otherCatalog);
             }
         });

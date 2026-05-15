@@ -29,7 +29,7 @@ public static class ChangeAttendeeTicketsHttpEndpoint
         var command = new ChangeAttendeeTicketsCommand(
             eventId,
             registrationId,
-            request.TicketTypeSlugs!,
+            request.TicketTypeIds!,
             ChangeMode.Admin);
 
         await handler.HandleAsync(command, cancellationToken);

@@ -10,7 +10,7 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.RegisterAttendee.PublicApi.Sel
 
 internal sealed class SelfRegisterAttendeeFixture
 {
-    public const string TicketTypeSlug = "general-admission";
+    public static readonly TicketTypeId TicketTypeId = TicketTypeId.From(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
 
     public string ApiKey => ApiKeyTestHelper.TestRawKey;
 
@@ -48,7 +48,7 @@ internal sealed class SelfRegisterAttendeeFixture
                 DateTimeOffset.UtcNow.AddDays(30)));
 
         var catalog = TicketCatalog.Create(eventId);
-        catalog.AddTicketType(Slug.From(TicketTypeSlug), TicketTypeName.From("General Admission"), [], 100);
+        catalog.AddTicketType(TicketTypeId, TicketTypeName.From("General Admission"), [], 100);
 
         await environment.OrganizationDatabase.SeedAsync(db =>
         {

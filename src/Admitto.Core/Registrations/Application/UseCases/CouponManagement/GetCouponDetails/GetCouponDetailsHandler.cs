@@ -31,7 +31,7 @@ internal sealed class GetCouponDetailsHandler(IRegistrationsWriteStore writeStor
             coupon.Code.Value,
             coupon.Email.Value,
             coupon.GetStatus(now),
-            coupon.AllowedTicketTypeSlugs.ToArray(),
+            coupon.AllowedTicketTypeIds.Select(id => id.Value).ToArray(),
             coupon.ExpiresAt,
             coupon.BypassRegistrationWindow,
             coupon.RedeemedAt,

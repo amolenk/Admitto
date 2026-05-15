@@ -34,7 +34,8 @@ public class TicketCatalogEntityConfiguration : IEntityTypeConfiguration<TicketC
             b.ToJson("ticket_types");
 
             b.Property(tt => tt.Id)
-                .HasJsonPropertyName("slug")
+                .HasJsonPropertyName("id")
+                .HasConversion<TicketTypeId.EfCoreValueConverter>()
                 .IsRequired();
 
             b.Property(tt => tt.Name)
@@ -56,11 +57,9 @@ public class TicketCatalogEntityConfiguration : IEntityTypeConfiguration<TicketC
                 .HasJsonPropertyName("self_service_enabled")
                 .IsRequired();
 
-            b.PrimitiveCollection(tt => tt.TimeSlotSlugs)
+            b.PrimitiveCollection(tt => tt.TimeSlots)
                 .HasJsonPropertyName("time_slots")
-                .ElementType(et => et.HasConversion<Slug.EfCoreValueConverter>());
-
-            b.Ignore(tt => tt.TimeSlots);
+                .ElementType(et => et.HasConversion<TimeSlot.EfCoreValueConverter>());
         });
     }
 }

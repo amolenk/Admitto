@@ -39,7 +39,7 @@ internal sealed class GetRegistrationDetailsHandler(IRegistrationsWriteStore wri
             ReconfirmedAt: registration.ReconfirmedAt,
             CancellationReason: registration.CancellationReason?.ToString(),
             Tickets: registration.Tickets
-                .Select(t => new TicketDetailDto(t.Slug.Value, t.Name.Value))
+                .Select(t => new TicketDetailDto(t.Id.Value, t.Name.Value))
                 .ToList(),
             AdditionalDetails: registration.AdditionalDetails
                 .ToDictionary(kvp => kvp.Key, kvp => kvp.Value),

@@ -51,7 +51,7 @@ internal sealed class SelfCancelRegistrationFixture
             EmailAddress.From(AttendeeEmail),
             FirstName.From("Alice"),
             LastName.From("Test"),
-            [new TicketTypeSnapshot(Slug.From("general-admission"), TicketTypeName.From("General Admission"), [])]);
+            [new TicketTypeSnapshot(TicketTypeId.From(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")), TicketTypeName.From("General Admission"), [])]);
         RegistrationId = registration.Id;
 
         if (alreadyCancelled)

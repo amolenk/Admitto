@@ -102,7 +102,7 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
             fixture.CouponEmail.Value,
             "Coupon",
             "User",
-            ["general-admission"],
+            [fixture.GetTicketTypeId("general-admission").Value],
             RegistrationMode.Coupon,
             CouponCode: fixture.CouponCodeString);
         var sut = NewHandler();
@@ -155,7 +155,6 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         var fixture = RegisterAttendeeFixture.CouponBypassesDomainRestriction();
         await fixture.SetupAsync(Environment);
 
-        // The coupon is bound to fixture.CouponEmail (gmail.com), event allows only @acme.com.
         var command = NewCommand(fixture, fixture.CouponEmail.Value);
         var sut = NewHandler();
 
@@ -209,7 +208,7 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         result.Error.Code.ShouldBe("registration.event_not_active");
     }
 
-    // SC011: Coupon rejected — supplied email does not match coupon target email (D8)
+    // SC011: Coupon rejected — supplied email does not match coupon target email
     [TestMethod]
     public async ValueTask RegisterWithCoupon_EmailMismatch_ThrowsCouponEmailMismatch()
     {
@@ -232,7 +231,6 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         var fixture = RegisterAttendeeFixture.CouponHappyFlow();
         await fixture.SetupAsync(Environment);
 
-        // Token deliberately omitted; coupon mode must not invoke the verifier.
         var command = NewCommand(fixture, fixture.CouponEmail.Value);
         var sut = NewHandler();
 
@@ -277,7 +275,7 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
             registration.CancellationReason.ShouldBeNull();
             registration.HasReconfirmed.ShouldBeFalse();
             registration.ReconfirmedAt.ShouldBeNull();
-            registration.Tickets.ShouldHaveSingleItem().Slug.ShouldBe(Slug.From(fixture.TicketTypeSlug));
+            registration.Tickets.ShouldHaveSingleItem().Id.ShouldBe(fixture.TicketTypeId);
             registration.AdditionalDetails["badge"].ShouldBe("speaker");
             AssertAttendeeRegisteredEvent(registration);
 
@@ -285,7 +283,7 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
             coupon.RedeemedAt.ShouldNotBeNull();
 
             var catalog = await dbContext.TicketCatalogs.SingleAsync(testContext.CancellationToken);
-            catalog.TicketTypes.Single(tt => tt.Id == fixture.TicketTypeSlug).UsedCapacity.ShouldBe(6);
+            catalog.TicketTypes.Single(tt => tt.Id == fixture.TicketTypeId).UsedCapacity.ShouldBe(6);
         });
     }
 
@@ -297,7 +295,7 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
             email,
             "Test",
             "User",
-            [fixture.TicketTypeSlug],
+            [fixture.TicketTypeId.Value],
             RegistrationMode.Coupon,
             CouponCode: fixture.CouponCodeString);
 
@@ -310,7 +308,7 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
             email,
             "Test",
             "User",
-            [fixture.TicketTypeSlug],
+            [fixture.TicketTypeId.Value],
             RegistrationMode.Coupon,
             CouponCode: fixture.CouponCodeString,
             AdditionalDetails: additionalDetails);

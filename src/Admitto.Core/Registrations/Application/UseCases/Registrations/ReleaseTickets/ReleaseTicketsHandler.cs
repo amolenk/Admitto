@@ -38,7 +38,7 @@ internal sealed class ReleaseTicketsHandler(IRegistrationsWriteStore writeStore)
         if (catalog is null)
             return;
 
-        var ticketSlugs = registration.Tickets.Select(t => t.Slug.Value).ToList();
-        catalog.Release(ticketSlugs);
+        var ticketIds = registration.Tickets.Select(t => t.Id).ToList();
+        catalog.Release(ticketIds);
     }
 }

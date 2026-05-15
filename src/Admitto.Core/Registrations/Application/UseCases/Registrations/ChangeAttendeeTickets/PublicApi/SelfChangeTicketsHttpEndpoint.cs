@@ -26,7 +26,7 @@ public static class SelfChangeTicketsHttpEndpoint
         var command = new ChangeAttendeeTicketsCommand(
             eventId,
             registrationId,
-            request.TicketTypeSlugs ?? [],
+            request.TicketTypeIds ?? [],
             ChangeMode.SelfService);
 
         await handler.HandleAsync(command, cancellationToken);

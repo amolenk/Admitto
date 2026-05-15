@@ -31,7 +31,7 @@ public sealed class GetRegistrationDetailTests(TestContext testContext) : EndToE
 
         var tickets = body.GetProperty("tickets").EnumerateArray().ToList();
         tickets.ShouldHaveSingleItem();
-        tickets[0].GetProperty("slug").GetString().ShouldBe(GetRegistrationDetailFixture.TicketTypeSlug);
+        tickets[0].GetProperty("id").GetString().ShouldBe(GetRegistrationDetailFixture.TicketTypeId.Value.ToString());
 
         body.GetProperty("activities").GetArrayLength().ShouldBe(0);
     }

@@ -83,15 +83,16 @@ public class RegistrationEntityConfiguration : IEntityTypeConfiguration<Registra
         builder.OwnsMany(e => e.Tickets, (OwnedNavigationBuilder<Registration, TicketTypeSnapshot> b) =>
         {
             b.ToJson("tickets");
-            b.Property(t => t.Slug)
-                .HasJsonPropertyName("slug")
+            b.Property(t => t.Id)
+                .HasJsonPropertyName("id")
+                .HasConversion<TicketTypeId.EfCoreValueConverter>()
                 .IsRequired();
             b.Property(t => t.Name)
                 .HasJsonPropertyName("name")
                 .IsRequired();
             b.PrimitiveCollection(t => t.TimeSlots)
                 .HasJsonPropertyName("time_slots")
-                .ElementType(et => et.HasConversion<Slug.EfCoreValueConverter>());
+                .ElementType(et => et.HasConversion<TimeSlot.EfCoreValueConverter>());
         });
 
         builder.Property(e => e.AdditionalDetails)

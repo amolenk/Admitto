@@ -17,7 +17,7 @@ public sealed class UpdateTicketTypeTests(TestContext testContext) : AspireInteg
 
         var command = new UpdateTicketTypeCommand(
             fixture.EventId.Value,
-            fixture.TicketTypeSlug,
+            fixture.TicketTypeId.Value,
             null,
             200);
         var sut = new UpdateTicketTypeHandler(Environment.RegistrationsDatabase.Context);
@@ -48,7 +48,7 @@ public sealed class UpdateTicketTypeTests(TestContext testContext) : AspireInteg
 
         var command = new UpdateTicketTypeCommand(
             fixture.EventId.Value,
-            fixture.TicketTypeSlug,
+            fixture.TicketTypeId.Value,
             "VIP Admission",
             null);
         var sut = new UpdateTicketTypeHandler(Environment.RegistrationsDatabase.Context);
@@ -77,7 +77,7 @@ public sealed class UpdateTicketTypeTests(TestContext testContext) : AspireInteg
 
         var command = new UpdateTicketTypeCommand(
             fixture.EventId.Value,
-            fixture.TicketTypeSlug,
+            fixture.TicketTypeId.Value,
             null,
             200);
         var sut = new UpdateTicketTypeHandler(Environment.RegistrationsDatabase.Context);

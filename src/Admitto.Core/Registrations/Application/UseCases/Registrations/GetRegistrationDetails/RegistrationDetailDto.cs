@@ -16,4 +16,4 @@ public sealed record RegistrationDetailDto(
     IReadOnlyDictionary<string, string> AdditionalDetails,
     IReadOnlyList<ActivityLogEntryDto> Activities);
 
-public sealed record TicketDetailDto(string Slug, string Name);
+public sealed record TicketDetailDto(Guid Id, string Name);

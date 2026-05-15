@@ -10,9 +10,10 @@ public sealed class TicketTypeTests
 {
     private static TicketType CreateTicketType(int? maxCapacity = 10, int usedCapacity = 0)
     {
+        var id = TicketTypeId.New();
         var catalog = TicketCatalog.Create(TicketedEventId.New());
-        catalog.AddTicketType(Slug.From("general"), TicketTypeName.From("General"), [], maxCapacity);
-        var tt = catalog.GetTicketType("general")!;
+        catalog.AddTicketType(id, TicketTypeName.From("General"), [], maxCapacity);
+        var tt = catalog.GetTicketType(id)!;
         for (var i = 0; i < usedCapacity; i++)
             tt.ClaimUncapped();
         return tt;

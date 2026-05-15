@@ -6,23 +6,23 @@ using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 namespace Amolenk.Admitto.Core.Registrations.Domain.Entities;
 
 /// <summary>
-/// A ticket type within a ticket catalog. Keyed by slug.
+/// A ticket type within a ticket catalog. Keyed by server-generated ID.
 /// Combines ticket definition (name, time slots) with capacity tracking (max, used).
 /// </summary>
-public class TicketType : Entity<string>
+public class TicketType : Entity<TicketTypeId>
 {
     private TicketType() { }
 
     internal TicketType(
-        string slug,
+        TicketTypeId id,
         TicketTypeName name,
         TimeSlot[] timeSlots,
         int? maxCapacity,
         bool selfServiceEnabled = true)
-        : base(slug)
+        : base(id)
     {
         Name = name;
-        TimeSlotSlugs = timeSlots.Select(ts => ts.Slug).ToArray();
+        TimeSlots = timeSlots;
         MaxCapacity = maxCapacity;
         UsedCapacity = 0;
         IsCancelled = false;
@@ -30,8 +30,7 @@ public class TicketType : Entity<string>
     }
 
     public TicketTypeName Name { get; private set; }
-    public Slug[] TimeSlotSlugs { get; private set; } = [];
-    public TimeSlot[] TimeSlots => TimeSlotSlugs.Select(s => new TimeSlot(s)).ToArray();
+    public TimeSlot[] TimeSlots { get; private set; } = [];
     public int? MaxCapacity { get; private set; }
     public int UsedCapacity { get; private set; }
     public bool IsCancelled { get; private set; }
@@ -89,19 +88,19 @@ public class TicketType : Entity<string>
 
     internal static class Errors
     {
-        public static Error TicketTypeAlreadyCancelled(string slug) =>
+        public static Error TicketTypeAlreadyCancelled(TicketTypeId id) =>
             new("ticket_type.already_cancelled",
                 "The ticket type is already cancelled.",
-                Details: new Dictionary<string, object?> { ["slug"] = slug });
+                Details: new Dictionary<string, object?> { ["id"] = id.Value });
 
-        public static Error TicketTypeNotAvailable(string slug) =>
+        public static Error TicketTypeNotAvailable(TicketTypeId id) =>
             new("ticket_type.not_available",
                 "Ticket type is not available for self-service registration.",
-                Details: new Dictionary<string, object?> { ["slug"] = slug });
+                Details: new Dictionary<string, object?> { ["id"] = id.Value });
 
-        public static Error TicketTypeAtCapacity(string slug) =>
+        public static Error TicketTypeAtCapacity(TicketTypeId id) =>
             new("ticket_type.at_capacity",
                 "Ticket type is at full capacity.",
-                Details: new Dictionary<string, object?> { ["slug"] = slug });
+                Details: new Dictionary<string, object?> { ["id"] = id.Value });
     }
 }

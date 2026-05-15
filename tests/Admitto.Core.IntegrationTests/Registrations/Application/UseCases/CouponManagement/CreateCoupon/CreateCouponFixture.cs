@@ -9,8 +9,8 @@ internal sealed class CreateCouponFixture
     private bool _hasCancelledTicketType;
 
     public TicketedEventId EventId { get; } = TicketedEventId.New();
-    public string TicketTypeSlug { get; } = "general-admission";
-    public string CancelledTicketTypeSlug { get; } = "vip-pass";
+    public TicketTypeId TicketTypeId { get; } = TicketTypeId.From(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
+    public TicketTypeId CancelledTicketTypeId { get; } = TicketTypeId.From(new Guid("cccccccc-cccc-cccc-cccc-cccccccccccc"));
 
     private CreateCouponFixture()
     {
@@ -27,13 +27,13 @@ internal sealed class CreateCouponFixture
     {
         var catalog = TicketCatalog.Create(EventId);
         catalog.AddTicketType(
-            Slug.From(TicketTypeSlug), TicketTypeName.From("General Admission"), [], 100);
+            TicketTypeId, TicketTypeName.From("General Admission"), [], 100);
 
         if (_hasCancelledTicketType)
         {
             catalog.AddTicketType(
-                Slug.From(CancelledTicketTypeSlug), TicketTypeName.From("VIP Pass"), [], 50);
-            catalog.CancelTicketType(Slug.From(CancelledTicketTypeSlug));
+                CancelledTicketTypeId, TicketTypeName.From("VIP Pass"), [], 50);
+            catalog.CancelTicketType(CancelledTicketTypeId);
         }
 
         await environment.RegistrationsDatabase.SeedAsync(dbContext =>

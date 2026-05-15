@@ -8,14 +8,14 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 
 internal sealed class GetRegistrationDetailsFixture
 {
-    public const string TicketTypeSlug = "general-admission";
     public const string TicketTypeNameStr = "General Admission";
-    public const string VipSlug = "vip-pass";
     public const string VipName = "VIP Pass";
 
     public TicketedEventId EventId { get; } = TicketedEventId.New();
     public TicketedEventId OtherEventId { get; } = TicketedEventId.New();
     public TeamId TeamId { get; } = TeamId.New();
+    public TicketTypeId TicketTypeId { get; } = TicketTypeId.New();
+    public TicketTypeId VipId { get; } = TicketTypeId.New();
     public RegistrationId RegistrationId { get; private set; } = RegistrationId.New();
     public DateTimeOffset RegisteredAt { get; private set; }
     public DateTimeOffset ReconfirmedAt { get; private set; }
@@ -78,10 +78,10 @@ internal sealed class GetRegistrationDetailsFixture
         var tickets = _withMultipleTickets
             ? new[]
             {
-                new TicketTypeSnapshot(Slug.From(TicketTypeSlug), TicketTypeName.From(TicketTypeNameStr), []),
-                new TicketTypeSnapshot(Slug.From(VipSlug), TicketTypeName.From(VipName), []),
+                new TicketTypeSnapshot(TicketTypeId, TicketTypeName.From(TicketTypeNameStr), []),
+                new TicketTypeSnapshot(VipId, TicketTypeName.From(VipName), []),
             }
-            : new[] { new TicketTypeSnapshot(Slug.From(TicketTypeSlug), TicketTypeName.From(TicketTypeNameStr), []) };
+            : new[] { new TicketTypeSnapshot(TicketTypeId, TicketTypeName.From(TicketTypeNameStr), []) };
 
         AdditionalDetails? additionalDetails = null;
         if (_withAdditionalDetails)

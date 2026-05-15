@@ -23,7 +23,7 @@ public sealed class ActivityLogTests(TestContext testContext) : EndToEndTestBase
 
         var registerResponse = await Environment.ApiClient.PostAsJsonAsync(
             fixture.RegisterRoute,
-            new { FirstName = "Alice", LastName = "Doe", Email = "alice@example.com", TicketTypeSlugs = new[] { ActivityLogFixture.TicketTypeSlug } },
+            new { FirstName = "Alice", LastName = "Doe", Email = "alice@example.com", TicketTypeIds = new[] { ActivityLogFixture.TicketTypeId.Value } },
             cancellationToken: testContext.CancellationToken);
 
         registerResponse.StatusCode.ShouldBe(HttpStatusCode.Created);
@@ -52,7 +52,7 @@ public sealed class ActivityLogTests(TestContext testContext) : EndToEndTestBase
 
         var registerResponse = await Environment.ApiClient.PostAsJsonAsync(
             fixture.RegisterRoute,
-            new { FirstName = "Alice", LastName = "Doe", Email = "alice@example.com", TicketTypeSlugs = new[] { ActivityLogFixture.TicketTypeSlug } },
+            new { FirstName = "Alice", LastName = "Doe", Email = "alice@example.com", TicketTypeIds = new[] { ActivityLogFixture.TicketTypeId.Value } },
             cancellationToken: testContext.CancellationToken);
 
         registerResponse.StatusCode.ShouldBe(HttpStatusCode.Created);

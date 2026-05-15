@@ -9,14 +9,14 @@ using Microsoft.EntityFrameworkCore;
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypeManagement.AddTicketType;
 
 internal sealed class AddTicketTypeHandler(IRegistrationsWriteStore writeStore)
-    : ICommandHandler<AddTicketTypeCommand>
+    : ICommandHandler<AddTicketTypeCommand, Guid>
 {
-    public async ValueTask HandleAsync(
+    public async ValueTask<Guid> HandleAsync(
         AddTicketTypeCommand command,
         CancellationToken cancellationToken)
     {
         TicketedEventId eventId = TicketedEventId.From(command.EventId);
-        Slug slug = Slug.From(command.Slug);
+        TicketTypeId id = TicketTypeId.New();
         TicketTypeName name = TicketTypeName.From(command.Name);
 
         var catalog = await writeStore.TicketCatalogs
@@ -29,10 +29,12 @@ internal sealed class AddTicketTypeHandler(IRegistrationsWriteStore writeStore)
         }
 
         var timeSlots = command.TimeSlots
-            .Select(s => new TimeSlot(Slug.From(s)))
+            .Select(s => TimeSlot.From(s))
             .ToArray();
 
-        catalog.AddTicketType(slug, name, timeSlots, command.MaxCapacity, command.SelfServiceEnabled);
+        catalog.AddTicketType(id, name, timeSlots, command.MaxCapacity, command.SelfServiceEnabled);
+
+        return id.Value;
     }
 }
 

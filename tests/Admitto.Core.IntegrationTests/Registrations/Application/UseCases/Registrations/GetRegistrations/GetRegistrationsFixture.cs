@@ -7,14 +7,14 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 
 internal sealed class GetRegistrationsFixture
 {
-    public const string GeneralSlug = "general-admission";
     public const string GeneralName = "General Admission";
-    public const string VipSlug = "vip-pass";
     public const string VipName = "VIP Pass";
 
     public TicketedEventId EventId { get; } = TicketedEventId.New();
     public TicketedEventId OtherEventId { get; } = TicketedEventId.New();
     public TeamId TeamId { get; } = TeamId.New();
+    public TicketTypeId GeneralId { get; } = TicketTypeId.New();
+    public TicketTypeId VipId { get; } = TicketTypeId.New();
 
     private bool _seedRegistrations;
     private bool _seedMultiTicketRegistration;
@@ -53,8 +53,8 @@ internal sealed class GetRegistrationsFixture
             TimeZoneId.From("UTC"));
 
         var catalog = TicketCatalog.Create(EventId);
-        catalog.AddTicketType(Slug.From(GeneralSlug), TicketTypeName.From(GeneralName), [], 100);
-        catalog.AddTicketType(Slug.From(VipSlug), TicketTypeName.From(VipName), [], 25);
+        catalog.AddTicketType(GeneralId, TicketTypeName.From(GeneralName), [], 100);
+        catalog.AddTicketType(VipId, TicketTypeName.From(VipName), [], 25);
 
         await environment.RegistrationsDatabase.SeedAsync(db =>
         {
@@ -70,7 +70,7 @@ internal sealed class GetRegistrationsFixture
                 EmailAddress.From("alice@example.com"),
                 FirstName.From("Alice"),
                 LastName.From("Doe"),
-                [new TicketTypeSnapshot(Slug.From(GeneralSlug), TicketTypeName.From(GeneralSlug), [])]);
+                [new TicketTypeSnapshot(GeneralId, TicketTypeName.From(GeneralName), [])]);
 
             var bob = Registration.Create(
                 TeamId,
@@ -78,7 +78,7 @@ internal sealed class GetRegistrationsFixture
                 EmailAddress.From("bob@example.com"),
                 FirstName.From("Bob"),
                 LastName.From("Doe"),
-                [new TicketTypeSnapshot(Slug.From(GeneralSlug), TicketTypeName.From(GeneralSlug), [])]);
+                [new TicketTypeSnapshot(GeneralId, TicketTypeName.From(GeneralName), [])]);
 
             await environment.RegistrationsDatabase.SeedAsync(db =>
             {
@@ -96,8 +96,8 @@ internal sealed class GetRegistrationsFixture
                 FirstName.From("Carol"),
                 LastName.From("Doe"),
                 [
-                    new TicketTypeSnapshot(Slug.From(GeneralSlug), TicketTypeName.From(GeneralSlug), []),
-                    new TicketTypeSnapshot(Slug.From(VipSlug), TicketTypeName.From(VipSlug), []),
+                    new TicketTypeSnapshot(GeneralId, TicketTypeName.From(GeneralName), []),
+                    new TicketTypeSnapshot(VipId, TicketTypeName.From(VipName), []),
                 ]);
 
             await environment.RegistrationsDatabase.SeedAsync(db => db.Registrations.Add(multi));
@@ -115,8 +115,9 @@ internal sealed class GetRegistrationsFixture
                 DateTimeOffset.UtcNow.AddDays(31),
                 TimeZoneId.From("UTC"));
 
+            var otherGeneralId = TicketTypeId.New();
             var otherCatalog = TicketCatalog.Create(OtherEventId);
-            otherCatalog.AddTicketType(Slug.From(GeneralSlug), TicketTypeName.From(GeneralName), [], 100);
+            otherCatalog.AddTicketType(otherGeneralId, TicketTypeName.From(GeneralName), [], 100);
 
             var dave = Registration.Create(
                 TeamId,
@@ -124,7 +125,7 @@ internal sealed class GetRegistrationsFixture
                 EmailAddress.From("dave@example.com"),
                 FirstName.From("Dave"),
                 LastName.From("Doe"),
-                [new TicketTypeSnapshot(Slug.From(GeneralSlug), TicketTypeName.From(GeneralSlug), [])]);
+                [new TicketTypeSnapshot(otherGeneralId, TicketTypeName.From(GeneralName), [])]);
 
             await environment.RegistrationsDatabase.SeedAsync(db =>
             {

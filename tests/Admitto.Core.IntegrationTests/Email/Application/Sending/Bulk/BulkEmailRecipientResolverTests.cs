@@ -17,7 +17,7 @@ public sealed class BulkEmailRecipientResolverTests
         // Arrange
         var eventId = TicketedEventId.New();
         var filter = new QueryRegistrationsDto(
-            TicketTypeSlugs: ["regular"],
+            TicketTypeIds: [Guid.NewGuid()],
             RegistrationStatus: RegistrationStatus.Registered,
             HasReconfirmed: false);
 
@@ -28,7 +28,7 @@ public sealed class BulkEmailRecipientResolverTests
                 Email: "Alice@Example.com",
                 FirstName: "Alice",
                 LastName: "Smith",
-                TicketTypeSlugs: ["regular"],
+                TicketTypeIds: [Guid.NewGuid()],
                 AdditionalDetails: new Dictionary<string, string> { ["company"] = "Acme" },
                 Status: RegistrationStatus.Registered,
                 HasReconfirmed: false,
@@ -38,7 +38,7 @@ public sealed class BulkEmailRecipientResolverTests
                 Email: "bob@example.com",
                 FirstName: "Bob",
                 LastName: "",
-                TicketTypeSlugs: [],
+                TicketTypeIds: [],
                 AdditionalDetails: new Dictionary<string, string>(),
                 Status: RegistrationStatus.Registered,
                 HasReconfirmed: false,

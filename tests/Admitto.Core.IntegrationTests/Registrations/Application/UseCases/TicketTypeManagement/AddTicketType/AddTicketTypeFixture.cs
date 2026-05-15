@@ -41,7 +41,7 @@ internal sealed class AddTicketTypeFixture
             if (_seedExistingTicketType)
             {
                 catalog.AddTicketType(
-                    Slug.From("existing-type"),
+                    TicketTypeId.New(),
                     TicketTypeName.From("Existing Type"),
                     [],
                     100);

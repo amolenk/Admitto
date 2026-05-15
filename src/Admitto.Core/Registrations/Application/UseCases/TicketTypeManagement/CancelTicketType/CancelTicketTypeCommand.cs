@@ -4,4 +4,4 @@ namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypeMana
 
 internal sealed record CancelTicketTypeCommand(
     Guid EventId,
-    string Slug) : Command;
+    Guid TicketTypeId) : Command;

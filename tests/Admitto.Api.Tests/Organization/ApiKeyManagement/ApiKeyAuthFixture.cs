@@ -86,7 +86,7 @@ internal sealed class ApiKeyAuthFixture
                 EventId = primaryEvent.Id.Value;
                 var primaryCatalog = TicketCatalog.Create(primaryEvent.Id);
                 primaryCatalog.AddTicketType(
-                    Slug.From("general-admission"), TicketTypeName.From("General Admission"), [], 100);
+                    TicketTypeId.From(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")), TicketTypeName.From("General Admission"), [], 100);
                 db.TicketedEvents.Add(primaryEvent);
                 db.TicketCatalogs.Add(primaryCatalog);
 
@@ -96,7 +96,7 @@ internal sealed class ApiKeyAuthFixture
                     OtherEventId = otherEvent.Id.Value;
                     var otherCatalog = TicketCatalog.Create(otherEvent.Id);
                     otherCatalog.AddTicketType(
-                        Slug.From("general-admission"), TicketTypeName.From("General Admission"), [], 100);
+                        TicketTypeId.From(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")), TicketTypeName.From("General Admission"), [], 100);
                     db.TicketedEvents.Add(otherEvent);
                     db.TicketCatalogs.Add(otherCatalog);
                 }

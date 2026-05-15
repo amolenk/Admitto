@@ -8,7 +8,7 @@ internal sealed record RegisterAttendeeCommand(
     string Email,
     string FirstName,
     string LastName,
-    string[] TicketTypeSlugs,
+    Guid[] TicketTypeIds,
     RegistrationMode Mode,
     string? CouponCode = null,
     string? EmailVerificationToken = null,

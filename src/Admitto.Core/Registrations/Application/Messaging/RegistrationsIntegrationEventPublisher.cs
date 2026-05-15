@@ -27,7 +27,7 @@ internal sealed class RegistrationsIntegrationEventPublisher(
             domainEvent.RecipientEmail.Value,
             domainEvent.FirstName.Value,
             domainEvent.LastName.Value,
-            domainEvent.Tickets.Select(t => new TicketTypeItem(t.Slug.Value, t.Name.Value)).ToList()));
+            domainEvent.Tickets.Select(t => new TicketTypeItem(t.Id.Value, t.Name.Value)).ToList()));
 
         return ValueTask.CompletedTask;
     }
@@ -138,7 +138,7 @@ internal sealed class RegistrationsIntegrationEventPublisher(
             domainEvent.RecipientEmail.Value,
             domainEvent.FirstName.Value,
             domainEvent.LastName.Value,
-            domainEvent.NewTickets.Select(t => new TicketTypeItem(t.Slug.Value, t.Name.Value)).ToList(),
+            domainEvent.NewTickets.Select(t => new TicketTypeItem(t.Id.Value, t.Name.Value)).ToList(),
             domainEvent.ChangedAt));
 
         return ValueTask.CompletedTask;

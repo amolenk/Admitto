@@ -12,7 +12,7 @@ public sealed record RegistrationListItemDto(
     string Email,
     string FirstName,
     string LastName,
-    IReadOnlyCollection<string> TicketTypeSlugs,
+    IReadOnlyCollection<Guid> TicketTypeIds,
     IReadOnlyDictionary<string, string> AdditionalDetails,
     RegistrationStatus Status,
     bool HasReconfirmed,

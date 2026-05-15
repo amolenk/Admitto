@@ -8,6 +8,7 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 
 internal sealed class ChangeAttendeeTicketsFixture
 {
+    private readonly Dictionary<string, TicketTypeId> _ticketTypeIdsBySlug = new();
     private TicketedEvent? _ticketedEvent;
     private TicketCatalog? _catalog;
     private bool _preCancel;
@@ -15,6 +16,8 @@ internal sealed class ChangeAttendeeTicketsFixture
     public TicketedEventId EventId { get; } = TicketedEventId.New();
     public TeamId TeamId { get; } = TeamId.New();
     public RegistrationId RegistrationId { get; private set; } = RegistrationId.New();
+
+    public TicketTypeId GetTicketTypeId(string slug) => _ticketTypeIdsBySlug[slug];
 
     private ChangeAttendeeTicketsFixture() { }
 
@@ -64,13 +67,14 @@ internal sealed class ChangeAttendeeTicketsFixture
             if (_ticketedEvent is not null) dbContext.TicketedEvents.Add(_ticketedEvent);
             if (_catalog is not null) dbContext.TicketCatalogs.Add(_catalog);
 
+            var earlyBirdId = _ticketTypeIdsBySlug.TryGetValue("early-bird", out var id) ? id : TicketTypeId.New();
             var registration = Registration.Create(
                 TeamId,
                 EventId,
                 EmailAddress.From("alice@example.com"),
                 FirstName.From("Alice"),
                 LastName.From("Test"),
-                [new TicketTypeSnapshot(Slug.From("early-bird"), TicketTypeName.From("Early Bird"), [])]);
+                [new TicketTypeSnapshot(earlyBirdId, TicketTypeName.From("Early Bird"), [])]);
             RegistrationId = registration.Id;
             if (_preCancel) registration.Cancel(CancellationReason.AttendeeRequest);
             dbContext.Registrations.Add(registration);
@@ -94,8 +98,10 @@ internal sealed class ChangeAttendeeTicketsFixture
         var catalog = TicketCatalog.Create(EventId);
         foreach (var (slug, name, max, used) in ticketTypes)
         {
-            catalog.AddTicketType(Slug.From(slug), TicketTypeName.From(name), [], max);
-            for (var i = 0; i < used; i++) catalog.Claim([slug], enforce: false);
+            var id = TicketTypeId.New();
+            _ticketTypeIdsBySlug[slug] = id;
+            catalog.AddTicketType(id, TicketTypeName.From(name), [], max);
+            for (var i = 0; i < used; i++) catalog.Claim([id], enforce: false);
         }
         return catalog;
     }

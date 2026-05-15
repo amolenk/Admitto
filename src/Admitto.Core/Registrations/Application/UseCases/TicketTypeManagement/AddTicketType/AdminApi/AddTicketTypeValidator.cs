@@ -1,6 +1,5 @@
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Validation;
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using FluentValidation;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypeManagement.AddTicketType.AdminApi;
@@ -9,16 +8,13 @@ public sealed class AddTicketTypeValidator : AbstractValidator<AddTicketTypeHttp
 {
     public AddTicketTypeValidator()
     {
-        RuleFor(x => x.Slug)
-            .MustBeParseable(Slug.TryFrom);
-
         RuleFor(x => x.Name)
             .MustBeParseable(TicketTypeName.TryFrom);
 
         When(x => x.TimeSlots is not null, () =>
         {
             RuleForEach(x => x.TimeSlots!)
-                .MustBeParseable(Slug.TryFrom);
+                .MustBeParseable(TimeSlot.TryFrom);
         });
 
         When(x => x.MaxCapacity is not null, () =>

@@ -30,7 +30,7 @@ public static class AdminRegisterAttendeeHttpEndpoint
             request.Email,
             request.FirstName,
             request.LastName,
-            request.TicketTypeSlugs,
+            request.TicketTypeIds,
             RegistrationMode.AdminAdd,
             CouponCode: null,
             EmailVerificationToken: null,

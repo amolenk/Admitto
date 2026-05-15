@@ -44,7 +44,7 @@ public static class SelfRegisterAttendeeHttpEndpoint
             claims.Email.Value,
             request.FirstName,
             request.LastName,
-            request.TicketTypeSlugs,
+            request.TicketTypeIds,
             RegistrationMode.SelfService,
             CouponCode: null,
             EmailVerificationToken: bearerToken,

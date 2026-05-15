@@ -5,5 +5,5 @@ public sealed record RegisterWithCouponHttpRequest(
     string Email,
     string FirstName,
     string LastName,
-    string[] TicketTypeSlugs,
+    Guid[] TicketTypeIds,
     Dictionary<string, string>? AdditionalDetails = null);

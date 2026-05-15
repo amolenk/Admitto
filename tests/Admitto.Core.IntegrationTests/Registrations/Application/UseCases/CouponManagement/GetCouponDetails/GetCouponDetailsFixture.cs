@@ -9,7 +9,7 @@ internal sealed class GetCouponDetailsFixture
     private bool _seedCoupon;
 
     public TicketedEventId EventId { get; } = TicketedEventId.New();
-    public string TicketTypeSlug { get; } = "general-admission";
+    public TicketTypeId TicketTypeId { get; } = TicketTypeId.From(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
     public CouponId CouponId { get; private set; } = CouponId.New();
 
     private GetCouponDetailsFixture()
@@ -33,8 +33,8 @@ internal sealed class GetCouponDetailsFixture
         var coupon = new CouponBuilder()
             .WithEventId(EventId)
             .WithEmail(EmailAddress.From("speaker@example.com"))
-            .WithRequestedTicketTypeSlugs(TicketTypeSlug)
-            .WithAvailableTicketTypes(new TicketTypeInfo(TicketTypeSlug, IsCancelled: false))
+            .WithRequestedTicketTypeIds(TicketTypeId)
+            .WithAvailableTicketTypes(new TicketTypeInfo(TicketTypeId, IsCancelled: false))
             .WithExpiresAt(DateTimeOffset.UtcNow.AddDays(30))
             .WithBypassRegistrationWindow()
             .Build();

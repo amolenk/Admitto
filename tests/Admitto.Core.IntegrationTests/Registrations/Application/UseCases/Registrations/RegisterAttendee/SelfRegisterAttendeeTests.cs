@@ -22,7 +22,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var fixture = RegisterAttendeeFixture.OpenWindowWithCapacity(max: 100, used: 50);
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture, "dave@example.com", fixture.TicketTypeSlug);
+        var command = NewCommand(fixture, "dave@example.com", fixture.TicketTypeId.Value);
         var sut = NewHandler();
 
         var registrationId = await sut.HandleAsync(command, testContext.CancellationToken);
@@ -33,7 +33,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
             registration.ShouldNotBeNull();
             registration.Id.Value.ShouldBe(registrationId);
             registration.Email.Value.ShouldBe("dave@example.com");
-            registration.Tickets.ShouldHaveSingleItem().Slug.ShouldBe(Slug.From(fixture.TicketTypeSlug));
+            registration.Tickets.ShouldHaveSingleItem().Id.ShouldBe(fixture.TicketTypeId);
 
             var catalog = await dbContext.TicketCatalogs.SingleOrDefaultAsync(testContext.CancellationToken);
             catalog.ShouldNotBeNull();
@@ -48,7 +48,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var fixture = RegisterAttendeeFixture.CapacityFull();
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture, "dave@example.com", "workshop");
+        var command = NewCommand(fixture, "dave@example.com", fixture.GetTicketTypeId("workshop").Value);
         var sut = NewHandler();
 
         var result = await ErrorResult.CaptureAsync(
@@ -57,7 +57,6 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         result.Error.Code.ShouldBe("ticket_type.at_capacity");
     }
 
-    // SC003: Self-service rejected — ticket type has no capacity set
     // SC003: Self-service rejected — ticket type has self-service disabled
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_SelfServiceDisabled_ThrowsNotAvailableError()
@@ -65,7 +64,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var fixture = RegisterAttendeeFixture.NoCapacitySet();
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture, "dave@example.com", "speaker-pass");
+        var command = NewCommand(fixture, "dave@example.com", fixture.GetTicketTypeId("speaker-pass").Value);
         var sut = NewHandler();
 
         var result = await ErrorResult.CaptureAsync(
@@ -81,7 +80,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var fixture = RegisterAttendeeFixture.WindowNotYetOpen();
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture, "dave@example.com", "general-admission");
+        var command = NewCommand(fixture, "dave@example.com", fixture.GetTicketTypeId("general-admission").Value);
         var sut = NewHandler();
 
         var result = await ErrorResult.CaptureAsync(
@@ -97,7 +96,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var fixture = RegisterAttendeeFixture.WindowClosed();
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture, "dave@example.com", "general-admission");
+        var command = NewCommand(fixture, "dave@example.com", fixture.GetTicketTypeId("general-admission").Value);
         var sut = NewHandler();
 
         var result = await ErrorResult.CaptureAsync(
@@ -113,7 +112,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var fixture = RegisterAttendeeFixture.WithoutRegistrationPolicy();
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture, "dave@example.com", "general-admission");
+        var command = NewCommand(fixture, "dave@example.com", fixture.GetTicketTypeId("general-admission").Value);
         var sut = NewHandler();
 
         var result = await ErrorResult.CaptureAsync(
@@ -129,7 +128,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var fixture = RegisterAttendeeFixture.WithEmailDomainRestriction("@acme.com");
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture, "outsider@gmail.com", "general-admission");
+        var command = NewCommand(fixture, "outsider@gmail.com", fixture.GetTicketTypeId("general-admission").Value);
         var sut = NewHandler();
 
         var result = await ErrorResult.CaptureAsync(
@@ -145,7 +144,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var fixture = RegisterAttendeeFixture.WithEmailDomainRestriction("@acme.com");
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture, "employee@acme.com", "general-admission");
+        var command = NewCommand(fixture, "employee@acme.com", fixture.GetTicketTypeId("general-admission").Value);
         var sut = NewHandler();
 
         var registrationId = await sut.HandleAsync(command, testContext.CancellationToken);
@@ -166,7 +165,9 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var fixture = RegisterAttendeeFixture.WithMultipleTicketTypes();
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture, "dave@example.com", "general-admission", "workshop-a");
+        var command = NewCommand(fixture, "dave@example.com",
+            fixture.GetTicketTypeId("general-admission").Value,
+            fixture.GetTicketTypeId("workshop-a").Value);
         var sut = NewHandler();
 
         await sut.HandleAsync(command, testContext.CancellationToken);
@@ -179,8 +180,8 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
 
             var catalog = await dbContext.TicketCatalogs.SingleOrDefaultAsync(testContext.CancellationToken);
             catalog.ShouldNotBeNull();
-            catalog.TicketTypes.Single(tt => tt.Id == "general-admission").UsedCapacity.ShouldBe(1);
-            catalog.TicketTypes.Single(tt => tt.Id == "workshop-a").UsedCapacity.ShouldBe(1);
+            catalog.TicketTypes.Single(tt => tt.Id == fixture.GetTicketTypeId("general-admission")).UsedCapacity.ShouldBe(1);
+            catalog.TicketTypes.Single(tt => tt.Id == fixture.GetTicketTypeId("workshop-a")).UsedCapacity.ShouldBe(1);
         });
     }
 
@@ -192,7 +193,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         await fixture.SetupAsync(Environment);
 
         var command = NewCommand(fixture, "dave@example.com",
-            fixture.TicketTypeSlug, fixture.TicketTypeSlug);
+            fixture.TicketTypeId.Value, fixture.TicketTypeId.Value);
         var sut = NewHandler();
 
         var result = await ErrorResult.CaptureAsync(
@@ -208,7 +209,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var fixture = RegisterAttendeeFixture.OpenWindowWithCapacity();
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture, "dave@example.com", "premium-vip");
+        var command = NewCommand(fixture, "dave@example.com", Guid.NewGuid());
         var sut = NewHandler();
 
         var result = await ErrorResult.CaptureAsync(
@@ -224,7 +225,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var fixture = RegisterAttendeeFixture.WithCancelledTicketType();
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture, "dave@example.com", "workshop-a");
+        var command = NewCommand(fixture, "dave@example.com", fixture.GetTicketTypeId("workshop-a").Value);
         var sut = NewHandler();
 
         var result = await ErrorResult.CaptureAsync(
@@ -240,7 +241,9 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var fixture = RegisterAttendeeFixture.WithOverlappingTimeSlots();
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture, "dave@example.com", "workshop-a", "workshop-b");
+        var command = NewCommand(fixture, "dave@example.com",
+            fixture.GetTicketTypeId("workshop-a").Value,
+            fixture.GetTicketTypeId("workshop-b").Value);
         var sut = NewHandler();
 
         var result = await ErrorResult.CaptureAsync(
@@ -256,7 +259,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var fixture = RegisterAttendeeFixture.EventCancelled();
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture, "dave@example.com", "general-admission");
+        var command = NewCommand(fixture, "dave@example.com", fixture.GetTicketTypeId("general-admission").Value);
         var sut = NewHandler();
 
         var result = await ErrorResult.CaptureAsync(
@@ -272,7 +275,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var fixture = RegisterAttendeeFixture.EventArchived();
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture, "dave@example.com", "general-admission");
+        var command = NewCommand(fixture, "dave@example.com", fixture.GetTicketTypeId("general-admission").Value);
         var sut = NewHandler();
 
         var result = await ErrorResult.CaptureAsync(
@@ -288,7 +291,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var fixture = RegisterAttendeeFixture.ConcurrentCancelDetectedAtClaim();
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture, "dave@example.com", "general-admission");
+        var command = NewCommand(fixture, "dave@example.com", fixture.GetTicketTypeId("general-admission").Value);
         var sut = NewHandler();
 
         var result = await ErrorResult.CaptureAsync(
@@ -311,7 +314,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var fixture = RegisterAttendeeFixture.WithExistingRegistration();
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture, "alice@example.com", fixture.TicketTypeSlug);
+        var command = NewCommand(fixture, "alice@example.com", fixture.TicketTypeId.Value);
         var sut = NewHandler();
 
         var result = await ErrorResult.CaptureAsync(
@@ -334,7 +337,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var command = NewCommand(
             fixture,
             "alice@example.com",
-            [fixture.TicketTypeSlug],
+            [fixture.TicketTypeId.Value],
             new Dictionary<string, string> { ["tshirt"] = "M" });
         var sut = NewHandler();
 
@@ -352,12 +355,12 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
             registration.CancellationReason.ShouldBeNull();
             registration.HasReconfirmed.ShouldBeFalse();
             registration.ReconfirmedAt.ShouldBeNull();
-            registration.Tickets.ShouldHaveSingleItem().Slug.ShouldBe(Slug.From(fixture.TicketTypeSlug));
+            registration.Tickets.ShouldHaveSingleItem().Id.ShouldBe(fixture.TicketTypeId);
             registration.AdditionalDetails["tshirt"].ShouldBe("M");
             AssertAttendeeRegisteredEvent(registration);
 
             var catalog = await dbContext.TicketCatalogs.SingleAsync(testContext.CancellationToken);
-            catalog.TicketTypes.Single(tt => tt.Id == fixture.TicketTypeSlug).UsedCapacity.ShouldBe(1);
+            catalog.TicketTypes.Single(tt => tt.Id == fixture.TicketTypeId).UsedCapacity.ShouldBe(1);
         });
     }
 
@@ -370,7 +373,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
             .WithCancelledExistingRegistration(email: "alice@example.com");
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture, "alice@example.com", "general-admission");
+        var command = NewCommand(fixture, "alice@example.com", fixture.GetTicketTypeId("general-admission").Value);
         var sut = NewHandler();
 
         var result = await ErrorResult.CaptureAsync(
@@ -385,7 +388,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
             registration.CancellationReason.ShouldBe(CancellationReason.AttendeeRequest);
 
             var catalog = await dbContext.TicketCatalogs.SingleAsync(testContext.CancellationToken);
-            catalog.TicketTypes.Single(tt => tt.Id == "general-admission").UsedCapacity.ShouldBe(0);
+            catalog.TicketTypes.Single(tt => tt.Id == fixture.GetTicketTypeId("general-admission")).UsedCapacity.ShouldBe(0);
         });
     }
 
@@ -396,7 +399,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var fixture = RegisterAttendeeFixture.OpenWindowWithCapacity();
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture, "dave@example.com", new[] { fixture.TicketTypeSlug }, token: null);
+        var command = NewCommand(fixture, "dave@example.com", new[] { fixture.TicketTypeId.Value }, token: null);
         var sut = NewHandler();
 
         var result = await ErrorResult.CaptureAsync(
@@ -412,7 +415,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var fixture = RegisterAttendeeFixture.OpenWindowWithCapacity();
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture, "dave@example.com", new[] { fixture.TicketTypeSlug }, token: "WRONG");
+        var command = NewCommand(fixture, "dave@example.com", new[] { fixture.TicketTypeId.Value }, token: "WRONG");
         var sut = NewHandler();
 
         var result = await ErrorResult.CaptureAsync(
@@ -425,13 +428,12 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_VerificationFailsBeforeEventLookup()
     {
-        // No event seeded.
         var command = new RegisterAttendeeCommand(
             TicketedEventId.New().Value,
             "dave@example.com",
             "Dave",
             "Doe",
-            ["general-admission"],
+            [Guid.NewGuid()],
             RegistrationMode.SelfService,
             CouponCode: null,
             EmailVerificationToken: null);
@@ -440,7 +442,6 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        // Verification error wins over event_not_found.
         result.Error.Code.ShouldBe("email.verification_required");
     }
 
@@ -449,20 +450,20 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
     private static RegisterAttendeeCommand NewCommand(
         RegisterAttendeeFixture fixture,
         string email,
-        params string[] ticketTypeSlugs)
-        => NewCommand(fixture, email, ticketTypeSlugs, StubEmailVerificationTokenValidator.ValidTokenFor(email));
+        params Guid[] ticketTypeIds)
+        => NewCommand(fixture, email, ticketTypeIds, StubEmailVerificationTokenValidator.ValidTokenFor(email));
 
     private static RegisterAttendeeCommand NewCommand(
         RegisterAttendeeFixture fixture,
         string email,
-        string[] ticketTypeSlugs,
+        Guid[] ticketTypeIds,
         string? token)
         => new(
             fixture.EventId.Value,
             email,
             "Test",
             "User",
-            ticketTypeSlugs,
+            ticketTypeIds,
             RegistrationMode.SelfService,
             CouponCode: null,
             EmailVerificationToken: token);
@@ -470,14 +471,14 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
     private static RegisterAttendeeCommand NewCommand(
         RegisterAttendeeFixture fixture,
         string email,
-        string[] ticketTypeSlugs,
+        Guid[] ticketTypeIds,
         IReadOnlyDictionary<string, string>? additionalDetails)
         => new(
             fixture.EventId.Value,
             email,
             "Test",
             "User",
-            ticketTypeSlugs,
+            ticketTypeIds,
             RegistrationMode.SelfService,
             CouponCode: null,
             EmailVerificationToken: StubEmailVerificationTokenValidator.ValidTokenFor(email),

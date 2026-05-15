@@ -21,7 +21,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         var fixture = RegisterAttendeeFixture.OpenWindowWithCapacity(max: 5, used: 5);
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture, "speaker@example.com", fixture.TicketTypeSlug);
+        var command = NewCommand(fixture, "speaker@example.com", fixture.TicketTypeId.Value);
         var sut = NewHandler();
 
         var registrationId = await sut.HandleAsync(command, testContext.CancellationToken);
@@ -32,7 +32,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
             registration.ShouldNotBeNull();
             registration.Id.Value.ShouldBe(registrationId);
             registration.Email.Value.ShouldBe("speaker@example.com");
-            registration.Tickets.ShouldHaveSingleItem().Slug.ShouldBe(Slug.From(fixture.TicketTypeSlug));
+            registration.Tickets.ShouldHaveSingleItem().Id.ShouldBe(fixture.TicketTypeId);
 
             var catalog = await dbContext.TicketCatalogs.SingleOrDefaultAsync(testContext.CancellationToken);
             catalog.ShouldNotBeNull();
@@ -47,7 +47,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         var fixture = RegisterAttendeeFixture.WindowNotYetOpen();
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture, "speaker@example.com", "general-admission");
+        var command = NewCommand(fixture, "speaker@example.com", fixture.GetTicketTypeId("general-admission").Value);
         var sut = NewHandler();
 
         await sut.HandleAsync(command, testContext.CancellationToken);
@@ -62,7 +62,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         var fixture = RegisterAttendeeFixture.WindowClosed();
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture, "speaker@example.com", "general-admission");
+        var command = NewCommand(fixture, "speaker@example.com", fixture.GetTicketTypeId("general-admission").Value);
         var sut = NewHandler();
 
         await sut.HandleAsync(command, testContext.CancellationToken);
@@ -77,7 +77,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         var fixture = RegisterAttendeeFixture.WithoutRegistrationPolicy();
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture, "speaker@example.com", "general-admission");
+        var command = NewCommand(fixture, "speaker@example.com", fixture.GetTicketTypeId("general-admission").Value);
         var sut = NewHandler();
 
         await sut.HandleAsync(command, testContext.CancellationToken);
@@ -92,7 +92,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         var fixture = RegisterAttendeeFixture.WithEmailDomainRestriction("@acme.com");
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture, "external@gmail.com", "general-admission");
+        var command = NewCommand(fixture, "external@gmail.com", fixture.GetTicketTypeId("general-admission").Value);
         var sut = NewHandler();
 
         await sut.HandleAsync(command, testContext.CancellationToken);
@@ -107,7 +107,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         var fixture = RegisterAttendeeFixture.CapacityFull();
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture, "speaker@example.com", "workshop");
+        var command = NewCommand(fixture, "speaker@example.com", fixture.GetTicketTypeId("workshop").Value);
         var sut = NewHandler();
 
         await sut.HandleAsync(command, testContext.CancellationToken);
@@ -127,7 +127,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         var fixture = RegisterAttendeeFixture.NoCapacitySet();
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture, "speaker@example.com", "speaker-pass");
+        var command = NewCommand(fixture, "speaker@example.com", fixture.GetTicketTypeId("speaker-pass").Value);
         var sut = NewHandler();
 
         await sut.HandleAsync(command, testContext.CancellationToken);
@@ -142,7 +142,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         var fixture = RegisterAttendeeFixture.EventCancelled();
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture, "speaker@example.com", "general-admission");
+        var command = NewCommand(fixture, "speaker@example.com", fixture.GetTicketTypeId("general-admission").Value);
         var sut = NewHandler();
 
         var result = await ErrorResult.CaptureAsync(
@@ -158,7 +158,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         var fixture = RegisterAttendeeFixture.EventArchived();
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture, "speaker@example.com", "general-admission");
+        var command = NewCommand(fixture, "speaker@example.com", fixture.GetTicketTypeId("general-admission").Value);
         var sut = NewHandler();
 
         var result = await ErrorResult.CaptureAsync(
@@ -174,7 +174,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         var fixture = RegisterAttendeeFixture.EventNotFound();
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture, "speaker@example.com", "general-admission");
+        var command = NewCommand(fixture, "speaker@example.com", Guid.NewGuid());
         var sut = NewHandler();
 
         var result = await ErrorResult.CaptureAsync(
@@ -190,7 +190,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         var fixture = RegisterAttendeeFixture.EventWithoutTicketCatalog();
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture, "speaker@example.com", "general-admission");
+        var command = NewCommand(fixture, "speaker@example.com", Guid.NewGuid());
         var sut = NewHandler();
 
         var result = await ErrorResult.CaptureAsync(
@@ -206,7 +206,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         var fixture = RegisterAttendeeFixture.WithExistingRegistration();
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture, "alice@example.com", fixture.TicketTypeSlug);
+        var command = NewCommand(fixture, "alice@example.com", fixture.TicketTypeId.Value);
         var sut = NewHandler();
 
         var result = await ErrorResult.CaptureAsync(
@@ -230,7 +230,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         var command = NewCommand(
             fixture,
             "alice@example.com",
-            [fixture.TicketTypeSlug],
+            [fixture.TicketTypeId.Value],
             new Dictionary<string, string> { ["meal"] = "vegan" });
         var sut = NewHandler();
 
@@ -248,12 +248,12 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
             registration.CancellationReason.ShouldBeNull();
             registration.HasReconfirmed.ShouldBeFalse();
             registration.ReconfirmedAt.ShouldBeNull();
-            registration.Tickets.ShouldHaveSingleItem().Slug.ShouldBe(Slug.From(fixture.TicketTypeSlug));
+            registration.Tickets.ShouldHaveSingleItem().Id.ShouldBe(fixture.TicketTypeId);
             registration.AdditionalDetails["meal"].ShouldBe("vegan");
             AssertAttendeeRegisteredEvent(registration);
 
             var catalog = await dbContext.TicketCatalogs.SingleAsync(testContext.CancellationToken);
-            catalog.TicketTypes.Single(tt => tt.Id == fixture.TicketTypeSlug).UsedCapacity.ShouldBe(6);
+            catalog.TicketTypes.Single(tt => tt.Id == fixture.TicketTypeId).UsedCapacity.ShouldBe(6);
         });
     }
 
@@ -265,7 +265,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         await fixture.SetupAsync(Environment);
 
         var command = NewCommand(fixture, "speaker@example.com",
-            fixture.TicketTypeSlug, fixture.TicketTypeSlug);
+            fixture.TicketTypeId.Value, fixture.TicketTypeId.Value);
         var sut = NewHandler();
 
         var result = await ErrorResult.CaptureAsync(
@@ -281,7 +281,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         var fixture = RegisterAttendeeFixture.OpenWindowWithCapacity();
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture, "speaker@example.com", "premium-vip");
+        var command = NewCommand(fixture, "speaker@example.com", Guid.NewGuid());
         var sut = NewHandler();
 
         var result = await ErrorResult.CaptureAsync(
@@ -297,7 +297,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         var fixture = RegisterAttendeeFixture.WithCancelledTicketType();
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture, "speaker@example.com", "workshop-a");
+        var command = NewCommand(fixture, "speaker@example.com", fixture.GetTicketTypeId("workshop-a").Value);
         var sut = NewHandler();
 
         var result = await ErrorResult.CaptureAsync(
@@ -313,7 +313,8 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         var fixture = RegisterAttendeeFixture.WithOverlappingTimeSlots();
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture, "speaker@example.com", "workshop-a", "workshop-b");
+        var command = NewCommand(fixture, "speaker@example.com",
+            fixture.GetTicketTypeId("workshop-a").Value, fixture.GetTicketTypeId("workshop-b").Value);
         var sut = NewHandler();
 
         var result = await ErrorResult.CaptureAsync(
@@ -333,7 +334,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         var command = NewCommand(
             fixture,
             "speaker@example.com",
-            new[] { "general-admission" },
+            [fixture.GetTicketTypeId("general-admission").Value],
             new Dictionary<string, string> { ["shoesize"] = "44" });
         var sut = NewHandler();
 
@@ -354,7 +355,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         var command = NewCommand(
             fixture,
             "speaker@example.com",
-            new[] { "general-admission" },
+            [fixture.GetTicketTypeId("general-admission").Value],
             new Dictionary<string, string> { ["tshirt"] = "XXXXL-extra-long" });
         var sut = NewHandler();
 
@@ -371,7 +372,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         var fixture = RegisterAttendeeFixture.ConcurrentCancelDetectedAtClaim();
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture, "speaker@example.com", "general-admission");
+        var command = NewCommand(fixture, "speaker@example.com", fixture.GetTicketTypeId("general-admission").Value);
         var sut = NewHandler();
 
         var result = await ErrorResult.CaptureAsync(
@@ -394,8 +395,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         var fixture = RegisterAttendeeFixture.OpenWindowWithCapacity();
         await fixture.SetupAsync(Environment);
 
-        // Token deliberately omitted; admin mode must not invoke the verifier.
-        var command = NewCommand(fixture, "speaker@example.com", fixture.TicketTypeSlug);
+        var command = NewCommand(fixture, "speaker@example.com", fixture.TicketTypeId.Value);
         var sut = NewHandler();
 
         await sut.HandleAsync(command, testContext.CancellationToken);
@@ -418,26 +418,26 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
     private static RegisterAttendeeCommand NewCommand(
         RegisterAttendeeFixture fixture,
         string email,
-        params string[] ticketTypeSlugs)
+        params Guid[] ticketTypeIds)
         => new(
             fixture.EventId.Value,
             email,
             "Test",
             "User",
-            ticketTypeSlugs,
+            ticketTypeIds,
             RegistrationMode.AdminAdd);
 
     private static RegisterAttendeeCommand NewCommand(
         RegisterAttendeeFixture fixture,
         string email,
-        string[] ticketTypeSlugs,
+        Guid[] ticketTypeIds,
         IReadOnlyDictionary<string, string>? additionalDetails)
         => new(
             fixture.EventId.Value,
             email,
             "Test",
             "User",
-            ticketTypeSlugs,
+            ticketTypeIds,
             RegistrationMode.AdminAdd,
             CouponCode: null,
             EmailVerificationToken: null,

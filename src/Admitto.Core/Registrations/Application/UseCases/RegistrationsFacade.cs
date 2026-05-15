@@ -33,14 +33,14 @@ internal sealed class RegistrationsFacade(
             cancellationToken);
 
         // No TeamId guard — event existence is assumed by cross-module callers.
-        // Map to Contracts DTO (slugs only; names are available but not part of the contract).
+        // Map to Contracts DTO (IDs only; names are available but not part of the contract).
         return (result ?? [])
             .Select(r => new RegistrationListItemDto(
                 r.Id,
                 r.Email,
                 r.FirstName,
                 r.LastName,
-                r.Tickets.Select(t => t.Slug).ToArray(),
+                r.Tickets.Select(t => t.Id).ToArray(),
                 r.AdditionalDetails,
                 r.Status,
                 r.HasReconfirmed,

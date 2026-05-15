@@ -52,10 +52,10 @@ public class CouponEntityConfiguration : IEntityTypeConfiguration<Coupon>
         builder.Property(e => e.RevokedAt)
             .HasColumnName("revoked_at");
 
-        builder.PrimitiveCollection(e => e.AllowedTicketTypeSlugs)
-            .HasColumnName("allowed_ticket_type_slugs")
+        builder.PrimitiveCollection(e => e.AllowedTicketTypeIds)
+            .HasColumnName("allowed_ticket_type_ids")
             .IsRequired()
-            .HasMaxLength(Slug.MaxLength);
+            .ElementType(et => et.HasConversion<TicketTypeId.EfCoreValueConverter>());
 
         builder.HasIndex(e => e.EventId);
     }

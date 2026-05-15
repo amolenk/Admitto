@@ -10,7 +10,7 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.GetRegistrationDetail;
 
 internal sealed class GetRegistrationDetailFixture
 {
-    public const string TicketTypeSlug = "general-admission";
+    public static readonly TicketTypeId TicketTypeId = TicketTypeId.From(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
 
     public Guid TeamId { get; private set; }
     public Guid EventId { get; private set; }
@@ -50,7 +50,7 @@ internal sealed class GetRegistrationDetailFixture
             EmailAddress.From("alice@example.com"),
             FirstName.From("Alice"),
             LastName.From("Doe"),
-            [new TicketTypeSnapshot(Slug.From(TicketTypeSlug), TicketTypeName.From("General Admission"), [])]);
+            [new TicketTypeSnapshot(TicketTypeId, TicketTypeName.From("General Admission"), [])]);
         RegistrationId = registration.Id;
 
         await environment.OrganizationDatabase.SeedAsync(db => db.Teams.Add(team));

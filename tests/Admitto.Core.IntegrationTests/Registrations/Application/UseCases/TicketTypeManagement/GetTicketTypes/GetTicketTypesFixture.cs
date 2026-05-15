@@ -9,6 +9,8 @@ internal sealed class GetTicketTypesFixture
     private bool _seedCatalog;
 
     public TicketedEventId EventId { get; } = TicketedEventId.New();
+    public TicketTypeId GeneralAdmissionId { get; } = TicketTypeId.New();
+    public TicketTypeId VipPassId { get; } = TicketTypeId.New();
 
     private GetTicketTypesFixture()
     {
@@ -30,16 +32,16 @@ internal sealed class GetTicketTypesFixture
         {
             var catalog = TicketCatalog.Create(EventId);
             catalog.AddTicketType(
-                Slug.From("general-admission"),
+                GeneralAdmissionId,
                 TicketTypeName.From("General Admission"),
-                [new TimeSlot(Slug.From("morning"))],
+                [TimeSlot.From("morning")],
                 100);
             catalog.AddTicketType(
-                Slug.From("vip-pass"),
+                VipPassId,
                 TicketTypeName.From("VIP Pass"),
                 [],
                 50);
-            catalog.CancelTicketType(Slug.From("vip-pass"));
+            catalog.CancelTicketType(VipPassId);
 
             dbContext.TicketCatalogs.Add(catalog);
         });
