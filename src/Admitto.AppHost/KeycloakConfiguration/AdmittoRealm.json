@@ -1150,7 +1150,24 @@
         "organization",
         "microprofile-jwt"
       ],
-      "secret": "admitto-ui-dev-secret"
+      "secret": "admitto-ui-dev-secret",
+      "protocolMappers": [
+        {
+          "id": "a3f8c2d1-5b7e-4a9f-8c3d-2e1f0a4b6c8d",
+          "name": "audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "admitto-api",
+            "id.token.claim": "false",
+            "lightweight.claim": "false",
+            "introspection.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "false"
+          }
+        }
+      ]
     },
     {
       "id": "1b04869e-7c96-47ca-8c48-eea45e708709",
