@@ -4,4 +4,4 @@ namespace Amolenk.Admitto.Core.Organization.Application.UseCases.TeamManagement.
 
 internal sealed record CreateTeamCommand(
     string Name)
-    : Command;
+    : Command<Guid>;

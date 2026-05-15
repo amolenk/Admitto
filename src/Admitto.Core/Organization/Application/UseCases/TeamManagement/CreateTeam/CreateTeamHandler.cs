@@ -8,9 +8,9 @@ using Vogen;
 namespace Amolenk.Admitto.Core.Organization.Application.UseCases.TeamManagement.CreateTeam;
 
 internal sealed class CreateTeamHandler(IOrganizationWriteStore writeStore)
-    : ICommandHandler<CreateTeamCommand>
+    : ICommandHandler<CreateTeamCommand, Guid>
 {
-    public async ValueTask HandleAsync(CreateTeamCommand command, CancellationToken cancellationToken)
+    public async ValueTask<Guid> HandleAsync(CreateTeamCommand command, CancellationToken cancellationToken)
     {
         TeamName name;
         try
@@ -25,5 +25,7 @@ internal sealed class CreateTeamHandler(IOrganizationWriteStore writeStore)
         var team = Team.Create(name);
 
         await writeStore.Teams.AddAsync(team, cancellationToken);
+
+        return team.Id.Value;
     }
 }

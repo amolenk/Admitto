@@ -15,7 +15,7 @@ public static class CreateTeamHttpEndpoint
         return group;
     }
 
-    private static async ValueTask<Ok> CreateTeam(
+    private static async ValueTask<Ok<CreateTeamHttpResponse>> CreateTeam(
         CreateTeamHttpRequest request,
         CreateTeamHandler handler,
         [FromKeyedServices(OrganizationModule.Key)]
@@ -24,10 +24,10 @@ public static class CreateTeamHttpEndpoint
     {
         var command = request.ToCommand();
 
-        await handler.HandleAsync(command, cancellationToken);
+        var teamId = await handler.HandleAsync(command, cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return TypedResults.Ok();
+        return TypedResults.Ok(new CreateTeamHttpResponse(teamId));
     }
 }

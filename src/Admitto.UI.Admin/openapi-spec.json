@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:15000/"
+      "url": "http://localhost:60567/"
     }
   ],
   "paths": {
@@ -2678,7 +2678,14 @@
             }
           },
           "200": {
-            "description": "OK"
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CreateTeamHttpResponse"
+                }
+              }
+            }
           }
         }
       },
@@ -7847,6 +7854,18 @@
           }
         }
       },
+      "CreateTeamHttpResponse": {
+        "required": [
+          "teamId"
+        ],
+        "type": "object",
+        "properties": {
+          "teamId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
+      },
       "EmailAddress": { },
       "EmailAuthMode": {
         "enum": [
@@ -9285,8 +9304,8 @@
         "type": "oauth2",
         "flows": {
           "authorizationCode": {
-            "authorizationUrl": "http://localhost:15001/realms/admitto/protocol/openid-connect/auth",
-            "tokenUrl": "http://localhost:15001/realms/admitto/protocol/openid-connect/token",
+            "authorizationUrl": "http://localhost:60576/realms/admitto/protocol/openid-connect/auth",
+            "tokenUrl": "http://localhost:60576/realms/admitto/protocol/openid-connect/token",
             "scopes": {
               "openid": "OpenID Connect",
               "profile": "User profile",
