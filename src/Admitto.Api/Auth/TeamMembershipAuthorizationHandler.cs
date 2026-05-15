@@ -21,6 +21,9 @@ public class TeamMembershipAuthorizationHandler(
         AuthorizationHandlerContext context,
         TeamMembershipAuthorizationRequirement requirement)
     {
+        if (context.User.Identity?.IsAuthenticated != true)
+            return;
+
         var userId = userContextAccessor.Current.UserId;
 
         // If the user is an administrator, they automatically satisfy the requirement.
