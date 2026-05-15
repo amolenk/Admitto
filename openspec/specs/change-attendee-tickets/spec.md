@@ -14,29 +14,29 @@ The handler SHALL:
 1. Load the `Registration` and verify its `Status` is `Registered`; a `Cancelled` registration SHALL be rejected with reason "registration is cancelled".
 2. Load the `TicketedEvent` and verify `Status` is `Active`; otherwise reject with "event not active".
 3. Load the `TicketCatalog` and validate the new ticket selection using the same rules as admin-add: no duplicates, no unknown ticket types, no cancelled ticket types, no overlapping time slots.
-4. Compute the capacity delta: `toRelease` = current slugs ∖ new slugs; `toClaim` = new slugs ∖ current slugs.
+4. Compute the capacity delta: `toRelease` = current ids ∖ new ids; `toClaim` = new ids ∖ current ids.
 5. Call `catalog.Release(toRelease)` to free capacity for removed tickets.
 6. Call `catalog.Claim(toClaim, enforce: false)` to record capacity for added tickets (unenforced, matching admin-add behaviour).
 7. Call `registration.ChangeTickets(newTickets)` to update the snapshot and raise a `TicketsChangedDomainEvent`.
 
-The `TicketsChangedDomainEvent` SHALL carry: `teamId`, `ticketedEventId`, `registrationId`, `recipientEmail`, `firstName`, `lastName`, `oldTickets` (list of `{slug, name}`), `newTickets` (list of `{slug, name}`), and `changedAt`.
+The `TicketsChangedDomainEvent` SHALL carry: `teamId`, `ticketedEventId`, `registrationId`, `recipientEmail`, `firstName`, `lastName`, `oldTickets` (list of `{id, name}`), `newTickets` (list of `{id, name}`), and `changedAt`.
 
 #### Scenario: SC001 Admin successfully changes tickets on an active registration
 
 - **GIVEN** a registration with status `Registered` holding ticket "Early Bird" on event "DevConf" (Status Active), with ticket catalog having "Early Bird" (50/100 used) and "Workshop" (10/20 used)
-- **WHEN** an admin changes the tickets to ["Workshop"]
+- **WHEN** an admin changes the tickets to [id of "Workshop"]
 - **THEN** the registration's ticket snapshot is updated to ["Workshop"], "Early Bird" `UsedCapacity` decreases to 49, "Workshop" `UsedCapacity` increases to 11, and a `TicketsChangedDomainEvent` is raised
 
 #### Scenario: SC002 Sold-out event does not block changing already-held tickets
 
 - **GIVEN** a registration holding "General Admission" (UsedCapacity 100/100 — sold out) on a fully sold-out event
-- **WHEN** an admin changes the tickets from ["General Admission"] to ["General Admission", "Workshop"] where "Workshop" has capacity 1/1 used
+- **WHEN** an admin changes the tickets from [id of "General Admission"] to [id of "General Admission", id of "Workshop"] where "Workshop" has capacity 1/1 used
 - **THEN** the change is applied; "Workshop" UsedCapacity becomes 2 (unenforced admin claim)
 
 #### Scenario: SC003 Changing to identical set is a no-op success
 
-- **GIVEN** a registration holding ["Early Bird"]
-- **WHEN** an admin submits the same selection ["Early Bird"]
+- **GIVEN** a registration holding [id of "Early Bird"]
+- **WHEN** an admin submits the same selection [id of "Early Bird"]
 - **THEN** the registration is unchanged, no capacity delta occurs, a `TicketsChangedDomainEvent` is still raised (to allow timeline/email), and the endpoint returns 200
 
 #### Scenario: SC004 Rejected — registration is cancelled
@@ -53,17 +53,17 @@ The `TicketsChangedDomainEvent` SHALL carry: `teamId`, `ticketedEventId`, `regis
 
 #### Scenario: SC006 Rejected — duplicate ticket types in new selection
 
-- **WHEN** an admin submits a new selection containing "Workshop" twice
+- **WHEN** an admin submits a new selection containing the id of "Workshop" twice
 - **THEN** the request is rejected with reason "duplicate ticket types"
 
 #### Scenario: SC007 Rejected — unknown ticket type in new selection
 
-- **WHEN** an admin submits a selection containing a slug that does not exist in the event's ticket catalog
+- **WHEN** an admin submits a selection containing an id that does not exist in the event's ticket catalog
 - **THEN** the request is rejected with reason "unknown ticket types"
 
 #### Scenario: SC008 Rejected — cancelled ticket type in new selection
 
-- **WHEN** an admin submits a selection that includes a ticket type whose status is Cancelled
+- **WHEN** an admin submits a selection that includes the id of a ticket type whose status is Cancelled
 - **THEN** the request is rejected with reason "cancelled ticket types"
 
 #### Scenario: SC009 Rejected — overlapping time slots in new selection
@@ -104,14 +104,14 @@ The email SHALL be sent with the same `ticket_types` parameter used by the initi
 
 The system SHALL expose `PUT /admin/teams/{teamSlug}/events/{eventSlug}/registrations/{registrationId}/tickets`, restricted to authenticated members of the team.
 
-The request body SHALL carry: `ticketTypeSlugs` (non-empty array of strings), `version` (integer — the registration's optimistic concurrency token).
+The request body SHALL carry: `ticketTypeIds` (non-empty array of GUIDs), `version` (integer — the registration's optimistic concurrency token).
 
 The response SHALL return 200 on success.
 
 #### Scenario: SC013 Authenticated organizer can change tickets
 
 - **GIVEN** a user is a member of the team with the Organizer role
-- **WHEN** they call the endpoint with a valid new selection
+- **WHEN** they call the endpoint with a valid new selection of ticket type IDs
 - **THEN** the system returns 200
 
 #### Scenario: SC014 Non-member of the team is forbidden

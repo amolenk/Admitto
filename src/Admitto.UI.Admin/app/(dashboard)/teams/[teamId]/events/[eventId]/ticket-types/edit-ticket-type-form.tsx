@@ -48,7 +48,7 @@ export function EditTicketTypeForm({
 
     async function onSubmit(values: EditValues) {
         await apiClient.put(
-            `/api/teams/${teamId}/events/${eventId}/ticket-types/${ticketType.slug}`,
+            `/api/teams/${teamId}/events/${eventId}/ticket-types/${ticketType.id}`,
             {
                 name: values.name,
                 selfServiceEnabled: values.selfServiceEnabled,
@@ -69,10 +69,6 @@ export function EditTicketTypeForm({
                         <AlertDescription>{form.generalError.detail}</AlertDescription>
                     </Alert>
                 )}
-                <div className="space-y-2">
-                    <label className="text-sm font-medium leading-none">Slug</label>
-                    <Input value={ticketType.slug} disabled className="bg-muted" />
-                </div>
                 <FormField
                     control={form.control}
                     name="name"

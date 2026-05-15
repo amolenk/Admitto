@@ -51,7 +51,7 @@ interface ActivityLogEntryDto {
 }
 
 interface TicketDetailDto {
-    slug: string;
+    id: string;
     name: string;
 }
 
@@ -239,7 +239,7 @@ export default function AttendeeDetailPage() {
     const [isCancelling, setIsCancelling] = useState(false);
 
     const [changeTicketsDialogOpen, setChangeTicketsDialogOpen] = useState(false);
-    const [selectedTicketSlugs, setSelectedTicketSlugs] = useState<string[]>([]);
+    const [selectedTicketTypeIds, setSelectedTicketTypeIds] = useState<string[]>([]);
     const [isChangingTickets, setIsChangingTickets] = useState(false);
     const [changeTicketsError, setChangeTicketsError] = useState<string | null>(null);
 
@@ -298,7 +298,7 @@ export default function AttendeeDetailPage() {
         try {
             await apiClient.put(
                 `/api/teams/${teamId}/events/${eventId}/registrations/${registrationId}/tickets`,
-                { ticketTypeSlugs: selectedTicketSlugs },
+                { ticketTypeIds: selectedTicketTypeIds },
             );
             await queryClient.invalidateQueries({
                 queryKey: ["registration-detail", teamId, eventId, registrationId],
@@ -519,7 +519,7 @@ export default function AttendeeDetailPage() {
                                         className="text-muted-foreground"
                                         disabled={registration.status !== "registered"}
                                         onClick={() => {
-                                            setSelectedTicketSlugs(registration.tickets.map((t) => t.slug));
+                                            setSelectedTicketTypeIds(registration.tickets.map((t) => t.id));
                                             setChangeTicketsDialogOpen(true);
                                         }}
                                     >
@@ -534,7 +534,7 @@ export default function AttendeeDetailPage() {
                                             const isCancelled = registration.status === "cancelled";
                                             return (
                                                 <Card
-                                                    key={ticket.slug}
+                                                    key={ticket.id}
                                                     className={`ticket-card overflow-hidden py-3 ${isCancelled ? "opacity-60" : ""}`}
                                                 >
                                                     <div className="px-5">
@@ -548,7 +548,6 @@ export default function AttendeeDetailPage() {
                                                                 </Badge>
                                                             )}
                                                         </div>
-                                                        <div className="text-[12.5px] text-muted-foreground font-mono">{ticket.slug}</div>
                                                         <div className="ticket-perf" aria-hidden="true" />
                                                     </div>
                                                 </Card>
@@ -674,16 +673,16 @@ export default function AttendeeDetailPage() {
                     ) : (
                         <div className="space-y-2 rounded-md border p-4">
                             {availableTicketTypes.map((t) => {
-                                const checked = selectedTicketSlugs.includes(t.slug);
+                                const checked = selectedTicketTypeIds.includes(t.id);
                                 return (
-                                    <label key={t.slug} className="flex items-center gap-2 text-sm cursor-pointer">
+                                    <label key={t.id} className="flex items-center gap-2 text-sm cursor-pointer">
                                         <Checkbox
                                             checked={checked}
                                             onCheckedChange={(value) => {
-                                                setSelectedTicketSlugs((prev) =>
+                                                setSelectedTicketTypeIds((prev) =>
                                                     value
-                                                        ? [...prev, t.slug]
-                                                        : prev.filter((s) => s !== t.slug),
+                                                        ? [...prev, t.id]
+                                                        : prev.filter((s) => s !== t.id),
                                                 );
                                             }}
                                         />
@@ -699,7 +698,7 @@ export default function AttendeeDetailPage() {
                     <AlertDialogFooter>
                         <AlertDialogCancel disabled={isChangingTickets}>Cancel</AlertDialogCancel>
                         <Button
-                            disabled={selectedTicketSlugs.length === 0 || isChangingTickets}
+                            disabled={selectedTicketTypeIds.length === 0 || isChangingTickets}
                             onClick={handleChangeTicketsConfirm}
                         >
                             {isChangingTickets ? "Saving…" : "Save changes"}

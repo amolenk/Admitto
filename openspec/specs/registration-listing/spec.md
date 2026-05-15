@@ -17,12 +17,12 @@ The system SHALL expose a query that returns every registration belonging to a s
 - **GIVEN** an event has three registrations
 - **WHEN** an admin requests the registrations of that event
 - **THEN** the system returns three items
-- **AND** each item exposes the registration id, the attendee `email`, `firstName`, `lastName`, the list of tickets (slug + display name), the registered-at timestamp, the registration `status` (`Registered`/`Cancelled`), and `hasReconfirmed` (with `reconfirmedAt` when true)
+- **AND** each item exposes the registration id, the attendee `email`, `firstName`, `lastName`, the list of tickets (ticket type id + display name), the registered-at timestamp, the registration `status` (`Registered`/`Cancelled`), and `hasReconfirmed` (with `reconfirmedAt` when true)
 
 #### Scenario: SC003 Multiple tickets are surfaced together
 - **GIVEN** a registration was created with two ticket types
 - **WHEN** an admin requests the registrations
-- **THEN** the corresponding item exposes both tickets with their slug and current display name
+- **THEN** the corresponding item exposes both tickets with their ticket type id and current display name
 
 #### Scenario: SC004 Items belong only to the requested event
 - **GIVEN** two events of the same team each have registrations

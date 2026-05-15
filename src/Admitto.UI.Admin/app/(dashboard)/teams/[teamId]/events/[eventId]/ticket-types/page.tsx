@@ -49,7 +49,7 @@ function TicketTypeCard({ t, teamId, eventId }: { t: TicketTypeDto; teamId: stri
 
     const cancelMutation = useMutation({
         mutationFn: () =>
-            apiClient.post(`/api/teams/${teamId}/events/${eventId}/ticket-types/${t.slug}/cancel`),
+            apiClient.post(`/api/teams/${teamId}/events/${eventId}/ticket-types/${t.id}/cancel`),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["ticket-types", teamId, eventId] });
         },
@@ -236,7 +236,7 @@ export default function TicketTypesPage() {
                     {[...types]
                         .sort((a, b) => a.name.localeCompare(b.name))
                         .map((t) => (
-                            <TicketTypeCard key={t.slug} t={t} teamId={teamId} eventId={eventId} />
+                            <TicketTypeCard key={t.id} t={t} teamId={teamId} eventId={eventId} />
                         ))}
                     <button
                         onClick={() => setAddOpen(true)}

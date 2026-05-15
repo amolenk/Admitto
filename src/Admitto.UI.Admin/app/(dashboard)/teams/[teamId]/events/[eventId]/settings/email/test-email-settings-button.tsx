@@ -22,21 +22,23 @@ export type EmailRecipientOption = {
 
 export function buildEmailRecipientOptions(
     team: TeamDto | null | undefined,
-    members: TeamMemberListItemDto[] | null | undefined
+    members: TeamMemberListItemDto[] | null | undefined,
+    fromAddress?: string | null
 ): EmailRecipientOption[] {
     const options: EmailRecipientOption[] = [];
     const seen = new Set<string>();
 
-    function add(email: string | null | undefined) {
+    function add(email: string | null | undefined, label?: string) {
         const normalized = email?.trim().toLowerCase();
         if (!normalized || seen.has(normalized)) {
             return;
         }
 
         seen.add(normalized);
-        options.push({ value: normalized, label: normalized });
+        options.push({ value: normalized, label: label ?? normalized });
     }
 
+    add(fromAddress, fromAddress ? `${fromAddress} (from address)` : undefined);
     members?.forEach((member) => add(member.email));
 
     return options;

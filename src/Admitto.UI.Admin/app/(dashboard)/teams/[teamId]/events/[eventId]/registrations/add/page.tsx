@@ -20,7 +20,7 @@ const formSchema = z.object({
     email: z.string().min(1, "Email is required").email("Enter a valid email"),
     firstName: z.string().min(1, "First name is required").max(100, "First name must be 100 characters or fewer"),
     lastName: z.string().min(1, "Last name is required").max(100, "Last name must be 100 characters or fewer"),
-    ticketTypeSlugs: z.array(z.string()).min(1, "Select at least one ticket type"),
+    ticketTypeIds: z.array(z.string()).min(1, "Select at least one ticket type"),
     additionalDetails: z.record(z.string(), z.string()).optional(),
 });
 
@@ -94,7 +94,7 @@ function AddRegistrationForm({
         email: "",
         firstName: "",
         lastName: "",
-        ticketTypeSlugs: [],
+        ticketTypeIds: [],
         additionalDetails: Object.fromEntries(additionalDetailSchema.map((f) => [f.key, ""])),
     });
 
@@ -110,7 +110,7 @@ function AddRegistrationForm({
             email: values.email,
             firstName: values.firstName,
             lastName: values.lastName,
-            ticketTypeSlugs: values.ticketTypeSlugs,
+            ticketTypeIds: values.ticketTypeIds,
             additionalDetails,
         });
         onAdded();
@@ -177,7 +177,7 @@ function AddRegistrationForm({
                 <FormHeading text="Tickets" />
                 <FormField
                     control={form.control}
-                    name="ticketTypeSlugs"
+                    name="ticketTypeIds"
                     render={() => (
                         <FormItem>
                             <FormLabel>Ticket types</FormLabel>
@@ -189,11 +189,11 @@ function AddRegistrationForm({
                                 <div className="space-y-2 rounded-md border p-4">
                                     {ticketTypes.map((t) => (
                                         <FormField
-                                            key={t.slug}
+                                            key={t.id}
                                             control={form.control}
-                                            name="ticketTypeSlugs"
+                                            name="ticketTypeIds"
                                             render={({ field }) => {
-                                                const checked = field.value?.includes(t.slug) ?? false;
+                                                const checked = field.value?.includes(t.id) ?? false;
                                                 return (
                                                     <label className="flex items-center gap-2 text-sm">
                                                         <Checkbox
@@ -202,8 +202,8 @@ function AddRegistrationForm({
                                                                 const current = field.value ?? [];
                                                                 field.onChange(
                                                                     c
-                                                                        ? [...current, t.slug]
-                                                                        : current.filter((s) => s !== t.slug));
+                                                                        ? [...current, t.id]
+                                                                        : current.filter((s) => s !== t.id));
                                                             }}
                                                         />
                                                         <span>{t.name}</span>

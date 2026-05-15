@@ -151,7 +151,7 @@ export function CreateEventForm() {
                     setPollProgress(100);
                     setIsNavigating(true);
                     await queryClient.invalidateQueries({ queryKey: ["events", teamId] });
-                    router.push(`/teams/${teamId}/events/${dto.ticketedEventId}/settings`);
+                    router.push(`/teams/${teamId}/events/${dto.ticketedEventId}`);
                     return;
                 }
 

@@ -202,6 +202,7 @@ export function EmailTemplateForm({
     isCustomised,
     version,
     teamId,
+    eventId,
 }: {
     templateApiUrl: string;
     previewApiUrl: string;
@@ -212,6 +213,7 @@ export function EmailTemplateForm({
     isCustomised: boolean;
     version: number | string | null;
     teamId: string;
+    eventId?: string;
 }) {
     const queryClient = useQueryClient();
     const router = useRouter();
@@ -222,13 +224,34 @@ export function EmailTemplateForm({
 
     const [team, setTeam] = useState<TeamDto | null>(null);
     const [members, setMembers] = useState<TeamMemberListItemDto[] | null>(null);
+    const [fromAddress, setFromAddress] = useState<string | null>(null);
 
     useEffect(() => {
         apiClient.get<TeamDto>(`/api/teams/${teamId}`).then(setTeam).catch(() => {});
         apiClient.get<TeamMemberListItemDto[]>(`/api/teams/${teamId}/members`).then(setMembers).catch(() => {});
-    }, [teamId]);
 
-    const recipients = buildEmailRecipientOptions(team, members);
+        async function resolveFromAddress() {
+            if (eventId) {
+                try {
+                    const eventSettings = await apiClient.get<{ fromAddress?: string | null }>(
+                        `/api/teams/${teamId}/events/${eventId}/email-settings`
+                    );
+                    if (eventSettings.fromAddress) {
+                        setFromAddress(eventSettings.fromAddress);
+                        return;
+                    }
+                } catch {
+                    // No event-specific settings; fall through to team settings
+                }
+            }
+            apiClient.get<{ fromAddress?: string | null }>(`/api/teams/${teamId}/email-settings`)
+                .then((s) => setFromAddress(s.fromAddress ?? null))
+                .catch(() => {});
+        }
+        resolveFromAddress();
+    }, [teamId, eventId]);
+
+    const recipients = buildEmailRecipientOptions(team, members, fromAddress);
 
     const form = useCustomForm<TemplateValues>(templateSchema, {
         subject: initialValues?.subject ?? "",

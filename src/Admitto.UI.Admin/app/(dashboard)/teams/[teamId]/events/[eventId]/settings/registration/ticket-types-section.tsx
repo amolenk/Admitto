@@ -14,10 +14,8 @@ import { apiClient } from "@/lib/api-client";
 import { TicketTypeDto } from "@/lib/admitto-api/generated";
 import { FormError } from "@/components/form-error";
 
-const slugRegex = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
 
 const addSchema = z.object({
-    slug: z.string().min(1, "Slug is required").regex(slugRegex, "Lowercase letters, digits, hyphens"),
     name: z.string().min(1, "Name is required"),
     selfServiceEnabled: z.boolean(),
     limitCapacity: z.boolean(),
@@ -45,7 +43,7 @@ export function TicketTypesSection({
     ticketTypes: TicketTypeDto[];
 }) {
     const queryClient = useQueryClient();
-    const [editingSlug, setEditingSlug] = useState<string | null>(null);
+    const [editingId, setEditingId] = useState<string | null>(null);
     const [showAdd, setShowAdd] = useState(false);
     const [actionError, setActionError] = useState<{ title: string; detail: string } | null>(null);
 
@@ -53,9 +51,9 @@ export function TicketTypesSection({
         queryClient.invalidateQueries({ queryKey: ["ticket-types", teamId, eventId] });
 
     const cancelMutation = useMutation({
-        mutationFn: (slug: string) =>
+        mutationFn: (id: string) =>
             apiClient.post(
-                `/api/teams/${teamId}/events/${eventId}/ticket-types/${slug}/cancel`
+                `/api/teams/${teamId}/events/${eventId}/ticket-types/${id}/cancel`
             ),
         onSuccess: () => {
             setActionError(null);
@@ -85,22 +83,22 @@ export function TicketTypesSection({
                     <li className="px-4 py-3 text-sm text-muted-foreground">No ticket types yet.</li>
                 )}
                 {ticketTypes.map((tt) =>
-                    editingSlug === tt.slug ? (
-                        <li key={tt.slug} className="px-4 py-3">
+                    editingId === tt.id ? (
+                        <li key={tt.id} className="px-4 py-3">
                             <EditTicketTypeForm
                                 teamId={teamId}
                                 eventId={eventId}
                                 ticketType={tt}
-                                onCancel={() => setEditingSlug(null)}
+                                onCancel={() => setEditingId(null)}
                                 onSaved={() => {
-                                    setEditingSlug(null);
+                                    setEditingId(null);
                                     invalidate();
                                 }}
                             />
                         </li>
                     ) : (
                         <li
-                            key={tt.slug}
+                            key={tt.id}
                             className="px-4 py-3 flex items-center gap-4 text-sm"
                         >
                             <div className="flex-1 min-w-0">
@@ -120,8 +118,7 @@ export function TicketTypesSection({
                                     )}
                                 </p>
                                 <p className="text-xs text-muted-foreground">
-                                    {tt.slug} · capacity{" "}
-                                    {tt.maxCapacity == null ? "unlimited" : String(tt.maxCapacity)} ·
+                                    capacity {tt.maxCapacity == null ? "unlimited" : String(tt.maxCapacity)} ·
                                     used {String(tt.usedCapacity)}
                                 </p>
                             </div>
@@ -131,7 +128,7 @@ export function TicketTypesSection({
                                         type="button"
                                         variant="ghost"
                                         size="icon"
-                                        onClick={() => setEditingSlug(tt.slug)}
+                                        onClick={() => setEditingId(tt.id)}
                                     >
                                         <Pencil className="h-4 w-4" />
                                     </Button>
@@ -140,7 +137,7 @@ export function TicketTypesSection({
                                         variant="ghost"
                                         size="icon"
                                         disabled={cancelMutation.isPending}
-                                        onClick={() => cancelMutation.mutate(tt.slug)}
+                                        onClick={() => cancelMutation.mutate(tt.id)}
                                     >
                                         <Trash2 className="h-4 w-4" />
                                     </Button>
@@ -182,7 +179,6 @@ function AddTicketTypeForm({
     onCancel: () => void;
 }) {
     const form = useCustomForm<AddValues>(addSchema, {
-        slug: "",
         name: "",
         selfServiceEnabled: true,
         limitCapacity: false,
@@ -193,7 +189,6 @@ function AddTicketTypeForm({
 
     async function onSubmit(values: AddValues) {
         await apiClient.post(`/api/teams/${teamId}/events/${eventId}/ticket-types`, {
-            slug: values.slug,
             name: values.name,
             selfServiceEnabled: values.selfServiceEnabled,
             maxCapacity: values.limitCapacity ? (values.maxCapacity ?? null) : null,
@@ -215,20 +210,7 @@ function AddTicketTypeForm({
                         <AlertDescription>{form.generalError.detail}</AlertDescription>
                     </Alert>
                 )}
-                <div className="grid grid-cols-2 gap-3">
-                    <FormField
-                        control={form.control}
-                        name="slug"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Slug</FormLabel>
-                                <FormControl>
-                                    <Input placeholder="standard" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
+                <div className="grid grid-cols-1 gap-3">
                     <FormField
                         control={form.control}
                         name="name"
@@ -329,7 +311,7 @@ function EditTicketTypeForm({
 
     async function onSubmit(values: EditValues) {
         await apiClient.put(
-            `/api/teams/${teamId}/events/${eventId}/ticket-types/${ticketType.slug}`,
+            `/api/teams/${teamId}/events/${eventId}/ticket-types/${ticketType.id}`,
             {
                 name: values.name,
                 selfServiceEnabled: values.selfServiceEnabled,

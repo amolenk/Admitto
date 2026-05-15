@@ -3,7 +3,7 @@
 import { useState, KeyboardEvent } from "react";
 import * as z from "zod";
 import { useQueryClient } from "@tanstack/react-query";
-import { AlertCircle, Globe, Lock, X } from "lucide-react";
+import { AlertCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -16,7 +16,6 @@ import { apiClient } from "@/lib/api-client";
 const slugRegex = /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/;
 
 const addSchema = z.object({
-    slug: z.string().min(1, "Slug is required").regex(slugRegex, "Lowercase letters, digits, hyphens"),
     name: z.string().min(1, "Name is required"),
     selfServiceEnabled: z.boolean(),
     limitCapacity: z.boolean(),
@@ -41,7 +40,6 @@ export function AddTicketTypeForm({
 }) {
     const queryClient = useQueryClient();
     const form = useCustomForm<AddValues>(addSchema, {
-        slug: "",
         name: "",
         selfServiceEnabled: true,
         limitCapacity: false,
@@ -53,7 +51,6 @@ export function AddTicketTypeForm({
 
     async function onSubmit(values: AddValues) {
         await apiClient.post(`/api/teams/${teamId}/events/${eventId}/ticket-types`, {
-            slug: values.slug,
             name: values.name,
             selfServiceEnabled: values.selfServiceEnabled,
             maxCapacity: values.limitCapacity ? (values.maxCapacity ?? null) : null,
@@ -73,19 +70,6 @@ export function AddTicketTypeForm({
                         <AlertDescription>{form.generalError.detail}</AlertDescription>
                     </Alert>
                 )}
-                <FormField
-                    control={form.control}
-                    name="slug"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Slug</FormLabel>
-                            <FormControl>
-                                <Input placeholder="early-bird" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
                 <FormField
                     control={form.control}
                     name="name"

@@ -79,7 +79,7 @@ export default function TeamEmailSettingsPage() {
 
     const settings = query.data ?? null;
     const version = settings ? Number(settings.version) : null;
-    const recipientOptions = buildEmailRecipientOptions(teamQuery.data, membersQuery.data);
+    const recipientOptions = buildEmailRecipientOptions(teamQuery.data, membersQuery.data, settings?.fromAddress);
 
     async function handleDelete() {
         setIsDeleting(true);

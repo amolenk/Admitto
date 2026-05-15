@@ -75,6 +75,7 @@ export default function EventEmailTemplateEditorPage({
                     isCustomised={data.isCustomised || data.kind === "custom"}
                     version={data.version}
                     teamId={teamId}
+                    eventId={eventId}
                 />
             )}
         </div>

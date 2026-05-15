@@ -78,6 +78,7 @@ export default function EventDashboardPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                     <TicketBreakdownCard
                         teamId={teamId}
+                        eventId={eventId}
                         ticketTypes={ticketTypes.data ?? []}
                         isLoading={ticketTypes.isLoading}
                     />

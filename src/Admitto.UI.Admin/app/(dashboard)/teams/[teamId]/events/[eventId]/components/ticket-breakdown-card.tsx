@@ -6,15 +6,16 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ChevronRight, Plus } from "lucide-react";
+import { ChevronRight, Ticket } from "lucide-react";
 
 interface TicketBreakdownCardProps {
     teamId: string;
+    eventId: string;
     ticketTypes: TicketTypeDto[];
     isLoading: boolean;
 }
 
-export function TicketBreakdownCard({ teamId, ticketTypes, isLoading }: TicketBreakdownCardProps) {
+export function TicketBreakdownCard({ teamId, eventId, ticketTypes, isLoading }: TicketBreakdownCardProps) {
     const router = useRouter();
 
     if (isLoading) {
@@ -43,7 +44,7 @@ export function TicketBreakdownCard({ teamId, ticketTypes, isLoading }: TicketBr
                     variant="ghost"
                     size="sm"
                     className="text-muted-foreground"
-                    onClick={() => router.push(`/teams/${teamId}/events/${ticketTypes[0]?.slug ? ticketTypes[0].slug.split("/")[0] : ""}/ticket-types`)}
+                    onClick={() => router.push(`/teams/${teamId}/events/${eventId}/ticket-types`)}
                 >
                     Manage <ChevronRight className="size-3 ml-1" />
                 </Button>
@@ -56,7 +57,7 @@ export function TicketBreakdownCard({ teamId, ticketTypes, isLoading }: TicketBr
                     const isFull = cap > 0 && used >= cap;
 
                     return (
-                        <div key={t.slug}>
+                        <div key={t.id}>
                             <div className="flex items-baseline justify-between mb-1.5">
                                 <div className="flex items-center gap-2">
                                     <span className="text-sm font-medium">{t.name}</span>
@@ -94,7 +95,7 @@ export function TicketBreakdownCard({ teamId, ticketTypes, isLoading }: TicketBr
                     const pct = cap > 0 ? Math.round((used / cap) * 100) : 0;
 
                     return (
-                        <div key={t.slug}>
+                        <div key={t.id}>
                             <div className="flex items-baseline justify-between mb-1.5">
                                 <div className="flex items-center gap-2">
                                     <span className="text-sm font-medium text-muted-foreground">{t.name}</span>
@@ -117,9 +118,14 @@ export function TicketBreakdownCard({ teamId, ticketTypes, isLoading }: TicketBr
             {ticketTypes.length === 0 && (
                 <div className="text-center py-6">
                     <p className="text-sm text-muted-foreground">No ticket types configured yet.</p>
-                    <Button variant="outline" size="sm" className="mt-3">
-                        <Plus className="size-3.5" />
-                        Add ticket type
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-3"
+                        onClick={() => router.push(`/teams/${teamId}/events/${eventId}/ticket-types`)}
+                    >
+                        <Ticket className="size-3.5" />
+                        Manage ticket types
                     </Button>
                 </div>
             )}

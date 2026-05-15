@@ -5,13 +5,13 @@ Admins and team owners manage teams — the foundational organizational unit in 
 ## Requirements
 
 ### Requirement: Admin can create a team
-The system SHALL allow admins to create a team with a name and email address.
-The name and email SHALL conform to their respective domain value object constraints.
+The system SHALL allow admins to create a team with a name.
+The name SHALL conform to its domain value object constraints.
 A `TeamId` (UUID) is assigned by the system on creation.
 
 #### Scenario: Successfully create a team
-- **WHEN** an authenticated admin creates a team with name "Acme Events" and email "info@acme.org"
-- **THEN** the team is created with the provided details, is in an active state, and a `TeamId` UUID is returned
+- **WHEN** an authenticated admin creates a team with name "Acme Events"
+- **THEN** the team is created with the provided name, is in an active state, and a `TeamId` UUID is returned
 
 #### Scenario: Reject invalid input on create
 - **WHEN** an admin creates a team with an empty name
@@ -25,7 +25,7 @@ details by team ID.
 
 #### Scenario: View team details by ID
 - **WHEN** a user with Crew role requests the details of team with ID "11111111-0000-0000-0000-000000000001"
-- **THEN** the team's ID, name, email address, and version are returned
+- **THEN** the team's ID, name, and version are returned
 
 #### Scenario: Reject unauthorized team view
 - **WHEN** a user who is not a member of the requested team requests its details
@@ -58,9 +58,8 @@ Archived teams SHALL be excluded.
 ---
 
 ### Requirement: Team owner can update team details
-The system SHALL allow team owners to update a team's name and/or email
-address as a partial update. The system SHALL use optimistic concurrency
-(expected version) to prevent lost updates.
+The system SHALL allow team owners to update a team's name as a partial update.
+The system SHALL use optimistic concurrency (expected version) to prevent lost updates.
 
 #### Scenario: Update team details with partial fields
 - **WHEN** an owner of team "Acme Events" at version 1 updates the name to "Acme Corp" with expected version 1

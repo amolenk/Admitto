@@ -116,7 +116,7 @@ export default function RegistrationsPage() {
                 ].join(" ").toLowerCase();
                 if (!haystack.includes(needle)) return false;
             }
-            if (ticketFilter !== "all" && !r.tickets.some((t) => t.slug === ticketFilter)) {
+            if (ticketFilter !== "all" && !r.tickets.some((t) => t.id === ticketFilter)) {
                 return false;
             }
             return true;
@@ -243,7 +243,7 @@ export default function RegistrationsPage() {
                         <SelectContent>
                             <SelectItem value="all">All ticket types</SelectItem>
                             {ticketTypes.map((t) => (
-                                <SelectItem key={t.slug} value={t.slug}>
+                                <SelectItem key={t.id} value={t.id}>
                                     {t.name}
                                 </SelectItem>
                             ))}
@@ -309,7 +309,7 @@ export default function RegistrationsPage() {
                                                 <TableCell>
                                                     <div className="flex flex-wrap gap-1">
                                                         {r.tickets.map((t) => (
-                                                            <Badge key={t.slug} variant="outline">
+                                                            <Badge key={t.id} variant="outline">
                                                                 {t.name}
                                                             </Badge>
                                                         ))}

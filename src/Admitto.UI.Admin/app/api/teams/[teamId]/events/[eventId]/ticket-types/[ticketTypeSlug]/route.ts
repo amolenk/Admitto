@@ -9,9 +9,9 @@ export async function PUT(
         params: Promise<{ teamId: string; eventId: string; ticketTypeSlug: string }>;
     }
 ) {
-    const { teamId, eventId, ticketTypeSlug } = await params;
+    const { teamId, eventId, ticketTypeSlug: ticketTypeId } = await params;
     const body = await request.json();
     return callAdmittoApi(() =>
-        updateTicketType({ path: { teamId, eventId, ticketTypeSlug }, body })
+        updateTicketType({ path: { teamId, eventId, ticketTypeId }, body })
     );
 }

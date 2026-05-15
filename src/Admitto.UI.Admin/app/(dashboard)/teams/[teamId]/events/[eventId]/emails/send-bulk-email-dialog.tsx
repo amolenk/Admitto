@@ -345,7 +345,7 @@ export function SendBulkEmailDialog({ teamId, eventId, open, onClose }: SendBulk
                                         <SelectContent>
                                             <SelectItem value="__all__">All ticket types</SelectItem>
                                             {ticketTypes?.map((t) => (
-                                                <SelectItem key={t.slug} value={t.slug}>
+                                                <SelectItem key={t.id} value={t.id}>
                                                     {t.name}
                                                 </SelectItem>
                                             ))}

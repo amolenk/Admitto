@@ -81,6 +81,7 @@ public class Team : Aggregate<TeamId>
         }
 
         ArchivedAt = archivedAt;
+        AddDomainEvent(new TeamArchivedDomainEvent(Id));
     }
 
     /// <summary>

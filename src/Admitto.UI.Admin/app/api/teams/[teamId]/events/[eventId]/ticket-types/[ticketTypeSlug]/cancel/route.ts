@@ -9,8 +9,8 @@ export async function POST(
         params: Promise<{ teamId: string; eventId: string; ticketTypeSlug: string }>;
     }
 ) {
-    const { teamId, eventId, ticketTypeSlug } = await params;
+    const { teamId, eventId, ticketTypeSlug: ticketTypeId } = await params;
     return callAdmittoApi(() =>
-        cancelTicketType({ path: { teamId, eventId, ticketTypeSlug } })
+        cancelTicketType({ path: { teamId, eventId, ticketTypeId } })
     );
 }

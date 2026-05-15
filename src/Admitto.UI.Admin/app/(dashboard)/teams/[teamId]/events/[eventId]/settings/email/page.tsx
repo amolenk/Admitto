@@ -87,7 +87,8 @@ export default function EmailSettingsPage() {
 
     const eventSettings = eventQuery.data ?? null;
     const teamSettings = teamSettingsQuery.data ?? null;
-    const recipientOptions = buildEmailRecipientOptions(teamQuery.data, membersQuery.data);
+    const effectiveFromAddress = eventSettings?.fromAddress ?? teamSettings?.fromAddress;
+    const recipientOptions = buildEmailRecipientOptions(teamQuery.data, membersQuery.data, effectiveFromAddress);
 
     const teamEmailPageHref = `/teams/${teamId}/settings/email`;
 
@@ -117,11 +118,9 @@ export default function EmailSettingsPage() {
                 <Alert className="mb-5">
                     <Info className="h-4 w-4" />
                     <AlertTitle>Inherited from team settings</AlertTitle>
-                    <AlertDescription>
+                    <AlertDescription className="!block">
                         This event uses the team-level email configuration.{" "}
-                        <Link href={teamEmailPageHref} className="underline underline-offset-2">
-                            View team email settings
-                        </Link>{" "}
+                        <Link href={teamEmailPageHref} className="underline underline-offset-2">View team email settings</Link>{" "}
                         to change them, or save settings here to create an event-specific override.
                     </AlertDescription>
                 </Alert>
@@ -131,12 +130,9 @@ export default function EmailSettingsPage() {
                 <Alert className="mb-5">
                     <Info className="h-4 w-4" />
                     <AlertTitle>Overriding team settings</AlertTitle>
-                    <AlertDescription>
+                    <AlertDescription className="!block">
                         This event has its own email configuration that overrides the team defaults.{" "}
-                        <Link href={teamEmailPageHref} className="underline underline-offset-2">
-                            View team email settings
-                        </Link>
-                        .
+                        <Link href={teamEmailPageHref} className="underline underline-offset-2">View team email settings</Link>.
                     </AlertDescription>
                 </Alert>
             )}
