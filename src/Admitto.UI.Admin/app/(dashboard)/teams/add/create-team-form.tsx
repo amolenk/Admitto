@@ -53,7 +53,7 @@ export function CreateTeamForm() {
         const result = await apiClient.post<CreateTeamResponse>("/api/teams", values);
         await queryClient.invalidateQueries({ queryKey: ["teams"] });
         setSelectedTeamId(result.teamId);
-        router.push(`/teams/${result.teamId}`);
+        router.push(`/teams/${result.teamId}/settings`);
     }
 
     const rootError = form.formState.errors.root?.message;
