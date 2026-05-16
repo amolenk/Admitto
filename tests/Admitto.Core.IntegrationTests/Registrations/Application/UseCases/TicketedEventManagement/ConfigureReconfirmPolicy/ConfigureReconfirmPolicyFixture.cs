@@ -7,8 +7,8 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 
 internal sealed class ConfigureReconfirmPolicyFixture
 {
-    private bool _cancel;
     private bool _seedExistingPolicy;
+    private bool _archive;
 
     public TicketedEventId EventId { get; } = TicketedEventId.New();
     public TeamId TeamId { get; } = TeamId.New();
@@ -18,7 +18,7 @@ internal sealed class ConfigureReconfirmPolicyFixture
 
     public static ConfigureReconfirmPolicyFixture ActiveEvent() => new();
     public static ConfigureReconfirmPolicyFixture ActiveWithExistingPolicy() => new() { _seedExistingPolicy = true };
-    public static ConfigureReconfirmPolicyFixture CancelledEvent() => new() { _cancel = true };
+    public static ConfigureReconfirmPolicyFixture ArchivedEvent() => new() { _archive = true };
 
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
     {
@@ -43,10 +43,11 @@ internal sealed class ConfigureReconfirmPolicyFixture
                     TicketedEventReconfirmPolicy.Create(
                         DateTimeOffset.UtcNow.AddDays(5),
                         DateTimeOffset.UtcNow.AddDays(15),
-                        TimeSpan.FromDays(7)));
+                        TimeSpan.FromDays(7),
+                        TimeSpan.FromHours(24)));
             }
 
-            if (_cancel) ticketedEvent.Cancel();
+            if (_archive) ticketedEvent.Archive();
 
             dbContext.TicketedEvents.Add(ticketedEvent);
             seeded = ticketedEvent;

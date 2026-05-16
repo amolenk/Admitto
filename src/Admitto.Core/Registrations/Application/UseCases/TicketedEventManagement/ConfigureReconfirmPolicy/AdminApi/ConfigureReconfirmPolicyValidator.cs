@@ -16,12 +16,19 @@ public sealed class ConfigureReconfirmPolicyValidator : AbstractValidator<Config
                 .NotNull()
                 .WithMessage("ClosesAt is required when configuring a reconfirm policy.");
 
-            RuleFor(x => x.CadenceDays)
+            RuleFor(x => x.CadenceHours)
                 .NotNull()
-                .WithMessage("CadenceDays is required when configuring a reconfirm policy.")
+                .WithMessage("CadenceHours is required when configuring a reconfirm policy.")
                 .GreaterThanOrEqualTo(1)
-                .When(x => x.CadenceDays is not null)
-                .WithMessage("Reconfirmation cadence must be at least 1 day.");
+                .When(x => x.CadenceHours is not null)
+                .WithMessage("Reconfirmation cadence must be at least 1 hour.");
+
+            RuleFor(x => x.MinEmailIntervalHours)
+                .NotNull()
+                .WithMessage("MinEmailIntervalHours is required when configuring a reconfirm policy.")
+                .GreaterThanOrEqualTo(1)
+                .When(x => x.MinEmailIntervalHours is not null)
+                .WithMessage("Minimum email interval must be at least 1 hour.");
 
             RuleFor(x => x.ClosesAt)
                 .GreaterThan(x => x.OpensAt)
@@ -31,5 +38,5 @@ public sealed class ConfigureReconfirmPolicyValidator : AbstractValidator<Config
     }
 
     private static bool HasAnyField(ConfigureReconfirmPolicyHttpRequest r) =>
-        r.OpensAt is not null || r.ClosesAt is not null || r.CadenceDays is not null;
+        r.OpensAt is not null || r.ClosesAt is not null || r.CadenceHours is not null;
 }

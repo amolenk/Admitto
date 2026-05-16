@@ -69,10 +69,10 @@ public sealed class UpdateTicketTypeTests(TestContext testContext) : AspireInteg
     }
 
     [TestMethod]
-    public async ValueTask UpdateTicketType_CancelledEvent_ThrowsEventNotActive()
+    public async ValueTask UpdateTicketType_ArchivedEvent_ThrowsEventNotActive()
     {
         // Arrange
-        var fixture = UpdateTicketTypeFixture.CancelledEvent();
+        var fixture = UpdateTicketTypeFixture.ArchivedEvent();
         await fixture.SetupAsync(Environment);
 
         var command = new UpdateTicketTypeCommand(

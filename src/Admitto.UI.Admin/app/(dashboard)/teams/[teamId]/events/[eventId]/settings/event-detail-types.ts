@@ -1,4 +1,4 @@
-export type EventLifecycleStatus = "active" | "cancelled" | "archived";
+export type EventLifecycleStatus = "active" | "archived";
 
 export interface RegistrationPolicy {
     opensAt: string;
@@ -6,14 +6,11 @@ export interface RegistrationPolicy {
     allowedEmailDomain: string | null;
 }
 
-export interface CancellationPolicy {
-    lateCancellationCutoff: string;
-}
-
 export interface ReconfirmPolicy {
     opensAt: string;
     closesAt: string;
-    cadenceDays: number;
+    cadenceHours: number;
+    minEmailIntervalHours: number;
 }
 
 export interface AdditionalDetailField {
@@ -34,7 +31,6 @@ export interface TicketedEventDetails {
     version: number | string;
     isRegistrationOpen: boolean;
     registrationPolicy: RegistrationPolicy | null;
-    cancellationPolicy: CancellationPolicy | null;
     reconfirmPolicy: ReconfirmPolicy | null;
     additionalDetailSchema?: AdditionalDetailField[];
     websiteUrl?: string;

@@ -22,7 +22,8 @@ internal sealed class GetActiveReconfirmTriggerSpecsHandler(IRegistrationsWriteS
                 e.TimeZone.Value,
                 e.ReconfirmPolicy!.OpensAt,
                 e.ReconfirmPolicy.ClosesAt,
-                (int)e.ReconfirmPolicy.Cadence.TotalDays))
+                (int)e.ReconfirmPolicy.Cadence.TotalHours,
+                (int)e.ReconfirmPolicy.MinEmailInterval.TotalHours))
             .ToListAsync(cancellationToken);
     }
 }

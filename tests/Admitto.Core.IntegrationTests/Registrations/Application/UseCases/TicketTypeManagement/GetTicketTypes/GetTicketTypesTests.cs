@@ -5,9 +5,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 [TestClass]
 public sealed class GetTicketTypesTests(TestContext testContext) : AspireIntegrationTestBase
 {
-    // SC-001: List ticket types with mixed active/cancelled — returns all with correct flags
+    // SC-001: List ticket types — returns all types
     [TestMethod]
-    public async ValueTask GetTicketTypes_MixedActiveAndCancelled_ReturnsAllWithCorrectFlags()
+    public async ValueTask GetTicketTypes_ReturnsAllTypes()
     {
         // Arrange
         var fixture = GetTicketTypesFixture.WithMixedTicketTypes();
@@ -26,11 +26,9 @@ public sealed class GetTicketTypesTests(TestContext testContext) : AspireIntegra
         active.Name.ShouldBe("General Admission");
         active.TimeSlots.ShouldContain("morning");
         active.MaxCapacity.ShouldBe(100);
-        active.IsCancelled.ShouldBeFalse();
 
-        var cancelled = result.Single(tt => tt.Id == fixture.VipPassId.Value);
-        cancelled.Name.ShouldBe("VIP Pass");
-        cancelled.IsCancelled.ShouldBeTrue();
+        var vipPass = result.Single(tt => tt.Id == fixture.VipPassId.Value);
+        vipPass.Name.ShouldBe("VIP Pass");
     }
 
     // SC-002: Empty list when no catalog exists — returns empty list

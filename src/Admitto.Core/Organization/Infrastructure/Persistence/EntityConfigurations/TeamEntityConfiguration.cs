@@ -31,11 +31,6 @@ public class TeamEntityConfiguration : IEntityTypeConfiguration<Team>
             .IsRequired()
             .HasDefaultValue(0);
 
-        builder.Property(e => e.CancelledEventCount)
-            .HasColumnName("cancelled_event_count")
-            .IsRequired()
-            .HasDefaultValue(0);
-
         builder.Property(e => e.ArchivedEventCount)
             .HasColumnName("archived_event_count")
             .IsRequired()

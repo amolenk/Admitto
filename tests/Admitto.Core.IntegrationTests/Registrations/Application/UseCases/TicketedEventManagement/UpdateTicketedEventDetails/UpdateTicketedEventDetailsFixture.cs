@@ -6,7 +6,7 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 
 internal sealed class UpdateTicketedEventDetailsFixture
 {
-    private bool _cancel;
+    private bool _archive;
 
     public TicketedEventId EventId { get; } = TicketedEventId.New();
     public TeamId TeamId { get; } = TeamId.New();
@@ -15,7 +15,7 @@ internal sealed class UpdateTicketedEventDetailsFixture
     private UpdateTicketedEventDetailsFixture() { }
 
     public static UpdateTicketedEventDetailsFixture ActiveEvent() => new();
-    public static UpdateTicketedEventDetailsFixture CancelledEvent() => new() { _cancel = true };
+    public static UpdateTicketedEventDetailsFixture ArchivedEvent() => new() { _archive = true };
 
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
     {
@@ -34,7 +34,7 @@ internal sealed class UpdateTicketedEventDetailsFixture
                 DateTimeOffset.UtcNow.AddDays(2),
                 TimeZoneId.From("UTC"));
 
-            if (_cancel) ticketedEvent.Cancel();
+            if (_archive) ticketedEvent.Archive();
 
             dbContext.TicketedEvents.Add(ticketedEvent);
             seeded = ticketedEvent;

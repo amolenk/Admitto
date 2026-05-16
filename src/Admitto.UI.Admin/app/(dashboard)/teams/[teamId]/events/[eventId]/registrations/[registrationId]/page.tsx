@@ -269,7 +269,7 @@ export default function AttendeeDetailPage() {
         retry: false,
     });
 
-    const availableTicketTypes = (ticketTypesQuery.data ?? []).filter((t) => !t.isCancelled);
+    const availableTicketTypes = ticketTypesQuery.data ?? [];
 
     async function handleCancelConfirm() {
         if (!cancelReason) return;

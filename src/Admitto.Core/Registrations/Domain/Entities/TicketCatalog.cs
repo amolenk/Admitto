@@ -22,31 +22,17 @@ public class TicketCatalog : Aggregate<TicketedEventId>
     /// <summary>
     /// Projection of the owning <see cref="TicketedEvent"/> lifecycle status. Kept in sync
     /// via the in-module <c>TicketedEventStatusChangedDomainEvent</c> handler so that the
-    /// atomic capacity claim can refuse to run once the event has been cancelled or
-    /// archived, even if a registration handler's earlier policy check observed Active.
-    /// Transitions are one-way: Active → Cancelled, Active → Archived, Cancelled → Archived.
+    /// atomic capacity claim can refuse to run once the event has been archived,
+    /// even if a registration handler's earlier policy check observed Active.
+    /// Transitions are one-way: Active → Archived.
     /// </summary>
     public EventLifecycleStatus EventStatus { get; private set; } = EventLifecycleStatus.Active;
 
     public static TicketCatalog Create(TicketedEventId eventId) => new(eventId);
 
     /// <summary>
-    /// Transitions <see cref="EventStatus"/> to <see cref="EventLifecycleStatus.Cancelled"/>.
-    /// Idempotent when already Cancelled; rejected when the catalog is already Archived.
-    /// </summary>
-    public void MarkEventCancelled()
-    {
-        if (EventStatus == EventLifecycleStatus.Cancelled) return;
-
-        if (EventStatus == EventLifecycleStatus.Archived)
-            throw new BusinessRuleViolationException(Errors.IllegalEventStatusTransition);
-
-        EventStatus = EventLifecycleStatus.Cancelled;
-    }
-
-    /// <summary>
     /// Transitions <see cref="EventStatus"/> to <see cref="EventLifecycleStatus.Archived"/>.
-    /// Idempotent when already Archived. Legal from Active or Cancelled.
+    /// Idempotent when already Archived. Legal from Active.
     /// </summary>
     public void MarkEventArchived()
     {
@@ -80,9 +66,6 @@ public class TicketCatalog : Aggregate<TicketedEventId>
 
         var ticketType = FindTicketType(id);
 
-        if (ticketType.IsCancelled)
-            throw new BusinessRuleViolationException(Errors.TicketTypeAlreadyCancelled(id));
-
         if (name is not null)
             ticketType.UpdateName(name.Value);
 
@@ -90,14 +73,6 @@ public class TicketCatalog : Aggregate<TicketedEventId>
 
         if (selfServiceEnabled is not null)
             ticketType.UpdateSelfServiceEnabled(selfServiceEnabled.Value);
-    }
-
-    public void CancelTicketType(TicketTypeId id)
-    {
-        EnsureEventActive();
-
-        var ticketType = FindTicketType(id);
-        ticketType.Cancel();
     }
 
     private void EnsureEventActive()
@@ -131,10 +106,6 @@ public class TicketCatalog : Aggregate<TicketedEventId>
         if (unknownIds.Length > 0)
             throw new BusinessRuleViolationException(Errors.UnknownTicketTypes(unknownIds));
 
-        var cancelledIds = ids.Where(id => ticketTypeMap[id].IsCancelled).Select(id => id.Value).ToArray();
-        if (cancelledIds.Length > 0)
-            throw new BusinessRuleViolationException(Errors.CancelledTicketTypes(cancelledIds));
-
         var allTimeSlots = ids
             .SelectMany(id => ticketTypeMap[id].TimeSlots.Select(ts => ts.Value))
             .ToList();
@@ -145,7 +116,7 @@ public class TicketCatalog : Aggregate<TicketedEventId>
 
     /// <summary>
     /// Claims tickets for the given IDs. Validates the selection (duplicates,
-    /// unknown IDs, cancelled IDs, self-service availability, overlapping time slots) before claiming capacity.
+    /// unknown IDs, self-service availability, overlapping time slots) before claiming capacity.
     /// If enforce is true, capacity is enforced and self-service flag is checked (self-service path).
     /// If enforce is false, UsedCapacity is incremented without enforcement (admin/coupon path).
     /// </summary>
@@ -164,10 +135,6 @@ public class TicketCatalog : Aggregate<TicketedEventId>
         var unknownIds = ids.Where(id => !ticketTypeMap.ContainsKey(id)).Select(id => id.Value).ToArray();
         if (unknownIds.Length > 0)
             throw new BusinessRuleViolationException(Errors.UnknownTicketTypes(unknownIds));
-
-        var cancelledIds = ids.Where(id => ticketTypeMap[id].IsCancelled).Select(id => id.Value).ToArray();
-        if (cancelledIds.Length > 0)
-            throw new BusinessRuleViolationException(Errors.CancelledTicketTypes(cancelledIds));
 
         if (enforce)
         {
@@ -227,11 +194,6 @@ public class TicketCatalog : Aggregate<TicketedEventId>
                 "One or more ticket types do not exist.",
                 Details: new Dictionary<string, object?> { ["ids"] = ids });
 
-        public static Error CancelledTicketTypes(Guid[] ids) =>
-            new("ticket_catalog.cancelled_ticket_types",
-                "One or more ticket types have been cancelled.",
-                Details: new Dictionary<string, object?> { ["ids"] = ids });
-
         public static Error TicketTypesNotSelfService(Guid[] ids) =>
             new("ticket_type.not_self_service",
                 "One or more ticket types are not available for self-service registration.",
@@ -253,18 +215,9 @@ public class TicketCatalog : Aggregate<TicketedEventId>
                 Type: ErrorType.NotFound,
                 Details: new Dictionary<string, object?> { ["id"] = id.Value });
 
-        public static Error TicketTypeAlreadyCancelled(TicketTypeId id) =>
-            new("ticket_catalog.ticket_type_already_cancelled",
-                "The ticket type is already cancelled.",
-                Details: new Dictionary<string, object?> { ["id"] = id.Value });
-
         public static readonly Error EventNotActive = new(
             "ticket_catalog.event_not_active",
             "Operation not allowed: the ticketed event is not Active.",
             Type: ErrorType.Validation);
-
-        public static readonly Error IllegalEventStatusTransition = new(
-            "ticket_catalog.illegal_event_status_transition",
-            "Illegal ticket catalog event status transition.");
     }
 }

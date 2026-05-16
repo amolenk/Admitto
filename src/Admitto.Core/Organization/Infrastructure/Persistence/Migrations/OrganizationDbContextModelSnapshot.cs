@@ -98,12 +98,6 @@ namespace Amolenk.Admitto.Core.Organization.Infrastructure.Persistence.Migration
                         .HasDefaultValue(0)
                         .HasColumnName("archived_event_count");
 
-                    b.Property<int>("CancelledEventCount")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasDefaultValue(0)
-                        .HasColumnName("cancelled_event_count");
-
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");

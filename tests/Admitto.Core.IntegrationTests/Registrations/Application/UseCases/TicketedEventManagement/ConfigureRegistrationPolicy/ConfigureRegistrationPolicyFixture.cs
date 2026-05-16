@@ -6,7 +6,6 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 
 internal sealed class ConfigureRegistrationPolicyFixture
 {
-    private bool _cancel;
     private bool _archive;
 
     public TicketedEventId EventId { get; } = TicketedEventId.New();
@@ -16,7 +15,6 @@ internal sealed class ConfigureRegistrationPolicyFixture
     private ConfigureRegistrationPolicyFixture() { }
 
     public static ConfigureRegistrationPolicyFixture ActiveEvent() => new();
-    public static ConfigureRegistrationPolicyFixture CancelledEvent() => new() { _cancel = true };
     public static ConfigureRegistrationPolicyFixture ArchivedEvent() => new() { _archive = true };
 
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
@@ -36,7 +34,6 @@ internal sealed class ConfigureRegistrationPolicyFixture
                 DateTimeOffset.UtcNow.AddDays(31),
                 TimeZoneId.From("UTC"));
 
-            if (_cancel) ticketedEvent.Cancel();
             if (_archive) ticketedEvent.Archive();
 
             dbContext.TicketedEvents.Add(ticketedEvent);

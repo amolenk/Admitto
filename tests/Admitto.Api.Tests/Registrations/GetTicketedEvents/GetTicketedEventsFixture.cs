@@ -33,7 +33,7 @@ internal sealed class GetTicketedEventsFixture
             DateTimeOffset.UtcNow.AddDays(32),
             TimeZoneId.From("UTC"));
 
-        var cancelled = TicketedEvent.Create(
+        var active2 = TicketedEvent.Create(
             CreationRequestId.From(Guid.NewGuid()),
             TicketedEventId.New(),
             team.Id,
@@ -43,7 +43,6 @@ internal sealed class GetTicketedEventsFixture
             DateTimeOffset.UtcNow.AddDays(10),
             DateTimeOffset.UtcNow.AddDays(11),
             TimeZoneId.From("UTC"));
-        cancelled.Cancel();
 
         var archived = TicketedEvent.Create(
             CreationRequestId.From(Guid.NewGuid()),
@@ -59,6 +58,6 @@ internal sealed class GetTicketedEventsFixture
 
         await environment.OrganizationDatabase.SeedAsync(db => db.Teams.Add(team));
         await environment.RegistrationsDatabase.SeedAsync(db =>
-            db.TicketedEvents.AddRange(active, cancelled, archived));
+            db.TicketedEvents.AddRange(active, active2, archived));
     }
 }

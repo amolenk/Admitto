@@ -78,17 +78,12 @@ public class TicketedEventEntityConfiguration : IEntityTypeConfiguration<Tickete
                 .HasMaxLength(253);
         });
 
-        builder.OwnsOne(e => e.CancellationPolicy, p =>
-        {
-            p.Property(x => x.LateCancellationCutoff)
-                .HasColumnName("cancellation_policy_late_cutoff");
-        });
-
         builder.OwnsOne(e => e.ReconfirmPolicy, p =>
         {
             p.Property(x => x.OpensAt).HasColumnName("reconfirm_policy_opens_at");
             p.Property(x => x.ClosesAt).HasColumnName("reconfirm_policy_closes_at");
             p.Property(x => x.Cadence).HasColumnName("reconfirm_policy_cadence");
+            p.Property(x => x.MinEmailInterval).HasColumnName("reconfirm_policy_min_email_interval");
         });
 
         builder.Property(e => e.AdditionalDetailSchema)

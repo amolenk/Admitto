@@ -15,8 +15,6 @@ using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.Regi
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.EmailVerification.RequestOtp.PublicApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.EmailVerification.VerifyOtp.PublicApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEventManagement.ArchiveTicketedEvent.AdminApi;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEventManagement.CancelTicketedEvent.AdminApi;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEventManagement.ConfigureCancellationPolicy.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEventManagement.ConfigureReconfirmPolicy.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEventManagement.ConfigureRegistrationPolicy.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEventManagement.GetTicketedEventDetails.AdminApi;
@@ -25,7 +23,6 @@ using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEventManag
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEventManagement.UpdateTicketedEventDetails.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEventManagement.UpdateTicketedEventTimeZone.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypeManagement.AddTicketType.AdminApi;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypeManagement.CancelTicketType.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypeManagement.GetPublicTicketTypes.PublicApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypeManagement.GetTicketTypes.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypeManagement.UpdateTicketType.AdminApi;
@@ -48,10 +45,8 @@ public static class RegistrationsModule
         eventGroup
             .MapGetTicketedEventDetails()
             .MapUpdateTicketedEventDetails()
-            .MapCancelTicketedEvent()
             .MapArchiveTicketedEvent()
             .MapConfigureRegistrationPolicy()
-            .MapConfigureCancellationPolicy()
             .MapConfigureReconfirmPolicy()
             .MapUpdateTicketedEventTimeZone()
             .MapUpdateAdditionalDetailSchema()
@@ -69,7 +64,6 @@ public static class RegistrationsModule
             .MapGroup("/ticket-types")
             .MapAddTicketType()
             .MapUpdateTicketType()
-            .MapCancelTicketType()
             .MapGetTicketTypes();
 
         return group;

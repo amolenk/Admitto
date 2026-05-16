@@ -192,11 +192,11 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         });
     }
 
-    // SC010: Coupon does not bypass cancelled event — active-status gate still applies
+    // SC010: Coupon does not bypass archived event — active-status gate still applies
     [TestMethod]
-    public async ValueTask RegisterWithCoupon_EventCancelled_ThrowsEventNotActive()
+    public async ValueTask RegisterWithCoupon_EventArchived_ThrowsEventNotActive()
     {
-        var fixture = RegisterAttendeeFixture.CouponEventCancelled();
+        var fixture = RegisterAttendeeFixture.CouponEventArchived();
         await fixture.SetupAsync(Environment);
 
         var command = NewCommand(fixture, fixture.CouponEmail.Value);

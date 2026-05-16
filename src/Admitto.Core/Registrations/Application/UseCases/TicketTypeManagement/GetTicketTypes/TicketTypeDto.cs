@@ -6,5 +6,4 @@ internal sealed record TicketTypeDto(
     string[] TimeSlots,
     int? MaxCapacity,
     int UsedCapacity,
-    bool IsCancelled,
     bool SelfServiceEnabled);

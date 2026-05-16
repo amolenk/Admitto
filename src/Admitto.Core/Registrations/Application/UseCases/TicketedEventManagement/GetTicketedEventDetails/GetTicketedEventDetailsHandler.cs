@@ -39,15 +39,13 @@ internal sealed class GetTicketedEventDetailsHandler(
                     ticketedEvent.RegistrationPolicy.OpensAt,
                     ticketedEvent.RegistrationPolicy.ClosesAt,
                     ticketedEvent.RegistrationPolicy.AllowedEmailDomain),
-            ticketedEvent.CancellationPolicy is null
-                ? null
-                : new CancellationPolicyDto(ticketedEvent.CancellationPolicy.LateCancellationCutoff),
             ticketedEvent.ReconfirmPolicy is null
                 ? null
                 : new ReconfirmPolicyDto(
                     ticketedEvent.ReconfirmPolicy.OpensAt,
                     ticketedEvent.ReconfirmPolicy.ClosesAt,
-                    (int)ticketedEvent.ReconfirmPolicy.Cadence.TotalDays),
+                    (int)ticketedEvent.ReconfirmPolicy.Cadence.TotalHours,
+                    (int)ticketedEvent.ReconfirmPolicy.MinEmailInterval.TotalHours),
             ticketedEvent.AdditionalDetailSchema.Fields
                 .Select(f => new AdditionalDetailFieldDto(f.Key, f.Name, f.MaxLength))
                 .ToArray());

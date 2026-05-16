@@ -27,7 +27,7 @@ internal sealed class CreateCouponHandler(
             .FirstOrDefaultAsync(tc => tc.Id == eventId, cancellationToken);
 
         var availableTicketTypes = catalog?.TicketTypes
-            .Select(tt => new TicketTypeInfo(tt.Id, tt.IsCancelled))
+            .Select(tt => new TicketTypeInfo(tt.Id))
             .ToList() ?? [];
 
         var coupon = Coupon.Create(

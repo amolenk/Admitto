@@ -7,7 +7,7 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 internal sealed class AddTicketTypeFixture
 {
     private bool _seedExistingTicketType;
-    private EventLifecycleStatus _eventStatus = EventLifecycleStatus.Active;
+    private bool _archive;
 
     public TicketedEventId EventId { get; } = TicketedEventId.New();
 
@@ -22,14 +22,9 @@ internal sealed class AddTicketTypeFixture
         _seedExistingTicketType = true
     };
 
-    public static AddTicketTypeFixture CancelledEvent() => new()
-    {
-        _eventStatus = EventLifecycleStatus.Cancelled
-    };
-
     public static AddTicketTypeFixture ArchivedEvent() => new()
     {
-        _eventStatus = EventLifecycleStatus.Archived
+        _archive = true
     };
 
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
@@ -47,11 +42,7 @@ internal sealed class AddTicketTypeFixture
                     100);
             }
 
-            if (_eventStatus == EventLifecycleStatus.Cancelled)
-            {
-                catalog.MarkEventCancelled();
-            }
-            else if (_eventStatus == EventLifecycleStatus.Archived)
+            if (_archive)
             {
                 catalog.MarkEventArchived();
             }

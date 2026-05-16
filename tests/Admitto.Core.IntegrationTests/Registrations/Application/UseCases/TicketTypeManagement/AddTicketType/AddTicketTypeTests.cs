@@ -40,7 +40,6 @@ public sealed class AddTicketTypeTests(TestContext testContext) : AspireIntegrat
             ticketType.Name.Value.ShouldBe("General Admission");
             ticketType.TimeSlots.ShouldContain(TimeSlot.From("morning"));
             ticketType.MaxCapacity.ShouldBe(100);
-            ticketType.IsCancelled.ShouldBeFalse();
         });
     }
 
@@ -98,28 +97,6 @@ public sealed class AddTicketTypeTests(TestContext testContext) : AspireIntegrat
     }
 
     // NOTE: SC-004 tests cover event-not-active rejection via TicketCatalog.EventStatus.
-
-    [TestMethod]
-    public async ValueTask AddTicketType_CancelledEvent_ThrowsEventNotActive()
-    {
-        // Arrange
-        var fixture = AddTicketTypeFixture.CancelledEvent();
-        await fixture.SetupAsync(Environment);
-
-        var command = new AddTicketTypeCommand(
-            fixture.EventId.Value,
-            "General Admission",
-            [],
-            100);
-        var sut = new AddTicketTypeHandler(Environment.RegistrationsDatabase.Context);
-
-        // Act
-        var result = await ErrorResult.CaptureAsync(
-            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
-
-        // Assert
-        result.Error.Code.ShouldBe("ticket_catalog.event_not_active");
-    }
 
     [TestMethod]
     public async ValueTask AddTicketType_ArchivedEvent_ThrowsEventNotActive()

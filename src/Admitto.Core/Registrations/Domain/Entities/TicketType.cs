@@ -25,7 +25,6 @@ public class TicketType : Entity<TicketTypeId>
         TimeSlots = timeSlots;
         MaxCapacity = maxCapacity;
         UsedCapacity = 0;
-        IsCancelled = false;
         SelfServiceEnabled = selfServiceEnabled;
     }
 
@@ -33,7 +32,6 @@ public class TicketType : Entity<TicketTypeId>
     public TimeSlot[] TimeSlots { get; private set; } = [];
     public int? MaxCapacity { get; private set; }
     public int UsedCapacity { get; private set; }
-    public bool IsCancelled { get; private set; }
     public bool SelfServiceEnabled { get; private set; } = true;
 
     public void UpdateName(TicketTypeName name)
@@ -49,14 +47,6 @@ public class TicketType : Entity<TicketTypeId>
     public void UpdateSelfServiceEnabled(bool enabled)
     {
         SelfServiceEnabled = enabled;
-    }
-
-    public void Cancel()
-    {
-        if (IsCancelled)
-            throw new BusinessRuleViolationException(Errors.TicketTypeAlreadyCancelled(Id));
-
-        IsCancelled = true;
     }
 
     /// <summary>
@@ -88,11 +78,6 @@ public class TicketType : Entity<TicketTypeId>
 
     internal static class Errors
     {
-        public static Error TicketTypeAlreadyCancelled(TicketTypeId id) =>
-            new("ticket_type.already_cancelled",
-                "The ticket type is already cancelled.",
-                Details: new Dictionary<string, object?> { ["id"] = id.Value });
-
         public static Error TicketTypeNotAvailable(TicketTypeId id) =>
             new("ticket_type.not_available",
                 "Ticket type is not available for self-service registration.",

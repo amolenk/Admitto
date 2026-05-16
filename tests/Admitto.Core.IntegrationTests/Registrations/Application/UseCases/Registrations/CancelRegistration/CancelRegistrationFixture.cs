@@ -8,6 +8,7 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 internal sealed class CancelRegistrationFixture
 {
     private bool _preCancel;
+    private DateTimeOffset? _eventStartsAt;
 
     public TicketedEventId EventId { get; } = TicketedEventId.New();
     public TeamId TeamId { get; } = TeamId.New();
@@ -20,6 +21,12 @@ internal sealed class CancelRegistrationFixture
     public static CancelRegistrationFixture ActiveRegistration() => new();
 
     public static CancelRegistrationFixture AlreadyCancelled() => new() { _preCancel = true };
+
+    public static CancelRegistrationFixture WithEventAlreadyStarted() =>
+        new() { _eventStartsAt = DateTimeOffset.UtcNow.AddDays(-1) };
+
+    public static CancelRegistrationFixture WithEventNotYetStarted() =>
+        new() { _eventStartsAt = DateTimeOffset.UtcNow.AddDays(60) };
 
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
     {
@@ -42,6 +49,21 @@ internal sealed class CancelRegistrationFixture
             }
 
             dbContext.Registrations.Add(registration);
+
+            if (_eventStartsAt.HasValue)
+            {
+                var ticketedEvent = TicketedEvent.Create(
+                    CreationRequestId.From(Guid.NewGuid()),
+                    EventId,
+                    TeamId,
+                    EventName.From("DevConf"),
+                    AbsoluteUrl.From("https://example.com"),
+                    AbsoluteUrl.From("https://tickets.example.com"),
+                    _eventStartsAt.Value,
+                    _eventStartsAt.Value.AddDays(1),
+                    TimeZoneId.From("UTC"));
+                dbContext.TicketedEvents.Add(ticketedEvent);
+            }
         });
     }
 }

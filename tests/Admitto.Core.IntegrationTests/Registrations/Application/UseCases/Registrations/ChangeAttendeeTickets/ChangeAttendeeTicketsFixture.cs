@@ -40,13 +40,15 @@ internal sealed class ChangeAttendeeTicketsFixture
         return f;
     }
 
-    public static ChangeAttendeeTicketsFixture WithCancelledEvent()
+    public static ChangeAttendeeTicketsFixture WithArchivedEvent()
     {
         var f = new ChangeAttendeeTicketsFixture();
         var ev = f.MakeActiveEvent();
-        ev.Cancel();
+        ev.Archive();
+        var catalog = f.MakeCatalog(("early-bird", "Early Bird", 100, 50));
+        catalog.MarkEventArchived();
         f._ticketedEvent = ev;
-        f._catalog = f.MakeCatalog(("early-bird", "Early Bird", 100, 50));
+        f._catalog = catalog;
         return f;
     }
 

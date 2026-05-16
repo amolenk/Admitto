@@ -32,7 +32,6 @@ public sealed class TicketCatalogTests
         tt.Name.ShouldBe(TicketTypeName.From("VIP Pass"));
         tt.MaxCapacity.ShouldBe(100);
         tt.UsedCapacity.ShouldBe(0);
-        tt.IsCancelled.ShouldBeFalse();
     }
 
     [TestMethod]
@@ -110,54 +109,6 @@ public sealed class TicketCatalogTests
 
         // Assert
         result.Error.ShouldMatch(TicketCatalog.Errors.TicketTypeNotFound(unknownId));
-    }
-
-    [TestMethod]
-    public void SC007_UpdateTicketType_CancelledType_Throws()
-    {
-        // Arrange
-        var sut = TicketCatalog.Create(DefaultEventId);
-        var id = TicketTypeId.New();
-        sut.AddTicketType(id, TicketTypeName.From("VIP"), [], 100);
-        sut.CancelTicketType(id);
-
-        // Act
-        var result = ErrorResult.Capture(() =>
-            sut.UpdateTicketType(id, name: null, maxCapacity: 200));
-
-        // Assert
-        result.Error.ShouldMatch(TicketCatalog.Errors.TicketTypeAlreadyCancelled(id));
-    }
-
-    [TestMethod]
-    public void SC008_CancelTicketType_ActiveType_Cancels()
-    {
-        // Arrange
-        var sut = TicketCatalog.Create(DefaultEventId);
-        var id = TicketTypeId.New();
-        sut.AddTicketType(id, TicketTypeName.From("VIP"), [], 100);
-
-        // Act
-        sut.CancelTicketType(id);
-
-        // Assert
-        sut.TicketTypes[0].IsCancelled.ShouldBeTrue();
-    }
-
-    [TestMethod]
-    public void SC009_CancelTicketType_AlreadyCancelled_Throws()
-    {
-        // Arrange
-        var sut = TicketCatalog.Create(DefaultEventId);
-        var id = TicketTypeId.New();
-        sut.AddTicketType(id, TicketTypeName.From("VIP"), [], 100);
-        sut.CancelTicketType(id);
-
-        // Act
-        var result = ErrorResult.Capture(() => sut.CancelTicketType(id));
-
-        // Assert
-        result.Error.ShouldMatch(Registrations.Domain.Entities.TicketType.Errors.TicketTypeAlreadyCancelled(id));
     }
 
     [TestMethod]
@@ -297,65 +248,10 @@ public sealed class TicketCatalogTests
     }
 
     [TestMethod]
-    public void SC019_MarkEventCancelled_FromActive_Transitions()
-    {
-        // Arrange
-        var sut = TicketCatalog.Create(DefaultEventId);
-
-        // Act
-        sut.MarkEventCancelled();
-
-        // Assert
-        sut.EventStatus.ShouldBe(EventLifecycleStatus.Cancelled);
-    }
-
-    [TestMethod]
-    public void SC020_MarkEventCancelled_AlreadyCancelled_IsIdempotent()
-    {
-        // Arrange
-        var sut = TicketCatalog.Create(DefaultEventId);
-        sut.MarkEventCancelled();
-
-        // Act
-        sut.MarkEventCancelled();
-
-        // Assert
-        sut.EventStatus.ShouldBe(EventLifecycleStatus.Cancelled);
-    }
-
-    [TestMethod]
-    public void SC021_MarkEventCancelled_FromArchived_Throws()
-    {
-        // Arrange
-        var sut = TicketCatalog.Create(DefaultEventId);
-        sut.MarkEventArchived();
-
-        // Act
-        var result = ErrorResult.Capture(() => sut.MarkEventCancelled());
-
-        // Assert
-        result.Error.ShouldMatch(TicketCatalog.Errors.IllegalEventStatusTransition);
-    }
-
-    [TestMethod]
     public void SC022_MarkEventArchived_FromActive_Transitions()
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
-
-        // Act
-        sut.MarkEventArchived();
-
-        // Assert
-        sut.EventStatus.ShouldBe(EventLifecycleStatus.Archived);
-    }
-
-    [TestMethod]
-    public void SC023_MarkEventArchived_FromCancelled_Transitions()
-    {
-        // Arrange
-        var sut = TicketCatalog.Create(DefaultEventId);
-        sut.MarkEventCancelled();
 
         // Act
         sut.MarkEventArchived();
@@ -379,22 +275,6 @@ public sealed class TicketCatalogTests
     }
 
     [TestMethod]
-    public void SC025_Claim_EventCancelled_Throws()
-    {
-        // Arrange
-        var sut = TicketCatalog.Create(DefaultEventId);
-        var id = TicketTypeId.New();
-        sut.AddTicketType(id, TicketTypeName.From("General"), [], 10);
-        sut.MarkEventCancelled();
-
-        // Act
-        var result = ErrorResult.Capture(() => sut.Claim([id], enforce: true));
-
-        // Assert
-        result.Error.ShouldMatch(TicketCatalog.Errors.EventNotActive);
-    }
-
-    [TestMethod]
     public void SC026_Claim_EventArchived_Throws()
     {
         // Arrange
@@ -411,21 +291,6 @@ public sealed class TicketCatalogTests
     }
 
     [TestMethod]
-    public void SC027_AddTicketType_EventCancelled_Throws()
-    {
-        // Arrange
-        var sut = TicketCatalog.Create(DefaultEventId);
-        sut.MarkEventCancelled();
-
-        // Act
-        var result = ErrorResult.Capture(() =>
-            sut.AddTicketType(TicketTypeId.New(), TicketTypeName.From("VIP"), [], 100));
-
-        // Assert
-        result.Error.ShouldMatch(TicketCatalog.Errors.EventNotActive);
-    }
-
-    [TestMethod]
     public void SC028_AddTicketType_EventArchived_Throws()
     {
         // Arrange
@@ -435,39 +300,6 @@ public sealed class TicketCatalogTests
         // Act
         var result = ErrorResult.Capture(() =>
             sut.AddTicketType(TicketTypeId.New(), TicketTypeName.From("VIP"), [], 100));
-
-        // Assert
-        result.Error.ShouldMatch(TicketCatalog.Errors.EventNotActive);
-    }
-
-    [TestMethod]
-    public void SC029_UpdateTicketType_EventCancelled_Throws()
-    {
-        // Arrange
-        var sut = TicketCatalog.Create(DefaultEventId);
-        var id = TicketTypeId.New();
-        sut.AddTicketType(id, TicketTypeName.From("VIP"), [], 100);
-        sut.MarkEventCancelled();
-
-        // Act
-        var result = ErrorResult.Capture(() =>
-            sut.UpdateTicketType(id, name: null, maxCapacity: 200));
-
-        // Assert
-        result.Error.ShouldMatch(TicketCatalog.Errors.EventNotActive);
-    }
-
-    [TestMethod]
-    public void SC030_CancelTicketType_EventCancelled_Throws()
-    {
-        // Arrange
-        var sut = TicketCatalog.Create(DefaultEventId);
-        var id = TicketTypeId.New();
-        sut.AddTicketType(id, TicketTypeName.From("VIP"), [], 100);
-        sut.MarkEventCancelled();
-
-        // Act
-        var result = ErrorResult.Capture(() => sut.CancelTicketType(id));
 
         // Assert
         result.Error.ShouldMatch(TicketCatalog.Errors.EventNotActive);
@@ -524,22 +356,6 @@ public sealed class TicketCatalogTests
         // Assert
         sut.GetTicketType(idA)!.UsedCapacity.ShouldBe(0);
         sut.GetTicketType(idB)!.UsedCapacity.ShouldBe(0);
-    }
-
-    [TestMethod]
-    public void SC034_Claim_CancelledTicketType_Throws()
-    {
-        // Arrange
-        var sut = TicketCatalog.Create(DefaultEventId);
-        var id = TicketTypeId.New();
-        sut.AddTicketType(id, TicketTypeName.From("VIP"), [], 10);
-        sut.CancelTicketType(id);
-
-        // Act
-        var result = ErrorResult.Capture(() => sut.Claim([id], enforce: false));
-
-        // Assert
-        result.Error.ShouldMatch(TicketCatalog.Errors.CancelledTicketTypes([id.Value]));
     }
 
     [TestMethod]

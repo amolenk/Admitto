@@ -1,7 +1,6 @@
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
-using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.Messaging;
@@ -92,27 +91,17 @@ internal sealed class RegistrationsIntegrationEventPublisher(
                 : new TicketedEventReconfirmPolicySnapshot(
                     domainEvent.Policy.OpensAt,
                     domainEvent.Policy.ClosesAt,
-                    (int)domainEvent.Policy.Cadence.TotalDays)));
+                    (int)domainEvent.Policy.Cadence.TotalHours,
+                    (int)domainEvent.Policy.MinEmailInterval.TotalHours)));
 
         return ValueTask.CompletedTask;
     }
 
     public ValueTask HandleAsync(TicketedEventStatusChangedDomainEvent domainEvent, CancellationToken cancellationToken)
     {
-        IIntegrationEvent integrationEvent = domainEvent.NewStatus switch
-        {
-            EventLifecycleStatus.Cancelled => new TicketedEventCancelledIntegrationEvent(
-                domainEvent.TeamId.Value,
-                domainEvent.TicketedEventId.Value),
-            EventLifecycleStatus.Archived => new TicketedEventArchivedIntegrationEvent(
-                domainEvent.TeamId.Value,
-                domainEvent.TicketedEventId.Value),
-            _ => throw new InvalidOperationException(
-                $"Unexpected {nameof(EventLifecycleStatus)} '{domainEvent.NewStatus}' for " +
-                $"{nameof(TicketedEventStatusChangedDomainEvent)}.")
-        };
-
-        outbox.Enqueue(integrationEvent);
+        outbox.Enqueue(new TicketedEventArchivedIntegrationEvent(
+            domainEvent.TeamId.Value,
+            domainEvent.TicketedEventId.Value));
 
         return ValueTask.CompletedTask;
     }

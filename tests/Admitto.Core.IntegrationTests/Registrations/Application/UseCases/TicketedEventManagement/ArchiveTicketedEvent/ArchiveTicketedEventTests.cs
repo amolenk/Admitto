@@ -28,29 +28,9 @@ public sealed class ArchiveTicketedEventTests(TestContext testContext) : AspireI
         });
     }
 
-    // SC-002: Archive cancelled event — allowed, transitions to Archived
-    [TestMethod]
-    public async ValueTask ArchiveTicketedEvent_CancelledEvent_TransitionsToArchived()
-    {
-        var fixture = ArchiveTicketedEventFixture.CancelledEvent();
-        await fixture.SetupAsync(Environment);
-
-        var sut = new ArchiveTicketedEventHandler(Environment.RegistrationsDatabase.Context);
-
-        await sut.HandleAsync(new ArchiveTicketedEventCommand(fixture.EventId.Value), testContext.CancellationToken);
-
-        await Environment.RegistrationsDatabase.AssertAsync(async ctx =>
-        {
-            var te = await ctx.TicketedEvents
-                .FirstOrDefaultAsync(e => e.Id == fixture.EventId, testContext.CancellationToken);
-            te.ShouldNotBeNull();
-            te.Status.ShouldBe(EventLifecycleStatus.Archived);
-        });
-    }
-
     // SC-003: Archive already-archived event throws
     [TestMethod]
-    public async ValueTask ArchiveTicketedEvent_AlreadyArchived_ThrowsAlreadyArchived()
+    public async ValueTask ArchiveTicketedEvent_AlreadyArchived_ThrowsEventNotActive()
     {
         var fixture = ArchiveTicketedEventFixture.AlreadyArchived();
         await fixture.SetupAsync(Environment);
@@ -60,6 +40,6 @@ public sealed class ArchiveTicketedEventTests(TestContext testContext) : AspireI
         var result = await ErrorResult.CaptureAsync(async () =>
             await sut.HandleAsync(new ArchiveTicketedEventCommand(fixture.EventId.Value), testContext.CancellationToken));
 
-        result.Error.Code.ShouldBe("ticketed_event.already_archived");
+        result.Error.Code.ShouldBe("ticketed_event.event_not_active");
     }
 }

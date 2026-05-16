@@ -58,11 +58,13 @@ export function NavEventPages({ teamId }: { teamId: string }) {
         return pathname.startsWith(fullPath);
     }
 
-    const eventName = event?.name ?? activeEventId;
+    const eventName = event?.name;
 
     return (
         <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-            <SidebarGroupLabel className="uppercase tracking-wider">{eventName}</SidebarGroupLabel>
+            <SidebarGroupLabel className="uppercase tracking-wider">
+                {eventName ?? <span className="inline-block w-24 h-3 rounded bg-muted animate-pulse" />}
+            </SidebarGroupLabel>
             <SidebarMenu>
                 {eventPages.map((page) => {
                     const Icon = page.icon;

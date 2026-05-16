@@ -20,7 +20,7 @@ public sealed class ConfigureReconfirmPolicyTests(TestContext testContext) : Asp
 
         await sut.HandleAsync(
             new ConfigureReconfirmPolicyCommand(
-                fixture.EventId.Value, fixture.SeededVersion, opensAt, closesAt, CadenceDays: 7),
+                fixture.EventId.Value, fixture.SeededVersion, opensAt, closesAt, CadenceHours: 7, MinEmailIntervalHours: 24),
             testContext.CancellationToken);
 
         await Environment.RegistrationsDatabase.AssertAsync(async ctx =>
@@ -31,7 +31,8 @@ public sealed class ConfigureReconfirmPolicyTests(TestContext testContext) : Asp
             te.ReconfirmPolicy.ShouldNotBeNull();
             te.ReconfirmPolicy.OpensAt.ShouldBe(opensAt);
             te.ReconfirmPolicy.ClosesAt.ShouldBe(closesAt);
-            te.ReconfirmPolicy.Cadence.ShouldBe(TimeSpan.FromDays(7));
+            te.ReconfirmPolicy.Cadence.ShouldBe(TimeSpan.FromHours(7));
+            te.ReconfirmPolicy.MinEmailInterval.ShouldBe(TimeSpan.FromHours(24));
         });
     }
 
@@ -45,7 +46,7 @@ public sealed class ConfigureReconfirmPolicyTests(TestContext testContext) : Asp
 
         await sut.HandleAsync(
             new ConfigureReconfirmPolicyCommand(
-                fixture.EventId.Value, fixture.SeededVersion, OpensAt: null, ClosesAt: null, CadenceDays: null),
+                fixture.EventId.Value, fixture.SeededVersion, OpensAt: null, ClosesAt: null, CadenceHours: null, MinEmailIntervalHours: null),
             testContext.CancellationToken);
 
         await Environment.RegistrationsDatabase.AssertAsync(async ctx =>
@@ -58,9 +59,9 @@ public sealed class ConfigureReconfirmPolicyTests(TestContext testContext) : Asp
     }
 
     [TestMethod]
-    public async ValueTask ConfigureReconfirmPolicy_CancelledEvent_ThrowsEventNotActive()
+    public async ValueTask ConfigureReconfirmPolicy_ArchivedEvent_ThrowsEventNotActive()
     {
-        var fixture = ConfigureReconfirmPolicyFixture.CancelledEvent();
+        var fixture = ConfigureReconfirmPolicyFixture.ArchivedEvent();
         await fixture.SetupAsync(Environment);
 
         var sut = new ConfigureReconfirmPolicyHandler(Environment.RegistrationsDatabase.Context);
@@ -72,7 +73,8 @@ public sealed class ConfigureReconfirmPolicyTests(TestContext testContext) : Asp
                     fixture.SeededVersion,
                     DateTimeOffset.UtcNow.AddDays(5),
                     DateTimeOffset.UtcNow.AddDays(15),
-                    CadenceDays: 7),
+                    CadenceHours: 7,
+                    MinEmailIntervalHours: 24),
                 testContext.CancellationToken));
 
         result.Error.Code.ShouldBe("ticketed_event.event_not_active");
@@ -93,7 +95,8 @@ public sealed class ConfigureReconfirmPolicyTests(TestContext testContext) : Asp
                     fixture.SeededVersion,
                     OpensAt: DateTimeOffset.UtcNow.AddDays(5),
                     ClosesAt: null,
-                    CadenceDays: 7),
+                    CadenceHours: 7,
+                    MinEmailIntervalHours: null),
                 testContext.CancellationToken));
 
         result.Error.Code.ShouldBe("configure_reconfirm_policy.incomplete");

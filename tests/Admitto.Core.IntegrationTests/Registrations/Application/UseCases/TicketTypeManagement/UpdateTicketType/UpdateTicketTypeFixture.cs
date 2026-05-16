@@ -17,9 +17,9 @@ internal sealed class UpdateTicketTypeFixture
 
     public static UpdateTicketTypeFixture ActiveEvent() => new();
 
-    public static UpdateTicketTypeFixture CancelledEvent() => new()
+    public static UpdateTicketTypeFixture ArchivedEvent() => new()
     {
-        _eventStatus = EventLifecycleStatus.Cancelled
+        _eventStatus = EventLifecycleStatus.Archived
     };
 
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
@@ -33,9 +33,9 @@ internal sealed class UpdateTicketTypeFixture
                 [],
                 100);
 
-            if (_eventStatus == EventLifecycleStatus.Cancelled)
+            if (_eventStatus == EventLifecycleStatus.Archived)
             {
-                catalog.MarkEventCancelled();
+                catalog.MarkEventArchived();
             }
 
             dbContext.TicketCatalogs.Add(catalog);

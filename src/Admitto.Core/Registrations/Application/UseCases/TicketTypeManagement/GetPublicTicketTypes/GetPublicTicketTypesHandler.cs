@@ -22,7 +22,7 @@ internal sealed class GetPublicTicketTypesHandler(IRegistrationsWriteStore write
                 NotFoundError.Create<TicketCatalog>(query.EventId.Value));
 
         return catalog.TicketTypes
-            .Where(tt => !tt.IsCancelled && tt.SelfServiceEnabled)
+            .Where(tt => tt.SelfServiceEnabled)
             .Select(tt => new PublicTicketTypeDto(
                 tt.Id.Value,
                 tt.Name.Value,

@@ -39,9 +39,9 @@ internal sealed class ScheduleReconfirmationsHandler(
         ReconfirmTriggerSpecDto spec,
         CancellationToken cancellationToken)
     {
-        if (spec.CadenceDays < 1)
+        if (spec.CadenceHours < 1)
             throw new ArgumentOutOfRangeException(
-                nameof(spec), spec.CadenceDays, "Cadence must be at least 1 day.");
+                nameof(spec), spec.CadenceHours, "Cadence must be at least 1 hour.");
 
         if (spec.ClosesAt <= spec.OpensAt)
             throw new ArgumentException("Window close must be after open.", nameof(spec));
@@ -61,13 +61,14 @@ internal sealed class ScheduleReconfirmationsHandler(
 
         var scheduler = await schedulerFactory.GetScheduler(cancellationToken);
         var triggerKey = TriggerKeyFor(ticketedEventId);
-        var cron = BuildCron(spec.CadenceDays);
+        var cron = BuildCron(spec.CadenceHours);
 
         var trigger = TriggerBuilder.Create()
             .WithIdentity(triggerKey)
             .ForJob(RequestReconfirmationsJob.Name)
             .UsingJobData(RequestReconfirmationsJob.TeamIdKey, spec.TeamId.ToString())
             .UsingJobData(RequestReconfirmationsJob.TicketedEventIdKey, ticketedEventId.Value.ToString())
+            .UsingJobData(RequestReconfirmationsJob.MinEmailIntervalHoursKey, spec.MinEmailIntervalHours.ToString())
             .StartAt(spec.OpensAt)
             .EndAt(spec.ClosesAt)
             .WithCronSchedule(cron, options => options
@@ -110,15 +111,18 @@ internal sealed class ScheduleReconfirmationsHandler(
         new(ticketedEventId.Value.ToString("N"), TriggerGroup);
 
     /// <summary>
-    /// Maps a cadence in whole days to a cron expression evaluated in the
-    /// event's time zone. Daily cadence fires at 09:00 local; multi-day
-    /// cadences use day-of-month stepping which approximates "every N days"
-    /// within each month boundary — acceptable given the minimum 1-day
-    /// cadence and that the cron is the source of truth for tick timing
-    /// (per design D5).
+    /// Maps a cadence in whole hours to a Quartz cron expression evaluated in
+    /// the event's time zone. Sub-day cadences fire at the top of every Nth
+    /// hour; day-level cadences (multiples of 24) fire at 09:00 local using
+    /// day-of-month stepping — acceptable given that the cron is the source
+    /// of truth for tick timing (per design D5).
     /// </summary>
-    private static string BuildCron(int cadenceDays)
+    private static string BuildCron(int cadenceHours)
     {
+        if (cadenceHours < 24)
+            return $"0 0 0/{cadenceHours} * * ?";
+
+        int cadenceDays = cadenceHours / 24;
         return cadenceDays == 1
             ? "0 0 9 * * ?"
             : $"0 0 9 1/{cadenceDays} * ?";

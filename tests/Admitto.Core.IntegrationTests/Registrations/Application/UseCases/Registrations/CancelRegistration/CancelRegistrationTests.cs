@@ -114,4 +114,47 @@ public sealed class CancelRegistrationTests(TestContext testContext) : AspireInt
 
         result.Error.ShouldMatch(NotFoundError.Create<Registration>(fixture.RegistrationId.Value));
     }
+
+    // SC-C06: Self-service cancellation fails when event has already started
+    [TestMethod]
+    public async ValueTask CancelRegistration_AttendeeRequest_EventAlreadyStarted_ThrowsConflict()
+    {
+        var fixture = CancelRegistrationFixture.WithEventAlreadyStarted();
+        await fixture.SetupAsync(Environment);
+
+        var command = new CancelRegistrationCommand(
+            fixture.RegistrationId.Value,
+            fixture.EventId.Value,
+            CancellationReason.AttendeeRequest);
+        var sut = new CancelRegistrationHandler(Environment.RegistrationsDatabase.Context);
+
+        var result = await ErrorResult.CaptureAsync(
+            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
+
+        result.Error.ShouldMatch(CancelRegistrationHandler.Errors.EventAlreadyStarted);
+    }
+
+    // SC-C07: Self-service cancellation succeeds when event has not yet started
+    [TestMethod]
+    public async ValueTask CancelRegistration_AttendeeRequest_EventNotYetStarted_SetsCancelledState()
+    {
+        var fixture = CancelRegistrationFixture.WithEventNotYetStarted();
+        await fixture.SetupAsync(Environment);
+
+        var command = new CancelRegistrationCommand(
+            fixture.RegistrationId.Value,
+            fixture.EventId.Value,
+            CancellationReason.AttendeeRequest);
+        var sut = new CancelRegistrationHandler(Environment.RegistrationsDatabase.Context);
+
+        await sut.HandleAsync(command, testContext.CancellationToken);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var registration = await dbContext.Registrations
+                .FirstOrDefaultAsync(r => r.Id == fixture.RegistrationId, testContext.CancellationToken);
+            registration.ShouldNotBeNull();
+            registration.CancellationReason.ShouldBe(CancellationReason.AttendeeRequest);
+        });
+    }
 }

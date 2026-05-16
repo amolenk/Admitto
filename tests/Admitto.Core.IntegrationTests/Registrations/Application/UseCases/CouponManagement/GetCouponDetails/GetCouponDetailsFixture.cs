@@ -34,7 +34,7 @@ internal sealed class GetCouponDetailsFixture
             .WithEventId(EventId)
             .WithEmail(EmailAddress.From("speaker@example.com"))
             .WithRequestedTicketTypeIds(TicketTypeId)
-            .WithAvailableTicketTypes(new TicketTypeInfo(TicketTypeId, IsCancelled: false))
+            .WithAvailableTicketTypes(new TicketTypeInfo(TicketTypeId))
             .WithExpiresAt(DateTimeOffset.UtcNow.AddDays(30))
             .WithBypassRegistrationWindow()
             .Build();

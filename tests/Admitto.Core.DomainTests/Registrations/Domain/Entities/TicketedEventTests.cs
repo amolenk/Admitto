@@ -34,7 +34,6 @@ public sealed class TicketedEventTests
         sut.Status.ShouldBe(EventLifecycleStatus.Active);
         sut.IsActive.ShouldBeTrue();
         sut.RegistrationPolicy.ShouldBeNull();
-        sut.CancellationPolicy.ShouldBeNull();
         sut.ReconfirmPolicy.ShouldBeNull();
     }
 
@@ -115,52 +114,12 @@ public sealed class TicketedEventTests
     public void SC012_UpdateDetails_NotActive_Throws()
     {
         var sut = NewEvent();
-        sut.Cancel();
+        sut.Archive();
 
         var act = () => sut.UpdateDetails(DefaultName, DefaultWebsite, DefaultBaseUrl, DefaultStart, DefaultEnd);
 
         var ex = Should.Throw<BusinessRuleViolationException>(act);
         ex.Error.Code.ShouldBe("ticketed_event.event_not_active");
-    }
-
-    // ── Cancel ───────────────────────────────────────────────────────────────
-
-    [TestMethod]
-    public void SC020_Cancel_Active_TransitionsToCancelledAndRaisesEvent()
-    {
-        var sut = NewEvent();
-
-        sut.Cancel();
-
-        sut.Status.ShouldBe(EventLifecycleStatus.Cancelled);
-        sut.IsActive.ShouldBeFalse();
-
-        var raised = sut.GetDomainEvents()
-            .OfType<TicketedEventStatusChangedDomainEvent>()
-            .ShouldHaveSingleItem();
-        raised.TicketedEventId.ShouldBe(DefaultEventId);
-        raised.TeamId.ShouldBe(DefaultTeamId);
-        raised.NewStatus.ShouldBe(EventLifecycleStatus.Cancelled);
-    }
-
-    [TestMethod]
-    public void SC021_Cancel_AlreadyCancelled_Throws()
-    {
-        var sut = NewEvent();
-        sut.Cancel();
-
-        var ex = Should.Throw<BusinessRuleViolationException>(() => sut.Cancel());
-        ex.Error.Code.ShouldBe("ticketed_event.already_cancelled");
-    }
-
-    [TestMethod]
-    public void SC022_Cancel_AlreadyArchived_Throws()
-    {
-        var sut = NewEvent();
-        sut.Archive();
-
-        var ex = Should.Throw<BusinessRuleViolationException>(() => sut.Cancel());
-        ex.Error.Code.ShouldBe("ticketed_event.already_archived");
     }
 
     // ── Archive ──────────────────────────────────────────────────────────────
@@ -180,29 +139,13 @@ public sealed class TicketedEventTests
     }
 
     [TestMethod]
-    public void SC031_Archive_Cancelled_TransitionsToArchived()
-    {
-        var sut = NewEvent();
-        sut.Cancel();
-        sut.ClearDomainEvents();
-
-        sut.Archive();
-
-        sut.Status.ShouldBe(EventLifecycleStatus.Archived);
-        sut.GetDomainEvents()
-            .OfType<TicketedEventStatusChangedDomainEvent>()
-            .ShouldHaveSingleItem()
-            .NewStatus.ShouldBe(EventLifecycleStatus.Archived);
-    }
-
-    [TestMethod]
     public void SC032_Archive_AlreadyArchived_Throws()
     {
         var sut = NewEvent();
         sut.Archive();
 
         var ex = Should.Throw<BusinessRuleViolationException>(() => sut.Archive());
-        ex.Error.Code.ShouldBe("ticketed_event.already_archived");
+        ex.Error.Code.ShouldBe("ticketed_event.event_not_active");
     }
 
     // ── ConfigureRegistrationPolicy ──────────────────────────────────────────
@@ -219,50 +162,12 @@ public sealed class TicketedEventTests
     }
 
     [TestMethod]
-    public void SC041_ConfigureRegistrationPolicy_Cancelled_Throws()
-    {
-        var sut = NewEvent();
-        sut.Cancel();
-
-        var act = () => sut.ConfigureRegistrationPolicy(NewRegistrationPolicy());
-
-        var ex = Should.Throw<BusinessRuleViolationException>(act);
-        ex.Error.Code.ShouldBe("ticketed_event.event_not_active");
-    }
-
-    [TestMethod]
     public void SC042_ConfigureRegistrationPolicy_Archived_Throws()
     {
         var sut = NewEvent();
         sut.Archive();
 
         var act = () => sut.ConfigureRegistrationPolicy(NewRegistrationPolicy());
-
-        var ex = Should.Throw<BusinessRuleViolationException>(act);
-        ex.Error.Code.ShouldBe("ticketed_event.event_not_active");
-    }
-
-    // ── ConfigureCancellationPolicy ──────────────────────────────────────────
-
-    [TestMethod]
-    public void SC050_ConfigureCancellationPolicy_Active_StoresPolicy()
-    {
-        var sut = NewEvent();
-        var policy = new TicketedEventCancellationPolicy(DefaultStart.AddDays(-3));
-
-        sut.ConfigureCancellationPolicy(policy);
-
-        sut.CancellationPolicy.ShouldBe(policy);
-    }
-
-    [TestMethod]
-    public void SC051_ConfigureCancellationPolicy_NotActive_Throws()
-    {
-        var sut = NewEvent();
-        sut.Cancel();
-
-        var act = () => sut.ConfigureCancellationPolicy(
-            new TicketedEventCancellationPolicy(DefaultStart));
 
         var ex = Should.Throw<BusinessRuleViolationException>(act);
         ex.Error.Code.ShouldBe("ticketed_event.event_not_active");
@@ -334,18 +239,6 @@ public sealed class TicketedEventTests
 
         sut.AdditionalDetailSchema.Fields.Count.ShouldBe(1);
         sut.AdditionalDetailSchema.Fields[0].Key.ShouldBe("tshirt");
-    }
-
-    [TestMethod]
-    public void SC102_UpdateAdditionalDetailSchema_Cancelled_Throws()
-    {
-        var sut = NewEvent();
-        sut.Cancel();
-
-        var act = () => sut.UpdateAdditionalDetailSchema(Array.Empty<AdditionalDetailField>());
-
-        var ex = Should.Throw<BusinessRuleViolationException>(act);
-        ex.Error.Code.ShouldBe("ticketed_event.event_not_active");
     }
 
     [TestMethod]
@@ -426,18 +319,6 @@ public sealed class TicketedEventTests
     }
 
     [TestMethod]
-    public void SC072_IsRegistrationOpen_Cancelled_ReturnsFalse()
-    {
-        var sut = NewEvent();
-        var now = DateTimeOffset.UtcNow;
-        sut.ConfigureRegistrationPolicy(TicketedEventRegistrationPolicy.Create(
-            now.AddDays(-1), now.AddDays(1)));
-        sut.Cancel();
-
-        sut.IsRegistrationOpen(now).ShouldBeFalse();
-    }
-
-    [TestMethod]
     public void SC073_IsRegistrationOpen_BeforeWindow_Active_ReturnsFalse()
     {
         var sut = NewEvent();
@@ -467,30 +348,6 @@ public sealed class TicketedEventTests
         sut.ConfigureRegistrationPolicy(TicketedEventRegistrationPolicy.Create(
             now.AddDays(-1), now.AddDays(1)));
         sut.Archive();
-
-        sut.IsRegistrationOpen(now).ShouldBeFalse();
-    }
-
-    [TestMethod]
-    public void SC076_IsRegistrationOpen_BeforeWindow_Cancelled_ReturnsFalse()
-    {
-        var sut = NewEvent();
-        var now = DateTimeOffset.UtcNow;
-        sut.ConfigureRegistrationPolicy(TicketedEventRegistrationPolicy.Create(
-            now.AddDays(1), now.AddDays(2)));
-        sut.Cancel();
-
-        sut.IsRegistrationOpen(now).ShouldBeFalse();
-    }
-
-    [TestMethod]
-    public void SC077_IsRegistrationOpen_AfterWindow_Cancelled_ReturnsFalse()
-    {
-        var sut = NewEvent();
-        var now = DateTimeOffset.UtcNow;
-        sut.ConfigureRegistrationPolicy(TicketedEventRegistrationPolicy.Create(
-            now.AddDays(-2), now.AddDays(-1)));
-        sut.Cancel();
 
         sut.IsRegistrationOpen(now).ShouldBeFalse();
     }
@@ -561,7 +418,7 @@ public sealed class TicketedEventTests
         var now = DateTimeOffset.UtcNow;
 
         var act = () => TicketedEventReconfirmPolicy.Create(
-            now.AddDays(2), now, TimeSpan.FromDays(1));
+            now.AddDays(2), now, TimeSpan.FromDays(1), TimeSpan.FromHours(24));
 
         var ex = Should.Throw<BusinessRuleViolationException>(act);
         ex.Error.Code.ShouldBe("ticketed_event_reconfirm_policy.window_close_before_open");
@@ -573,7 +430,7 @@ public sealed class TicketedEventTests
         var now = DateTimeOffset.UtcNow;
 
         var act = () => TicketedEventReconfirmPolicy.Create(
-            now, now.AddDays(10), TimeSpan.FromHours(23));
+            now, now.AddDays(10), TimeSpan.FromHours(23), TimeSpan.FromHours(24));
 
         var ex = Should.Throw<BusinessRuleViolationException>(act);
         ex.Error.Code.ShouldBe("ticketed_event_reconfirm_policy.cadence_below_minimum");
@@ -596,6 +453,6 @@ public sealed class TicketedEventTests
     {
         var now = DateTimeOffset.UtcNow;
         return TicketedEventReconfirmPolicy.Create(
-            now.AddDays(-10), now.AddDays(-1), TimeSpan.FromDays(2));
+            now.AddDays(-10), now.AddDays(-1), TimeSpan.FromDays(2), TimeSpan.FromHours(24));
     }
 }

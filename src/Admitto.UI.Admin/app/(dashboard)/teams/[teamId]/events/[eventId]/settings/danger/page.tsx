@@ -30,7 +30,6 @@ export default function DangerZonePage() {
     const { teamId, eventId } = useParams<{ teamId: string; eventId: string }>();
     const router = useRouter();
     const queryClient = useQueryClient();
-    const [isCancelling, setIsCancelling] = useState(false);
     const [isArchiving, setIsArchiving] = useState(false);
     const [archiveDialogOpen, setArchiveDialogOpen] = useState(false);
     const [confirmName, setConfirmName] = useState("");
@@ -41,20 +40,6 @@ export default function DangerZonePage() {
         queryFn: () => fetchEvent(teamId, eventId),
         throwOnError: false,
     });
-
-    async function handleCancel() {
-        if (!event.data) return;
-        setIsCancelling(true);
-        try {
-            await apiClient.post(`/api/teams/${teamId}/events/${eventId}/cancel`, {
-                expectedVersion: Number(event.data.version),
-            });
-            await queryClient.invalidateQueries({ queryKey: ["event", teamId, eventId] });
-            await queryClient.invalidateQueries({ queryKey: ["events", teamId] });
-        } finally {
-            setIsCancelling(false);
-        }
-    }
 
     async function handleArchive() {
         if (!event.data) return;
@@ -98,44 +83,6 @@ export default function DangerZonePage() {
             <Card className="divide-y" style={{ borderColor: "color-mix(in oklch, var(--destructive) 30%, var(--border))" }}>
                 <div className="flex items-center gap-4 p-5">
                     <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium">Cancel event</div>
-                        <div className="text-xs text-muted-foreground mt-0.5">
-                            Notify all registrants and stop accepting new registrations.
-                        </div>
-                    </div>
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className="text-destructive border-destructive/30"
-                                disabled={isCancelling || isArchiving || event.data?.status === "cancelled"}
-                            >
-                                Cancel event
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Cancel this event?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    This will stop all registrations and notify attendees. This action cannot be undone.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Keep event</AlertDialogCancel>
-                                <Button
-                                    variant="destructive"
-                                    onClick={handleCancel}
-                                    disabled={isCancelling}
-                                >
-                                    {isCancelling ? "Cancelling…" : "Yes, cancel event"}
-                                </Button>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                </div>
-                <div className="flex items-center gap-4 p-5">
-                    <div className="flex-1 min-w-0">
                         <div className="text-sm font-medium">Archive event</div>
                         <div className="text-xs text-muted-foreground mt-0.5">
                             Hide from the dashboard and make read-only. Can be restored.
@@ -147,7 +94,7 @@ export default function DangerZonePage() {
                                 variant="outline"
                                 size="sm"
                                 className="text-destructive border-destructive/30"
-                                disabled={isCancelling || isArchiving}
+                                disabled={isArchiving}
                             >
                                 Archive
                             </Button>

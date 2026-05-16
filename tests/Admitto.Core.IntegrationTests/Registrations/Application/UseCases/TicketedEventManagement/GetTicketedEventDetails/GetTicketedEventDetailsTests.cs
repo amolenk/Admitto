@@ -16,7 +16,6 @@ public sealed class GetTicketedEventDetailsTests(TestContext testContext) : Aspi
         var teamId = TeamId.New();
         var opensAt = DateTimeOffset.UtcNow.AddDays(1);
         var closesAt = DateTimeOffset.UtcNow.AddDays(10);
-        var cancelCutoff = DateTimeOffset.UtcNow.AddDays(20);
         var reconfirmOpens = DateTimeOffset.UtcNow.AddDays(11);
         var reconfirmCloses = DateTimeOffset.UtcNow.AddDays(25);
 
@@ -35,9 +34,8 @@ public sealed class GetTicketedEventDetailsTests(TestContext testContext) : Aspi
 
             te.ConfigureRegistrationPolicy(
                 TicketedEventRegistrationPolicy.Create(opensAt, closesAt, "@example.com"));
-            te.ConfigureCancellationPolicy(new TicketedEventCancellationPolicy(cancelCutoff));
             te.ConfigureReconfirmPolicy(
-                TicketedEventReconfirmPolicy.Create(reconfirmOpens, reconfirmCloses, TimeSpan.FromDays(7)));
+                TicketedEventReconfirmPolicy.Create(reconfirmOpens, reconfirmCloses, TimeSpan.FromDays(7), TimeSpan.FromHours(24)));
 
             ctx.TicketedEvents.Add(te);
         });
@@ -58,13 +56,11 @@ public sealed class GetTicketedEventDetailsTests(TestContext testContext) : Aspi
         result.RegistrationPolicy.ClosesAt.ShouldBe(closesAt);
         result.RegistrationPolicy.AllowedEmailDomain.ShouldBe("@example.com");
 
-        result.CancellationPolicy.ShouldNotBeNull();
-        result.CancellationPolicy.LateCancellationCutoff.ShouldBe(cancelCutoff);
-
         result.ReconfirmPolicy.ShouldNotBeNull();
         result.ReconfirmPolicy.OpensAt.ShouldBe(reconfirmOpens);
         result.ReconfirmPolicy.ClosesAt.ShouldBe(reconfirmCloses);
-        result.ReconfirmPolicy.CadenceDays.ShouldBe(7);
+        result.ReconfirmPolicy.CadenceHours.ShouldBe(168);
+        result.ReconfirmPolicy.MinEmailIntervalHours.ShouldBe(24);
     }
 
     [TestMethod]
@@ -96,7 +92,6 @@ public sealed class GetTicketedEventDetailsTests(TestContext testContext) : Aspi
 
         result.ShouldNotBeNull();
         result.RegistrationPolicy.ShouldBeNull();
-        result.CancellationPolicy.ShouldBeNull();
         result.ReconfirmPolicy.ShouldBeNull();
         result.IsRegistrationOpen.ShouldBeFalse();
     }

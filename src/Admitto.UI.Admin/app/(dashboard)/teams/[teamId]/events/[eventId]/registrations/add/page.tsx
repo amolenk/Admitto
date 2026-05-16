@@ -51,7 +51,7 @@ export default function AddRegistrationPage() {
     });
 
     const isLoading = eventQuery.isLoading || ticketTypesQuery.isLoading;
-    const ticketTypes = (ticketTypesQuery.data ?? []).filter((t) => !t.isCancelled);
+    const ticketTypes = ticketTypesQuery.data ?? [];
     const additionalDetailSchema: AdditionalDetailFieldDto[] = eventQuery.data?.additionalDetailSchema ?? [];
 
     return (

@@ -30,6 +30,25 @@ internal sealed class CancelRegistrationHandler(IRegistrationsWriteStore writeSt
                 NotFoundError.Create<Registration>(registrationId.Value));
         }
 
+        if (command.Reason == CancellationReason.AttendeeRequest)
+        {
+            var ticketedEvent = await writeStore.TicketedEvents
+                .FirstOrDefaultAsync(e => e.Id == ticketedEventId, cancellationToken);
+
+            if (ticketedEvent is not null && DateTimeOffset.UtcNow >= ticketedEvent.StartsAt)
+            {
+                throw new BusinessRuleViolationException(Errors.EventAlreadyStarted);
+            }
+        }
+
         registration.Cancel(command.Reason);
+    }
+
+    internal static class Errors
+    {
+        public static readonly Error EventAlreadyStarted = new(
+            "registration.event_already_started",
+            "Self-service cancellation is not allowed once the event has started.",
+            Type: ErrorType.Conflict);
     }
 }

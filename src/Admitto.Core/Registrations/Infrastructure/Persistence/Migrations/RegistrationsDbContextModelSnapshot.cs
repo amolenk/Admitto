@@ -465,9 +465,6 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
                             b1.Property<Guid>("Id")
                                 .HasJsonPropertyName("id");
 
-                            b1.Property<bool>("IsCancelled")
-                                .HasJsonPropertyName("is_cancelled");
-
                             b1.Property<int?>("MaxCapacity")
                                 .HasJsonPropertyName("max_capacity");
 
@@ -502,23 +499,6 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
 
             modelBuilder.Entity("Amolenk.Admitto.Core.Registrations.Domain.Entities.TicketedEvent", b =>
                 {
-                    b.OwnsOne("Amolenk.Admitto.Core.Registrations.Domain.ValueObjects.TicketedEventCancellationPolicy", "CancellationPolicy", b1 =>
-                        {
-                            b1.Property<Guid>("TicketedEventId")
-                                .HasColumnType("uuid");
-
-                            b1.Property<DateTimeOffset>("LateCancellationCutoff")
-                                .HasColumnType("timestamp with time zone")
-                                .HasColumnName("cancellation_policy_late_cutoff");
-
-                            b1.HasKey("TicketedEventId");
-
-                            b1.ToTable("ticketed_events", "registrations");
-
-                            b1.WithOwner()
-                                .HasForeignKey("TicketedEventId");
-                        });
-
                     b.OwnsOne("Amolenk.Admitto.Core.Registrations.Domain.ValueObjects.TicketedEventReconfirmPolicy", "ReconfirmPolicy", b1 =>
                         {
                             b1.Property<Guid>("TicketedEventId")
@@ -531,6 +511,10 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
                             b1.Property<DateTimeOffset>("ClosesAt")
                                 .HasColumnType("timestamp with time zone")
                                 .HasColumnName("reconfirm_policy_closes_at");
+
+                            b1.Property<TimeSpan>("MinEmailInterval")
+                                .HasColumnType("interval")
+                                .HasColumnName("reconfirm_policy_min_email_interval");
 
                             b1.Property<DateTimeOffset>("OpensAt")
                                 .HasColumnType("timestamp with time zone")
@@ -569,8 +553,6 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
                             b1.WithOwner()
                                 .HasForeignKey("TicketedEventId");
                         });
-
-                    b.Navigation("CancellationPolicy");
 
                     b.Navigation("ReconfirmPolicy");
 

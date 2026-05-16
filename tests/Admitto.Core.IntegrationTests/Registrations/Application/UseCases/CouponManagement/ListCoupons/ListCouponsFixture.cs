@@ -34,7 +34,7 @@ internal sealed class ListCouponsFixture
             .WithEventId(EventId)
             .WithEmail(EmailAddress.From("active@example.com"))
             .WithRequestedTicketTypeIds(TicketTypeId)
-            .WithAvailableTicketTypes(new TicketTypeInfo(TicketTypeId, IsCancelled: false))
+            .WithAvailableTicketTypes(new TicketTypeInfo(TicketTypeId))
             .WithExpiresAt(DateTimeOffset.UtcNow.AddDays(30))
             .Build();
 
@@ -43,7 +43,7 @@ internal sealed class ListCouponsFixture
             .WithEventId(EventId)
             .WithEmail(EmailAddress.From("revoked@example.com"))
             .WithRequestedTicketTypeIds(TicketTypeId)
-            .WithAvailableTicketTypes(new TicketTypeInfo(TicketTypeId, IsCancelled: false))
+            .WithAvailableTicketTypes(new TicketTypeInfo(TicketTypeId))
             .WithExpiresAt(DateTimeOffset.UtcNow.AddDays(30))
             .Build();
         revokedCoupon.Revoke();

@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import * as z from "zod";
-import { AlertCircle, Globe, Lock, Plus, Trash2, Pencil, X, Check } from "lucide-react";
+import { AlertCircle, Globe, Lock, Plus, Pencil, X, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,6 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { useCustomForm } from "@/hooks/use-custom-form";
 import { apiClient } from "@/lib/api-client";
 import { TicketTypeDto } from "@/lib/admitto-api/generated";
-import { FormError } from "@/components/form-error";
 
 
 const addSchema = z.object({
@@ -45,39 +44,12 @@ export function TicketTypesSection({
     const queryClient = useQueryClient();
     const [editingId, setEditingId] = useState<string | null>(null);
     const [showAdd, setShowAdd] = useState(false);
-    const [actionError, setActionError] = useState<{ title: string; detail: string } | null>(null);
 
     const invalidate = () =>
         queryClient.invalidateQueries({ queryKey: ["ticket-types", teamId, eventId] });
 
-    const cancelMutation = useMutation({
-        mutationFn: (id: string) =>
-            apiClient.post(
-                `/api/teams/${teamId}/events/${eventId}/ticket-types/${id}/cancel`
-            ),
-        onSuccess: () => {
-            setActionError(null);
-            invalidate();
-        },
-        onError: (err) => {
-            if (err instanceof FormError) {
-                setActionError({ title: err.title, detail: err.detail });
-            } else {
-                setActionError({ title: "Unexpected Error", detail: "Could not cancel ticket type." });
-            }
-        },
-    });
-
     return (
         <div className="space-y-4">
-            {actionError && (
-                <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>{actionError.title}</AlertTitle>
-                    <AlertDescription>{actionError.detail}</AlertDescription>
-                </Alert>
-            )}
-
             <ul className="divide-y rounded-md border">
                 {ticketTypes.length === 0 && (
                     <li className="px-4 py-3 text-sm text-muted-foreground">No ticket types yet.</li>
@@ -104,14 +76,11 @@ export function TicketTypesSection({
                             <div className="flex-1 min-w-0">
                                 <p className="font-medium flex items-center gap-1.5">
                                     {tt.name}{" "}
-                                    {tt.isCancelled && (
-                                        <span className="text-xs text-muted-foreground">(cancelled)</span>
-                                    )}
-                                    {!tt.isCancelled && tt.selfServiceEnabled ? (
+                                    {tt.selfServiceEnabled ? (
                                         <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-blue-600 dark:text-blue-400">
                                             <Globe className="h-3 w-3" /> Self-service
                                         </span>
-                                    ) : !tt.isCancelled && (
+                                    ) : (
                                         <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-muted-foreground">
                                             <Lock className="h-3 w-3" /> Admin only
                                         </span>
@@ -122,27 +91,14 @@ export function TicketTypesSection({
                                     used {String(tt.usedCapacity)}
                                 </p>
                             </div>
-                            {!tt.isCancelled && (
-                                <>
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="icon"
-                                        onClick={() => setEditingId(tt.id)}
-                                    >
-                                        <Pencil className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="icon"
-                                        disabled={cancelMutation.isPending}
-                                        onClick={() => cancelMutation.mutate(tt.id)}
-                                    >
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                </>
-                            )}
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setEditingId(tt.id)}
+                            >
+                                <Pencil className="h-4 w-4" />
+                            </Button>
                         </li>
                     )
                 )}

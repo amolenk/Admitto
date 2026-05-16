@@ -27,7 +27,6 @@ internal sealed class GetTicketTypesHandler(IRegistrationsWriteStore writeStore)
                 tt.TimeSlots.Select(ts => ts.Value).ToArray(),
                 tt.MaxCapacity,
                 tt.UsedCapacity,
-                tt.IsCancelled,
                 tt.SelfServiceEnabled))
             .ToList();
     }

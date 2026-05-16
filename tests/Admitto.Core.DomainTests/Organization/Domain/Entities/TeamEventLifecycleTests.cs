@@ -181,63 +181,6 @@ public sealed class TeamEventLifecycleTests
     }
 
     // -------------------------------------------------------------------------
-    // RegisterEventCancelled
-    // -------------------------------------------------------------------------
-
-    [TestMethod]
-    public void RegisterEventCancelled_ActiveEvent_SwapsActiveToCancelled()
-    {
-        // Arrange
-        var sut = new TeamBuilder().Build();
-        var eventId = TicketedEventId.New();
-        var request = sut.RequestEventCreation(Requester, Now);
-        sut.RegisterEventCreated(request.Id, eventId, Now);
-
-        // Act
-        sut.RegisterEventCancelled(eventId);
-
-        // Assert
-        sut.ActiveEventCount.ShouldBe(0);
-        sut.CancelledEventCount.ShouldBe(1);
-        sut.ArchivedEventCount.ShouldBe(0);
-        request.ObservedEventStatus.ShouldBe(EventStatus.Cancelled);
-    }
-
-    [TestMethod]
-    public void RegisterEventCancelled_RedeliveredAfterCancel_IsIdempotent()
-    {
-        // Arrange
-        var sut = new TeamBuilder().Build();
-        var eventId = TicketedEventId.New();
-        var request = sut.RequestEventCreation(Requester, Now);
-        sut.RegisterEventCreated(request.Id, eventId, Now);
-        sut.RegisterEventCancelled(eventId);
-
-        // Act — redeliver
-        sut.RegisterEventCancelled(eventId);
-
-        // Assert — no double-decrement
-        sut.ActiveEventCount.ShouldBe(0);
-        sut.CancelledEventCount.ShouldBe(1);
-    }
-
-    [TestMethod]
-    public void RegisterEventCancelled_UnknownEvent_IsNoOp()
-    {
-        // Arrange
-        var sut = new TeamBuilder().Build();
-        var request = sut.RequestEventCreation(Requester, Now);
-        sut.RegisterEventCreated(request.Id, TicketedEventId.New(), Now);
-
-        // Act
-        sut.RegisterEventCancelled(TicketedEventId.New());
-
-        // Assert
-        sut.ActiveEventCount.ShouldBe(1);
-        sut.CancelledEventCount.ShouldBe(0);
-    }
-
-    // -------------------------------------------------------------------------
     // RegisterEventArchived
     // -------------------------------------------------------------------------
 
@@ -255,28 +198,8 @@ public sealed class TeamEventLifecycleTests
 
         // Assert
         sut.ActiveEventCount.ShouldBe(0);
-        sut.CancelledEventCount.ShouldBe(0);
         sut.ArchivedEventCount.ShouldBe(1);
         request.ObservedEventStatus.ShouldBe(EventStatus.Archived);
-    }
-
-    [TestMethod]
-    public void RegisterEventArchived_FromCancelled_DecrementsCancelledAndIncrementsArchived()
-    {
-        // Arrange
-        var sut = new TeamBuilder().Build();
-        var eventId = TicketedEventId.New();
-        var request = sut.RequestEventCreation(Requester, Now);
-        sut.RegisterEventCreated(request.Id, eventId, Now);
-        sut.RegisterEventCancelled(eventId);
-
-        // Act
-        sut.RegisterEventArchived(eventId);
-
-        // Assert
-        sut.ActiveEventCount.ShouldBe(0);
-        sut.CancelledEventCount.ShouldBe(0);
-        sut.ArchivedEventCount.ShouldBe(1);
     }
 
     [TestMethod]
@@ -302,20 +225,6 @@ public sealed class TeamEventLifecycleTests
     // -------------------------------------------------------------------------
 
     [TestMethod]
-    public void RegisterEventCancelled_FreshTeam_DoesNotDriveCountersNegative()
-    {
-        // Arrange — no requests at all
-        var sut = new TeamBuilder().Build();
-
-        // Act
-        sut.RegisterEventCancelled(TicketedEventId.New());
-
-        // Assert
-        sut.ActiveEventCount.ShouldBe(0);
-        sut.CancelledEventCount.ShouldBe(0);
-    }
-
-    [TestMethod]
     public void RegisterEventArchived_FreshTeam_DoesNotDriveCountersNegative()
     {
         // Arrange — no requests at all
@@ -326,7 +235,6 @@ public sealed class TeamEventLifecycleTests
 
         // Assert
         sut.ActiveEventCount.ShouldBe(0);
-        sut.CancelledEventCount.ShouldBe(0);
         sut.ArchivedEventCount.ShouldBe(0);
     }
 
@@ -368,12 +276,7 @@ public sealed class TeamEventLifecycleTests
     {
         // Arrange
         var sut = new TeamBuilder().Build();
-        var cancelledId = TicketedEventId.New();
         var archivedId = TicketedEventId.New();
-
-        var r1 = sut.RequestEventCreation(Requester, Now);
-        sut.RegisterEventCreated(r1.Id, cancelledId, Now);
-        sut.RegisterEventCancelled(cancelledId);
 
         var r2 = sut.RequestEventCreation(Requester, Now);
         sut.RegisterEventCreated(r2.Id, archivedId, Now);
@@ -382,7 +285,6 @@ public sealed class TeamEventLifecycleTests
         // Sanity: counters as expected
         sut.ActiveEventCount.ShouldBe(0);
         sut.PendingEventCount.ShouldBe(0);
-        sut.CancelledEventCount.ShouldBe(1);
         sut.ArchivedEventCount.ShouldBe(1);
 
         // Act

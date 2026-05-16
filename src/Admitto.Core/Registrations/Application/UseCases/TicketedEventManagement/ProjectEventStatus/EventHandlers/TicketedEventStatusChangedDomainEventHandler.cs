@@ -23,14 +23,7 @@ internal sealed class TicketedEventStatusChangedDomainEventHandler(IRegistration
 
         if (catalog is null) return;
 
-        switch (domainEvent.NewStatus)
-        {
-            case EventLifecycleStatus.Cancelled:
-                catalog.MarkEventCancelled();
-                break;
-            case EventLifecycleStatus.Archived:
-                catalog.MarkEventArchived();
-                break;
-        }
+        if (domainEvent.NewStatus == EventLifecycleStatus.Archived)
+            catalog.MarkEventArchived();
     }
 }

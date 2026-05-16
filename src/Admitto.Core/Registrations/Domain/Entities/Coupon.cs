@@ -71,31 +71,16 @@ public class Coupon : Aggregate<CouponId>
             throw new BusinessRuleViolationException(Errors.NoTicketTypes);
         }
 
-        // Validate all requested ticket types exist and are not cancelled.
+        // Validate all requested ticket types exist.
         var availableLookup = availableTicketTypes.ToDictionary(t => t.Id);
-        var unknownIds = new List<Guid>();
-        var cancelledIds = new List<Guid>();
-
-        foreach (var id in requestedTicketTypeIds)
-        {
-            if (!availableLookup.TryGetValue(id, out var ticketType))
-            {
-                unknownIds.Add(id.Value);
-            }
-            else if (ticketType.IsCancelled)
-            {
-                cancelledIds.Add(id.Value);
-            }
-        }
+        var unknownIds = requestedTicketTypeIds
+            .Where(id => !availableLookup.ContainsKey(id))
+            .Select(id => id.Value)
+            .ToList();
 
         if (unknownIds.Count > 0)
         {
             throw new BusinessRuleViolationException(Errors.UnknownTicketTypes(unknownIds));
-        }
-
-        if (cancelledIds.Count > 0)
-        {
-            throw new BusinessRuleViolationException(Errors.CancelledTicketTypes(cancelledIds));
         }
 
         // Validate expiry is in the future.
@@ -152,11 +137,6 @@ public class Coupon : Aggregate<CouponId>
         public static Error UnknownTicketTypes(IReadOnlyList<Guid> ids) => new(
             "coupon.unknown_ticket_types",
             "One or more ticket types do not exist.",
-            new Dictionary<string, object?> { ["ticketTypeIds"] = ids });
-
-        public static Error CancelledTicketTypes(IReadOnlyList<Guid> ids) => new(
-            "coupon.cancelled_ticket_types",
-            "One or more ticket types are cancelled.",
             new Dictionary<string, object?> { ["ticketTypeIds"] = ids });
 
         public static readonly Error ExpiryMustBeInFuture = new(

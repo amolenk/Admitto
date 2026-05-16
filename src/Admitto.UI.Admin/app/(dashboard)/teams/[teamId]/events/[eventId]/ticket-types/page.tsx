@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useParams } from "next/navigation";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { TicketTypeDto, TicketedEventDetailsDto } from "@/lib/admitto-api/generated";
 import { apiClient } from "@/lib/api-client";
 import { PageLayout } from "@/components/page-layout";
@@ -13,17 +13,8 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
     Plus,
-    MoreHorizontal,
     Pencil,
-    X,
 } from "lucide-react";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
     Dialog,
     DialogContent,
@@ -39,21 +30,12 @@ async function fetchTicketTypes(teamId: string, eventId: string): Promise<Ticket
 }
 
 function TicketTypeCard({ t, teamId, eventId }: { t: TicketTypeDto; teamId: string; eventId: string }) {
-    const queryClient = useQueryClient();
     const [editOpen, setEditOpen] = useState(false);
 
     const cap = Number(t.maxCapacity) || 0;
     const used = Number(t.usedCapacity);
     const remaining = cap > 0 ? cap - used : 0;
     const pct = cap > 0 ? Math.round((used / cap) * 100) : 0;
-
-    const cancelMutation = useMutation({
-        mutationFn: () =>
-            apiClient.post(`/api/teams/${teamId}/events/${eventId}/ticket-types/${t.id}/cancel`),
-        onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ["ticket-types", teamId, eventId] });
-        },
-    });
 
     return (
         <>
@@ -63,9 +45,7 @@ function TicketTypeCard({ t, teamId, eventId }: { t: TicketTypeDto; teamId: stri
                         <div className="min-w-0">
                             <div className="flex items-center gap-2 mb-1">
                                 <h3 className="font-display text-lg font-semibold">{t.name}</h3>
-                                {t.isCancelled ? (
-                                    <Badge variant="secondary">Cancelled</Badge>
-                                ) : cap > 0 && used >= cap ? (
+                                {cap > 0 && used >= cap ? (
                                     <Badge variant="secondary">Sold out</Badge>
                                 ) : (
                                     <Badge variant="outline" className="text-success border-success/30 bg-success/10">
@@ -75,27 +55,9 @@ function TicketTypeCard({ t, teamId, eventId }: { t: TicketTypeDto; teamId: stri
                                 )}
                             </div>
                         </div>
-                        {!t.isCancelled && (
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="sm">
-                                        <MoreHorizontal className="size-4" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={() => setEditOpen(true)}>
-                                        <Pencil className="size-3.5 mr-2" /> Edit
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem
-                                        className="text-destructive"
-                                        onClick={() => cancelMutation.mutate()}
-                                    >
-                                        <X className="size-3.5 mr-2" /> Cancel ticket type
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        )}
+                        <Button variant="ghost" size="sm" onClick={() => setEditOpen(true)}>
+                            <Pencil className="size-4" />
+                        </Button>
                     </div>
 
                     <div className="ticket-perf" aria-hidden="true" />
@@ -135,7 +97,6 @@ function TicketTypeCard({ t, teamId, eventId }: { t: TicketTypeDto; teamId: stri
                                 <span
                                     style={{
                                         width: `${pct}%`,
-                                        ...(t.isCancelled ? { background: "var(--muted-foreground)", opacity: 0.5 } : {}),
                                     }}
                                 />
                             </div>

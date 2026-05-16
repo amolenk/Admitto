@@ -72,22 +72,6 @@ internal sealed class RegisterAttendeeFixture
         return f;
     }
 
-    public static RegisterAttendeeFixture WithCancelledTicketType()
-    {
-        var f = new RegisterAttendeeFixture();
-        f._ticketedEvent = f.MakeActiveEventWithOpenWindow();
-        var catalog = TicketCatalog.Create(f.EventId);
-        var generalId = TicketTypeId.New();
-        var workshopAId = TicketTypeId.New();
-        f._ticketTypeIdsBySlug["general-admission"] = generalId;
-        f._ticketTypeIdsBySlug["workshop-a"] = workshopAId;
-        catalog.AddTicketType(generalId, TicketTypeName.From("General Admission"), [], 100);
-        catalog.AddTicketType(workshopAId, TicketTypeName.From("Workshop A"), [], null);
-        catalog.CancelTicketType(workshopAId);
-        f._catalog = catalog;
-        return f;
-    }
-
     public static RegisterAttendeeFixture WithOverlappingTimeSlots()
     {
         var f = new RegisterAttendeeFixture();
@@ -154,20 +138,6 @@ internal sealed class RegisterAttendeeFixture
         return f;
     }
 
-    public static RegisterAttendeeFixture EventCancelled()
-    {
-        var f = new RegisterAttendeeFixture();
-        var ev = f.MakeActiveEventWithOpenWindow();
-        ev.Cancel();
-        f._ticketedEvent = ev;
-        var catalog = TicketCatalog.Create(f.EventId);
-        var generalId = TicketTypeId.New();
-        f._ticketTypeIdsBySlug["general-admission"] = generalId;
-        catalog.AddTicketType(generalId, TicketTypeName.From("General Admission"), [], 100);
-        f._catalog = catalog;
-        return f;
-    }
-
     public static RegisterAttendeeFixture EventArchived()
     {
         var f = new RegisterAttendeeFixture();
@@ -206,7 +176,7 @@ internal sealed class RegisterAttendeeFixture
         return f;
     }
 
-    public static RegisterAttendeeFixture ConcurrentCancelDetectedAtClaim()
+    public static RegisterAttendeeFixture ConcurrentArchiveDetectedAtClaim()
     {
         var f = new RegisterAttendeeFixture();
         f._ticketedEvent = f.MakeActiveEventWithOpenWindow();
@@ -214,7 +184,7 @@ internal sealed class RegisterAttendeeFixture
         var generalId = TicketTypeId.New();
         f._ticketTypeIdsBySlug["general-admission"] = generalId;
         catalog.AddTicketType(generalId, TicketTypeName.From("General Admission"), [], 100);
-        catalog.MarkEventCancelled();
+        catalog.MarkEventArchived();
         f._catalog = catalog;
         return f;
     }
@@ -291,7 +261,7 @@ internal sealed class RegisterAttendeeFixture
             .WithEventId(f.EventId)
             .WithEmail(f.CouponEmail)
             .WithRequestedTicketTypeIds(ticketTypeId)
-            .WithAvailableTicketTypes(new TicketTypeInfo(ticketTypeId, false))
+            .WithAvailableTicketTypes(new TicketTypeInfo(ticketTypeId))
             .WithExpiresAt(DateTimeOffset.UtcNow.AddMinutes(-1))
             .Build();
         f.CouponCodeString = f._coupon.Code.Value.ToString();
@@ -379,13 +349,13 @@ internal sealed class RegisterAttendeeFixture
         return f;
     }
 
-    public static RegisterAttendeeFixture CouponEventCancelled()
+    public static RegisterAttendeeFixture CouponEventArchived()
     {
         var f = new RegisterAttendeeFixture { TicketTypeSlug = "speaker-pass" };
         f._catalog = f.MakeCatalog(("speaker-pass", "Speaker Pass", 100, 0));
         f._coupon = f.BuildCoupon(bypassWindow: true);
         var ev = f.MakeActiveEventWithOpenWindow();
-        ev.Cancel();
+        ev.Archive();
         f._ticketedEvent = ev;
         return f;
     }
@@ -443,7 +413,7 @@ internal sealed class RegisterAttendeeFixture
             .WithEventId(EventId)
             .WithEmail(CouponEmail)
             .WithRequestedTicketTypeIds(ticketTypeId)
-            .WithAvailableTicketTypes(new TicketTypeInfo(ticketTypeId, false))
+            .WithAvailableTicketTypes(new TicketTypeInfo(ticketTypeId))
             .WithExpiresAt(DateTimeOffset.UtcNow.AddDays(30))
             .WithBypassRegistrationWindow(bypassWindow)
             .Build();

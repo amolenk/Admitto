@@ -42,6 +42,7 @@ internal sealed class RegistrationsFacade(
                 r.LastName,
                 r.Tickets.Select(t => t.Id).ToArray(),
                 r.AdditionalDetails,
+                r.CreatedAt,
                 r.Status,
                 r.HasReconfirmed,
                 r.ReconfirmedAt))

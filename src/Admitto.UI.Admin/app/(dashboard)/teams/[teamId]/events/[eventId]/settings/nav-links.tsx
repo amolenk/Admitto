@@ -3,16 +3,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Settings, Users, Mail, Zap, Trash2 } from "lucide-react";
+import { Settings, Users, Mail, Trash2 } from "lucide-react";
 
 const navItems = [
     { label: "General", href: "", icon: Settings, desc: "Name, date, venue, website", exact: true },
     { label: "Registration", href: "/registration", icon: Users, desc: "Policy, windows, waitlist" },
-    { label: "Cancellation", href: "/cancellation", icon: Zap, desc: "Late cancellation cutoff" },
     { label: "Reconfirmation", href: "/reconfirm", icon: Mail, desc: "Window and cadence" },
     { label: "Email", href: "/email", icon: Mail, desc: "Templates, SMTP, sender", exact: true },
     { label: "Email templates", href: "/email/templates", icon: Mail, desc: "Customize email content" },
-    { label: "Danger zone", href: "/danger", icon: Trash2, desc: "Cancel or archive" },
+    { label: "Danger zone", href: "/danger", icon: Trash2, desc: "Archive" },
 ];
 
 interface NavLinksProps {

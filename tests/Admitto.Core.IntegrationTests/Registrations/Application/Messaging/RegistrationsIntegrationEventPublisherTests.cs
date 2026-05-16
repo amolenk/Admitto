@@ -166,7 +166,7 @@ public sealed class RegistrationsIntegrationEventPublisherTests
         var domainEvent = new TicketedEventReconfirmPolicyChangedDomainEvent(
             teamId,
             eventId,
-            TicketedEventReconfirmPolicy.Create(opensAt, closesAt, TimeSpan.FromDays(7)));
+            TicketedEventReconfirmPolicy.Create(opensAt, closesAt, TimeSpan.FromDays(7), TimeSpan.FromHours(24)));
 
         await _publisher.HandleAsync(domainEvent, CancellationToken.None);
 
@@ -177,7 +177,8 @@ public sealed class RegistrationsIntegrationEventPublisherTests
         evt.Policy.ShouldNotBeNull();
         evt.Policy.OpensAt.ShouldBe(opensAt);
         evt.Policy.ClosesAt.ShouldBe(closesAt);
-        evt.Policy.CadenceDays.ShouldBe(7);
+        evt.Policy.CadenceHours.ShouldBe(168);
+        evt.Policy.MinEmailIntervalHours.ShouldBe(24);
     }
 
     [TestMethod]
@@ -193,20 +194,6 @@ public sealed class RegistrationsIntegrationEventPublisherTests
         _captured.ShouldNotBeNull();
         var evt = _captured.ShouldBeOfType<TicketedEventReconfirmPolicyChangedIntegrationEvent>();
         evt.Policy.ShouldBeNull();
-    }
-
-    [TestMethod]
-    public async ValueTask StatusChangedToCancelled_EnqueuesCancelledIntegrationEvent()
-    {
-        var eventId = TicketedEventId.New();
-        var teamId = TeamId.New();
-        var domainEvent = new TicketedEventStatusChangedDomainEvent(eventId, teamId, EventLifecycleStatus.Cancelled);
-
-        await _publisher.HandleAsync(domainEvent, CancellationToken.None);
-
-        var evt = _captured.ShouldBeOfType<TicketedEventCancelledIntegrationEvent>();
-        evt.TicketedEventId.ShouldBe(eventId.Value);
-        evt.TeamId.ShouldBe(teamId.Value);
     }
 
     [TestMethod]

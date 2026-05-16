@@ -12,32 +12,6 @@ public sealed class ProjectEventStatusToCatalogDomainEventHandlerTests(TestConte
     : AspireIntegrationTestBase
 {
     [TestMethod]
-    public async ValueTask Cancelled_ProjectsOntoCatalog()
-    {
-        var eventId = TicketedEventId.New();
-        var teamId = TeamId.New();
-        await Environment.RegistrationsDatabase.SeedAsync(db =>
-        {
-            var catalog = TicketCatalog.Create(eventId);
-            db.TicketCatalogs.Add(catalog);
-        });
-
-        var handler = new TicketedEventStatusChangedDomainEventHandler(Environment.RegistrationsDatabase.Context);
-        var domainEvent = new TicketedEventStatusChangedDomainEvent(
-            eventId, teamId, EventLifecycleStatus.Cancelled);
-
-        await handler.HandleAsync(domainEvent, testContext.CancellationToken);
-
-        await Environment.RegistrationsDatabase.AssertAsync(async db =>
-        {
-            var catalog = await db.TicketCatalogs
-                .FirstOrDefaultAsync(c => c.Id == eventId, testContext.CancellationToken);
-            catalog.ShouldNotBeNull();
-            catalog.EventStatus.ShouldBe(EventLifecycleStatus.Cancelled);
-        });
-    }
-
-    [TestMethod]
     public async ValueTask Archived_ProjectsOntoCatalog()
     {
         var eventId = TicketedEventId.New();
@@ -71,7 +45,7 @@ public sealed class ProjectEventStatusToCatalogDomainEventHandlerTests(TestConte
 
         var handler = new TicketedEventStatusChangedDomainEventHandler(Environment.RegistrationsDatabase.Context);
         var domainEvent = new TicketedEventStatusChangedDomainEvent(
-            eventId, teamId, EventLifecycleStatus.Cancelled);
+            eventId, teamId, EventLifecycleStatus.Archived);
 
         // Should complete without throwing even when no catalog exists yet.
         await handler.HandleAsync(domainEvent, testContext.CancellationToken);

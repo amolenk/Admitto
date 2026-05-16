@@ -15,7 +15,6 @@ public sealed record TicketedEventDetailsDto(
     uint Version,
     bool IsRegistrationOpen,
     RegistrationPolicyDto? RegistrationPolicy,
-    CancellationPolicyDto? CancellationPolicy,
     ReconfirmPolicyDto? ReconfirmPolicy,
     IReadOnlyList<AdditionalDetailFieldDto> AdditionalDetailSchema);
 
@@ -26,9 +25,8 @@ public sealed record RegistrationPolicyDto(
     DateTimeOffset ClosesAt,
     string? AllowedEmailDomain);
 
-public sealed record CancellationPolicyDto(DateTimeOffset LateCancellationCutoff);
-
 public sealed record ReconfirmPolicyDto(
     DateTimeOffset OpensAt,
     DateTimeOffset ClosesAt,
-    int CadenceDays);
+    int CadenceHours,
+    int MinEmailIntervalHours);

@@ -40,27 +40,6 @@ public sealed class ConfigureRegistrationPolicyTests(TestContext testContext) : 
     }
 
     [TestMethod]
-    public async ValueTask ConfigureRegistrationPolicy_CancelledEvent_ThrowsEventNotActive()
-    {
-        var fixture = ConfigureRegistrationPolicyFixture.CancelledEvent();
-        await fixture.SetupAsync(Environment);
-
-        var command = new ConfigureRegistrationPolicyCommand(
-            fixture.EventId.Value,
-            fixture.SeededVersion,
-            DateTimeOffset.UtcNow.AddDays(1),
-            DateTimeOffset.UtcNow.AddDays(10),
-            null);
-
-        var sut = new ConfigureRegistrationPolicyHandler(Environment.RegistrationsDatabase.Context);
-
-        var result = await ErrorResult.CaptureAsync(async () =>
-            await sut.HandleAsync(command, testContext.CancellationToken));
-
-        result.Error.Code.ShouldBe("ticketed_event.event_not_active");
-    }
-
-    [TestMethod]
     public async ValueTask ConfigureRegistrationPolicy_ArchivedEvent_ThrowsEventNotActive()
     {
         var fixture = ConfigureRegistrationPolicyFixture.ArchivedEvent();

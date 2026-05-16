@@ -1,5 +1,6 @@
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
 using Amolenk.Admitto.Core.Registrations.Contracts;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
@@ -45,6 +46,12 @@ internal sealed class GetRegistrationsHandler(IRegistrationsWriteStore writeStor
             {
                 var idList = ids.Select(TicketTypeId.From).ToArray();
                 q = q.Where(r => r.Tickets.Any(t => idList.Contains(t.Id)));
+            }
+
+            if (filter.RegistrationIds is { Count: > 0 } registrationIds)
+            {
+                var idList = registrationIds.Select(RegistrationId.From).ToArray();
+                q = q.Where(r => idList.Contains(r.Id));
             }
         }
 

@@ -89,11 +89,11 @@ public sealed class ChangeAttendeeTicketsHandlerTests(TestContext testContext) :
         result.Error.ShouldMatch(ChangeAttendeeTicketsHandler.Errors.RegistrationIsCancelled);
     }
 
-    // SC005: Admin attempts to change tickets for a cancelled event → EventNotActive
+    // SC005: Admin attempts to change tickets for an archived event → EventNotActive
     [TestMethod]
-    public async ValueTask ChangeAttendeeTickets_CancelledEvent_ThrowsEventNotActive()
+    public async ValueTask ChangeAttendeeTickets_ArchivedEvent_ThrowsEventNotActive()
     {
-        var fixture = ChangeAttendeeTicketsFixture.WithCancelledEvent();
+        var fixture = ChangeAttendeeTicketsFixture.WithArchivedEvent();
         await fixture.SetupAsync(Environment);
 
         var command = new ChangeAttendeeTicketsCommand(

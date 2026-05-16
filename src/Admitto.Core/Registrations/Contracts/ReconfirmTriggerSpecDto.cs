@@ -17,4 +17,5 @@ public sealed record ReconfirmTriggerSpecDto(
     string TimeZone,
     DateTimeOffset OpensAt,
     DateTimeOffset ClosesAt,
-    int CadenceDays);
+    int CadenceHours,
+    int MinEmailIntervalHours);

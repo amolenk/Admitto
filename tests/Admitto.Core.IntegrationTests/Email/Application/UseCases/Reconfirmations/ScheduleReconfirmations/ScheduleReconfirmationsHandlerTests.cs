@@ -38,8 +38,8 @@ public sealed class ScheduleReconfirmationsHandlerTests
     private static TriggerKey TriggerKeyFor(TicketedEventId eventId) =>
         new(eventId.Value.ToString("N"), ScheduleReconfirmationsHandler.TriggerGroup);
 
-    private static ReconfirmTriggerSpecDto Spec(Guid teamId, Guid eventId, string tz, int cadenceDays = 1) =>
-        new(teamId, eventId, tz, Opens, Closes, cadenceDays);
+    private static ReconfirmTriggerSpecDto Spec(Guid teamId, Guid eventId, string tz, int cadenceHours = 24) =>
+        new(teamId, eventId, tz, Opens, Closes, cadenceHours, MinEmailIntervalHours: 24);
 
     [TestMethod]
     public async Task Upsert_CreatesTriggerWithExpectedCronAndTimeZone()
@@ -70,12 +70,29 @@ public sealed class ScheduleReconfirmationsHandlerTests
         var eventId = TicketedEventId.New();
 
         await subject.HandleAsync(
-            new ScheduleReconfirmationsCommand(eventId.Value, Spec(Guid.NewGuid(), eventId.Value, "UTC", cadenceDays: 3)),
+            new ScheduleReconfirmationsCommand(eventId.Value, Spec(Guid.NewGuid(), eventId.Value, "UTC", cadenceHours: 72)),
             default);
 
         var trigger = (ICronTrigger?)await scheduler.GetTrigger(TriggerKeyFor(eventId));
         trigger.ShouldNotBeNull();
         trigger.CronExpressionString.ShouldBe("0 0 9 1/3 * ?");
+
+        await scheduler.Shutdown();
+    }
+
+    [TestMethod]
+    public async Task Upsert_SubDayCadence_UsesHourlyCron()
+    {
+        var (scheduler, subject) = await CreateAsync();
+        var eventId = TicketedEventId.New();
+
+        await subject.HandleAsync(
+            new ScheduleReconfirmationsCommand(eventId.Value, Spec(Guid.NewGuid(), eventId.Value, "UTC", cadenceHours: 6)),
+            default);
+
+        var trigger = (ICronTrigger?)await scheduler.GetTrigger(TriggerKeyFor(eventId));
+        trigger.ShouldNotBeNull();
+        trigger.CronExpressionString.ShouldBe("0 0 0/6 * * ?");
 
         await scheduler.Shutdown();
     }
@@ -122,7 +139,7 @@ public sealed class ScheduleReconfirmationsHandlerTests
 
         await Should.ThrowAsync<ArgumentOutOfRangeException>(() =>
             subject.HandleAsync(
-                new ScheduleReconfirmationsCommand(eventId.Value, Spec(Guid.NewGuid(), eventId.Value, "UTC", cadenceDays: 0)),
+                new ScheduleReconfirmationsCommand(eventId.Value, Spec(Guid.NewGuid(), eventId.Value, "UTC", cadenceHours: 0)),
                 default).AsTask());
 
         await scheduler.Shutdown();
@@ -133,7 +150,7 @@ public sealed class ScheduleReconfirmationsHandlerTests
     {
         var (scheduler, subject) = await CreateAsync();
         var eventId = TicketedEventId.New();
-        var bad = new ReconfirmTriggerSpecDto(Guid.NewGuid(), eventId.Value, "UTC", Closes, Opens, 1);
+        var bad = new ReconfirmTriggerSpecDto(Guid.NewGuid(), eventId.Value, "UTC", Closes, Opens, 1, MinEmailIntervalHours: 24);
 
         await Should.ThrowAsync<ArgumentException>(() =>
             subject.HandleAsync(new ScheduleReconfirmationsCommand(eventId.Value, bad), default).AsTask());

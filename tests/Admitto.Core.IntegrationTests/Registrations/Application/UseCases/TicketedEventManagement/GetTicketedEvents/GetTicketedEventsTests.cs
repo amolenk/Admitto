@@ -5,9 +5,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 [TestClass]
 public sealed class GetTicketedEventsTests(TestContext testContext) : AspireIntegrationTestBase
 {
-    // SC001: List active events excludes archived — active and cancelled returned, archived excluded
+    // SC001: List active events excludes archived — only active events returned
     [TestMethod]
-    public async ValueTask ListActiveEventsExcludesArchived_ActiveAndCancelledReturned_ArchivedExcluded()
+    public async ValueTask ListActiveEventsExcludesArchived_ActiveEventsReturned_ArchivedExcluded()
     {
         // Arrange
         var fixture = GetTicketedEventsFixture.WithMixedStatuses();

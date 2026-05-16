@@ -218,22 +218,6 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         result.Error.Code.ShouldBe("ticket_catalog.unknown_ticket_types");
     }
 
-    // SC012: Rejected — cancelled ticket type
-    [TestMethod]
-    public async ValueTask SelfRegisterAttendee_CancelledTicketType_ThrowsCancelledError()
-    {
-        var fixture = RegisterAttendeeFixture.WithCancelledTicketType();
-        await fixture.SetupAsync(Environment);
-
-        var command = NewCommand(fixture, "dave@example.com", fixture.GetTicketTypeId("workshop-a").Value);
-        var sut = NewHandler();
-
-        var result = await ErrorResult.CaptureAsync(
-            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
-
-        result.Error.Code.ShouldBe("ticket_catalog.cancelled_ticket_types");
-    }
-
     // SC013: Rejected — overlapping time slots
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_OverlappingTimeSlots_ThrowsOverlappingError()
@@ -250,22 +234,6 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
         result.Error.Code.ShouldBe("ticket_catalog.overlapping_time_slots");
-    }
-
-    // SC014: Rejected — TicketedEvent status is Cancelled
-    [TestMethod]
-    public async ValueTask SelfRegisterAttendee_EventCancelled_ThrowsEventNotActive()
-    {
-        var fixture = RegisterAttendeeFixture.EventCancelled();
-        await fixture.SetupAsync(Environment);
-
-        var command = NewCommand(fixture, "dave@example.com", fixture.GetTicketTypeId("general-admission").Value);
-        var sut = NewHandler();
-
-        var result = await ErrorResult.CaptureAsync(
-            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
-
-        result.Error.Code.ShouldBe("registration.event_not_active");
     }
 
     // SC014b: Rejected — TicketedEvent status is Archived
@@ -288,7 +256,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_ConcurrentCancelAtClaim_ThrowsEventNotActive()
     {
-        var fixture = RegisterAttendeeFixture.ConcurrentCancelDetectedAtClaim();
+        var fixture = RegisterAttendeeFixture.ConcurrentArchiveDetectedAtClaim();
         await fixture.SetupAsync(Environment);
 
         var command = NewCommand(fixture, "dave@example.com", fixture.GetTicketTypeId("general-admission").Value);

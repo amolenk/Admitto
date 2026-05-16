@@ -12,7 +12,8 @@ namespace Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 public sealed record TicketedEventReconfirmPolicySnapshot(
     DateTimeOffset OpensAt,
     DateTimeOffset ClosesAt,
-    int CadenceDays);
+    int CadenceHours,
+    int MinEmailIntervalHours);
 
 /// <summary>
 /// Published by the Registrations module whenever a ticketed event's reconfirm

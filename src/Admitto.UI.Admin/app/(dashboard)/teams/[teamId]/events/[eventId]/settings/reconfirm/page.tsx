@@ -39,8 +39,8 @@ export default function ReconfirmPolicyPage() {
                     <CheckCircle2 className="h-4 w-4" />
                     <AlertTitle>Reconfirmation policy configured</AlertTitle>
                     <AlertDescription>
-                        Attendees will be asked to reconfirm every {policy.cadenceDays}{" "}
-                        {policy.cadenceDays === 1 ? "day" : "days"}.
+                        Attendees will be asked to reconfirm every {policy.cadenceHours}{" "}
+                        {policy.cadenceHours === 1 ? "hour" : "hours"}.
                     </AlertDescription>
                 </Alert>
             ) : (

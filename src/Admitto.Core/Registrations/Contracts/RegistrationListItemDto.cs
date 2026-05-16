@@ -14,6 +14,7 @@ public sealed record RegistrationListItemDto(
     string LastName,
     IReadOnlyCollection<Guid> TicketTypeIds,
     IReadOnlyDictionary<string, string> AdditionalDetails,
+    DateTimeOffset CreatedAt,
     RegistrationStatus Status,
     bool HasReconfirmed,
     DateTimeOffset? ReconfirmedAt);

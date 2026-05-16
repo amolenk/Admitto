@@ -135,22 +135,6 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         await AssertSingleRegistrationAsync("speaker@example.com");
     }
 
-    // SC008: Admin-add rejected — event not active (Cancelled)
-    [TestMethod]
-    public async ValueTask AdminRegisterAttendee_EventCancelled_ThrowsEventNotActive()
-    {
-        var fixture = RegisterAttendeeFixture.EventCancelled();
-        await fixture.SetupAsync(Environment);
-
-        var command = NewCommand(fixture, "speaker@example.com", fixture.GetTicketTypeId("general-admission").Value);
-        var sut = NewHandler();
-
-        var result = await ErrorResult.CaptureAsync(
-            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
-
-        result.Error.Code.ShouldBe("registration.event_not_active");
-    }
-
     // SC009: Admin-add rejected — event not active (Archived)
     [TestMethod]
     public async ValueTask AdminRegisterAttendee_EventArchived_ThrowsEventNotActive()
@@ -290,22 +274,6 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         result.Error.Code.ShouldBe("ticket_catalog.unknown_ticket_types");
     }
 
-    // SC015: Admin-add rejected — cancelled ticket type
-    [TestMethod]
-    public async ValueTask AdminRegisterAttendee_CancelledTicketType_ThrowsCancelledError()
-    {
-        var fixture = RegisterAttendeeFixture.WithCancelledTicketType();
-        await fixture.SetupAsync(Environment);
-
-        var command = NewCommand(fixture, "speaker@example.com", fixture.GetTicketTypeId("workshop-a").Value);
-        var sut = NewHandler();
-
-        var result = await ErrorResult.CaptureAsync(
-            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
-
-        result.Error.Code.ShouldBe("ticket_catalog.cancelled_ticket_types");
-    }
-
     // SC016: Admin-add rejected — overlapping time slots
     [TestMethod]
     public async ValueTask AdminRegisterAttendee_OverlappingTimeSlots_ThrowsOverlappingError()
@@ -365,11 +333,11 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         result.Error.Code.ShouldBe("additional_details.value_too_long");
     }
 
-    // SC019: Concurrent cancel detected at claim time
+    // SC019: Concurrent archive detected at claim time
     [TestMethod]
     public async ValueTask AdminRegisterAttendee_ConcurrentCancelAtClaim_ThrowsEventNotActive()
     {
-        var fixture = RegisterAttendeeFixture.ConcurrentCancelDetectedAtClaim();
+        var fixture = RegisterAttendeeFixture.ConcurrentArchiveDetectedAtClaim();
         await fixture.SetupAsync(Environment);
 
         var command = NewCommand(fixture, "speaker@example.com", fixture.GetTicketTypeId("general-admission").Value);

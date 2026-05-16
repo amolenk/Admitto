@@ -41,7 +41,6 @@ internal sealed class GetTicketTypesFixture
                 TicketTypeName.From("VIP Pass"),
                 [],
                 50);
-            catalog.CancelTicketType(VipPassId);
 
             dbContext.TicketCatalogs.Add(catalog);
         });

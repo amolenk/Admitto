@@ -3,8 +3,9 @@ using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 namespace Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 
 /// <summary>
-/// Value-object policy describing the reconfirmation window and cadence for
-/// a <c>TicketedEvent</c>. The cadence must be at least one day.
+/// Value-object policy describing the reconfirmation window, cadence, and
+/// per-attendee minimum email interval for a <c>TicketedEvent</c>.
+/// The cadence must be at least one day; the minimum email interval at least one hour.
 /// </summary>
 public sealed record TicketedEventReconfirmPolicy
 {
@@ -12,25 +13,41 @@ public sealed record TicketedEventReconfirmPolicy
     public DateTimeOffset ClosesAt { get; }
     public TimeSpan Cadence { get; }
 
-    private TicketedEventReconfirmPolicy(DateTimeOffset opensAt, DateTimeOffset closesAt, TimeSpan cadence)
+    /// <summary>
+    /// Minimum time that must have elapsed since the later of an attendee's
+    /// registration time and their last reconfirmation email before another
+    /// reconfirmation email may be sent to them.
+    /// </summary>
+    public TimeSpan MinEmailInterval { get; }
+
+    private TicketedEventReconfirmPolicy(
+        DateTimeOffset opensAt,
+        DateTimeOffset closesAt,
+        TimeSpan cadence,
+        TimeSpan minEmailInterval)
     {
         OpensAt = opensAt;
         ClosesAt = closesAt;
         Cadence = cadence;
+        MinEmailInterval = minEmailInterval;
     }
 
     public static TicketedEventReconfirmPolicy Create(
         DateTimeOffset opensAt,
         DateTimeOffset closesAt,
-        TimeSpan cadence)
+        TimeSpan cadence,
+        TimeSpan minEmailInterval)
     {
         if (closesAt <= opensAt)
             throw new BusinessRuleViolationException(Errors.WindowCloseBeforeOpen);
 
-        if (cadence < TimeSpan.FromDays(1))
+        if (cadence < TimeSpan.FromHours(1))
             throw new BusinessRuleViolationException(Errors.CadenceBelowMinimum);
 
-        return new TicketedEventReconfirmPolicy(opensAt, closesAt, cadence);
+        if (minEmailInterval < TimeSpan.FromHours(1))
+            throw new BusinessRuleViolationException(Errors.MinEmailIntervalBelowMinimum);
+
+        return new TicketedEventReconfirmPolicy(opensAt, closesAt, cadence, minEmailInterval);
     }
 
     internal static class Errors
@@ -41,6 +58,10 @@ public sealed record TicketedEventReconfirmPolicy
 
         public static readonly Error CadenceBelowMinimum = new(
             "ticketed_event_reconfirm_policy.cadence_below_minimum",
-            "Reconfirmation cadence must be at least 1 day.");
+            "Reconfirmation cadence must be at least 1 hour.");
+
+        public static readonly Error MinEmailIntervalBelowMinimum = new(
+            "ticketed_event_reconfirm_policy.min_email_interval_below_minimum",
+            "Minimum email interval must be at least 1 hour.");
     }
 }

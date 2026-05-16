@@ -63,25 +63,6 @@ public sealed class UpdateAdditionalDetailSchemaTests(TestContext testContext) :
     }
 
     [TestMethod]
-    public async ValueTask UpdateAdditionalDetailSchema_CancelledEvent_ThrowsEventNotActive()
-    {
-        var fixture = UpdateAdditionalDetailSchemaFixture.CancelledEvent();
-        await fixture.SetupAsync(Environment);
-
-        var command = new UpdateAdditionalDetailSchemaCommand(
-            fixture.EventId.Value,
-            fixture.SeededVersion,
-            [new UpdateAdditionalDetailSchemaCommand.FieldInput("dietary", "Dietary", 100)]);
-
-        var sut = new UpdateAdditionalDetailSchemaHandler(Environment.RegistrationsDatabase.Context);
-
-        var result = await ErrorResult.CaptureAsync(async () =>
-            await sut.HandleAsync(command, testContext.CancellationToken));
-
-        result.Error.Code.ShouldBe("ticketed_event.event_not_active");
-    }
-
-    [TestMethod]
     public async ValueTask UpdateAdditionalDetailSchema_ArchivedEvent_ThrowsEventNotActive()
     {
         var fixture = UpdateAdditionalDetailSchemaFixture.ArchivedEvent();

@@ -51,7 +51,7 @@ internal sealed class RevokeCouponFixture
         var builder = new CouponBuilder()
             .WithEventId(EventId)
             .WithRequestedTicketTypeIds(TicketTypeId)
-            .WithAvailableTicketTypes(new TicketTypeInfo(TicketTypeId, IsCancelled: false))
+            .WithAvailableTicketTypes(new TicketTypeInfo(TicketTypeId))
             .WithExpiresAt(DateTimeOffset.UtcNow.AddDays(30));
 
         if (_seedExpiredCoupon)

@@ -87,27 +87,6 @@ public sealed class CreateCouponTests(TestContext testContext) : AspireIntegrati
         result.Error.ShouldMatch(Coupon.Errors.UnknownTicketTypes([unknownId]));
     }
 
-    // SC-004: Rejected — ticket type is cancelled
-    [TestMethod]
-    public async ValueTask CreateCoupon_CancelledTicketType_ThrowsCancelledTicketTypesError()
-    {
-        // Arrange
-        var fixture = CreateCouponFixture.WithCancelledTicketType();
-        await fixture.SetupAsync(Environment);
-
-        var command = NewCreateCouponCommand(
-            fixture.EventId,
-            allowedTicketTypeIds: [fixture.CancelledTicketTypeId.Value]);
-        var sut = NewCreateCouponHandler(fixture);
-
-        // Act
-        var result = await ErrorResult.CaptureAsync(
-            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
-
-        // Assert
-        result.Error.ShouldMatch(Coupon.Errors.CancelledTicketTypes([fixture.CancelledTicketTypeId.Value]));
-    }
-
     // SC-005: Rejected — expiry in the past
     [TestMethod]
     public async ValueTask CreateCoupon_ExpiryInThePast_ThrowsExpiryMustBeInFutureError()

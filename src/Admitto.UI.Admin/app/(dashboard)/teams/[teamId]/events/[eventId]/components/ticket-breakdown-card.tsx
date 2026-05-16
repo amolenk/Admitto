@@ -50,7 +50,7 @@ export function TicketBreakdownCard({ teamId, eventId, ticketTypes, isLoading }:
                 </Button>
             </div>
             <div className="flex flex-col gap-3.5">
-                {ticketTypes.filter(t => !t.isCancelled).map((t) => {
+                {ticketTypes.map((t) => {
                     const cap = Number(t.maxCapacity) || 0;
                     const used = Number(t.usedCapacity);
                     const pct = cap > 0 ? Math.round((used / cap) * 100) : 0;
@@ -84,31 +84,6 @@ export function TicketBreakdownCard({ teamId, eventId, ticketTypes, isLoading }:
                                             ...(isFull ? { background: "var(--muted-foreground)", opacity: 0.5 } : {}),
                                         }}
                                     />
-                                </div>
-                            )}
-                        </div>
-                    );
-                })}
-                {ticketTypes.filter(t => t.isCancelled).map((t) => {
-                    const cap = Number(t.maxCapacity) || 0;
-                    const used = Number(t.usedCapacity);
-                    const pct = cap > 0 ? Math.round((used / cap) * 100) : 0;
-
-                    return (
-                        <div key={t.id}>
-                            <div className="flex items-baseline justify-between mb-1.5">
-                                <div className="flex items-center gap-2">
-                                    <span className="text-sm font-medium text-muted-foreground">{t.name}</span>
-                                    <Badge variant="secondary" className="text-[0.68rem]">Cancelled</Badge>
-                                </div>
-                                <div className="text-xs text-muted-foreground">
-                                    <span className="font-mono tabular-nums font-medium">{used}</span>
-                                    {cap > 0 && <> / {cap}</>}
-                                </div>
-                            </div>
-                            {cap > 0 && (
-                                <div className="capacity-bar">
-                                    <span style={{ width: `${pct}%`, background: "var(--muted-foreground)", opacity: 0.5 }} />
                                 </div>
                             )}
                         </div>

@@ -27,10 +27,15 @@ namespace Amolenk.Admitto.Core.Registrations.Contracts;
 /// Optional equality filter against entries in the registration's
 /// <c>AdditionalDetails</c> map. Each key/value pair must match exactly.
 /// </param>
+/// <param name="RegistrationIds">
+/// Optional allowlist of registration IDs. When set, only registrations whose
+/// ID appears in this collection are returned regardless of other filters.
+/// </param>
 public sealed record QueryRegistrationsDto(
     IReadOnlyCollection<Guid>? TicketTypeIds = null,
     RegistrationStatus? RegistrationStatus = null,
     bool? HasReconfirmed = null,
     DateTimeOffset? RegisteredAfter = null,
     DateTimeOffset? RegisteredBefore = null,
-    IReadOnlyDictionary<string, string>? AdditionalDetailEquals = null);
+    IReadOnlyDictionary<string, string>? AdditionalDetailEquals = null,
+    IReadOnlyCollection<Guid>? RegistrationIds = null);

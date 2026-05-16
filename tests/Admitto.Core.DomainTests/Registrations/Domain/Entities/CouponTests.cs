@@ -22,7 +22,7 @@ public sealed class CouponTests
         var sut = new CouponBuilder()
             .WithEmail(email)
             .WithRequestedTicketTypeIds(ticketTypeId)
-            .WithAvailableTicketTypes(new TicketTypeInfo(ticketTypeId, IsCancelled: false))
+            .WithAvailableTicketTypes(new TicketTypeInfo(ticketTypeId))
             .Build();
 
         // Assert
@@ -65,28 +65,11 @@ public sealed class CouponTests
         var result = ErrorResult.Capture(() =>
             new CouponBuilder()
                 .WithRequestedTicketTypeIds(unknownId)
-                .WithAvailableTicketTypes(new TicketTypeInfo(knownId, IsCancelled: false))
+                .WithAvailableTicketTypes(new TicketTypeInfo(knownId))
                 .Build());
 
         // Assert
         result.Error.ShouldMatch(Coupon.Errors.UnknownTicketTypes(new List<Guid> { unknownId.Value }));
-    }
-
-    [TestMethod]
-    public void Create_CancelledTicketType_ThrowsCancelledTicketTypesError()
-    {
-        // Arrange
-        var cancelledId = TicketTypeId.New();
-
-        // Act
-        var result = ErrorResult.Capture(() =>
-            new CouponBuilder()
-                .WithRequestedTicketTypeIds(cancelledId)
-                .WithAvailableTicketTypes(new TicketTypeInfo(cancelledId, IsCancelled: true))
-                .Build());
-
-        // Assert
-        result.Error.ShouldMatch(Coupon.Errors.CancelledTicketTypes(new List<Guid> { cancelledId.Value }));
     }
 
     [TestMethod]
@@ -150,8 +133,8 @@ public sealed class CouponTests
             .WithEmail(email)
             .WithRequestedTicketTypeIds(id1, id2)
             .WithAvailableTicketTypes(
-                new TicketTypeInfo(id1, IsCancelled: false),
-                new TicketTypeInfo(id2, IsCancelled: false))
+                new TicketTypeInfo(id1),
+                new TicketTypeInfo(id2))
             .WithExpiresAt(expiresAt)
             .WithBypassRegistrationWindow()
             .Build();

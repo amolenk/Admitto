@@ -17,7 +17,7 @@ public class CouponBuilder
     private List<TicketTypeId> _requestedTicketTypeIds = [DefaultTicketTypeId];
     private DateTimeOffset _expiresAt = DefaultExpiresAt;
     private bool _bypassRegistrationWindow;
-    private List<TicketTypeInfo> _availableTicketTypes = [new(DefaultTicketTypeId, IsCancelled: false)];
+    private List<TicketTypeInfo> _availableTicketTypes = [new(DefaultTicketTypeId)];
     private DateTimeOffset _now = DefaultNow;
 
     public CouponBuilder WithEventId(TicketedEventId eventId)

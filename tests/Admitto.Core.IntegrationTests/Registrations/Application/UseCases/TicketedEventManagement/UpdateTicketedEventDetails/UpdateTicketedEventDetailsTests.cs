@@ -67,9 +67,9 @@ public sealed class UpdateTicketedEventDetailsTests(TestContext testContext) : A
 
     // SC-003: Updating cancelled event throws (guard: EnsureActive)
     [TestMethod]
-    public async ValueTask UpdateTicketedEventDetails_CancelledEvent_ThrowsEventNotActive()
+    public async ValueTask UpdateTicketedEventDetails_ArchivedEvent_ThrowsEventNotActive()
     {
-        var fixture = UpdateTicketedEventDetailsFixture.CancelledEvent();
+        var fixture = UpdateTicketedEventDetailsFixture.ArchivedEvent();
         await fixture.SetupAsync(Environment);
 
         var command = new UpdateTicketedEventDetailsCommand(

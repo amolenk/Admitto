@@ -10,11 +10,10 @@ namespace Amolenk.Admitto.Core.Organization.Domain.Entities;
 /// Represents an organizing team in the system.
 /// </summary>
 /// <remarks>
-/// The team owns four bounded counters that track the team-side view of the events it has
+/// The team owns three bounded counters that track the team-side view of the events it has
 /// requested in the Registrations module:
 /// <list type="bullet">
 ///   <item><see cref="ActiveEventCount"/> — materialised events currently Active.</item>
-///   <item><see cref="CancelledEventCount"/> — materialised events currently Cancelled.</item>
 ///   <item><see cref="ArchivedEventCount"/> — materialised events that have reached Archived.</item>
 ///   <item><see cref="PendingEventCount"/> — in-flight creation requests not yet acked by Registrations.</item>
 /// </list>
@@ -46,7 +45,6 @@ public class Team : Aggregate<TeamId>
     public DateTimeOffset? ArchivedAt { get; private set; }
 
     public int ActiveEventCount { get; private set; }
-    public int CancelledEventCount { get; private set; }
     public int ArchivedEventCount { get; private set; }
     public int PendingEventCount { get; private set; }
 
@@ -193,30 +191,7 @@ public class Team : Aggregate<TeamId>
 
     /// <summary>
     /// Records that the materialised event with the given id transitioned to
-    /// <see cref="EventStatus.Cancelled"/>. Idempotent on the observed status.
-    /// </summary>
-    public void RegisterEventCancelled(TicketedEventId ticketedEventId)
-    {
-        var request = FindRequestForEvent(ticketedEventId);
-        if (request is null)
-        {
-            return;
-        }
-
-        if (request.ObservedEventStatus != EventStatus.Active)
-        {
-            return;
-        }
-
-        request.RecordEventStatus(EventStatus.Cancelled);
-        if (ActiveEventCount > 0) ActiveEventCount--;
-        CancelledEventCount++;
-    }
-
-    /// <summary>
-    /// Records that the materialised event with the given id transitioned to
-    /// <see cref="EventStatus.Archived"/>. The source counter (active or cancelled) is
-    /// determined from the observed status. Idempotent.
+    /// <see cref="EventStatus.Archived"/>. Idempotent.
     /// </summary>
     public void RegisterEventArchived(TicketedEventId ticketedEventId)
     {
@@ -226,18 +201,14 @@ public class Team : Aggregate<TeamId>
             return;
         }
 
-        switch (request.ObservedEventStatus)
+        if (request.ObservedEventStatus == EventStatus.Archived)
         {
-            case EventStatus.Active:
-                if (ActiveEventCount > 0) ActiveEventCount--;
-                break;
-            case EventStatus.Cancelled:
-                if (CancelledEventCount > 0) CancelledEventCount--;
-                break;
-            case EventStatus.Archived:
-                return;
-            default:
-                return;
+            return;
+        }
+
+        if (request.ObservedEventStatus == EventStatus.Active)
+        {
+            if (ActiveEventCount > 0) ActiveEventCount--;
         }
 
         request.RecordEventStatus(EventStatus.Archived);

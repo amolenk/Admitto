@@ -18,13 +18,10 @@ public sealed class PublicTicketTypesTests(TestContext testContext) : EndToEndTe
         var fixture = PublicTicketTypesFixture.Create();
         var generalId = TicketTypeId.From(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
         var vipId = TicketTypeId.From(new Guid("cccccccc-cccc-cccc-cccc-cccccccccccc"));
-        var earlyBirdId = TicketTypeId.From(new Guid("dddddddd-dddd-dddd-dddd-dddddddddddd"));
         await fixture.SetupAsync(Environment, catalog =>
         {
             catalog.AddTicketType(generalId, TicketTypeName.From("General Admission"), [], 200, selfServiceEnabled: true);
             catalog.AddTicketType(vipId, TicketTypeName.From("VIP Pass"), [], 50, selfServiceEnabled: false);
-            catalog.AddTicketType(earlyBirdId, TicketTypeName.From("Early Bird"), [], 100, selfServiceEnabled: true);
-            catalog.CancelTicketType(earlyBirdId); // cancelled
         });
 
         using var client = Environment.CreatePublicApiClient(fixture.ApiKey);

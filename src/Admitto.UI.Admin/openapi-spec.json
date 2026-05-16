@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:60567/"
+      "url": "http://localhost:63668/"
     }
   ],
   "paths": {
@@ -4042,89 +4042,6 @@
         }
       }
     },
-    "/admin/teams/{teamId}/events/{eventId}/cancel": {
-      "post": {
-        "tags": [
-          "CancelTicketedEventHttpEndpoint"
-        ],
-        "operationId": "CancelTicketedEvent",
-        "parameters": [
-          {
-            "name": "teamId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "eventId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "204": {
-            "description": "No Content"
-          }
-        }
-      }
-    },
     "/admin/teams/{teamId}/events/{eventId}/archive": {
       "post": {
         "tags": [
@@ -4239,99 +4156,6 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ConfigureRegistrationPolicyHttpRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "204": {
-            "description": "No Content"
-          }
-        }
-      }
-    },
-    "/admin/teams/{teamId}/events/{eventId}/cancellation-policy": {
-      "put": {
-        "tags": [
-          "ConfigureCancellationPolicyHttpEndpoint"
-        ],
-        "operationId": "ConfigureCancellationPolicy",
-        "parameters": [
-          {
-            "name": "teamId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "eventId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ConfigureCancellationPolicyHttpRequest"
               }
             }
           },
@@ -5788,98 +5612,6 @@
           },
           "required": true
         },
-        "responses": {
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "204": {
-            "description": "No Content"
-          }
-        }
-      }
-    },
-    "/admin/teams/{teamId}/events/{eventId}/ticket-types/{ticketTypeId}/cancel": {
-      "post": {
-        "tags": [
-          "CancelTicketTypeHttpEndpoint"
-        ],
-        "operationId": "CancelTicketType",
-        "parameters": [
-          {
-            "name": "ticketTypeId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "teamId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "eventId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
         "responses": {
           "400": {
             "description": "Bad Request",
@@ -7415,18 +7147,6 @@
           }
         }
       },
-      "CancellationPolicyDto": {
-        "required": [
-          "lateCancellationCutoff"
-        ],
-        "type": "object",
-        "properties": {
-          "lateCancellationCutoff": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
       "CancelRegistrationHttpRequest": {
         "required": [
           "reason"
@@ -7470,27 +7190,6 @@
           }
         }
       },
-      "ConfigureCancellationPolicyHttpRequest": {
-        "type": "object",
-        "properties": {
-          "lateCancellationCutoff": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          },
-          "expectedVersion": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
-            "format": "uint32"
-          }
-        }
-      },
       "ConfigureReconfirmPolicyHttpRequest": {
         "type": "object",
         "properties": {
@@ -7509,6 +7208,15 @@
             "format": "date-time"
           },
           "cadenceDays": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "minEmailIntervalHours": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
@@ -8081,7 +7789,6 @@
       "EventLifecycleStatus": {
         "enum": [
           "active",
-          "cancelled",
           "archived"
         ]
       },
@@ -8426,6 +8133,16 @@
             "additionalProperties": {
               "type": "string"
             }
+          },
+          "registrationIds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         }
       },
@@ -8433,7 +8150,8 @@
         "required": [
           "opensAt",
           "closesAt",
-          "cadenceDays"
+          "cadenceDays",
+          "minEmailIntervalHours"
         ],
         "type": "object",
         "properties": {
@@ -8446,6 +8164,14 @@
             "format": "date-time"
           },
           "cadenceDays": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "minEmailIntervalHours": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "integer",
@@ -8876,7 +8602,6 @@
           "version",
           "isRegistrationOpen",
           "registrationPolicy",
-          "cancellationPolicy",
           "reconfirmPolicy",
           "additionalDetailSchema"
         ],
@@ -8931,16 +8656,6 @@
               },
               {
                 "$ref": "#/components/schemas/RegistrationPolicyDto"
-              }
-            ]
-          },
-          "cancellationPolicy": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/CancellationPolicyDto"
               }
             ]
           },
@@ -9019,7 +8734,6 @@
           "timeSlots",
           "maxCapacity",
           "usedCapacity",
-          "isCancelled",
           "selfServiceEnabled"
         ],
         "type": "object",
@@ -9053,9 +8767,6 @@
               "string"
             ],
             "format": "int32"
-          },
-          "isCancelled": {
-            "type": "boolean"
           },
           "selfServiceEnabled": {
             "type": "boolean"
@@ -9304,8 +9015,8 @@
         "type": "oauth2",
         "flows": {
           "authorizationCode": {
-            "authorizationUrl": "http://localhost:60576/realms/admitto/protocol/openid-connect/auth",
-            "tokenUrl": "http://localhost:60576/realms/admitto/protocol/openid-connect/token",
+            "authorizationUrl": "http://localhost:63666/realms/admitto/protocol/openid-connect/auth",
+            "tokenUrl": "http://localhost:63666/realms/admitto/protocol/openid-connect/token",
             "scopes": {
               "openid": "OpenID Connect",
               "profile": "User profile",
@@ -9401,16 +9112,10 @@
       "name": "UpdateTicketedEventDetailsHttpEndpoint"
     },
     {
-      "name": "CancelTicketedEventHttpEndpoint"
-    },
-    {
       "name": "ArchiveTicketedEventHttpEndpoint"
     },
     {
       "name": "ConfigureRegistrationPolicyHttpEndpoint"
-    },
-    {
-      "name": "ConfigureCancellationPolicyHttpEndpoint"
     },
     {
       "name": "ConfigureReconfirmPolicyHttpEndpoint"
@@ -9456,9 +9161,6 @@
     },
     {
       "name": "UpdateTicketTypeHttpEndpoint"
-    },
-    {
-      "name": "CancelTicketTypeHttpEndpoint"
     },
     {
       "name": "RequestOtpHttpEndpoint"

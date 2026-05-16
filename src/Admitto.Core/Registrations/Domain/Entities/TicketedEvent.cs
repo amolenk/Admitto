@@ -10,13 +10,12 @@ namespace Amolenk.Admitto.Core.Registrations.Domain.Entities;
 
 /// <summary>
 /// Authoritative aggregate for a ticketed event in the Registrations module.
-/// Owns the name/dates, the lifecycle status, and the three policies
-/// (registration, cancellation, reconfirm) as value objects.
+/// Owns the name/dates, the lifecycle status, and the two policies
+/// (registration, reconfirm) as value objects.
 /// </summary>
 /// <remarks>
-/// Policy mutators
-/// reject when the aggregate is not Active; lifecycle transitions are
-/// one-way (Active → Cancelled → Archived, or Active → Archived directly).
+/// Policy mutators reject when the aggregate is not Active; lifecycle
+/// transitions are one-way (Active → Archived).
 /// </remarks>
 public class TicketedEvent : Aggregate<TicketedEventId>
 {
@@ -56,7 +55,6 @@ public class TicketedEvent : Aggregate<TicketedEventId>
     public EventLifecycleStatus Status { get; private set; }
 
     public TicketedEventRegistrationPolicy? RegistrationPolicy { get; private set; }
-    public TicketedEventCancellationPolicy? CancellationPolicy { get; private set; }
     public TicketedEventReconfirmPolicy? ReconfirmPolicy { get; private set; }
     public AdditionalDetailSchema AdditionalDetailSchema { get; private set; } = AdditionalDetailSchema.Empty;
 
@@ -125,22 +123,9 @@ public class TicketedEvent : Aggregate<TicketedEventId>
         EndsAt = endsAt;
     }
 
-    public void Cancel()
-    {
-        if (Status == EventLifecycleStatus.Cancelled)
-            throw new BusinessRuleViolationException(Errors.AlreadyCancelled);
-
-        if (Status == EventLifecycleStatus.Archived)
-            throw new BusinessRuleViolationException(Errors.AlreadyArchived);
-
-        Status = EventLifecycleStatus.Cancelled;
-        AddDomainEvent(new TicketedEventStatusChangedDomainEvent(Id, TeamId, Status));
-    }
-
     public void Archive()
     {
-        if (Status == EventLifecycleStatus.Archived)
-            throw new BusinessRuleViolationException(Errors.AlreadyArchived);
+        EnsureActive();
 
         Status = EventLifecycleStatus.Archived;
         AddDomainEvent(new TicketedEventStatusChangedDomainEvent(Id, TeamId, Status));
@@ -150,12 +135,6 @@ public class TicketedEvent : Aggregate<TicketedEventId>
     {
         EnsureActive();
         RegistrationPolicy = policy;
-    }
-
-    public void ConfigureCancellationPolicy(TicketedEventCancellationPolicy? policy)
-    {
-        EnsureActive();
-        CancellationPolicy = policy;
     }
 
     public void ConfigureReconfirmPolicy(TicketedEventReconfirmPolicy? policy)
@@ -200,13 +179,5 @@ public class TicketedEvent : Aggregate<TicketedEventId>
             "ticketed_event.event_not_active",
             "Operation not allowed: the ticketed event is not Active.",
             Type: ErrorType.Validation);
-
-        public static readonly Error AlreadyCancelled = new(
-            "ticketed_event.already_cancelled",
-            "The ticketed event is already cancelled.");
-
-        public static readonly Error AlreadyArchived = new(
-            "ticketed_event.already_archived",
-            "The ticketed event is already archived.");
     }
 }
