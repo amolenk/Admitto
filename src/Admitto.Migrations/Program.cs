@@ -12,7 +12,8 @@ builder.AddServiceDefaults();
 
 // Migrations run without an HTTP context, so provide a no-op IUserContextAccessor
 // to satisfy the AuditInterceptor dependency.
-builder.Services.AddSingleton<IUserContextAccessor>(new MigrationUserContextAccessor());
+builder.Services.AddSingleton<IUserContextAccessor>(
+    new StaticUserContextAccessor(new UserContextDto(Guid.Empty, "migrations", "migrations@system.local")));
 
 builder.AddOrganizationModule();
 builder.AddEmailModule();
@@ -94,14 +95,4 @@ async ValueTask MigrateBetterAuthAsync(IConfiguration configuration)
     await using var dataSource = NpgsqlDataSource.Create(connectionString);
     await using var cmd = dataSource.CreateCommand(BetterAuthSchemaSql);
     await cmd.ExecuteNonQueryAsync();
-}
-
-/// <summary>
-/// Stub accessor for migration-only scenarios where no user context exists.
-/// The AuditInterceptor will not fire during migrations (no SaveChanges calls),
-/// but its constructor still requires the service to be registered.
-/// </summary>
-file sealed class MigrationUserContextAccessor : IUserContextAccessor
-{
-    public UserContextDto Current => new(Guid.Empty, "migrations", "migrations@system.local");
 }

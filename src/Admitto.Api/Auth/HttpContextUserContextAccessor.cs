@@ -12,11 +12,6 @@ public class HttpContextUserContextAccessor(IHttpContextAccessor httpContextAcce
         "api-key",
         "apikey@system.local");
 
-    private static readonly UserContextDto SystemUser = new(
-        Guid.Empty,
-        "system",
-        "system@system.local");
-
     public UserContextDto Current
     {
         get
@@ -25,7 +20,7 @@ public class HttpContextUserContextAccessor(IHttpContextAccessor httpContextAcce
 
             // No HTTP context — running in a background/hosted-service context.
             if (httpContext is null)
-                return SystemUser;
+                return StaticUserContextAccessor.SystemUser;
 
             var user = httpContext.User;
 

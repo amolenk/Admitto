@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Core.Shared.Application.Auth;
-using Amolenk.Admitto.Worker;
 
 var builder = Host.CreateApplicationBuilder(args);
 
@@ -8,7 +7,8 @@ builder.AddServiceDefaults();
 
 // The Worker has no HTTP context, so provide a fixed system identity
 // for the AuditInterceptor used by EF Core.
-builder.Services.AddSingleton<IUserContextAccessor, SystemUserContextAccessor>();
+builder.Services.AddSingleton<IUserContextAccessor>(
+    new StaticUserContextAccessor(StaticUserContextAccessor.SystemUser));
 
 // Add modules (application + infrastructure) and their worker-specific services.
 builder

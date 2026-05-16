@@ -1,3 +1,5 @@
+using Amolenk.Admitto.Core.Shared.Application.Auth;
+using Amolenk.Admitto.Core.Shared.Contracts;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Interceptors;
 using Microsoft.EntityFrameworkCore;
@@ -28,7 +30,8 @@ public class DatabaseTestContext<TDbContext> : IAsyncDisposable
                 connectionString,
                 npgsql => { npgsql.MigrationsHistoryTable("ef_migrations_history", TDbContext.SchemaName); })
             // Add the audit interceptor to ensure that audit fields are properly set during tests.
-            .AddInterceptors(new AuditInterceptor(new FakeUserContextAccessor()))
+            .AddInterceptors(new AuditInterceptor(new StaticUserContextAccessor(
+                new UserContextDto(Guid.NewGuid(), "Test User", "test.user@example.com"))))
             .Options;
 
         var dbContext = (TDbContext)Activator.CreateInstance(typeof(TDbContext), options)!;
