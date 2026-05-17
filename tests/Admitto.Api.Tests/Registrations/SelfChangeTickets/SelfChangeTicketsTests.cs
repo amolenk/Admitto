@@ -8,7 +8,7 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.SelfChangeTickets;
 [TestClass]
 public sealed class SelfChangeTicketsTests(TestContext testContext) : EndToEndTestBase
 {
-    // SC001: Successful self-service ticket change returns 200
+    // Successful self-service ticket change returns 200
     [TestMethod]
     public async Task SelfChangeTickets_ValidChange_Returns200()
     {
@@ -26,7 +26,7 @@ public sealed class SelfChangeTicketsTests(TestContext testContext) : EndToEndTe
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
     }
 
-    // SC002: Registration not found returns 404
+    // Registration not found returns 404
     [TestMethod]
     public async Task SelfChangeTickets_NotFound_Returns404()
     {
@@ -46,7 +46,7 @@ public sealed class SelfChangeTicketsTests(TestContext testContext) : EndToEndTe
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
     }
 
-    // SC003: Workshop at capacity returns 400
+    // Workshop at capacity returns 400
     [TestMethod]
     public async Task SelfChangeTickets_CapacityFull_Returns400()
     {
@@ -64,7 +64,7 @@ public sealed class SelfChangeTicketsTests(TestContext testContext) : EndToEndTe
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 
-    // SC004: Registration window closed returns 400
+    // Registration window closed returns 400
     [TestMethod]
     public async Task SelfChangeTickets_RegistrationWindowClosed_Returns400()
     {
@@ -82,7 +82,7 @@ public sealed class SelfChangeTicketsTests(TestContext testContext) : EndToEndTe
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 
-    // SC005: Cancelled registration returns 409
+    // Cancelled registration returns 409
     [TestMethod]
     public async Task SelfChangeTickets_AlreadyCancelled_Returns409()
     {
@@ -100,7 +100,7 @@ public sealed class SelfChangeTicketsTests(TestContext testContext) : EndToEndTe
         response.StatusCode.ShouldBe(HttpStatusCode.Conflict);
     }
 
-    // SC006: Unknown ticket type slug returns 400
+    // Unknown ticket type slug returns 400
     [TestMethod]
     public async Task SelfChangeTickets_UnknownTicketType_Returns400()
     {
@@ -118,7 +118,7 @@ public sealed class SelfChangeTicketsTests(TestContext testContext) : EndToEndTe
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 
-    // SC007: Identical ticket set is a no-op success returning 200
+    // Identical ticket set is a no-op success returning 200
     [TestMethod]
     public async Task SelfChangeTickets_SameSelection_Returns200()
     {

@@ -9,7 +9,7 @@ namespace Amolenk.Admitto.Api.Tests.Organization.ApiKeyManagement;
 [TestClass]
 public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
 {
-    // SC001: Create API key via admin endpoint returns 201 with raw key
+    // Create API key via admin endpoint returns 201 with raw key
     [TestMethod]
     public async Task CreateApiKey_ValidRequest_Returns201WithRawKey()
     {
@@ -31,7 +31,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
         prefixProp.GetString()!.Length.ShouldBe(8);
     }
 
-    // SC002: Create API key without a name returns 422
+    // Create API key without a name returns 422
     [TestMethod]
     public async Task CreateApiKey_MissingName_Returns400()
     {
@@ -46,7 +46,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 
-    // SC003: Create API key with name too long returns 400
+    // Create API key with name too long returns 400
     [TestMethod]
     public async Task CreateApiKey_NameTooLong_Returns400()
     {
@@ -61,7 +61,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 
-    // SC004: List API keys returns 200 with array
+    // List API keys returns 200 with array
     [TestMethod]
     public async Task GetApiKeys_ReturnsListWithSeededKey()
     {
@@ -82,7 +82,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
         first.TryGetProperty("key", out _).ShouldBeFalse();
     }
 
-    // SC005: Revoke API key returns 204
+    // Revoke API key returns 204
     [TestMethod]
     public async Task RevokeApiKey_ActiveKey_Returns204()
     {
@@ -96,7 +96,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
     }
 
-    // SC006: Revoke already-revoked API key returns 409
+    // Revoke already-revoked API key returns 409
     [TestMethod]
     public async Task RevokeApiKey_AlreadyRevoked_Returns409()
     {
@@ -110,7 +110,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
         response.StatusCode.ShouldBe(HttpStatusCode.Conflict);
     }
 
-    // SC007: Revoke a key that belongs to a different team returns 404
+    // Revoke a key that belongs to a different team returns 404
     [TestMethod]
     public async Task RevokeApiKey_KeyFromDifferentTeam_Returns404()
     {
@@ -125,7 +125,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
     }
 
-    // SC008: No X-Api-Key header returns 401
+    // No X-Api-Key header returns 401
     [TestMethod]
     public async Task PublicEndpoint_NoApiKey_Returns401()
     {
@@ -142,7 +142,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
         response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
 
-    // SC009: Bogus/unknown API key returns 401
+    // Bogus/unknown API key returns 401
     [TestMethod]
     public async Task PublicEndpoint_BogusApiKey_Returns401()
     {
@@ -158,7 +158,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
         response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
 
-    // SC010: Revoked API key returns 401
+    // Revoked API key returns 401
     [TestMethod]
     public async Task PublicEndpoint_RevokedApiKey_Returns401()
     {
@@ -174,7 +174,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
         response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
 
-    // SC011: API key for Team A used against Team B's route returns 403
+    // API key for Team A used against Team B's route returns 403
     [TestMethod]
     public async Task PublicEndpoint_ApiKeyForOtherTeam_Returns403()
     {
@@ -191,7 +191,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
         response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
     }
 
-    // SC012: Valid API key for correct team returns 202
+    // Valid API key for correct team returns 202
     [TestMethod]
     public async Task PublicEndpoint_ValidApiKey_Returns202()
     {

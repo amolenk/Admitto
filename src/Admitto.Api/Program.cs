@@ -2,7 +2,6 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Amolenk.Admitto.Api.Auth;
 using Amolenk.Admitto.Api.Endpoints;
-using Amolenk.Admitto.ApiService.Auth;
 using Amolenk.Admitto.ApiService.Middleware;
 using Amolenk.Admitto.ApiService.OpenApi;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
@@ -20,19 +19,7 @@ builder
     .AddRegistrationsModule();
 
 // Add shared services.
-builder
-    .AddSharedInfrastructureMessagingServices()
-    .Services
-    .AddSharedInfrastructureServices()
-    .AddCryptographyApplicationServices()
-    .AddValidationApplicationServices();
-
-builder.AddMessageTypeRegistry(b =>
-{
-    b.AddOrganizationMessageTypes();
-    b.AddRegistrationsMessageTypes();
-    b.AddEmailMessageTypes();
-});
+builder.AddSharedServices();
 
 // Add auth services.
 builder
@@ -41,7 +28,6 @@ builder
 
 // Add validation and error handling middleware.
 builder.Services
-    .AddValidationApplicationServices()
     .AddProblemDetails()
     // TODO
     // .AddExceptionHandler<DomainRuleExceptionHandler>()
@@ -61,7 +47,6 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 // TODO
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<IUserContextAccessor, HttpContextUserContextAccessor>();
-builder.Services.AddScoped<IAdministratorRoleService, AdministratorRoleService>();
 builder.Services.AddScoped<UserContextResolver>();
 
 // Configure CORS to allow all origins, methods, and headers.

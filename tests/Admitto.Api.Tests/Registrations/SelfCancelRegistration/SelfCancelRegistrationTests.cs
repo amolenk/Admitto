@@ -7,7 +7,7 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.SelfCancelRegistration;
 [TestClass]
 public sealed class SelfCancelRegistrationTests(TestContext testContext) : EndToEndTestBase
 {
-    // SC001: Successful self-service cancellation returns 200
+    // Successful self-service cancellation returns 200
     [TestMethod]
     public async Task SelfCancelRegistration_WithoutToken_Returns200()
     {
@@ -20,7 +20,7 @@ public sealed class SelfCancelRegistrationTests(TestContext testContext) : EndTo
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
     }
 
-    // SC002: Registration not found returns 404
+    // Registration not found returns 404
     [TestMethod]
     public async Task SelfCancelRegistration_NotFound_Returns404()
     {
@@ -35,7 +35,7 @@ public sealed class SelfCancelRegistrationTests(TestContext testContext) : EndTo
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
     }
 
-    // SC003: Already cancelled registration returns 409 Conflict
+    // Already cancelled registration returns 409 Conflict
     [TestMethod]
     public async Task SelfCancelRegistration_AlreadyCancelled_Returns409()
     {

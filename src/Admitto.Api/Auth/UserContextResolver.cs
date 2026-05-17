@@ -7,7 +7,7 @@ using Amolenk.Admitto.Core.Shared.Contracts;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 
-namespace Amolenk.Admitto.ApiService.Auth;
+namespace Amolenk.Admitto.Api.Auth;
 
 /// <summary>
 /// Resolves the calling user's domain identity from JWT claims, performing lazy ExternalUserId binding
@@ -40,7 +40,12 @@ public sealed class UserContextResolver(
             .FirstOrDefaultAsync(u => u.ExternalUserId == externalId, cancellationToken);
 
         if (byExternalId is not null)
-            return new UserContextDto(byExternalId.Id.Value, name, byExternalId.EmailAddress.Value);
+            return new UserContextDto(
+                byExternalId.Id.Value,
+                name,
+                byExternalId.EmailAddress.Value,
+                byExternalId.IsAdmin,
+                byExternalId.Memberships.Select(m => new UserContextTeamMembershipDto(m.Id.Value, m.Role)).ToList());
 
         // 2. Fall back to email (first sign-in: bind the sub to the pre-invited user).
         if (string.IsNullOrWhiteSpace(email))
@@ -61,6 +66,11 @@ public sealed class UserContextResolver(
         byEmail.AssignExternalUserId(ExternalUserId.From(sub));
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return new UserContextDto(byEmail.Id.Value, name, byEmail.EmailAddress.Value);
+        return new UserContextDto(
+            byEmail.Id.Value,
+            name,
+            byEmail.EmailAddress.Value,
+            byEmail.IsAdmin,
+            byEmail.Memberships.Select(m => new UserContextTeamMembershipDto(m.Id.Value, m.Role)).ToList());
     }
 }

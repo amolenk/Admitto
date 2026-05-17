@@ -8,7 +8,7 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.OtpRequest;
 [TestClass]
 public sealed class OtpRequestTests(TestContext testContext) : EndToEndTestBase
 {
-    // SC001: Successful OTP request returns 202 Accepted
+    // Successful OTP request returns 202 Accepted
     [TestMethod]
     public async Task RequestOtp_ValidEmail_Returns202()
     {
@@ -24,7 +24,7 @@ public sealed class OtpRequestTests(TestContext testContext) : EndToEndTestBase
         response.StatusCode.ShouldBe(HttpStatusCode.Accepted);
     }
 
-    // SC002: Unknown email still returns 202 (no enumeration)
+    // Unknown email still returns 202 (no enumeration)
     [TestMethod]
     public async Task RequestOtp_UnknownEmail_Returns202()
     {
@@ -40,7 +40,7 @@ public sealed class OtpRequestTests(TestContext testContext) : EndToEndTestBase
         response.StatusCode.ShouldBe(HttpStatusCode.Accepted);
     }
 
-    // SC003: Second request supersedes previous pending code and returns 202
+    // Second request supersedes previous pending code and returns 202
     [TestMethod]
     public async Task RequestOtp_SupersedesPreviousCode_Returns202()
     {
@@ -59,7 +59,7 @@ public sealed class OtpRequestTests(TestContext testContext) : EndToEndTestBase
         secondResponse.StatusCode.ShouldBe(HttpStatusCode.Accepted);
     }
 
-    // SC004: Rate limit exceeded returns 400 (TooManyRequests maps to Validation → 400)
+    // Rate limit exceeded returns 400 (TooManyRequests maps to Validation → 400)
     [TestMethod]
     public async Task RequestOtp_RateLimitExceeded_Returns400()
     {
@@ -76,7 +76,7 @@ public sealed class OtpRequestTests(TestContext testContext) : EndToEndTestBase
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 
-    // SC005: Unknown event slug returns 404
+    // Unknown event slug returns 404
     [TestMethod]
     public async Task RequestOtp_UnknownEvent_Returns404()
     {

@@ -12,33 +12,17 @@ builder.Services.AddSingleton<IUserContextAccessor>(
 
 // Add modules (application + infrastructure) and their worker-specific services.
 builder
-    .AddOrganizationModule()
     .AddOrganizationModuleWorker()
     .AddOrganizationIdentityServices();
 
-builder
-    .AddRegistrationsModule()
-    .AddRegistrationsModuleWorker();
+builder.AddRegistrationsModuleWorker();
 
-builder
-    .AddEmailModule()
-    .AddEmailModuleWorker();
+builder.AddEmailModuleWorker();
 
 // Add shared services.
 builder
-    .AddSharedInfrastructureMessagingServices()
+    .AddSharedServices()
     .AddSharedInfrastructureQueueConsumer();
-
-builder.Services
-    .AddCryptographyApplicationServices()
-    .AddSharedInfrastructureServices();
-
-builder.AddMessageTypeRegistry(b =>
-{
-    b.AddOrganizationMessageTypes();
-    b.AddRegistrationsMessageTypes();
-    b.AddEmailMessageTypes();
-});
 
 var host = builder.Build();
 host.Run();

@@ -61,7 +61,7 @@ public async Task CreateTeam_ValidInput_CreatesTeam() { ... }
 public async Task CreateTeam_DuplicateName_ReturnsError() { ... }
 ```
 
-**Do not prefix test method names with scenario IDs** (e.g., `SC001_`, `SC-BIND_`). The scenario ID belongs only in the test body as a comment (e.g., `// SC-BIND: ...`), not in the method name.
+**Do not prefix test method names with scenario IDs** (e.g., `SC001_`, `SC-BIND_`). Do not reference scenario IDs in comments either. Describe the scenario in plain English in the test body or method name.
 
 ### Builders
 Builders (e.g., `TeamBuilder`, `CouponBuilder`) live in `Admitto.Testing/Builders/` and are shared across all test projects. Add new builders there.

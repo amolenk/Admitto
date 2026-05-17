@@ -1,4 +1,3 @@
-using Amolenk.Admitto.ApiService.Auth;
 using Amolenk.Admitto.Core.Shared.Contracts;
 
 namespace Amolenk.Admitto.Api.Auth;

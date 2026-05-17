@@ -14,7 +14,7 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 [TestClass]
 public sealed class AdminRegisterAttendeeTests(TestContext testContext) : AspireIntegrationTestBase
 {
-    // SC001: Successful admin-add registration (capacity at limit still allowed)
+    // Successful admin-add registration (capacity at limit still allowed)
     [TestMethod]
     public async ValueTask AdminRegisterAttendee_Success_CreatesRegistrationAndIncrementsCapacity()
     {
@@ -40,7 +40,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         });
     }
 
-    // SC002: Admin-add bypasses registration window — before opens
+    // Admin-add bypasses registration window — before opens
     [TestMethod]
     public async ValueTask AdminRegisterAttendee_BeforeWindowOpens_CreatesRegistration()
     {
@@ -55,7 +55,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         await AssertSingleRegistrationAsync("speaker@example.com");
     }
 
-    // SC003: Admin-add bypasses registration window — already closed
+    // Admin-add bypasses registration window — already closed
     [TestMethod]
     public async ValueTask AdminRegisterAttendee_AfterWindowCloses_CreatesRegistration()
     {
@@ -70,7 +70,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         await AssertSingleRegistrationAsync("speaker@example.com");
     }
 
-    // SC004: Admin-add bypasses registration window — never configured
+    // Admin-add bypasses registration window — never configured
     [TestMethod]
     public async ValueTask AdminRegisterAttendee_NoRegistrationPolicy_CreatesRegistration()
     {
@@ -85,7 +85,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         await AssertSingleRegistrationAsync("speaker@example.com");
     }
 
-    // SC005: Admin-add bypasses email-domain restriction
+    // Admin-add bypasses email-domain restriction
     [TestMethod]
     public async ValueTask AdminRegisterAttendee_DomainMismatch_CreatesRegistration()
     {
@@ -100,7 +100,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         await AssertSingleRegistrationAsync("external@gmail.com");
     }
 
-    // SC006: Admin-add bypasses capacity limit
+    // Admin-add bypasses capacity limit
     [TestMethod]
     public async ValueTask AdminRegisterAttendee_CapacityFull_CreatesRegistrationAndExceedsLimit()
     {
@@ -120,7 +120,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         });
     }
 
-    // SC007: Admin-add bypasses missing capacity configuration
+    // Admin-add bypasses missing capacity configuration
     [TestMethod]
     public async ValueTask AdminRegisterAttendee_NoCapacitySet_CreatesRegistration()
     {
@@ -135,7 +135,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         await AssertSingleRegistrationAsync("speaker@example.com");
     }
 
-    // SC009: Admin-add rejected — event not active (Archived)
+    // Admin-add rejected — event not active (Archived)
     [TestMethod]
     public async ValueTask AdminRegisterAttendee_EventArchived_ThrowsEventNotActive()
     {
@@ -151,7 +151,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         result.Error.Code.ShouldBe("registration.event_not_active");
     }
 
-    // SC010: Admin-add rejected — event not found
+    // Admin-add rejected — event not found
     [TestMethod]
     public async ValueTask AdminRegisterAttendee_EventNotFound_ThrowsEventNotFound()
     {
@@ -167,7 +167,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         result.Error.Code.ShouldBe("registration.event_not_found");
     }
 
-    // SC011: Admin-add rejected — no ticket types configured
+    // Admin-add rejected — no ticket types configured
     [TestMethod]
     public async ValueTask AdminRegisterAttendee_NoTicketCatalog_ThrowsNoTicketTypesConfigured()
     {
@@ -183,7 +183,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         result.Error.Code.ShouldBe("registration.no_ticket_types");
     }
 
-    // SC012: Admin-add rejected — duplicate active email
+    // Admin-add rejected — duplicate active email
     [TestMethod]
     public async ValueTask AdminRegisterAttendee_DuplicateActiveEmail_ThrowsBusinessConflict()
     {
@@ -199,7 +199,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         result.Error.ShouldMatch(AlreadyExistsError.Create<Registration>());
     }
 
-    // SC021: Admin-add resets a cancelled registration
+    // Admin-add resets a cancelled registration
     [TestMethod]
     public async ValueTask AdminRegisterAttendee_CancelledRegistration_ResetsExistingRegistration()
     {
@@ -241,7 +241,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         });
     }
 
-    // SC013: Admin-add rejected — duplicate ticket types in selection
+    // Admin-add rejected — duplicate ticket types in selection
     [TestMethod]
     public async ValueTask AdminRegisterAttendee_DuplicateTickets_ThrowsDuplicateError()
     {
@@ -258,7 +258,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         result.Error.Code.ShouldBe("ticket_catalog.duplicate_ticket_types");
     }
 
-    // SC014: Admin-add rejected — unknown ticket type
+    // Admin-add rejected — unknown ticket type
     [TestMethod]
     public async ValueTask AdminRegisterAttendee_UnknownTicketType_ThrowsUnknownTicketTypesError()
     {
@@ -274,7 +274,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         result.Error.Code.ShouldBe("ticket_catalog.unknown_ticket_types");
     }
 
-    // SC016: Admin-add rejected — overlapping time slots
+    // Admin-add rejected — overlapping time slots
     [TestMethod]
     public async ValueTask AdminRegisterAttendee_OverlappingTimeSlots_ThrowsOverlappingError()
     {
@@ -291,7 +291,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         result.Error.Code.ShouldBe("ticket_catalog.overlapping_time_slots");
     }
 
-    // SC017: Admin-add rejected — additional detail key not in schema
+    // Admin-add rejected — additional detail key not in schema
     [TestMethod]
     public async ValueTask AdminRegisterAttendee_UnknownAdditionalDetailKey_ThrowsKeyNotInSchema()
     {
@@ -312,7 +312,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         result.Error.Code.ShouldBe("additional_details.key_not_in_schema");
     }
 
-    // SC018: Admin-add rejected — additional detail value too long
+    // Admin-add rejected — additional detail value too long
     [TestMethod]
     public async ValueTask AdminRegisterAttendee_AdditionalDetailValueTooLong_ThrowsValueTooLong()
     {
@@ -333,7 +333,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         result.Error.Code.ShouldBe("additional_details.value_too_long");
     }
 
-    // SC019: Concurrent archive detected at claim time
+    // Concurrent archive detected at claim time
     [TestMethod]
     public async ValueTask AdminRegisterAttendee_ConcurrentCancelAtClaim_ThrowsEventNotActive()
     {
@@ -356,7 +356,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         });
     }
 
-    // SC020: Admin-add does NOT require an email-verification token
+    // Admin-add does NOT require an email-verification token
     [TestMethod]
     public async ValueTask AdminRegisterAttendee_NoTokenRequired_Succeeds()
     {

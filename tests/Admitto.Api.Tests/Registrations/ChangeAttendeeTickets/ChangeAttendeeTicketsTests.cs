@@ -8,7 +8,7 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.ChangeAttendeeTickets;
 [TestClass]
 public sealed class ChangeAttendeeTicketsTests(TestContext testContext) : EndToEndTestBase
 {
-    // SC013: Authenticated organizer changes ticket types — returns 200 OK
+    // Authenticated organizer changes ticket types — returns 200 OK
     [TestMethod]
     public async Task ChangeAttendeeTickets_Organizer_Returns200()
     {
@@ -23,7 +23,7 @@ public sealed class ChangeAttendeeTicketsTests(TestContext testContext) : EndToE
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
     }
 
-    // SC014: Non-member (Bob) attempts to change ticket types — returns 403
+    // Non-member (Bob) attempts to change ticket types — returns 403
     [TestMethod]
     public async Task ChangeAttendeeTickets_NonMember_Returns403()
     {

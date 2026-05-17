@@ -15,13 +15,13 @@ public sealed class AdditionalDetailsTests
     });
 
     [TestMethod]
-    public void SC001_Validate_Null_ReturnsEmpty()
+    public void Validate_Null_ReturnsEmpty()
     {
         AdditionalDetails.Validate(null, Schema).Count.ShouldBe(0);
     }
 
     [TestMethod]
-    public void SC002_Validate_AcceptedKeys_ReturnsValues()
+    public void Validate_AcceptedKeys_ReturnsValues()
     {
         var sut = AdditionalDetails.Validate(
             new Dictionary<string, string> { ["dietary"] = "vegan", ["tshirt"] = "M" }, Schema);
@@ -32,7 +32,7 @@ public sealed class AdditionalDetailsTests
     }
 
     [TestMethod]
-    public void SC003_Validate_Partial_OmittedKeysAreNotProvided()
+    public void Validate_Partial_OmittedKeysAreNotProvided()
     {
         var sut = AdditionalDetails.Validate(
             new Dictionary<string, string> { ["dietary"] = "vegan" }, Schema);
@@ -42,7 +42,7 @@ public sealed class AdditionalDetailsTests
     }
 
     [TestMethod]
-    public void SC004_Validate_EmptyString_Preserved()
+    public void Validate_EmptyString_Preserved()
     {
         var sut = AdditionalDetails.Validate(
             new Dictionary<string, string> { ["dietary"] = "" }, Schema);
@@ -51,7 +51,7 @@ public sealed class AdditionalDetailsTests
     }
 
     [TestMethod]
-    public void SC010_Validate_UnknownKey_Throws()
+    public void Validate_UnknownKey_Throws()
     {
         var act = () => AdditionalDetails.Validate(
             new Dictionary<string, string> { ["shoesize"] = "44" }, Schema);
@@ -61,7 +61,7 @@ public sealed class AdditionalDetailsTests
     }
 
     [TestMethod]
-    public void SC011_Validate_ValueTooLong_Throws()
+    public void Validate_ValueTooLong_Throws()
     {
         var act = () => AdditionalDetails.Validate(
             new Dictionary<string, string> { ["tshirt"] = "XXXXXX" }, Schema);

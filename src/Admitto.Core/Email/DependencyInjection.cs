@@ -45,7 +45,11 @@ public static class EmailModuleExtensions
         // Domain event handlers
         services.AddDomainEventHandlersFromAssembly(assembly, "Amolenk.Admitto.Core.Email");
 
-        services.AddValidatorsFromAssembly(assembly);
+        services.AddValidatorsFromAssembly(assembly, "Amolenk.Admitto.Core.Email");
+
+        // Message type registry contribution
+        services.AddSingleton<Action<MessageTypeRegistryBuilder>>(
+            b => b.AddFromAssembly(assembly, "Amolenk.Admitto.Core.Email"));
 
         services.AddScoped<IEffectiveEmailSettingsResolver, EffectiveEmailSettingsResolver>();
         services.AddScoped<IEmailTemplateService, EmailTemplateService>();
@@ -77,6 +81,8 @@ public static class EmailModuleExtensions
 
     public static IHostApplicationBuilder AddEmailModuleWorker(this IHostApplicationBuilder builder)
     {
+        builder.AddEmailModule();
+
         var services = builder.Services;
         var assembly = Assembly.GetExecutingAssembly();
 
@@ -111,10 +117,5 @@ public static class EmailModuleExtensions
         services.AddHostedService<ReconcileReconfirmationSchedulingStartupService>();
 
         return builder;
-    }
-
-    public static void AddEmailMessageTypes(this MessageTypeRegistryBuilder builder)
-    {
-        builder.AddFromAssembly(Assembly.GetExecutingAssembly(), "Amolenk.Admitto.Core.Email");
     }
 }

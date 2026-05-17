@@ -11,7 +11,7 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.PublicTicketTypes;
 [TestClass]
 public sealed class PublicTicketTypesTests(TestContext testContext) : EndToEndTestBase
 {
-    // SC001: Only active + self-service-enabled ticket types are returned
+    // Only active + self-service-enabled ticket types are returned
     [TestMethod]
     public async Task GetPublicTicketTypes_ReturnsOnlySelfServiceEnabledAndActiveTypes()
     {
@@ -34,7 +34,7 @@ public sealed class PublicTicketTypesTests(TestContext testContext) : EndToEndTe
         items[0].GetProperty("name").GetString().ShouldBe("General Admission");
     }
 
-    // SC002: Empty list returned when no self-service ticket types exist
+    // Empty list returned when no self-service ticket types exist
     [TestMethod]
     public async Task GetPublicTicketTypes_NoSelfServiceTypes_ReturnsEmptyList()
     {
@@ -53,7 +53,7 @@ public sealed class PublicTicketTypesTests(TestContext testContext) : EndToEndTe
         body.EnumerateArray().ToList().ShouldBeEmpty();
     }
 
-    // SC003: 404 when event does not exist
+    // 404 when event does not exist
     [TestMethod]
     public async Task GetPublicTicketTypes_NonExistentEvent_Returns404()
     {

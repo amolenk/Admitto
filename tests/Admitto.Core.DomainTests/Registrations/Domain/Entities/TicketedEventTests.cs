@@ -24,7 +24,7 @@ public sealed class TicketedEventTests
     // ── Create ───────────────────────────────────────────────────────────────
 
     [TestMethod]
-    public void SC001_Create_ValidDates_ReturnsActiveEvent()
+    public void Create_ValidDates_ReturnsActiveEvent()
     {
         var sut = NewEvent();
 
@@ -38,7 +38,7 @@ public sealed class TicketedEventTests
     }
 
     [TestMethod]
-    public void SC003_Create_GeneratesSigningKey_DecodingToAtLeast32Bytes()
+    public void Create_GeneratesSigningKey_DecodingToAtLeast32Bytes()
     {
         var sut = NewEvent();
 
@@ -47,7 +47,7 @@ public sealed class TicketedEventTests
     }
 
     [TestMethod]
-    public void SC004_Create_TwoEvents_HaveDifferentSigningKeys()
+    public void Create_TwoEvents_HaveDifferentSigningKeys()
     {
         var first = NewEvent();
         var second = TicketedEvent.Create(
@@ -65,7 +65,7 @@ public sealed class TicketedEventTests
     }
 
     [TestMethod]
-    public void SC002_Create_EndBeforeStart_Throws()
+    public void Create_EndBeforeStart_Throws()
     {
         var act = () => TicketedEvent.Create(
         CreationRequestId.From(Guid.NewGuid()),
@@ -85,7 +85,7 @@ public sealed class TicketedEventTests
     // ── UpdateDetails ────────────────────────────────────────────────────────
 
     [TestMethod]
-    public void SC010_UpdateDetails_Active_UpdatesFields()
+    public void UpdateDetails_Active_UpdatesFields()
     {
         var sut = NewEvent();
         var newName = EventName.From("Renamed Event");
@@ -100,7 +100,7 @@ public sealed class TicketedEventTests
     }
 
     [TestMethod]
-    public void SC011_UpdateDetails_EndBeforeStart_Throws()
+    public void UpdateDetails_EndBeforeStart_Throws()
     {
         var sut = NewEvent();
 
@@ -111,7 +111,7 @@ public sealed class TicketedEventTests
     }
 
     [TestMethod]
-    public void SC012_UpdateDetails_NotActive_Throws()
+    public void UpdateDetails_NotActive_Throws()
     {
         var sut = NewEvent();
         sut.Archive();
@@ -125,7 +125,7 @@ public sealed class TicketedEventTests
     // ── Archive ──────────────────────────────────────────────────────────────
 
     [TestMethod]
-    public void SC030_Archive_Active_TransitionsToArchivedAndRaisesEvent()
+    public void Archive_Active_TransitionsToArchivedAndRaisesEvent()
     {
         var sut = NewEvent();
 
@@ -139,7 +139,7 @@ public sealed class TicketedEventTests
     }
 
     [TestMethod]
-    public void SC032_Archive_AlreadyArchived_Throws()
+    public void Archive_AlreadyArchived_Throws()
     {
         var sut = NewEvent();
         sut.Archive();
@@ -151,7 +151,7 @@ public sealed class TicketedEventTests
     // ── ConfigureRegistrationPolicy ──────────────────────────────────────────
 
     [TestMethod]
-    public void SC040_ConfigureRegistrationPolicy_Active_StoresPolicy()
+    public void ConfigureRegistrationPolicy_Active_StoresPolicy()
     {
         var sut = NewEvent();
         var policy = NewRegistrationPolicy();
@@ -162,7 +162,7 @@ public sealed class TicketedEventTests
     }
 
     [TestMethod]
-    public void SC042_ConfigureRegistrationPolicy_Archived_Throws()
+    public void ConfigureRegistrationPolicy_Archived_Throws()
     {
         var sut = NewEvent();
         sut.Archive();
@@ -176,7 +176,7 @@ public sealed class TicketedEventTests
     // ── ConfigureReconfirmPolicy ─────────────────────────────────────────────
 
     [TestMethod]
-    public void SC060_ConfigureReconfirmPolicy_Active_StoresPolicy()
+    public void ConfigureReconfirmPolicy_Active_StoresPolicy()
     {
         var sut = NewEvent();
         var policy = NewReconfirmPolicy();
@@ -187,7 +187,7 @@ public sealed class TicketedEventTests
     }
 
     [TestMethod]
-    public void SC061_ConfigureReconfirmPolicy_NotActive_Throws()
+    public void ConfigureReconfirmPolicy_NotActive_Throws()
     {
         var sut = NewEvent();
         sut.Archive();
@@ -201,7 +201,7 @@ public sealed class TicketedEventTests
     // ── UpdateAdditionalDetailSchema ─────────────────────────────────────────
 
     [TestMethod]
-    public void SC100_UpdateAdditionalDetailSchema_Active_StoresSchemaAndRaisesEvent()
+    public void UpdateAdditionalDetailSchema_Active_StoresSchemaAndRaisesEvent()
     {
         var sut = NewEvent();
         var fields = new[]
@@ -224,7 +224,7 @@ public sealed class TicketedEventTests
     }
 
     [TestMethod]
-    public void SC101_UpdateAdditionalDetailSchema_ReplacesAtomically()
+    public void UpdateAdditionalDetailSchema_ReplacesAtomically()
     {
         var sut = NewEvent();
         sut.UpdateAdditionalDetailSchema(new[]
@@ -242,7 +242,7 @@ public sealed class TicketedEventTests
     }
 
     [TestMethod]
-    public void SC103_UpdateAdditionalDetailSchema_Archived_Throws()
+    public void UpdateAdditionalDetailSchema_Archived_Throws()
     {
         var sut = NewEvent();
         sut.Archive();
@@ -254,7 +254,7 @@ public sealed class TicketedEventTests
     }
 
     [TestMethod]
-    public void SC104_UpdateAdditionalDetailSchema_DuplicateKey_Throws()
+    public void UpdateAdditionalDetailSchema_DuplicateKey_Throws()
     {
         var sut = NewEvent();
 
@@ -269,7 +269,7 @@ public sealed class TicketedEventTests
     }
 
     [TestMethod]
-    public void SC105_UpdateAdditionalDetailSchema_DuplicateName_CaseInsensitive_Throws()
+    public void UpdateAdditionalDetailSchema_DuplicateName_CaseInsensitive_Throws()
     {
         var sut = NewEvent();
 
@@ -284,7 +284,7 @@ public sealed class TicketedEventTests
     }
 
     [TestMethod]
-    public void SC106_UpdateAdditionalDetailSchema_TooManyFields_Throws()
+    public void UpdateAdditionalDetailSchema_TooManyFields_Throws()
     {
         var sut = NewEvent();
         var fields = Enumerable.Range(0, AdditionalDetailSchema.MaxFields + 1)
@@ -300,7 +300,7 @@ public sealed class TicketedEventTests
     // ── IsRegistrationOpen ───────────────────────────────────────────────────
 
     [TestMethod]
-    public void SC070_IsRegistrationOpen_NoPolicy_ReturnsFalse()
+    public void IsRegistrationOpen_NoPolicy_ReturnsFalse()
     {
         var sut = NewEvent();
 
@@ -308,7 +308,7 @@ public sealed class TicketedEventTests
     }
 
     [TestMethod]
-    public void SC071_IsRegistrationOpen_InsideWindowAndActive_ReturnsTrue()
+    public void IsRegistrationOpen_InsideWindowAndActive_ReturnsTrue()
     {
         var sut = NewEvent();
         var now = DateTimeOffset.UtcNow;
@@ -319,7 +319,7 @@ public sealed class TicketedEventTests
     }
 
     [TestMethod]
-    public void SC073_IsRegistrationOpen_BeforeWindow_Active_ReturnsFalse()
+    public void IsRegistrationOpen_BeforeWindow_Active_ReturnsFalse()
     {
         var sut = NewEvent();
         var now = DateTimeOffset.UtcNow;
@@ -330,7 +330,7 @@ public sealed class TicketedEventTests
     }
 
     [TestMethod]
-    public void SC074_IsRegistrationOpen_AfterWindow_Active_ReturnsFalse()
+    public void IsRegistrationOpen_AfterWindow_Active_ReturnsFalse()
     {
         var sut = NewEvent();
         var now = DateTimeOffset.UtcNow;
@@ -341,7 +341,7 @@ public sealed class TicketedEventTests
     }
 
     [TestMethod]
-    public void SC075_IsRegistrationOpen_InsideWindow_Archived_ReturnsFalse()
+    public void IsRegistrationOpen_InsideWindow_Archived_ReturnsFalse()
     {
         var sut = NewEvent();
         var now = DateTimeOffset.UtcNow;
@@ -353,7 +353,7 @@ public sealed class TicketedEventTests
     }
 
     [TestMethod]
-    public void SC078_IsRegistrationOpen_BeforeWindow_Archived_ReturnsFalse()
+    public void IsRegistrationOpen_BeforeWindow_Archived_ReturnsFalse()
     {
         var sut = NewEvent();
         var now = DateTimeOffset.UtcNow;
@@ -365,7 +365,7 @@ public sealed class TicketedEventTests
     }
 
     [TestMethod]
-    public void SC079_IsRegistrationOpen_AfterWindow_Archived_ReturnsFalse()
+    public void IsRegistrationOpen_AfterWindow_Archived_ReturnsFalse()
     {
         var sut = NewEvent();
         var now = DateTimeOffset.UtcNow;
@@ -379,7 +379,7 @@ public sealed class TicketedEventTests
     // ── Value object: RegistrationPolicy ─────────────────────────────────────
 
     [TestMethod]
-    public void SC080_RegistrationPolicy_CloseBeforeOpen_Throws()
+    public void RegistrationPolicy_CloseBeforeOpen_Throws()
     {
         var now = DateTimeOffset.UtcNow;
 
@@ -390,7 +390,7 @@ public sealed class TicketedEventTests
     }
 
     [TestMethod]
-    public void SC081_RegistrationPolicy_CloseEqualsOpen_Throws()
+    public void RegistrationPolicy_CloseEqualsOpen_Throws()
     {
         var now = DateTimeOffset.UtcNow;
 
@@ -400,7 +400,7 @@ public sealed class TicketedEventTests
     }
 
     [TestMethod]
-    public void SC082_RegistrationPolicy_EmailDomain_MatchesCaseInsensitively()
+    public void RegistrationPolicy_EmailDomain_MatchesCaseInsensitively()
     {
         var now = DateTimeOffset.UtcNow;
         var policy = TicketedEventRegistrationPolicy.Create(
@@ -413,7 +413,7 @@ public sealed class TicketedEventTests
     // ── Value object: ReconfirmPolicy ────────────────────────────────────────
 
     [TestMethod]
-    public void SC090_ReconfirmPolicy_CloseBeforeOpen_Throws()
+    public void ReconfirmPolicy_CloseBeforeOpen_Throws()
     {
         var now = DateTimeOffset.UtcNow;
 
@@ -425,12 +425,12 @@ public sealed class TicketedEventTests
     }
 
     [TestMethod]
-    public void SC091_ReconfirmPolicy_CadenceBelowOneDay_Throws()
+    public void ReconfirmPolicy_CadenceBelowOneHour_Throws()
     {
         var now = DateTimeOffset.UtcNow;
 
         var act = () => TicketedEventReconfirmPolicy.Create(
-            now, now.AddDays(10), TimeSpan.FromHours(23), TimeSpan.FromHours(24));
+            now, now.AddDays(10), TimeSpan.FromMinutes(59), TimeSpan.FromHours(24));
 
         var ex = Should.Throw<BusinessRuleViolationException>(act);
         ex.Error.Code.ShouldBe("ticketed_event_reconfirm_policy.cadence_below_minimum");

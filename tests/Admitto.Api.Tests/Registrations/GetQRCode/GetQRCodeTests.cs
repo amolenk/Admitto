@@ -62,7 +62,7 @@ public sealed class GetQRCodeTests(TestContext testContext) : EndToEndTestBase
     }
 
     [TestMethod]
-    public async Task SC004a_UnknownTeamSlug_Returns403()
+    public async Task UnknownTeamSlug_Returns403()
     {
         var fixture = GetQRCodeFixture.HappyFlow();
         await fixture.SetupAsync(Environment);
@@ -77,7 +77,7 @@ public sealed class GetQRCodeTests(TestContext testContext) : EndToEndTestBase
     }
 
     [TestMethod]
-    public async Task SC004b_UnknownEventSlug_Returns404()
+    public async Task UnknownEventSlug_Returns404()
     {
         var fixture = GetQRCodeFixture.HappyFlow();
         await fixture.SetupAsync(Environment);

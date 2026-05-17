@@ -20,7 +20,7 @@ public sealed class TicketTypeTests
     }
 
     [TestMethod]
-    public void SC001_ReleaseCapacity_WhenUsedIsPositive_Decrements()
+    public void ReleaseCapacity_WhenUsedIsPositive_Decrements()
     {
         // Arrange
         var sut = CreateTicketType(maxCapacity: 10, usedCapacity: 5);
@@ -33,7 +33,7 @@ public sealed class TicketTypeTests
     }
 
     [TestMethod]
-    public void SC002_ReleaseCapacity_WhenUsedIsOne_DecrementsToZero()
+    public void ReleaseCapacity_WhenUsedIsOne_DecrementsToZero()
     {
         // Arrange
         var sut = CreateTicketType(maxCapacity: 10, usedCapacity: 1);
@@ -46,7 +46,7 @@ public sealed class TicketTypeTests
     }
 
     [TestMethod]
-    public void SC003_ReleaseCapacity_WhenUsedIsZero_ClampsAtZero()
+    public void ReleaseCapacity_WhenUsedIsZero_ClampsAtZero()
     {
         // Arrange
         var sut = CreateTicketType(maxCapacity: 10, usedCapacity: 0);

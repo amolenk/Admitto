@@ -1,12 +1,8 @@
-using Amolenk.Admitto.Api.Auth;
-using Amolenk.Admitto.Core.Organization.Contracts;
-using Microsoft.AspNetCore.Mvc;
-
-namespace Amolenk.Admitto.Api.Endpoints;
+namespace Amolenk.Admitto.Api.Auth;
 
 /// <summary>
 /// Verifies that the API key's team matches the {teamId} in the request path.
-/// Returns 403 if there is a mismatch.
+/// Returns 403 if there is a mismatch or if the route is team-scoped but the key carries no team claim.
 /// </summary>
 public class ApiKeyTeamScopeFilter : IEndpointFilter
 {
@@ -21,12 +17,7 @@ public class ApiKeyTeamScopeFilter : IEndpointFilter
         }
 
         var teamIdClaim = httpContext.User.FindFirst(ApiKeyAuthenticationHandler.TeamIdClaimType);
-        if (teamIdClaim is null || !Guid.TryParse(teamIdClaim.Value, out var claimTeamId))
-        {
-            return await next(context);
-        }
-
-        if (routeTeamId != claimTeamId)
+        if (teamIdClaim is null || !Guid.TryParse(teamIdClaim.Value, out var claimTeamId) || routeTeamId != claimTeamId)
         {
             return Results.Problem(
                 statusCode: StatusCodes.Status403Forbidden,

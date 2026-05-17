@@ -8,7 +8,7 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.GetTicketedEvents;
 [TestClass]
 public sealed class GetTicketedEventsTests(TestContext testContext) : EndToEndTestBase
 {
-    // SC002: Admin listing excludes archived events — only active events returned
+    // Admin listing excludes archived events — only active events returned
     [TestMethod]
     public async Task AdminListingExcludesArchivedEvents_ActiveEventsReturned_ArchivedExcluded()
     {

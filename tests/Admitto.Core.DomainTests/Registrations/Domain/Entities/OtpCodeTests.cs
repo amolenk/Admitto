@@ -13,7 +13,7 @@ public sealed class OtpCodeTests
     private static readonly EmailAddress DefaultEmail = EmailAddress.From("test@example.com");
 
     [TestMethod]
-    public void SC001_OtpCode_Create_RaisesOtpCodeRequestedDomainEvent()
+    public void OtpCode_Create_RaisesOtpCodeRequestedDomainEvent()
     {
         var now = DateTimeOffset.UtcNow;
         var expiresAt = now.AddMinutes(10);
@@ -29,7 +29,7 @@ public sealed class OtpCodeTests
     }
 
     [TestMethod]
-    public void SC002_OtpCode_Create_HashesEmailAndCode()
+    public void OtpCode_Create_HashesEmailAndCode()
     {
         var sut = OtpCode.Create(DefaultTeamId, DefaultEventId, EventName.From("Test Event"), DefaultEmail, "123456",
             DateTimeOffset.UtcNow.AddMinutes(10));
@@ -40,7 +40,7 @@ public sealed class OtpCodeTests
     }
 
     [TestMethod]
-    public void SC003_OtpCode_IsExpired_FalseBeforeExpiry()
+    public void OtpCode_IsExpired_FalseBeforeExpiry()
     {
         var now = DateTimeOffset.UtcNow;
         var sut = OtpCode.Create(DefaultTeamId, DefaultEventId, EventName.From("Event"), DefaultEmail, "000000",
@@ -50,7 +50,7 @@ public sealed class OtpCodeTests
     }
 
     [TestMethod]
-    public void SC004_OtpCode_IsExpired_TrueAtOrAfterExpiry()
+    public void OtpCode_IsExpired_TrueAtOrAfterExpiry()
     {
         var expiresAt = DateTimeOffset.UtcNow;
         var sut = OtpCode.Create(DefaultTeamId, DefaultEventId, EventName.From("Event"), DefaultEmail, "000000", expiresAt);
@@ -60,7 +60,7 @@ public sealed class OtpCodeTests
     }
 
     [TestMethod]
-    public void SC005_OtpCode_IsUsed_FalseInitially()
+    public void OtpCode_IsUsed_FalseInitially()
     {
         var sut = OtpCode.Create(DefaultTeamId, DefaultEventId, EventName.From("Event"), DefaultEmail, "000000",
             DateTimeOffset.UtcNow.AddMinutes(10));
@@ -69,7 +69,7 @@ public sealed class OtpCodeTests
     }
 
     [TestMethod]
-    public void SC006_OtpCode_MarkUsed_SetsUsedAtAndIsUsed()
+    public void OtpCode_MarkUsed_SetsUsedAtAndIsUsed()
     {
         var sut = OtpCode.Create(DefaultTeamId, DefaultEventId, EventName.From("Event"), DefaultEmail, "000000",
             DateTimeOffset.UtcNow.AddMinutes(10));
@@ -82,7 +82,7 @@ public sealed class OtpCodeTests
     }
 
     [TestMethod]
-    public void SC007_OtpCode_IsLocked_FalseBeforeFiveAttempts()
+    public void OtpCode_IsLocked_FalseBeforeFiveAttempts()
     {
         var sut = OtpCode.Create(DefaultTeamId, DefaultEventId, EventName.From("Event"), DefaultEmail, "000000",
             DateTimeOffset.UtcNow.AddMinutes(10));
@@ -95,7 +95,7 @@ public sealed class OtpCodeTests
     }
 
     [TestMethod]
-    public void SC008_OtpCode_IsLocked_TrueAfterFiveAttempts()
+    public void OtpCode_IsLocked_TrueAfterFiveAttempts()
     {
         var sut = OtpCode.Create(DefaultTeamId, DefaultEventId, EventName.From("Event"), DefaultEmail, "000000",
             DateTimeOffset.UtcNow.AddMinutes(10));
@@ -107,7 +107,7 @@ public sealed class OtpCodeTests
     }
 
     [TestMethod]
-    public void SC009_OtpCode_IsSuperseded_FalseInitially()
+    public void OtpCode_IsSuperseded_FalseInitially()
     {
         var sut = OtpCode.Create(DefaultTeamId, DefaultEventId, EventName.From("Event"), DefaultEmail, "000000",
             DateTimeOffset.UtcNow.AddMinutes(10));
@@ -116,7 +116,7 @@ public sealed class OtpCodeTests
     }
 
     [TestMethod]
-    public void SC010_OtpCode_Supersede_SetsSupersededAt()
+    public void OtpCode_Supersede_SetsSupersededAt()
     {
         var sut = OtpCode.Create(DefaultTeamId, DefaultEventId, EventName.From("Event"), DefaultEmail, "000000",
             DateTimeOffset.UtcNow.AddMinutes(10));

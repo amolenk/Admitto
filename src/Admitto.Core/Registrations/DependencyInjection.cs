@@ -32,7 +32,11 @@ public static class RegistrationsModuleExtensions
         // Domain event handlers
         services.AddDomainEventHandlersFromAssembly(assembly, "Amolenk.Admitto.Core.Registrations");
 
-        services.AddValidatorsFromAssembly(assembly);
+        services.AddValidatorsFromAssembly(assembly, "Amolenk.Admitto.Core.Registrations");
+
+        // Message type registry contribution
+        services.AddSingleton<Action<MessageTypeRegistryBuilder>>(
+            b => b.AddFromAssembly(assembly, "Amolenk.Admitto.Core.Registrations"));
 
         services.AddScoped<IRegistrationsFacade, RegistrationsFacade>();
 
@@ -59,15 +63,12 @@ public static class RegistrationsModuleExtensions
 
     public static IHostApplicationBuilder AddRegistrationsModuleWorker(this IHostApplicationBuilder builder)
     {
+        builder.AddRegistrationsModule();
+
         builder.Services.AddIntegrationEventHandlersFromAssembly(
             Assembly.GetExecutingAssembly(),
             "Amolenk.Admitto.Core.Registrations");
 
         return builder;
-    }
-
-    public static void AddRegistrationsMessageTypes(this MessageTypeRegistryBuilder builder)
-    {
-        builder.AddFromAssembly(Assembly.GetExecutingAssembly(), "Amolenk.Admitto.Core.Registrations");
     }
 }

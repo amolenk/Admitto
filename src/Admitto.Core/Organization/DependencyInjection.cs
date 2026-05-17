@@ -38,7 +38,11 @@ public static class OrganizationModuleExtensions
         services.AddDomainEventHandlersFromAssembly(assembly, "Amolenk.Admitto.Core.Organization");
 
         // Validators
-        services.AddValidatorsFromAssembly(assembly);
+        services.AddValidatorsFromAssembly(assembly, "Amolenk.Admitto.Core.Organization");
+
+        // Message type registry contribution
+        services.AddSingleton<Action<MessageTypeRegistryBuilder>>(
+            b => b.AddFromAssembly(assembly, "Amolenk.Admitto.Core.Organization"));
 
         // Facade
         services.AddScoped<OrganizationFacade>();
@@ -72,6 +76,8 @@ public static class OrganizationModuleExtensions
 
     public static IHostApplicationBuilder AddOrganizationModuleWorker(this IHostApplicationBuilder builder)
     {
+        builder.AddOrganizationModule();
+
         var services = builder.Services;
         var assembly = Assembly.GetExecutingAssembly();
 
@@ -124,11 +130,6 @@ public static class OrganizationModuleExtensions
                 "No user management service configured. Please configure either Auth0 or Keycloak settings.");
 
         return builder;
-    }
-
-    public static void AddOrganizationMessageTypes(this MessageTypeRegistryBuilder builder)
-    {
-        builder.AddFromAssembly(Assembly.GetExecutingAssembly(), "Amolenk.Admitto.Core.Organization");
     }
 
     private static void AddAuth0Services(this IHostApplicationBuilder builder)

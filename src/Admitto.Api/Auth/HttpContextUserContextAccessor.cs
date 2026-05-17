@@ -1,17 +1,10 @@
-using System.Security.Claims;
-using Amolenk.Admitto.Api.Auth;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
 using Amolenk.Admitto.Core.Shared.Contracts;
 
-namespace Amolenk.Admitto.ApiService.Auth;
+namespace Amolenk.Admitto.Api.Auth;
 
 public class HttpContextUserContextAccessor(IHttpContextAccessor httpContextAccessor) : IUserContextAccessor
 {
-    private static readonly UserContextDto ApiKeyUser = new(
-        Guid.Empty,
-        "api-key",
-        "apikey@system.local");
-
     public UserContextDto Current
     {
         get
@@ -24,9 +17,9 @@ public class HttpContextUserContextAccessor(IHttpContextAccessor httpContextAcce
 
             var user = httpContext.User;
 
-            // API key requests have no human identity — return a fixed system user.
+            // API key requests have no human identity — build a system user scoped to the key's team.
             if (user.Identity?.AuthenticationType == ApiKeyAuthenticationHandler.SchemeName)
-                return ApiKeyUser;
+                return BuildApiKeyUserContext(user);
 
             // The UserContextResolutionMiddleware pre-resolves and caches the domain user identity.
             if (httpContext.Items[UserContextResolutionMiddleware.UserContextItemKey] is UserContextDto cached)
@@ -35,5 +28,16 @@ public class HttpContextUserContextAccessor(IHttpContextAccessor httpContextAcce
             throw new InvalidOperationException(
                 "User context has not been resolved. Ensure UserContextResolutionMiddleware is registered.");
         }
+    }
+
+    private static UserContextDto BuildApiKeyUserContext(System.Security.Claims.ClaimsPrincipal user)
+    {
+        var teamIdClaim = user.FindFirst(ApiKeyAuthenticationHandler.TeamIdClaimType);
+        if (teamIdClaim is not null && Guid.TryParse(teamIdClaim.Value, out var teamId))
+        {
+            return new UserContextDto(teamId, $"api-key-{teamId}", $"{teamId}@apikey.admitto");
+        }
+
+        return new UserContextDto(Guid.Empty, "api-key", "unknown@apikey.admitto");
     }
 }

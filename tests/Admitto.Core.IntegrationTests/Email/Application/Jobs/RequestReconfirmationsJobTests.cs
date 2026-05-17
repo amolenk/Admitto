@@ -30,7 +30,7 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
     [TestMethod]
     public async ValueTask Execute_AttendeeRegisteredRecently_ExcludedFromBulkJob()
     {
-        // SC007 – Attendee registered < MinEmailInterval hours ago → no bulk job created.
+        // Attendee registered < MinEmailInterval hours ago → no bulk job created.
         var eventId = TicketedEventId.New();
         var now = DateTimeOffset.UtcNow;
         var minIntervalHours = 48;
@@ -54,7 +54,7 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
     [TestMethod]
     public async ValueTask Execute_AttendeeReceivedReconfirmRecently_ExcludedFromBulkJob()
     {
-        // SC008 – Reconfirmation sent within MinEmailInterval → attendee excluded.
+        // Reconfirmation sent within MinEmailInterval → attendee excluded.
         var eventId = TicketedEventId.New();
         var now = DateTimeOffset.UtcNow;
         var minIntervalHours = 48;
@@ -82,7 +82,7 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
     [TestMethod]
     public async ValueTask Execute_MinEmailIntervalElapsedSinceLastEmail_AttendeeIncluded()
     {
-        // SC009 – MinEmailInterval fully elapsed since last contact → attendee included.
+        // MinEmailInterval fully elapsed since last contact → attendee included.
         var eventId = TicketedEventId.New();
         var now = DateTimeOffset.UtcNow;
         var minIntervalHours = 48;

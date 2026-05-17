@@ -12,7 +12,7 @@ public sealed class TicketCatalogTests
     private static readonly TicketedEventId DefaultEventId = TicketedEventId.New();
 
     [TestMethod]
-    public void SC001_AddTicketType_ActiveEvent_AddsSuccessfully()
+    public void AddTicketType_ActiveEvent_AddsSuccessfully()
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
@@ -35,7 +35,7 @@ public sealed class TicketCatalogTests
     }
 
     [TestMethod]
-    public void SC002_AddTicketType_NoCapacity_SetsNullMaxCapacity()
+    public void AddTicketType_NoCapacity_SetsNullMaxCapacity()
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
@@ -52,7 +52,7 @@ public sealed class TicketCatalogTests
     }
 
     [TestMethod]
-    public void SC003_AddTicketType_DuplicateName_Throws()
+    public void AddTicketType_DuplicateName_Throws()
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
@@ -67,7 +67,7 @@ public sealed class TicketCatalogTests
     }
 
     [TestMethod]
-    public void SC004_UpdateTicketType_Capacity_Updates()
+    public void UpdateTicketType_Capacity_Updates()
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
@@ -82,7 +82,7 @@ public sealed class TicketCatalogTests
     }
 
     [TestMethod]
-    public void SC005_UpdateTicketType_Name_Updates()
+    public void UpdateTicketType_Name_Updates()
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
@@ -97,7 +97,7 @@ public sealed class TicketCatalogTests
     }
 
     [TestMethod]
-    public void SC006_UpdateTicketType_NotFound_Throws()
+    public void UpdateTicketType_NotFound_Throws()
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
@@ -112,7 +112,7 @@ public sealed class TicketCatalogTests
     }
 
     [TestMethod]
-    public void SC010_Claim_Enforce_AvailableCapacity_Increments()
+    public void Claim_Enforce_AvailableCapacity_Increments()
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
@@ -127,7 +127,7 @@ public sealed class TicketCatalogTests
     }
 
     [TestMethod]
-    public void SC011_Claim_Enforce_AtCapacity_Throws()
+    public void Claim_Enforce_AtCapacity_Throws()
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
@@ -143,7 +143,7 @@ public sealed class TicketCatalogTests
     }
 
     [TestMethod]
-    public void SC012_Claim_Enforce_NullCapacity_SelfServiceEnabled_Succeeds()
+    public void Claim_Enforce_NullCapacity_SelfServiceEnabled_Succeeds()
     {
         // Arrange — null capacity + self-service enabled means unlimited self-service
         var sut = TicketCatalog.Create(DefaultEventId);
@@ -158,7 +158,7 @@ public sealed class TicketCatalogTests
     }
 
     [TestMethod]
-    public void SC013_Claim_Uncapped_AlwaysIncrements()
+    public void Claim_Uncapped_AlwaysIncrements()
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
@@ -174,7 +174,7 @@ public sealed class TicketCatalogTests
     }
 
     [TestMethod]
-    public void SC014_Claim_MultipleIds_AllIncrement()
+    public void Claim_MultipleIds_AllIncrement()
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
@@ -192,7 +192,7 @@ public sealed class TicketCatalogTests
     }
 
     [TestMethod]
-    public void SC015_Claim_UnknownId_Throws()
+    public void Claim_UnknownId_Throws()
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
@@ -208,7 +208,7 @@ public sealed class TicketCatalogTests
     }
 
     [TestMethod]
-    public void SC016_GetTicketType_Exists_Returns()
+    public void GetTicketType_Exists_Returns()
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
@@ -224,7 +224,7 @@ public sealed class TicketCatalogTests
     }
 
     [TestMethod]
-    public void SC017_GetTicketType_NotExists_ReturnsNull()
+    public void GetTicketType_NotExists_ReturnsNull()
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
@@ -238,7 +238,7 @@ public sealed class TicketCatalogTests
     }
 
     [TestMethod]
-    public void SC018_NewCatalog_EventStatusIsActive()
+    public void NewCatalog_EventStatusIsActive()
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
@@ -248,7 +248,7 @@ public sealed class TicketCatalogTests
     }
 
     [TestMethod]
-    public void SC022_MarkEventArchived_FromActive_Transitions()
+    public void MarkEventArchived_FromActive_Transitions()
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
@@ -261,7 +261,7 @@ public sealed class TicketCatalogTests
     }
 
     [TestMethod]
-    public void SC024_MarkEventArchived_AlreadyArchived_IsIdempotent()
+    public void MarkEventArchived_AlreadyArchived_IsIdempotent()
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
@@ -275,7 +275,7 @@ public sealed class TicketCatalogTests
     }
 
     [TestMethod]
-    public void SC026_Claim_EventArchived_Throws()
+    public void Claim_EventArchived_Throws()
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
@@ -291,7 +291,7 @@ public sealed class TicketCatalogTests
     }
 
     [TestMethod]
-    public void SC028_AddTicketType_EventArchived_Throws()
+    public void AddTicketType_EventArchived_Throws()
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
@@ -306,7 +306,7 @@ public sealed class TicketCatalogTests
     }
 
     [TestMethod]
-    public void SC031_Release_MatchingIds_DecrementsUsedCapacity()
+    public void Release_MatchingIds_DecrementsUsedCapacity()
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
@@ -323,7 +323,7 @@ public sealed class TicketCatalogTests
     }
 
     [TestMethod]
-    public void SC032_Release_UnknownId_IsSilentlySkipped()
+    public void Release_UnknownId_IsSilentlySkipped()
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
@@ -340,7 +340,7 @@ public sealed class TicketCatalogTests
     }
 
     [TestMethod]
-    public void SC033_Release_MultipleIds_AllDecrement()
+    public void Release_MultipleIds_AllDecrement()
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
@@ -359,7 +359,7 @@ public sealed class TicketCatalogTests
     }
 
     [TestMethod]
-    public void SC035_Claim_DuplicateIds_Throws()
+    public void Claim_DuplicateIds_Throws()
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
@@ -374,7 +374,7 @@ public sealed class TicketCatalogTests
     }
 
     [TestMethod]
-    public void SC036_Claim_OverlappingTimeSlots_Throws()
+    public void Claim_OverlappingTimeSlots_Throws()
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
@@ -393,7 +393,7 @@ public sealed class TicketCatalogTests
     }
 
     [TestMethod]
-    public void SC037_Claim_EmptyList_IsNoOp()
+    public void Claim_EmptyList_IsNoOp()
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
@@ -408,7 +408,7 @@ public sealed class TicketCatalogTests
     }
 
     [TestMethod]
-    public void SC038_Claim_Enforce_NonSelfServiceTicketType_Throws()
+    public void Claim_Enforce_NonSelfServiceTicketType_Throws()
     {
         // Arrange
         var sut = TicketCatalog.Create(DefaultEventId);
@@ -423,7 +423,7 @@ public sealed class TicketCatalogTests
     }
 
     [TestMethod]
-    public void SC039_Claim_NoEnforce_NonSelfServiceTicketType_Succeeds()
+    public void Claim_NoEnforce_NonSelfServiceTicketType_Succeeds()
     {
         // Arrange — admin/coupon bypass: enforce=false skips self-service check
         var sut = TicketCatalog.Create(DefaultEventId);

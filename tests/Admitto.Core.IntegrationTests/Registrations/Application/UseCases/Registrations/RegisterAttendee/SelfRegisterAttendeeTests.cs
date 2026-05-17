@@ -15,7 +15,7 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 [TestClass]
 public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireIntegrationTestBase
 {
-    // SC001: Successful self-service registration
+    // Successful self-service registration
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_Success_CreatesRegistrationAndUpdatesCapacity()
     {
@@ -41,7 +41,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         });
     }
 
-    // SC002: Self-service rejected — capacity full
+    // Self-service rejected — capacity full
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_CapacityFull_ThrowsAtCapacityError()
     {
@@ -57,7 +57,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         result.Error.Code.ShouldBe("ticket_type.at_capacity");
     }
 
-    // SC003: Self-service rejected — ticket type has self-service disabled
+    // Self-service rejected — ticket type has self-service disabled
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_SelfServiceDisabled_ThrowsNotAvailableError()
     {
@@ -73,7 +73,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         result.Error.Code.ShouldBe("ticket_type.not_self_service");
     }
 
-    // SC004: Self-service rejected — before registration window opens
+    // Self-service rejected — before registration window opens
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_BeforeWindowOpens_ThrowsRegistrationNotOpen()
     {
@@ -89,7 +89,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         result.Error.Code.ShouldBe("registration.not_open");
     }
 
-    // SC005: Self-service rejected — after registration window closes
+    // Self-service rejected — after registration window closes
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_AfterWindowCloses_ThrowsRegistrationClosed()
     {
@@ -105,7 +105,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         result.Error.Code.ShouldBe("registration.closed");
     }
 
-    // SC006: Self-service rejected — no registration window configured
+    // Self-service rejected — no registration window configured
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_NoRegistrationPolicy_ThrowsRegistrationNotOpen()
     {
@@ -121,7 +121,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         result.Error.Code.ShouldBe("registration.not_open");
     }
 
-    // SC007: Self-service rejected — email domain mismatch
+    // Self-service rejected — email domain mismatch
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_DomainMismatch_ThrowsEmailDomainNotAllowed()
     {
@@ -137,7 +137,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         result.Error.Code.ShouldBe("registration.email_domain_not_allowed");
     }
 
-    // SC008: Self-service allowed — email domain matches
+    // Self-service allowed — email domain matches
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_DomainMatches_CreatesRegistration()
     {
@@ -158,7 +158,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         });
     }
 
-    // SC009: Successful registration with multiple ticket types
+    // Successful registration with multiple ticket types
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_MultipleTickets_CreatesRegistrationWithBothTickets()
     {
@@ -185,7 +185,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         });
     }
 
-    // SC010: Rejected — duplicate ticket types in selection
+    // Rejected — duplicate ticket types in selection
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_DuplicateTickets_ThrowsDuplicateError()
     {
@@ -202,7 +202,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         result.Error.Code.ShouldBe("ticket_catalog.duplicate_ticket_types");
     }
 
-    // SC011: Rejected — non-existent ticket type
+    // Rejected — non-existent ticket type
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_UnknownTicketType_ThrowsUnknownTicketTypesError()
     {
@@ -218,7 +218,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         result.Error.Code.ShouldBe("ticket_catalog.unknown_ticket_types");
     }
 
-    // SC013: Rejected — overlapping time slots
+    // Rejected — overlapping time slots
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_OverlappingTimeSlots_ThrowsOverlappingError()
     {
@@ -236,7 +236,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         result.Error.Code.ShouldBe("ticket_catalog.overlapping_time_slots");
     }
 
-    // SC014b: Rejected — TicketedEvent status is Archived
+    // Rejected — TicketedEvent status is Archived
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_EventArchived_ThrowsEventNotActive()
     {
@@ -252,7 +252,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         result.Error.Code.ShouldBe("registration.event_not_active");
     }
 
-    // SC015: Rejected — TicketCatalog.EventStatus catches concurrent transition
+    // Rejected — TicketCatalog.EventStatus catches concurrent transition
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_ConcurrentCancelAtClaim_ThrowsEventNotActive()
     {
@@ -275,7 +275,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         });
     }
 
-    // SC016: Rejected — duplicate active email
+    // Rejected — duplicate active email
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_DuplicateActiveEmail_ThrowsBusinessConflict()
     {
@@ -291,7 +291,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         result.Error.ShouldMatch(AlreadyExistsError.Create<Registration>());
     }
 
-    // SC020: Self-service resets a cancelled registration
+    // Self-service resets a cancelled registration
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_CancelledRegistration_ResetsExistingRegistration()
     {
@@ -332,7 +332,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         });
     }
 
-    // SC021: Reset is not applied when self-service gates fail
+    // Reset is not applied when self-service gates fail
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_ResetGateFails_LeavesCancelledRegistrationAndCapacityUnchanged()
     {
@@ -360,7 +360,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         });
     }
 
-    // SC017: Rejected — missing email-verification token
+    // Rejected — missing email-verification token
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_TokenMissing_ThrowsEmailVerificationRequired()
     {
@@ -376,7 +376,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         result.Error.Code.ShouldBe("email.verification_required");
     }
 
-    // SC018: Rejected — invalid email-verification token
+    // Rejected — invalid email-verification token
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_TokenInvalid_ThrowsEmailVerificationInvalid()
     {
@@ -392,7 +392,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         result.Error.Code.ShouldBe("email.verification_invalid");
     }
 
-    // SC019: Verification runs before any DB lookup — non-existent event still yields verification error
+    // Verification runs before any DB lookup — non-existent event still yields verification error
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_VerificationFailsBeforeEventLookup()
     {

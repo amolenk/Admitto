@@ -9,7 +9,7 @@ namespace Amolenk.Admitto.Core.Registrations.Domain.Tests.ValueObjects;
 public sealed class AdditionalDetailFieldTests
 {
     [TestMethod]
-    public void SC001_Create_Valid_ReturnsField()
+    public void Create_Valid_ReturnsField()
     {
         var sut = AdditionalDetailField.Create("dietary", "Dietary requirements", 200);
 
@@ -19,7 +19,7 @@ public sealed class AdditionalDetailFieldTests
     }
 
     [TestMethod]
-    public void SC002_Create_TrimsName()
+    public void Create_TrimsName()
     {
         var sut = AdditionalDetailField.Create("k", "  Padded  ", 10);
 
@@ -32,7 +32,7 @@ public sealed class AdditionalDetailFieldTests
     [DataRow("")]
     [DataRow("dietary_needs")]
     [TestMethod]
-    public void SC010_Create_InvalidKey_Throws(string key)
+    public void Create_InvalidKey_Throws(string key)
     {
         var act = () => AdditionalDetailField.Create(key, "Name", 10);
 
@@ -41,7 +41,7 @@ public sealed class AdditionalDetailFieldTests
     }
 
     [TestMethod]
-    public void SC011_Create_KeyTooLong_Throws()
+    public void Create_KeyTooLong_Throws()
     {
         var act = () => AdditionalDetailField.Create(new string('a', 51), "Name", 10);
 
@@ -50,7 +50,7 @@ public sealed class AdditionalDetailFieldTests
     }
 
     [TestMethod]
-    public void SC020_Create_EmptyName_Throws()
+    public void Create_EmptyName_Throws()
     {
         var act = () => AdditionalDetailField.Create("k", "   ", 10);
 
@@ -59,7 +59,7 @@ public sealed class AdditionalDetailFieldTests
     }
 
     [TestMethod]
-    public void SC021_Create_NameTooLong_Throws()
+    public void Create_NameTooLong_Throws()
     {
         var act = () => AdditionalDetailField.Create("k", new string('a', 101), 10);
 
@@ -71,7 +71,7 @@ public sealed class AdditionalDetailFieldTests
     [DataRow(-1)]
     [DataRow(4001)]
     [TestMethod]
-    public void SC030_Create_MaxLengthOutOfRange_Throws(int maxLength)
+    public void Create_MaxLengthOutOfRange_Throws(int maxLength)
     {
         var act = () => AdditionalDetailField.Create("k", "Name", maxLength);
 

@@ -1,7 +1,5 @@
 using Amolenk.Admitto.Api.Auth;
-using Amolenk.Admitto.ApiService.Auth;
 using Amolenk.Admitto.ApiService.OpenApi;
-using Amolenk.Admitto.Core.Shared.Application.Auth;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -23,7 +21,7 @@ public static class DependencyInjection
             {
                 // Add Bearer token security scheme to the OpenAPI output.
                 options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
-                
+
                 options.AddSchemaTransformer<NumberTypeTransformer>();
                 NumberTypeTransformer.MapType<TimeSpan>(
                     new OpenApiSchema { Type = JsonSchemaType.String, Format = "duration" });
@@ -93,7 +91,6 @@ public static class DependencyInjection
             builder.Services
                 .AddScoped<IAuthorizationHandler, AdminAuthorizationHandler>()
                 .AddScoped<IAuthorizationHandler, TeamMembershipAuthorizationHandler>()
-                .AddScoped<IAdministratorRoleService, AdministratorRoleService>()
                 .AddAuthorization();
 
             return builder;

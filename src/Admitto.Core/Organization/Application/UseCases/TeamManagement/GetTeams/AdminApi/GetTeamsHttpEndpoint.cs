@@ -20,14 +20,13 @@ public static class GetTeamsHttpEndpoint
 
     private static async ValueTask<Ok<IReadOnlyList<TeamListItemDto>>> GetTeams(
         IUserContextAccessor userContextAccessor,
-        IAdministratorRoleService administratorRoleService,
         GetTeamsHandler handler,
         CancellationToken cancellationToken)
     {
-        var callerId = userContextAccessor.Current.UserId;
-        var callerIsAdmin = await administratorRoleService.IsAdministratorAsync(callerId, cancellationToken);
-
-        var teams = await handler.HandleAsync(new GetTeamsQuery(callerId, callerIsAdmin), cancellationToken);
+        var callerContext = userContextAccessor.Current;
+        var teams = await handler.HandleAsync(
+            new GetTeamsQuery(callerContext.UserId, callerContext.IsAdmin),
+            cancellationToken);
 
         return TypedResults.Ok(teams);
     }

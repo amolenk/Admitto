@@ -7,7 +7,7 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 [TestClass]
 public sealed class ReleaseTicketsTests(TestContext testContext) : AspireIntegrationTestBase
 {
-    // SC001: Cancelling a registration decrements UsedCapacity on matching ticket types
+    // Cancelling a registration decrements UsedCapacity on matching ticket types
     [TestMethod]
     public async ValueTask ReleaseTickets_WithMatchingCatalog_DecrementsUsedCapacity()
     {
@@ -28,7 +28,7 @@ public sealed class ReleaseTicketsTests(TestContext testContext) : AspireIntegra
         });
     }
 
-    // SC002: Release is skipped when no ticket catalog exists (coupon-only registration)
+    // Release is skipped when no ticket catalog exists (coupon-only registration)
     [TestMethod]
     public async ValueTask ReleaseTickets_NoCatalog_CompletesWithoutError()
     {
@@ -42,7 +42,7 @@ public sealed class ReleaseTicketsTests(TestContext testContext) : AspireIntegra
         await sut.HandleAsync(command, testContext.CancellationToken);
     }
 
-    // SC003: UsedCapacity does not go below zero
+    // UsedCapacity does not go below zero
     [TestMethod]
     public async ValueTask ReleaseTickets_UsedCapacityAtZero_RemainsAtZero()
     {
@@ -63,7 +63,7 @@ public sealed class ReleaseTicketsTests(TestContext testContext) : AspireIntegra
         });
     }
 
-    // SC004: Unknown ticket type IDs are silently skipped
+    // Unknown ticket type IDs are silently skipped
     [TestMethod]
     public async ValueTask ReleaseTickets_UnknownSlug_IsSkippedWithoutError()
     {

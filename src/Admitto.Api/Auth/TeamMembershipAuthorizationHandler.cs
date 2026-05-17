@@ -1,5 +1,3 @@
-using Amolenk.Admitto.ApiService.Auth;
-using Amolenk.Admitto.Core.Organization.Contracts;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.AspNetCore.Authorization;
@@ -12,53 +10,40 @@ namespace Amolenk.Admitto.Api.Auth;
 /// </summary>
 public class TeamMembershipAuthorizationHandler(
     IUserContextAccessor userContextAccessor,
-    IOrganizationFacade organizationFacade,
-    IAdministratorRoleService administratorRoleService,
     IHttpContextAccessor httpContextAccessor)
     : AuthorizationHandler<TeamMembershipAuthorizationRequirement>
 {
-    protected override async Task HandleRequirementAsync(
+    protected override Task HandleRequirementAsync(
         AuthorizationHandlerContext context,
         TeamMembershipAuthorizationRequirement requirement)
     {
         if (context.User.Identity?.IsAuthenticated != true)
-            return;
+            return Task.CompletedTask;
 
-        var userId = userContextAccessor.Current.UserId;
+        var userContext = userContextAccessor.Current;
 
-        // If the user is an administrator, they automatically satisfy the requirement.
-        if (await administratorRoleService.IsAdministratorAsync(userId))
+        // Administrators automatically satisfy any team membership requirement.
+        if (userContext.IsAdmin)
         {
             context.Succeed(requirement);
-            return;
+            return Task.CompletedTask;
         }
 
         // Extract teamId from route values since authorization runs before endpoint binding.
         var httpContext = httpContextAccessor.HttpContext;
         if (httpContext is null)
-        {
-            return;
-        }
+            return Task.CompletedTask;
 
         var teamIdValue = httpContext.GetRouteValue("teamId")?.ToString();
         if (!Guid.TryParse(teamIdValue, out var teamId))
-        {
-            return;
-        }
+            return Task.CompletedTask;
 
-        var role = await organizationFacade.GetTeamMembershipRoleAsync(userId, teamId);
-
-        if (role.HasValue && MapToTeamMembershipRole(role.Value) >= requirement.RequiredRole)
+        var membership = userContext.TeamMemberships?.FirstOrDefault(m => m.TeamId == teamId);
+        if (membership is not null && membership.Role >= requirement.RequiredRole)
         {
             context.Succeed(requirement);
         }
-    }
 
-    private static TeamMembershipRole MapToTeamMembershipRole(TeamMembershipRoleDto dto) => dto switch
-    {
-        TeamMembershipRoleDto.Crew => TeamMembershipRole.Crew,
-        TeamMembershipRoleDto.Organizer => TeamMembershipRole.Organizer,
-        TeamMembershipRoleDto.Owner => TeamMembershipRole.Owner,
-        _ => throw new ArgumentOutOfRangeException(nameof(dto))
-    };
+        return Task.CompletedTask;
+    }
 }

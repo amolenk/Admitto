@@ -10,7 +10,7 @@ namespace Amolenk.Admitto.Api.Tests.Email.AdminEmailTemplates;
 [TestClass]
 public sealed class AdminEmailTemplatesTests(TestContext testContext) : EndToEndTestBase
 {
-    // SC001: Create team-scoped built-in template
+    // Create team-scoped built-in template
     // WHEN an organizer POSTs a new built-in template for team "acme-templates"
     // THEN the response is 201 Created and returns a GUID id
     [TestMethod]
@@ -39,7 +39,7 @@ public sealed class AdminEmailTemplatesTests(TestContext testContext) : EndToEnd
         body.GetProperty("id").GetGuid().ShouldNotBe(Guid.Empty);
     }
 
-    // SC002: Create event-scoped built-in template
+    // Create event-scoped built-in template
     // WHEN an organizer POSTs a new built-in template for event "templatesconf"
     // THEN the response is 201 Created
     [TestMethod]
@@ -64,7 +64,7 @@ public sealed class AdminEmailTemplatesTests(TestContext testContext) : EndToEnd
         response.StatusCode.ShouldBe(HttpStatusCode.Created);
     }
 
-    // SC003: GET team-scoped template
+    // GET team-scoped template
     // WHEN an organizer reads a team-scoped ticket template
     // THEN the response is 200 OK with the stored subject and bodies
     [TestMethod]
@@ -86,7 +86,7 @@ public sealed class AdminEmailTemplatesTests(TestContext testContext) : EndToEnd
         body.GetProperty("htmlBody").GetString().ShouldNotBeNullOrEmpty();
     }
 
-    // SC004: GET event-scoped template
+    // GET event-scoped template
     // WHEN an organizer reads an event-scoped ticket template
     // THEN the response is 200 OK with the event-scoped subject
     [TestMethod]
@@ -106,7 +106,7 @@ public sealed class AdminEmailTemplatesTests(TestContext testContext) : EndToEnd
         body.GetProperty("subject").GetString().ShouldBe("Event subject");
     }
 
-    // SC005: Update team-scoped template with correct version
+    // Update team-scoped template with correct version
     // WHEN an organizer submits an update with the correct version
     // THEN the response is 200 OK and a subsequent GET returns the updated content
     [TestMethod]
@@ -138,7 +138,7 @@ public sealed class AdminEmailTemplatesTests(TestContext testContext) : EndToEnd
         body.GetProperty("subject").GetString().ShouldBe("Updated subject");
     }
 
-    // SC006: DELETE team-scoped template
+    // DELETE team-scoped template
     // WHEN an organizer deletes a team-scoped template
     // THEN the response is 204 No Content and the list shows the built-in as not customised
     [TestMethod]
@@ -167,7 +167,7 @@ public sealed class AdminEmailTemplatesTests(TestContext testContext) : EndToEnd
         ticketEntry.GetProperty("isCustomised").GetBoolean().ShouldBeFalse();
     }
 
-    // SC007: Delete event-scoped template
+    // Delete event-scoped template
     // WHEN an organizer deletes the event-scoped template
     // THEN the response is 204 No Content
     [TestMethod]
@@ -183,7 +183,7 @@ public sealed class AdminEmailTemplatesTests(TestContext testContext) : EndToEnd
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
     }
 
-    // SC008: Non-team-member denied
+    // Non-team-member denied
     // WHEN a user who is not a member of team "acme-templates" attempts to create a template
     // THEN the request is denied with a 403 Forbidden
     [TestMethod]
@@ -208,7 +208,7 @@ public sealed class AdminEmailTemplatesTests(TestContext testContext) : EndToEnd
         response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
     }
 
-    // SC009: Reject update with stale version
+    // Reject update with stale version
     // WHEN an organizer submits an update with a Version older than the stored value
     // THEN the request is rejected with a 409 Conflict
     [TestMethod]
@@ -233,7 +233,7 @@ public sealed class AdminEmailTemplatesTests(TestContext testContext) : EndToEnd
         response.StatusCode.ShouldBe(HttpStatusCode.Conflict);
     }
 
-    // SC010: List templates includes virtual built-ins
+    // List templates includes virtual built-ins
     // WHEN an organizer lists templates for a team with no customisations
     // THEN the list includes all built-in templates with isCustomised: false and no id
     [TestMethod]

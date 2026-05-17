@@ -9,7 +9,7 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.OtpVerify;
 [TestClass]
 public sealed class OtpVerifyTests(TestContext testContext) : EndToEndTestBase
 {
-    // SC006: Successful OTP verification returns 200 with token
+    // Successful OTP verification returns 200 with token
     [TestMethod]
     public async Task VerifyOtp_CorrectCode_Returns200WithToken()
     {
@@ -31,7 +31,7 @@ public sealed class OtpVerifyTests(TestContext testContext) : EndToEndTestBase
         tokenProp.GetString().ShouldNotBeNullOrEmpty();
     }
 
-    // SC007: Wrong OTP code returns 400 and increments failed attempts
+    // Wrong OTP code returns 400 and increments failed attempts
     [TestMethod]
     public async Task VerifyOtp_WrongCode_Returns400()
     {
@@ -48,7 +48,7 @@ public sealed class OtpVerifyTests(TestContext testContext) : EndToEndTestBase
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 
-    // SC008: Code locked after 5 failed attempts returns 400
+    // Code locked after 5 failed attempts returns 400
     [TestMethod]
     public async Task VerifyOtp_FifthFailedAttempt_LocksCode_Returns400()
     {
@@ -66,7 +66,7 @@ public sealed class OtpVerifyTests(TestContext testContext) : EndToEndTestBase
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 
-    // SC009: Expired code returns 400
+    // Expired code returns 400
     [TestMethod]
     public async Task VerifyOtp_ExpiredCode_Returns400()
     {
@@ -83,7 +83,7 @@ public sealed class OtpVerifyTests(TestContext testContext) : EndToEndTestBase
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 
-    // SC010: Already-used code returns 400
+    // Already-used code returns 400
     [TestMethod]
     public async Task VerifyOtp_AlreadyUsedCode_Returns400()
     {
@@ -100,7 +100,7 @@ public sealed class OtpVerifyTests(TestContext testContext) : EndToEndTestBase
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 
-    // SC011: No code exists for email+event returns 400
+    // No code exists for email+event returns 400
     [TestMethod]
     public async Task VerifyOtp_NoCodeForEmail_Returns400()
     {

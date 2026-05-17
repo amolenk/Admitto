@@ -95,13 +95,37 @@ public static class SharedModuleExtensions
         return builder;
     }
 
-    public static IHostApplicationBuilder AddMessageTypeRegistry(
-        this IHostApplicationBuilder builder,
-        Action<MessageTypeRegistryBuilder> configure)
+    /// <summary>
+    /// Registers the message type registry singleton, built lazily from all
+    /// <see cref="Action{MessageTypeRegistryBuilder}"/> contributions registered by each module's
+    /// <c>AddXModule</c> call.
+    /// </summary>
+    public static IHostApplicationBuilder AddMessageTypeRegistry(this IHostApplicationBuilder builder)
     {
-        var registryBuilder = new MessageTypeRegistryBuilder();
-        configure(registryBuilder);
-        builder.Services.AddSingleton(registryBuilder.Build());
+        builder.Services.AddSingleton(sp =>
+        {
+            var registryBuilder = new MessageTypeRegistryBuilder();
+            foreach (var configure in sp.GetServices<Action<MessageTypeRegistryBuilder>>())
+                configure(registryBuilder);
+            return registryBuilder.Build();
+        });
+        return builder;
+    }
+
+    /// <summary>
+    /// Convenience wrapper that registers all shared cross-cutting services needed by both the API
+    /// and Worker hosts: messaging infrastructure, outbox sender, cryptography, validation config,
+    /// and the message type registry built from module contributions.
+    /// Worker hosts should additionally call <see cref="AddSharedInfrastructureQueueConsumer"/>.
+    /// </summary>
+    public static IHostApplicationBuilder AddSharedServices(this IHostApplicationBuilder builder)
+    {
+        builder.AddSharedInfrastructureMessagingServices();
+        builder.Services
+            .AddSharedInfrastructureServices()
+            .AddCryptographyApplicationServices()
+            .AddValidationApplicationServices();
+        builder.AddMessageTypeRegistry();
         return builder;
     }
 

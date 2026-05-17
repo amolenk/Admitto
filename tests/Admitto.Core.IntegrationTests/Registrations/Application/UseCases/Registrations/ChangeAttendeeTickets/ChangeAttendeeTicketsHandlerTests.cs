@@ -12,7 +12,7 @@ public sealed class ChangeAttendeeTicketsHandlerTests(TestContext testContext) :
     private ChangeAttendeeTicketsHandler CreateSut() =>
         new(Environment.RegistrationsDatabase.Context, TimeProvider.System);
 
-    // SC001: Admin changes early-bird → workshop; capacity is updated correctly
+    // Admin changes early-bird → workshop; capacity is updated correctly
     [TestMethod]
     public async ValueTask ChangeAttendeeTickets_HappyPath_TicketsUpdatedAndEventRaised()
     {
@@ -45,7 +45,7 @@ public sealed class ChangeAttendeeTicketsHandlerTests(TestContext testContext) :
         });
     }
 
-    // SC002: Sold-out workshop does NOT block admin change (enforce: false)
+    // Sold-out workshop does NOT block admin change (enforce: false)
     [TestMethod]
     public async ValueTask ChangeAttendeeTickets_SoldOut_AdminBypassesCapacityEnforcement()
     {
@@ -70,7 +70,7 @@ public sealed class ChangeAttendeeTicketsHandlerTests(TestContext testContext) :
         });
     }
 
-    // SC004: Admin attempts to change tickets of a cancelled registration → RegistrationIsCancelled
+    // Admin attempts to change tickets of a cancelled registration → RegistrationIsCancelled
     [TestMethod]
     public async ValueTask ChangeAttendeeTickets_CancelledRegistration_ThrowsRegistrationIsCancelled()
     {
@@ -89,7 +89,7 @@ public sealed class ChangeAttendeeTicketsHandlerTests(TestContext testContext) :
         result.Error.ShouldMatch(ChangeAttendeeTicketsHandler.Errors.RegistrationIsCancelled);
     }
 
-    // SC005: Admin attempts to change tickets for an archived event → EventNotActive
+    // Admin attempts to change tickets for an archived event → EventNotActive
     [TestMethod]
     public async ValueTask ChangeAttendeeTickets_ArchivedEvent_ThrowsEventNotActive()
     {

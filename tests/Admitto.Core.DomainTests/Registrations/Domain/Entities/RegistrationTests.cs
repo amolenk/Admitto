@@ -19,7 +19,7 @@ public sealed class RegistrationTests
     private static readonly LastName DefaultLastName = LastName.From("User");
 
     [TestMethod]
-    public void SC001_Registration_Create_ValidInput_CreatesWithCorrectSnapshots()
+    public void Registration_Create_ValidInput_CreatesWithCorrectSnapshots()
     {
         // Arrange
         var id1 = TicketTypeId.New();
@@ -43,7 +43,7 @@ public sealed class RegistrationTests
     }
 
     [TestMethod]
-    public void SC003_Registration_Create_PopulatesIdentityAndDefaults()
+    public void Registration_Create_PopulatesIdentityAndDefaults()
     {
         var sut = NewRegistration();
 
@@ -57,7 +57,7 @@ public sealed class RegistrationTests
     }
 
     [TestMethod]
-    public void SC004_Registration_Cancel_TransitionsAndRaisesEvent()
+    public void Registration_Cancel_TransitionsAndRaisesEvent()
     {
         var sut = NewRegistration();
         ClearEvents(sut);
@@ -70,7 +70,7 @@ public sealed class RegistrationTests
     }
 
     [TestMethod]
-    public void SC005_Registration_CancelTwice_Throws()
+    public void Registration_CancelTwice_Throws()
     {
         var sut = NewRegistration();
         sut.Cancel(CancellationReason.AttendeeRequest);
@@ -81,7 +81,7 @@ public sealed class RegistrationTests
     }
 
     [TestMethod]
-    public void SC006_Registration_Reconfirm_SetsFlagAndRaisesEvent()
+    public void Registration_Reconfirm_SetsFlagAndRaisesEvent()
     {
         var sut = NewRegistration();
         ClearEvents(sut);
@@ -95,7 +95,7 @@ public sealed class RegistrationTests
     }
 
     [TestMethod]
-    public void SC007_Registration_ReconfirmTwice_IsIdempotent()
+    public void Registration_ReconfirmTwice_IsIdempotent()
     {
         var sut = NewRegistration();
         var first = DateTimeOffset.UtcNow;
@@ -109,7 +109,7 @@ public sealed class RegistrationTests
     }
 
     [TestMethod]
-    public void SC008_Registration_ReconfirmAfterCancel_Throws()
+    public void Registration_ReconfirmAfterCancel_Throws()
     {
         var sut = NewRegistration();
         sut.Cancel(CancellationReason.AttendeeRequest);
@@ -120,7 +120,7 @@ public sealed class RegistrationTests
     }
 
     [TestMethod]
-    public void SC009_Registration_ChangeTickets_HappyPath_UpdatesSnapshotAndRaisesEvent()
+    public void Registration_ChangeTickets_HappyPath_UpdatesSnapshotAndRaisesEvent()
     {
         var sut = NewRegistration();
         ClearEvents(sut);
@@ -142,7 +142,7 @@ public sealed class RegistrationTests
     }
 
     [TestMethod]
-    public void SC010_Registration_ChangeTickets_SameSelection_StillRaisesEvent()
+    public void Registration_ChangeTickets_SameSelection_StillRaisesEvent()
     {
         var generalId = TicketTypeId.New();
         var sut = Registration.Create(DefaultTeamId, DefaultEventId, DefaultEmail, DefaultFirstName, DefaultLastName,
@@ -160,7 +160,7 @@ public sealed class RegistrationTests
     }
 
     [TestMethod]
-    public void SC011_Registration_ChangeTickets_Cancelled_Throws()
+    public void Registration_ChangeTickets_Cancelled_Throws()
     {
         var sut = NewRegistration();
         sut.Cancel(CancellationReason.AttendeeRequest);

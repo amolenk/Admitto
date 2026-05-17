@@ -14,7 +14,7 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.ActivityLog;
 [TestClass]
 public sealed class ActivityLogTests(TestContext testContext) : EndToEndTestBase
 {
-    // SC001: Registering an attendee via the API produces a single Registered activity entry.
+    // Registering an attendee via the API produces a single Registered activity entry.
     [TestMethod]
     public async Task AdminRegisterAttendee_CreatesRegisteredActivityEntry()
     {
@@ -43,7 +43,7 @@ public sealed class ActivityLogTests(TestContext testContext) : EndToEndTestBase
         activities[0].GetProperty("activityType").GetString().ShouldBe("Registered");
     }
 
-    // SC002: Cancelling a registration via the API appends a Cancelled activity entry.
+    // Cancelling a registration via the API appends a Cancelled activity entry.
     [TestMethod]
     public async Task CancelRegistration_AppendsCancelledActivityEntry()
     {

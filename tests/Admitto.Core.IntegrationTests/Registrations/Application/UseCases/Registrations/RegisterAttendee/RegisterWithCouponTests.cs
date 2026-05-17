@@ -13,7 +13,7 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 [TestClass]
 public sealed class RegisterWithCouponTests(TestContext testContext) : AspireIntegrationTestBase
 {
-    // SC001: Successful coupon registration — capacity exceeded, still registers and increments used
+    // Successful coupon registration — capacity exceeded, still registers and increments used
     [TestMethod]
     public async ValueTask RegisterWithCoupon_CapacityExceeded_SucceedsAndIncrementsUsedCapacity()
     {
@@ -41,7 +41,7 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         });
     }
 
-    // SC002: Coupon rejected — expired
+    // Coupon rejected — expired
     [TestMethod]
     public async ValueTask RegisterWithCoupon_ExpiredCoupon_ThrowsCouponExpiredError()
     {
@@ -57,7 +57,7 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         result.Error.ShouldMatch(RegisterAttendeeHandler.Errors.CouponExpired);
     }
 
-    // SC003: Coupon rejected — already redeemed
+    // Coupon rejected — already redeemed
     [TestMethod]
     public async ValueTask RegisterWithCoupon_AlreadyRedeemed_ThrowsCouponAlreadyRedeemedError()
     {
@@ -73,7 +73,7 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         result.Error.ShouldMatch(RegisterAttendeeHandler.Errors.CouponAlreadyRedeemed);
     }
 
-    // SC004: Coupon rejected — revoked
+    // Coupon rejected — revoked
     [TestMethod]
     public async ValueTask RegisterWithCoupon_RevokedCoupon_ThrowsCouponRevokedError()
     {
@@ -89,7 +89,7 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         result.Error.ShouldMatch(RegisterAttendeeHandler.Errors.CouponRevoked);
     }
 
-    // SC005: Coupon rejected — ticket type not allowlisted
+    // Coupon rejected — ticket type not allowlisted
     [TestMethod]
     public async ValueTask RegisterWithCoupon_TicketTypeNotAllowlisted_ThrowsNotAllowlistedError()
     {
@@ -113,7 +113,7 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         result.Error.Code.ShouldBe("coupon.ticket_type_not_allowed");
     }
 
-    // SC006: Coupon bypasses registration window when flag set
+    // Coupon bypasses registration window when flag set
     [TestMethod]
     public async ValueTask RegisterWithCoupon_BypassesClosedWindow_Succeeds()
     {
@@ -132,7 +132,7 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         });
     }
 
-    // SC007: Coupon respects registration window when flag not set
+    // Coupon respects registration window when flag not set
     [TestMethod]
     public async ValueTask RegisterWithCoupon_RespectsClosedWindow_ThrowsRegistrationClosed()
     {
@@ -148,7 +148,7 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         result.Error.Code.ShouldBe("registration.closed");
     }
 
-    // SC008: Coupon bypasses domain restriction (target email outside allowed domain)
+    // Coupon bypasses domain restriction (target email outside allowed domain)
     [TestMethod]
     public async ValueTask RegisterWithCoupon_BypassesDomainRestriction_Succeeds()
     {
@@ -168,7 +168,7 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         });
     }
 
-    // SC009: Coupon bypasses capacity requirement (null MaxCapacity)
+    // Coupon bypasses capacity requirement (null MaxCapacity)
     [TestMethod]
     public async ValueTask RegisterWithCoupon_NullCapacity_SucceedsAndIncrementsUsedCapacity()
     {
@@ -192,7 +192,7 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         });
     }
 
-    // SC010: Coupon does not bypass archived event — active-status gate still applies
+    // Coupon does not bypass archived event — active-status gate still applies
     [TestMethod]
     public async ValueTask RegisterWithCoupon_EventArchived_ThrowsEventNotActive()
     {
@@ -208,7 +208,7 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         result.Error.Code.ShouldBe("registration.event_not_active");
     }
 
-    // SC011: Coupon rejected — supplied email does not match coupon target email
+    // Coupon rejected — supplied email does not match coupon target email
     [TestMethod]
     public async ValueTask RegisterWithCoupon_EmailMismatch_ThrowsCouponEmailMismatch()
     {
@@ -224,7 +224,7 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         result.Error.Code.ShouldBe("coupon.email_mismatch");
     }
 
-    // SC012: Coupon mode does NOT require an email-verification token
+    // Coupon mode does NOT require an email-verification token
     [TestMethod]
     public async ValueTask RegisterWithCoupon_NoTokenRequired_Succeeds()
     {
@@ -243,7 +243,7 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         });
     }
 
-    // SC013: Coupon registration resets a cancelled registration
+    // Coupon registration resets a cancelled registration
     [TestMethod]
     public async ValueTask RegisterWithCoupon_CancelledRegistration_ResetsExistingRegistration()
     {

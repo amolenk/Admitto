@@ -1,5 +1,6 @@
 using System.Reflection;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
+using FluentValidation;
 
 namespace Amolenk.Admitto.Core.Shared.Infrastructure.Messaging;
 
@@ -105,6 +106,23 @@ public static class HandlerRegistrationExtensions
         }
 
         return services;
+    }
+
+    /// <summary>
+    /// Scans for FluentValidation validators in <paramref name="namespacePrefix"/>.*
+    /// only, restricting the scan to the owning module's namespace so that modules
+    /// sharing a single assembly do not register each other's validators.
+    /// </summary>
+    public static IServiceCollection AddValidatorsFromAssembly(
+        this IServiceCollection services,
+        Assembly assembly,
+        string namespacePrefix)
+    {
+        return services.AddValidatorsFromAssembly(assembly,
+            filter: result => result.ValidatorType.Namespace is not null
+                              && (result.ValidatorType.Namespace == namespacePrefix
+                                  || result.ValidatorType.Namespace.StartsWith(
+                                      namespacePrefix + ".", StringComparison.Ordinal)));
     }
 
     private static IEnumerable<(Type ClosedInterface, Type Implementation)> FindHandlers(
