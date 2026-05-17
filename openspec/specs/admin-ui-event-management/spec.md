@@ -32,7 +32,7 @@ Submission SHALL `POST` to the Organization create-event endpoint, which respond
 ---
 
 ### Requirement: Admin UI exposes event settings through tabbed navigation
-The Admin UI SHALL render event settings under `/teams/{teamId}/events/{eventId}/settings` with a side-navigation containing tabs: **General**, **Registration**, **Cancellation**, **Reconfirmation**, **Email**, **Email templates**, and **Danger zone**. The active tab SHALL be highlighted. Each tab SHALL be an independently routable page. The layout shell (breadcrumbs, heading, sidebar nav) SHALL be rendered as a Next.js Server Component so that the team name and event name are fetched server-side and present in the initial HTML.
+The Admin UI SHALL render event settings under `/teams/{teamId}/events/{eventId}/settings` with a side-navigation containing tabs: **General**, **Registration**, **Reconfirmation**, **Email**, **Email templates**, and **Danger zone**. The **Cancellation** tab is removed. The active tab SHALL be highlighted. Each tab SHALL be an independently routable page. The layout shell (breadcrumbs, heading, sidebar nav) SHALL be rendered as a Next.js Server Component so that the team name and event name are fetched server-side and present in the initial HTML.
 
 #### Scenario: Navigate between tabs
 - **WHEN** an organizer is on the General tab and clicks the "Registration" tab
@@ -45,6 +45,10 @@ The Admin UI SHALL render event settings under `/teams/{teamId}/events/{eventId}
 #### Scenario: Team and event names are present on initial render
 - **WHEN** an organizer navigates directly to any event settings tab URL or hard-refreshes the page
 - **THEN** the breadcrumb shows the team name and event name immediately, without any GUID flash or loading state
+
+#### Scenario: Cancellation tab no longer exists
+- **WHEN** an organizer views the event settings sidebar
+- **THEN** there is no "Cancellation" entry in the sidebar navigation
 
 ---
 
@@ -267,15 +271,15 @@ The Admin UI Ticket Types page SHALL render the in-sale status badge with the te
 ---
 
 ### Requirement: Ticket type cards expose actions only via the overflow menu
-The Admin UI Ticket Types page SHALL expose Edit and Cancel actions for a ticket type only via the per-card `…` overflow menu. The card SHALL NOT render an inline footer action bar containing duplicate Edit / Cancel buttons.
+The Admin UI Ticket Types page SHALL expose only an Edit action for a ticket type via the per-card `…` overflow menu. The card SHALL NOT render an inline footer action bar. There is no cancel action.
 
 #### Scenario: No footer action bar
-- **WHEN** an active (not cancelled) ticket type card is rendered
-- **THEN** there is no row of inline Edit / Cancel buttons beneath the stats; the only edit/cancel entry point is the `…` overflow menu in the card header
+- **WHEN** a ticket type card is rendered
+- **THEN** there is no row of inline buttons beneath the stats; the only edit entry point is the `…` overflow menu in the card header
 
-#### Scenario: Cancelled ticket type still hides actions
-- **WHEN** a cancelled ticket type card is rendered
-- **THEN** the overflow menu offers no edit or cancel actions (unchanged behaviour) and there is still no footer action bar
+#### Scenario: Overflow menu shows only Edit
+- **WHEN** an organizer opens the `…` menu on a ticket type card
+- **THEN** the menu contains only the Edit action; there is no cancel option
 
 ---
 
@@ -285,15 +289,6 @@ The Admin UI Ticket Types page SHALL NOT display the ticket type slug on the car
 #### Scenario: Card hides slug
 - **WHEN** a ticket type card is rendered for ticket type slug "vip"
 - **THEN** the card does not show the text "vip" anywhere; the name and (when present) time-slot badges are the only identifying labels in the card header
-
----
-
-### Requirement: Cancel action is labelled "Cancel ticket type"
-The Admin UI Ticket Types page SHALL label the cancel action as "Cancel ticket type" in the `…` overflow menu (replacing any previous label such as "Cancel" or "Cancel sales"). Confirmation dialogs and toasts that surface the action SHALL use the same wording.
-
-#### Scenario: Overflow menu shows "Cancel ticket type"
-- **WHEN** an organizer opens the `…` menu on an active ticket type card
-- **THEN** the destructive item reads "Cancel ticket type"
 
 ---
 
@@ -414,15 +409,11 @@ The event email settings page remains accessible via the Settings sidebar entry 
 ---
 
 ### Requirement: Events list page excludes archived events and reflects archive action immediately
-The Admin UI events list page SHALL only display non-archived events (active and
-cancelled). When an organizer archives an event via any archive action available
-in the UI, the archived event SHALL be removed from the events list immediately
-upon a successful archive response — without requiring a page reload or manual
-navigation.
+The Admin UI events list page SHALL only display non-archived events (active only — there is no longer a "cancelled" status). When an organizer archives an event via any archive action available in the UI, the archived event SHALL be removed from the events list immediately upon a successful archive response — without requiring a page reload or manual navigation.
 
 #### Scenario: Archived events are not shown on the events list page
-- **WHEN** an organizer navigates to the events list page for team "acme" and "conf-2026" (active), "meetup-q1" (cancelled), and "conf-2025" (archived) exist
-- **THEN** "conf-2026" and "meetup-q1" are visible in the list and "conf-2025" is not shown
+- **WHEN** an organizer navigates to the events list page for team "acme" and "conf-2026" (active) and "conf-2025" (archived) exist
+- **THEN** "conf-2026" is visible in the list and "conf-2025" is not shown
 
 #### Scenario: Archived event disappears immediately after archive action
 - **WHEN** an organizer archives event "conf-2025" from the UI and the archive request succeeds

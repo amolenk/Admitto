@@ -6,7 +6,7 @@ using Amolenk.Admitto.Core.Shared.Infrastructure.Messaging;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Interceptors;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Outbox;
-using Azure.Storage.Queues;
+using Azure.Messaging.ServiceBus;
 using FluentValidation;
 using FluentValidation.Internal;
 using Humanizer;
@@ -64,12 +64,12 @@ public static class SharedModuleExtensions
     public static IHostApplicationBuilder AddSharedInfrastructureMessagingServices(
         this IHostApplicationBuilder builder)
     {
-        builder.AddAzureQueueServiceClient(connectionName: "queues");
+        builder.AddAzureServiceBusClient(connectionName: "messaging");
 
-        builder.Services.AddSingleton<QueueClient>(serviceProvider =>
+        builder.Services.AddSingleton<ServiceBusSender>(serviceProvider =>
         {
-            var queueServiceClient = serviceProvider.GetRequiredService<QueueServiceClient>();
-            return queueServiceClient.GetQueueClient("queue");
+            var client = serviceProvider.GetRequiredService<ServiceBusClient>();
+            return client.CreateSender("queue");
         });
 
         return builder;
@@ -84,6 +84,16 @@ public static class SharedModuleExtensions
     public static IHostApplicationBuilder AddSharedInfrastructureQueueConsumer(
         this IHostApplicationBuilder builder)
     {
+        builder.Services.AddSingleton<ServiceBusProcessor>(serviceProvider =>
+        {
+            var client = serviceProvider.GetRequiredService<ServiceBusClient>();
+            return client.CreateProcessor("queue", new ServiceBusProcessorOptions
+            {
+                AutoCompleteMessages = false,
+                MaxConcurrentCalls = 1
+            });
+        });
+
         builder.Services.AddScoped<QueueMessageDispatcher>();
         builder.Services.AddHostedService<MessageQueueProcessor>();
 

@@ -7,6 +7,7 @@ param keyVaultName string
 param managedIdentityClientId string
 param managedIdentityId string
 param storageAccountName string
+param serviceBusEndpoint string
 
 var resourceToken = uniqueString(resourceGroup().id)
 
@@ -68,8 +69,8 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
               secretRef: 'quartz-db-connection-string'
             }
             {
-              name: 'ConnectionStrings__queues'
-              value: 'https://${storageAccountName}.queue.${environment().suffixes.storage}'
+              name: 'ConnectionStrings__messaging'
+              value: serviceBusEndpoint
             }
             {
               name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'

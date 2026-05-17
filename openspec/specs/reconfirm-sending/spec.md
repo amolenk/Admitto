@@ -13,10 +13,15 @@ The Email module SHALL drive recurring `reconfirm` emails to attendees of any `T
 1. The event's status is `Active`.
 2. `now` falls inside the policy's `Window` (`[OpensAt, ClosesAt]`).
 3. The candidate recipient's registration status is `Registered` AND `HasReconfirmed = false`.
+4. The time elapsed since the later of (the attendee's `RegisteredAt`, the last `reconfirm` email sent to the attendee as recorded in `email_log`) is at least `MinEmailInterval` hours.
 
-Eligibility SHALL be (re)evaluated against live Registrations data on every tick of the per-event Quartz trigger by calling `IRegistrationsFacade.QueryRegistrationsAsync(eventId, { Status: Registered, HasReconfirmed: false })`. The cadence is encoded entirely by the cron schedule of the per-event trigger; the resolver SHALL NOT additionally filter candidates against the `email_log` for prior `reconfirm` rows. Once an attendee reconfirms, they fall out of the candidate set on the next tick and receive no further reconfirm prompts.
+Eligibility SHALL be (re)evaluated against live Registrations and email-log data on every tick of the per-event Quartz trigger by calling:
+- `IRegistrationsFacade.QueryRegistrationsAsync(eventId, { Status: Registered, HasReconfirmed: false })` to get candidate attendees, and
+- querying the `email_log` for the most recent `reconfirm` email sent to each candidate, to filter out those who received one within the last `MinEmailInterval` hours.
 
-Each tick of the reconfirm scheduler SHALL create one `BulkEmailJob` per event with an `AttendeeSource(status=Registered, hasReconfirmed=false)`. The job's `EmailType` SHALL be `reconfirm`. The trigger user SHALL be a system-user marker (no real user id).
+Once an attendee reconfirms, they fall out of the candidate set. Attendees whose last email is within the interval are skipped for that tick and retried on the next tick.
+
+Each tick of the reconfirm scheduler SHALL create one `BulkEmailJob` per event with an `AttendeeSource(status=Registered, hasReconfirmed=false, minEmailIntervalHours=N)`. The job's `EmailType` SHALL be `reconfirm`. The trigger user SHALL be a system-user marker (no real user id).
 
 #### Scenario: Reconfirmed attendees are excluded
 - **WHEN** the scheduler ticks for an event with three registered attendees, one of whom has already reconfirmed
@@ -30,16 +35,28 @@ Each tick of the reconfirm scheduler SHALL create one `BulkEmailJob` per event w
 - **WHEN** an attendee was prompted on tick N and reconfirms before tick N+1
 - **THEN** they are NOT included in tick N+1's bulk job
 
-#### Scenario: Cron schedule encodes cadence
-- **WHEN** the policy `Cadence` is 7d, the trigger window is open, and an unreconfirmed attendee was prompted on the previous tick 7 days ago
-- **THEN** the next tick fires (per cron) and the attendee is included again — eligibility is determined entirely by `HasReconfirmed=false`, the 7d gap is enforced by the cron schedule
+#### Scenario: Attendee within MinEmailInterval is skipped
+- **WHEN** the scheduler ticks for an event with `MinEmailInterval=24h` and attendee "alice" received a `reconfirm` email 12 hours ago
+- **THEN** the `BulkEmailJob` does NOT include "alice" in the recipient set for this tick
+
+#### Scenario: Attendee past MinEmailInterval is included
+- **WHEN** the scheduler ticks for an event with `MinEmailInterval=24h` and attendee "bob" received a `reconfirm` email 25 hours ago and has `HasReconfirmed=false`
+- **THEN** the `BulkEmailJob` includes "bob" in the recipient set
+
+#### Scenario: New registrant is always eligible on first tick
+- **WHEN** an attendee registers and the next tick fires within the same hour
+- **THEN** the attendee is included in the `BulkEmailJob` for that tick (no prior email means the interval guard uses `RegisteredAt`)
+
+#### Scenario: Cron schedule encodes cadence; MinEmailInterval throttles per attendee
+- **WHEN** the policy `Cadence` is 7d and `MinEmailInterval` is 24h, the trigger window is open, and an unreconfirmed attendee last received a `reconfirm` email 8 days ago
+- **THEN** the next tick fires (per cron) and the attendee is included — the cron fires every 7d and MinEmailInterval (24h) is satisfied
 
 #### Scenario: Outside window, no job created
 - **WHEN** the scheduler ticks for an event whose `now` is before `OpensAt` or after `ClosesAt`
 - **THEN** no `BulkEmailJob` is created (the trigger is bounded by the window)
 
-#### Scenario: Cancelled or Archived event, no job created
-- **WHEN** the scheduler ticks for an event whose status is `Cancelled` or `Archived`
+#### Scenario: Archived event, no job created
+- **WHEN** the scheduler ticks for an event whose status is `Archived`
 - **THEN** no `BulkEmailJob` is created (the trigger is removed when the event leaves Active)
 
 #### Scenario: Everyone has reconfirmed
@@ -50,16 +67,20 @@ Each tick of the reconfirm scheduler SHALL create one `BulkEmailJob` per event w
 
 ### Requirement: A per-event Quartz trigger encodes the reconfirm cadence
 
-For every `TicketedEvent` with an active `TicketedEventReconfirmPolicy` and status `Active`, the Email module SHALL register exactly one Quartz trigger keyed by `TicketedEventId` for the static `EvaluateReconfirmJob`. The trigger SHALL fire on a cron expression derived from the policy `Cadence`, evaluated **in the event's `TimeZone`** (so e.g. a daily cadence fires at the same local hour year-round, including across DST transitions). The trigger SHALL be bounded by `StartAt = Window.OpensAt` and `EndAt = Window.ClosesAt`. Trigger creation/replacement SHALL happen idempotently in response to:
+For every `TicketedEvent` with an active `TicketedEventReconfirmPolicy` and status `Active`, the Email module SHALL register exactly one Quartz trigger keyed by `TicketedEventId` for the static `EvaluateReconfirmJob`. The trigger SHALL fire on a cron expression derived from the policy `Cadence`, evaluated **in the event's `TimeZone`**. The trigger SHALL be bounded by `StartAt = Window.OpensAt` and `EndAt = Window.ClosesAt`. Trigger creation/replacement SHALL happen idempotently in response to:
 
 - The `TicketedEventCreated` integration event (initial creation when a policy is set at creation).
-- A new `TicketedEventReconfirmPolicyChanged` integration event (NEW — published by Registrations when the policy is set, updated, or cleared). The trigger SHALL be removed when the policy is cleared.
-- The `TicketedEventTimeZoneChanged` integration event (NEW — published by Registrations when the event's time zone is changed). The trigger SHALL be replaced atomically with one keyed to the new zone.
-- The `TicketedEventCancelled` and `TicketedEventArchived` integration events (trigger removed).
+- A `TicketedEventReconfirmPolicyChanged` integration event (published by Registrations when the policy is set, updated, or cleared — the `MinEmailInterval` is included in the payload). The trigger SHALL be removed when the policy is cleared.
+- The `TicketedEventTimeZoneChanged` integration event (published by Registrations when the event's time zone is changed). The trigger SHALL be replaced atomically with one keyed to the new zone.
+- The `TicketedEventArchived` integration event (trigger removed). Note: `TicketedEventCancelled` is no longer published.
 
 #### Scenario: Policy added → trigger registered in event time zone
-- **WHEN** an event in `Active` status with `TimeZone="Europe/Amsterdam"` receives a new reconfirm policy with `Window=[2025-05-01, 2025-05-25]` and `Cadence=1d`
+- **WHEN** an event in `Active` status with `TimeZone="Europe/Amsterdam"` receives a new reconfirm policy with `Window=[2025-05-01, 2025-05-25]`, `Cadence=1d`, and `MinEmailInterval=24h`
 - **THEN** a Quartz trigger keyed to the event id is registered with start/end at the window bounds and a daily cron evaluated in `Europe/Amsterdam` (so it fires at the same local hour both before and after the spring-forward DST transition)
+
+#### Scenario: Policy MinEmailInterval updated → trigger payload updated
+- **WHEN** an active event's reconfirm policy `MinEmailInterval` changes from 24h to 48h
+- **THEN** the updated policy (including new MinEmailInterval) is stored so the next tick uses the new value; the Quartz trigger schedule is unchanged if only MinEmailInterval changed
 
 #### Scenario: Time zone change → trigger replaced
 - **WHEN** an active event's time zone changes from `Europe/Amsterdam` to `America/Los_Angeles`
@@ -69,8 +90,8 @@ For every `TicketedEvent` with an active `TicketedEventReconfirmPolicy` and stat
 - **WHEN** the reconfirm policy is removed from an active event
 - **THEN** the corresponding Quartz trigger is removed and no further reconfirm jobs are created for that event
 
-#### Scenario: Event cancelled → trigger unregistered
-- **WHEN** an event's `TicketedEventCancelled` integration event is processed
+#### Scenario: Event archived → trigger unregistered
+- **WHEN** an event's `TicketedEventArchived` integration event is processed
 - **THEN** any reconfirm trigger for that event is removed
 
 #### Scenario: Policy updated → trigger replaced atomically

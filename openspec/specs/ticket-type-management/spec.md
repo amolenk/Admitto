@@ -12,7 +12,7 @@ an event with a name, time slots, optional capacity, and a `SelfServiceEnabled`
 flag (defaults to `true`). The server SHALL generate a `TicketTypeId` (GUID) upon
 creation. Ticket type names SHALL be unique within an event (case-insensitive).
 Adding a ticket type mutates the event's `TicketCatalog`: the command is rejected
-when `TicketCatalog.EventStatus` is Cancelled or Archived, and succeeds only when Active. The `TicketCatalog` is
+when `TicketCatalog.EventStatus` is Archived, and succeeds only when Active. The `TicketCatalog` is
 created by the Registrations module's reaction to `TicketedEventCreated`, so it
 already exists by the time any ticket-type command can run; there is no longer a
 "create catalog on first ticket type" path.
@@ -28,10 +28,6 @@ already exists by the time any ticket-type command can run; there is no longer a
 #### Scenario: Reject duplicate ticket type name
 - **WHEN** event "conf-2026" already has a ticket type with name "VIP Pass" and an organizer adds another with name "VIP Pass" (or "vip pass" — case-insensitive)
 - **THEN** the request is rejected with a duplicate ticket type name error
-
-#### Scenario: Reject adding ticket type when event is Cancelled
-- **WHEN** event "conf-2026" has `TicketCatalog.EventStatus` Cancelled and an organizer attempts to add a ticket type
-- **THEN** the request is rejected with reason "event not active"
 
 #### Scenario: Reject adding ticket type when event is Archived
 - **WHEN** event "conf-2026" has `TicketCatalog.EventStatus` Archived and an organizer attempts to add a ticket type
@@ -62,13 +58,9 @@ status transitions; no separate mutation counter is maintained.
 - **WHEN** an organizer updates ticket type with id {tt-id} name to "VIP Access" on an event whose `TicketCatalog.EventStatus` is Active
 - **THEN** the ticket type name is updated
 
-#### Scenario: Reject update when event is Cancelled
-- **WHEN** `TicketCatalog.EventStatus` is Cancelled and an organizer attempts to update a ticket type
+#### Scenario: Reject update when event is Archived
+- **WHEN** `TicketCatalog.EventStatus` is Archived and an organizer attempts to update a ticket type
 - **THEN** the request is rejected with reason "event not active"
-
-#### Scenario: Concurrent cancel detected via optimistic concurrency
-- **WHEN** an organizer submits an update against a `TicketCatalog` whose `EventStatus` was just transitioned to Cancelled by an in-flight projection from `TicketedEvent`
-- **THEN** the update fails with a concurrency conflict and no change is persisted
 
 #### Scenario: Disable self-service on an existing ticket type
 - **WHEN** an organizer updates ticket type with id {tt-id} setting `selfServiceEnabled: false` on an active event
@@ -80,35 +72,15 @@ status transitions; no separate mutation counter is maintained.
 
 ---
 
-### Requirement: Organizer can cancel a ticket type
-The system SHALL allow organizers to cancel an active ticket type (identified by its
-`TicketTypeId`), preventing new registrations for it. The system SHALL reject
-cancelling an already cancelled ticket type. Cancelling a ticket type SHALL be
-rejected when `TicketCatalog.EventStatus` is not Active.
-
-#### Scenario: Cancel a ticket type
-- **WHEN** an organizer cancels active ticket type with id {tt-id} on event "conf-2026" whose `TicketCatalog.EventStatus` is Active
-- **THEN** the ticket type is marked as cancelled and no new registrations can be made for it
-
-#### Scenario: Reject cancelling an already cancelled ticket type
-- **WHEN** an organizer attempts to cancel a ticket type which is already cancelled
-- **THEN** the request is rejected because the ticket type is already cancelled
-
-#### Scenario: Reject cancelling ticket type when event is Cancelled
-- **WHEN** `TicketCatalog.EventStatus` is Cancelled and an organizer attempts to cancel a ticket type
-- **THEN** the request is rejected with reason "event not active"
-
----
-
-### Requirement: Team member can list ticket types for an event
+### Requirement: Organizer can list ticket types
 The system SHALL allow team members with Crew role or above to list all ticket types
-for an event, including cancelled ticket types. Each ticket type SHALL include its
-`id`, name, time slots, capacity (max and used), cancellation status, and
-`selfServiceEnabled` flag.
+for an event. Each ticket type SHALL include its
+`id`, name, time slots, capacity (max and used), and
+`selfServiceEnabled` flag. There is no `cancellationStatus` field.
 
 #### Scenario: List ticket types for an event
-- **WHEN** a Crew member lists ticket types for event "conf-2026" which has "General Admission" (active, capacity 100/50 used), "VIP Pass" (active, capacity 50/10 used), and "Early Bird" (cancelled)
-- **THEN** all three ticket types are returned with their id, name, capacity details, and cancellation status
+- **WHEN** a Crew member lists ticket types for event "conf-2026" which has "General Admission" (capacity 100/50 used) and "VIP Pass" (capacity 50/10 used)
+- **THEN** both ticket types are returned with their id, name, capacity details, and self-service status
 
 #### Scenario: List ticket types for an event with no ticket types
 - **WHEN** a Crew member lists ticket types for event "conf-2026" which has no ticket types
@@ -120,15 +92,12 @@ for an event, including cancelled ticket types. Each ticket type SHALL include i
 
 ---
 
-### Requirement: TicketCatalog projects the TicketedEvent status
+### Requirement: TicketCatalog projects only Active and Archived event status
 The `TicketCatalog` aggregate SHALL hold an `EventStatus` field with values
-`Active`, `Cancelled`, or `Archived`. The field SHALL be initialised to `Active`
-when the catalog is created in response to `TicketedEventCreated`. Subsequent
-`TicketedEvent` lifecycle changes (cancel, archive) SHALL be projected onto the
-catalog via an in-module domain event handled in the **same unit of work** as
-the `TicketedEvent` mutation that triggered it. Status transitions on the
-catalog SHALL be one-way: `Active → Cancelled`, `Active → Archived`, and
-`Cancelled → Archived`.
+`Active` or `Archived` only. The `Cancelled` status is removed. The field SHALL be initialised to `Active`
+when the catalog is created in response to `TicketedEventCreated`. The state
+transition is one-way: `Active → Archived`. The catalog SHALL reject ticket-type
+mutations when `EventStatus` is `Archived`.
 
 The `EventStatus` is the only event-level state the catalog stores; all richer
 event details (policies, name, dates) remain on `TicketedEvent` and are read
@@ -138,13 +107,13 @@ directly from there by application handlers.
 - **WHEN** Registrations processes its own `TicketedEventCreated` domain event
 - **THEN** a `TicketCatalog` is created for the event with `EventStatus = Active`
 
-#### Scenario: Cancellation is projected in the same unit of work
-- **WHEN** an organizer cancels a `TicketedEvent`
-- **THEN** the `TicketedEvent` becomes `Cancelled` and `TicketCatalog.EventStatus` becomes `Cancelled` in the same database transaction
+#### Scenario: Archive is projected in the same unit of work
+- **WHEN** an organizer archives a `TicketedEvent`
+- **THEN** the `TicketedEvent` becomes `Archived` and `TicketCatalog.EventStatus` becomes `Archived` in the same database transaction
 
-#### Scenario: Archive from cancelled
-- **WHEN** an organizer archives a `TicketedEvent` whose status is Cancelled
-- **THEN** both `TicketedEvent.Status` and `TicketCatalog.EventStatus` become `Archived` in the same transaction
+#### Scenario: Claim refused for archived event
+- **WHEN** the registration handler invokes `TicketCatalog.Claim` for a catalog whose `EventStatus = Archived`
+- **THEN** the claim is rejected
 
 #### Scenario: Reject illegal transition
 - **WHEN** any code path attempts to transition `TicketCatalog.EventStatus` from `Archived` back to `Active`

@@ -135,6 +135,14 @@ module storageAccount 'modules/storageAccount.bicep' = {
   }
 }
 
+module serviceBus 'modules/serviceBus.bicep' = {
+  name: 'serviceBus'
+  params: {
+    location: location
+    principalId: managedIdentity.outputs.principalId
+  }
+}
+
 module postgres 'modules/postgres.bicep' = {
   name: 'postgres'
   params: {
@@ -178,6 +186,7 @@ module admittoApi 'modules/admittoApiApp.bicep' = {
     managedIdentityClientId: managedIdentity.outputs.clientId
     managedIdentityId: managedIdentity.outputs.id
     storageAccountName: storageAccount.outputs.storageAccountName
+    serviceBusEndpoint: serviceBus.outputs.serviceBusEndpoint
   }
 }
 
@@ -192,6 +201,7 @@ module admittoWorker 'modules/admittoWorkerApp.bicep' = {
     managedIdentityClientId: managedIdentity.outputs.clientId
     managedIdentityId: managedIdentity.outputs.id
     storageAccountName: storageAccount.outputs.storageAccountName
+    serviceBusEndpoint: serviceBus.outputs.serviceBusEndpoint
   }
 }
 

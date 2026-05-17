@@ -114,44 +114,31 @@ to itself when its own status is Cancelled or Archived.
 
 ---
 
-### Requirement: Organizer can cancel an event
-The system SHALL allow organizers to cancel an active `TicketedEvent`. The
-command is handled by the Registrations module. In the same unit of work the
-`TicketedEvent` aggregate SHALL transition its status to Cancelled, publish an
-in-module domain event that projects `EventStatus = Cancelled` onto the
-event's `TicketCatalog`, and outbox a `TicketedEventCancelled` integration
-event to Organization so the team's counters can be advanced (see
-team-management).
-
-#### Scenario: Cancel an active event
-- **WHEN** an organizer cancels event "conf-2026" which is active
-- **THEN** the `TicketedEvent` status is changed to Cancelled, the event's `TicketCatalog.EventStatus` is set to Cancelled in the same unit of work, and a `TicketedEventCancelled` integration event is outboxed
-
-#### Scenario: Reject cancelling an already cancelled event
-- **WHEN** an organizer attempts to cancel event "meetup-q1" which is already cancelled
-- **THEN** the request is rejected because the event is already cancelled
-
----
-
 ### Requirement: Organizer can archive an event
-The system SHALL allow organizers to archive an active or cancelled
-`TicketedEvent`. The command is handled by the Registrations module. In the
-same unit of work the `TicketedEvent` aggregate SHALL transition its status
-to Archived, publish an in-module domain event that projects `EventStatus = Archived`
-onto the event's `TicketCatalog`, and outbox a `TicketedEventArchived`
-integration event to Organization.
+The system SHALL allow organizers to archive an **active** `TicketedEvent`. The command is handled by the Registrations module. In the same unit of work the `TicketedEvent` aggregate SHALL transition its status to Archived, publish an in-module domain event that projects `EventStatus = Archived` onto the event's `TicketCatalog`, and outbox a `TicketedEventArchived` integration event to Organization.
+
+Archiving from the `Cancelled` status is no longer supported because the `Cancelled` status has been removed.
 
 #### Scenario: Archive an active event
 - **WHEN** an organizer archives event "conf-2025" which is active
 - **THEN** the `TicketedEvent` status is changed to Archived, the `TicketCatalog.EventStatus` is set to Archived, and a `TicketedEventArchived` integration event is outboxed
 
-#### Scenario: Archive a cancelled event
-- **WHEN** an organizer archives event "meetup-q1" which is cancelled
-- **THEN** the `TicketedEvent` status is changed to Archived, the `TicketCatalog.EventStatus` is set to Archived, and a `TicketedEventArchived` integration event is outboxed
-
 #### Scenario: Reject archiving an already archived event
 - **WHEN** an organizer attempts to archive event "conf-2024" which is already archived
 - **THEN** the request is rejected because the event is already archived
+
+---
+
+### Requirement: TicketedEvent lifecycle is Active and Archived only
+The `TicketedEvent` aggregate SHALL support exactly two lifecycle statuses: `Active` and `Archived`. The `Cancelled` status is removed. Transition `Active → Archived` is the only permitted lifecycle mutation after creation. The `TicketedEvent` aggregate SHALL reject modifications to itself when its own status is Archived (replacing the prior Cancelled-or-Archived guard).
+
+#### Scenario: Reject update of archived event
+- **WHEN** an organizer attempts to update the name of an archived event
+- **THEN** the `TicketedEvent` rejects the update with reason "event not active"
+
+#### Scenario: List events returns only active events
+- **WHEN** an admin calls `GET /admin/teams/{teamId}/events` and events with active and archived status exist
+- **THEN** only active events are returned (archived events are excluded)
 
 ---
 
@@ -266,76 +253,23 @@ Otherwise registration is "closed".
 
 ---
 
-### Requirement: TicketedEvent owns the cancellation policy
-The `TicketedEvent` aggregate SHALL own an optional
-`TicketedEventCancellationPolicy` value object storing a single
-`LateCancellationCutoff` datetime. Attendee-initiated cancellations submitted
-on or after that moment SHALL be classified as "late"; cancellations submitted
-before it SHALL be classified as "on time". The policy itself does not reject
-cancellations or impose fees — it is pure classification data.
-
-The policy is optional. When no `TicketedEventCancellationPolicy` is configured,
-no cancellation is ever classified as late. The policy MAY be cleared.
-Configuring or updating the policy SHALL be rejected when the `TicketedEvent`
-status is Cancelled or Archived.
-
-#### Scenario: Configure a late-cancellation cutoff
-- **WHEN** an organizer sets the late-cancellation cutoff for active event "DevConf" to "2025-05-25T00:00Z"
-- **THEN** the `TicketedEventCancellationPolicy` is saved with `LateCancellationCutoff = 2025-05-25T00:00Z`
-
-#### Scenario: Update a late-cancellation cutoff
-- **WHEN** event "DevConf" has a policy with cutoff "2025-05-25T00:00Z" and an organizer updates it to "2025-05-20T00:00Z"
-- **THEN** the policy is updated to "2025-05-20T00:00Z"
-
-#### Scenario: Remove the cancellation policy
-- **WHEN** event "DevConf" has a cancellation policy and an organizer removes it
-- **THEN** the policy no longer exists for "DevConf"
-
-#### Scenario: Cancellation at cutoff is late
-- **WHEN** event "DevConf" has cutoff "2025-05-25T00:00Z" and an attendee cancels at exactly "2025-05-25T00:00Z"
-- **THEN** the cancellation is classified as late
-
-#### Scenario: Cancellation after cutoff is late
-- **WHEN** event "DevConf" has cutoff "2025-05-25T00:00Z" and an attendee cancels at "2025-05-28T00:00Z"
-- **THEN** the cancellation is classified as late
-
-#### Scenario: Cancellation before cutoff is on time
-- **WHEN** event "DevConf" has cutoff "2025-05-25T00:00Z" and an attendee cancels at "2025-05-20T12:00Z"
-- **THEN** the cancellation is classified as on time
-
-#### Scenario: No policy means never late
-- **WHEN** event "DevConf" has no cancellation policy and an attendee cancels at "2025-07-01T00:00Z"
-- **THEN** the cancellation is classified as on time
-
-#### Scenario: Rejected — event is Cancelled
-- **WHEN** event "DevConf" has status Cancelled and an organizer attempts to set the late-cancellation cutoff
-- **THEN** the `TicketedEvent` rejects the mutation with reason "event not active"
-
----
-
 ### Requirement: TicketedEvent owns the reconfirm policy
 The `TicketedEvent` aggregate SHALL own an optional
 `TicketedEventReconfirmPolicy` value object storing:
 
-- a reconfirmation `Window` with `OpensAt` and `ClosesAt` datetimes, and
-- a `Cadence` expressed as a positive duration (minimum 1 day) describing how
-  often attendees are asked to reconfirm.
+- a reconfirmation `Window` with `OpensAt` and `ClosesAt` datetimes,
+- a `Cadence` expressed as a positive duration (minimum 1 day) describing how often the scheduler ticks to evaluate reconfirmation, and
+- a `MinEmailInterval` expressed as a positive integer in hours (minimum 1) representing the minimum time that must elapse since the later of (an attendee's registration time, the last reconfirmation email sent to that attendee) before the system will send them another reconfirmation email.
 
-The close datetime SHALL be strictly after the open datetime. The cadence
-SHALL be strictly positive and at least 1 day. The policy describes *when
-and how often* attendees should be asked to reconfirm; sending messages is
-not part of this capability. The policy is optional; when absent the system
-SHALL NOT ask attendees to reconfirm. The policy MAY be cleared. Configuring
-or updating the policy SHALL be rejected when the `TicketedEvent` status is
-Cancelled or Archived.
+The close datetime SHALL be strictly after the open datetime. The cadence SHALL be strictly positive and at least 1 day. The `MinEmailInterval` SHALL be a positive integer of at least 1 hour. The policy describes *when and how often* attendees are asked to reconfirm; sending messages is not part of this capability. The policy is optional; when absent the system SHALL NOT ask attendees to reconfirm. The policy MAY be cleared. Configuring or updating the policy SHALL be rejected when the `TicketedEvent` status is Archived.
 
 #### Scenario: Configure a reconfirm policy
-- **WHEN** an organizer sets the reconfirm window for active event "DevConf" to "2025-05-01T00:00Z" / "2025-05-25T00:00Z" with cadence 7 days
-- **THEN** the `TicketedEventReconfirmPolicy` is saved with the provided window and cadence
+- **WHEN** an organizer sets the reconfirm window for active event "DevConf" to "2025-05-01T00:00Z" / "2025-05-25T00:00Z" with cadence 7 days and MinEmailInterval 24 hours
+- **THEN** the `TicketedEventReconfirmPolicy` is saved with the provided window, cadence, and MinEmailInterval
 
 #### Scenario: Update a reconfirm policy
-- **WHEN** event "DevConf" has a reconfirm policy with cadence 7 days and an organizer updates it to cadence 3 days
-- **THEN** the policy cadence is updated to 3 days
+- **WHEN** event "DevConf" has a reconfirm policy with cadence 7 days and MinEmailInterval 24 hours and an organizer updates cadence to 3 days and MinEmailInterval to 48 hours
+- **THEN** the policy is updated to cadence 3 days and MinEmailInterval 48 hours
 
 #### Scenario: Remove a reconfirm policy
 - **WHEN** event "DevConf" has a reconfirm policy and an organizer removes it
@@ -347,6 +281,10 @@ Cancelled or Archived.
 
 #### Scenario: Rejected — cadence below minimum
 - **WHEN** an organizer sets a reconfirm cadence below 1 day
+- **THEN** the request is rejected with a validation error
+
+#### Scenario: Rejected — MinEmailInterval below minimum
+- **WHEN** an organizer sets a MinEmailInterval below 1 hour
 - **THEN** the request is rejected with a validation error
 
 #### Scenario: Rejected — event is Archived

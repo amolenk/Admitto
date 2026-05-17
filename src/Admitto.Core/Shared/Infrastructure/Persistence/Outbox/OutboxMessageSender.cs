@@ -1,12 +1,12 @@
 using System.Diagnostics;
 using Amolenk.Admitto.Core.Shared.Application;
 using Azure.Messaging;
-using Azure.Storage.Queues;
+using Azure.Messaging.ServiceBus;
 
 namespace Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Outbox;
 
 public class OutboxMessageSender(
-    QueueClient queueClient,
+    ServiceBusSender sender,
     ILogger<OutboxMessageSender> logger) : IOutboxMessageSender
 {
     public async ValueTask SendAsync(OutboxMessage message, CancellationToken cancellationToken = default)
@@ -16,8 +16,8 @@ public class OutboxMessageSender(
             ActivityKind.Producer);
         activity?.AddTag("admitto.message.id", message.Id);
         activity?.AddTag("admitto.message.type", message.Type);
-        activity?.AddTag("messaging.system", "azure.storage.queue");
-        activity?.AddTag("messaging.destination.name", queueClient.Name);
+        activity?.AddTag("messaging.system", "AzureServiceBus");
+        activity?.AddTag("messaging.destination.name", "queue");
 
         var cloudEvent = new CloudEvent(
             nameof(Admitto),
@@ -40,6 +40,7 @@ public class OutboxMessageSender(
 
         logger.LogInformation("Sending message to queue: {MessageType}", message.Type);
 
-        await queueClient.SendMessageAsync(System.Text.Json.JsonSerializer.Serialize(cloudEvent), cancellationToken);
+        var serviceBusMessage = new ServiceBusMessage(BinaryData.FromObjectAsJson(cloudEvent));
+        await sender.SendMessageAsync(serviceBusMessage, cancellationToken);
     }
 }

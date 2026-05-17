@@ -1,5 +1,4 @@
 param location string = resourceGroup().location
-param sku string = 'Standard'
 
 param principalId string
 
@@ -10,7 +9,7 @@ resource serviceBus 'Microsoft.ServiceBus/namespaces@2024-01-01' = {
     disableLocalAuth: true
   }
   sku: {
-    name: sku
+    name: 'Basic'
   }
 }
 

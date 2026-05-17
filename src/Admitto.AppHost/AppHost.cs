@@ -1,4 +1,4 @@
-using Amolenk.Admitto.AppHost.Extensions.AzureStorage;
+using Amolenk.Admitto.AppHost.Extensions.AzureServiceBus;
 using Amolenk.Admitto.AppHost.Extensions;
 using Aspire.Hosting.Azure;
 using Microsoft.AspNetCore.Routing;
@@ -17,7 +17,7 @@ var betterAuthDb = postgres.AddDatabase("better-auth-db");
 
 if (builder.Environment.IsEndToEndTesting() || builder.Environment.IsDevelopment())
 {
-    var queues = builder.ConfigureStorageQueues(projectHashSuffix);
+    var serviceBus = builder.ConfigureServiceBus(projectHashSuffix);
     var keycloak = builder.ConfigureKeycloak(projectHashSuffix);
     var mailDev = builder.ConfigureMailDev();
 
@@ -41,7 +41,7 @@ if (builder.Environment.IsEndToEndTesting() || builder.Environment.IsDevelopment
         .WithReference(postgresDb)
         .WithReference(quartzDb)
         .WithReference(keycloak).WaitFor(keycloak)
-        .WithReference(queues).WaitFor(queues)
+        .WithReference(serviceBus).WaitFor(serviceBus)
         .WaitForCompletion(migrations);
 
     builder.AddProject<Projects.Admitto_Worker>("worker")
@@ -56,7 +56,7 @@ if (builder.Environment.IsEndToEndTesting() || builder.Environment.IsDevelopment
         .WithReference(postgresDb)
         .WithReference(quartzDb)
         .WithReference(keycloak).WaitFor(keycloak)
-        .WithReference(queues).WaitFor(queues)
+        .WithReference(serviceBus).WaitFor(serviceBus)
         .WaitFor(mailDev)
         .WaitForCompletion(migrations);
 }
@@ -107,20 +107,18 @@ internal static class Extensions
             return postgres;
         }
 
-        public IResourceBuilder<AzureQueueStorageResource> ConfigureStorageQueues(string projectHashSuffix)
+        public IResourceBuilder<AzureServiceBusResource> ConfigureServiceBus(string projectHashSuffix)
         {
-            var storage = builder.AddAzureStorage("storage")
+            var serviceBus = builder.AddAzureServiceBus("messaging")
                 .RunAsEmulator(configure =>
                 {
-                    configure
-                        .WithDataVolume("admitto-storage-" + projectHashSuffix)
-                        .WithLifetime(ContainerLifetime.Persistent);
-                });
+                    configure.WithLifetime(ContainerLifetime.Persistent);
+                })
+                .ReplaceEmulatorDatabase();
 
-            var queues = storage.AddQueues("queues")
-                .CreateQueue("queue");
+            serviceBus.AddQueue("queue");
 
-            return queues;
+            return serviceBus;
         }
 
         public IResourceBuilder<ContainerResource> ConfigureMailDev()
