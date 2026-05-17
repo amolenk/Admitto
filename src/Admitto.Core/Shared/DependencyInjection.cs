@@ -7,6 +7,7 @@ using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Interceptors;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Outbox;
 using Azure.Messaging.ServiceBus;
+using Microsoft.Extensions.Azure;
 using FluentValidation;
 using FluentValidation.Internal;
 using Humanizer;
@@ -64,7 +65,16 @@ public static class SharedModuleExtensions
     public static IHostApplicationBuilder AddSharedInfrastructureMessagingServices(
         this IHostApplicationBuilder builder)
     {
-        builder.AddAzureServiceBusClient(connectionName: "messaging");
+        // Configure a short TryTimeout so the SDK re-issues AMQP receive requests frequently.
+        // The Azure SB emulator only checks for new messages when it receives a fresh AMQP credit;
+        // with the default 60 s TryTimeout a message arriving after the initial check sits undelivered
+        // for up to 90 s. 5 s keeps emulator tests fast and has no adverse effect on production SB.
+        builder.AddAzureServiceBusClient(
+            connectionName: "messaging",
+            configureClientBuilder: clientBuilder => clientBuilder.ConfigureOptions(options =>
+            {
+                options.RetryOptions.TryTimeout = TimeSpan.FromSeconds(5);
+            }));
 
         builder.Services.AddSingleton<ServiceBusSender>(serviceProvider =>
         {
@@ -84,16 +94,6 @@ public static class SharedModuleExtensions
     public static IHostApplicationBuilder AddSharedInfrastructureQueueConsumer(
         this IHostApplicationBuilder builder)
     {
-        builder.Services.AddSingleton<ServiceBusProcessor>(serviceProvider =>
-        {
-            var client = serviceProvider.GetRequiredService<ServiceBusClient>();
-            return client.CreateProcessor("queue", new ServiceBusProcessorOptions
-            {
-                AutoCompleteMessages = false,
-                MaxConcurrentCalls = 1
-            });
-        });
-
         builder.Services.AddScoped<QueueMessageDispatcher>();
         builder.Services.AddHostedService<MessageQueueProcessor>();
 
@@ -171,10 +171,12 @@ public static class SharedModuleExtensions
                 {
                     var dbContext = sp.GetRequiredService<TDbContext>();
                     var outboxMessageSender = sp.GetRequiredService<IOutboxMessageSender>();
+                    var logger = sp.GetRequiredService<ILogger<UnitOfWork<TDbContext>>>();
                     var postgresExceptionMapping = sp.GetKeyedService<IPostgresExceptionMapping>(key);
                     return new UnitOfWork<TDbContext>(
                         dbContext,
                         outboxMessageSender,
+                        logger,
                         postgresExceptionMapping);
                 });
 

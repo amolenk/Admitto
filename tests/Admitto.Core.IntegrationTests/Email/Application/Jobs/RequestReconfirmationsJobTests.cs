@@ -171,7 +171,7 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
     {
         var ctx = Environment.EmailDatabase.Context;
         IEmailWriteStore writeStore = ctx;
-        IUnitOfWork unitOfWork = new UnitOfWork<EmailDbContext>(ctx, new NoOpOutboxMessageSender());
+        IUnitOfWork unitOfWork = new UnitOfWork<EmailDbContext>(ctx, new NoOpOutboxMessageSender(), NullLogger<UnitOfWork<EmailDbContext>>.Instance);
 
         return new RequestReconfirmationsJob(
             writeStore,

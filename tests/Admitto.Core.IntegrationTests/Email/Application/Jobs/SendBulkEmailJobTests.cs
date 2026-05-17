@@ -323,7 +323,7 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
         var settingsResolver = new EffectiveEmailSettingsResolver(ctx, protectedSecret);
         var templateService = new EmailTemplateService(ctx);
         var renderer = new ScribanEmailRenderer();
-        IUnitOfWork unitOfWork = new UnitOfWork<EmailDbContext>(ctx, new NoOpOutboxMessageSender());
+        IUnitOfWork unitOfWork = new UnitOfWork<EmailDbContext>(ctx, new NoOpOutboxMessageSender(), NullLogger<UnitOfWork<EmailDbContext>>.Instance);
 
         var options = new BulkEmailOptions
         {

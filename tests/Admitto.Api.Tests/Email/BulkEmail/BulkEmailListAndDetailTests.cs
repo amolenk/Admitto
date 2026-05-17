@@ -41,7 +41,7 @@ public sealed class BulkEmailListAndDetailTests(TestContext testContext) : EndTo
             .GetProperty("bulkEmailJobId").GetGuid();
 
         // Wait for fan-out to complete by watching MailDev.
-        await Environment.PollAsync(2, TimeSpan.FromSeconds(45), testContext.CancellationToken);
+        await Environment.PollAsync(2, TimeSpan.FromSeconds(90), testContext.CancellationToken);
 
         var detail = await PollUntilTerminalAsync(fixture, bulkJobId);
         detail.GetProperty("status").GetString().ShouldBe("completed");
@@ -69,7 +69,7 @@ public sealed class BulkEmailListAndDetailTests(TestContext testContext) : EndTo
 
     private async Task<JsonElement> PollUntilTerminalAsync(BulkEmailFixture fixture, Guid bulkJobId)
     {
-        var deadline = DateTimeOffset.UtcNow.AddSeconds(60);
+        var deadline = DateTimeOffset.UtcNow.AddSeconds(90);
         JsonElement last = default;
         while (DateTimeOffset.UtcNow < deadline)
         {

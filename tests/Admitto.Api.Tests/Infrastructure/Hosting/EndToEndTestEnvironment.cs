@@ -2,7 +2,9 @@ using Amolenk.Admitto.Core.Email.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.Organization.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence;
 using Amolenk.Admitto.Testing.Infrastructure.TestContexts;
+using Aspire.Hosting;
 using Aspire.Hosting.Testing;
+using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Amolenk.Admitto.Api.Tests.Infrastructure.Hosting;
@@ -15,7 +17,9 @@ public sealed record EndToEndTestEnvironment(
     Uri MailDevSmtpEndpoint,
     HttpClient ApiClient,
     HttpClient BobApiClient,
-    HttpClient PublicApiClient)
+    HttpClient PublicApiClient,
+    ServiceBusClient ServiceBusClient,
+    DistributedApplication Application)
 {
     public static async ValueTask<EndToEndTestEnvironment> CreateAsync(
         EndToEndTestAppHost appHost,
@@ -25,6 +29,12 @@ public sealed record EndToEndTestEnvironment(
         if (databaseConnectionString is null)
         {
             throw new InvalidOperationException("Connection string for Admitto database not found.");
+        }
+
+        var serviceBusConnectionString = await appHost.GetConnectionString("messaging");
+        if (serviceBusConnectionString is null)
+        {
+            throw new InvalidOperationException("Connection string for Service Bus not found.");
         }
 
         var organizationDatabase =
@@ -48,8 +58,9 @@ public sealed record EndToEndTestEnvironment(
         var publicApiClient = factory.CreateClient("AdmittoApiPublic");
         var mailDevClient = factory.CreateClient("MailDev");
         var mailDevSmtpEndpoint = appHost.Application.GetEndpoint("maildev", "smtp");
+        var serviceBusClient = new ServiceBusClient(serviceBusConnectionString);
 
-        return new EndToEndTestEnvironment(organizationDatabase, registrationsDatabase, emailDatabase, mailDevClient, mailDevSmtpEndpoint, apiClient, bobApiClient, publicApiClient);
+        return new EndToEndTestEnvironment(organizationDatabase, registrationsDatabase, emailDatabase, mailDevClient, mailDevSmtpEndpoint, apiClient, bobApiClient, publicApiClient, serviceBusClient, appHost.Application);
     }
 
     public HttpClient CreatePublicApiClient(string rawApiKey)

@@ -46,7 +46,10 @@ if (builder.Environment.IsEndToEndTesting() || builder.Environment.IsDevelopment
 
     builder.AddProject<Projects.Admitto_Worker>("worker")
         // Only enable caching in development environment to avoid stale data issues in tests
-        .WithEnvironment("CACHING__ENABLED", builder.Environment.IsDevelopment().ToString()) 
+        .WithEnvironment("CACHING__ENABLED", builder.Environment.IsDevelopment().ToString())
+        // In tests, disable the per-message delay so bulk-email fan-out completes quickly
+        .WithEnvironment("BULKEMAIL__PERMESSAGEDELAY",
+            builder.Environment.IsDevelopment() ? "00:00:00.500" : "00:00:00")
         .WithEnvironment(
             "EMAIL__DEFAULTSMTP__HOST",
             ReferenceExpression.Create($"{mailDev.GetEndpoint("smtp").Property(EndpointProperty.Host)}"))
@@ -91,7 +94,7 @@ internal static class Extensions
             var postgres = builder.AddPostgres("postgres", password: postgresPassword)
                 .WithDataVolume("admitto-postgres-" + projectHashSuffix)
                 .WithLifetime(ContainerLifetime.Persistent);
-            
+
             if (builder.Environment.IsDevelopment())
             {
                 postgres
@@ -116,7 +119,7 @@ internal static class Extensions
                 })
                 .ReplaceEmulatorDatabase();
 
-            serviceBus.AddQueue("queue");
+            serviceBus.AddServiceBusQueue("queue");
 
             return serviceBus;
         }

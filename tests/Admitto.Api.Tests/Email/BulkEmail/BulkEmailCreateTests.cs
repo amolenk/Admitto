@@ -47,7 +47,7 @@ public sealed class BulkEmailCreateTests(TestContext testContext) : EndToEndTest
 
         var emails = await Environment.PollAsync(
             expectedCount: 2,
-            timeout: TimeSpan.FromSeconds(45),
+            timeout: TimeSpan.FromSeconds(90),
             ct: testContext.CancellationToken);
 
         emails.Count.ShouldBe(2);
@@ -97,7 +97,7 @@ public sealed class BulkEmailCreateTests(TestContext testContext) : EndToEndTest
 
         var emails = await Environment.PollAsync(
             expectedCount: 1,
-            timeout: TimeSpan.FromSeconds(45),
+            timeout: TimeSpan.FromSeconds(90),
             ct: testContext.CancellationToken);
 
         emails.Count.ShouldBe(1);

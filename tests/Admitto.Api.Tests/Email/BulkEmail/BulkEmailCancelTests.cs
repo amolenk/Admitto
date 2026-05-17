@@ -83,7 +83,7 @@ public sealed class BulkEmailCancelTests(TestContext testContext) : EndToEndTest
             cancellationToken: testContext.CancellationToken))
             .GetProperty("bulkEmailJobId").GetGuid();
 
-        await Environment.PollAsync(1, TimeSpan.FromSeconds(45), testContext.CancellationToken);
+        await Environment.PollAsync(1, TimeSpan.FromSeconds(90), testContext.CancellationToken);
         // Wait until the job rolls over to a terminal state in the DB.
         var detail = await PollUntilTerminalAsync(fixture, bulkJobId);
         detail.GetProperty("status").GetString().ShouldBe("completed");
@@ -97,7 +97,7 @@ public sealed class BulkEmailCancelTests(TestContext testContext) : EndToEndTest
 
     private async Task<JsonElement> PollUntilTerminalAsync(BulkEmailFixture fixture, Guid bulkJobId)
     {
-        var deadline = DateTimeOffset.UtcNow.AddSeconds(60);
+        var deadline = DateTimeOffset.UtcNow.AddSeconds(120);
         JsonElement last = default;
         while (DateTimeOffset.UtcNow < deadline)
         {

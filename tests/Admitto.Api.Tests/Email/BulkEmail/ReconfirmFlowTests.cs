@@ -59,7 +59,7 @@ public sealed class ReconfirmFlowTests(TestContext testContext) : EndToEndTestBa
 
         var emails = await Environment.PollAsync(
             expectedCount: 1,
-            timeout: TimeSpan.FromSeconds(45),
+            timeout: TimeSpan.FromSeconds(90),
             ct: testContext.CancellationToken);
 
         // Wait an extra moment for any stragglers — the assertion below catches
