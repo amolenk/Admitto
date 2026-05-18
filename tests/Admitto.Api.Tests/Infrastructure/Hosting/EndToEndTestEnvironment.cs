@@ -5,6 +5,7 @@ using Amolenk.Admitto.Testing.Infrastructure.TestContexts;
 using Aspire.Hosting;
 using Aspire.Hosting.Testing;
 using Azure.Messaging.ServiceBus;
+using Azure.Messaging.ServiceBus.Administration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Amolenk.Admitto.Api.Tests.Infrastructure.Hosting;
@@ -19,6 +20,7 @@ public sealed record EndToEndTestEnvironment(
     HttpClient BobApiClient,
     HttpClient PublicApiClient,
     ServiceBusClient ServiceBusClient,
+    ServiceBusAdministrationClient ServiceBusAdministrationClient,
     DistributedApplication Application)
 {
     public static async ValueTask<EndToEndTestEnvironment> CreateAsync(
@@ -59,8 +61,20 @@ public sealed record EndToEndTestEnvironment(
         var mailDevClient = factory.CreateClient("MailDev");
         var mailDevSmtpEndpoint = appHost.Application.GetEndpoint("maildev", "smtp");
         var serviceBusClient = new ServiceBusClient(serviceBusConnectionString);
+        var serviceBusAdministrationClient = new ServiceBusAdministrationClient(serviceBusConnectionString);
 
-        return new EndToEndTestEnvironment(organizationDatabase, registrationsDatabase, emailDatabase, mailDevClient, mailDevSmtpEndpoint, apiClient, bobApiClient, publicApiClient, serviceBusClient, appHost.Application);
+        return new EndToEndTestEnvironment(
+            organizationDatabase,
+            registrationsDatabase,
+            emailDatabase,
+            mailDevClient,
+            mailDevSmtpEndpoint,
+            apiClient,
+            bobApiClient,
+            publicApiClient,
+            serviceBusClient,
+            serviceBusAdministrationClient,
+            appHost.Application);
     }
 
     public HttpClient CreatePublicApiClient(string rawApiKey)

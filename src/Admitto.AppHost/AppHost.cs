@@ -1,7 +1,5 @@
-using Amolenk.Admitto.AppHost.Extensions.AzureServiceBus;
 using Amolenk.Admitto.AppHost.Extensions;
 using Aspire.Hosting.Azure;
-using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Hosting;
 
 var builder = DistributedApplication.CreateBuilder(args);
@@ -26,13 +24,13 @@ if (builder.Environment.IsEndToEndTesting() || builder.Environment.IsDevelopment
         .WithReference(quartzDb).WaitFor(quartzDb)
         .WithReference(betterAuthDb).WaitFor(betterAuthDb);
 
-    builder.AddProject<Projects.Admitto_Api>("api")
+    var api = builder.AddProject<Projects.Admitto_Api>("api")
         .WithEnvironment(
             "AUTHENTICATION__BEARER__AUTHORITY",
             ReferenceExpression.Create($"{keycloak.GetEndpoint("http")}/realms/admitto"))
         .WithUrlForEndpoint(
             "http",
-            ep => new ResourceUrlAnnotation
+            _ => new ResourceUrlAnnotation
             {
                 Url = "/scalar",
                 DisplayText = "Scalar",
@@ -44,12 +42,17 @@ if (builder.Environment.IsEndToEndTesting() || builder.Environment.IsDevelopment
         .WithReference(serviceBus).WaitFor(serviceBus)
         .WaitForCompletion(migrations);
 
+    // Bootstrap admin user
+    if (builder.Environment.IsDevelopment())
+    {
+        api.WithEnvironment("ORGANIZATION__BOOTSTRAPADMIN__EMAILADDRESS", "alice@example.com");
+    }
+
     builder.AddProject<Projects.Admitto_Worker>("worker")
         // Only enable caching in development environment to avoid stale data issues in tests
         .WithEnvironment("CACHING__ENABLED", builder.Environment.IsDevelopment().ToString())
-        // In tests, disable the per-message delay so bulk-email fan-out completes quickly
-        .WithEnvironment("BULKEMAIL__PERMESSAGEDELAY",
-            builder.Environment.IsDevelopment() ? "00:00:00.500" : "00:00:00")
+        // In dev/test, disable the per-message delay so bulk-email fan-out completes quickly
+        .WithEnvironment("BULKEMAIL__PERMESSAGEDELAY", "00:00:00")
         .WithEnvironment(
             "EMAIL__DEFAULTSMTP__HOST",
             ReferenceExpression.Create($"{mailDev.GetEndpoint("smtp").Property(EndpointProperty.Host)}"))
@@ -78,8 +81,6 @@ catch (AggregateException e) when (e.InnerException is TaskCanceledException)
 {
     // Ignore task cancellation exceptions on shutdown. Annoying while debugging unit tests.
 }
-
-return;
 
 internal static class Extensions
 {
@@ -115,9 +116,9 @@ internal static class Extensions
             var serviceBus = builder.AddAzureServiceBus("messaging")
                 .RunAsEmulator(configure =>
                 {
-                    configure.WithLifetime(ContainerLifetime.Persistent);
-                })
-                .ReplaceEmulatorDatabase();
+                    configure
+                        .WithLifetime(ContainerLifetime.Persistent);
+                });
 
             serviceBus.AddServiceBusQueue("queue");
 

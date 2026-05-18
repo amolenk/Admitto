@@ -1,8 +1,7 @@
 using Azure.Messaging;
 using Azure.Messaging.ServiceBus;
-using Microsoft.Extensions.Configuration;
 
-namespace Amolenk.Admitto.Core.Shared.Infrastructure.Messaging;
+namespace Amolenk.Admitto.Core.Shared.Infrastructure.Messaging.ServiceBus;
 
 /// <summary>
 /// Hosted service that polls the Service Bus queue using an explicit receive loop and routes each
