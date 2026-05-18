@@ -3,9 +3,6 @@ using Amolenk.Admitto.Core.Organization.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence;
 using Amolenk.Admitto.Testing.Infrastructure.TestContexts;
 using Aspire.Hosting;
-using Aspire.Hosting.Testing;
-using Azure.Messaging.ServiceBus;
-using Azure.Messaging.ServiceBus.Administration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Amolenk.Admitto.Api.Tests.Infrastructure.Hosting;
@@ -14,66 +11,44 @@ public sealed record EndToEndTestEnvironment(
     DatabaseTestContext<OrganizationDbContext> OrganizationDatabase,
     DatabaseTestContext<RegistrationsDbContext> RegistrationsDatabase,
     DatabaseTestContext<EmailDbContext> EmailDatabase,
-    HttpClient MailDevClient,
-    Uri MailDevSmtpEndpoint,
+    MessagingTestContext Messaging,
+    EmailTestContext Email,
     HttpClient ApiClient,
     HttpClient BobApiClient,
     HttpClient PublicApiClient,
-    ServiceBusClient ServiceBusClient,
-    ServiceBusAdministrationClient ServiceBusAdministrationClient,
     DistributedApplication Application)
 {
     public static async ValueTask<EndToEndTestEnvironment> CreateAsync(
         EndToEndTestAppHost appHost,
         CancellationToken cancellationToken = default)
     {
-        var databaseConnectionString = await appHost.GetConnectionString("admitto-db");
-        if (databaseConnectionString is null)
-        {
-            throw new InvalidOperationException("Connection string for Admitto database not found.");
-        }
-
-        var serviceBusConnectionString = await appHost.GetConnectionString("messaging");
-        if (serviceBusConnectionString is null)
-        {
-            throw new InvalidOperationException("Connection string for Service Bus not found.");
-        }
-
         var organizationDatabase =
-            await DatabaseTestContext<OrganizationDbContext>.CreateAsync(
-                databaseConnectionString,
-                cancellationToken);
+            await DatabaseTestContext<OrganizationDbContext>.CreateAsync(appHost, cancellationToken);
 
         var registrationsDatabase =
-            await DatabaseTestContext<RegistrationsDbContext>.CreateAsync(
-                databaseConnectionString,
-                cancellationToken);
+            await DatabaseTestContext<RegistrationsDbContext>.CreateAsync(appHost, cancellationToken);
 
         var emailDatabase =
-            await DatabaseTestContext<EmailDbContext>.CreateAsync(
-                databaseConnectionString,
-                cancellationToken);
+            await DatabaseTestContext<EmailDbContext>.CreateAsync(appHost, cancellationToken);
+
+        var messaging = await MessagingTestContext.CreateAsync(appHost);
+
+        var email = await EmailTestContext.CreateAsync(appHost.Application);
 
         var factory = appHost.Application.Services.GetRequiredService<IHttpClientFactory>();
         var apiClient = factory.CreateClient("AdmittoApi");
         var bobApiClient = factory.CreateClient("AdmittoApiBob");
         var publicApiClient = factory.CreateClient("AdmittoApiPublic");
-        var mailDevClient = factory.CreateClient("MailDev");
-        var mailDevSmtpEndpoint = appHost.Application.GetEndpoint("maildev", "smtp");
-        var serviceBusClient = new ServiceBusClient(serviceBusConnectionString);
-        var serviceBusAdministrationClient = new ServiceBusAdministrationClient(serviceBusConnectionString);
 
         return new EndToEndTestEnvironment(
             organizationDatabase,
             registrationsDatabase,
             emailDatabase,
-            mailDevClient,
-            mailDevSmtpEndpoint,
+            messaging,
+            email,
             apiClient,
             bobApiClient,
             publicApiClient,
-            serviceBusClient,
-            serviceBusAdministrationClient,
             appHost.Application);
     }
 

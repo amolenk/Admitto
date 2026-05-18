@@ -3,6 +3,7 @@ using Amolenk.Admitto.Core.Shared.Application.Cryptography;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Messaging;
+using Amolenk.Admitto.Core.Shared.Infrastructure.Messaging.ServiceBus;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Interceptors;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Outbox;
@@ -95,7 +96,7 @@ public static class SharedModuleExtensions
         this IHostApplicationBuilder builder)
     {
         builder.Services.AddScoped<QueueMessageDispatcher>();
-        builder.Services.AddHostedService<MessageQueueProcessor>();
+        builder.Services.AddHostedService<ServiceBusMessageProcessor>();
 
         builder.Services.AddQuartzHostedService(options =>
         {

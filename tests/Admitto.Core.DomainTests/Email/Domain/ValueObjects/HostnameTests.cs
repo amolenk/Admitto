@@ -18,7 +18,7 @@ public sealed class HostnameTests
     [TestMethod]
     public void TryFrom_WithNull_Fails()
     {
-        var result = Hostname.TryFrom(null);
+        var result = Hostname.TryFrom(null!);
 
         result.IsSuccess.ShouldBeFalse();
     }

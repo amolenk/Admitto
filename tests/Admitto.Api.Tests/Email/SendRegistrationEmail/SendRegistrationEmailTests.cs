@@ -1,6 +1,5 @@
 using System.Net;
 using System.Net.Http.Json;
-using System.Text.Json;
 using Amolenk.Admitto.Api.Tests.Infrastructure;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Microsoft.EntityFrameworkCore;
@@ -11,13 +10,6 @@ namespace Amolenk.Admitto.Api.Tests.Email.SendRegistrationEmail;
 [TestClass]
 public sealed class SendRegistrationEmailTests(TestContext testContext) : EndToEndTestBase
 {
-    [TestInitialize]
-    public override async ValueTask TestInitialize()
-    {
-        await base.TestInitialize();
-        await ClearMailDevAsync();
-    }
-
     [TestMethod]
     public async Task RegisterAttendee_WithEmailSettings_SendsExactlyOneEmailAndLogsIt()
     {
@@ -40,11 +32,15 @@ public sealed class SendRegistrationEmailTests(TestContext testContext) : EndToE
         response.StatusCode.ShouldBe(HttpStatusCode.Created);
 
         // Wait for the Worker to pick up the outbox message and send the email.
-        var emails = await PollMailDevAsync(expectedCount: 1, timeout: TimeSpan.FromSeconds(30));
+        var emails = await Environment.Email.WaitForAsync(
+            expectedCount: 1,
+            timeout: TimeSpan.FromSeconds(30),
+            testContext.CancellationToken);
 
         emails.Count.ShouldBe(1);
         var email = emails[0];
-        email.GetProperty("to")[0].GetProperty("address").GetString().ShouldBe(SendRegistrationEmailFixture.RecipientEmail);
+        email.GetProperty("to")[0].GetProperty("address").GetString()
+            .ShouldBe(SendRegistrationEmailFixture.RecipientEmail);
 
         // Verify exactly one EmailLog row was created with status Sent.
         Environment.EmailDatabase.Context.ChangeTracker.Clear();
@@ -79,18 +75,24 @@ public sealed class SendRegistrationEmailTests(TestContext testContext) : EndToE
 
         response.StatusCode.ShouldBe(HttpStatusCode.Created);
 
-        var emails = await PollMailDevAsync(expectedCount: 1, timeout: TimeSpan.FromSeconds(30));
+        var emails = await Environment.Email.WaitForAsync(
+            expectedCount: 1,
+            timeout: TimeSpan.FromSeconds(30),
+            testContext.CancellationToken);
         emails.Count.ShouldBe(1);
 
-        // Clear MailDev inbox and wait briefly. The idempotency check in the integration event
+        // Clear MailDev inbox. The idempotency check in the integration event
         // handler uses the EmailLog, so a redelivery attempt (same idempotency key) must not
         // produce a second send.
-        await ClearMailDevAsync();
+        await Environment.Email.ResetAsync();
 
         // Wait briefly to confirm no second email is sent.
         await Task.Delay(TimeSpan.FromSeconds(5), testContext.CancellationToken);
 
-        var emailsAfterDelay = await PollMailDevAsync(expectedCount: 0, timeout: TimeSpan.Zero);
+        var emailsAfterDelay = await Environment.Email.WaitForAsync(
+            expectedCount: 0,
+            timeout: TimeSpan.Zero,
+            testContext.CancellationToken);
         emailsAfterDelay.Count.ShouldBe(0, "No second email should be sent after clearing MailDev");
 
         // EmailLog must still contain exactly one entry.
@@ -101,37 +103,5 @@ public sealed class SendRegistrationEmailTests(TestContext testContext) : EndToE
             .ToListAsync(testContext.CancellationToken);
 
         logEntries.Count.ShouldBe(1);
-    }
-
-    private async Task ClearMailDevAsync()
-    {
-        await Environment.MailDevClient.DeleteAsync("/email/all", testContext.CancellationToken);
-    }
-
-    private async Task<List<JsonElement>> PollMailDevAsync(int expectedCount, TimeSpan timeout)
-    {
-        var deadline = DateTimeOffset.UtcNow.Add(timeout);
-
-        while (true)
-        {
-            var mailDevResponse = await Environment.MailDevClient.GetAsync(
-                "/email",
-                testContext.CancellationToken);
-
-            if (mailDevResponse.IsSuccessStatusCode)
-            {
-                var json = await mailDevResponse.Content.ReadFromJsonAsync<JsonElement>(
-                    cancellationToken: testContext.CancellationToken);
-
-                var emails = json.EnumerateArray().ToList();
-                if (emails.Count >= expectedCount)
-                    return emails;
-            }
-
-            if (DateTimeOffset.UtcNow >= deadline)
-                return [];
-
-            await Task.Delay(TimeSpan.FromSeconds(2), testContext.CancellationToken);
-        }
     }
 }

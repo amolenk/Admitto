@@ -9,13 +9,6 @@ namespace Amolenk.Admitto.Api.Tests.Email.BulkEmail;
 [TestClass]
 public sealed class BulkEmailListAndDetailTests(TestContext testContext) : EndToEndTestBase
 {
-    [TestInitialize]
-    public override async ValueTask TestInitialize()
-    {
-        await base.TestInitialize();
-        await Environment.ClearAsync(testContext.CancellationToken);
-    }
-
     // SC-8.4: GET / returns the job in the list, GET /{id} returns full detail with
     // per-recipient status visible after fan-out completes.
     [TestMethod]
@@ -31,7 +24,7 @@ public sealed class BulkEmailListAndDetailTests(TestContext testContext) : EndTo
             fixture.CreateRoute,
             new
             {
-                EmailType = BulkEmailFixture.EmailType,
+                BulkEmailFixture.EmailType,
                 Source = new { Attendee = new { } }
             },
             cancellationToken: testContext.CancellationToken);
@@ -40,10 +33,10 @@ public sealed class BulkEmailListAndDetailTests(TestContext testContext) : EndTo
             cancellationToken: testContext.CancellationToken))
             .GetProperty("bulkEmailJobId").GetGuid();
 
-        // Wait for fan-out to complete by watching MailDev.
-        await Environment.PollAsync(2, TimeSpan.FromSeconds(90), testContext.CancellationToken);
+        // Wait for fan-out to complete by watching status.
+        // await Environment.PollEmailAsync(2, TimeSpan.FromSeconds(90), testContext.CancellationToken);
 
-        var detail = await PollUntilTerminalAsync(fixture, bulkJobId);
+        var detail = await fixture.PollUntilTerminalAsync(bulkJobId, Environment, testContext.CancellationToken);
         detail.GetProperty("status").GetString().ShouldBe("completed");
         detail.GetProperty("recipientCount").GetInt32().ShouldBe(2);
         detail.GetProperty("sentCount").GetInt32().ShouldBe(2);
@@ -65,28 +58,5 @@ public sealed class BulkEmailListAndDetailTests(TestContext testContext) : EndTo
             .Select(j => j.GetProperty("id").GetGuid())
             .ToList();
         ids.ShouldContain(bulkJobId);
-    }
-
-    private async Task<JsonElement> PollUntilTerminalAsync(BulkEmailFixture fixture, Guid bulkJobId)
-    {
-        var deadline = DateTimeOffset.UtcNow.AddSeconds(90);
-        JsonElement last = default;
-        while (DateTimeOffset.UtcNow < deadline)
-        {
-            var response = await Environment.ApiClient.GetAsync(
-                fixture.DetailRoute(bulkJobId),
-                testContext.CancellationToken);
-            if (response.IsSuccessStatusCode)
-            {
-                last = await response.Content.ReadFromJsonAsync<JsonElement>(
-                    cancellationToken: testContext.CancellationToken);
-                var status = last.GetProperty("status").GetString();
-                if (status is "completed" or "partiallyFailed" or "failed" or "cancelled")
-                    return last;
-            }
-            await Task.Delay(TimeSpan.FromMilliseconds(500), testContext.CancellationToken);
-        }
-        throw new TimeoutException(
-            $"Bulk-email job {bulkJobId} never reached a terminal state. Last observed: {last}");
     }
 }

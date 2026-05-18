@@ -54,8 +54,8 @@ internal sealed class AdminEmailSettingsFixture
 
         var settings = new EventEmailSettingsBuilder()
             .ForTeam(team.Id)
-            .WithSmtpHost(environment.MailDevSmtpEndpoint.Host)
-            .WithSmtpPort(environment.MailDevSmtpEndpoint.Port)
+            .WithSmtpHost(environment.Email.SmtpEndpoint.Host)
+            .WithSmtpPort(environment.Email.SmtpEndpoint.Port)
             .WithFromAddress("team@example.com")
             .Build();
 
@@ -92,15 +92,15 @@ internal sealed class AdminEmailSettingsFixture
 
         var teamSettings = new EventEmailSettingsBuilder()
             .ForTeam(team.Id)
-            .WithSmtpHost(environment.MailDevSmtpEndpoint.Host)
-            .WithSmtpPort(environment.MailDevSmtpEndpoint.Port)
+            .WithSmtpHost(environment.Email.SmtpEndpoint.Host)
+            .WithSmtpPort(environment.Email.SmtpEndpoint.Port)
             .WithFromAddress("team@example.com")
             .Build();
 
         var eventSettings = new EventEmailSettingsBuilder()
             .ForEvent(eventId)
-            .WithSmtpHost(environment.MailDevSmtpEndpoint.Host)
-            .WithSmtpPort(environment.MailDevSmtpEndpoint.Port)
+            .WithSmtpHost(environment.Email.SmtpEndpoint.Host)
+            .WithSmtpPort(environment.Email.SmtpEndpoint.Port)
             .WithFromAddress("event@example.com")
             .Build();
 

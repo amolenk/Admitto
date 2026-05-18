@@ -2,6 +2,7 @@ using Amolenk.Admitto.Core.Shared.Application.Auth;
 using Amolenk.Admitto.Core.Shared.Contracts;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Interceptors;
+using Aspire.Hosting.Testing;
 using Microsoft.EntityFrameworkCore;
 using Respawn;
 
@@ -22,9 +23,15 @@ public class DatabaseTestContext<TDbContext> : IAsyncDisposable
     }
 
     public static async ValueTask<DatabaseTestContext<TDbContext>> CreateAsync(
-        string connectionString,
+        DistributedApplicationFactory appHost,
         CancellationToken cancellationToken = default)
     {
+        var connectionString = await appHost.GetConnectionString("admitto-db");
+        if (connectionString is null)
+        {
+            throw new InvalidOperationException("Connection string for Admitto database not found.");
+        }
+
         var options = new DbContextOptionsBuilder<TDbContext>()
             .UseNpgsql(
                 connectionString,
@@ -49,11 +56,11 @@ public class DatabaseTestContext<TDbContext> : IAsyncDisposable
 
         Context.ChangeTracker.Clear();
     }
-    
+
     public async ValueTask SeedAsync(Action<TDbContext> seed, CancellationToken cancellationToken = default)
     {
         seed(Context);
-    
+
         await Context.SaveChangesAsync(cancellationToken);
 
         // Reset the database context to ensure no stale data is present.
@@ -65,11 +72,11 @@ public class DatabaseTestContext<TDbContext> : IAsyncDisposable
         // Save changes first so we can ensure that the changes can actually be saved to the database before we
         // execute the assertion operation.
         await Context.SaveChangesAsync();
-        
+
         await operation(Context);
     }
 
-    
+
     public async ValueTask WithContextAsync(Func<TDbContext, ValueTask> operation)
     {
         await operation(Context);

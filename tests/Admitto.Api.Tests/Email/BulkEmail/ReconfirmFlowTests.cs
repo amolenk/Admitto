@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Amolenk.Admitto.Api.Tests.Infrastructure;
+using Amolenk.Admitto.Testing.Infrastructure.TestContexts;
 using Shouldly;
 
 namespace Amolenk.Admitto.Api.Tests.Email.BulkEmail;
@@ -9,13 +10,6 @@ namespace Amolenk.Admitto.Api.Tests.Email.BulkEmail;
 [TestClass]
 public sealed class ReconfirmFlowTests(TestContext testContext) : EndToEndTestBase
 {
-    [TestInitialize]
-    public override async ValueTask TestInitialize()
-    {
-        await base.TestInitialize();
-        await Environment.ClearAsync(testContext.CancellationToken);
-    }
-
     /// <summary>
     /// SC-8.5: end-to-end smoke test of the reconfirm fan-out shape.
     ///
@@ -57,20 +51,20 @@ public sealed class ReconfirmFlowTests(TestContext testContext) : EndToEndTestBa
             cancellationToken: testContext.CancellationToken);
         createResponse.StatusCode.ShouldBe(HttpStatusCode.Created);
 
-        var emails = await Environment.PollAsync(
+        var emails = await Environment.Email.WaitForAsync(
             expectedCount: 1,
             timeout: TimeSpan.FromSeconds(90),
-            ct: testContext.CancellationToken);
+            testContext.CancellationToken);
 
         // Wait an extra moment for any stragglers — the assertion below catches
         // accidental over-fanning.
         await Task.Delay(TimeSpan.FromSeconds(2), testContext.CancellationToken);
-        var response = await Environment.MailDevClient.GetAsync(
+        var response = await Environment.Email.Client.GetAsync(
             "/email", testContext.CancellationToken);
         var json = await response.Content.ReadFromJsonAsync<JsonElement>(
             cancellationToken: testContext.CancellationToken);
         emails = json.EnumerateArray().ToList();
 
-        emails.RecipientAddresses().ShouldBe(new[] { "needs-reconfirm@example.com" });
+        EmailTestContext.GetLowercaseRecipientAddresses(emails).ShouldBe(["needs-reconfirm@example.com"]);
     }
 }

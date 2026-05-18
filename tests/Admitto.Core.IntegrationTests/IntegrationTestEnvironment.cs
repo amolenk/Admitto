@@ -15,22 +15,13 @@ public sealed record IntegrationTestEnvironment(
         DistributedApplicationFactory appHost,
         CancellationToken cancellationToken = default)
     {
-        var databaseConnectionString = await appHost.GetConnectionString("admitto-db");
-        if (databaseConnectionString is null)
-            throw new InvalidOperationException("Connection string for Admitto database not found.");
+        var emailDatabase = await DatabaseTestContext<EmailDbContext>.CreateAsync(appHost, cancellationToken);
 
-        var emailDatabase = await DatabaseTestContext<EmailDbContext>.CreateAsync(
-            databaseConnectionString,
-            cancellationToken);
+        var organizationDatabase =
+            await DatabaseTestContext<OrganizationDbContext>.CreateAsync(appHost, cancellationToken);
 
-        var organizationDatabase = await DatabaseTestContext<OrganizationDbContext>.CreateAsync(
-            databaseConnectionString,
-            cancellationToken);
-
-        var registrationsDatabase = await DatabaseTestContext<RegistrationsDbContext>.CreateAsync(
-            databaseConnectionString,
-            cancellationToken);
-
+        var registrationsDatabase =
+            await DatabaseTestContext<RegistrationsDbContext>.CreateAsync(appHost, cancellationToken);
 
         return new IntegrationTestEnvironment(emailDatabase, organizationDatabase, registrationsDatabase);
     }

@@ -1,3 +1,5 @@
+using System.Net.Http.Json;
+using System.Text.Json;
 using Amolenk.Admitto.Api.Tests.Infrastructure.Hosting;
 using Amolenk.Admitto.Core.Email.Application.Templating;
 using Amolenk.Admitto.Core.Email.Domain.Entities;
@@ -7,7 +9,6 @@ using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using TeamBuilder = Amolenk.Admitto.Testing.Builders.Organization.Application.TeamBuilder;
-using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Api.Tests.Email.BulkEmail;
 
@@ -18,7 +19,9 @@ namespace Amolenk.Admitto.Api.Tests.Email.BulkEmail;
 /// </summary>
 internal sealed class BulkEmailFixture
 {
-    public static readonly TicketTypeId TicketTypeId = TicketTypeId.From(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
+    public static readonly TicketTypeId TicketTypeId =
+        TicketTypeId.From(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
+
     public const string EmailType = BuiltInEmailTemplateNames.TicketConfirmation;
     public const string ReconfirmEmailType = BuiltInEmailTemplateNames.Reconfirmation;
 
@@ -42,7 +45,9 @@ internal sealed class BulkEmailFixture
     private bool _seedReconfirmTemplate;
     private readonly List<RegistrationSeed> _registrationSeeds = [];
 
-    private BulkEmailFixture() { }
+    private BulkEmailFixture()
+    {
+    }
 
     public static BulkEmailFixture Empty() => new();
 
@@ -117,8 +122,8 @@ internal sealed class BulkEmailFixture
             Registrations.Add(registration);
         }
 
-        var smtpHost = environment.MailDevSmtpEndpoint.Host;
-        var smtpPort = environment.MailDevSmtpEndpoint.Port;
+        var smtpHost = environment.Email.SmtpEndpoint.Host;
+        var smtpPort = environment.Email.SmtpEndpoint.Port;
 
         var emailSettings = EmailSettings.Create(
             scope: EmailSettingsScope.Team,
@@ -145,26 +150,56 @@ internal sealed class BulkEmailFixture
 
             if (_seedTicketTemplate)
             {
-                db.EmailTemplates.Add(new EmailTemplateBuilder()
-                    .ForTeam(team.Id)
-                    .WithName(EmailType)
-                    .WithSubject("Hello {{ first_name }}")
-                    .WithTextBody("Hi {{ first_name }} {{ last_name }}")
-                    .WithHtmlBody("<p>Hi {{ first_name }} {{ last_name }}</p>")
-                    .Build());
+                db.EmailTemplates.Add(
+                    new EmailTemplateBuilder()
+                        .ForTeam(team.Id)
+                        .WithName(EmailType)
+                        .WithSubject("Hello {{ first_name }}")
+                        .WithTextBody("Hi {{ first_name }} {{ last_name }}")
+                        .WithHtmlBody("<p>Hi {{ first_name }} {{ last_name }}</p>")
+                        .Build());
             }
 
             if (_seedReconfirmTemplate)
             {
-                db.EmailTemplates.Add(new EmailTemplateBuilder()
-                    .ForTeam(team.Id)
-                    .WithName(ReconfirmEmailType)
-                    .WithSubject("Please reconfirm")
-                    .WithTextBody("Please reconfirm {{ first_name }}")
-                    .WithHtmlBody("<p>Please reconfirm {{ first_name }}</p>")
-                    .Build());
+                db.EmailTemplates.Add(
+                    new EmailTemplateBuilder()
+                        .ForTeam(team.Id)
+                        .WithName(ReconfirmEmailType)
+                        .WithSubject("Please reconfirm")
+                        .WithTextBody("Please reconfirm {{ first_name }}")
+                        .WithHtmlBody("<p>Please reconfirm {{ first_name }}</p>")
+                        .Build());
             }
         });
+    }
+
+    public async Task<JsonElement> PollUntilTerminalAsync(
+        Guid bulkJobId,
+        EndToEndTestEnvironment environment,
+        CancellationToken cancellationToken = default)
+    {
+        var deadline = DateTimeOffset.UtcNow.AddSeconds(60);
+        JsonElement last = default;
+        while (DateTimeOffset.UtcNow < deadline)
+        {
+            var response = await environment.ApiClient.GetAsync(
+                DetailRoute(bulkJobId),
+                cancellationToken);
+            if (response.IsSuccessStatusCode)
+            {
+                last = await response.Content.ReadFromJsonAsync<JsonElement>(
+                    cancellationToken: cancellationToken);
+                var status = last.GetProperty("status").GetString();
+                if (status is "completed" or "partiallyFailed" or "failed" or "cancelled")
+                    return last;
+            }
+
+            await Task.Delay(TimeSpan.FromMilliseconds(500), cancellationToken);
+        }
+
+        throw new TimeoutException(
+            $"Bulk-email job {bulkJobId} never reached a terminal state. Last observed: {last}");
     }
 
     private sealed record RegistrationSeed(

@@ -18,7 +18,7 @@ public sealed class SmtpUsernameTests
     [TestMethod]
     public void TryFrom_WithNull_Fails()
     {
-        var result = SmtpUsername.TryFrom(null);
+        var result = SmtpUsername.TryFrom(null!);
 
         result.IsSuccess.ShouldBeFalse();
     }

@@ -54,8 +54,8 @@ internal sealed class SendRegistrationEmailFixture
 
         // Seed team-scoped email settings pointing at MailDev SMTP.
         // Use the dynamic endpoint from the test environment to avoid port conflicts.
-        var smtpHost = environment.MailDevSmtpEndpoint.Host;
-        var smtpPort = environment.MailDevSmtpEndpoint.Port;
+        var smtpHost = environment.Email.SmtpEndpoint.Host;
+        var smtpPort = environment.Email.SmtpEndpoint.Port;
 
         var emailSettings = EmailSettings.Create(
             scope: EmailSettingsScope.Team,

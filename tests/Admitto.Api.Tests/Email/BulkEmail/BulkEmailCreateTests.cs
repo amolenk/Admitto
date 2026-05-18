@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Amolenk.Admitto.Api.Tests.Infrastructure;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
+using Amolenk.Admitto.Testing.Infrastructure.TestContexts;
 using Microsoft.EntityFrameworkCore;
 using Shouldly;
 
@@ -11,13 +12,6 @@ namespace Amolenk.Admitto.Api.Tests.Email.BulkEmail;
 [TestClass]
 public sealed class BulkEmailCreateTests(TestContext testContext) : EndToEndTestBase
 {
-    [TestInitialize]
-    public override async ValueTask TestInitialize()
-    {
-        await base.TestInitialize();
-        await Environment.ClearAsync(testContext.CancellationToken);
-    }
-
     // SC-8.2: saved-template path creates a job that fans out, hits MailDev, and produces
     // EmailLog rows tagged with the bulk-job id.
     [TestMethod]
@@ -45,14 +39,14 @@ public sealed class BulkEmailCreateTests(TestContext testContext) : EndToEndTest
             cancellationToken: testContext.CancellationToken);
         var bulkJobId = createBody.GetProperty("bulkEmailJobId").GetGuid();
 
-        var emails = await Environment.PollAsync(
+        var emails = await Environment.Email.WaitForAsync(
             expectedCount: 2,
             timeout: TimeSpan.FromSeconds(90),
-            ct: testContext.CancellationToken);
+            testContext.CancellationToken);
 
         emails.Count.ShouldBe(2);
-        emails.RecipientAddresses().ShouldBe(
-            new[] { "alice@example.com", "bob@example.com" }, ignoreOrder: true);
+        EmailTestContext.GetLowercaseRecipientAddresses(emails).ShouldBe(
+            ["alice@example.com", "bob@example.com"], ignoreOrder: true);
 
         // Every EmailLog row written by the fan-out must carry the originating bulk-job id.
         await WaitForEmailLogsAsync(bulkJobId, expectedCount: 2);
@@ -95,10 +89,10 @@ public sealed class BulkEmailCreateTests(TestContext testContext) : EndToEndTest
             cancellationToken: testContext.CancellationToken))
             .GetProperty("bulkEmailJobId").GetGuid();
 
-        var emails = await Environment.PollAsync(
+        var emails = await Environment.Email.WaitForAsync(
             expectedCount: 1,
             timeout: TimeSpan.FromSeconds(90),
-            ct: testContext.CancellationToken);
+            testContext.CancellationToken);
 
         emails.Count.ShouldBe(1);
         emails[0].GetProperty("subject").GetString().ShouldBe("Custom subject for Dana");

@@ -24,10 +24,10 @@ namespace Amolenk.Admitto.Core.Shared.Infrastructure.Messaging.ServiceBus;
 /// The same full recreation happens when an exception is caught during receive.
 /// </para>
 /// </summary>
-internal sealed class MessageQueueProcessor(
+internal sealed class ServiceBusMessageProcessor(
     IConfiguration configuration,
     IServiceScopeFactory scopeFactory,
-    ILogger<MessageQueueProcessor> logger) : BackgroundService
+    ILogger<ServiceBusMessageProcessor> logger) : BackgroundService
 {
     private const string QueueName = "queue";
     private static readonly TimeSpan ReceiveWaitTime = TimeSpan.FromSeconds(5);

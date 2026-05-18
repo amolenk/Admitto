@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using Amolenk.Admitto.Api.Tests.Infrastructure;
+using Amolenk.Admitto.Testing.Infrastructure.TestContexts;
 using Shouldly;
 
 namespace Amolenk.Admitto.Api.Tests.Email.AdminEmailSettings;
@@ -253,7 +254,6 @@ public sealed class AdminEmailSettingsTests(TestContext testContext) : EndToEndT
     {
         var fixture = AdminEmailSettingsFixture.WithTeamSettings();
         await fixture.SetupTeamSmtpSettingsAsync(Environment);
-        await Environment.ClearAsync(testContext.CancellationToken);
 
         var response = await Environment.ApiClient.PostAsJsonAsync(
             fixture.TeamSettingsTestRoute,
@@ -262,8 +262,12 @@ public sealed class AdminEmailSettingsTests(TestContext testContext) : EndToEndT
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
 
-        var messages = await Environment.PollAsync(1, TimeSpan.FromSeconds(10), testContext.CancellationToken);
-        messages.RecipientAddresses().ShouldContain("ops@acme.org");
+        var messages = await Environment.Email.WaitForAsync(
+            1,
+            TimeSpan.FromSeconds(10),
+            testContext.CancellationToken);
+
+        EmailTestContext.GetLowercaseRecipientAddresses(messages).ShouldContain("ops@acme.org");
     }
 
     // Scenario: Diagnostic send succeeds at event scope without consulting the team scope
@@ -274,7 +278,6 @@ public sealed class AdminEmailSettingsTests(TestContext testContext) : EndToEndT
     {
         var fixture = AdminEmailSettingsFixture.WithBothSettings();
         await fixture.SetupBothSmtpSettingsAsync(Environment);
-        await Environment.ClearAsync(testContext.CancellationToken);
 
         var response = await Environment.ApiClient.PostAsJsonAsync(
             fixture.EventSettingsTestRoute,
@@ -283,8 +286,12 @@ public sealed class AdminEmailSettingsTests(TestContext testContext) : EndToEndT
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
 
-        var messages = await Environment.PollAsync(1, TimeSpan.FromSeconds(10), testContext.CancellationToken);
-        messages.RecipientAddresses().ShouldContain("ops@acme.org");
+        var messages = await Environment.Email.WaitForAsync(
+            1,
+            TimeSpan.FromSeconds(10),
+            testContext.CancellationToken);
+
+        EmailTestContext.GetLowercaseRecipientAddresses(messages).ShouldContain("ops@acme.org");
     }
 
     // Scenario: Recipient validation
@@ -312,7 +319,6 @@ public sealed class AdminEmailSettingsTests(TestContext testContext) : EndToEndT
     {
         var fixture = AdminEmailSettingsFixture.WithTeamSettings();
         await fixture.SetupTeamSmtpSettingsAsync(Environment);
-        await Environment.ClearAsync(testContext.CancellationToken);
 
         var response = await Environment.BobApiClient.PostAsJsonAsync(
             fixture.TeamSettingsTestRoute,
@@ -321,7 +327,11 @@ public sealed class AdminEmailSettingsTests(TestContext testContext) : EndToEndT
 
         response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
 
-        var messages = await Environment.PollAsync(1, TimeSpan.FromSeconds(2), testContext.CancellationToken);
+        var messages = await Environment.Email.WaitForAsync(
+            1,
+            TimeSpan.FromSeconds(2),
+            testContext.CancellationToken);
+
         messages.ShouldBeEmpty();
     }
 }
