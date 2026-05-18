@@ -7,8 +7,8 @@ namespace Amolenk.Admitto.Api.Tests.Infrastructure;
 
 public abstract class EndToEndTestBase
 {
-    private static readonly string AliceKeycloakSub = "236d597b-a4df-4e08-b90c-b4cb1808ec2d";
-    private static readonly string BobKeycloakSub = "6189cd5b-6b08-4ff1-a87d-4e434e8d1c79";
+    private const string AliceKeycloakSub = "236d597b-a4df-4e08-b90c-b4cb1808ec2d";
+    private const string BobKeycloakSub = "6189cd5b-6b08-4ff1-a87d-4e434e8d1c79";
 
     internal static EndToEndTestEnvironment Environment { get; set; } = null!;
 
