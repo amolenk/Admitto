@@ -14,7 +14,6 @@ internal sealed class EmailTemplateEntityConfiguration : IEntityTypeConfiguratio
 
         builder.Property(e => e.Id)
             .HasColumnName("id")
-            .HasConversion(v => v.Value, v => EmailTemplateId.From(v))
             .IsRequired()
             .ValueGeneratedNever();
 

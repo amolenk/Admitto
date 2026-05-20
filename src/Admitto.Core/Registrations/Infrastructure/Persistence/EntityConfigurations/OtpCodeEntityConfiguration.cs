@@ -15,18 +15,15 @@ public class OtpCodeEntityConfiguration : IEntityTypeConfiguration<OtpCode>
 
         builder.Property(e => e.Id)
             .HasColumnName("id")
-            .HasConversion(v => v.Value, v => OtpCodeId.From(v))
             .IsRequired()
             .ValueGeneratedNever();
 
         builder.Property(e => e.EventId)
             .HasColumnName("event_id")
-            .HasConversion(v => v.Value, v => TicketedEventId.From(v))
             .IsRequired();
 
         builder.Property(e => e.TeamId)
             .HasColumnName("team_id")
-            .HasConversion(v => v.Value, v => TeamId.From(v))
             .IsRequired();
 
         builder.Property(e => e.EmailHash)

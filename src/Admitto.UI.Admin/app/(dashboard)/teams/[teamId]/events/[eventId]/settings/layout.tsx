@@ -16,8 +16,8 @@ export default async function EventSettingsLayout({
         getTicketedEventDetails({ path: { teamId, eventId } }),
     ]);
 
-    const teamName = teamResult.data?.name ?? teamId;
-    const eventName = eventResult.data?.name ?? eventId;
+    const teamName = teamResult.data?.name ?? "";
+    const eventName = eventResult.data?.name ?? "";
     const basePath = `/teams/${teamId}/events/${eventId}/settings`;
 
     const breadcrumbs = [

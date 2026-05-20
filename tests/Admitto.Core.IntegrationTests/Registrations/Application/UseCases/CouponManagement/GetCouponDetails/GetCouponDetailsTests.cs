@@ -50,7 +50,7 @@ public sealed class GetCouponDetailsTests(TestContext testContext) : AspireInteg
             async () => { await sut.HandleAsync(query, testContext.CancellationToken); });
 
         // Assert
-        result.Error.ShouldMatch(NotFoundError.Create<Coupon>(fixture.CouponId.Value));
+        result.Error.ShouldMatch(NotFoundError.Create<Coupon>());
     }
 
     private static GetCouponDetailsHandler NewGetCouponDetailsHandler() =>

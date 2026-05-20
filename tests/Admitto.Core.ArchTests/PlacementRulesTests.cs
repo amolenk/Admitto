@@ -53,6 +53,34 @@ public class PlacementRulesTests
     }
 
     [TestMethod]
+    public void Validators_MustNotBeNestedClasses()
+    {
+        var validatorBase = typeof(FluentValidation.AbstractValidator<>);
+
+        var violations = System.Reflection.Assembly.GetAssembly(typeof(DomainEvent))!
+            .GetTypes()
+            .Where(t => t is { IsClass: true, IsAbstract: false, IsNested: true }
+                        && IsAssignableToOpenGeneric(t, validatorBase))
+            .Select(t => t.FullName!)
+            .ToList();
+
+        if (violations.Count > 0)
+            Assert.Fail(
+                "Validators must be top-level classes, not nested inside request types:\n" +
+                string.Join("\n", violations));
+    }
+
+    private static bool IsAssignableToOpenGeneric(System.Type type, System.Type openGeneric)
+    {
+        for (var t = type; t is not null; t = t.BaseType)
+        {
+            if (t.IsGenericType && t.GetGenericTypeDefinition() == openGeneric)
+                return true;
+        }
+        return false;
+    }
+
+    [TestMethod]
     public void Commands_MustResideInUseCasesNamespace()
     {
         AssertRule(Classes().That()

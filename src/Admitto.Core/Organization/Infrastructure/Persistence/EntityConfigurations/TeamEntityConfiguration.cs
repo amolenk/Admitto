@@ -51,7 +51,6 @@ public class TeamEntityConfiguration : IEntityTypeConfiguration<Team>
 
                 req.Property(r => r.Id)
                     .HasColumnName("id")
-                    .HasConversion(v => v.Value, v => CreationRequestId.From(v))
                     .IsRequired()
                     .ValueGeneratedNever();
 
@@ -72,10 +71,7 @@ public class TeamEntityConfiguration : IEntityTypeConfiguration<Team>
                     .IsRequired();
 
                 req.Property(r => r.TicketedEventId)
-                    .HasColumnName("ticketed_event_id")
-                    .HasConversion(
-                        v => v!.Value.Value,
-                        v => TicketedEventId.From(v));
+                    .HasColumnName("ticketed_event_id");
 
                 req.Property(r => r.RejectionReason)
                     .HasColumnName("rejection_reason")

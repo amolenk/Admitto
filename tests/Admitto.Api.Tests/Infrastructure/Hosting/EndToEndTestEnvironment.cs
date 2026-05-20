@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Core.Badges.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.Email.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.Organization.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence;
@@ -11,6 +12,7 @@ public sealed record EndToEndTestEnvironment(
     DatabaseTestContext<OrganizationDbContext> OrganizationDatabase,
     DatabaseTestContext<RegistrationsDbContext> RegistrationsDatabase,
     DatabaseTestContext<EmailDbContext> EmailDatabase,
+    DatabaseTestContext<BadgesDbContext> BadgesDatabase,
     MessagingTestContext Messaging,
     EmailTestContext Email,
     HttpClient ApiClient,
@@ -31,6 +33,9 @@ public sealed record EndToEndTestEnvironment(
         var emailDatabase =
             await DatabaseTestContext<EmailDbContext>.CreateAsync(appHost, cancellationToken);
 
+        var badgesDatabase =
+            await DatabaseTestContext<BadgesDbContext>.CreateAsync(appHost, cancellationToken);
+
         var messaging = await MessagingTestContext.CreateAsync(appHost);
 
         var email = await EmailTestContext.CreateAsync(appHost.Application);
@@ -44,6 +49,7 @@ public sealed record EndToEndTestEnvironment(
             organizationDatabase,
             registrationsDatabase,
             emailDatabase,
+            badgesDatabase,
             messaging,
             email,
             apiClient,

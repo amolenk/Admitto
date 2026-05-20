@@ -1,9 +1,7 @@
 using Amolenk.Admitto.Core.Organization.Application.Persistence;
-using Amolenk.Admitto.Core.Organization.Domain.Entities;
 using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
-using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using Amolenk.Admitto.Core.Shared.Application.Persistence;
 
 namespace Amolenk.Admitto.Core.Organization.Application.UseCases.TicketedEventManagement.RequestTicketedEventCreation;
 
@@ -14,9 +12,9 @@ internal sealed class RequestTicketedEventCreationHandler(IOrganizationWriteStor
         RequestTicketedEventCreationCommand command,
         CancellationToken cancellationToken)
     {
-        var team = await writeStore.Teams
-            .FirstOrDefaultAsync(t => t.Id == TeamId.From(command.TeamId), cancellationToken)
-            ?? throw new BusinessRuleViolationException(NotFoundError.Create<Team>(command.TeamId));
+        var team = await writeStore.Teams.GetAsync(
+                 t => t.Id == TeamId.From(command.TeamId),
+                 cancellationToken);
 
         var request = team.RequestEventCreation(
             EventName.From(command.Name),

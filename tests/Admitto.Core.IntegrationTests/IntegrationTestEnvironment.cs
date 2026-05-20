@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Core.Badges.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.Email.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.Organization.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence;
@@ -7,6 +8,7 @@ using Aspire.Hosting.Testing;
 namespace Amolenk.Admitto.Core.IntegrationTests;
 
 public sealed record IntegrationTestEnvironment(
+    DatabaseTestContext<BadgesDbContext> BadgesDatabase,
     DatabaseTestContext<EmailDbContext> EmailDatabase,
     DatabaseTestContext<OrganizationDbContext> OrganizationDatabase,
     DatabaseTestContext<RegistrationsDbContext> RegistrationsDatabase)
@@ -15,6 +17,8 @@ public sealed record IntegrationTestEnvironment(
         DistributedApplicationFactory appHost,
         CancellationToken cancellationToken = default)
     {
+        var badgesDatabase = await DatabaseTestContext<BadgesDbContext>.CreateAsync(appHost, cancellationToken);
+
         var emailDatabase = await DatabaseTestContext<EmailDbContext>.CreateAsync(appHost, cancellationToken);
 
         var organizationDatabase =
@@ -23,6 +27,6 @@ public sealed record IntegrationTestEnvironment(
         var registrationsDatabase =
             await DatabaseTestContext<RegistrationsDbContext>.CreateAsync(appHost, cancellationToken);
 
-        return new IntegrationTestEnvironment(emailDatabase, organizationDatabase, registrationsDatabase);
+        return new IntegrationTestEnvironment(badgesDatabase, emailDatabase, organizationDatabase, registrationsDatabase);
     }
 }

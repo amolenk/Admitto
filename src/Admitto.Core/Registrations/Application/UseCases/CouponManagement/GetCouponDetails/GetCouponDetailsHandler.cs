@@ -1,8 +1,6 @@
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
-using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
-using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
-using Microsoft.EntityFrameworkCore;
+using Amolenk.Admitto.Core.Shared.Application.Persistence;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.CouponManagement.GetCouponDetails;
 
@@ -15,16 +13,9 @@ internal sealed class GetCouponDetailsHandler(IRegistrationsWriteStore writeStor
     {
         var now = DateTimeOffset.UtcNow;
 
-        var coupon = await writeStore.Coupons
-            .FirstOrDefaultAsync(
-                c => c.Id == query.CouponId && c.EventId == query.EventId,
-                cancellationToken);
-
-        if (coupon is null)
-        {
-            throw new BusinessRuleViolationException(
-                NotFoundError.Create<Coupon>(query.CouponId.Value));
-        }
+        var coupon = await writeStore.Coupons.GetAsync(
+                 c => c.Id == query.CouponId && c.EventId == query.EventId,
+                 cancellationToken);
 
         return new CouponDetailsDto(
             coupon.Id.Value,

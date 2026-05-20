@@ -109,7 +109,7 @@ public sealed class RevokeCouponTests(TestContext testContext) : AspireIntegrati
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
         // Assert
-        result.Error.ShouldMatch(NotFoundError.Create<Coupon>(fixture.CouponId.Value));
+        result.Error.ShouldMatch(NotFoundError.Create<Coupon>());
     }
 
     private static RevokeCouponHandler NewRevokeCouponHandler() =>

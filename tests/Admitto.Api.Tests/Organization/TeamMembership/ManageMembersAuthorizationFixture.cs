@@ -1,6 +1,7 @@
 using Amolenk.Admitto.Api.Tests.Infrastructure.Hosting;
 using Amolenk.Admitto.Testing.Builders.Organization.Domain;
 using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Testing.Builders.Organization.Application;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using TeamBuilder = Amolenk.Admitto.Testing.Builders.Organization.Application.TeamBuilder;
@@ -28,17 +29,15 @@ internal sealed class ManageMembersAuthorizationFixture
             .Build();
         TeamId = team.Id.Value;
 
-        var bob = new UserBuilder()
-            .WithEmailAddress(EmailAddress.From("bob@example.com"))
-            .WithMembership(team.Id, TeamMembershipRole.Crew)
-            .Build();
-
-        bob.AssignExternalUserId(ExternalUserId.From(BobKeycloakSub));
+        var bob = await environment.OrganizationDatabase.Context.Users.GetAsync(u =>
+            u.EmailAddress == EmailAddress.From("bob@example.com"));
 
         await environment.OrganizationDatabase.SeedAsync(dbContext =>
         {
+            bob.AddTeamMembership(team.Id, TeamMembershipRole.Crew);
+            // bob.AssignExternalUserId(ExternalUserId.From(BobKeycloakSub));
+
             dbContext.Teams.Add(team);
-            dbContext.Users.Add(bob);
         });
     }
 

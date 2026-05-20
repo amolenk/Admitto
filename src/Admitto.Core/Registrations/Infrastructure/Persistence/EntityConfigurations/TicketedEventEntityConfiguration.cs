@@ -14,13 +14,11 @@ public class TicketedEventEntityConfiguration : IEntityTypeConfiguration<Tickete
 
         builder.Property(e => e.Id)
             .HasColumnName("id")
-            .HasConversion<Guid>(v => v.Value, v => TicketedEventId.From(v))
             .IsRequired()
             .ValueGeneratedNever();
 
         builder.Property(e => e.TeamId)
             .HasColumnName("team_id")
-            .HasConversion<Guid>(v => v.Value, v => TeamId.From(v))
             .IsRequired();
 
         builder.Property(e => e.Name)
@@ -30,13 +28,11 @@ public class TicketedEventEntityConfiguration : IEntityTypeConfiguration<Tickete
 
         builder.Property(e => e.WebsiteUrl)
             .HasColumnName("website_url")
-            .HasConversion(v => v.Value.ToString(), v => AbsoluteUrl.From(v))
             .IsRequired()
             .HasMaxLength(320);
 
         builder.Property(e => e.BaseUrl)
             .HasColumnName("base_url")
-            .HasConversion(v => v.Value.ToString(), v => AbsoluteUrl.From(v))
             .IsRequired()
             .HasMaxLength(320);
 
@@ -50,7 +46,6 @@ public class TicketedEventEntityConfiguration : IEntityTypeConfiguration<Tickete
 
         builder.Property(e => e.TimeZone)
             .HasColumnName("time_zone")
-            .HasConversion(v => v.Value, v => TimeZoneId.From(v))
             .HasMaxLength(TimeZoneId.MaxLength)
             .HasDefaultValue(TimeZoneId.From("UTC"))
             .IsRequired();

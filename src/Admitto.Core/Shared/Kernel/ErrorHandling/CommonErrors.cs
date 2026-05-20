@@ -1,23 +1,9 @@
 namespace Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 
+// TODO Split into separate classes, like NotFoundError, etc.
 public class CommonErrors
 {
-    public static Error ConcurrencyConflict() =>
-        new(
-            "concurrency_conflict",
-            "The resource was modified by another operation.",
-            Type: ErrorType.Conflict);
 
-    public static Error ConcurrencyConflict(uint expectedVersion, uint actualVersion) =>
-        new(
-            "concurrency_conflict",
-            "The resource was modified by another operation.",
-            new Dictionary<string, object?>
-            {
-                ["expectedVersion"] = expectedVersion,
-                ["actualVersion"] = actualVersion
-            },
-            ErrorType.Conflict);
 
     public static readonly Error TextEmpty = new(
       "text.empty",

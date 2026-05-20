@@ -2,7 +2,7 @@ using Amolenk.Admitto.Core.Email.Application.Persistence;
 using Amolenk.Admitto.Core.Email.Domain.Entities;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
-using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
+using Amolenk.Admitto.Core.Shared.Application.Persistence;
 
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.BulkEmails.CancelBulkEmail;
 
@@ -20,10 +20,9 @@ internal sealed class CancelBulkEmailHandler(
     {
         BulkEmailJobId bulkEmailJobId = BulkEmailJobId.From(command.BulkEmailJobId);
 
-        var job = await writeStore.BulkEmailJobs
-            .FirstOrDefaultAsync(j => j.Id == bulkEmailJobId, cancellationToken)
-            ?? throw new BusinessRuleViolationException(
-                NotFoundError.Create<BulkEmailJob>(bulkEmailJobId.Value.ToString()));
+        var job = await writeStore.BulkEmailJobs.GetAsync(
+             j => j.Id == bulkEmailJobId,
+             cancellationToken);
 
         job.RequestCancellation(timeProvider.GetUtcNow());
     }

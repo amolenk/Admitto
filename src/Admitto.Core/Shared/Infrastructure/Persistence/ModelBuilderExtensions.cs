@@ -1,6 +1,4 @@
 using Amolenk.Admitto.Core.Shared.Kernel.Abstractions;
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
-using Microsoft.EntityFrameworkCore;
 
 namespace Amolenk.Admitto.Core.Shared.Infrastructure.Persistence;
 

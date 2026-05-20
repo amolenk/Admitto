@@ -47,7 +47,7 @@ public class DependencyRulesTests
     public void ApplicationLayer_DoesNotDependOnOtherModuleNonContractTypes()
     {
         var violations = new List<string>();
-        var knownModules = new[] { "Organization", "Registrations", "Email" };
+        var knownModules = new[] { "Organization", "Registrations", "Email", "Badges" };
 
         foreach (var sourceModule in knownModules)
         {
@@ -94,7 +94,7 @@ public class DependencyRulesTests
     public void InfrastructureLayer_DoesNotDependOnOtherModuleNonContractTypes()
     {
         var violations = new List<string>();
-        var knownModules = new[] { "Organization", "Registrations", "Email" };
+        var knownModules = new[] { "Organization", "Registrations", "Email", "Badges" };
 
         foreach (var sourceModule in knownModules)
         {

@@ -15,7 +15,6 @@ public class TicketCatalogEntityConfiguration : IEntityTypeConfiguration<TicketC
 
         builder.Property(e => e.Id)
             .HasColumnName("event_id")
-            .HasConversion<Guid>(v => v.Value, v => TicketedEventId.From(v))
             .IsRequired()
             .ValueGeneratedNever();
 

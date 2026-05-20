@@ -19,6 +19,7 @@ public abstract class EndToEndTestBase
         await Environment.OrganizationDatabase.ResetAsync();
         await Environment.RegistrationsDatabase.ResetAsync();
         await Environment.EmailDatabase.ResetAsync();
+        await Environment.BadgesDatabase.ResetAsync();
         await Environment.Email.ResetAsync();
 
         await SeedUserAsync(AliceKeycloakSub, configure => configure

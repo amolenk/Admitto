@@ -134,12 +134,20 @@ public class TicketedEvent : Aggregate<TicketedEventId>
     public void ConfigureRegistrationPolicy(TicketedEventRegistrationPolicy policy)
     {
         EnsureActive();
+
+        if (policy.ClosesAt > EndsAt)
+            throw new BusinessRuleViolationException(Errors.RegistrationWindowClosesAfterEventEnd);
+
         RegistrationPolicy = policy;
     }
 
     public void ConfigureReconfirmPolicy(TicketedEventReconfirmPolicy? policy)
     {
         EnsureActive();
+
+        if (policy is not null && policy.ClosesAt >= StartsAt)
+            throw new BusinessRuleViolationException(Errors.ReconfirmWindowClosesAfterEventStart);
+
         ReconfirmPolicy = policy;
         AddDomainEvent(new TicketedEventReconfirmPolicyChangedDomainEvent(TeamId, Id, policy));
     }
@@ -179,5 +187,13 @@ public class TicketedEvent : Aggregate<TicketedEventId>
             "ticketed_event.event_not_active",
             "Operation not allowed: the ticketed event is not Active.",
             Type: ErrorType.Validation);
+
+        public static readonly Error RegistrationWindowClosesAfterEventEnd = new(
+            "ticketed_event.registration_window_closes_after_event_end",
+            "Registration window must close on or before the event end date.");
+
+        public static readonly Error ReconfirmWindowClosesAfterEventStart = new(
+            "ticketed_event.reconfirm_window_closes_after_event_start",
+            "Reconfirmation window must close before the event start date.");
     }
 }

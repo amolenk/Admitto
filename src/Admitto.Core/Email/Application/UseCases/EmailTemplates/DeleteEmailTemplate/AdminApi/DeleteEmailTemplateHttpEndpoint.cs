@@ -14,7 +14,7 @@ public static class DeleteEmailTemplateHttpEndpoint
         EmailSettingsScope scope)
     {
         var endpointName = scope == EmailSettingsScope.Team ? "DeleteTeamEmailTemplate" : "DeleteEventEmailTemplate";
-        var handler = new Handler(scope);
+        var handler = new Handler();
 
         group
             .MapDelete("/{id:guid}", handler.HandleAsync)
@@ -24,7 +24,7 @@ public static class DeleteEmailTemplateHttpEndpoint
         return group;
     }
 
-    private sealed class Handler(EmailSettingsScope scope)
+    private sealed class Handler()
     {
         public async ValueTask<NoContent> HandleAsync(
             Guid id,

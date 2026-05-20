@@ -59,5 +59,13 @@ public sealed class OrganizationDbContext(DbContextOptions<OrganizationDbContext
         configurationBuilder
             .Properties<ExternalUserId>()
             .HaveConversion<ExternalUserId.EfCoreValueConverter>();
+
+        configurationBuilder
+            .Properties<TicketedEventId>()
+            .HaveConversion<TicketedEventId.EfCoreValueConverter>();
+
+        configurationBuilder
+            .Properties<CreationRequestId>()
+            .HaveConversion<CreationRequestId.EfCoreValueConverter>();
     }
 }

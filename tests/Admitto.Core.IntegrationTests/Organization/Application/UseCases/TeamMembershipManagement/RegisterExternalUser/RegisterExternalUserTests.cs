@@ -48,7 +48,7 @@ public sealed class RegisterExternalUserTests(TestContext testContext) : AspireI
         var result = await ErrorResult.CaptureAsync(() => sut.HandleAsync(command, testContext.CancellationToken));
 
         // Assert
-        result.Error.ShouldMatch(NotFoundError.Create<User>(fixture.UserId));
+        result.Error.ShouldMatch(NotFoundError.Create<User>());
     }
 
     private static RegisterExternalUserCommand NewRegisterExternalUserCommand(Guid userId)

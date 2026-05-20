@@ -54,5 +54,45 @@ public sealed class RegistrationsDbContext(DbContextOptions<RegistrationsDbConte
         configurationBuilder
             .Properties<EmailAddress>()
             .HaveConversion<EmailAddress.EfCoreValueConverter>();
+
+        configurationBuilder
+            .Properties<TeamId>()
+            .HaveConversion<TeamId.EfCoreValueConverter>();
+
+        configurationBuilder
+            .Properties<TicketedEventId>()
+            .HaveConversion<TicketedEventId.EfCoreValueConverter>();
+
+        configurationBuilder
+            .Properties<AbsoluteUrl>()
+            .HaveConversion<AbsoluteUrl.EfCoreValueConverter>();
+
+        configurationBuilder
+            .Properties<TimeZoneId>()
+            .HaveConversion<TimeZoneId.EfCoreValueConverter>();
+
+        configurationBuilder
+            .Properties<FirstName>()
+            .HaveConversion<FirstName.EfCoreValueConverter>();
+
+        configurationBuilder
+            .Properties<LastName>()
+            .HaveConversion<LastName.EfCoreValueConverter>();
+
+        configurationBuilder
+            .Properties<CouponId>()
+            .HaveConversion<CouponId.EfCoreValueConverter>();
+
+        configurationBuilder
+            .Properties<CouponCode>()
+            .HaveConversion<CouponCode.EfCoreValueConverter>();
+
+        configurationBuilder
+            .Properties<OtpCodeId>()
+            .HaveConversion<OtpCodeId.EfCoreValueConverter>();
+
+        configurationBuilder
+            .Properties<ActivityLogId>()
+            .HaveConversion<ActivityLogId.EfCoreValueConverter>();
     }
 }

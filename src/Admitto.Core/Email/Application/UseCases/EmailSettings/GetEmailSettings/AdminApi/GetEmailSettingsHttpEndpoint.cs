@@ -1,9 +1,7 @@
 using Amolenk.Admitto.Core.Email.Application.UseCases.EmailSettings.GetEmailSettings;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
-using Amolenk.Admitto.Core.Shared.Application.Http;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.EmailSettings.GetEmailSettings.AdminApi;
 
@@ -39,7 +37,7 @@ public static class GetEmailSettingsHttpEndpoint
 
             if (dto is null)
                 throw new BusinessRuleViolationException(
-                    NotFoundError.Create<Domain.Entities.EmailSettings>(teamId.ToString()));
+                    NotFoundError.Create<Domain.Entities.EmailSettings>());
 
             return TypedResults.Ok(dto);
         }

@@ -316,10 +316,10 @@ export default function AttendeeDetailPage() {
 
     const name = registration ? attendeeFullName(registration) : "";
     const breadcrumbs = [
-        { label: selectedTeam?.name ?? teamId, href: `/teams/${teamId}/settings` },
-        { label: eventId, href: `/teams/${teamId}/events/${eventId}` },
+        { label: selectedTeam?.name ?? "", href: `/teams/${teamId}/settings` },
+        { label: "", href: `/teams/${teamId}/events/${eventId}` },
         { label: "Registrations", href: `/teams/${teamId}/events/${eventId}/registrations` },
-        { label: name || registrationId },
+        { label: name },
     ];
 
     return (

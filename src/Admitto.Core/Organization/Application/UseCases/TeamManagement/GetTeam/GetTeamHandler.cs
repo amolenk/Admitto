@@ -2,7 +2,6 @@ using Amolenk.Admitto.Core.Organization.Application.Persistence;
 using Amolenk.Admitto.Core.Organization.Domain.Entities;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Core.Organization.Application.UseCases.TeamManagement.GetTeam;
 
@@ -23,6 +22,6 @@ internal class GetTeamHandler(IOrganizationWriteStore writeStore)
                        t.Name.Value,
                        t.Version))
                    .FirstOrDefaultAsync(cancellationToken)
-               ?? throw new BusinessRuleViolationException(NotFoundError.Create<Team>(query.TeamId));
+               ?? throw new BusinessRuleViolationException(NotFoundError.Create<Team>());
     }
 }

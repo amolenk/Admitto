@@ -33,7 +33,7 @@ internal sealed class GetTicketedEventEmailContextHandler(
             })
             .FirstOrDefaultAsync(cancellationToken)
             ?? throw new BusinessRuleViolationException(
-                NotFoundError.Create<TicketedEvent>(query.TicketedEventId));
+                NotFoundError.Create<TicketedEvent>());
 
         var signature = await registrationSigner.SignAsync(
             query.RegistrationId, ticketedEventId, cancellationToken);

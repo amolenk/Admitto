@@ -16,12 +16,12 @@ internal sealed class DeleteEmailTemplateHandler(IEmailWriteStore writeStore)
         var template = await writeStore.EmailTemplates
             .FirstOrDefaultAsync(t => t.Id == id, cancellationToken)
             ?? throw new BusinessRuleViolationException(
-                NotFoundError.Create<EmailTemplate>(id.Value.ToString()));
+                NotFoundError.Create<EmailTemplate>());
 
         if (command.ExpectedVersion != template.Version)
         {
             throw new BusinessRuleViolationException(
-                CommonErrors.ConcurrencyConflict(command.ExpectedVersion, template.Version));
+                ConcurrencyConflictError.Create(command.ExpectedVersion, template.Version));
         }
 
         writeStore.EmailTemplates.Remove(template);

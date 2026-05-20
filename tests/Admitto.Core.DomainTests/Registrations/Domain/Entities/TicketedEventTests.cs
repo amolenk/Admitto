@@ -173,6 +173,29 @@ public sealed class TicketedEventTests
         ex.Error.Code.ShouldBe("ticketed_event.event_not_active");
     }
 
+    [TestMethod]
+    public void ConfigureRegistrationPolicy_WindowClosesAtEventEnd_Accepted()
+    {
+        var sut = NewEvent();
+        var policy = TicketedEventRegistrationPolicy.Create(DefaultStart.AddDays(-30), DefaultEnd);
+
+        sut.ConfigureRegistrationPolicy(policy);
+
+        sut.RegistrationPolicy.ShouldBe(policy);
+    }
+
+    [TestMethod]
+    public void ConfigureRegistrationPolicy_WindowClosesAfterEventEnd_Throws()
+    {
+        var sut = NewEvent();
+        var policy = TicketedEventRegistrationPolicy.Create(DefaultStart.AddDays(-30), DefaultEnd.AddSeconds(1));
+
+        var act = () => sut.ConfigureRegistrationPolicy(policy);
+
+        var ex = Should.Throw<BusinessRuleViolationException>(act);
+        ex.Error.Code.ShouldBe("ticketed_event.registration_window_closes_after_event_end");
+    }
+
     // ── ConfigureReconfirmPolicy ─────────────────────────────────────────────
 
     [TestMethod]
@@ -196,6 +219,55 @@ public sealed class TicketedEventTests
 
         var ex = Should.Throw<BusinessRuleViolationException>(act);
         ex.Error.Code.ShouldBe("ticketed_event.event_not_active");
+    }
+
+    [TestMethod]
+    public void ConfigureReconfirmPolicy_WindowClosesBeforeEventStart_Accepted()
+    {
+        var sut = NewEvent();
+        var policy = TicketedEventReconfirmPolicy.Create(
+            DefaultStart.AddDays(-60), DefaultStart.AddSeconds(-1), TimeSpan.FromDays(2), TimeSpan.FromHours(24));
+
+        sut.ConfigureReconfirmPolicy(policy);
+
+        sut.ReconfirmPolicy.ShouldBe(policy);
+    }
+
+    [TestMethod]
+    public void ConfigureReconfirmPolicy_WindowClosesAtEventStart_Throws()
+    {
+        var sut = NewEvent();
+        var policy = TicketedEventReconfirmPolicy.Create(
+            DefaultStart.AddDays(-60), DefaultStart, TimeSpan.FromDays(2), TimeSpan.FromHours(24));
+
+        var act = () => sut.ConfigureReconfirmPolicy(policy);
+
+        var ex = Should.Throw<BusinessRuleViolationException>(act);
+        ex.Error.Code.ShouldBe("ticketed_event.reconfirm_window_closes_after_event_start");
+    }
+
+    [TestMethod]
+    public void ConfigureReconfirmPolicy_WindowClosesAfterEventStart_Throws()
+    {
+        var sut = NewEvent();
+        var policy = TicketedEventReconfirmPolicy.Create(
+            DefaultStart.AddDays(-60), DefaultStart.AddSeconds(1), TimeSpan.FromDays(2), TimeSpan.FromHours(24));
+
+        var act = () => sut.ConfigureReconfirmPolicy(policy);
+
+        var ex = Should.Throw<BusinessRuleViolationException>(act);
+        ex.Error.Code.ShouldBe("ticketed_event.reconfirm_window_closes_after_event_start");
+    }
+
+    [TestMethod]
+    public void ConfigureReconfirmPolicy_NullPolicy_Accepted()
+    {
+        var sut = NewEvent();
+        sut.ConfigureReconfirmPolicy(NewReconfirmPolicy());
+
+        sut.ConfigureReconfirmPolicy(null);
+
+        sut.ReconfirmPolicy.ShouldBeNull();
     }
 
     // ── UpdateAdditionalDetailSchema ─────────────────────────────────────────

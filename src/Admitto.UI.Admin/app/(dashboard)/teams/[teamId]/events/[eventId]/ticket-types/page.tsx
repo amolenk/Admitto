@@ -146,17 +146,15 @@ export default function TicketTypesPage() {
             ),
     });
 
-    const eventName = event.data?.name ?? eventId;
+    const eventName = event.data?.name ?? "";
 
     const breadcrumbs = [
-        { label: selectedTeam?.name ?? teamId, href: `/teams/${teamId}/settings` },
+        { label: selectedTeam?.name ?? "", href: `/teams/${teamId}/settings` },
         { label: eventName, href: `/teams/${teamId}/events/${eventId}` },
         { label: "Ticket types" },
     ];
 
     const types = ticketTypes ?? [];
-    const totalRegistered = types.reduce((s, t) => s + Number(t.usedCapacity), 0);
-    const totalCap = types.reduce((s, t) => s + (Number(t.maxCapacity) || 0), 0);
     const availableTimeSlots = Array.from(
         new Set(types.flatMap((t) => t.timeSlots ?? []))
     ).sort();
@@ -171,15 +169,6 @@ export default function TicketTypesPage() {
                     <h1 className="font-display text-[30px] font-semibold tracking-tight leading-tight mt-0.5">
                         {eventName}
                     </h1>
-                    {!isLoading && (
-                        <p className="text-[13.5px] text-muted-foreground mt-1">
-                            <span className="font-mono tabular-nums text-foreground font-medium">{totalRegistered}</span> registered
-                            {totalCap > 0 && (
-                                <> of <span className="font-mono tabular-nums">{totalCap}</span></>
-                            )}{" "}
-                            across <span className="font-mono tabular-nums">{types.length}</span> ticket types.
-                        </p>
-                    )}
                 </div>
                 <Button size="sm" onClick={() => setAddOpen(true)}>
                     <Plus className="size-3.5" /> New ticket type

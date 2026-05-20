@@ -16,7 +16,8 @@ builder.AddServiceDefaults();
 builder
     .AddOrganizationModule()
     .AddEmailModule()
-    .AddRegistrationsModule();
+    .AddRegistrationsModule()
+    .AddBadgesModule();
 
 // Add shared services.
 builder.AddSharedServices();

@@ -1,11 +1,11 @@
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
 using Amolenk.Admitto.Core.Registrations.Contracts;
-using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
+using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.ChangeAttendeeTickets;
 
 internal sealed class ChangeAttendeeTicketsHandler(
@@ -21,14 +21,9 @@ internal sealed class ChangeAttendeeTicketsHandler(
         RegistrationId registrationId = RegistrationId.From(command.RegistrationId);
 
         // 1. Load registration; reject if not found.
-        var registration = await writeStore.Registrations
-            .FirstOrDefaultAsync(
-                r => r.Id == registrationId && r.EventId == eventId,
-                cancellationToken);
-
-        if (registration is null)
-            throw new BusinessRuleViolationException(
-                NotFoundError.Create<Registration>(registrationId.Value));
+        var registration = await writeStore.Registrations.GetAsync(
+                 r => r.Id == registrationId && r.EventId == eventId,
+                 cancellationToken);
 
         // 2. Reject cancelled registrations.
         if (registration.Status == RegistrationStatus.Cancelled)

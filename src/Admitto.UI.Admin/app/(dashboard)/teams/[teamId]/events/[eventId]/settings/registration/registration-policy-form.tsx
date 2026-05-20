@@ -30,29 +30,43 @@ function Field({ label, hint, children }: {
     );
 }
 
-const policySchema = z
-    .object({
-        registrationWindowOpensAt: z.string().min(1, "Open date is required"),
-        registrationWindowClosesAt: z.string().min(1, "Close date is required"),
-        restrictEmailDomain: z.boolean(),
-        allowedEmailDomain: z.string().optional(),
-    })
-    .refine(
-        (d) => new Date(d.registrationWindowClosesAt) > new Date(d.registrationWindowOpensAt),
-        {
-            path: ["registrationWindowClosesAt"],
-            message: "Close date must be after open date",
-        }
-    )
-    .refine(
-        (d) => !d.restrictEmailDomain || (d.allowedEmailDomain && d.allowedEmailDomain.length > 0),
-        {
-            path: ["allowedEmailDomain"],
-            message: "Domain is required when domain restriction is enabled",
-        }
-    );
+function makePolicySchema(eventEndsAt: string) {
+    return z
+        .object({
+            registrationWindowOpensAt: z.string().min(1, "Open date is required"),
+            registrationWindowClosesAt: z.string().min(1, "Close date is required"),
+            restrictEmailDomain: z.boolean(),
+            allowedEmailDomain: z.string().optional(),
+        })
+        .refine(
+            (d) => new Date(d.registrationWindowClosesAt) > new Date(d.registrationWindowOpensAt),
+            {
+                path: ["registrationWindowClosesAt"],
+                message: "Close date must be after open date",
+            }
+        )
+        .refine(
+            (d) => new Date(d.registrationWindowClosesAt) <= new Date(eventEndsAt),
+            {
+                path: ["registrationWindowClosesAt"],
+                message: "Registration window must close on or before the event end date",
+            }
+        )
+        .refine(
+            (d) => !d.restrictEmailDomain || (d.allowedEmailDomain && d.allowedEmailDomain.length > 0),
+            {
+                path: ["allowedEmailDomain"],
+                message: "Domain is required when domain restriction is enabled",
+            }
+        );
+}
 
-type PolicyValues = z.infer<typeof policySchema>;
+type PolicyValues = {
+    registrationWindowOpensAt: string;
+    registrationWindowClosesAt: string;
+    restrictEmailDomain: boolean;
+    allowedEmailDomain?: string;
+};
 
 export function RegistrationPolicyForm({
     event,
@@ -68,7 +82,7 @@ export function RegistrationPolicyForm({
     const queryClient = useQueryClient();
     const policy = event.registrationPolicy;
 
-    const form = useCustomForm<PolicyValues>(policySchema, {
+    const form = useCustomForm<PolicyValues>(makePolicySchema(event.endsAt), {
         registrationWindowOpensAt: policy?.opensAt ?? "",
         registrationWindowClosesAt: policy?.closesAt ?? "",
         restrictEmailDomain: !!policy?.allowedEmailDomain,

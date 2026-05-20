@@ -1,9 +1,7 @@
 using Amolenk.Admitto.Core.Organization.Application.Persistence;
-using Amolenk.Admitto.Core.Organization.Domain.Entities;
 using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
-using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using Amolenk.Admitto.Core.Shared.Application.Persistence;
 
 namespace Amolenk.Admitto.Core.Organization.Application.UseCases.ApiKeyManagement.RevokeApiKey;
 
@@ -15,11 +13,9 @@ internal sealed class RevokeApiKeyHandler(IOrganizationWriteStore writeStore)
         var teamId = TeamId.From(command.TeamId);
         var keyId = ApiKeyId.From(command.KeyId);
 
-        var apiKey = await writeStore.ApiKeys
-            .FirstOrDefaultAsync(
-                k => k.Id == keyId && k.TeamId == teamId,
-                cancellationToken)
-            ?? throw new BusinessRuleViolationException(NotFoundError.Create<ApiKey>(command.KeyId));
+        var apiKey = await writeStore.ApiKeys.GetAsync(
+                 k => k.Id == keyId && k.TeamId == teamId,
+                 cancellationToken);
 
         apiKey.Revoke(DateTimeOffset.UtcNow);
     }

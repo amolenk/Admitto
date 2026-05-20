@@ -7,6 +7,7 @@ public abstract class AspireIntegrationTestBase
     [TestInitialize]
     public virtual async ValueTask TestInitialize()
     {
+        await Environment.BadgesDatabase.ResetAsync();
         await Environment.EmailDatabase.ResetAsync();
         await Environment.OrganizationDatabase.ResetAsync();
         await Environment.RegistrationsDatabase.ResetAsync();

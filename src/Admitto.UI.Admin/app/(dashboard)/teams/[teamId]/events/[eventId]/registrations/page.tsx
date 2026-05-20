@@ -100,11 +100,6 @@ export default function RegistrationsPage() {
     const registrations = registrationsQuery.data ?? [];
     const ticketTypes = ticketTypesQuery.data ?? [];
 
-    const totalCapacity = ticketTypes.reduce(
-        (s, t) => s + (Number(t.maxCapacity) || 0),
-        0,
-    );
-
     const filtered = useMemo(() => {
         const needle = search.trim().toLowerCase();
         return registrations.filter((r) => {
@@ -163,8 +158,8 @@ export default function RegistrationsPage() {
     }
 
     const breadcrumbs = [
-        { label: selectedTeam?.name ?? teamId, href: `/teams/${teamId}/settings` },
-        { label: eventId, href: `/teams/${teamId}/events/${eventId}` },
+        { label: selectedTeam?.name ?? "", href: `/teams/${teamId}/settings` },
+        { label: eventQuery.data?.name ?? "", href: `/teams/${teamId}/events/${eventId}` },
         { label: "Registrations" },
     ];
 
@@ -179,7 +174,7 @@ export default function RegistrationsPage() {
                         Registrations
                     </div>
                     <h1 className="font-display text-[30px] font-semibold tracking-tight leading-tight mt-0.5">
-                        {eventQuery.data?.name ?? eventId}
+                        {eventQuery.data?.name ?? ""}
                     </h1>
                 </div>
                 <div className="flex gap-2">
@@ -201,23 +196,6 @@ export default function RegistrationsPage() {
                     </Button>
                 </div>
             </div>
-
-            <Card className="p-4 mb-6">
-                <div className="flex items-baseline gap-2">
-                    <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                        Total
-                    </div>
-                    <div className="font-mono tabular-nums text-[20px] font-semibold">
-                        {totalCount}
-                        {totalCapacity > 0 && (
-                            <span className="text-muted-foreground text-[14px] font-normal">
-                                {" "}
-                                of {totalCapacity}
-                            </span>
-                        )}
-                    </div>
-                </div>
-            </Card>
 
             <Card className="p-4">
                 <div className="flex flex-wrap items-center gap-2 mb-4">

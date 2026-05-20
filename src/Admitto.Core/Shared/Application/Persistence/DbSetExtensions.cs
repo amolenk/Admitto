@@ -1,38 +1,89 @@
+using System.Linq.Expressions;
 using Amolenk.Admitto.Core.Shared.Kernel.Abstractions;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
-using Microsoft.EntityFrameworkCore;
 
 namespace Amolenk.Admitto.Core.Shared.Application.Persistence;
 
 public static class DbSetExtensions
 {
-    public static async ValueTask<TEntity> GetAsync<TEntity, TKey>(
-        this DbSet<TEntity> dbSet,
-        TKey key,
-        CancellationToken cancellationToken = default)
-        where TEntity : class
-        where TKey : notnull
+    extension<TEntity>(DbSet<TEntity> dbSet) where TEntity : class
     {
-        var entity = await dbSet.FindAsync([key], cancellationToken);
-        return entity ?? throw new BusinessRuleViolationException(NotFoundError.Create<TEntity>(key));
-    }
-
-    public static async ValueTask<TEntity> GetAsync<TEntity, TKey>(
-        this DbSet<TEntity> dbSet,
-        TKey key,
-        uint? expectedVersion,
-        CancellationToken cancellationToken = default)
-        where TEntity : class, IIsVersioned
-        where TKey : notnull
-    {
-        var entity = await dbSet.GetAsync(key, cancellationToken);
-
-        if (expectedVersion is null || expectedVersion == entity.Version)
+        public async ValueTask<TEntity> GetAsync(
+            object key,
+            CancellationToken cancellationToken = default)
         {
-            return entity;
+            var entity = await dbSet.FindAsync([key], cancellationToken);
+
+            return entity ?? throw new BusinessRuleViolationException(NotFoundError.Create<TEntity>());
         }
 
-        throw new BusinessRuleViolationException(
-          CommonErrors.ConcurrencyConflict(expectedVersion.Value, entity.Version));
+        public async ValueTask<TEntity> GetAsync(
+            Expression<Func<TEntity, bool>> predicate,
+            CancellationToken cancellationToken = default)
+        {
+            var entity = await dbSet.FirstOrDefaultAsync(predicate, cancellationToken);
+
+            return entity ?? throw new BusinessRuleViolationException(NotFoundError.Create<TEntity>());
+        }
+
+        public async ValueTask<TEntity> GetUntrackedAsync(
+            Expression<Func<TEntity, bool>> predicate,
+            CancellationToken cancellationToken = default)
+        {
+            var entity = await dbSet.AsNoTracking().FirstOrDefaultAsync(predicate, cancellationToken);
+
+            return entity ?? throw new BusinessRuleViolationException(NotFoundError.Create<TEntity>());
+        }
+    }
+
+    extension<TEntity>(DbSet<TEntity> dbSet) where TEntity : class, IIsVersioned
+    {
+        public async ValueTask<TEntity> GetAsync(
+            object key,
+            uint? expectedVersion,
+            CancellationToken cancellationToken = default)
+        {
+            var entity = await dbSet.GetAsync(key, cancellationToken);
+
+            if (expectedVersion is null || expectedVersion == entity.Version)
+            {
+                return entity;
+            }
+
+            throw new BusinessRuleViolationException(
+                ConcurrencyConflictError.Create(expectedVersion.Value, entity.Version));
+        }
+
+        public async ValueTask<TEntity> GetAsync(
+            Expression<Func<TEntity, bool>> predicate,
+            uint? expectedVersion,
+            CancellationToken cancellationToken = default)
+        {
+            var entity = await dbSet.GetAsync(predicate, cancellationToken);
+
+            if (expectedVersion is null || expectedVersion == entity.Version)
+            {
+                return entity;
+            }
+
+            throw new BusinessRuleViolationException(
+                ConcurrencyConflictError.Create(expectedVersion.Value, entity.Version));
+        }
+
+        public async ValueTask<TEntity> GetUntrackedAsync(
+            Expression<Func<TEntity, bool>> predicate,
+            uint? expectedVersion,
+            CancellationToken cancellationToken = default)
+        {
+            var entity = await dbSet.GetUntrackedAsync(predicate, cancellationToken);
+
+            if (expectedVersion is null || expectedVersion == entity.Version)
+            {
+                return entity;
+            }
+
+            throw new BusinessRuleViolationException(
+                ConcurrencyConflictError.Create(expectedVersion.Value, entity.Version));
+        }
     }
 }

@@ -13,7 +13,7 @@ public static class GetEmailTemplateHttpEndpoint
         EmailSettingsScope scope)
     {
         var endpointName = scope == EmailSettingsScope.Team ? "GetTeamEmailTemplate" : "GetEventEmailTemplate";
-        var handler = new Handler(scope);
+        var handler = new Handler();
 
         group
             .MapGet("/{id:guid}", handler.HandleAsync)
@@ -23,7 +23,7 @@ public static class GetEmailTemplateHttpEndpoint
         return group;
     }
 
-    private sealed class Handler(EmailSettingsScope scope)
+    private sealed class Handler()
     {
         public async ValueTask<Ok<EmailTemplateDto>> HandleAsync(
             Guid id,
@@ -35,7 +35,7 @@ public static class GetEmailTemplateHttpEndpoint
 
             if (dto is null)
                 throw new BusinessRuleViolationException(
-                    NotFoundError.Create<Domain.Entities.EmailTemplate>(id.ToString()));
+                    NotFoundError.Create<Domain.Entities.EmailTemplate>());
 
             return TypedResults.Ok(dto);
         }

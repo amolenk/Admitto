@@ -1,7 +1,6 @@
 using Amolenk.Admitto.Core.Organization.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Core.Organization.Application.UseCases.TeamManagement.UpdateTeam;
 
@@ -10,10 +9,9 @@ internal sealed class UpdateTeamHandler(IOrganizationWriteStore writeStore)
 {
     public async ValueTask HandleAsync(UpdateTeamCommand command, CancellationToken cancellationToken)
     {
-        var team = await writeStore.Teams.GetAsync(
-            TeamId.From(command.TeamId),
-            command.ExpectedVersion,
-            cancellationToken);
+        var teamId = TeamId.From(command.TeamId);
+
+        var team = await writeStore.Teams.GetAsync(teamId, command.ExpectedVersion, cancellationToken);
 
         if (command.Name is not null)
         {

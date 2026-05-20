@@ -51,6 +51,17 @@ The system SHALL provide an `AddHandlersFromAssembly(Assembly)` extension method
 - **WHEN** `AddHandlersFromAssembly` is called with an assembly containing abstract `ICommandHandler<>` implementations
 - **THEN** those abstract types are not registered
 
+### Requirement: At-least-once message delivery with explicit settlement
+The queue consumer SHALL use a push-based delivery mechanism. Messages SHALL be explicitly completed after successful dispatch, and abandoned (left for retry) on failure. The system SHALL guarantee at-least-once delivery: if the worker crashes after dispatch but before completion, the message will be redelivered.
+
+#### Scenario: Message is completed after successful dispatch
+- **WHEN** a message is received and all handlers dispatch without error
+- **THEN** the message is explicitly completed (removed from the queue)
+
+#### Scenario: Message is abandoned on dispatch failure
+- **WHEN** a message is received and processing throws an exception
+- **THEN** the message is abandoned and becomes available for redelivery
+
 ### Requirement: Assembly scanning for message type registry
 The system SHALL provide an `AddFromAssembly(Assembly)` method on `MessageTypeRegistryBuilder` that scans the given assembly for concrete implementations of `ICommand` and `IIntegrationEvent` and registers each in the registry, equivalent to calling `AddCommand<T>()` or `AddIntegrationEvent<T>()` for each discovered type individually.
 

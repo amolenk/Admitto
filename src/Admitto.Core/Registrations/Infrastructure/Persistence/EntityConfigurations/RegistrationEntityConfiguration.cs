@@ -18,7 +18,6 @@ public class RegistrationEntityConfiguration : IEntityTypeConfiguration<Registra
 
         var idProperty = builder.Property(e => e.Id)
             .HasColumnName("id")
-            .HasConversion(v => v.Value, v => RegistrationId.From(v))
             .IsRequired()
             .ValueGeneratedNever();
 
@@ -32,29 +31,24 @@ public class RegistrationEntityConfiguration : IEntityTypeConfiguration<Registra
 
         builder.Property(e => e.TeamId)
             .HasColumnName("team_id")
-            .HasConversion(v => v.Value, v => TeamId.From(v))
             .IsRequired();
 
         builder.Property(e => e.EventId)
             .HasColumnName("event_id")
-            .HasConversion(v => v.Value, v => TicketedEventId.From(v))
             .IsRequired();
 
         builder.Property(e => e.Email)
             .HasColumnName("email")
-            .HasConversion<string>(v => v.Value, v => EmailAddress.From(v))
             .IsRequired()
             .HasMaxLength(EmailAddress.MaxLength);
 
         builder.Property(e => e.FirstName)
             .HasColumnName("first_name")
-            .HasConversion<string>(v => v.Value, v => FirstName.From(v))
             .IsRequired()
             .HasMaxLength(FirstName.MaxLength);
 
         builder.Property(e => e.LastName)
             .HasColumnName("last_name")
-            .HasConversion<string>(v => v.Value, v => LastName.From(v))
             .IsRequired()
             .HasMaxLength(LastName.MaxLength);
 

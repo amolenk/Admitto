@@ -1,7 +1,6 @@
 using Amolenk.Admitto.Core.Email.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
-using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
-using EmailSettingsEntity = Amolenk.Admitto.Core.Email.Domain.Entities.EmailSettings;
+using Amolenk.Admitto.Core.Shared.Application.Persistence;
 
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.EmailSettings.DeleteEmailSettings;
 
@@ -10,18 +9,10 @@ internal sealed class DeleteEmailSettingsHandler(IEmailWriteStore writeStore)
 {
     public async ValueTask HandleAsync(DeleteEmailSettingsCommand command, CancellationToken cancellationToken)
     {
-        var settings = await writeStore.EmailSettings
-            .FirstOrDefaultAsync(
-                s => s.Scope == command.Scope && s.ScopeId == command.ScopeId,
-                cancellationToken)
-            ?? throw new BusinessRuleViolationException(
-                NotFoundError.Create<EmailSettingsEntity>(command.ScopeId));
-
-        if (command.ExpectedVersion != settings.Version)
-        {
-            throw new BusinessRuleViolationException(
-                CommonErrors.ConcurrencyConflict(command.ExpectedVersion, settings.Version));
-        }
+        var settings = await writeStore.EmailSettings.GetUntrackedAsync(
+            s => s.Scope == command.Scope && s.ScopeId == command.ScopeId,
+            command.ExpectedVersion,
+            cancellationToken);
 
         writeStore.EmailSettings.Remove(settings);
     }

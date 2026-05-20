@@ -32,7 +32,7 @@ public sealed class UnitOfWork<TDbContext>(
         }
         catch (DbUpdateConcurrencyException)
         {
-            throw new BusinessRuleViolationException(CommonErrors.ConcurrencyConflict());
+            throw new BusinessRuleViolationException(ConcurrencyConflictError.Create());
         }
 
         if (result <= 0 || dbContext is not IOutboxDbContext outboxDbContext) return;

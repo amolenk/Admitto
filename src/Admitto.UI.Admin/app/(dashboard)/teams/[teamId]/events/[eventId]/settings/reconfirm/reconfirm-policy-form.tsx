@@ -37,28 +37,42 @@ function Field({ label, hint, children }: {
     );
 }
 
-const reconfirmSchema = z
-    .object({
-        opensAt: z.string().min(1, "Opens at is required"),
-        closesAt: z.string().min(1, "Closes at is required"),
-        cadenceHours: z.coerce
-            .number()
-            .int("Cadence must be a whole number")
-            .min(1, "Cadence must be at least 1 hour"),
-        minEmailIntervalHours: z.coerce
-            .number()
-            .int("Must be a whole number")
-            .min(1, "Must be at least 1 hour"),
-    })
-    .refine(
-        (d) => new Date(d.closesAt) > new Date(d.opensAt),
-        {
-            path: ["closesAt"],
-            message: "Close date must be after open date",
-        }
-    );
+function makeReconfirmSchema(eventStartsAt: string) {
+    return z
+        .object({
+            opensAt: z.string().min(1, "Opens at is required"),
+            closesAt: z.string().min(1, "Closes at is required"),
+            cadenceHours: z.coerce
+                .number()
+                .int("Cadence must be a whole number")
+                .min(1, "Cadence must be at least 1 hour"),
+            minEmailIntervalHours: z.coerce
+                .number()
+                .int("Must be a whole number")
+                .min(1, "Must be at least 1 hour"),
+        })
+        .refine(
+            (d) => new Date(d.closesAt) > new Date(d.opensAt),
+            {
+                path: ["closesAt"],
+                message: "Close date must be after open date",
+            }
+        )
+        .refine(
+            (d) => new Date(d.closesAt) < new Date(eventStartsAt),
+            {
+                path: ["closesAt"],
+                message: "Reconfirmation window must close before the event start date",
+            }
+        );
+}
 
-type ReconfirmValues = z.infer<typeof reconfirmSchema>;
+type ReconfirmValues = {
+    opensAt: string;
+    closesAt: string;
+    cadenceHours: number;
+    minEmailIntervalHours: number;
+};
 
 export function ReconfirmPolicyForm({
     event,
@@ -77,7 +91,7 @@ export function ReconfirmPolicyForm({
     const [removeError, setRemoveError] = useState<{ title: string; detail: string } | null>(null);
     const [isRemoving, setIsRemoving] = useState(false);
 
-    const form = useCustomForm<ReconfirmValues>(reconfirmSchema, {
+    const form = useCustomForm<ReconfirmValues>(makeReconfirmSchema(event.startsAt), {
         opensAt: policy?.opensAt ?? "",
         closesAt: policy?.closesAt ?? "",
         cadenceHours: policy?.cadenceHours ?? 24,

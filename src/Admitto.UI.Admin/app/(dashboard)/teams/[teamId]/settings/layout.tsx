@@ -11,7 +11,7 @@ export default async function SettingsLayout({
 }) {
     const { teamId } = await params;
     const result = await getTeam({ path: { teamId } });
-    const teamName = result.data?.name ?? teamId;
+    const teamName = result.data?.name ?? "";
     const basePath = `/teams/${teamId}/settings`;
 
     const breadcrumbs = [

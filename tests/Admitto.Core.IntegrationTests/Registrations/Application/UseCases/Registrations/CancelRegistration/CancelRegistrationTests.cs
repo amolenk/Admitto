@@ -93,7 +93,7 @@ public sealed class CancelRegistrationTests(TestContext testContext) : AspireInt
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.ShouldMatch(NotFoundError.Create<Registration>(unknownId.Value));
+        result.Error.ShouldMatch(NotFoundError.Create<Registration>());
     }
 
     // SC-C05: Admin cancels registration from wrong event — returns not_found (no info leak)
@@ -112,7 +112,7 @@ public sealed class CancelRegistrationTests(TestContext testContext) : AspireInt
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.ShouldMatch(NotFoundError.Create<Registration>(fixture.RegistrationId.Value));
+        result.Error.ShouldMatch(NotFoundError.Create<Registration>());
     }
 
     // SC-C06: Self-service cancellation fails when event has already started

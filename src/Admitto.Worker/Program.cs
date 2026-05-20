@@ -18,6 +18,7 @@ builder
 builder.AddRegistrationsModuleWorker();
 
 builder.AddEmailModuleWorker();
+builder.AddBadgesModuleWorker();
 
 // Add shared services.
 builder

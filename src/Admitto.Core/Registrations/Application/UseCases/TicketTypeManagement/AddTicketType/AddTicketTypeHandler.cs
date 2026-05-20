@@ -1,10 +1,7 @@
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
-using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
-using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
-using Microsoft.EntityFrameworkCore;
+using Amolenk.Admitto.Core.Shared.Application.Persistence;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypeManagement.AddTicketType;
 
@@ -19,17 +16,12 @@ internal sealed class AddTicketTypeHandler(IRegistrationsWriteStore writeStore)
         TicketTypeId id = TicketTypeId.New();
         TicketTypeName name = TicketTypeName.From(command.Name);
 
-        var catalog = await writeStore.TicketCatalogs
-            .FirstOrDefaultAsync(tc => tc.Id == eventId, cancellationToken);
-
-        if (catalog is null)
-        {
-            throw new BusinessRuleViolationException(
-                NotFoundError.Create<TicketCatalog>(eventId.Value));
-        }
+        var catalog = await writeStore.TicketCatalogs.GetAsync(
+                 eventId,
+                 cancellationToken);
 
         var timeSlots = command.TimeSlots
-            .Select(s => TimeSlot.From(s))
+            .Select(TimeSlot.From)
             .ToArray();
 
         catalog.AddTicketType(id, name, timeSlots, command.MaxCapacity, command.SelfServiceEnabled);

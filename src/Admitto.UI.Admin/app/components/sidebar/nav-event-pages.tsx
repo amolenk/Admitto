@@ -3,6 +3,7 @@
 import { useRouter, useParams, usePathname } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
+    Award,
     LayoutDashboard,
     Users,
     Ticket,
@@ -22,6 +23,7 @@ const eventPages = [
     { label: "Dashboard", href: "", icon: LayoutDashboard },
     { label: "Registrations", href: "/registrations", icon: Users },
     { label: "Ticket types", href: "/ticket-types", icon: Ticket },
+    { label: "Badges", href: "/badge-types", icon: Award },
     { label: "Emails", href: "/emails", icon: Mail },
     { label: "Settings", href: "/settings", icon: Settings },
 ];

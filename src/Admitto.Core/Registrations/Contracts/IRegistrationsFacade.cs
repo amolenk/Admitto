@@ -38,4 +38,22 @@ public interface IRegistrationsFacade
     /// </summary>
     Task<IReadOnlyList<ReconfirmTriggerSpecDto>> GetActiveReconfirmTriggerSpecsAsync(
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns a deduplicated list of registrations for badge export — one entry per unique
+    /// <c>RegistrationId</c> that has at least one ticket matching <paramref name="ticketTypeIds"/>
+    /// and has <c>Status = Registered</c>. Used by the Badges module's CSV export handler.
+    /// </summary>
+    Task<IReadOnlyList<BadgeExportRegistrationDto>> QueryRegistrationsForBadgeExportAsync(
+        TicketedEventId eventId,
+        IReadOnlyList<TicketTypeId> ticketTypeIds,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns the ordered additional detail schema fields for the given event.
+    /// Used by the Badges module's CSV export handler to determine column order.
+    /// </summary>
+    Task<IReadOnlyList<AdditionalDetailFieldDto>> GetAdditionalDetailSchemaAsync(
+        TicketedEventId eventId,
+        CancellationToken cancellationToken = default);
 }

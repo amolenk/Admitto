@@ -19,18 +19,15 @@ internal sealed class BulkEmailJobEntityConfiguration : IEntityTypeConfiguration
 
         builder.Property(e => e.Id)
             .HasColumnName("id")
-            .HasConversion(v => v.Value, v => BulkEmailJobId.From(v))
             .IsRequired()
             .ValueGeneratedNever();
 
         builder.Property(e => e.TeamId)
             .HasColumnName("team_id")
-            .HasConversion(v => v.Value, v => TeamId.From(v))
             .IsRequired();
 
         builder.Property(e => e.TicketedEventId)
             .HasColumnName("ticketed_event_id")
-            .HasConversion(v => v.Value, v => TicketedEventId.From(v))
             .IsRequired();
 
         builder.Property(e => e.EmailType)

@@ -82,5 +82,21 @@ public sealed class EmailDbContext(DbContextOptions<EmailDbContext> options)
         configurationBuilder
             .Properties<ProtectedPassword>()
             .HaveConversion<ProtectedPasswordConverter>();
+
+        configurationBuilder
+            .Properties<BulkEmailJobId>()
+            .HaveConversion<BulkEmailJobId.EfCoreValueConverter>();
+
+        configurationBuilder
+            .Properties<EmailLogId>()
+            .HaveConversion<EmailLogId.EfCoreValueConverter>();
+
+        configurationBuilder
+            .Properties<EmailSettingsId>()
+            .HaveConversion<EmailSettingsId.EfCoreValueConverter>();
+
+        configurationBuilder
+            .Properties<EmailTemplateId>()
+            .HaveConversion<EmailTemplateId.EfCoreValueConverter>();
     }
 }

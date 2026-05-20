@@ -3,6 +3,7 @@ using Amolenk.Admitto.Core.Email.Application.Templating;
 using Amolenk.Admitto.Core.Email.Domain.Entities;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
+using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Microsoft.EntityFrameworkCore;
 
@@ -27,14 +28,11 @@ internal sealed class UpdateEmailTemplateHandler(IEmailWriteStore writeStore)
     {
         EmailTemplateId id = EmailTemplateId.From(command.Id);
 
-        var template = await writeStore.EmailTemplates
-            .FirstOrDefaultAsync(t => t.Id == id, ct)
-            ?? throw new BusinessRuleViolationException(
-                NotFoundError.Create<EmailTemplate>(id.Value.ToString()));
+        var template = await writeStore.EmailTemplates.GetAsync(t => t.Id == id, command.Version, ct);
 
         if (command.Version != template.Version)
             throw new BusinessRuleViolationException(
-                CommonErrors.ConcurrencyConflict(command.Version, template.Version));
+                ConcurrencyConflictError.Create(command.Version, template.Version));
 
         var nameChanged = command.Name is not null &&
             !string.Equals(template.Name, command.Name, StringComparison.OrdinalIgnoreCase);
@@ -44,20 +42,20 @@ internal sealed class UpdateEmailTemplateHandler(IEmailWriteStore writeStore)
             if (BuiltInEmailTemplateNames.IsReserved(template.Name))
                 throw new BusinessRuleViolationException(CannotRenameBuiltIn);
 
-            if (BuiltInEmailTemplateNames.IsReserved(command.Name))
+            if (BuiltInEmailTemplateNames.IsReserved(command.Name!))
                 throw new BusinessRuleViolationException(ReservedNameError);
 
             var alreadyExists = await writeStore.EmailTemplates.AnyAsync(
                 t => t.Id != id &&
                      t.Scope == template.Scope &&
                      t.ScopeId == template.ScopeId &&
-                     t.Name.ToLower() == command.Name.ToLower(),
+                     t.Name.ToLower() == command.Name!.ToLower(),
                 ct);
 
             if (alreadyExists)
                 throw new BusinessRuleViolationException(AlreadyExistsError);
 
-            template.Rename(command.Name);
+            template.Rename(command.Name!);
         }
 
         template.Update(command.Subject, command.TextBody, command.HtmlBody);

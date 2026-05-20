@@ -2,9 +2,7 @@ using Amolenk.Admitto.Core.Email.Application.Persistence;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Email.Infrastructure.Security;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
-using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
-using EmailSettingsEntity = Amolenk.Admitto.Core.Email.Domain.Entities.EmailSettings;
+using Amolenk.Admitto.Core.Shared.Application.Persistence;
 
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.EmailSettings.UpdateEmailSettings;
 
@@ -20,18 +18,10 @@ internal sealed class UpdateEmailSettingsHandler(
 {
     public async ValueTask HandleAsync(UpdateEmailSettingsCommand command, CancellationToken cancellationToken)
     {
-        var settings = await writeStore.EmailSettings
-            .FirstOrDefaultAsync(
-                s => s.Scope == command.Scope && s.ScopeId == command.ScopeId,
-                cancellationToken)
-            ?? throw new BusinessRuleViolationException(
-                NotFoundError.Create<EmailSettingsEntity>(command.ScopeId));
-
-        if (command.ExpectedVersion != settings.Version)
-        {
-            throw new BusinessRuleViolationException(
-                CommonErrors.ConcurrencyConflict(command.ExpectedVersion, settings.Version));
-        }
+        var settings = await writeStore.EmailSettings.GetAsync(
+             s => s.Scope == command.Scope && s.ScopeId == command.ScopeId,
+             command.ExpectedVersion,
+             cancellationToken);
 
         var smtpHost = command.SmtpHost is not null ? Hostname.From(command.SmtpHost) : (Hostname?)null;
         var smtpPort = command.SmtpPort.HasValue ? Port.From(command.SmtpPort.Value) : (Port?)null;

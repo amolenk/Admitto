@@ -15,7 +15,6 @@ internal sealed class ActivityLogEntityConfiguration : IEntityTypeConfiguration<
 
         builder.Property(e => e.Id)
             .HasColumnName("id")
-            .HasConversion(v => v.Value, v => ActivityLogId.From(v))
             .IsRequired()
             .ValueGeneratedNever();
 

@@ -31,7 +31,7 @@ export default function ReconfirmPolicyPage() {
     const policy = event.data.reconfirmPolicy;
 
     return (
-        <div className="space-y-6 max-w-lg">
+        <div className="space-y-6">
             <EventStatusBanner status={event.data.status} />
 
             {policy ? (

@@ -16,25 +16,21 @@ public class CouponEntityConfiguration : IEntityTypeConfiguration<Coupon>
         
         builder.Property(e => e.Id)
             .HasColumnName("id")
-            .HasConversion(v => v.Value, v => CouponId.From(v))
             .IsRequired()
             .ValueGeneratedNever();
 
         builder.Property(e => e.EventId)
             .HasColumnName("event_id")
-            .HasConversion(v => v.Value, v => TicketedEventId.From(v))
             .IsRequired();
 
         builder.Property(e => e.Code)
             .HasColumnName("code")
-            .HasConversion(v => v.Value, v => CouponCode.From(v))
             .IsRequired();
 
         builder.HasIndex(e => e.Code).IsUnique();
 
         builder.Property(e => e.Email)
             .HasColumnName("email")
-            .HasConversion<string>(v => v.Value, v => EmailAddress.From(v))
             .IsRequired()
             .HasMaxLength(EmailAddress.MaxLength);
 

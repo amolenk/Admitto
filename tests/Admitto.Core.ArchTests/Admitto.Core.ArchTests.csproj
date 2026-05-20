@@ -1,5 +1,6 @@
 <Project Sdk="MSTest.Sdk">
   <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
     <PackageReference Include="TngTech.ArchUnitNET.MSTestV2" />
   </ItemGroup>
   <ItemGroup>

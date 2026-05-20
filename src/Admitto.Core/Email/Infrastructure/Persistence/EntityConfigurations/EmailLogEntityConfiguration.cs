@@ -14,7 +14,6 @@ internal sealed class EmailLogEntityConfiguration : IEntityTypeConfiguration<Ema
 
         builder.Property(e => e.Id)
             .HasColumnName("id")
-            .HasConversion(v => v.Value, v => EmailLogId.From(v))
             .IsRequired()
             .ValueGeneratedNever();
 
@@ -74,10 +73,7 @@ internal sealed class EmailLogEntityConfiguration : IEntityTypeConfiguration<Ema
             .HasColumnType("text");
 
         builder.Property(e => e.BulkEmailJobId)
-            .HasColumnName("bulk_email_job_id")
-            .HasConversion(
-                v => v == null ? (Guid?)null : v.Value.Value,
-                v => v == null ? (Domain.ValueObjects.BulkEmailJobId?)null : Domain.ValueObjects.BulkEmailJobId.From(v.Value));
+            .HasColumnName("bulk_email_job_id");
 
         builder.HasOne<BulkEmailJob>()
             .WithMany()

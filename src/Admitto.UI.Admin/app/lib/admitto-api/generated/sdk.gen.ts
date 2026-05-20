@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AddTicketTypeData, AddTicketTypeErrors, AddTicketTypeResponses, AdminRegisterAttendeeData, AdminRegisterAttendeeErrors, AdminRegisterAttendeeResponses, ArchiveTeamData, ArchiveTeamErrors, ArchiveTeamResponses, ArchiveTicketedEventData, ArchiveTicketedEventErrors, ArchiveTicketedEventResponses, AssignTeamMembershipData, AssignTeamMembershipErrors, AssignTeamMembershipResponses, CancelBulkEmailData, CancelBulkEmailErrors, CancelBulkEmailResponses, CancelRegistrationData, CancelRegistrationErrors, CancelRegistrationResponses, ChangeAttendeeTicketsData, ChangeAttendeeTicketsErrors, ChangeAttendeeTicketsResponses, ChangeTeamMembershipRoleData, ChangeTeamMembershipRoleErrors, ChangeTeamMembershipRoleResponses, ConfigureReconfirmPolicyData, ConfigureReconfirmPolicyErrors, ConfigureReconfirmPolicyResponses, ConfigureRegistrationPolicyData, ConfigureRegistrationPolicyErrors, ConfigureRegistrationPolicyResponses, CreateApiKeyData, CreateApiKeyErrors, CreateApiKeyResponses, CreateBulkEmailData, CreateBulkEmailErrors, CreateBulkEmailResponses, CreateCouponData, CreateCouponErrors, CreateCouponResponses, CreateEventEmailTemplateData, CreateEventEmailTemplateErrors, CreateEventEmailTemplateResponses, CreateTeamData, CreateTeamEmailTemplateData, CreateTeamEmailTemplateErrors, CreateTeamEmailTemplateResponses, CreateTeamErrors, CreateTeamResponses, DeleteEventEmailSettingsData, DeleteEventEmailSettingsErrors, DeleteEventEmailSettingsResponses, DeleteEventEmailTemplateData, DeleteEventEmailTemplateErrors, DeleteEventEmailTemplateResponses, DeleteTeamEmailSettingsData, DeleteTeamEmailSettingsErrors, DeleteTeamEmailSettingsResponses, DeleteTeamEmailTemplateData, DeleteTeamEmailTemplateErrors, DeleteTeamEmailTemplateResponses, GetApiKeysData, GetApiKeysErrors, GetApiKeysResponses, GetAttendeeEmailsData, GetAttendeeEmailsErrors, GetAttendeeEmailsResponses, GetBulkEmailData, GetBulkEmailErrors, GetBulkEmailResponses, GetBulkEmailsData, GetBulkEmailsErrors, GetBulkEmailsResponses, GetCouponDetailsData, GetCouponDetailsErrors, GetCouponDetailsResponses, GetEventCreationRequestData, GetEventCreationRequestErrors, GetEventCreationRequestResponses, GetEventEmailSettingsData, GetEventEmailSettingsErrors, GetEventEmailSettingsResponses, GetEventEmailTemplateData, GetEventEmailTemplateErrors, GetEventEmailTemplateResponses, GetEventEmailTemplatesData, GetEventEmailTemplatesErrors, GetEventEmailTemplatesResponses, GetPublicTicketTypesHttpEndpointData, GetPublicTicketTypesHttpEndpointErrors, GetPublicTicketTypesHttpEndpointResponses, GetQrCodeHttpEndpointData, GetQrCodeHttpEndpointErrors, GetRegistrationDetailsData, GetRegistrationDetailsErrors, GetRegistrationDetailsResponses, GetRegistrationsData, GetRegistrationsErrors, GetRegistrationsResponses, GetTeamData, GetTeamEmailSettingsData, GetTeamEmailSettingsErrors, GetTeamEmailSettingsResponses, GetTeamEmailTemplateData, GetTeamEmailTemplateErrors, GetTeamEmailTemplateResponses, GetTeamEmailTemplatesData, GetTeamEmailTemplatesErrors, GetTeamEmailTemplatesResponses, GetTeamErrors, GetTeamResponses, GetTeamsData, GetTeamsErrors, GetTeamsResponses, GetTicketedEventDetailsData, GetTicketedEventDetailsErrors, GetTicketedEventDetailsResponses, GetTicketedEventsData, GetTicketedEventsErrors, GetTicketedEventsResponses, GetTicketTypesData, GetTicketTypesErrors, GetTicketTypesResponses, ListCouponsData, ListCouponsErrors, ListCouponsResponses, ListTeamMembersData, ListTeamMembersErrors, ListTeamMembersResponses, PreviewBulkEmailData, PreviewBulkEmailErrors, PreviewBulkEmailResponses, PreviewEventEmailTemplateData, PreviewEventEmailTemplateErrors, PreviewEventEmailTemplateResponses, PreviewTeamEmailTemplateData, PreviewTeamEmailTemplateErrors, PreviewTeamEmailTemplateResponses, RegisterWithCouponHttpEndpointData, RegisterWithCouponHttpEndpointErrors, RemoveTeamMembershipData, RemoveTeamMembershipErrors, RemoveTeamMembershipResponses, RequestOtpHttpEndpointData, RequestOtpHttpEndpointErrors, RequestTicketedEventCreationData, RequestTicketedEventCreationErrors, RequestTicketedEventCreationResponses, RevokeApiKeyData, RevokeApiKeyErrors, RevokeApiKeyResponses, RevokeCouponData, RevokeCouponErrors, RevokeCouponResponses, SelfCancelRegistrationHttpEndpointData, SelfCancelRegistrationHttpEndpointErrors, SelfChangeTicketsHttpEndpointData, SelfChangeTicketsHttpEndpointErrors, SelfRegisterAttendeeHttpEndpointData, SelfRegisterAttendeeHttpEndpointErrors, TestEventEmailSettingsData, TestEventEmailSettingsErrors, TestEventEmailSettingsResponses, TestSendEventEmailTemplateData, TestSendEventEmailTemplateErrors, TestSendEventEmailTemplateResponses, TestSendTeamEmailTemplateData, TestSendTeamEmailTemplateErrors, TestSendTeamEmailTemplateResponses, TestTeamEmailSettingsData, TestTeamEmailSettingsErrors, TestTeamEmailSettingsResponses, UpdateAdditionalDetailSchemaData, UpdateAdditionalDetailSchemaErrors, UpdateAdditionalDetailSchemaResponses, UpdateEventEmailTemplateData, UpdateEventEmailTemplateErrors, UpdateEventEmailTemplateResponses, UpdateTeamData, UpdateTeamEmailTemplateData, UpdateTeamEmailTemplateErrors, UpdateTeamEmailTemplateResponses, UpdateTeamErrors, UpdateTeamResponses, UpdateTicketedEventDetailsData, UpdateTicketedEventDetailsErrors, UpdateTicketedEventDetailsResponses, UpdateTicketedEventTimeZoneData, UpdateTicketedEventTimeZoneErrors, UpdateTicketedEventTimeZoneResponses, UpdateTicketTypeData, UpdateTicketTypeErrors, UpdateTicketTypeResponses, UpsertEventEmailSettingsData, UpsertEventEmailSettingsErrors, UpsertEventEmailSettingsResponses, UpsertTeamEmailSettingsData, UpsertTeamEmailSettingsErrors, UpsertTeamEmailSettingsResponses, VerifyOtpHttpEndpointData, VerifyOtpHttpEndpointErrors } from './types.gen';
+import type { AddBadgeInstanceData, AddBadgeInstanceErrors, AddBadgeInstanceResponses, AddBadgeTypeData, AddBadgeTypeErrors, AddBadgeTypeResponses, AddTicketTypeData, AddTicketTypeErrors, AddTicketTypeResponses, AdminRegisterAttendeeData, AdminRegisterAttendeeErrors, AdminRegisterAttendeeResponses, ArchiveTeamData, ArchiveTeamErrors, ArchiveTeamResponses, ArchiveTicketedEventData, ArchiveTicketedEventErrors, ArchiveTicketedEventResponses, AssignTeamMembershipData, AssignTeamMembershipErrors, AssignTeamMembershipResponses, CancelBulkEmailData, CancelBulkEmailErrors, CancelBulkEmailResponses, CancelRegistrationData, CancelRegistrationErrors, CancelRegistrationResponses, ChangeAttendeeTicketsData, ChangeAttendeeTicketsErrors, ChangeAttendeeTicketsResponses, ChangeTeamMembershipRoleData, ChangeTeamMembershipRoleErrors, ChangeTeamMembershipRoleResponses, ConfigureReconfirmPolicyData, ConfigureReconfirmPolicyErrors, ConfigureReconfirmPolicyResponses, ConfigureRegistrationPolicyData, ConfigureRegistrationPolicyErrors, ConfigureRegistrationPolicyResponses, CreateApiKeyData, CreateApiKeyErrors, CreateApiKeyResponses, CreateBulkEmailData, CreateBulkEmailErrors, CreateBulkEmailResponses, CreateCouponData, CreateCouponErrors, CreateCouponResponses, CreateEventEmailTemplateData, CreateEventEmailTemplateErrors, CreateEventEmailTemplateResponses, CreateTeamData, CreateTeamEmailTemplateData, CreateTeamEmailTemplateErrors, CreateTeamEmailTemplateResponses, CreateTeamErrors, CreateTeamResponses, DeleteBadgeInstanceData, DeleteBadgeInstanceErrors, DeleteBadgeInstanceResponses, DeleteBadgeTypeData, DeleteBadgeTypeErrors, DeleteBadgeTypeResponses, DeleteEventEmailSettingsData, DeleteEventEmailSettingsErrors, DeleteEventEmailSettingsResponses, DeleteEventEmailTemplateData, DeleteEventEmailTemplateErrors, DeleteEventEmailTemplateResponses, DeleteTeamEmailSettingsData, DeleteTeamEmailSettingsErrors, DeleteTeamEmailSettingsResponses, DeleteTeamEmailTemplateData, DeleteTeamEmailTemplateErrors, DeleteTeamEmailTemplateResponses, ExportBadgeCsvData, ExportBadgeCsvErrors, GetApiKeysData, GetApiKeysErrors, GetApiKeysResponses, GetAttendeeEmailsData, GetAttendeeEmailsErrors, GetAttendeeEmailsResponses, GetBulkEmailData, GetBulkEmailErrors, GetBulkEmailResponses, GetBulkEmailsData, GetBulkEmailsErrors, GetBulkEmailsResponses, GetCouponDetailsData, GetCouponDetailsErrors, GetCouponDetailsResponses, GetEventCreationRequestData, GetEventCreationRequestErrors, GetEventCreationRequestResponses, GetEventEmailSettingsData, GetEventEmailSettingsErrors, GetEventEmailSettingsResponses, GetEventEmailTemplateData, GetEventEmailTemplateErrors, GetEventEmailTemplateResponses, GetEventEmailTemplatesData, GetEventEmailTemplatesErrors, GetEventEmailTemplatesResponses, GetPublicTicketTypesHttpEndpointData, GetPublicTicketTypesHttpEndpointErrors, GetPublicTicketTypesHttpEndpointResponses, GetQrCodeHttpEndpointData, GetQrCodeHttpEndpointErrors, GetRegistrationDetailsData, GetRegistrationDetailsErrors, GetRegistrationDetailsResponses, GetRegistrationsData, GetRegistrationsErrors, GetRegistrationsResponses, GetTeamData, GetTeamEmailSettingsData, GetTeamEmailSettingsErrors, GetTeamEmailSettingsResponses, GetTeamEmailTemplateData, GetTeamEmailTemplateErrors, GetTeamEmailTemplateResponses, GetTeamEmailTemplatesData, GetTeamEmailTemplatesErrors, GetTeamEmailTemplatesResponses, GetTeamErrors, GetTeamResponses, GetTeamsData, GetTeamsErrors, GetTeamsResponses, GetTicketedEventDetailsData, GetTicketedEventDetailsErrors, GetTicketedEventDetailsResponses, GetTicketedEventsData, GetTicketedEventsErrors, GetTicketedEventsResponses, GetTicketTypesData, GetTicketTypesErrors, GetTicketTypesResponses, ListBadgeInstancesData, ListBadgeInstancesErrors, ListBadgeInstancesResponses, ListBadgeTypesData, ListBadgeTypesErrors, ListBadgeTypesResponses, ListCouponsData, ListCouponsErrors, ListCouponsResponses, ListTeamMembersData, ListTeamMembersErrors, ListTeamMembersResponses, PreviewBulkEmailData, PreviewBulkEmailErrors, PreviewBulkEmailResponses, PreviewEventEmailTemplateData, PreviewEventEmailTemplateErrors, PreviewEventEmailTemplateResponses, PreviewTeamEmailTemplateData, PreviewTeamEmailTemplateErrors, PreviewTeamEmailTemplateResponses, RegisterWithCouponHttpEndpointData, RegisterWithCouponHttpEndpointErrors, RemoveTeamMembershipData, RemoveTeamMembershipErrors, RemoveTeamMembershipResponses, RenameBadgeTypeData, RenameBadgeTypeErrors, RenameBadgeTypeResponses, RequestOtpHttpEndpointData, RequestOtpHttpEndpointErrors, RequestTicketedEventCreationData, RequestTicketedEventCreationErrors, RequestTicketedEventCreationResponses, RevokeApiKeyData, RevokeApiKeyErrors, RevokeApiKeyResponses, RevokeCouponData, RevokeCouponErrors, RevokeCouponResponses, SelfCancelRegistrationHttpEndpointData, SelfCancelRegistrationHttpEndpointErrors, SelfChangeTicketsHttpEndpointData, SelfChangeTicketsHttpEndpointErrors, SelfRegisterAttendeeHttpEndpointData, SelfRegisterAttendeeHttpEndpointErrors, TestEventEmailSettingsData, TestEventEmailSettingsErrors, TestEventEmailSettingsResponses, TestSendEventEmailTemplateData, TestSendEventEmailTemplateErrors, TestSendEventEmailTemplateResponses, TestSendTeamEmailTemplateData, TestSendTeamEmailTemplateErrors, TestSendTeamEmailTemplateResponses, TestTeamEmailSettingsData, TestTeamEmailSettingsErrors, TestTeamEmailSettingsResponses, UpdateAdditionalDetailSchemaData, UpdateAdditionalDetailSchemaErrors, UpdateAdditionalDetailSchemaResponses, UpdateBadgeInstanceData, UpdateBadgeInstanceErrors, UpdateBadgeInstanceResponses, UpdateEventEmailTemplateData, UpdateEventEmailTemplateErrors, UpdateEventEmailTemplateResponses, UpdateTeamData, UpdateTeamEmailTemplateData, UpdateTeamEmailTemplateErrors, UpdateTeamEmailTemplateResponses, UpdateTeamErrors, UpdateTeamResponses, UpdateTicketedEventDetailsData, UpdateTicketedEventDetailsErrors, UpdateTicketedEventDetailsResponses, UpdateTicketedEventTimeZoneData, UpdateTicketedEventTimeZoneErrors, UpdateTicketedEventTimeZoneResponses, UpdateTicketTypeData, UpdateTicketTypeErrors, UpdateTicketTypeResponses, UpsertEventEmailSettingsData, UpsertEventEmailSettingsErrors, UpsertEventEmailSettingsResponses, UpsertTeamEmailSettingsData, UpsertTeamEmailSettingsErrors, UpsertTeamEmailSettingsResponses, VerifyOtpHttpEndpointData, VerifyOtpHttpEndpointErrors } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -949,6 +949,139 @@ export const updateTicketType = <ThrowOnError extends boolean = false>(options: 
             'Content-Type': 'application/json',
             ...options.headers
         }
+    });
+};
+
+export const listBadgeTypes = <ThrowOnError extends boolean = false>(options: Options<ListBadgeTypesData, ThrowOnError>) => {
+    return (options.client ?? client).get<ListBadgeTypesResponses, ListBadgeTypesErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}/badge-types',
+        ...options
+    });
+};
+
+export const addBadgeType = <ThrowOnError extends boolean = false>(options: Options<AddBadgeTypeData, ThrowOnError>) => {
+    return (options.client ?? client).post<AddBadgeTypeResponses, AddBadgeTypeErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}/badge-types',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+export const deleteBadgeType = <ThrowOnError extends boolean = false>(options: Options<DeleteBadgeTypeData, ThrowOnError>) => {
+    return (options.client ?? client).delete<DeleteBadgeTypeResponses, DeleteBadgeTypeErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}/badge-types/{badgeTypeId}',
+        ...options
+    });
+};
+
+export const renameBadgeType = <ThrowOnError extends boolean = false>(options: Options<RenameBadgeTypeData, ThrowOnError>) => {
+    return (options.client ?? client).put<RenameBadgeTypeResponses, RenameBadgeTypeErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}/badge-types/{badgeTypeId}',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+export const listBadgeInstances = <ThrowOnError extends boolean = false>(options: Options<ListBadgeInstancesData, ThrowOnError>) => {
+    return (options.client ?? client).get<ListBadgeInstancesResponses, ListBadgeInstancesErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}/badge-types/{badgeTypeId}/instances',
+        ...options
+    });
+};
+
+export const addBadgeInstance = <ThrowOnError extends boolean = false>(options: Options<AddBadgeInstanceData, ThrowOnError>) => {
+    return (options.client ?? client).post<AddBadgeInstanceResponses, AddBadgeInstanceErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}/badge-types/{badgeTypeId}/instances',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+export const deleteBadgeInstance = <ThrowOnError extends boolean = false>(options: Options<DeleteBadgeInstanceData, ThrowOnError>) => {
+    return (options.client ?? client).delete<DeleteBadgeInstanceResponses, DeleteBadgeInstanceErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}/badge-types/{badgeTypeId}/instances/{badgeInstanceId}',
+        ...options
+    });
+};
+
+export const updateBadgeInstance = <ThrowOnError extends boolean = false>(options: Options<UpdateBadgeInstanceData, ThrowOnError>) => {
+    return (options.client ?? client).put<UpdateBadgeInstanceResponses, UpdateBadgeInstanceErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}/badge-types/{badgeTypeId}/instances/{badgeInstanceId}',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+export const exportBadgeCsv = <ThrowOnError extends boolean = false>(options: Options<ExportBadgeCsvData, ThrowOnError>) => {
+    return (options.client ?? client).get<unknown, ExportBadgeCsvErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}/badge-types/{badgeTypeId}/export',
+        ...options
     });
 };
 

@@ -324,6 +324,7 @@ namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence.Migrations
                         .HasColumnName("created_at");
 
                     b.Property<string>("HtmlBody")
+                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("html_body");
 

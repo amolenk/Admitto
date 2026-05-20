@@ -57,6 +57,7 @@
     <PackageVersion Include="Scriban" Version="7.1.0" />
     <PackageVersion Include="Shouldly" Version="4.3.0" />
     <PackageVersion Include="Spectre.Console.Cli" Version="0.55.0" />
+    <PackageVersion Include="Microsoft.CodeAnalysis.CSharp" Version="4.12.0" />
     <PackageVersion Include="Spectre.Console.Json" Version="0.55.2" />
     <PackageVersion Include="TextCopy" Version="6.2.1" />
     <PackageVersion Include="TngTech.ArchUnitNET.MSTestV2" Version="0.13.3" />

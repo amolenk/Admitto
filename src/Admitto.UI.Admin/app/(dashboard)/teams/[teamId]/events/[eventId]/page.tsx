@@ -38,8 +38,8 @@ export default function EventDashboardPage() {
     });
 
     const breadcrumbs = [
-        { label: selectedTeam?.name ?? teamId, href: `/teams/${teamId}/settings` },
-        { label: event.data?.name ?? eventId },
+        { label: selectedTeam?.name ?? "", href: `/teams/${teamId}/settings` },
+        { label: event.data?.name ?? "" },
         { label: "Dashboard" },
     ];
 

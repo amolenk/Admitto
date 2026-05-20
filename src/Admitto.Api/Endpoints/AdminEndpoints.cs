@@ -1,4 +1,5 @@
 using Amolenk.Admitto.ApiService.Middleware;
+using Amolenk.Admitto.Core.Badges;
 using Amolenk.Admitto.Core.Email;
 using Amolenk.Admitto.Core.Organization;
 using Amolenk.Admitto.Core.Registrations;
@@ -21,6 +22,7 @@ public static class AdminEndpoints
         adminGroup
             .MapEmailAdminEndpoints()
             .MapOrganizationAdminEndpoints()
-            .MapRegistrationsAdminEndpoints();
+            .MapRegistrationsAdminEndpoints()
+            .MapBadgesAdminEndpoints();
     }
 }

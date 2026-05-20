@@ -40,7 +40,7 @@ public class EmailTemplate : Aggregate<EmailTemplateId>
 
     public string Subject { get; private set; } = default!;
     public string TextBody { get; private set; } = default!;
-    public string? HtmlBody { get; private set; }
+    public string HtmlBody { get; private set; } = default!;
 
     public static EmailTemplate Create(
         EmailSettingsScope scope,
