@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Shared.Application.Auth;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
@@ -19,7 +20,7 @@ public static class RevokeApiKeyHttpEndpoint
     private static async ValueTask<NoContent> RevokeApiKey(
         Guid teamId,
         Guid keyId,
-        RevokeApiKeyHandler handler,
+        ICommandHandler<RevokeApiKeyCommand> handler,
         [FromKeyedServices(OrganizationModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)

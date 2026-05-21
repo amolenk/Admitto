@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Shared.Application.Auth;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
@@ -19,7 +20,7 @@ public static class UpdateTeamHttpEndpoint
     private static async ValueTask<Ok> UpdateTeam(
         Guid teamId,
         UpdateTeamHttpRequest request,
-        UpdateTeamHandler handler,
+        ICommandHandler<UpdateTeamCommand> handler,
         [FromKeyedServices(OrganizationModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)

@@ -1,7 +1,6 @@
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
-using Microsoft.AspNetCore.Http.HttpResults;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.CouponManagement.GetCouponDetails.AdminApi;
 
@@ -21,7 +20,7 @@ public static class GetCouponDetailsHttpEndpoint
         Guid couponId,
         Guid teamId,
         Guid eventId,
-        GetCouponDetailsHandler handler,
+        IQueryHandler<GetCouponDetailsQuery, CouponDetailsDto> handler,
         CancellationToken cancellationToken)
     {
         var query = new GetCouponDetailsQuery(

@@ -1,7 +1,4 @@
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.Reconfirmations.ReconcileReconfirmationScheduling;
 
@@ -22,7 +19,8 @@ internal sealed class ReconcileReconfirmationSchedulingStartupService(
         try
         {
             using var scope = scopeFactory.CreateScope();
-            var handler = scope.ServiceProvider.GetRequiredService<ReconcileReconfirmationSchedulingHandler>();
+            var handler = scope.ServiceProvider
+                .GetRequiredService<ICommandHandler<ReconcileReconfirmationSchedulingCommand>>();
 
             await handler.HandleAsync(
                 new ReconcileReconfirmationSchedulingCommand(),

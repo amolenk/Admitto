@@ -3,6 +3,7 @@ using Amolenk.Admitto.Core.Email.Application.UseCases.EmailSettings.UpdateEmailS
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
 using Amolenk.Admitto.Core.Shared.Application.Http;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
@@ -31,8 +32,8 @@ public static class UpsertEmailSettingsHttpEndpoint
             Guid teamId,
             Guid? eventId,
             UpsertEmailSettingsHttpRequest request,
-            CreateEmailSettingsHandler createHandler,
-            UpdateEmailSettingsHandler updateHandler,
+            ICommandHandler<CreateEmailSettingsCommand> createHandler,
+            ICommandHandler<UpdateEmailSettingsCommand> updateHandler,
             [FromKeyedServices(EmailModule.Key)] IUnitOfWork unitOfWork,
             CancellationToken ct)
         {

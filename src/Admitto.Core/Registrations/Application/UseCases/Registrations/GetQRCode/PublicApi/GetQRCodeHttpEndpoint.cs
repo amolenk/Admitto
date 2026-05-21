@@ -1,11 +1,7 @@
 using Amolenk.Admitto.Core.Registrations.Application.Common.Cryptography;
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
-using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
-using Microsoft.AspNetCore.Http.HttpResults;
-using Microsoft.EntityFrameworkCore;
 using QRCoder;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.GetQRCode.PublicApi;

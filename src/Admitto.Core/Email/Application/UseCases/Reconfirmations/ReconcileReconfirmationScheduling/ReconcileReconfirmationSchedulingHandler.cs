@@ -1,7 +1,6 @@
 using Amolenk.Admitto.Core.Email.Application.UseCases.Reconfirmations.ScheduleReconfirmations;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
-using Microsoft.Extensions.Logging;
 
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.Reconfirmations.ReconcileReconfirmationScheduling;
 
@@ -13,9 +12,9 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.Reconfirmations.Reconc
 /// </summary>
 internal sealed class ReconcileReconfirmationSchedulingHandler(
     IRegistrationsFacade registrationsFacade,
-    ScheduleReconfirmationsHandler scheduleReconfirmationsHandler,
+    ICommandHandler<ScheduleReconfirmationsCommand> scheduleReconfirmationsHandler,
     ILogger<ReconcileReconfirmationSchedulingHandler> logger)
-    : ICommandHandler<ReconcileReconfirmationSchedulingCommand>
+    : ICommandHandler<ReconcileReconfirmationSchedulingCommand>, IWorkerOnly
 {
     public async ValueTask HandleAsync(
         ReconcileReconfirmationSchedulingCommand command,

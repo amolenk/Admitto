@@ -1,7 +1,5 @@
-using Amolenk.Admitto.Core.Email.Application.UseCases.EmailTemplates.TestSendEmailTemplate;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
-using Amolenk.Admitto.Core.Shared.Application.Http;
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.EmailTemplates.TestSendEmailTemplate.AdminApi;
 
@@ -32,7 +30,7 @@ public static class TestSendEmailTemplateHttpEndpoint
             Guid teamId,
             Guid? eventId,
             TestSendEmailTemplateHttpRequest request,
-            TestSendEmailTemplateHandler handler,
+            ICommandHandler<TestSendEmailTemplateCommand> handler,
             CancellationToken ct)
         {
             var command = isEventScoped

@@ -2,6 +2,7 @@ using Amolenk.Admitto.Core.Email.Application.UseCases.EmailTemplates.CreateEmail
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
 using Amolenk.Admitto.Core.Shared.Application.Http;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
@@ -33,7 +34,7 @@ public static class CreateEmailTemplateHttpEndpoint
             Guid teamId,
             Guid? eventId,
             CreateEmailTemplateHttpRequest request,
-            CreateEmailTemplateHandler handler,
+            ICommandHandler<CreateEmailTemplateCommand, Guid> handler,
             [FromKeyedServices(EmailModule.Key)] IUnitOfWork unitOfWork,
             CancellationToken ct)
         {

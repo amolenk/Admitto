@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Shared.Application.Auth;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
@@ -20,7 +21,7 @@ public static class ChangeTeamMembershipRoleHttpEndpoint
         Guid teamId,
         string email,
         ChangeTeamMembershipRoleHttpRequest request,
-        ChangeTeamMembershipRoleHandler handler,
+        ICommandHandler<ChangeTeamMembershipRoleCommand> handler,
         [FromKeyedServices(OrganizationModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)

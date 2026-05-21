@@ -9,7 +9,7 @@ namespace Amolenk.Admitto.Core.Organization.Application.UseCases.TeamMembershipM
 internal sealed class RegisterExternalUserHandler(
     IOrganizationWriteStore writeStore,
     IExternalUserDirectory userDirectory)
-    : ICommandHandler<RegisterExternalUserCommand>
+    : ICommandHandler<RegisterExternalUserCommand>, IWorkerOnly
 {
     public async ValueTask HandleAsync(RegisterExternalUserCommand command, CancellationToken cancellationToken)
     {

@@ -4,7 +4,7 @@ using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Core.Organization.Application.UseCases.TicketedEventManagement.RegisterTicketedEventArchived.EventHandlers;
 
-internal sealed class TicketedEventArchivedIntegrationEventHandler(RegisterTicketedEventArchivedHandler handler)
+internal sealed class TicketedEventArchivedIntegrationEventHandler(ICommandHandler<RegisterTicketedEventArchivedCommand> handler)
     : IIntegrationEventHandler<TicketedEventArchivedIntegrationEvent>
 {
     public ValueTask HandleAsync(TicketedEventArchivedIntegrationEvent integrationEvent, CancellationToken cancellationToken)

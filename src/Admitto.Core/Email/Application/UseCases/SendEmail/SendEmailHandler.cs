@@ -6,8 +6,6 @@ using Amolenk.Admitto.Core.Email.Domain.Entities;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
-using Microsoft.EntityFrameworkCore;
 
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.SendEmail;
 
@@ -16,7 +14,7 @@ internal sealed class SendEmailHandler(
     IEffectiveEmailSettingsResolver settingsResolver,
     IEmailTemplateService templateService,
     IEmailRenderer renderer,
-    IEmailSender emailSender) : ICommandHandler<SendEmailCommand>
+    IEmailSender emailSender) : ICommandHandler<SendEmailCommand>, IWorkerOnly
 {
     public async ValueTask HandleAsync(SendEmailCommand command, CancellationToken cancellationToken)
     {

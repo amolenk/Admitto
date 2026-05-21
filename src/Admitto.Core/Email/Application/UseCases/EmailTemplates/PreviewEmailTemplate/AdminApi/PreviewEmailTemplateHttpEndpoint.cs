@@ -1,7 +1,5 @@
-using Amolenk.Admitto.Core.Email.Application.UseCases.EmailTemplates.PreviewEmailTemplate;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
-using Amolenk.Admitto.Core.Shared.Application.Http;
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.EmailTemplates.PreviewEmailTemplate.AdminApi;
 
@@ -25,7 +23,7 @@ public static class PreviewEmailTemplateHttpEndpoint
         Guid teamId,
         Guid? eventId,
         PreviewEmailTemplateHttpRequest request,
-        PreviewEmailTemplateHandler handler,
+        IQueryHandler<PreviewEmailTemplateQuery, PreviewEmailTemplateDto> handler,
         CancellationToken ct)
     {
         var query = new PreviewEmailTemplateQuery(

@@ -1,8 +1,6 @@
-using Amolenk.Admitto.Core.Email.Application.UseCases.AttendeeEmails.GetAttendeeEmails;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
-using Microsoft.AspNetCore.Http.HttpResults;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.AttendeeEmails.GetAttendeeEmails.AdminApi;
 
@@ -22,7 +20,7 @@ public static class GetAttendeeEmailsHttpEndpoint
         Guid teamId,
         Guid eventId,
         Guid registrationId,
-        GetAttendeeEmailsHandler handler,
+        IQueryHandler<GetAttendeeEmailsQuery, IReadOnlyList<AttendeeEmailLogItemDto>> handler,
         CancellationToken cancellationToken)
     {
         var query = new GetAttendeeEmailsQuery(

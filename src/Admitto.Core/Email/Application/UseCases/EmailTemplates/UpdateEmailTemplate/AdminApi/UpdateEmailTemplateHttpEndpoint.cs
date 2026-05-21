@@ -1,5 +1,6 @@
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.EmailTemplates.UpdateEmailTemplate.AdminApi;
@@ -25,7 +26,7 @@ public static class UpdateEmailTemplateHttpEndpoint
     private static async ValueTask<Ok> UpdateEmailTemplate(
         Guid id,
         UpdateEmailTemplateHttpRequest request,
-        UpdateEmailTemplateHandler handler,
+        ICommandHandler<UpdateEmailTemplateCommand> handler,
         [FromKeyedServices(EmailModule.Key)] IUnitOfWork unitOfWork,
         CancellationToken ct)
     {

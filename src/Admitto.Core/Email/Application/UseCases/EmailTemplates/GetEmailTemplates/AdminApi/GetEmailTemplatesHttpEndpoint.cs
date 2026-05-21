@@ -1,8 +1,7 @@
 using Amolenk.Admitto.Core.Email.Application.UseCases.EmailTemplates.GetEmailTemplates;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
-using Amolenk.Admitto.Core.Shared.Application.Http;
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.EmailTemplates.GetEmailTemplates.AdminApi;
 
@@ -31,7 +30,7 @@ public static class GetEmailTemplatesHttpEndpoint
         public async ValueTask<Ok<IReadOnlyList<EmailTemplateListItemDto>>> HandleAsync(
             Guid teamId,
             Guid? eventId,
-            GetEmailTemplatesHandler handler,
+            IQueryHandler<GetEmailTemplatesQuery, IReadOnlyList<EmailTemplateListItemDto>> handler,
             CancellationToken ct)
         {
             var scopeId = EmailScopeId.From(scope == EmailSettingsScope.Event ? eventId!.Value : teamId);

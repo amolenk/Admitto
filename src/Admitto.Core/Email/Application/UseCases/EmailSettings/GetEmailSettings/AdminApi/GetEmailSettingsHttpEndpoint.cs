@@ -1,6 +1,7 @@
 using Amolenk.Admitto.Core.Email.Application.UseCases.EmailSettings.GetEmailSettings;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.EmailSettings.GetEmailSettings.AdminApi;
@@ -27,7 +28,7 @@ public static class GetEmailSettingsHttpEndpoint
         public async ValueTask<Ok<EmailSettingsDto>> HandleAsync(
             Guid teamId,
             Guid? eventId,
-            GetEmailSettingsHandler handler,
+            IQueryHandler<GetEmailSettingsQuery, EmailSettingsDto?> handler,
             CancellationToken ct)
         {
             var scopeId = EmailScopeId.From(scope == EmailSettingsScope.Event ? eventId!.Value : teamId);

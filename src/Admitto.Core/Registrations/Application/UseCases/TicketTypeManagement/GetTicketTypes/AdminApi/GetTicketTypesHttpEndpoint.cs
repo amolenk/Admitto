@@ -1,6 +1,5 @@
 using Amolenk.Admitto.Core.Shared.Application.Auth;
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
-using Microsoft.AspNetCore.Http.HttpResults;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypeManagement.GetTicketTypes.AdminApi;
 
@@ -19,7 +18,7 @@ public static class GetTicketTypesHttpEndpoint
     private static async ValueTask<Ok<IReadOnlyList<TicketTypeDto>>> GetTicketTypes(
         Guid teamId,
         Guid eventId,
-        GetTicketTypesHandler handler,
+        IQueryHandler<GetTicketTypesQuery, IReadOnlyList<TicketTypeDto>> handler,
         CancellationToken cancellationToken)
     {
         var query = new GetTicketTypesQuery(TicketedEventId.From(eventId));

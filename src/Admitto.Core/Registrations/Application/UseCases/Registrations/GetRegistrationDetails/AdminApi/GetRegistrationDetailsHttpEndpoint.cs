@@ -1,8 +1,6 @@
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
-using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
-using Microsoft.AspNetCore.Http.HttpResults;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.GetRegistrationDetails.AdminApi;
 
@@ -22,7 +20,7 @@ public static class GetRegistrationDetailsHttpEndpoint
         Guid teamId,
         Guid eventId,
         Guid registrationId,
-        GetRegistrationDetailsHandler handler,
+        IQueryHandler<GetRegistrationDetailsQuery, RegistrationDetailDto?> handler,
         CancellationToken cancellationToken)
     {
         var query = new GetRegistrationDetailsQuery(

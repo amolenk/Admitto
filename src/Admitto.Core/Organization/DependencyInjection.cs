@@ -1,6 +1,5 @@
 using System.Reflection;
 using Amolenk.Admitto.Core.Organization;
-using Amolenk.Admitto.Core.Organization.Application;
 using Amolenk.Admitto.Core.Organization.Application.Bootstrap;
 using Amolenk.Admitto.Core.Organization.Application.Jobs;
 using Amolenk.Admitto.Core.Organization.Application.Persistence;
@@ -14,8 +13,6 @@ using Amolenk.Admitto.Core.Organization.Infrastructure.UserDirectories.Keycloak;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Messaging;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence;
-using FluentValidation;
-using Microsoft.Extensions.Configuration;
 using Quartz;
 
 // ReSharper disable once CheckNamespace
@@ -23,142 +20,149 @@ namespace Microsoft.Extensions.DependencyInjection;
 
 public static class OrganizationModuleExtensions
 {
-    public static IHostApplicationBuilder AddOrganizationModule(this IHostApplicationBuilder builder)
+    extension(IHostApplicationBuilder builder)
     {
-        var services = builder.Services;
-        var assembly = Assembly.GetExecutingAssembly();
-
-        // Command handlers
-        services.AddConcreteCommandHandlersFromAssembly(assembly, "Amolenk.Admitto.Core.Organization");
-
-        // Query handlers
-        services.AddConcreteQueryHandlersFromAssembly(assembly, "Amolenk.Admitto.Core.Organization");
-
-        // Domain event handlers
-        services.AddDomainEventHandlersFromAssembly(assembly, "Amolenk.Admitto.Core.Organization");
-
-        // Validators
-        services.AddValidatorsFromAssembly(assembly, "Amolenk.Admitto.Core.Organization");
-
-        // Message type registry contribution
-        services.AddSingleton<Action<MessageTypeRegistryBuilder>>(
-            b => b.AddFromAssembly(assembly, "Amolenk.Admitto.Core.Organization"));
-
-        // Facade
-        services.AddScoped<OrganizationFacade>();
-        services.AddScoped<IOrganizationFacade>(sp =>
+        public IHostApplicationBuilder AddOrganizationModule(bool includeWorkerHandlers = false)
         {
-            if (builder.Configuration["ORGANIZATION__CACHING__ENABLED"] != "true")
-                return sp.GetRequiredService<OrganizationFacade>();
+            var services = builder.Services;
+            var assembly = Assembly.GetExecutingAssembly();
 
-            var inner = sp.GetRequiredService<OrganizationFacade>();
-            return new CachingOrganizationFacade(inner);
-        });
+            // Command handlers
+            services.AddCommandHandlersFromAssembly(
+                assembly,
+                OrganizationModule.NamespacePrefix,
+                includeWorkerHandlers);
 
-        // Infrastructure
-        builder.AddModuleDatabaseServices<IOrganizationWriteStore, OrganizationDbContext>(
-            OrganizationModule.Key);
+            // Query handlers
+            services.AddQueryHandlersFromAssembly(assembly, OrganizationModule.NamespacePrefix);
 
-        services.AddKeyedScoped<IPostgresExceptionMapping, PostgresExceptionMapping>(
-            OrganizationModule.Key);
+            // Domain event handlers
+            services.AddDomainEventHandlersFromAssembly(assembly, OrganizationModule.NamespacePrefix);
 
-        // Bootstrap admin (only when configured)
-        var bootstrapEmail = builder.Configuration[$"{BootstrapAdminOptions.SectionName}:EmailAddress"];
-        if (!string.IsNullOrWhiteSpace(bootstrapEmail))
-        {
-            services.Configure<BootstrapAdminOptions>(
-                builder.Configuration.GetSection(BootstrapAdminOptions.SectionName));
-            services.AddHostedService<BootstrapAdminInitializer>();
+            // Validators
+            services.AddValidatorsFromAssembly(assembly, OrganizationModule.NamespacePrefix);
+
+            // Message type registry contribution
+            services.AddSingleton<Action<MessageTypeRegistryBuilder>>(b => b.AddFromAssembly(
+                assembly,
+                OrganizationModule.NamespacePrefix));
+
+            // Facade
+            services.AddScoped<OrganizationFacade>();
+            services.AddScoped<IOrganizationFacade>(sp =>
+            {
+                if (builder.Configuration["ORGANIZATION__CACHING__ENABLED"] != "true")
+                    return sp.GetRequiredService<OrganizationFacade>();
+
+                var inner = sp.GetRequiredService<OrganizationFacade>();
+                return new CachingOrganizationFacade(inner);
+            });
+
+            // Infrastructure
+            builder.AddModuleDatabaseServices<IOrganizationWriteStore, OrganizationDbContext>(
+                OrganizationModule.Key);
+
+            services.AddKeyedScoped<IPostgresExceptionMapping, PostgresExceptionMapping>(
+                OrganizationModule.Key);
+
+            // Bootstrap admin (only when configured)
+            var bootstrapEmail = builder.Configuration[$"{BootstrapAdminOptions.SectionName}:EmailAddress"];
+            if (!string.IsNullOrWhiteSpace(bootstrapEmail))
+            {
+                services.Configure<BootstrapAdminOptions>(
+                    builder.Configuration.GetSection(BootstrapAdminOptions.SectionName));
+                services.AddHostedService<BootstrapAdminInitializer>();
+            }
+
+            return builder;
         }
 
-        return builder;
-    }
-
-    public static IHostApplicationBuilder AddOrganizationModuleWorker(this IHostApplicationBuilder builder)
-    {
-        builder.AddOrganizationModule();
-
-        var services = builder.Services;
-        var assembly = Assembly.GetExecutingAssembly();
-
-        // Integration event handlers
-        services.AddIntegrationEventHandlersFromAssembly(assembly, "Amolenk.Admitto.Core.Organization");
-
-        // Worker-only interface mapping — concrete already registered by AddOrganizationModule scan
-        services.AddScoped<ICommandHandler<RegisterExternalUserCommand>, RegisterExternalUserHandler>(
-            sp => sp.GetRequiredService<RegisterExternalUserHandler>());
-
-        // Quartz job registrations (hosted service is started once by AddSharedInfrastructureQueueConsumer)
-        services.AddQuartz(options =>
+        public IHostApplicationBuilder AddOrganizationModuleWorker()
         {
-            options.AddJob<DeprovisionUserIdpJob>(c => c
-                .StoreDurably()
-                .WithIdentity(DeprovisionUserIdpJob.Name));
+            builder.AddOrganizationModule(includeWorkerHandlers: true);
 
-            options.AddTrigger(t => t
-                .ForJob(DeprovisionUserIdpJob.Name)
-                .WithIdentity($"{DeprovisionUserIdpJob.Name}.trigger")
-                .WithSimpleSchedule(s => s
-                    .WithIntervalInHours(1)
-                    .RepeatForever())
-                .StartNow());
+            var services = builder.Services;
+            var assembly = Assembly.GetExecutingAssembly();
 
-            options.AddJob<ExpireStaleEventCreationRequestsJob>(c => c
-                .StoreDurably()
-                .WithIdentity(ExpireStaleEventCreationRequestsJob.Name));
+            // Integration event handlers
+            services.AddIntegrationEventHandlersFromAssembly(assembly, OrganizationModule.NamespacePrefix);
 
-            options.AddTrigger(t => t
-                .ForJob(ExpireStaleEventCreationRequestsJob.Name)
-                .WithIdentity($"{ExpireStaleEventCreationRequestsJob.Name}.trigger")
-                .WithSimpleSchedule(s => s
-                    .WithIntervalInMinutes(15)
-                    .RepeatForever())
-                .StartNow());
-        });
+            // Worker-only interface mapping — concrete already registered by AddOrganizationModule scan
+            // services.AddScoped<ICommandHandler<RegisterExternalUserCommand>, RegisterExternalUserHandler>(sp =>
+            //     sp.GetRequiredService<RegisterExternalUserHandler>());
 
-        return builder;
-    }
+            // Quartz job registrations (hosted service is started once by AddSharedInfrastructureQueueConsumer)
+            services.AddQuartz(options =>
+            {
+                options.AddJob<DeprovisionUserIdpJob>(c => c
+                    .StoreDurably()
+                    .WithIdentity(DeprovisionUserIdpJob.Name));
 
-    public static IHostApplicationBuilder AddOrganizationIdentityServices(this IHostApplicationBuilder builder)
-    {
-        if (builder.Configuration.GetSection(Auth0Options.SectionName).Exists())
-            builder.AddAuth0Services();
-        else if (builder.Configuration.GetSection(KeycloakOptions.SectionName).Exists())
-            builder.AddKeycloakServices();
-        else
-            throw new InvalidOperationException(
-                "No user management service configured. Please configure either Auth0 or Keycloak settings.");
+                options.AddTrigger(t => t
+                    .ForJob(DeprovisionUserIdpJob.Name)
+                    .WithIdentity($"{DeprovisionUserIdpJob.Name}.trigger")
+                    .WithSimpleSchedule(s => s
+                        .WithIntervalInHours(1)
+                        .RepeatForever())
+                    .StartNow());
 
-        return builder;
-    }
+                options.AddJob<ExpireStaleEventCreationRequestsJob>(c => c
+                    .StoreDurably()
+                    .WithIdentity(ExpireStaleEventCreationRequestsJob.Name));
 
-    private static void AddAuth0Services(this IHostApplicationBuilder builder)
-    {
-        var services = builder.Services;
+                options.AddTrigger(t => t
+                    .ForJob(ExpireStaleEventCreationRequestsJob.Name)
+                    .WithIdentity($"{ExpireStaleEventCreationRequestsJob.Name}.trigger")
+                    .WithSimpleSchedule(s => s
+                        .WithIntervalInMinutes(15)
+                        .RepeatForever())
+                    .StartNow());
+            });
 
-        services.Configure<Auth0Options>(builder.Configuration.GetSection(Auth0Options.SectionName));
-        services.AddOptions<Auth0Options>()
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
+            return builder;
+        }
 
-        services.AddScoped<IAuth0ManagementApiClient, Auth0ManagementApiAdapter>();
-        services.AddScoped<IExternalUserDirectory, Auth0UserDirectory>();
-    }
+        public IHostApplicationBuilder AddOrganizationIdentityServices()
+        {
+            if (builder.Configuration.GetSection(Auth0Options.SectionName).Exists())
+                builder.AddAuth0Services();
+            else if (builder.Configuration.GetSection(KeycloakOptions.SectionName).Exists())
+                builder.AddKeycloakServices();
+            else
+                throw new InvalidOperationException(
+                    "No user management service configured. Please configure either Auth0 or Keycloak settings.");
 
-    private static void AddKeycloakServices(this IHostApplicationBuilder builder)
-    {
-        var services = builder.Services;
+            return builder;
+        }
 
-        services.Configure<KeycloakOptions>(builder.Configuration.GetSection(KeycloakOptions.SectionName));
-        services.AddOptions<KeycloakOptions>()
-            .ValidateDataAnnotations()
-            .ValidateOnStart();
+        private void AddAuth0Services()
+        {
+            var services = builder.Services;
 
-        services.AddTransient<KeycloakAccessTokenHandler>();
+            services.Configure<Auth0Options>(builder.Configuration.GetSection(Auth0Options.SectionName));
+            services.AddOptions<Auth0Options>()
+                .ValidateDataAnnotations()
+                .ValidateOnStart();
 
-        var settings = builder.Configuration.GetSection(KeycloakOptions.SectionName).Get<KeycloakOptions>();
-        services.AddHttpClient<IExternalUserDirectory, KeycloakUserManagementService>(client =>
-                client.BaseAddress = new Uri(settings!.Authority))
-            .AddHttpMessageHandler<KeycloakAccessTokenHandler>();
+            services.AddScoped<IAuth0ManagementApiClient, Auth0ManagementApiAdapter>();
+            services.AddScoped<IExternalUserDirectory, Auth0UserDirectory>();
+        }
+
+        private void AddKeycloakServices()
+        {
+            var services = builder.Services;
+
+            services.Configure<KeycloakOptions>(builder.Configuration.GetSection(KeycloakOptions.SectionName));
+            services.AddOptions<KeycloakOptions>()
+                .ValidateDataAnnotations()
+                .ValidateOnStart();
+
+            services.AddTransient<KeycloakAccessTokenHandler>();
+
+            var settings = builder.Configuration.GetSection(KeycloakOptions.SectionName).Get<KeycloakOptions>();
+            services.AddHttpClient<IExternalUserDirectory, KeycloakUserManagementService>(client =>
+                    client.BaseAddress = new Uri(settings!.Authority))
+                .AddHttpMessageHandler<KeycloakAccessTokenHandler>();
+        }
     }
 }

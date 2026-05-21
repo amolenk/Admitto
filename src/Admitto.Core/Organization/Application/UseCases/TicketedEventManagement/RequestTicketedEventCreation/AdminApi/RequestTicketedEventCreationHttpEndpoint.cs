@@ -1,6 +1,6 @@
 using Amolenk.Admitto.Core.Shared.Application.Auth;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Core.Organization.Application.UseCases.TicketedEventManagement.RequestTicketedEventCreation.AdminApi;
 
@@ -25,7 +25,7 @@ public static class RequestTicketedEventCreationHttpEndpoint
         Guid teamId,
         IUserContextAccessor userContextAccessor,
         RequestTicketedEventCreationHttpRequest request,
-        RequestTicketedEventCreationHandler handler,
+        ICommandHandler<RequestTicketedEventCreationCommand, Guid> handler,
         [FromKeyedServices(OrganizationModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)

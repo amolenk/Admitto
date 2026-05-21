@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Shared.Application.Auth;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 
 namespace Amolenk.Admitto.Core.Organization.Application.UseCases.TeamManagement.CreateTeam.AdminApi;
@@ -17,7 +18,7 @@ public static class CreateTeamHttpEndpoint
 
     private static async ValueTask<Ok<CreateTeamHttpResponse>> CreateTeam(
         CreateTeamHttpRequest request,
-        CreateTeamHandler handler,
+        ICommandHandler<CreateTeamCommand, Guid> handler,
         [FromKeyedServices(OrganizationModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)

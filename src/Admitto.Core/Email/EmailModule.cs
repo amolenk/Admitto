@@ -22,6 +22,7 @@ namespace Amolenk.Admitto.Core.Email;
 public static class EmailModule
 {
     public const string Key = nameof(Email);
+    public const string NamespacePrefix = "Amolenk.Admitto.Core.Email";
 
     public static RouteGroupBuilder MapEmailAdminEndpoints(this RouteGroupBuilder group)
     {

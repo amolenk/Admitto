@@ -18,6 +18,8 @@ public static class PreviewBulkEmailHttpEndpoint
                 IBulkEmailRecipientResolver recipientResolver,
                 CancellationToken ct) =>
             {
+                // TODO Should be command/query
+
                 var source = request.Source.ToDomain();
                 var recipients = await recipientResolver.ResolveAsync(
                     TicketedEventId.From(eventId),

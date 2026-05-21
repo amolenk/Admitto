@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Registrations.Application.Security;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
@@ -20,7 +21,7 @@ public static class SelfRegisterAttendeeHttpEndpoint
         SelfRegisterAttendeeHttpRequest request,
         HttpRequest httpRequest,
         IVerificationTokenService verificationTokenService,
-        RegisterAttendeeHandler handler,
+        ICommandHandler<RegisterAttendeeCommand, Guid> handler,
         [FromKeyedServices(RegistrationsModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)

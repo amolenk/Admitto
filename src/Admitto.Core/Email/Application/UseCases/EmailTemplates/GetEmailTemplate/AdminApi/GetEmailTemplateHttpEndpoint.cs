@@ -1,6 +1,7 @@
 using Amolenk.Admitto.Core.Email.Application.UseCases.EmailTemplates.GetEmailTemplate;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
@@ -27,7 +28,7 @@ public static class GetEmailTemplateHttpEndpoint
     {
         public async ValueTask<Ok<EmailTemplateDto>> HandleAsync(
             Guid id,
-            GetEmailTemplateHandler handler,
+            IQueryHandler<GetEmailTemplateQuery, EmailTemplateDto?> handler,
             CancellationToken ct)
         {
             var dto = await handler.HandleAsync(

@@ -15,7 +15,7 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.BulkEmails.TriggerBulk
 internal sealed class TriggerBulkEmailJobHandler(
     ISchedulerFactory schedulerFactory,
     ILogger<TriggerBulkEmailJobHandler> logger)
-    : ICommandHandler<TriggerBulkEmailJobCommand>
+    : ICommandHandler<TriggerBulkEmailJobCommand>, IWorkerOnly
 {
     public const string JobGroup = "bulk-email-fan-out";
 

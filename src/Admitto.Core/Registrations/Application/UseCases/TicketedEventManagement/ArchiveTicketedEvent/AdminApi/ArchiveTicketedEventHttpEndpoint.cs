@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Shared.Application.Auth;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Microsoft.AspNetCore.Http.HttpResults;
 
@@ -19,7 +20,7 @@ public static class ArchiveTicketedEventHttpEndpoint
     private static async ValueTask<NoContent> ArchiveTicketedEvent(
         Guid teamId,
         Guid eventId,
-        ArchiveTicketedEventHandler handler,
+        ICommandHandler<ArchiveTicketedEventCommand> handler,
         [FromKeyedServices(RegistrationsModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)

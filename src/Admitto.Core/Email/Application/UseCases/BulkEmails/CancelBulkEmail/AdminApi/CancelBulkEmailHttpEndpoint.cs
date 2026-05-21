@@ -1,5 +1,6 @@
 using Amolenk.Admitto.Core.Email.Application.UseCases.BulkEmails.CancelBulkEmail;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.BulkEmails.CancelBulkEmail.AdminApi;
@@ -20,7 +21,7 @@ public static class CancelBulkEmailHttpEndpoint
         Guid teamId,
         Guid eventId,
         Guid bulkEmailJobId,
-        CancelBulkEmailHandler handler,
+        ICommandHandler<CancelBulkEmailCommand> handler,
         [FromKeyedServices(EmailModule.Key)] IUnitOfWork unitOfWork,
         CancellationToken ct)
     {

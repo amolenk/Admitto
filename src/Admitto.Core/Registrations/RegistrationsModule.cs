@@ -32,6 +32,7 @@ namespace Amolenk.Admitto.Core.Registrations;
 public static class RegistrationsModule
 {
     public const string Key = nameof(Registrations);
+    public const string NamespacePrefix = "Amolenk.Admitto.Core.Registrations";
 
     public static RouteGroupBuilder MapRegistrationsAdminEndpoints(this RouteGroupBuilder group)
     {

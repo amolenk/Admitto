@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.ChangeAttendeeTickets.PublicApi;
@@ -18,7 +19,7 @@ public static class SelfChangeTicketsHttpEndpoint
         Guid eventId,
         Guid registrationId,
         SelfChangeTicketsHttpRequest request,
-        ChangeAttendeeTicketsHandler handler,
+        ICommandHandler<ChangeAttendeeTicketsCommand> handler,
         [FromKeyedServices(RegistrationsModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)

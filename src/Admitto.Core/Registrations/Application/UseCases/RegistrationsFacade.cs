@@ -4,17 +4,17 @@ using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEventManag
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEventManagement.GetReconfirmTriggerSpec;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEventManagement.GetTicketedEventEmailContext;
 using Amolenk.Admitto.Core.Registrations.Contracts;
-using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
-using Microsoft.EntityFrameworkCore;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases;
 
 internal sealed class RegistrationsFacade(
-    GetTicketedEventEmailContextHandler getEmailContextHandler,
-    GetRegistrationsNs.GetRegistrationsHandler getRegistrationsHandler,
-    GetReconfirmTriggerSpecHandler getReconfirmTriggerSpecHandler,
-    GetActiveReconfirmTriggerSpecsHandler getActiveReconfirmTriggerSpecsHandler,
+    IQueryHandler<GetTicketedEventEmailContextQuery, TicketedEventEmailContextDto> getEmailContextHandler,
+    IQueryHandler<GetRegistrationsNs.GetRegistrationsQuery, IReadOnlyList<GetRegistrationsNs.RegistrationListItemDto>?>
+        getRegistrationsHandler,
+    IQueryHandler<GetReconfirmTriggerSpecQuery, ReconfirmTriggerSpecDto?> getReconfirmTriggerSpecHandler,
+    IQueryHandler<GetActiveReconfirmTriggerSpecsQuery, IReadOnlyList<ReconfirmTriggerSpecDto>>
+        getActiveReconfirmTriggerSpecsHandler,
     IRegistrationsWriteStore writeStore) : IRegistrationsFacade
 {
     public async ValueTask<TicketedEventEmailContextDto> GetTicketedEventEmailContextAsync(

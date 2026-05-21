@@ -11,14 +11,11 @@ builder.Services.AddSingleton<IUserContextAccessor>(
     new StaticUserContextAccessor(StaticUserContextAccessor.SystemUser));
 
 // Add modules (application + infrastructure) and their worker-specific services.
-builder
-    .AddOrganizationModuleWorker()
-    .AddOrganizationIdentityServices();
-
-builder.AddRegistrationsModuleWorker();
-
-builder.AddEmailModuleWorker();
 builder.AddBadgesModuleWorker();
+builder.AddEmailModuleWorker();
+builder.AddOrganizationModuleWorker();
+builder.AddOrganizationIdentityServices();
+builder.AddRegistrationsModuleWorker();
 
 // Add shared services.
 builder

@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Shared.Application.Auth;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
@@ -19,7 +20,7 @@ public static class RemoveTeamMembershipHttpEndpoint
     private static async ValueTask<Ok> RemoveTeamMembership(
         Guid teamId,
         string email,
-        RemoveTeamMembershipHandler handler,
+        ICommandHandler<RemoveTeamMembershipCommand> handler,
         [FromKeyedServices(OrganizationModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)

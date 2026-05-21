@@ -1,9 +1,7 @@
-using Amolenk.Admitto.Core.Email.Application.UseCases.EmailSettings.DeleteEmailSettings;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
-using Amolenk.Admitto.Core.Shared.Application.Http;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.EmailSettings.DeleteEmailSettings.AdminApi;
@@ -31,7 +29,7 @@ public static class DeleteEmailSettingsHttpEndpoint
             Guid teamId,
             Guid? eventId,
             [FromQuery] uint version,
-            DeleteEmailSettingsHandler handler,
+            ICommandHandler<DeleteEmailSettingsCommand> handler,
             [FromKeyedServices(EmailModule.Key)] IUnitOfWork unitOfWork,
             CancellationToken ct)
         {

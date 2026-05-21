@@ -1,5 +1,6 @@
 using Amolenk.Admitto.Core.Email.Application.UseCases.BulkEmails.CreateBulkEmail;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
@@ -21,7 +22,7 @@ public static class CreateBulkEmailHttpEndpoint
         Guid teamId,
         Guid eventId,
         CreateBulkEmailHttpRequest request,
-        CreateBulkEmailHandler handler,
+        ICommandHandler<CreateBulkEmailCommand, Guid> handler,
         [FromKeyedServices(EmailModule.Key)] IUnitOfWork unitOfWork,
         CancellationToken ct)
     {

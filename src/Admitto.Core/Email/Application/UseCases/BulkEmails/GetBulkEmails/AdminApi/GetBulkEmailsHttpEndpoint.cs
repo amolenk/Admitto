@@ -1,6 +1,5 @@
-using Amolenk.Admitto.Core.Email.Application.UseCases.BulkEmails.GetBulkEmails;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.BulkEmails.GetBulkEmails.AdminApi;
 
@@ -19,7 +18,7 @@ public static class GetBulkEmailsHttpEndpoint
     private static async ValueTask<Ok<IReadOnlyList<BulkEmailListItemDto>>> GetBulkEmails(
         Guid teamId,
         Guid eventId,
-        GetBulkEmailsHandler handler,
+        IQueryHandler<GetBulkEmailsQuery, IReadOnlyList<BulkEmailListItemDto>> handler,
         CancellationToken ct)
     {
         var rows = await handler.HandleAsync(

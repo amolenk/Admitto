@@ -11,7 +11,7 @@ namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEventM
 /// <c>TicketedEventCreatedIntegrationEvent</c>.
 /// </summary>
 internal sealed class TicketedEventCreationRequestedIntegrationEventHandler(
-    MaterializeTicketedEventHandler materializeHandler)
+    ICommandHandler<MaterializeTicketedEventCommand> materializeHandler)
     : IIntegrationEventHandler<TicketedEventCreationRequestedIntegrationEvent>
 {
     public ValueTask HandleAsync(

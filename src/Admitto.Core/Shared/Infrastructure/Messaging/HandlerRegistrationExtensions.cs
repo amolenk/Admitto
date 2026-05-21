@@ -5,124 +5,92 @@ using FluentValidation;
 namespace Amolenk.Admitto.Core.Shared.Infrastructure.Messaging;
 
 /// <summary>
-/// Assembly-scanning registration helpers that replace per-type
-/// <c>AddScoped</c> calls in each module's DI setup.
-/// All modules live in a single assembly; the <paramref name="namespacePrefix"/>
-/// limits each scan to the owning module's namespace.
+/// Assembly-scanning registration helpers.
 /// </summary>
 public static class HandlerRegistrationExtensions
 {
-    /// <summary>
-    /// Scans for non-abstract concrete types in <paramref name="namespacePrefix"/>.*
-    /// implementing any <c>ICommandHandler&lt;TCommand&gt;</c> or
-    /// <c>ICommandHandler&lt;TCommand, TResult&gt;</c> variant and registers each as
-    /// <c>AddScoped&lt;THandler&gt;()</c> (concrete only).
-    /// For queue-dispatched commands and handlers that need <c>ICommandHandler&lt;T&gt;</c>
-    /// by interface, add explicit mappings in the Worker-specific DI method.
-    /// </summary>
-    public static IServiceCollection AddConcreteCommandHandlersFromAssembly(
-        this IServiceCollection services,
-        Assembly assembly,
-        string namespacePrefix)
+    extension(IServiceCollection services)
     {
-        var commandHandlerType = typeof(ICommandHandler<>);
-        var commandHandlerWithResultType = typeof(ICommandHandler<,>);
-
-        foreach (var type in assembly.GetTypes()
-                     .Where(t => t is { IsClass: true, IsAbstract: false }
-                                 && t.Namespace is not null
-                                 && (t.Namespace == namespacePrefix
-                                     || t.Namespace.StartsWith(namespacePrefix + ".", StringComparison.Ordinal))))
+        /// <summary>
+        /// Scans for command handlers in <paramref name="namespacePrefix"/>.*
+        /// </summary>
+        public IServiceCollection AddCommandHandlersFromAssembly(
+            Assembly assembly,
+            string namespacePrefix,
+            bool includeWorkerHandlers = false)
         {
-            var hasCommandInterface = type.GetInterfaces()
-                .Any(i => i.IsGenericType
-                          && (i.GetGenericTypeDefinition() == commandHandlerType
-                              || i.GetGenericTypeDefinition() == commandHandlerWithResultType));
+            services.RegisterHandlers(assembly, namespacePrefix, typeof(ICommandHandler<>), includeWorkerHandlers);
+            services.RegisterHandlers(assembly, namespacePrefix, typeof(ICommandHandler<,>), includeWorkerHandlers);
+            return services;
+        }
 
-            if (hasCommandInterface)
+        /// <summary>
+        /// Scans for query handlers in <paramref name="namespacePrefix"/>.*
+        /// </summary>
+        public IServiceCollection AddQueryHandlersFromAssembly(
+            Assembly assembly,
+            string namespacePrefix,
+            bool includeWorkerHandlers = false)
+        {
+            services.RegisterHandlers(assembly, namespacePrefix, typeof(IQueryHandler<,>), includeWorkerHandlers);
+            return services;
+        }
+
+        /// <summary>
+        /// Scans for domain event handlers in <paramref name="namespacePrefix"/>.*
+        /// </summary>
+        public IServiceCollection AddDomainEventHandlersFromAssembly(
+            Assembly assembly,
+            string namespacePrefix)
+        {
+            services.RegisterHandlers(assembly, namespacePrefix, typeof(IDomainEventHandler<>));
+            return services;
+        }
+
+        /// <summary>
+        /// Scans for integration event handlers in <paramref name="namespacePrefix"/>.*
+        /// </summary>
+        public IServiceCollection AddIntegrationEventHandlersFromAssembly(
+            Assembly assembly,
+            string namespacePrefix)
+        {
+            services.RegisterHandlers(assembly, namespacePrefix, typeof(IIntegrationEventHandler<>));
+            return services;
+        }
+
+        /// <summary>
+        /// Scans for FluentValidation validators in <paramref name="namespacePrefix"/>.*
+        /// only, restricting the scan to the owning module's namespace so that modules
+        /// sharing a single assembly do not register each other's validators.
+        /// </summary>
+        public IServiceCollection AddValidatorsFromAssembly(
+            Assembly assembly,
+            string namespacePrefix)
+        {
+            return services.AddValidatorsFromAssembly(
+                assembly,
+                filter: result => result.ValidatorType.Namespace is not null
+                                  && (result.ValidatorType.Namespace == namespacePrefix
+                                      || result.ValidatorType.Namespace.StartsWith(
+                                          namespacePrefix + ".",
+                                          StringComparison.Ordinal)));
+        }
+
+        private void RegisterHandlers(
+            Assembly assembly,
+            string namespacePrefix,
+            Type openHandlerType,
+            bool includeWorkerHandlers = false)
+        {
+            var filter = new Func<Type, bool>(t => includeWorkerHandlers || !t.IsAssignableTo(typeof(IWorkerOnly)));
+
+            foreach (var (closedInterface, implementation) in FindHandlers(assembly, namespacePrefix, openHandlerType))
             {
-                services.AddScoped(type);
+                if (filter is not null && !filter(implementation)) continue;
+
+                services.AddScoped(closedInterface, implementation);
             }
         }
-
-        return services;
-    }
-
-    /// <summary>
-    /// Scans for non-abstract concrete types in <paramref name="namespacePrefix"/>.*
-    /// implementing any <c>IQueryHandler&lt;TQuery, TResult&gt;</c> variant and
-    /// registers each as <c>AddScoped&lt;THandler&gt;()</c> (concrete only).
-    /// </summary>
-    public static IServiceCollection AddConcreteQueryHandlersFromAssembly(
-        this IServiceCollection services,
-        Assembly assembly,
-        string namespacePrefix)
-    {
-        var handlerOpenType = typeof(IQueryHandler<,>);
-
-        foreach (var (_, implementation) in FindHandlers(assembly, namespacePrefix, handlerOpenType))
-        {
-            services.AddScoped(implementation);
-        }
-
-        return services;
-    }
-
-    /// <summary>
-    /// Scans for non-abstract concrete types in <paramref name="namespacePrefix"/>.*
-    /// implementing closed <c>IDomainEventHandler&lt;TEvent&gt;</c> and registers
-    /// each as <c>AddScoped&lt;IDomainEventHandler&lt;TEvent&gt;, THandler&gt;()</c>.
-    /// </summary>
-    public static IServiceCollection AddDomainEventHandlersFromAssembly(
-        this IServiceCollection services,
-        Assembly assembly,
-        string namespacePrefix)
-    {
-        var handlerOpenType = typeof(IDomainEventHandler<>);
-
-        foreach (var (closedInterface, implementation) in FindHandlers(assembly, namespacePrefix, handlerOpenType))
-        {
-            services.AddScoped(closedInterface, implementation);
-        }
-
-        return services;
-    }
-
-    /// <summary>
-    /// Scans for non-abstract concrete types in <paramref name="namespacePrefix"/>.*
-    /// implementing closed <c>IIntegrationEventHandler&lt;TEvent&gt;</c> and registers
-    /// each as <c>AddScoped&lt;IIntegrationEventHandler&lt;TEvent&gt;, THandler&gt;()</c>.
-    /// </summary>
-    public static IServiceCollection AddIntegrationEventHandlersFromAssembly(
-        this IServiceCollection services,
-        Assembly assembly,
-        string namespacePrefix)
-    {
-        var handlerOpenType = typeof(IIntegrationEventHandler<>);
-
-        foreach (var (closedInterface, implementation) in FindHandlers(assembly, namespacePrefix, handlerOpenType))
-        {
-            services.AddScoped(closedInterface, implementation);
-        }
-
-        return services;
-    }
-
-    /// <summary>
-    /// Scans for FluentValidation validators in <paramref name="namespacePrefix"/>.*
-    /// only, restricting the scan to the owning module's namespace so that modules
-    /// sharing a single assembly do not register each other's validators.
-    /// </summary>
-    public static IServiceCollection AddValidatorsFromAssembly(
-        this IServiceCollection services,
-        Assembly assembly,
-        string namespacePrefix)
-    {
-        return services.AddValidatorsFromAssembly(assembly,
-            filter: result => result.ValidatorType.Namespace is not null
-                              && (result.ValidatorType.Namespace == namespacePrefix
-                                  || result.ValidatorType.Namespace.StartsWith(
-                                      namespacePrefix + ".", StringComparison.Ordinal)));
     }
 
     private static IEnumerable<(Type ClosedInterface, Type Implementation)> FindHandlers(
@@ -131,9 +99,10 @@ public static class HandlerRegistrationExtensions
         Type openHandlerType)
     {
         return assembly.GetTypes()
-            .Where(t => t is { IsClass: true, IsAbstract: false }
-                        && t.Namespace is not null
-                        && (t.Namespace == namespacePrefix || t.Namespace.StartsWith(namespacePrefix + ".", StringComparison.Ordinal)))
+            .Where(t => t is { IsClass: true, IsAbstract: false, Namespace: not null }
+                        && (t.Namespace == namespacePrefix || t.Namespace.StartsWith(
+                            namespacePrefix + ".",
+                            StringComparison.Ordinal)))
             .SelectMany(t => t.GetInterfaces()
                 .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == openHandlerType)
                 .Select(i => (ClosedInterface: i, Implementation: t)));

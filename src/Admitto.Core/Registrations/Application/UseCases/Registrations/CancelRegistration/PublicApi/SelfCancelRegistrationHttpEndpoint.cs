@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.CancelRegistration.PublicApi;
@@ -17,7 +18,7 @@ public static class SelfCancelRegistrationHttpEndpoint
         Guid teamId,
         Guid eventId,
         Guid registrationId,
-        CancelRegistrationHandler handler,
+        ICommandHandler<CancelRegistrationCommand> handler,
         [FromKeyedServices(RegistrationsModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)

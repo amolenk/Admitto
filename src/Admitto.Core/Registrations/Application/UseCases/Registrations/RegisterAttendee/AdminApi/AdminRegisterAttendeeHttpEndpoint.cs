@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Shared.Application.Auth;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Microsoft.AspNetCore.Http.HttpResults;
 
@@ -20,7 +21,7 @@ public static class AdminRegisterAttendeeHttpEndpoint
         Guid teamId,
         Guid eventId,
         AdminRegisterAttendeeHttpRequest request,
-        RegisterAttendeeHandler handler,
+        ICommandHandler<RegisterAttendeeCommand, Guid> handler,
         [FromKeyedServices(RegistrationsModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)

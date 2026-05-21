@@ -1,5 +1,6 @@
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.BulkEmails.GetBulkEmail.AdminApi;
@@ -20,7 +21,7 @@ public static class GetBulkEmailHttpEndpoint
         Guid teamId,
         Guid eventId,
         Guid bulkEmailJobId,
-        GetBulkEmailHandler handler,
+        IQueryHandler<GetBulkEmailQuery, BulkEmailJobDetailDto?> handler,
         CancellationToken ct)
     {
         var dto = await handler.HandleAsync(

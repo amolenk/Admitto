@@ -1,0 +1,31 @@
+using Amolenk.Admitto.Core.Badges.Application.Persistence;
+using Amolenk.Admitto.Core.Badges.Domain.Entities;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
+using Amolenk.Admitto.Core.Shared.Application.Persistence;
+
+namespace Amolenk.Admitto.Core.Badges.Application.UseCases.BadgeTypeManagement.AddBadgeType;
+
+internal sealed class AddBadgeTypeHandler(IBadgesWriteStore writeStore)
+    : ICommandHandler<AddBadgeTypeCommand, Guid>
+{
+    public async ValueTask<Guid> HandleAsync(AddBadgeTypeCommand command, CancellationToken cancellationToken)
+    {
+        var eventId = TicketedEventId.From(command.EventId);
+
+        var badgesEvent = await writeStore.BadgesEvents.GetUntrackedAsync(
+             e => e.Id == eventId,
+             cancellationToken);
+
+        badgesEvent.EnsureEventActive();
+
+        var kind = Enum.Parse<BadgeKind>(command.Kind, ignoreCase: true);
+        var id = BadgeTypeId.New();
+        var name = BadgeTypeName.From(command.Name);
+        var ticketTypeIds = command.TicketTypeIds.Select(TicketTypeId.From).ToList();
+
+        var badgeType = BadgeType.Create(id, eventId, name, kind, ticketTypeIds);
+        writeStore.BadgeTypes.Add(badgeType);
+
+        return id.Value;
+    }
+}

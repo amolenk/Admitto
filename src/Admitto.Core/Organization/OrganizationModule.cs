@@ -18,6 +18,7 @@ namespace Amolenk.Admitto.Core.Organization;
 public static class OrganizationModule
 {
     public const string Key = nameof(Organization);
+    public const string NamespacePrefix = "Amolenk.Admitto.Core.Organization";
 
     public static RouteGroupBuilder MapOrganizationAdminEndpoints(this RouteGroupBuilder group)
     {

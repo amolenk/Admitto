@@ -1,5 +1,5 @@
 using Amolenk.Admitto.Core.Shared.Application.Auth;
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
 namespace Amolenk.Admitto.Core.Organization.Application.UseCases.TicketedEventManagement.GetEventCreationRequest.AdminApi;
 
@@ -22,7 +22,7 @@ public static class GetEventCreationRequestHttpEndpoint
     private static async ValueTask<Ok<EventCreationRequestDto>> GetEventCreationRequest(
         Guid teamId,
         Guid creationRequestId,
-        GetEventCreationRequestHandler handler,
+        IQueryHandler<GetEventCreationRequestQuery, EventCreationRequestDto> handler,
         CancellationToken cancellationToken)
     {
         var dto = await handler.HandleAsync(new GetEventCreationRequestQuery(teamId, creationRequestId), cancellationToken);

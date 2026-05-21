@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Shared.Application.Auth;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
@@ -23,7 +24,7 @@ public static class ArchiveTeamHttpEndpoint
     private static async ValueTask<Ok> ArchiveTeam(
         Guid teamId,
         ArchiveTeamHttpRequest request,
-        ArchiveTeamHandler handler,
+        ICommandHandler<ArchiveTeamCommand> handler,
         [FromKeyedServices(OrganizationModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)

@@ -1,8 +1,6 @@
 using Amolenk.Admitto.Core.Email.Application.Jobs;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
-using Microsoft.Extensions.Logging;
 using Quartz;
 
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.Reconfirmations.ScheduleReconfirmations;
@@ -14,7 +12,7 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.Reconfirmations.Schedu
 internal sealed class ScheduleReconfirmationsHandler(
     ISchedulerFactory schedulerFactory,
     ILogger<ScheduleReconfirmationsHandler> logger)
-    : ICommandHandler<ScheduleReconfirmationsCommand>
+    : ICommandHandler<ScheduleReconfirmationsCommand>, IWorkerOnly
 {
     public const string TriggerGroup = "reconfirm";
 
@@ -22,7 +20,7 @@ internal sealed class ScheduleReconfirmationsHandler(
         ScheduleReconfirmationsCommand command,
         CancellationToken cancellationToken)
     {
-        TicketedEventId ticketedEventId = TicketedEventId.From(command.TicketedEventId);
+        var ticketedEventId = TicketedEventId.From(command.TicketedEventId);
 
         if (command.Spec is null)
         {

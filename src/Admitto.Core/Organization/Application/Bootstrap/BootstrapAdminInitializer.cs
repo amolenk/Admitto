@@ -3,11 +3,6 @@ using Amolenk.Admitto.Core.Organization.Application.Services;
 using Amolenk.Admitto.Core.Organization.Domain.Entities;
 using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Amolenk.Admitto.Core.Organization.Application.Bootstrap;

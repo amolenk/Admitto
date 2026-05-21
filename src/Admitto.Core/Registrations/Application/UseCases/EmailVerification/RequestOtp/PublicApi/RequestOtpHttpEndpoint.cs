@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
@@ -17,7 +18,7 @@ public static class RequestOtpHttpEndpoint
         Guid teamId,
         Guid eventId,
         RequestOtpHttpRequest request,
-        RequestOtpHandler handler,
+        ICommandHandler<RequestOtpCommand> handler,
         [FromKeyedServices(RegistrationsModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)

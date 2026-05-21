@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Shared.Application.Auth;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
 namespace Amolenk.Admitto.Core.Organization.Application.UseCases.TeamManagement.GetTeams.AdminApi;
 
@@ -20,7 +21,7 @@ public static class GetTeamsHttpEndpoint
 
     private static async ValueTask<Ok<IReadOnlyList<TeamListItemDto>>> GetTeams(
         IUserContextAccessor userContextAccessor,
-        GetTeamsHandler handler,
+        IQueryHandler<GetTeamsQuery, IReadOnlyList<TeamListItemDto>> handler,
         CancellationToken cancellationToken)
     {
         var callerContext = userContextAccessor.Current;

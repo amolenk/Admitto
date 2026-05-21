@@ -1,5 +1,5 @@
 using Amolenk.Admitto.Core.Shared.Application.Auth;
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
 namespace Amolenk.Admitto.Core.Organization.Application.UseCases.ApiKeyManagement.GetApiKeys.AdminApi;
 
@@ -17,7 +17,7 @@ public static class GetApiKeysHttpEndpoint
 
     private static async ValueTask<Ok<IReadOnlyList<ApiKeyListItemDto>>> GetApiKeys(
         Guid teamId,
-        GetApiKeysHandler handler,
+        IQueryHandler<GetApiKeysQuery, IReadOnlyList<ApiKeyListItemDto>> handler,
         CancellationToken cancellationToken)
     {
         var keys = await handler.HandleAsync(new GetApiKeysQuery(teamId), cancellationToken);
