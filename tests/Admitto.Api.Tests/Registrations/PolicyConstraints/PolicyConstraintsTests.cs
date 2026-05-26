@@ -8,7 +8,6 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.PolicyConstraints;
 [TestClass]
 public sealed class PolicyConstraintsTests(TestContext testContext) : EndToEndTestBase
 {
-    // Registration window closing on or before event end is accepted
     [TestMethod]
     public async Task ConfigureRegistrationPolicy_WindowClosesAtEventEnd_Returns204()
     {
@@ -27,7 +26,6 @@ public sealed class PolicyConstraintsTests(TestContext testContext) : EndToEndTe
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
     }
 
-    // Registration window closing after event end is rejected
     [TestMethod]
     public async Task ConfigureRegistrationPolicy_WindowClosesAfterEventEnd_Returns400()
     {
@@ -46,7 +44,6 @@ public sealed class PolicyConstraintsTests(TestContext testContext) : EndToEndTe
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 
-    // Reconfirm window closing before event start is accepted
     [TestMethod]
     public async Task ConfigureReconfirmPolicy_WindowClosesBeforeEventStart_Returns204()
     {
@@ -67,7 +64,6 @@ public sealed class PolicyConstraintsTests(TestContext testContext) : EndToEndTe
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
     }
 
-    // Reconfirm window closing at event start is rejected
     [TestMethod]
     public async Task ConfigureReconfirmPolicy_WindowClosesAtEventStart_Returns400()
     {
@@ -88,7 +84,6 @@ public sealed class PolicyConstraintsTests(TestContext testContext) : EndToEndTe
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 
-    // Reconfirm window closing after event start is rejected
     [TestMethod]
     public async Task ConfigureReconfirmPolicy_WindowClosesAfterEventStart_Returns400()
     {

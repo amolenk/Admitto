@@ -15,7 +15,9 @@ internal sealed class ListBadgeInstancesHandler(IBadgesWriteStore writeStore)
     {
         var badgeTypeId = BadgeTypeId.From(query.BadgeTypeId);
 
-        var badgeType = await writeStore.BadgeTypes.GetUntrackedAsync(bt => bt.Id == badgeTypeId, cancellationToken);
+        var badgeType = await writeStore.BadgeTypes.GetUntrackedAsync(
+            bt => bt.Id == badgeTypeId,
+            cancellationToken);
 
         if (badgeType.Kind != BadgeKind.Standalone)
             throw new BusinessRuleViolationException(Errors.NotStandaloneBadgeType);

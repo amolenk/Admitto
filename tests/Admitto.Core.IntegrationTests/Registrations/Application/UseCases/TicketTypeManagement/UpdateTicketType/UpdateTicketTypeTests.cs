@@ -35,6 +35,7 @@ public sealed class UpdateTicketTypeTests(TestContext testContext) : AspireInteg
             var ticketType = catalog.TicketTypes.ShouldHaveSingleItem();
             ticketType.MaxCapacity.ShouldBe(200);
             ticketType.Name.Value.ShouldBe("General Admission");
+            ticketType.MaxReconfirmAttempts.ShouldBeNull();
         });
     }
 
@@ -65,6 +66,31 @@ public sealed class UpdateTicketTypeTests(TestContext testContext) : AspireInteg
             catalog.ShouldNotBeNull();
             var ticketType = catalog.TicketTypes.ShouldHaveSingleItem();
             ticketType.Name.Value.ShouldBe("VIP Admission");
+        });
+    }
+
+    [TestMethod]
+    public async ValueTask UpdateTicketType_WithMaxReconfirmAttempts_PersistsValue()
+    {
+        var fixture = UpdateTicketTypeFixture.ActiveEvent();
+        await fixture.SetupAsync(Environment);
+
+        var command = new UpdateTicketTypeCommand(
+            fixture.EventId.Value,
+            fixture.TicketTypeId.Value,
+            null,
+            null,
+            MaxReconfirmAttempts: 2,
+            UpdateMaxReconfirmAttempts: true);
+        var sut = new UpdateTicketTypeHandler(Environment.RegistrationsDatabase.Context);
+
+        await sut.HandleAsync(command, testContext.CancellationToken);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var catalog = await dbContext.TicketCatalogs.FirstOrDefaultAsync(c => c.Id == fixture.EventId, testContext.CancellationToken);
+            catalog.ShouldNotBeNull();
+            catalog.TicketTypes[0].MaxReconfirmAttempts.ShouldBe(2);
         });
     }
 

@@ -7,6 +7,7 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 internal sealed class ListCouponsFixture
 {
     private bool _seedCoupons;
+    private bool _seedMixedSources;
 
     public TicketedEventId EventId { get; } = TicketedEventId.New();
     public TicketTypeId TicketTypeId { get; } = TicketTypeId.New();
@@ -22,13 +23,25 @@ internal sealed class ListCouponsFixture
         _seedCoupons = true
     };
 
+    public static ListCouponsFixture WithMixedSources() => new()
+    {
+        _seedMixedSources = true
+    };
+
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
     {
-        if (!_seedCoupons)
+        if (_seedCoupons)
         {
-            return;
+            await SeedCouponsAsync(environment);
         }
+        else if (_seedMixedSources)
+        {
+            await SeedMixedSourcesAsync(environment);
+        }
+    }
 
+    private async ValueTask SeedCouponsAsync(IntegrationTestEnvironment environment)
+    {
         // Seed an active coupon.
         var activeCoupon = new CouponBuilder()
             .WithEventId(EventId)
@@ -52,6 +65,33 @@ internal sealed class ListCouponsFixture
         {
             dbContext.Coupons.Add(activeCoupon);
             dbContext.Coupons.Add(revokedCoupon);
+        });
+    }
+
+    private async ValueTask SeedMixedSourcesAsync(IntegrationTestEnvironment environment)
+    {
+        var organiserCoupon = new CouponBuilder()
+            .WithEventId(EventId)
+            .WithEmail(EmailAddress.From("organiser@example.com"))
+            .WithRequestedTicketTypeIds(TicketTypeId)
+            .WithAvailableTicketTypes(new TicketTypeInfo(TicketTypeId))
+            .WithExpiresAt(DateTimeOffset.UtcNow.AddDays(30))
+            .WithSource(CouponSource.Organiser)
+            .Build();
+
+        var waitlistCoupon = new CouponBuilder()
+            .WithEventId(EventId)
+            .WithEmail(EmailAddress.From("waitlist@example.com"))
+            .WithRequestedTicketTypeIds(TicketTypeId)
+            .WithAvailableTicketTypes(new TicketTypeInfo(TicketTypeId))
+            .WithExpiresAt(DateTimeOffset.UtcNow.AddDays(30))
+            .WithSource(CouponSource.Waitlist)
+            .Build();
+
+        await environment.RegistrationsDatabase.SeedAsync(dbContext =>
+        {
+            dbContext.Coupons.Add(organiserCoupon);
+            dbContext.Coupons.Add(waitlistCoupon);
         });
     }
 }

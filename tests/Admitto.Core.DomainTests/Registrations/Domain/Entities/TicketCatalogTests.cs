@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
@@ -435,5 +436,279 @@ public sealed class TicketCatalogTests
 
         // Assert
         sut.GetTicketType(id)!.UsedCapacity.ShouldBe(1);
+    }
+
+    // ── Waitlist ─────────────────────────────────────────────────────────────
+
+    [TestMethod]
+    public void Claim_Enforce_LastSlotWithWaitlistEnabled_ActivatesWaitlistMode()
+    {
+        // Arrange — capacity of 2, sell first slot, then the second (last) slot
+        var sut = TicketCatalog.Create(DefaultEventId);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], 2, waitlistEnabled: true);
+        sut.Claim([id], enforce: true);
+
+        // Act — claim the last slot
+        sut.Claim([id], enforce: true);
+
+        // Assert
+        var tt = sut.GetTicketType(id)!;
+        tt.WaitlistMode.ShouldBeTrue();
+        sut.GetDomainEvents().OfType<WaitlistModeActivatedDomainEvent>()
+            .ShouldHaveSingleItem()
+            .TicketTypeId.ShouldBe(id);
+    }
+
+    [TestMethod]
+    public void Claim_Enforce_LastSlotWithWaitlistDisabled_DoesNotActivateWaitlistMode()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], 1, waitlistEnabled: false);
+
+        // Act — claim the only slot
+        sut.Claim([id], enforce: true);
+
+        // Assert
+        sut.GetTicketType(id)!.WaitlistMode.ShouldBeFalse();
+        sut.GetDomainEvents().OfType<WaitlistModeActivatedDomainEvent>().ShouldBeEmpty();
+    }
+
+    [TestMethod]
+    public void Claim_NoEnforce_LastSlotWithWaitlistEnabled_DoesNotActivateWaitlistMode()
+    {
+        // Admin/coupon path bypasses waitlist mode activation
+        var sut = TicketCatalog.Create(DefaultEventId);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], 1, waitlistEnabled: true);
+
+        // Act
+        sut.Claim([id], enforce: false);
+
+        // Assert
+        sut.GetTicketType(id)!.WaitlistMode.ShouldBeFalse();
+        sut.GetDomainEvents().OfType<WaitlistModeActivatedDomainEvent>().ShouldBeEmpty();
+    }
+
+    [TestMethod]
+    public void UpdateTicketType_EnableWaitlistOnSoldOutType_ActivatesWaitlistModeImmediately()
+    {
+        // Arrange — fully sold out before enabling waitlist
+        var sut = TicketCatalog.Create(DefaultEventId);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], 2);
+        sut.Claim([id], enforce: false);
+        sut.Claim([id], enforce: false);
+
+        // Act
+        sut.UpdateTicketType(id, name: null, maxCapacity: 2, waitlistEnabled: true);
+
+        // Assert
+        var tt = sut.GetTicketType(id)!;
+        tt.WaitlistEnabled.ShouldBeTrue();
+        tt.WaitlistMode.ShouldBeTrue();
+        sut.GetDomainEvents().OfType<WaitlistModeActivatedDomainEvent>()
+            .ShouldHaveSingleItem()
+            .TicketTypeId.ShouldBe(id);
+    }
+
+    [TestMethod]
+    public void UpdateTicketType_EnableWaitlistOnPartiallyFilledType_DoesNotActivateWaitlistMode()
+    {
+        // Arrange — one slot still available
+        var sut = TicketCatalog.Create(DefaultEventId);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], 2);
+        sut.Claim([id], enforce: false);
+
+        // Act
+        sut.UpdateTicketType(id, name: null, maxCapacity: 2, waitlistEnabled: true);
+
+        // Assert
+        sut.GetTicketType(id)!.WaitlistMode.ShouldBeFalse();
+        sut.GetDomainEvents().OfType<WaitlistModeActivatedDomainEvent>().ShouldBeEmpty();
+    }
+
+    [TestMethod]
+    public void UpdateTicketType_DisableWaitlistWhileInWaitlistMode_ForcesDisableAndRaisesEvent()
+    {
+        // Arrange — waitlist mode active
+        var sut = TicketCatalog.Create(DefaultEventId);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], 1, waitlistEnabled: true);
+        sut.Claim([id], enforce: true); // fills capacity → WaitlistMode activates
+
+        // Act
+        sut.UpdateTicketType(id, name: null, maxCapacity: 1, waitlistEnabled: false);
+
+        // Assert
+        var tt = sut.GetTicketType(id)!;
+        tt.WaitlistEnabled.ShouldBeFalse();
+        tt.WaitlistMode.ShouldBeFalse();
+        sut.GetDomainEvents().OfType<WaitlistForcedDisabledDomainEvent>()
+            .ShouldHaveSingleItem()
+            .TicketTypeId.ShouldBe(id);
+    }
+
+    [TestMethod]
+    public void UpdateTicketType_RemoveCapacityLimitWithWaitlistEnabled_ForcesDisableAndRaisesEvent()
+    {
+        // Removing the capacity bound requires force-disabling waitlist
+        var sut = TicketCatalog.Create(DefaultEventId);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], 10, waitlistEnabled: true);
+
+        // Act — remove capacity limit (set null)
+        sut.UpdateTicketType(id, name: null, maxCapacity: null);
+
+        // Assert
+        var tt = sut.GetTicketType(id)!;
+        tt.WaitlistEnabled.ShouldBeFalse();
+        tt.WaitlistMode.ShouldBeFalse();
+        tt.MaxCapacity.ShouldBeNull();
+        sut.GetDomainEvents().OfType<WaitlistForcedDisabledDomainEvent>()
+            .ShouldHaveSingleItem()
+            .TicketTypeId.ShouldBe(id);
+    }
+
+    [TestMethod]
+    public void UpdateTicketType_CapacityIncreaseWhileInWaitlistMode_RaisesWaitlistCapacityFreedEvent()
+    {
+        // Arrange — sold out and in WaitlistMode
+        var sut = TicketCatalog.Create(DefaultEventId);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], 1, waitlistEnabled: true);
+        sut.Claim([id], enforce: true); // fills to capacity → WaitlistMode on
+        sut.ClearDomainEvents();
+
+        // Act — add 3 more slots
+        sut.UpdateTicketType(id, name: null, maxCapacity: 4);
+
+        // Assert — 3 freed slots
+        var evt = sut.GetDomainEvents().OfType<WaitlistCapacityFreedDomainEvent>()
+            .ShouldHaveSingleItem();
+        evt.TicketTypeId.ShouldBe(id);
+        evt.FreedSlots.ShouldBe(3);
+    }
+
+    [TestMethod]
+    public void AddTicketType_WaitlistEnabledWithoutCapacity_Throws()
+    {
+        // Arrange
+        var sut = TicketCatalog.Create(DefaultEventId);
+        var id = TicketTypeId.New();
+
+        // Act
+        var result = ErrorResult.Capture(() =>
+            sut.AddTicketType(id, TicketTypeName.From("General"), [], maxCapacity: null, waitlistEnabled: true));
+
+        // Assert
+        result.Error.ShouldMatch(TicketCatalog.Errors.WaitlistRequiresBoundedCapacity(id));
+    }
+
+    [TestMethod]
+    public void ReEvaluateWaitlistMode_AllConditionsMet_ClearsWaitlistMode()
+    {
+        // Arrange — in WaitlistMode but capacity is now available
+        var sut = TicketCatalog.Create(DefaultEventId);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], 2, waitlistEnabled: true);
+        sut.Claim([id], enforce: true);
+        sut.Claim([id], enforce: true); // WaitlistMode on
+        sut.Release([id]); // one slot freed
+
+        // Act — no active entries, no issued coupons
+        sut.ReEvaluateWaitlistMode(id, activeEntryCount: 0, issuedCouponCount: 0);
+
+        // Assert
+        sut.GetTicketType(id)!.WaitlistMode.ShouldBeFalse();
+    }
+
+    [TestMethod]
+    public void ReEvaluateWaitlistMode_StillAtCapacity_KeepsWaitlistMode()
+    {
+        // Arrange — WaitlistMode on, at capacity
+        var sut = TicketCatalog.Create(DefaultEventId);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], 1, waitlistEnabled: true);
+        sut.Claim([id], enforce: true); // WaitlistMode on
+
+        // Act
+        sut.ReEvaluateWaitlistMode(id, activeEntryCount: 0, issuedCouponCount: 0);
+
+        // Assert — still at capacity → stays in WaitlistMode
+        sut.GetTicketType(id)!.WaitlistMode.ShouldBeTrue();
+    }
+
+    [TestMethod]
+    public void ReEvaluateWaitlistMode_ActiveEntriesRemaining_KeepsWaitlistMode()
+    {
+        // Arrange — capacity freed but entries still in queue
+        var sut = TicketCatalog.Create(DefaultEventId);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], 2, waitlistEnabled: true);
+        sut.Claim([id], enforce: true);
+        sut.Claim([id], enforce: true); // WaitlistMode on
+        sut.Release([id]); // one slot freed
+
+        // Act — entries still active
+        sut.ReEvaluateWaitlistMode(id, activeEntryCount: 1, issuedCouponCount: 0);
+
+        // Assert
+        sut.GetTicketType(id)!.WaitlistMode.ShouldBeTrue();
+    }
+
+    [TestMethod]
+    public void ReEvaluateWaitlistMode_IssuedCouponsRemaining_KeepsWaitlistMode()
+    {
+        // Arrange — capacity freed but coupon still outstanding
+        var sut = TicketCatalog.Create(DefaultEventId);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], 2, waitlistEnabled: true);
+        sut.Claim([id], enforce: true);
+        sut.Claim([id], enforce: true); // WaitlistMode on
+        sut.Release([id]); // one slot freed
+
+        // Act — coupon still in flight
+        sut.ReEvaluateWaitlistMode(id, activeEntryCount: 0, issuedCouponCount: 1);
+
+        // Assert
+        sut.GetTicketType(id)!.WaitlistMode.ShouldBeTrue();
+    }
+
+    [TestMethod]
+    public void TryDeactivateWaitlistMode_WhenCapacityAvailable_ClearsWaitlistMode()
+    {
+        // Arrange — sold out → WaitlistMode on, then one slot freed
+        var sut = TicketCatalog.Create(DefaultEventId);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], 2, waitlistEnabled: true);
+        sut.Claim([id], enforce: true);
+        sut.Claim([id], enforce: true); // WaitlistMode on
+        sut.Release([id]); // UsedCapacity < MaxCapacity now
+
+        // Act
+        sut.TryDeactivateWaitlistMode(id);
+
+        // Assert
+        sut.GetTicketType(id)!.WaitlistMode.ShouldBeFalse();
+    }
+
+    [TestMethod]
+    public void TryDeactivateWaitlistMode_WhenAtCapacity_DoesNotClearWaitlistMode()
+    {
+        // Arrange — sold out → WaitlistMode on, still at capacity
+        var sut = TicketCatalog.Create(DefaultEventId);
+        var id = TicketTypeId.New();
+        sut.AddTicketType(id, TicketTypeName.From("General"), [], 1, waitlistEnabled: true);
+        sut.Claim([id], enforce: true); // WaitlistMode on, UsedCapacity == MaxCapacity
+
+        // Act
+        sut.TryDeactivateWaitlistMode(id);
+
+        // Assert
+        sut.GetTicketType(id)!.WaitlistMode.ShouldBeTrue();
     }
 }

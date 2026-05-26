@@ -24,7 +24,8 @@ internal sealed class AddTicketTypeHandler(IRegistrationsWriteStore writeStore)
             .Select(TimeSlot.From)
             .ToArray();
 
-        catalog.AddTicketType(id, name, timeSlots, command.MaxCapacity, command.SelfServiceEnabled);
+        catalog.AddTicketType(id, name, timeSlots, command.MaxCapacity, command.SelfServiceEnabled,
+            command.WaitlistEnabled, command.ClaimWindowHours, command.MaxReconfirmAttempts);
 
         return id.Value;
     }

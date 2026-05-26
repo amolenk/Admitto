@@ -13,16 +13,24 @@ public class CouponBuilder
     public static readonly DateTimeOffset DefaultExpiresAt = new(2025, 6, 1, 0, 0, 0, TimeSpan.Zero);
 
     private TicketedEventId _eventId = DefaultEventId;
+    private TeamId _teamId = TeamId.New();
     private EmailAddress _email = DefaultEmail;
     private List<TicketTypeId> _requestedTicketTypeIds = [DefaultTicketTypeId];
     private DateTimeOffset _expiresAt = DefaultExpiresAt;
     private bool _bypassRegistrationWindow;
     private List<TicketTypeInfo> _availableTicketTypes = [new(DefaultTicketTypeId)];
     private DateTimeOffset _now = DefaultNow;
+    private CouponSource _source = CouponSource.Organiser;
 
     public CouponBuilder WithEventId(TicketedEventId eventId)
     {
         _eventId = eventId;
+        return this;
+    }
+
+    public CouponBuilder WithTeamId(TeamId teamId)
+    {
+        _teamId = teamId;
         return this;
     }
 
@@ -62,15 +70,23 @@ public class CouponBuilder
         return this;
     }
 
+    public CouponBuilder WithSource(CouponSource source)
+    {
+        _source = source;
+        return this;
+    }
+
     public Coupon Build()
     {
         return Coupon.Create(
             _eventId,
+            _teamId,
             _email,
             _requestedTicketTypeIds,
             _expiresAt,
             _bypassRegistrationWindow,
             _availableTicketTypes,
-            _now);
+            _now,
+            _source);
     }
 }

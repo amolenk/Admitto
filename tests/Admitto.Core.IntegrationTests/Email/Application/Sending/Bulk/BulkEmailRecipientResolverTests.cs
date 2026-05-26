@@ -33,7 +33,8 @@ public sealed class BulkEmailRecipientResolverTests
                 CreatedAt: DateTimeOffset.UtcNow,
                 Status: RegistrationStatus.Registered,
                 HasReconfirmed: false,
-                ReconfirmedAt: null),
+                ReconfirmedAt: null,
+                EffectiveMaxReconfirmAttempts: null),
             new RegistrationListItemDto(
                 RegistrationId: Guid.NewGuid(),
                 Email: "bob@example.com",
@@ -44,7 +45,8 @@ public sealed class BulkEmailRecipientResolverTests
                 CreatedAt: DateTimeOffset.UtcNow,
                 Status: RegistrationStatus.Registered,
                 HasReconfirmed: false,
-                ReconfirmedAt: null),
+                ReconfirmedAt: null,
+                EffectiveMaxReconfirmAttempts: null),
         };
 
         var facade = Substitute.For<IRegistrationsFacade>();

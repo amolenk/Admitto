@@ -52,6 +52,21 @@ public class TicketCatalogEntityConfiguration : IEntityTypeConfiguration<TicketC
                 .HasJsonPropertyName("self_service_enabled")
                 .IsRequired();
 
+            b.Property(tt => tt.WaitlistEnabled)
+                .HasJsonPropertyName("waitlist_enabled")
+                .IsRequired();
+
+            b.Property(tt => tt.WaitlistMode)
+                .HasJsonPropertyName("waitlist_mode")
+                .IsRequired();
+
+            b.Property(tt => tt.ClaimWindowHours)
+                .HasJsonPropertyName("claim_window_hours")
+                .IsRequired();
+
+            b.Property(tt => tt.MaxReconfirmAttempts)
+                .HasJsonPropertyName("max_reconfirm_attempts");
+
             b.PrimitiveCollection(tt => tt.TimeSlots)
                 .HasJsonPropertyName("time_slots")
                 .ElementType(et => et.HasConversion<TimeSlot.EfCoreValueConverter>());

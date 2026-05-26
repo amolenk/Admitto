@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
@@ -14,6 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
     Plus,
     Pencil,
+    Users,
 } from "lucide-react";
 import {
     Dialog,
@@ -55,9 +57,18 @@ function TicketTypeCard({ t, teamId, eventId }: { t: TicketTypeDto; teamId: stri
                                 )}
                             </div>
                         </div>
-                        <Button variant="ghost" size="sm" onClick={() => setEditOpen(true)}>
-                            <Pencil className="size-4" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                            {t.waitlistEnabled && (
+                                <Button variant="ghost" size="sm" asChild>
+                                    <Link href={`/teams/${teamId}/events/${eventId}/ticket-types/${t.id}/waitlist`}>
+                                        <Users className="size-4" />
+                                    </Link>
+                                </Button>
+                            )}
+                            <Button variant="ghost" size="sm" onClick={() => setEditOpen(true)}>
+                                <Pencil className="size-4" />
+                            </Button>
+                        </div>
                     </div>
 
                     <div className="ticket-perf" aria-hidden="true" />

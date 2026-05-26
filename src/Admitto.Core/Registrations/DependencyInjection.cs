@@ -1,6 +1,7 @@
 using System.Reflection;
 using Amolenk.Admitto.Core.Registrations;
 using Amolenk.Admitto.Core.Registrations.Application.Common.Cryptography;
+using Amolenk.Admitto.Core.Registrations.Application.Jobs;
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
 using Amolenk.Admitto.Core.Registrations.Application.Security;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases;
@@ -9,6 +10,7 @@ using Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.Shared.Application.Cryptography;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Messaging;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence;
+using Quartz;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection;
@@ -72,6 +74,21 @@ public static class RegistrationsModuleExtensions
             builder.Services.AddIntegrationEventHandlersFromAssembly(
                 Assembly.GetExecutingAssembly(),
                 RegistrationsModule.NamespacePrefix);
+
+            builder.Services.AddQuartz(options =>
+            {
+                options.AddJob<ProcessExpiredWaitlistCouponsJob>(c => c
+                    .StoreDurably()
+                    .WithIdentity(ProcessExpiredWaitlistCouponsJob.Name));
+
+                options.AddTrigger(t => t
+                    .ForJob(ProcessExpiredWaitlistCouponsJob.Name)
+                    .WithIdentity($"{ProcessExpiredWaitlistCouponsJob.Name}.trigger")
+                    .WithSimpleSchedule(s => s
+                        .WithIntervalInMinutes(5)
+                        .RepeatForever())
+                    .StartNow());
+            });
 
             return builder;
         }

@@ -26,7 +26,7 @@ public static class CreateCouponHttpEndpoint
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
-        var command = request.ToCommand(eventId);
+        var command = request.ToCommand(teamId, eventId);
 
         var couponId = await handler.HandleAsync(command, cancellationToken);
 

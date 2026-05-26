@@ -1,26 +1,14 @@
-using Amolenk.Admitto.Core.Email.Application.Persistence;
 using Amolenk.Admitto.Core.Email.Application.Templating;
-using Amolenk.Admitto.Core.Email.Application.UseCases.SendEmail;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
-using Microsoft.EntityFrameworkCore;
 
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.SendEmail.EventHandlers;
 
 /// <summary>
-/// Handles <see cref="AttendeeRegisteredIntegrationEvent"/> by dispatching a
-/// <see cref="SendEmailCommand"/> to send a registration confirmation email.
+/// Sends a TicketConfirmation email when an attendee has registered.
 /// </summary>
-/// <remarks>
-/// No capability gate — this handler runs in any host that processes the Registrations queue.
-/// The actual send is handled inside <see cref="SendEmailHandler"/>.
-/// Idempotency key: <c>attendee-registered:{registrationId}</c>.
-/// Event name, website URL, and pre-signed links are all returned by the Registrations facade
-/// so signing infra stays inside the Registrations module.
-/// </remarks>
 internal sealed class AttendeeRegisteredIntegrationEventHandler(
-    IEmailWriteStore writeStore,
     IRegistrationsFacade registrationsFacade,
     ICommandHandler<SendEmailCommand> sendEmailHandler)
     : IIntegrationEventHandler<AttendeeRegisteredIntegrationEvent>
@@ -30,12 +18,6 @@ internal sealed class AttendeeRegisteredIntegrationEventHandler(
         CancellationToken cancellationToken)
     {
         var idempotencyKey = $"attendee-registered:{integrationEvent.RegistrationId}";
-
-        var alreadyHandled = await writeStore.EmailLog
-            .AnyAsync(l => l.IdempotencyKey == idempotencyKey, cancellationToken);
-
-        if (alreadyHandled)
-            return;
 
         var eventContext = await registrationsFacade.GetTicketedEventEmailContextAsync(
             integrationEvent.TicketedEventId,
@@ -59,7 +41,7 @@ internal sealed class AttendeeRegisteredIntegrationEventHandler(
                 integrationEvent.LastName,
                 EventName = eventContext.Name,
                 EventWebsite = eventContext.WebsiteUrl,
-                QRCodeLink = eventContext.QRCodeLink,
+                eventContext.QRCodeLink,
                 TicketTypes = ticketTypeNames
             },
             RegistrationId: integrationEvent.RegistrationId);

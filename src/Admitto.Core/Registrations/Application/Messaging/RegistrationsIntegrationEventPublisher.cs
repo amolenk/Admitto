@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Core.Registrations.Application.Security;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
@@ -6,8 +7,10 @@ using Amolenk.Admitto.Core.Shared.Application.Messaging;
 namespace Amolenk.Admitto.Core.Registrations.Application.Messaging;
 
 internal sealed class RegistrationsIntegrationEventPublisher(
-    [FromKeyedServices(RegistrationsModule.Key)] IOutbox outbox)
+    [FromKeyedServices(RegistrationsModule.Key)] IOutbox outbox,
+    IVerificationTokenService verificationTokenService)
     : IDomainEventHandler<AttendeeRegisteredDomainEvent>,
+      IDomainEventHandler<CouponCreatedDomainEvent>,
       IDomainEventHandler<OtpCodeRequestedDomainEvent>,
       IDomainEventHandler<RegistrationCancelledDomainEvent>,
       IDomainEventHandler<RegistrationReconfirmedDomainEvent>,
@@ -15,7 +18,9 @@ internal sealed class RegistrationsIntegrationEventPublisher(
       IDomainEventHandler<TicketedEventReconfirmPolicyChangedDomainEvent>,
       IDomainEventHandler<TicketedEventStatusChangedDomainEvent>,
       IDomainEventHandler<TicketedEventTimeZoneChangedDomainEvent>,
-      IDomainEventHandler<TicketsChangedDomainEvent>
+      IDomainEventHandler<TicketsChangedDomainEvent>,
+      IDomainEventHandler<WaitlistCouponIssuedDomainEvent>,
+      IDomainEventHandler<WaitlistEntryAddedDomainEvent>
 {
     public ValueTask HandleAsync(AttendeeRegisteredDomainEvent domainEvent, CancellationToken cancellationToken)
     {
@@ -27,6 +32,17 @@ internal sealed class RegistrationsIntegrationEventPublisher(
             domainEvent.FirstName.Value,
             domainEvent.LastName.Value,
             domainEvent.Tickets.Select(t => new TicketTypeItem(t.Id.Value, t.Name.Value)).ToList()));
+
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask HandleAsync(CouponCreatedDomainEvent domainEvent, CancellationToken cancellationToken)
+    {
+        outbox.Enqueue(new CouponCreatedIntegrationEvent(
+            domainEvent.TeamId.Value,
+            domainEvent.TicketedEventId.Value,
+            domainEvent.Email.Value,
+            domainEvent.Code.Value.ToString()));
 
         return ValueTask.CompletedTask;
     }
@@ -129,6 +145,33 @@ internal sealed class RegistrationsIntegrationEventPublisher(
             domainEvent.LastName.Value,
             domainEvent.NewTickets.Select(t => new TicketTypeItem(t.Id.Value, t.Name.Value)).ToList(),
             domainEvent.ChangedAt));
+
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask HandleAsync(WaitlistCouponIssuedDomainEvent domainEvent, CancellationToken cancellationToken)
+    {
+        outbox.Enqueue(new WaitlistCouponIssuedIntegrationEvent(
+            domainEvent.TeamId.Value,
+            domainEvent.TicketedEventId.Value,
+            domainEvent.RecipientEmail.Value,
+            domainEvent.CouponCode.Value.ToString(),
+            domainEvent.TicketTypeName,
+            domainEvent.ExpiresAt));
+
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask HandleAsync(WaitlistEntryAddedDomainEvent domainEvent, CancellationToken cancellationToken)
+    {
+        var token = verificationTokenService.Issue(domainEvent.Email, domainEvent.TicketedEventId, domainEvent.TeamId);
+
+        outbox.Enqueue(new WaitlistJoinRequestedIntegrationEvent(
+            domainEvent.TeamId.Value,
+            domainEvent.TicketedEventId.Value,
+            domainEvent.TicketTypeId.Value,
+            domainEvent.Email.Value,
+            token));
 
         return ValueTask.CompletedTask;
     }

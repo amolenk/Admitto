@@ -1,9 +1,8 @@
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendee;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendeeSelfService;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
-using Amolenk.Admitto.Core.Registrations.Tests.Application.UseCases.Registrations.RegisterAttendee;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
@@ -265,7 +264,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.Code.ShouldBe("registration.event_not_active");
+        result.Error.Code.ShouldBe("ticket_catalog.event_not_active");
 
         await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
         {
@@ -347,7 +346,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.ShouldMatch(RegisterAttendeeHandler.Errors.RegistrationClosed);
+        result.Error.ShouldMatch(TicketedEvent.Errors.RegistrationClosed);
         await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
         {
             var registration = await dbContext.Registrations.SingleAsync(testContext.CancellationToken);
@@ -360,83 +359,36 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         });
     }
 
-    // Rejected — missing email-verification token
+    // Self-service rejected — ticket type is in WaitlistMode
     [TestMethod]
-    public async ValueTask SelfRegisterAttendee_TokenMissing_ThrowsEmailVerificationRequired()
+    public async ValueTask SelfRegisterAttendee_WaitlistModeActive_ThrowsWaitlistModeError()
     {
-        var fixture = RegisterAttendeeFixture.OpenWindowWithCapacity();
+        var fixture = RegisterAttendeeFixture.SelfServiceWithWaitlistMode();
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture, "dave@example.com", new[] { fixture.TicketTypeId.Value }, token: null);
+        var command = NewCommand(fixture, "dave@example.com", fixture.GetTicketTypeId("general-admission").Value);
         var sut = NewHandler();
 
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.Code.ShouldBe("email.verification_required");
-    }
-
-    // Rejected — invalid email-verification token
-    [TestMethod]
-    public async ValueTask SelfRegisterAttendee_TokenInvalid_ThrowsEmailVerificationInvalid()
-    {
-        var fixture = RegisterAttendeeFixture.OpenWindowWithCapacity();
-        await fixture.SetupAsync(Environment);
-
-        var command = NewCommand(fixture, "dave@example.com", new[] { fixture.TicketTypeId.Value }, token: "WRONG");
-        var sut = NewHandler();
-
-        var result = await ErrorResult.CaptureAsync(
-            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
-
-        result.Error.Code.ShouldBe("email.verification_invalid");
-    }
-
-    // Verification runs before any DB lookup — non-existent event still yields verification error
-    [TestMethod]
-    public async ValueTask SelfRegisterAttendee_VerificationFailsBeforeEventLookup()
-    {
-        var command = new RegisterAttendeeCommand(
-            TicketedEventId.New().Value,
-            "dave@example.com",
-            "Dave",
-            "Doe",
-            [Guid.NewGuid()],
-            RegistrationMode.SelfService,
-            CouponCode: null,
-            EmailVerificationToken: null);
-        var sut = NewHandler();
-
-        var result = await ErrorResult.CaptureAsync(
-            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
-
-        result.Error.Code.ShouldBe("email.verification_required");
+        result.Error.Code.ShouldBe("ticket_type.waitlist_mode");
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
 
-    private static RegisterAttendeeCommand NewCommand(
+    private static RegisterAttendeeSelfServiceCommand NewCommand(
         RegisterAttendeeFixture fixture,
         string email,
         params Guid[] ticketTypeIds)
-        => NewCommand(fixture, email, ticketTypeIds, StubEmailVerificationTokenValidator.ValidTokenFor(email));
-
-    private static RegisterAttendeeCommand NewCommand(
-        RegisterAttendeeFixture fixture,
-        string email,
-        Guid[] ticketTypeIds,
-        string? token)
         => new(
             fixture.EventId.Value,
             email,
             "Test",
             "User",
-            ticketTypeIds,
-            RegistrationMode.SelfService,
-            CouponCode: null,
-            EmailVerificationToken: token);
+            ticketTypeIds);
 
-    private static RegisterAttendeeCommand NewCommand(
+    private static RegisterAttendeeSelfServiceCommand NewCommand(
         RegisterAttendeeFixture fixture,
         string email,
         Guid[] ticketTypeIds,
@@ -447,9 +399,6 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
             "Test",
             "User",
             ticketTypeIds,
-            RegistrationMode.SelfService,
-            CouponCode: null,
-            EmailVerificationToken: StubEmailVerificationTokenValidator.ValidTokenFor(email),
             AdditionalDetails: additionalDetails);
 
     private static void AssertAttendeeRegisteredEvent(Registration registration)
@@ -464,6 +413,6 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         domainEvent.Tickets.ShouldBe(registration.Tickets);
     }
 
-    private static RegisterAttendeeHandler NewHandler()
-        => new(Environment.RegistrationsDatabase.Context, TimeProvider.System, new StubEmailVerificationTokenValidator());
+    private static RegisterAttendeeSelfServiceHandler NewHandler()
+        => new(Environment.RegistrationsDatabase.Context, TimeProvider.System);
 }

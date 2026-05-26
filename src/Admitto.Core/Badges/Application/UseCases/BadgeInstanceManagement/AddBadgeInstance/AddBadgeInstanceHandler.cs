@@ -13,7 +13,9 @@ internal sealed class AddBadgeInstanceHandler(IBadgesWriteStore writeStore)
     {
         var eventId = TicketedEventId.From(command.EventId);
 
-        var badgesEvent = await writeStore.BadgesEvents.GetUntrackedAsync(be => be.Id == eventId, cancellationToken);
+        var badgesEvent = await writeStore.BadgesEvents.GetUntrackedAsync(
+            be => be.Id == eventId,
+            cancellationToken);
 
         badgesEvent.EnsureEventActive();
 

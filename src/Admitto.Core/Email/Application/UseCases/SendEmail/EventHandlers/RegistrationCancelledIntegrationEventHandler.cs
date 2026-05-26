@@ -61,6 +61,7 @@ internal sealed class RegistrationCancelledIntegrationEventHandler(
                 LastName = lastName,
                 EventName = eventContext.Name,
                 EventWebsite = eventContext.WebsiteUrl,
+                RegisterLink = eventContext.RegisterLink,
                 QRCodeLink = eventContext.QRCodeLink
             });
 
@@ -71,6 +72,7 @@ internal sealed class RegistrationCancelledIntegrationEventHandler(
     {
         "AttendeeRequest" => BuiltInEmailTemplateNames.Cancellation,
         "VisaLetterDenied" => BuiltInEmailTemplateNames.VisaLetterDenied,
+        "ReconfirmAutoCancel" => BuiltInEmailTemplateNames.ReconfirmCancelled,
         _ => null
     };
 }

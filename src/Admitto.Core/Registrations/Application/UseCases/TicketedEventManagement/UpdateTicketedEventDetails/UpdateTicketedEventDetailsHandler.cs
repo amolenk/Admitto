@@ -23,5 +23,6 @@ internal sealed class UpdateTicketedEventDetailsHandler(IRegistrationsWriteStore
             cancellationToken);
 
         ticketedEvent.UpdateDetails(name, websiteUrl, baseUrl, command.StartsAt, command.EndsAt);
+        ticketedEvent.UpdateQuietHours(command.QuietHoursStart, command.QuietHoursEnd);
     }
 }

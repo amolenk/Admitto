@@ -16,7 +16,9 @@ public sealed record TicketedEventDetailsDto(
     bool IsRegistrationOpen,
     RegistrationPolicyDto? RegistrationPolicy,
     ReconfirmPolicyDto? ReconfirmPolicy,
-    IReadOnlyList<AdditionalDetailFieldDto> AdditionalDetailSchema);
+    IReadOnlyList<AdditionalDetailFieldDto> AdditionalDetailSchema,
+    TimeOnly QuietHoursStart,
+    TimeOnly QuietHoursEnd);
 
 public sealed record AdditionalDetailFieldDto(string Key, string Name, int MaxLength);
 

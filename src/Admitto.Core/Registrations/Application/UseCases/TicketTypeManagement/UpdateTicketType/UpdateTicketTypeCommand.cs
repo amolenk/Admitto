@@ -7,4 +7,8 @@ internal sealed record UpdateTicketTypeCommand(
     Guid TicketTypeId,
     string? Name,
     int? MaxCapacity,
-    bool? SelfServiceEnabled = null) : Command;
+    bool? SelfServiceEnabled = null,
+    bool? WaitlistEnabled = null,
+    int? ClaimWindowHours = null,
+    int? MaxReconfirmAttempts = null,
+    bool UpdateMaxReconfirmAttempts = false) : Command;

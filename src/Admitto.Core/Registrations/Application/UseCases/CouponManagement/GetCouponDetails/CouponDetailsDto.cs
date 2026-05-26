@@ -7,6 +7,7 @@ public sealed record CouponDetailsDto(
     Guid Code,
     string Email,
     CouponStatus Status,
+    CouponSource Source,
     Guid[] AllowedTicketTypeIds,
     DateTimeOffset ExpiresAt,
     bool BypassRegistrationWindow,

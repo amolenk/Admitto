@@ -1,8 +1,8 @@
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendee;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendeeWithCoupon;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
-using Amolenk.Admitto.Core.Registrations.Tests.Application.UseCases.Registrations.RegisterAttendee;
+using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
@@ -54,7 +54,7 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.ShouldMatch(RegisterAttendeeHandler.Errors.CouponExpired);
+        result.Error.ShouldMatch(Coupon.Errors.Expired);
     }
 
     // Coupon rejected — already redeemed
@@ -70,7 +70,7 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.ShouldMatch(RegisterAttendeeHandler.Errors.CouponAlreadyRedeemed);
+        result.Error.ShouldMatch(Coupon.Errors.AlreadyRedeemed);
     }
 
     // Coupon rejected — revoked
@@ -86,7 +86,7 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.ShouldMatch(RegisterAttendeeHandler.Errors.CouponRevoked);
+        result.Error.ShouldMatch(Coupon.Errors.Revoked);
     }
 
     // Coupon rejected — ticket type not allowlisted
@@ -97,14 +97,13 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         await fixture.SetupAsync(Environment);
 
         // Requesting "general-admission" but coupon only allows "speaker-pass".
-        var command = new RegisterAttendeeCommand(
+        var command = new RegisterAttendeeWithCouponCommand(
             fixture.EventId.Value,
             fixture.CouponEmail.Value,
             "Coupon",
             "User",
             [fixture.GetTicketTypeId("general-admission").Value],
-            RegistrationMode.Coupon,
-            CouponCode: fixture.CouponCodeString);
+            CouponCode: fixture.CouponCode);
         var sut = NewHandler();
 
         var result = await ErrorResult.CaptureAsync(
@@ -287,19 +286,62 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         });
     }
 
+    // Waitlist coupon — marks WaitlistCoupon as Redeemed in same transaction
+    [TestMethod]
+    public async ValueTask RegisterWithCoupon_WaitlistCoupon_MarksWaitlistCouponRedeemed()
+    {
+        var fixture = RegisterAttendeeFixture.WaitlistCouponHappyFlow();
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(fixture, fixture.CouponEmail.Value);
+        var sut = NewHandler();
+
+        await sut.HandleAsync(command, testContext.CancellationToken);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var coupon = await dbContext.Coupons.SingleAsync(testContext.CancellationToken);
+            coupon.RedeemedAt.ShouldNotBeNull();
+
+            var waitlist = await dbContext.Waitlists.SingleAsync(testContext.CancellationToken);
+            waitlist.Coupons.ShouldHaveSingleItem().Status.ShouldBe(WaitlistCouponStatus.Redeemed);
+        });
+    }
+
+    // Organiser coupon with WaitlistMode active — Waitlist is not touched
+    [TestMethod]
+    public async ValueTask RegisterWithCoupon_OrganiserCouponWithWaitlistActive_DoesNotTouchWaitlist()
+    {
+        var fixture = RegisterAttendeeFixture.OrganiserCouponWithWaitlistActive();
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(fixture, fixture.CouponEmail.Value);
+        var sut = NewHandler();
+
+        await sut.HandleAsync(command, testContext.CancellationToken);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var coupon = await dbContext.Coupons.SingleAsync(testContext.CancellationToken);
+            coupon.RedeemedAt.ShouldNotBeNull();
+
+            var waitlist = await dbContext.Waitlists.SingleAsync(testContext.CancellationToken);
+            waitlist.Coupons.ShouldBeEmpty();
+        });
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────────
 
-    private static RegisterAttendeeCommand NewCommand(RegisterAttendeeFixture fixture, string email)
+    private static RegisterAttendeeWithCouponCommand NewCommand(RegisterAttendeeFixture fixture, string email)
         => new(
             fixture.EventId.Value,
             email,
             "Test",
             "User",
             [fixture.TicketTypeId.Value],
-            RegistrationMode.Coupon,
-            CouponCode: fixture.CouponCodeString);
+            CouponCode: fixture.CouponCode);
 
-    private static RegisterAttendeeCommand NewCommand(
+    private static RegisterAttendeeWithCouponCommand NewCommand(
         RegisterAttendeeFixture fixture,
         string email,
         IReadOnlyDictionary<string, string>? additionalDetails)
@@ -309,8 +351,7 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
             "Test",
             "User",
             [fixture.TicketTypeId.Value],
-            RegistrationMode.Coupon,
-            CouponCode: fixture.CouponCodeString,
+            CouponCode: fixture.CouponCode,
             AdditionalDetails: additionalDetails);
 
     private static void AssertAttendeeRegisteredEvent(Registration registration)
@@ -325,6 +366,6 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         domainEvent.Tickets.ShouldBe(registration.Tickets);
     }
 
-    private static RegisterAttendeeHandler NewHandler()
-        => new(Environment.RegistrationsDatabase.Context, TimeProvider.System, new StubEmailVerificationTokenValidator());
+    private static RegisterAttendeeWithCouponHandler NewHandler()
+        => new(Environment.RegistrationsDatabase.Context, TimeProvider.System);
 }

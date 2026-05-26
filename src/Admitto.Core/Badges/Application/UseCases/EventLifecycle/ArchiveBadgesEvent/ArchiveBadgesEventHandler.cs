@@ -1,5 +1,6 @@
 using Amolenk.Admitto.Core.Badges.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
+using Amolenk.Admitto.Core.Shared.Application.Persistence;
 
 namespace Amolenk.Admitto.Core.Badges.Application.UseCases.EventLifecycle.ArchiveBadgesEvent;
 
@@ -10,9 +11,8 @@ internal sealed class ArchiveBadgesEventHandler(IBadgesWriteStore writeStore)
     {
         var eventId = TicketedEventId.From(command.EventId);
 
-        var badgesEvent = await writeStore.BadgesEvents
-            .FindAsync([eventId], cancellationToken);
+        var badgesEvent = await writeStore.BadgesEvents.GetAsync(eventId, cancellationToken);
 
-        badgesEvent?.MarkArchived();
+        badgesEvent.MarkArchived();
     }
 }

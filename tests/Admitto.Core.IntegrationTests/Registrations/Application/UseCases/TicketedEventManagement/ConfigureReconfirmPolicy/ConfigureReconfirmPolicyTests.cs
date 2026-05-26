@@ -20,7 +20,12 @@ public sealed class ConfigureReconfirmPolicyTests(TestContext testContext) : Asp
 
         await sut.HandleAsync(
             new ConfigureReconfirmPolicyCommand(
-                fixture.EventId.Value, fixture.SeededVersion, opensAt, closesAt, CadenceHours: 7, MinEmailIntervalHours: 24),
+                fixture.EventId.Value,
+                fixture.SeededVersion,
+                opensAt,
+                closesAt,
+                CadenceHours: 7,
+                MinEmailIntervalHours: 24),
             testContext.CancellationToken);
 
         await Environment.RegistrationsDatabase.AssertAsync(async ctx =>
@@ -46,7 +51,12 @@ public sealed class ConfigureReconfirmPolicyTests(TestContext testContext) : Asp
 
         await sut.HandleAsync(
             new ConfigureReconfirmPolicyCommand(
-                fixture.EventId.Value, fixture.SeededVersion, OpensAt: null, ClosesAt: null, CadenceHours: null, MinEmailIntervalHours: null),
+                fixture.EventId.Value,
+                fixture.SeededVersion,
+                OpensAt: null,
+                ClosesAt: null,
+                CadenceHours: null,
+                MinEmailIntervalHours: null),
             testContext.CancellationToken);
 
         await Environment.RegistrationsDatabase.AssertAsync(async ctx =>

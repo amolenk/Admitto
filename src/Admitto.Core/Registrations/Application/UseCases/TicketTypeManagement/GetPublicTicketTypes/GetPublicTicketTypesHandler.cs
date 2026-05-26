@@ -22,7 +22,9 @@ internal sealed class GetPublicTicketTypesHandler(IRegistrationsWriteStore write
                 tt.Name.Value,
                 tt.TimeSlots.Select(ts => ts.Value).ToArray(),
                 tt.MaxCapacity,
-                tt.UsedCapacity))
+                tt.UsedCapacity,
+                tt.WaitlistEnabled,
+                tt.WaitlistMode))
             .ToList();
     }
 }

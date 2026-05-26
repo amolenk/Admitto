@@ -1,0 +1,82 @@
+using Amolenk.Admitto.Core.Registrations.Application.Persistence;
+using Amolenk.Admitto.Core.Registrations.Contracts;
+using Amolenk.Admitto.Core.Registrations.Domain.Entities;
+using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
+using Amolenk.Admitto.Core.Shared.Application.Persistence;
+using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
+
+namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendeeSelfService;
+
+internal sealed class RegisterAttendeeSelfServiceHandler(
+    IRegistrationsWriteStore writeStore,
+    TimeProvider timeProvider)
+    : ICommandHandler<RegisterAttendeeSelfServiceCommand, Guid>
+{
+    public async ValueTask<Guid> HandleAsync(
+        RegisterAttendeeSelfServiceCommand command,
+        CancellationToken cancellationToken)
+    {
+        var eventId = TicketedEventId.From(command.EventId);
+        var email = EmailAddress.From(command.Email);
+        var firstName = FirstName.From(command.FirstName);
+        var lastName = LastName.From(command.LastName);
+
+        var ticketedEvent = await writeStore.TicketedEvents
+            .GetAsync(e => e.Id == eventId, cancellationToken);
+
+        if (!ticketedEvent.IsActive)
+            throw new BusinessRuleViolationException(Errors.EventNotActive);
+
+        var additionalDetails = AdditionalDetails.Validate(
+            command.AdditionalDetails,
+            ticketedEvent.AdditionalDetailSchema);
+
+        var now = timeProvider.GetUtcNow();
+        ticketedEvent.EnsureRegistrationOpen(now);
+        ticketedEvent.EnsureEmailDomainAllowed(email);
+
+        var existingRegistration = await writeStore.Registrations
+            .SingleOrDefaultAsync(
+                r => r.EventId == eventId && r.Email == email,
+                cancellationToken);
+
+        if (existingRegistration?.Status == RegistrationStatus.Registered)
+            throw new BusinessRuleViolationException(AlreadyExistsError.Create<Registration>());
+
+        var catalog = await writeStore.TicketCatalogs
+            .GetAsync(tc => tc.Id == eventId, cancellationToken);
+
+        var ticketTypeIds = command.TicketTypeIds.Select(TicketTypeId.From).ToList();
+        var tickets = catalog.Claim(ticketTypeIds, enforce: true);
+
+        Registration registration;
+        if (existingRegistration is null)
+        {
+            registration = Registration.Create(
+                ticketedEvent.TeamId,
+                eventId,
+                email,
+                firstName,
+                lastName,
+                tickets,
+                additionalDetails);
+            await writeStore.Registrations.AddAsync(registration, cancellationToken);
+        }
+        else
+        {
+            registration = existingRegistration;
+            registration.Reset(firstName, lastName, tickets, additionalDetails);
+        }
+
+        return registration.Id.Value;
+    }
+
+    internal static class Errors
+    {
+        public static readonly Error EventNotActive = new(
+            "registration.event_not_active",
+            "Cannot register for a cancelled or archived event.",
+            Type: ErrorType.Validation);
+    }
+}

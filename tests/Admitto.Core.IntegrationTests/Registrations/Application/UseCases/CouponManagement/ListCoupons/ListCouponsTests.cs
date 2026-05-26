@@ -48,6 +48,29 @@ public sealed class ListCouponsTests(TestContext testContext) : AspireIntegratio
         result.Coupons.ShouldBeEmpty();
     }
 
+    [TestMethod]
+    public async ValueTask ListCoupons_MixedSources_ReturnsCorrectSourceForEach()
+    {
+        // Arrange
+        var fixture = ListCouponsFixture.WithMixedSources();
+        await fixture.SetupAsync(Environment);
+
+        var query = new ListCouponsQuery(fixture.EventId);
+        var sut = NewListCouponsHandler();
+
+        // Act
+        var result = await sut.HandleAsync(query, testContext.CancellationToken);
+
+        // Assert
+        result.Coupons.Count.ShouldBe(2);
+
+        var organiser = result.Coupons.SingleOrDefault(c => c.Email == "organiser@example.com");
+        organiser.ShouldNotBeNull().Source.ShouldBe(CouponSource.Organiser);
+
+        var waitlist = result.Coupons.SingleOrDefault(c => c.Email == "waitlist@example.com");
+        waitlist.ShouldNotBeNull().Source.ShouldBe(CouponSource.Waitlist);
+    }
+
     private static ListCouponsHandler NewListCouponsHandler() =>
         new(Environment.RegistrationsDatabase.Context);
 }

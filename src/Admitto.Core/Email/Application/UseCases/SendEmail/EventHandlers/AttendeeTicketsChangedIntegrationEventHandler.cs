@@ -9,13 +9,8 @@ using Microsoft.EntityFrameworkCore;
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.SendEmail.EventHandlers;
 
 /// <summary>
-/// Handles <see cref="AttendeeTicketsChangedIntegrationEvent"/> by dispatching a
-/// <see cref="SendEmailCommand"/> to send a ticket-change confirmation email.
+/// Sends a new TicketConfirmation email when an attendee's tickets have changed.
 /// </summary>
-/// <remarks>
-/// Idempotency key: <c>tickets-changed:{registrationId}:{changedAt-unix-ms}</c>.
-/// The <c>ticket_types</c> parameter lists the new ticket type names.
-/// </remarks>
 internal sealed class AttendeeTicketsChangedIntegrationEventHandler(
     IEmailWriteStore writeStore,
     IRegistrationsFacade registrationsFacade,

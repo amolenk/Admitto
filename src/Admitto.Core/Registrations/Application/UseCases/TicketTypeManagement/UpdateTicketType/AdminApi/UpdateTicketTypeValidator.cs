@@ -1,6 +1,5 @@
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Validation;
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using FluentValidation;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypeManagement.UpdateTicketType.AdminApi;
@@ -16,6 +15,20 @@ public sealed class UpdateTicketTypeValidator : AbstractValidator<UpdateTicketTy
         {
             RuleFor(x => x.MaxCapacity!.Value)
                 .GreaterThan(0);
+        });
+
+        When(x => x.ClaimWindowHours is not null, () =>
+        {
+            RuleFor(x => x.ClaimWindowHours!.Value)
+                .GreaterThanOrEqualTo(1)
+                .WithMessage("ClaimWindowHours must be at least 1.");
+        });
+
+        When(x => x.MaxReconfirmAttempts is not null, () =>
+        {
+            RuleFor(x => x.MaxReconfirmAttempts!.Value)
+                .GreaterThanOrEqualTo(1)
+                .WithMessage("MaxReconfirmAttempts must be at least 1.");
         });
     }
 }

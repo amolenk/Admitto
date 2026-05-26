@@ -24,7 +24,9 @@ public sealed class UpdateTicketedEventDetailsTests(TestContext testContext) : A
             "https://example.com",
             "https://tickets.example.com",
             newStart,
-            newEnd);
+            newEnd,
+            QuietHoursStart: new TimeOnly(22, 0),
+            QuietHoursEnd: new TimeOnly(8, 0));
 
         var sut = new UpdateTicketedEventDetailsHandler(Environment.RegistrationsDatabase.Context);
 
@@ -55,7 +57,9 @@ public sealed class UpdateTicketedEventDetailsTests(TestContext testContext) : A
             "https://example.com",
             "https://tickets.example.com",
             DateTimeOffset.UtcNow.AddDays(10),
-            DateTimeOffset.UtcNow.AddDays(11));
+            DateTimeOffset.UtcNow.AddDays(11),
+            QuietHoursStart: new TimeOnly(22, 0),
+            QuietHoursEnd: new TimeOnly(8, 0));
 
         var sut = new UpdateTicketedEventDetailsHandler(Environment.RegistrationsDatabase.Context);
 
@@ -79,7 +83,9 @@ public sealed class UpdateTicketedEventDetailsTests(TestContext testContext) : A
             "https://example.com",
             "https://tickets.example.com",
             DateTimeOffset.UtcNow.AddDays(10),
-            DateTimeOffset.UtcNow.AddDays(11));
+            DateTimeOffset.UtcNow.AddDays(11),
+            QuietHoursStart: new TimeOnly(22, 0),
+            QuietHoursEnd: new TimeOnly(8, 0));
 
         var sut = new UpdateTicketedEventDetailsHandler(Environment.RegistrationsDatabase.Context);
 

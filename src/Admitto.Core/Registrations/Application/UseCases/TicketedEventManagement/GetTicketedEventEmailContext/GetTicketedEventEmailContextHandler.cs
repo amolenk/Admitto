@@ -57,6 +57,12 @@ internal sealed class GetTicketedEventEmailContextHandler(
             lastName = attendee?.LastName;
         }
 
-        return new TicketedEventEmailContextDto(fields.Name, fields.WebsiteUrl, qrCodeLink, firstName, lastName);
+        return new TicketedEventEmailContextDto(
+            fields.Name,
+            fields.WebsiteUrl,
+            fields.BaseUrl,
+            qrCodeLink,
+            firstName,
+            lastName);
     }
 }

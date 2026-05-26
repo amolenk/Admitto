@@ -23,7 +23,7 @@ public sealed class AttendeeRegisteredIntegrationEventHandlerTests(TestContext t
         new(TeamGuid.Value, EventGuid.Value, RegId, "alice@example.com", "Alice", "Anderson", []);
 
     private static TicketedEventEmailContextDto Context() =>
-        new("DevConf 2025", "https://devconf.example.com", "https://devconf.example.com/qr", "Alice", "Anderson");
+        new("DevConf 2025", "https://devconf.example.com", "https://tickets.example.com", "https://devconf.example.com/qr", "Alice", "Anderson");
 
     [TestMethod]
     public async Task AttendeeRegistered_DispatchesTicketEmail()
@@ -33,8 +33,7 @@ public sealed class AttendeeRegisteredIntegrationEventHandlerTests(TestContext t
             .Returns(Context());
         var sendEmailHandler = Substitute.For<ICommandHandler<SendEmailCommand>>();
 
-        var sut = new AttendeeRegisteredIntegrationEventHandler(
-            Environment.EmailDatabase.Context, facade, sendEmailHandler);
+        var sut = new AttendeeRegisteredIntegrationEventHandler(facade, sendEmailHandler);
 
         await sut.HandleAsync(Event(), testContext.CancellationToken);
 
@@ -59,8 +58,7 @@ public sealed class AttendeeRegisteredIntegrationEventHandlerTests(TestContext t
             .HandleAsync(Arg.Do<SendEmailCommand>(c => captured = c), Arg.Any<CancellationToken>())
             .Returns(ValueTask.CompletedTask);
 
-        var sut = new AttendeeRegisteredIntegrationEventHandler(
-            Environment.EmailDatabase.Context, facade, sendEmailHandler);
+        var sut = new AttendeeRegisteredIntegrationEventHandler(facade, sendEmailHandler);
 
         await sut.HandleAsync(Event(), testContext.CancellationToken);
 
@@ -89,8 +87,7 @@ public sealed class AttendeeRegisteredIntegrationEventHandlerTests(TestContext t
         var facade = Substitute.For<IRegistrationsFacade>();
         var sendEmailHandler = Substitute.For<ICommandHandler<SendEmailCommand>>();
 
-        var sut = new AttendeeRegisteredIntegrationEventHandler(
-            Environment.EmailDatabase.Context, facade, sendEmailHandler);
+        var sut = new AttendeeRegisteredIntegrationEventHandler(facade, sendEmailHandler);
 
         await sut.HandleAsync(Event(), testContext.CancellationToken);
 

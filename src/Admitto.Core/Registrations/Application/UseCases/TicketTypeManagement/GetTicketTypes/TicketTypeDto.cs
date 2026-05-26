@@ -6,4 +6,8 @@ internal sealed record TicketTypeDto(
     string[] TimeSlots,
     int? MaxCapacity,
     int UsedCapacity,
-    bool SelfServiceEnabled);
+    bool SelfServiceEnabled,
+    bool WaitlistEnabled,
+    bool WaitlistMode,
+    int ClaimWindowHours,
+    int? MaxReconfirmAttempts);

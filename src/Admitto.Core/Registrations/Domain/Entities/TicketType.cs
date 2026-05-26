@@ -18,7 +18,10 @@ public class TicketType : Entity<TicketTypeId>
         TicketTypeName name,
         TimeSlot[] timeSlots,
         int? maxCapacity,
-        bool selfServiceEnabled = true)
+        bool selfServiceEnabled = true,
+        bool waitlistEnabled = false,
+        int claimWindowHours = 8,
+        int? maxReconfirmAttempts = null)
         : base(id)
     {
         Name = name;
@@ -26,6 +29,9 @@ public class TicketType : Entity<TicketTypeId>
         MaxCapacity = maxCapacity;
         UsedCapacity = 0;
         SelfServiceEnabled = selfServiceEnabled;
+        WaitlistEnabled = waitlistEnabled;
+        ClaimWindowHours = claimWindowHours;
+        UpdateMaxReconfirmAttempts(maxReconfirmAttempts);
     }
 
     public TicketTypeName Name { get; private set; }
@@ -33,6 +39,10 @@ public class TicketType : Entity<TicketTypeId>
     public int? MaxCapacity { get; private set; }
     public int UsedCapacity { get; private set; }
     public bool SelfServiceEnabled { get; private set; } = true;
+    public bool WaitlistEnabled { get; private set; }
+    public bool WaitlistMode { get; private set; }
+    public int ClaimWindowHours { get; private set; } = 8;
+    public int? MaxReconfirmAttempts { get; private set; }
 
     public void UpdateName(TicketTypeName name)
     {
@@ -49,11 +59,47 @@ public class TicketType : Entity<TicketTypeId>
         SelfServiceEnabled = enabled;
     }
 
+    public void UpdateMaxReconfirmAttempts(int? value)
+    {
+        if (value is <= 0)
+            throw new BusinessRuleViolationException(Errors.MaxReconfirmAttemptsBelowMinimum);
+
+        MaxReconfirmAttempts = value;
+    }
+
+    internal void EnableWaitlist()
+    {
+        WaitlistEnabled = true;
+    }
+
+    internal void DisableWaitlist()
+    {
+        WaitlistEnabled = false;
+    }
+
+    internal void UpdateClaimWindowHours(int hours)
+    {
+        ClaimWindowHours = hours;
+    }
+
+    internal void ActivateWaitlistMode()
+    {
+        WaitlistMode = true;
+    }
+
+    internal void DeactivateWaitlistMode()
+    {
+        WaitlistMode = false;
+    }
+
     /// <summary>
-    /// Increments used capacity. Throws if sold out. Self-service availability is checked upstream at catalog level.
+    /// Increments used capacity. Throws if in WaitlistMode or sold out. Self-service availability is checked upstream at catalog level.
     /// </summary>
     public void ClaimWithEnforcement()
     {
+        if (WaitlistMode)
+            throw new BusinessRuleViolationException(Errors.TicketTypeInWaitlistMode(Id));
+
         if (MaxCapacity is not null && UsedCapacity >= MaxCapacity.Value)
             throw new BusinessRuleViolationException(Errors.TicketTypeAtCapacity(Id));
 
@@ -83,9 +129,18 @@ public class TicketType : Entity<TicketTypeId>
                 "Ticket type is not available for self-service registration.",
                 Details: new Dictionary<string, object?> { ["id"] = id.Value });
 
+        public static Error TicketTypeInWaitlistMode(TicketTypeId id) =>
+            new("ticket_type.waitlist_mode",
+                "This ticket type is currently in waitlist mode.",
+                Details: new Dictionary<string, object?> { ["id"] = id.Value });
+
         public static Error TicketTypeAtCapacity(TicketTypeId id) =>
             new("ticket_type.at_capacity",
                 "Ticket type is at full capacity.",
                 Details: new Dictionary<string, object?> { ["id"] = id.Value });
+
+        public static Error MaxReconfirmAttemptsBelowMinimum =>
+            new("ticket_type.max_reconfirm_attempts_below_minimum",
+                "MaxReconfirmAttempts must be at least 1.");
     }
 }

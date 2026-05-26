@@ -109,6 +109,14 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("revoked_at");
 
+                    b.Property<int>("Source")
+                        .HasColumnType("integer")
+                        .HasColumnName("source");
+
+                    b.Property<Guid>("TeamId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("team_id");
+
                     b.Property<uint>("Version")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
@@ -347,6 +355,18 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
                         .HasColumnType("character varying(64)")
                         .HasColumnName("name");
 
+                    b.Property<TimeOnly>("QuietHoursEnd")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("time")
+                        .HasDefaultValue(new TimeOnly(8, 0, 0))
+                        .HasColumnName("quiet_hours_end");
+
+                    b.Property<TimeOnly>("QuietHoursStart")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("time")
+                        .HasDefaultValue(new TimeOnly(22, 0, 0))
+                        .HasColumnName("quiet_hours_start");
+
                     b.Property<string>("SigningKey")
                         .IsRequired()
                         .HasMaxLength(64)
@@ -388,6 +408,72 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
                     b.HasKey("Id");
 
                     b.ToTable("ticketed_events", "registrations");
+                });
+
+            modelBuilder.Entity("Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("ticket_type_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("EventId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("event_id");
+
+                    b.Property<DateTimeOffset>("LastChangedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_changed_at");
+
+                    b.Property<string>("LastChangedBy")
+                        .IsRequired()
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)")
+                        .HasColumnName("last_changed_by");
+
+                    b.Property<Guid>("TeamId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("team_id");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EventId");
+
+                    b.ToTable("waitlists", "registrations");
+                });
+
+            modelBuilder.Entity("Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Inbox.ProcessedMessage", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("MessageKey")
+                        .IsRequired()
+                        .HasMaxLength(512)
+                        .HasColumnType("character varying(512)")
+                        .HasColumnName("message_key");
+
+                    b.Property<DateTimeOffset>("ProcessedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("processed_at");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MessageKey")
+                        .IsUnique()
+                        .HasDatabaseName("ix_processed_messages_message_key");
+
+                    b.ToTable("processed_messages", "registrations");
                 });
 
             modelBuilder.Entity("Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Outbox.OutboxMessage", b =>
@@ -462,11 +548,17 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
                             b1.Property<int>("__synthesizedOrdinal")
                                 .ValueGeneratedOnAdd();
 
+                            b1.Property<int>("ClaimWindowHours")
+                                .HasJsonPropertyName("claim_window_hours");
+
                             b1.Property<Guid>("Id")
                                 .HasJsonPropertyName("id");
 
                             b1.Property<int?>("MaxCapacity")
                                 .HasJsonPropertyName("max_capacity");
+
+                            b1.Property<int?>("MaxReconfirmAttempts")
+                                .HasJsonPropertyName("max_reconfirm_attempts");
 
                             b1.Property<string>("Name")
                                 .IsRequired()
@@ -481,6 +573,12 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
 
                             b1.Property<int>("UsedCapacity")
                                 .HasJsonPropertyName("used_capacity");
+
+                            b1.Property<bool>("WaitlistEnabled")
+                                .HasJsonPropertyName("waitlist_enabled");
+
+                            b1.Property<bool>("WaitlistMode")
+                                .HasJsonPropertyName("waitlist_mode");
 
                             b1.HasKey("TicketCatalogId", "__synthesizedOrdinal");
 
@@ -557,6 +655,76 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
                     b.Navigation("ReconfirmPolicy");
 
                     b.Navigation("RegistrationPolicy");
+                });
+
+            modelBuilder.Entity("Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist", b =>
+                {
+                    b.OwnsMany("Amolenk.Admitto.Core.Registrations.Domain.Entities.WaitlistCoupon", "WaitlistCoupons", b1 =>
+                        {
+                            b1.Property<Guid>("WaitlistId");
+
+                            b1.Property<int>("__synthesizedOrdinal")
+                                .ValueGeneratedOnAdd();
+
+                            b1.Property<Guid>("Id")
+                                .HasJsonPropertyName("id");
+
+                            b1.Property<DateTimeOffset>("IssuedAt")
+                                .HasJsonPropertyName("issued_at");
+
+                            b1.Property<int>("Status")
+                                .HasJsonPropertyName("status");
+
+                            b1.HasKey("WaitlistId", "__synthesizedOrdinal");
+
+                            b1.ToTable("waitlists", "registrations");
+
+                            b1
+                                .ToJson("waitlist_coupons")
+                                .HasColumnType("jsonb");
+
+                            b1.WithOwner()
+                                .HasForeignKey("WaitlistId");
+                        });
+
+                    b.OwnsMany("Amolenk.Admitto.Core.Registrations.Domain.Entities.WaitlistEntry", "Entries", b1 =>
+                        {
+                            b1.Property<Guid>("WaitlistId");
+
+                            b1.Property<int>("__synthesizedOrdinal")
+                                .ValueGeneratedOnAdd();
+
+                            b1.Property<DateTimeOffset>("AddedAt")
+                                .HasJsonPropertyName("added_at");
+
+                            b1.Property<string>("Email")
+                                .IsRequired()
+                                .HasJsonPropertyName("email");
+
+                            b1.Property<Guid>("Id")
+                                .HasJsonPropertyName("id");
+
+                            b1.Property<int>("Position")
+                                .HasJsonPropertyName("position");
+
+                            b1.Property<int>("Status")
+                                .HasJsonPropertyName("status");
+
+                            b1.HasKey("WaitlistId", "__synthesizedOrdinal");
+
+                            b1.ToTable("waitlists", "registrations");
+
+                            b1
+                                .ToJson("entries")
+                                .HasColumnType("jsonb");
+
+                            b1.WithOwner()
+                                .HasForeignKey("WaitlistId");
+                        });
+
+                    b.Navigation("Entries");
+
+                    b.Navigation("WaitlistCoupons");
                 });
 #pragma warning restore 612, 618
         }

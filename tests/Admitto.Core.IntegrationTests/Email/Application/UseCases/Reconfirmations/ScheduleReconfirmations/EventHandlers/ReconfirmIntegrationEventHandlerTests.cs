@@ -15,7 +15,7 @@ public sealed class ReconfirmIntegrationEventHandlerTests
     private static readonly DateTimeOffset Closes = new(2030, 12, 31, 0, 0, 0, TimeSpan.Zero);
 
     private static ReconfirmTriggerSpecDto Spec(Guid teamId, Guid eventId) =>
-        new(teamId, eventId, "UTC", Opens, Closes, 1, MinEmailIntervalHours: 24);
+        new(teamId, eventId, "UTC", Opens, Closes, 1, 24);
 
     [TestMethod]
     public async Task TicketedEventCreatedIntegrationEvent_WithExistingPolicy_DispatchesUpsertCommand()
@@ -77,7 +77,7 @@ public sealed class ReconfirmIntegrationEventHandlerTests
         await handler.HandleAsync(
             new TicketedEventReconfirmPolicyChangedIntegrationEvent(
                 teamId, eventId,
-                new TicketedEventReconfirmPolicySnapshot(Opens, Closes, 1, MinEmailIntervalHours: 0)),
+                new TicketedEventReconfirmPolicySnapshot(Opens, Closes, 1, 24)),
             default);
 
         await scheduleHandler.Received(1).HandleAsync(
@@ -166,5 +166,4 @@ public sealed class ReconfirmIntegrationEventHandlerTests
                 c.TicketedEventId == TicketedEventId.From(eventId) && c.Spec == null),
             Arg.Any<CancellationToken>());
     }
-
 }

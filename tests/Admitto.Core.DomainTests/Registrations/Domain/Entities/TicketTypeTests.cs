@@ -1,5 +1,6 @@
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Shouldly;
 
@@ -22,39 +23,74 @@ public sealed class TicketTypeTests
     [TestMethod]
     public void ReleaseCapacity_WhenUsedIsPositive_Decrements()
     {
-        // Arrange
         var sut = CreateTicketType(maxCapacity: 10, usedCapacity: 5);
 
-        // Act
         sut.ReleaseCapacity();
 
-        // Assert
         sut.UsedCapacity.ShouldBe(4);
     }
 
     [TestMethod]
     public void ReleaseCapacity_WhenUsedIsOne_DecrementsToZero()
     {
-        // Arrange
         var sut = CreateTicketType(maxCapacity: 10, usedCapacity: 1);
 
-        // Act
         sut.ReleaseCapacity();
 
-        // Assert
         sut.UsedCapacity.ShouldBe(0);
     }
 
     [TestMethod]
     public void ReleaseCapacity_WhenUsedIsZero_ClampsAtZero()
     {
-        // Arrange
         var sut = CreateTicketType(maxCapacity: 10, usedCapacity: 0);
 
-        // Act
         sut.ReleaseCapacity();
 
-        // Assert
         sut.UsedCapacity.ShouldBe(0);
+    }
+
+    [TestMethod]
+    public void ClaimWithEnforcement_WhenWaitlistModeActive_ThrowsWaitlistModeError()
+    {
+        var id = TicketTypeId.New();
+        var catalog = TicketCatalog.Create(TicketedEventId.New());
+        catalog.AddTicketType(id, TicketTypeName.From("General"), [], maxCapacity: 1, waitlistEnabled: true);
+        catalog.Claim([id], enforce: true);
+        var sut = catalog.GetTicketType(id)!;
+
+        Should.Throw<BusinessRuleViolationException>(() => sut.ClaimWithEnforcement())
+            .Error.Code.ShouldBe("ticket_type.waitlist_mode");
+    }
+
+    [TestMethod]
+    public void UpdateMaxReconfirmAttempts_ValidValue_SetsProperty()
+    {
+        var ticketType = CreateTicketType();
+
+        ticketType.UpdateMaxReconfirmAttempts(3);
+
+        ticketType.MaxReconfirmAttempts.ShouldBe(3);
+    }
+
+    [TestMethod]
+    public void UpdateMaxReconfirmAttempts_Zero_ThrowsValidationError()
+    {
+        var ticketType = CreateTicketType();
+
+        var ex = Should.Throw<BusinessRuleViolationException>(() => ticketType.UpdateMaxReconfirmAttempts(0));
+
+        ex.Error.Code.ShouldBe("ticket_type.max_reconfirm_attempts_below_minimum");
+    }
+
+    [TestMethod]
+    public void UpdateMaxReconfirmAttempts_Null_DisablesAutoCancelForType()
+    {
+        var ticketType = CreateTicketType();
+        ticketType.UpdateMaxReconfirmAttempts(3);
+
+        ticketType.UpdateMaxReconfirmAttempts(null);
+
+        ticketType.MaxReconfirmAttempts.ShouldBeNull();
     }
 }

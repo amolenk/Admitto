@@ -6,5 +6,7 @@ namespace Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 
 public record CouponCreatedDomainEvent(
     CouponId CouponId,
+    TeamId TeamId,
     TicketedEventId TicketedEventId,
-    EmailAddress Email) : DomainEvent;
+    EmailAddress Email,
+    CouponCode Code) : DomainEvent;

@@ -8,7 +8,7 @@ public static class AssemblySetup
     [AssemblyInitialize]
     public static async Task AssemblyInit(TestContext testContext)
     {
-        using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        using var cts = new CancellationTokenSource(TimeSpan.FromMinutes(2));
 
         AppHost = new IntegrationTestAppHost();
         await AppHost.StartAsync(cts.Token);
@@ -18,12 +18,6 @@ public static class AssemblySetup
             cancellationToken: cts.Token);
 
         AspireIntegrationTestBase.Environment = await IntegrationTestEnvironment.CreateAsync(AppHost, cts.Token);
-
-        AspireIntegrationTestBase.Environment =
-            await IntegrationTestEnvironment.CreateAsync(AppHost, cts.Token);
-
-        AspireIntegrationTestBase.Environment =
-            await IntegrationTestEnvironment.CreateAsync(AppHost, cts.Token);
     }
 
     [AssemblyCleanup]

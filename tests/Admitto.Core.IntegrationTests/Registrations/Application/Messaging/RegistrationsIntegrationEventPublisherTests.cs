@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Registrations.Application.Messaging;
+using Amolenk.Admitto.Core.Registrations.Application.Security;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
@@ -22,7 +23,7 @@ public sealed class RegistrationsIntegrationEventPublisherTests
     {
         _outbox = Substitute.For<IOutbox>();
         _outbox.When(o => o.Enqueue(Arg.Any<IIntegrationEvent>())).Do(ci => _captured = ci.Arg<IIntegrationEvent>());
-        _publisher = new RegistrationsIntegrationEventPublisher(_outbox);
+        _publisher = new RegistrationsIntegrationEventPublisher(_outbox, Substitute.For<IVerificationTokenService>());
     }
 
     [TestMethod]
@@ -166,7 +167,11 @@ public sealed class RegistrationsIntegrationEventPublisherTests
         var domainEvent = new TicketedEventReconfirmPolicyChangedDomainEvent(
             teamId,
             eventId,
-            TicketedEventReconfirmPolicy.Create(opensAt, closesAt, TimeSpan.FromDays(7), TimeSpan.FromHours(24)));
+            TicketedEventReconfirmPolicy.Create(
+                opensAt,
+                closesAt,
+                TimeSpan.FromDays(7),
+                TimeSpan.FromHours(24)));
 
         await _publisher.HandleAsync(domainEvent, CancellationToken.None);
 
@@ -262,5 +267,35 @@ public sealed class RegistrationsIntegrationEventPublisherTests
         evt.LastName.ShouldBe("Adams");
         evt.NewTickets.ShouldHaveSingleItem().Id.ShouldBe(vipId.Value);
         evt.ChangedAt.ShouldBe(changedAt);
+    }
+
+    [TestMethod]
+    public async ValueTask WaitlistCouponIssued_EnqueuesWaitlistCouponIssuedIntegrationEvent()
+    {
+        var teamId = TeamId.New();
+        var eventId = TicketedEventId.New();
+        var ticketTypeId = TicketTypeId.New();
+        var couponCode = CouponCode.New();
+        var expiresAt = DateTimeOffset.UtcNow.AddHours(8);
+
+        var domainEvent = new WaitlistCouponIssuedDomainEvent(
+            teamId,
+            eventId,
+            ticketTypeId,
+            EmailAddress.From("alice@example.com"),
+            couponCode,
+            "Conference Pass",
+            expiresAt);
+
+        await _publisher.HandleAsync(domainEvent, CancellationToken.None);
+
+        _captured.ShouldNotBeNull();
+        var evt = _captured.ShouldBeOfType<WaitlistCouponIssuedIntegrationEvent>();
+        evt.TeamId.ShouldBe(teamId.Value);
+        evt.TicketedEventId.ShouldBe(eventId.Value);
+        evt.RecipientEmail.ShouldBe("alice@example.com");
+        evt.CouponCode.ShouldBe(couponCode.Value.ToString());
+        evt.TicketTypeName.ShouldBe("Conference Pass");
+        evt.ExpiresAt.ShouldBe(expiresAt);
     }
 }

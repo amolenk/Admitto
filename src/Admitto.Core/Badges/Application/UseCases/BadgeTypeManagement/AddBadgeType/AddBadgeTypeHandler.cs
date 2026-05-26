@@ -13,15 +13,15 @@ internal sealed class AddBadgeTypeHandler(IBadgesWriteStore writeStore)
         var eventId = TicketedEventId.From(command.EventId);
 
         var badgesEvent = await writeStore.BadgesEvents.GetUntrackedAsync(
-             e => e.Id == eventId,
-             cancellationToken);
+            e => e.Id == eventId,
+            cancellationToken);
 
         badgesEvent.EnsureEventActive();
 
         var kind = Enum.Parse<BadgeKind>(command.Kind, ignoreCase: true);
         var id = BadgeTypeId.New();
         var name = BadgeTypeName.From(command.Name);
-        var ticketTypeIds = command.TicketTypeIds.Select(TicketTypeId.From).ToList();
+        var ticketTypeIds = TicketTypeId.ListFrom(command.TicketTypeIds);
 
         var badgeType = BadgeType.Create(id, eventId, name, kind, ticketTypeIds);
         writeStore.BadgeTypes.Add(badgeType);

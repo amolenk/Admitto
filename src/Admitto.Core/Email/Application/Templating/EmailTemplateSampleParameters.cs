@@ -16,5 +16,8 @@ internal static class EmailTemplateSampleParameters
         CancelLink    = "https://example.com/cancel",
         EventWebsite  = "https://example.com",
         PlainCode     = "123456",
+        CouponCode    = "WAITLIST-ABC123",
+        TicketTypeName = "Conference Pass",
+        ExpiresAt     = "2026-06-15 08:00 (Europe/Amsterdam)",
     };
 }

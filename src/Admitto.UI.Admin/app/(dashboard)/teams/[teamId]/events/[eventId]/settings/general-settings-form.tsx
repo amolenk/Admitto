@@ -51,6 +51,8 @@ const generalSchema = z
             .refine((v) => isValidTimeZone(v), "Unknown IANA time zone"),
         startsAt: z.string().min(1, "Start is required"),
         endsAt: z.string().min(1, "End is required"),
+        quietHoursStart: z.string().regex(/^\d{2}:\d{2}$/, "Must be HH:MM"),
+        quietHoursEnd: z.string().regex(/^\d{2}:\d{2}$/, "Must be HH:MM"),
     })
     .refine((d) => new Date(d.startsAt) < new Date(d.endsAt), {
         path: ["endsAt"],
@@ -70,21 +72,31 @@ export function GeneralSettingsForm({ event }: { event: TicketedEventDetailsDto 
         timeZone: event.timeZone,
         startsAt: event.startsAt,
         endsAt: event.endsAt,
+        quietHoursStart: event.quietHoursStart?.substring(0, 5) ?? "00:00",
+        quietHoursEnd: event.quietHoursEnd?.substring(0, 5) ?? "00:00",
     });
 
     async function onSubmit(values: GeneralValues) {
-        const body: Record<string, unknown> = {
-            expectedVersion: Number(event.version),
-        };
-        if (values.name !== event.name) body.name = values.name;
-        if (values.websiteUrl !== event.websiteUrl) body.websiteUrl = values.websiteUrl;
-        if (values.baseUrl !== event.baseUrl) body.baseUrl = values.baseUrl;
-        if (values.startsAt !== event.startsAt) body.startsAt = values.startsAt;
-        if (values.endsAt !== event.endsAt) body.endsAt = values.endsAt;
+        const detailsChanged =
+            values.name !== event.name ||
+            values.websiteUrl !== event.websiteUrl ||
+            values.baseUrl !== event.baseUrl ||
+            values.startsAt !== event.startsAt ||
+            values.endsAt !== event.endsAt ||
+            values.quietHoursStart !== (event.quietHoursStart?.substring(0, 5) ?? "00:00") ||
+            values.quietHoursEnd !== (event.quietHoursEnd?.substring(0, 5) ?? "00:00");
 
-        const detailsChanged = Object.keys(body).length > 1;
         if (detailsChanged) {
-            await apiClient.put(`/api/teams/${teamId}/events/${eventId}`, body);
+            await apiClient.put(`/api/teams/${teamId}/events/${eventId}`, {
+                expectedVersion: Number(event.version),
+                name: values.name,
+                websiteUrl: values.websiteUrl,
+                baseUrl: values.baseUrl,
+                startsAt: values.startsAt,
+                endsAt: values.endsAt,
+                quietHoursStart: values.quietHoursStart + ":00",
+                quietHoursEnd: values.quietHoursEnd + ":00",
+            });
         }
 
         if (values.timeZone !== event.timeZone) {
@@ -185,6 +197,39 @@ export function GeneralSettingsForm({ event }: { event: TicketedEventDetailsDto 
                                                     onChange={field.onChange}
                                                     onBlur={field.onBlur}
                                                 />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    </Field>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="quietHoursStart"
+                                render={({ field }) => (
+                                    <Field
+                                        label="Quiet hours start"
+                                        hint="Waitlist claim windows extend rather than notify during quiet hours."
+                                    >
+                                        <FormItem className="space-y-1">
+                                            <FormControl>
+                                                <Input type="time" {...field} className="w-36" />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    </Field>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="quietHoursEnd"
+                                render={({ field }) => (
+                                    <Field label="Quiet hours end" hint="Notifications resume after this time.">
+                                        <FormItem className="space-y-1">
+                                            <FormControl>
+                                                <Input type="time" {...field} className="w-36" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>

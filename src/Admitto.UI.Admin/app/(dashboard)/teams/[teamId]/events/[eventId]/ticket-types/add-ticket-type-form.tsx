@@ -5,7 +5,7 @@ import * as z from "zod";
 import { useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -20,6 +20,9 @@ const addSchema = z.object({
     selfServiceEnabled: z.boolean(),
     limitCapacity: z.boolean(),
     maxCapacity: z.number().int().min(1).optional(),
+    waitlistEnabled: z.boolean(),
+    claimWindowHours: z.number().int().min(1).optional(),
+    maxReconfirmAttempts: z.number().int().min(1, "Must be at least 1").optional(),
     timeSlots: z.array(z.string().regex(slugRegex)),
 });
 
@@ -44,16 +47,23 @@ export function AddTicketTypeForm({
         selfServiceEnabled: true,
         limitCapacity: false,
         maxCapacity: undefined,
+        waitlistEnabled: false,
+        claimWindowHours: 8,
+        maxReconfirmAttempts: undefined,
         timeSlots: [],
     });
 
     const limitCapacity = form.watch("limitCapacity");
+    const waitlistEnabled = form.watch("waitlistEnabled");
 
     async function onSubmit(values: AddValues) {
         await apiClient.post(`/api/teams/${teamId}/events/${eventId}/ticket-types`, {
             name: values.name,
             selfServiceEnabled: values.selfServiceEnabled,
             maxCapacity: values.limitCapacity ? (values.maxCapacity ?? null) : null,
+            waitlistEnabled: values.limitCapacity ? values.waitlistEnabled : false,
+            claimWindowHours: values.limitCapacity && values.waitlistEnabled ? (values.claimWindowHours ?? 8) : undefined,
+            maxReconfirmAttempts: values.maxReconfirmAttempts ?? null,
             timeSlots: values.timeSlots,
         });
         await queryClient.invalidateQueries({ queryKey: ["ticket-types", teamId, eventId] });
@@ -101,7 +111,15 @@ export function AddTicketTypeForm({
                     render={({ field }) => (
                         <FormItem className="flex items-center gap-3">
                             <FormControl>
-                                <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                <Switch
+                                    checked={field.value}
+                                    onCheckedChange={(checked) => {
+                                        field.onChange(checked);
+                                        if (!checked) {
+                                            form.setValue("waitlistEnabled", false);
+                                        }
+                                    }}
+                                />
                             </FormControl>
                             <FormLabel className="!mt-0">Limit capacity</FormLabel>
                         </FormItem>
@@ -130,6 +148,71 @@ export function AddTicketTypeForm({
                         )}
                     />
                 )}
+                {limitCapacity && (
+                    <FormField
+                        control={form.control}
+                        name="waitlistEnabled"
+                        render={({ field }) => (
+                            <FormItem className="flex items-center gap-3">
+                                <FormControl>
+                                    <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                </FormControl>
+                                <FormLabel className="!mt-0">Enable waitlist</FormLabel>
+                            </FormItem>
+                        )}
+                    />
+                )}
+                {limitCapacity && waitlistEnabled && (
+                    <FormField
+                        control={form.control}
+                        name="claimWindowHours"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Claim window (hours)</FormLabel>
+                                <FormControl>
+                                    <Input
+                                        type="number"
+                                        min={1}
+                                        placeholder="e.g. 8"
+                                        value={field.value ?? ""}
+                                        onChange={(e) =>
+                                            field.onChange(e.target.value === "" ? undefined : e.target.valueAsNumber)
+                                        }
+                                    />
+                                </FormControl>
+                                <FormDescription>
+                                    How long a notified attendee has to claim their spot.
+                                </FormDescription>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                )}
+                <FormField
+                    control={form.control}
+                    name="maxReconfirmAttempts"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel>Max reconfirmation attempts (optional)</FormLabel>
+                            <FormControl>
+                                <Input
+                                    type="number"
+                                    min={1}
+                                    placeholder="e.g. 3"
+                                    value={field.value ?? ""}
+                                    onChange={(e) =>
+                                        field.onChange(e.target.value === "" ? undefined : e.target.valueAsNumber)
+                                    }
+                                />
+                            </FormControl>
+                            <FormDescription>
+                                When set, registrations with this ticket type will be automatically cancelled
+                                if not reconfirmed within this many attempts.
+                            </FormDescription>
+                            <FormMessage />
+                        </FormItem>
+                    )}
+                />
                 <FormField
                     control={form.control}
                     name="timeSlots"

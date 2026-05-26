@@ -50,7 +50,7 @@ internal sealed class ConfigureReconfirmPolicyHandler(IRegistrationsWriteStore w
     {
         public static readonly Error IncompletePolicy = new(
             "configure_reconfirm_policy.incomplete",
-            "Reconfirm policy requires OpensAt, ClosesAt, CadenceHours, and MinEmailIntervalHours — send all four to configure or none to clear.",
+            "Reconfirm policy requires OpensAt, ClosesAt, CadenceHours, and MinEmailIntervalHours — send all four fields to configure or none to clear.",
             Type: ErrorType.Validation);
     }
 }

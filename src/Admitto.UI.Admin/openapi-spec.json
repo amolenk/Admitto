@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:63670/"
+      "url": "http://localhost:63672/"
     }
   ],
   "paths": {
@@ -5669,6 +5669,209 @@
         }
       }
     },
+    "/admin/teams/{teamId}/events/{eventId}/ticket-types/{ticketTypeId}/waitlist/{entryId}": {
+      "delete": {
+        "tags": [
+          "RemoveWaitlistEntryHttpEndpoint"
+        ],
+        "operationId": "RemoveWaitlistEntryHttpEndpoint",
+        "parameters": [
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "eventId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "ticketTypeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "entryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/admin/teams/{teamId}/events/{eventId}/ticket-types/{ticketTypeId}/waitlist": {
+      "get": {
+        "tags": [
+          "GetWaitlistDetailsHttpEndpoint"
+        ],
+        "operationId": "GetWaitlistDetailsHttpEndpoint",
+        "parameters": [
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "eventId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "ticketTypeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WaitlistDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
     "/admin/teams/{teamId}/events/{eventId}/badge-types": {
       "post": {
         "tags": [
@@ -6743,9 +6946,9 @@
     "/api/teams/{teamId}/events/{eventId}/registrations": {
       "post": {
         "tags": [
-          "SelfRegisterAttendeeHttpEndpoint"
+          "RegisterAttendeeSelfServiceHttpEndpoint"
         ],
-        "operationId": "SelfRegisterAttendeeHttpEndpoint",
+        "operationId": "RegisterAttendeeSelfServiceHttpEndpoint",
         "parameters": [
           {
             "name": "teamId",
@@ -6770,7 +6973,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/SelfRegisterAttendeeHttpRequest"
+                "$ref": "#/components/schemas/RegisterAttendeeSelfServiceHttpRequest"
               }
             }
           },
@@ -6833,9 +7036,9 @@
     "/api/teams/{teamId}/events/{eventId}/registrations/coupon": {
       "post": {
         "tags": [
-          "RegisterWithCouponHttpEndpoint"
+          "RegisterAttendeeWithCouponHttpEndpoint"
         ],
-        "operationId": "RegisterWithCouponHttpEndpoint",
+        "operationId": "RegisterAttendeeWithCouponHttpEndpoint",
         "parameters": [
           {
             "name": "teamId",
@@ -6860,7 +7063,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RegisterWithCouponHttpRequest"
+                "$ref": "#/components/schemas/RegisterAttendeeWithCouponHttpRequest"
               }
             }
           },
@@ -7296,6 +7499,378 @@
           }
         }
       }
+    },
+    "/api/teams/{teamId}/events/{eventId}/waitlist/{ticketTypeId}": {
+      "post": {
+        "tags": [
+          "JoinWaitlistHttpEndpoint"
+        ],
+        "operationId": "JoinWaitlistHttpEndpoint",
+        "parameters": [
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "eventId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "ticketTypeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JoinWaitlistHttpRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "202": {
+            "description": "Accepted"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "LeaveWaitlistHttpEndpoint"
+        ],
+        "operationId": "LeaveWaitlistHttpEndpoint",
+        "parameters": [
+          {
+            "name": "eventId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "ticketTypeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "email",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/teams/{teamId}/events/{eventId}/waitlist/{ticketTypeId}/confirm": {
+      "post": {
+        "tags": [
+          "ConfirmWaitlistEntryHttpEndpoint"
+        ],
+        "operationId": "ConfirmWaitlistEntryHttpEndpoint",
+        "parameters": [
+          {
+            "name": "eventId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "ticketTypeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "token",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/teams/{teamId}/events/{eventId}/coupons/{couponCode}": {
+      "get": {
+        "tags": [
+          "GetPublicCouponDetailsHttpEndpoint"
+        ],
+        "operationId": "GetPublicCouponDetailsHttpEndpoint",
+        "parameters": [
+          {
+            "name": "eventId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "couponCode",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicCouponDetailsDto"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -7445,6 +8020,28 @@
               "string"
             ],
             "format": "int32"
+          },
+          "waitlistEnabled": {
+            "type": "boolean",
+            "default": false
+          },
+          "claimWindowHours": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32",
+            "default": 8
+          },
+          "maxReconfirmAttempts": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           }
         }
       },
@@ -7505,6 +8102,22 @@
           "registrationId": {
             "type": "string",
             "format": "uuid"
+          }
+        }
+      },
+      "AllowedTicketTypeDto": {
+        "required": [
+          "id",
+          "name"
+        ],
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string"
           }
         }
       },
@@ -8290,6 +8903,7 @@
           "code",
           "email",
           "status",
+          "source",
           "allowedTicketTypeIds",
           "expiresAt",
           "bypassRegistrationWindow",
@@ -8312,6 +8926,9 @@
           },
           "status": {
             "$ref": "#/components/schemas/CouponStatus"
+          },
+          "source": {
+            "$ref": "#/components/schemas/CouponSource"
           },
           "allowedTicketTypeIds": {
             "type": "array",
@@ -8347,6 +8964,12 @@
           }
         }
       },
+      "CouponSource": {
+        "enum": [
+          "organiser",
+          "waitlist"
+        ]
+      },
       "CouponStatus": {
         "enum": [
           "active",
@@ -8360,6 +8983,7 @@
           "id",
           "email",
           "status",
+          "source",
           "allowedTicketTypeIds",
           "expiresAt",
           "createdAt"
@@ -8375,6 +8999,9 @@
           },
           "status": {
             "$ref": "#/components/schemas/CouponStatus"
+          },
+          "source": {
+            "$ref": "#/components/schemas/CouponSource"
           },
           "allowedTicketTypeIds": {
             "type": "array",
@@ -8929,6 +9556,17 @@
           }
         }
       },
+      "JoinWaitlistHttpRequest": {
+        "required": [
+          "email"
+        ],
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          }
+        }
+      },
       "ListCouponsResult": {
         "required": [
           "coupons"
@@ -8940,6 +9578,27 @@
             "items": {
               "$ref": "#/components/schemas/CouponSummaryDto"
             }
+          }
+        }
+      },
+      "PendingNotificationRow": {
+        "required": [
+          "couponId",
+          "maskedEmail",
+          "expiresAt"
+        ],
+        "type": "object",
+        "properties": {
+          "couponId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "maskedEmail": {
+            "type": "string"
+          },
+          "expiresAt": {
+            "type": "string",
+            "format": "date-time"
           }
         }
       },
@@ -9056,13 +9715,41 @@
           }
         }
       },
+      "PublicCouponDetailsDto": {
+        "required": [
+          "status",
+          "allowedTicketTypes",
+          "expiresAt"
+        ],
+        "type": "object",
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/CouponStatus"
+          },
+          "allowedTicketTypes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AllowedTicketTypeDto"
+            }
+          },
+          "expiresAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          }
+        }
+      },
       "PublicTicketTypeDto": {
         "required": [
           "id",
           "name",
           "timeSlots",
           "maxCapacity",
-          "usedCapacity"
+          "usedCapacity",
+          "waitlistEnabled",
+          "waitlistMode"
         ],
         "type": "object",
         "properties": {
@@ -9095,6 +9782,12 @@
               "string"
             ],
             "format": "int32"
+          },
+          "waitlistEnabled": {
+            "type": "boolean"
+          },
+          "waitlistMode": {
+            "type": "boolean"
           }
         }
       },
@@ -9197,7 +9890,39 @@
           }
         }
       },
-      "RegisterWithCouponHttpRequest": {
+      "RegisterAttendeeSelfServiceHttpRequest": {
+        "required": [
+          "firstName",
+          "lastName",
+          "ticketTypeIds"
+        ],
+        "type": "object",
+        "properties": {
+          "firstName": {
+            "type": "string"
+          },
+          "lastName": {
+            "type": "string"
+          },
+          "ticketTypeIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "additionalDetails": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "RegisterAttendeeWithCouponHttpRequest": {
         "required": [
           "couponCode",
           "email",
@@ -9208,7 +9933,8 @@
         "type": "object",
         "properties": {
           "couponCode": {
-            "type": "string"
+            "type": "string",
+            "format": "uuid"
           },
           "email": {
             "type": "string"
@@ -9473,38 +10199,6 @@
           }
         }
       },
-      "SelfRegisterAttendeeHttpRequest": {
-        "required": [
-          "firstName",
-          "lastName",
-          "ticketTypeIds"
-        ],
-        "type": "object",
-        "properties": {
-          "firstName": {
-            "type": "string"
-          },
-          "lastName": {
-            "type": "string"
-          },
-          "ticketTypeIds": {
-            "type": "array",
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          "additionalDetails": {
-            "type": [
-              "null",
-              "object"
-            ],
-            "additionalProperties": {
-              "type": "string"
-            }
-          }
-        }
-      },
       "SendTestEmailHttpRequest": {
         "required": [
           "recipient"
@@ -9630,7 +10324,9 @@
           "isRegistrationOpen",
           "registrationPolicy",
           "reconfirmPolicy",
-          "additionalDetailSchema"
+          "additionalDetailSchema",
+          "quietHoursStart",
+          "quietHoursEnd"
         ],
         "type": "object",
         "properties": {
@@ -9701,6 +10397,14 @@
             "items": {
               "$ref": "#/components/schemas/AdditionalDetailFieldDto"
             }
+          },
+          "quietHoursStart": {
+            "type": "string",
+            "format": "time"
+          },
+          "quietHoursEnd": {
+            "type": "string",
+            "format": "time"
           }
         }
       },
@@ -9761,7 +10465,11 @@
           "timeSlots",
           "maxCapacity",
           "usedCapacity",
-          "selfServiceEnabled"
+          "selfServiceEnabled",
+          "waitlistEnabled",
+          "waitlistMode",
+          "claimWindowHours",
+          "maxReconfirmAttempts"
         ],
         "type": "object",
         "properties": {
@@ -9797,6 +10505,29 @@
           },
           "selfServiceEnabled": {
             "type": "boolean"
+          },
+          "waitlistEnabled": {
+            "type": "boolean"
+          },
+          "waitlistMode": {
+            "type": "boolean"
+          },
+          "claimWindowHours": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "maxReconfirmAttempts": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           }
         }
       },
@@ -9909,7 +10640,9 @@
           "websiteUrl",
           "baseUrl",
           "startsAt",
-          "endsAt"
+          "endsAt",
+          "quietHoursStart",
+          "quietHoursEnd"
         ],
         "type": "object",
         "properties": {
@@ -9929,6 +10662,14 @@
           "endsAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "quietHoursStart": {
+            "type": "string",
+            "format": "time"
+          },
+          "quietHoursEnd": {
+            "type": "string",
+            "format": "time"
           },
           "expectedVersion": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -9984,6 +10725,30 @@
               "null",
               "boolean"
             ]
+          },
+          "waitlistEnabled": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "claimWindowHours": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "maxReconfirmAttempts": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
           }
         }
       },
@@ -10053,6 +10818,95 @@
             "type": "string"
           }
         }
+      },
+      "WaitlistDetailsDto": {
+        "required": [
+          "activeEntries",
+          "pendingNotifications",
+          "stats"
+        ],
+        "type": "object",
+        "properties": {
+          "activeEntries": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WaitlistEntryRow"
+            }
+          },
+          "pendingNotifications": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PendingNotificationRow"
+            }
+          },
+          "stats": {
+            "$ref": "#/components/schemas/WaitlistStats"
+          }
+        }
+      },
+      "WaitlistEntryRow": {
+        "required": [
+          "entryId",
+          "position",
+          "maskedEmail",
+          "joinedAt"
+        ],
+        "type": "object",
+        "properties": {
+          "entryId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "position": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "maskedEmail": {
+            "type": "string"
+          },
+          "joinedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "WaitlistStats": {
+        "required": [
+          "totalWaiting",
+          "totalPending",
+          "sentToday"
+        ],
+        "type": "object",
+        "properties": {
+          "totalWaiting": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "totalPending": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "sentToday": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
       }
     },
     "securitySchemes": {
@@ -10060,8 +10914,8 @@
         "type": "oauth2",
         "flows": {
           "authorizationCode": {
-            "authorizationUrl": "http://localhost:63680/realms/admitto/protocol/openid-connect/auth",
-            "tokenUrl": "http://localhost:63680/realms/admitto/protocol/openid-connect/token",
+            "authorizationUrl": "http://localhost:63669/realms/admitto/protocol/openid-connect/auth",
+            "tokenUrl": "http://localhost:63669/realms/admitto/protocol/openid-connect/token",
             "scopes": {
               "openid": "OpenID Connect",
               "profile": "User profile",
@@ -10208,6 +11062,12 @@
       "name": "UpdateTicketTypeHttpEndpoint"
     },
     {
+      "name": "RemoveWaitlistEntryHttpEndpoint"
+    },
+    {
+      "name": "GetWaitlistDetailsHttpEndpoint"
+    },
+    {
       "name": "AddBadgeTypeHttpEndpoint"
     },
     {
@@ -10241,10 +11101,10 @@
       "name": "VerifyOtpHttpEndpoint"
     },
     {
-      "name": "SelfRegisterAttendeeHttpEndpoint"
+      "name": "RegisterAttendeeSelfServiceHttpEndpoint"
     },
     {
-      "name": "RegisterWithCouponHttpEndpoint"
+      "name": "RegisterAttendeeWithCouponHttpEndpoint"
     },
     {
       "name": "GetQRCodeHttpEndpoint"
@@ -10257,6 +11117,18 @@
     },
     {
       "name": "GetPublicTicketTypesHttpEndpoint"
+    },
+    {
+      "name": "JoinWaitlistHttpEndpoint"
+    },
+    {
+      "name": "LeaveWaitlistHttpEndpoint"
+    },
+    {
+      "name": "ConfirmWaitlistEntryHttpEndpoint"
+    },
+    {
+      "name": "GetPublicCouponDetailsHttpEndpoint"
     }
   ]
 }

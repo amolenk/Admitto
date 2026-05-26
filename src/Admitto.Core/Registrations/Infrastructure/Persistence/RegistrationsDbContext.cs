@@ -4,6 +4,7 @@ using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence;
+using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Inbox;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Outbox;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
@@ -18,9 +19,11 @@ public sealed class RegistrationsDbContext(DbContextOptions<RegistrationsDbConte
     public DbSet<ActivityLog> ActivityLog => Set<ActivityLog>();
     public DbSet<Coupon> Coupons => Set<Coupon>();
     public DbSet<OtpCode> OtpCodes => Set<OtpCode>();
+    public DbSet<ProcessedMessage> ProcessedMessages => Set<ProcessedMessage>();
     public DbSet<Registration> Registrations => Set<Registration>();
     public DbSet<TicketCatalog> TicketCatalogs => Set<TicketCatalog>();
     public DbSet<TicketedEvent> TicketedEvents => Set<TicketedEvent>();
+    public DbSet<Waitlist> Waitlists => Set<Waitlist>();
 
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
     
@@ -29,6 +32,7 @@ public sealed class RegistrationsDbContext(DbContextOptions<RegistrationsDbConte
         modelBuilder.HasDefaultSchema(SchemaName);
         modelBuilder.ApplySharedConfiguration();
         modelBuilder.ApplyConfiguration(new OutboxMessageEntityConfiguration());
+        modelBuilder.ApplyConfiguration(new ProcessedMessageEntityConfiguration());
         modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly(),
             t => t.Namespace?.StartsWith("Amolenk.Admitto.Core.Registrations") == true);
     }
@@ -94,5 +98,9 @@ public sealed class RegistrationsDbContext(DbContextOptions<RegistrationsDbConte
         configurationBuilder
             .Properties<ActivityLogId>()
             .HaveConversion<ActivityLogId.EfCoreValueConverter>();
+
+        configurationBuilder
+            .Properties<TicketTypeId>()
+            .HaveConversion<TicketTypeId.EfCoreValueConverter>();
     }
 }

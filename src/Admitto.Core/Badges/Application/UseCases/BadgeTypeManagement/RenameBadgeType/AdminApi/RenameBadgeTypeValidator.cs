@@ -1,4 +1,3 @@
-using Amolenk.Admitto.Core.Badges.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Validation;
 using FluentValidation;
 

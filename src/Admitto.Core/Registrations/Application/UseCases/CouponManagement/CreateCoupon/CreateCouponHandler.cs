@@ -21,6 +21,7 @@ internal sealed class CreateCouponHandler(
         CancellationToken cancellationToken)
     {
         TicketedEventId eventId = TicketedEventId.From(command.EventId);
+        TeamId teamId = TeamId.From(command.TeamId);
         EmailAddress email = EmailAddress.From(command.Email);
 
         var catalog = await writeStore.TicketCatalogs
@@ -32,6 +33,7 @@ internal sealed class CreateCouponHandler(
 
         var coupon = Coupon.Create(
             eventId,
+            teamId,
             email,
             command.AllowedTicketTypeIds.Select(TicketTypeId.From).ToList(),
             command.ExpiresAt,

@@ -52,6 +52,8 @@ public class TicketedEvent : Aggregate<TicketedEventId>
     public DateTimeOffset StartsAt { get; private set; }
     public DateTimeOffset EndsAt { get; private set; }
     public TimeZoneId TimeZone { get; private set; }
+    public TimeOnly QuietHoursStart { get; private set; } = new(22, 0);
+    public TimeOnly QuietHoursEnd { get; private set; } = new(8, 0);
     public EventLifecycleStatus Status { get; private set; }
 
     public TicketedEventRegistrationPolicy? RegistrationPolicy { get; private set; }
@@ -91,6 +93,14 @@ public class TicketedEvent : Aggregate<TicketedEventId>
             new TicketedEventCreatedDomainEvent(creationRequestId, teamId, id, timeZone));
 
         return ticketedEvent;
+    }
+
+    public void UpdateQuietHours(TimeOnly start, TimeOnly end)
+    {
+        EnsureActive();
+
+        QuietHoursStart = start;
+        QuietHoursEnd = end;
     }
 
     public void ChangeTimeZone(TimeZoneId timeZone)
@@ -171,6 +181,30 @@ public class TicketedEvent : Aggregate<TicketedEventId>
         && RegistrationPolicy is not null
         && RegistrationPolicy.IsWithinWindow(now);
 
+    /// <summary>
+    /// Enforces that the registration window is currently open.
+    /// Throws <see cref="BusinessRuleViolationException"/> if the policy is absent,
+    /// the window has not yet started, or the window has already closed.
+    /// </summary>
+    public void EnsureRegistrationOpen(DateTimeOffset now)
+    {
+        if (RegistrationPolicy is null || now < RegistrationPolicy.OpensAt)
+            throw new BusinessRuleViolationException(Errors.RegistrationNotOpen);
+
+        if (now >= RegistrationPolicy.ClosesAt)
+            throw new BusinessRuleViolationException(Errors.RegistrationClosed);
+    }
+
+    /// <summary>
+    /// Enforces that the supplied email address matches any domain restriction
+    /// configured on the registration policy.
+    /// </summary>
+    public void EnsureEmailDomainAllowed(EmailAddress email)
+    {
+        if (RegistrationPolicy is not null && !RegistrationPolicy.IsEmailDomainAllowed(email.Value))
+            throw new BusinessRuleViolationException(Errors.EmailDomainNotAllowed);
+    }
+
     private void EnsureActive()
     {
         if (!IsActive)
@@ -195,5 +229,20 @@ public class TicketedEvent : Aggregate<TicketedEventId>
         public static readonly Error ReconfirmWindowClosesAfterEventStart = new(
             "ticketed_event.reconfirm_window_closes_after_event_start",
             "Reconfirmation window must close before the event start date.");
+
+        public static readonly Error RegistrationNotOpen = new(
+            "registration.not_open",
+            "Registration is not open for this event.",
+            Type: ErrorType.Validation);
+
+        public static readonly Error RegistrationClosed = new(
+            "registration.closed",
+            "Registration for this event has closed.",
+            Type: ErrorType.Validation);
+
+        public static readonly Error EmailDomainNotAllowed = new(
+            "registration.email_domain_not_allowed",
+            "Your email domain is not allowed for this event.",
+            Type: ErrorType.Validation);
     }
 }

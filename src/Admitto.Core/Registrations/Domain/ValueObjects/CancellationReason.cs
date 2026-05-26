@@ -4,5 +4,6 @@ public enum CancellationReason
 {
     AttendeeRequest = 0,
     VisaLetterDenied = 1,
-    TicketTypesRemoved = 2
+    TicketTypesRemoved = 2,
+    ReconfirmAutoCancel = 3
 }

@@ -45,12 +45,18 @@ internal static class BuiltInEmailTemplateCatalog
             Build(BuiltInEmailTemplateNames.Cancellation,
                 description:  "Sent when an attendee cancels",
                 resourceKey:  "cancellation"),
+            Build(BuiltInEmailTemplateNames.ReconfirmCancelled,
+                description:  "Sent when a registration is auto-cancelled after no reconfirmation response",
+                resourceKey:  "reconfirm-cancelled"),
             Build(BuiltInEmailTemplateNames.VisaLetterDenied,
                 description:  "Sent when a visa letter request is declined",
                 resourceKey:  "visa-letter-denied"),
             Build(BuiltInEmailTemplateNames.VerificationCode,
                 description:  "Sent when someone starts registration",
                 resourceKey:  "otp-code"),
+            Build(BuiltInEmailTemplateNames.WaitlistNotification,
+                description:  "Sent when a waitlist spot becomes available",
+                resourceKey:  "waitlist-notification"),
         ];
     }
 

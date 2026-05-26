@@ -38,5 +38,8 @@ public sealed class ConfigureReconfirmPolicyValidator : AbstractValidator<Config
     }
 
     private static bool HasAnyField(ConfigureReconfirmPolicyHttpRequest r) =>
-        r.OpensAt is not null || r.ClosesAt is not null || r.CadenceHours is not null;
+        r.OpensAt is not null
+        || r.ClosesAt is not null
+        || r.CadenceHours is not null
+        || r.MinEmailIntervalHours is not null;
 }

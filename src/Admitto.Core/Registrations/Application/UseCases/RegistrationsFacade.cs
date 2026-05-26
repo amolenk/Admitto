@@ -36,20 +36,38 @@ internal sealed class RegistrationsFacade(
             new GetRegistrationsNs.GetRegistrationsQuery(eventId, Filter: query),
             cancellationToken);
 
-        // No TeamId guard — event existence is assumed by cross-module callers.
-        // Map to Contracts DTO (IDs only; names are available but not part of the contract).
+        var catalog = await writeStore.TicketCatalogs
+            .AsNoTracking()
+            .FirstOrDefaultAsync(c => c.Id == eventId, cancellationToken);
+
+        var maxAttemptsByTypeId = catalog?.TicketTypes
+            .Where(t => t.MaxReconfirmAttempts.HasValue)
+            .ToDictionary(t => t.Id.Value, t => t.MaxReconfirmAttempts!.Value)
+            ?? new Dictionary<Guid, int>();
+
         return (result ?? [])
-            .Select(r => new RegistrationListItemDto(
-                r.Id,
-                r.Email,
-                r.FirstName,
-                r.LastName,
-                r.Tickets.Select(t => t.Id).ToArray(),
-                r.AdditionalDetails,
-                r.CreatedAt,
-                r.Status,
-                r.HasReconfirmed,
-                r.ReconfirmedAt))
+            .Select(r =>
+            {
+                var ticketTypeIds = r.Tickets.Select(t => t.Id).ToArray();
+                var relevantAttempts = ticketTypeIds
+                    .Where(id => maxAttemptsByTypeId.ContainsKey(id))
+                    .Select(id => maxAttemptsByTypeId[id])
+                    .ToList();
+                var effectiveMax = relevantAttempts.Count > 0 ? (int?)relevantAttempts.Min() : null;
+
+                return new RegistrationListItemDto(
+                    r.Id,
+                    r.Email,
+                    r.FirstName,
+                    r.LastName,
+                    ticketTypeIds,
+                    r.AdditionalDetails,
+                    r.CreatedAt,
+                    r.Status,
+                    r.HasReconfirmed,
+                    r.ReconfirmedAt,
+                    effectiveMax);
+            })
             .ToList();
     }
 

@@ -23,7 +23,7 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
         new(TeamGuid.Value, EventGuid.Value, RegId, "alice@example.com", reason);
 
     private static TicketedEventEmailContextDto Context() =>
-        new("DevConf 2025", "https://devconf.example.com", "https://devconf.example.com/qr", "Alice", "Test");
+        new("DevConf 2025", "https://devconf.example.com", "https://tickets.example.com", "https://devconf.example.com/qr", "Alice", "Test");
 
     [TestMethod]
     public async Task AttendeeRequest_DispatchesCancellationEmail()
@@ -63,6 +63,24 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
             Arg.Is<SendEmailCommand>(c =>
                 c.EmailType == BuiltInEmailTemplateNames.VisaLetterDenied &&
                 c.RecipientAddress == "alice@example.com"),
+            Arg.Any<CancellationToken>());
+    }
+
+    [TestMethod]
+    public async Task ReconfirmAutoCancel_DispatchesReconfirmCancelledEmail()
+    {
+        var facade = Substitute.For<IRegistrationsFacade>();
+        facade.GetTicketedEventEmailContextAsync(EventGuid.Value, RegId, Arg.Any<CancellationToken>())
+            .Returns(Context());
+        var sendEmailHandler = Substitute.For<ICommandHandler<SendEmailCommand>>();
+
+        var sut = new RegistrationCancelledIntegrationEventHandler(
+            Environment.EmailDatabase.Context, facade, sendEmailHandler);
+
+        await sut.HandleAsync(Event("ReconfirmAutoCancel"), testContext.CancellationToken);
+
+        await sendEmailHandler.Received(1).HandleAsync(
+            Arg.Is<SendEmailCommand>(c => c.EmailType == BuiltInEmailTemplateNames.ReconfirmCancelled),
             Arg.Any<CancellationToken>());
     }
 
@@ -152,6 +170,7 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
         // 'EventWebsiteUrl' (→ 'event_website_url') which would leave {{ event_website }} empty.
         var eventWebsite = GetParam(captured.Parameters, "EventWebsite");
         eventWebsite.ShouldBe("https://devconf.example.com");
+        GetParam(captured.Parameters, "RegisterLink").ShouldBe("https://tickets.example.com");
     }
 
     private static object? GetParam(object parameters, string name) =>

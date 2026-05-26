@@ -22,5 +22,23 @@ public sealed class AddTicketTypeValidator : AbstractValidator<AddTicketTypeHttp
             RuleFor(x => x.MaxCapacity!.Value)
                 .GreaterThan(0);
         });
+
+        When(x => x.WaitlistEnabled, () =>
+        {
+            RuleFor(x => x.MaxCapacity)
+                .NotNull()
+                .WithMessage("WaitlistEnabled requires a bounded capacity (MaxCapacity must be set).");
+        });
+
+        RuleFor(x => x.ClaimWindowHours)
+            .GreaterThanOrEqualTo(1)
+            .WithMessage("ClaimWindowHours must be at least 1.");
+
+        When(x => x.MaxReconfirmAttempts is not null, () =>
+        {
+            RuleFor(x => x.MaxReconfirmAttempts!.Value)
+                .GreaterThanOrEqualTo(1)
+                .WithMessage("MaxReconfirmAttempts must be at least 1.");
+        });
     }
 }

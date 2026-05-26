@@ -5,7 +5,7 @@ namespace Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 /// <summary>
 /// Value-object policy describing the reconfirmation window, cadence, and
 /// per-attendee minimum email interval for a <c>TicketedEvent</c>.
-/// The cadence must be at least one day; the minimum email interval at least one hour.
+/// The cadence and minimum email interval must each be at least one hour.
 /// </summary>
 public sealed record TicketedEventReconfirmPolicy
 {
@@ -47,7 +47,11 @@ public sealed record TicketedEventReconfirmPolicy
         if (minEmailInterval < TimeSpan.FromHours(1))
             throw new BusinessRuleViolationException(Errors.MinEmailIntervalBelowMinimum);
 
-        return new TicketedEventReconfirmPolicy(opensAt, closesAt, cadence, minEmailInterval);
+        return new TicketedEventReconfirmPolicy(
+            opensAt,
+            closesAt,
+            cadence,
+            minEmailInterval);
     }
 
     internal static class Errors

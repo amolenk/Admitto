@@ -40,6 +40,7 @@ public sealed class AddTicketTypeTests(TestContext testContext) : AspireIntegrat
             ticketType.Name.Value.ShouldBe("General Admission");
             ticketType.TimeSlots.ShouldContain(TimeSlot.From("morning"));
             ticketType.MaxCapacity.ShouldBe(100);
+            ticketType.MaxReconfirmAttempts.ShouldBeNull();
         });
     }
 
@@ -94,6 +95,30 @@ public sealed class AddTicketTypeTests(TestContext testContext) : AspireIntegrat
 
         // Assert
         result.Error.Code.ShouldBe("ticket_catalog.duplicate_name");
+    }
+
+    [TestMethod]
+    public async ValueTask AddTicketType_WithMaxReconfirmAttempts_PersistsValue()
+    {
+        var fixture = AddTicketTypeFixture.ActiveEvent();
+        await fixture.SetupAsync(Environment);
+
+        var command = new AddTicketTypeCommand(
+            fixture.EventId.Value,
+            "Workshop",
+            [],
+            50,
+            MaxReconfirmAttempts: 3);
+        var sut = new AddTicketTypeHandler(Environment.RegistrationsDatabase.Context);
+
+        await sut.HandleAsync(command, testContext.CancellationToken);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var catalog = await dbContext.TicketCatalogs.FirstOrDefaultAsync(c => c.Id == fixture.EventId, testContext.CancellationToken);
+            catalog.ShouldNotBeNull();
+            catalog.TicketTypes[0].MaxReconfirmAttempts.ShouldBe(3);
+        });
     }
 
     // NOTE: SC-004 tests cover event-not-active rejection via TicketCatalog.EventStatus.

@@ -6,6 +6,8 @@ public sealed record UpdateTicketedEventDetailsHttpRequest(
     string BaseUrl,
     DateTimeOffset StartsAt,
     DateTimeOffset EndsAt,
+    TimeOnly QuietHoursStart,
+    TimeOnly QuietHoursEnd,
     uint? ExpectedVersion = null)
 {
     internal UpdateTicketedEventDetailsCommand ToCommand(Guid eventId) => new(
@@ -15,5 +17,7 @@ public sealed record UpdateTicketedEventDetailsHttpRequest(
         WebsiteUrl,
         BaseUrl,
         StartsAt,
-        EndsAt);
+        EndsAt,
+        QuietHoursStart,
+        QuietHoursEnd);
 }

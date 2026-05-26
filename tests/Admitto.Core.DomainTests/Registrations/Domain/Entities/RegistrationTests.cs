@@ -70,6 +70,17 @@ public sealed class RegistrationTests
     }
 
     [TestMethod]
+    public void Registration_CancelWithReconfirmAutoCancel_TransitionsAndStoresReason()
+    {
+        var sut = NewRegistration();
+
+        sut.Cancel(CancellationReason.ReconfirmAutoCancel);
+
+        sut.Status.ShouldBe(RegistrationStatus.Cancelled);
+        sut.CancellationReason.ShouldBe(CancellationReason.ReconfirmAutoCancel);
+    }
+
+    [TestMethod]
     public void Registration_CancelTwice_Throws()
     {
         var sut = NewRegistration();

@@ -20,7 +20,8 @@ internal sealed class UpdateTicketTypeHandler(IRegistrationsWriteStore writeStor
              eventId,
              cancellationToken);
 
-        catalog.UpdateTicketType(ticketTypeId, name, command.MaxCapacity, command.SelfServiceEnabled);
+        catalog.UpdateTicketType(ticketTypeId, name, command.MaxCapacity, command.SelfServiceEnabled,
+            command.WaitlistEnabled, command.ClaimWindowHours, command.MaxReconfirmAttempts, command.UpdateMaxReconfirmAttempts);
     }
 }
 

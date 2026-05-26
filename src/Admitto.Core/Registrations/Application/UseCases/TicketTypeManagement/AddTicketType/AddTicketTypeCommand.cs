@@ -7,4 +7,7 @@ internal sealed record AddTicketTypeCommand(
     string Name,
     string[] TimeSlots,
     int? MaxCapacity,
-    bool SelfServiceEnabled = true) : Command<Guid>;
+    bool SelfServiceEnabled = true,
+    bool WaitlistEnabled = false,
+    int ClaimWindowHours = 8,
+    int? MaxReconfirmAttempts = null) : Command<Guid>;

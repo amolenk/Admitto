@@ -65,7 +65,7 @@ internal sealed class RevokeCouponFixture
 
         if (_seedRedeemedCoupon)
         {
-            coupon.Redeem();
+            coupon.Redeem(coupon.Email, coupon.AllowedTicketTypeIds, DateTimeOffset.UtcNow);
         }
 
         if (_seedRevokedCoupon)

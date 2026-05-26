@@ -1,8 +1,7 @@
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendee;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.AdminRegisterAttendee;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
-using Amolenk.Admitto.Core.Registrations.Tests.Application.UseCases.Registrations.RegisterAttendee;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
@@ -164,7 +163,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.Code.ShouldBe("registration.event_not_found");
+        result.Error.Code.ShouldBe("ticketed-event.not_found");
     }
 
     // Admin-add rejected — no ticket types configured
@@ -180,7 +179,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.Code.ShouldBe("registration.no_ticket_types");
+        result.Error.Code.ShouldBe("ticket-catalog.not_found");
     }
 
     // Admin-add rejected — duplicate active email
@@ -346,7 +345,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.Code.ShouldBe("registration.event_not_active");
+        result.Error.Code.ShouldBe("ticket_catalog.event_not_active");
 
         await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
         {
@@ -383,7 +382,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         });
     }
 
-    private static RegisterAttendeeCommand NewCommand(
+    private static AdminRegisterAttendeeCommand NewCommand(
         RegisterAttendeeFixture fixture,
         string email,
         params Guid[] ticketTypeIds)
@@ -392,10 +391,9 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
             email,
             "Test",
             "User",
-            ticketTypeIds,
-            RegistrationMode.AdminAdd);
+            ticketTypeIds);
 
-    private static RegisterAttendeeCommand NewCommand(
+    private static AdminRegisterAttendeeCommand NewCommand(
         RegisterAttendeeFixture fixture,
         string email,
         Guid[] ticketTypeIds,
@@ -406,9 +404,6 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
             "Test",
             "User",
             ticketTypeIds,
-            RegistrationMode.AdminAdd,
-            CouponCode: null,
-            EmailVerificationToken: null,
             AdditionalDetails: additionalDetails);
 
     private static void AssertAttendeeRegisteredEvent(Registration registration)
@@ -423,6 +418,6 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         domainEvent.Tickets.ShouldBe(registration.Tickets);
     }
 
-    private static RegisterAttendeeHandler NewHandler()
-        => new(Environment.RegistrationsDatabase.Context, TimeProvider.System, new StubEmailVerificationTokenValidator());
+    private static AdminRegisterAttendeeHandler NewHandler()
+        => new(Environment.RegistrationsDatabase.Context);
 }

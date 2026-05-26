@@ -4,6 +4,7 @@ using Amolenk.Admitto.Core.Badges.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
+using Humanizer;
 
 namespace Amolenk.Admitto.Core.Badges.Application.UseCases.BadgeExport.ExportBadgeCsv;
 
@@ -27,7 +28,7 @@ internal sealed class ExportBadgeCsvHandler(
             ? await BuildStandaloneCsvAsync(badgeTypeId, cancellationToken)
             : await BuildTicketBasedCsvAsync(eventId, badgeType, cancellationToken);
 
-        var fileName = $"badges-{badgeType.Name.Value.Replace(" ", "-").ToLowerInvariant()}.csv";
+        var fileName = $"badges-{badgeType.Name.Value.Kebaberize()}.csv";
         return (fileName, Encoding.UTF8.GetBytes(csv));
     }
 

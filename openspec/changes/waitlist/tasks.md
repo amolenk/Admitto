@@ -1,216 +1,82 @@
 # Implementation Tasks — Waitlist
 
-## Group 1: WaitlistEnabled flag and WaitlistOnly mode on TicketCatalog
+## 1. WaitlistEnabled flag and WaitlistOnly mode on TicketCatalog
 
-### Task 2.1: Add WaitlistEnabled and WaitlistMode to TicketType value object
-- Add `WaitlistEnabled` (bool, default false) and `WaitlistMode` (bool, default false) to the `TicketType` value object inside `TicketCatalog`.
-- Add `ClaimWindowHours` (int, minimum 1, default 8) to `TicketType`.
-- Update EF Core entity configuration for new columns.
-
-### Task 2.2: Add WaitlistEnabled to ticket type add/update commands
-- Add `WaitlistEnabled` and `ClaimWindowHours` to `AddTicketType` and `UpdateTicketType` commands, handlers, HTTP requests, and FluentValidation validators.
-- Guard: `WaitlistEnabled` can only be true when `Capacity` is set (unlimited-capacity types cannot sell out).
-- **Retroactive activation**: if `UpdateTicketType` sets `WaitlistEnabled = true` and `UsedCapacity >= MaxCapacity`, raise `WaitlistModeActivatedDomainEvent` immediately (same path as `ClaimCapacity`).
-- **Force-disable cleanup**: if `UpdateTicketType` sets `WaitlistEnabled = false` while `WaitlistMode = true`, raise a `WaitlistForcedDisabledDomainEvent`. The handler: (a) revokes all pending waitlist coupons and queues a "claim cancelled" email per holder, (b) marks all active waitlist entries as Removed, (c) calls `TicketCatalog.ForceDeactivateWaitlistMode(ticketTypeId)` which always clears `WaitlistMode` regardless of capacity.
-- **Capacity increase while in WaitlistMode**: if `UpdateTicketType` increases `MaxCapacity` and the ticket type has `WaitlistMode = true`, compute freed slots (`newMax - usedCapacity`) and call `ProcessWaitlistNotifications` with that count.
-- **Remove capacity limit while WaitlistEnabled**: if `UpdateTicketType` removes the capacity constraint (unlimited) on a ticket type with `WaitlistEnabled = true`, treat it as a force-disable (same cleanup path as above).
-
-### Task 2.3: Activate WaitlistOnly mode when capacity is reached
-- In `TicketCatalog.ClaimCapacity` (called on registration), after incrementing used capacity, set `WaitlistMode = true` if `WaitlistEnabled && UsedCapacity >= MaxCapacity`.
-
-### Task 2.4: Re-evaluate and lift WaitlistOnly mode
-- Add a domain method `TicketCatalog.ReEvaluateWaitlistMode(ticketTypeId, activeWaitlistCount, activeWaitlistCouponCount)` that sets `WaitlistMode = false` when used < max AND active entries == 0 AND active coupons == 0.
-- Call this after: (a) successful coupon redemption/registration, (b) coupon expiry cycle, (c) admin removal of waitlist entry.
-
-### Task 2.5: Expose WaitlistMode in ticket type listing and detail responses
-- Add `waitlistMode` and `waitlistEnabled` booleans to the ticket type listing/detail API response.
-
-### Task 2.6: Tests for WaitlistEnabled and WaitlistOnly mode
-- Domain test: WaitlistMode activates when last slot is taken and WaitlistEnabled is true.
-- Domain test: WaitlistMode does not activate when WaitlistEnabled is false.
-- Domain test: enabling WaitlistEnabled on a sold-out ticket type immediately activates WaitlistMode (retroactive activation).
-- Domain test: disabling WaitlistEnabled while WaitlistMode is active clears WaitlistMode and removes all entries regardless of capacity.
-- Domain test: increasing MaxCapacity while WaitlistMode active triggers ProcessWaitlistNotifications for freed slots.
-- Domain test: removing capacity limit while WaitlistEnabled force-disables WaitlistEnabled.
-- Domain test: WaitlistMode lifts when conditions are met (capacity, no entries, no pending coupons).
-- Integration test: add ticket type with `waitlistEnabled: true`; fill to capacity; verify `waitlistMode: true` in response.
-- Integration test: enable waitlist on sold-out ticket type; verify WaitlistMode activates immediately.
-- Integration test: force-disable WaitlistEnabled while entries and pending coupons exist; verify cleanup and cancellation emails.
+- [x] 1.1 Add `WaitlistEnabled` (bool, default false), `WaitlistMode` (bool, default false), and `ClaimWindowHours` (int, min 1, default 8) to `TicketType` value object; update EF Core entity configuration for new columns
+- [x] 1.2 Add `WaitlistEnabled` and `ClaimWindowHours` to `AddTicketType`/`UpdateTicketType` commands, handlers, HTTP requests, and validators; guard: `WaitlistEnabled` requires bounded capacity; handle retroactive activation (sold-out type), force-disable cleanup (with `WaitlistForcedDisabledDomainEvent`), capacity-increase-while-in-WaitlistMode (trigger `ProcessWaitlistNotifications`), and remove-capacity-limit (treat as force-disable)
+- [x] 1.3 In `TicketCatalog.ClaimCapacity`, set `WaitlistMode = true` and raise `WaitlistModeActivatedDomainEvent` after increment when `WaitlistEnabled && UsedCapacity >= MaxCapacity`
+- [x] 1.4 Add `TicketCatalog.ReEvaluateWaitlistMode(ticketTypeId)` that clears `WaitlistMode` only when `UsedCapacity < MaxCapacity AND active entries == 0 AND issued coupons == 0`; call after coupon redemption, expiry cycle, and admin entry removal
+- [x] 1.5 Expose `waitlistMode` and `waitlistEnabled` booleans in ticket type listing and detail API responses
+- [x] 1.6 Domain tests: WaitlistMode activates on last slot when WaitlistEnabled; does not activate when WaitlistEnabled false; retroactive activation on sold-out type; force-disable clears WaitlistMode and entries regardless of capacity; capacity increase triggers ProcessWaitlistNotifications; removing capacity limit force-disables; mode lifts when all three conditions met; Integration tests: fill to capacity → verify waitlistMode true; enable on sold-out → WaitlistMode activates immediately; force-disable with entries and pending coupons → cleanup and cancellation emails; capacity increase with pending coupons in flight → WaitlistMode does NOT lift until coupons expire or are redeemed
 
 ---
 
-## Group 3: Waitlist aggregate and core domain
+## 2. Waitlist aggregate and core domain
 
-### Task 3.1: Create the Waitlist aggregate
-- Define `Waitlist` aggregate root: `WaitlistId` (EventId + TicketTypeId), `Entries`
-  (ordered by position), `PendingCouponCount` (int, tracks issued-but-not-resolved coupons).
-- Each entry: `WaitlistEntryId` (GUID), `Email`, `Position` (int), `AddedAt` (UTC), `Status` (Active / Removed).
-- Add EF Core entity configuration and migration.
-- Add `WaitlistRepository` in the Registrations module.
-
-### Task 3.2: Activate Waitlist aggregate via domain event from TicketCatalog
-- In `TicketCatalog.ClaimCapacity`, when `WaitlistEnabled && UsedCapacity >= MaxCapacity`, set `WaitlistMode = true` and raise `WaitlistModeActivatedDomainEvent`.
-- Add `WaitlistModeActivatedDomainEventHandler`: creates a new `Waitlist` aggregate for the ticket type in the same `RegistrationsDbContext` (runs in `SavingChangesAsync`, same transaction).
-
-### Task 3.3: Implement JoinWaitlist command
-- Command: `JoinWaitlist { EventId, TicketTypeId, Email }`.
-- Handler: validate ticket type exists, WaitlistEnabled, WaitlistMode active; check for existing active entry (idempotent — return success without sending new email); otherwise add entry and raise `WaitlistEntryAdded` domain event.
-- Domain event triggers `SendWaitlistVerificationEmail` via the Email module facade.
-- Verification link: HMAC-signed URL (similar to existing HMAC token pattern) valid 24 hours, pointing to the verification endpoint.
-
-### Task 3.4: Implement email-verified waitlist confirmation endpoint
-- New public endpoint `POST /events/{teamSlug}/{eventSlug}/waitlist/{ticketTypeId}/confirm?token={hmac}`.
-- Validates HMAC token; creates active waitlist entry if not already active; assigns next position.
-
-### Task 3.5: Implement LeaveWaitlist command
-- Command: `LeaveWaitlist { EventId, TicketTypeId, Email }`.
-- Removes the active entry (idempotent — no error if not found).
-- Raises `WaitlistEntryRemoved` domain event.
-- After removal, calls `ReEvaluateWaitlistMode`.
-
-### Task 3.6: Deactivate WaitlistMode via domain event from Waitlist aggregate
-- Add `WaitlistExhaustedDomainEvent` raised by `Waitlist` when both `Entries.Count(Active) == 0` and `PendingCouponCount == 0`.
-- Add `WaitlistExhaustedDomainEventHandler`: loads `TicketCatalog` into the same `RegistrationsDbContext` and calls `TicketCatalog.TryDeactivateWaitlistMode(ticketTypeId)`, which clears `WaitlistMode` only when `UsedCapacity < MaxCapacity` also holds.
-- Add `TicketCatalog.ForceDeactivateWaitlistMode(ticketTypeId)`: unconditionally clears `WaitlistMode`; used by the admin force-disable path regardless of capacity.
-- Add `CouponRedeemedDomainEventHandler` (in Registrations module): when a `Waitlist`-sourced coupon is redeemed, decrements `Waitlist.PendingCouponCount`; this may trigger `WaitlistExhaustedDomainEvent`.
-
-### Task 3.7: Admin remove waitlist entry endpoint
-- New admin endpoint `DELETE /admin/teams/{teamId}/events/{eventId}/ticket-types/{ticketTypeId}/waitlist/{entryId}`.
-- Calls `LeaveWaitlist` (or a dedicated `AdminRemoveWaitlistEntry` command).
-
-### Task 3.8: Tests for waitlist domain logic
-- Domain test: joining adds an entry at the correct position.
-- Domain test: joining twice is idempotent.
-- Domain test: cannot join when WaitlistMode is false.
-- Domain test: leaving removes the entry and re-numbers positions.
-- Domain test: leaving when not on waitlist is idempotent.
-- Integration test: full join flow including email verification.
-- Domain test: `WaitlistExhaustedDomainEvent` fires when both entries and `PendingCouponCount` are zero.
-- Domain test: `TryDeactivateWaitlistMode` does not clear the flag when capacity is still full.
-- Domain test: `TryDeactivateWaitlistMode` clears the flag when capacity is available and waitlist is exhausted.
+- [x] 2.1 Create `Waitlist` aggregate root: `WaitlistId` (EventId + TicketTypeId), `Entries` collection (WaitlistEntryId GUID, Email, Position int, AddedAt UTC, Status Active/Removed), `WaitlistCoupons` collection (CouponId GUID, Status Issued/Redeemed/Revoked); add EF Core entity configuration and migration; add `WaitlistRepository`
+- [x] 2.2 Add `WaitlistModeActivatedDomainEventHandler`: creates a new `Waitlist` aggregate for the ticket type in the same `RegistrationsDbContext` (dispatched synchronously in `SavingChangesAsync`, same transaction)
+- [x] 2.3 Implement `JoinWaitlist { EventId, TicketTypeId, Email }` command and handler: validate WaitlistEnabled and WaitlistMode active; idempotent on duplicate email (return success, no new email); otherwise raise `WaitlistEntryAdded` triggering verification email via Email facade; HMAC-signed link valid 24 hours
+- [x] 2.4 Implement `POST /events/{teamSlug}/{eventSlug}/waitlist/{ticketTypeId}/confirm?token={hmac}` public endpoint: validate HMAC token; create active waitlist entry at next position (idempotent)
+- [x] 2.5 Implement `LeaveWaitlist { EventId, TicketTypeId, Email }` command and handler: remove active entry (idempotent if not found); raise `WaitlistEntryRemoved`; call `ReEvaluateWaitlistMode`
+- [x] 2.6 Raise `WaitlistExhaustedDomainEvent` from `Waitlist` when `Entries.Count(Active) == 0 AND WaitlistCoupons.Count(Issued) == 0`; add `WaitlistExhaustedDomainEventHandler` that calls `TicketCatalog.TryDeactivateWaitlistMode(ticketTypeId)` (clears only when `UsedCapacity < MaxCapacity`); add `TicketCatalog.ForceDeactivateWaitlistMode(ticketTypeId)` for unconditional admin force-disable path
+- [x] 2.7 Implement admin `DELETE /admin/teams/{teamId}/events/{eventId}/ticket-types/{ticketTypeId}/waitlist/{entryId}` endpoint
+- [x] 2.8 Domain tests: join adds entry at correct position; idempotent join; cannot join when WaitlistMode false; leave removes entry and re-numbers positions; idempotent leave; `WaitlistExhaustedDomainEvent` fires when entries and issued coupons are both zero; event does NOT fire when issued coupons still outstanding; WaitlistCoupon transitions Issued→Redeemed and Issued→Revoked; `TryDeactivateWaitlistMode` stays active when at capacity; clears when capacity available and waitlist exhausted; Integration test: full join flow including email verification
 
 ---
 
-## Group 4: WaitlistOnly mode enforcement in attendee registration
+## 3. WaitlistOnly mode enforcement in attendee registration
 
-### Task 4.1: Block self-service registration when WaitlistMode is active
-- In `TicketCatalog.ClaimCapacity` (or the registration pre-check), if `TicketType.WaitlistMode = true` and no coupon bypass, return domain error with reason `"ticket type in waitlist mode"`.
-- Map this to a distinct rejection reason in the registration response.
-
-### Task 4.2: Tests for WaitlistOnly mode enforcement
-- Domain test: self-service registration returns "ticket type in waitlist mode" when active.
-- Domain test: coupon-based registration succeeds even when WaitlistMode is active.
-- Integration test: self-service registration is rejected with the correct reason.
+- [x] 3.1 Reject self-service registration with reason `"ticket type in waitlist mode"` when `WaitlistMode = true` and no coupon bypass; map to distinct rejection reason in response
+- [x] 3.2 In the registration command handler, after successful coupon registration, check `coupon.Source == Waitlist`; if so, load `Waitlist` aggregate and call `waitlist.RedeemCoupon(couponId)` in the same transaction; organiser-provisioned coupons do not interact with the `Waitlist` aggregate
+- [x] 3.3 Domain tests: self-service returns `"ticket type in waitlist mode"`; coupon-based registration succeeds when WaitlistMode active; Integration tests: self-service rejected with correct reason; redeeming a waitlist coupon marks WaitlistCoupon as Redeemed and may trigger WaitlistExhaustedDomainEvent; redeeming an organiser coupon does not affect the Waitlist aggregate
 
 ---
 
-## Group 5: Coupon source discriminator and system-generated waitlist coupons
+## 4. Coupon source discriminator and system-generated waitlist coupons
 
-### Task 5.1: Add CouponSource discriminator to Coupon aggregate
-- Add `Source` enum (`Organiser`, `Waitlist`) to the `Coupon` aggregate.
-- Existing organiser-created coupons use `Organiser`; new system-generated coupons use `Waitlist`.
-- `Waitlist` source coupons suppress the invitation-email trigger in `CouponCreated` handler.
-- Update EF Core entity configuration; add migration.
-
-### Task 5.2: Expose CouponSource in coupon list response
-- Add `source` field to coupon list and detail responses.
-
-### Task 5.3: Tests for CouponSource
-- Domain test: organiser-created coupon triggers invitation email.
-- Domain test: waitlist coupon does NOT trigger invitation email.
-- Integration test: coupon list includes correct `source` for each type.
+- [x] 4.1 Add `Source` enum (`Organiser`, `Waitlist`) to `Coupon` aggregate; `Waitlist` coupons suppress the invitation-email trigger; waitlist coupons cannot be created via the organiser API; update EF Core entity configuration and add migration
+- [x] 4.2 Expose `source` field in coupon list and detail API responses
+- [x] 4.3 Domain tests: organiser coupon triggers invitation email; waitlist coupon does not trigger invitation email; Integration test: coupon list returns correct `source` for each type
 
 ---
 
-## Group 6: Waitlist notification flow
+## 5. Waitlist notification flow
 
-### Task 6.1: Implement ProcessWaitlistNotifications command
-- Command: `ProcessWaitlistNotifications { EventId, TicketTypeId, FreedSlots }`.
-- Handler:
-  1. Load event's `TimeZone`, `QuietHoursStart`, and `QuietHoursEnd`.
-  2. Compute `effectiveStart = max(utcNow, nextAllowedWindowStart(utcNow, timeZone, quietHours))`.
-  3. Take up to `FreedSlots` active waitlist entries in position order.
-  4. For each: generate a `Waitlist` coupon with `ExpiresAt = effectiveStart + ClaimWindowHours`, remove the entry from the waitlist.
-  5. Send a waitlist notification email per attendee including the coupon code and the `ExpiresAt` deadline.
-  6. Call `ReEvaluateWaitlistMode` after processing.
-  7. No delayed-scheduling is needed; the expiry job already handles the next-batch cascade.
-
-### Task 6.2: Trigger ProcessWaitlistNotifications on cancellation
-- In the `RegistrationCancelled` domain event handler, if the cancelled ticket type has `WaitlistEnabled`, call `ProcessWaitlistNotifications` for the freed slots.
-
-### Task 6.3: Add event-level quiet hours configuration
-- Add `QuietHoursStart` and `QuietHoursEnd` (TimeOnly) fields to `TicketedEvent` (defaulting to 22:00 and 08:00). The existing `TimeZone` field is already present.
-- Expose in the event update endpoint (alongside the existing timezone endpoint pattern).
-- Add a helper `WaitlistClaimWindowCalculator.ComputeExpiresAt(utcNow, timeZone, quietHours, claimWindowHours)` that returns `max(utcNow, nextAllowedWindowStart) + claimWindowHours`.
-
-### Task 6.4: Email template for waitlist notification
-- Add `SendWaitlistNotificationAsync(email, couponCode, ticketTypeName, expiresAt)` to `IEventEmailFacade`.
-- Create the email template: explains the claim offer, includes the coupon code, states the expiry time, and includes a direct registration link with the coupon pre-filled.
-- If the quiet-hours delay was applied, the email should note "Your claim window opens at {NotifyAfter local time}."
-
-### Task 6.5: Tests for notification flow
-- Domain test: notification distributes correct number of coupons with correct `ExpiresAt` (outside quiet hours: `now + claimWindowHours`).
-- Domain test: notification during quiet hours sets `ExpiresAt = nextAllowedWindowStart + claimWindowHours` (email still sent immediately).
-- Integration test: cancel a registration → waitlist is notified → coupon created with correct expiry → email sent.
-- Integration test: notification during quiet hours produces extended expiry, not a delayed send.
+- [x] 5.1 Implement `ProcessWaitlistNotifications { EventId, TicketTypeId, FreedSlots }` command and handler: compute `ExpiresAt = max(utcNow, nextAllowedWindowStart) + ClaimWindowHours` in event timezone (using `WaitlistClaimWindowCalculator`); issue one waitlist coupon per freed slot; remove each notified entry from the waitlist; send notification email per attendee; call `ReEvaluateWaitlistMode`
+- [x] 5.2 Trigger `ProcessWaitlistNotifications` from `RegistrationCancelled` domain event handler when ticket type has `WaitlistEnabled` and WaitlistMode is active
+- [x] 5.3 Add `QuietHoursStart` and `QuietHoursEnd` (TimeOnly, defaults 22:00/08:00) to `TicketedEvent`; expose in event update endpoint; add `WaitlistClaimWindowCalculator.ComputeExpiresAt(utcNow, timeZone, quietHours, claimWindowHours)` helper
+- [x] 5.4 Add `SendWaitlistNotificationAsync(email, couponCode, ticketTypeName, expiresAt)` to `IEventEmailFacade`; create email template with coupon code, expiry deadline, pre-filled registration link, and note about extended claim window when quiet hours apply
+- [x] 5.5 Domain tests: correct `ExpiresAt` when issued outside quiet hours (`now + ClaimWindowHours`); correct `ExpiresAt` when issued during quiet hours (`nextAllowedWindowStart + ClaimWindowHours`, email sent immediately); Integration tests: cancel registration → waitlist notified → coupon with correct expiry → email sent; quiet hours produces extended expiry not delayed send; fewer entries than freed slots — only available entries notified and remaining capacity re-evaluated; capacity increase with in-flight coupons → WaitlistMode does NOT lift until coupons expire or are redeemed
 
 ---
 
-## Group 7: Expiry processing and next-batch cascade
+## 6. Expiry processing and next-batch cascade
 
-### Task 7.1: Implement ProcessExpiredWaitlistCouponsJob (Quartz job)
-- New `ProcessExpiredWaitlistCouponsJob` in the Worker host polling every 5 minutes.
-- For each expired, unredeemed waitlist coupon:
-  1. Revoke the coupon.
-  2. Call `ProcessWaitlistNotifications` for the owning ticket type (1 freed slot).
-  3. Call `ReEvaluateWaitlistMode`.
-
-### Task 7.2: Tests for expiry processing
-- Integration test: coupon expires → next person on waitlist is notified.
-- Integration test: last coupon expires, waitlist empty → WaitlistMode is lifted.
+- [x] 6.1 Implement `ProcessExpiredWaitlistCouponsJob` (Quartz, polling every 5 minutes) in Worker host: query for waitlist coupons where `ExpiresAt <= utcNow - 2 minutes` (grace period to avoid racing with last-second redemptions); for each: call `waitlist.RevokeCoupon(couponId)`, fire `ProcessWaitlistNotifications` (1 freed slot), call `ReEvaluateWaitlistMode`
+- [x] 6.2 Integration tests: coupon expires → next person on waitlist is notified; last coupon expires and waitlist empty → WaitlistMode is lifted; coupon whose `ExpiresAt` is within the 2-minute grace period is NOT processed by the job; Domain test: concurrent expiry-revoke and attendee-redemption of the same coupon — EF Core concurrency token ensures only one write succeeds; registration handler treats conflict as "coupon no longer valid"
 
 ---
 
-## Group 8: Public coupon lookup endpoint
+## 7. Public coupon lookup endpoint
 
-### Task 8.1: Implement public GET /events/{teamSlug}/{eventSlug}/coupons/{couponCode}
-- New unauthenticated endpoint returning `{ status, allowedTicketTypes: [{ id, name }], expiresAt }`.
-- 404 when coupon does not exist for the given event slug.
-- Target email is NOT included in the response.
-
-### Task 8.2: Tests for coupon lookup
-- Integration test: look up active waitlist coupon returns correct status and ticket types.
-- Integration test: look up redeemed coupon returns `status: "redeemed"`.
-- Integration test: non-existent coupon code returns 404.
-- Integration test: coupon from different event returns 404.
+- [x] 7.1 Implement unauthenticated `GET /events/{teamSlug}/{eventSlug}/coupons/{couponCode}` returning `{ status, allowedTicketTypes: [{ id, name }], expiresAt }`; 404 when coupon does not exist for the given event; do not return target email
+- [x] 7.2 Integration tests: active waitlist coupon returns correct status and ticket types; redeemed coupon returns `status: "redeemed"`; non-existent coupon code returns 404; coupon from different event returns 404
 
 ---
 
-## Group 9: Admin UI — Ticket type form changes
+## 8. Admin UI — Ticket type form
 
-### Task 9.1: Add WaitlistEnabled toggle to ticket type form
-- Add `waitlistEnabled` toggle to the ticket type create/edit form in the Admin UI.
-- Show only when capacity is set.
-- Add `claimWindowHours` number input (shown when `waitlistEnabled` is on).
-- Regenerate API client SDK after backend endpoints are updated.
+- [x] 8.1 Add `waitlistEnabled` toggle (visible only when capacity is set) and `claimWindowHours` number input (visible only when enabled) to ticket type create/edit form; show confirmation dialog before disabling waitlist while WaitlistMode is active (warns that pending coupons will be revoked and entries removed); regenerate SDK
 
 ---
 
-## Group 10: Admin UI — Event settings form changes
+## 9. Admin UI — Event settings form
 
-### Task 10.1: Add TimeZoneId selector and quiet hours to event settings
-- Add a searchable IANA timezone dropdown for `timeZoneId`.
-- Add `quietHoursStart` and `quietHoursEnd` time pickers.
-- Regenerate API client SDK after backend endpoints are updated.
+- [x] 9.1 Add `quietHoursStart` and `quietHoursEnd` time pickers (with help text explaining that quiet hours extend the claim window rather than delaying notification) to the existing event settings form alongside the existing timezone selector; regenerate SDK
 
 ---
 
-## Group 11: Admin UI — Waitlist management page
+## 10. Admin UI — Waitlist management page
 
-### Task 11.1: Implement waitlist management page per ticket type
-- New page: `/admin/teams/{teamId}/events/{eventId}/ticket-types/{ticketTypeId}/waitlist`.
-- Show active entries (ranked, masked email, join date).
-- Show pending notifications (masked email, expiry countdown).
-- Show summary stats (total waiting, total pending, sent today).
-- "Remove" button per active entry (calls admin remove endpoint).
-- Regenerate API client SDK; use generated API functions in proxy routes.
+- [x] 10.1 Implement waitlist management page at `/admin/teams/{teamId}/events/{eventId}/ticket-types/{ticketTypeId}/waitlist`: show active entries (ranked, masked email, join date), pending notifications (masked email, expiry countdown), summary stats (total waiting, total pending, sent today), and per-entry Remove button; use generated SDK functions in proxy routes
+

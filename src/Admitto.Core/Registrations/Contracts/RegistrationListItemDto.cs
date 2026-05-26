@@ -17,4 +17,5 @@ public sealed record RegistrationListItemDto(
     DateTimeOffset CreatedAt,
     RegistrationStatus Status,
     bool HasReconfirmed,
-    DateTimeOffset? ReconfirmedAt);
+    DateTimeOffset? ReconfirmedAt,
+    int? EffectiveMaxReconfirmAttempts);

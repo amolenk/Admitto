@@ -1,4 +1,3 @@
-using Amolenk.Admitto.Core.Badges.Application.UseCases.BadgeTypeManagement.ListBadgeTypes.AdminApi;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
@@ -22,7 +21,9 @@ public static class ListBadgeTypesHttpEndpoint
         IQueryHandler<ListBadgeTypesQuery, IReadOnlyList<BadgeTypeListItemDto>> handler,
         CancellationToken cancellationToken)
     {
-        var result = await handler.HandleAsync(new ListBadgeTypesQuery(eventId), cancellationToken);
+        var result = await handler.HandleAsync(
+            new ListBadgeTypesQuery(eventId),
+            cancellationToken);
 
         return TypedResults.Ok(result);
     }

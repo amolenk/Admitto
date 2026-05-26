@@ -11,11 +11,7 @@ internal sealed class TicketedEventArchivedIntegrationEventHandler(
         TicketedEventArchivedIntegrationEvent integrationEvent,
         CancellationToken cancellationToken)
     {
-        var command = new ArchiveBadgesEventCommand(integrationEvent.TicketedEventId)
-        {
-            CommandId = DeterministicGuid.Create(
-                $"{integrationEvent.IntegrationEventId}:{nameof(TicketedEventArchivedIntegrationEvent)}:badges")
-        };
+        var command = new ArchiveBadgesEventCommand(integrationEvent.TicketedEventId);
 
         return handler.HandleAsync(command, cancellationToken);
     }

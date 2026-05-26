@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.Entities;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
@@ -46,21 +47,31 @@ public class TicketCatalog : Aggregate<TicketedEventId>
         TicketTypeName name,
         TimeSlot[] timeSlots,
         int? maxCapacity,
-        bool selfServiceEnabled = true)
+        bool selfServiceEnabled = true,
+        bool waitlistEnabled = false,
+        int claimWindowHours = 8,
+        int? maxReconfirmAttempts = null)
     {
         EnsureEventActive();
 
         if (_ticketTypes.Any(tt => string.Equals(tt.Name.Value, name.Value, StringComparison.OrdinalIgnoreCase)))
             throw new BusinessRuleViolationException(Errors.DuplicateTicketTypeName(name));
 
-        _ticketTypes.Add(new TicketType(id, name, timeSlots, maxCapacity, selfServiceEnabled));
+        if (waitlistEnabled && maxCapacity is null)
+            throw new BusinessRuleViolationException(Errors.WaitlistRequiresBoundedCapacity(id));
+
+        _ticketTypes.Add(new TicketType(id, name, timeSlots, maxCapacity, selfServiceEnabled, waitlistEnabled, claimWindowHours, maxReconfirmAttempts));
     }
 
     public void UpdateTicketType(
         TicketTypeId id,
         TicketTypeName? name,
         int? maxCapacity,
-        bool? selfServiceEnabled = null)
+        bool? selfServiceEnabled = null,
+        bool? waitlistEnabled = null,
+        int? claimWindowHours = null,
+        int? maxReconfirmAttempts = null,
+        bool updateMaxReconfirmAttempts = false)
     {
         EnsureEventActive();
 
@@ -69,10 +80,105 @@ public class TicketCatalog : Aggregate<TicketedEventId>
         if (name is not null)
             ticketType.UpdateName(name.Value);
 
-        ticketType.UpdateCapacity(maxCapacity);
-
         if (selfServiceEnabled is not null)
             ticketType.UpdateSelfServiceEnabled(selfServiceEnabled.Value);
+
+        if (claimWindowHours is not null)
+            ticketType.UpdateClaimWindowHours(claimWindowHours.Value);
+
+        if (updateMaxReconfirmAttempts)
+            ticketType.UpdateMaxReconfirmAttempts(maxReconfirmAttempts);
+
+        // Disabling waitlist or removing capacity limit forces waitlist off
+        bool forceDisabling = (waitlistEnabled == false && ticketType.WaitlistEnabled)
+                              || (maxCapacity is null && ticketType.WaitlistEnabled);
+
+        if (forceDisabling)
+        {
+            if (ticketType.WaitlistMode)
+                ticketType.DeactivateWaitlistMode();
+            ticketType.DisableWaitlist();
+            AddDomainEvent(new WaitlistForcedDisabledDomainEvent(Id, id));
+            ticketType.UpdateCapacity(maxCapacity);
+            return;
+        }
+
+        // Enabling waitlist
+        if (waitlistEnabled == true && !ticketType.WaitlistEnabled)
+        {
+            var effectiveMaxCapacity = maxCapacity ?? ticketType.MaxCapacity;
+            if (effectiveMaxCapacity is null)
+                throw new BusinessRuleViolationException(Errors.WaitlistRequiresBoundedCapacity(id));
+
+            ticketType.EnableWaitlist();
+        }
+
+        // Update capacity and handle freed slots or retroactive activation
+        var previousMaxCapacity = ticketType.MaxCapacity;
+        ticketType.UpdateCapacity(maxCapacity);
+
+        // Retroactive WaitlistMode activation: enabled on a sold-out type
+        if (ticketType.WaitlistEnabled && !ticketType.WaitlistMode
+            && ticketType.MaxCapacity.HasValue
+            && ticketType.UsedCapacity >= ticketType.MaxCapacity.Value)
+        {
+            ticketType.ActivateWaitlistMode();
+            AddDomainEvent(new WaitlistModeActivatedDomainEvent(Id, id));
+        }
+        // Capacity increase while WaitlistMode active → notify waiting attendees
+        else if (ticketType.WaitlistMode && ticketType.MaxCapacity.HasValue)
+        {
+            var oldAvailable = Math.Max(0, (previousMaxCapacity ?? 0) - ticketType.UsedCapacity);
+            var newAvailable = Math.Max(0, ticketType.MaxCapacity.Value - ticketType.UsedCapacity);
+            var freedSlots = newAvailable - oldAvailable;
+            if (freedSlots > 0)
+                AddDomainEvent(new WaitlistCapacityFreedDomainEvent(Id, id, freedSlots));
+        }
+    }
+
+    /// <summary>
+    /// Re-evaluates WaitlistMode for the given ticket type. Clears WaitlistMode only when
+    /// all three conditions hold: available capacity, no active waitlist entries, and no issued coupons.
+    /// </summary>
+    public void ReEvaluateWaitlistMode(TicketTypeId ticketTypeId, int activeEntryCount, int issuedCouponCount)
+    {
+        var ticketType = _ticketTypes.FirstOrDefault(tt => tt.Id == ticketTypeId);
+        if (ticketType is null || !ticketType.WaitlistMode) return;
+
+        if (ticketType.MaxCapacity.HasValue
+            && ticketType.UsedCapacity < ticketType.MaxCapacity.Value
+            && activeEntryCount == 0
+            && issuedCouponCount == 0)
+        {
+            ticketType.DeactivateWaitlistMode();
+        }
+    }
+
+    /// <summary>
+    /// Clears WaitlistMode only when capacity is available (UsedCapacity &lt; MaxCapacity).
+    /// Called when the Waitlist aggregate signals it is exhausted (no active entries, no issued coupons).
+    /// </summary>
+    public void TryDeactivateWaitlistMode(TicketTypeId ticketTypeId)
+    {
+        var ticketType = _ticketTypes.FirstOrDefault(tt => tt.Id == ticketTypeId);
+        if (ticketType is null || !ticketType.WaitlistMode) return;
+
+        if (ticketType.MaxCapacity.HasValue
+            && ticketType.UsedCapacity < ticketType.MaxCapacity.Value)
+        {
+            ticketType.DeactivateWaitlistMode();
+        }
+    }
+
+    /// <summary>
+    /// Unconditionally clears WaitlistMode for a ticket type (used on admin force-disable).
+    /// </summary>
+    public void ForceDeactivateWaitlistMode(TicketTypeId ticketTypeId)
+    {
+        var ticketType = _ticketTypes.FirstOrDefault(tt => tt.Id == ticketTypeId);
+        if (ticketType is null || !ticketType.WaitlistMode) return;
+
+        ticketType.DeactivateWaitlistMode();
     }
 
     private void EnsureEventActive()
@@ -119,12 +225,13 @@ public class TicketCatalog : Aggregate<TicketedEventId>
     /// unknown IDs, self-service availability, overlapping time slots) before claiming capacity.
     /// If enforce is true, capacity is enforced and self-service flag is checked (self-service path).
     /// If enforce is false, UsedCapacity is incremented without enforcement (admin/coupon path).
+    /// Returns snapshots of the claimed ticket types.
     /// </summary>
-    public void Claim(IReadOnlyList<TicketTypeId> ids, bool enforce)
+    public IReadOnlyList<TicketTypeSnapshot> Claim(IReadOnlyList<TicketTypeId> ids, bool enforce)
     {
         EnsureEventActive();
 
-        if (ids.Count == 0) return;
+        if (ids.Count == 0) return [];
 
         var ticketTypeMap = _ticketTypes.ToDictionary(t => t.Id);
 
@@ -157,7 +264,22 @@ public class TicketCatalog : Aggregate<TicketedEventId>
                 ticketType.ClaimWithEnforcement();
             else
                 ticketType.ClaimUncapped();
+
+            // Activate WaitlistMode when the last slot is claimed on a WaitlistEnabled type
+            if (enforce && ticketType.WaitlistEnabled && !ticketType.WaitlistMode
+                && ticketType.MaxCapacity.HasValue
+                && ticketType.UsedCapacity >= ticketType.MaxCapacity.Value)
+            {
+                ticketType.ActivateWaitlistMode();
+                AddDomainEvent(new WaitlistModeActivatedDomainEvent(Id, id));
+            }
         }
+
+        return ids.Select(id =>
+        {
+            var ticketType = ticketTypeMap[id];
+            return new TicketTypeSnapshot(id, ticketType.Name, ticketType.TimeSlots);
+        }).ToList();
     }
 
     /// <summary>
@@ -213,6 +335,11 @@ public class TicketCatalog : Aggregate<TicketedEventId>
             new("ticket_catalog.ticket_type_not_found",
                 "Ticket type could not be found.",
                 Type: ErrorType.NotFound,
+                Details: new Dictionary<string, object?> { ["id"] = id.Value });
+
+        public static Error WaitlistRequiresBoundedCapacity(TicketTypeId id) =>
+            new("ticket_catalog.waitlist_requires_bounded_capacity",
+                "WaitlistEnabled requires a bounded capacity (MaxCapacity must be set).",
                 Details: new Dictionary<string, object?> { ["id"] = id.Value });
 
         public static readonly Error EventNotActive = new(

@@ -38,8 +38,12 @@ public sealed class ScheduleReconfirmationsHandlerTests
     private static TriggerKey TriggerKeyFor(TicketedEventId eventId) =>
         new(eventId.Value.ToString("N"), ScheduleReconfirmationsHandler.TriggerGroup);
 
-    private static ReconfirmTriggerSpecDto Spec(Guid teamId, Guid eventId, string tz, int cadenceHours = 24) =>
-        new(teamId, eventId, tz, Opens, Closes, cadenceHours, MinEmailIntervalHours: 24);
+    private static ReconfirmTriggerSpecDto Spec(
+        Guid teamId,
+        Guid eventId,
+        string tz,
+        int cadenceHours = 24) =>
+        new(teamId, eventId, tz, Opens, Closes, cadenceHours, 24);
 
     [TestMethod]
     public async Task Upsert_CreatesTriggerWithExpectedCronAndTimeZone()
@@ -59,6 +63,7 @@ public sealed class ScheduleReconfirmationsHandlerTests
         trigger.JobKey.Name.ShouldBe(RequestReconfirmationsJob.Name);
         trigger.JobDataMap.GetString(RequestReconfirmationsJob.TeamIdKey).ShouldBe(teamId.Value.ToString());
         trigger.JobDataMap.GetString(RequestReconfirmationsJob.TicketedEventIdKey).ShouldBe(eventId.Value.ToString());
+        trigger.JobDataMap.GetString(RequestReconfirmationsJob.MinEmailIntervalHoursKey).ShouldBe("24");
 
         await scheduler.Shutdown();
     }
@@ -150,7 +155,7 @@ public sealed class ScheduleReconfirmationsHandlerTests
     {
         var (scheduler, subject) = await CreateAsync();
         var eventId = TicketedEventId.New();
-        var bad = new ReconfirmTriggerSpecDto(Guid.NewGuid(), eventId.Value, "UTC", Closes, Opens, 1, MinEmailIntervalHours: 24);
+        var bad = new ReconfirmTriggerSpecDto(Guid.NewGuid(), eventId.Value, "UTC", Closes, Opens, 1, 24);
 
         await Should.ThrowAsync<ArgumentException>(() =>
             subject.HandleAsync(new ScheduleReconfirmationsCommand(eventId.Value, bad), default).AsTask());

@@ -152,7 +152,7 @@ export function ReconfirmPolicyForm({
                         disabled={disabled || form.formState.isSubmitting}
                     >
                         <Check className="size-3.5" />
-                        {form.formState.isSubmitting ? "Saving\u2026" : "Save changes"}
+                        {form.formState.isSubmitting ? "Saving…" : "Save changes"}
                     </Button>
                 </div>
             </div>
@@ -288,7 +288,7 @@ export function ReconfirmPolicyForm({
                         disabled={disabled || isRemoving}
                         onClick={handleRemove}
                     >
-                        {isRemoving ? "Removing\u2026" : "Remove policy"}
+                        {isRemoving ? "Removing…" : "Remove policy"}
                     </Button>
                 </div>
             )}

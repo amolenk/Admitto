@@ -50,6 +50,18 @@ public class TicketedEventEntityConfiguration : IEntityTypeConfiguration<Tickete
             .HasDefaultValue(TimeZoneId.From("UTC"))
             .IsRequired();
 
+        builder.Property(e => e.QuietHoursStart)
+            .HasColumnName("quiet_hours_start")
+            .HasColumnType("time")
+            .HasDefaultValue(new TimeOnly(22, 0))
+            .IsRequired();
+
+        builder.Property(e => e.QuietHoursEnd)
+            .HasColumnName("quiet_hours_end")
+            .HasColumnType("time")
+            .HasDefaultValue(new TimeOnly(8, 0))
+            .IsRequired();
+
         builder.Property(e => e.Status)
             .HasColumnName("status")
             .HasConversion<int>()

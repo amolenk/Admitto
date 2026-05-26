@@ -35,7 +35,11 @@ public sealed class GetTicketedEventDetailsTests(TestContext testContext) : Aspi
             te.ConfigureRegistrationPolicy(
                 TicketedEventRegistrationPolicy.Create(opensAt, closesAt, "@example.com"));
             te.ConfigureReconfirmPolicy(
-                TicketedEventReconfirmPolicy.Create(reconfirmOpens, reconfirmCloses, TimeSpan.FromDays(7), TimeSpan.FromHours(24)));
+                TicketedEventReconfirmPolicy.Create(
+                    reconfirmOpens,
+                    reconfirmCloses,
+                    TimeSpan.FromDays(7),
+                    TimeSpan.FromHours(24)));
 
             ctx.TicketedEvents.Add(te);
         });

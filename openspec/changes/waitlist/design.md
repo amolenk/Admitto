@@ -44,7 +44,9 @@ on a ticket type that is in WaitlistMode and the new capacity creates free slots
 (`newMax - usedCapacity > 0`), the system calls `ProcessWaitlistNotifications` for
 the freed slot count immediately. This propagates the newly available capacity to the
 front of the waitlist without waiting for the next expiry cycle. If the waitlist is
-empty at that moment, WaitlistMode conditions are re-evaluated and the mode may lift.
+already empty (no active entries and no pending coupons), WaitlistMode conditions are
+re-evaluated and the mode may lift. If there are pending coupons already in flight,
+WaitlistMode stays active until those coupons are redeemed or expire.
 
 **Admin force-disable** — the organiser may set `WaitlistEnabled = false` on a ticket
 type that is currently in WaitlistMode. Rather than blocking this action, the system
@@ -126,15 +128,23 @@ Default quiet hours: 22:00–08:00. Configurable at the event level.
 
 ---
 
-### Decision 6: Capacity is NOT pre-reserved at notification time
+### Decision 6: Capacity is soft-reserved via BypassCapacity, not hard-decremented
 
-When a coupon is issued no capacity slot is immediately held. The first attendee to
-redeem their coupon while capacity is still available successfully registers; others
-(if a batch was issued for multiple freed slots) may find the slot has already been
-taken and must re-join the waitlist. Issuing coupons in batch (one per freed slot)
-rather than sequentially is an optimisation to reduce latency; the policy that a
-notified attendee is removed from the waitlist still applies regardless of whether
-they successfully redeem.
+When a coupon is issued no capacity slot is immediately decremented from
+`UsedCapacity`. Instead, `BypassCapacity = true` on the coupon allows the holder to
+register even when the live capacity check would otherwise block them. This means
+every coupon holder in a batch is effectively guaranteed a ticket — available
+capacity does not need to be confirmed at redemption time because the bypass removes
+that gate entirely.
+
+The distinction matters for the `WaitlistMode` deactivation check (Decision 2,
+condition 3): slots soft-reserved by outstanding coupons are not yet reflected in
+`UsedCapacity`, so WaitlistMode must stay active until those coupons are redeemed
+or expire — otherwise a non-waitlisted attendee could register ahead of a notified
+attendee who has not yet redeemed.
+
+The policy that a notified attendee is removed from the waitlist still applies
+regardless of whether they redeem their coupon.
 
 **Accepted**
 
@@ -185,13 +195,21 @@ safe to expose publicly without leaking attendee information.
 
 Each ticket type with `WaitlistEnabled = true` gets its own `Waitlist` aggregate
 (identified by `EventId` + `TicketTypeId`) that owns the ordered entry collection
-and tracks the count of issued but not yet redeemed or expired coupons
-(`PendingCouponCount`). Separating the aggregate gives it a clear identity, its own
-consistency boundary, and avoids inflating `TicketCatalog` with waitlist state.
+and a collection of `WaitlistCoupon` records (one per coupon issued by the waitlist
+mechanism). Each `WaitlistCoupon` tracks the coupon ID and its state: `Issued`,
+`Redeemed`, or `Revoked`. The count of pending coupons is derived from the collection
+(entries in `Issued` state) rather than stored as a raw counter. Separating the
+aggregate gives it a clear identity, its own consistency boundary, and avoids
+inflating `TicketCatalog` with waitlist state.
 
 `TicketCatalog` retains two flags on `TicketType`: `WaitlistEnabled` (organiser
 setting) and `WaitlistMode` (system-managed) — the latter is needed there because
 self-service registration checks happen against `TicketCatalog`.
+
+**Identifying waitlist coupons**: the `Coupon` aggregate carries `Source = Waitlist`
+(see Decision 3). The registration command handler checks this discriminator before
+interacting with the `Waitlist` aggregate, ensuring that admin-provisioned coupons
+for the same ticket type are never treated as waitlist coupons.
 
 **Activation** (cross-aggregate, in-transaction):
 `TicketCatalog.ClaimCapacity` detects `WaitlistEnabled && UsedCapacity >= MaxCapacity`,
@@ -203,7 +221,7 @@ transaction.
 
 **Deactivation** (cross-aggregate, in-transaction):
 The `Waitlist` aggregate raises `WaitlistExhaustedDomainEvent` whenever both its
-entry count and `PendingCouponCount` reach zero. The event handler loads
+active entry count and issued-coupon count reach zero. The event handler loads
 `TicketCatalog` into the same scoped `DbContext` and calls
 `TicketCatalog.TryDeactivateWaitlistMode(ticketTypeId)`, which clears `WaitlistMode`
 only when `UsedCapacity < MaxCapacity` also holds. If capacity is still full (e.g.,
@@ -211,8 +229,12 @@ all pending coupons were admin-revoked but all slots remain occupied), `Waitlist
 stays active — correct, because new attendees can still join the now-empty waitlist.
 Again, all mutations are committed in one `SaveChangesAsync` call.
 
-`PendingCouponCount` is decremented when a waitlist coupon is redeemed (via a domain
-event handler on `CouponRedeemed`) or when the expiry job explicitly revokes it.
+**Coupon lifecycle calls on `Waitlist`** (both `TicketCatalog` and `Waitlist` share
+the same `RegistrationsDbContext`, so no event indirection is needed):
+- Registration command handler: calls `waitlist.RedeemCoupon(couponId)` after
+  confirming `coupon.Source == Waitlist`.
+- Expiry job: calls `waitlist.RevokeCoupon(couponId)` when revoking an expired
+  waitlist coupon.
 
 **Accepted**
 
@@ -225,5 +247,14 @@ every 5 minutes) for waitlist coupons that have expired without being redeemed. 
 found, it revokes the coupon and fires a `ProcessWaitlistNotifications` command to
 attempt the next batch notification. This job also re-evaluates WaitlistMode after
 each expiry cycle in case the waitlist has been exhausted.
+
+**Race condition guard**: the job queries for coupons where
+`ExpiresAt <= now - graceperiod` (default 2 minutes) rather than `ExpiresAt <= now`.
+This eliminates the practical window where the expiry job and a last-second
+redemption run concurrently against the same coupon. As a second line of defence,
+the `Coupon` aggregate carries an EF Core concurrency token: if both transactions
+commit simultaneously, the one that writes second will receive a
+`DbUpdateConcurrencyException`. The registration handler treats this as "coupon no
+longer valid" and returns an appropriate error to the attendee.
 
 **Accepted**

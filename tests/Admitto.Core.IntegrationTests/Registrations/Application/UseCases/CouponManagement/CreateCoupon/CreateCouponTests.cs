@@ -114,6 +114,7 @@ public sealed class CreateCouponTests(TestContext testContext) : AspireIntegrati
 
     private static CreateCouponCommand NewCreateCouponCommand(
         TicketedEventId eventId,
+        Guid teamId = default,
         Guid[]? allowedTicketTypeIds = null,
         string? email = null,
         DateTimeOffset? expiresAt = null,
@@ -124,6 +125,7 @@ public sealed class CreateCouponTests(TestContext testContext) : AspireIntegrati
         allowedTicketTypeIds ??= [Guid.NewGuid()];
 
         return new CreateCouponCommand(
+            teamId == default ? Guid.NewGuid() : teamId,
             eventId.Value,
             email,
             allowedTicketTypeIds,

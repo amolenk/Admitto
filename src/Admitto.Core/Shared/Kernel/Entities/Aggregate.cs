@@ -1,7 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using Amolenk.Admitto.Core.Shared.Kernel.Abstractions;
 using Amolenk.Admitto.Core.Shared.Kernel.DomainEvents;
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Core.Shared.Kernel.Entities;
 
@@ -12,7 +11,7 @@ public abstract class Aggregate<TId> : Entity<TId>, IIsAuditable, IIsVersioned, 
     protected Aggregate()
     {
     }
-    
+
     protected Aggregate(TId id) : base(id)
     {
     }

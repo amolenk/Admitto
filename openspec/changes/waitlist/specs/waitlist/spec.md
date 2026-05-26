@@ -74,10 +74,11 @@ remove endpoint. Leaving a waitlist the attendee is not on SHALL succeed silentl
 
 When one or more registrations for a `WaitlistEnabled` ticket type are cancelled (and
 the ticket type has WaitlistMode active), the system SHALL distribute one waitlist
-coupon per freed slot to the next N entries in the ranked waitlist. Notifications
-SHALL be delayed until the start of the next allowed window if the current time falls
-within the configured quiet hours for the event. Each notified attendee is removed
-from the active waitlist at the point of notification.
+coupon per freed slot to the next N entries in the ranked waitlist. Each notification
+email SHALL be sent immediately. If the current time falls within the configured quiet
+hours for the event, the coupon's `ExpiresAt` is extended so that quiet hours do not
+count toward the claim window. Each notified attendee is removed from the active
+waitlist at the point of notification.
 
 #### Scenario: Notify first batch when capacity is freed
 - **WHEN** a registration for "General Admission" on "DevConf" is cancelled, freeing

@@ -1,4 +1,3 @@
-using Amolenk.Admitto.Core.Badges.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Validation;
 using FluentValidation;
 
@@ -17,7 +16,7 @@ public sealed class AddBadgeTypeValidator : AbstractValidator<AddBadgeTypeHttpRe
             .WithMessage(ValidKindsMessage);
         RuleFor(x => x.TicketTypeIds)
             .NotEmpty()
-            .When(x => x.Kind?.Equals(nameof(BadgeKind.TicketBased), StringComparison.OrdinalIgnoreCase) == true)
+            .When(x => x.Kind.Equals(nameof(BadgeKind.TicketBased), StringComparison.OrdinalIgnoreCase))
             .WithMessage("A ticket-based badge type must reference at least one ticket type.");
     }
 }

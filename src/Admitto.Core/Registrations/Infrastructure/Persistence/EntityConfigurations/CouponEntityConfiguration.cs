@@ -23,6 +23,10 @@ public class CouponEntityConfiguration : IEntityTypeConfiguration<Coupon>
             .HasColumnName("event_id")
             .IsRequired();
 
+        builder.Property(e => e.TeamId)
+            .HasColumnName("team_id")
+            .IsRequired();
+
         builder.Property(e => e.Code)
             .HasColumnName("code")
             .IsRequired();
@@ -47,6 +51,11 @@ public class CouponEntityConfiguration : IEntityTypeConfiguration<Coupon>
 
         builder.Property(e => e.RevokedAt)
             .HasColumnName("revoked_at");
+
+        builder.Property(e => e.Source)
+            .HasColumnName("source")
+            .IsRequired()
+            .HasConversion<int>();
 
         builder.PrimitiveCollection(e => e.AllowedTicketTypeIds)
             .HasColumnName("allowed_ticket_type_ids")

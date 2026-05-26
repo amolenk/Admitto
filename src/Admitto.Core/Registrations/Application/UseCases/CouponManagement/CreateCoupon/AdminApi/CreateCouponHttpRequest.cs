@@ -6,7 +6,8 @@ public sealed record CreateCouponHttpRequest(
     DateTimeOffset ExpiresAt,
     bool BypassRegistrationWindow = false)
 {
-    internal CreateCouponCommand ToCommand(Guid eventId) => new(
+    internal CreateCouponCommand ToCommand(Guid teamId, Guid eventId) => new(
+        teamId,
         eventId,
         Email,
         AllowedTicketTypeIds,

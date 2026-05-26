@@ -5,4 +5,6 @@ public sealed record PublicTicketTypeDto(
     string Name,
     string[] TimeSlots,
     int? MaxCapacity,
-    int UsedCapacity);
+    int UsedCapacity,
+    bool WaitlistEnabled,
+    bool WaitlistMode);

@@ -1,8 +1,10 @@
 using Amolenk.Admitto.Core.Email.Application.Persistence;
 using Amolenk.Admitto.Core.Email.Application.Templating;
+using Amolenk.Admitto.Core.Email.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Email.Domain.Entities;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Contracts;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
@@ -23,6 +25,7 @@ namespace Amolenk.Admitto.Core.Email.Application.Jobs;
 internal sealed class RequestReconfirmationsJob(
     IEmailWriteStore writeStore,
     IRegistrationsFacade registrationsFacade,
+    [FromKeyedServices(EmailModule.Key)] IOutbox outbox,
     [FromKeyedServices(EmailModule.Key)] IUnitOfWork unitOfWork,
     TimeProvider timeProvider,
     ILogger<RequestReconfirmationsJob> logger)
@@ -45,88 +48,122 @@ internal sealed class RequestReconfirmationsJob(
         var minIntervalRaw = context.MergedJobDataMap.GetString(MinEmailIntervalHoursKey);
         int.TryParse(minIntervalRaw, out var minEmailIntervalHours);
 
-        QueryRegistrationsDto filter;
+        var now = timeProvider.GetUtcNow();
+        var candidates = await registrationsFacade.QueryRegistrationsAsync(
+            ticketedEventId,
+            new QueryRegistrationsDto(
+                RegistrationStatus: RegistrationStatus.Registered,
+                HasReconfirmed: false),
+            ct);
 
+        if (candidates.Count == 0)
+        {
+            logger.LogInformation(
+                "Reconfirm tick for event {TicketedEventId}: no un-reconfirmed attendees, skipping.",
+                eventIdValue);
+            return;
+        }
+
+        var emailLogDataByEmail = await writeStore.EmailLog
+            .AsNoTracking()
+            .Where(l =>
+                l.TicketedEventId == ticketedEventId &&
+                l.EmailType == BuiltInEmailTemplateNames.Reconfirmation &&
+                l.Status == EmailLogStatus.Sent)
+            .GroupBy(l => l.Recipient)
+            .Select(g => new
+            {
+                Email = g.Key,
+                LastSentAt = g.Max(l => l.SentAt),
+                Count = g.Count()
+            })
+            .ToDictionaryAsync(x => x.Email.Value, x => (x.LastSentAt, x.Count), ct);
+
+        var eligibleCandidates = candidates;
         if (minEmailIntervalHours > 0)
         {
-            var now = timeProvider.GetUtcNow();
-            var candidates = await registrationsFacade.QueryRegistrationsAsync(
-                ticketedEventId,
-                new QueryRegistrationsDto(
-                    RegistrationStatus: RegistrationStatus.Registered,
-                    HasReconfirmed: false),
-                ct);
-
-            if (candidates.Count == 0)
-            {
-                logger.LogInformation(
-                    "Reconfirm tick for event {TicketedEventId}: no un-reconfirmed attendees, skipping.",
-                    eventIdValue);
-                return;
-            }
-
-            // Build a map of recipient email → last reconfirmation sent-at.
-            var lastSentByEmail = await writeStore.EmailLog
-                .AsNoTracking()
-                .Where(l =>
-                    l.TicketedEventId == ticketedEventId &&
-                    l.EmailType == BuiltInEmailTemplateNames.Reconfirmation &&
-                    l.Status == EmailLogStatus.Sent)
-                .GroupBy(l => l.Recipient)
-                .Select(g => new { Email = g.Key, LastSentAt = g.Max(l => l.SentAt) })
-                .ToDictionaryAsync(x => x.Email.Value, x => x.LastSentAt, ct);
-
             var threshold = TimeSpan.FromHours(minEmailIntervalHours);
-            var eligibleIds = candidates
+            eligibleCandidates = candidates
                 .Where(r =>
                 {
-                    var baseline = lastSentByEmail.TryGetValue(r.Email, out var lastSent) && lastSent.HasValue
-                        ? (lastSent.Value > r.CreatedAt ? lastSent.Value : r.CreatedAt)
+                    var baseline = emailLogDataByEmail.TryGetValue(r.Email, out var logData) && logData.LastSentAt.HasValue
+                        ? (logData.LastSentAt.Value > r.CreatedAt ? logData.LastSentAt.Value : r.CreatedAt)
                         : r.CreatedAt;
                     return baseline + threshold <= now;
                 })
-                .Select(r => r.RegistrationId)
                 .ToList();
 
-            if (eligibleIds.Count == 0)
+            if (eligibleCandidates.Count == 0)
             {
                 logger.LogInformation(
                     "Reconfirm tick for event {TicketedEventId}: all {Total} attendees throttled by MinEmailInterval ({Hours}h), skipping.",
-                    eventIdValue, candidates.Count, minEmailIntervalHours);
+                    eventIdValue,
+                    candidates.Count,
+                    minEmailIntervalHours);
                 return;
             }
-
-            logger.LogInformation(
-                "Reconfirm tick for event {TicketedEventId}: {Eligible}/{Total} attendees eligible after MinEmailInterval throttle ({Hours}h); creating bulk-email job.",
-                eventIdValue, eligibleIds.Count, candidates.Count, minEmailIntervalHours);
-
-            filter = new QueryRegistrationsDto(
-                RegistrationStatus: RegistrationStatus.Registered,
-                HasReconfirmed: false,
-                RegistrationIds: eligibleIds);
         }
-        else
+
+        var reconfirmRegistrationIds = eligibleCandidates
+            .Where(r =>
+                r.EffectiveMaxReconfirmAttempts is null
+                || !emailLogDataByEmail.TryGetValue(r.Email, out var logData)
+                || logData.Count < r.EffectiveMaxReconfirmAttempts.Value)
+            .Select(r => r.RegistrationId)
+            .ToList();
+
+        var autoCancelRegistrationIds = eligibleCandidates
+            .Where(r =>
+                r.EffectiveMaxReconfirmAttempts is not null
+                && emailLogDataByEmail.TryGetValue(r.Email, out var logData)
+                && logData.Count >= r.EffectiveMaxReconfirmAttempts.Value)
+            .Select(r => r.RegistrationId)
+            .ToList();
+
+        if (reconfirmRegistrationIds.Count > 0)
         {
             logger.LogInformation(
-                "Reconfirm tick for event {TicketedEventId} (team {TeamId}); creating bulk-email job.",
-                eventIdValue, teamIdValue);
+                "Reconfirm tick for event {TicketedEventId}: creating bulk-email job for {Eligible} attendees.",
+                eventIdValue,
+                reconfirmRegistrationIds.Count);
 
-            filter = new QueryRegistrationsDto(
+            var filter = new QueryRegistrationsDto(
                 RegistrationStatus: RegistrationStatus.Registered,
-                HasReconfirmed: false);
+                HasReconfirmed: false,
+                RegistrationIds: reconfirmRegistrationIds);
+
+            var job = BulkEmailJob.CreateSystemTriggered(
+                teamId,
+                ticketedEventId,
+                BuiltInEmailTemplateNames.Reconfirmation,
+                subject: null,
+                textBody: null,
+                htmlBody: null,
+                source: new AttendeeSource(filter),
+                now: now);
+
+            writeStore.BulkEmailJobs.Add(job);
         }
 
-        var job = BulkEmailJob.CreateSystemTriggered(
-            teamId,
-            ticketedEventId,
-            BuiltInEmailTemplateNames.Reconfirmation,
-            subject: null,
-            textBody: null,
-            htmlBody: null,
-            source: new AttendeeSource(filter),
-            now: timeProvider.GetUtcNow());
+        if (autoCancelRegistrationIds.Count > 0)
+        {
+            logger.LogInformation(
+                "Reconfirm tick for event {TicketedEventId}: auto-cancelling {Cancelled} attendees.",
+                eventIdValue,
+                autoCancelRegistrationIds.Count);
 
-        writeStore.BulkEmailJobs.Add(job);
+            outbox.Enqueue(new ReconfirmAutoExpiredIntegrationEvent(
+                ticketedEventId.Value,
+                autoCancelRegistrationIds));
+        }
+
+        if (reconfirmRegistrationIds.Count == 0 && autoCancelRegistrationIds.Count == 0)
+        {
+            logger.LogInformation(
+                "Reconfirm tick for event {TicketedEventId}: no attendees eligible after policy evaluation, skipping.",
+                eventIdValue);
+            return;
+        }
 
         await unitOfWork.SaveChangesAsync(ct);
     }

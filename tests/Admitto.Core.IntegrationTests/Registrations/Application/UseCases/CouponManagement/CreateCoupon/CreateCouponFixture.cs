@@ -6,6 +6,7 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 
 internal sealed class CreateCouponFixture
 {
+    public TeamId TeamId { get; } = TeamId.New();
     public TicketedEventId EventId { get; } = TicketedEventId.New();
     public TicketTypeId TicketTypeId { get; } = TicketTypeId.From(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
 

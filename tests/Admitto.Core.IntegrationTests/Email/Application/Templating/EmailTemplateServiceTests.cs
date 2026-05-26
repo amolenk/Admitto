@@ -86,4 +86,18 @@ public sealed class EmailTemplateServiceTests(TestContext testContext) : AspireI
         result.TextBody.ShouldNotBeNullOrEmpty();
         result.HtmlBody.ShouldNotBeNullOrEmpty();
     }
+
+    [TestMethod]
+    public async ValueTask LoadAsync_ReconfirmCancelledWithoutCustomTemplate_ReturnsBuiltInDefault()
+    {
+        var teamId = TeamId.New();
+        var eventId = TicketedEventId.New();
+
+        var service = new EmailTemplateService(Environment.EmailDatabase.Context);
+        var result = await service.LoadAsync(BuiltInEmailTemplateNames.ReconfirmCancelled, teamId, eventId, testContext.CancellationToken);
+
+        result.Subject.ShouldContain("Cancelled");
+        result.TextBody.ShouldContain("automatically cancelled");
+        result.HtmlBody.ShouldContain("automatically cancelled");
+    }
 }

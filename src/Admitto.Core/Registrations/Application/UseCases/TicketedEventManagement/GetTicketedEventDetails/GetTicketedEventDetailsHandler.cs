@@ -47,6 +47,8 @@ internal sealed class GetTicketedEventDetailsHandler(
                     (int)ticketedEvent.ReconfirmPolicy.MinEmailInterval.TotalHours),
             ticketedEvent.AdditionalDetailSchema.Fields
                 .Select(f => new AdditionalDetailFieldDto(f.Key, f.Name, f.MaxLength))
-                .ToArray());
+                .ToArray(),
+            ticketedEvent.QuietHoursStart,
+            ticketedEvent.QuietHoursEnd);
     }
 }

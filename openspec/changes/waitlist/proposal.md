@@ -20,10 +20,10 @@ transparent mechanism for sold-out events.
   distributes **system-generated single-use coupons** — one per freed slot — to the
   first N people on the waitlist (reusing existing coupon infrastructure).
 - Coupons expire after a configurable claim window (default 8 hours). To prevent
-  attendees waking up to a missed window, notifications are **not sent during quiet
-  hours** (configurable, default 22:00–08:00 in the event's local timezone); if the
-  processor fires during quiet hours it delays notification to the start of the next
-  allowed window and anchors the claim window from there.
+  attendees waking up to a missed window, the system sends the notification
+  immediately but **extends the claim window expiry** so that quiet hours
+  (configurable, default 22:00–08:00 in the event's local timezone) do not count
+  toward it. The expiry is anchored from the start of the next non-quiet period.
 - Once notified, an attendee is **automatically removed** from the waitlist and must
   re-join if they wish to be considered again.
 - If a coupon expires without being redeemed, the system notifies the next batch on
@@ -66,7 +66,7 @@ transparent mechanism for sold-out events.
   entries and pending notifications. `WaitlistOnly` flag added to `TicketType` in
   `TicketCatalog`. New command handlers: `JoinWaitlist`, `LeaveWaitlist`,
   `ProcessWaitlistNotifications`. New domain events: `WaitlistEntryAdded`,
-  `WaitlistEntryRemoved`, `WaitlistCouponsDistributed`, `WaitlistNotificationDelayed`.
+  `WaitlistEntryRemoved`, `WaitlistCouponsDistributed`.
   Cancellation flow triggers a `WaitlistNotificationRequested` module event.
   `TicketCatalog.TicketType.WaitlistEnabled` and `WaitlistMode` flags added.
 - **Coupon aggregate**: New `CouponSource` discriminator (`Organiser` vs `Waitlist`).

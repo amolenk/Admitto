@@ -11,8 +11,12 @@ public static class BuiltInEmailTemplateNames
     public const string TicketConfirmation = "Ticket confirmation";
     public const string Reconfirmation     = "Reconfirmation";
     public const string Cancellation       = "Cancellation";
+    public const string ReconfirmCancelled = "Reconfirm cancelled";
     public const string VisaLetterDenied   = "Visa letter denied";
     public const string VerificationCode   = "Verification code";
+    public const string WaitlistVerification = "Waitlist verification";
+    public const string CouponInvitation   = "Coupon invitation";
+    public const string WaitlistNotification = "Waitlist notification";
 
     /// <summary>
     /// Returns true if the given name (case-insensitive) matches a reserved built-in name.
@@ -25,7 +29,11 @@ public static class BuiltInEmailTemplateNames
         TicketConfirmation,
         Reconfirmation,
         Cancellation,
+        ReconfirmCancelled,
         VisaLetterDenied,
         VerificationCode,
+        WaitlistVerification,
+        CouponInvitation,
+        WaitlistNotification,
     };
 }

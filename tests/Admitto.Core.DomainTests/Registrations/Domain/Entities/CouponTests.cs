@@ -12,6 +12,45 @@ namespace Amolenk.Admitto.Core.Registrations.Domain.Tests.Entities;
 public sealed class CouponTests
 {
     [TestMethod]
+    public void Create_OrganiserSource_RaisesCouponCreatedDomainEvent()
+    {
+        // Arrange
+        var ticketTypeId = TicketTypeId.New();
+        var email = EmailAddress.From("speaker@example.com");
+
+        // Act
+        var sut = new CouponBuilder()
+            .WithEmail(email)
+            .WithRequestedTicketTypeIds(ticketTypeId)
+            .WithAvailableTicketTypes(new TicketTypeInfo(ticketTypeId))
+            .WithSource(CouponSource.Organiser)
+            .Build();
+
+        // Assert
+        sut.GetDomainEvents()
+            .ShouldHaveSingleItem()
+            .ShouldBeAssignableTo<CouponCreatedDomainEvent>()
+            .ShouldSatisfyAllConditions(
+                e => e.CouponId.ShouldBe(sut.Id),
+                e => e.TeamId.ShouldBe(sut.TeamId),
+                e => e.TicketedEventId.ShouldBe(sut.EventId),
+                e => e.Email.ShouldBe(email),
+                e => e.Code.ShouldBe(sut.Code));
+    }
+
+    [TestMethod]
+    public void Create_WaitlistSource_DoesNotRaiseCouponCreatedDomainEvent()
+    {
+        // Act
+        var sut = new CouponBuilder()
+            .WithSource(CouponSource.Waitlist)
+            .Build();
+
+        // Assert
+        sut.GetDomainEvents().ShouldBeEmpty();
+    }
+
+    [TestMethod]
     public void Create_ValidInput_CreatesCouponAndRaisesDomainEvent()
     {
         // Arrange
@@ -38,8 +77,10 @@ public sealed class CouponTests
             .ShouldBeAssignableTo<CouponCreatedDomainEvent>()
             .ShouldSatisfyAllConditions(
                 e => e.CouponId.ShouldBe(sut.Id),
+                e => e.TeamId.ShouldBe(sut.TeamId),
                 e => e.TicketedEventId.ShouldBe(sut.EventId),
-                e => e.Email.ShouldBe(email));
+                e => e.Email.ShouldBe(email),
+                e => e.Code.ShouldBe(sut.Code));
     }
 
     [TestMethod]
