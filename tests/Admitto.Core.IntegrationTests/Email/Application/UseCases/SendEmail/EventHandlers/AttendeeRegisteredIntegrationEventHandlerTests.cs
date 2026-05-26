@@ -1,8 +1,6 @@
 using Amolenk.Admitto.Core.Email.Application.Templating;
 using Amolenk.Admitto.Core.Email.Application.UseCases.SendEmail;
 using Amolenk.Admitto.Core.Email.Application.UseCases.SendEmail.EventHandlers;
-using Amolenk.Admitto.Core.Email.Domain.Entities;
-using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
@@ -33,7 +31,7 @@ public sealed class AttendeeRegisteredIntegrationEventHandlerTests(TestContext t
             .Returns(Context());
         var sendEmailHandler = Substitute.For<ICommandHandler<SendEmailCommand>>();
 
-        var sut = new AttendeeRegisteredIntegrationEventHandler(Environment.EmailDatabase.Context, facade, sendEmailHandler);
+        var sut = new AttendeeRegisteredIntegrationEventHandler(facade, sendEmailHandler);
 
         await sut.HandleAsync(Event(), testContext.CancellationToken);
 
@@ -58,7 +56,7 @@ public sealed class AttendeeRegisteredIntegrationEventHandlerTests(TestContext t
             .HandleAsync(Arg.Do<SendEmailCommand>(c => captured = c), Arg.Any<CancellationToken>())
             .Returns(ValueTask.CompletedTask);
 
-        var sut = new AttendeeRegisteredIntegrationEventHandler(Environment.EmailDatabase.Context, facade, sendEmailHandler);
+        var sut = new AttendeeRegisteredIntegrationEventHandler(facade, sendEmailHandler);
 
         await sut.HandleAsync(Event(), testContext.CancellationToken);
 
@@ -68,31 +66,6 @@ public sealed class AttendeeRegisteredIntegrationEventHandlerTests(TestContext t
         // 'EventWebsiteUrl' (→ 'event_website_url') which would leave {{ event_website }} empty.
         var eventWebsite = GetParam(captured.Parameters, "EventWebsite");
         eventWebsite.ShouldBe("https://devconf.example.com");
-    }
-
-    [TestMethod]
-    public async Task AlreadyHandled_SkipsDispatch()
-    {
-        var idempotencyKey = $"attendee-registered:{RegId}";
-        await Environment.EmailDatabase.SeedAsync(db =>
-        {
-            var log = EmailLog.Create(
-                TeamGuid, EventGuid, idempotencyKey,
-                EmailAddress.From("alice@example.com"), BuiltInEmailTemplateNames.TicketConfirmation,
-                "Subject", "smtp", null, EmailLogStatus.Sent,
-                DateTimeOffset.UtcNow, DateTimeOffset.UtcNow);
-            db.EmailLog.Add(log);
-        });
-
-        var facade = Substitute.For<IRegistrationsFacade>();
-        var sendEmailHandler = Substitute.For<ICommandHandler<SendEmailCommand>>();
-
-        var sut = new AttendeeRegisteredIntegrationEventHandler(Environment.EmailDatabase.Context, facade, sendEmailHandler);
-
-        await sut.HandleAsync(Event(), testContext.CancellationToken);
-
-        await sendEmailHandler.DidNotReceive().HandleAsync(
-            Arg.Any<SendEmailCommand>(), Arg.Any<CancellationToken>());
     }
 
     private static object? GetParam(object parameters, string name) =>

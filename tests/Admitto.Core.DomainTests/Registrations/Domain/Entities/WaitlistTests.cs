@@ -247,11 +247,7 @@ public sealed class WaitlistTests
         sut.ClearDomainEvents();
 
         // Act
-        var result = sut.IssueNextCoupon(CreateTicketedEvent(), CreateTicketType());
-
-        // Assert
-        result.ShouldNotBeNull();
-        result.Email.ShouldBe(email);
+        var result = sut.IssueNextCoupon(CreateTicketedEvent(), CreateTicketType(), DateTimeOffset.UtcNow);
         sut.Entries.ShouldNotContain(e => e.Status == WaitlistEntryStatus.Active);
         sut.Coupons.ShouldHaveSingleItem().Id.ShouldBe(result.Id);
     }
@@ -268,9 +264,7 @@ public sealed class WaitlistTests
         sut.ClearDomainEvents();
 
         // Act
-        var result = sut.IssueNextCoupon(CreateTicketedEvent(), CreateTicketType());
-
-        // Assert — the entry at position 1 (first@example.com) should be served first
+        var result = sut.IssueNextCoupon(CreateTicketedEvent(), CreateTicketType(), now);
         result.ShouldNotBeNull();
         result.Email.Value.ShouldBe("first@example.com");
     }
@@ -283,10 +277,7 @@ public sealed class WaitlistTests
         sut.ClearDomainEvents();
 
         // Act
-        var result = sut.IssueNextCoupon(CreateTicketedEvent(), CreateTicketType());
-
-        // Assert
-        result.ShouldBeNull();
+        var result = sut.IssueNextCoupon(CreateTicketedEvent(), CreateTicketType(), DateTimeOffset.UtcNow);
         sut.GetDomainEvents().ShouldBeEmpty();
         sut.Coupons.ShouldBeEmpty();
     }

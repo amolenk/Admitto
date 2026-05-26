@@ -1,9 +1,7 @@
-using Amolenk.Admitto.Core.Email.Application.Persistence;
 using Amolenk.Admitto.Core.Email.Application.Templating;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
-using Microsoft.EntityFrameworkCore;
 
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.SendEmail.EventHandlers;
 
@@ -11,7 +9,6 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.SendEmail.EventHandler
 /// Sends a TicketConfirmation email when an attendee has registered.
 /// </summary>
 internal sealed class AttendeeRegisteredIntegrationEventHandler(
-    IEmailWriteStore writeStore,
     IRegistrationsFacade registrationsFacade,
     ICommandHandler<SendEmailCommand> sendEmailHandler)
     : IIntegrationEventHandler<AttendeeRegisteredIntegrationEvent>
@@ -21,12 +18,6 @@ internal sealed class AttendeeRegisteredIntegrationEventHandler(
         CancellationToken cancellationToken)
     {
         var idempotencyKey = $"attendee-registered:{integrationEvent.RegistrationId}";
-
-        var alreadyHandled = await writeStore.EmailLog
-            .AnyAsync(l => l.IdempotencyKey == idempotencyKey, cancellationToken);
-
-        if (alreadyHandled)
-            return;
 
         var eventContext = await registrationsFacade.GetTicketedEventEmailContextAsync(
             integrationEvent.TicketedEventId,

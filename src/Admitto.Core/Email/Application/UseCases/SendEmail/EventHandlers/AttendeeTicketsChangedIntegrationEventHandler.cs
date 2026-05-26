@@ -1,10 +1,8 @@
-using Amolenk.Admitto.Core.Email.Application.Persistence;
 using Amolenk.Admitto.Core.Email.Application.Templating;
 using Amolenk.Admitto.Core.Email.Application.UseCases.SendEmail;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
-using Microsoft.EntityFrameworkCore;
 
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.SendEmail.EventHandlers;
 
@@ -12,7 +10,6 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.SendEmail.EventHandler
 /// Sends a new TicketConfirmation email when an attendee's tickets have changed.
 /// </summary>
 internal sealed class AttendeeTicketsChangedIntegrationEventHandler(
-    IEmailWriteStore writeStore,
     IRegistrationsFacade registrationsFacade,
     ICommandHandler<SendEmailCommand> sendEmailHandler)
     : IIntegrationEventHandler<AttendeeTicketsChangedIntegrationEvent>
@@ -23,12 +20,6 @@ internal sealed class AttendeeTicketsChangedIntegrationEventHandler(
     {
         var changedAtMs = integrationEvent.ChangedAt.ToUnixTimeMilliseconds();
         var idempotencyKey = $"tickets-changed:{integrationEvent.RegistrationId}:{changedAtMs}";
-
-        var alreadyHandled = await writeStore.EmailLog
-            .AnyAsync(l => l.IdempotencyKey == idempotencyKey, cancellationToken);
-
-        if (alreadyHandled)
-            return;
 
         var eventContext = await registrationsFacade.GetTicketedEventEmailContextAsync(
             integrationEvent.TicketedEventId,

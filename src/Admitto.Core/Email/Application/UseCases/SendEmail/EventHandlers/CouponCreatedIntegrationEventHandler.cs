@@ -1,9 +1,7 @@
-using Amolenk.Admitto.Core.Email.Application.Persistence;
 using Amolenk.Admitto.Core.Email.Application.Templating;
 using Amolenk.Admitto.Core.Email.Application.UseCases.SendEmail;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
-using Microsoft.EntityFrameworkCore;
 
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.SendEmail.EventHandlers;
 
@@ -11,7 +9,6 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.SendEmail.EventHandler
 /// Sends a CouponInvitation email when a coupon is created for an attendee.
 /// </summary>
 internal sealed class CouponCreatedIntegrationEventHandler(
-    IEmailWriteStore writeStore,
     ICommandHandler<SendEmailCommand> sendEmailHandler)
     : IIntegrationEventHandler<CouponCreatedIntegrationEvent>
 {
@@ -20,12 +17,6 @@ internal sealed class CouponCreatedIntegrationEventHandler(
         CancellationToken cancellationToken)
     {
         var idempotencyKey = $"coupon-created:{integrationEvent.CouponCode}";
-
-        var alreadyHandled = await writeStore.EmailLog
-            .AnyAsync(l => l.IdempotencyKey == idempotencyKey, cancellationToken);
-
-        if (alreadyHandled)
-            return;
 
         var command = new SendEmailCommand(
             TeamId: integrationEvent.TeamId,

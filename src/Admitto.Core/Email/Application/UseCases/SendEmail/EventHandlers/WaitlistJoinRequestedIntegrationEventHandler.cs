@@ -1,9 +1,7 @@
-using Amolenk.Admitto.Core.Email.Application.Persistence;
 using Amolenk.Admitto.Core.Email.Application.Templating;
 using Amolenk.Admitto.Core.Email.Application.UseCases.SendEmail;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
-using Microsoft.EntityFrameworkCore;
 
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.SendEmail.EventHandlers;
 
@@ -13,7 +11,6 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.SendEmail.EventHandler
 /// Idempotency key: <c>waitlist-join-requested:{teamId}:{ticketTypeId}:{recipientEmail}</c>.
 /// </summary>
 internal sealed class WaitlistJoinRequestedIntegrationEventHandler(
-    IEmailWriteStore writeStore,
     ICommandHandler<SendEmailCommand> sendEmailHandler)
     : IIntegrationEventHandler<WaitlistJoinRequestedIntegrationEvent>
 {
@@ -23,12 +20,6 @@ internal sealed class WaitlistJoinRequestedIntegrationEventHandler(
     {
         var idempotencyKey =
             $"waitlist-join-requested:{integrationEvent.TeamId}:{integrationEvent.TicketTypeId}:{integrationEvent.RecipientEmail}";
-
-        var alreadyHandled = await writeStore.EmailLog
-            .AnyAsync(l => l.IdempotencyKey == idempotencyKey, cancellationToken);
-
-        if (alreadyHandled)
-            return;
 
         var command = new SendEmailCommand(
             TeamId: integrationEvent.TeamId,

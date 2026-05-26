@@ -1,10 +1,8 @@
-using Amolenk.Admitto.Core.Email.Application.Persistence;
 using Amolenk.Admitto.Core.Email.Application.Templating;
 using Amolenk.Admitto.Core.Email.Application.UseCases.SendEmail;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
-using Microsoft.EntityFrameworkCore;
 
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.SendEmail.EventHandlers;
 
@@ -18,7 +16,6 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.SendEmail.EventHandler
 /// Idempotency key: <c>registration-cancelled:{registrationId}</c>.
 /// </remarks>
 internal sealed class RegistrationCancelledIntegrationEventHandler(
-    IEmailWriteStore writeStore,
     IRegistrationsFacade registrationsFacade,
     ICommandHandler<SendEmailCommand> sendEmailHandler)
     : IIntegrationEventHandler<RegistrationCancelledIntegrationEvent>
@@ -32,12 +29,6 @@ internal sealed class RegistrationCancelledIntegrationEventHandler(
             return;
 
         var idempotencyKey = $"registration-cancelled:{integrationEvent.RegistrationId}";
-
-        var alreadyHandled = await writeStore.EmailLog
-            .AnyAsync(l => l.IdempotencyKey == idempotencyKey, cancellationToken);
-
-        if (alreadyHandled)
-            return;
 
         var eventContext = await registrationsFacade.GetTicketedEventEmailContextAsync(
             integrationEvent.TicketedEventId,
