@@ -47,6 +47,14 @@ optimistic concurrency token on `TicketCatalog` is the safety net).
 - **WHEN** an attendee self-registers for "Workshop" where capacity is 20/20 used and the window is open
 - **THEN** the registration is rejected with reason "ticket type at capacity"
 
+#### Scenario: Self-service rejected — ticket type in WaitlistOnly mode
+- **WHEN** an attendee submits a self-service registration for ticket type "General Admission" on event "DevConf" and "General Admission" has `WaitlistMode = true`
+- **THEN** the registration is rejected with reason `"ticket type in waitlist mode"` and no registration record is created
+
+#### Scenario: Coupon-based registration bypasses WaitlistOnly mode check
+- **WHEN** an attendee submits a registration with a valid waitlist coupon for ticket type "General Admission" on event "DevConf" and "General Admission" has `WaitlistMode = true`
+- **THEN** the registration proceeds normally (coupon bypass is unchanged)
+
 #### Scenario: Self-service rejected — ticket type has no capacity set
 - **WHEN** an attendee self-registers for "Speaker Pass" which has no capacity configured
 - **THEN** the registration is rejected with reason "ticket type not available"

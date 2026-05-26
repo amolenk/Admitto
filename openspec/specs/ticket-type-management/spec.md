@@ -8,14 +8,18 @@ Organizers add, update, cancel, and list ticket types for an event. Ticket types
 
 ### Requirement: Organizer can add a ticket type to an event
 The system SHALL allow organizers (Owner or Organizer role) to add a ticket type to
-an event with a name, time slots, optional capacity, and a `SelfServiceEnabled`
-flag (defaults to `true`). The server SHALL generate a `TicketTypeId` (GUID) upon
-creation. Ticket type names SHALL be unique within an event (case-insensitive).
-Adding a ticket type mutates the event's `TicketCatalog`: the command is rejected
-when `TicketCatalog.EventStatus` is Archived, and succeeds only when Active. The `TicketCatalog` is
-created by the Registrations module's reaction to `TicketedEventCreated`, so it
-already exists by the time any ticket-type command can run; there is no longer a
-"create catalog on first ticket type" path.
+an event with a name, time slots, optional capacity, a `SelfServiceEnabled`
+flag (defaults to `true`), and an optional `waitlistEnabled` boolean (default `false`).
+The server SHALL generate a `TicketTypeId` (GUID) upon creation. Ticket type names
+SHALL be unique within an event (case-insensitive). Adding a ticket type mutates the
+event's `TicketCatalog`: the command is rejected when `TicketCatalog.EventStatus` is
+Archived, and succeeds only when Active. The `TicketCatalog` is created by the
+Registrations module's reaction to `TicketedEventCreated`, so it already exists by
+the time any ticket-type command can run; there is no longer a "create catalog on
+first ticket type" path.
+
+When `waitlistEnabled = true` and the ticket type reaches capacity, the system will
+automatically activate WaitlistOnly mode for that type.
 
 #### Scenario: Add a ticket type to an active event
 - **WHEN** an organizer adds a ticket type with name "VIP Pass", time slots ["Morning Session", "Afternoon Session"], and capacity 100 to event "conf-2026" whose `TicketCatalog.EventStatus` is Active
@@ -41,14 +45,36 @@ already exists by the time any ticket-type command can run; there is no longer a
 - **WHEN** an organizer adds a ticket type with name "VIP Pass", capacity 50, and `selfServiceEnabled: false` to event "conf-2026"
 - **THEN** the ticket type is created with `SelfServiceEnabled = false` and self-service registration for this ticket type is rejected
 
+#### Scenario: Add a ticket type with waitlist enabled
+- **WHEN** an organizer adds ticket type "General Admission" with `waitlistEnabled: true` and capacity 200
+- **THEN** the ticket type is created with `WaitlistEnabled = true` and WaitlistOnly mode is initially `false` (not yet at capacity)
+
+#### Scenario: Add a ticket type with waitlist disabled (default)
+- **WHEN** an organizer adds ticket type "VIP Pass" without specifying `waitlistEnabled`
+- **THEN** the ticket type is created with `WaitlistEnabled = false`
+
 ---
 
 ### Requirement: Organizer can update a ticket type
-The system SHALL allow organizers to update a ticket type's name, capacity, and
-`SelfServiceEnabled` flag, identified by its `TicketTypeId`. Updating a ticket type
+The system SHALL allow organizers to update a ticket type's name, capacity,
+`SelfServiceEnabled` flag, optional `waitlistEnabled` boolean, and optional
+`claimWindowHours` integer, identified by its `TicketTypeId`. Updating a ticket type
 SHALL be rejected when `TicketCatalog.EventStatus` is not Active. Optimistic
 concurrency on the `TicketCatalog` row is sufficient to detect concurrent
 status transitions; no separate mutation counter is maintained.
+
+When `waitlistEnabled` is toggled from `false` to `true` and the ticket type is
+already at capacity, the system SHALL immediately activate WaitlistMode and create
+the Waitlist aggregate, as if the last slot had just been claimed.
+
+When `waitlistEnabled` is set to `false` on a type that currently has WaitlistMode
+active, the system SHALL perform a force-disable cleanup: revoke all pending waitlist
+coupons (notifying their holders), remove all active waitlist entries, and clear
+WaitlistMode — all in the same transaction.
+
+When the capacity limit is removed entirely (set to unlimited) on a ticket type with
+`WaitlistEnabled = true`, the system SHALL automatically force `WaitlistEnabled` to
+`false` with the same cleanup if WaitlistMode was active.
 
 #### Scenario: Update a ticket type's capacity
 - **WHEN** an organizer updates ticket type with id {tt-id} to capacity 200 on an event whose `TicketCatalog.EventStatus` is Active
@@ -70,13 +96,38 @@ status transitions; no separate mutation counter is maintained.
 - **WHEN** an organizer updates ticket type with id {tt-id} setting `selfServiceEnabled: true` on an active event
 - **THEN** the ticket type's `SelfServiceEnabled` becomes `true` and self-service registrations for it are accepted
 
+#### Scenario: Enable waitlist on an existing ticket type with capacity remaining
+- **WHEN** an organizer updates ticket type "General Admission" setting `waitlistEnabled: true` while `UsedCapacity < MaxCapacity`
+- **THEN** `WaitlistEnabled` is set to `true` and `WaitlistMode` remains `false`
+
+#### Scenario: Enable waitlist on a sold-out ticket type activates WaitlistMode immediately
+- **WHEN** an organizer updates ticket type "General Admission" setting `waitlistEnabled: true` while `UsedCapacity >= MaxCapacity`
+- **THEN** `WaitlistEnabled` is set to `true`, `WaitlistMode` is set to `true`, and a Waitlist aggregate is created for that ticket type in the same transaction
+
+#### Scenario: Disable waitlist while WaitlistMode is active performs cleanup
+- **WHEN** ticket type "General Admission" has `WaitlistMode = true` with 3 active entries and 1 pending coupon, and an organizer updates it setting `waitlistEnabled: false`
+- **THEN** the 1 pending coupon is revoked (and its holder receives a cancellation email), the 3 active waitlist entries are removed, `WaitlistMode` is cleared, and `WaitlistEnabled` is set to `false` — all in the same transaction
+
+#### Scenario: Disable waitlist when WaitlistMode is not active
+- **WHEN** ticket type "General Admission" has `WaitlistEnabled = true` and `WaitlistMode = false`, and an organizer sets `waitlistEnabled: false`
+- **THEN** `WaitlistEnabled` is set to `false` with no side effects
+
+#### Scenario: Increase capacity while WaitlistMode is active triggers notification
+- **WHEN** ticket type "General Admission" has `WaitlistMode = true` with 2 active entries and the organizer increases `MaxCapacity` by 1 (creating 1 free slot)
+- **THEN** `ProcessWaitlistNotifications` is triggered for 1 freed slot, the first waiting attendee is notified, and WaitlistMode conditions are re-evaluated
+
+#### Scenario: Update ClaimWindowHours on a ticket type
+- **WHEN** an organizer updates ticket type "General Admission" setting `claimWindowHours: 12`
+- **THEN** `ClaimWindowHours` is updated to 12 and subsequent claim offers will expire 12 hours after notification time
+
 ---
 
 ### Requirement: Organizer can list ticket types
 The system SHALL allow team members with Crew role or above to list all ticket types
 for an event. Each ticket type SHALL include its
-`id`, name, time slots, capacity (max and used), and
-`selfServiceEnabled` flag. There is no `cancellationStatus` field.
+`id`, name, time slots, capacity (max and used),
+`selfServiceEnabled` flag, and `waitlistMode` boolean (derived from whether
+WaitlistOnly mode is currently active for that ticket type). There is no `cancellationStatus` field.
 
 #### Scenario: List ticket types for an event
 - **WHEN** a Crew member lists ticket types for event "conf-2026" which has "General Admission" (capacity 100/50 used) and "VIP Pass" (capacity 50/10 used)
@@ -89,6 +140,10 @@ for an event. Each ticket type SHALL include its
 #### Scenario: List ticket types includes selfServiceEnabled
 - **WHEN** a Crew member lists ticket types for event "conf-2026" which has "General Admission" (selfServiceEnabled: true) and "VIP Pass" (selfServiceEnabled: false)
 - **THEN** both ticket types are returned with their respective `selfServiceEnabled` values
+
+#### Scenario: List ticket types includes WaitlistMode
+- **WHEN** event "DevConf" has ticket type "General Admission" with `WaitlistMode = true` and "VIP Pass" with `WaitlistMode = false`
+- **THEN** the listing returns `"waitlistMode": true` for "General Admission" and `"waitlistMode": false` for "VIP Pass"
 
 ---
 
