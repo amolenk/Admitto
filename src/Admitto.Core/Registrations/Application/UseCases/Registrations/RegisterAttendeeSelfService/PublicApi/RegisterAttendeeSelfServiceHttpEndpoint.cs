@@ -9,13 +9,13 @@ public static class RegisterAttendeeSelfServiceHttpEndpoint
 {
     public static RouteGroupBuilder MapRegisterAttendeeSelfService(this RouteGroupBuilder group)
     {
-        group.MapPost("/registrations", HandleAsync)
-            .WithName(nameof(RegisterAttendeeSelfServiceHttpEndpoint));
+        group.MapPost("/registrations", RegisterAttendeeSelfService)
+            .WithName(nameof(RegisterAttendeeSelfService));
 
         return group;
     }
 
-    private static async ValueTask<IResult> HandleAsync(
+    private static async ValueTask<IResult> RegisterAttendeeSelfService(
         Guid teamId,
         Guid eventId,
         RegisterAttendeeSelfServiceHttpRequest request,

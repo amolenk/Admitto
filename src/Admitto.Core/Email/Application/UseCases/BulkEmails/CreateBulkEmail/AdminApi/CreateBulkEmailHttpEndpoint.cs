@@ -45,5 +45,3 @@ public static class CreateBulkEmailHttpEndpoint
         return TypedResults.Created(location, new CreateBulkEmailResponse(bulkEmailJobId));
     }
 }
-
-public sealed record CreateBulkEmailResponse(Guid BulkEmailJobId);

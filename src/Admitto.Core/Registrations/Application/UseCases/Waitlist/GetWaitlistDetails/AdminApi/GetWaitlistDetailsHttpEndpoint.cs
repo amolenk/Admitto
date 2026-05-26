@@ -8,14 +8,14 @@ public static class GetWaitlistDetailsHttpEndpoint
     public static RouteGroupBuilder MapGetWaitlistDetails(this RouteGroupBuilder group)
     {
         group
-            .MapGet("/waitlist", HandleAsync)
-            .WithName(nameof(GetWaitlistDetailsHttpEndpoint))
+            .MapGet("/waitlist", GetWaitlistDetails)
+            .WithName(nameof(GetWaitlistDetails))
             .RequireAuthorization(policy => policy.RequireTeamMembership(TeamMembershipRole.Organizer));
 
         return group;
     }
 
-    private static async ValueTask<Results<Ok<WaitlistDetailsDto>, NotFound>> HandleAsync(
+    private static async ValueTask<Results<Ok<WaitlistDetailsDto>, NotFound>> GetWaitlistDetails(
         Guid teamId,
         Guid eventId,
         Guid ticketTypeId,

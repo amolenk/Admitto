@@ -8,13 +8,13 @@ public static class SelfCancelRegistrationHttpEndpoint
 {
     public static RouteGroupBuilder MapSelfCancelRegistration(this RouteGroupBuilder group)
     {
-        group.MapPost("/registrations/{registrationId:guid}/cancel", HandleAsync)
-            .WithName(nameof(SelfCancelRegistrationHttpEndpoint));
+        group.MapPost("/registrations/{registrationId:guid}/cancel", SelfCancelRegistration)
+            .WithName(nameof(SelfCancelRegistration));
 
         return group;
     }
 
-    private static async ValueTask<IResult> HandleAsync(
+    private static async ValueTask<IResult> SelfCancelRegistration(
         Guid teamId,
         Guid eventId,
         Guid registrationId,

@@ -9,14 +9,14 @@ public static class GetPublicCouponDetailsHttpEndpoint
     public static RouteGroupBuilder MapGetPublicCouponDetails(this RouteGroupBuilder group)
     {
         group
-            .MapGet("/coupons/{couponCode:guid}", HandleAsync)
-            .WithName(nameof(GetPublicCouponDetailsHttpEndpoint))
+            .MapGet("/coupons/{couponCode:guid}", GetPublicCouponDetails)
+            .WithName(nameof(GetPublicCouponDetails))
             .AllowAnonymous();
 
         return group;
     }
 
-    private static async ValueTask<Ok<PublicCouponDetailsDto>> HandleAsync(
+    private static async ValueTask<Ok<PublicCouponDetailsDto>> GetPublicCouponDetails(
         Guid eventId,
         Guid couponCode,
         IQueryHandler<GetPublicCouponDetailsQuery, PublicCouponDetailsDto> handler,

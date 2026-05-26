@@ -8,13 +8,13 @@ public static class SelfChangeTicketsHttpEndpoint
 {
     public static RouteGroupBuilder MapSelfChangeTickets(this RouteGroupBuilder group)
     {
-        group.MapPut("/registrations/{registrationId:guid}/tickets", HandleAsync)
-            .WithName(nameof(SelfChangeTicketsHttpEndpoint));
+        group.MapPut("/registrations/{registrationId:guid}/tickets", SelfChangeTickets)
+            .WithName(nameof(SelfChangeTickets));
 
         return group;
     }
 
-    private static async ValueTask<IResult> HandleAsync(
+    private static async ValueTask<IResult> SelfChangeTickets(
         Guid teamId,
         Guid eventId,
         Guid registrationId,

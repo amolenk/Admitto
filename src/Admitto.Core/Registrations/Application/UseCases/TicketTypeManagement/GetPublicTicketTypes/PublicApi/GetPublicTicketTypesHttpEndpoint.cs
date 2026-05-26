@@ -6,13 +6,13 @@ public static class GetPublicTicketTypesHttpEndpoint
 {
     public static RouteGroupBuilder MapGetPublicTicketTypes(this RouteGroupBuilder group)
     {
-        group.MapGet("/ticket-types", HandleAsync)
-            .WithName(nameof(GetPublicTicketTypesHttpEndpoint));
+        group.MapGet("/ticket-types", GetPublicTicketTypes)
+            .WithName(nameof(GetPublicTicketTypes));
 
         return group;
     }
 
-    private static async ValueTask<Ok<IReadOnlyList<PublicTicketTypeDto>>> HandleAsync(
+    private static async ValueTask<Ok<IReadOnlyList<PublicTicketTypeDto>>> GetPublicTicketTypes(
         Guid teamId,
         Guid eventId,
         IQueryHandler<GetPublicTicketTypesQuery, IReadOnlyList<PublicTicketTypeDto>> handler,

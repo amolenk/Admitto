@@ -8,13 +8,13 @@ public static class RequestOtpHttpEndpoint
 {
     public static RouteGroupBuilder MapRequestOtp(this RouteGroupBuilder group)
     {
-        group.MapPost("/otp/request", HandleAsync)
-            .WithName(nameof(RequestOtpHttpEndpoint));
+        group.MapPost("/otp/request", RequestOtp)
+            .WithName(nameof(RequestOtp));
 
         return group;
     }
 
-    private static async ValueTask<IResult> HandleAsync(
+    private static async ValueTask<IResult> RequestOtp(
         Guid teamId,
         Guid eventId,
         RequestOtpHttpRequest request,

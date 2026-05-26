@@ -62,5 +62,3 @@ public static class CreateEmailTemplateHttpEndpoint
         }
     }
 }
-
-public sealed record CreateEmailTemplateResponse(Guid Id);

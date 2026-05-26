@@ -10,13 +10,13 @@ public static class GetQRCodeHttpEndpoint
 {
     public static RouteGroupBuilder MapGetQRCode(this RouteGroupBuilder group)
     {
-        group.MapGet("/registrations/{registrationId:guid}/qr-code", HandleAsync)
-            .WithName(nameof(GetQRCodeHttpEndpoint));
+        group.MapGet("/registrations/{registrationId:guid}/qr-code", GetQRCode)
+            .WithName(nameof(GetQRCode));
 
         return group;
     }
 
-    private static async ValueTask<FileContentHttpResult> HandleAsync(
+    private static async ValueTask<FileContentHttpResult> GetQRCode(
         Guid teamId,
         Guid eventId,
         Guid registrationId,

@@ -7,13 +7,13 @@ public static class RegisterAttendeeWithCouponHttpEndpoint
 {
     public static RouteGroupBuilder MapRegisterAttendeeWithCoupon(this RouteGroupBuilder group)
     {
-        group.MapPost("/registrations/coupon", HandleAsync)
-            .WithName(nameof(RegisterAttendeeWithCouponHttpEndpoint));
+        group.MapPost("/registrations/coupon", RegisterAttendeeWithCoupon)
+            .WithName(nameof(RegisterAttendeeWithCoupon));
 
         return group;
     }
 
-    private static async ValueTask<IResult> HandleAsync(
+    private static async ValueTask<IResult> RegisterAttendeeWithCoupon(
         Guid teamId,
         Guid eventId,
         RegisterAttendeeWithCouponHttpRequest request,

@@ -11,31 +11,32 @@ public static class PreviewBulkEmailHttpEndpoint
     public static RouteGroupBuilder MapPreviewBulkEmail(this RouteGroupBuilder group)
     {
         group
-            .MapPost("/preview", async (
-                Guid teamId,
-                Guid eventId,
-                PreviewBulkEmailHttpRequest request,
-                IBulkEmailRecipientResolver recipientResolver,
-                CancellationToken ct) =>
-            {
-                // TODO Should be command/query
-
-                var source = request.Source.ToDomain();
-                var recipients = await recipientResolver.ResolveAsync(
-                    TicketedEventId.From(eventId),
-                    source,
-                    ct);
-
-                var sample = recipients
-                    .Take(SampleSize)
-                    .Select(r => new BulkEmailRecipientPreviewDto(r.Email.Value, r.DisplayName))
-                    .ToList();
-
-                return TypedResults.Ok(new PreviewBulkEmailResponse(recipients.Count, sample));
-            })
+            .MapPost("/preview", PreviewBulkEmail)
             .WithName("PreviewBulkEmail")
             .RequireAuthorization(policy => policy.RequireTeamMembership(TeamMembershipRole.Organizer));
 
         return group;
+    }
+
+    // TODO Should be command/query
+    private static async ValueTask<Ok<PreviewBulkEmailResponse>> PreviewBulkEmail(
+        Guid teamId,
+        Guid eventId,
+        PreviewBulkEmailHttpRequest request,
+        IBulkEmailRecipientResolver recipientResolver,
+        CancellationToken ct)
+    {
+        var source = request.Source.ToDomain();
+        var recipients = await recipientResolver.ResolveAsync(
+            TicketedEventId.From(eventId),
+            source,
+            ct);
+
+        var sample = recipients
+            .Take(SampleSize)
+            .Select(r => new BulkEmailRecipientPreviewDto(r.Email.Value, r.DisplayName))
+            .ToList();
+
+        return TypedResults.Ok(new PreviewBulkEmailResponse(recipients.Count, sample));
     }
 }

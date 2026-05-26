@@ -8,13 +8,13 @@ public static class VerifyOtpHttpEndpoint
 {
     public static RouteGroupBuilder MapVerifyOtp(this RouteGroupBuilder group)
     {
-        group.MapPost("/otp/verify", HandleAsync)
-            .WithName(nameof(VerifyOtpHttpEndpoint));
+        group.MapPost("/otp/verify", VerifyOtp)
+            .WithName(nameof(VerifyOtp));
 
         return group;
     }
 
-    private static async ValueTask<IResult> HandleAsync(
+    private static async ValueTask<IResult> VerifyOtp(
         Guid teamId,
         Guid eventId,
         VerifyOtpHttpRequest request,
