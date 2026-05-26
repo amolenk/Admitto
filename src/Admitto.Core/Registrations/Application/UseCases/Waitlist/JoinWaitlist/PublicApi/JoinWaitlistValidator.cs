@@ -1,5 +1,3 @@
-using Amolenk.Admitto.Core.Shared.Application.Validation;
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using FluentValidation;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlist.JoinWaitlist.PublicApi;
@@ -8,7 +6,7 @@ public sealed class JoinWaitlistValidator : AbstractValidator<JoinWaitlistHttpRe
 {
     public JoinWaitlistValidator()
     {
-        RuleFor(x => x.Email)
-            .MustBeParseable(EmailAddress.TryFrom);
+        RuleFor(x => x.Token)
+            .NotEmpty();
     }
 }

@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Core.Registrations.Application.Messaging;
-using Amolenk.Admitto.Core.Registrations.Application.Security;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
@@ -23,7 +22,7 @@ public sealed class RegistrationsIntegrationEventPublisherTests
     {
         _outbox = Substitute.For<IOutbox>();
         _outbox.When(o => o.Enqueue(Arg.Any<IIntegrationEvent>())).Do(ci => _captured = ci.Arg<IIntegrationEvent>());
-        _publisher = new RegistrationsIntegrationEventPublisher(_outbox, Substitute.For<IVerificationTokenService>());
+        _publisher = new RegistrationsIntegrationEventPublisher(_outbox);
     }
 
     [TestMethod]

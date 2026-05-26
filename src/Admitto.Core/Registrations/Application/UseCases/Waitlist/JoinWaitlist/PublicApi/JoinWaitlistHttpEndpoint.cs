@@ -29,7 +29,7 @@ public static class JoinWaitlistHttpEndpoint
             teamId,
             eventId,
             ticketTypeId,
-            request.Email);
+            request.Token);
 
         await handler.HandleAsync(command, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);

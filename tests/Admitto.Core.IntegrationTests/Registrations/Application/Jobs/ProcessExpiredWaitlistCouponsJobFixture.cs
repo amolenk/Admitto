@@ -67,7 +67,7 @@ internal sealed class ProcessExpiredWaitlistCouponsJobFixture
             var waitlist = Waitlist.Create(EventId, TicketTypeId, TeamId);
             var now = DateTimeOffset.UtcNow;
             for (var i = 0; i < totalEntries; i++)
-                waitlist.ConfirmEntry(EmailAddress.From($"attendee{i + 1}@example.com"), now.AddMinutes(i));
+                waitlist.AddEntry(EmailAddress.From($"attendee{i + 1}@example.com"), now.AddMinutes(i));
 
             dbContext.Waitlists.Add(waitlist);
         }, cancellationToken);

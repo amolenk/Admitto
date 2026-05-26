@@ -41,28 +41,17 @@ public class Waitlist : Aggregate<TicketTypeId>
         => new(eventId, ticketTypeId, teamId);
 
     /// <summary>
-    /// Registers a join request (pre-confirmation). Raises <see cref="WaitlistEntryAddedDomainEvent"/>
-    /// to trigger a verification email. Returns false (no event) when the email already has an active entry.
+    /// Adds an active waitlist entry immediately. Idempotent — returns false without adding a duplicate
+    /// when the email already has an active entry.
     /// </summary>
-    public bool RequestJoin(EmailAddress email)
+    public bool AddEntry(EmailAddress email, DateTimeOffset addedAt)
     {
         if (_entries.Any(e => e.Email == email && e.Status == WaitlistEntryStatus.Active))
             return false;
 
-        AddDomainEvent(new WaitlistEntryAddedDomainEvent(TeamId, EventId, Id, email));
-        return true;
-    }
-
-    /// <summary>
-    /// Confirms a join request by creating an active entry at the next queue position. Idempotent.
-    /// </summary>
-    public void ConfirmEntry(EmailAddress email, DateTimeOffset addedAt)
-    {
-        if (_entries.Any(e => e.Email == email && e.Status == WaitlistEntryStatus.Active))
-            return;
-
         var nextPosition = _entries.Count(e => e.Status == WaitlistEntryStatus.Active) + 1;
         _entries.Add(new WaitlistEntry(WaitlistEntryId.New(), email, nextPosition, addedAt));
+        return true;
     }
 
     /// <summary>

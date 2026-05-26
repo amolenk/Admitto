@@ -39,52 +39,50 @@ public sealed class WaitlistTests
     }
 
     [TestMethod]
-    public void RequestJoin_WhenEmailIsNew_RaisesWaitlistEntryAddedDomainEvent()
+    public void AddEntry_WhenEmailIsNew_AddsActiveEntry()
     {
         // Arrange
         var sut = CreateWaitlist();
         var email = EmailAddress.From("alice@example.com");
+        var now = DateTimeOffset.UtcNow;
 
         // Act
-        var result = sut.RequestJoin(email);
+        var result = sut.AddEntry(email, now);
 
         // Assert
         result.ShouldBeTrue();
-        sut.GetDomainEvents()
-            .ShouldHaveSingleItem()
-            .ShouldBeAssignableTo<WaitlistEntryAddedDomainEvent>()
+        sut.Entries.ShouldHaveSingleItem()
             .ShouldSatisfyAllConditions(
                 e => e.Email.ShouldBe(email),
-                e => e.TicketTypeId.ShouldBe(DefaultTicketTypeId),
-                e => e.TicketedEventId.ShouldBe(DefaultEventId));
-    }
-
-    [TestMethod]
-    public void RequestJoin_WhenEmailAlreadyActive_ReturnsFalseWithNoEvent()
-    {
-        // Arrange
-        var sut = CreateWaitlist();
-        var email = EmailAddress.From("alice@example.com");
-        sut.ConfirmEntry(email, DateTimeOffset.UtcNow);
-        sut.ClearDomainEvents();
-
-        // Act
-        var result = sut.RequestJoin(email);
-
-        // Assert
-        result.ShouldBeFalse();
+                e => e.Status.ShouldBe(WaitlistEntryStatus.Active));
         sut.GetDomainEvents().ShouldBeEmpty();
     }
 
     [TestMethod]
-    public void ConfirmEntry_WhenNewEmail_AddsActiveEntryAtNextPosition()
+    public void AddEntry_WhenEmailAlreadyActive_ReturnsFalse()
     {
         // Arrange
         var sut = CreateWaitlist();
-        sut.ConfirmEntry(EmailAddress.From("alice@example.com"), DateTimeOffset.UtcNow);
+        var email = EmailAddress.From("alice@example.com");
+        sut.AddEntry(email, DateTimeOffset.UtcNow);
 
         // Act
-        sut.ConfirmEntry(EmailAddress.From("bob@example.com"), DateTimeOffset.UtcNow);
+        var result = sut.AddEntry(email, DateTimeOffset.UtcNow);
+
+        // Assert
+        result.ShouldBeFalse();
+        sut.Entries.Count(e => e.Email == email && e.Status == WaitlistEntryStatus.Active).ShouldBe(1);
+    }
+
+    [TestMethod]
+    public void AddEntry_WhenNewEmail_AddsActiveEntryAtNextPosition()
+    {
+        // Arrange
+        var sut = CreateWaitlist();
+        sut.AddEntry(EmailAddress.From("alice@example.com"), DateTimeOffset.UtcNow);
+
+        // Act
+        sut.AddEntry(EmailAddress.From("bob@example.com"), DateTimeOffset.UtcNow);
 
         // Assert
         sut.Entries.Count.ShouldBe(2);
@@ -94,29 +92,14 @@ public sealed class WaitlistTests
     }
 
     [TestMethod]
-    public void ConfirmEntry_WhenAlreadyConfirmed_IsIdempotent()
-    {
-        // Arrange
-        var sut = CreateWaitlist();
-        var email = EmailAddress.From("alice@example.com");
-        sut.ConfirmEntry(email, DateTimeOffset.UtcNow);
-
-        // Act
-        sut.ConfirmEntry(email, DateTimeOffset.UtcNow);
-
-        // Assert
-        sut.Entries.Count(e => e.Email == email && e.Status == WaitlistEntryStatus.Active).ShouldBe(1);
-    }
-
-    [TestMethod]
     public void RemoveEntry_ByEmail_MarksEntryRemovedAndRenumbersPositions()
     {
         // Arrange
         var sut = CreateWaitlist();
         var alice = EmailAddress.From("alice@example.com");
         var bob = EmailAddress.From("bob@example.com");
-        sut.ConfirmEntry(alice, DateTimeOffset.UtcNow);
-        sut.ConfirmEntry(bob, DateTimeOffset.UtcNow);
+        sut.AddEntry(alice, DateTimeOffset.UtcNow);
+        sut.AddEntry(bob, DateTimeOffset.UtcNow);
         sut.ClearDomainEvents();
 
         // Act
@@ -148,7 +131,7 @@ public sealed class WaitlistTests
         // Arrange
         var sut = CreateWaitlist();
         var email = EmailAddress.From("alice@example.com");
-        sut.ConfirmEntry(email, DateTimeOffset.UtcNow);
+        sut.AddEntry(email, DateTimeOffset.UtcNow);
         var entryId = sut.Entries.Single().Id;
         sut.RemoveEntry(email);
         sut.ClearDomainEvents();
@@ -175,7 +158,7 @@ public sealed class WaitlistTests
         // Arrange
         var sut = CreateWaitlist();
         var email = EmailAddress.From("alice@example.com");
-        sut.ConfirmEntry(email, DateTimeOffset.UtcNow);
+        sut.AddEntry(email, DateTimeOffset.UtcNow);
         sut.ClearDomainEvents();
 
         // Act
@@ -196,7 +179,7 @@ public sealed class WaitlistTests
         // Arrange
         var sut = CreateWaitlist();
         var email = EmailAddress.From("alice@example.com");
-        sut.ConfirmEntry(email, DateTimeOffset.UtcNow);
+        sut.AddEntry(email, DateTimeOffset.UtcNow);
         sut.TrackIssuedCoupon(CouponId.New(), DateTimeOffset.UtcNow);
         sut.ClearDomainEvents();
 
@@ -243,12 +226,13 @@ public sealed class WaitlistTests
         // Arrange
         var sut = CreateWaitlist();
         var email = EmailAddress.From("alice@example.com");
-        sut.ConfirmEntry(email, DateTimeOffset.UtcNow);
+        sut.AddEntry(email, DateTimeOffset.UtcNow);
         sut.ClearDomainEvents();
 
         // Act
         var result = sut.IssueNextCoupon(CreateTicketedEvent(), CreateTicketType(), DateTimeOffset.UtcNow);
         sut.Entries.ShouldNotContain(e => e.Status == WaitlistEntryStatus.Active);
+        result.ShouldNotBeNull();
         sut.Coupons.ShouldHaveSingleItem().Id.ShouldBe(result.Id);
     }
 
@@ -259,8 +243,8 @@ public sealed class WaitlistTests
         var sut = CreateWaitlist();
         var now = DateTimeOffset.UtcNow;
         // first@example.com gets position 1, second@example.com gets position 2
-        sut.ConfirmEntry(EmailAddress.From("first@example.com"), now);
-        sut.ConfirmEntry(EmailAddress.From("second@example.com"), now.AddMinutes(1));
+        sut.AddEntry(EmailAddress.From("first@example.com"), now);
+        sut.AddEntry(EmailAddress.From("second@example.com"), now.AddMinutes(1));
         sut.ClearDomainEvents();
 
         // Act

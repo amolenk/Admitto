@@ -67,7 +67,7 @@ internal sealed class ProcessWaitlistNotificationsFixture
             var waitlist = global::Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist.Create(EventId, TicketTypeId, TeamId);
             var now = DateTimeOffset.UtcNow;
             for (var i = 0; i < activeEntries; i++)
-                waitlist.ConfirmEntry(EmailAddress.From($"attendee{i + 1}@example.com"), now.AddMinutes(i));
+                waitlist.AddEntry(EmailAddress.From($"attendee{i + 1}@example.com"), now.AddMinutes(i));
 
             dbContext.Waitlists.Add(waitlist);
         });

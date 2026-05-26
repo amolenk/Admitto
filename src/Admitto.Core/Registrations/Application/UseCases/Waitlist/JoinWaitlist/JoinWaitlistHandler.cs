@@ -1,25 +1,28 @@
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
+using Amolenk.Admitto.Core.Registrations.Application.Security;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlist.JoinWaitlist;
 
-internal sealed class JoinWaitlistHandler(IRegistrationsWriteStore writeStore)
+internal sealed class JoinWaitlistHandler(
+    IRegistrationsWriteStore writeStore,
+    IVerificationTokenService verificationTokenService,
+    TimeProvider timeProvider)
     : ICommandHandler<JoinWaitlistCommand>
 {
     public async ValueTask HandleAsync(
         JoinWaitlistCommand command,
         CancellationToken cancellationToken)
     {
-        var emailResult = EmailAddress.TryFrom(command.Email);
-        if (!emailResult.IsSuccess)
-            throw new BusinessRuleViolationException(Errors.InvalidEmail);
-
-        var email = emailResult.ValueObject;
         TicketedEventId eventId = TicketedEventId.From(command.EventId);
+
+        var claims = verificationTokenService.Validate(command.Token, eventId);
+        if (claims is null)
+            throw new BusinessRuleViolationException(Errors.InvalidToken);
+
         TicketTypeId ticketTypeId = TicketTypeId.From(command.TicketTypeId);
 
         var catalog = await writeStore.TicketCatalogs
@@ -45,14 +48,14 @@ internal sealed class JoinWaitlistHandler(IRegistrationsWriteStore writeStore)
         if (waitlist is null)
             throw new BusinessRuleViolationException(Errors.WaitlistNotFound);
 
-        waitlist.RequestJoin(email);
+        waitlist.AddEntry(claims.Email, timeProvider.GetUtcNow());
     }
 
     internal static class Errors
     {
-        public static readonly Error InvalidEmail = new(
-            "waitlist.invalid_email",
-            "The provided email address is not valid.",
+        public static readonly Error InvalidToken = new(
+            "waitlist.invalid_token",
+            "The provided verification token is invalid or expired.",
             Type: ErrorType.Validation);
 
         public static readonly Error EventNotFound = new(

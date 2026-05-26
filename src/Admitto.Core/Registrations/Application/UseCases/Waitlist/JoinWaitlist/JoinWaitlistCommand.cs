@@ -6,4 +6,4 @@ internal sealed record JoinWaitlistCommand(
     Guid TeamId,
     Guid EventId,
     Guid TicketTypeId,
-    string Email) : Command;
+    string Token) : Command;

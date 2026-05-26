@@ -1,4 +1,3 @@
-using Amolenk.Admitto.Core.Registrations.Application.Security;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
@@ -7,8 +6,7 @@ using Amolenk.Admitto.Core.Shared.Application.Messaging;
 namespace Amolenk.Admitto.Core.Registrations.Application.Messaging;
 
 internal sealed class RegistrationsIntegrationEventPublisher(
-    [FromKeyedServices(RegistrationsModule.Key)] IOutbox outbox,
-    IVerificationTokenService verificationTokenService)
+    [FromKeyedServices(RegistrationsModule.Key)] IOutbox outbox)
     : IDomainEventHandler<AttendeeRegisteredDomainEvent>,
       IDomainEventHandler<CouponCreatedDomainEvent>,
       IDomainEventHandler<OtpCodeRequestedDomainEvent>,
@@ -19,8 +17,7 @@ internal sealed class RegistrationsIntegrationEventPublisher(
       IDomainEventHandler<TicketedEventStatusChangedDomainEvent>,
       IDomainEventHandler<TicketedEventTimeZoneChangedDomainEvent>,
       IDomainEventHandler<TicketsChangedDomainEvent>,
-      IDomainEventHandler<WaitlistCouponIssuedDomainEvent>,
-      IDomainEventHandler<WaitlistEntryAddedDomainEvent>
+      IDomainEventHandler<WaitlistCouponIssuedDomainEvent>
 {
     public ValueTask HandleAsync(AttendeeRegisteredDomainEvent domainEvent, CancellationToken cancellationToken)
     {
@@ -158,20 +155,6 @@ internal sealed class RegistrationsIntegrationEventPublisher(
             domainEvent.CouponCode.Value.ToString(),
             domainEvent.TicketTypeName,
             domainEvent.ExpiresAt));
-
-        return ValueTask.CompletedTask;
-    }
-
-    public ValueTask HandleAsync(WaitlistEntryAddedDomainEvent domainEvent, CancellationToken cancellationToken)
-    {
-        var token = verificationTokenService.Issue(domainEvent.Email, domainEvent.TicketedEventId, domainEvent.TeamId);
-
-        outbox.Enqueue(new WaitlistJoinRequestedIntegrationEvent(
-            domainEvent.TeamId.Value,
-            domainEvent.TicketedEventId.Value,
-            domainEvent.TicketTypeId.Value,
-            domainEvent.Email.Value,
-            token));
 
         return ValueTask.CompletedTask;
     }
