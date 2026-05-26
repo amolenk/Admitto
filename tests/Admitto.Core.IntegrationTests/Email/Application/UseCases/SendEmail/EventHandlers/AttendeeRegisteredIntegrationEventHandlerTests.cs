@@ -33,7 +33,7 @@ public sealed class AttendeeRegisteredIntegrationEventHandlerTests(TestContext t
             .Returns(Context());
         var sendEmailHandler = Substitute.For<ICommandHandler<SendEmailCommand>>();
 
-        var sut = new AttendeeRegisteredIntegrationEventHandler(facade, sendEmailHandler);
+        var sut = new AttendeeRegisteredIntegrationEventHandler(Environment.EmailDatabase.Context, facade, sendEmailHandler);
 
         await sut.HandleAsync(Event(), testContext.CancellationToken);
 
@@ -58,7 +58,7 @@ public sealed class AttendeeRegisteredIntegrationEventHandlerTests(TestContext t
             .HandleAsync(Arg.Do<SendEmailCommand>(c => captured = c), Arg.Any<CancellationToken>())
             .Returns(ValueTask.CompletedTask);
 
-        var sut = new AttendeeRegisteredIntegrationEventHandler(facade, sendEmailHandler);
+        var sut = new AttendeeRegisteredIntegrationEventHandler(Environment.EmailDatabase.Context, facade, sendEmailHandler);
 
         await sut.HandleAsync(Event(), testContext.CancellationToken);
 
@@ -87,7 +87,7 @@ public sealed class AttendeeRegisteredIntegrationEventHandlerTests(TestContext t
         var facade = Substitute.For<IRegistrationsFacade>();
         var sendEmailHandler = Substitute.For<ICommandHandler<SendEmailCommand>>();
 
-        var sut = new AttendeeRegisteredIntegrationEventHandler(facade, sendEmailHandler);
+        var sut = new AttendeeRegisteredIntegrationEventHandler(Environment.EmailDatabase.Context, facade, sendEmailHandler);
 
         await sut.HandleAsync(Event(), testContext.CancellationToken);
 

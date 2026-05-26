@@ -11,7 +11,9 @@ internal sealed class ArchiveBadgesEventHandler(IBadgesWriteStore writeStore)
     {
         var eventId = TicketedEventId.From(command.EventId);
 
-        var badgesEvent = await writeStore.BadgesEvents.GetAsync(eventId, cancellationToken);
+        var badgesEvent = await writeStore.BadgesEvents.FindAsync([eventId], cancellationToken);
+        if (badgesEvent is null)
+            return;
 
         badgesEvent.MarkArchived();
     }

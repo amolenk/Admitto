@@ -1,6 +1,6 @@
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
-namespace Amolenk.Admitto.Core.Registrations.Application.Common;
+namespace Amolenk.Admitto.Core.Registrations.Domain.Entities;
 
 /// <summary>
 /// Computes the <c>ExpiresAt</c> timestamp for a waitlist coupon, applying quiet-hours logic so

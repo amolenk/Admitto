@@ -1,4 +1,3 @@
-using Amolenk.Admitto.Core.Registrations.Application.Common;
 using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.Entities;
@@ -118,7 +117,8 @@ public class Waitlist : Aggregate<TicketTypeId>
     /// </summary>
     public Coupon? IssueNextCoupon(
         TicketedEvent ticketedEvent,
-        TicketType ticketType)
+        TicketType ticketType,
+        DateTimeOffset utcNow)
     {
         // TODO PopNextEntry
         var entry = _entries
@@ -132,7 +132,7 @@ public class Waitlist : Aggregate<TicketTypeId>
         RenumberPositions();
         // END TODO
 
-        var now = DateTime.UtcNow;
+        var now = utcNow;
         var expiresAt = WaitlistClaimWindowCalculator.ComputeExpiresAt(
             now,
             ticketedEvent.TimeZone,

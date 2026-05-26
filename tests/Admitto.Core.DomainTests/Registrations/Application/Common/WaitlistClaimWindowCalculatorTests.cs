@@ -1,4 +1,4 @@
-using Amolenk.Admitto.Core.Registrations.Application.Common;
+using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Shouldly;
 

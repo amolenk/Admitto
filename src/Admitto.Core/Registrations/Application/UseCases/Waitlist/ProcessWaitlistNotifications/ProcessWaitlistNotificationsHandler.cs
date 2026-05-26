@@ -57,7 +57,7 @@ internal sealed class ProcessWaitlistNotificationsHandler(
 
         for (var i = 0; i < slotsToProcess; i++)
         {
-            var coupon = waitlist.IssueNextCoupon(ticketedEvent, ticketType);
+            var coupon = waitlist.IssueNextCoupon(ticketedEvent, ticketType, utcNow);
 
             // var nextEntry = waitlist.Entries
             //     .Where(e => e.Status == WaitlistEntryStatus.Active)
