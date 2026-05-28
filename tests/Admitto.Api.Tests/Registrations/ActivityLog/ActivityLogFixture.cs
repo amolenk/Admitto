@@ -53,7 +53,7 @@ internal sealed class ActivityLogFixture
                 DateTimeOffset.UtcNow.AddDays(-1),
                 DateTimeOffset.UtcNow.AddDays(30)));
 
-        var catalog = TicketCatalog.Create(eventId);
+        var catalog = TicketCatalog.Create(eventId, team.Id);
         catalog.AddTicketType(TicketTypeId, TicketTypeName.From("General Admission"), [], 100);
 
         await environment.OrganizationDatabase.SeedAsync(db => db.Teams.Add(team));

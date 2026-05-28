@@ -1,22 +1,19 @@
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
-
 namespace Amolenk.Admitto.Core.Registrations.Contracts;
 
 public interface IRegistrationsFacade
 {
-    ValueTask<TicketedEventEmailContextDto> GetTicketedEventEmailContextAsync(
+    ValueTask<EventRegistrationSnapshotDto> GetEventRegistrationSnapshotAsync(
         Guid ticketedEventId,
         Guid registrationId,
         CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Cross-module read query that returns the projections for every registration
-    /// on the given ticketed event matching the supplied filters. Used by the Email
-    /// module's bulk-email recipient resolver and intentionally generic so other
-    /// future cross-module needs can reuse it.
+    /// on the given ticketed event matching the supplied filters. Intentionally
+    /// generic so multiple callers can reuse it without adding per-caller methods.
     /// </summary>
-    Task<IReadOnlyList<RegistrationListItemDto>> QueryRegistrationsAsync(
-        TicketedEventId eventId,
+    Task<IReadOnlyList<RegistrationListItemDto>> GetRegistrationsAsync(
+        Guid eventId,
         QueryRegistrationsDto query,
         CancellationToken cancellationToken = default);
 
@@ -28,7 +25,7 @@ public interface IRegistrationsFacade
     /// integration events.
     /// </summary>
     Task<ReconfirmTriggerSpecDto?> GetReconfirmTriggerSpecAsync(
-        TicketedEventId eventId,
+        Guid eventId,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -40,20 +37,10 @@ public interface IRegistrationsFacade
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Returns a deduplicated list of registrations for badge export — one entry per unique
-    /// <c>RegistrationId</c> that has at least one ticket matching <paramref name="ticketTypeIds"/>
-    /// and has <c>Status = Registered</c>. Used by the Badges module's CSV export handler.
-    /// </summary>
-    Task<IReadOnlyList<BadgeExportRegistrationDto>> QueryRegistrationsForBadgeExportAsync(
-        TicketedEventId eventId,
-        IReadOnlyList<TicketTypeId> ticketTypeIds,
-        CancellationToken cancellationToken = default);
-
-    /// <summary>
     /// Returns the ordered additional detail schema fields for the given event.
     /// Used by the Badges module's CSV export handler to determine column order.
     /// </summary>
     Task<IReadOnlyList<AdditionalDetailFieldDto>> GetAdditionalDetailSchemaAsync(
-        TicketedEventId eventId,
+        Guid eventId,
         CancellationToken cancellationToken = default);
 }

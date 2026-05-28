@@ -5,7 +5,7 @@ using Amolenk.Admitto.Core.Organization.Application.Jobs;
 using Amolenk.Admitto.Core.Organization.Application.Persistence;
 using Amolenk.Admitto.Core.Organization.Application.Services;
 using Amolenk.Admitto.Core.Organization.Application.UseCases;
-using Amolenk.Admitto.Core.Organization.Application.UseCases.TeamMembershipManagement.RegisterExternalUser;
+using Amolenk.Admitto.Core.Organization.Application.UseCases.TeamMemberships.RegisterExternalUser;
 using Amolenk.Admitto.Core.Organization.Contracts;
 using Amolenk.Admitto.Core.Organization.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.Organization.Infrastructure.UserDirectories.Auth0;

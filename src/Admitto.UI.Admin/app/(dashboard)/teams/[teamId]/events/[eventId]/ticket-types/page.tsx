@@ -73,16 +73,6 @@ function TicketTypeCard({ t, teamId, eventId }: { t: TicketTypeDto; teamId: stri
 
                     <div className="ticket-perf" aria-hidden="true" />
 
-                    {t.timeSlots && t.timeSlots.length > 0 && (
-                        <div className="mt-3 flex flex-wrap gap-1.5">
-                            {t.timeSlots.map((slot) => (
-                                <Badge key={slot} variant="outline" className="font-mono text-[11px]">
-                                    {slot}
-                                </Badge>
-                            ))}
-                        </div>
-                    )}
-
                     <div className="grid grid-cols-3 gap-4 mt-4">
                         <div>
                             <div className="text-[11px] uppercase tracking-wide text-muted-foreground">Registered</div>
@@ -115,6 +105,16 @@ function TicketTypeCard({ t, teamId, eventId }: { t: TicketTypeDto; teamId: stri
                                 <span>{pct}% registered</span>
                                 <span>cap {cap}</span>
                             </div>
+                        </div>
+                    )}
+
+                    {t.timeSlots && t.timeSlots.length > 0 && (
+                        <div className="mt-3 flex flex-wrap gap-1.5">
+                            {t.timeSlots.map((slot) => (
+                                <Badge key={slot} variant="outline" className="font-mono text-[11px]">
+                                    {slot}
+                                </Badge>
+                            ))}
                         </div>
                     )}
                 </div>

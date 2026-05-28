@@ -1,0 +1,45 @@
+using Amolenk.Admitto.Core.Registrations.Domain.Entities;
+using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
+
+namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCases.TicketedEvents.UpdateAdditionalDetailSchema;
+
+internal sealed class UpdateAdditionalDetailSchemaFixture
+{
+    private bool _archive;
+
+    public TicketedEventId EventId { get; } = TicketedEventId.New();
+    public TeamId TeamId { get; } = TeamId.New();
+    public uint SeededVersion { get; private set; }
+
+    private UpdateAdditionalDetailSchemaFixture() { }
+
+    public static UpdateAdditionalDetailSchemaFixture ActiveEvent() => new();
+    public static UpdateAdditionalDetailSchemaFixture ArchivedEvent() => new() { _archive = true };
+
+    public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
+    {
+        TicketedEvent? seeded = null;
+
+        await environment.RegistrationsDatabase.SeedAsync(dbContext =>
+        {
+            var ticketedEvent = TicketedEvent.Create(
+                CreationRequestId.From(Guid.NewGuid()),
+                EventId,
+                TeamId,
+                EventName.From("Add Details Event"),
+                AbsoluteUrl.From("https://example.com"),
+                AbsoluteUrl.From("https://tickets.example.com"),
+                DateTimeOffset.UtcNow.AddDays(30),
+                DateTimeOffset.UtcNow.AddDays(31),
+                TimeZoneId.From("UTC"));
+
+            if (_archive) ticketedEvent.Archive();
+
+            dbContext.TicketedEvents.Add(ticketedEvent);
+            seeded = ticketedEvent;
+        });
+
+        SeededVersion = seeded!.Version;
+    }
+}

@@ -12,7 +12,7 @@ internal sealed class GetBulkEmailsHandler(IEmailWriteStore writeStore)
     {
         var jobs = await writeStore.BulkEmailJobs
             .AsNoTracking()
-            .Where(j => j.TicketedEventId == query.TicketedEventId)
+            .Where(j => j.TicketedEventId == query.TicketedEventId && j.TeamId == query.TeamId)
             .OrderByDescending(j => j.CreatedAt)
             .ToListAsync(ct);
 

@@ -31,7 +31,7 @@ internal sealed class ReleaseTicketsFixture
     {
         var f = new ReleaseTicketsFixture();
         f._registrationTicketTypeId = f.TicketTypeId;
-        var catalog = TicketCatalog.Create(f.EventId);
+        var catalog = TicketCatalog.Create(f.EventId, f.TeamId);
         catalog.AddTicketType(f.TicketTypeId, TicketTypeName.From("General Admission"), [], maxCapacity);
         for (var i = 0; i < usedCapacity; i++)
             catalog.Claim([f.TicketTypeId], enforce: false);
@@ -45,7 +45,7 @@ internal sealed class ReleaseTicketsFixture
     {
         var f = new ReleaseTicketsFixture();
         f._registrationTicketTypeId = f.TicketTypeId;
-        var catalog = TicketCatalog.Create(f.EventId);
+        var catalog = TicketCatalog.Create(f.EventId, f.TeamId);
         catalog.AddTicketType(f.TicketTypeId, TicketTypeName.From("General Admission"), [], 10);
         f._catalog = catalog;
         return f;
@@ -64,7 +64,7 @@ internal sealed class ReleaseTicketsFixture
         // TicketTypeId points to the catalog's known ticket type for assertions
         f.TicketTypeId = knownId;
 
-        var catalog = TicketCatalog.Create(f.EventId);
+        var catalog = TicketCatalog.Create(f.EventId, f.TeamId);
         catalog.AddTicketType(knownId, TicketTypeName.From("Known Ticket"), [], 10);
         catalog.Claim([knownId], enforce: false);
         f._catalog = catalog;

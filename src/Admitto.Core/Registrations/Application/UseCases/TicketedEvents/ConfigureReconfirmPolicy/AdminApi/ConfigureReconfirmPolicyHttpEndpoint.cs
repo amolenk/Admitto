@@ -1,0 +1,36 @@
+using Amolenk.Admitto.Core.Shared.Application.Auth;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
+using Amolenk.Admitto.Core.Shared.Application.Persistence;
+
+namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.ConfigureReconfirmPolicy.AdminApi;
+
+public static class ConfigureReconfirmPolicyHttpEndpoint
+{
+    public static RouteGroupBuilder MapConfigureReconfirmPolicy(this RouteGroupBuilder group)
+    {
+        group
+            .MapPut("/reconfirm-policy", ConfigureReconfirmPolicy)
+            .WithName(nameof(ConfigureReconfirmPolicy))
+            .RequireAuthorization(policy => policy.RequireTeamMembership(TeamMembershipRole.Organizer));
+
+        return group;
+    }
+
+    private static async ValueTask<NoContent> ConfigureReconfirmPolicy(
+        Guid teamId,
+        Guid eventId,
+        ConfigureReconfirmPolicyHttpRequest request,
+        ICommandHandler<ConfigureReconfirmPolicyCommand> handler,
+        [FromKeyedServices(RegistrationsModule.Key)]
+        IUnitOfWork unitOfWork,
+        CancellationToken cancellationToken)
+    {
+        var command = request.ToCommand(eventId, teamId);
+
+        await handler.HandleAsync(command, cancellationToken);
+
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return TypedResults.NoContent();
+    }
+}

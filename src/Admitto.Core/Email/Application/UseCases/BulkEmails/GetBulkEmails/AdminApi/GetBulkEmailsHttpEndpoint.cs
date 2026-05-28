@@ -22,7 +22,7 @@ public static class GetBulkEmailsHttpEndpoint
         CancellationToken ct)
     {
         var rows = await handler.HandleAsync(
-            new GetBulkEmailsQuery(TicketedEventId.From(eventId)), ct);
+            new GetBulkEmailsQuery(TicketedEventId.From(eventId), TeamId.From(teamId)), ct);
 
         return TypedResults.Ok(rows);
     }

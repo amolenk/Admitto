@@ -19,9 +19,11 @@ internal sealed class CancelBulkEmailHandler(
     public async ValueTask HandleAsync(CancelBulkEmailCommand command, CancellationToken cancellationToken)
     {
         BulkEmailJobId bulkEmailJobId = BulkEmailJobId.From(command.BulkEmailJobId);
+        TicketedEventId ticketedEventId = TicketedEventId.From(command.TicketedEventId);
+        TeamId teamId = TeamId.From(command.TeamId);
 
         var job = await writeStore.BulkEmailJobs.GetAsync(
-             j => j.Id == bulkEmailJobId,
+             j => j.Id == bulkEmailJobId && j.TicketedEventId == ticketedEventId && j.TeamId == teamId,
              cancellationToken);
 
         job.RequestCancellation(timeProvider.GetUtcNow());

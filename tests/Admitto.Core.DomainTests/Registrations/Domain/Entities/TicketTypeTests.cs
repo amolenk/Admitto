@@ -12,7 +12,7 @@ public sealed class TicketTypeTests
     private static TicketType CreateTicketType(int? maxCapacity = 10, int usedCapacity = 0)
     {
         var id = TicketTypeId.New();
-        var catalog = TicketCatalog.Create(TicketedEventId.New());
+        var catalog = TicketCatalog.Create(TicketedEventId.New(), TeamId.New());
         catalog.AddTicketType(id, TicketTypeName.From("General"), [], maxCapacity);
         var tt = catalog.GetTicketType(id)!;
         for (var i = 0; i < usedCapacity; i++)
@@ -54,7 +54,7 @@ public sealed class TicketTypeTests
     public void ClaimWithEnforcement_WhenWaitlistModeActive_ThrowsWaitlistModeError()
     {
         var id = TicketTypeId.New();
-        var catalog = TicketCatalog.Create(TicketedEventId.New());
+        var catalog = TicketCatalog.Create(TicketedEventId.New(), TeamId.New());
         catalog.AddTicketType(id, TicketTypeName.From("General"), [], maxCapacity: 1, waitlistEnabled: true);
         catalog.Claim([id], enforce: true);
         var sut = catalog.GetTicketType(id)!;

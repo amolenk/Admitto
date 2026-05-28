@@ -25,7 +25,7 @@ public sealed class ReconfirmIntegrationEventHandlerTests
         var spec = Spec(teamId, eventId);
 
         var facade = Substitute.For<IRegistrationsFacade>();
-        facade.GetReconfirmTriggerSpecAsync(TicketedEventId.From(eventId), Arg.Any<CancellationToken>())
+        facade.GetReconfirmTriggerSpecAsync(eventId, Arg.Any<CancellationToken>())
             .Returns(spec);
         var scheduleHandler = Substitute.For<ICommandHandler<ScheduleReconfirmationsCommand>>();
 
@@ -46,7 +46,7 @@ public sealed class ReconfirmIntegrationEventHandlerTests
     {
         var eventId = Guid.NewGuid();
         var facade = Substitute.For<IRegistrationsFacade>();
-        facade.GetReconfirmTriggerSpecAsync(TicketedEventId.From(eventId), Arg.Any<CancellationToken>())
+        facade.GetReconfirmTriggerSpecAsync(eventId, Arg.Any<CancellationToken>())
             .Returns((ReconfirmTriggerSpecDto?)null);
         var scheduleHandler = Substitute.For<ICommandHandler<ScheduleReconfirmationsCommand>>();
 
@@ -68,7 +68,7 @@ public sealed class ReconfirmIntegrationEventHandlerTests
         var spec = Spec(teamId, eventId);
 
         var facade = Substitute.For<IRegistrationsFacade>();
-        facade.GetReconfirmTriggerSpecAsync(TicketedEventId.From(eventId), Arg.Any<CancellationToken>())
+        facade.GetReconfirmTriggerSpecAsync(eventId, Arg.Any<CancellationToken>())
             .Returns(spec);
         var scheduleHandler = Substitute.For<ICommandHandler<ScheduleReconfirmationsCommand>>();
 
@@ -103,7 +103,7 @@ public sealed class ReconfirmIntegrationEventHandlerTests
             Arg.Is<ScheduleReconfirmationsCommand>(c =>
                 c.TicketedEventId == TicketedEventId.From(eventId) && c.Spec == null),
             Arg.Any<CancellationToken>());
-        await facade.DidNotReceiveWithAnyArgs().GetReconfirmTriggerSpecAsync(TicketedEventId.New(), default);
+        await facade.DidNotReceive().GetReconfirmTriggerSpecAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 
     [TestMethod]
@@ -114,7 +114,7 @@ public sealed class ReconfirmIntegrationEventHandlerTests
         var spec = Spec(teamId, eventId);
 
         var facade = Substitute.For<IRegistrationsFacade>();
-        facade.GetReconfirmTriggerSpecAsync(TicketedEventId.From(eventId), Arg.Any<CancellationToken>())
+        facade.GetReconfirmTriggerSpecAsync(eventId, Arg.Any<CancellationToken>())
             .Returns(spec);
         var scheduleHandler = Substitute.For<ICommandHandler<ScheduleReconfirmationsCommand>>();
 
@@ -135,7 +135,7 @@ public sealed class ReconfirmIntegrationEventHandlerTests
     {
         var eventId = Guid.NewGuid();
         var facade = Substitute.For<IRegistrationsFacade>();
-        facade.GetReconfirmTriggerSpecAsync(TicketedEventId.From(eventId), Arg.Any<CancellationToken>())
+        facade.GetReconfirmTriggerSpecAsync(eventId, Arg.Any<CancellationToken>())
             .Returns((ReconfirmTriggerSpecDto?)null);
         var scheduleHandler = Substitute.For<ICommandHandler<ScheduleReconfirmationsCommand>>();
 

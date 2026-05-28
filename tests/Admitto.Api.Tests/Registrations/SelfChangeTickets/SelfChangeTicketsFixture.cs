@@ -59,7 +59,7 @@ internal sealed class SelfChangeTicketsFixture
                 DateTimeOffset.UtcNow.AddDays(30)));
         }
 
-        var catalog = TicketCatalog.Create(eventId);
+        var catalog = TicketCatalog.Create(eventId, team.Id);
         catalog.AddTicketType(GeneralAdmissionId, TicketTypeName.From("General Admission"), [], 100);
         catalog.AddTicketType(WorkshopId, TicketTypeName.From("Workshop"), [], workshopCapacity);
 

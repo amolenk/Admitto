@@ -18,6 +18,10 @@ public class TicketCatalogEntityConfiguration : IEntityTypeConfiguration<TicketC
             .IsRequired()
             .ValueGeneratedNever();
 
+        builder.Property(e => e.TeamId)
+            .HasColumnName("team_id")
+            .IsRequired();
+
         builder.Property(e => e.Version)
             .HasColumnName("xmin")
             .IsRowVersion();

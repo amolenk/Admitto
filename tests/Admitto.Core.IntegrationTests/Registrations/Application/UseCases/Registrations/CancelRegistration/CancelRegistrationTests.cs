@@ -22,6 +22,7 @@ public sealed class CancelRegistrationTests(TestContext testContext) : AspireInt
         var command = new CancelRegistrationCommand(
             fixture.RegistrationId.Value,
             fixture.EventId.Value,
+            fixture.TeamId.Value,
             CancellationReason.AttendeeRequest);
         var sut = new CancelRegistrationHandler(Environment.RegistrationsDatabase.Context);
 
@@ -46,6 +47,7 @@ public sealed class CancelRegistrationTests(TestContext testContext) : AspireInt
         var command = new CancelRegistrationCommand(
             fixture.RegistrationId.Value,
             fixture.EventId.Value,
+            fixture.TeamId.Value,
             CancellationReason.VisaLetterDenied);
         var sut = new CancelRegistrationHandler(Environment.RegistrationsDatabase.Context);
 
@@ -70,6 +72,7 @@ public sealed class CancelRegistrationTests(TestContext testContext) : AspireInt
         var command = new CancelRegistrationCommand(
             fixture.RegistrationId.Value,
             fixture.EventId.Value,
+            fixture.TeamId.Value,
             CancellationReason.AttendeeRequest);
         var sut = new CancelRegistrationHandler(Environment.RegistrationsDatabase.Context);
 
@@ -87,6 +90,7 @@ public sealed class CancelRegistrationTests(TestContext testContext) : AspireInt
         var command = new CancelRegistrationCommand(
             unknownId.Value,
             TicketedEventId.New().Value,
+            TeamId.New().Value,
             CancellationReason.AttendeeRequest);
         var sut = new CancelRegistrationHandler(Environment.RegistrationsDatabase.Context);
 
@@ -106,6 +110,7 @@ public sealed class CancelRegistrationTests(TestContext testContext) : AspireInt
         var command = new CancelRegistrationCommand(
             fixture.RegistrationId.Value,
             TicketedEventId.New().Value,   // wrong event
+            TeamId.New().Value,
             CancellationReason.AttendeeRequest);
         var sut = new CancelRegistrationHandler(Environment.RegistrationsDatabase.Context);
 
@@ -125,6 +130,7 @@ public sealed class CancelRegistrationTests(TestContext testContext) : AspireInt
         var command = new CancelRegistrationCommand(
             fixture.RegistrationId.Value,
             fixture.EventId.Value,
+            fixture.TeamId.Value,
             CancellationReason.AttendeeRequest);
         var sut = new CancelRegistrationHandler(Environment.RegistrationsDatabase.Context);
 
@@ -144,6 +150,7 @@ public sealed class CancelRegistrationTests(TestContext testContext) : AspireInt
         var command = new CancelRegistrationCommand(
             fixture.RegistrationId.Value,
             fixture.EventId.Value,
+            fixture.TeamId.Value,
             CancellationReason.AttendeeRequest);
         var sut = new CancelRegistrationHandler(Environment.RegistrationsDatabase.Context);
 

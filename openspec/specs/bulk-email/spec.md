@@ -38,13 +38,13 @@ Status SHALL be one of: `Pending` (created, not yet picked up), `Resolving` (rec
 
 A `BulkEmailJob.Source` SHALL be exactly one of two discriminated value types: `AttendeeSource` or `ExternalListSource`. There SHALL NOT be a combined / multi-source shape; an organizer who needs to email both registered attendees and an external list SHALL create two separate jobs.
 
-`AttendeeSource` SHALL carry filters consumable by `IRegistrationsFacade.QueryRegistrationsAsync`, including at minimum: `TicketTypeSlugs?` (any-of match), `RegistrationStatus?`, `HasReconfirmed?`, `RegisteredAfter?`/`RegisteredBefore?`, and `AdditionalDetailEquals?` (key/value pairs).
+`AttendeeSource` SHALL carry filters consumable by `IRegistrationsFacade.GetRegistrationsAsync`, including at minimum: `TicketTypeSlugs?` (any-of match), `RegistrationStatus?`, `HasReconfirmed?`, `RegisteredAfter?`/`RegisteredBefore?`, and `AdditionalDetailEquals?` (key/value pairs).
 
 `ExternalListSource` SHALL carry an array of `(Email, DisplayName?)` items supplied at request time. There SHALL NOT be a separate persisted "saved recipient list" entity.
 
 #### Scenario: Attendee source resolves against live Registrations data at job start
 - **WHEN** a job with `AttendeeSource(ticketTypeSlugs=["workshop-a"])` enters `Resolving`
-- **THEN** the resolver calls `IRegistrationsFacade.QueryRegistrationsAsync` with the filters and receives one row per matching registration
+- **THEN** the resolver calls `IRegistrationsFacade.GetRegistrationsAsync` with the filters and receives one row per matching registration
 
 #### Scenario: External list source needs no facade call
 - **WHEN** a job with `ExternalListSource([("alice@x.org","Alice"),("bob@x.org",null)])` enters `Resolving`

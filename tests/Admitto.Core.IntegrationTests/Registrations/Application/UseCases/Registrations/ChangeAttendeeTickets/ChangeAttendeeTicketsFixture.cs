@@ -97,7 +97,7 @@ internal sealed class ChangeAttendeeTicketsFixture
 
     private TicketCatalog MakeCatalog(params (string slug, string name, int max, int used)[] ticketTypes)
     {
-        var catalog = TicketCatalog.Create(EventId);
+        var catalog = TicketCatalog.Create(EventId, TeamId);
         foreach (var (slug, name, max, used) in ticketTypes)
         {
             var id = TicketTypeId.New();

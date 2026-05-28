@@ -7,4 +7,5 @@ namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.
 internal sealed record CancelRegistrationCommand(
     Guid RegistrationId,
     Guid TicketedEventId,
+    Guid TeamId,
     CancellationReason Reason) : Command;

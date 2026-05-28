@@ -33,7 +33,7 @@ public sealed class WaitlistTests
 
     private static TicketType CreateTicketType()
     {
-        var catalog = TicketCatalog.Create(DefaultEventId);
+        var catalog = TicketCatalog.Create(DefaultEventId, TeamId.New());
         catalog.AddTicketType(DefaultTicketTypeId, TicketTypeName.From("Conference Pass"), [], maxCapacity: 100);
         return catalog.TicketTypes.Single(tt => tt.Id == DefaultTicketTypeId);
     }

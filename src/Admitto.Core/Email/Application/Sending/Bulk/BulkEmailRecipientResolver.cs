@@ -44,8 +44,8 @@ internal sealed class BulkEmailRecipientResolver(IRegistrationsFacade registrati
         AttendeeSource source,
         CancellationToken cancellationToken)
     {
-        var rows = await registrationsFacade.QueryRegistrationsAsync(
-            eventId, source.Filter, cancellationToken);
+        var rows = await registrationsFacade.GetRegistrationsAsync(
+            eventId.Value, source.Filter, cancellationToken);
 
         var recipients = new List<BulkEmailRecipient>(rows.Count);
         foreach (var row in rows)

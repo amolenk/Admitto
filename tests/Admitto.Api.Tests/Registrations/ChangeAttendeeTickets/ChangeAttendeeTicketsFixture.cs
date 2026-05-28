@@ -45,7 +45,7 @@ internal sealed class ChangeAttendeeTicketsFixture
             DateTimeOffset.UtcNow.AddDays(61),
             TimeZoneId.From("UTC"));
 
-        var catalog = TicketCatalog.Create(eventId);
+        var catalog = TicketCatalog.Create(eventId, team.Id);
         catalog.AddTicketType(GeneralAdmissionId, TicketTypeName.From("General Admission"), [], 100);
         catalog.AddTicketType(WorkshopId, TicketTypeName.From("Workshop"), [], 20);
 

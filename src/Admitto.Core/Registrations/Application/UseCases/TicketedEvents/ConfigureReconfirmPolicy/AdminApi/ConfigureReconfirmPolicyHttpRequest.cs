@@ -1,0 +1,18 @@
+namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.ConfigureReconfirmPolicy.AdminApi;
+
+public sealed record ConfigureReconfirmPolicyHttpRequest(
+    DateTimeOffset? OpensAt = null,
+    DateTimeOffset? ClosesAt = null,
+    int? CadenceHours = null,
+    int? MinEmailIntervalHours = null,
+    uint? ExpectedVersion = null)
+{
+    internal ConfigureReconfirmPolicyCommand ToCommand(Guid eventId, Guid teamId) => new(
+        eventId,
+        teamId,
+        ExpectedVersion,
+        OpensAt,
+        ClosesAt,
+        CadenceHours,
+        MinEmailIntervalHours);
+}

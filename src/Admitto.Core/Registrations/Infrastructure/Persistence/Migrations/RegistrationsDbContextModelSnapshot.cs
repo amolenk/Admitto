@@ -301,6 +301,10 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
                         .HasColumnType("character varying(320)")
                         .HasColumnName("last_changed_by");
 
+                    b.Property<Guid>("TeamId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("team_id");
+
                     b.Property<uint>("Version")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
@@ -659,7 +663,7 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
 
             modelBuilder.Entity("Amolenk.Admitto.Core.Registrations.Domain.Entities.Waitlist", b =>
                 {
-                    b.OwnsMany("Amolenk.Admitto.Core.Registrations.Domain.Entities.WaitlistCoupon", "WaitlistCoupons", b1 =>
+                    b.OwnsMany("Amolenk.Admitto.Core.Registrations.Domain.Entities.WaitlistCoupon", "Coupons", b1 =>
                         {
                             b1.Property<Guid>("WaitlistId");
 
@@ -722,9 +726,9 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
                                 .HasForeignKey("WaitlistId");
                         });
 
-                    b.Navigation("Entries");
+                    b.Navigation("Coupons");
 
-                    b.Navigation("WaitlistCoupons");
+                    b.Navigation("Entries");
                 });
 #pragma warning restore 612, 618
         }

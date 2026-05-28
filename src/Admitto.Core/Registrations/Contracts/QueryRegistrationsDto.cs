@@ -3,7 +3,7 @@ namespace Amolenk.Admitto.Core.Registrations.Contracts;
 /// <summary>
 /// Reusable filter shape for cross-module registration queries (e.g. used by the
 /// Email module to resolve bulk-email recipients via
-/// <see cref="IRegistrationsFacade.QueryRegistrationsAsync"/>). All filters are
+/// <see cref="IRegistrationsFacade.GetRegistrationsAsync"/>). All filters are
 /// optional; an empty <see cref="QueryRegistrationsDto"/> matches every
 /// registration on the target ticketed event.
 /// </summary>

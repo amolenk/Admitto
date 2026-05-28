@@ -50,7 +50,7 @@ public sealed class BulkEmailRecipientResolverTests
         };
 
         var facade = Substitute.For<IRegistrationsFacade>();
-        facade.QueryRegistrationsAsync(eventId, filter, Arg.Any<CancellationToken>())
+        facade.GetRegistrationsAsync(eventId.Value, filter, Arg.Any<CancellationToken>())
             .Returns(rows);
 
         var resolver = new BulkEmailRecipientResolver(facade);
@@ -61,7 +61,7 @@ public sealed class BulkEmailRecipientResolverTests
 
         // Assert
         await facade.Received(1)
-            .QueryRegistrationsAsync(eventId, filter, Arg.Any<CancellationToken>());
+            .GetRegistrationsAsync(eventId.Value, filter, Arg.Any<CancellationToken>());
         recipients.Count.ShouldBe(2);
 
         var alice = recipients[0];
@@ -105,7 +105,7 @@ public sealed class BulkEmailRecipientResolverTests
     public async Task ResolveAsync_AttendeeSource_NoMatches_ReturnsEmptyList()
     {
         var facade = Substitute.For<IRegistrationsFacade>();
-        facade.QueryRegistrationsAsync(TicketedEventId.New(), default!, default)
+        facade.GetRegistrationsAsync(TicketedEventId.New().Value, default!, default)
             .ReturnsForAnyArgs(Array.Empty<RegistrationListItemDto>());
 
         var resolver = new BulkEmailRecipientResolver(facade);

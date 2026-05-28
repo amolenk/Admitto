@@ -1,6 +1,8 @@
 using Amolenk.Admitto.Core.Registrations.Application.Security;
+using Amolenk.Admitto.Core.Shared.Application.Http;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
+using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendeeSelfService.PublicApi;
@@ -28,17 +30,14 @@ public static class RegisterAttendeeSelfServiceHttpEndpoint
     {
         var bearerToken = ExtractBearerToken(httpRequest);
         if (bearerToken is null)
-            return Results.Problem(
-                detail: "An email-verification token is required for self-service registration.",
-                statusCode: StatusCodes.Status401Unauthorized,
-                extensions: new Dictionary<string, object?> { ["code"] = "email.verification_required" });
+            return Errors.TokenRequired.ToProblemHttpResult();
 
         var claims = verificationTokenService.Validate(bearerToken, TicketedEventId.From(eventId));
         if (claims is null)
-            return Results.Problem(
-                detail: "The email-verification token is invalid or expired.",
-                statusCode: StatusCodes.Status401Unauthorized,
-                extensions: new Dictionary<string, object?> { ["code"] = "email.verification_invalid" });
+            return Errors.TokenInvalid.ToProblemHttpResult();
+
+        if (claims.Email != EmailAddress.From(request.Email))
+            return Errors.EmailMismatch.ToProblemHttpResult();
 
         var command = new RegisterAttendeeSelfServiceCommand(
             eventId,
@@ -63,5 +62,23 @@ public static class RegisterAttendeeSelfServiceHttpEndpoint
         if (authHeader is null || !authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
             return null;
         return authHeader["Bearer ".Length..].Trim();
+    }
+
+    private static class Errors
+    {
+        public static readonly Error TokenRequired = new(
+            "email.verification_required",
+            "An email-verification token is required for self-service registration.",
+            Type: ErrorType.Unauthorized);
+
+        public static readonly Error TokenInvalid = new(
+            "email.verification_invalid",
+            "The email-verification token is invalid or expired.",
+            Type: ErrorType.Unauthorized);
+
+        public static readonly Error EmailMismatch = new(
+            "email.verification_mismatch",
+            "The provided email does not match the verification token.",
+            Type: ErrorType.Unauthorized);
     }
 }

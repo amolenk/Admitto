@@ -12,16 +12,18 @@ public sealed class BadgesEvent : Entity<TicketedEventId>
 {
     private BadgesEvent() { }
 
-    private BadgesEvent(TicketedEventId eventId, BadgeEventStatus status)
+    private BadgesEvent(TicketedEventId eventId, TeamId teamId, BadgeEventStatus status)
         : base(eventId)
     {
+        TeamId = teamId;
         Status = status;
     }
 
+    public TeamId TeamId { get; private set; }
     public BadgeEventStatus Status { get; private set; }
 
-    public static BadgesEvent Create(TicketedEventId eventId)
-        => new(eventId, BadgeEventStatus.Active);
+    public static BadgesEvent Create(TicketedEventId eventId, TeamId teamId)
+        => new(eventId, teamId, BadgeEventStatus.Active);
 
     public void MarkArchived()
     {

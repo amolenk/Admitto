@@ -26,6 +26,7 @@ public static class SelfCancelRegistrationHttpEndpoint
         var command = new CancelRegistrationCommand(
             registrationId,
             eventId,
+            teamId,
             CancellationReason.AttendeeRequest);
 
         await handler.HandleAsync(command, cancellationToken);

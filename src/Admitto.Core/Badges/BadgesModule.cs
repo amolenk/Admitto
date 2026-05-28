@@ -1,11 +1,11 @@
-using Amolenk.Admitto.Core.Badges.Application.UseCases.BadgeTypeManagement.AddBadgeType.AdminApi;
-using Amolenk.Admitto.Core.Badges.Application.UseCases.BadgeTypeManagement.DeleteBadgeType.AdminApi;
-using Amolenk.Admitto.Core.Badges.Application.UseCases.BadgeTypeManagement.ListBadgeTypes.AdminApi;
-using Amolenk.Admitto.Core.Badges.Application.UseCases.BadgeTypeManagement.RenameBadgeType.AdminApi;
-using Amolenk.Admitto.Core.Badges.Application.UseCases.BadgeInstanceManagement.AddBadgeInstance.AdminApi;
-using Amolenk.Admitto.Core.Badges.Application.UseCases.BadgeInstanceManagement.DeleteBadgeInstance.AdminApi;
-using Amolenk.Admitto.Core.Badges.Application.UseCases.BadgeInstanceManagement.ListBadgeInstances.AdminApi;
-using Amolenk.Admitto.Core.Badges.Application.UseCases.BadgeInstanceManagement.UpdateBadgeInstance.AdminApi;
+using Amolenk.Admitto.Core.Badges.Application.UseCases.BadgeTypes.AddBadgeType.AdminApi;
+using Amolenk.Admitto.Core.Badges.Application.UseCases.BadgeTypes.DeleteBadgeType.AdminApi;
+using Amolenk.Admitto.Core.Badges.Application.UseCases.BadgeTypes.ListBadgeTypes.AdminApi;
+using Amolenk.Admitto.Core.Badges.Application.UseCases.BadgeTypes.RenameBadgeType.AdminApi;
+using Amolenk.Admitto.Core.Badges.Application.UseCases.BadgeInstances.AddBadgeInstance.AdminApi;
+using Amolenk.Admitto.Core.Badges.Application.UseCases.BadgeInstances.DeleteBadgeInstance.AdminApi;
+using Amolenk.Admitto.Core.Badges.Application.UseCases.BadgeInstances.ListBadgeInstances.AdminApi;
+using Amolenk.Admitto.Core.Badges.Application.UseCases.BadgeInstances.UpdateBadgeInstance.AdminApi;
 using Amolenk.Admitto.Core.Badges.Application.UseCases.BadgeExport.ExportBadgeCsv.AdminApi;
 
 namespace Amolenk.Admitto.Core.Badges;

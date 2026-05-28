@@ -78,7 +78,7 @@ internal sealed class GetQRCodeFixture
             OtherEventId = otherEvent.Id.Value;
         }
 
-        var primaryCatalog = TicketCatalog.Create(primaryEvent.Id);
+        var primaryCatalog = TicketCatalog.Create(primaryEvent.Id, team.Id);
         primaryCatalog.AddTicketType(
             TicketTypeId, TicketTypeName.From("General Admission"), [], 100);
 
@@ -114,7 +114,7 @@ internal sealed class GetQRCodeFixture
             if (otherEvent is not null)
             {
                 db.TicketedEvents.Add(otherEvent);
-                var otherCatalog = TicketCatalog.Create(otherEvent.Id);
+                var otherCatalog = TicketCatalog.Create(otherEvent.Id, team.Id);
                 otherCatalog.AddTicketType(
                     TicketTypeId, TicketTypeName.From("General Admission"), [], 100);
                 db.TicketCatalogs.Add(otherCatalog);

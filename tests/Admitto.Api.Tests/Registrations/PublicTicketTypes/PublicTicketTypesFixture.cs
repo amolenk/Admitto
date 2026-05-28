@@ -46,7 +46,7 @@ internal sealed class PublicTicketTypesFixture
             DateTimeOffset.UtcNow.AddDays(-1),
             DateTimeOffset.UtcNow.AddDays(30)));
 
-        var catalog = TicketCatalog.Create(eventId);
+        var catalog = TicketCatalog.Create(eventId, team.Id);
         configureCatalog?.Invoke(catalog);
 
         await environment.OrganizationDatabase.SeedAsync(db =>

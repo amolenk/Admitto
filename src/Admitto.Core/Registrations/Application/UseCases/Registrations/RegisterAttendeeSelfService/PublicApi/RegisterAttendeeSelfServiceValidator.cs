@@ -8,6 +8,9 @@ public sealed class RegisterAttendeeSelfServiceValidator : AbstractValidator<Reg
 {
     public RegisterAttendeeSelfServiceValidator()
     {
+        RuleFor(x => x.Email)
+            .MustBeParseable(EmailAddress.TryFrom);
+
         RuleFor(x => x.FirstName)
             .MustBeParseable(FirstName.TryFrom);
 

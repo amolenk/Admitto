@@ -26,6 +26,7 @@ public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBas
         {
             Content = JsonContent.Create(new
             {
+                Email = SelfRegisterFixture.AttendeeEmail,
                 FirstName = "Dave",
                 LastName = "Smith",
                 TicketTypeIds = new[] { SelfRegisterFixture.TicketTypeId.Value }
@@ -50,6 +51,7 @@ public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBas
             fixture.RegisterRoute,
             new
             {
+                Email = SelfRegisterFixture.AttendeeEmail,
                 FirstName = "Dave",
                 LastName = "Smith",
                 TicketTypeIds = new[] { SelfRegisterFixture.TicketTypeId.Value }
@@ -71,6 +73,7 @@ public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBas
         {
             Content = JsonContent.Create(new
             {
+                Email = SelfRegisterFixture.AttendeeEmail,
                 FirstName = "Dave",
                 LastName = "Smith",
                 TicketTypeIds = new[] { SelfRegisterFixture.TicketTypeId.Value }
@@ -107,7 +110,7 @@ public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBas
         secondEvent.ConfigureRegistrationPolicy(TicketedEventRegistrationPolicy.Create(
             DateTimeOffset.UtcNow.AddDays(-1),
             DateTimeOffset.UtcNow.AddDays(30)));
-        var secondCatalog = TicketCatalog.Create(secondEventId);
+        var secondCatalog = TicketCatalog.Create(secondEventId, fixture.TeamId);
         secondCatalog.AddTicketType(TicketTypeId.From(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")), TicketTypeName.From("General Admission"), [], 100);
         await Environment.RegistrationsDatabase.SeedAsync(db =>
         {
@@ -122,6 +125,7 @@ public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBas
         {
             Content = JsonContent.Create(new
             {
+                Email = SelfRegisterFixture.AttendeeEmail,
                 FirstName = "Dave",
                 LastName = "Smith",
                 TicketTypeIds = new[] { SelfRegisterFixture.TicketTypeId.Value }
@@ -148,6 +152,7 @@ public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBas
         {
             Content = JsonContent.Create(new
             {
+                Email = SelfRegisterFixture.AttendeeEmail,
                 FirstName = "Dave",
                 LastName = "Smith",
                 TicketTypeIds = new[] { SelfRegisterFixture.TicketTypeId.Value }

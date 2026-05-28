@@ -16,7 +16,9 @@ public class TicketCatalog : Aggregate<TicketedEventId>
 
     private TicketCatalog() { }
 
-    private TicketCatalog(TicketedEventId id) : base(id) { }
+    private TicketCatalog(TicketedEventId id, TeamId teamId) : base(id) { TeamId = teamId; }
+
+    public TeamId TeamId { get; private set; }
 
     public IReadOnlyList<TicketType> TicketTypes => _ticketTypes.AsReadOnly();
 
@@ -29,7 +31,7 @@ public class TicketCatalog : Aggregate<TicketedEventId>
     /// </summary>
     public EventLifecycleStatus EventStatus { get; private set; } = EventLifecycleStatus.Active;
 
-    public static TicketCatalog Create(TicketedEventId eventId) => new(eventId);
+    public static TicketCatalog Create(TicketedEventId eventId, TeamId teamId) => new(eventId, teamId);
 
     /// <summary>
     /// Transitions <see cref="EventStatus"/> to <see cref="EventLifecycleStatus.Archived"/>.

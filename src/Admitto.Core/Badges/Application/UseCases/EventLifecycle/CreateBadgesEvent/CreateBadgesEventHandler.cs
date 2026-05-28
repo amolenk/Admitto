@@ -10,11 +10,12 @@ internal sealed class CreateBadgesEventHandler(IBadgesWriteStore writeStore)
     public async ValueTask HandleAsync(CreateBadgesEventCommand command, CancellationToken cancellationToken)
     {
         var eventId = TicketedEventId.From(command.EventId);
+        var teamId = TeamId.From(command.TeamId);
 
         var existing = await writeStore.BadgesEvents.FindAsync([eventId], cancellationToken);
         if (existing is not null) return;
 
-        var badgesEvent = BadgesEvent.Create(eventId);
+        var badgesEvent = BadgesEvent.Create(eventId, teamId);
         writeStore.BadgesEvents.Add(badgesEvent);
     }
 }

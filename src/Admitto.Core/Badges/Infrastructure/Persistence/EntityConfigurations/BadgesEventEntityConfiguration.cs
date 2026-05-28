@@ -15,6 +15,10 @@ public class BadgesEventEntityConfiguration : IEntityTypeConfiguration<BadgesEve
             .IsRequired()
             .ValueGeneratedNever();
 
+        builder.Property(e => e.TeamId)
+            .HasColumnName("team_id")
+            .IsRequired();
+
         builder.Property(e => e.Status)
             .HasColumnName("status")
             .HasConversion<int>()

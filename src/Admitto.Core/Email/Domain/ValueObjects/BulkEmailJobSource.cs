@@ -14,7 +14,7 @@ namespace Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 public abstract record BulkEmailJobSource;
 
 /// <summary>
-/// Resolves recipients via <c>IRegistrationsFacade.QueryRegistrationsAsync</c>.
+/// Resolves recipients via <c>IRegistrationsFacade.GetRegistrationsAsync</c>.
 /// </summary>
 public sealed record AttendeeSource(QueryRegistrationsDto Filter) : BulkEmailJobSource;
 

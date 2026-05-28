@@ -11,7 +11,7 @@ internal sealed class TicketedEventCreatedIntegrationEventHandler(
         TicketedEventCreatedIntegrationEvent integrationEvent,
         CancellationToken cancellationToken)
     {
-        var command = new CreateBadgesEventCommand(integrationEvent.TicketedEventId);
+        var command = new CreateBadgesEventCommand(integrationEvent.TicketedEventId, integrationEvent.TeamId);
 
         return handler.HandleAsync(command, cancellationToken);
     }

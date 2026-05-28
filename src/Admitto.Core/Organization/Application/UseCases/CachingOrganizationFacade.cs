@@ -5,8 +5,8 @@ namespace Amolenk.Admitto.Core.Organization.Application.UseCases;
 internal class CachingOrganizationFacade(IOrganizationFacade innerFacade)
     : IOrganizationFacade
 {
-    public ValueTask<Guid?> ValidateApiKeyAsync(
+    public ValueTask<Guid?> LookupApiKeyOwnerAsync(
         string keyHash,
         CancellationToken cancellationToken = default) =>
-        innerFacade.ValidateApiKeyAsync(keyHash, cancellationToken);
+        innerFacade.LookupApiKeyOwnerAsync(keyHash, cancellationToken);
 }

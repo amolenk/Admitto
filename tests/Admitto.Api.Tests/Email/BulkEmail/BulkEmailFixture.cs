@@ -97,7 +97,7 @@ internal sealed class BulkEmailFixture
                 DateTimeOffset.UtcNow.AddDays(-1),
                 DateTimeOffset.UtcNow.AddDays(30)));
 
-        var catalog = TicketCatalog.Create(EventId);
+        var catalog = TicketCatalog.Create(EventId, team.Id);
         catalog.AddTicketType(TicketTypeId, TicketTypeName.From("General Admission"), [], 100);
 
         // Seed registrations directly via the aggregate so we control state

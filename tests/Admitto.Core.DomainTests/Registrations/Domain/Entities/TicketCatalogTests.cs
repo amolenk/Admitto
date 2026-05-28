@@ -11,12 +11,13 @@ namespace Amolenk.Admitto.Core.Registrations.Domain.Tests.Entities;
 public sealed class TicketCatalogTests
 {
     private static readonly TicketedEventId DefaultEventId = TicketedEventId.New();
+    private static readonly TeamId DefaultTeamId = TeamId.New();
 
     [TestMethod]
     public void AddTicketType_ActiveEvent_AddsSuccessfully()
     {
         // Arrange
-        var sut = TicketCatalog.Create(DefaultEventId);
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
 
         // Act
@@ -39,7 +40,7 @@ public sealed class TicketCatalogTests
     public void AddTicketType_NoCapacity_SetsNullMaxCapacity()
     {
         // Arrange
-        var sut = TicketCatalog.Create(DefaultEventId);
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
 
         // Act
         sut.AddTicketType(
@@ -56,7 +57,7 @@ public sealed class TicketCatalogTests
     public void AddTicketType_DuplicateName_Throws()
     {
         // Arrange
-        var sut = TicketCatalog.Create(DefaultEventId);
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         sut.AddTicketType(TicketTypeId.New(), TicketTypeName.From("VIP"), [], 100);
 
         // Act
@@ -71,7 +72,7 @@ public sealed class TicketCatalogTests
     public void UpdateTicketType_Capacity_Updates()
     {
         // Arrange
-        var sut = TicketCatalog.Create(DefaultEventId);
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("VIP"), [], 100);
 
@@ -86,7 +87,7 @@ public sealed class TicketCatalogTests
     public void UpdateTicketType_Name_Updates()
     {
         // Arrange
-        var sut = TicketCatalog.Create(DefaultEventId);
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("VIP"), [], 100);
 
@@ -101,7 +102,7 @@ public sealed class TicketCatalogTests
     public void UpdateTicketType_NotFound_Throws()
     {
         // Arrange
-        var sut = TicketCatalog.Create(DefaultEventId);
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var unknownId = TicketTypeId.New();
 
         // Act
@@ -116,7 +117,7 @@ public sealed class TicketCatalogTests
     public void Claim_Enforce_AvailableCapacity_Increments()
     {
         // Arrange
-        var sut = TicketCatalog.Create(DefaultEventId);
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("General"), [], 10);
 
@@ -131,7 +132,7 @@ public sealed class TicketCatalogTests
     public void Claim_Enforce_AtCapacity_Throws()
     {
         // Arrange
-        var sut = TicketCatalog.Create(DefaultEventId);
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("General"), [], 1);
         sut.Claim([id], enforce: true);
@@ -147,7 +148,7 @@ public sealed class TicketCatalogTests
     public void Claim_Enforce_NullCapacity_SelfServiceEnabled_Succeeds()
     {
         // Arrange — null capacity + self-service enabled means unlimited self-service
-        var sut = TicketCatalog.Create(DefaultEventId);
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("Speaker"), [], null, selfServiceEnabled: true);
 
@@ -162,7 +163,7 @@ public sealed class TicketCatalogTests
     public void Claim_Uncapped_AlwaysIncrements()
     {
         // Arrange
-        var sut = TicketCatalog.Create(DefaultEventId);
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("VIP"), [], 1);
         sut.Claim([id], enforce: false); // at capacity
@@ -178,7 +179,7 @@ public sealed class TicketCatalogTests
     public void Claim_MultipleIds_AllIncrement()
     {
         // Arrange
-        var sut = TicketCatalog.Create(DefaultEventId);
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var idA = TicketTypeId.New();
         var idB = TicketTypeId.New();
         sut.AddTicketType(idA, TicketTypeName.From("A"), [], 10);
@@ -196,7 +197,7 @@ public sealed class TicketCatalogTests
     public void Claim_UnknownId_Throws()
     {
         // Arrange
-        var sut = TicketCatalog.Create(DefaultEventId);
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var knownId = TicketTypeId.New();
         var unknownId = TicketTypeId.New();
         sut.AddTicketType(knownId, TicketTypeName.From("Known"), [], 10);
@@ -212,7 +213,7 @@ public sealed class TicketCatalogTests
     public void GetTicketType_Exists_Returns()
     {
         // Arrange
-        var sut = TicketCatalog.Create(DefaultEventId);
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("VIP"), [], 100);
 
@@ -228,7 +229,7 @@ public sealed class TicketCatalogTests
     public void GetTicketType_NotExists_ReturnsNull()
     {
         // Arrange
-        var sut = TicketCatalog.Create(DefaultEventId);
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var unknownId = TicketTypeId.New();
 
         // Act
@@ -242,7 +243,7 @@ public sealed class TicketCatalogTests
     public void NewCatalog_EventStatusIsActive()
     {
         // Arrange
-        var sut = TicketCatalog.Create(DefaultEventId);
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
 
         // Assert
         sut.EventStatus.ShouldBe(EventLifecycleStatus.Active);
@@ -252,7 +253,7 @@ public sealed class TicketCatalogTests
     public void MarkEventArchived_FromActive_Transitions()
     {
         // Arrange
-        var sut = TicketCatalog.Create(DefaultEventId);
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
 
         // Act
         sut.MarkEventArchived();
@@ -265,7 +266,7 @@ public sealed class TicketCatalogTests
     public void MarkEventArchived_AlreadyArchived_IsIdempotent()
     {
         // Arrange
-        var sut = TicketCatalog.Create(DefaultEventId);
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         sut.MarkEventArchived();
 
         // Act
@@ -279,7 +280,7 @@ public sealed class TicketCatalogTests
     public void Claim_EventArchived_Throws()
     {
         // Arrange
-        var sut = TicketCatalog.Create(DefaultEventId);
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("General"), [], 10);
         sut.MarkEventArchived();
@@ -295,7 +296,7 @@ public sealed class TicketCatalogTests
     public void AddTicketType_EventArchived_Throws()
     {
         // Arrange
-        var sut = TicketCatalog.Create(DefaultEventId);
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         sut.MarkEventArchived();
 
         // Act
@@ -310,7 +311,7 @@ public sealed class TicketCatalogTests
     public void Release_MatchingIds_DecrementsUsedCapacity()
     {
         // Arrange
-        var sut = TicketCatalog.Create(DefaultEventId);
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("General"), [], 10);
         sut.Claim([id], enforce: true);
@@ -327,7 +328,7 @@ public sealed class TicketCatalogTests
     public void Release_UnknownId_IsSilentlySkipped()
     {
         // Arrange
-        var sut = TicketCatalog.Create(DefaultEventId);
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var knownId = TicketTypeId.New();
         var unknownId = TicketTypeId.New();
         sut.AddTicketType(knownId, TicketTypeName.From("Known"), [], 10);
@@ -344,7 +345,7 @@ public sealed class TicketCatalogTests
     public void Release_MultipleIds_AllDecrement()
     {
         // Arrange
-        var sut = TicketCatalog.Create(DefaultEventId);
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var idA = TicketTypeId.New();
         var idB = TicketTypeId.New();
         sut.AddTicketType(idA, TicketTypeName.From("A"), [], 10);
@@ -363,7 +364,7 @@ public sealed class TicketCatalogTests
     public void Claim_DuplicateIds_Throws()
     {
         // Arrange
-        var sut = TicketCatalog.Create(DefaultEventId);
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("General"), [], 10);
 
@@ -378,7 +379,7 @@ public sealed class TicketCatalogTests
     public void Claim_OverlappingTimeSlots_Throws()
     {
         // Arrange
-        var sut = TicketCatalog.Create(DefaultEventId);
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var idA = TicketTypeId.New();
         var idB = TicketTypeId.New();
         sut.AddTicketType(idA, TicketTypeName.From("Workshop A"),
@@ -397,7 +398,7 @@ public sealed class TicketCatalogTests
     public void Claim_EmptyList_IsNoOp()
     {
         // Arrange
-        var sut = TicketCatalog.Create(DefaultEventId);
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("General"), [], 10);
 
@@ -412,7 +413,7 @@ public sealed class TicketCatalogTests
     public void Claim_Enforce_NonSelfServiceTicketType_Throws()
     {
         // Arrange
-        var sut = TicketCatalog.Create(DefaultEventId);
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("VIP"), [], 50, selfServiceEnabled: false);
 
@@ -427,7 +428,7 @@ public sealed class TicketCatalogTests
     public void Claim_NoEnforce_NonSelfServiceTicketType_Succeeds()
     {
         // Arrange — admin/coupon bypass: enforce=false skips self-service check
-        var sut = TicketCatalog.Create(DefaultEventId);
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("VIP"), [], 50, selfServiceEnabled: false);
 
@@ -444,7 +445,7 @@ public sealed class TicketCatalogTests
     public void Claim_Enforce_LastSlotWithWaitlistEnabled_ActivatesWaitlistMode()
     {
         // Arrange — capacity of 2, sell first slot, then the second (last) slot
-        var sut = TicketCatalog.Create(DefaultEventId);
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("General"), [], 2, waitlistEnabled: true);
         sut.Claim([id], enforce: true);
@@ -464,7 +465,7 @@ public sealed class TicketCatalogTests
     public void Claim_Enforce_LastSlotWithWaitlistDisabled_DoesNotActivateWaitlistMode()
     {
         // Arrange
-        var sut = TicketCatalog.Create(DefaultEventId);
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("General"), [], 1, waitlistEnabled: false);
 
@@ -480,7 +481,7 @@ public sealed class TicketCatalogTests
     public void Claim_NoEnforce_LastSlotWithWaitlistEnabled_DoesNotActivateWaitlistMode()
     {
         // Admin/coupon path bypasses waitlist mode activation
-        var sut = TicketCatalog.Create(DefaultEventId);
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("General"), [], 1, waitlistEnabled: true);
 
@@ -496,7 +497,7 @@ public sealed class TicketCatalogTests
     public void UpdateTicketType_EnableWaitlistOnSoldOutType_ActivatesWaitlistModeImmediately()
     {
         // Arrange — fully sold out before enabling waitlist
-        var sut = TicketCatalog.Create(DefaultEventId);
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("General"), [], 2);
         sut.Claim([id], enforce: false);
@@ -518,7 +519,7 @@ public sealed class TicketCatalogTests
     public void UpdateTicketType_EnableWaitlistOnPartiallyFilledType_DoesNotActivateWaitlistMode()
     {
         // Arrange — one slot still available
-        var sut = TicketCatalog.Create(DefaultEventId);
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("General"), [], 2);
         sut.Claim([id], enforce: false);
@@ -535,7 +536,7 @@ public sealed class TicketCatalogTests
     public void UpdateTicketType_DisableWaitlistWhileInWaitlistMode_ForcesDisableAndRaisesEvent()
     {
         // Arrange — waitlist mode active
-        var sut = TicketCatalog.Create(DefaultEventId);
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("General"), [], 1, waitlistEnabled: true);
         sut.Claim([id], enforce: true); // fills capacity → WaitlistMode activates
@@ -556,7 +557,7 @@ public sealed class TicketCatalogTests
     public void UpdateTicketType_RemoveCapacityLimitWithWaitlistEnabled_ForcesDisableAndRaisesEvent()
     {
         // Removing the capacity bound requires force-disabling waitlist
-        var sut = TicketCatalog.Create(DefaultEventId);
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("General"), [], 10, waitlistEnabled: true);
 
@@ -577,7 +578,7 @@ public sealed class TicketCatalogTests
     public void UpdateTicketType_CapacityIncreaseWhileInWaitlistMode_RaisesWaitlistCapacityFreedEvent()
     {
         // Arrange — sold out and in WaitlistMode
-        var sut = TicketCatalog.Create(DefaultEventId);
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("General"), [], 1, waitlistEnabled: true);
         sut.Claim([id], enforce: true); // fills to capacity → WaitlistMode on
@@ -597,7 +598,7 @@ public sealed class TicketCatalogTests
     public void AddTicketType_WaitlistEnabledWithoutCapacity_Throws()
     {
         // Arrange
-        var sut = TicketCatalog.Create(DefaultEventId);
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
 
         // Act
@@ -612,7 +613,7 @@ public sealed class TicketCatalogTests
     public void ReEvaluateWaitlistMode_AllConditionsMet_ClearsWaitlistMode()
     {
         // Arrange — in WaitlistMode but capacity is now available
-        var sut = TicketCatalog.Create(DefaultEventId);
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("General"), [], 2, waitlistEnabled: true);
         sut.Claim([id], enforce: true);
@@ -630,7 +631,7 @@ public sealed class TicketCatalogTests
     public void ReEvaluateWaitlistMode_StillAtCapacity_KeepsWaitlistMode()
     {
         // Arrange — WaitlistMode on, at capacity
-        var sut = TicketCatalog.Create(DefaultEventId);
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("General"), [], 1, waitlistEnabled: true);
         sut.Claim([id], enforce: true); // WaitlistMode on
@@ -646,7 +647,7 @@ public sealed class TicketCatalogTests
     public void ReEvaluateWaitlistMode_ActiveEntriesRemaining_KeepsWaitlistMode()
     {
         // Arrange — capacity freed but entries still in queue
-        var sut = TicketCatalog.Create(DefaultEventId);
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("General"), [], 2, waitlistEnabled: true);
         sut.Claim([id], enforce: true);
@@ -664,7 +665,7 @@ public sealed class TicketCatalogTests
     public void ReEvaluateWaitlistMode_IssuedCouponsRemaining_KeepsWaitlistMode()
     {
         // Arrange — capacity freed but coupon still outstanding
-        var sut = TicketCatalog.Create(DefaultEventId);
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("General"), [], 2, waitlistEnabled: true);
         sut.Claim([id], enforce: true);
@@ -682,7 +683,7 @@ public sealed class TicketCatalogTests
     public void TryDeactivateWaitlistMode_WhenCapacityAvailable_ClearsWaitlistMode()
     {
         // Arrange — sold out → WaitlistMode on, then one slot freed
-        var sut = TicketCatalog.Create(DefaultEventId);
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("General"), [], 2, waitlistEnabled: true);
         sut.Claim([id], enforce: true);
@@ -700,7 +701,7 @@ public sealed class TicketCatalogTests
     public void TryDeactivateWaitlistMode_WhenAtCapacity_DoesNotClearWaitlistMode()
     {
         // Arrange — sold out → WaitlistMode on, still at capacity
-        var sut = TicketCatalog.Create(DefaultEventId);
+        var sut = TicketCatalog.Create(DefaultEventId, DefaultTeamId);
         var id = TicketTypeId.New();
         sut.AddTicketType(id, TicketTypeName.From("General"), [], 1, waitlistEnabled: true);
         sut.Claim([id], enforce: true); // WaitlistMode on, UsedCapacity == MaxCapacity

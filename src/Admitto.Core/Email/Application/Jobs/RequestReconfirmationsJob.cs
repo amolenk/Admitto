@@ -49,8 +49,8 @@ internal sealed class RequestReconfirmationsJob(
         int.TryParse(minIntervalRaw, out var minEmailIntervalHours);
 
         var now = timeProvider.GetUtcNow();
-        var candidates = await registrationsFacade.QueryRegistrationsAsync(
-            ticketedEventId,
+        var candidates = await registrationsFacade.GetRegistrationsAsync(
+            ticketedEventId.Value,
             new QueryRegistrationsDto(
                 RegistrationStatus: RegistrationStatus.Registered,
                 HasReconfirmed: false),

@@ -84,7 +84,7 @@ internal sealed class BadgesApiFixture
             DateTimeOffset.UtcNow.AddDays(61),
             TimeZoneId.From("UTC"));
 
-        var catalog = TicketCatalog.Create(eventId);
+        var catalog = TicketCatalog.Create(eventId, team.Id);
         catalog.AddTicketType(TicketTypeId.From(TicketTypeAId), TicketTypeName.From("General Admission"), [], 100);
         catalog.AddTicketType(TicketTypeId.From(TicketTypeBId), TicketTypeName.From("VIP"), [], 50);
 
@@ -106,7 +106,7 @@ internal sealed class BadgesApiFixture
             return reg;
         }).ToList();
 
-        var badgesEvent = BadgesEvent.Create(eventId);
+        var badgesEvent = BadgesEvent.Create(eventId, team.Id);
         if (_archived)
             badgesEvent.MarkArchived();
 

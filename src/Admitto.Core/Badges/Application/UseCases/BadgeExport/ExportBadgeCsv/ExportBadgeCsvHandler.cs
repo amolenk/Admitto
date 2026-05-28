@@ -4,6 +4,7 @@ using Amolenk.Admitto.Core.Badges.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
+using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Humanizer;
 
 namespace Amolenk.Admitto.Core.Badges.Application.UseCases.BadgeExport.ExportBadgeCsv;
@@ -18,6 +19,12 @@ internal sealed class ExportBadgeCsvHandler(
         CancellationToken cancellationToken)
     {
         var eventId = TicketedEventId.From(query.EventId);
+        var teamId = TeamId.From(query.TeamId);
+
+        await writeStore.BadgesEvents.GetUntrackedAsync(
+            e => e.Id == eventId && e.TeamId == teamId,
+            cancellationToken);
+
         var badgeTypeId = BadgeTypeId.From(query.BadgeTypeId);
 
         var badgeType = await writeStore.BadgeTypes.GetUntrackedAsync(
@@ -58,17 +65,19 @@ internal sealed class ExportBadgeCsvHandler(
         BadgeType badgeType,
         CancellationToken cancellationToken)
     {
-        var ticketTypeIds = badgeType.TicketTypeIds
-            .Select(id => TicketTypeId.From(id.Value))
+        var ticketTypeGuids = badgeType.TicketTypeIds
+            .Select(id => id.Value)
             .ToList();
 
-        var registrations = await registrationsFacade.QueryRegistrationsForBadgeExportAsync(
-            eventId,
-            ticketTypeIds,
+        var registrations = await registrationsFacade.GetRegistrationsAsync(
+            eventId.Value,
+            new QueryRegistrationsDto(
+                RegistrationStatus: RegistrationStatus.Registered,
+                TicketTypeIds: ticketTypeGuids),
             cancellationToken);
 
         var schemaFields = await registrationsFacade.GetAdditionalDetailSchemaAsync(
-            eventId,
+            eventId.Value,
             cancellationToken);
 
         var sb = new StringBuilder();

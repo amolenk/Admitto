@@ -52,7 +52,7 @@ internal sealed class SelfRegisterFixture
             DateTimeOffset.UtcNow.AddDays(-1),
             DateTimeOffset.UtcNow.AddDays(30)));
 
-        var catalog = TicketCatalog.Create(eventId);
+        var catalog = TicketCatalog.Create(eventId, team.Id);
         catalog.AddTicketType(TicketTypeId, TicketTypeName.From("General Admission"), [], 100,
             selfServiceEnabled: selfServiceEnabled);
 

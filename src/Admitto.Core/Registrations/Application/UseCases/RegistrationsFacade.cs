@@ -1,15 +1,16 @@
 using GetRegistrationsNs = Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.GetRegistrations;
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEventManagement.GetActiveReconfirmTriggerSpecs;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEventManagement.GetReconfirmTriggerSpec;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEventManagement.GetTicketedEventEmailContext;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.GetActiveReconfirmTriggerSpecs;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.GetReconfirmTriggerSpec;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.GetTicketedEventEmailContext;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
+using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases;
 
 internal sealed class RegistrationsFacade(
-    IQueryHandler<GetTicketedEventEmailContextQuery, TicketedEventEmailContextDto> getEmailContextHandler,
+    IQueryHandler<GetTicketedEventEmailContextQuery, EventRegistrationSnapshotDto> getEmailContextHandler,
     IQueryHandler<GetRegistrationsNs.GetRegistrationsQuery, IReadOnlyList<GetRegistrationsNs.RegistrationListItemDto>?>
         getRegistrationsHandler,
     IQueryHandler<GetReconfirmTriggerSpecQuery, ReconfirmTriggerSpecDto?> getReconfirmTriggerSpecHandler,
@@ -17,7 +18,7 @@ internal sealed class RegistrationsFacade(
         getActiveReconfirmTriggerSpecsHandler,
     IRegistrationsWriteStore writeStore) : IRegistrationsFacade
 {
-    public async ValueTask<TicketedEventEmailContextDto> GetTicketedEventEmailContextAsync(
+    public async ValueTask<EventRegistrationSnapshotDto> GetEventRegistrationSnapshotAsync(
         Guid ticketedEventId,
         Guid registrationId,
         CancellationToken cancellationToken = default)
@@ -27,18 +28,20 @@ internal sealed class RegistrationsFacade(
             cancellationToken);
     }
 
-    public async Task<IReadOnlyList<RegistrationListItemDto>> QueryRegistrationsAsync(
-        TicketedEventId eventId,
+    public async Task<IReadOnlyList<RegistrationListItemDto>> GetRegistrationsAsync(
+        Guid eventId,
         QueryRegistrationsDto query,
         CancellationToken cancellationToken = default)
     {
+        var ticketedEventId = TicketedEventId.From(eventId);
+
         var result = await getRegistrationsHandler.HandleAsync(
-            new GetRegistrationsNs.GetRegistrationsQuery(eventId, Filter: query),
+            new GetRegistrationsNs.GetRegistrationsQuery(ticketedEventId, Filter: query),
             cancellationToken);
 
         var catalog = await writeStore.TicketCatalogs
             .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Id == eventId, cancellationToken);
+            .FirstOrDefaultAsync(c => c.Id == ticketedEventId, cancellationToken);
 
         var maxAttemptsByTypeId = catalog?.TicketTypes
             .Where(t => t.MaxReconfirmAttempts.HasValue)
@@ -72,11 +75,11 @@ internal sealed class RegistrationsFacade(
     }
 
     public async Task<ReconfirmTriggerSpecDto?> GetReconfirmTriggerSpecAsync(
-        TicketedEventId eventId,
+        Guid eventId,
         CancellationToken cancellationToken = default)
     {
         return await getReconfirmTriggerSpecHandler.HandleAsync(
-            new GetReconfirmTriggerSpecQuery(eventId.Value),
+            new GetReconfirmTriggerSpecQuery(eventId),
             cancellationToken);
     }
 
@@ -88,37 +91,15 @@ internal sealed class RegistrationsFacade(
             cancellationToken);
     }
 
-    public async Task<IReadOnlyList<BadgeExportRegistrationDto>> QueryRegistrationsForBadgeExportAsync(
-        TicketedEventId eventId,
-        IReadOnlyList<TicketTypeId> ticketTypeIds,
-        CancellationToken cancellationToken = default)
-    {
-        var typedIds = ticketTypeIds.ToArray();
-
-        var registrations = await writeStore.Registrations
-            .AsNoTracking()
-            .Where(r =>
-                r.EventId == eventId &&
-                r.Status == RegistrationStatus.Registered &&
-                r.Tickets.Any(t => typedIds.Contains(t.Id)))
-            .ToListAsync(cancellationToken);
-
-        return registrations
-            .Select(r => new BadgeExportRegistrationDto(
-                r.FirstName.Value,
-                r.LastName.Value,
-                r.Email.Value,
-                r.AdditionalDetails.ToDictionary(kvp => kvp.Key, kvp => kvp.Value)))
-            .ToList();
-    }
-
     public async Task<IReadOnlyList<AdditionalDetailFieldDto>> GetAdditionalDetailSchemaAsync(
-        TicketedEventId eventId,
+        Guid eventId,
         CancellationToken cancellationToken = default)
     {
+        var ticketedEventId = TicketedEventId.From(eventId);
+
         var ticketedEvent = await writeStore.TicketedEvents
             .AsNoTracking()
-            .FirstOrDefaultAsync(e => e.Id == eventId, cancellationToken);
+            .FirstOrDefaultAsync(e => e.Id == ticketedEventId, cancellationToken);
 
         if (ticketedEvent is null)
             return [];

@@ -95,7 +95,7 @@ internal sealed class AdminEmailTemplatesFixture
             DateTimeOffset.UtcNow.AddDays(61),
                 TimeZoneId.From("UTC"));
 
-        var catalog = TicketCatalog.Create(eventId);
+        var catalog = TicketCatalog.Create(eventId, team.Id);
         catalog.AddTicketType(TicketTypeId.From(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")), TicketTypeName.From("General"), [], 100);
 
         await environment.OrganizationDatabase.SeedAsync(db => db.Teams.Add(team));

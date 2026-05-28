@@ -16,9 +16,10 @@ internal sealed class CancelRegistrationHandler(IRegistrationsWriteStore writeSt
     {
         RegistrationId registrationId = RegistrationId.From(command.RegistrationId);
         TicketedEventId ticketedEventId = TicketedEventId.From(command.TicketedEventId);
+        TeamId teamId = TeamId.From(command.TeamId);
 
         var registration = await writeStore.Registrations.GetAsync(
-                 r => r.Id == registrationId && r.EventId == ticketedEventId,
+                 r => r.Id == registrationId && r.EventId == ticketedEventId && r.TeamId == teamId,
                  cancellationToken);
 
         if (command.Reason == CancellationReason.AttendeeRequest)

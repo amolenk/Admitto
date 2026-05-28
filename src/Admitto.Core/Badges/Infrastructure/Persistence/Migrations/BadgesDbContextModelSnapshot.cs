@@ -137,6 +137,10 @@ namespace Amolenk.Admitto.Core.Badges.Infrastructure.Persistence.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("status");
 
+                    b.Property<Guid>("TeamId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("team_id");
+
                     b.HasKey("Id");
 
                     b.ToTable("badges_events", "badges");

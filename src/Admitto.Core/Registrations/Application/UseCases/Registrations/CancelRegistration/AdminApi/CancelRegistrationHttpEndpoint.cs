@@ -32,6 +32,7 @@ public static class CancelRegistrationHttpEndpoint
         var command = new CancelRegistrationCommand(
             registrationId,
             eventId,
+            teamId,
             reason);
 
         await handler.HandleAsync(command, cancellationToken);

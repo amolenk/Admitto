@@ -22,7 +22,7 @@ internal sealed class TicketedEventTimeZoneChangedIntegrationEventHandler(
         var ticketedEventId = TicketedEventId.From(integrationEvent.TicketedEventId);
 
         var spec = await registrationsFacade.GetReconfirmTriggerSpecAsync(
-            ticketedEventId, cancellationToken);
+            ticketedEventId.Value, cancellationToken);
 
         if (spec is null)
             return;

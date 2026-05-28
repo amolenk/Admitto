@@ -49,6 +49,10 @@ public sealed class BadgesDbContext(DbContextOptions<BadgesDbContext> options)
             .HaveConversion<TicketedEventId.EfCoreValueConverter>();
 
         configurationBuilder
+            .Properties<TeamId>()
+            .HaveConversion<TeamId.EfCoreValueConverter>();
+
+        configurationBuilder
             .Properties<EmailAddress>()
             .HaveConversion<EmailAddress.EfCoreValueConverter>();
     }

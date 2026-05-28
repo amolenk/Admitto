@@ -52,7 +52,7 @@ internal sealed class GetRegistrationsFixture
             DateTimeOffset.UtcNow.AddDays(31),
             TimeZoneId.From("UTC"));
 
-        var catalog = TicketCatalog.Create(EventId);
+        var catalog = TicketCatalog.Create(EventId, TeamId);
         catalog.AddTicketType(GeneralId, TicketTypeName.From(GeneralName), [], 100);
         catalog.AddTicketType(VipId, TicketTypeName.From(VipName), [], 25);
 
@@ -116,7 +116,7 @@ internal sealed class GetRegistrationsFixture
                 TimeZoneId.From("UTC"));
 
             var otherGeneralId = TicketTypeId.New();
-            var otherCatalog = TicketCatalog.Create(OtherEventId);
+            var otherCatalog = TicketCatalog.Create(OtherEventId, TeamId);
             otherCatalog.AddTicketType(otherGeneralId, TicketTypeName.From(GeneralName), [], 100);
 
             var dave = Registration.Create(

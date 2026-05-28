@@ -16,7 +16,7 @@ The Email module SHALL drive recurring `reconfirm` emails to attendees of any `T
 4. The time elapsed since the later of (the attendee's `RegisteredAt`, the last `reconfirm` email sent to the attendee as recorded in `email_log`) is at least `MinEmailInterval` hours.
 
 Eligibility SHALL be (re)evaluated against live Registrations and email-log data on every tick of the per-event Quartz trigger by calling:
-- `IRegistrationsFacade.QueryRegistrationsAsync(eventId, { Status: Registered, HasReconfirmed: false })` to get candidate attendees, and
+- `IRegistrationsFacade.GetRegistrationsAsync(eventId, { Status: Registered, HasReconfirmed: false })` to get candidate attendees, and
 - querying the `email_log` for the most recent `reconfirm` email sent to each candidate, to filter out those who received one within the last `MinEmailInterval` hours.
 
 Once an attendee reconfirms, they fall out of the candidate set. Attendees whose last email is within the interval are skipped for that tick and retried on the next tick.

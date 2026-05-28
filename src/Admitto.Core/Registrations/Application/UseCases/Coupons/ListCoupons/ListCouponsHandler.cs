@@ -1,0 +1,34 @@
+using Amolenk.Admitto.Core.Registrations.Application.Persistence;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
+
+namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Coupons.ListCoupons;
+
+internal sealed class ListCouponsHandler(IRegistrationsWriteStore writeStore)
+    : IQueryHandler<ListCouponsQuery, ListCouponsResult>
+{
+    public async ValueTask<ListCouponsResult> HandleAsync(
+        ListCouponsQuery query,
+        CancellationToken cancellationToken)
+    {
+        var now = DateTimeOffset.UtcNow;
+
+        var coupons = await writeStore.Coupons
+            .Where(c => c.EventId == query.EventId && c.TeamId == query.TeamId)
+            .OrderByDescending(c => c.CreatedAt)
+            .AsNoTracking()
+            .ToListAsync(cancellationToken);
+
+        var summaries = coupons
+            .Select(c => new CouponSummaryDto(
+                c.Id.Value,
+                c.Email.Value,
+                c.GetStatus(now),
+                c.Source,
+                c.AllowedTicketTypeIds.Select(id => id.Value).ToArray(),
+                c.ExpiresAt,
+                c.CreatedAt))
+            .ToList();
+
+        return new ListCouponsResult(summaries);
+    }
+}

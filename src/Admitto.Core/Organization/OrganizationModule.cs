@@ -1,17 +1,17 @@
-using Amolenk.Admitto.Core.Organization.Application.UseCases.TeamManagement.ArchiveTeam.AdminApi;
-using Amolenk.Admitto.Core.Organization.Application.UseCases.TeamManagement.CreateTeam.AdminApi;
-using Amolenk.Admitto.Core.Organization.Application.UseCases.TeamManagement.GetTeam.AdminApi;
-using Amolenk.Admitto.Core.Organization.Application.UseCases.TeamManagement.GetTeams.AdminApi;
-using Amolenk.Admitto.Core.Organization.Application.UseCases.TeamManagement.UpdateTeam.AdminApi;
-using Amolenk.Admitto.Core.Organization.Application.UseCases.TeamMembershipManagement.AssignTeamMembership.AdminApi;
-using Amolenk.Admitto.Core.Organization.Application.UseCases.TeamMembershipManagement.ChangeTeamMembershipRole.AdminApi;
-using Amolenk.Admitto.Core.Organization.Application.UseCases.TeamMembershipManagement.ListTeamMembers.AdminApi;
-using Amolenk.Admitto.Core.Organization.Application.UseCases.TeamMembershipManagement.RemoveTeamMembership.AdminApi;
-using Amolenk.Admitto.Core.Organization.Application.UseCases.TicketedEventManagement.GetEventCreationRequest.AdminApi;
-using Amolenk.Admitto.Core.Organization.Application.UseCases.TicketedEventManagement.RequestTicketedEventCreation.AdminApi;
-using Amolenk.Admitto.Core.Organization.Application.UseCases.ApiKeyManagement.CreateApiKey.AdminApi;
-using Amolenk.Admitto.Core.Organization.Application.UseCases.ApiKeyManagement.GetApiKeys.AdminApi;
-using Amolenk.Admitto.Core.Organization.Application.UseCases.ApiKeyManagement.RevokeApiKey.AdminApi;
+using Amolenk.Admitto.Core.Organization.Application.UseCases.Teams.ArchiveTeam.AdminApi;
+using Amolenk.Admitto.Core.Organization.Application.UseCases.Teams.CreateTeam.AdminApi;
+using Amolenk.Admitto.Core.Organization.Application.UseCases.Teams.GetTeam.AdminApi;
+using Amolenk.Admitto.Core.Organization.Application.UseCases.Teams.GetTeams.AdminApi;
+using Amolenk.Admitto.Core.Organization.Application.UseCases.Teams.UpdateTeam.AdminApi;
+using Amolenk.Admitto.Core.Organization.Application.UseCases.TeamMemberships.AssignTeamMembership.AdminApi;
+using Amolenk.Admitto.Core.Organization.Application.UseCases.TeamMemberships.ChangeTeamMembershipRole.AdminApi;
+using Amolenk.Admitto.Core.Organization.Application.UseCases.TeamMemberships.ListTeamMembers.AdminApi;
+using Amolenk.Admitto.Core.Organization.Application.UseCases.TeamMemberships.RemoveTeamMembership.AdminApi;
+using Amolenk.Admitto.Core.Organization.Application.UseCases.TicketedEvents.GetEventCreationRequest.AdminApi;
+using Amolenk.Admitto.Core.Organization.Application.UseCases.TicketedEvents.RequestTicketedEventCreation.AdminApi;
+using Amolenk.Admitto.Core.Organization.Application.UseCases.ApiKeys.CreateApiKey.AdminApi;
+using Amolenk.Admitto.Core.Organization.Application.UseCases.ApiKeys.GetApiKeys.AdminApi;
+using Amolenk.Admitto.Core.Organization.Application.UseCases.ApiKeys.RevokeApiKey.AdminApi;
 
 namespace Amolenk.Admitto.Core.Organization;
 

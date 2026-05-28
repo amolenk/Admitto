@@ -32,7 +32,7 @@ public class ApiKeyAuthenticationHandler(
         }
 
         var keyHash = ComputeHash(rawKey);
-        var teamId = await organizationFacade.ValidateApiKeyAsync(keyHash, Context.RequestAborted);
+        var teamId = await organizationFacade.LookupApiKeyOwnerAsync(keyHash, Context.RequestAborted);
 
         if (teamId is null)
         {

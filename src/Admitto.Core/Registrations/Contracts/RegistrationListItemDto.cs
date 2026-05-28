@@ -2,7 +2,7 @@ namespace Amolenk.Admitto.Core.Registrations.Contracts;
 
 /// <summary>
 /// Per-registration projection returned by
-/// <see cref="IRegistrationsFacade.QueryRegistrationsAsync"/>. Carries the
+/// <see cref="IRegistrationsFacade.GetRegistrationsAsync"/>. Carries the
 /// minimum surface other modules need to materialise recipient lists and
 /// per-recipient template parameters without crossing the Registrations
 /// aggregate boundary.

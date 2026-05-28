@@ -1,4 +1,4 @@
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlist.ProcessWaitlistNotifications;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.ProcessWaitlistNotifications;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
@@ -58,7 +58,7 @@ internal sealed class ProcessExpiredWaitlistCouponsJobFixture
                 TimeZone);
             dbContext.TicketedEvents.Add(ticketedEvent);
 
-            var catalog = TicketCatalog.Create(EventId);
+            var catalog = TicketCatalog.Create(EventId, TeamId);
             catalog.AddTicketType(TicketTypeId, TicketTypeName.From("Conference Pass"), [], maxCapacity: 1,
                 waitlistEnabled: true, claimWindowHours: 8);
             catalog.Claim([TicketTypeId], enforce: true);   // fill to capacity → WaitlistMode activates

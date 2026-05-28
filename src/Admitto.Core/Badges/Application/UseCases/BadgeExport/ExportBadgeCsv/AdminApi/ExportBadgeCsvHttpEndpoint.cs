@@ -23,7 +23,7 @@ public static class ExportBadgeCsvHttpEndpoint
         CancellationToken cancellationToken)
     {
         var (fileName, content) = await handler.HandleAsync(
-            new ExportBadgeCsvQuery(eventId, badgeTypeId),
+            new ExportBadgeCsvQuery(eventId, teamId, badgeTypeId),
             cancellationToken);
 
         return TypedResults.File(content, "text/csv", fileName);

@@ -2,7 +2,7 @@
 
 public interface IOrganizationFacade
 {
-    ValueTask<Guid?> ValidateApiKeyAsync(
+    ValueTask<Guid?> LookupApiKeyOwnerAsync(
         string keyHash,
         CancellationToken cancellationToken = default);
 }

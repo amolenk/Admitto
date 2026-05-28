@@ -10,7 +10,7 @@ internal sealed class GetBulkEmailHandler(IEmailWriteStore writeStore)
     {
         var job = await writeStore.BulkEmailJobs
             .AsNoTracking()
-            .FirstOrDefaultAsync(j => j.Id == query.BulkEmailJobId, ct);
+            .FirstOrDefaultAsync(j => j.Id == query.BulkEmailJobId && j.TicketedEventId == query.TicketedEventId && j.TeamId == query.TeamId, ct);
 
         if (job is null)
             return null;

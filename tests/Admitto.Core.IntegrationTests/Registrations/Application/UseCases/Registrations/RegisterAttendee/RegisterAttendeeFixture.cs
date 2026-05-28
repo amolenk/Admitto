@@ -77,7 +77,7 @@ internal sealed class RegisterAttendeeFixture
     {
         var f = new RegisterAttendeeFixture();
         f._ticketedEvent = f.MakeActiveEventWithOpenWindow();
-        var catalog = TicketCatalog.Create(f.EventId);
+        var catalog = TicketCatalog.Create(f.EventId, f.TeamId);
         var workshopAId = TicketTypeId.New();
         var workshopBId = TicketTypeId.New();
         f._ticketTypeIdsBySlug["workshop-a"] = workshopAId;
@@ -145,7 +145,7 @@ internal sealed class RegisterAttendeeFixture
         var ev = f.MakeActiveEventWithOpenWindow();
         ev.Archive();
         f._ticketedEvent = ev;
-        var catalog = TicketCatalog.Create(f.EventId);
+        var catalog = TicketCatalog.Create(f.EventId, f.TeamId);
         var generalId = TicketTypeId.New();
         f._ticketTypeIdsBySlug["general-admission"] = generalId;
         catalog.AddTicketType(generalId, TicketTypeName.From("General Admission"), [], 100);
@@ -181,7 +181,7 @@ internal sealed class RegisterAttendeeFixture
     {
         var f = new RegisterAttendeeFixture();
         f._ticketedEvent = f.MakeActiveEventWithOpenWindow();
-        var catalog = TicketCatalog.Create(f.EventId);
+        var catalog = TicketCatalog.Create(f.EventId, f.TeamId);
         var generalId = TicketTypeId.New();
         f._ticketTypeIdsBySlug["general-admission"] = generalId;
         catalog.AddTicketType(generalId, TicketTypeName.From("General Admission"), [], 100);
@@ -510,7 +510,7 @@ internal sealed class RegisterAttendeeFixture
 
     private TicketCatalog MakeCatalog(params (string slug, string name, int? max, int used, bool selfServiceEnabled)[] ticketTypes)
     {
-        var catalog = TicketCatalog.Create(EventId);
+        var catalog = TicketCatalog.Create(EventId, TeamId);
         foreach (var (slug, name, max, used, selfServiceEnabled) in ticketTypes)
         {
             var id = TicketTypeId.New();
@@ -529,7 +529,7 @@ internal sealed class RegisterAttendeeFixture
     /// </summary>
     private TicketCatalog MakeWaitlistModeCatalog(string slug, string name, int max, int preFill)
     {
-        var catalog = TicketCatalog.Create(EventId);
+        var catalog = TicketCatalog.Create(EventId, TeamId);
         var id = TicketTypeId.New();
         _ticketTypeIdsBySlug[slug] = id;
         catalog.AddTicketType(id, TicketTypeName.From(name), [], max, waitlistEnabled: true);
