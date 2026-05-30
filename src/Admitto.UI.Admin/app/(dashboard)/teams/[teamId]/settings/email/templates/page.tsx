@@ -88,6 +88,7 @@ export default function TeamEmailTemplatesPage() {
         queryFn: () =>
             apiClient.get<EmailTemplateListItemDto[]>(`/api/teams/${teamId}/email-templates`),
         throwOnError: false,
+        staleTime: 30_000,
     });
 
     const createMutation = useMutation({
@@ -126,8 +127,6 @@ export default function TeamEmailTemplatesPage() {
             );
             router.push(`${basePath}/${result.id}`);
         } catch {
-            // Ignore errors — user can retry
-        } finally {
             setMaterialisingId(null);
         }
     }

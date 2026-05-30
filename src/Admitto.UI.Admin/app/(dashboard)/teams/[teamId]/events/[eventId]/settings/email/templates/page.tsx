@@ -90,6 +90,7 @@ export default function EventEmailTemplatesPage() {
                 `/api/teams/${teamId}/events/${eventId}/email-templates`
             ),
         throwOnError: false,
+        staleTime: 30_000,
     });
 
     const createMutation = useMutation({
@@ -127,8 +128,6 @@ export default function EventEmailTemplatesPage() {
             );
             router.push(`${eventBasePath}/${result.id}`);
         } catch {
-            // ignore errors — user can retry
-        } finally {
             setMaterialisingId(null);
         }
     }
