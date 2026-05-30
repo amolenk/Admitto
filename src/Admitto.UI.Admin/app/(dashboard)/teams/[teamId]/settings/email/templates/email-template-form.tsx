@@ -281,7 +281,7 @@ export function EmailTemplateForm({
     const [deleteError, setDeleteError] = useState<string | null>(null);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [testSendDialogOpen, setTestSendDialogOpen] = useState(false);
-    const [activeTab, setActiveTab] = useState("edit");
+    const [activeTab, setActiveTab] = useState("html");
     const [previewKey, setPreviewKey] = useState(0);
     const [previewValues, setPreviewValues] = useState<TemplateValues | null>(null);
 
@@ -295,17 +295,15 @@ export function EmailTemplateForm({
 
         async function resolveFromAddress() {
             if (eventId) {
-                try {
-                    const eventSettings = await apiClient.get<{ fromAddress?: string | null }>(
-                        `/api/teams/${teamId}/events/${eventId}/email-settings`
-                    );
+                const res = await fetch(`/api/teams/${teamId}/events/${eventId}/email-settings`);
+                if (res.ok) {
+                    const eventSettings = await res.json() as { fromAddress?: string | null };
                     if (eventSettings.fromAddress) {
                         setFromAddress(eventSettings.fromAddress);
                         return;
                     }
-                } catch {
-                    // No event-specific settings; fall through to team settings
                 }
+                // 404 = event has no override; fall through to team settings
             }
             apiClient.get<{ fromAddress?: string | null }>(`/api/teams/${teamId}/email-settings`)
                 .then((s) => setFromAddress(s.fromAddress ?? null))
@@ -368,156 +366,163 @@ export function EmailTemplateForm({
 
     return (
         <div>
-            {generalError && (
-                <Alert variant="destructive" className="mb-4">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>{generalError.title}</AlertTitle>
-                    <AlertDescription>{generalError.detail}</AlertDescription>
-                </Alert>
-            )}
+            <Form {...form}>
+                <form onSubmit={submit(onSubmit)}>
+                    <div className="flex items-center justify-between mb-5">
+                        <div className="flex items-center gap-2">
+                            <Button type="submit" size="sm" disabled={!isDirty || isSubmitting}>
+                                <Check className="size-3.5" />
+                                {isSubmitting ? "Saving..." : "Save changes"}
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setTestSendDialogOpen(true)}
+                            >
+                                <Send className="size-3.5" />
+                                Send test email
+                            </Button>
+                        </div>
 
-            <Tabs value={activeTab} onValueChange={handleTabChange}>
-                <TabsList>
-                    <TabsTrigger value="edit">Edit</TabsTrigger>
-                    <TabsTrigger value="preview">Preview</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="edit">
-                    <Form {...form}>
-                        <form onSubmit={submit(onSubmit)} className="space-y-5 pt-4">
-                            <FormField
-                                control={form.control}
-                                name="subject"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Subject</FormLabel>
-                                        <p className="text-[12px] text-muted-foreground -mt-1">
-                                            The email subject line. Supports template variables.
-                                        </p>
-                                        <FormControl>
-                                            <Input placeholder="e.g. Your ticket for {{ event_name }}" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="htmlBody"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>HTML body</FormLabel>
-                                        <p className="text-[12px] text-muted-foreground -mt-1">
-                                            Rendered HTML email body. Supports Scriban template syntax.
-                                        </p>
-                                        <FormControl>
-                                            <CodeEditor
-                                                value={field.value}
-                                                onChange={field.onChange}
-                                                minHeight="300px"
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                            <FormField
-                                control={form.control}
-                                name="textBody"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Text body</FormLabel>
-                                        <p className="text-[12px] text-muted-foreground -mt-1">
-                                            Plain-text fallback for email clients that don&apos;t render HTML.
-                                        </p>
-                                        <FormControl>
-                                            <Textarea
-                                                className="font-mono text-[12px] min-h-40"
-                                                {...field}
-                                            />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-
-                            <div className="flex items-center justify-between gap-4 pt-2">
-                                <div className="flex items-center gap-2">
-                                    <Button type="submit" size="sm" disabled={!isDirty || isSubmitting}>
-                                        <Check className="size-3.5" />
-                                        {isSubmitting ? "Saving..." : "Save changes"}
-                                    </Button>
+                        {isCustomised && (
+                            <AlertDialog
+                                open={deleteDialogOpen}
+                                onOpenChange={(open) => {
+                                    setDeleteDialogOpen(open);
+                                    if (!open) setDeleteError(null);
+                                }}
+                            >
+                                <AlertDialogTrigger asChild>
                                     <Button
                                         type="button"
                                         variant="outline"
                                         size="sm"
-                                        onClick={() => setTestSendDialogOpen(true)}
+                                        className="text-destructive border-destructive/30"
                                     >
-                                        <Send className="size-3.5" />
-                                        Send test email
+                                        <Trash2 className="size-3.5" />
+                                        Delete custom template
                                     </Button>
-                                </div>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Delete custom template?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            This will remove the custom template and restore the built-in default.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    {deleteError && (
+                                        <Alert variant="destructive">
+                                            <AlertCircle className="h-4 w-4" />
+                                            <AlertDescription>{deleteError}</AlertDescription>
+                                        </Alert>
+                                    )}
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <Button
+                                            variant="destructive"
+                                            onClick={handleDelete}
+                                            disabled={isDeleting}
+                                        >
+                                            {isDeleting ? "Deleting…" : "Delete"}
+                                        </Button>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        )}
+                    </div>
 
-                                {isCustomised && (
-                                    <AlertDialog
-                                        open={deleteDialogOpen}
-                                        onOpenChange={(open) => {
-                                            setDeleteDialogOpen(open);
-                                            if (!open) setDeleteError(null);
-                                        }}
-                                    >
-                                        <AlertDialogTrigger asChild>
-                                            <Button
-                                                type="button"
-                                                variant="outline"
-                                                size="sm"
-                                                className="text-destructive border-destructive/30"
-                                            >
-                                                <Trash2 className="size-3.5" />
-                                                Delete custom template
-                                            </Button>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                            <AlertDialogHeader>
-                                                <AlertDialogTitle>Delete custom template?</AlertDialogTitle>
-                                                <AlertDialogDescription>
-                                                    This will remove the custom template and restore the built-in default.
-                                                </AlertDialogDescription>
-                                            </AlertDialogHeader>
-                                            {deleteError && (
-                                                <Alert variant="destructive">
-                                                    <AlertCircle className="h-4 w-4" />
-                                                    <AlertDescription>{deleteError}</AlertDescription>
-                                                </Alert>
-                                            )}
-                                            <AlertDialogFooter>
-                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                <Button
-                                                    variant="destructive"
-                                                    onClick={handleDelete}
-                                                    disabled={isDeleting}
-                                                >
-                                                    {isDeleting ? "Deleting…" : "Delete"}
-                                                </Button>
-                                            </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                    </AlertDialog>
-                                )}
-                            </div>
-                        </form>
-                    </Form>
-                </TabsContent>
-
-                <TabsContent value="preview">
-                    {previewValues && (
-                        <PreviewTabContent
-                            key={previewKey}
-                            previewApiUrl={previewApiUrl}
-                            values={previewValues}
-                        />
+                    {generalError && (
+                        <Alert variant="destructive" className="mb-4">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertTitle>{generalError.title}</AlertTitle>
+                            <AlertDescription>{generalError.detail}</AlertDescription>
+                        </Alert>
                     )}
-                </TabsContent>
-            </Tabs>
+
+                    <div className="space-y-5">
+                        <FormField
+                            control={form.control}
+                            name="subject"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Subject</FormLabel>
+                                    <p className="text-[12px] text-muted-foreground -mt-1">
+                                        The email subject line. Supports template variables.
+                                    </p>
+                                    <FormControl>
+                                        <Input placeholder="e.g. Your ticket for {{ event_name }}" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+
+                        <Tabs value={activeTab} onValueChange={handleTabChange}>
+                            <TabsList>
+                                <TabsTrigger value="html">HTML</TabsTrigger>
+                                <TabsTrigger value="text">Text</TabsTrigger>
+                                <TabsTrigger value="preview">Preview</TabsTrigger>
+                            </TabsList>
+
+                            <TabsContent value="html" className="pt-4">
+                                <FormField
+                                    control={form.control}
+                                    name="htmlBody"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>HTML body</FormLabel>
+                                            <p className="text-[12px] text-muted-foreground -mt-1">
+                                                Rendered HTML email body. Supports Scriban template syntax.
+                                            </p>
+                                            <FormControl>
+                                                <CodeEditor
+                                                    value={field.value}
+                                                    onChange={field.onChange}
+                                                    minHeight="400px"
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </TabsContent>
+
+                            <TabsContent value="text" className="pt-4">
+                                <FormField
+                                    control={form.control}
+                                    name="textBody"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Text body</FormLabel>
+                                            <p className="text-[12px] text-muted-foreground -mt-1">
+                                                Plain-text fallback for email clients that don&apos;t render HTML.
+                                            </p>
+                                            <FormControl>
+                                                <Textarea
+                                                    className="font-mono text-[12px] min-h-64"
+                                                    {...field}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </TabsContent>
+
+                            <TabsContent value="preview">
+                                {previewValues && (
+                                    <PreviewTabContent
+                                        key={previewKey}
+                                        previewApiUrl={previewApiUrl}
+                                        values={previewValues}
+                                    />
+                                )}
+                            </TabsContent>
+                        </Tabs>
+                    </div>
+                </form>
+            </Form>
 
             <Dialog open={testSendDialogOpen} onOpenChange={setTestSendDialogOpen}>
                 <SendTestEmailDialog
