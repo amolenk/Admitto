@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { Mail, Pencil, Plus, Sparkles } from "lucide-react";
+import { FileText, Pencil, Plus, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
@@ -171,7 +171,7 @@ export default function TeamEmailTemplatesPage() {
                         <div key={template.id ?? template.name} className="flex items-center gap-4 p-4">
                             <div className="h-8 w-8 rounded-md bg-muted grid place-items-center shrink-0">
                                 {isBuiltIn
-                                    ? <Mail className="size-3.5 text-muted-foreground" />
+                                    ? <FileText className="size-3.5 text-muted-foreground" />
                                     : <Sparkles className="size-3.5 text-muted-foreground" />
                                 }
                             </div>
