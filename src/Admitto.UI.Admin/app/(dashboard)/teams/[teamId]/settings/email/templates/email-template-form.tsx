@@ -369,67 +369,68 @@ export function EmailTemplateForm({
             <Form {...form}>
                 <form onSubmit={submit(onSubmit)}>
                     <div className="flex items-center justify-between mb-5">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setTestSendDialogOpen(true)}
+                        >
+                            <Send className="size-3.5" />
+                            Send test email
+                        </Button>
+
                         <div className="flex items-center gap-2">
+                            {isCustomised && (
+                                <AlertDialog
+                                    open={deleteDialogOpen}
+                                    onOpenChange={(open) => {
+                                        setDeleteDialogOpen(open);
+                                        if (!open) setDeleteError(null);
+                                    }}
+                                >
+                                    <AlertDialogTrigger asChild>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            className="text-destructive border-destructive/30"
+                                        >
+                                            <Trash2 className="size-3.5" />
+                                            Delete custom template
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Delete custom template?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                This will remove the custom template and restore the built-in default.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        {deleteError && (
+                                            <Alert variant="destructive">
+                                                <AlertCircle className="h-4 w-4" />
+                                                <AlertDescription>{deleteError}</AlertDescription>
+                                            </Alert>
+                                        )}
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <Button
+                                                variant="destructive"
+                                                onClick={handleDelete}
+                                                disabled={isDeleting}
+                                            >
+                                                {isDeleting ? "Deleting…" : "Delete"}
+                                            </Button>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                            )}
+
                             <Button type="submit" size="sm" disabled={!isDirty || isSubmitting}>
                                 <Check className="size-3.5" />
                                 {isSubmitting ? "Saving..." : "Save changes"}
                             </Button>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                onClick={() => setTestSendDialogOpen(true)}
-                            >
-                                <Send className="size-3.5" />
-                                Send test email
-                            </Button>
                         </div>
-
-                        {isCustomised && (
-                            <AlertDialog
-                                open={deleteDialogOpen}
-                                onOpenChange={(open) => {
-                                    setDeleteDialogOpen(open);
-                                    if (!open) setDeleteError(null);
-                                }}
-                            >
-                                <AlertDialogTrigger asChild>
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        className="text-destructive border-destructive/30"
-                                    >
-                                        <Trash2 className="size-3.5" />
-                                        Delete custom template
-                                    </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>Delete custom template?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            This will remove the custom template and restore the built-in default.
-                                        </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    {deleteError && (
-                                        <Alert variant="destructive">
-                                            <AlertCircle className="h-4 w-4" />
-                                            <AlertDescription>{deleteError}</AlertDescription>
-                                        </Alert>
-                                    )}
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                        <Button
-                                            variant="destructive"
-                                            onClick={handleDelete}
-                                            disabled={isDeleting}
-                                        >
-                                            {isDeleting ? "Deleting…" : "Delete"}
-                                        </Button>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                        )}
                     </div>
 
                     {generalError && (
