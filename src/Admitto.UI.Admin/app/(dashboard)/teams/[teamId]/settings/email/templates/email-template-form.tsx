@@ -442,66 +442,77 @@ export function EmailTemplateForm({
                         </Alert>
                     )}
 
-                    <div className="space-y-5">
-                        <Card className="px-6 py-4">
-                        <FormField
-                            control={form.control}
-                            name="subject"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Subject</FormLabel>
-                                    <p className="text-[12px] text-muted-foreground -mt-1">
-                                        The email subject line. Supports template variables.
-                                    </p>
-                                    <FormControl>
-                                        <Input placeholder="e.g. Your ticket for {{ event_name }}" {...field} />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        </Card>
+                    <Card className="overflow-hidden">
+                        <div className="px-6 py-4 border-b">
+                            <FormField
+                                control={form.control}
+                                name="subject"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Subject</FormLabel>
+                                        <p className="text-[12px] text-muted-foreground -mt-1">
+                                            Supports template variables like{" "}
+                                            <code className="text-[11px] bg-muted px-1 py-0.5 rounded">{"{{ event_name }}"}</code>
+                                        </p>
+                                        <FormControl>
+                                            <Input placeholder="e.g. Your ticket for {{ event_name }}" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
 
                         <Tabs value={activeTab} onValueChange={handleTabChange}>
-                            <TabsList>
-                                <TabsTrigger value="html">HTML</TabsTrigger>
-                                <TabsTrigger value="text">Text</TabsTrigger>
-                                <TabsTrigger value="preview">Preview</TabsTrigger>
-                            </TabsList>
+                            <div className="border-b px-6">
+                                <TabsList className="h-auto rounded-none bg-transparent p-0 gap-0">
+                                    <TabsTrigger
+                                        value="html"
+                                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 py-2.5 text-sm"
+                                    >
+                                        HTML
+                                    </TabsTrigger>
+                                    <TabsTrigger
+                                        value="text"
+                                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 py-2.5 text-sm"
+                                    >
+                                        Text
+                                    </TabsTrigger>
+                                    <TabsTrigger
+                                        value="preview"
+                                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 py-2.5 text-sm"
+                                    >
+                                        Preview
+                                    </TabsTrigger>
+                                </TabsList>
+                            </div>
 
-                            <TabsContent value="html" className="pt-4">
+                            <TabsContent value="html" className="mt-0">
                                 <FormField
                                     control={form.control}
                                     name="htmlBody"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>HTML body</FormLabel>
-                                            <p className="text-[12px] text-muted-foreground -mt-1">
-                                                Rendered HTML email body. Supports Scriban template syntax.
-                                            </p>
                                             <FormControl>
                                                 <CodeEditor
                                                     value={field.value}
                                                     onChange={field.onChange}
                                                     minHeight="400px"
+                                                    className="rounded-none border-x-0 border-b-0 shadow-none"
                                                 />
                                             </FormControl>
-                                            <FormMessage />
+                                            <FormMessage className="px-6 pb-4" />
                                         </FormItem>
                                     )}
                                 />
                             </TabsContent>
 
-                            <TabsContent value="text" className="pt-4">
+                            <TabsContent value="text" className="mt-0 p-6">
                                 <FormField
                                     control={form.control}
                                     name="textBody"
                                     render={({ field }) => (
                                         <FormItem>
-                                            <FormLabel>Text body</FormLabel>
-                                            <p className="text-[12px] text-muted-foreground -mt-1">
-                                                Plain-text fallback for email clients that don&apos;t render HTML.
-                                            </p>
                                             <FormControl>
                                                 <Textarea
                                                     className="font-mono text-[12px] min-h-64"
@@ -514,7 +525,7 @@ export function EmailTemplateForm({
                                 />
                             </TabsContent>
 
-                            <TabsContent value="preview">
+                            <TabsContent value="preview" className="mt-0">
                                 {previewValues && (
                                     <PreviewTabContent
                                         key={previewKey}
@@ -524,7 +535,7 @@ export function EmailTemplateForm({
                                 )}
                             </TabsContent>
                         </Tabs>
-                    </div>
+                    </Card>
                 </form>
             </Form>
 
