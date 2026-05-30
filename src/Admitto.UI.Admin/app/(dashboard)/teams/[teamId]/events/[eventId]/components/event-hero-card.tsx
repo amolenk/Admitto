@@ -3,17 +3,11 @@
 import { TicketedEventDetailsDto, TicketTypeDto } from "@/lib/admitto-api/generated";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar, Clock, Globe, Copy } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Calendar, Clock, Globe } from "lucide-react";
 import { formatInEventZone, formatZoneCaption } from "@/lib/time-zones";
 
 function formatDate(iso: string, zone: string): string {
     return formatInEventZone(iso, zone, "EEEE, MMMM d, yyyy");
-}
-
-function formatTime(startsAt: string, endsAt: string, zone: string): string {
-    const fmt = (iso: string) => formatInEventZone(iso, zone, "HH:mm");
-    return `${fmt(startsAt)} \u2013 ${fmt(endsAt)}`;
 }
 
 function daysUntil(iso: string): number {
@@ -63,6 +57,23 @@ interface EventHeroCardProps {
     ticketTypes?: TicketTypeDto[] | null;
 }
 
+function getRegistrationStat(event: EventHeroCardProps["event"]): { value: string | number; sub: string; muted: boolean } {
+    const policy = event.registrationPolicy;
+    if (!policy) {
+        return { value: "\u2014", sub: "window not set", muted: true };
+    }
+    if (event.isRegistrationOpen) {
+        return { value: "Open", sub: "registration", muted: false };
+    }
+    const now = new Date();
+    const opensAt = new Date(policy.opensAt);
+    if (now < opensAt) {
+        const daysLeft = Math.ceil((opensAt.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        return { value: daysLeft, sub: "days until open", muted: false };
+    }
+    return { value: "Closed", sub: "registration", muted: true };
+}
+
 function statusLabel(status: string): string {
     if (!status) return "";
     return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
@@ -78,7 +89,11 @@ export function EventHeroCard({ event, openStatus, ticketTypes }: EventHeroCardP
         ?.reduce((sum, t) => sum + (Number(t.maxCapacity) || 0), 0) ?? 0;
     const totalUsed = ticketTypes
         ?.reduce((sum, t) => sum + Number(t.usedCapacity), 0) ?? 0;
-    const capacityPct = totalCapacity > 0 ? Math.round((totalUsed / totalCapacity) * 100) : 0;
+    const hasUnlimited = ticketTypes?.some(t => !Number(t.maxCapacity)) ?? false;
+    const hasCapacity = totalCapacity > 0;
+    const capacityPct = hasCapacity ? Math.round((totalUsed / totalCapacity) * 100) : 0;
+
+    const regStat = getRegistrationStat(event);
 
     return (
         <Card className="overflow-hidden gap-0 py-0">
@@ -99,7 +114,7 @@ export function EventHeroCard({ event, openStatus, ticketTypes }: EventHeroCardP
                                 {days} days to go
                             </Badge>
                         </div>
-                        <h1 className="font-display text-[40px] leading-[1.05] font-semibold tracking-tight">
+                        <h1 className="font-display text-[28px] md:text-[40px] leading-[1.05] font-semibold tracking-tight">
                             {event.name}
                         </h1>
                         <div className="mt-5 flex flex-wrap gap-x-6 gap-y-2 text-[13.5px]">
@@ -109,7 +124,7 @@ export function EventHeroCard({ event, openStatus, ticketTypes }: EventHeroCardP
                             </div>
                             <div className="flex items-center gap-1.5">
                                 <Clock className="size-3.5 text-muted-foreground" />
-                                <span>{formatTime(event.startsAt, event.endsAt, event.timeZone)}</span>
+                                <span>{formatInEventZone(event.startsAt, event.timeZone, "HH:mm")}</span>
                                 <span className="text-muted-foreground">&middot; {formatZoneCaption(event.timeZone)}</span>
                             </div>
                             {event.websiteUrl && (
@@ -125,38 +140,20 @@ export function EventHeroCard({ event, openStatus, ticketTypes }: EventHeroCardP
                             )}
                         </div>
                     </div>
-                    <div className="flex flex-col items-end gap-2 shrink-0">
-                        <Button variant="outline" size="sm">
-                            <Copy className="size-3.5" />
-                            Copy link
-                        </Button>
-                    </div>
                 </div>
             </div>
-            <div className="ticket-perf" />
-            <div className="grid grid-cols-2 md:grid-cols-4 divide-x">
+            <div className="grid grid-cols-2 divide-x border-t">
+                <HeroStat
+                    label="Status"
+                    value={regStat.value}
+                    sub={regStat.sub}
+                    muted={regStat.muted}
+                />
                 <HeroStat
                     label="Registered"
                     value={totalUsed}
-                    sub={totalCapacity > 0 ? `of ${totalCapacity}` : "total"}
-                    pct={totalCapacity > 0 ? capacityPct : undefined}
-                />
-                <HeroStat
-                    label="Ticket types"
-                    value={ticketTypes?.length ?? 0}
-                    sub="configured"
-                />
-                <HeroStat
-                    label="Available"
-                    value={totalCapacity > 0 ? totalCapacity - totalUsed : "\u2014"}
-                    sub={totalCapacity > 0 ? "remaining" : "no cap set"}
-                    muted={totalCapacity === 0}
-                />
-                <HeroStat
-                    label="Status"
-                    value={isOpen ? "Open" : "Closed"}
-                    sub={isActive ? "registration" : "event inactive"}
-                    muted={!isOpen}
+                    sub={hasCapacity ? `of ${totalCapacity}${hasUnlimited ? "+" : ""}` : "total"}
+                    pct={hasCapacity ? capacityPct : undefined}
                 />
             </div>
         </Card>

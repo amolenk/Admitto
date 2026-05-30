@@ -14,12 +14,12 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
     AlertCircle,
-    Award,
+    IdCard,
     Download,
+    LayoutList,
     Pencil,
     Plus,
     Trash2,
-    Users,
 } from "lucide-react";
 import {
     Dialog,
@@ -189,7 +189,7 @@ function BadgeTypeCard({
                                     )
                                 }
                             >
-                                <Users className="size-3.5 mr-1" />
+                                <LayoutList className="size-3.5 mr-1" />
                                 Instances
                             </Button>
                         )}
@@ -305,7 +305,7 @@ export default function BadgeTypesPage() {
 
     return (
         <PageLayout title="Badges" breadcrumbs={breadcrumbs}>
-            <div className="flex items-start justify-between mb-6">
+            <div className="flex flex-wrap items-start justify-between mb-6 gap-y-3">
                 <div>
                     <div className="text-[0.6875rem] uppercase tracking-widest text-muted-foreground font-semibold">
                         Badges
@@ -342,7 +342,7 @@ export default function BadgeTypesPage() {
                         className="rounded-xl border border-dashed p-6 flex flex-col items-center justify-center gap-2 text-muted-foreground hover:text-foreground hover:bg-accent transition bg-grid"
                     >
                         <div className="h-10 w-10 rounded-lg border grid place-items-center bg-card">
-                            <Award className="size-4.5" />
+                            <IdCard className="size-4.5" />
                         </div>
                         <div className="text-sm font-medium text-foreground">Add a badge type</div>
                     </button>

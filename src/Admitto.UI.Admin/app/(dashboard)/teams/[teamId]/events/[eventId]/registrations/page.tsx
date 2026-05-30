@@ -168,7 +168,7 @@ export default function RegistrationsPage() {
 
     return (
         <PageLayout title="Registrations" breadcrumbs={breadcrumbs}>
-            <div className="flex items-start justify-between mb-6 gap-4">
+            <div className="flex flex-wrap items-start justify-between mb-6 gap-4 gap-y-3">
                 <div>
                     <div className="text-[0.6875rem] uppercase tracking-widest text-muted-foreground font-semibold">
                         Registrations
@@ -206,7 +206,7 @@ export default function RegistrationsPage() {
                             setSearch(e.target.value);
                             setPage(1);
                         }}
-                        className="max-w-xs"
+                        className="w-full sm:max-w-xs"
                     />
                     <Select
                         value={ticketFilter}
@@ -257,9 +257,10 @@ export default function RegistrationsPage() {
                                         onClick={() => toggleSort("ticket")}
                                     />
                                     <TableHead>Status</TableHead>
-                                    <TableHead>Reconfirm</TableHead>
+                                    <TableHead className="hidden sm:table-cell">Reconfirm</TableHead>
                                     <SortableHead
                                         label="Registered"
+                                        className="hidden sm:table-cell"
                                         active={sortKey === "registered"}
                                         dir={sortDir}
                                         onClick={() => toggleSort("registered")}
@@ -304,7 +305,7 @@ export default function RegistrationsPage() {
                                                         </Badge>
                                                     )}
                                                 </TableCell>
-                                                <TableCell className="text-xs">
+                                                <TableCell className="hidden sm:table-cell text-xs">
                                                     {r.hasReconfirmed && r.reconfirmedAt ? (
                                                         <span className="font-mono tabular-nums">
                                                             {new Date(r.reconfirmedAt).toLocaleString(undefined, { hour12: false })}
@@ -313,7 +314,7 @@ export default function RegistrationsPage() {
                                                         <span className="text-muted-foreground">—</span>
                                                     )}
                                                 </TableCell>
-                                                <TableCell className="font-mono tabular-nums text-xs">
+                                                <TableCell className="hidden sm:table-cell font-mono tabular-nums text-xs">
                                                     {new Date(r.createdAt).toLocaleString(undefined, { hour12: false })}
                                                 </TableCell>
                                             </TableRow>
@@ -360,15 +361,17 @@ function SortableHead({
     active,
     dir,
     onClick,
+    className,
 }: {
     label: string;
     active: boolean;
     dir: SortDir;
     onClick: () => void;
+    className?: string;
 }) {
     const Icon = !active ? ArrowUpDown : dir === "asc" ? ArrowUp : ArrowDown;
     return (
-        <TableHead>
+        <TableHead className={className}>
             <button
                 type="button"
                 onClick={onClick}

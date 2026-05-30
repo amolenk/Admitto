@@ -3,14 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Settings, Users, Mail, Trash2 } from "lucide-react";
+import { Settings, ClipboardList, Mail, FileText, RotateCcw, Trash2 } from "lucide-react";
 
 const navItems = [
     { label: "General", href: "", icon: Settings, desc: "Name, date, venue, website", exact: true },
-    { label: "Registration", href: "/registration", icon: Users, desc: "Policy, windows, waitlist" },
-    { label: "Reconfirmation", href: "/reconfirm", icon: Mail, desc: "Window and cadence" },
+    { label: "Registration", href: "/registration", icon: ClipboardList, desc: "Policy, windows, waitlist" },
+    { label: "Reconfirmation", href: "/reconfirm", icon: RotateCcw, desc: "Window and cadence" },
     { label: "Email", href: "/email", icon: Mail, desc: "Templates, SMTP, sender", exact: true },
-    { label: "Email templates", href: "/email/templates", icon: Mail, desc: "Customize email content" },
+    { label: "Email templates", href: "/email/templates", icon: FileText, desc: "Customize email content" },
     { label: "Danger zone", href: "/danger", icon: Trash2, desc: "Archive" },
 ];
 

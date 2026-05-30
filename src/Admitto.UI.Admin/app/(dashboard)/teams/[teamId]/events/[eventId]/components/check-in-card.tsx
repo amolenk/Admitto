@@ -4,7 +4,7 @@ import { TicketedEventDetailsDto, TicketTypeDto } from "@/lib/admitto-api/genera
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Clock, QrCode, Copy } from "lucide-react";
+import { Clock, QrCode } from "lucide-react";
 import { formatInEventZone } from "@/lib/time-zones";
 
 function daysUntil(iso: string): number {
@@ -55,10 +55,6 @@ export function CheckInCard({ event, ticketTypes }: CheckInCardProps) {
                             <Button variant="outline" size="sm">
                                 <QrCode className="size-3.5" />
                                 Scanner
-                            </Button>
-                            <Button variant="ghost" size="sm" className="text-muted-foreground">
-                                <Copy className="size-3.5" />
-                                Share link
                             </Button>
                         </div>
                     </div>

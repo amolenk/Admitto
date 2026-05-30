@@ -313,7 +313,7 @@ export default function BadgeInstancesPage() {
 
     return (
         <PageLayout title="Badge instances" breadcrumbs={breadcrumbs}>
-            <div className="flex items-start justify-between mb-6">
+            <div className="flex flex-wrap items-start justify-between mb-6 gap-y-3">
                 <div>
                     <div className="text-[0.6875rem] uppercase tracking-widest text-muted-foreground font-semibold">
                         Badge instances

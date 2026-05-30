@@ -66,8 +66,9 @@ export function TicketBreakdownCard({ teamId, eventId, ticketTypes, isLoading }:
                                             Sold out
                                         </Badge>
                                     ) : (
-                                        <Badge variant="outline" className="text-[0.68rem] text-primary border-primary/30 bg-primary/5">
-                                            On sale
+                                        <Badge variant="outline" className="text-[0.68rem] text-success border-success/30 bg-success/10">
+                                            <span className="pulse-dot mr-1" style={{ width: 5, height: 5 }} />
+                                            Available
                                         </Badge>
                                     )}
                                 </div>

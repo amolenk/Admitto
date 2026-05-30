@@ -3,7 +3,7 @@
 import { useParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow, format } from "date-fns";
-import { ArrowLeft, Clock, Trash2, Users } from "lucide-react";
+import { ArrowLeft, Clock, Trash2, ListOrdered } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { WaitlistDetailsDto, TicketTypeDto } from "@/lib/admitto-api/generated";
@@ -124,7 +124,7 @@ export default function WaitlistPage() {
                     <Card>
                         <CardHeader className="pb-3">
                             <CardTitle className="flex items-center gap-2 text-base font-semibold">
-                                <Users className="size-4" /> Active entries
+                                <ListOrdered className="size-4" /> Active entries
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="p-0">

@@ -36,7 +36,7 @@ export default async function EventSettingsLayout({
                     {eventName}
                 </h1>
             </div>
-            <div className="grid grid-cols-12 gap-8">
+            <div className="grid grid-cols-12 gap-4 lg:gap-8">
                 <div className="col-span-12 lg:col-span-3">
                     <NavLinks basePath={basePath} />
                 </div>

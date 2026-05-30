@@ -6,6 +6,8 @@
         <Nullable>enable</Nullable>
         <RootNamespace>Amolenk.$(MSBuildProjectName)</RootNamespace>
         <UserSecretsId>Admitto</UserSecretsId>
+<!--        <TreatWarningsAsErrors>false</TreatWarningsAsErrors>-->
+<!--        <MSBuildTreatWarningsAsErrors>true</MSBuildTreatWarningsAsErrors>-->
     </PropertyGroup>
 
     <ItemGroup>

@@ -15,7 +15,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import {
     Plus,
     Pencil,
-    Users,
+    Hourglass,
 } from "lucide-react";
 import {
     Dialog,
@@ -61,7 +61,7 @@ function TicketTypeCard({ t, teamId, eventId }: { t: TicketTypeDto; teamId: stri
                             {t.waitlistEnabled && (
                                 <Button variant="ghost" size="sm" asChild>
                                     <Link href={`/teams/${teamId}/events/${eventId}/ticket-types/${t.id}/waitlist`}>
-                                        <Users className="size-4" />
+                                        <Hourglass className="size-4" />
                                     </Link>
                                 </Button>
                             )}
@@ -92,21 +92,26 @@ function TicketTypeCard({ t, teamId, eventId }: { t: TicketTypeDto; teamId: stri
                         </div>
                     </div>
 
-                    {cap > 0 && (
-                        <div className="mt-4">
-                            <div className="capacity-bar">
-                                <span
-                                    style={{
-                                        width: `${pct}%`,
-                                    }}
-                                />
-                            </div>
-                            <div className="flex justify-between text-[11px] text-muted-foreground mt-1.5 font-mono tabular-nums">
-                                <span>{pct}% registered</span>
-                                <span>cap {cap}</span>
-                            </div>
+                    <div className="mt-4">
+                        <div className="capacity-bar">
+                            {cap > 0 && (
+                                <span style={{ width: `${pct}%` }} />
+                            )}
                         </div>
-                    )}
+                        <div className="flex justify-between text-[11px] text-muted-foreground mt-1.5 font-mono tabular-nums">
+                            {cap > 0 ? (
+                                <>
+                                    <span>{pct}% registered</span>
+                                    <span>cap {cap}</span>
+                                </>
+                            ) : (
+                                <>
+                                    <span>{used} registered</span>
+                                    <span>unlimited</span>
+                                </>
+                            )}
+                        </div>
+                    </div>
 
                     {t.timeSlots && t.timeSlots.length > 0 && (
                         <div className="mt-3 flex flex-wrap gap-1.5">
@@ -172,7 +177,7 @@ export default function TicketTypesPage() {
 
     return (
         <PageLayout title="Ticket types" breadcrumbs={breadcrumbs}>
-            <div className="flex items-start justify-between mb-6">
+            <div className="flex flex-wrap items-start justify-between mb-6 gap-y-3">
                 <div>
                     <div className="text-[0.6875rem] uppercase tracking-widest text-muted-foreground font-semibold">
                         Ticket types

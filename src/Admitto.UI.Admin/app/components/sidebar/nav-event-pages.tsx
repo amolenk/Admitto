@@ -3,9 +3,9 @@
 import { useRouter, useParams, usePathname } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
-    Award,
+    IdCard,
     LayoutDashboard,
-    Users,
+    ClipboardList,
     Ticket,
     Mail,
     Settings,
@@ -21,9 +21,9 @@ import { TicketedEventDetailsDto } from "@/lib/admitto-api/generated";
 
 const eventPages = [
     { label: "Dashboard", href: "", icon: LayoutDashboard },
-    { label: "Registrations", href: "/registrations", icon: Users },
+    { label: "Registrations", href: "/registrations", icon: ClipboardList },
     { label: "Ticket types", href: "/ticket-types", icon: Ticket },
-    { label: "Badges", href: "/badge-types", icon: Award },
+    { label: "Badges", href: "/badge-types", icon: IdCard },
     { label: "Emails", href: "/emails", icon: Mail },
     { label: "Settings", href: "/settings", icon: Settings },
 ];

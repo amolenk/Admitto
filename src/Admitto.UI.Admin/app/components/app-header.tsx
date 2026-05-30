@@ -6,6 +6,7 @@ import { Separator } from "@/components/ui/separator"
 import { useHeader } from "@/components/header-context"
 import {
     Breadcrumb,
+    BreadcrumbEllipsis,
     BreadcrumbItem,
     BreadcrumbLink,
     BreadcrumbList,
@@ -18,6 +19,11 @@ import { ThemeToggle } from "@/components/theme-toggle"
 export function AppHeader() {
     const { title, breadcrumbs } = useHeader()
 
+    // On mobile: show at most the last 2 crumbs with an ellipsis for any skipped middle crumbs.
+    // On desktop: show the full path.
+    const mobileCrumbs = breadcrumbs.length > 2 ? breadcrumbs.slice(-2) : breadcrumbs
+    const showEllipsis = breadcrumbs.length > 2
+
     return (
         <header
             className="group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 flex h-12 shrink-0 items-center gap-2 border-b transition-[width,height] ease-linear">
@@ -28,26 +34,58 @@ export function AppHeader() {
                     className="mx-2 data-[orientation=vertical]:h-4"
                 />
                 {breadcrumbs.length > 0 ? (
-                    <Breadcrumb>
-                        <BreadcrumbList>
-                            {breadcrumbs.map((crumb, i) => (
-                                <React.Fragment key={i}>
-                                    {i > 0 && <BreadcrumbSeparator />}
-                                    <BreadcrumbItem>
-                                        {i === breadcrumbs.length - 1 ? (
-                                            <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
-                                        ) : crumb.href ? (
-                                            <BreadcrumbLink asChild>
-                                                <Link href={crumb.href}>{crumb.label}</Link>
-                                            </BreadcrumbLink>
-                                        ) : (
-                                            <span className="text-muted-foreground">{crumb.label}</span>
-                                        )}
-                                    </BreadcrumbItem>
-                                </React.Fragment>
-                            ))}
-                        </BreadcrumbList>
-                    </Breadcrumb>
+                    <div className="min-w-0 flex-1 overflow-hidden">
+                        {/* Mobile: collapsed breadcrumbs (last 2 items + ellipsis) */}
+                        <Breadcrumb className="sm:hidden">
+                            <BreadcrumbList className="flex-nowrap">
+                                {showEllipsis && (
+                                    <>
+                                        <BreadcrumbItem>
+                                            <BreadcrumbEllipsis />
+                                        </BreadcrumbItem>
+                                        <BreadcrumbSeparator />
+                                    </>
+                                )}
+                                {mobileCrumbs.map((crumb, i) => (
+                                    <React.Fragment key={i}>
+                                        {i > 0 && <BreadcrumbSeparator />}
+                                        <BreadcrumbItem>
+                                            {i === mobileCrumbs.length - 1 ? (
+                                                <BreadcrumbPage className="truncate max-w-[140px]">{crumb.label}</BreadcrumbPage>
+                                            ) : crumb.href ? (
+                                                <BreadcrumbLink asChild>
+                                                    <Link href={crumb.href}>{crumb.label}</Link>
+                                                </BreadcrumbLink>
+                                            ) : (
+                                                <span className="text-muted-foreground">{crumb.label}</span>
+                                            )}
+                                        </BreadcrumbItem>
+                                    </React.Fragment>
+                                ))}
+                            </BreadcrumbList>
+                        </Breadcrumb>
+                        {/* Desktop: full breadcrumb trail */}
+                        <Breadcrumb className="hidden sm:block">
+                            <BreadcrumbList>
+                                {breadcrumbs.map((crumb, i) => (
+                                    <React.Fragment key={i}>
+                                        {i > 0 && <BreadcrumbSeparator />}
+                                        <BreadcrumbItem>
+                                            {i === breadcrumbs.length - 1 ? (
+                                                <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
+                                            ) : crumb.href ? (
+                                                <BreadcrumbLink asChild>
+                                                    <Link href={crumb.href}>{crumb.label}</Link>
+                                                </BreadcrumbLink>
+                                            ) : (
+                                                <span className="text-muted-foreground">{crumb.label}</span>
+                                            )}
+                                        </BreadcrumbItem>
+                                    </React.Fragment>
+                                ))}
+                            </BreadcrumbList>
+                        </Breadcrumb>
+                    </div>
                 ) : (
                     <h1 className="text-base font-medium">{title}</h1>
                 )}

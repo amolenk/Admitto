@@ -142,7 +142,7 @@ export default function TeamEmailTemplatesPage() {
                 error={createError}
             />
 
-            <div className="flex items-start justify-between mb-4">
+            <div className="flex flex-wrap items-start justify-between mb-4 gap-y-3">
                 <div>
                     <h2 className="font-display text-[22px] font-semibold">Email templates</h2>
                     <p className="text-[13.5px] text-muted-foreground">

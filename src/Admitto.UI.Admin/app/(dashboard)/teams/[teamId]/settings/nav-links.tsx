@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Settings, Users, Trash2, Mail, KeyRound } from "lucide-react";
+import { Settings, Users, Trash2, Mail, KeyRound, FileText } from "lucide-react";
 
 const navItems = [
     { label: "General", href: "", icon: Settings, desc: "Team name", exact: true },
     { label: "Members", href: "/members", icon: Users, desc: "Roles and access" },
     { label: "Email", href: "/email", icon: Mail, desc: "SMTP and sender identity", exact: true },
-    { label: "Email templates", href: "/email/templates", icon: Mail, desc: "Customize email content" },
+    { label: "Email templates", href: "/email/templates", icon: FileText, desc: "Customize email content" },
     { label: "API Keys", href: "/api-keys", icon: KeyRound, desc: "Public API authentication" },
     { label: "Danger zone", href: "/danger", icon: Trash2, desc: "Archive team" },
 ];
