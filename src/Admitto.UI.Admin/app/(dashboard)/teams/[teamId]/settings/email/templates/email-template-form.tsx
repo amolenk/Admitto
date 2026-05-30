@@ -464,7 +464,7 @@ export function EmailTemplateForm({
                         </div>
 
                         <Tabs value={activeTab} onValueChange={handleTabChange}>
-                            <div className="border-b px-6 py-2">
+                            <div className="border-b px-6 py-1.5">
                                 <TabsList>
                                     <TabsTrigger value="html">HTML</TabsTrigger>
                                     <TabsTrigger value="text">Text</TabsTrigger>
