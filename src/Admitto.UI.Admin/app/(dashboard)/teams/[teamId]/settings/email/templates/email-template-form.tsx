@@ -42,6 +42,7 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Card } from "@/components/ui/card";
 import { useCustomForm } from "@/hooks/use-custom-form";
 import { apiClient } from "@/lib/api-client";
 import { FormError } from "@/components/form-error";
@@ -442,6 +443,7 @@ export function EmailTemplateForm({
                     )}
 
                     <div className="space-y-5">
+                        <Card className="px-6 py-4">
                         <FormField
                             control={form.control}
                             name="subject"
@@ -458,6 +460,7 @@ export function EmailTemplateForm({
                                 </FormItem>
                             )}
                         />
+                        </Card>
 
                         <Tabs value={activeTab} onValueChange={handleTabChange}>
                             <TabsList>
