@@ -208,7 +208,7 @@ function PreviewTabContent({
     }, []);
 
     return (
-        <div className="pt-4">
+        <div className="px-6 py-4">
             <p className="text-[12px] text-muted-foreground mb-4">
                 Rendered with sample placeholder data.
             </p>
@@ -464,30 +464,15 @@ export function EmailTemplateForm({
                         </div>
 
                         <Tabs value={activeTab} onValueChange={handleTabChange}>
-                            <div className="border-b px-6">
-                                <TabsList className="h-auto rounded-none bg-transparent p-0 gap-0">
-                                    <TabsTrigger
-                                        value="html"
-                                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 py-2.5 text-sm"
-                                    >
-                                        HTML
-                                    </TabsTrigger>
-                                    <TabsTrigger
-                                        value="text"
-                                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 py-2.5 text-sm"
-                                    >
-                                        Text
-                                    </TabsTrigger>
-                                    <TabsTrigger
-                                        value="preview"
-                                        className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent data-[state=active]:shadow-none px-3 py-2.5 text-sm"
-                                    >
-                                        Preview
-                                    </TabsTrigger>
+                            <div className="border-b px-6 py-2">
+                                <TabsList>
+                                    <TabsTrigger value="html">HTML</TabsTrigger>
+                                    <TabsTrigger value="text">Text</TabsTrigger>
+                                    <TabsTrigger value="preview">Preview</TabsTrigger>
                                 </TabsList>
                             </div>
 
-                            <TabsContent value="html" className="mt-0">
+                            <TabsContent value="html" className="mt-0 min-h-[460px]">
                                 <FormField
                                     control={form.control}
                                     name="htmlBody"
@@ -497,8 +482,8 @@ export function EmailTemplateForm({
                                                 <CodeEditor
                                                     value={field.value}
                                                     onChange={field.onChange}
-                                                    minHeight="400px"
-                                                    className="rounded-none border-x-0 border-b-0 shadow-none"
+                                                    minHeight="460px"
+                                                    className="rounded-none border-none shadow-none"
                                                 />
                                             </FormControl>
                                             <FormMessage className="px-6 pb-4" />
@@ -507,7 +492,7 @@ export function EmailTemplateForm({
                                 />
                             </TabsContent>
 
-                            <TabsContent value="text" className="mt-0 p-6">
+                            <TabsContent value="text" className="mt-0 p-6 min-h-[460px]">
                                 <FormField
                                     control={form.control}
                                     name="textBody"
@@ -515,7 +500,7 @@ export function EmailTemplateForm({
                                         <FormItem>
                                             <FormControl>
                                                 <Textarea
-                                                    className="font-mono text-[12px] min-h-64"
+                                                    className="font-mono text-[12px] min-h-[400px]"
                                                     {...field}
                                                 />
                                             </FormControl>
@@ -525,7 +510,7 @@ export function EmailTemplateForm({
                                 />
                             </TabsContent>
 
-                            <TabsContent value="preview" className="mt-0">
+                            <TabsContent value="preview" className="mt-0 min-h-[460px]">
                                 {previewValues && (
                                     <PreviewTabContent
                                         key={previewKey}
