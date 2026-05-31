@@ -19,7 +19,6 @@ import { TicketTypeDto } from "@/lib/admitto-api/generated";
 import { apiClient } from "@/lib/api-client";
 import { FormError } from "@/components/form-error";
 import { PageLayout } from "@/components/page-layout";
-import { useTeams } from "@/hooks/use-teams";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -217,7 +216,6 @@ export default function AttendeeDetailPage() {
         eventId: string;
         registrationId: string;
     }>();
-    const { selectedTeam } = useTeams();
     const queryClient = useQueryClient();
 
     const detailQuery = useQuery({
@@ -315,15 +313,9 @@ export default function AttendeeDetailPage() {
     }
 
     const name = registration ? attendeeFullName(registration) : "";
-    const breadcrumbs = [
-        { label: selectedTeam?.name ?? "", href: `/teams/${teamId}/settings` },
-        { label: "", href: `/teams/${teamId}/events/${eventId}` },
-        { label: "Registrations", href: `/teams/${teamId}/events/${eventId}/registrations` },
-        { label: name },
-    ];
 
     return (
-        <PageLayout title="Attendee" breadcrumbs={breadcrumbs}>
+        <PageLayout>
             {/* Back link */}
             <div className="flex items-center gap-2 text-[13px]">
                 <Button variant="ghost" size="sm" asChild className="text-muted-foreground">

@@ -5,7 +5,6 @@ import { AppHeader } from "@/components/app-header";
 import { Inter, Fraunces } from "next/font/google";
 import { Geist_Mono } from "next/font/google";
 import "@/globals.css";
-import { HeaderProvider } from "@/components/header-context";
 import { QueryProvider } from "@/components/query-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -54,19 +53,17 @@ export default async function RootLayout({
         >
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
         <QueryProvider>
-            <HeaderProvider>
-                <SidebarProvider>
-                    <AppSidebar session={session} variant="inset" />
-                    <SidebarInset>
-                        <AppHeader />
-                        <div className="flex flex-1 flex-col">
-                            <div className="@container/main flex flex-1 flex-col gap-2 px-4 py-4 lg:px-6 lg:py-6">
-                                {children}
-                            </div>
+            <SidebarProvider>
+                <AppSidebar session={session} variant="inset" />
+                <SidebarInset>
+                    <AppHeader />
+                    <div className="flex flex-1 flex-col">
+                        <div className="@container/main flex flex-1 flex-col gap-2 px-4 py-4 lg:px-6 lg:py-6">
+                            {children}
                         </div>
-                    </SidebarInset>
-                </SidebarProvider>
-            </HeaderProvider>
+                    </div>
+                </SidebarInset>
+            </SidebarProvider>
             <Toaster />
         </QueryProvider>
         </ThemeProvider>

@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AddBadgeInstanceData, AddBadgeInstanceErrors, AddBadgeInstanceResponses, AddBadgeTypeData, AddBadgeTypeErrors, AddBadgeTypeResponses, AddTicketTypeData, AddTicketTypeErrors, AddTicketTypeResponses, AdminRegisterAttendeeData, AdminRegisterAttendeeErrors, AdminRegisterAttendeeResponses, ArchiveTeamData, ArchiveTeamErrors, ArchiveTeamResponses, ArchiveTicketedEventData, ArchiveTicketedEventErrors, ArchiveTicketedEventResponses, AssignTeamMembershipData, AssignTeamMembershipErrors, AssignTeamMembershipResponses, CancelBulkEmailData, CancelBulkEmailErrors, CancelBulkEmailResponses, CancelRegistrationData, CancelRegistrationErrors, CancelRegistrationResponses, ChangeAttendeeTicketsData, ChangeAttendeeTicketsErrors, ChangeAttendeeTicketsResponses, ChangeTeamMembershipRoleData, ChangeTeamMembershipRoleErrors, ChangeTeamMembershipRoleResponses, ConfigureReconfirmPolicyData, ConfigureReconfirmPolicyErrors, ConfigureReconfirmPolicyResponses, ConfigureRegistrationPolicyData, ConfigureRegistrationPolicyErrors, ConfigureRegistrationPolicyResponses, ConfirmWaitlistEntryHttpEndpointData, ConfirmWaitlistEntryHttpEndpointErrors, ConfirmWaitlistEntryHttpEndpointResponses, CreateApiKeyData, CreateApiKeyErrors, CreateApiKeyResponses, CreateBulkEmailData, CreateBulkEmailErrors, CreateBulkEmailResponses, CreateCouponData, CreateCouponErrors, CreateCouponResponses, CreateEventEmailTemplateData, CreateEventEmailTemplateErrors, CreateEventEmailTemplateResponses, CreateTeamData, CreateTeamEmailTemplateData, CreateTeamEmailTemplateErrors, CreateTeamEmailTemplateResponses, CreateTeamErrors, CreateTeamResponses, DeleteBadgeInstanceData, DeleteBadgeInstanceErrors, DeleteBadgeInstanceResponses, DeleteBadgeTypeData, DeleteBadgeTypeErrors, DeleteBadgeTypeResponses, DeleteEventEmailSettingsData, DeleteEventEmailSettingsErrors, DeleteEventEmailSettingsResponses, DeleteEventEmailTemplateData, DeleteEventEmailTemplateErrors, DeleteEventEmailTemplateResponses, DeleteTeamEmailSettingsData, DeleteTeamEmailSettingsErrors, DeleteTeamEmailSettingsResponses, DeleteTeamEmailTemplateData, DeleteTeamEmailTemplateErrors, DeleteTeamEmailTemplateResponses, ExportBadgeCsvData, ExportBadgeCsvErrors, GetApiKeysData, GetApiKeysErrors, GetApiKeysResponses, GetAttendeeEmailsData, GetAttendeeEmailsErrors, GetAttendeeEmailsResponses, GetBulkEmailData, GetBulkEmailErrors, GetBulkEmailResponses, GetBulkEmailsData, GetBulkEmailsErrors, GetBulkEmailsResponses, GetCouponDetailsData, GetCouponDetailsErrors, GetCouponDetailsResponses, GetEventCreationRequestData, GetEventCreationRequestErrors, GetEventCreationRequestResponses, GetEventEmailSettingsData, GetEventEmailSettingsErrors, GetEventEmailSettingsResponses, GetEventEmailTemplateData, GetEventEmailTemplateErrors, GetEventEmailTemplateResponses, GetEventEmailTemplatesData, GetEventEmailTemplatesErrors, GetEventEmailTemplatesResponses, GetPublicCouponDetailsHttpEndpointData, GetPublicCouponDetailsHttpEndpointErrors, GetPublicCouponDetailsHttpEndpointResponses, GetPublicTicketTypesHttpEndpointData, GetPublicTicketTypesHttpEndpointErrors, GetPublicTicketTypesHttpEndpointResponses, GetQrCodeHttpEndpointData, GetQrCodeHttpEndpointErrors, GetRegistrationDetailsData, GetRegistrationDetailsErrors, GetRegistrationDetailsResponses, GetRegistrationsData, GetRegistrationsErrors, GetRegistrationsResponses, GetTeamData, GetTeamEmailSettingsData, GetTeamEmailSettingsErrors, GetTeamEmailSettingsResponses, GetTeamEmailTemplateData, GetTeamEmailTemplateErrors, GetTeamEmailTemplateResponses, GetTeamEmailTemplatesData, GetTeamEmailTemplatesErrors, GetTeamEmailTemplatesResponses, GetTeamErrors, GetTeamResponses, GetTeamsData, GetTeamsErrors, GetTeamsResponses, GetTicketedEventDetailsData, GetTicketedEventDetailsErrors, GetTicketedEventDetailsResponses, GetTicketedEventsData, GetTicketedEventsErrors, GetTicketedEventsResponses, GetTicketTypesData, GetTicketTypesErrors, GetTicketTypesResponses, GetWaitlistDetailsHttpEndpointData, GetWaitlistDetailsHttpEndpointErrors, GetWaitlistDetailsHttpEndpointResponses, JoinWaitlistHttpEndpointData, JoinWaitlistHttpEndpointErrors, JoinWaitlistHttpEndpointResponses, LeaveWaitlistHttpEndpointData, LeaveWaitlistHttpEndpointErrors, LeaveWaitlistHttpEndpointResponses, ListBadgeInstancesData, ListBadgeInstancesErrors, ListBadgeInstancesResponses, ListBadgeTypesData, ListBadgeTypesErrors, ListBadgeTypesResponses, ListCouponsData, ListCouponsErrors, ListCouponsResponses, ListTeamMembersData, ListTeamMembersErrors, ListTeamMembersResponses, PreviewBulkEmailData, PreviewBulkEmailErrors, PreviewBulkEmailResponses, PreviewEventEmailTemplateData, PreviewEventEmailTemplateErrors, PreviewEventEmailTemplateResponses, PreviewTeamEmailTemplateData, PreviewTeamEmailTemplateErrors, PreviewTeamEmailTemplateResponses, RegisterAttendeeSelfServiceHttpEndpointData, RegisterAttendeeSelfServiceHttpEndpointErrors, RegisterAttendeeWithCouponHttpEndpointData, RegisterAttendeeWithCouponHttpEndpointErrors, RemoveTeamMembershipData, RemoveTeamMembershipErrors, RemoveTeamMembershipResponses, RemoveWaitlistEntryHttpEndpointData, RemoveWaitlistEntryHttpEndpointErrors, RemoveWaitlistEntryHttpEndpointResponses, RenameBadgeTypeData, RenameBadgeTypeErrors, RenameBadgeTypeResponses, RequestOtpHttpEndpointData, RequestOtpHttpEndpointErrors, RequestTicketedEventCreationData, RequestTicketedEventCreationErrors, RequestTicketedEventCreationResponses, RevokeApiKeyData, RevokeApiKeyErrors, RevokeApiKeyResponses, RevokeCouponData, RevokeCouponErrors, RevokeCouponResponses, SelfCancelRegistrationHttpEndpointData, SelfCancelRegistrationHttpEndpointErrors, SelfChangeTicketsHttpEndpointData, SelfChangeTicketsHttpEndpointErrors, TestEventEmailSettingsData, TestEventEmailSettingsErrors, TestEventEmailSettingsResponses, TestSendEventEmailTemplateData, TestSendEventEmailTemplateErrors, TestSendEventEmailTemplateResponses, TestSendTeamEmailTemplateData, TestSendTeamEmailTemplateErrors, TestSendTeamEmailTemplateResponses, TestTeamEmailSettingsData, TestTeamEmailSettingsErrors, TestTeamEmailSettingsResponses, UpdateAdditionalDetailSchemaData, UpdateAdditionalDetailSchemaErrors, UpdateAdditionalDetailSchemaResponses, UpdateBadgeInstanceData, UpdateBadgeInstanceErrors, UpdateBadgeInstanceResponses, UpdateEventEmailTemplateData, UpdateEventEmailTemplateErrors, UpdateEventEmailTemplateResponses, UpdateTeamData, UpdateTeamEmailTemplateData, UpdateTeamEmailTemplateErrors, UpdateTeamEmailTemplateResponses, UpdateTeamErrors, UpdateTeamResponses, UpdateTicketedEventDetailsData, UpdateTicketedEventDetailsErrors, UpdateTicketedEventDetailsResponses, UpdateTicketedEventTimeZoneData, UpdateTicketedEventTimeZoneErrors, UpdateTicketedEventTimeZoneResponses, UpdateTicketTypeData, UpdateTicketTypeErrors, UpdateTicketTypeResponses, UpsertEventEmailSettingsData, UpsertEventEmailSettingsErrors, UpsertEventEmailSettingsResponses, UpsertTeamEmailSettingsData, UpsertTeamEmailSettingsErrors, UpsertTeamEmailSettingsResponses, VerifyOtpHttpEndpointData, VerifyOtpHttpEndpointErrors } from './types.gen';
+import type { AddBadgeInstanceData, AddBadgeInstanceErrors, AddBadgeInstanceResponses, AddBadgeTypeData, AddBadgeTypeErrors, AddBadgeTypeResponses, AddTicketTypeData, AddTicketTypeErrors, AddTicketTypeResponses, AdminRegisterAttendeeData, AdminRegisterAttendeeErrors, AdminRegisterAttendeeResponses, ArchiveTeamData, ArchiveTeamErrors, ArchiveTeamResponses, ArchiveTicketedEventData, ArchiveTicketedEventErrors, ArchiveTicketedEventResponses, AssignTeamMembershipData, AssignTeamMembershipErrors, AssignTeamMembershipResponses, CancelBulkEmailData, CancelBulkEmailErrors, CancelBulkEmailResponses, CancelRegistrationData, CancelRegistrationErrors, CancelRegistrationResponses, ChangeAttendeeTicketsData, ChangeAttendeeTicketsErrors, ChangeAttendeeTicketsResponses, ChangeTeamMembershipRoleData, ChangeTeamMembershipRoleErrors, ChangeTeamMembershipRoleResponses, ConfigureReconfirmPolicyData, ConfigureReconfirmPolicyErrors, ConfigureReconfirmPolicyResponses, ConfigureRegistrationPolicyData, ConfigureRegistrationPolicyErrors, ConfigureRegistrationPolicyResponses, CreateApiKeyData, CreateApiKeyErrors, CreateApiKeyResponses, CreateBulkEmailData, CreateBulkEmailErrors, CreateBulkEmailResponses, CreateCouponData, CreateCouponErrors, CreateCouponResponses, CreateEventEmailTemplateData, CreateEventEmailTemplateErrors, CreateEventEmailTemplateResponses, CreateTeamData, CreateTeamEmailTemplateData, CreateTeamEmailTemplateErrors, CreateTeamEmailTemplateResponses, CreateTeamErrors, CreateTeamResponses, DeleteBadgeInstanceData, DeleteBadgeInstanceErrors, DeleteBadgeInstanceResponses, DeleteBadgeTypeData, DeleteBadgeTypeErrors, DeleteBadgeTypeResponses, DeleteEventEmailSettingsData, DeleteEventEmailSettingsErrors, DeleteEventEmailSettingsResponses, DeleteEventEmailTemplateData, DeleteEventEmailTemplateErrors, DeleteEventEmailTemplateResponses, DeleteTeamEmailSettingsData, DeleteTeamEmailSettingsErrors, DeleteTeamEmailSettingsResponses, DeleteTeamEmailTemplateData, DeleteTeamEmailTemplateErrors, DeleteTeamEmailTemplateResponses, ExportBadgeCsvData, ExportBadgeCsvErrors, ExportRegistrationsCsvData, ExportRegistrationsCsvErrors, GetApiKeysData, GetApiKeysErrors, GetApiKeysResponses, GetAttendeeEmailsData, GetAttendeeEmailsErrors, GetAttendeeEmailsResponses, GetBulkEmailData, GetBulkEmailErrors, GetBulkEmailResponses, GetBulkEmailsData, GetBulkEmailsErrors, GetBulkEmailsResponses, GetCouponDetailsData, GetCouponDetailsErrors, GetCouponDetailsResponses, GetEventCreationRequestData, GetEventCreationRequestErrors, GetEventCreationRequestResponses, GetEventEmailSettingsData, GetEventEmailSettingsErrors, GetEventEmailSettingsResponses, GetEventEmailTemplateData, GetEventEmailTemplateErrors, GetEventEmailTemplateResponses, GetEventEmailTemplatesData, GetEventEmailTemplatesErrors, GetEventEmailTemplatesResponses, GetPublicCouponDetailsData, GetPublicCouponDetailsErrors, GetPublicCouponDetailsResponses, GetPublicTicketTypesData, GetPublicTicketTypesErrors, GetPublicTicketTypesResponses, GetQrCodeData, GetQrCodeErrors, GetRegistrationDetailsData, GetRegistrationDetailsErrors, GetRegistrationDetailsResponses, GetRegistrationsData, GetRegistrationsErrors, GetRegistrationsResponses, GetTeamData, GetTeamEmailSettingsData, GetTeamEmailSettingsErrors, GetTeamEmailSettingsResponses, GetTeamEmailTemplateData, GetTeamEmailTemplateErrors, GetTeamEmailTemplateResponses, GetTeamEmailTemplatesData, GetTeamEmailTemplatesErrors, GetTeamEmailTemplatesResponses, GetTeamErrors, GetTeamResponses, GetTeamsData, GetTeamsErrors, GetTeamsResponses, GetTicketedEventDetailsData, GetTicketedEventDetailsErrors, GetTicketedEventDetailsResponses, GetTicketedEventsData, GetTicketedEventsErrors, GetTicketedEventsResponses, GetTicketTypesData, GetTicketTypesErrors, GetTicketTypesResponses, GetWaitlistDetailsData, GetWaitlistDetailsErrors, GetWaitlistDetailsResponses, JoinWaitlistData, JoinWaitlistErrors, LeaveWaitlistData, LeaveWaitlistErrors, LeaveWaitlistResponses, ListBadgeInstancesData, ListBadgeInstancesErrors, ListBadgeInstancesResponses, ListBadgeTypesData, ListBadgeTypesErrors, ListBadgeTypesResponses, ListCouponsData, ListCouponsErrors, ListCouponsResponses, ListTeamMembersData, ListTeamMembersErrors, ListTeamMembersResponses, PreviewBulkEmailData, PreviewBulkEmailErrors, PreviewBulkEmailResponses, PreviewEventEmailTemplateData, PreviewEventEmailTemplateErrors, PreviewEventEmailTemplateResponses, PreviewTeamEmailTemplateData, PreviewTeamEmailTemplateErrors, PreviewTeamEmailTemplateResponses, RegisterAttendeeSelfServiceData, RegisterAttendeeSelfServiceErrors, RegisterAttendeeWithCouponData, RegisterAttendeeWithCouponErrors, RemoveTeamMembershipData, RemoveTeamMembershipErrors, RemoveTeamMembershipResponses, RemoveWaitlistEntryData, RemoveWaitlistEntryErrors, RemoveWaitlistEntryResponses, RenameBadgeTypeData, RenameBadgeTypeErrors, RenameBadgeTypeResponses, RequestOtpData, RequestOtpErrors, RequestTicketedEventCreationData, RequestTicketedEventCreationErrors, RequestTicketedEventCreationResponses, RevokeApiKeyData, RevokeApiKeyErrors, RevokeApiKeyResponses, RevokeCouponData, RevokeCouponErrors, RevokeCouponResponses, SelfCancelRegistrationData, SelfCancelRegistrationErrors, SelfChangeTicketsData, SelfChangeTicketsErrors, TestEventEmailSettingsData, TestEventEmailSettingsErrors, TestEventEmailSettingsResponses, TestSendEventEmailTemplateData, TestSendEventEmailTemplateErrors, TestSendEventEmailTemplateResponses, TestSendTeamEmailTemplateData, TestSendTeamEmailTemplateErrors, TestSendTeamEmailTemplateResponses, TestTeamEmailSettingsData, TestTeamEmailSettingsErrors, TestTeamEmailSettingsResponses, UpdateAdditionalDetailSchemaData, UpdateAdditionalDetailSchemaErrors, UpdateAdditionalDetailSchemaResponses, UpdateBadgeInstanceData, UpdateBadgeInstanceErrors, UpdateBadgeInstanceResponses, UpdateEventEmailTemplateData, UpdateEventEmailTemplateErrors, UpdateEventEmailTemplateResponses, UpdateTeamData, UpdateTeamEmailTemplateData, UpdateTeamEmailTemplateErrors, UpdateTeamEmailTemplateResponses, UpdateTeamErrors, UpdateTeamResponses, UpdateTicketedEventDetailsData, UpdateTicketedEventDetailsErrors, UpdateTicketedEventDetailsResponses, UpdateTicketedEventTimeZoneData, UpdateTicketedEventTimeZoneErrors, UpdateTicketedEventTimeZoneResponses, UpdateTicketTypeData, UpdateTicketTypeErrors, UpdateTicketTypeResponses, UpsertEventEmailSettingsData, UpsertEventEmailSettingsErrors, UpsertEventEmailSettingsResponses, UpsertTeamEmailSettingsData, UpsertTeamEmailSettingsErrors, UpsertTeamEmailSettingsResponses, VerifyOtpData, VerifyOtpErrors } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -802,6 +802,19 @@ export const adminRegisterAttendee = <ThrowOnError extends boolean = false>(opti
     });
 };
 
+export const exportRegistrationsCsv = <ThrowOnError extends boolean = false>(options: Options<ExportRegistrationsCsvData, ThrowOnError>) => {
+    return (options.client ?? client).get<unknown, ExportRegistrationsCsvErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}/registrations/export',
+        ...options
+    });
+};
+
 export const getRegistrationDetails = <ThrowOnError extends boolean = false>(options: Options<GetRegistrationDetailsData, ThrowOnError>) => {
     return (options.client ?? client).get<GetRegistrationDetailsResponses, GetRegistrationDetailsErrors, ThrowOnError>({
         security: [
@@ -952,8 +965,8 @@ export const updateTicketType = <ThrowOnError extends boolean = false>(options: 
     });
 };
 
-export const removeWaitlistEntryHttpEndpoint = <ThrowOnError extends boolean = false>(options: Options<RemoveWaitlistEntryHttpEndpointData, ThrowOnError>) => {
-    return (options.client ?? client).delete<RemoveWaitlistEntryHttpEndpointResponses, RemoveWaitlistEntryHttpEndpointErrors, ThrowOnError>({
+export const removeWaitlistEntry = <ThrowOnError extends boolean = false>(options: Options<RemoveWaitlistEntryData, ThrowOnError>) => {
+    return (options.client ?? client).delete<RemoveWaitlistEntryResponses, RemoveWaitlistEntryErrors, ThrowOnError>({
         security: [
             {
                 scheme: 'bearer',
@@ -965,8 +978,8 @@ export const removeWaitlistEntryHttpEndpoint = <ThrowOnError extends boolean = f
     });
 };
 
-export const getWaitlistDetailsHttpEndpoint = <ThrowOnError extends boolean = false>(options: Options<GetWaitlistDetailsHttpEndpointData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetWaitlistDetailsHttpEndpointResponses, GetWaitlistDetailsHttpEndpointErrors, ThrowOnError>({
+export const getWaitlistDetails = <ThrowOnError extends boolean = false>(options: Options<GetWaitlistDetailsData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetWaitlistDetailsResponses, GetWaitlistDetailsErrors, ThrowOnError>({
         security: [
             {
                 scheme: 'bearer',
@@ -1111,8 +1124,8 @@ export const exportBadgeCsv = <ThrowOnError extends boolean = false>(options: Op
     });
 };
 
-export const requestOtpHttpEndpoint = <ThrowOnError extends boolean = false>(options: Options<RequestOtpHttpEndpointData, ThrowOnError>) => {
-    return (options.client ?? client).post<unknown, RequestOtpHttpEndpointErrors, ThrowOnError>({
+export const requestOtp = <ThrowOnError extends boolean = false>(options: Options<RequestOtpData, ThrowOnError>) => {
+    return (options.client ?? client).post<unknown, RequestOtpErrors, ThrowOnError>({
         security: [
             {
                 scheme: 'bearer',
@@ -1128,8 +1141,8 @@ export const requestOtpHttpEndpoint = <ThrowOnError extends boolean = false>(opt
     });
 };
 
-export const verifyOtpHttpEndpoint = <ThrowOnError extends boolean = false>(options: Options<VerifyOtpHttpEndpointData, ThrowOnError>) => {
-    return (options.client ?? client).post<unknown, VerifyOtpHttpEndpointErrors, ThrowOnError>({
+export const verifyOtp = <ThrowOnError extends boolean = false>(options: Options<VerifyOtpData, ThrowOnError>) => {
+    return (options.client ?? client).post<unknown, VerifyOtpErrors, ThrowOnError>({
         security: [
             {
                 scheme: 'bearer',
@@ -1145,8 +1158,8 @@ export const verifyOtpHttpEndpoint = <ThrowOnError extends boolean = false>(opti
     });
 };
 
-export const registerAttendeeSelfServiceHttpEndpoint = <ThrowOnError extends boolean = false>(options: Options<RegisterAttendeeSelfServiceHttpEndpointData, ThrowOnError>) => {
-    return (options.client ?? client).post<unknown, RegisterAttendeeSelfServiceHttpEndpointErrors, ThrowOnError>({
+export const registerAttendeeSelfService = <ThrowOnError extends boolean = false>(options: Options<RegisterAttendeeSelfServiceData, ThrowOnError>) => {
+    return (options.client ?? client).post<unknown, RegisterAttendeeSelfServiceErrors, ThrowOnError>({
         security: [
             {
                 scheme: 'bearer',
@@ -1162,8 +1175,8 @@ export const registerAttendeeSelfServiceHttpEndpoint = <ThrowOnError extends boo
     });
 };
 
-export const registerAttendeeWithCouponHttpEndpoint = <ThrowOnError extends boolean = false>(options: Options<RegisterAttendeeWithCouponHttpEndpointData, ThrowOnError>) => {
-    return (options.client ?? client).post<unknown, RegisterAttendeeWithCouponHttpEndpointErrors, ThrowOnError>({
+export const registerAttendeeWithCoupon = <ThrowOnError extends boolean = false>(options: Options<RegisterAttendeeWithCouponData, ThrowOnError>) => {
+    return (options.client ?? client).post<unknown, RegisterAttendeeWithCouponErrors, ThrowOnError>({
         security: [
             {
                 scheme: 'bearer',
@@ -1179,8 +1192,8 @@ export const registerAttendeeWithCouponHttpEndpoint = <ThrowOnError extends bool
     });
 };
 
-export const getQrCodeHttpEndpoint = <ThrowOnError extends boolean = false>(options: Options<GetQrCodeHttpEndpointData, ThrowOnError>) => {
-    return (options.client ?? client).get<unknown, GetQrCodeHttpEndpointErrors, ThrowOnError>({
+export const getQrCode = <ThrowOnError extends boolean = false>(options: Options<GetQrCodeData, ThrowOnError>) => {
+    return (options.client ?? client).get<unknown, GetQrCodeErrors, ThrowOnError>({
         security: [
             {
                 scheme: 'bearer',
@@ -1192,8 +1205,8 @@ export const getQrCodeHttpEndpoint = <ThrowOnError extends boolean = false>(opti
     });
 };
 
-export const selfCancelRegistrationHttpEndpoint = <ThrowOnError extends boolean = false>(options: Options<SelfCancelRegistrationHttpEndpointData, ThrowOnError>) => {
-    return (options.client ?? client).post<unknown, SelfCancelRegistrationHttpEndpointErrors, ThrowOnError>({
+export const selfCancelRegistration = <ThrowOnError extends boolean = false>(options: Options<SelfCancelRegistrationData, ThrowOnError>) => {
+    return (options.client ?? client).post<unknown, SelfCancelRegistrationErrors, ThrowOnError>({
         security: [
             {
                 scheme: 'bearer',
@@ -1205,8 +1218,8 @@ export const selfCancelRegistrationHttpEndpoint = <ThrowOnError extends boolean 
     });
 };
 
-export const selfChangeTicketsHttpEndpoint = <ThrowOnError extends boolean = false>(options: Options<SelfChangeTicketsHttpEndpointData, ThrowOnError>) => {
-    return (options.client ?? client).put<unknown, SelfChangeTicketsHttpEndpointErrors, ThrowOnError>({
+export const selfChangeTickets = <ThrowOnError extends boolean = false>(options: Options<SelfChangeTicketsData, ThrowOnError>) => {
+    return (options.client ?? client).put<unknown, SelfChangeTicketsErrors, ThrowOnError>({
         security: [
             {
                 scheme: 'bearer',
@@ -1222,8 +1235,8 @@ export const selfChangeTicketsHttpEndpoint = <ThrowOnError extends boolean = fal
     });
 };
 
-export const getPublicTicketTypesHttpEndpoint = <ThrowOnError extends boolean = false>(options: Options<GetPublicTicketTypesHttpEndpointData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetPublicTicketTypesHttpEndpointResponses, GetPublicTicketTypesHttpEndpointErrors, ThrowOnError>({
+export const getPublicTicketTypes = <ThrowOnError extends boolean = false>(options: Options<GetPublicTicketTypesData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetPublicTicketTypesResponses, GetPublicTicketTypesErrors, ThrowOnError>({
         security: [
             {
                 scheme: 'bearer',
@@ -1235,8 +1248,8 @@ export const getPublicTicketTypesHttpEndpoint = <ThrowOnError extends boolean = 
     });
 };
 
-export const leaveWaitlistHttpEndpoint = <ThrowOnError extends boolean = false>(options: Options<LeaveWaitlistHttpEndpointData, ThrowOnError>) => {
-    return (options.client ?? client).delete<LeaveWaitlistHttpEndpointResponses, LeaveWaitlistHttpEndpointErrors, ThrowOnError>({
+export const leaveWaitlist = <ThrowOnError extends boolean = false>(options: Options<LeaveWaitlistData, ThrowOnError>) => {
+    return (options.client ?? client).delete<LeaveWaitlistResponses, LeaveWaitlistErrors, ThrowOnError>({
         security: [
             {
                 scheme: 'bearer',
@@ -1248,8 +1261,8 @@ export const leaveWaitlistHttpEndpoint = <ThrowOnError extends boolean = false>(
     });
 };
 
-export const joinWaitlistHttpEndpoint = <ThrowOnError extends boolean = false>(options: Options<JoinWaitlistHttpEndpointData, ThrowOnError>) => {
-    return (options.client ?? client).post<JoinWaitlistHttpEndpointResponses, JoinWaitlistHttpEndpointErrors, ThrowOnError>({
+export const joinWaitlist = <ThrowOnError extends boolean = false>(options: Options<JoinWaitlistData, ThrowOnError>) => {
+    return (options.client ?? client).post<unknown, JoinWaitlistErrors, ThrowOnError>({
         security: [
             {
                 scheme: 'bearer',
@@ -1265,21 +1278,8 @@ export const joinWaitlistHttpEndpoint = <ThrowOnError extends boolean = false>(o
     });
 };
 
-export const confirmWaitlistEntryHttpEndpoint = <ThrowOnError extends boolean = false>(options: Options<ConfirmWaitlistEntryHttpEndpointData, ThrowOnError>) => {
-    return (options.client ?? client).post<ConfirmWaitlistEntryHttpEndpointResponses, ConfirmWaitlistEntryHttpEndpointErrors, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/api/teams/{teamId}/events/{eventId}/waitlist/{ticketTypeId}/confirm',
-        ...options
-    });
-};
-
-export const getPublicCouponDetailsHttpEndpoint = <ThrowOnError extends boolean = false>(options: Options<GetPublicCouponDetailsHttpEndpointData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetPublicCouponDetailsHttpEndpointResponses, GetPublicCouponDetailsHttpEndpointErrors, ThrowOnError>({
+export const getPublicCouponDetails = <ThrowOnError extends boolean = false>(options: Options<GetPublicCouponDetailsData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetPublicCouponDetailsResponses, GetPublicCouponDetailsErrors, ThrowOnError>({
         security: [
             {
                 scheme: 'bearer',

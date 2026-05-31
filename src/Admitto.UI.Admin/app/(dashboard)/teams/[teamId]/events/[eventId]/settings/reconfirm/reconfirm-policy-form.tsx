@@ -143,13 +143,13 @@ export function ReconfirmPolicyForm({
                     <p className="text-[13.5px] text-muted-foreground">Require attendees to periodically reconfirm their registration.</p>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="ghost" size="sm" type="button" onClick={() => form.reset()} disabled={disabled}>
+                    <Button variant="ghost" size="sm" type="button" onClick={() => form.reset()} disabled={disabled || !form.formState.isDirty}>
                         Discard
                     </Button>
                     <Button
                         size="sm"
                         onClick={form.submit(onSubmit)}
-                        disabled={disabled || form.formState.isSubmitting}
+                        disabled={disabled || !form.formState.isDirty || form.formState.isSubmitting}
                     >
                         <Check className="size-3.5" />
                         {form.formState.isSubmitting ? "Saving…" : "Save changes"}

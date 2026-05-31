@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowDown, ArrowUp, ArrowUpDown, Download, Plus } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -13,9 +13,8 @@ import {
 } from "@/lib/admitto-api/generated";
 import { apiClient } from "@/lib/api-client";
 import { PageLayout } from "@/components/page-layout";
-import { useTeams } from "@/hooks/use-teams";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -34,6 +33,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
+import { AddRegistrationSheet } from "./add-registration-sheet";
 
 const PAGE_SIZE = 25;
 
@@ -71,7 +71,6 @@ function attendeeSortKey(r: RegistrationListItemDto) {
 
 export default function RegistrationsPage() {
     const { teamId, eventId } = useParams<{ teamId: string; eventId: string }>();
-    const { selectedTeam } = useTeams();
 
     const registrationsQuery = useQuery({
         queryKey: ["registrations", teamId, eventId],
@@ -96,6 +95,8 @@ export default function RegistrationsPage() {
     const [sortKey, setSortKey] = useState<SortKey>("attendee");
     const [sortDir, setSortDir] = useState<SortDir>("asc");
     const [page, setPage] = useState(1);
+    const [addOpen, setAddOpen] = useState(false);
+    const queryClient = useQueryClient();
 
     const registrations = registrationsQuery.data ?? [];
     const ticketTypes = ticketTypesQuery.data ?? [];
@@ -157,17 +158,11 @@ export default function RegistrationsPage() {
         setPage(1);
     }
 
-    const breadcrumbs = [
-        { label: selectedTeam?.name ?? "", href: `/teams/${teamId}/settings` },
-        { label: eventQuery.data?.name ?? "", href: `/teams/${teamId}/events/${eventId}` },
-        { label: "Registrations" },
-    ];
-
     const isLoading = registrationsQuery.isLoading;
     const totalCount = registrations.length;
 
     return (
-        <PageLayout title="Registrations" breadcrumbs={breadcrumbs}>
+        <PageLayout>
             <div className="flex flex-wrap items-start justify-between mb-6 gap-4 gap-y-3">
                 <div>
                     <div className="text-[0.6875rem] uppercase tracking-widest text-muted-foreground font-semibold">
@@ -181,21 +176,31 @@ export default function RegistrationsPage() {
                     <Button
                         variant="outline"
                         size="sm"
-                        onClick={() =>
-                            toast.info("Export CSV is coming soon.", {
-                                description: "This feature is not yet available.",
-                            })
-                        }
+                        onClick={() => {
+                            window.location.href = `/api/teams/${teamId}/events/${eventId}/registrations/export`;
+                        }}
                     >
                         <Download className="size-3.5" /> Export CSV
                     </Button>
-                    <Button asChild size="sm">
-                        <Link href={`/teams/${teamId}/events/${eventId}/registrations/add`}>
-                            <Plus className="size-3.5" /> Add registration
-                        </Link>
+                    <Button size="sm" onClick={() => setAddOpen(true)}>
+                        <Plus className="size-3.5" /> Add registration
                     </Button>
                 </div>
             </div>
+
+            <AddRegistrationSheet
+                open={addOpen}
+                onOpenChange={setAddOpen}
+                teamId={teamId}
+                eventId={eventId}
+                eventName={eventQuery.data?.name ?? ""}
+                ticketTypes={ticketTypes}
+                additionalDetailSchema={eventQuery.data?.additionalDetailSchema ?? []}
+                onAdded={() => {
+                    toast.success("Registration added.");
+                    queryClient.invalidateQueries({ queryKey: ["registrations", teamId, eventId] });
+                }}
+            />
 
             <Card className="p-4">
                 <div className="flex flex-wrap items-center gap-2 mb-4">

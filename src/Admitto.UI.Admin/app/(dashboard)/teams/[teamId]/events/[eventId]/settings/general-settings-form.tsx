@@ -118,10 +118,10 @@ export function GeneralSettingsForm({ event }: { event: TicketedEventDetailsDto 
                     <p className="text-[13.5px] text-muted-foreground">Public-facing event details.</p>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="ghost" size="sm" type="button" onClick={() => form.reset()}>
+                    <Button variant="ghost" size="sm" type="button" onClick={() => form.reset()} disabled={!form.formState.isDirty || form.formState.isSubmitting}>
                         Discard
                     </Button>
-                    <Button size="sm" onClick={form.submit(onSubmit)} disabled={form.formState.isSubmitting}>
+                    <Button size="sm" onClick={form.submit(onSubmit)} disabled={!form.formState.isDirty || form.formState.isSubmitting}>
                         <Check className="size-3.5" />
                         {form.formState.isSubmitting ? "Saving\u2026" : "Save changes"}
                     </Button>

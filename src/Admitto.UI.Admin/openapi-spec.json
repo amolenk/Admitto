@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:63672/"
+      "url": "http://localhost:59485/"
     }
   ],
   "paths": {
@@ -2029,7 +2029,7 @@
     "/admin/teams/{teamId}/events/{eventId}/bulk-emails/preview": {
       "post": {
         "tags": [
-          "Admitto.Api"
+          "PreviewBulkEmailHttpEndpoint"
         ],
         "operationId": "PreviewBulkEmail",
         "parameters": [
@@ -4691,6 +4691,89 @@
         }
       }
     },
+    "/admin/teams/{teamId}/events/{eventId}/registrations/export": {
+      "get": {
+        "tags": [
+          "ExportRegistrationsCsvHttpEndpoint"
+        ],
+        "operationId": "ExportRegistrationsCsv",
+        "parameters": [
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "eventId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        }
+      }
+    },
     "/admin/teams/{teamId}/events/{eventId}/registrations/{registrationId}": {
       "get": {
         "tags": [
@@ -5674,7 +5757,7 @@
         "tags": [
           "RemoveWaitlistEntryHttpEndpoint"
         ],
-        "operationId": "RemoveWaitlistEntryHttpEndpoint",
+        "operationId": "RemoveWaitlistEntry",
         "parameters": [
           {
             "name": "teamId",
@@ -5775,7 +5858,7 @@
         "tags": [
           "GetWaitlistDetailsHttpEndpoint"
         ],
-        "operationId": "GetWaitlistDetailsHttpEndpoint",
+        "operationId": "GetWaitlistDetails",
         "parameters": [
           {
             "name": "teamId",
@@ -6768,7 +6851,7 @@
         "tags": [
           "RequestOtpHttpEndpoint"
         ],
-        "operationId": "RequestOtpHttpEndpoint",
+        "operationId": "RequestOtp",
         "parameters": [
           {
             "name": "teamId",
@@ -6858,7 +6941,7 @@
         "tags": [
           "VerifyOtpHttpEndpoint"
         ],
-        "operationId": "VerifyOtpHttpEndpoint",
+        "operationId": "VerifyOtp",
         "parameters": [
           {
             "name": "teamId",
@@ -6948,7 +7031,7 @@
         "tags": [
           "RegisterAttendeeSelfServiceHttpEndpoint"
         ],
-        "operationId": "RegisterAttendeeSelfServiceHttpEndpoint",
+        "operationId": "RegisterAttendeeSelfService",
         "parameters": [
           {
             "name": "teamId",
@@ -7038,7 +7121,7 @@
         "tags": [
           "RegisterAttendeeWithCouponHttpEndpoint"
         ],
-        "operationId": "RegisterAttendeeWithCouponHttpEndpoint",
+        "operationId": "RegisterAttendeeWithCoupon",
         "parameters": [
           {
             "name": "teamId",
@@ -7128,7 +7211,7 @@
         "tags": [
           "GetQRCodeHttpEndpoint"
         ],
-        "operationId": "GetQRCodeHttpEndpoint",
+        "operationId": "GetQRCode",
         "parameters": [
           {
             "name": "teamId",
@@ -7224,7 +7307,7 @@
         "tags": [
           "SelfCancelRegistrationHttpEndpoint"
         ],
-        "operationId": "SelfCancelRegistrationHttpEndpoint",
+        "operationId": "SelfCancelRegistration",
         "parameters": [
           {
             "name": "teamId",
@@ -7313,7 +7396,7 @@
         "tags": [
           "SelfChangeTicketsHttpEndpoint"
         ],
-        "operationId": "SelfChangeTicketsHttpEndpoint",
+        "operationId": "SelfChangeTickets",
         "parameters": [
           {
             "name": "teamId",
@@ -7412,7 +7495,7 @@
         "tags": [
           "GetPublicTicketTypesHttpEndpoint"
         ],
-        "operationId": "GetPublicTicketTypesHttpEndpoint",
+        "operationId": "GetPublicTicketTypes",
         "parameters": [
           {
             "name": "teamId",
@@ -7505,7 +7588,7 @@
         "tags": [
           "JoinWaitlistHttpEndpoint"
         ],
-        "operationId": "JoinWaitlistHttpEndpoint",
+        "operationId": "JoinWaitlist",
         "parameters": [
           {
             "name": "teamId",
@@ -7595,9 +7678,6 @@
                 }
               }
             }
-          },
-          "202": {
-            "description": "Accepted"
           }
         }
       },
@@ -7605,7 +7685,7 @@
         "tags": [
           "LeaveWaitlistHttpEndpoint"
         ],
-        "operationId": "LeaveWaitlistHttpEndpoint",
+        "operationId": "LeaveWaitlist",
         "parameters": [
           {
             "name": "eventId",
@@ -7691,103 +7771,12 @@
         }
       }
     },
-    "/api/teams/{teamId}/events/{eventId}/waitlist/{ticketTypeId}/confirm": {
-      "post": {
-        "tags": [
-          "ConfirmWaitlistEntryHttpEndpoint"
-        ],
-        "operationId": "ConfirmWaitlistEntryHttpEndpoint",
-        "parameters": [
-          {
-            "name": "eventId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "ticketTypeId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "token",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "OK"
-          }
-        }
-      }
-    },
     "/api/teams/{teamId}/events/{eventId}/coupons/{couponCode}": {
       "get": {
         "tags": [
           "GetPublicCouponDetailsHttpEndpoint"
         ],
-        "operationId": "GetPublicCouponDetailsHttpEndpoint",
+        "operationId": "GetPublicCouponDetails",
         "parameters": [
           {
             "name": "eventId",
@@ -9892,12 +9881,16 @@
       },
       "RegisterAttendeeSelfServiceHttpRequest": {
         "required": [
+          "email",
           "firstName",
           "lastName",
           "ticketTypeIds"
         ],
         "type": "object",
         "properties": {
+          "email": {
+            "type": "string"
+          },
           "firstName": {
             "type": "string"
           },
@@ -10914,8 +10907,8 @@
         "type": "oauth2",
         "flows": {
           "authorizationCode": {
-            "authorizationUrl": "http://localhost:63669/realms/admitto/protocol/openid-connect/auth",
-            "tokenUrl": "http://localhost:63669/realms/admitto/protocol/openid-connect/token",
+            "authorizationUrl": "http://localhost:59481/realms/admitto/protocol/openid-connect/auth",
+            "tokenUrl": "http://localhost:59481/realms/admitto/protocol/openid-connect/token",
             "scopes": {
               "openid": "OpenID Connect",
               "profile": "User profile",
@@ -10942,7 +10935,7 @@
       "name": "PreviewEmailTemplateHttpEndpoint"
     },
     {
-      "name": "Admitto.Api"
+      "name": "PreviewBulkEmailHttpEndpoint"
     },
     {
       "name": "CreateBulkEmailHttpEndpoint"
@@ -11030,6 +11023,9 @@
     },
     {
       "name": "GetRegistrationsHttpEndpoint"
+    },
+    {
+      "name": "ExportRegistrationsCsvHttpEndpoint"
     },
     {
       "name": "GetRegistrationDetailsHttpEndpoint"
@@ -11123,9 +11119,6 @@
     },
     {
       "name": "LeaveWaitlistHttpEndpoint"
-    },
-    {
-      "name": "ConfirmWaitlistEntryHttpEndpoint"
     },
     {
       "name": "GetPublicCouponDetailsHttpEndpoint"

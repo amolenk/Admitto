@@ -7,7 +7,6 @@ import { useQuery } from "@tanstack/react-query";
 import { TicketTypeDto, TicketedEventDetailsDto } from "@/lib/admitto-api/generated";
 import { apiClient } from "@/lib/api-client";
 import { PageLayout } from "@/components/page-layout";
-import { useTeams } from "@/hooks/use-teams";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,11 +17,11 @@ import {
     Hourglass,
 } from "lucide-react";
 import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
+    Sheet,
+    SheetContent,
+    SheetHeader,
+    SheetTitle,
+} from "@/components/ui/sheet";
 import { FormError } from "@/components/form-error";
 import { AddTicketTypeForm } from "./add-ticket-type-form";
 import { EditTicketTypeForm } from "./edit-ticket-type-form";
@@ -43,10 +42,10 @@ function TicketTypeCard({ t, teamId, eventId }: { t: TicketTypeDto; teamId: stri
         <>
             <Card className="ticket-card overflow-hidden py-3">
                 <div className="px-5">
-                    <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                                <h3 className="font-display text-lg font-semibold">{t.name}</h3>
+                    <div className="min-w-0 mb-1">
+                        <h3 className="font-display text-lg font-semibold truncate">{t.name}</h3>
+                        <div className="flex items-center justify-between gap-2 mt-1">
+                            <div>
                                 {cap > 0 && used >= cap ? (
                                     <Badge variant="secondary">Sold out</Badge>
                                 ) : (
@@ -56,18 +55,18 @@ function TicketTypeCard({ t, teamId, eventId }: { t: TicketTypeDto; teamId: stri
                                     </Badge>
                                 )}
                             </div>
-                        </div>
-                        <div className="flex items-center gap-1">
-                            {t.waitlistEnabled && (
-                                <Button variant="ghost" size="sm" asChild>
-                                    <Link href={`/teams/${teamId}/events/${eventId}/ticket-types/${t.id}/waitlist`}>
-                                        <Hourglass className="size-4" />
-                                    </Link>
+                            <div className="flex items-center gap-1">
+                                {t.waitlistEnabled && (
+                                    <Button variant="ghost" size="sm" asChild>
+                                        <Link href={`/teams/${teamId}/events/${eventId}/ticket-types/${t.id}/waitlist`}>
+                                            <Hourglass className="size-4" />
+                                        </Link>
+                                    </Button>
+                                )}
+                                <Button variant="ghost" size="sm" onClick={() => setEditOpen(true)}>
+                                    <Pencil className="size-4" />
                                 </Button>
-                            )}
-                            <Button variant="ghost" size="sm" onClick={() => setEditOpen(true)}>
-                                <Pencil className="size-4" />
-                            </Button>
+                            </div>
                         </div>
                     </div>
 
@@ -125,11 +124,11 @@ function TicketTypeCard({ t, teamId, eventId }: { t: TicketTypeDto; teamId: stri
                 </div>
             </Card>
 
-            <Dialog open={editOpen} onOpenChange={setEditOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Edit ticket type</DialogTitle>
-                    </DialogHeader>
+            <Sheet open={editOpen} onOpenChange={setEditOpen}>
+                <SheetContent side="right" className="sm:max-w-lg">
+                    <SheetHeader>
+                        <SheetTitle>Edit ticket type</SheetTitle>
+                    </SheetHeader>
                     <EditTicketTypeForm
                         teamId={teamId}
                         eventId={eventId}
@@ -137,15 +136,14 @@ function TicketTypeCard({ t, teamId, eventId }: { t: TicketTypeDto; teamId: stri
                         onSaved={() => setEditOpen(false)}
                         onCancel={() => setEditOpen(false)}
                     />
-                </DialogContent>
-            </Dialog>
+                </SheetContent>
+            </Sheet>
         </>
     );
 }
 
 export default function TicketTypesPage() {
     const { teamId, eventId } = useParams<{ teamId: string; eventId: string }>();
-    const { selectedTeam } = useTeams();
     const [addOpen, setAddOpen] = useState(false);
 
     const { data: ticketTypes, isLoading } = useQuery({
@@ -164,19 +162,13 @@ export default function TicketTypesPage() {
 
     const eventName = event.data?.name ?? "";
 
-    const breadcrumbs = [
-        { label: selectedTeam?.name ?? "", href: `/teams/${teamId}/settings` },
-        { label: eventName, href: `/teams/${teamId}/events/${eventId}` },
-        { label: "Ticket types" },
-    ];
-
     const types = ticketTypes ?? [];
     const availableTimeSlots = Array.from(
         new Set(types.flatMap((t) => t.timeSlots ?? []))
     ).sort();
 
     return (
-        <PageLayout title="Ticket types" breadcrumbs={breadcrumbs}>
+        <PageLayout>
             <div className="flex flex-wrap items-start justify-between mb-6 gap-y-3">
                 <div>
                     <div className="text-[0.6875rem] uppercase tracking-widest text-muted-foreground font-semibold">
@@ -216,11 +208,11 @@ export default function TicketTypesPage() {
                 </div>
             )}
 
-            <Dialog open={addOpen} onOpenChange={setAddOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Add ticket type</DialogTitle>
-                    </DialogHeader>
+            <Sheet open={addOpen} onOpenChange={setAddOpen}>
+                <SheetContent side="right" className="sm:max-w-lg">
+                    <SheetHeader>
+                        <SheetTitle>Add ticket type</SheetTitle>
+                    </SheetHeader>
                     <AddTicketTypeForm
                         teamId={teamId}
                         eventId={eventId}
@@ -228,8 +220,8 @@ export default function TicketTypesPage() {
                         onAdded={() => setAddOpen(false)}
                         onCancel={() => setAddOpen(false)}
                     />
-                </DialogContent>
-            </Dialog>
+                </SheetContent>
+            </Sheet>
         </PageLayout>
     );
 }

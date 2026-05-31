@@ -15,6 +15,10 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+    SheetBody,
+    SheetFooter,
+} from "@/components/ui/sheet";
 import { useCustomForm } from "@/hooks/use-custom-form";
 import { apiClient } from "@/lib/api-client";
 import { TicketTypeDto } from "@/lib/admitto-api/generated";
@@ -73,92 +77,94 @@ export function AddBadgeTypeForm({
 
     return (
         <Form {...form}>
-            <form onSubmit={form.submit(onSubmit)} className="space-y-4">
-                {form.generalError && (
-                    <Alert variant="destructive">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>{form.generalError.title}</AlertTitle>
-                        <AlertDescription>{form.generalError.detail}</AlertDescription>
-                    </Alert>
-                )}
-                <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
+            <form onSubmit={form.submit(onSubmit)} className="flex min-h-0 flex-1 flex-col">
+                <SheetBody className="space-y-5">
+                    {form.generalError && (
+                        <Alert variant="destructive">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertTitle>{form.generalError.title}</AlertTitle>
+                            <AlertDescription>{form.generalError.detail}</AlertDescription>
+                        </Alert>
+                    )}
+                    <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Name</FormLabel>
+                                <FormControl>
+                                    <Input placeholder="e.g. Speaker Badge" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    <FormField
+                        control={form.control}
+                        name="kind"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Kind</FormLabel>
+                                <div className="flex gap-2">
+                                    <Button
+                                        type="button"
+                                        variant={field.value === "standalone" ? "default" : "outline"}
+                                        size="sm"
+                                        onClick={() => {
+                                            field.onChange("standalone");
+                                            setSelectedTicketTypes([]);
+                                        }}
+                                    >
+                                        Standalone
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        variant={field.value === "ticketBased" ? "default" : "outline"}
+                                        size="sm"
+                                        onClick={() => field.onChange("ticketBased")}
+                                    >
+                                        Ticket-based
+                                    </Button>
+                                </div>
+                                <p className="text-[11px] text-muted-foreground">
+                                    {field.value === "standalone"
+                                        ? "Instances are managed manually."
+                                        : "One instance is created per ticket of the selected types."}
+                                </p>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                    {isTicketBased && (
                         <FormItem>
-                            <FormLabel>Name</FormLabel>
+                            <FormLabel>Ticket types</FormLabel>
                             <FormControl>
-                                <Input placeholder="e.g. Speaker Badge" {...field} />
+                                <MultipleSelector
+                                    value={selectedTicketTypes}
+                                    onChange={setSelectedTicketTypes}
+                                    defaultOptions={ticketTypeOptions}
+                                    placeholder="Select ticket types..."
+                                    emptyIndicator={
+                                        <p className="text-sm text-muted-foreground text-center py-2">
+                                            No ticket types found.
+                                        </p>
+                                    }
+                                />
                             </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                <FormField
-                    control={form.control}
-                    name="kind"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Kind</FormLabel>
-                            <div className="flex gap-2">
-                                <Button
-                                    type="button"
-                                    variant={field.value === "standalone" ? "default" : "outline"}
-                                    size="sm"
-                                    onClick={() => {
-                                        field.onChange("standalone");
-                                        setSelectedTicketTypes([]);
-                                    }}
-                                >
-                                    Standalone
-                                </Button>
-                                <Button
-                                    type="button"
-                                    variant={field.value === "ticketBased" ? "default" : "outline"}
-                                    size="sm"
-                                    onClick={() => field.onChange("ticketBased")}
-                                >
-                                    Ticket-based
-                                </Button>
-                            </div>
                             <p className="text-[11px] text-muted-foreground">
-                                {field.value === "standalone"
-                                    ? "Instances are managed manually."
-                                    : "One instance is created per ticket of the selected types."}
+                                Leave empty to apply to all ticket types.
                             </p>
-                            <FormMessage />
                         </FormItem>
                     )}
-                />
-                {isTicketBased && (
-                    <FormItem>
-                        <FormLabel>Ticket types</FormLabel>
-                        <FormControl>
-                            <MultipleSelector
-                                value={selectedTicketTypes}
-                                onChange={setSelectedTicketTypes}
-                                defaultOptions={ticketTypeOptions}
-                                placeholder="Select ticket types..."
-                                emptyIndicator={
-                                    <p className="text-sm text-muted-foreground text-center py-2">
-                                        No ticket types found.
-                                    </p>
-                                }
-                            />
-                        </FormControl>
-                        <p className="text-[11px] text-muted-foreground">
-                            Leave empty to apply to all ticket types.
-                        </p>
-                    </FormItem>
-                )}
-                <div className="flex gap-2 justify-end">
-                    <Button type="button" variant="ghost" onClick={onCancel}>
+                </SheetBody>
+                <SheetFooter>
+                    <Button type="button" variant="outline" onClick={onCancel}>
                         Cancel
                     </Button>
                     <Button type="submit" disabled={form.formState.isSubmitting}>
                         {form.formState.isSubmitting ? "Adding..." : "Add badge type"}
                     </Button>
-                </div>
+                </SheetFooter>
             </form>
         </Form>
     );

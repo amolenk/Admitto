@@ -7,8 +7,9 @@ import {
     LayoutDashboard,
     ClipboardList,
     Ticket,
+    Hourglass,
     Mail,
-    Settings,
+    CalendarCog,
 } from "lucide-react";
 import {
     SidebarGroup,
@@ -21,11 +22,12 @@ import { TicketedEventDetailsDto } from "@/lib/admitto-api/generated";
 
 const eventPages = [
     { label: "Dashboard", href: "", icon: LayoutDashboard },
+    { label: "Edit event", href: "/edit/general", icon: CalendarCog },
     { label: "Registrations", href: "/registrations", icon: ClipboardList },
     { label: "Ticket types", href: "/ticket-types", icon: Ticket },
+    { label: "Waitlist", href: "/waitlist", icon: Hourglass },
     { label: "Badges", href: "/badge-types", icon: IdCard },
-    { label: "Emails", href: "/emails", icon: Mail },
-    { label: "Settings", href: "/settings", icon: Settings },
+    { label: "Emails", href: "/emails/campaigns", icon: Mail },
 ];
 
 async function fetchEvent(teamId: string, eventId: string): Promise<TicketedEventDetailsDto> {
@@ -54,8 +56,11 @@ export function NavEventPages({ teamId }: { teamId: string }) {
         if (pageHref === "") {
             return pathname === basePath;
         }
-        if (pageHref === "/settings") {
-            return pathname.startsWith(fullPath);
+        if (pageHref === "/edit/general") {
+            return pathname.startsWith(`${basePath}/edit`);
+        }
+        if (pageHref === "/emails/campaigns") {
+            return pathname.startsWith(`${basePath}/emails`);
         }
         return pathname.startsWith(fullPath);
     }

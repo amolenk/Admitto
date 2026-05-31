@@ -6,7 +6,6 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BadgeTypeListItemDto, TicketTypeDto, TicketedEventDetailsDto } from "@/lib/admitto-api/generated";
 import { apiClient } from "@/lib/api-client";
 import { PageLayout } from "@/components/page-layout";
-import { useTeams } from "@/hooks/use-teams";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,11 +21,13 @@ import {
     Trash2,
 } from "lucide-react";
 import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
+    Sheet,
+    SheetContent,
+    SheetHeader,
+    SheetBody,
+    SheetFooter,
+    SheetTitle,
+} from "@/components/ui/sheet";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -75,35 +76,37 @@ function RenameBadgeTypeForm({
 
     return (
         <Form {...form}>
-            <form onSubmit={form.submit(onSubmit)} className="space-y-4">
-                {form.generalError && (
-                    <Alert variant="destructive">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>{form.generalError.title}</AlertTitle>
-                        <AlertDescription>{form.generalError.detail}</AlertDescription>
-                    </Alert>
-                )}
-                <FormField
-                    control={form.control}
-                    name="name"
-                    render={({ field }) => (
-                        <FormItem>
-                            <FormLabel>Name</FormLabel>
-                            <FormControl>
-                                <Input {...field} />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
+            <form onSubmit={form.submit(onSubmit)} className="flex min-h-0 flex-1 flex-col">
+                <SheetBody className="space-y-5">
+                    {form.generalError && (
+                        <Alert variant="destructive">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertTitle>{form.generalError.title}</AlertTitle>
+                            <AlertDescription>{form.generalError.detail}</AlertDescription>
+                        </Alert>
                     )}
-                />
-                <div className="flex gap-2 justify-end">
-                    <Button type="button" variant="ghost" onClick={onCancel}>
+                    <FormField
+                        control={form.control}
+                        name="name"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Name</FormLabel>
+                                <FormControl>
+                                    <Input {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                </SheetBody>
+                <SheetFooter>
+                    <Button type="button" variant="outline" onClick={onCancel}>
                         Cancel
                     </Button>
                     <Button type="submit" disabled={form.formState.isSubmitting}>
                         {form.formState.isSubmitting ? "Saving..." : "Save"}
                     </Button>
-                </div>
+                </SheetFooter>
             </form>
         </Form>
     );
@@ -224,11 +227,11 @@ function BadgeTypeCard({
                 </div>
             </Card>
 
-            <Dialog open={renameOpen} onOpenChange={setRenameOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Rename badge type</DialogTitle>
-                    </DialogHeader>
+            <Sheet open={renameOpen} onOpenChange={setRenameOpen}>
+                <SheetContent side="right" className="sm:max-w-lg">
+                    <SheetHeader>
+                        <SheetTitle>Rename badge type</SheetTitle>
+                    </SheetHeader>
                     <RenameBadgeTypeForm
                         teamId={teamId}
                         eventId={eventId}
@@ -236,8 +239,8 @@ function BadgeTypeCard({
                         onSaved={() => setRenameOpen(false)}
                         onCancel={() => setRenameOpen(false)}
                     />
-                </DialogContent>
-            </Dialog>
+                </SheetContent>
+            </Sheet>
 
             <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
                 <AlertDialogContent>
@@ -266,7 +269,6 @@ function BadgeTypeCard({
 
 export default function BadgeTypesPage() {
     const { teamId, eventId } = useParams<{ teamId: string; eventId: string }>();
-    const { selectedTeam } = useTeams();
     const [addOpen, setAddOpen] = useState(false);
 
     const { data: badgeTypes, isLoading } = useQuery({
@@ -295,16 +297,10 @@ export default function BadgeTypesPage() {
 
     const eventName = event.data?.name ?? "";
 
-    const breadcrumbs = [
-        { label: selectedTeam?.name ?? "", href: `/teams/${teamId}/settings` },
-        { label: eventName, href: `/teams/${teamId}/events/${eventId}` },
-        { label: "Badges" },
-    ];
-
     const types = badgeTypes ?? [];
 
     return (
-        <PageLayout title="Badges" breadcrumbs={breadcrumbs}>
+        <PageLayout>
             <div className="flex flex-wrap items-start justify-between mb-6 gap-y-3">
                 <div>
                     <div className="text-[0.6875rem] uppercase tracking-widest text-muted-foreground font-semibold">
@@ -349,11 +345,11 @@ export default function BadgeTypesPage() {
                 </div>
             )}
 
-            <Dialog open={addOpen} onOpenChange={setAddOpen}>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>Add badge type</DialogTitle>
-                    </DialogHeader>
+            <Sheet open={addOpen} onOpenChange={setAddOpen}>
+                <SheetContent side="right" className="sm:max-w-lg">
+                    <SheetHeader>
+                        <SheetTitle>Add badge type</SheetTitle>
+                    </SheetHeader>
                     <AddBadgeTypeForm
                         teamId={teamId}
                         eventId={eventId}
@@ -361,8 +357,8 @@ export default function BadgeTypesPage() {
                         onAdded={() => setAddOpen(false)}
                         onCancel={() => setAddOpen(false)}
                     />
-                </DialogContent>
-            </Dialog>
+                </SheetContent>
+            </Sheet>
         </PageLayout>
     );
 }

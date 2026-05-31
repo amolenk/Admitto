@@ -10,7 +10,6 @@ import {
 } from "@/lib/admitto-api/generated";
 import { apiClient } from "@/lib/api-client";
 import { PageLayout } from "@/components/page-layout";
-import { useTeams } from "@/hooks/use-teams";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -271,7 +270,6 @@ export default function BadgeInstancesPage() {
         eventId: string;
         badgeTypeId: string;
     }>();
-    const { selectedTeam } = useTeams();
     const [addOpen, setAddOpen] = useState(false);
 
     const { data: instances, isLoading } = useQuery({
@@ -302,17 +300,10 @@ export default function BadgeInstancesPage() {
     const badgeType = badgeTypes.data?.find((bt) => bt.id === badgeTypeId);
     const badgeTypeName = badgeType?.name ?? "";
 
-    const breadcrumbs = [
-        { label: selectedTeam?.name ?? "", href: `/teams/${teamId}/settings` },
-        { label: eventName, href: `/teams/${teamId}/events/${eventId}` },
-        { label: "Badges", href: `/teams/${teamId}/events/${eventId}/badge-types` },
-        { label: badgeTypeName || "Instances" },
-    ];
-
     const rows = instances ?? [];
 
     return (
-        <PageLayout title="Badge instances" breadcrumbs={breadcrumbs}>
+        <PageLayout>
             <div className="flex flex-wrap items-start justify-between mb-6 gap-y-3">
                 <div>
                     <div className="text-[0.6875rem] uppercase tracking-widest text-muted-foreground font-semibold">

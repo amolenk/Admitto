@@ -85,9 +85,48 @@ function SheetHeader({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="sheet-header"
-      className={cn("flex flex-col gap-1.5 p-4", className)}
+      className={cn("flex flex-col gap-1.5 border-b p-4", className)}
       {...props}
     />
+  )
+}
+
+function SheetBody({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="sheet-body"
+      className={cn("flex-1 overflow-y-auto px-4 py-5", className)}
+      {...props}
+    />
+  )
+}
+
+function SheetSection({
+  title,
+  description,
+  className,
+  children,
+  ...props
+}: React.ComponentProps<"section"> & {
+  title?: string
+  description?: string
+}) {
+  return (
+    <section className={cn("space-y-4", className)} {...props}>
+      {(title || description) && (
+        <div className="space-y-0.5">
+          {title && (
+            <h3 className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+              {title}
+            </h3>
+          )}
+          {description && (
+            <p className="text-[12px] text-muted-foreground">{description}</p>
+          )}
+        </div>
+      )}
+      {children}
+    </section>
   )
 }
 
@@ -95,7 +134,7 @@ function SheetFooter({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="sheet-footer"
-      className={cn("mt-auto flex flex-col gap-2 p-4", className)}
+      className={cn("mt-auto flex flex-col gap-2 border-t p-4", className)}
       {...props}
     />
   )
@@ -133,6 +172,8 @@ export {
   SheetClose,
   SheetContent,
   SheetHeader,
+  SheetBody,
+  SheetSection,
   SheetFooter,
   SheetTitle,
   SheetDescription,

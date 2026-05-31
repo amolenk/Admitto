@@ -10,6 +10,7 @@ using Amolenk.Admitto.Core.Registrations.Application.UseCases.Coupons.RevokeCoup
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.GetQRCode.PublicApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.GetRegistrationDetails.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.GetRegistrations.AdminApi;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.ExportRegistrationsCsv.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.AdminRegisterAttendee.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendeeWithCoupon.PublicApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendeeSelfService.PublicApi;
@@ -58,6 +59,7 @@ public static class RegistrationsModule
             .MapUpdateAdditionalDetailSchema()
             .MapAdminRegisterAttendee()
             .MapGetRegistrations()
+            .MapExportRegistrationsCsv()
             .MapGetRegistrationDetails()
             .MapCancelRegistration()
             .MapChangeAttendeeTickets()

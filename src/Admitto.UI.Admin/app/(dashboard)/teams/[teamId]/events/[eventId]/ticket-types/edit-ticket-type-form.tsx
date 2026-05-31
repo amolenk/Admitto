@@ -20,6 +20,11 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import {
+    SheetBody,
+    SheetFooter,
+    SheetSection,
+} from "@/components/ui/sheet";
 import { useCustomForm } from "@/hooks/use-custom-form";
 import { apiClient } from "@/lib/api-client";
 import { TicketTypeDto } from "@/lib/admitto-api/generated";
@@ -124,174 +129,183 @@ export function EditTicketTypeForm({
                 </AlertDialogContent>
             </AlertDialog>
             <Form {...form}>
-                <form onSubmit={form.submit(onSubmit)} className="space-y-4">
-                    {form.generalError && (
-                        <Alert variant="destructive">
-                            <AlertCircle className="h-4 w-4" />
-                            <AlertTitle>{form.generalError.title}</AlertTitle>
-                            <AlertDescription>{form.generalError.detail}</AlertDescription>
-                        </Alert>
-                    )}
-                    <FormField
-                        control={form.control}
-                        name="name"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Name</FormLabel>
-                                <FormControl>
-                                    <Input {...field} />
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
+                <form onSubmit={form.submit(onSubmit)} className="flex min-h-0 flex-1 flex-col">
+                    <SheetBody className="space-y-6">
+                        {form.generalError && (
+                            <Alert variant="destructive">
+                                <AlertCircle className="h-4 w-4" />
+                                <AlertTitle>{form.generalError.title}</AlertTitle>
+                                <AlertDescription>{form.generalError.detail}</AlertDescription>
+                            </Alert>
                         )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="selfServiceEnabled"
-                        render={({ field }) => (
-                            <FormItem className="flex items-center gap-3">
-                                <FormControl>
-                                    <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                </FormControl>
-                                <FormLabel className="!mt-0">Enable self-service registration</FormLabel>
-                            </FormItem>
-                        )}
-                    />
-                    <FormField
-                        control={form.control}
-                        name="limitCapacity"
-                        render={({ field }) => (
-                            <FormItem className="flex items-center gap-3">
-                                <FormControl>
-                                    <Switch
-                                        checked={field.value}
-                                        onCheckedChange={(checked) => {
-                                            field.onChange(checked);
-                                            if (!checked) {
-                                                form.setValue("waitlistEnabled", false);
-                                            }
-                                        }}
-                                    />
-                                </FormControl>
-                                <FormLabel className="!mt-0">Limit capacity</FormLabel>
-                            </FormItem>
-                        )}
-                    />
-                    {limitCapacity && (
-                        <FormField
-                            control={form.control}
-                            name="maxCapacity"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Max capacity</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            type="number"
-                                            min={1}
-                                            placeholder="e.g. 100"
-                                            value={field.value ?? ""}
-                                            onChange={(e) =>
-                                                field.onChange(e.target.value === "" ? undefined : e.target.valueAsNumber)
-                                            }
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
+                        <SheetSection title="Details">
+                            <FormField
+                                control={form.control}
+                                name="name"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Name</FormLabel>
+                                        <FormControl>
+                                            <Input {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </SheetSection>
+                        <SheetSection title="Registration">
+                            <FormField
+                                control={form.control}
+                                name="selfServiceEnabled"
+                                render={({ field }) => (
+                                    <FormItem className="flex items-center gap-3">
+                                        <FormControl>
+                                            <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                        </FormControl>
+                                        <FormLabel className="!mt-0">Enable self-service registration</FormLabel>
+                                    </FormItem>
+                                )}
+                            />
+                            <FormField
+                                control={form.control}
+                                name="limitCapacity"
+                                render={({ field }) => (
+                                    <FormItem className="flex items-center gap-3">
+                                        <FormControl>
+                                            <Switch
+                                                checked={field.value}
+                                                onCheckedChange={(checked) => {
+                                                    field.onChange(checked);
+                                                    if (!checked) {
+                                                        form.setValue("waitlistEnabled", false);
+                                                    }
+                                                }}
+                                            />
+                                        </FormControl>
+                                        <FormLabel className="!mt-0">Limit capacity</FormLabel>
+                                    </FormItem>
+                                )}
+                            />
+                            {limitCapacity && (
+                                <FormField
+                                    control={form.control}
+                                    name="maxCapacity"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Max capacity</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    type="number"
+                                                    min={1}
+                                                    placeholder="e.g. 100"
+                                                    value={field.value ?? ""}
+                                                    onChange={(e) =>
+                                                        field.onChange(e.target.value === "" ? undefined : e.target.valueAsNumber)
+                                                    }
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
                             )}
-                        />
-                    )}
-                    {limitCapacity && (
-                        <FormField
-                            control={form.control}
-                            name="waitlistEnabled"
-                            render={({ field }) => (
-                                <FormItem className="flex items-center gap-3">
-                                    <FormControl>
-                                        <Switch checked={field.value} onCheckedChange={field.onChange} />
-                                    </FormControl>
-                                    <FormLabel className="!mt-0">Enable waitlist</FormLabel>
-                                </FormItem>
+                            {limitCapacity && (
+                                <FormField
+                                    control={form.control}
+                                    name="waitlistEnabled"
+                                    render={({ field }) => (
+                                        <FormItem className="flex items-center gap-3">
+                                            <FormControl>
+                                                <Switch checked={field.value} onCheckedChange={field.onChange} />
+                                            </FormControl>
+                                            <FormLabel className="!mt-0">Enable waitlist</FormLabel>
+                                        </FormItem>
+                                    )}
+                                />
                             )}
-                        />
-                    )}
-                    {limitCapacity && waitlistEnabled && (
-                        <FormField
-                            control={form.control}
-                            name="claimWindowHours"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Claim window (hours)</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            type="number"
-                                            min={1}
-                                            placeholder="e.g. 8"
-                                            value={field.value ?? ""}
-                                            onChange={(e) =>
-                                                field.onChange(e.target.value === "" ? undefined : e.target.valueAsNumber)
-                                            }
-                                        />
-                                    </FormControl>
-                                    <FormDescription>
-                                        How long a notified attendee has to claim their spot.
-                                    </FormDescription>
-                                    <FormMessage />
-                                </FormItem>
+                            {limitCapacity && waitlistEnabled && (
+                                <FormField
+                                    control={form.control}
+                                    name="claimWindowHours"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Claim window (hours)</FormLabel>
+                                            <FormControl>
+                                                <Input
+                                                    type="number"
+                                                    min={1}
+                                                    placeholder="e.g. 8"
+                                                    value={field.value ?? ""}
+                                                    onChange={(e) =>
+                                                        field.onChange(e.target.value === "" ? undefined : e.target.valueAsNumber)
+                                                    }
+                                                />
+                                            </FormControl>
+                                            <FormDescription>
+                                                How long a notified attendee has to claim their spot.
+                                            </FormDescription>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
                             )}
-                        />
-                    )}
-                    <FormField
-                        control={form.control}
-                        name="maxReconfirmAttempts"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Max reconfirmation attempts (optional)</FormLabel>
-                                <FormControl>
-                                    <Input
-                                        type="number"
-                                        min={1}
-                                        placeholder="e.g. 3"
-                                        value={field.value ?? ""}
-                                        onChange={(e) =>
-                                            field.onChange(e.target.value === "" ? undefined : e.target.valueAsNumber)
-                                        }
-                                    />
-                                </FormControl>
-                                <FormDescription>
-                                    When set, registrations with this ticket type will be automatically cancelled
-                                    if not reconfirmed within this many attempts.
-                                </FormDescription>
-                                <FormMessage />
-                            </FormItem>
+                        </SheetSection>
+                        <SheetSection title="Reconfirmation">
+                            <FormField
+                                control={form.control}
+                                name="maxReconfirmAttempts"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Max reconfirmation attempts (optional)</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                type="number"
+                                                min={1}
+                                                placeholder="e.g. 3"
+                                                value={field.value ?? ""}
+                                                onChange={(e) =>
+                                                    field.onChange(e.target.value === "" ? undefined : e.target.valueAsNumber)
+                                                }
+                                            />
+                                        </FormControl>
+                                        <FormDescription>
+                                            When set, registrations with this ticket type will be automatically cancelled
+                                            if not reconfirmed within this many attempts.
+                                        </FormDescription>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </SheetSection>
+                        {ticketType.timeSlots && ticketType.timeSlots.length > 0 && (
+                            <SheetSection title="Schedule">
+                                <div className="space-y-2">
+                                    <div className="flex flex-wrap gap-1.5">
+                                        {ticketType.timeSlots.map((slot) => (
+                                            <Badge
+                                                key={slot}
+                                                variant="outline"
+                                                className="font-mono text-[11px] opacity-70"
+                                            >
+                                                {slot}
+                                            </Badge>
+                                        ))}
+                                    </div>
+                                    <p className="text-[11px] text-muted-foreground">
+                                        Time slots can&apos;t be changed after creation.
+                                    </p>
+                                </div>
+                            </SheetSection>
                         )}
-                    />
-                    {ticketType.timeSlots && ticketType.timeSlots.length > 0 && (
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium leading-none">Time slots</label>
-                            <div className="flex flex-wrap gap-1.5">
-                                {ticketType.timeSlots.map((slot) => (
-                                    <Badge
-                                        key={slot}
-                                        variant="outline"
-                                        className="font-mono text-[11px] opacity-70"
-                                    >
-                                        {slot}
-                                    </Badge>
-                                ))}
-                            </div>
-                            <p className="text-[11px] text-muted-foreground">
-                                Time slots can&apos;t be changed after creation.
-                            </p>
-                        </div>
-                    )}
-                    <div className="flex gap-2 justify-end">
-                        <Button type="button" variant="ghost" onClick={onCancel}>
+                    </SheetBody>
+                    <SheetFooter>
+                        <Button type="button" variant="outline" onClick={onCancel}>
                             Cancel
                         </Button>
                         <Button type="submit" disabled={form.formState.isSubmitting}>
                             {form.formState.isSubmitting ? "Saving..." : "Save changes"}
                         </Button>
-                    </div>
+                    </SheetFooter>
                 </form>
             </Form>
         </>

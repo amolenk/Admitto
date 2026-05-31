@@ -357,6 +357,10 @@ export function EmailTemplateForm({
         try {
             await apiClient.delete(`${templateApiUrl}?version=${version}`);
             queryClient.removeQueries({ queryKey });
+            const listQueryKey = eventId
+                ? ["event-email-templates", teamId, eventId]
+                : ["team-email-templates", teamId];
+            await queryClient.invalidateQueries({ queryKey: listQueryKey });
             router.push(backHref);
         } catch (err) {
             setDeleteError(err instanceof Error ? err.message : "Failed to delete template.");

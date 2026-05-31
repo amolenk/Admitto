@@ -1,5 +1,5 @@
 import { callAdmittoApi } from "@/lib/admitto-api/admitto-client";
-import { getWaitlistDetailsHttpEndpoint } from "@/lib/admitto-api/generated";
+import { getWaitlistDetails } from "@/lib/admitto-api/generated";
 
 export async function GET(
     _request: Request,
@@ -7,6 +7,6 @@ export async function GET(
 ) {
     const { teamId, eventId, ticketTypeId } = await params;
     return callAdmittoApi(() =>
-        getWaitlistDetailsHttpEndpoint({ path: { teamId, eventId, ticketTypeId } })
+        getWaitlistDetails({ path: { teamId, eventId, ticketTypeId } })
     );
 }

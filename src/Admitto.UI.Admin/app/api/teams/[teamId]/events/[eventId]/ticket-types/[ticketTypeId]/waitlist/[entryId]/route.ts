@@ -1,5 +1,5 @@
 import { callAdmittoApi } from "@/lib/admitto-api/admitto-client";
-import { removeWaitlistEntryHttpEndpoint } from "@/lib/admitto-api/generated";
+import { removeWaitlistEntry } from "@/lib/admitto-api/generated";
 
 export async function DELETE(
     _request: Request,
@@ -16,6 +16,6 @@ export async function DELETE(
 ) {
     const { teamId, eventId, ticketTypeId, entryId } = await params;
     return callAdmittoApi(() =>
-        removeWaitlistEntryHttpEndpoint({ path: { teamId, eventId, ticketTypeId, entryId } })
+        removeWaitlistEntry({ path: { teamId, eventId, ticketTypeId, entryId } })
     );
 }

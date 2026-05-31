@@ -7,11 +7,11 @@ Admins create ticketed events and manage their core metadata, registration polic
 ### Requirement: Admin can create a ticketed event via the UI
 The Admin UI SHALL provide a "Create Event" page reachable from the team's events list. The form SHALL collect name, start datetime, and end datetime (no slug field). The form SHALL validate inputs client-side and surface server-side validation errors inline.
 
-Submission SHALL `POST` to the Organization create-event endpoint, which responds `202 Accepted` with a `Location` header pointing to a creation-status URL (see event-management). The UI SHALL then poll that URL until status becomes `Created`, `Rejected`, or `Expired`. While polling, the UI SHALL display a non-blocking spinner and disable the form. On `Created`, the UI SHALL navigate to the new event's settings page (General tab) using the event's UUID. On `Rejected`, the UI SHALL render the rejection reason inline so the user can edit and resubmit. On `Expired`, the UI SHALL render a generic "creation timed out, please try again" error.
+Submission SHALL `POST` to the Organization create-event endpoint, which responds `202 Accepted` with a `Location` header pointing to a creation-status URL (see event-management). The UI SHALL then poll that URL until status becomes `Created`, `Rejected`, or `Expired`. While polling, the UI SHALL display a non-blocking spinner and disable the form. On `Created`, the UI SHALL navigate to the new event's Edit Event page (General tab) using the event's UUID. On `Rejected`, the UI SHALL render the rejection reason inline so the user can edit and resubmit. On `Expired`, the UI SHALL render a generic "creation timed out, please try again" error.
 
 #### Scenario: Successfully create an event (async)
 - **WHEN** an organizer submits the create event form for name "DevConf 2026", start "2026-06-01T09:00Z", end "2026-06-03T17:00Z" and the backend returns `202 Accepted`, then polling eventually returns status `Created` with the new event's ID
-- **THEN** the organizer is redirected to `/teams/{teamId}/events/{eventId}/settings`
+- **THEN** the organizer is redirected to `/teams/{teamId}/events/{eventId}/edit/general`
 
 #### Scenario: Display client-side validation error on create
 - **WHEN** an organizer submits the create event form with an empty name
@@ -31,24 +31,54 @@ Submission SHALL `POST` to the Organization create-event endpoint, which respond
 
 ---
 
-### Requirement: Admin UI exposes event settings through tabbed navigation
-The Admin UI SHALL render event settings under `/teams/{teamId}/events/{eventId}/settings` with a side-navigation containing tabs: **General**, **Registration**, **Reconfirmation**, **Email**, **Email templates**, and **Danger zone**. The **Cancellation** tab is removed. The active tab SHALL be highlighted. Each tab SHALL be an independently routable page. The layout shell (breadcrumbs, heading, sidebar nav) SHALL be rendered as a Next.js Server Component so that the team name and event name are fetched server-side and present in the initial HTML.
+### Requirement: Admin UI exposes event settings through a tabbed Edit Event page
 
-#### Scenario: Navigate between tabs
-- **WHEN** an organizer is on the General tab and clicks the "Registration" tab
-- **THEN** the URL changes to `.../settings/registration` and the Registration tab content loads
+The Admin UI SHALL provide a tabbed **Edit Event** page at `/teams/{teamId}/events/{eventId}/edit` accessible from the event sidebar as the second item after Dashboard. The page SHALL have three tabs implemented as independently routable sub-pages:
 
-#### Scenario: Active tab is highlighted
-- **WHEN** the Email tab is the current page
-- **THEN** the "Email" navigation entry is rendered with the active style
+- **General** at `/teams/{teamId}/events/{eventId}/edit/general` — general event details (name, dates, etc.)
+- **Policies** at `/teams/{teamId}/events/{eventId}/edit/policies` — registration policy, additional detail fields, and reconfirmation policy on a single scrollable page
+- **Danger zone** at `/teams/{teamId}/events/{eventId}/edit/danger` — destructive actions
 
-#### Scenario: Team and event names are present on initial render
-- **WHEN** an organizer navigates directly to any event settings tab URL or hard-refreshes the page
-- **THEN** the breadcrumb shows the team name and event name immediately, without any GUID flash or loading state
+The bare `/edit` path SHALL redirect to `/edit/general`. The active tab SHALL be visually highlighted. There is no shared settings sub-nav or sub-layout; the tab bar is part of the Edit Event page layout itself.
 
-#### Scenario: Cancellation tab no longer exists
-- **WHEN** an organizer views the event settings sidebar
-- **THEN** there is no "Cancellation" entry in the sidebar navigation
+The old `settings/*` URL patterns SHALL permanently redirect (HTTP 308) to their corresponding new paths.
+
+After a successful event creation the UI SHALL navigate to `/teams/{teamId}/events/{eventId}/edit/general` (was `settings`).
+
+#### Scenario: Edit Event page is accessible from the sidebar
+
+- **WHEN** an organizer clicks "Edit Event" in the event sidebar
+- **THEN** the browser navigates to `/teams/{teamId}/events/{eventId}/edit/general` and the General tab content is displayed
+
+#### Scenario: Switching to Policies tab
+
+- **WHEN** an organizer clicks the "Policies" tab on the Edit Event page
+- **THEN** the URL changes to `.../edit/policies` and a single page shows both the registration policy form and the reconfirmation policy form
+
+#### Scenario: Switching to Danger zone tab
+
+- **WHEN** an organizer clicks the "Danger zone" tab
+- **THEN** the URL changes to `.../edit/danger` and the danger zone actions are shown
+
+#### Scenario: Old settings URL redirects to General tab
+
+- **WHEN** a browser navigates to `/teams/acme/events/devconf-2026/settings`
+- **THEN** the browser is permanently redirected to `/teams/acme/events/devconf-2026/edit/general`
+
+#### Scenario: Old settings/registration URL redirects to Policies tab
+
+- **WHEN** a browser navigates to `/teams/acme/events/devconf-2026/settings/registration`
+- **THEN** the browser is permanently redirected to `/teams/acme/events/devconf-2026/edit/policies`
+
+#### Scenario: Old settings/reconfirm URL redirects to Policies tab
+
+- **WHEN** a browser navigates to `/teams/acme/events/devconf-2026/settings/reconfirm`
+- **THEN** the browser is permanently redirected to `/teams/acme/events/devconf-2026/edit/policies`
+
+#### Scenario: Post-creation redirect lands on General tab
+
+- **WHEN** an organizer completes the create-event flow and the event is successfully created
+- **THEN** the UI navigates to `/teams/{teamId}/events/{eventId}/edit/general`
 
 ---
 

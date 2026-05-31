@@ -6,7 +6,6 @@ import { TicketedEventDetailsDto, TicketTypeDto, RegistrationListItemDto } from 
 import { apiClient } from "@/lib/api-client";
 import { PageLayout } from "@/components/page-layout";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useTeams } from "@/hooks/use-teams";
 import { EventHeroCard } from "./components/event-hero-card";
 import { TicketBreakdownCard } from "./components/ticket-breakdown-card";
 import { CheckInCard } from "./components/check-in-card";
@@ -28,7 +27,6 @@ async function fetchRegistrations(teamId: string, eventId: string): Promise<Regi
 
 export default function EventDashboardPage() {
     const { teamId, eventId } = useParams<{ teamId: string; eventId: string }>();
-    const { selectedTeam } = useTeams();
 
     const event = useQuery({
         queryKey: ["event", teamId, eventId],
@@ -48,15 +46,9 @@ export default function EventDashboardPage() {
         throwOnError: false,
     });
 
-    const breadcrumbs = [
-        { label: selectedTeam?.name ?? "", href: `/teams/${teamId}/settings` },
-        { label: event.data?.name ?? "" },
-        { label: "Dashboard" },
-    ];
-
     if (event.isLoading) {
         return (
-            <PageLayout title="Dashboard" breadcrumbs={breadcrumbs}>
+            <PageLayout>
                 <Skeleton className="h-48 w-full" />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
                     <Skeleton className="h-64 w-full" />
@@ -68,14 +60,14 @@ export default function EventDashboardPage() {
 
     if (event.error || !event.data) {
         return (
-            <PageLayout title="Dashboard" breadcrumbs={breadcrumbs}>
+            <PageLayout>
                 <p className="text-destructive">Failed to load event details.</p>
             </PageLayout>
         );
     }
 
     return (
-        <PageLayout title="Dashboard" breadcrumbs={breadcrumbs}>
+        <PageLayout>
             <div className="flex flex-col gap-5">
                 <EventHeroCard
                     event={event.data}

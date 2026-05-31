@@ -1,15 +1,13 @@
 "use client";
 
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { formatDistanceToNow, format } from "date-fns";
 import { ArrowLeft, Clock, Trash2, ListOrdered } from "lucide-react";
-import Link from "next/link";
 import { toast } from "sonner";
 import { WaitlistDetailsDto, TicketTypeDto } from "@/lib/admitto-api/generated";
 import { apiClient } from "@/lib/api-client";
 import { PageLayout } from "@/components/page-layout";
-import { useTeams } from "@/hooks/use-teams";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -39,7 +37,7 @@ export default function WaitlistPage() {
         eventId: string;
         ticketTypeId: string;
     }>();
-    const { selectedTeam } = useTeams();
+    const router = useRouter();
     const queryClient = useQueryClient();
 
     const { data: ticketTypes } = useQuery({
@@ -69,22 +67,14 @@ export default function WaitlistPage() {
         toast.success("Entry removed from waitlist.");
     }
 
-    const breadcrumbs = [
-        { label: selectedTeam?.name ?? "", href: `/teams/${teamId}/settings` },
-        { label: "Ticket types", href: `/teams/${teamId}/events/${eventId}/ticket-types` },
-        { label: ticketType?.name ?? "Waitlist" },
-    ];
-
     const stats = waitlist?.stats;
 
     return (
-        <PageLayout title="Waitlist" breadcrumbs={breadcrumbs}>
+        <PageLayout>
             <div className="flex items-center gap-3 mb-6">
-                <Button variant="ghost" size="sm" asChild>
-                    <Link href={`/teams/${teamId}/events/${eventId}/ticket-types`}>
+                <Button variant="ghost" size="sm" onClick={() => router.back()}>
                         <ArrowLeft className="size-4" />
-                    </Link>
-                </Button>
+                    </Button>
                 <div>
                     <div className="text-[0.6875rem] uppercase tracking-widest text-muted-foreground font-semibold">
                         Waitlist

@@ -49,6 +49,9 @@ export function EmailSettingsForm({
     version,
     initialValues,
     renderTestEmail,
+    title = "Email",
+    description = "Sender identity and SMTP configuration.",
+    callout,
 }: {
     apiUrl: string;
     queryKey: unknown[];
@@ -56,6 +59,9 @@ export function EmailSettingsForm({
     version: number | null;
     initialValues: EmailSettingsInitialValues;
     renderTestEmail?: () => React.ReactNode;
+    title?: string;
+    description?: string;
+    callout?: React.ReactNode;
 }) {
     const queryClient = useQueryClient();
 
@@ -86,19 +92,20 @@ export function EmailSettingsForm({
     }
 
     const authMode = form.watch("authMode");
+    const isDirty = form.formState.isDirty;
 
     return (
         <div>
             <div className="flex items-start justify-between mb-5">
                 <div>
-                    <h2 className="font-display text-[22px] font-semibold">Email</h2>
-                    <p className="text-[13.5px] text-muted-foreground">Sender identity and SMTP configuration.</p>
+                    <h2 className="font-display text-[22px] font-semibold">{title}</h2>
+                    <p className="text-[13.5px] text-muted-foreground">{description}</p>
                 </div>
                 <div className="flex gap-2">
-                    <Button variant="ghost" size="sm" type="button" onClick={() => form.reset()}>
+                    <Button variant="ghost" size="sm" type="button" onClick={() => form.reset()} disabled={!isDirty || form.formState.isSubmitting}>
                         Discard
                     </Button>
-                    <Button size="sm" onClick={form.submit(onSubmit)} disabled={form.formState.isSubmitting}>
+                    <Button size="sm" onClick={form.submit(onSubmit)} disabled={!isDirty || form.formState.isSubmitting}>
                         <Check className="size-3.5" />
                         {form.formState.isSubmitting ? "Saving…" : "Save changes"}
                     </Button>
@@ -117,6 +124,7 @@ export function EmailSettingsForm({
                 <form onSubmit={form.submit(onSubmit)}>
                     <Card>
                         <div className="px-6 divide-y">
+                            {callout}
                             <FormField
                                 control={form.control}
                                 name="fromAddress"

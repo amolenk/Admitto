@@ -14,13 +14,8 @@ export default async function SettingsLayout({
     const teamName = result.data?.name ?? "";
     const basePath = `/teams/${teamId}/settings`;
 
-    const breadcrumbs = [
-        { label: teamName, href: `/teams/${teamId}/settings` },
-        { label: "Settings" },
-    ];
-
     return (
-        <PageLayout title="Team settings" breadcrumbs={breadcrumbs}>
+        <PageLayout>
             <div className="mb-5">
                 <div className="text-[0.6875rem] uppercase tracking-widest text-muted-foreground font-semibold">
                     Settings
