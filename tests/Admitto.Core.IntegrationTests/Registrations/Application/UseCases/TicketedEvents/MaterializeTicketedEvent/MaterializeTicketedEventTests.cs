@@ -4,7 +4,6 @@ using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.Mat
 using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
-using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCases.TicketedEvents.MaterializeTicketedEvent;
 

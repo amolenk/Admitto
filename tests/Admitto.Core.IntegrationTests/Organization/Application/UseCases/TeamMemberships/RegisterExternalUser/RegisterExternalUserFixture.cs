@@ -1,4 +1,4 @@
-using Amolenk.Admitto.Core.Organization.Application.Services;
+using Amolenk.Admitto.Core.Organization.Application.ExternalUsers;
 using Amolenk.Admitto.Testing.Builders.Organization.Domain;
 using NSubstitute;
 

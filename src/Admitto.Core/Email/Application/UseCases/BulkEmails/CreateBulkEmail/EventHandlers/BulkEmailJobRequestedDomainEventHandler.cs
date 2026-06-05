@@ -1,6 +1,5 @@
 using Amolenk.Admitto.Core.Email.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.BulkEmails.CreateBulkEmail.EventHandlers;
 

@@ -1,7 +1,5 @@
 using System.Security.Claims;
 using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
-using Microsoft.EntityFrameworkCore;
 using ExternalUserIdVO = Amolenk.Admitto.Core.Organization.Domain.ValueObjects.ExternalUserId;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Organization.Auth;

@@ -1,9 +1,7 @@
 using Amolenk.Admitto.Core.Organization.Application.Mapping;
 using Amolenk.Admitto.Core.Organization.Application.Persistence;
-using Amolenk.Admitto.Core.Organization.Domain.Entities;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Core.Organization.Application.UseCases.TeamMemberships.ChangeTeamMembershipRole;
 

@@ -1,6 +1,5 @@
 using Amolenk.Admitto.Core.Organization.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Amolenk.Admitto.Core.Organization.Application.UseCases.TeamMemberships.RegisterExternalUser.EventHandlers;
 

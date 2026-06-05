@@ -1,5 +1,4 @@
 using FluentValidation;
-using Humanizer;
 
 namespace Amolenk.Admitto.ApiService.Middleware;
 

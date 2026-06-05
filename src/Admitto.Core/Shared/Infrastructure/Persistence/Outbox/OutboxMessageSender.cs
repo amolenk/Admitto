@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.Json;
 using Amolenk.Admitto.Core.Shared.Application;
 using Azure.Messaging;
 using Azure.Messaging.ServiceBus;
@@ -16,8 +17,6 @@ public class OutboxMessageSender(
             ActivityKind.Producer);
         activity?.AddTag("admitto.message.id", message.Id);
         activity?.AddTag("admitto.message.type", message.Type);
-        activity?.AddTag("messaging.system", "AzureServiceBus");
-        activity?.AddTag("messaging.destination.name", "queue");
 
         var cloudEvent = new CloudEvent(
             nameof(Admitto),
@@ -34,13 +33,15 @@ public class OutboxMessageSender(
             cloudEvent.ExtensionAttributes[AdmittoActivitySource.TraceParentAttribute] = propagationActivity.Id!;
             if (!string.IsNullOrEmpty(propagationActivity.TraceStateString))
             {
-                cloudEvent.ExtensionAttributes[AdmittoActivitySource.TraceStateAttribute] = propagationActivity.TraceStateString;
+                cloudEvent.ExtensionAttributes[AdmittoActivitySource.TraceStateAttribute] =
+                    propagationActivity.TraceStateString;
             }
         }
 
         logger.LogInformation("Sending message to queue: {MessageType}", message.Type);
 
-        var serviceBusMessage = new ServiceBusMessage(BinaryData.FromObjectAsJson(cloudEvent));
+        var serviceBusMessage =
+            new ServiceBusMessage(BinaryData.FromObjectAsJson(cloudEvent, JsonSerializerOptions.Web));
         await sender.SendMessageAsync(serviceBusMessage, cancellationToken);
     }
 }

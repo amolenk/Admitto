@@ -1,11 +1,12 @@
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
+using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
-using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCases.TicketedEvents.ConfigureRegistrationPolicy;
 
 internal sealed class ConfigureRegistrationPolicyFixture
 {
+    private bool _seedExistingPolicy;
     private bool _archive;
 
     public TicketedEventId EventId { get; } = TicketedEventId.New();
@@ -15,6 +16,7 @@ internal sealed class ConfigureRegistrationPolicyFixture
     private ConfigureRegistrationPolicyFixture() { }
 
     public static ConfigureRegistrationPolicyFixture ActiveEvent() => new();
+    public static ConfigureRegistrationPolicyFixture ActiveWithExistingPolicy() => new() { _seedExistingPolicy = true };
     public static ConfigureRegistrationPolicyFixture ArchivedEvent() => new() { _archive = true };
 
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
@@ -33,6 +35,14 @@ internal sealed class ConfigureRegistrationPolicyFixture
                 DateTimeOffset.UtcNow.AddDays(30),
                 DateTimeOffset.UtcNow.AddDays(31),
                 TimeZoneId.From("UTC"));
+
+            if (_seedExistingPolicy)
+            {
+                ticketedEvent.ConfigureRegistrationPolicy(
+                    TicketedEventRegistrationPolicy.Create(
+                        DateTimeOffset.UtcNow.AddDays(1),
+                        DateTimeOffset.UtcNow.AddDays(10)));
+            }
 
             if (_archive) ticketedEvent.Archive();
 

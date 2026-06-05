@@ -9,7 +9,7 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.PolicyConstraints;
 public sealed class PolicyConstraintsTests(TestContext testContext) : EndToEndTestBase
 {
     [TestMethod]
-    public async Task ConfigureRegistrationPolicy_WindowClosesAtEventEnd_Returns204()
+    public async Task ConfigureRegistrationPolicy_WindowClosesAtEventStart_Returns204()
     {
         var fixture = PolicyConstraintsFixture.WithActiveEvent();
         await fixture.SetupAsync(Environment);
@@ -19,7 +19,7 @@ public sealed class PolicyConstraintsTests(TestContext testContext) : EndToEndTe
             new
             {
                 OpensAt = PolicyConstraintsFixture.EventStartsAt.AddDays(-30),
-                ClosesAt = PolicyConstraintsFixture.EventEndsAt,
+                ClosesAt = PolicyConstraintsFixture.EventStartsAt,
             },
             cancellationToken: testContext.CancellationToken);
 
@@ -27,7 +27,7 @@ public sealed class PolicyConstraintsTests(TestContext testContext) : EndToEndTe
     }
 
     [TestMethod]
-    public async Task ConfigureRegistrationPolicy_WindowClosesAfterEventEnd_Returns400()
+    public async Task ConfigureRegistrationPolicy_WindowClosesAfterEventStart_Returns400()
     {
         var fixture = PolicyConstraintsFixture.WithActiveEvent();
         await fixture.SetupAsync(Environment);
@@ -37,7 +37,7 @@ public sealed class PolicyConstraintsTests(TestContext testContext) : EndToEndTe
             new
             {
                 OpensAt = PolicyConstraintsFixture.EventStartsAt.AddDays(-30),
-                ClosesAt = PolicyConstraintsFixture.EventEndsAt.AddSeconds(1),
+                ClosesAt = PolicyConstraintsFixture.EventStartsAt.AddSeconds(1),
             },
             cancellationToken: testContext.CancellationToken);
 

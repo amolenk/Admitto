@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Outbox;
@@ -9,7 +8,7 @@ public class OutboxMessageEntityConfiguration : IEntityTypeConfiguration<OutboxM
     {
         builder.ToTable("outbox");
         builder.HasKey(e => e.Id);
-        
+
         builder.Property(e => e.Id)
             .HasColumnName("id")
             .IsRequired()
@@ -19,12 +18,12 @@ public class OutboxMessageEntityConfiguration : IEntityTypeConfiguration<OutboxM
             .HasColumnName("type")
             .IsRequired()
             .HasMaxLength(255);
-        
+
         builder.Property(e => e.Payload)
             .HasColumnName("data")
             .HasColumnType("jsonb")
             .IsRequired();
-        
+
         builder.Property(e => e.State)
             .HasColumnName("state")
             .HasConversion<string>()

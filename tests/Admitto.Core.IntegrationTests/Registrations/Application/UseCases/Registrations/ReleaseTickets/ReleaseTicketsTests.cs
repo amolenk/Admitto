@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.ReleaseTickets;
-using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCases.Registrations.ReleaseTickets;

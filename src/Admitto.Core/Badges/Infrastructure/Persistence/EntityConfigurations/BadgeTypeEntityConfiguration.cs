@@ -1,7 +1,4 @@
 using Amolenk.Admitto.Core.Badges.Domain.Entities;
-using Amolenk.Admitto.Core.Badges.Domain.ValueObjects;
-using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Amolenk.Admitto.Core.Badges.Infrastructure.Persistence.EntityConfigurations;

@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import * as z from "zod";
 import { AlertCircle, Check } from "lucide-react";
 import { useQueryClient } from "@tanstack/react-query";
@@ -12,6 +13,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Card } from "@/components/ui/card";
 import { useCustomForm } from "@/hooks/use-custom-form";
 import { apiClient } from "@/lib/api-client";
+import { FormError } from "@/components/form-error";
 import { TicketedEventDetails } from "../event-detail-types";
 
 function Field({ label, hint, children }: {
@@ -30,7 +32,7 @@ function Field({ label, hint, children }: {
     );
 }
 
-function makePolicySchema(eventEndsAt: string) {
+function makePolicySchema(eventStartsAt: string) {
     return z
         .object({
             registrationWindowOpensAt: z.string().min(1, "Open date is required"),
@@ -46,10 +48,10 @@ function makePolicySchema(eventEndsAt: string) {
             }
         )
         .refine(
-            (d) => new Date(d.registrationWindowClosesAt) <= new Date(eventEndsAt),
+            (d) => new Date(d.registrationWindowClosesAt) <= new Date(eventStartsAt),
             {
                 path: ["registrationWindowClosesAt"],
-                message: "Registration window must close on or before the event end date",
+                message: "Registration window must close on or before the event start date",
             }
         )
         .refine(
@@ -82,7 +84,10 @@ export function RegistrationPolicyForm({
     const queryClient = useQueryClient();
     const policy = event.registrationPolicy;
 
-    const form = useCustomForm<PolicyValues>(makePolicySchema(event.endsAt), {
+    const [removeError, setRemoveError] = useState<{ title: string; detail: string } | null>(null);
+    const [isRemoving, setIsRemoving] = useState(false);
+
+    const form = useCustomForm<PolicyValues>(makePolicySchema(event.startsAt), {
         registrationWindowOpensAt: policy?.opensAt ?? "",
         registrationWindowClosesAt: policy?.closesAt ?? "",
         restrictEmailDomain: !!policy?.allowedEmailDomain,
@@ -105,6 +110,31 @@ export function RegistrationPolicyForm({
         await apiClient.put(`/api/teams/${teamId}/events/${eventId}/registration-policy`, body);
         await queryClient.invalidateQueries({ queryKey: ["event", teamId, eventId] });
         form.reset(values);
+    }
+
+    async function handleRemove() {
+        setRemoveError(null);
+        setIsRemoving(true);
+        try {
+            await apiClient.put(`/api/teams/${teamId}/events/${eventId}/registration-policy`, {
+                opensAt: null,
+                closesAt: null,
+                allowedEmailDomain: null,
+                expectedVersion: Number(event.version),
+            });
+            await queryClient.invalidateQueries({ queryKey: ["event", teamId, eventId] });
+        } catch (err) {
+            if (err instanceof FormError) {
+                setRemoveError({ title: err.title, detail: err.detail });
+            } else {
+                setRemoveError({
+                    title: "Unexpected Error",
+                    detail: "Could not remove the registration policy.",
+                });
+            }
+        } finally {
+            setIsRemoving(false);
+        }
     }
 
     return (
@@ -134,6 +164,14 @@ export function RegistrationPolicyForm({
                     <AlertCircle className="h-4 w-4" />
                     <AlertTitle>{form.generalError.title}</AlertTitle>
                     <AlertDescription>{form.generalError.detail}</AlertDescription>
+                </Alert>
+            )}
+
+            {removeError && (
+                <Alert variant="destructive" className="mb-5">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>{removeError.title}</AlertTitle>
+                    <AlertDescription>{removeError.detail}</AlertDescription>
                 </Alert>
             )}
 
@@ -211,6 +249,20 @@ export function RegistrationPolicyForm({
                                             </Field>
                                         )}
                                     />
+                                )}
+
+                                {policy && (
+                                    <Field label="Remove policy" hint="Self-service registration will be closed until a new window is configured.">
+                                        <Button
+                                            type="button"
+                                            variant="destructive"
+                                            size="sm"
+                                            disabled={disabled || isRemoving}
+                                            onClick={handleRemove}
+                                        >
+                                            {isRemoving ? "Removing\u2026" : "Remove policy"}
+                                        </Button>
+                                    </Field>
                                 )}
                             </div>
                         </Card>

@@ -1,4 +1,4 @@
-using Amolenk.Admitto.Core.Organization.Application.Services;
+using Amolenk.Admitto.Core.Organization.Application.ExternalUsers;
 using Amolenk.Admitto.Core.Organization.Application.UseCases.TeamMemberships.RegisterExternalUser;
 using Amolenk.Admitto.Core.Organization.Domain.Entities;
 using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;

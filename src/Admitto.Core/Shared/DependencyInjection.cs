@@ -12,13 +12,12 @@ using Microsoft.Extensions.Azure;
 using FluentValidation;
 using FluentValidation.Internal;
 using Humanizer;
-using Microsoft.EntityFrameworkCore;
 using Quartz;
 
 // ReSharper disable once CheckNamespace
 namespace Microsoft.Extensions.DependencyInjection;
 
-public static class SharedModuleExtensions
+public static class DependencyInjection
 {
     public static IServiceCollection AddCryptographyApplicationServices(this IServiceCollection services)
     {
@@ -106,22 +105,22 @@ public static class SharedModuleExtensions
         return builder;
     }
 
-    /// <summary>
-    /// Registers the message type registry singleton, built lazily from all
-    /// <see cref="Action{MessageTypeRegistryBuilder}"/> contributions registered by each module's
-    /// <c>AddXModule</c> call.
-    /// </summary>
-    public static IHostApplicationBuilder AddMessageTypeRegistry(this IHostApplicationBuilder builder)
-    {
-        builder.Services.AddSingleton(sp =>
-        {
-            var registryBuilder = new MessageTypeRegistryBuilder();
-            foreach (var configure in sp.GetServices<Action<MessageTypeRegistryBuilder>>())
-                configure(registryBuilder);
-            return registryBuilder.Build();
-        });
-        return builder;
-    }
+    // /// <summary>
+    // /// Registers the message type registry singleton, built lazily from all
+    // /// <see cref="Action{MessageTypeRegistryBuilder}"/> contributions registered by each module's
+    // /// <c>AddXModule</c> call.
+    // /// </summary>
+    // public static IHostApplicationBuilder AddMessageTypeRegistry(this IHostApplicationBuilder builder)
+    // {
+    //     builder.Services.AddSingleton(sp =>
+    //     {
+    //         var registryBuilder = new MessageTypeRegistryBuilder();
+    //         foreach (var configure in sp.GetServices<Action<MessageTypeRegistryBuilder>>())
+    //             configure(registryBuilder);
+    //         return registryBuilder.Build();
+    //     });
+    //     return builder;
+    // }
 
     /// <summary>
     /// Convenience wrapper that registers all shared cross-cutting services needed by both the API
@@ -136,7 +135,7 @@ public static class SharedModuleExtensions
             .AddSharedInfrastructureServices()
             .AddCryptographyApplicationServices()
             .AddValidationApplicationServices();
-        builder.AddMessageTypeRegistry();
+        // builder.AddMessageTypeRegistry();
         return builder;
     }
 

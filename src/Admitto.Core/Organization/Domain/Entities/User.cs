@@ -2,7 +2,6 @@ using Amolenk.Admitto.Core.Organization.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.Entities;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Core.Organization.Domain.Entities;
 
@@ -33,11 +32,11 @@ public class User : Aggregate<UserId>
     }
 
     public ExternalUserId? ExternalUserId { get; private set; }
-    
+
     public EmailAddress EmailAddress { get; private set; }
 
     public bool IsAdmin { get; private set; }
-    
+
     public IReadOnlyList<TeamMembership> Memberships => _memberships.AsReadOnly();
 
     /// <summary>
@@ -70,7 +69,7 @@ public class User : Aggregate<UserId>
 
         return user;
     }
-    
+
     public void AssignExternalUserId(ExternalUserId externalUserId)
     {
         ExternalUserId = externalUserId;
@@ -131,7 +130,7 @@ public class User : Aggregate<UserId>
         ExternalUserId = null;
         DeprovisionAfter = null;
     }
-    
+
     internal static class Errors
     {
         public static Error UserAlreadyTeamMember(UserId userId, TeamId teamId) =>

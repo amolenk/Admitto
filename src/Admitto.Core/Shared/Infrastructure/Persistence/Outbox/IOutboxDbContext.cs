@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Outbox;

@@ -1,5 +1,3 @@
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
-
 namespace Amolenk.Admitto.Core.Shared.Application.Cryptography;
 
 /// <summary>

@@ -1,4 +1,3 @@
-using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using FluentValidation;
 using FluentValidation.Results;
 using Vogen;

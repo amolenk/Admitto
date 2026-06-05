@@ -1,5 +1,3 @@
-using Microsoft.EntityFrameworkCore;
-
 namespace Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Outbox;
 
 internal class OutboxDispatcher(IOutboxDbContext dbContext, IOutboxMessageSender messageSender)

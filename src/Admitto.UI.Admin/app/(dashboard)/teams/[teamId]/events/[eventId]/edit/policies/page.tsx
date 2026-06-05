@@ -4,7 +4,7 @@ import { useParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { CheckCircle2, Info } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import { TicketedEventDetails, isEventActive } from "../../settings/event-detail-types";
 import { EventStatusBanner } from "../../settings/event-status-banner";
@@ -53,22 +53,13 @@ export default function EditPoliciesPage() {
             />
 
             <div className="space-y-6">
-                {policy ? (
+                {policy && (
                     <Alert>
                         <CheckCircle2 className="h-4 w-4" />
                         <AlertTitle>Reconfirmation policy configured</AlertTitle>
                         <AlertDescription>
                             Attendees will be asked to reconfirm every {policy.cadenceHours}{" "}
                             {policy.cadenceHours === 1 ? "hour" : "hours"}.
-                        </AlertDescription>
-                    </Alert>
-                ) : (
-                    <Alert>
-                        <Info className="h-4 w-4" />
-                        <AlertTitle>No reconfirmation policy configured</AlertTitle>
-                        <AlertDescription>
-                            Set up a reconfirmation window and cadence below to require attendees to
-                            reconfirm their registration.
                         </AlertDescription>
                     </Alert>
                 )}

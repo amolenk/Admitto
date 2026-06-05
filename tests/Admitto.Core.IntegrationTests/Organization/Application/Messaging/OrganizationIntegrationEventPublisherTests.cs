@@ -1,7 +1,6 @@
 using Amolenk.Admitto.Core.Organization.Application.Messaging;
 using Amolenk.Admitto.Core.Organization.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Organization.Domain.DomainEvents;
-using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using NSubstitute;

@@ -1,6 +1,5 @@
 using ArchUnitNET.Domain;
 using ArchUnitNET.Fluent;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using static ArchUnitNET.Fluent.ArchRuleDefinition;
 using Amolenk.Admitto.Core.Shared.Kernel.DomainEvents;
 

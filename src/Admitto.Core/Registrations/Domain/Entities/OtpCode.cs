@@ -6,7 +6,6 @@ using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.Abstractions;
 using Amolenk.Admitto.Core.Shared.Kernel.DomainEvents;
 using Amolenk.Admitto.Core.Shared.Kernel.Entities;
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Core.Registrations.Domain.Entities;
 

@@ -1,8 +1,4 @@
 using ArchUnitNET.Domain;
-using ArchUnitNET.Fluent;
-using ArchUnitNET.MSTestV2;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using static ArchUnitNET.Fluent.ArchRuleDefinition;
 using Amolenk.Admitto.Core.Shared.Kernel.DomainEvents;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 

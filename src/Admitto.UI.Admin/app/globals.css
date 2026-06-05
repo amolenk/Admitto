@@ -40,6 +40,7 @@
   --color-card: var(--card);
   --color-success: var(--success);
   --color-warning: var(--warning);
+  --color-live: var(--live);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -81,6 +82,7 @@
   --sidebar-ring: oklch(0.623 0.214 259.815);
   --success: oklch(0.58 0.13 160);
   --warning: oklch(0.72 0.14 70);
+  --live: oklch(0.55 0.22 300);
 }
 
 .dark {
@@ -117,6 +119,7 @@
   --sidebar-ring: oklch(0.488 0.243 264.376);
   --success: oklch(0.62 0.13 150);
   --warning: oklch(0.72 0.14 70);
+  --live: oklch(0.62 0.20 300);
 }
 
 @layer base {
@@ -128,13 +131,29 @@
   }
 }
 
-/* Hero gradient */
-.hero-gradient {
-  background:
-    radial-gradient(circle at 0% 100%, color-mix(in oklch, var(--primary) 35%, transparent), transparent 50%),
-    radial-gradient(circle at 90% 0%, color-mix(in oklch, var(--warning) 28%, transparent), transparent 55%),
-    radial-gradient(circle at 60% 100%, color-mix(in oklch, var(--destructive) 22%, transparent), transparent 60%),
-    var(--card);
+/* Hero panel: flat card background with a colored accent spine. A subtle
+   accent-colored dot texture is layered via ::before and masked so it only
+   appears toward the right edge, keeping the heading area clean and readable.
+   The accent is supplied per-event via --hero-accent. */
+.hero-panel {
+  --hero-accent: var(--primary);
+  position: relative;
+  overflow: hidden;
+  background-color: var(--card);
+  border-left: 4px solid var(--hero-accent);
+}
+.hero-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(
+    color-mix(in oklch, var(--hero-accent) 32%, transparent) 1px,
+    transparent 1.5px
+  );
+  background-size: 14px 14px;
+  -webkit-mask-image: linear-gradient(to left, black, transparent 60%);
+  mask-image: linear-gradient(to left, black, transparent 60%);
 }
 
 /* Ticket perforation divider */
@@ -169,14 +188,14 @@
   width: 0.5rem;
   height: 0.5rem;
   border-radius: 999px;
-  background: var(--success);
+  background: var(--pulse-color, var(--success));
 }
 .pulse-dot::after {
   content: "";
   position: absolute;
   inset: -3px;
   border-radius: 999px;
-  background: var(--success);
+  background: var(--pulse-color, var(--success));
   opacity: 0.3;
   animation: pulse-ring 1.8s ease-out infinite;
 }

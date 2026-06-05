@@ -1,4 +1,3 @@
-using Amolenk.Admitto.Core.IntegrationTests.Organization.Application.Jobs;
 using Amolenk.Admitto.Core.Organization.Application.Jobs;
 using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;

@@ -6,7 +6,6 @@ using Amolenk.Admitto.Core.Badges.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
-using Shouldly;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Badges.Application.UseCases.EventLifecycle;
 

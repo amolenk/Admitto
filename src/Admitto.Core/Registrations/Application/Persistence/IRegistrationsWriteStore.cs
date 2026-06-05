@@ -1,6 +1,5 @@
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Inbox;
-using Microsoft.EntityFrameworkCore;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.Persistence;
 

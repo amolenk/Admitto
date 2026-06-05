@@ -1,6 +1,5 @@
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Validation;
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using FluentValidation;
 
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.EmailSettings.UpsertEmailSettings.AdminApi;

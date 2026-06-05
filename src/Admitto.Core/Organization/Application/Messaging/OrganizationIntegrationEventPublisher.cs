@@ -16,8 +16,8 @@ internal sealed class OrganizationIntegrationEventPublisher(
             domainEvent.CreationRequestId.Value,
             domainEvent.TeamId.Value,
             domainEvent.Name.Value,
-            domainEvent.WebsiteUrl.Value.ToString(),
-            domainEvent.BaseUrl.Value.ToString(),
+            domainEvent.WebsiteUrl.Value,
+            domainEvent.BaseUrl.Value,
             domainEvent.StartsAt,
             domainEvent.EndsAt,
             domainEvent.TimeZone.Value));

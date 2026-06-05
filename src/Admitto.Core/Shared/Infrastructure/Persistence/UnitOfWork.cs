@@ -1,8 +1,6 @@
-using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Outbox;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
-using Microsoft.EntityFrameworkCore;
 using Npgsql;
 
 namespace Amolenk.Admitto.Core.Shared.Infrastructure.Persistence;
@@ -19,6 +17,8 @@ public sealed class UnitOfWork<TDbContext>(
         int result;
         try
         {
+            // When saving changes, the DomainEventsInterceptor will dispatch all
+            // pending domain events.
             result = await dbContext.SaveChangesAsync(cancellationToken);
         }
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException pge)

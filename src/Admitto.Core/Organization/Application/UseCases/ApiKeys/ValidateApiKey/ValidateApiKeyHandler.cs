@@ -1,6 +1,5 @@
 using Amolenk.Admitto.Core.Organization.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
-using Microsoft.EntityFrameworkCore;
 
 namespace Amolenk.Admitto.Core.Organization.Application.UseCases.ApiKeys.ValidateApiKey;
 

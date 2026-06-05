@@ -1,4 +1,4 @@
-using Amolenk.Admitto.Core.Organization.Application.Services;
+using Amolenk.Admitto.Core.Organization.Application.ExternalUsers;
 
 namespace Amolenk.Admitto.Core.Organization.Infrastructure.UserDirectories.Auth0;
 

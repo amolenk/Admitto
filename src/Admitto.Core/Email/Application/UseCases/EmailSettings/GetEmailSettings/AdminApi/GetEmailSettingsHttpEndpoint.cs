@@ -1,4 +1,3 @@
-using Amolenk.Admitto.Core.Email.Application.UseCases.EmailSettings.GetEmailSettings;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;

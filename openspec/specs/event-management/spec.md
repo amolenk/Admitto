@@ -98,7 +98,12 @@ The system SHALL allow organizers to update a `TicketedEvent`'s name, website
 URL, base URL, and start/end dates. Updates are handled by the Registrations
 module. The system SHALL use optimistic concurrency (expected version) to
 prevent lost updates. The `TicketedEvent` aggregate SHALL reject modifications
-to itself when its own status is Cancelled or Archived.
+to itself when its own status is Cancelled or Archived. When start/end dates
+change, the aggregate SHALL re-validate any already-configured policies against
+the new dates: the registration window's `ClosesAt` SHALL remain on or before
+the new `StartsAt`, and the reconfirm window's `ClosesAt` SHALL remain strictly
+before the new `StartsAt`. Updates that would violate these constraints SHALL be
+rejected with a validation error.
 
 #### Scenario: Update event details
 - **WHEN** an organizer of team "acme" updates event "conf-2026" name to "Acme Conference 2026" with expected version 1 and the current version is 1
@@ -111,6 +116,10 @@ to itself when its own status is Cancelled or Archived.
 #### Scenario: Reject update of cancelled event
 - **WHEN** an organizer attempts to update the name of a cancelled event
 - **THEN** the `TicketedEvent` rejects the update with reason "event not active"
+
+#### Scenario: Rejected — moving event dates into a configured registration window
+- **WHEN** an event has a registration policy and an organizer changes the event's `StartsAt` to be before the policy's `ClosesAt`
+- **THEN** the request is rejected with a validation error
 
 ---
 
@@ -173,10 +182,14 @@ The `TicketedEvent` aggregate SHALL own a `TicketedEventRegistrationPolicy`
 value object storing a registration window (`OpensAt` and `ClosesAt`) and an
 optional email-domain restriction (single domain pattern, e.g. "@acme.com").
 The close datetime SHALL be strictly after the open datetime. The close datetime
-SHALL be on or before the event's `EndsAt`. The aggregate
+SHALL be on or before the event's `StartsAt`. The aggregate
 SHALL allow organizers (Owner or Organizer role) to configure and update the
-policy. Policy mutations SHALL be rejected when the `TicketedEvent`'s own
-status is Cancelled or Archived.
+policy. The policy is optional and MAY be cleared; when absent, self-service
+registration is closed. Configuring the policy SHALL require both `OpensAt` and
+`ClosesAt` (with an optional email-domain restriction); supplying an email-domain
+restriction or only one window bound without a complete window SHALL be rejected
+as an incomplete policy. Policy mutations SHALL be rejected when the
+`TicketedEvent`'s own status is Cancelled or Archived.
 
 Self-service registrations outside the window or from a non-matching email
 domain SHALL be rejected by the attendee-registration capability.
@@ -200,12 +213,20 @@ separate stored "registration status".
 - **WHEN** an organizer removes the email-domain restriction from event "CorpConf"
 - **THEN** the policy is saved with no domain restriction
 
+#### Scenario: Clear the registration policy
+- **WHEN** event "DevConf" has a registration policy and an organizer clears it by sending no policy fields
+- **THEN** the `TicketedEventRegistrationPolicy` is removed and self-service registration is closed
+
+#### Scenario: Rejected — incomplete registration policy
+- **WHEN** an organizer submits a registration policy with only one of `OpensAt`/`ClosesAt`, or with only an email-domain restriction
+- **THEN** the request is rejected with an incomplete-policy validation error
+
 #### Scenario: Rejected — close before open
 - **WHEN** an organizer sets a registration window where the close datetime is before or equal to the open datetime
 - **THEN** the request is rejected with a validation error
 
-#### Scenario: Rejected — registration window closes after event ends
-- **WHEN** an organizer sets a registration window whose `ClosesAt` is after the event's `EndsAt`
+#### Scenario: Rejected — registration window closes after event starts
+- **WHEN** an organizer sets a registration window whose `ClosesAt` is after the event's `StartsAt`
 - **THEN** the request is rejected with a validation error
 
 #### Scenario: Rejected — event is Cancelled

@@ -41,6 +41,55 @@ public sealed class ConfigureRegistrationPolicyTests(TestContext testContext) : 
     }
 
     [TestMethod]
+    public async ValueTask ConfigureRegistrationPolicy_ClearExistingPolicy_RemovesPolicy()
+    {
+        var fixture = ConfigureRegistrationPolicyFixture.ActiveWithExistingPolicy();
+        await fixture.SetupAsync(Environment);
+
+        var command = new ConfigureRegistrationPolicyCommand(
+            fixture.EventId.Value,
+            fixture.TeamId.Value,
+            fixture.SeededVersion,
+            OpensAt: null,
+            ClosesAt: null,
+            AllowedEmailDomain: null);
+
+        var sut = new ConfigureRegistrationPolicyHandler(Environment.RegistrationsDatabase.Context);
+
+        await sut.HandleAsync(command, testContext.CancellationToken);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async ctx =>
+        {
+            var te = await ctx.TicketedEvents
+                .FirstOrDefaultAsync(e => e.Id == fixture.EventId, testContext.CancellationToken);
+            te.ShouldNotBeNull();
+            te.RegistrationPolicy.ShouldBeNull();
+        });
+    }
+
+    [TestMethod]
+    public async ValueTask ConfigureRegistrationPolicy_IncompleteFields_ThrowsIncompletePolicy()
+    {
+        var fixture = ConfigureRegistrationPolicyFixture.ActiveEvent();
+        await fixture.SetupAsync(Environment);
+
+        var command = new ConfigureRegistrationPolicyCommand(
+            fixture.EventId.Value,
+            fixture.TeamId.Value,
+            fixture.SeededVersion,
+            OpensAt: DateTimeOffset.UtcNow.AddDays(1),
+            ClosesAt: null,
+            AllowedEmailDomain: null);
+
+        var sut = new ConfigureRegistrationPolicyHandler(Environment.RegistrationsDatabase.Context);
+
+        var result = await ErrorResult.CaptureAsync(async () =>
+            await sut.HandleAsync(command, testContext.CancellationToken));
+
+        result.Error.Code.ShouldBe("configure_registration_policy.incomplete");
+    }
+
+    [TestMethod]
     public async ValueTask ConfigureRegistrationPolicy_ArchivedEvent_ThrowsEventNotActive()
     {
         var fixture = ConfigureRegistrationPolicyFixture.ArchivedEvent();

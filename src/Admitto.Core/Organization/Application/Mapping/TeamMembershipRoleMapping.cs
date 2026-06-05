@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Core.Organization.Contracts;
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Core.Organization.Application.Mapping;
 

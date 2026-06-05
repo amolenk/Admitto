@@ -2,7 +2,6 @@ using Amolenk.Admitto.Core.Email.Application.Sending;
 using Amolenk.Admitto.Core.Email.Application.Sending.Bulk;
 using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using MimeKit;

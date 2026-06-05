@@ -40,9 +40,9 @@ public static class RegistrationsModuleExtensions
             services.AddValidatorsFromAssembly(assembly, RegistrationsModule.NamespacePrefix);
 
             // Message type registry contribution
-            services.AddSingleton<Action<MessageTypeRegistryBuilder>>(b => b.AddFromAssembly(
-                assembly,
-                RegistrationsModule.NamespacePrefix));
+            // services.AddSingleton<Action<MessageTypeRegistryBuilder>>(b => b.AddFromAssembly(
+            //     assembly,
+            //     RegistrationsModule.NamespacePrefix));
 
             services.AddScoped<IRegistrationsFacade, RegistrationsFacade>();
 

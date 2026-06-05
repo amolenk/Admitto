@@ -1,4 +1,4 @@
-namespace Amolenk.Admitto.Core.Organization.Application.Services;
+namespace Amolenk.Admitto.Core.Organization.Application.ExternalUsers;
 
 public interface IExternalUserDirectory
 {

@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 
 namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence;

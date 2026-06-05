@@ -1,6 +1,7 @@
 "use client";
 
 import { TicketedEventDetailsDto, TicketTypeDto } from "@/lib/admitto-api/generated";
+import type { CSSProperties } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Clock, Globe } from "lucide-react";
@@ -81,9 +82,12 @@ function statusLabel(status: string): string {
 
 export function EventHeroCard({ event, openStatus, ticketTypes }: EventHeroCardProps) {
     const days = daysUntil(event.startsAt);
+    const isPast = new Date(event.endsAt).getTime() < Date.now();
+    const isLive = !isPast && new Date(event.startsAt).getTime() <= Date.now();
     const normalizedStatus = (event.status ?? "").toLowerCase();
     const isActive = normalizedStatus === "active";
     const isOpen = openStatus?.isOpen ?? false;
+    const isClosingSoon = isOpen && !isPast && days <= 7;
 
     const totalCapacity = ticketTypes
         ?.reduce((sum, t) => sum + (Number(t.maxCapacity) || 0), 0) ?? 0;
@@ -95,13 +99,35 @@ export function EventHeroCard({ event, openStatus, ticketTypes }: EventHeroCardP
 
     const regStat = getRegistrationStat(event);
 
+    const heroAccent = isPast
+        ? "var(--muted-foreground)"
+        : isLive
+            ? "var(--live)"
+            : isClosingSoon
+                ? "var(--warning)"
+                : isOpen
+                    ? "var(--success)"
+                    : isActive
+                        ? "var(--primary)"
+                        : "var(--muted-foreground)";
+
     return (
         <Card className="overflow-hidden gap-0 py-0">
-            <div className="hero-gradient p-7">
-                <div className="flex items-start justify-between gap-6">
+            <div
+                className="hero-panel p-7"
+                style={{ "--hero-accent": heroAccent } as CSSProperties}
+            >
+                <div className="relative z-10 flex items-start justify-between gap-6">
                     <div className="min-w-0">
                         <div className="flex items-center gap-2 mb-3">
-                            {isActive ? (
+                            {isPast ? (
+                                <Badge variant="secondary">Ended</Badge>
+                            ) : isLive ? (
+                                <Badge variant="outline" className="text-live border-live/30 bg-live/10">
+                                    <span className="pulse-dot mr-1" style={{ "--pulse-color": "var(--live)" } as CSSProperties} />
+                                    Live
+                                </Badge>
+                            ) : isActive ? (
                                 <Badge variant="outline" className="text-success border-success/30 bg-success/10">
                                     <span className="pulse-dot mr-1" />
                                     {isOpen ? "Registration open" : "Active"}
@@ -111,7 +137,7 @@ export function EventHeroCard({ event, openStatus, ticketTypes }: EventHeroCardP
                             )}
                             <Badge variant="outline" className="text-muted-foreground">
                                 <Clock className="size-3 mr-1" />
-                                {days} days to go
+                                {isPast ? "Event ended" : isLive ? "Happening now" : `${days} days to go`}
                             </Badge>
                         </div>
                         <h1 className="font-display text-[28px] md:text-[40px] leading-[1.05] font-semibold tracking-tight">

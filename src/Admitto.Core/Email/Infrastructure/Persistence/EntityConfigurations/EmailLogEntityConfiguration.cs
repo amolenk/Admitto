@@ -1,6 +1,4 @@
 using Amolenk.Admitto.Core.Email.Domain.Entities;
-using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence.EntityConfigurations;

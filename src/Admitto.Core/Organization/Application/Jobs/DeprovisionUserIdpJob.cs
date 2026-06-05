@@ -1,8 +1,6 @@
+using Amolenk.Admitto.Core.Organization.Application.ExternalUsers;
 using Amolenk.Admitto.Core.Organization.Application.Persistence;
-using Amolenk.Admitto.Core.Organization.Application.Services;
-using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
-using Microsoft.Extensions.Logging;
 using Quartz;
 
 namespace Amolenk.Admitto.Core.Organization.Application.Jobs;

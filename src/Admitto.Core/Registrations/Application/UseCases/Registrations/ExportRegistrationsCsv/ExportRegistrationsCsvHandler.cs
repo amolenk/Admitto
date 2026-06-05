@@ -3,7 +3,6 @@ using Amolenk.Admitto.Core.Registrations.Application.Persistence;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.GetRegistrations;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Humanizer;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.ExportRegistrationsCsv;

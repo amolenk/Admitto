@@ -2,7 +2,7 @@ using Amolenk.Admitto.Core.Organization.Application.UseCases.ApiKeys.ValidateApi
 using Amolenk.Admitto.Core.Organization.Contracts;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
-namespace Amolenk.Admitto.Core.Organization.Application.UseCases;
+namespace Amolenk.Admitto.Core.Organization.Application;
 
 internal class OrganizationFacade(IQueryHandler<ValidateApiKeyQuery, Guid?> validateApiKeyHandler) : IOrganizationFacade
 {

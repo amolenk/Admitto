@@ -8,9 +8,16 @@ namespace Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Interceptors;
 
 public sealed class DomainEventsInterceptor(IServiceProvider serviceProvider) : SaveChangesInterceptor
 {
-    private static readonly ConcurrentDictionary<Type, Func<IServiceProvider, IDomainEvent, CancellationToken, ValueTask>>
-        _dispatchers = new();
+    /// <summary>
+    /// Cache of domain event dispatchers to avoid recurring reflection overhead.
+    /// </summary>
+    private static readonly
+        ConcurrentDictionary<Type, Func<IServiceProvider, IDomainEvent, CancellationToken, ValueTask>>
+        Dispatchers = new();
 
+    /// <summary>
+    /// When saving, dispatches all pending domain events to all registered handlers.
+    /// </summary>
     public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(
         DbContextEventData eventData,
         InterceptionResult<int> result,
@@ -37,28 +44,45 @@ public sealed class DomainEventsInterceptor(IServiceProvider serviceProvider) : 
         return result;
     }
 
+    /// <summary>
+    /// Dispatches a domain event to all registered handlers.
+    /// </summary>
     private ValueTask PublishDomainEventAsync(IDomainEvent domainEvent, CancellationToken cancellationToken)
     {
         var eventType = domainEvent.GetType();
-        var dispatcher = _dispatchers.GetOrAdd(eventType, static t =>
-        {
-            var method = typeof(DomainEventsInterceptor)
-                .GetMethod(nameof(DispatchAsync), BindingFlags.NonPublic | BindingFlags.Static)!
-                .MakeGenericMethod(t);
-            return (Func<IServiceProvider, IDomainEvent, CancellationToken, ValueTask>)
-                Delegate.CreateDelegate(
-                    typeof(Func<IServiceProvider, IDomainEvent, CancellationToken, ValueTask>), method);
-        });
+
+        // Get or add a dispatcher for the event type. The dispatcher is a compiled delegate that invokes the generic
+        // CallDomainEventHandlersAsync method. The dispatcher is cached to avoid reflection overhead.
+        var dispatcher = Dispatchers.GetOrAdd(
+            eventType,
+            static t =>
+            {
+                var method = typeof(DomainEventsInterceptor)
+                    .GetMethod(nameof(CallDomainEventHandlersAsync), BindingFlags.NonPublic | BindingFlags.Static)!
+                    .MakeGenericMethod(t);
+                return (Func<IServiceProvider, IDomainEvent, CancellationToken, ValueTask>)
+                    Delegate.CreateDelegate(
+                        typeof(Func<IServiceProvider, IDomainEvent, CancellationToken, ValueTask>),
+                        method);
+            });
 
         return dispatcher(serviceProvider, domainEvent, cancellationToken);
     }
 
-    private static async ValueTask DispatchAsync<TDomainEvent>(
-        IServiceProvider sp, IDomainEvent evt, CancellationToken ct)
+    /// <summary>
+    /// Calls all registered handlers for the given domain event.
+    /// </summary>
+    private static async ValueTask CallDomainEventHandlersAsync<TDomainEvent>(
+        IServiceProvider serviceProvider,
+        IDomainEvent domainEvent,
+        CancellationToken cancellationToken)
         where TDomainEvent : IDomainEvent
     {
-        var handlers = sp.GetServices<IDomainEventHandler<TDomainEvent>>();
+        var handlers = serviceProvider.GetServices<IDomainEventHandler<TDomainEvent>>();
+
         foreach (var handler in handlers)
-            await handler.HandleAsync((TDomainEvent)evt, ct);
+        {
+            await handler.HandleAsync((TDomainEvent)domainEvent, cancellationToken);
+        }
     }
 }

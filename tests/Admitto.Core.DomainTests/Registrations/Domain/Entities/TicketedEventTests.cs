@@ -1,10 +1,8 @@
-using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
-using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Shouldly;
 using Should = Shouldly.Should;
 
@@ -122,6 +120,48 @@ public sealed class TicketedEventTests
         ex.Error.Code.ShouldBe("ticketed_event.event_not_active");
     }
 
+    [TestMethod]
+    public void UpdateDetails_StartMovesIntoRegistrationWindow_Throws()
+    {
+        var sut = NewEvent();
+        sut.ConfigureRegistrationPolicy(
+            TicketedEventRegistrationPolicy.Create(DefaultStart.AddDays(-30), DefaultStart));
+
+        var act = () => sut.UpdateDetails(
+            DefaultName, DefaultWebsite, DefaultBaseUrl, DefaultStart.AddDays(-1), DefaultEnd);
+
+        var ex = Should.Throw<BusinessRuleViolationException>(act);
+        ex.Error.Code.ShouldBe("ticketed_event.registration_window_closes_after_event_start");
+    }
+
+    [TestMethod]
+    public void UpdateDetails_StartStillAfterRegistrationWindowClose_Accepted()
+    {
+        var sut = NewEvent();
+        sut.ConfigureRegistrationPolicy(
+            TicketedEventRegistrationPolicy.Create(DefaultStart.AddDays(-30), DefaultStart.AddDays(-1)));
+        var newStart = DefaultStart.AddDays(1);
+        var newEnd = DefaultEnd.AddDays(1);
+
+        sut.UpdateDetails(DefaultName, DefaultWebsite, DefaultBaseUrl, newStart, newEnd);
+
+        sut.StartsAt.ShouldBe(newStart);
+    }
+
+    [TestMethod]
+    public void UpdateDetails_StartMovesBeforeReconfirmWindowClose_Throws()
+    {
+        var sut = NewEvent();
+        sut.ConfigureReconfirmPolicy(TicketedEventReconfirmPolicy.Create(
+            DefaultStart.AddDays(-60), DefaultStart.AddSeconds(-1), TimeSpan.FromDays(2), TimeSpan.FromHours(24)));
+
+        var act = () => sut.UpdateDetails(
+            DefaultName, DefaultWebsite, DefaultBaseUrl, DefaultStart.AddDays(-1), DefaultEnd);
+
+        var ex = Should.Throw<BusinessRuleViolationException>(act);
+        ex.Error.Code.ShouldBe("ticketed_event.reconfirm_window_closes_after_event_start");
+    }
+
     // ── Archive ──────────────────────────────────────────────────────────────
 
     [TestMethod]
@@ -174,10 +214,10 @@ public sealed class TicketedEventTests
     }
 
     [TestMethod]
-    public void ConfigureRegistrationPolicy_WindowClosesAtEventEnd_Accepted()
+    public void ConfigureRegistrationPolicy_WindowClosesAtEventStart_Accepted()
     {
         var sut = NewEvent();
-        var policy = TicketedEventRegistrationPolicy.Create(DefaultStart.AddDays(-30), DefaultEnd);
+        var policy = TicketedEventRegistrationPolicy.Create(DefaultStart.AddDays(-30), DefaultStart);
 
         sut.ConfigureRegistrationPolicy(policy);
 
@@ -185,15 +225,26 @@ public sealed class TicketedEventTests
     }
 
     [TestMethod]
-    public void ConfigureRegistrationPolicy_WindowClosesAfterEventEnd_Throws()
+    public void ConfigureRegistrationPolicy_WindowClosesAfterEventStart_Throws()
     {
         var sut = NewEvent();
-        var policy = TicketedEventRegistrationPolicy.Create(DefaultStart.AddDays(-30), DefaultEnd.AddSeconds(1));
+        var policy = TicketedEventRegistrationPolicy.Create(DefaultStart.AddDays(-30), DefaultStart.AddSeconds(1));
 
         var act = () => sut.ConfigureRegistrationPolicy(policy);
 
         var ex = Should.Throw<BusinessRuleViolationException>(act);
-        ex.Error.Code.ShouldBe("ticketed_event.registration_window_closes_after_event_end");
+        ex.Error.Code.ShouldBe("ticketed_event.registration_window_closes_after_event_start");
+    }
+
+    [TestMethod]
+    public void ConfigureRegistrationPolicy_NullPolicy_ClearsPolicy()
+    {
+        var sut = NewEvent();
+        sut.ConfigureRegistrationPolicy(NewRegistrationPolicy());
+
+        sut.ConfigureRegistrationPolicy(null);
+
+        sut.RegistrationPolicy.ShouldBeNull();
     }
 
     // ── ConfigureReconfirmPolicy ─────────────────────────────────────────────

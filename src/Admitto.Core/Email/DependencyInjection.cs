@@ -44,9 +44,9 @@ public static class EmailModuleExtensions
             services.AddValidatorsFromAssembly(assembly, EmailModule.NamespacePrefix);
 
             // Message type registry contribution
-            services.AddSingleton<Action<MessageTypeRegistryBuilder>>(b => b.AddFromAssembly(
-                assembly,
-                EmailModule.NamespacePrefix));
+            // services.AddSingleton<Action<MessageTypeRegistryBuilder>>(b => b.AddFromAssembly(
+            //     assembly,
+            //     EmailModule.NamespacePrefix));
 
             services.AddScoped<IEffectiveEmailSettingsResolver, EffectiveEmailSettingsResolver>();
             services.AddScoped<IEmailTemplateService, EmailTemplateService>();

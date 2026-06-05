@@ -269,29 +269,25 @@ export function ReconfirmPolicyForm({
                                         </Field>
                                     )}
                                 />
+
+                                {policy && (
+                                    <Field label="Remove policy" hint="Attendees will no longer be asked to reconfirm.">
+                                        <Button
+                                            type="button"
+                                            variant="destructive"
+                                            size="sm"
+                                            disabled={disabled || isRemoving}
+                                            onClick={handleRemove}
+                                        >
+                                            {isRemoving ? "Removing…" : "Remove policy"}
+                                        </Button>
+                                    </Field>
+                                )}
                             </div>
                         </Card>
                     </fieldset>
                 </form>
             </Form>
-
-            {policy && (
-                <div className="mt-6 pt-6 border-t">
-                    <h3 className="text-sm font-medium mb-1">Remove policy</h3>
-                    <p className="text-[13px] text-muted-foreground mb-3">
-                        Removes the reconfirmation policy. Attendees will no longer be asked to reconfirm.
-                    </p>
-                    <Button
-                        type="button"
-                        variant="destructive"
-                        size="sm"
-                        disabled={disabled || isRemoving}
-                        onClick={handleRemove}
-                    >
-                        {isRemoving ? "Removing…" : "Remove policy"}
-                    </Button>
-                </div>
-            )}
         </div>
     );
 }

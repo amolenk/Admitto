@@ -2,8 +2,6 @@ using Amolenk.Admitto.Core.Email.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Email.Domain.Entities;
 using Amolenk.Admitto.Testing.Builders.Email.Domain;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
-using Amolenk.Admitto.Core.Registrations.Contracts;
-using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Shouldly;
 

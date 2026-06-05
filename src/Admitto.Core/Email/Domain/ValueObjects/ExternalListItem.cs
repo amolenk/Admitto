@@ -1,5 +1,3 @@
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
-
 namespace Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 
 /// <summary>

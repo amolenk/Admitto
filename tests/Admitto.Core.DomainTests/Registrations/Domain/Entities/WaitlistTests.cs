@@ -3,7 +3,6 @@ using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
-using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Shouldly;
 
 namespace Amolenk.Admitto.Core.Registrations.Domain.Tests.Entities;

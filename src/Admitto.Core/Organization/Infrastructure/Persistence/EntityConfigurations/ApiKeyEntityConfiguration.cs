@@ -1,6 +1,4 @@
 using Amolenk.Admitto.Core.Organization.Domain.Entities;
-using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Amolenk.Admitto.Core.Organization.Infrastructure.Persistence.EntityConfigurations;

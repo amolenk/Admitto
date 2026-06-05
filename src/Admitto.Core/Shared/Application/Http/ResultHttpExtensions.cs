@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
-using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace Amolenk.Admitto.Core.Shared.Application.Http;
 

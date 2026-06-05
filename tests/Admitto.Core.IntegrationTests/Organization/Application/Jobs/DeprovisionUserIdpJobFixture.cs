@@ -1,6 +1,5 @@
+using Amolenk.Admitto.Core.Organization.Application.ExternalUsers;
 using Amolenk.Admitto.Core.Organization.Application.Jobs;
-using Amolenk.Admitto.Core.Organization.Application.Services;
-using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Testing.Builders.Organization.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;

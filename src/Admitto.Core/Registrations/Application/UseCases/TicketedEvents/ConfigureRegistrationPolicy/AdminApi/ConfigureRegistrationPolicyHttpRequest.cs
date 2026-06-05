@@ -1,8 +1,8 @@
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.ConfigureRegistrationPolicy.AdminApi;
 
 public sealed record ConfigureRegistrationPolicyHttpRequest(
-    DateTimeOffset OpensAt,
-    DateTimeOffset ClosesAt,
+    DateTimeOffset? OpensAt = null,
+    DateTimeOffset? ClosesAt = null,
     string? AllowedEmailDomain = null,
     uint? ExpectedVersion = null)
 {

@@ -1,7 +1,4 @@
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
-using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
-using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.EntityConfigurations;

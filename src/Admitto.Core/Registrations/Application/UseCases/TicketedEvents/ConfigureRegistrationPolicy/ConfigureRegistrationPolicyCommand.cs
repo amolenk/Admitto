@@ -6,6 +6,6 @@ internal sealed record ConfigureRegistrationPolicyCommand(
     Guid EventId,
     Guid TeamId,
     uint? ExpectedVersion,
-    DateTimeOffset OpensAt,
-    DateTimeOffset ClosesAt,
+    DateTimeOffset? OpensAt,
+    DateTimeOffset? ClosesAt,
     string? AllowedEmailDomain) : Command;

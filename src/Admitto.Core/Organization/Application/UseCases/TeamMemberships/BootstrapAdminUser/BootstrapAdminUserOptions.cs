@@ -1,9 +1,9 @@
-namespace Amolenk.Admitto.Core.Organization.Application.Bootstrap;
+namespace Amolenk.Admitto.Core.Organization.Application.UseCases.TeamMemberships.BootstrapAdminUser;
 
 /// <summary>
 /// Configuration options for the bootstrap admin initializer.
 /// </summary>
-public sealed class BootstrapAdminOptions
+public sealed class BootstrapAdminUserOptions
 {
     public const string SectionName = "Organization:BootstrapAdmin";
 

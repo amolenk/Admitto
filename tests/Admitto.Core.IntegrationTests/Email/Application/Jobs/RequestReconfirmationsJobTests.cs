@@ -2,6 +2,7 @@ using System.Text.Json;
 using Amolenk.Admitto.Core.Email.Application.Jobs;
 using Amolenk.Admitto.Core.Email.Application.Persistence;
 using Amolenk.Admitto.Core.Email.Application.Templating;
+using Amolenk.Admitto.Core.Email.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Email.Domain.Entities;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Email.Infrastructure.Persistence;
@@ -22,7 +23,7 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.Jobs;
 [TestClass]
 public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
 {
-    private static readonly TeamId _teamId = TeamId.New();
+    private static readonly TeamId TeamId = TeamId.New();
 
     [TestMethod]
     public async ValueTask Execute_AttendeeRegisteredRecently_ExcludedFromBulkJob()
@@ -114,7 +115,7 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
 
         var outboxMessages = await LoadOutboxMessagesAsync();
         outboxMessages.Count.ShouldBe(1);
-        outboxMessages[0].Type.ShouldBe("integration.email.reconfirm-auto-expired");
+        outboxMessages[0].Type.ShouldBe($"{nameof(Email)}:{nameof(ReconfirmAutoExpiredIntegrationEvent)}");
         GetRegistrationIds(outboxMessages[0].Payload).ShouldBe([workshopId], ignoreOrder: true);
     }
 
@@ -201,13 +202,13 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
                     q.HasReconfirmed == false &&
                     q.RegistrationIds == null),
                 Arg.Any<CancellationToken>())
-            .Returns(Task.FromResult<IReadOnlyList<RegistrationListItemDto>>(candidates));
+            .Returns(Task.FromResult(candidates));
         return facade;
     }
 
     private static EmailLog ReconfirmEmailLog(TicketedEventId eventId, string recipientEmail, DateTimeOffset sentAt) =>
         EmailLog.Create(
-            teamId: _teamId,
+            teamId: TeamId,
             ticketedEventId: eventId,
             idempotencyKey: $"reconfirm:{Guid.NewGuid():N}",
             recipient: EmailAddress.From(recipientEmail),
@@ -239,7 +240,7 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
     {
         var data = new JobDataMap
         {
-            [RequestReconfirmationsJob.TeamIdKey] = _teamId.Value.ToString(),
+            [RequestReconfirmationsJob.TeamIdKey] = TeamId.Value.ToString(),
             [RequestReconfirmationsJob.TicketedEventIdKey] = eventId.Value.ToString(),
             [RequestReconfirmationsJob.MinEmailIntervalHoursKey] = minEmailIntervalHours.ToString(),
         };

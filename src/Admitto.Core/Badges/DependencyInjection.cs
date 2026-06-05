@@ -30,9 +30,9 @@ public static class BadgesModuleExtensions
             services.AddValidatorsFromAssembly(assembly, BadgesModule.NamespacePrefix);
 
             // Message type registry contribution
-            services.AddSingleton<Action<MessageTypeRegistryBuilder>>(b => b.AddFromAssembly(
-                assembly,
-                BadgesModule.NamespacePrefix));
+            // services.AddSingleton<Action<MessageTypeRegistryBuilder>>(b => b.AddFromAssembly(
+            //     assembly,
+            //     BadgesModule.NamespacePrefix));
 
             // Infrastructure
             builder.AddModuleDatabaseServices<IBadgesWriteStore, BadgesDbContext>(BadgesModule.Key);

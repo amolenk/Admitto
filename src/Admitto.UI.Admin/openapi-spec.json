@@ -8855,18 +8855,20 @@
         }
       },
       "ConfigureRegistrationPolicyHttpRequest": {
-        "required": [
-          "opensAt",
-          "closesAt"
-        ],
         "type": "object",
         "properties": {
           "opensAt": {
-            "type": "string",
+            "type": [
+              "null",
+              "string"
+            ],
             "format": "date-time"
           },
           "closesAt": {
-            "type": "string",
+            "type": [
+              "null",
+              "string"
+            ],
             "format": "date-time"
           },
           "allowedEmailDomain": {

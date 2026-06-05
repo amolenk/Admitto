@@ -1,4 +1,3 @@
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.AspNetCore.Authorization;
 
 namespace Amolenk.Admitto.Core.Shared.Application.Auth;

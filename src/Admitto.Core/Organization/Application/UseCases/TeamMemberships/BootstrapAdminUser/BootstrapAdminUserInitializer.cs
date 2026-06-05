@@ -1,20 +1,18 @@
 using Amolenk.Admitto.Core.Organization.Application.Persistence;
-using Amolenk.Admitto.Core.Organization.Application.Services;
 using Amolenk.Admitto.Core.Organization.Domain.Entities;
-using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Microsoft.Extensions.Options;
 
-namespace Amolenk.Admitto.Core.Organization.Application.Bootstrap;
+namespace Amolenk.Admitto.Core.Organization.Application.UseCases.TeamMemberships.BootstrapAdminUser;
 
 /// <summary>
 /// Hosted service that ensures a bootstrap administrator user exists on startup.
 /// Idempotent: safe to run on every restart and under concurrent startup scenarios.
 /// </summary>
-public sealed class BootstrapAdminInitializer(
+public sealed class BootstrapAdminUserInitializer(
     IServiceScopeFactory scopeFactory,
-    IOptions<BootstrapAdminOptions> options,
-    ILogger<BootstrapAdminInitializer> logger)
+    IOptions<BootstrapAdminUserOptions> options,
+    ILogger<BootstrapAdminUserInitializer> logger)
     : IHostedService
 {
     public async Task StartAsync(CancellationToken cancellationToken)
@@ -27,7 +25,7 @@ public sealed class BootstrapAdminInitializer(
 
         await using var scope = scopeFactory.CreateAsyncScope();
         var writeStore = scope.ServiceProvider.GetRequiredService<IOrganizationWriteStore>();
-        var userDirectory = scope.ServiceProvider.GetRequiredService<IExternalUserDirectory>();
+        // var userDirectory = scope.ServiceProvider.GetRequiredService<IExternalUserDirectory>();
         var unitOfWork = scope.ServiceProvider.GetRequiredKeyedService<IUnitOfWork>(OrganizationModule.Key);
 
         var emailAddress = EmailAddress.From(email);
@@ -42,16 +40,16 @@ public sealed class BootstrapAdminInitializer(
             await unitOfWork.SaveChangesAsync(cancellationToken);
             logger.LogInformation("Created bootstrap admin user {UserId}.", user.Id.Value);
         }
-
-        if (user.ExternalUserId is null)
-        {
-            logger.LogInformation("Inviting bootstrap admin user {UserId} to IdP.", user.Id.Value);
-            var externalUserId = await userDirectory.InviteUserAsync(email, cancellationToken);
-
-            user.AssignExternalUserId(ExternalUserId.From(externalUserId));
-            await unitOfWork.SaveChangesAsync(cancellationToken);
-            logger.LogInformation("Bootstrap admin user {UserId} provisioned in IdP.", user.Id.Value);
-        }
+        // TODO Should be able to remove this as domain event will take care of provisioning the external user
+        // if (user.ExternalUserId is null)
+        // {
+        //     logger.LogInformation("Inviting bootstrap admin user {UserId} to IdP.", user.Id.Value);
+        //     var externalUserId = await userDirectory.InviteUserAsync(email, cancellationToken);
+        //
+        //     user.AssignExternalUserId(ExternalUserId.From(externalUserId));
+        //     await unitOfWork.SaveChangesAsync(cancellationToken);
+        //     logger.LogInformation("Bootstrap admin user {UserId} provisioned in IdP.", user.Id.Value);
+        // }
         else
         {
             logger.LogInformation("Bootstrap admin user {UserId} already provisioned, skipping.", user.Id.Value);

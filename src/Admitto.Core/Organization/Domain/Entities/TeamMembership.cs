@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Core.Shared.Kernel.Entities;
-using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Core.Organization.Domain.Entities;
 

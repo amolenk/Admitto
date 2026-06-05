@@ -1,16 +1,14 @@
 using System.Reflection;
 using Amolenk.Admitto.Core.Organization;
-using Amolenk.Admitto.Core.Organization.Application.Bootstrap;
+using Amolenk.Admitto.Core.Organization.Application;
+using Amolenk.Admitto.Core.Organization.Application.ExternalUsers;
 using Amolenk.Admitto.Core.Organization.Application.Jobs;
 using Amolenk.Admitto.Core.Organization.Application.Persistence;
-using Amolenk.Admitto.Core.Organization.Application.Services;
-using Amolenk.Admitto.Core.Organization.Application.UseCases;
-using Amolenk.Admitto.Core.Organization.Application.UseCases.TeamMemberships.RegisterExternalUser;
+using Amolenk.Admitto.Core.Organization.Application.UseCases.TeamMemberships.BootstrapAdminUser;
 using Amolenk.Admitto.Core.Organization.Contracts;
 using Amolenk.Admitto.Core.Organization.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.Organization.Infrastructure.UserDirectories.Auth0;
 using Amolenk.Admitto.Core.Organization.Infrastructure.UserDirectories.Keycloak;
-using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Messaging;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence;
 using Quartz;
@@ -43,9 +41,9 @@ public static class OrganizationModuleExtensions
             services.AddValidatorsFromAssembly(assembly, OrganizationModule.NamespacePrefix);
 
             // Message type registry contribution
-            services.AddSingleton<Action<MessageTypeRegistryBuilder>>(b => b.AddFromAssembly(
-                assembly,
-                OrganizationModule.NamespacePrefix));
+            // services.AddSingleton<Action<MessageTypeRegistryBuilder>>(b => b.AddFromAssembly(
+            //     assembly,
+            //     OrganizationModule.NamespacePrefix));
 
             // Facade
             services.AddScoped<OrganizationFacade>();
@@ -66,12 +64,12 @@ public static class OrganizationModuleExtensions
                 OrganizationModule.Key);
 
             // Bootstrap admin (only when configured)
-            var bootstrapEmail = builder.Configuration[$"{BootstrapAdminOptions.SectionName}:EmailAddress"];
+            var bootstrapEmail = builder.Configuration[$"{BootstrapAdminUserOptions.SectionName}:EmailAddress"];
             if (!string.IsNullOrWhiteSpace(bootstrapEmail))
             {
-                services.Configure<BootstrapAdminOptions>(
-                    builder.Configuration.GetSection(BootstrapAdminOptions.SectionName));
-                services.AddHostedService<BootstrapAdminInitializer>();
+                services.Configure<BootstrapAdminUserOptions>(
+                    builder.Configuration.GetSection(BootstrapAdminUserOptions.SectionName));
+                services.AddHostedService<BootstrapAdminUserInitializer>();
             }
 
             return builder;
