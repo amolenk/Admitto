@@ -15,7 +15,6 @@ namespace Amolenk.Admitto.Core.Shared.Infrastructure.Messaging;
 /// committing each handler's module unit of work after a successful invocation.
 /// </summary>
 internal sealed partial class QueueMessageDispatcher(
-    // MessageTypeRegistry registry,
     IServiceProvider serviceProvider,
     ILogger<QueueMessageDispatcher> logger)
 {
