@@ -182,7 +182,7 @@ public class TicketCatalog : Aggregate<TicketedEventId>
         ticketType.DeactivateWaitlistMode();
     }
 
-    private void EnsureEventActive()
+    public void EnsureEventActive()
     {
         if (EventStatus != EventLifecycleStatus.Active)
             throw new BusinessRuleViolationException(Errors.EventNotActive);

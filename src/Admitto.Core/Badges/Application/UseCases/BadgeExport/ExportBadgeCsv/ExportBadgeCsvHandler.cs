@@ -52,7 +52,7 @@ internal sealed class ExportBadgeCsvHandler(
 
         using var ms = new MemoryStream();
         await using var writer = new StreamWriter(ms, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
-        await using var csv = new CsvWriter(writer, CultureInfo.InvariantCulture);
+        await using var csv = new CsvWriter(writer, new CsvHelper.Configuration.CsvConfiguration(CultureInfo.InvariantCulture) { NewLine = "\n" });
 
         csv.WriteField("DisplayName");
         csv.WriteField("Notes");
@@ -91,7 +91,7 @@ internal sealed class ExportBadgeCsvHandler(
 
         using var ms = new MemoryStream();
         await using var writer = new StreamWriter(ms, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
-        await using var csv = new CsvWriter(writer, CultureInfo.InvariantCulture);
+        await using var csv = new CsvWriter(writer, new CsvHelper.Configuration.CsvConfiguration(CultureInfo.InvariantCulture) { NewLine = "\n" });
 
         // Header row
         csv.WriteField("FirstName");

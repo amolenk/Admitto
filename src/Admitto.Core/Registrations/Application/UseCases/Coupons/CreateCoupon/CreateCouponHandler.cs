@@ -2,12 +2,10 @@ using Amolenk.Admitto.Core.Registrations.Application.Persistence;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
+using Amolenk.Admitto.Core.Shared.Application.Persistence;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Coupons.CreateCoupon;
 
-// NOTE: EventStatus gating is reintroduced on TicketCatalog in section 7/9 of the
-// redesign-ticketed-event-ownership change once the new TicketedEvent aggregate owns
-// lifecycle transitions.
 internal sealed class CreateCouponHandler(
     IRegistrationsWriteStore writeStore,
     TimeProvider timeProvider)
@@ -17,16 +15,16 @@ internal sealed class CreateCouponHandler(
         CreateCouponCommand command,
         CancellationToken cancellationToken)
     {
-        TicketedEventId eventId = TicketedEventId.From(command.EventId);
-        TeamId teamId = TeamId.From(command.TeamId);
-        EmailAddress email = EmailAddress.From(command.Email);
+        var eventId = TicketedEventId.From(command.EventId);
+        var teamId = TeamId.From(command.TeamId);
+        var email = EmailAddress.From(command.Email);
 
-        var catalog = await writeStore.TicketCatalogs
-            .FirstOrDefaultAsync(tc => tc.Id == eventId, cancellationToken);
+        var catalog = await writeStore.TicketCatalogs.GetUntrackedAsync(tc => tc.Id == eventId, cancellationToken);
+        catalog.EnsureEventActive();
 
-        var availableTicketTypes = catalog?.TicketTypes
+        var availableTicketTypes = catalog.TicketTypes
             .Select(tt => new TicketTypeInfo(tt.Id))
-            .ToList() ?? [];
+            .ToList();
 
         var coupon = Coupon.Create(
             eventId,
@@ -43,4 +41,3 @@ internal sealed class CreateCouponHandler(
         return coupon.Id.Value;
     }
 }
-

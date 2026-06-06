@@ -4,6 +4,8 @@ namespace Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Inbox;
 
 public class ProcessedMessageEntityConfiguration : IEntityTypeConfiguration<ProcessedMessage>
 {
+    public const string MessageKeyIndexName = "ix_processed_messages_message_key";
+
     public void Configure(EntityTypeBuilder<ProcessedMessage> builder)
     {
         builder.ToTable("processed_messages");
@@ -25,6 +27,6 @@ public class ProcessedMessageEntityConfiguration : IEntityTypeConfiguration<Proc
 
         builder.HasIndex(e => e.MessageKey)
             .IsUnique()
-            .HasDatabaseName("ix_processed_messages_message_key");
+            .HasDatabaseName(MessageKeyIndexName);
     }
 }

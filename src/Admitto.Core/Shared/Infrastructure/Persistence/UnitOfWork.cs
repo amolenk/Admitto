@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
+using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Inbox;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Outbox;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Npgsql;
@@ -12,6 +13,8 @@ public sealed class UnitOfWork<TDbContext>(
     IPostgresExceptionMapping? postgresExceptionMapping = null) : IUnitOfWork
     where TDbContext : DbContext
 {
+    private const string UniqueViolation = "23505";
+
     public async ValueTask SaveChangesAsync(CancellationToken cancellationToken = default)
     {
         int result;
@@ -23,6 +26,11 @@ public sealed class UnitOfWork<TDbContext>(
         }
         catch (DbUpdateException ex) when (ex.InnerException is PostgresException pge)
         {
+            if (IsProcessedMessageDuplicate(pge))
+            {
+                throw new DuplicateProcessedMessageException(ex);
+            }
+
             if (postgresExceptionMapping?.TryMapToError(pge, out var error) ?? false)
             {
                 throw new BusinessRuleViolationException(error);
@@ -52,4 +60,8 @@ public sealed class UnitOfWork<TDbContext>(
             logger.LogWarning(ex, "Best-effort outbox flush failed; pending messages will be retried by the worker.");
         }
     }
+
+    private static bool IsProcessedMessageDuplicate(PostgresException exception) =>
+        exception.SqlState == UniqueViolation
+        && exception.ConstraintName == ProcessedMessageEntityConfiguration.MessageKeyIndexName;
 }

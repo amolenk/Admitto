@@ -30,7 +30,6 @@ internal sealed class GetEventCreationRequestHandler(IOrganizationWriteStore wri
                        r.TicketedEventId == null ? (Guid?)null : r.TicketedEventId.Value.Value,
                        r.RejectionReason))
                    .FirstOrDefaultAsync(cancellationToken)
-               ?? throw new BusinessRuleViolationException(
-                   NotFoundError.Create<TeamEventCreationRequest>());
+               ?? throw new BusinessRuleViolationException(NotFoundError.Create<TeamEventCreationRequest>());
     }
 }

@@ -1,7 +1,5 @@
-using Amolenk.Admitto.Core.Organization.Application.UseCases.TicketedEvents.RegisterTicketedEventArchived;
 using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
-using Amolenk.Admitto.Testing.Builders.Organization.Application;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Organization.Application.UseCases.TicketedEvents.RegisterTicketedEventArchived;
 
@@ -11,17 +9,12 @@ public sealed class RegisterTicketedEventArchivedTests(TestContext testContext) 
     [TestMethod]
     public async ValueTask IsIdempotent_OnRedelivery()
     {
-        // Arrange: team with a Created request in Active state.
-        var team = new TeamBuilder().Build();
-        var pendingRequest = team.RequestEventCreation(
-                UserId.New(), DateTimeOffset.UtcNow);
-        var ticketedEventId = TicketedEventId.New();
-        team.RegisterEventCreated(pendingRequest.Id, ticketedEventId, DateTimeOffset.UtcNow);
+        // Arrange
+        var fixture = RegisterTicketedEventArchivedFixture.ActiveEvent();
+        await fixture.SetupAsync(Environment, testContext.CancellationToken);
 
-        await Environment.OrganizationDatabase.SeedAsync(ctx => ctx.Teams.Add(team));
-
-        var command = new RegisterTicketedEventArchivedCommand(team.Id.Value, ticketedEventId.Value);
-        var sut = new RegisterTicketedEventArchivedHandler(Environment.OrganizationDatabase.Context);
+        var command = fixture.ToCommand();
+        var sut = fixture.CreateHandler(Environment);
 
         // Act
         await sut.HandleAsync(command, testContext.CancellationToken);
@@ -32,12 +25,37 @@ public sealed class RegisterTicketedEventArchivedTests(TestContext testContext) 
         await Environment.OrganizationDatabase.AssertAsync(async ctx =>
         {
             var persisted = await ctx.Teams.FindAsync(
-                [TeamId.From(team.Id.Value)],
+                [TeamId.From(fixture.TeamId)],
                 testContext.CancellationToken);
 
             persisted.ShouldNotBeNull();
             persisted.ActiveEventCount.ShouldBe(0);
             persisted.ArchivedEventCount.ShouldBe(1);
+        });
+    }
+
+    [TestMethod]
+    public async ValueTask HandleAsync_AlreadyProcessed_DoesNotRegisterEventArchivedAgain()
+    {
+        // Arrange
+        var fixture = RegisterTicketedEventArchivedFixture.AlreadyProcessed();
+        await fixture.SetupAsync(Environment, testContext.CancellationToken);
+
+        var sut = fixture.CreateIntegrationEventHandler(Environment);
+
+        // Act
+        await sut.HandleAsync(fixture.IntegrationEvent, testContext.CancellationToken);
+
+        // Assert
+        await Environment.OrganizationDatabase.AssertAsync(async ctx =>
+        {
+            var persisted = await ctx.Teams.FindAsync(
+                [TeamId.From(fixture.TeamId)],
+                testContext.CancellationToken);
+
+            persisted.ShouldNotBeNull();
+            persisted.ActiveEventCount.ShouldBe(1);
+            persisted.ArchivedEventCount.ShouldBe(0);
         });
     }
 }

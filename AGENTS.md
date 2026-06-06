@@ -89,7 +89,7 @@ Run targeted tests for the modules you changed. See `tests/AGENTS.md` for comman
 
 **Always run architecture tests first:**
 ```bash
-dotnet test tests/Admitto.Core.ArchTests/Admitto.Core.ArchTests.csproj
+dotnet test --project tests/Admitto.Core.ArchTests/Admitto.Core.ArchTests.csproj
 ```
 If ArchTests fail, fix the architectural violation before running other test suites.
 
@@ -106,7 +106,6 @@ Before declaring a feature complete:
 - HTTP-exposed slices: command/query, handler, endpoint, request/validator/response as needed.
 - Internal event-driven work: event-handler pattern under `Application/UseCases/.../EventHandlers/`; jobs under `Application/Jobs/`.
 - Endpoint wiring updated in the module's endpoint registration entry point.
-- Each acceptance scenario (`SC-*`) has a corresponding test method with scenario ID prefix (`SC001_...`).
 - Tests use fixture/builder patterns, not inline setup.
 - All new and existing tests pass.
 - Domain model changes are covered by domain-level tests.

@@ -13,9 +13,8 @@ internal sealed class RegisterTicketedEventCreatedHandler(IOrganizationWriteStor
         var teamId = TeamId.From(command.TeamId);
 
         var team = await writeStore.Teams.FirstOrDefaultAsync(t => t.Id == teamId, cancellationToken);
-        if (team is null) return;
 
-        team.RegisterEventCreated(
+        team?.RegisterEventCreated(
             CreationRequestId.From(command.CreationRequestId),
             TicketedEventId.From(command.TicketedEventId),
             DateTimeOffset.UtcNow);

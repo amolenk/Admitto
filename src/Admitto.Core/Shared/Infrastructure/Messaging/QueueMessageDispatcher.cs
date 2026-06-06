@@ -4,6 +4,7 @@ using System.Text.Json;
 using Amolenk.Admitto.Core.Shared.Application;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
+using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Inbox;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Azure.Messaging;
 
@@ -143,6 +144,15 @@ internal sealed partial class QueueMessageDispatcher(
                     ex.Error,
                     ex);
             }
+            catch (DuplicateProcessedMessageException ex)
+            {
+                handlerActivity?.SetStatus(ActivityStatusCode.Ok);
+
+                LogDuplicateProcessedMessage(
+                    messageTypeName,
+                    handler.GetType().FullName!,
+                    ex);
+            }
             catch (Exception ex)
             {
                 handlerActivity?.SetStatus(ActivityStatusCode.Error, ex.Message);
@@ -219,4 +229,12 @@ internal sealed partial class QueueMessageDispatcher(
         string handlerType,
         Error errorDetails,
         BusinessRuleViolationException businessRuleViolationException);
+
+    [LoggerMessage(
+        LogLevel.Information,
+        "Duplicate delivery of message type {MessageType} to handler {HandlerType}; message was already processed and will be acknowledged.")]
+    partial void LogDuplicateProcessedMessage(
+        string messageType,
+        string handlerType,
+        DuplicateProcessedMessageException duplicateProcessedMessageException);
 }

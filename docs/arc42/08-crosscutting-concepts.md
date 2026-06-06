@@ -20,7 +20,8 @@ Reference: `Admitto.Api/Middleware/ValidationFilter.cs`, applied in `Admitto.Api
 
 - **Authentication:** JWT Bearer tokens validated against a configurable authority. Challenge and forbidden responses return ProblemDetails.
 - **Admin authorization:** `AdminAuthorizationRequirement` checked by `AdminAuthorizationHandler` via `IAdministratorRoleService`.
-- **Team membership authorization:** `TeamMembershipAuthorizationRequirement` checked by `TeamMembershipAuthorizationHandler` via `IOrganizationFacade.GetTeamMembershipRoleAsync`. Admin users bypass team checks.
+- **User context resolution:** `UserContextResolutionMiddleware` resolves the authenticated JWT subject to a domain user before authorization runs. When the route contains both `teamId` and `eventId`, `UserContextResolver` verifies that the event belongs to the team; non-admin mismatches return 403 before endpoint authorization or handler execution.
+- **Team membership authorization:** `TeamMembershipAuthorizationRequirement` checked by `TeamMembershipAuthorizationHandler` against the pre-resolved user context. Admin users bypass team checks.
 
 Endpoints declare requirements with `policy.RequireAdminRole()` or `policy.RequireTeamMembership(role)`.
 
@@ -28,7 +29,9 @@ Endpoints declare requirements with `policy.RequireAdminRole()` or `policy.Requi
 
 Admin endpoints declare `teamId` and `eventId` as explicit GUID path parameters in their handler signatures. No slug-to-ID translation is needed; the IDs from the route are used directly to load aggregates.
 
-The `TeamMembershipAuthorizationHandler` extracts `teamId` from `HttpContext.GetRouteValue()` and resolves team membership by ID because authorization runs before endpoint binding.
+Before authorization, `UserContextResolutionMiddleware` parses those route values and passes them to `UserContextResolver`. The resolver uses Organization's ticketed-event tracking state to verify that the supplied event belongs to the supplied team. This centralized route-scope guard means handlers do not need to add parent team/event existence checks solely to defend against guessed event GUIDs, though handlers should keep `TeamId` filters when team ownership is part of the resource being queried or mutated.
+
+The `TeamMembershipAuthorizationHandler` reads the pre-resolved user context instead of querying route values directly.
 
 ### Synchronous cross-module facades
 
@@ -36,7 +39,7 @@ Some workflows need to consult another module's state inside the same request wi
 
 | Facade | Module | Used by | Purpose |
 | :----- | :----- | :------ | :------ |
-| `IOrganizationFacade` | Organization | Registrations, API auth | Check team membership, look up team by ID |
+| `IOrganizationFacade` | Organization | Registrations | Check team membership, look up team by ID |
 | `IEventEmailFacade` | Email | Registrations | Check whether per-event SMTP credentials are configured before allowing registration to open |
 
 Facades are read-only and side-effect-free. Cross-module *writes* still go through commands and integration events on the outbox (see §8.6).
@@ -134,6 +137,8 @@ All cross-module integration-event handlers are idempotent:
 
 - Organization's `TicketedEventCreated` / `TicketedEventCreationRejected` handlers key off `CreationRequestId`.
 - Organization's `TicketedEventCancelled` / `TicketedEventArchived` handlers key off `TicketedEventId` plus the observed transition (so redelivery after the counter has already moved is a no-op).
+
+Handlers that require inbox protection insert a `ProcessedMessage` marker before mutating state. The marker is committed in the same unit of work as the handler's aggregate changes. If two deliveries race, both can pass the initial marker lookup, but the unique `message_key` constraint makes one `SaveChangesAsync` fail; the module `UnitOfWork` converts that database conflict to `DuplicateProcessedMessageException`, and the queue dispatcher acknowledges it as an already-processed delivery.
 
 Ticket type data is owned entirely by the Registrations module — no cross-module sync.
 

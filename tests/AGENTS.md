@@ -6,7 +6,7 @@ This file applies to `/tests`. Test intent and layer boundaries are in `docs/arc
 ## First: Architecture Tests
 Before any other test suite, verify architectural rules pass:
 ```bash
-dotnet test tests/Admitto.Core.ArchTests/Admitto.Core.ArchTests.csproj
+dotnet test --project tests/Admitto.Core.ArchTests/Admitto.Core.ArchTests.csproj
 ```
 Architecture tests enforce dependency direction, naming conventions, and placement rules (see §8.15 in `docs/arc42/08-crosscutting-concepts.md`). Fix violations before running other suites.
 
@@ -18,16 +18,16 @@ Architecture tests enforce dependency direction, naming conventions, and placeme
 ## Commands
 ```bash
 # Architecture tests (run first)
-dotnet test tests/Admitto.Core.ArchTests/Admitto.Core.ArchTests.csproj
+dotnet test --project tests/Admitto.Core.ArchTests/Admitto.Core.ArchTests.csproj
 
 # Domain unit tests
-dotnet test tests/Admitto.Core.DomainTests/Admitto.Core.DomainTests.csproj
+dotnet test --project tests/Admitto.Core.DomainTests/Admitto.Core.DomainTests.csproj
 
 # Core integration tests (requires container runtime)
-dotnet test tests/Admitto.Core.IntegrationTests/Admitto.Core.IntegrationTests.csproj
+dotnet test --project tests/Admitto.Core.IntegrationTests/Admitto.Core.IntegrationTests.csproj
 
 # API-level tests (requires container runtime)
-dotnet test tests/Admitto.Api.Tests/Admitto.Api.Tests.csproj
+dotnet test --project tests/Admitto.Api.Tests/Admitto.Api.Tests.csproj
 ```
 
 ## Environment Notes
@@ -85,4 +85,3 @@ Builders (e.g., `TeamBuilder`, `CouponBuilder`) live in `Admitto.Testing/Builder
 - Prefer builder/fixture helpers over repetitive setup.
 - Keep tests focused on observable behavior (domain error, HTTP result, persisted state).
 - Add or update tests in the same module layer as the behavior you changed.
-

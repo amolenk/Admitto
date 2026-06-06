@@ -4,12 +4,21 @@ namespace Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Inbox;
 
 public sealed class Inbox(IInboxDbContext dbContext) : IInbox
 {
-    public void MarkAsProcessed<THandler>(IIntegrationEvent integrationEvent, THandler handler)
+    public async ValueTask<bool> TryMarkAsProcessedByAsync<THandler>(
+        IIntegrationEvent integrationEvent,
+        CancellationToken cancellationToken)
     {
-        var messageKey = $"{integrationEvent.GetType().Name}.{typeof(THandler).Name}";
+        var messageKey = $"{integrationEvent.IntegrationEventId:N}.{typeof(THandler).FullName}";
+
+        var alreadyProcessed = await dbContext.ProcessedMessages
+            .AnyAsync(x => x.MessageKey == messageKey, cancellationToken);
+
+        if (alreadyProcessed)
+            return false;
 
         var processedMessage = ProcessedMessage.Create(messageKey, DateTime.UtcNow);
 
         dbContext.ProcessedMessages.Add(processedMessage);
+        return true;
     }
 }

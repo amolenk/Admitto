@@ -12,7 +12,7 @@ public sealed class UserContextResolverTests : AspireIntegrationTestBase
     public async Task FirstSignIn_BindsExternalUserIdAndReturnsContext()
     {
         // Arrange
-        // SC-BIND: On first sign-in the resolver finds the pre-invited user by email,
+        // On first sign-in the resolver finds the pre-invited user by email,
         // stores the sub claim as ExternalUserId, and returns a populated UserContextDto.
         var fixture = new UserContextResolverFixture();
         await fixture.SeedUserWithoutExternalIdAsync(Environment);
@@ -44,7 +44,7 @@ public sealed class UserContextResolverTests : AspireIntegrationTestBase
     public async Task SubsequentSignIn_ResolvesDirectlyByExternalUserId()
     {
         // Arrange
-        // SC-RESOLVE-BY-ID: After the ExternalUserId is bound, subsequent requests resolve
+        // After the ExternalUserId is bound, subsequent requests resolve
         // by the sub claim directly without touching the email lookup path.
         var fixture = new UserContextResolverFixture();
         await fixture.SeedUserWithExternalIdAsync(Environment);
@@ -68,7 +68,7 @@ public sealed class UserContextResolverTests : AspireIntegrationTestBase
     public async Task ExternalUserIdMismatch_ReturnsNull()
     {
         // Arrange
-        // SC-MISMATCH-STORED-ID: If a user already has a different ExternalUserId stored,
+        // If a user already has a different ExternalUserId stored,
         // the resolver must reject the request (returns null → caller gets 403).
         var fixture = new UserContextResolverFixture();
         await fixture.SeedUserWithExternalIdAsync(Environment); // seeded with ExternalUserId="auth0|abc123"
@@ -91,7 +91,7 @@ public sealed class UserContextResolverTests : AspireIntegrationTestBase
     public async Task UnknownUser_ReturnsNull()
     {
         // Arrange
-        // SC-UNKNOWN: A sub/email combination that doesn't match any known user returns null → 403.
+        // A sub/email combination that doesn't match any known user returns null → 403.
         var fixture = new UserContextResolverFixture();
         // No user seeded
 
@@ -113,7 +113,7 @@ public sealed class UserContextResolverTests : AspireIntegrationTestBase
     public async Task TeamContext_UserIsMember_RolePopulated()
     {
         // Arrange
-        // SC-TEAM-ROLE: When a teamId is present in the route and the user is a member,
+        // When a teamId is present in the route and the user is a member,
         // the resolved context carries the correct role.
         var fixture = new UserContextResolverFixture();
         await fixture.SeedUserWithTeamMembershipAsync(Environment, TeamMembershipRole.Organizer);
@@ -139,7 +139,7 @@ public sealed class UserContextResolverTests : AspireIntegrationTestBase
     public async Task AdminUser_NoMemberships_StillResolves()
     {
         // Arrange
-        // SC-ADMIN-NO-MEMBERSHIPS: An admin with no team memberships must still resolve
+        // An admin with no team memberships must still resolve
         // successfully — admins are not gated by membership.
         var fixture = new UserContextResolverFixture();
         await fixture.SeedAdminWithoutMembershipsAsync(Environment);
@@ -164,7 +164,7 @@ public sealed class UserContextResolverTests : AspireIntegrationTestBase
     public async Task EventContext_EventBelongsToTeam_Resolves()
     {
         // Arrange
-        // SC-EVENT-IN-TEAM: When both teamId and eventId are present and the event belongs
+        // When both teamId and eventId are present and the event belongs
         // to the team, the request resolves normally.
         var fixture = new UserContextResolverFixture();
         await fixture.SeedUserWithTeamAndEventAsync(Environment);
@@ -190,7 +190,7 @@ public sealed class UserContextResolverTests : AspireIntegrationTestBase
     public async Task EventContext_EventDoesNotBelongToTeam_ReturnsNull()
     {
         // Arrange
-        // SC-EVENT-NOT-IN-TEAM: When a valid eventId is provided that does not belong to the
+        // When a valid eventId is provided that does not belong to the
         // given teamId, the resolver must reject the request → 403.
         // This guards against users guessing eventIds from other teams.
         var fixture = new UserContextResolverFixture();
@@ -213,10 +213,10 @@ public sealed class UserContextResolverTests : AspireIntegrationTestBase
     }
 
     [TestMethod]
-    public async Task AdminUser_EventDoesNotBelongToTeam_ReturnsNull()
+    public async Task AdminUser_EventDoesNotBelongToTeam_Resolves()
     {
         // Arrange
-        // SC-ADMIN-EVENT-SCOPE: Admins bypass the event-scope guard — they can access any
+        // Admins bypass the event-scope guard — they can access any
         // event regardless of whether it's registered under the route's teamId.
         var fixture = new UserContextResolverFixture();
         await fixture.SeedAdminWithoutMembershipsAsync(Environment);
@@ -234,7 +234,8 @@ public sealed class UserContextResolverTests : AspireIntegrationTestBase
         var result = await sut.ResolveAsync(principal, teamId, foreignEventId, CancellationToken.None);
 
         // Assert
-        result.ShouldBeNull();
+        result.ShouldNotBeNull();
+        result.IsAdmin.ShouldBeTrue();
     }
 
     private static ClaimsPrincipal BuildPrincipal(string sub, string email, string name)

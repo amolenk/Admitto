@@ -9,10 +9,7 @@ internal sealed class UserCreatedDomainEventHandler(
 {
     public ValueTask HandleAsync(UserCreatedDomainEvent domainEvent, CancellationToken cancellationToken)
     {
-        outbox.Enqueue(new RegisterExternalUserCommand(domainEvent.UserId.Value)
-        {
-            CommandId = DeterministicCommandId<RegisterExternalUserCommand>.Create(domainEvent.EventId.Value)
-        });
+        outbox.Enqueue(new RegisterExternalUserCommand(domainEvent.UserId.Value));
 
         return ValueTask.CompletedTask;
     }

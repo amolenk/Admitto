@@ -25,7 +25,9 @@ public static class GetEventCreationRequestHttpEndpoint
         IQueryHandler<GetEventCreationRequestQuery, EventCreationRequestDto> handler,
         CancellationToken cancellationToken)
     {
-        var dto = await handler.HandleAsync(new GetEventCreationRequestQuery(teamId, creationRequestId), cancellationToken);
+        var dto = await handler.HandleAsync(
+            new GetEventCreationRequestQuery(teamId, creationRequestId),
+            cancellationToken);
 
         return TypedResults.Ok(dto);
     }

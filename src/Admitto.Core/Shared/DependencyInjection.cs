@@ -6,6 +6,7 @@ using Amolenk.Admitto.Core.Shared.Infrastructure.Messaging;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Messaging.ServiceBus;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Interceptors;
+using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Inbox;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Outbox;
 using Azure.Messaging.ServiceBus;
 using Microsoft.Extensions.Azure;
@@ -184,6 +185,12 @@ public static class DependencyInjection
         {
             builder.Services.AddKeyedScoped<IOutbox>(moduleKey, (sp, _) =>
                 new Outbox((IOutboxDbContext)sp.GetRequiredService<TDbContext>()));
+        }
+
+        if (typeof(IInboxDbContext).IsAssignableFrom(typeof(TDbContext)))
+        {
+            builder.Services.AddKeyedScoped<IInbox>(moduleKey, (sp, _) =>
+                new Inbox((IInboxDbContext)sp.GetRequiredService<TDbContext>()));
         }
 
         return builder;

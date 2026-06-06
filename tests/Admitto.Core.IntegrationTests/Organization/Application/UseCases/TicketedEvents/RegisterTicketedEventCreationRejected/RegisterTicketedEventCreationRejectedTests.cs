@@ -1,7 +1,5 @@
-using Amolenk.Admitto.Core.Organization.Application.UseCases.TicketedEvents.RegisterTicketedEventCreationRejected;
 using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
-using Amolenk.Admitto.Testing.Builders.Organization.Application;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Organization.Application.UseCases.TicketedEvents.RegisterTicketedEventCreationRejected;
 
@@ -12,19 +10,11 @@ public sealed class RegisterTicketedEventCreationRejectedTests(TestContext testC
     public async ValueTask IsIdempotent_OnRedelivery()
     {
         // Arrange
-        var team = new TeamBuilder().Build();
-        var pendingRequest = team.RequestEventCreation(
-                UserId.New(),
-            DateTimeOffset.UtcNow);
+        var fixture = RegisterTicketedEventCreationRejectedFixture.PendingRequest();
+        await fixture.SetupAsync(Environment, testContext.CancellationToken);
 
-        await Environment.OrganizationDatabase.SeedAsync(ctx => ctx.Teams.Add(team));
-
-        var command = new RegisterTicketedEventCreationRejectedCommand(
-            team.Id.Value,
-            pendingRequest.Id.Value,
-            "duplicate_slug");
-
-        var sut = new RegisterTicketedEventCreationRejectedHandler(Environment.OrganizationDatabase.Context);
+        var command = fixture.ToCommand();
+        var sut = fixture.CreateHandler(Environment);
 
         // Act
         await sut.HandleAsync(command, testContext.CancellationToken);
@@ -35,7 +25,7 @@ public sealed class RegisterTicketedEventCreationRejectedTests(TestContext testC
         await Environment.OrganizationDatabase.AssertAsync(async ctx =>
         {
             var persisted = await ctx.Teams.FindAsync(
-                [TeamId.From(team.Id.Value)],
+                [TeamId.From(fixture.TeamId)],
                 testContext.CancellationToken);
 
             persisted.ShouldNotBeNull();
@@ -43,7 +33,34 @@ public sealed class RegisterTicketedEventCreationRejectedTests(TestContext testC
 
             var request = persisted.EventCreationRequests.ShouldHaveSingleItem();
             request.Status.ShouldBe(TeamEventCreationRequestStatus.Rejected);
-            request.RejectionReason.ShouldBe("duplicate_slug");
+            request.RejectionReason.ShouldBe(fixture.Reason);
+        });
+    }
+
+    [TestMethod]
+    public async ValueTask HandleAsync_AlreadyProcessed_DoesNotRegisterEventCreationRejectedAgain()
+    {
+        // Arrange
+        var fixture = RegisterTicketedEventCreationRejectedFixture.AlreadyProcessed();
+        await fixture.SetupAsync(Environment, testContext.CancellationToken);
+
+        var sut = fixture.CreateIntegrationEventHandler(Environment);
+
+        // Act
+        await sut.HandleAsync(fixture.IntegrationEvent, testContext.CancellationToken);
+
+        // Assert
+        await Environment.OrganizationDatabase.AssertAsync(async ctx =>
+        {
+            var persisted = await ctx.Teams.FindAsync(
+                [TeamId.From(fixture.TeamId)],
+                testContext.CancellationToken);
+
+            persisted.ShouldNotBeNull();
+            persisted.PendingEventCount.ShouldBe(1);
+
+            var request = persisted.EventCreationRequests.ShouldHaveSingleItem();
+            request.Status.ShouldBe(TeamEventCreationRequestStatus.Pending);
         });
     }
 }

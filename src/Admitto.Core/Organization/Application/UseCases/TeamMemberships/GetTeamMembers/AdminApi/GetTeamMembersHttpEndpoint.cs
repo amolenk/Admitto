@@ -1,6 +1,5 @@
 using Amolenk.Admitto.Core.Shared.Application.Auth;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
-using Amolenk.Admitto.Core.Organization.Application.UseCases.TeamMemberships.GetTeamMembers;
 
 namespace Amolenk.Admitto.Core.Organization.Application.UseCases.TeamMemberships.GetTeamMembers.AdminApi;
 
@@ -21,7 +20,9 @@ public static class GetTeamMembersHttpEndpoint
         IQueryHandler<GetTeamMembersQuery, IReadOnlyList<TeamMemberListItemDto>> handler,
         CancellationToken cancellationToken)
     {
-        var members = await handler.HandleAsync(new GetTeamMembersQuery(teamId), cancellationToken);
+        var query = new GetTeamMembersQuery(teamId);
+
+        var members = await handler.HandleAsync(query, cancellationToken);
 
         return TypedResults.Ok(members);
     }

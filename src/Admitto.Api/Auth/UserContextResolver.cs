@@ -59,7 +59,8 @@ public sealed class UserContextResolver(
         if (result is not null)
         {
             // Event-scope guard: eventId was provided but doesn't belong to the team.
-            if (!result.EventBelongsToTeam)
+            // Administrators are exempt — they have unrestricted access across all teams and events.
+            if (!result.IsAdmin && !result.EventBelongsToTeam)
                 return null;
 
             return new UserContextDto(

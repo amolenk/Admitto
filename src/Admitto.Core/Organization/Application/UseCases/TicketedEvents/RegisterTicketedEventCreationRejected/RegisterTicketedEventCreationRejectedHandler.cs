@@ -13,9 +13,8 @@ internal sealed class RegisterTicketedEventCreationRejectedHandler(IOrganization
         var teamId = TeamId.From(command.TeamId);
 
         var team = await writeStore.Teams.FirstOrDefaultAsync(t => t.Id == teamId, cancellationToken);
-        if (team is null) return;
 
-        team.RegisterEventCreationRejected(
+        team?.RegisterEventCreationRejected(
             CreationRequestId.From(command.CreationRequestId),
             command.Reason,
             DateTimeOffset.UtcNow);

@@ -28,8 +28,5 @@ public sealed class UserCreatedDomainEventHandlerTests
         var command = captured.ShouldBeOfType<RegisterExternalUserCommand>();
         command.UserId.ShouldBe(userId.Value);
         command.CommandId.ShouldNotBe(Guid.Empty);
-
-        var expectedCommandId = DeterministicCommandId<RegisterExternalUserCommand>.Create(domainEvent.EventId.Value);
-        command.CommandId.ShouldBe(expectedCommandId);
     }
 }
