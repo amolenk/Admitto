@@ -7,9 +7,7 @@ namespace Amolenk.Admitto.Api.Auth;
 /// Represents an authorization requirement that requires the user to be a team member with a given role.
 /// Administrator users automatically satisfy this requirement.
 /// </summary>
-public class TeamMembershipAuthorizationHandler(
-    IUserContextAccessor userContextAccessor,
-    IHttpContextAccessor httpContextAccessor)
+public class TeamMembershipAuthorizationHandler(IUserContextAccessor userContextAccessor)
     : AuthorizationHandler<TeamMembershipAuthorizationRequirement>
 {
     protected override Task HandleRequirementAsync(
@@ -28,17 +26,8 @@ public class TeamMembershipAuthorizationHandler(
             return Task.CompletedTask;
         }
 
-        // Extract teamId from route values since authorization runs before endpoint binding.
-        var httpContext = httpContextAccessor.HttpContext;
-        if (httpContext is null)
-            return Task.CompletedTask;
-
-        var teamIdValue = httpContext.GetRouteValue("teamId")?.ToString();
-        if (!Guid.TryParse(teamIdValue, out var teamId))
-            return Task.CompletedTask;
-
-        var membership = userContext.TeamMemberships?.FirstOrDefault(m => m.TeamId == teamId);
-        if (membership is not null && membership.Role >= requirement.RequiredRole)
+        // Otherwise, the user must have a team membership with a sufficient role.
+        if (userContext.Role >= requirement.RequiredRole)
         {
             context.Succeed(requirement);
         }

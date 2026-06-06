@@ -24,6 +24,37 @@ public sealed class RenameBadgeTypeTests(TestContext testContext) : EndToEndTest
     }
 
     [TestMethod]
+    public async Task RenameBadgeType_WithCorrectVersion_Returns204()
+    {
+        var fixture = BadgesApiFixture.Active();
+        var badgeTypeId = fixture.AddStandaloneBadgeType("Original");
+        await fixture.SetupAsync(Environment);
+
+        var request = new { Name = "Renamed", ExpectedVersion = fixture.BadgeTypeVersion(badgeTypeId) };
+
+        var response = await Environment.ApiClient.PutAsJsonAsync(
+            fixture.BadgeTypeRoute(badgeTypeId.Value), request, cancellationToken: testContext.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+    }
+
+    [TestMethod]
+    public async Task RenameBadgeType_WithStaleVersion_Returns409()
+    {
+        var fixture = BadgesApiFixture.Active();
+        var badgeTypeId = fixture.AddStandaloneBadgeType("Original");
+        await fixture.SetupAsync(Environment);
+
+        var staleVersion = fixture.BadgeTypeVersion(badgeTypeId) > 0 ? 0u : uint.MaxValue;
+        var request = new { Name = "Renamed", ExpectedVersion = staleVersion };
+
+        var response = await Environment.ApiClient.PutAsJsonAsync(
+            fixture.BadgeTypeRoute(badgeTypeId.Value), request, cancellationToken: testContext.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.Conflict);
+    }
+
+    [TestMethod]
     public async Task RenameBadgeType_DuplicateName_Returns409()
     {
         var fixture = BadgesApiFixture.Active();

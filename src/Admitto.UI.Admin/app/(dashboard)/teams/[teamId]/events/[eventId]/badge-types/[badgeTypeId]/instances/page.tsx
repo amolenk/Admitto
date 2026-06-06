@@ -90,7 +90,7 @@ function BadgeInstanceForm({
         if (isEdit) {
             await apiClient.put(
                 `/api/teams/${teamId}/events/${eventId}/badge-types/${badgeTypeId}/instances/${existing.id}`,
-                body
+                { ...body, expectedVersion: existing.version }
             );
         } else {
             await apiClient.post(

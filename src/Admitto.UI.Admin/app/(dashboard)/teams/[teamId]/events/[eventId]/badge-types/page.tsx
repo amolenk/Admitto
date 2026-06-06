@@ -68,7 +68,7 @@ function RenameBadgeTypeForm({
     async function onSubmit(values: RenameValues) {
         await apiClient.put(
             `/api/teams/${teamId}/events/${eventId}/badge-types/${badgeType.id}`,
-            { name: values.name }
+            { name: values.name, expectedVersion: badgeType.version }
         );
         await queryClient.invalidateQueries({ queryKey: ["badge-types", teamId, eventId] });
         onSaved();

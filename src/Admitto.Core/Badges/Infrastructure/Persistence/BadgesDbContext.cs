@@ -10,7 +10,7 @@ public sealed class BadgesDbContext(DbContextOptions<BadgesDbContext> options)
 {
     public static string SchemaName => "badges";
 
-    public DbSet<BadgesEvent> BadgesEvents => Set<BadgesEvent>();
+    public DbSet<BadgeEvent> BadgeEvents => Set<BadgeEvent>();
     public DbSet<BadgeType> BadgeTypes => Set<BadgeType>();
     public DbSet<BadgeInstance> BadgeInstances => Set<BadgeInstance>();
 

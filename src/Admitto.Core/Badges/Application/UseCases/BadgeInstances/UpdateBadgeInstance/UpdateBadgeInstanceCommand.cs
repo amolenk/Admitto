@@ -8,4 +8,5 @@ internal sealed record UpdateBadgeInstanceCommand(
     Guid BadgeTypeId,
     Guid BadgeInstanceId,
     string DisplayName,
-    string Notes) : Command;
+    string Notes,
+    uint? ExpectedVersion) : Command;

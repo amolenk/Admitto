@@ -21,7 +21,7 @@ internal sealed class AssignTeamMembershipHandler(IOrganizationWriteStore writeS
             throw new BusinessRuleViolationException(Errors.TeamNotFound(teamId));
         }
 
-        // EC-10: Reject if the team is archived.
+        // Reject if the team is archived.
         team.EnsureNotArchived();
 
         var emailAddress = EmailAddress.From(command.EmailAddress);

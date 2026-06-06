@@ -20,7 +20,8 @@ internal sealed class GetTeamsHandler(IOrganizationWriteStore writeStore)
             return await writeStore.Teams
                 .AsNoTracking()
                 .Where(t => t.ArchivedAt == null)
-                .Select(t => new TeamListItemDto(                    t.Id.Value,
+                .Select(t => new TeamListItemDto(
+                    t.Id.Value,
                     t.Name.Value,
                     t.Version))
                 .ToListAsync(cancellationToken);

@@ -1,3 +1,5 @@
+using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+
 namespace Amolenk.Admitto.Api.Auth;
 
 /// <summary>
@@ -20,7 +22,11 @@ public sealed class UserContextResolutionMiddleware(RequestDelegate next)
         if (user.Identity?.IsAuthenticated == true
             && user.Identity.AuthenticationType != ApiKeyAuthenticationHandler.SchemeName)
         {
-            var userContext = await resolver.ResolveAsync(user, context.RequestAborted);
+            // Parse route context.
+            var teamId = TryParseTeamId(context);
+            var eventId = TryParseEventId(context);
+
+            var userContext = await resolver.ResolveAsync(user, teamId, eventId, context.RequestAborted);
             if (userContext is null)
             {
                 context.Response.StatusCode = StatusCodes.Status403Forbidden;
@@ -31,5 +37,17 @@ public sealed class UserContextResolutionMiddleware(RequestDelegate next)
         }
 
         await next(context);
+    }
+
+    private static TeamId? TryParseTeamId(HttpContext httpContext)
+    {
+        var v = httpContext.GetRouteValue("teamId")?.ToString();
+        return v is null ? null : TeamId.Parse(v);
+    }
+
+    private static TicketedEventId? TryParseEventId(HttpContext httpContext)
+    {
+        var v = httpContext.GetRouteValue("eventId")?.ToString();
+        return v is null ? null : TicketedEventId.Parse(v);
     }
 }

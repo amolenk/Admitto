@@ -3,9 +3,9 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Amolenk.Admitto.Core.Badges.Infrastructure.Persistence.EntityConfigurations;
 
-public class BadgesEventEntityConfiguration : IEntityTypeConfiguration<BadgesEvent>
+public class BadgesEventEntityConfiguration : IEntityTypeConfiguration<BadgeEvent>
 {
-    public void Configure(EntityTypeBuilder<BadgesEvent> builder)
+    public void Configure(EntityTypeBuilder<BadgeEvent> builder)
     {
         builder.ToTable("badges_events");
         builder.HasKey(e => e.Id);

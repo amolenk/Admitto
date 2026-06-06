@@ -93,6 +93,43 @@ public sealed class BadgeInstanceManagementTests(TestContext testContext) : EndT
     }
 
     [TestMethod]
+    public async Task UpdateBadgeInstance_WithCorrectVersion_Returns204()
+    {
+        var fixture = BadgesApiFixture.Active();
+        var badgeTypeId = fixture.AddStandaloneBadgeType("Speaker Badge");
+        var instanceId = fixture.AddBadgeInstance(badgeTypeId, "Alice Smith", "");
+        await fixture.SetupAsync(Environment);
+
+        var request = new { DisplayName = "Alice Smith (Updated)", Notes = "Workshop", ExpectedVersion = fixture.BadgeInstanceVersion(instanceId) };
+
+        var response = await Environment.ApiClient.PutAsJsonAsync(
+            fixture.BadgeInstanceRoute(badgeTypeId.Value, instanceId.Value),
+            request,
+            cancellationToken: testContext.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+    }
+
+    [TestMethod]
+    public async Task UpdateBadgeInstance_WithStaleVersion_Returns409()
+    {
+        var fixture = BadgesApiFixture.Active();
+        var badgeTypeId = fixture.AddStandaloneBadgeType("Speaker Badge");
+        var instanceId = fixture.AddBadgeInstance(badgeTypeId, "Alice Smith", "");
+        await fixture.SetupAsync(Environment);
+
+        var staleVersion = fixture.BadgeInstanceVersion(instanceId) > 0 ? 0u : uint.MaxValue;
+        var request = new { DisplayName = "Alice Smith (Updated)", Notes = "Workshop", ExpectedVersion = staleVersion };
+
+        var response = await Environment.ApiClient.PutAsJsonAsync(
+            fixture.BadgeInstanceRoute(badgeTypeId.Value, instanceId.Value),
+            request,
+            cancellationToken: testContext.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.Conflict);
+    }
+
+    [TestMethod]
     public async Task UpdateBadgeInstance_NotFound_Returns404()
     {
         var fixture = BadgesApiFixture.Active();

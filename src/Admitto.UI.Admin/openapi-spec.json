@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:59485/"
+      "url": "http://localhost:57687/"
     }
   ],
   "paths": {
@@ -6056,9 +6056,9 @@
       },
       "get": {
         "tags": [
-          "ListBadgeTypesHttpEndpoint"
+          "GetBadgeTypesHttpEndpoint"
         ],
-        "operationId": "ListBadgeTypes",
+        "operationId": "GetBadgeTypes",
         "parameters": [
           {
             "name": "teamId",
@@ -6448,7 +6448,7 @@
       },
       "get": {
         "tags": [
-          "ListBadgeInstancesHttpEndpoint"
+          "GetBadgeInstancesHttpEndpoint"
         ],
         "operationId": "ListBadgeInstances",
         "parameters": [
@@ -8277,7 +8277,8 @@
         "required": [
           "id",
           "displayName",
-          "notes"
+          "notes",
+          "version"
         ],
         "type": "object",
         "properties": {
@@ -8290,6 +8291,14 @@
           },
           "notes": {
             "type": "string"
+          },
+          "version": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "uint32"
           }
         }
       },
@@ -8299,7 +8308,8 @@
           "name",
           "kind",
           "ticketTypeIds",
-          "instanceCount"
+          "instanceCount",
+          "version"
         ],
         "type": "object",
         "properties": {
@@ -8327,6 +8337,14 @@
               "string"
             ],
             "format": "int32"
+          },
+          "version": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "uint32"
           }
         }
       },
@@ -10123,12 +10141,22 @@
       },
       "RenameBadgeTypeHttpRequest": {
         "required": [
-          "name"
+          "name",
+          "expectedVersion"
         ],
         "type": "object",
         "properties": {
           "name": {
             "type": "string"
+          },
+          "expectedVersion": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "uint32"
           }
         }
       },
@@ -10552,7 +10580,8 @@
       "UpdateBadgeInstanceHttpRequest": {
         "required": [
           "displayName",
-          "notes"
+          "notes",
+          "expectedVersion"
         ],
         "type": "object",
         "properties": {
@@ -10564,6 +10593,15 @@
               "null",
               "string"
             ]
+          },
+          "expectedVersion": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "uint32"
           }
         }
       },
@@ -10909,8 +10947,8 @@
         "type": "oauth2",
         "flows": {
           "authorizationCode": {
-            "authorizationUrl": "http://localhost:59481/realms/admitto/protocol/openid-connect/auth",
-            "tokenUrl": "http://localhost:59481/realms/admitto/protocol/openid-connect/token",
+            "authorizationUrl": "http://localhost:57693/realms/admitto/protocol/openid-connect/auth",
+            "tokenUrl": "http://localhost:57693/realms/admitto/protocol/openid-connect/token",
             "scopes": {
               "openid": "OpenID Connect",
               "profile": "User profile",
@@ -11069,7 +11107,7 @@
       "name": "AddBadgeTypeHttpEndpoint"
     },
     {
-      "name": "ListBadgeTypesHttpEndpoint"
+      "name": "GetBadgeTypesHttpEndpoint"
     },
     {
       "name": "RenameBadgeTypeHttpEndpoint"
@@ -11081,7 +11119,7 @@
       "name": "AddBadgeInstanceHttpEndpoint"
     },
     {
-      "name": "ListBadgeInstancesHttpEndpoint"
+      "name": "GetBadgeInstancesHttpEndpoint"
     },
     {
       "name": "UpdateBadgeInstanceHttpEndpoint"

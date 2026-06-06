@@ -83,6 +83,9 @@ public class User : Aggregate<UserId>
         }
 
         _memberships.Add(TeamMembership.Create(teamId, role));
+
+        AddDomainEvent(new TeamMembershipAssignedDomainEvent(Id, teamId, role));
+
         CancelDeprovisioning();
     }
 
@@ -94,7 +97,11 @@ public class User : Aggregate<UserId>
             throw new BusinessRuleViolationException(Errors.UserNotTeamMember(Id, teamId));
         }
 
+        if (membership.Role == newRole) return;
+
         membership.ChangeRole(newRole);
+
+        AddDomainEvent(new TeamMembershipChangedDomainEvent(Id, teamId, newRole));
     }
 
     public void RemoveTeamMembership(TeamId teamId)
@@ -106,6 +113,8 @@ public class User : Aggregate<UserId>
         }
 
         _memberships.Remove(membership);
+
+        AddDomainEvent(new TeamMembershipRemovedDomainEvent(Id, teamId));
 
         if (_memberships.Count == 0)
         {

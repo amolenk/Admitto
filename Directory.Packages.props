@@ -16,6 +16,7 @@
     <PackageVersion Include="Azure.Monitor.OpenTelemetry.AspNetCore" Version="1.5.0" />
     <PackageVersion Include="Azure.Messaging.ServiceBus" Version="7.20.1" />
     <PackageVersion Include="ClosedXML" Version="0.105.0" />
+    <PackageVersion Include="CsvHelper" Version="33.0.1" />
     <PackageVersion Include="CommunityToolkit.Aspire.Hosting.NodeJS.Extensions" Version="9.9.0" />
     <PackageVersion Include="Duende.IdentityModel.OidcClient" Version="7.1.0" />
     <PackageVersion Include="FluentValidation" Version="12.1.1" />

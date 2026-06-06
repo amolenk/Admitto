@@ -29,11 +29,6 @@ public static class BadgesModuleExtensions
             // Validators
             services.AddValidatorsFromAssembly(assembly, BadgesModule.NamespacePrefix);
 
-            // Message type registry contribution
-            // services.AddSingleton<Action<MessageTypeRegistryBuilder>>(b => b.AddFromAssembly(
-            //     assembly,
-            //     BadgesModule.NamespacePrefix));
-
             // Infrastructure
             builder.AddModuleDatabaseServices<IBadgesWriteStore, BadgesDbContext>(BadgesModule.Key);
             services.AddKeyedScoped<IPostgresExceptionMapping, BadgesPostgresExceptionMapping>(

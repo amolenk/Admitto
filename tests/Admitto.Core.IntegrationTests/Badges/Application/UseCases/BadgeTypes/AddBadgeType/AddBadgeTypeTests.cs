@@ -17,9 +17,9 @@ public sealed class AddBadgeTypeTests(TestContext testContext) : AspireIntegrati
         var teamIdA = TeamId.New();
         var teamIdB = TeamId.New();
 
-        var badgesEvent = BadgesEvent.Create(eventId, teamIdA);
+        var badgesEvent = BadgeEvent.Create(eventId, teamIdA);
 
-        await Environment.BadgesDatabase.SeedAsync(db => db.BadgesEvents.Add(badgesEvent));
+        await Environment.BadgesDatabase.SeedAsync(db => db.BadgeEvents.Add(badgesEvent));
 
         // Act: try to add a badge type using team B's ID
         var command = new AddBadgeTypeCommand(
@@ -35,6 +35,6 @@ public sealed class AddBadgeTypeTests(TestContext testContext) : AspireIntegrati
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
         // Assert: cross-team access is rejected
-        result.Error.ShouldMatch(NotFoundError.Create<BadgesEvent>());
+        result.Error.ShouldMatch(NotFoundError.Create<BadgeEvent>());
     }
 }

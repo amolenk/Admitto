@@ -12,17 +12,18 @@ internal sealed class UpdateBadgeInstanceHandler(IBadgesWriteStore writeStore)
         var eventId = TicketedEventId.From(command.EventId);
         var teamId = TeamId.From(command.TeamId);
 
-        var badgesEvent = await writeStore.BadgesEvents.GetUntrackedAsync(
+        var badgeEvent = await writeStore.BadgeEvents.GetUntrackedAsync(
             e => e.Id == eventId && e.TeamId == teamId,
             cancellationToken);
 
-        badgesEvent.EnsureEventActive();
+        badgeEvent.EnsureEventActive();
 
         var badgeInstanceId = BadgeInstanceId.From(command.BadgeInstanceId);
         var badgeTypeId = BadgeTypeId.From(command.BadgeTypeId);
 
         var instance = await writeStore.BadgeInstances.GetAsync(
              bi => bi.Id == badgeInstanceId && bi.BadgeTypeId == badgeTypeId,
+             command.ExpectedVersion,
              cancellationToken);
 
         instance.Update(

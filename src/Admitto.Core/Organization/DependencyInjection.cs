@@ -40,21 +40,8 @@ public static class OrganizationModuleExtensions
             // Validators
             services.AddValidatorsFromAssembly(assembly, OrganizationModule.NamespacePrefix);
 
-            // Message type registry contribution
-            // services.AddSingleton<Action<MessageTypeRegistryBuilder>>(b => b.AddFromAssembly(
-            //     assembly,
-            //     OrganizationModule.NamespacePrefix));
-
             // Facade
-            services.AddScoped<OrganizationFacade>();
-            services.AddScoped<IOrganizationFacade>(sp =>
-            {
-                if (builder.Configuration["ORGANIZATION__CACHING__ENABLED"] != "true")
-                    return sp.GetRequiredService<OrganizationFacade>();
-
-                var inner = sp.GetRequiredService<OrganizationFacade>();
-                return new CachingOrganizationFacade(inner);
-            });
+            services.AddScoped<IOrganizationFacade, OrganizationFacade>();
 
             // Infrastructure
             builder.AddModuleDatabaseServices<IOrganizationWriteStore, OrganizationDbContext>(
@@ -84,10 +71,6 @@ public static class OrganizationModuleExtensions
 
             // Integration event handlers
             services.AddIntegrationEventHandlersFromAssembly(assembly, OrganizationModule.NamespacePrefix);
-
-            // Worker-only interface mapping — concrete already registered by AddOrganizationModule scan
-            // services.AddScoped<ICommandHandler<RegisterExternalUserCommand>, RegisterExternalUserHandler>(sp =>
-            //     sp.GetRequiredService<RegisterExternalUserHandler>());
 
             // Quartz job registrations (hosted service is started once by AddSharedInfrastructureQueueConsumer)
             services.AddQuartz(options =>

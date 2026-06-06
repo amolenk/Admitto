@@ -1,9 +1,11 @@
+using System.Globalization;
 using System.Text;
 using Amolenk.Admitto.Core.Badges.Application.Persistence;
 using Amolenk.Admitto.Core.Badges.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
+using CsvHelper;
 using Humanizer;
 
 namespace Amolenk.Admitto.Core.Badges.Application.UseCases.BadgeExport.ExportBadgeCsv;
@@ -20,7 +22,7 @@ internal sealed class ExportBadgeCsvHandler(
         var eventId = TicketedEventId.From(query.EventId);
         var teamId = TeamId.From(query.TeamId);
 
-        await writeStore.BadgesEvents.GetUntrackedAsync(
+        await writeStore.BadgeEvents.GetUntrackedAsync(
             e => e.Id == eventId && e.TeamId == teamId,
             cancellationToken);
 
@@ -30,15 +32,15 @@ internal sealed class ExportBadgeCsvHandler(
             bt => bt.Id == badgeTypeId && bt.EventId == eventId,
             cancellationToken);
 
-        var csv = badgeType.Kind == BadgeKind.Standalone
+        var content = badgeType.Kind == BadgeKind.Standalone
             ? await BuildStandaloneCsvAsync(badgeTypeId, cancellationToken)
             : await BuildTicketBasedCsvAsync(eventId, badgeType, cancellationToken);
 
         var fileName = $"badges-{badgeType.Name.Value.Kebaberize()}.csv";
-        return (fileName, Encoding.UTF8.GetBytes(csv));
+        return (fileName, content);
     }
 
-    private async Task<string> BuildStandaloneCsvAsync(
+    private async Task<byte[]> BuildStandaloneCsvAsync(
         BadgeTypeId badgeTypeId,
         CancellationToken cancellationToken)
     {
@@ -48,18 +50,26 @@ internal sealed class ExportBadgeCsvHandler(
             .OrderBy(bi => bi.DisplayName)
             .ToListAsync(cancellationToken);
 
-        var sb = new StringBuilder();
-        sb.AppendLine("DisplayName,Notes");
+        using var ms = new MemoryStream();
+        await using var writer = new StreamWriter(ms, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+        await using var csv = new CsvWriter(writer, CultureInfo.InvariantCulture);
+
+        csv.WriteField("DisplayName");
+        csv.WriteField("Notes");
+        await csv.NextRecordAsync();
 
         foreach (var instance in instances)
         {
-            sb.AppendLine($"{CsvEscape(instance.DisplayName.Value)},{CsvEscape(instance.Notes.Value)}");
+            csv.WriteField(instance.DisplayName.Value);
+            csv.WriteField(instance.Notes.Value);
+            await csv.NextRecordAsync();
         }
 
-        return sb.ToString();
+        await writer.FlushAsync(cancellationToken);
+        return ms.ToArray();
     }
 
-    private async Task<string> BuildTicketBasedCsvAsync(
+    private async Task<byte[]> BuildTicketBasedCsvAsync(
         TicketedEventId eventId,
         BadgeType badgeType,
         CancellationToken cancellationToken)
@@ -79,39 +89,35 @@ internal sealed class ExportBadgeCsvHandler(
             eventId.Value,
             cancellationToken);
 
-        var sb = new StringBuilder();
+        using var ms = new MemoryStream();
+        await using var writer = new StreamWriter(ms, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+        await using var csv = new CsvWriter(writer, CultureInfo.InvariantCulture);
 
         // Header row
-        var headerParts = new List<string> { "FirstName", "LastName", "Email" };
-        headerParts.AddRange(schemaFields.Select(f => CsvEscape(f.Key)));
-        sb.AppendLine(string.Join(",", headerParts));
+        csv.WriteField("FirstName");
+        csv.WriteField("LastName");
+        csv.WriteField("Email");
+        foreach (var field in schemaFields)
+        {
+            csv.WriteField(field.Key);
+        }
+        await csv.NextRecordAsync();
 
         // Data rows
         foreach (var reg in registrations)
         {
-            var parts = new List<string>
-            {
-                CsvEscape(reg.FirstName),
-                CsvEscape(reg.LastName),
-                CsvEscape(reg.Email)
-            };
-
+            csv.WriteField(reg.FirstName);
+            csv.WriteField(reg.LastName);
+            csv.WriteField(reg.Email);
             foreach (var field in schemaFields)
             {
                 var value = reg.AdditionalDetails.TryGetValue(field.Key, out var v) ? v : string.Empty;
-                parts.Add(CsvEscape(value));
+                csv.WriteField(value);
             }
-
-            sb.AppendLine(string.Join(",", parts));
+            await csv.NextRecordAsync();
         }
 
-        return sb.ToString();
-    }
-
-    private static string CsvEscape(string value)
-    {
-        if (value.Contains(',') || value.Contains('"') || value.Contains('\n') || value.Contains('\r'))
-            return $"\"{value.Replace("\"", "\"\"")}\"";
-        return value;
+        await writer.FlushAsync(cancellationToken);
+        return ms.ToArray();
     }
 }

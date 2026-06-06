@@ -13,11 +13,11 @@ internal sealed class AddBadgeTypeHandler(IBadgesWriteStore writeStore)
         var eventId = TicketedEventId.From(command.EventId);
         var teamId = TeamId.From(command.TeamId);
 
-        var badgesEvent = await writeStore.BadgesEvents.GetUntrackedAsync(
+        var badgeEvent = await writeStore.BadgeEvents.GetUntrackedAsync(
             e => e.Id == eventId && e.TeamId == teamId,
             cancellationToken);
 
-        badgesEvent.EnsureEventActive();
+        badgeEvent.EnsureEventActive();
 
         var kind = Enum.Parse<BadgeKind>(command.Kind, ignoreCase: true);
         var id = BadgeTypeId.New();

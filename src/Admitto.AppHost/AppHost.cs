@@ -100,9 +100,9 @@ internal static class Extensions
             {
                 postgres
                     .WithHostPort(15003)
-                    .WithPgWeb(pgWeb =>
+                    .WithPgAdmin(pgAdmin =>
                     {
-                        pgWeb
+                        pgAdmin
                             .WithHostPort(15004)
                             .WithLifetime(ContainerLifetime.Persistent);
                     });

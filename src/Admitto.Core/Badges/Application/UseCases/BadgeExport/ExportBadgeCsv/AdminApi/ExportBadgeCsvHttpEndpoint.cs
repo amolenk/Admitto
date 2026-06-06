@@ -10,7 +10,7 @@ public static class ExportBadgeCsvHttpEndpoint
         group
             .MapGet("/{badgeTypeId:guid}/export", ExportBadgeCsv)
             .WithName(nameof(ExportBadgeCsv))
-            .RequireAuthorization(policy => policy.RequireTeamMembership(TeamMembershipRole.Organizer));
+            .RequireAuthorization(policy => policy.RequireTeamMembership(TeamMembershipRole.Crew));
 
         return group;
     }

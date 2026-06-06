@@ -16,14 +16,17 @@ namespace Amolenk.Admitto.Api.Auth;
 /// Resolution order:
 /// 1. Find User by ExternalUserId matching the JWT <c>sub</c> claim → direct hit.
 /// 2. Find User by email → bind <c>ExternalUserId</c> when it is null, then return.
-/// 3. If neither resolves, or a stored ExternalUserId doesn't match the sub → return null (caller gets 403).
+/// 3. If neither resolves → return null (caller gets 403).
 /// </summary>
 public sealed class UserContextResolver(
     IOrganizationWriteStore writeStore,
-    [FromKeyedServices(OrganizationModule.Key)] IUnitOfWork unitOfWork)
+    [FromKeyedServices(OrganizationModule.Key)]
+    IUnitOfWork unitOfWork)
 {
     public async ValueTask<UserContextDto?> ResolveAsync(
         ClaimsPrincipal principal,
+        TeamId? teamId,
+        TicketedEventId? eventId,
         CancellationToken cancellationToken)
     {
         var sub = principal.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -34,20 +37,40 @@ public sealed class UserContextResolver(
         if (string.IsNullOrWhiteSpace(sub))
             return null;
 
-        // 1. Resolve by ExternalUserId (fast path after first sign-in).
         var externalId = ExternalUserId.From(sub);
-        var byExternalId = await writeStore.Users
-            .FirstOrDefaultAsync(u => u.ExternalUserId == externalId, cancellationToken);
 
-        if (byExternalId is not null)
+        // Run a single query to get user, memberships and check if the event actually belongs to the team
+        var result = await writeStore.Users
+            .Where(u => u.ExternalUserId == externalId)
+            .Select(u => new
+            {
+                u.Id,
+                u.EmailAddress,
+                u.IsAdmin,
+                u.ExternalUserId,
+                Memberships = u.Memberships.Select(m => new { TeamId = m.Id, m.Role }).ToList(),
+                EventBelongsToTeam = teamId == null || eventId == null ||
+                                     writeStore.Teams.Any(t =>
+                                         t.Id == teamId &&
+                                         t.EventCreationRequests.Any(ecr => ecr.TicketedEventId == eventId))
+            })
+            .SingleOrDefaultAsync(cancellationToken);
+
+        if (result is not null)
+        {
+            // Event-scope guard: eventId was provided but doesn't belong to the team.
+            if (!result.EventBelongsToTeam)
+                return null;
+
             return new UserContextDto(
-                byExternalId.Id.Value,
+                result.Id.Value,
                 name,
-                byExternalId.EmailAddress.Value,
-                byExternalId.IsAdmin,
-                byExternalId.Memberships.Select(m => new UserContextTeamMembershipDto(m.Id.Value, m.Role)).ToList());
+                result.EmailAddress.Value,
+                result.Memberships.Select(m => m.Role).SingleOrDefault(),
+                result.IsAdmin);
+        }
 
-        // 2. Fall back to email (first sign-in: bind the sub to the pre-invited user).
+        // First sign-in: fall back to email
         if (string.IsNullOrWhiteSpace(email))
             return null;
 
@@ -55,22 +78,17 @@ public sealed class UserContextResolver(
         var byEmail = await writeStore.Users
             .FirstOrDefaultAsync(u => u.EmailAddress == emailAddress, cancellationToken);
 
-        if (byEmail is null)
+        if (byEmail is null || byEmail.ExternalUserId is not null)
             return null;
 
-        // If the user already has a different sub stored, reject — possible account takeover.
-        if (byEmail.ExternalUserId is not null)
-            return null;
-
-        // Bind the sub and persist.
-        byEmail.AssignExternalUserId(ExternalUserId.From(sub));
+        byEmail.AssignExternalUserId(externalId);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return new UserContextDto(
             byEmail.Id.Value,
             name,
             byEmail.EmailAddress.Value,
-            byEmail.IsAdmin,
-            byEmail.Memberships.Select(m => new UserContextTeamMembershipDto(m.Id.Value, m.Role)).ToList());
+            byEmail.Memberships.Select(m => m.Role).SingleOrDefault(),
+            byEmail.IsAdmin);
     }
 }

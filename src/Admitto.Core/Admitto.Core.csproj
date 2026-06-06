@@ -7,6 +7,7 @@
     <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" />
     <PackageReference Include="Auth0.ManagementApi" />
     <PackageReference Include="Azure.Messaging.ServiceBus" />
+    <PackageReference Include="CsvHelper" />
     <PackageReference Include="FluentValidation" />
     <PackageReference Include="FluentValidation.DependencyInjectionExtensions" />
     <PackageReference Include="Humanizer.Core" />

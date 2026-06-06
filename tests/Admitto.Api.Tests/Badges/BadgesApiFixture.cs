@@ -31,6 +31,8 @@ internal sealed class BadgesApiFixture
     private readonly List<BadgeTypeSeed> _badgeTypeSeeds = [];
     private readonly List<BadgeInstanceSeed> _badgeInstanceSeeds = [];
     private readonly List<RegistrationSeed> _registrationSeeds = [];
+    private readonly Dictionary<BadgeTypeId, uint> _badgeTypeVersions = [];
+    private readonly Dictionary<BadgeInstanceId, uint> _badgeInstanceVersions = [];
 
     private BadgesApiFixture(bool archived) => _archived = archived;
 
@@ -64,6 +66,10 @@ internal sealed class BadgesApiFixture
     {
         _registrationSeeds.Add(new RegistrationSeed(email, firstName, lastName, cancelled));
     }
+
+    public uint BadgeTypeVersion(BadgeTypeId id) => _badgeTypeVersions[id];
+
+    public uint BadgeInstanceVersion(BadgeInstanceId id) => _badgeInstanceVersions[id];
 
     public async ValueTask SetupAsync(EndToEndTestEnvironment environment)
     {
@@ -106,9 +112,25 @@ internal sealed class BadgesApiFixture
             return reg;
         }).ToList();
 
-        var badgesEvent = BadgesEvent.Create(eventId, team.Id);
+        var badgesEvent = BadgeEvent.Create(eventId, team.Id);
         if (_archived)
             badgesEvent.MarkArchived();
+
+        var badgeTypeEntities = _badgeTypeSeeds.Select(seed =>
+        {
+            var ticketTypeVoIds = seed.TicketTypeIds
+                .Select(t => TicketTypeId.From(t))
+                .ToList();
+            return BadgeType.Create(seed.Id, eventId, BadgeTypeName.From(seed.Name), seed.Kind, ticketTypeVoIds);
+        }).ToList();
+
+        var badgeInstanceEntities = _badgeInstanceSeeds.Select(seed =>
+            BadgeInstance.Create(
+                seed.Id,
+                seed.BadgeTypeId,
+                BadgeInstanceDisplayName.From(seed.DisplayName),
+                BadgeInstanceNotes.From(seed.Notes))
+        ).ToList();
 
         await environment.OrganizationDatabase.SeedAsync(db => db.Teams.Add(team));
         await environment.RegistrationsDatabase.SeedAsync(db =>
@@ -120,27 +142,17 @@ internal sealed class BadgesApiFixture
         });
         await environment.BadgesDatabase.SeedAsync(db =>
         {
-            db.BadgesEvents.Add(badgesEvent);
-
-            foreach (var seed in _badgeTypeSeeds)
-            {
-                var ticketTypeVoIds = seed.TicketTypeIds
-                    .Select(t => TicketTypeId.From(t))
-                    .ToList();
-                var badgeType = BadgeType.Create(seed.Id, eventId, BadgeTypeName.From(seed.Name), seed.Kind, ticketTypeVoIds);
-                db.BadgeTypes.Add(badgeType);
-            }
-
-            foreach (var seed in _badgeInstanceSeeds)
-            {
-                var instance = BadgeInstance.Create(
-                    seed.Id,
-                    seed.BadgeTypeId,
-                    BadgeInstanceDisplayName.From(seed.DisplayName),
-                    BadgeInstanceNotes.From(seed.Notes));
-                db.BadgeInstances.Add(instance);
-            }
+            db.BadgeEvents.Add(badgesEvent);
+            foreach (var entity in badgeTypeEntities)
+                db.BadgeTypes.Add(entity);
+            foreach (var entity in badgeInstanceEntities)
+                db.BadgeInstances.Add(entity);
         });
+
+        foreach (var (seed, entity) in _badgeTypeSeeds.Zip(badgeTypeEntities))
+            _badgeTypeVersions[seed.Id] = entity.Version;
+        foreach (var (seed, entity) in _badgeInstanceSeeds.Zip(badgeInstanceEntities))
+            _badgeInstanceVersions[seed.Id] = entity.Version;
     }
 
     private sealed record BadgeTypeSeed(BadgeTypeId Id, string Name, BadgeKind Kind, IReadOnlyList<Guid> TicketTypeIds);
