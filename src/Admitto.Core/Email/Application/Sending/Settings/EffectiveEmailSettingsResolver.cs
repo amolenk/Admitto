@@ -37,12 +37,12 @@ internal sealed class EffectiveEmailSettingsResolver(
         var settings = await writeStore.EmailSettings
             .AsNoTracking()
             .Where(s =>
-                (s.Scope == EmailSettingsScope.Event && s.ScopeId == EmailScopeId.From(eventId.Value)) ||
-                (s.Scope == EmailSettingsScope.Team  && s.ScopeId == EmailScopeId.From(teamId.Value)))
+                s.TeamId == teamId &&
+                (s.TicketedEventId == eventId || s.TicketedEventId == null))
             .ToListAsync(cancellationToken);
 
-        var effective = settings.FirstOrDefault(s => s.Scope == EmailSettingsScope.Event)
-                     ?? settings.FirstOrDefault(s => s.Scope == EmailSettingsScope.Team);
+        var effective = settings.FirstOrDefault(s => s.TicketedEventId == eventId)
+                     ?? settings.FirstOrDefault(s => s.TicketedEventId == null);
 
         return effective is null ? null : ToEffective(effective);
     }
@@ -54,7 +54,8 @@ internal sealed class EffectiveEmailSettingsResolver(
         var settings = await writeStore.EmailSettings
             .AsNoTracking()
             .FirstOrDefaultAsync(
-                s => s.Scope == EmailSettingsScope.Team && s.ScopeId == EmailScopeId.From(teamId.Value),
+                s => s.TeamId == teamId &&
+                     s.TicketedEventId == null,
                 cancellationToken);
 
         return settings is null ? null : ToEffective(settings);

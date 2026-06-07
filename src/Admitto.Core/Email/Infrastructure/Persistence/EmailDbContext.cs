@@ -52,10 +52,6 @@ public sealed class EmailDbContext(DbContextOptions<EmailDbContext> options)
             .HaveConversion<TicketedEventId.EfCoreValueConverter>();
 
         configurationBuilder
-            .Properties<EmailScopeId>()
-            .HaveConversion<EmailScopeId.EfCoreValueConverter>();
-
-        configurationBuilder
             .Properties<RegistrationId>()
             .HaveConversion<RegistrationId.EfCoreValueConverter>();
 

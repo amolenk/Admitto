@@ -15,14 +15,12 @@ internal sealed class EmailTemplateEntityConfiguration : IEntityTypeConfiguratio
             .IsRequired()
             .ValueGeneratedNever();
 
-        builder.Property(e => e.Scope)
-            .HasColumnName("scope")
-            .HasConversion<int>()
+        builder.Property(e => e.TeamId)
+            .HasColumnName("team_id")
             .IsRequired();
 
-        builder.Property(e => e.ScopeId)
-            .HasColumnName("scope_id")
-            .IsRequired();
+        builder.Property(e => e.TicketedEventId)
+            .HasColumnName("ticketed_event_id");
 
         builder.Property(e => e.Name)
             .HasColumnName("name")

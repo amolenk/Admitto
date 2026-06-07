@@ -4,6 +4,6 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.EmailSettings.SendTest
 
 public sealed record SendTestEmailHttpRequest(string Recipient)
 {
-    internal SendTestEmailCommand ToCommand(EmailSettingsScope scope, EmailScopeId scopeId) =>
-        new(scope, scopeId, Recipient);
+    internal SendTestEmailCommand ToCommand(Guid teamId, Guid? ticketedEventId) =>
+        new(teamId, ticketedEventId, Recipient);
 }

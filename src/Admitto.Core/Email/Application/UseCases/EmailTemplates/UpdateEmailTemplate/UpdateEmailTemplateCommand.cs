@@ -4,6 +4,8 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.EmailTemplates.UpdateE
 
 internal sealed record UpdateEmailTemplateCommand(
     Guid Id,
+    Guid TeamId,
+    Guid? TicketedEventId,
     string? Name,
     string Subject,
     string TextBody,

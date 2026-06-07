@@ -16,14 +16,12 @@ internal sealed class EmailSettingsEntityConfiguration : IEntityTypeConfiguratio
             .IsRequired()
             .ValueGeneratedNever();
 
-        builder.Property(e => e.Scope)
-            .HasColumnName("scope")
-            .HasConversion<int>()
+        builder.Property(e => e.TeamId)
+            .HasColumnName("team_id")
             .IsRequired();
 
-        builder.Property(e => e.ScopeId)
-            .HasColumnName("scope_id")
-            .IsRequired();
+        builder.Property(e => e.TicketedEventId)
+            .HasColumnName("ticketed_event_id");
 
         builder.Property(e => e.SmtpHost)
             .HasColumnName("smtp_host")
@@ -51,8 +49,14 @@ internal sealed class EmailSettingsEntityConfiguration : IEntityTypeConfiguratio
         builder.Property(e => e.ProtectedPassword)
             .HasColumnName("protected_password");
 
-        builder.HasIndex(e => new { e.Scope, e.ScopeId })
-            .HasDatabaseName("IX_email_settings_scope_scope_id")
+        builder.HasIndex(e => e.TeamId)
+            .HasDatabaseName("IX_email_settings_team")
+            .HasFilter("ticketed_event_id IS NULL")
+            .IsUnique();
+
+        builder.HasIndex(e => new { e.TeamId, e.TicketedEventId })
+            .HasDatabaseName("IX_email_settings_team_event")
+            .HasFilter("ticketed_event_id IS NOT NULL")
             .IsUnique();
     }
 }

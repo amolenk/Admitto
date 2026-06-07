@@ -9,10 +9,10 @@ public static class GetEmailSettingsHttpEndpoint
 {
     public static RouteGroupBuilder MapGetEmailSettings(
         this RouteGroupBuilder group,
-        EmailSettingsScope scope)
+        bool isEventScoped)
     {
-        var endpointName = scope == EmailSettingsScope.Team ? "GetTeamEmailSettings" : "GetEventEmailSettings";
-        var handler = new Handler(scope);
+        var endpointName = isEventScoped ? "GetEventEmailSettings" : "GetTeamEmailSettings";
+        var handler = new Handler(isEventScoped);
 
         group
             .MapGet("/", handler.HandleAsync)
@@ -22,7 +22,7 @@ public static class GetEmailSettingsHttpEndpoint
         return group;
     }
 
-    private sealed class Handler(EmailSettingsScope scope)
+    private sealed class Handler(bool isEventScoped)
     {
         public async ValueTask<Ok<EmailSettingsDto>> HandleAsync(
             Guid teamId,
@@ -30,10 +30,10 @@ public static class GetEmailSettingsHttpEndpoint
             IQueryHandler<GetEmailSettingsQuery, EmailSettingsDto?> handler,
             CancellationToken ct)
         {
-            var scopeId = EmailScopeId.From(scope == EmailSettingsScope.Event ? eventId!.Value : teamId);
+            var ticketedEventId = isEventScoped ? eventId!.Value : (Guid?)null;
 
             var dto = await handler.HandleAsync(
-                new GetEmailSettingsQuery(scope, scopeId), ct);
+                new GetEmailSettingsQuery(teamId, ticketedEventId), ct);
 
             if (dto is null)
                 throw new BusinessRuleViolationException(

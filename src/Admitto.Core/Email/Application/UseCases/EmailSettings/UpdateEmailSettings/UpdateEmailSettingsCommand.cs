@@ -4,8 +4,8 @@ using Amolenk.Admitto.Core.Shared.Application.Messaging;
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.EmailSettings.UpdateEmailSettings;
 
 internal sealed record UpdateEmailSettingsCommand(
-    EmailSettingsScope Scope,
-    EmailScopeId ScopeId,
+    Guid TeamId,
+    Guid? TicketedEventId,
     string? SmtpHost,
     int? SmtpPort,
     string? FromAddress,

@@ -20,7 +20,7 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
         var (teamId, eventId, protectedSecret, fakeSender, handler) = BuildHandler();
 
         var settings = new EventEmailSettingsBuilder()
-            .ForEvent(eventId)
+            .ForTeamAndEvent(teamId, eventId)
             .WithBasicAuth(protectedPassword: protectedSecret.Protect("pass"))
             .Build();
         await Environment.EmailDatabase.SeedAsync(db => db.EmailSettings.Add(settings));
@@ -89,10 +89,10 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
         var (teamId, eventId, protectedSecret, fakeSender, handler) = BuildHandler();
 
         var settings = new EventEmailSettingsBuilder()
-            .ForEvent(eventId)
+            .ForTeamAndEvent(teamId, eventId)
             .Build();
         var brokenTemplate = new EmailTemplateBuilder()
-            .ForEvent(eventId)
+            .ForTeamAndEvent(teamId, eventId)
             .WithSubject("{{ for }}")
             .Build();
         await Environment.EmailDatabase.SeedAsync(db =>
@@ -133,7 +133,7 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
         var (teamId, eventId, protectedSecret, fakeSender, handler) = BuildHandler();
 
         var settings = new EventEmailSettingsBuilder()
-            .ForEvent(eventId)
+            .ForTeamAndEvent(teamId, eventId)
             .WithBasicAuth(protectedPassword: protectedSecret.Protect("pass"))
             .Build();
         await Environment.EmailDatabase.SeedAsync(db => db.EmailSettings.Add(settings));

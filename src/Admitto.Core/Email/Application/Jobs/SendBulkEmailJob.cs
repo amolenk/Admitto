@@ -44,6 +44,8 @@ internal sealed class SendBulkEmailJob(
 {
     public const string Name = nameof(SendBulkEmailJob);
     public const string BulkEmailJobIdKey = "BulkEmailJobId";
+    public const string TeamIdKey = "TeamId";
+    public const string TicketedEventIdKey = "TicketedEventId";
 
     private static readonly JsonSerializerOptions ParametersJsonOptions = new(JsonSerializerDefaults.Web);
 
@@ -51,12 +53,18 @@ internal sealed class SendBulkEmailJob(
     {
         var ct = context.CancellationToken;
         var bulkJobIdValue = context.MergedJobDataMap.GetGuidValueFromString(BulkEmailJobIdKey);
+        var teamIdValue = context.MergedJobDataMap.GetGuidValueFromString(TeamIdKey);
+        var eventIdValue = context.MergedJobDataMap.GetGuidValueFromString(TicketedEventIdKey);
         var bulkJobId = BulkEmailJobId.From(bulkJobIdValue);
+        var teamId = TeamId.From(teamIdValue);
+        var ticketedEventId = TicketedEventId.From(eventIdValue);
 
         try
         {
             var job = await writeStore.BulkEmailJobs
-                .FirstOrDefaultAsync(j => j.Id == bulkJobId, ct);
+                .FirstOrDefaultAsync(
+                    j => j.Id == bulkJobId && j.TeamId == teamId && j.TicketedEventId == ticketedEventId,
+                    ct);
 
             if (job is null)
             {
@@ -124,8 +132,8 @@ internal sealed class SendBulkEmailJob(
             if (job.Subject is not null && job.TextBody is not null)
             {
                 template = EmailTemplate.Create(
-                    EmailSettingsScope.Event,
-                    EmailScopeId.From(job.TicketedEventId.Value),
+                    job.TeamId,
+                    job.TicketedEventId,
                     job.EmailType,
                     job.Subject,
                     job.TextBody,
@@ -155,18 +163,18 @@ internal sealed class SendBulkEmailJob(
 
             // Skip opening an SMTP session entirely when cancellation was
             // requested before pickup or there is nothing left to send.
-            var cancelledBeforeOpen = await IsCancellationRequestedAsync(bulkJobId, ct);
+            var cancelledBeforeOpen = await IsCancellationRequestedAsync(bulkJobId, teamId, ticketedEventId, ct);
             if (!cancelledBeforeOpen && pending.Count > 0)
             {
                 await using var session = await bulkSmtpSender.OpenSessionAsync(settings, ct);
                 foreach (var recipient in pending)
                 {
-                    if (await IsCancellationRequestedAsync(bulkJobId, ct))
+                    if (await IsCancellationRequestedAsync(bulkJobId, teamId, ticketedEventId, ct))
                         break;
 
                     await ProcessRecipientAsync(job, recipient, template, session, ct);
 
-                    if (await IsCancellationRequestedAsync(bulkJobId, ct))
+                    if (await IsCancellationRequestedAsync(bulkJobId, teamId, ticketedEventId, ct))
                         break;
 
                     await Task.Delay(options.CurrentValue.PerMessageDelay, ct);
@@ -174,7 +182,7 @@ internal sealed class SendBulkEmailJob(
             }
 
             // Phase 3: terminal state.
-            var freshCancellation = await IsCancellationRequestedAsync(bulkJobId, ct);
+            var freshCancellation = await IsCancellationRequestedAsync(bulkJobId, teamId, ticketedEventId, ct);
             if (freshCancellation)
             {
                 job.FinaliseCancelled(DateTimeOffset.UtcNow);
@@ -297,10 +305,14 @@ internal sealed class SendBulkEmailJob(
         }
     }
 
-    private async Task<bool> IsCancellationRequestedAsync(BulkEmailJobId jobId, CancellationToken ct)
+    private async Task<bool> IsCancellationRequestedAsync(
+        BulkEmailJobId jobId,
+        TeamId teamId,
+        TicketedEventId ticketedEventId,
+        CancellationToken ct)
     {
         return await writeStore.BulkEmailJobs
-            .Where(j => j.Id == jobId)
+            .Where(j => j.Id == jobId && j.TeamId == teamId && j.TicketedEventId == ticketedEventId)
             .Select(j => j.CancellationRequestedAt)
             .FirstOrDefaultAsync(ct) is not null;
     }

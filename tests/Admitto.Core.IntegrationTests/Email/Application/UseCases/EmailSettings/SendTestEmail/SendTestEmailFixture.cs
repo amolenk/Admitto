@@ -64,7 +64,7 @@ internal sealed class SendTestEmailFixture
             if (_seedEventSettings)
             {
                 db.EmailSettings.Add(new EventEmailSettingsBuilder()
-                    .ForEvent(EventId)
+                    .ForTeamAndEvent(TeamId, EventId)
                     .WithSmtpHost("event.smtp.example.com")
                     .WithFromAddress("event@example.com")
                     .WithBasicAuth(protectedPassword: ProtectedSecret.Protect(ProtectedPasswordPlaintext))
@@ -75,7 +75,7 @@ internal sealed class SendTestEmailFixture
         if (_eventSettingsIncomplete)
         {
             await environment.EmailDatabase.Context.Database.ExecuteSqlRawAsync(
-                "UPDATE email.email_settings SET protected_password = NULL WHERE scope_id = {0}",
+                "UPDATE email.email_settings SET protected_password = NULL WHERE ticketed_event_id = {0}",
                 [EventId.Value],
                 ct);
             environment.EmailDatabase.Context.ChangeTracker.Clear();
@@ -86,10 +86,10 @@ internal sealed class SendTestEmailFixture
         new(environment.EmailDatabase.Context, ProtectedSecret, EmailSender);
 
     public SendTestEmailCommand TeamCommand(string recipient = "ops@acme.org") =>
-        new(EmailSettingsScope.Team, EmailScopeId.From(TeamId.Value), recipient);
+        new(TeamId.Value, null, recipient);
 
     public SendTestEmailCommand EventCommand(string recipient = "ops@acme.org") =>
-        new(EmailSettingsScope.Event, EmailScopeId.From(EventId.Value), recipient);
+        new(TeamId.Value, EventId.Value, recipient);
 }
 
 internal sealed class FakeTestEmailSender : IEmailSender

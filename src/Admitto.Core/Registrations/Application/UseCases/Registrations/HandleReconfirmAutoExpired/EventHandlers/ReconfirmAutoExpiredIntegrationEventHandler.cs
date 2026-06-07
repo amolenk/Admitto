@@ -22,13 +22,18 @@ internal sealed class ReconfirmAutoExpiredIntegrationEventHandler(IRegistrations
         if (alreadyHandled)
             return;
 
+        var teamId = TeamId.From(integrationEvent.TeamId);
         var ticketedEventId = TicketedEventId.From(integrationEvent.TicketedEventId);
         var eventIsActive = await writeStore.TicketedEvents
             .AsNoTracking()
-            .AnyAsync(e => e.Id == ticketedEventId && e.Status == EventLifecycleStatus.Active, cancellationToken);
+            .AnyAsync(
+                e => e.Id == ticketedEventId && e.TeamId == teamId && e.Status == EventLifecycleStatus.Active,
+                cancellationToken);
         var catalogIsActive = await writeStore.TicketCatalogs
             .AsNoTracking()
-            .AnyAsync(c => c.Id == ticketedEventId && c.EventStatus == EventLifecycleStatus.Active, cancellationToken);
+            .AnyAsync(
+                c => c.Id == ticketedEventId && c.TeamId == teamId && c.EventStatus == EventLifecycleStatus.Active,
+                cancellationToken);
 
         if (!eventIsActive || !catalogIsActive)
         {
@@ -41,7 +46,9 @@ internal sealed class ReconfirmAutoExpiredIntegrationEventHandler(IRegistrations
         {
             var registrationId = RegistrationId.From(registrationIdValue);
             var registration = await writeStore.Registrations
-                .FirstOrDefaultAsync(r => r.Id == registrationId, cancellationToken);
+                .FirstOrDefaultAsync(
+                    r => r.Id == registrationId && r.TeamId == teamId && r.EventId == ticketedEventId,
+                    cancellationToken);
 
             if (registration is null
                 || registration.Status != RegistrationStatus.Registered

@@ -4,4 +4,6 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.EmailTemplates.DeleteE
 
 internal sealed record DeleteEmailTemplateCommand(
     Guid Id,
+    Guid TeamId,
+    Guid? TicketedEventId,
     uint ExpectedVersion) : Command;

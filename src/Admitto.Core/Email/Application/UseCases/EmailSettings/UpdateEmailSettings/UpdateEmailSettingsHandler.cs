@@ -19,7 +19,8 @@ internal sealed class UpdateEmailSettingsHandler(
     public async ValueTask HandleAsync(UpdateEmailSettingsCommand command, CancellationToken cancellationToken)
     {
         var settings = await writeStore.EmailSettings.GetAsync(
-             s => s.Scope == command.Scope && s.ScopeId == command.ScopeId,
+             s => s.TeamId == TeamId.From(command.TeamId) &&
+                  s.TicketedEventId == (command.TicketedEventId.HasValue ? TicketedEventId.From(command.TicketedEventId.Value) : null),
              command.ExpectedVersion,
              cancellationToken);
 

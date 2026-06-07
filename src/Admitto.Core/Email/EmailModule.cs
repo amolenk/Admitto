@@ -15,7 +15,6 @@ using Amolenk.Admitto.Core.Email.Application.UseCases.EmailTemplates.GetEmailTem
 using Amolenk.Admitto.Core.Email.Application.UseCases.EmailTemplates.PreviewEmailTemplate.AdminApi;
 using Amolenk.Admitto.Core.Email.Application.UseCases.EmailTemplates.TestSendEmailTemplate.AdminApi;
 using Amolenk.Admitto.Core.Email.Application.UseCases.EmailTemplates.UpdateEmailTemplate.AdminApi;
-using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Core.Email;
 
@@ -29,38 +28,38 @@ public static class EmailModule
         // Team-scoped email settings
         group
             .MapGroup("/teams/{teamId:guid}/email-settings")
-            .MapGetEmailSettings(EmailSettingsScope.Team)
-            .MapUpsertEmailSettings(EmailSettingsScope.Team)
-            .MapDeleteEmailSettings(EmailSettingsScope.Team)
-            .MapSendTestEmail(EmailSettingsScope.Team);
+            .MapGetEmailSettings(isEventScoped: false)
+            .MapUpsertEmailSettings(isEventScoped: false)
+            .MapDeleteEmailSettings(isEventScoped: false)
+            .MapSendTestEmail(isEventScoped: false);
 
         // Event-scoped email settings
         group
             .MapGroup("/teams/{teamId:guid}/events/{eventId:guid}/email-settings")
-            .MapGetEmailSettings(EmailSettingsScope.Event)
-            .MapUpsertEmailSettings(EmailSettingsScope.Event)
-            .MapDeleteEmailSettings(EmailSettingsScope.Event)
-            .MapSendTestEmail(EmailSettingsScope.Event);
+            .MapGetEmailSettings(isEventScoped: true)
+            .MapUpsertEmailSettings(isEventScoped: true)
+            .MapDeleteEmailSettings(isEventScoped: true)
+            .MapSendTestEmail(isEventScoped: true);
 
         // Team-scoped email templates
         group
             .MapGroup("/teams/{teamId:guid}/email-templates")
-            .MapGetEmailTemplates(EmailSettingsScope.Team)
-            .MapCreateEmailTemplate(EmailSettingsScope.Team)
-            .MapGetEmailTemplate(EmailSettingsScope.Team)
-            .MapUpdateEmailTemplate(EmailSettingsScope.Team)
-            .MapDeleteEmailTemplate(EmailSettingsScope.Team)
+            .MapGetEmailTemplates(isEventScoped: false)
+            .MapCreateEmailTemplate(isEventScoped: false)
+            .MapGetEmailTemplate(isEventScoped: false)
+            .MapUpdateEmailTemplate(isEventScoped: false)
+            .MapDeleteEmailTemplate(isEventScoped: false)
             .MapPreviewEmailTemplate(isEventScoped: false)
             .MapTestSendEmailTemplate(isEventScoped: false);
 
         // Event-scoped email templates
         group
             .MapGroup("/teams/{teamId:guid}/events/{eventId:guid}/email-templates")
-            .MapGetEmailTemplates(EmailSettingsScope.Event)
-            .MapCreateEmailTemplate(EmailSettingsScope.Event)
-            .MapGetEmailTemplate(EmailSettingsScope.Event)
-            .MapUpdateEmailTemplate(EmailSettingsScope.Event)
-            .MapDeleteEmailTemplate(EmailSettingsScope.Event)
+            .MapGetEmailTemplates(isEventScoped: true)
+            .MapCreateEmailTemplate(isEventScoped: true)
+            .MapGetEmailTemplate(isEventScoped: true)
+            .MapUpdateEmailTemplate(isEventScoped: true)
+            .MapDeleteEmailTemplate(isEventScoped: true)
             .MapPreviewEmailTemplate(isEventScoped: true)
             .MapTestSendEmailTemplate(isEventScoped: true);
 

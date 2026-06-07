@@ -302,7 +302,7 @@ export default function BadgeTypesPage() {
 
     const eventName = event.data?.name ?? "";
     const badgeTypes = response?.badgeTypes ?? [];
-    const eventVersion = response?.eventVersion ?? 0;
+    const eventVersion = Number(response?.eventVersion ?? 0);
 
     return (
         <PageLayout>

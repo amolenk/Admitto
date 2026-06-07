@@ -10,10 +10,10 @@ public static class DeleteEmailSettingsHttpEndpoint
 {
     public static RouteGroupBuilder MapDeleteEmailSettings(
         this RouteGroupBuilder group,
-        EmailSettingsScope scope)
+        bool isEventScoped)
     {
-        var endpointName = scope == EmailSettingsScope.Team ? "DeleteTeamEmailSettings" : "DeleteEventEmailSettings";
-        var handler = new Handler(scope);
+        var endpointName = isEventScoped ? "DeleteEventEmailSettings" : "DeleteTeamEmailSettings";
+        var handler = new Handler(isEventScoped);
 
         group
             .MapDelete("/", handler.HandleAsync)
@@ -23,7 +23,7 @@ public static class DeleteEmailSettingsHttpEndpoint
         return group;
     }
 
-    private sealed class Handler(EmailSettingsScope scope)
+    private sealed class Handler(bool isEventScoped)
     {
         public async ValueTask<NoContent> HandleAsync(
             Guid teamId,
@@ -33,9 +33,9 @@ public static class DeleteEmailSettingsHttpEndpoint
             [FromKeyedServices(EmailModule.Key)] IUnitOfWork unitOfWork,
             CancellationToken ct)
         {
-            var scopeId = EmailScopeId.From(scope == EmailSettingsScope.Event ? eventId!.Value : teamId);
+            var ticketedEventId = isEventScoped ? eventId!.Value : (Guid?)null;
 
-            await handler.HandleAsync(new DeleteEmailSettingsCommand(scope, scopeId, version), ct);
+            await handler.HandleAsync(new DeleteEmailSettingsCommand(teamId, ticketedEventId, version), ct);
             await unitOfWork.SaveChangesAsync(ct);
 
             return TypedResults.NoContent();

@@ -19,9 +19,9 @@ public sealed record UpsertEmailSettingsHttpRequest(
     string? Password,
     uint? Version)
 {
-    internal CreateEmailSettingsCommand ToCreateCommand(EmailSettingsScope scope, EmailScopeId scopeId) =>
-        new(scope, scopeId, SmtpHost, SmtpPort, FromAddress, AuthMode, Username, Password);
+    internal CreateEmailSettingsCommand ToCreateCommand(Guid teamId, Guid? ticketedEventId) =>
+        new(teamId, ticketedEventId, SmtpHost, SmtpPort, FromAddress, AuthMode, Username, Password);
 
-    internal UpdateEmailSettingsCommand ToUpdateCommand(EmailSettingsScope scope, EmailScopeId scopeId, uint expectedVersion) =>
-        new(scope, scopeId, SmtpHost, SmtpPort, FromAddress, AuthMode, Username, Password, expectedVersion);
+    internal UpdateEmailSettingsCommand ToUpdateCommand(Guid teamId, Guid? ticketedEventId, uint expectedVersion) =>
+        new(teamId, ticketedEventId, SmtpHost, SmtpPort, FromAddress, AuthMode, Username, Password, expectedVersion);
 }

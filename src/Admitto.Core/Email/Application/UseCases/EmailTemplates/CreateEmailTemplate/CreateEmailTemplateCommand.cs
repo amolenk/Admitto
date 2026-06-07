@@ -1,13 +1,11 @@
-using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.EmailTemplates.CreateEmailTemplate;
 
 internal sealed record CreateEmailTemplateCommand(
-    EmailSettingsScope Scope,
-    EmailScopeId ScopeId,
+    Guid TeamId,
+    Guid? TicketedEventId,
     string Name,
     string? Subject,
     string? TextBody,
-    string? HtmlBody,
-    EmailScopeId? ParentScopeId = null) : Command<Guid>;
+    string? HtmlBody) : Command<Guid>;

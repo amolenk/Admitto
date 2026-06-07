@@ -64,6 +64,7 @@ internal sealed class RequestReconfirmationsJob(
         var emailLogDataByEmail = await writeStore.EmailLog
             .AsNoTracking()
             .Where(l =>
+                l.TeamId == teamId &&
                 l.TicketedEventId == ticketedEventId &&
                 l.EmailType == BuiltInEmailTemplateNames.Reconfirmation &&
                 l.Status == EmailLogStatus.Sent)
@@ -150,6 +151,7 @@ internal sealed class RequestReconfirmationsJob(
                 autoCancelRegistrationIds.Count);
 
             outbox.Enqueue(new ReconfirmAutoExpiredIntegrationEvent(
+                teamId.Value,
                 ticketedEventId.Value,
                 autoCancelRegistrationIds));
         }

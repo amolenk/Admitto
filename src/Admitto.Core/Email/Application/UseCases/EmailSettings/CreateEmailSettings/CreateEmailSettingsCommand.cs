@@ -4,8 +4,8 @@ using Amolenk.Admitto.Core.Shared.Application.Messaging;
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.EmailSettings.CreateEmailSettings;
 
 internal sealed record CreateEmailSettingsCommand(
-    EmailSettingsScope Scope,
-    EmailScopeId ScopeId,
+    Guid TeamId,
+    Guid? TicketedEventId,
     string SmtpHost,
     int SmtpPort,
     string FromAddress,

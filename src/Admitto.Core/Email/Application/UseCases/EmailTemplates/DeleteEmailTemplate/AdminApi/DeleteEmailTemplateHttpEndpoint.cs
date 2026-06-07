@@ -10,10 +10,10 @@ public static class DeleteEmailTemplateHttpEndpoint
 {
     public static RouteGroupBuilder MapDeleteEmailTemplate(
         this RouteGroupBuilder group,
-        EmailSettingsScope scope)
+        bool isEventScoped)
     {
-        var endpointName = scope == EmailSettingsScope.Team ? "DeleteTeamEmailTemplate" : "DeleteEventEmailTemplate";
-        var handler = new Handler();
+        var endpointName = isEventScoped ? "DeleteEventEmailTemplate" : "DeleteTeamEmailTemplate";
+        var handler = new Handler(isEventScoped);
 
         group
             .MapDelete("/{id:guid}", handler.HandleAsync)
@@ -23,16 +23,23 @@ public static class DeleteEmailTemplateHttpEndpoint
         return group;
     }
 
-    private sealed class Handler()
+    private sealed class Handler(bool isEventScoped)
     {
         public async ValueTask<NoContent> HandleAsync(
             Guid id,
+            Guid teamId,
+            Guid? eventId,
             [FromQuery] uint version,
             ICommandHandler<DeleteEmailTemplateCommand> handler,
             [FromKeyedServices(EmailModule.Key)] IUnitOfWork unitOfWork,
             CancellationToken ct)
         {
-            await handler.HandleAsync(new DeleteEmailTemplateCommand(id, version), ct);
+            await handler.HandleAsync(
+                new DeleteEmailTemplateCommand(
+                    id,
+                    teamId,
+                    isEventScoped ? eventId!.Value : null,
+                    version), ct);
             await unitOfWork.SaveChangesAsync(ct);
 
             return TypedResults.NoContent();

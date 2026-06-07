@@ -11,7 +11,7 @@ export async function GET(
     { params }: { params: Promise<{ teamId: string; id: string }> },
 ) {
     const { teamId, id } = await params;
-    return callAdmittoApi(() => getTeamEmailTemplate({ path: { teamId, id } as { id: string } }));
+    return callAdmittoApi(() => getTeamEmailTemplate({ path: { teamId, id } }));
 }
 
 export async function PUT(
@@ -20,7 +20,7 @@ export async function PUT(
 ) {
     const { teamId, id } = await params;
     const body = await request.json() as UpdateEmailTemplateHttpRequest;
-    return callAdmittoApi(() => updateTeamEmailTemplate({ path: { teamId, id } as { id: string }, body }));
+    return callAdmittoApi(() => updateTeamEmailTemplate({ path: { teamId, id }, body }));
 }
 
 export async function DELETE(
@@ -30,5 +30,5 @@ export async function DELETE(
     const { teamId, id } = await params;
     const url = new URL(request.url);
     const version = Number(url.searchParams.get("version"));
-    return callAdmittoApi(() => deleteTeamEmailTemplate({ path: { teamId, id } as { id: string }, query: { version } }));
+    return callAdmittoApi(() => deleteTeamEmailTemplate({ path: { teamId, id }, query: { version } }));
 }

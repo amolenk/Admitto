@@ -5,4 +5,7 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.BulkEmails.TriggerBulk
 /// <summary>
 /// Schedules a one-shot Quartz trigger that drives the fan-out for a bulk email job.
 /// </summary>
-internal sealed record TriggerBulkEmailJobCommand(Guid BulkEmailJobId) : Command;
+internal sealed record TriggerBulkEmailJobCommand(
+    Guid BulkEmailJobId,
+    Guid TeamId,
+    Guid TicketedEventId) : Command;

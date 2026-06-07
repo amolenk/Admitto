@@ -8,7 +8,7 @@ When the Email module's reconfirm scheduler determines that a registration has e
 
 ### Requirement: Registrations are auto-cancelled when the email log count reaches MaxReconfirmAttempts
 
-When the Registrations module receives a `ReconfirmAutoExpiredIntegrationEvent` (published by the Email module when a tick identifies registrations whose email log count has reached `MaxReconfirmAttempts`), it SHALL call `registration.Cancel(ReconfirmAutoCancel)` for each listed registration whose current state is `Registered` and `HasReconfirmed=false`. `ReconfirmAutoCancel` is a new value added to the `RegistrationCancellationReason` enum. The handler SHALL be idempotent (use the event-id as deduplication key). Already-cancelled or already-reconfirmed registrations SHALL be silently skipped.
+When the Registrations module receives a `ReconfirmAutoExpiredIntegrationEvent` (published by the Email module when a tick identifies registrations whose email log count has reached `MaxReconfirmAttempts`), it SHALL use the event's `TeamId` and `TicketedEventId` to scope all aggregate loads and call `registration.Cancel(ReconfirmAutoCancel)` for each listed registration whose current state is `Registered` and `HasReconfirmed=false`. `ReconfirmAutoCancel` is a new value added to the `RegistrationCancellationReason` enum. The handler SHALL be idempotent (use the event-id as deduplication key). Already-cancelled or already-reconfirmed registrations SHALL be silently skipped.
 
 #### Scenario: Registration is cancelled when the event is received
 

@@ -1,6 +1,6 @@
 using Amolenk.Admitto.Core.Email.Application.Templating;
 using Amolenk.Admitto.Core.Email.Domain.Entities;
-using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Shouldly;
 
 namespace Amolenk.Admitto.Core.Email.Domain.Tests.Entities;
@@ -11,19 +11,20 @@ public sealed class EmailTemplateTests
     [TestMethod]
     public void Create_WithEventScope_SetsAllFields()
     {
-        var scopeId = EmailScopeId.From(Guid.NewGuid());
+        var teamId = TeamId.New();
+        var eventId = TicketedEventId.New();
 
         var template = EmailTemplate.Create(
-            EmailSettingsScope.Event,
-            scopeId,
+            teamId,
+            eventId,
             BuiltInEmailTemplateNames.TicketConfirmation,
             "Your ticket",
             "Text body",
             "<p>HTML body</p>");
 
         template.Id.Value.ShouldNotBe(Guid.Empty);
-        template.Scope.ShouldBe(EmailSettingsScope.Event);
-        template.ScopeId.ShouldBe(scopeId);
+        template.TeamId.ShouldBe(teamId);
+        template.TicketedEventId.ShouldBe(eventId);
         template.Name.ShouldBe(BuiltInEmailTemplateNames.TicketConfirmation);
         template.Subject.ShouldBe("Your ticket");
         template.TextBody.ShouldBe("Text body");
@@ -33,25 +34,27 @@ public sealed class EmailTemplateTests
     [TestMethod]
     public void Create_WithTeamScope_SetsScope()
     {
-        var teamScopeId = EmailScopeId.From(Guid.NewGuid());
+        var teamId = TeamId.New();
 
         var template = EmailTemplate.Create(
-            EmailSettingsScope.Team,
-            teamScopeId,
+            teamId,
+            null,
             BuiltInEmailTemplateNames.TicketConfirmation,
             "Subject",
             "Text",
             "<p>Html</p>");
 
-        template.Scope.ShouldBe(EmailSettingsScope.Team);
-        template.ScopeId.ShouldBe(teamScopeId);
+        template.TeamId.ShouldBe(teamId);
+        template.TicketedEventId.ShouldBeNull();
     }
 
     [TestMethod]
     public void Create_TwoTemplates_HaveDistinctIds()
     {
-        var t1 = EmailTemplate.Create(EmailSettingsScope.Event, EmailScopeId.From(Guid.NewGuid()), BuiltInEmailTemplateNames.TicketConfirmation, "S1", "T1", "H1");
-        var t2 = EmailTemplate.Create(EmailSettingsScope.Event, EmailScopeId.From(Guid.NewGuid()), BuiltInEmailTemplateNames.Reconfirmation, "S2", "T2", "H2");
+        var t1EventId = TicketedEventId.New();
+        var t2EventId = TicketedEventId.New();
+        var t1 = EmailTemplate.Create(TeamId.New(), t1EventId, BuiltInEmailTemplateNames.TicketConfirmation, "S1", "T1", "H1");
+        var t2 = EmailTemplate.Create(TeamId.New(), t2EventId, BuiltInEmailTemplateNames.Reconfirmation, "S2", "T2", "H2");
 
         t1.Id.ShouldNotBe(t2.Id);
     }
@@ -60,8 +63,8 @@ public sealed class EmailTemplateTests
     public void Update_ChangesSubjectTextAndHtml()
     {
         var template = EmailTemplate.Create(
-            EmailSettingsScope.Event,
-            EmailScopeId.From(Guid.NewGuid()),
+            TeamId.New(),
+            TicketedEventId.New(),
             BuiltInEmailTemplateNames.TicketConfirmation,
             "Old subject",
             "Old text",
@@ -75,14 +78,15 @@ public sealed class EmailTemplateTests
     }
 
     [TestMethod]
-    public void Update_DoesNotChangeScope()
+    public void Update_DoesNotChangeScopeIds()
     {
-        var scopeId = EmailScopeId.From(Guid.NewGuid());
-        var template = EmailTemplate.Create(EmailSettingsScope.Event, scopeId, BuiltInEmailTemplateNames.TicketConfirmation, "S", "T", "H");
+        var teamId = TeamId.New();
+        var eventId = TicketedEventId.New();
+        var template = EmailTemplate.Create(teamId, eventId, BuiltInEmailTemplateNames.TicketConfirmation, "S", "T", "H");
 
         template.Update("New subject", "New text", "<p>New html</p>");
 
-        template.Scope.ShouldBe(EmailSettingsScope.Event);
-        template.ScopeId.ShouldBe(scopeId);
+        template.TeamId.ShouldBe(teamId);
+        template.TicketedEventId.ShouldBe(eventId);
     }
 }

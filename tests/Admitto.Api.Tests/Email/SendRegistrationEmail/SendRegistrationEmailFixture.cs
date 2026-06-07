@@ -57,8 +57,8 @@ internal sealed class SendRegistrationEmailFixture
         var smtpPort = environment.Email.SmtpEndpoint.Port;
 
         var emailSettings = EmailSettings.Create(
-            scope: EmailSettingsScope.Team,
-            scopeId: EmailScopeId.From(team.Id.Value),
+            teamId: team.Id,
+            ticketedEventId: null,
             smtpHost: Hostname.From(smtpHost),
             smtpPort: Port.From(smtpPort),
             fromAddress: EmailAddress.From("noreply@admitto.io"),

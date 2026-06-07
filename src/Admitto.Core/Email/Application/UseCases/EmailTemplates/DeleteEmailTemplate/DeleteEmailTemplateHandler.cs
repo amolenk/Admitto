@@ -12,9 +12,15 @@ internal sealed class DeleteEmailTemplateHandler(IEmailWriteStore writeStore)
     public async ValueTask HandleAsync(DeleteEmailTemplateCommand command, CancellationToken cancellationToken)
     {
         EmailTemplateId id = EmailTemplateId.From(command.Id);
+        var teamId = TeamId.From(command.TeamId);
+        TicketedEventId? ticketedEventId = command.TicketedEventId.HasValue
+            ? TicketedEventId.From(command.TicketedEventId.Value)
+            : null;
 
         var template = await writeStore.EmailTemplates
-            .FirstOrDefaultAsync(t => t.Id == id, cancellationToken)
+            .FirstOrDefaultAsync(
+                t => t.Id == id && t.TeamId == teamId && t.TicketedEventId == ticketedEventId,
+                cancellationToken)
             ?? throw new BusinessRuleViolationException(
                 NotFoundError.Create<EmailTemplate>());
 

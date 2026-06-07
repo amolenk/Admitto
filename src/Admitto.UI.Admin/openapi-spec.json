@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "https://localhost:7100/"
+      "url": "http://localhost:50845/"
     }
   ],
   "paths": {
@@ -952,6 +952,23 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "eventId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -1019,7 +1036,7 @@
       },
       "put": {
         "tags": [
-          "UpdateEmailTemplateHttpEndpoint"
+          "Handler"
         ],
         "operationId": "UpdateTeamEmailTemplate",
         "parameters": [
@@ -1027,6 +1044,23 @@
             "name": "id",
             "in": "path",
             "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "eventId",
+            "in": "query",
             "schema": {
               "type": "string",
               "format": "uuid"
@@ -1109,6 +1143,23 @@
             "name": "id",
             "in": "path",
             "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "eventId",
+            "in": "query",
             "schema": {
               "type": "string",
               "format": "uuid"
@@ -1591,6 +1642,24 @@
               "type": "string",
               "format": "uuid"
             }
+          },
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "eventId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
           }
         ],
         "responses": {
@@ -1658,12 +1727,30 @@
       },
       "put": {
         "tags": [
-          "UpdateEmailTemplateHttpEndpoint"
+          "Handler"
         ],
         "operationId": "UpdateEventEmailTemplate",
         "parameters": [
           {
             "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
@@ -1746,6 +1833,24 @@
         "parameters": [
           {
             "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "eventId",
             "in": "path",
             "required": true,
             "schema": {
@@ -10958,8 +11063,8 @@
         "type": "oauth2",
         "flows": {
           "authorizationCode": {
-            "authorizationUrl": "http://localhost:15001/realms/admitto/protocol/openid-connect/auth",
-            "tokenUrl": "http://localhost:15001/realms/admitto/protocol/openid-connect/token",
+            "authorizationUrl": "http://localhost:50851/realms/admitto/protocol/openid-connect/auth",
+            "tokenUrl": "http://localhost:50851/realms/admitto/protocol/openid-connect/token",
             "scopes": {
               "openid": "OpenID Connect",
               "profile": "User profile",
@@ -10978,9 +11083,6 @@
   "tags": [
     {
       "name": "Handler"
-    },
-    {
-      "name": "UpdateEmailTemplateHttpEndpoint"
     },
     {
       "name": "PreviewEmailTemplateHttpEndpoint"

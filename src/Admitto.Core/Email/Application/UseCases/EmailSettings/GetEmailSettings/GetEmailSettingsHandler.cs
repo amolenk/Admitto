@@ -10,7 +10,10 @@ internal sealed class GetEmailSettingsHandler(IEmailWriteStore writeStore)
     {
         var settings = await writeStore.EmailSettings
             .AsNoTracking()
-            .FirstOrDefaultAsync(s => s.Scope == query.Scope && s.ScopeId == query.ScopeId, ct);
+            .FirstOrDefaultAsync(
+                s => s.TeamId == TeamId.From(query.TeamId) &&
+                     s.TicketedEventId == (query.TicketedEventId.HasValue ? TicketedEventId.From(query.TicketedEventId.Value) : null),
+                ct);
 
         if (settings is null)
             return null;

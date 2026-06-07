@@ -22,13 +22,17 @@ internal sealed class CreateEmailTemplateHandler(IEmailWriteStore writeStore)
         CancellationToken ct)
     {
         var isBuiltIn = BuiltInEmailTemplateNames.IsReserved(command.Name);
+        var teamId = TeamId.From(command.TeamId);
+        TicketedEventId? ticketedEventId = command.TicketedEventId.HasValue
+            ? TicketedEventId.From(command.TicketedEventId.Value)
+            : null;
 
         if (!isBuiltIn && BuiltInEmailTemplateNames.IsReserved(command.Name))
             throw new BusinessRuleViolationException(ReservedNameError);
 
         var alreadyExists = await writeStore.EmailTemplates.AnyAsync(
-            t => t.Scope == command.Scope &&
-                 t.ScopeId == command.ScopeId &&
+            t => t.TeamId == teamId &&
+                 t.TicketedEventId == ticketedEventId &&
                  t.Name.ToLower() == command.Name.ToLower(),
             ct);
 
@@ -50,12 +54,13 @@ internal sealed class CreateEmailTemplateHandler(IEmailWriteStore writeStore)
         {
             string? parentSubject = null, parentTextBody = null, parentHtmlBody = null;
 
-            if (command.ParentScopeId.HasValue)
+            if (ticketedEventId.HasValue)
             {
                 var parentTemplate = await writeStore.EmailTemplates
                     .AsNoTracking()
                     .FirstOrDefaultAsync(
-                        t => t.ScopeId == command.ParentScopeId.Value &&
+                        t => t.TeamId == teamId &&
+                             t.TicketedEventId == null &&
                              t.Name.ToLower() == command.Name.ToLower(),
                         ct);
 
@@ -70,8 +75,8 @@ internal sealed class CreateEmailTemplateHandler(IEmailWriteStore writeStore)
         }
 
         var template = EmailTemplate.Create(
-            command.Scope,
-            command.ScopeId,
+            teamId,
+            ticketedEventId,
             command.Name,
             subject,
             textBody,

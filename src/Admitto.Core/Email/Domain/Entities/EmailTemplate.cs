@@ -12,24 +12,24 @@ public class EmailTemplate : Aggregate<EmailTemplateId>
 
     private EmailTemplate(
         EmailTemplateId id,
-        EmailSettingsScope scope,
-        EmailScopeId scopeId,
+        TeamId teamId,
+        TicketedEventId? ticketedEventId,
         string name,
         string subject,
         string textBody,
         string? htmlBody)
         : base(id)
     {
-        Scope = scope;
-        ScopeId = scopeId;
+        TeamId = teamId;
+        TicketedEventId = ticketedEventId;
         Name = name;
         Subject = subject;
         TextBody = textBody;
         HtmlBody = htmlBody;
     }
 
-    public EmailSettingsScope Scope { get; private set; }
-    public EmailScopeId ScopeId { get; private set; }
+    public TeamId TeamId { get; private set; }
+    public TicketedEventId? TicketedEventId { get; private set; }
 
     /// <summary>
     /// The template's unique name within its scope.
@@ -40,11 +40,11 @@ public class EmailTemplate : Aggregate<EmailTemplateId>
 
     public string Subject { get; private set; } = default!;
     public string TextBody { get; private set; } = default!;
-    public string HtmlBody { get; private set; } = default!;
+    public string? HtmlBody { get; private set; }
 
     public static EmailTemplate Create(
-        EmailSettingsScope scope,
-        EmailScopeId scopeId,
+        TeamId teamId,
+        TicketedEventId? ticketedEventId,
         string name,
         string subject,
         string textBody,
@@ -52,8 +52,8 @@ public class EmailTemplate : Aggregate<EmailTemplateId>
     {
         return new EmailTemplate(
             EmailTemplateId.New(),
-            scope,
-            scopeId,
+            teamId,
+            ticketedEventId,
             name,
             subject,
             textBody,

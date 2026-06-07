@@ -11,7 +11,9 @@ internal sealed class GetEmailTemplateHandler(IEmailWriteStore writeStore)
     {
         var template = await writeStore.EmailTemplates
             .AsNoTracking()
-            .FirstOrDefaultAsync(t => t.Id == query.Id, ct);
+            .FirstOrDefaultAsync(
+                t => t.Id == query.Id && t.TeamId == query.TeamId && t.TicketedEventId == query.TicketedEventId,
+                ct);
 
         if (template is null)
             return null;

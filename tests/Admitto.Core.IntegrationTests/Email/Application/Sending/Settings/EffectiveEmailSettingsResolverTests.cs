@@ -16,7 +16,7 @@ public sealed class EffectiveEmailSettingsResolverTests(TestContext testContext)
         var protectedSecret = TestProtectedSecretFactory.Create();
 
         var settings = new EventEmailSettingsBuilder()
-            .ForEvent(eventId)
+            .ForTeamAndEvent(teamId, eventId)
             .WithSmtpHost("event-smtp.example.com")
             .WithBasicAuth(protectedPassword: protectedSecret.Protect("event-pass"))
             .Build();
@@ -58,7 +58,7 @@ public sealed class EffectiveEmailSettingsResolverTests(TestContext testContext)
         var protectedSecret = TestProtectedSecretFactory.Create();
 
         var eventSettings = new EventEmailSettingsBuilder()
-            .ForEvent(eventId)
+            .ForTeamAndEvent(teamId, eventId)
             .WithSmtpHost("event-smtp.example.com")
             .Build();
         var teamSettings = new EventEmailSettingsBuilder()
@@ -92,6 +92,26 @@ public sealed class EffectiveEmailSettingsResolverTests(TestContext testContext)
     }
 
     [TestMethod]
+    public async ValueTask ResolveAsync_EventSettingsForDifferentTeam_ReturnsNull()
+    {
+        var teamId = TeamId.New();
+        var otherTeamId = TeamId.New();
+        var eventId = TicketedEventId.New();
+        var protectedSecret = TestProtectedSecretFactory.Create();
+
+        var settings = new EventEmailSettingsBuilder()
+            .ForTeamAndEvent(otherTeamId, eventId)
+            .WithSmtpHost("other-team-smtp.example.com")
+            .Build();
+        await Environment.EmailDatabase.SeedAsync(db => db.EmailSettings.Add(settings));
+
+        var resolver = new EffectiveEmailSettingsResolver(Environment.EmailDatabase.Context, protectedSecret);
+        var result = await resolver.ResolveAsync(teamId, eventId, testContext.CancellationToken);
+
+        result.ShouldBeNull();
+    }
+
+    [TestMethod]
     public async ValueTask ResolveAsync_EventSettingsPresent_ReturnedRegardlessOfValidity()
     {
         // The resolver does NOT skip invalid settings — the caller decides what to do.
@@ -101,7 +121,7 @@ public sealed class EffectiveEmailSettingsResolverTests(TestContext testContext)
         var protectedSecret = TestProtectedSecretFactory.Create();
 
         var eventSettings = new EventEmailSettingsBuilder()
-            .ForEvent(eventId)
+            .ForTeamAndEvent(teamId, eventId)
             .WithSmtpHost("event-smtp.example.com")
             .Build();
         var teamSettings = new EventEmailSettingsBuilder()

@@ -32,7 +32,9 @@ internal sealed class TestSendEmailTemplateHandler(
 
         var template = await writeStore.EmailTemplates
             .AsNoTracking()
-            .FirstOrDefaultAsync(t => t.Id == templateId, ct)
+            .FirstOrDefaultAsync(t => t.Id == templateId &&
+                                      t.TeamId == teamId &&
+                                      t.TicketedEventId == eventId, ct)
             ?? throw new BusinessRuleViolationException(Errors.TemplateNotFound);
 
         var parameters = EmailTemplateSampleParameters.Create();

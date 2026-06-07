@@ -11,10 +11,10 @@ public static class UpsertEmailSettingsHttpEndpoint
 {
     public static RouteGroupBuilder MapUpsertEmailSettings(
         this RouteGroupBuilder group,
-        EmailSettingsScope scope)
+        bool isEventScoped)
     {
-        var endpointName = scope == EmailSettingsScope.Team ? "UpsertTeamEmailSettings" : "UpsertEventEmailSettings";
-        var handler = new Handler(scope);
+        var endpointName = isEventScoped ? "UpsertEventEmailSettings" : "UpsertTeamEmailSettings";
+        var handler = new Handler(isEventScoped);
 
         group
             .MapPut("/", handler.HandleAsync)
@@ -24,7 +24,7 @@ public static class UpsertEmailSettingsHttpEndpoint
         return group;
     }
 
-    private sealed class Handler(EmailSettingsScope scope)
+    private sealed class Handler(bool isEventScoped)
     {
         public async ValueTask<Results<Ok, Created>> HandleAsync(
             Guid teamId,
@@ -35,16 +35,16 @@ public static class UpsertEmailSettingsHttpEndpoint
             [FromKeyedServices(EmailModule.Key)] IUnitOfWork unitOfWork,
             CancellationToken ct)
         {
-            var scopeId = EmailScopeId.From(scope == EmailSettingsScope.Event ? eventId!.Value : teamId);
+            var ticketedEventId = isEventScoped ? eventId!.Value : (Guid?)null;
 
             if (request.Version is { } expectedVersion)
             {
-                await updateHandler.HandleAsync(request.ToUpdateCommand(scope, scopeId, expectedVersion), ct);
+                await updateHandler.HandleAsync(request.ToUpdateCommand(teamId, ticketedEventId, expectedVersion), ct);
                 await unitOfWork.SaveChangesAsync(ct);
                 return TypedResults.Ok();
             }
 
-            await createHandler.HandleAsync(request.ToCreateCommand(scope, scopeId), ct);
+            await createHandler.HandleAsync(request.ToCreateCommand(teamId, ticketedEventId), ct);
             await unitOfWork.SaveChangesAsync(ct);
 
             var location = eventId is not null

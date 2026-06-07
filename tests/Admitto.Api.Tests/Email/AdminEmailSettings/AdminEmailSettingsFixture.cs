@@ -72,7 +72,7 @@ internal sealed class AdminEmailSettingsFixture
             .Build();
 
         var eventSettings = new EventEmailSettingsBuilder()
-            .ForEvent(eventId)
+            .ForTeamAndEvent(team.Id, eventId)
             .WithFromAddress("event@example.com")
             .Build();
 
@@ -97,7 +97,7 @@ internal sealed class AdminEmailSettingsFixture
             .Build();
 
         var eventSettings = new EventEmailSettingsBuilder()
-            .ForEvent(eventId)
+            .ForTeamAndEvent(team.Id, eventId)
             .WithSmtpHost(environment.Email.SmtpEndpoint.Host)
             .WithSmtpPort(environment.Email.SmtpEndpoint.Port)
             .WithFromAddress("event@example.com")

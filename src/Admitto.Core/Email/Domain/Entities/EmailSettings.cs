@@ -5,8 +5,7 @@ using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 namespace Amolenk.Admitto.Core.Email.Domain.Entities;
 
 /// <summary>
-/// Unified SMTP/email server settings aggregate keyed by <see cref="EmailSettingsScope"/> and
-/// <see cref="ScopeId"/>. Supports both team-scoped and event-scoped configurations.
+/// Unified SMTP/email server settings aggregate scoped by team and optional event.
 /// </summary>
 public class EmailSettings : Aggregate<EmailSettingsId>
 {
@@ -17,8 +16,8 @@ public class EmailSettings : Aggregate<EmailSettingsId>
 
     private EmailSettings(
         EmailSettingsId id,
-        EmailSettingsScope scope,
-        EmailScopeId scopeId,
+        TeamId teamId,
+        TicketedEventId? ticketedEventId,
         Hostname smtpHost,
         Port smtpPort,
         EmailAddress fromAddress,
@@ -27,8 +26,8 @@ public class EmailSettings : Aggregate<EmailSettingsId>
         ProtectedPassword? protectedPassword)
         : base(id)
     {
-        Scope = scope;
-        ScopeId = scopeId;
+        TeamId = teamId;
+        TicketedEventId = ticketedEventId;
         SmtpHost = smtpHost;
         SmtpPort = smtpPort;
         FromAddress = fromAddress;
@@ -37,8 +36,8 @@ public class EmailSettings : Aggregate<EmailSettingsId>
         ProtectedPassword = protectedPassword;
     }
 
-    public EmailSettingsScope Scope { get; private set; }
-    public EmailScopeId ScopeId { get; private set; }
+    public TeamId TeamId { get; private set; }
+    public TicketedEventId? TicketedEventId { get; private set; }
     public Hostname SmtpHost { get; private set; }
     public Port SmtpPort { get; private set; }
     public EmailAddress FromAddress { get; private set; }
@@ -51,8 +50,8 @@ public class EmailSettings : Aggregate<EmailSettingsId>
     public ProtectedPassword? ProtectedPassword { get; private set; }
 
     public static EmailSettings Create(
-        EmailSettingsScope scope,
-        EmailScopeId scopeId,
+        TeamId teamId,
+        TicketedEventId? ticketedEventId,
         Hostname smtpHost,
         Port smtpPort,
         EmailAddress fromAddress,
@@ -64,8 +63,8 @@ public class EmailSettings : Aggregate<EmailSettingsId>
 
         return new EmailSettings(
             EmailSettingsId.New(),
-            scope,
-            scopeId,
+            teamId,
+            ticketedEventId,
             smtpHost,
             smtpPort,
             fromAddress,

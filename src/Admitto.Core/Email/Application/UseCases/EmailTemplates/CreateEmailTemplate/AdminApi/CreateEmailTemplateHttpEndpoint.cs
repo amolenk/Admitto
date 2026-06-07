@@ -1,4 +1,3 @@
-using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
@@ -9,13 +8,11 @@ public static class CreateEmailTemplateHttpEndpoint
 {
     public static RouteGroupBuilder MapCreateEmailTemplate(
         this RouteGroupBuilder group,
-        EmailSettingsScope scope)
+        bool isEventScoped)
     {
-        var endpointName = scope == EmailSettingsScope.Team
-            ? "CreateTeamEmailTemplate"
-            : "CreateEventEmailTemplate";
+        var endpointName = isEventScoped ? "CreateEventEmailTemplate" : "CreateTeamEmailTemplate";
 
-        var handler = new Handler(scope);
+        var handler = new Handler(isEventScoped);
 
         group
             .MapPost("/", handler.HandleAsync)
@@ -25,7 +22,7 @@ public static class CreateEmailTemplateHttpEndpoint
         return group;
     }
 
-    private sealed class Handler(EmailSettingsScope scope)
+    private sealed class Handler(bool isEventScoped)
     {
         public async ValueTask<Created<CreateEmailTemplateResponse>> HandleAsync(
             Guid teamId,
@@ -35,17 +32,15 @@ public static class CreateEmailTemplateHttpEndpoint
             [FromKeyedServices(EmailModule.Key)] IUnitOfWork unitOfWork,
             CancellationToken ct)
         {
-            var scopeId = EmailScopeId.From(scope == EmailSettingsScope.Event ? eventId!.Value : teamId);
-            var parentScopeId = scope == EmailSettingsScope.Event ? EmailScopeId.From(teamId) : (EmailScopeId?)null;
+            var ticketedEventId = isEventScoped ? eventId!.Value : (Guid?)null;
 
             var command = new CreateEmailTemplateCommand(
-                scope,
-                scopeId,
+                teamId,
+                ticketedEventId,
                 request.Name,
                 request.Subject,
                 request.TextBody,
-                request.HtmlBody,
-                parentScopeId);
+                request.HtmlBody);
 
             var id = await handler.HandleAsync(command, ct);
 

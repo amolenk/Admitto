@@ -23,6 +23,8 @@ internal sealed class TriggerBulkEmailJobHandler(
         CancellationToken cancellationToken)
     {
         BulkEmailJobId bulkEmailJobId = BulkEmailJobId.From(command.BulkEmailJobId);
+        TeamId teamId = TeamId.From(command.TeamId);
+        TicketedEventId ticketedEventId = TicketedEventId.From(command.TicketedEventId);
 
         var scheduler = await schedulerFactory.GetScheduler(cancellationToken);
 
@@ -41,6 +43,8 @@ internal sealed class TriggerBulkEmailJobHandler(
         var jobDetail = JobBuilder.Create<SendBulkEmailJob>()
             .WithIdentity(jobKey)
             .UsingJobData(SendBulkEmailJob.BulkEmailJobIdKey, bulkEmailJobId.Value.ToString())
+            .UsingJobData(SendBulkEmailJob.TeamIdKey, teamId.Value.ToString())
+            .UsingJobData(SendBulkEmailJob.TicketedEventIdKey, ticketedEventId.Value.ToString())
             .StoreDurably(false)
             .Build();
 

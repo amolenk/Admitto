@@ -8,13 +8,11 @@ public static class GetEmailTemplatesHttpEndpoint
 {
     public static RouteGroupBuilder MapGetEmailTemplates(
         this RouteGroupBuilder group,
-        EmailSettingsScope scope)
+        bool isEventScoped)
     {
-        var endpointName = scope == EmailSettingsScope.Team
-            ? "GetTeamEmailTemplates"
-            : "GetEventEmailTemplates";
+        var endpointName = isEventScoped ? "GetEventEmailTemplates" : "GetTeamEmailTemplates";
 
-        var handler = new Handler(scope);
+        var handler = new Handler(isEventScoped);
 
         group
             .MapGet("/", handler.HandleAsync)
@@ -24,7 +22,7 @@ public static class GetEmailTemplatesHttpEndpoint
         return group;
     }
 
-    private sealed class Handler(EmailSettingsScope scope)
+    private sealed class Handler(bool isEventScoped)
     {
         public async ValueTask<Ok<IReadOnlyList<EmailTemplateListItemDto>>> HandleAsync(
             Guid teamId,
@@ -32,11 +30,12 @@ public static class GetEmailTemplatesHttpEndpoint
             IQueryHandler<GetEmailTemplatesQuery, IReadOnlyList<EmailTemplateListItemDto>> handler,
             CancellationToken ct)
         {
-            var scopeId = EmailScopeId.From(scope == EmailSettingsScope.Event ? eventId!.Value : teamId);
-            var parentScopeId = scope == EmailSettingsScope.Event ? EmailScopeId.From(teamId) : (EmailScopeId?)null;
+            var ticketedEventId = isEventScoped ? TicketedEventId.From(eventId!.Value) : (TicketedEventId?)null;
 
             var rows = await handler.HandleAsync(
-                new GetEmailTemplatesQuery(scope, scopeId, parentScopeId), ct);
+                new GetEmailTemplatesQuery(
+                    TeamId.From(teamId),
+                    ticketedEventId), ct);
 
             return TypedResults.Ok(rows);
         }

@@ -56,7 +56,7 @@ internal sealed class AdminEmailTemplatesFixture
             .Build();
 
         var eventTemplate = new EmailTemplateBuilder()
-            .ForEvent(eventId)
+            .ForTeamAndEvent(team.Id, eventId)
             .WithName(TemplateName)
             .WithSubject("Event subject")
             .Build();

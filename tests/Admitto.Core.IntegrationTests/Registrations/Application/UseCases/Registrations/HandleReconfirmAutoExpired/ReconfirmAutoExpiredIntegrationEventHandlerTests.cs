@@ -18,7 +18,7 @@ public sealed class ReconfirmAutoExpiredIntegrationEventHandlerTests(TestContext
 
         var sut = new ReconfirmAutoExpiredIntegrationEventHandler(Environment.RegistrationsDatabase.Context);
         await sut.HandleAsync(
-            new ReconfirmAutoExpiredIntegrationEvent(fixture.TicketedEventId.Value, [fixture.RegistrationId.Value]),
+            new ReconfirmAutoExpiredIntegrationEvent(fixture.TeamId.Value, fixture.TicketedEventId.Value, [fixture.RegistrationId.Value]),
             testContext.CancellationToken);
         await Environment.RegistrationsDatabase.Context.SaveChangesAsync(testContext.CancellationToken);
 
@@ -39,7 +39,7 @@ public sealed class ReconfirmAutoExpiredIntegrationEventHandlerTests(TestContext
 
         var sut = new ReconfirmAutoExpiredIntegrationEventHandler(Environment.RegistrationsDatabase.Context);
         await sut.HandleAsync(
-            new ReconfirmAutoExpiredIntegrationEvent(fixture.TicketedEventId.Value, [fixture.RegistrationId.Value]),
+            new ReconfirmAutoExpiredIntegrationEvent(fixture.TeamId.Value, fixture.TicketedEventId.Value, [fixture.RegistrationId.Value]),
             testContext.CancellationToken);
         await Environment.RegistrationsDatabase.Context.SaveChangesAsync(testContext.CancellationToken);
 
@@ -61,7 +61,7 @@ public sealed class ReconfirmAutoExpiredIntegrationEventHandlerTests(TestContext
 
         var sut = new ReconfirmAutoExpiredIntegrationEventHandler(Environment.RegistrationsDatabase.Context);
         await sut.HandleAsync(
-            new ReconfirmAutoExpiredIntegrationEvent(fixture.TicketedEventId.Value, [fixture.RegistrationId.Value]),
+            new ReconfirmAutoExpiredIntegrationEvent(fixture.TeamId.Value, fixture.TicketedEventId.Value, [fixture.RegistrationId.Value]),
             testContext.CancellationToken);
         await Environment.RegistrationsDatabase.Context.SaveChangesAsync(testContext.CancellationToken);
 
@@ -80,7 +80,7 @@ public sealed class ReconfirmAutoExpiredIntegrationEventHandlerTests(TestContext
         await ClearOutboxAsync();
 
         var integrationEventId = Guid.NewGuid();
-        var integrationEvent = new ReconfirmAutoExpiredIntegrationEvent(fixture.TicketedEventId.Value, [fixture.RegistrationId.Value])
+        var integrationEvent = new ReconfirmAutoExpiredIntegrationEvent(fixture.TeamId.Value, fixture.TicketedEventId.Value, [fixture.RegistrationId.Value])
         {
             IntegrationEventId = integrationEventId
         };
@@ -107,7 +107,7 @@ public sealed class ReconfirmAutoExpiredIntegrationEventHandlerTests(TestContext
         await ClearOutboxAsync();
 
         var integrationEventId = Guid.NewGuid();
-        var integrationEvent = new ReconfirmAutoExpiredIntegrationEvent(fixture.TicketedEventId.Value, [fixture.RegistrationId.Value])
+        var integrationEvent = new ReconfirmAutoExpiredIntegrationEvent(fixture.TeamId.Value, fixture.TicketedEventId.Value, [fixture.RegistrationId.Value])
         {
             IntegrationEventId = integrationEventId
         };

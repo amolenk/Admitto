@@ -10,7 +10,8 @@ internal sealed class DeleteEmailSettingsHandler(IEmailWriteStore writeStore)
     public async ValueTask HandleAsync(DeleteEmailSettingsCommand command, CancellationToken cancellationToken)
     {
         var settings = await writeStore.EmailSettings.GetUntrackedAsync(
-            s => s.Scope == command.Scope && s.ScopeId == command.ScopeId,
+            s => s.TeamId == TeamId.From(command.TeamId) &&
+                 s.TicketedEventId == (command.TicketedEventId.HasValue ? TicketedEventId.From(command.TicketedEventId.Value) : null),
             command.ExpectedVersion,
             cancellationToken);
 

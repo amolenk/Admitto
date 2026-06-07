@@ -41,7 +41,7 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
         var (job, fakeSender, fanOut) = await SetupAsync(
             recipients: [Recipient("alice@example.com", "Alice"), Recipient("bob@example.com", "Bob")]);
 
-        await fanOut.Execute(JobContext(job.Id));
+        await fanOut.Execute(JobContext(job));
 
         var reloaded = await ReloadJobAsync(job.Id);
         reloaded.Status.ShouldBe(BulkEmailJobStatus.Completed);
@@ -66,7 +66,7 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
         fakeSender.FailOn("alice@example.com");
         fakeSender.FailOn("bob@example.com");
 
-        await fanOut.Execute(JobContext(job.Id));
+        await fanOut.Execute(JobContext(job));
 
         var reloaded = await ReloadJobAsync(job.Id);
         reloaded.Status.ShouldBe(BulkEmailJobStatus.Failed);
@@ -87,7 +87,7 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
             recipients: [Recipient("alice@example.com"), Recipient("bob@example.com")]);
         fakeSender.FailOn("bob@example.com");
 
-        await fanOut.Execute(JobContext(job.Id));
+        await fanOut.Execute(JobContext(job));
 
         var reloaded = await ReloadJobAsync(job.Id);
         reloaded.Status.ShouldBe(BulkEmailJobStatus.PartiallyFailed);
@@ -100,7 +100,7 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
     {
         var (job, fakeSender, fanOut) = await SetupAsync(recipients: []);
 
-        await fanOut.Execute(JobContext(job.Id));
+        await fanOut.Execute(JobContext(job));
 
         var reloaded = await ReloadJobAsync(job.Id);
         reloaded.Status.ShouldBe(BulkEmailJobStatus.Completed);
@@ -136,7 +136,7 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
         var fanOut = BuildFanOut(fakeSender, recipientResolver: NeverCalledResolver());
 
         // Act
-        await fanOut.Execute(JobContext(job.Id));
+        await fanOut.Execute(JobContext(job));
 
         // Assert: only Bob was sent on the resume pickup; Alice was already Sent.
         fakeSender.SentMessages.Count.ShouldBe(1);
@@ -185,7 +185,7 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
 
         // Act + Assert: the worker should NOT throw once the dedup recovery
         // gap is fixed. Until then we capture current behaviour.
-        await Should.ThrowAsync<JobExecutionException>(() => fanOut.Execute(JobContext(job.Id)));
+        await Should.ThrowAsync<JobExecutionException>(() => fanOut.Execute(JobContext(job)));
 
         var logs = await Environment.EmailDatabase.Context.EmailLog.AsNoTracking()
             .Where(l => l.IdempotencyKey == idempotencyKey)
@@ -207,7 +207,7 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
             tracked.RequestCancellation(DateTimeOffset.UtcNow);
         });
 
-        await fanOut.Execute(JobContext(job.Id));
+        await fanOut.Execute(JobContext(job));
 
         var reloaded = await ReloadJobAsync(job.Id);
         reloaded.Status.ShouldBe(BulkEmailJobStatus.Cancelled);
@@ -251,7 +251,7 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
         var fakeSender = new FakeBulkSmtpSender();
         var fanOut = BuildFanOut(fakeSender, recipientResolver: NeverCalledResolver());
 
-        await fanOut.Execute(JobContext(job.Id));
+        await fanOut.Execute(JobContext(job));
 
         var reloaded = await ReloadJobAsync(job.Id);
         reloaded.Status.ShouldBe(BulkEmailJobStatus.Cancelled);
@@ -295,11 +295,11 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
     {
         var protectedSecret = TestProtectedSecretFactory.Create();
         var settings = new EventEmailSettingsBuilder()
-            .ForEvent(eventId)
+            .ForTeamAndEvent(teamId, eventId)
             .WithBasicAuth(protectedPassword: protectedSecret.Protect("pass"))
             .Build();
         var template = new EmailTemplateBuilder()
-            .ForEvent(eventId)
+            .ForTeamAndEvent(teamId, eventId)
             .WithName(DefaultEmailType)
             .WithSubject("Hi {{ first_name }}")
             .WithTextBody("Hello {{ first_name }}")
@@ -353,10 +353,12 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
         return resolver;
     }
 
-    private static IJobExecutionContext JobContext(BulkEmailJobId jobId)
+    private static IJobExecutionContext JobContext(BulkEmailJob job)
     {
         var data = new JobDataMap();
-        data[SendBulkEmailJob.BulkEmailJobIdKey] = jobId.Value.ToString();
+        data[SendBulkEmailJob.BulkEmailJobIdKey] = job.Id.Value.ToString();
+        data[SendBulkEmailJob.TeamIdKey] = job.TeamId.Value.ToString();
+        data[SendBulkEmailJob.TicketedEventIdKey] = job.TicketedEventId.Value.ToString();
 
         var context = Substitute.For<IJobExecutionContext>();
         context.MergedJobDataMap.Returns(data);

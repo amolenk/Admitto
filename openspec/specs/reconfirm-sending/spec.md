@@ -120,7 +120,7 @@ For every `TicketedEvent` with an active `TicketedEventReconfirmPolicy` and stat
 When `EvaluateReconfirmJob` fires for an event whose trigger job data has `AutoCancelEnabled=true`, the tick SHALL extend its existing email log query to also return the **total count** of `reconfirm` emails sent to each candidate (not just the most recent timestamp). The tick then partitions the eligible `Registered, HasReconfirmed=false` candidate set (after applying the `MinEmailInterval` filter) into two disjoint sets:
 
 - **Reconfirm set** — candidates where `email_log_count < MaxReconfirmAttempts`: included in the `BulkEmailJob` as before.
-- **Auto-cancel set** — candidates where `email_log_count >= MaxReconfirmAttempts`: excluded from the `BulkEmailJob`; the Email module SHALL enqueue a `ReconfirmAutoExpiredIntegrationEvent { TicketedEventId, RegistrationIds[] }` on its outbox in the same DB transaction.
+- **Auto-cancel set** — candidates where `email_log_count >= MaxReconfirmAttempts`: excluded from the `BulkEmailJob`; the Email module SHALL enqueue a `ReconfirmAutoExpiredIntegrationEvent { TeamId, TicketedEventId, RegistrationIds[] }` on its outbox in the same DB transaction.
 
 When `AutoCancelEnabled=false`, all candidates remain in the reconfirm set and no `ReconfirmAutoExpiredIntegrationEvent` is published (existing behaviour).
 

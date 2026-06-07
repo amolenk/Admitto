@@ -25,8 +25,15 @@ internal sealed class UpdateEmailTemplateHandler(IEmailWriteStore writeStore)
     public async ValueTask HandleAsync(UpdateEmailTemplateCommand command, CancellationToken ct)
     {
         EmailTemplateId id = EmailTemplateId.From(command.Id);
+        var teamId = TeamId.From(command.TeamId);
+        TicketedEventId? ticketedEventId = command.TicketedEventId.HasValue
+            ? TicketedEventId.From(command.TicketedEventId.Value)
+            : null;
 
-        var template = await writeStore.EmailTemplates.GetAsync(t => t.Id == id, command.Version, ct);
+        var template = await writeStore.EmailTemplates.GetAsync(
+            t => t.Id == id && t.TeamId == teamId && t.TicketedEventId == ticketedEventId,
+            command.Version,
+            ct);
 
         if (command.Version != template.Version)
             throw new BusinessRuleViolationException(
@@ -45,8 +52,8 @@ internal sealed class UpdateEmailTemplateHandler(IEmailWriteStore writeStore)
 
             var alreadyExists = await writeStore.EmailTemplates.AnyAsync(
                 t => t.Id != id &&
-                     t.Scope == template.Scope &&
-                     t.ScopeId == template.ScopeId &&
+                     t.TeamId == teamId &&
+                     t.TicketedEventId == ticketedEventId &&
                      t.Name.ToLower() == command.Name!.ToLower(),
                 ct);
 

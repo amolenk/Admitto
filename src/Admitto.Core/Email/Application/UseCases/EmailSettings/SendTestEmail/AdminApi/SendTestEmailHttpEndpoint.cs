@@ -8,10 +8,10 @@ public static class SendTestEmailHttpEndpoint
 {
     public static RouteGroupBuilder MapSendTestEmail(
         this RouteGroupBuilder group,
-        EmailSettingsScope scope)
+        bool isEventScoped)
     {
-        var endpointName = scope == EmailSettingsScope.Team ? "TestTeamEmailSettings" : "TestEventEmailSettings";
-        var handler = new Handler(scope);
+        var endpointName = isEventScoped ? "TestEventEmailSettings" : "TestTeamEmailSettings";
+        var handler = new Handler(isEventScoped);
 
         group
             .MapPost("/test", handler.HandleAsync)
@@ -21,7 +21,7 @@ public static class SendTestEmailHttpEndpoint
         return group;
     }
 
-    private sealed class Handler(EmailSettingsScope scope)
+    private sealed class Handler(bool isEventScoped)
     {
         public async ValueTask<Ok> HandleAsync(
             Guid teamId,
@@ -30,9 +30,9 @@ public static class SendTestEmailHttpEndpoint
             ICommandHandler<SendTestEmailCommand> handler,
             CancellationToken ct)
         {
-            var scopeId = EmailScopeId.From(scope == EmailSettingsScope.Event ? eventId!.Value : teamId);
+            var ticketedEventId = isEventScoped ? eventId!.Value : (Guid?)null;
 
-            await handler.HandleAsync(request.ToCommand(scope, scopeId), ct);
+            await handler.HandleAsync(request.ToCommand(teamId, ticketedEventId), ct);
 
             return TypedResults.Ok();
         }

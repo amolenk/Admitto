@@ -41,7 +41,7 @@ The Email module SHALL expose admin HTTP endpoints to read, create, update, and 
 ---
 
 ### Requirement: Email module exposes a facade for cross-module configuration checks
-The Email module's Contracts project SHALL expose an `IEventEmailFacade` interface with a method that reports whether email is configured for a given event. The facade implementation SHALL return true if and only if effective email settings exist for the event AND those settings pass the domain `IsValid` check (all required fields populated). Effective settings SHALL be resolved as: (1) the event-scoped `EmailSettings` row for `(Scope=Event, ScopeId=eventId)` if present; otherwise (2) the team-scoped `EmailSettings` row for `(Scope=Team, ScopeId=teamId)` of the event's owning team if present; otherwise none. There SHALL be no per-field merging across the two scopes — when event-scoped settings exist, team-scoped settings are ignored entirely. The facade SHALL NOT perform an SMTP connectivity probe.
+The Email module's Contracts project SHALL expose an `IEventEmailFacade` interface with a method that reports whether email is configured for a given event. The facade implementation SHALL return true if and only if effective email settings exist for the event AND those settings pass the domain `IsValid` check (all required fields populated). Effective settings SHALL be resolved as: (1) the event-scoped `EmailSettings` row for `(TeamId=teamId, TicketedEventId=eventId)` if present; otherwise (2) the team-scoped `EmailSettings` row for `(TeamId=teamId, TicketedEventId=null)` of the event's owning team if present; otherwise none. There SHALL be no per-field merging across the two scopes — when event-scoped settings exist, team-scoped settings are ignored entirely. The facade SHALL NOT perform an SMTP connectivity probe.
 
 #### Scenario: Reports configured when event-scoped settings exist and are valid
 - **WHEN** `IsEmailConfiguredAsync` is called for an event whose event-scoped `EmailSettings` row exists with all required fields populated
@@ -72,28 +72,28 @@ Admin endpoints and the `IEventEmailFacade` implementation SHALL be registered i
 - **WHEN** the API host requests `IEventEmailFacade` from DI
 - **THEN** an implementation is resolved without requiring `HostCapability.Email`
 
-### Requirement: Email module owns email server settings as a single scope-keyed aggregate
-The system SHALL provide an Email module (`Admitto.Module.Email`) that owns email server settings as a single `EmailSettings` aggregate keyed by `(Scope, ScopeId)` where `Scope ∈ {Team, Event}`. Each settings record SHALL belong to exactly one scope (a specific team OR a specific event). Settings SHALL include at minimum: SMTP host, SMTP port, from-address, authentication mode (`none`, `basic`), and credentials when applicable. The aggregate SHALL carry a `Version` token for optimistic concurrency and SHALL be persisted in a dedicated `email` database schema. A unique index on `(scope, scope_id)` SHALL enforce at most one settings row per scope per scopeId.
+### Requirement: Email module owns email server settings as a scoped aggregate
+The system SHALL provide an Email module (`Admitto.Module.Email`) that owns email server settings as a single `EmailSettings` aggregate scoped by required `TeamId` and nullable `TicketedEventId`. Team-level rows SHALL store `TicketedEventId=null`; event-level rows SHALL store the event id. Each settings record SHALL belong to exactly one scope (a specific team OR a specific event). Settings SHALL include at minimum: SMTP host, SMTP port, from-address, authentication mode (`none`, `basic`), and credentials when applicable. The aggregate SHALL carry a `Version` token for optimistic concurrency and SHALL be persisted in a dedicated `email` database schema. Unique indexes on `(team_id)` for team rows and `(team_id, ticketed_event_id)` for event rows SHALL enforce at most one settings row per scope.
 
 #### Scenario: Create event-scoped email settings
 - **WHEN** an organizer creates email settings for event "devconf-2026" with host "smtp.acme.org", port 587, from-address "events@acme.org", auth "basic", username "noreply", password "secret"
-- **THEN** an `EmailSettings` aggregate is persisted in the `email` schema with `Scope=Event` and `ScopeId` referencing "devconf-2026"
+- **THEN** an `EmailSettings` aggregate is persisted in the `email` schema with `TeamId` referencing "acme" and `TicketedEventId` referencing "devconf-2026"
 
 #### Scenario: Create team-scoped email settings
 - **WHEN** an organizer creates email settings for team "acme" with the same fields
-- **THEN** an `EmailSettings` aggregate is persisted with `Scope=Team` and `ScopeId` referencing the "acme" team id
+- **THEN** an `EmailSettings` aggregate is persisted with `TeamId` referencing the "acme" team id and `TicketedEventId=null`
 
 #### Scenario: At most one settings record per event scope
-- **WHEN** an organizer attempts to create a second settings row for `(Scope=Event, ScopeId=devconf-2026)`
+- **WHEN** an organizer attempts to create a second settings row for `(TeamId=acme, TicketedEventId=devconf-2026)`
 - **THEN** the request is rejected with an "already exists" error
 
 #### Scenario: At most one settings record per team scope
-- **WHEN** an organizer attempts to create a second settings row for `(Scope=Team, ScopeId=acme)`
+- **WHEN** an organizer attempts to create a second settings row for `(TeamId=acme, TicketedEventId=null)`
 - **THEN** the request is rejected with an "already exists" error
 
 #### Scenario: Existing event-scoped data is preserved through the storage change
 - **WHEN** the EF migration runs against a database that previously contained rows in `event_email_settings`
-- **THEN** every prior row appears in the new `email_settings` table as `(scope='event', scope_id=<original ticketed_event_id>, …)` with all other fields preserved
+- **THEN** every prior row appears in the new `email_settings` table with `team_id` and nullable `ticketed_event_id` populated, with all other fields preserved
 
 ---
 
@@ -116,7 +116,7 @@ The Email module SHALL provide an internal contract (not exposed to other module
 
 ### Requirement: Organizers can send a diagnostic test email via the saved settings of either scope
 
-The Email module SHALL expose admin HTTP endpoints that send a diagnostic email using the saved settings of a single scope, so organizers can verify SMTP credentials before relying on them for real sends. The endpoints SHALL exist at both team scope (`POST /admin/teams/{teamSlug}/email-settings/test`) and event scope (`POST /admin/teams/{teamSlug}/events/{eventSlug}/email-settings/test`), and SHALL share the same `(Scope, ScopeId)`-parameterised slice family used by the read/upsert/delete endpoints.
+The Email module SHALL expose admin HTTP endpoints that send a diagnostic email using the saved settings of a single scope, so organizers can verify SMTP credentials before relying on them for real sends. The endpoints SHALL exist at both team scope (`POST /admin/teams/{teamSlug}/email-settings/test`) and event scope (`POST /admin/teams/{teamSlug}/events/{eventSlug}/email-settings/test`), and SHALL share the same `TeamId` + nullable `TicketedEventId` slice family used by the read/upsert/delete endpoints.
 
 The request body SHALL carry a single `recipient` field (an email address). The endpoint SHALL load only the email-settings row matching the requested scope and SHALL NOT fall back to the team scope when the event-scope row is missing — the test reflects exactly the settings that the requested scope would use today. The diagnostic send SHALL be performed synchronously through `IEmailSender` (no outbox, no Quartz job) so the caller receives the success or failure result on the same HTTP response. The send SHALL NOT write any row to `email_log`, because the diagnostic is not real correspondence.
 
@@ -165,4 +165,3 @@ The endpoint SHALL be authorized via team membership on the team that owns the s
 - **AND** no diagnostic email is sent
 
 ---
-

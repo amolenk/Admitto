@@ -19,7 +19,8 @@ internal sealed class SendTestEmailHandler(
         var settings = await writeStore.EmailSettings
             .AsNoTracking()
             .FirstOrDefaultAsync(
-                s => s.Scope == command.Scope && s.ScopeId == command.ScopeId,
+                s => s.TeamId == TeamId.From(command.TeamId) &&
+                     s.TicketedEventId == (command.TicketedEventId.HasValue ? TicketedEventId.From(command.TicketedEventId.Value) : null),
                 cancellationToken)
             ?? throw new BusinessRuleViolationException(Errors.SettingsNotConfigured);
 

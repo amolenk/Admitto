@@ -4,17 +4,17 @@
 TBD - created by archiving change add-email-module. Update Purpose after archive.
 ## Requirements
 ### Requirement: Email templates are configurable per team and per event
-The Email module SHALL persist `EmailTemplate` records scoped to either a team or a specific ticketed event. Each template SHALL carry a `Type`, a `Subject`, a `TextBody`, and an `HtmlBody`. A team SHALL have at most one template per `Type`; an event SHALL have at most one template per `Type`.
+The Email module SHALL persist `EmailTemplate` records scoped to either a team or a specific ticketed event. Each template SHALL carry required `TeamId` and nullable `TicketedEventId`; team-level rows SHALL use `TicketedEventId=null` and event-level rows SHALL use the event id. Each template SHALL carry a `Type`, a `Subject`, a `TextBody`, and an `HtmlBody`. A team SHALL have at most one template per `Type`; an event SHALL have at most one template per `Type`.
 
 The supported `Type` values SHALL be: `ticket` (single registration confirmation), `cancellation` (attendee-request cancellation), `visa-letter-denied` (visa denial cancellation), `ticket-types-removed` (system/admin cancellation due to removed ticket types), `reconfirm` (recurring reconfirm-attendance prompt), `reconfirm-cancelled` (notification sent when a registration is auto-cancelled after exhausting reconfirm attempts), and `bulk-custom` (catch-all type used when ad-hoc subject/body fully overrides the resolved template; see `bulk-email` capability).
 
 #### Scenario: Create a team-scoped template
 - **WHEN** an organizer creates a `ticket` template for team "acme" with subject "Welcome to {{ event_name }}", a text body, and an html body
-- **THEN** an `EmailTemplate` is persisted in the `email` schema with scope=team, scopeId=acmeTeamId, type="ticket"
+- **THEN** an `EmailTemplate` is persisted in the `email` schema with `TeamId=acmeTeamId`, `TicketedEventId=null`, type="ticket"
 
 #### Scenario: Create an event-scoped template
 - **WHEN** an organizer creates a `ticket` template for event "devconf-2026" on team "acme"
-- **THEN** an `EmailTemplate` is persisted with scope=event, scopeId=devconfEventId, type="ticket"
+- **THEN** an `EmailTemplate` is persisted with `TeamId=acmeTeamId`, `TicketedEventId=devconfEventId`, type="ticket"
 
 #### Scenario: At most one template per scope per type
 - **WHEN** an organizer creates a second `ticket` template for the same event
@@ -22,24 +22,24 @@ The supported `Type` values SHALL be: `ticket` (single registration confirmation
 
 #### Scenario: Create a reconfirm template
 - **WHEN** an organizer creates a `reconfirm` team-scoped template for team "acme"
-- **THEN** an `EmailTemplate` is persisted with scope=team, type="reconfirm" and is used by the reconfirm scheduler for any of the team's events lacking an event-scoped override
+- **THEN** an `EmailTemplate` is persisted with `TicketedEventId=null`, type="reconfirm" and is used by the reconfirm scheduler for any of the team's events lacking an event-scoped override
 
 #### Scenario: Create a cancellation template
 - **WHEN** an organizer creates a `cancellation` template for team "acme"
-- **THEN** an `EmailTemplate` is persisted with scope=team, type="cancellation" and is used for attendee-request cancellations for any of the team's events lacking an event-scoped override
+- **THEN** an `EmailTemplate` is persisted with `TicketedEventId=null`, type="cancellation" and is used for attendee-request cancellations for any of the team's events lacking an event-scoped override
 
 #### Scenario: Create a visa-letter-denied template
 - **WHEN** an organizer creates a `visa-letter-denied` template for team "acme"
-- **THEN** an `EmailTemplate` is persisted with scope=team, type="visa-letter-denied"
+- **THEN** an `EmailTemplate` is persisted with `TicketedEventId=null`, type="visa-letter-denied"
 
 #### Scenario: Create a ticket-types-removed template
 - **WHEN** an organizer creates a `ticket-types-removed` template for team "acme"
-- **THEN** an `EmailTemplate` is persisted with scope=team, type="ticket-types-removed"
+- **THEN** an `EmailTemplate` is persisted with `TicketedEventId=null`, type="ticket-types-removed"
 
 #### Scenario: Create a reconfirm-cancelled template
 
 - **WHEN** an organizer creates a `reconfirm-cancelled` template for team "acme"
-- **THEN** an `EmailTemplate` is persisted with scope=team, type="reconfirm-cancelled" and is used as the auto-cancel notification for any of the team's events lacking an event-scoped override
+- **THEN** an `EmailTemplate` is persisted with `TicketedEventId=null`, type="reconfirm-cancelled" and is used as the auto-cancel notification for any of the team's events lacking an event-scoped override
 
 #### Scenario: bulk-custom type cannot be persisted as a template
 - **WHEN** an organizer attempts to create or upsert a template with `type="bulk-custom"`
@@ -48,7 +48,7 @@ The supported `Type` values SHALL be: `ticket` (single registration confirmation
 ---
 
 ### Requirement: Template lookup precedence is event > team > built-in default
-When the Email module needs a template of type `T` for event `E` on team `Team(E)`, it SHALL resolve in this order: (1) the event-scoped template for `(scope=event, scopeId=E, type=T)` if present; otherwise (2) the team-scoped template for `(scope=team, scopeId=Team(E), type=T)` if present; otherwise (3) the built-in default template for type `T` shipped as an embedded resource. The lookup SHALL be a single resolution pass — no field-level merging across scopes.
+When the Email module needs a template of type `T` for event `E` on team `Team(E)`, it SHALL resolve in this order: (1) the event-scoped template for `(TeamId=Team(E), TicketedEventId=E, type=T)` if present; otherwise (2) the team-scoped template for `(TeamId=Team(E), TicketedEventId=null, type=T)` if present; otherwise (3) the built-in default template for type `T` shipped as an embedded resource. The lookup SHALL be a single resolution pass — no field-level merging across scopes.
 
 #### Scenario: Event-scoped template wins over team-scoped
 - **WHEN** both a team-scoped `ticket` template and an event-scoped `ticket` template exist for the event in question

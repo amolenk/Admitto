@@ -17,19 +17,19 @@ The system SHALL replace primitive fields on `EmailLog` with typed VOs:
 - **WHEN** an `EmailLog` entity is constructed
 - **THEN** `TeamId`, `TicketedEventId`, `RegistrationId`, and `Recipient` use the respective VO types
 
-### Requirement: EmailSettings uses EmailScopeId VO
-The system SHALL introduce an `EmailScopeId` Vogen value object (Guid-backed) in `Email/Domain/ValueObjects/` and replace the `Guid ScopeId` field on `EmailSettings` with `EmailScopeId ScopeId`.
+### Requirement: EmailSettings uses explicit scope VOs
+The system SHALL use the shared `TeamId` value object and optional `TicketedEventId` value object on `EmailSettings`; it SHALL NOT use a generic email scope id.
 
-#### Scenario: EmailSettings is created with typed ScopeId
+#### Scenario: EmailSettings is created with explicit scope ids
 - **WHEN** `EmailSettings.Create` is called
-- **THEN** the `ScopeId` property is of type `EmailScopeId` VO, not `Guid`
+- **THEN** `TeamId` is required and `TicketedEventId` is nullable
 
-### Requirement: EmailTemplate uses EmailScopeId VO
-The system SHALL replace the `Guid ScopeId` field on `EmailTemplate` with `EmailScopeId ScopeId`, using the same `EmailScopeId` VO introduced for `EmailSettings`.
+### Requirement: EmailTemplate uses explicit scope VOs
+The system SHALL use the shared `TeamId` value object and optional `TicketedEventId` value object on `EmailTemplate`; it SHALL NOT use a generic email scope id.
 
-#### Scenario: EmailTemplate is created with typed ScopeId
+#### Scenario: EmailTemplate is created with explicit scope ids
 - **WHEN** `EmailTemplate.Create` is called
-- **THEN** the `ScopeId` property is of type `EmailScopeId` VO, not `Guid`
+- **THEN** `TeamId` is required and `TicketedEventId` is nullable
 
 ### Requirement: ExternalListItem uses EmailAddress VO
 The system SHALL replace the `string Email` field on `ExternalListItem` with the existing `EmailAddress` VO.

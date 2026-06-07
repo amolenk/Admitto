@@ -15,7 +15,10 @@ internal sealed class BulkEmailJobRequestedDomainEventHandler(
         BulkEmailJobRequestedDomainEvent domainEvent,
         CancellationToken cancellationToken)
     {
-        outbox.Enqueue(new TriggerBulkEmailJob.TriggerBulkEmailJobCommand(domainEvent.BulkEmailJobId.Value));
+        outbox.Enqueue(new TriggerBulkEmailJob.TriggerBulkEmailJobCommand(
+            domainEvent.BulkEmailJobId.Value,
+            domainEvent.TeamId.Value,
+            domainEvent.TicketedEventId.Value));
 
         return ValueTask.CompletedTask;
     }

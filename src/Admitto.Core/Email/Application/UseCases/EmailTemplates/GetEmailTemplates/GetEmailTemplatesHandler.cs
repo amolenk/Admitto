@@ -14,7 +14,8 @@ internal sealed class GetEmailTemplatesHandler(IEmailWriteStore writeStore)
     {
         var dbRows = await writeStore.EmailTemplates
             .AsNoTracking()
-            .Where(t => t.Scope == query.Scope && t.ScopeId == query.ScopeId)
+            .Where(t => t.TeamId == query.TeamId &&
+                        t.TicketedEventId == query.TicketedEventId)
             .ToListAsync(ct);
 
         var result = new List<EmailTemplateListItemDto>();
@@ -64,12 +65,12 @@ internal sealed class GetEmailTemplatesHandler(IEmailWriteStore writeStore)
 
         // Custom templates from parent scope (e.g. team-level when listing for an event)
         // that have not already been overridden at the current scope.
-        if (query.ParentScopeId.HasValue)
+        if (query.TicketedEventId.HasValue)
         {
             var parentRows = await writeStore.EmailTemplates
                 .AsNoTracking()
-                .Where(t => t.Scope == EmailSettingsScope.Team &&
-                            t.ScopeId == query.ParentScopeId.Value)
+                .Where(t => t.TeamId == query.TeamId &&
+                            t.TicketedEventId == null)
                 .ToListAsync(ct);
 
             var parentCustomRows = parentRows.Where(t => !BuiltInEmailTemplateNames.IsReserved(t.Name));

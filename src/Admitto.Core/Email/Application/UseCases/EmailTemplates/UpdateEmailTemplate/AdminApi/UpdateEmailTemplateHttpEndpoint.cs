@@ -9,38 +9,43 @@ public static class UpdateEmailTemplateHttpEndpoint
 {
     public static RouteGroupBuilder MapUpdateEmailTemplate(
         this RouteGroupBuilder group,
-        EmailSettingsScope scope)
+        bool isEventScoped)
     {
-        var endpointName = scope == EmailSettingsScope.Team
-            ? "UpdateTeamEmailTemplate"
-            : "UpdateEventEmailTemplate";
+        var endpointName = isEventScoped ? "UpdateEventEmailTemplate" : "UpdateTeamEmailTemplate";
 
         group
-            .MapPut("/{id:guid}", UpdateEmailTemplate)
+            .MapPut("/{id:guid}", new Handler(isEventScoped).HandleAsync)
             .WithName(endpointName)
             .RequireAuthorization(policy => policy.RequireTeamMembership(TeamMembershipRole.Organizer));
 
         return group;
     }
 
-    private static async ValueTask<Ok> UpdateEmailTemplate(
-        Guid id,
-        UpdateEmailTemplateHttpRequest request,
-        ICommandHandler<UpdateEmailTemplateCommand> handler,
-        [FromKeyedServices(EmailModule.Key)] IUnitOfWork unitOfWork,
-        CancellationToken ct)
+    private sealed class Handler(bool isEventScoped)
     {
-        var command = new UpdateEmailTemplateCommand(
-            id,
-            request.Name,
-            request.Subject,
-            request.TextBody,
-            request.HtmlBody,
-            request.Version);
+        public async ValueTask<Ok> HandleAsync(
+            Guid id,
+            Guid teamId,
+            Guid? eventId,
+            UpdateEmailTemplateHttpRequest request,
+            ICommandHandler<UpdateEmailTemplateCommand> handler,
+            [FromKeyedServices(EmailModule.Key)] IUnitOfWork unitOfWork,
+            CancellationToken ct)
+        {
+            var command = new UpdateEmailTemplateCommand(
+                id,
+                teamId,
+                isEventScoped ? eventId!.Value : null,
+                request.Name,
+                request.Subject,
+                request.TextBody,
+                request.HtmlBody,
+                request.Version);
 
-        await handler.HandleAsync(command, ct);
-        await unitOfWork.SaveChangesAsync(ct);
+            await handler.HandleAsync(command, ct);
+            await unitOfWork.SaveChangesAsync(ct);
 
-        return TypedResults.Ok();
+            return TypedResults.Ok();
+        }
     }
 }

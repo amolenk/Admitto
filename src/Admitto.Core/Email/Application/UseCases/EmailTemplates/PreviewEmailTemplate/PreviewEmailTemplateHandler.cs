@@ -14,8 +14,8 @@ internal sealed class PreviewEmailTemplateHandler(IEmailRenderer renderer)
         CancellationToken ct)
     {
         var draftTemplate = EmailTemplate.Create(
-            EmailSettingsScope.Team,
-            EmailScopeId.From(Guid.Empty),
+            TeamId.New(),
+            null,
             "preview",
             query.Subject,
             query.TextBody,

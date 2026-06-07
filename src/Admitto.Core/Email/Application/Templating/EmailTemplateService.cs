@@ -16,12 +16,12 @@ internal sealed class EmailTemplateService(IEmailWriteStore writeStore) : IEmail
         var candidates = await writeStore.EmailTemplates
             .AsNoTracking()
             .Where(t => t.Name == name &&
-                        ((t.Scope == EmailSettingsScope.Event && t.ScopeId == EmailScopeId.From(eventId.Value)) ||
-                         (t.Scope == EmailSettingsScope.Team  && t.ScopeId == EmailScopeId.From(teamId.Value))))
+                        t.TeamId == teamId &&
+                        (t.TicketedEventId == eventId || t.TicketedEventId == null))
             .ToListAsync(cancellationToken);
 
-        var template = candidates.FirstOrDefault(t => t.Scope == EmailSettingsScope.Event)
-                    ?? candidates.FirstOrDefault(t => t.Scope == EmailSettingsScope.Team);
+        var template = candidates.FirstOrDefault(t => t.TicketedEventId == eventId)
+                    ?? candidates.FirstOrDefault(t => t.TicketedEventId == null);
 
         if (template is not null)
             return template;
@@ -37,7 +37,9 @@ internal sealed class EmailTemplateService(IEmailWriteStore writeStore) : IEmail
         var template = await writeStore.EmailTemplates
             .AsNoTracking()
             .FirstOrDefaultAsync(
-                t => t.Name == name && t.Scope == EmailSettingsScope.Team && t.ScopeId == EmailScopeId.From(teamId.Value),
+                t => t.Name == name &&
+                     t.TeamId == teamId &&
+                     t.TicketedEventId == null,
                 cancellationToken);
 
         if (template is not null)
@@ -52,8 +54,8 @@ internal sealed class EmailTemplateService(IEmailWriteStore writeStore) : IEmail
             ?? throw new InvalidOperationException($"No template found for name '{name}' and no built-in default exists.");
 
         return EmailTemplate.Create(
-            EmailSettingsScope.Team,
-            EmailScopeId.From(Guid.Empty),
+            TeamId.New(),
+            null,
             entry.Name,
             entry.DefaultSubject,
             entry.DefaultTextBody,

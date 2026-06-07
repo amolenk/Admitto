@@ -25,8 +25,8 @@ internal sealed class CreateEmailSettingsHandler(
             : (ProtectedPassword?)null;
 
         var settings = Domain.Entities.EmailSettings.Create(
-            command.Scope,
-            command.ScopeId,
+            TeamId.From(command.TeamId),
+            command.TicketedEventId.HasValue ? TicketedEventId.From(command.TicketedEventId.Value) : null,
             Hostname.From(command.SmtpHost),
             Port.From(command.SmtpPort),
             EmailAddress.From(command.FromAddress),

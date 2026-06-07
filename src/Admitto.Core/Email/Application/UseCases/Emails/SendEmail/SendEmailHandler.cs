@@ -27,7 +27,11 @@ internal sealed class SendEmailHandler(
 
         // Dedup: skip if already processed.
         var alreadySent = await writeStore.EmailLog
-            .AnyAsync(l => l.IdempotencyKey == command.IdempotencyKey, cancellationToken);
+            .AnyAsync(
+                l => l.TeamId == teamId &&
+                     l.TicketedEventId == ticketedEventId &&
+                     l.IdempotencyKey == command.IdempotencyKey,
+                cancellationToken);
 
         if (alreadySent)
             return;

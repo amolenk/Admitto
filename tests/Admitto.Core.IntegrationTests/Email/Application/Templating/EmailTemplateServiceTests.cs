@@ -15,7 +15,7 @@ public sealed class EmailTemplateServiceTests(TestContext testContext) : AspireI
         var eventId = TicketedEventId.New();
 
         var template = new EmailTemplateBuilder()
-            .ForEvent(eventId)
+            .ForTeamAndEvent(teamId, eventId)
             .WithSubject("Event subject")
             .Build();
         await Environment.EmailDatabase.SeedAsync(db => db.EmailTemplates.Add(template));
@@ -24,7 +24,8 @@ public sealed class EmailTemplateServiceTests(TestContext testContext) : AspireI
         var result = await service.LoadAsync(BuiltInEmailTemplateNames.TicketConfirmation, teamId, eventId, testContext.CancellationToken);
 
         result.Subject.ShouldBe("Event subject");
-        result.Scope.ShouldBe(EmailSettingsScope.Event);
+        result.TeamId.ShouldBe(teamId);
+        result.TicketedEventId.ShouldBe(eventId);
     }
 
     [TestMethod]
@@ -43,7 +44,8 @@ public sealed class EmailTemplateServiceTests(TestContext testContext) : AspireI
         var result = await service.LoadAsync(BuiltInEmailTemplateNames.TicketConfirmation, teamId, eventId, testContext.CancellationToken);
 
         result.Subject.ShouldBe("Team subject");
-        result.Scope.ShouldBe(EmailSettingsScope.Team);
+        result.TeamId.ShouldBe(teamId);
+        result.TicketedEventId.ShouldBeNull();
     }
 
     [TestMethod]
@@ -57,7 +59,7 @@ public sealed class EmailTemplateServiceTests(TestContext testContext) : AspireI
             .WithSubject("Team subject")
             .Build();
         var eventTemplate = new EmailTemplateBuilder()
-            .ForEvent(eventId)
+            .ForTeamAndEvent(teamId, eventId)
             .WithSubject("Event subject")
             .Build();
         await Environment.EmailDatabase.SeedAsync(db =>
@@ -70,7 +72,8 @@ public sealed class EmailTemplateServiceTests(TestContext testContext) : AspireI
         var result = await service.LoadAsync(BuiltInEmailTemplateNames.TicketConfirmation, teamId, eventId, testContext.CancellationToken);
 
         result.Subject.ShouldBe("Event subject");
-        result.Scope.ShouldBe(EmailSettingsScope.Event);
+        result.TeamId.ShouldBe(teamId);
+        result.TicketedEventId.ShouldBe(eventId);
     }
 
     [TestMethod]
@@ -88,6 +91,25 @@ public sealed class EmailTemplateServiceTests(TestContext testContext) : AspireI
     }
 
     [TestMethod]
+    public async ValueTask LoadAsync_EventTemplateForDifferentTeam_IgnoresTemplate()
+    {
+        var teamId = TeamId.New();
+        var otherTeamId = TeamId.New();
+        var eventId = TicketedEventId.New();
+
+        var template = new EmailTemplateBuilder()
+            .ForTeamAndEvent(otherTeamId, eventId)
+            .WithSubject("Other team subject")
+            .Build();
+        await Environment.EmailDatabase.SeedAsync(db => db.EmailTemplates.Add(template));
+
+        var service = new EmailTemplateService(Environment.EmailDatabase.Context);
+        var result = await service.LoadAsync(BuiltInEmailTemplateNames.TicketConfirmation, teamId, eventId, testContext.CancellationToken);
+
+        result.Subject.ShouldNotBe("Other team subject");
+    }
+
+    [TestMethod]
     public async ValueTask LoadAsync_ReconfirmCancelledWithoutCustomTemplate_ReturnsBuiltInDefault()
     {
         var teamId = TeamId.New();
@@ -98,6 +120,7 @@ public sealed class EmailTemplateServiceTests(TestContext testContext) : AspireI
 
         result.Subject.ShouldContain("Cancelled");
         result.TextBody.ShouldContain("automatically cancelled");
+        result.HtmlBody.ShouldNotBeNull();
         result.HtmlBody.ShouldContain("automatically cancelled");
     }
 }
