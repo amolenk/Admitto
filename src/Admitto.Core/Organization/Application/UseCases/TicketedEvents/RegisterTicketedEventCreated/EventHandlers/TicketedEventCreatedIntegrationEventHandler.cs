@@ -1,4 +1,3 @@
-using Amolenk.Admitto.Core.Organization;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
@@ -23,10 +22,7 @@ internal sealed class TicketedEventCreatedIntegrationEventHandler(
         var command = new RegisterTicketedEventCreatedCommand(
             integrationEvent.TeamId,
             integrationEvent.CreationRequestId,
-            integrationEvent.TicketedEventId)
-        {
-            CommandId = DeterministicGuid.Create($"{integrationEvent.IntegrationEventId}:{nameof(TicketedEventCreatedIntegrationEvent)}")
-        };
+            integrationEvent.TicketedEventId);
 
         await handler.HandleAsync(command, cancellationToken);
     }

@@ -23,10 +23,7 @@ internal sealed class TicketedEventCreationRejectedIntegrationEventHandler(
         var command = new RegisterTicketedEventCreationRejectedCommand(
             integrationEvent.TeamId,
             integrationEvent.CreationRequestId,
-            integrationEvent.Reason)
-        {
-            CommandId = DeterministicGuid.Create($"{integrationEvent.IntegrationEventId}:{nameof(TicketedEventCreationRejectedIntegrationEvent)}")
-        };
+            integrationEvent.Reason);
 
         await handler.HandleAsync(command, cancellationToken);
     }
