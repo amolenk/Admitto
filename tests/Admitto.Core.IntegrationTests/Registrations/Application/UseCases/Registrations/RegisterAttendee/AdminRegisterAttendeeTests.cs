@@ -420,5 +420,5 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
     }
 
     private static AdminRegisterAttendeeHandler NewHandler()
-        => new(Environment.RegistrationsDatabase.Context);
+        => new(Environment.RegistrationsDatabase.Context, TimeProvider.System);
 }

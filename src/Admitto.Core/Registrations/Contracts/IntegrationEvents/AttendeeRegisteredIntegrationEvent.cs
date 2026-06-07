@@ -13,4 +13,5 @@ public sealed record AttendeeRegisteredIntegrationEvent(
     string RecipientEmail,
     string FirstName,
     string LastName,
-    IReadOnlyList<TicketTypeItem> Tickets) : IntegrationEvent;
+    IReadOnlyList<TicketTypeItem> Tickets,
+    DateTimeOffset RegisteredAt) : IntegrationEvent;

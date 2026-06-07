@@ -9,7 +9,8 @@ using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.AdminRegisterAttendee;
 
 internal sealed class AdminRegisterAttendeeHandler(
-    IRegistrationsWriteStore writeStore)
+    IRegistrationsWriteStore writeStore,
+    TimeProvider timeProvider)
     : ICommandHandler<AdminRegisterAttendeeCommand, Guid>
 {
     public async ValueTask<Guid> HandleAsync(
@@ -31,6 +32,8 @@ internal sealed class AdminRegisterAttendeeHandler(
         var additionalDetails = AdditionalDetails.Validate(
             command.AdditionalDetails,
             ticketedEvent.AdditionalDetailSchema);
+
+        var now = timeProvider.GetUtcNow();
 
         var existingRegistration = await writeStore.Registrations
             .SingleOrDefaultAsync(
@@ -56,13 +59,14 @@ internal sealed class AdminRegisterAttendeeHandler(
                 firstName,
                 lastName,
                 tickets,
-                additionalDetails);
+                additionalDetails,
+                now);
             await writeStore.Registrations.AddAsync(registration, cancellationToken);
         }
         else
         {
             registration = existingRegistration;
-            registration.Reset(firstName, lastName, tickets, additionalDetails);
+            registration.Reset(firstName, lastName, tickets, additionalDetails, now);
         }
 
         return registration.Id.Value;

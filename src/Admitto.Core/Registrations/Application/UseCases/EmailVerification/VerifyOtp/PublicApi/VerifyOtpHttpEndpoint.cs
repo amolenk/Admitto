@@ -8,7 +8,8 @@ public static class VerifyOtpHttpEndpoint
     public static RouteGroupBuilder MapVerifyOtp(this RouteGroupBuilder group)
     {
         group.MapPost("/otp/verify", VerifyOtp)
-            .WithName(nameof(VerifyOtp));
+            .WithName(nameof(VerifyOtp))
+            .RequireRateLimiting("public-strict");
 
         return group;
     }

@@ -196,7 +196,8 @@ public sealed class RegistrationTests
             FirstName.From("Reset"),
             LastName.From("User"),
             [new TicketTypeSnapshot(TicketTypeId.New(), TicketTypeName.From("Workshop"), [TimeSlot.From("morning")])],
-            AdditionalDetails.From(new Dictionary<string, string> { ["tshirt"] = "M" }));
+            AdditionalDetails.From(new Dictionary<string, string> { ["tshirt"] = "M" }),
+            DateTimeOffset.UtcNow);
 
         sut.Id.ShouldBe(id);
         sut.TeamId.ShouldBe(teamId);
@@ -214,7 +215,8 @@ public sealed class RegistrationTests
             FirstName.From("Reset"),
             LastName.From("User"),
             [new TicketTypeSnapshot(TicketTypeId.New(), TicketTypeName.From("Workshop"), [])],
-            AdditionalDetails.Empty));
+            AdditionalDetails.Empty,
+            DateTimeOffset.UtcNow));
 
         result.Error.ShouldMatch(Registration.Errors.CannotResetActive);
     }
@@ -230,7 +232,8 @@ public sealed class RegistrationTests
             FirstName.From("Reset"),
             LastName.From("User"),
             [new TicketTypeSnapshot(TicketTypeId.New(), TicketTypeName.From("Workshop"), [])],
-            AdditionalDetails.Empty);
+            AdditionalDetails.Empty,
+            DateTimeOffset.UtcNow);
 
         sut.CancellationReason.ShouldBeNull();
         sut.HasReconfirmed.ShouldBeFalse();
@@ -260,7 +263,8 @@ public sealed class RegistrationTests
                 new TicketTypeSnapshot(workshopId, TicketTypeName.From("Workshop"), [TimeSlot.From("morning")]),
                 new TicketTypeSnapshot(dinnerId, TicketTypeName.From("Dinner"), [])
             ],
-            AdditionalDetails.From(new Dictionary<string, string> { ["tshirt"] = "M" }));
+            AdditionalDetails.From(new Dictionary<string, string> { ["tshirt"] = "M" }),
+            DateTimeOffset.UtcNow);
 
         sut.FirstName.ShouldBe(FirstName.From("New"));
         sut.LastName.ShouldBe(LastName.From("Person"));
@@ -283,11 +287,13 @@ public sealed class RegistrationTests
             new(workshopId, TicketTypeName.From("Workshop"), [TimeSlot.From("morning")])
         };
 
+        var resetAt = DateTimeOffset.UtcNow;
         sut.Reset(
             FirstName.From("Reset"),
             LastName.From("User"),
             tickets,
-            AdditionalDetails.Empty);
+            AdditionalDetails.Empty,
+            resetAt);
 
         var domainEvent = sut.GetDomainEvents()
             .OfType<AttendeeRegisteredDomainEvent>()
@@ -299,6 +305,7 @@ public sealed class RegistrationTests
         domainEvent.FirstName.ShouldBe(FirstName.From("Reset"));
         domainEvent.LastName.ShouldBe(LastName.From("User"));
         domainEvent.Tickets.ShouldBe(tickets);
+        domainEvent.RegisteredAt.ShouldBe(resetAt);
     }
 
     private static Registration NewRegistration() =>

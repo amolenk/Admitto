@@ -61,13 +61,14 @@ internal sealed class RegisterAttendeeSelfServiceHandler(
                 firstName,
                 lastName,
                 tickets,
-                additionalDetails);
+                additionalDetails,
+                now);
             await writeStore.Registrations.AddAsync(registration, cancellationToken);
         }
         else
         {
             registration = existingRegistration;
-            registration.Reset(firstName, lastName, tickets, additionalDetails);
+            registration.Reset(firstName, lastName, tickets, additionalDetails, now);
         }
 
         return registration.Id.Value;

@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Attendee can request an OTP code for email verification
-The system SHALL expose a public endpoint `POST /events/{teamSlug}/{eventSlug}/otp/request` that accepts an email address and issues a 6-digit one-time password (OTP) delivered to that address. The OTP SHALL be stored as a SHA-256 hash alongside the SHA-256 hash of the email (lowercased), the event scope, an expiry of 10 minutes from issuance, and a failed-attempts counter initialised to zero. Requesting a new OTP for the same email+event SHALL invalidate (mark as superseded) all previous unexpired codes for that email+event.
+The system SHALL expose a public endpoint `POST /events/{teamSlug}/{eventSlug}/otp/request` that accepts an email address and issues a 6-digit one-time password (OTP) delivered to that address. The 6-digit code SHALL be generated using a cryptographically secure random number generator (CSPRNG). The OTP SHALL be stored as a SHA-256 hash alongside the SHA-256 hash of the email (lowercased), the event scope, an expiry of 10 minutes from issuance, and a failed-attempts counter initialised to zero. Requesting a new OTP for the same email+event SHALL invalidate (mark as superseded) all previous unexpired codes for that email+event.
 
 The system SHALL reject requests where more than 3 unexpired (or recently expired but still within the 10-minute window) OTP codes have already been issued for the same email+event combination, returning HTTP 429 Too Many Requests. The endpoint SHALL return HTTP 202 Accepted regardless of whether the email address has a current registration, to avoid email-address enumeration.
 

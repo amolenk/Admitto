@@ -8,7 +8,8 @@ public static class RequestOtpHttpEndpoint
     public static RouteGroupBuilder MapRequestOtp(this RouteGroupBuilder group)
     {
         group.MapPost("/otp/request", RequestOtp)
-            .WithName(nameof(RequestOtp));
+            .WithName(nameof(RequestOtp))
+            .RequireRateLimiting("public-strict");
 
         return group;
     }

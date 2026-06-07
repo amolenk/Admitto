@@ -39,7 +39,8 @@ public sealed class RegistrationsIntegrationEventPublisherTests
             EmailAddress.From("bob@example.com"),
             FirstName.From("Bob"),
             LastName.From("Smith"),
-            [new TicketTypeSnapshot(earlyBirdId, TicketTypeName.From("Early Bird"), [])]);
+            [new TicketTypeSnapshot(earlyBirdId, TicketTypeName.From("Early Bird"), [])],
+            DateTimeOffset.UtcNow);
 
         await _publisher.HandleAsync(domainEvent, CancellationToken.None);
 

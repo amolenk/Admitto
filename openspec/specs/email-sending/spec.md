@@ -21,7 +21,7 @@ The Email module SHALL send exactly one registration-confirmation ("ticket") ema
 ---
 
 ### Requirement: Sending is idempotent across at-least-once delivery
-The Email module SHALL ensure that the same triggering integration event redelivered any number of times produces at most one sent email per `(TicketedEventId, recipient, IdempotencyKey)`. The idempotency key for the registration trigger SHALL be derived deterministically from the registration identity (`attendee-registered:{registrationId}`). A unique database index on `(ticketed_event_id, recipient, idempotency_key)` in the email log SHALL be the authoritative deduplication mechanism.
+The Email module SHALL ensure that the same triggering integration event redelivered any number of times produces at most one sent email per `(TicketedEventId, recipient, IdempotencyKey)`. The idempotency key for the registration trigger SHALL be derived deterministically from the registration occurrence: `attendee-registered:{registrationId}:{registeredAt}` where `registeredAt` is the ISO 8601 timestamp captured at the moment of registration or re-registration (i.e. the value changes when a cancelled registration is reset, ensuring a fresh confirmation email is sent). A unique database index on `(ticketed_event_id, recipient, idempotency_key)` in the email log SHALL be the authoritative deduplication mechanism.
 
 #### Scenario: Duplicate integration event delivery
 - **WHEN** the Registrations module's `AttendeeRegisteredIntegrationEvent` for registration `R1` is delivered to the Email module twice (e.g. queue at-least-once)

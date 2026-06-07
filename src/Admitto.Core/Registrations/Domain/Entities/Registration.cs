@@ -21,7 +21,8 @@ public class Registration : Aggregate<RegistrationId>
         FirstName firstName,
         LastName lastName,
         IReadOnlyList<TicketTypeSnapshot> tickets,
-        AdditionalDetails additionalDetails)
+        AdditionalDetails additionalDetails,
+        DateTimeOffset registeredAt)
         : base(id)
     {
         TeamId = teamId;
@@ -35,7 +36,7 @@ public class Registration : Aggregate<RegistrationId>
         _tickets = tickets.ToList();
         AdditionalDetails = additionalDetails;
 
-        AddDomainEvent(new AttendeeRegisteredDomainEvent(teamId, eventId, id, email, firstName, lastName, tickets));
+        AddDomainEvent(new AttendeeRegisteredDomainEvent(teamId, eventId, id, email, firstName, lastName, tickets, registeredAt));
     }
 
     public TeamId TeamId { get; private set; }
@@ -57,7 +58,8 @@ public class Registration : Aggregate<RegistrationId>
         FirstName firstName,
         LastName lastName,
         IReadOnlyList<TicketTypeSnapshot> tickets,
-        AdditionalDetails? additionalDetails = null)
+        AdditionalDetails? additionalDetails = null,
+        DateTimeOffset? registeredAt = null)
     {
         return new Registration(
             RegistrationId.New(),
@@ -67,7 +69,8 @@ public class Registration : Aggregate<RegistrationId>
             firstName,
             lastName,
             tickets,
-            additionalDetails ?? AdditionalDetails.Empty);
+            additionalDetails ?? AdditionalDetails.Empty,
+            registeredAt ?? DateTimeOffset.UtcNow);
     }
 
     public void Cancel(CancellationReason reason)
@@ -85,7 +88,8 @@ public class Registration : Aggregate<RegistrationId>
         FirstName firstName,
         LastName lastName,
         IReadOnlyList<TicketTypeSnapshot> tickets,
-        AdditionalDetails additionalDetails)
+        AdditionalDetails additionalDetails,
+        DateTimeOffset registeredAt)
     {
         if (Status != RegistrationStatus.Cancelled)
             throw new BusinessRuleViolationException(Errors.CannotResetActive);
@@ -107,7 +111,8 @@ public class Registration : Aggregate<RegistrationId>
             Email,
             FirstName,
             LastName,
-            tickets));
+            tickets,
+            registeredAt));
     }
 
     public void ChangeTickets(IReadOnlyList<TicketTypeSnapshot> newTickets, DateTimeOffset changedAt)

@@ -18,7 +18,7 @@ public sealed class AttendeeRegisteredIntegrationEventHandlerTests(TestContext t
     private static readonly Guid RegId = Guid.NewGuid();
 
     private static AttendeeRegisteredIntegrationEvent Event() =>
-        new(TeamGuid.Value, EventGuid.Value, RegId, "alice@example.com", "Alice", "Anderson", []);
+        new(TeamGuid.Value, EventGuid.Value, RegId, "alice@example.com", "Alice", "Anderson", [], DateTimeOffset.UtcNow);
 
     private static EventRegistrationSnapshotDto Context() =>
         new("DevConf 2025", "https://devconf.example.com", "https://tickets.example.com", "https://devconf.example.com/qr", "Alice", "Anderson");
@@ -33,13 +33,14 @@ public sealed class AttendeeRegisteredIntegrationEventHandlerTests(TestContext t
 
         var sut = new AttendeeRegisteredIntegrationEventHandler(facade, sendEmailHandler);
 
-        await sut.HandleAsync(Event(), testContext.CancellationToken);
+        var evt = Event();
+        await sut.HandleAsync(evt, testContext.CancellationToken);
 
         await sendEmailHandler.Received(1).HandleAsync(
             Arg.Is<SendEmailCommand>(c =>
                 c.EmailType == BuiltInEmailTemplateNames.TicketConfirmation &&
                 c.RecipientAddress == "alice@example.com" &&
-                c.IdempotencyKey == $"attendee-registered:{RegId}"),
+                c.IdempotencyKey == $"attendee-registered:{RegId}:{evt.RegisteredAt:O}"),
             Arg.Any<CancellationToken>());
     }
 

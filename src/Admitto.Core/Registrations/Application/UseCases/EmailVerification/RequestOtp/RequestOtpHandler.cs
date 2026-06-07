@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
 using Amolenk.Admitto.Core.Registrations.Application.Security;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
@@ -71,7 +72,7 @@ internal sealed class RequestOtpHandler(
 
     private static string GenerateSixDigitCode()
     {
-        var value = Random.Shared.Next(0, 1_000_000);
+        var value = RandomNumberGenerator.GetInt32(0, 1_000_000);
         return value.ToString("D6");
     }
 

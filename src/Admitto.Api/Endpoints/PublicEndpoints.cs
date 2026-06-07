@@ -12,6 +12,7 @@ public static class PublicEndpoints
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status409Conflict)
+            .ProducesProblem(StatusCodes.Status429TooManyRequests)
             .ProducesProblem(StatusCodes.Status500InternalServerError)
             .AddEndpointFilter<ValidationFilter>()
             .AddEndpointFilter<ApiKeyTeamScopeFilter>()
@@ -19,6 +20,7 @@ public static class PublicEndpoints
             .RequireAuthorization(policy =>
                 policy.AddAuthenticationSchemes(ApiKeyAuthenticationHandler.SchemeName)
                       .RequireAuthenticatedUser())
+            .RequireRateLimiting("public-standard")
             .MapRegistrationsPublicEndpoints();
     }
 }
