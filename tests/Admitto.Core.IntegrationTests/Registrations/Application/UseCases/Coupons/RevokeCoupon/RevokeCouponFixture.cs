@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Amolenk.Admitto.Testing.Builders.Registrations.Domain;
@@ -44,11 +45,6 @@ internal sealed class RevokeCouponFixture
 
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
     {
-        if (!_seedActiveCoupon && !_seedRedeemedCoupon && !_seedRevokedCoupon && !_seedExpiredCoupon)
-        {
-            return;
-        }
-
         var builder = new CouponBuilder()
             .WithEventId(EventId)
             .WithTeamId(TeamId)
@@ -62,22 +58,29 @@ internal sealed class RevokeCouponFixture
             builder.WithExpiresAt(DateTimeOffset.UtcNow.AddMinutes(-1));
         }
 
-        var coupon = builder.Build();
-        CouponId = coupon.Id;
+        var coupon = (_seedActiveCoupon || _seedRedeemedCoupon || _seedRevokedCoupon || _seedExpiredCoupon)
+            ? builder.Build()
+            : null;
+        CouponId = coupon?.Id ?? CouponId;
 
-        if (_seedRedeemedCoupon)
+        if (_seedRedeemedCoupon && coupon is not null)
         {
             coupon.Redeem(coupon.Email, coupon.AllowedTicketTypeIds, DateTimeOffset.UtcNow);
         }
 
-        if (_seedRevokedCoupon)
+        if (_seedRevokedCoupon && coupon is not null)
         {
             coupon.Revoke();
         }
 
         await environment.RegistrationsDatabase.SeedAsync(dbContext =>
         {
-            dbContext.Coupons.Add(coupon);
+            var catalog = TicketCatalog.Create(EventId, TeamId);
+            catalog.AddTicketType(TicketTypeId, TicketTypeName.From("General Admission"), [], 100);
+            dbContext.TicketCatalogs.Add(catalog);
+
+            if (coupon is not null)
+                dbContext.Coupons.Add(coupon);
         });
     }
 }

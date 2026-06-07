@@ -1,5 +1,6 @@
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
+using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 
@@ -26,6 +27,9 @@ internal sealed class ProcessWaitlistNotificationsHandler(
 
         var ticketedEvent = await writeStore.TicketedEvents.GetAsync(eventId, cancellationToken);
         var catalog = await writeStore.TicketCatalogs.GetAsync(eventId, cancellationToken);
+
+        if (!ticketedEvent.IsActive || catalog.EventStatus != EventLifecycleStatus.Active)
+            return;
 
         var ticketType = catalog.GetTicketType(ticketTypeId);
         if (ticketType is null || !ticketType.WaitlistEnabled || !ticketType.WaitlistMode)

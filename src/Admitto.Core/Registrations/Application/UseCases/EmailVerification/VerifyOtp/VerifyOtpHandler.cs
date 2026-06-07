@@ -24,6 +24,12 @@ internal sealed class VerifyOtpHandler(
         var emailHash = ComputeHash(email.Value);
         var now = timeProvider.GetUtcNow();
 
+        var ticketedEvent = await writeStore.TicketedEvents
+            .FirstOrDefaultAsync(e => e.Id == command.EventId, cancellationToken);
+
+        if (ticketedEvent is null || !ticketedEvent.IsActive)
+            throw new BusinessRuleViolationException(Errors.EventNotActive);
+
         // Load the latest non-superseded OTP code for this email+event.
         var otpCode = await writeStore.OtpCodes
             .Where(c => c.EventId == command.EventId
@@ -65,11 +71,16 @@ internal sealed class VerifyOtpHandler(
         public static readonly Error InvalidCode = new(
             "otp.invalid_code",
             "The OTP code is invalid or expired.",
-            Type: ErrorType.Validation);
+            Type: ErrorType.Unprocessable);
 
         public static readonly Error CodeLocked = new(
             "otp.code_locked",
             "Too many failed attempts. Please request a new OTP code.",
+            Type: ErrorType.Unprocessable);
+
+        public static readonly Error EventNotActive = new(
+            "otp.event_not_active",
+            "The event is not accepting registrations.",
             Type: ErrorType.Validation);
     }
 }

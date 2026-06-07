@@ -33,6 +33,11 @@ internal sealed class CancelRegistrationFixture
         await environment.RegistrationsDatabase.SeedAsync(dbContext =>
         {
             var ticketTypeId = TicketTypeId.New();
+
+            var catalog = TicketCatalog.Create(EventId, TeamId);
+            catalog.AddTicketType(ticketTypeId, TicketTypeName.From("General Admission"), [], 100);
+            dbContext.TicketCatalogs.Add(catalog);
+
             var registration = Registration.Create(
                 TeamId,
                 EventId,

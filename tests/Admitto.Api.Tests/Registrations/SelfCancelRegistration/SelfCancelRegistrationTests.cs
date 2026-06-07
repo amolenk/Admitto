@@ -7,9 +7,9 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.SelfCancelRegistration;
 [TestClass]
 public sealed class SelfCancelRegistrationTests(TestContext testContext) : EndToEndTestBase
 {
-    // Successful self-service cancellation returns 200
+    // Successful self-service cancellation returns 204 NoContent
     [TestMethod]
-    public async Task SelfCancelRegistration_WithoutToken_Returns200()
+    public async Task SelfCancelRegistration_WithoutToken_Returns204()
     {
         var fixture = SelfCancelRegistrationFixture.WithActiveRegistration();
         await fixture.SetupAsync(Environment);
@@ -17,7 +17,7 @@ public sealed class SelfCancelRegistrationTests(TestContext testContext) : EndTo
         using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
         var response = await client.PostAsync(fixture.CancelRoute, null, testContext.CancellationToken);
 
-        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
     }
 
     // Registration not found returns 404

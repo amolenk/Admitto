@@ -59,9 +59,9 @@ public sealed class OtpRequestTests(TestContext testContext) : EndToEndTestBase
         secondResponse.StatusCode.ShouldBe(HttpStatusCode.Accepted);
     }
 
-    // Rate limit exceeded returns 400 (TooManyRequests maps to Validation → 400)
+     // Rate limit exceeded returns 429 (TooManyRequests)
     [TestMethod]
-    public async Task RequestOtp_RateLimitExceeded_Returns400()
+    public async Task RequestOtp_RateLimitExceeded_Returns429()
     {
         var fixture = OtpRequestFixture.ActiveEvent();
         await fixture.SetupAsync(Environment);
@@ -73,7 +73,7 @@ public sealed class OtpRequestTests(TestContext testContext) : EndToEndTestBase
             new { Email = OtpRequestFixture.AttendeeEmail },
             cancellationToken: testContext.CancellationToken);
 
-        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        response.StatusCode.ShouldBe(HttpStatusCode.TooManyRequests);
     }
 
     // Unknown event slug returns 404

@@ -16,6 +16,12 @@ internal sealed class RevokeCouponHandler(IRegistrationsWriteStore writeStore)
         TeamId teamId = TeamId.From(command.TeamId);
         CouponId couponId = CouponId.From(command.CouponId);
 
+        var catalog = await writeStore.TicketCatalogs.GetUntrackedAsync(
+            tc => tc.Id == eventId && tc.TeamId == teamId,
+            cancellationToken);
+
+        catalog.EnsureEventActive();
+
         var coupon = await writeStore.Coupons.GetAsync(
                  c => c.Id == couponId && c.EventId == eventId && c.TeamId == teamId,
                  cancellationToken);

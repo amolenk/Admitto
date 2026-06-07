@@ -22,6 +22,21 @@ internal sealed class ReconfirmAutoExpiredIntegrationEventHandler(IRegistrations
         if (alreadyHandled)
             return;
 
+        var ticketedEventId = TicketedEventId.From(integrationEvent.TicketedEventId);
+        var eventIsActive = await writeStore.TicketedEvents
+            .AsNoTracking()
+            .AnyAsync(e => e.Id == ticketedEventId && e.Status == EventLifecycleStatus.Active, cancellationToken);
+        var catalogIsActive = await writeStore.TicketCatalogs
+            .AsNoTracking()
+            .AnyAsync(c => c.Id == ticketedEventId && c.EventStatus == EventLifecycleStatus.Active, cancellationToken);
+
+        if (!eventIsActive || !catalogIsActive)
+        {
+            writeStore.ProcessedMessages.Add(
+                ProcessedMessage.Create(messageKey, DateTimeOffset.UtcNow));
+            return;
+        }
+
         foreach (var registrationIdValue in integrationEvent.RegistrationIds)
         {
             var registrationId = RegistrationId.From(registrationIdValue);

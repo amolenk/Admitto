@@ -1,6 +1,7 @@
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.ProcessWaitlistNotifications;
 using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
+using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 
@@ -27,6 +28,9 @@ internal sealed class RegistrationCancelledDomainEventHandler(
             .FirstOrDefaultAsync(tc => tc.Id == domainEvent.TicketedEventId, cancellationToken);
 
         if (catalog is null)
+            return;
+
+        if (catalog.EventStatus != EventLifecycleStatus.Active)
             return;
 
         // Group the freed tickets by ticket type to compute how many slots each type gained.

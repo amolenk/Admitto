@@ -22,6 +22,8 @@ internal sealed class JoinWaitlistHandler(
         if (catalog is null)
             throw new BusinessRuleViolationException(Errors.EventNotFound);
 
+        catalog.EnsureEventActive();
+
         var ticketType = catalog.GetTicketType(ticketTypeId);
         if (ticketType is null)
             throw new BusinessRuleViolationException(Errors.TicketTypeNotFound);

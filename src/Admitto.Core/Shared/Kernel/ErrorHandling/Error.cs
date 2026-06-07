@@ -7,6 +7,8 @@ public enum ErrorType
     Conflict,
     Unauthorized,
     Forbidden,
+    TooManyRequests,
+    Unprocessable,
 }
 
 public sealed record Error(

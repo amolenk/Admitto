@@ -27,14 +27,14 @@ internal sealed class RegisterAttendeeWithCouponHandler(
             c => c.EventId == eventId && c.Code == CouponCode.From(command.CouponCode),
             cancellationToken);
 
-        var now = timeProvider.GetUtcNow();
-        coupon.Redeem(email, ticketTypeIds, now);
-
         var ticketedEvent = await writeStore.TicketedEvents
             .GetAsync(e => e.Id == eventId, cancellationToken);
 
         if (!ticketedEvent.IsActive)
             throw new BusinessRuleViolationException(Errors.EventNotActive);
+
+        var now = timeProvider.GetUtcNow();
+        coupon.Redeem(email, ticketTypeIds, now);
 
         var additionalDetails = AdditionalDetails.Validate(
             command.AdditionalDetails,

@@ -143,6 +143,8 @@ public class TicketCatalog : Aggregate<TicketedEventId>
     /// </summary>
     public void ReEvaluateWaitlistMode(TicketTypeId ticketTypeId, int activeEntryCount, int issuedCouponCount)
     {
+        EnsureEventActive();
+
         var ticketType = _ticketTypes.FirstOrDefault(tt => tt.Id == ticketTypeId);
         if (ticketType is null || !ticketType.WaitlistMode) return;
 
@@ -161,6 +163,8 @@ public class TicketCatalog : Aggregate<TicketedEventId>
     /// </summary>
     public void TryDeactivateWaitlistMode(TicketTypeId ticketTypeId)
     {
+        EnsureEventActive();
+
         var ticketType = _ticketTypes.FirstOrDefault(tt => tt.Id == ticketTypeId);
         if (ticketType is null || !ticketType.WaitlistMode) return;
 
@@ -201,6 +205,8 @@ public class TicketCatalog : Aggregate<TicketedEventId>
     /// </summary>
     public void ValidateSelection(IReadOnlyList<TicketTypeId> ids)
     {
+        EnsureEventActive();
+
         if (ids.Count == 0) return;
 
         var ticketTypeMap = _ticketTypes.ToDictionary(t => t.Id);

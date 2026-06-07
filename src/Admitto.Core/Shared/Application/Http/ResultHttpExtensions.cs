@@ -51,6 +51,24 @@ public static class ResultHttpExtensions
                     ["code"] = error.Code
                 }),
 
+            ErrorType.TooManyRequests => TypedResults.Problem(
+                title: "Too many requests",
+                detail: error.Message,
+                statusCode: StatusCodes.Status429TooManyRequests,
+                extensions: new Dictionary<string, object?>
+                {
+                    ["code"] = error.Code
+                }),
+
+            ErrorType.Unprocessable => TypedResults.Problem(
+                title: "Unprocessable entity",
+                detail: error.Message,
+                statusCode: StatusCodes.Status422UnprocessableEntity,
+                extensions: new Dictionary<string, object?>
+                {
+                    ["code"] = error.Code
+                }),
+
             ErrorType.Validation => TypedResults.Problem(
                 title: "Validation error",
                 detail: error.Message,

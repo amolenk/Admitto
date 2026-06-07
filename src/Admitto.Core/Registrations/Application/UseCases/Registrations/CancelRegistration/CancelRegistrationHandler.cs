@@ -7,7 +7,9 @@ using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.CancelRegistration;
 
-internal sealed class CancelRegistrationHandler(IRegistrationsWriteStore writeStore)
+internal sealed class CancelRegistrationHandler(
+    IRegistrationsWriteStore writeStore,
+    TimeProvider timeProvider)
     : ICommandHandler<CancelRegistrationCommand>
 {
     public async ValueTask HandleAsync(
@@ -22,12 +24,19 @@ internal sealed class CancelRegistrationHandler(IRegistrationsWriteStore writeSt
                  r => r.Id == registrationId && r.EventId == ticketedEventId && r.TeamId == teamId,
                  cancellationToken);
 
+        var catalog = await writeStore.TicketCatalogs.GetUntrackedAsync(
+            c => c.Id == ticketedEventId && c.TeamId == teamId,
+            cancellationToken);
+
+        catalog.EnsureEventActive();
+
         if (command.Reason == CancellationReason.AttendeeRequest)
         {
             var ticketedEvent = await writeStore.TicketedEvents
                 .FirstOrDefaultAsync(e => e.Id == ticketedEventId, cancellationToken);
 
-            if (ticketedEvent is not null && DateTimeOffset.UtcNow >= ticketedEvent.StartsAt)
+            var now = timeProvider.GetUtcNow();
+            if (ticketedEvent is not null && now >= ticketedEvent.StartsAt)
             {
                 throw new BusinessRuleViolationException(Errors.EventAlreadyStarted);
             }

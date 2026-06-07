@@ -32,6 +32,6 @@ public static class SelfCancelRegistrationHttpEndpoint
         await handler.HandleAsync(command, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
-        return Results.Ok();
+        return Results.NoContent();
     }
 }

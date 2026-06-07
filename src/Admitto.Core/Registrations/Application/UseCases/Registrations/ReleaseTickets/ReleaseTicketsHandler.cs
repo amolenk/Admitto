@@ -1,5 +1,6 @@
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
+using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 
@@ -25,6 +26,9 @@ internal sealed class ReleaseTicketsHandler(IRegistrationsWriteStore writeStore)
                 cancellationToken);
 
         if (catalog is null)
+            return;
+
+        if (catalog.EventStatus != EventLifecycleStatus.Active)
             return;
 
         var ticketIds = registration.Tickets.Select(t => t.Id).ToList();

@@ -73,6 +73,33 @@ public sealed class ReconfirmAutoExpiredIntegrationEventHandlerTests(TestContext
     }
 
     [TestMethod]
+    public async ValueTask HandleAsync_ArchivedEvent_SkipsCancellation()
+    {
+        var fixture = HandleReconfirmAutoExpiredFixture.ArchivedEventRegistration();
+        await fixture.SetupAsync(Environment);
+        await ClearOutboxAsync();
+
+        var integrationEventId = Guid.NewGuid();
+        var integrationEvent = new ReconfirmAutoExpiredIntegrationEvent(fixture.TicketedEventId.Value, [fixture.RegistrationId.Value])
+        {
+            IntegrationEventId = integrationEventId
+        };
+
+        var sut = new ReconfirmAutoExpiredIntegrationEventHandler(Environment.RegistrationsDatabase.Context);
+        await sut.HandleAsync(integrationEvent, testContext.CancellationToken);
+        await Environment.RegistrationsDatabase.Context.SaveChangesAsync(testContext.CancellationToken);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async db =>
+        {
+            var registration = await db.Registrations.FirstAsync(r => r.Id == fixture.RegistrationId, testContext.CancellationToken);
+            registration.Status.ShouldBe(RegistrationStatus.Registered);
+
+            var processedMessage = await db.ProcessedMessages.SingleAsync(testContext.CancellationToken);
+            processedMessage.MessageKey.ShouldBe(integrationEventId.ToString("N"));
+        });
+    }
+
+    [TestMethod]
     public async ValueTask HandleAsync_RedeliveredEvent_IsIdempotent()
     {
         var fixture = HandleReconfirmAutoExpiredFixture.ActiveRegistration();

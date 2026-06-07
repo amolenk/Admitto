@@ -93,6 +93,6 @@ internal sealed class RequestOtpHandler(
         public static readonly Error TooManyRequests = new(
             "otp.too_many_requests",
             "Too many OTP requests. Please wait before requesting another code.",
-            Type: ErrorType.Validation);
+            Type: ErrorType.TooManyRequests);
     }
 }

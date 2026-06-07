@@ -67,6 +67,13 @@ internal sealed class ProcessExpiredWaitlistCouponsJob(
                 var (eventId, ticketTypeId) = group.Key;
                 var couponsToRevoke = group.ToList();
 
+                var catalog = await writeStore.TicketCatalogs
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(c => c.Id == eventId, context.CancellationToken);
+
+                if (catalog is null || catalog.EventStatus != EventLifecycleStatus.Active)
+                    continue;
+
                 logger.LogInformation(
                     "Revoking {Count} expired waitlist coupon(s) for ticket type {TicketTypeId}",
                     couponsToRevoke.Count, ticketTypeId.Value);

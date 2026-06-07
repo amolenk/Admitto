@@ -1,5 +1,6 @@
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
+using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.LeaveWaitlist;
@@ -16,10 +17,17 @@ internal sealed class LeaveWaitlistHandler(IRegistrationsWriteStore writeStore)
             throw new BusinessRuleViolationException(Errors.InvalidEmail);
 
         var email = emailResult.ValueObject;
+        TicketedEventId eventId = TicketedEventId.From(command.EventId);
         TicketTypeId ticketTypeId = TicketTypeId.From(command.TicketTypeId);
 
+        var catalog = await writeStore.TicketCatalogs.GetUntrackedAsync(
+            tc => tc.Id == eventId,
+            cancellationToken);
+
+        catalog.EnsureEventActive();
+
         var waitlist = await writeStore.Waitlists
-            .FirstOrDefaultAsync(w => w.Id == ticketTypeId, cancellationToken);
+            .FirstOrDefaultAsync(w => w.Id == ticketTypeId && w.EventId == eventId, cancellationToken);
 
         if (waitlist is null)
             throw new BusinessRuleViolationException(Errors.WaitlistNotFound);

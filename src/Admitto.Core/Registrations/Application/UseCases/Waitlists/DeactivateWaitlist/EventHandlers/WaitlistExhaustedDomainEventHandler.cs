@@ -1,5 +1,6 @@
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
 using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
+using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.DeactivateWaitlist.EventHandlers;
@@ -19,6 +20,9 @@ internal sealed class WaitlistExhaustedDomainEventHandler(IRegistrationsWriteSto
             .FirstOrDefaultAsync(tc => tc.Id == domainEvent.TicketedEventId, cancellationToken);
 
         if (catalog is null)
+            return;
+
+        if (catalog.EventStatus != EventLifecycleStatus.Active)
             return;
 
         catalog.ForceDeactivateWaitlistMode(domainEvent.TicketTypeId);
