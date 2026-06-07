@@ -14,10 +14,11 @@ internal sealed class JoinWaitlistHandler(
         CancellationToken cancellationToken)
     {
         TicketedEventId eventId = TicketedEventId.From(command.EventId);
+        TeamId teamId = TeamId.From(command.TeamId);
         TicketTypeId ticketTypeId = TicketTypeId.From(command.TicketTypeId);
 
         var catalog = await writeStore.TicketCatalogs
-            .FirstOrDefaultAsync(tc => tc.Id == eventId, cancellationToken);
+            .FirstOrDefaultAsync(tc => tc.Id == eventId && tc.TeamId == teamId, cancellationToken);
 
         if (catalog is null)
             throw new BusinessRuleViolationException(Errors.EventNotFound);
@@ -36,7 +37,9 @@ internal sealed class JoinWaitlistHandler(
 
         var waitlist = await writeStore.Waitlists
             .Include(w => w.Entries)
-            .FirstOrDefaultAsync(w => w.Id == ticketTypeId, cancellationToken);
+            .FirstOrDefaultAsync(
+                w => w.Id == ticketTypeId && w.EventId == eventId && w.TeamId == teamId,
+                cancellationToken);
 
         if (waitlist is null)
             throw new BusinessRuleViolationException(Errors.WaitlistNotFound);

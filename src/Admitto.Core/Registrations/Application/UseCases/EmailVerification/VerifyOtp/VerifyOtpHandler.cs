@@ -25,7 +25,7 @@ internal sealed class VerifyOtpHandler(
         var now = timeProvider.GetUtcNow();
 
         var ticketedEvent = await writeStore.TicketedEvents
-            .FirstOrDefaultAsync(e => e.Id == command.EventId, cancellationToken);
+            .FirstOrDefaultAsync(e => e.Id == command.EventId && e.TeamId == command.TeamId, cancellationToken);
 
         if (ticketedEvent is null || !ticketedEvent.IsActive)
             throw new BusinessRuleViolationException(Errors.EventNotActive);
@@ -33,6 +33,7 @@ internal sealed class VerifyOtpHandler(
         // Load the latest non-superseded OTP code for this email+event.
         var otpCode = await writeStore.OtpCodes
             .Where(c => c.EventId == command.EventId
+                        && c.TeamId == command.TeamId
                         && c.EmailHash == emailHash
                         && c.SupersededAt == null)
             .OrderByDescending(c => c.ExpiresAt)

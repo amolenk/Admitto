@@ -27,6 +27,7 @@ public static class AdminRegisterAttendeeHttpEndpoint
     {
         var command = new AdminRegisterAttendeeCommand(
             eventId,
+            teamId,
             request.Email,
             request.FirstName,
             request.LastName,

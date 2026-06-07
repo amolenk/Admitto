@@ -14,6 +14,7 @@ namespace Amolenk.Admitto.Core.Email.Application.Sending.Bulk;
 public interface IBulkEmailRecipientResolver
 {
     Task<IReadOnlyList<BulkEmailRecipient>> ResolveAsync(
+        TeamId teamId,
         TicketedEventId eventId,
         BulkEmailJobSource source,
         CancellationToken cancellationToken = default);
@@ -25,13 +26,14 @@ internal sealed class BulkEmailRecipientResolver(IRegistrationsFacade registrati
     private static readonly JsonSerializerOptions ParametersJsonOptions = new(JsonSerializerDefaults.Web);
 
     public async Task<IReadOnlyList<BulkEmailRecipient>> ResolveAsync(
+        TeamId teamId,
         TicketedEventId eventId,
         BulkEmailJobSource source,
         CancellationToken cancellationToken = default)
     {
         return source switch
         {
-            AttendeeSource attendee => await ResolveAttendeesAsync(eventId, attendee, cancellationToken),
+            AttendeeSource attendee => await ResolveAttendeesAsync(teamId, eventId, attendee, cancellationToken),
             ExternalListSource external => ResolveExternalList(external),
             _ => throw new InvalidOperationException(
                 $"Unknown {nameof(BulkEmailJobSource)} type '{source.GetType().Name}'.")
@@ -39,12 +41,13 @@ internal sealed class BulkEmailRecipientResolver(IRegistrationsFacade registrati
     }
 
     private async Task<IReadOnlyList<BulkEmailRecipient>> ResolveAttendeesAsync(
+        TeamId teamId,
         TicketedEventId eventId,
         AttendeeSource source,
         CancellationToken cancellationToken)
     {
         var rows = await registrationsFacade.GetRegistrationsAsync(
-            eventId.Value, source.Filter, cancellationToken);
+            teamId.Value, eventId.Value, source.Filter, cancellationToken);
 
         var recipients = new List<BulkEmailRecipient>(rows.Count);
         foreach (var row in rows)

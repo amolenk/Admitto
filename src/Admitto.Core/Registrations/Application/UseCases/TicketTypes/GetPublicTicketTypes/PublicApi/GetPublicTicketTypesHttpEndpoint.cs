@@ -18,7 +18,7 @@ public static class GetPublicTicketTypesHttpEndpoint
         IQueryHandler<GetPublicTicketTypesQuery, IReadOnlyList<PublicTicketTypeDto>> handler,
         CancellationToken cancellationToken)
     {
-        var query = new GetPublicTicketTypesQuery(TicketedEventId.From(eventId));
+        var query = new GetPublicTicketTypesQuery(TicketedEventId.From(eventId), TeamId.From(teamId));
 
         var result = await handler.HandleAsync(query, cancellationToken);
 

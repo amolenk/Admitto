@@ -20,7 +20,7 @@ public sealed class ProcessWaitlistNotificationsTests(TestContext testContext) :
 
         // Act
         await sut.HandleAsync(
-            new ProcessWaitlistNotificationsCommand(fixture.EventId.Value, fixture.TicketTypeId.Value, FreedSlots: 1),
+            new ProcessWaitlistNotificationsCommand(fixture.EventId.Value, fixture.TeamId.Value, fixture.TicketTypeId.Value, FreedSlots: 1),
             testContext.CancellationToken);
 
         // Assert — one coupon created, waitlist entry removed
@@ -53,7 +53,7 @@ public sealed class ProcessWaitlistNotificationsTests(TestContext testContext) :
 
         // Act
         await sut.HandleAsync(
-            new ProcessWaitlistNotificationsCommand(fixture.EventId.Value, fixture.TicketTypeId.Value, FreedSlots: 1),
+            new ProcessWaitlistNotificationsCommand(fixture.EventId.Value, fixture.TeamId.Value, fixture.TicketTypeId.Value, FreedSlots: 1),
             testContext.CancellationToken);
 
         // Assert — only one coupon, one entry still active (position 2 → renumbered to 1)
@@ -82,7 +82,7 @@ public sealed class ProcessWaitlistNotificationsTests(TestContext testContext) :
 
         // Act
         await sut.HandleAsync(
-            new ProcessWaitlistNotificationsCommand(fixture.EventId.Value, fixture.TicketTypeId.Value, FreedSlots: 2),
+            new ProcessWaitlistNotificationsCommand(fixture.EventId.Value, fixture.TeamId.Value, fixture.TicketTypeId.Value, FreedSlots: 2),
             testContext.CancellationToken);
 
         // Assert — only 1 coupon issued (capped by active entry count)
@@ -108,7 +108,7 @@ public sealed class ProcessWaitlistNotificationsTests(TestContext testContext) :
 
         // Act
         await sut.HandleAsync(
-            new ProcessWaitlistNotificationsCommand(fixture.EventId.Value, fixture.TicketTypeId.Value, FreedSlots: 1),
+            new ProcessWaitlistNotificationsCommand(fixture.EventId.Value, fixture.TeamId.Value, fixture.TicketTypeId.Value, FreedSlots: 1),
             testContext.CancellationToken);
 
         // Assert — expiry must be after quiet hours end (08:00 next day) + 8h = 16:00 next day UTC

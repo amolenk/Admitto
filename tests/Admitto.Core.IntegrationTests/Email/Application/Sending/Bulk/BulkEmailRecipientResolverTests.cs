@@ -16,6 +16,7 @@ public sealed class BulkEmailRecipientResolverTests
     {
         // Arrange
         var eventId = TicketedEventId.New();
+        var teamId = TeamId.New();
         var filter = new QueryRegistrationsDto(
             TicketTypeIds: [Guid.NewGuid()],
             RegistrationStatus: RegistrationStatus.Registered,
@@ -50,18 +51,18 @@ public sealed class BulkEmailRecipientResolverTests
         };
 
         var facade = Substitute.For<IRegistrationsFacade>();
-        facade.GetRegistrationsAsync(eventId.Value, filter, Arg.Any<CancellationToken>())
+        facade.GetRegistrationsAsync(teamId.Value, eventId.Value, filter, Arg.Any<CancellationToken>())
             .Returns(rows);
 
         var resolver = new BulkEmailRecipientResolver(facade);
 
         // Act
         var recipients = await resolver.ResolveAsync(
-            eventId, new AttendeeSource(filter), CancellationToken.None);
+            teamId, eventId, new AttendeeSource(filter), CancellationToken.None);
 
         // Assert
         await facade.Received(1)
-            .GetRegistrationsAsync(eventId.Value, filter, Arg.Any<CancellationToken>());
+            .GetRegistrationsAsync(teamId.Value, eventId.Value, filter, Arg.Any<CancellationToken>());
         recipients.Count.ShouldBe(2);
 
         var alice = recipients[0];
@@ -88,7 +89,7 @@ public sealed class BulkEmailRecipientResolverTests
         ]);
 
         var recipients = await resolver.ResolveAsync(
-            TicketedEventId.New(), source, CancellationToken.None);
+            TeamId.New(), TicketedEventId.New(), source, CancellationToken.None);
 
         recipients.Count.ShouldBe(2);
         recipients[0].Email.ShouldBe(EmailAddress.From("alice@example.com"));
@@ -105,12 +106,13 @@ public sealed class BulkEmailRecipientResolverTests
     public async Task ResolveAsync_AttendeeSource_NoMatches_ReturnsEmptyList()
     {
         var facade = Substitute.For<IRegistrationsFacade>();
-        facade.GetRegistrationsAsync(TicketedEventId.New().Value, default!, default)
+        facade.GetRegistrationsAsync(TeamId.New().Value, TicketedEventId.New().Value, default!, default)
             .ReturnsForAnyArgs(Array.Empty<RegistrationListItemDto>());
 
         var resolver = new BulkEmailRecipientResolver(facade);
 
         var recipients = await resolver.ResolveAsync(
+            TeamId.New(),
             TicketedEventId.New(),
             new AttendeeSource(new QueryRegistrationsDto()),
             CancellationToken.None);
@@ -124,6 +126,7 @@ public sealed class BulkEmailRecipientResolverTests
         var resolver = new BulkEmailRecipientResolver(Substitute.For<IRegistrationsFacade>());
 
         var recipients = await resolver.ResolveAsync(
+            TeamId.New(),
             TicketedEventId.New(),
             new ExternalListSource(Array.Empty<ExternalListItem>()),
             CancellationToken.None);

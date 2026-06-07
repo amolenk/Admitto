@@ -13,7 +13,8 @@ internal sealed class RegistrationCancelledDomainEventHandler(ICommandHandler<Re
         await handler.HandleAsync(
             new ReleaseTicketsCommand(
                 domainEvent.RegistrationId.Value,
-                domainEvent.TicketedEventId.Value),
+                domainEvent.TicketedEventId.Value,
+                domainEvent.TeamId.Value),
             cancellationToken);
     }
 }

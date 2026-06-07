@@ -13,6 +13,8 @@ internal sealed class RegistrationCancelledDomainEventHandler(ICommandHandler<Wr
     {
         await handler.HandleAsync(
             new WriteActivityLogCommand(
+                domainEvent.TeamId,
+                domainEvent.TicketedEventId,
                 domainEvent.RegistrationId,
                 ActivityType.Cancelled,
                 domainEvent.OccurredOn,

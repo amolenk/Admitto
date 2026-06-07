@@ -30,6 +30,7 @@ internal sealed class RegistrationCancelledIntegrationEventHandler(
         var idempotencyKey = $"registration-cancelled:{integrationEvent.RegistrationId}";
 
         var eventContext = await registrationsFacade.GetEventRegistrationSnapshotAsync(
+            integrationEvent.TeamId,
             integrationEvent.TicketedEventId,
             integrationEvent.RegistrationId,
             cancellationToken);

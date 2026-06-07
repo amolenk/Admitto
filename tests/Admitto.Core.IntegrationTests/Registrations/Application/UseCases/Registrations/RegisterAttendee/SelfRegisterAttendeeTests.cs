@@ -382,6 +382,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         params Guid[] ticketTypeIds)
         => new(
             fixture.EventId.Value,
+            fixture.TeamId.Value,
             email,
             "Test",
             "User",
@@ -394,6 +395,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         IReadOnlyDictionary<string, string>? additionalDetails)
         => new(
             fixture.EventId.Value,
+            fixture.TeamId.Value,
             email,
             "Test",
             "User",

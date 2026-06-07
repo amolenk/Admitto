@@ -4,4 +4,5 @@ namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.
 
 internal sealed record ReleaseTicketsCommand(
     Guid RegistrationId,
-    Guid TicketedEventId) : Command;
+    Guid TicketedEventId,
+    Guid TeamId) : Command;

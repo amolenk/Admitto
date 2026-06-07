@@ -12,7 +12,7 @@ internal sealed class GetPublicTicketTypesHandler(IRegistrationsWriteStore write
         CancellationToken cancellationToken)
     {
         var catalog = await writeStore.TicketCatalogs.GetUntrackedAsync(
-             tc => tc.Id == query.EventId,
+             tc => tc.Id == query.EventId && tc.TeamId == query.TeamId,
              cancellationToken);
 
         return catalog.TicketTypes

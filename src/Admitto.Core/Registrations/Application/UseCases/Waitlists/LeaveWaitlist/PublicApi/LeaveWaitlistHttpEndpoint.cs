@@ -15,6 +15,7 @@ public static class LeaveWaitlistHttpEndpoint
     }
 
     private static async ValueTask<Ok> LeaveWaitlist(
+        Guid teamId,
         Guid eventId,
         Guid ticketTypeId,
         string email,
@@ -23,7 +24,7 @@ public static class LeaveWaitlistHttpEndpoint
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
-        var command = new LeaveWaitlistCommand(eventId, ticketTypeId, email);
+        var command = new LeaveWaitlistCommand(teamId, eventId, ticketTypeId, email);
 
         await handler.HandleAsync(command, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);

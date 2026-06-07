@@ -78,7 +78,7 @@ internal sealed class ProcessExpiredWaitlistCouponsJobFixture
             environment.RegistrationsDatabase.Context, TimeProvider.System);
 
         await handler.HandleAsync(
-            new ProcessWaitlistNotificationsCommand(EventId.Value, TicketTypeId.Value, FreedSlots: 1),
+            new ProcessWaitlistNotificationsCommand(EventId.Value, TeamId.Value, TicketTypeId.Value, FreedSlots: 1),
             cancellationToken);
 
         await environment.RegistrationsDatabase.Context.SaveChangesAsync(cancellationToken);

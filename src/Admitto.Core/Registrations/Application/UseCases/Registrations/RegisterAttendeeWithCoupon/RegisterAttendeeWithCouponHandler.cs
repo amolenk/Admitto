@@ -18,17 +18,18 @@ internal sealed class RegisterAttendeeWithCouponHandler(
         CancellationToken cancellationToken)
     {
         var eventId = TicketedEventId.From(command.EventId);
+        var teamId = TeamId.From(command.TeamId);
         var email = EmailAddress.From(command.Email);
         var firstName = FirstName.From(command.FirstName);
         var lastName = LastName.From(command.LastName);
         var ticketTypeIds = command.TicketTypeIds.Select(TicketTypeId.From).ToList();
 
         var coupon = await writeStore.Coupons.GetAsync(
-            c => c.EventId == eventId && c.Code == CouponCode.From(command.CouponCode),
+            c => c.EventId == eventId && c.TeamId == teamId && c.Code == CouponCode.From(command.CouponCode),
             cancellationToken);
 
         var ticketedEvent = await writeStore.TicketedEvents
-            .GetAsync(e => e.Id == eventId, cancellationToken);
+            .GetAsync(e => e.Id == eventId && e.TeamId == teamId, cancellationToken);
 
         if (!ticketedEvent.IsActive)
             throw new BusinessRuleViolationException(Errors.EventNotActive);
@@ -45,14 +46,14 @@ internal sealed class RegisterAttendeeWithCouponHandler(
 
         var existingRegistration = await writeStore.Registrations
             .SingleOrDefaultAsync(
-                r => r.EventId == eventId && r.Email == email,
+                r => r.EventId == eventId && r.TeamId == teamId && r.Email == email,
                 cancellationToken);
 
         if (existingRegistration?.Status == RegistrationStatus.Registered)
             throw new BusinessRuleViolationException(AlreadyExistsError.Create<Registration>());
 
         var catalog = await writeStore.TicketCatalogs
-            .GetAsync(tc => tc.Id == eventId, cancellationToken);
+            .GetAsync(tc => tc.Id == eventId && tc.TeamId == teamId, cancellationToken);
 
         var tickets = catalog.Claim(ticketTypeIds, enforce: false);
 
@@ -79,7 +80,7 @@ internal sealed class RegisterAttendeeWithCouponHandler(
 
         var ticketTypeId = TicketTypeId.From(coupon.AllowedTicketTypeIds[0].Value);
         var waitlist = await writeStore.Waitlists
-            .GetAsync(w => w.EventId == eventId && w.Id == ticketTypeId, cancellationToken);
+            .GetAsync(w => w.EventId == eventId && w.TeamId == teamId && w.Id == ticketTypeId, cancellationToken);
 
         waitlist.RedeemCoupon(coupon.Id);
 

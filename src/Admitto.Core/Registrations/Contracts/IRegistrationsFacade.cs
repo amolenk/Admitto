@@ -3,6 +3,7 @@ namespace Amolenk.Admitto.Core.Registrations.Contracts;
 public interface IRegistrationsFacade
 {
     ValueTask<EventRegistrationSnapshotDto> GetEventRegistrationSnapshotAsync(
+        Guid teamId,
         Guid ticketedEventId,
         Guid registrationId,
         CancellationToken cancellationToken = default);
@@ -13,6 +14,7 @@ public interface IRegistrationsFacade
     /// generic so multiple callers can reuse it without adding per-caller methods.
     /// </summary>
     Task<IReadOnlyList<RegistrationListItemDto>> GetRegistrationsAsync(
+        Guid teamId,
         Guid eventId,
         QueryRegistrationsDto query,
         CancellationToken cancellationToken = default);
@@ -25,6 +27,7 @@ public interface IRegistrationsFacade
     /// integration events.
     /// </summary>
     Task<ReconfirmTriggerSpecDto?> GetReconfirmTriggerSpecAsync(
+        Guid teamId,
         Guid eventId,
         CancellationToken cancellationToken = default);
 
@@ -41,6 +44,7 @@ public interface IRegistrationsFacade
     /// Used by the Badges module's CSV export handler to determine column order.
     /// </summary>
     Task<IReadOnlyList<AdditionalDetailFieldDto>> GetAdditionalDetailSchemaAsync(
+        Guid teamId,
         Guid eventId,
         CancellationToken cancellationToken = default);
 }

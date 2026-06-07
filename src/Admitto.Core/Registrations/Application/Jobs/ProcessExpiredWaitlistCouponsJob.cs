@@ -60,16 +60,16 @@ internal sealed class ProcessExpiredWaitlistCouponsJob(
 
             // Waitlist coupons always target exactly one ticket type — group to batch per type.
             var groups = expiredCoupons
-                .GroupBy(c => (EventId: c.EventId, TicketTypeId: c.AllowedTicketTypeIds[0]));
+                .GroupBy(c => (c.TeamId, EventId: c.EventId, TicketTypeId: c.AllowedTicketTypeIds[0]));
 
             foreach (var group in groups)
             {
-                var (eventId, ticketTypeId) = group.Key;
+                var (teamId, eventId, ticketTypeId) = group.Key;
                 var couponsToRevoke = group.ToList();
 
                 var catalog = await writeStore.TicketCatalogs
                     .AsNoTracking()
-                    .FirstOrDefaultAsync(c => c.Id == eventId, context.CancellationToken);
+                    .FirstOrDefaultAsync(c => c.Id == eventId && c.TeamId == teamId, context.CancellationToken);
 
                 if (catalog is null || catalog.EventStatus != EventLifecycleStatus.Active)
                     continue;
@@ -81,7 +81,9 @@ internal sealed class ProcessExpiredWaitlistCouponsJob(
                 var waitlist = await writeStore.Waitlists
                     .Include(w => w.Entries)
                     .Include(w => w.Coupons)
-                    .FirstOrDefaultAsync(w => w.Id == ticketTypeId, context.CancellationToken);
+                    .FirstOrDefaultAsync(
+                        w => w.Id == ticketTypeId && w.EventId == eventId && w.TeamId == teamId,
+                        context.CancellationToken);
 
                 if (waitlist is null)
                 {
@@ -99,7 +101,7 @@ internal sealed class ProcessExpiredWaitlistCouponsJob(
 
                 await notifyHandler.HandleAsync(
                     new ProcessWaitlistNotificationsCommand(
-                        eventId.Value, ticketTypeId.Value, couponsToRevoke.Count),
+                        eventId.Value, teamId.Value, ticketTypeId.Value, couponsToRevoke.Count),
                     context.CancellationToken);
             }
 

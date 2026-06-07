@@ -15,14 +15,15 @@ internal sealed class ReleaseTicketsHandler(IRegistrationsWriteStore writeStore)
     {
         RegistrationId registrationId = RegistrationId.From(command.RegistrationId);
         TicketedEventId ticketedEventId = TicketedEventId.From(command.TicketedEventId);
+        TeamId teamId = TeamId.From(command.TeamId);
 
         var registration = await writeStore.Registrations.GetAsync(
-                 r => r.Id == registrationId && r.EventId == ticketedEventId,
+                 r => r.Id == registrationId && r.EventId == ticketedEventId && r.TeamId == teamId,
                  cancellationToken);
 
         var catalog = await writeStore.TicketCatalogs
             .FirstOrDefaultAsync(
-                c => c.Id == ticketedEventId,
+                c => c.Id == ticketedEventId && c.TeamId == teamId,
                 cancellationToken);
 
         if (catalog is null)

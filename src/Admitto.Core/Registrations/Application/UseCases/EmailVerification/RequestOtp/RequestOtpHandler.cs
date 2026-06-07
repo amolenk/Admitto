@@ -23,7 +23,7 @@ internal sealed class RequestOtpHandler(
         var email = emailResult.ValueObject;
 
         var ticketedEvent = await writeStore.TicketedEvents
-            .FirstOrDefaultAsync(e => e.Id == command.EventId, cancellationToken);
+            .FirstOrDefaultAsync(e => e.Id == command.EventId && e.TeamId == command.TeamId, cancellationToken);
 
         if (ticketedEvent is null)
             throw new BusinessRuleViolationException(Errors.EventNotFound);
@@ -39,6 +39,7 @@ internal sealed class RequestOtpHandler(
         var recentCount = await writeStore.OtpCodes
             .CountAsync(
                 c => c.EventId == command.EventId
+                     && c.TeamId == command.TeamId
                      && c.EmailHash == emailHash
                      && c.ExpiresAt > rateLimitWindow,
                 cancellationToken);
@@ -49,6 +50,7 @@ internal sealed class RequestOtpHandler(
         // Supersede any active (non-expired, non-used, non-superseded) codes for this email+event.
         var activeCodes = await writeStore.OtpCodes
             .Where(c => c.EventId == command.EventId
+                        && c.TeamId == command.TeamId
                         && c.EmailHash == emailHash
                         && c.SupersededAt == null
                         && c.UsedAt == null

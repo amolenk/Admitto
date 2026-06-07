@@ -13,10 +13,12 @@ internal sealed class GetReconfirmTriggerSpecHandler(IRegistrationsWriteStore wr
         CancellationToken cancellationToken)
     {
         var ticketedEventId = TicketedEventId.From(query.TicketedEventId);
+        var teamId = TeamId.From(query.TeamId);
 
         return await writeStore.TicketedEvents
             .AsNoTracking()
             .Where(e => e.Id == ticketedEventId
+                        && e.TeamId == teamId
                         && e.Status == EventLifecycleStatus.Active
                         && e.ReconfirmPolicy != null)
             .Select(e => new ReconfirmTriggerSpecDto(

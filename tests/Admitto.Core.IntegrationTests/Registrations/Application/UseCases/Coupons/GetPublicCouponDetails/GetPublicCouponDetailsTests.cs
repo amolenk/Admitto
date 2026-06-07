@@ -17,7 +17,7 @@ public sealed class GetPublicCouponDetailsTests(TestContext testContext) : Aspir
         var fixture = GetPublicCouponDetailsFixture.WithActiveCoupon();
         await fixture.SetupAsync(Environment);
 
-        var query = new GetPublicCouponDetailsQuery(fixture.EventId, fixture.CouponCode);
+        var query = new GetPublicCouponDetailsQuery(fixture.EventId, fixture.TeamId, fixture.CouponCode);
         var sut = NewHandler();
 
         // Act
@@ -39,7 +39,7 @@ public sealed class GetPublicCouponDetailsTests(TestContext testContext) : Aspir
         var fixture = GetPublicCouponDetailsFixture.WithRedeemedCoupon();
         await fixture.SetupAsync(Environment);
 
-        var query = new GetPublicCouponDetailsQuery(fixture.EventId, fixture.CouponCode);
+        var query = new GetPublicCouponDetailsQuery(fixture.EventId, fixture.TeamId, fixture.CouponCode);
         var sut = NewHandler();
 
         // Act
@@ -56,7 +56,7 @@ public sealed class GetPublicCouponDetailsTests(TestContext testContext) : Aspir
         var fixture = GetPublicCouponDetailsFixture.NoCoupon();
         await fixture.SetupAsync(Environment);
 
-        var query = new GetPublicCouponDetailsQuery(fixture.EventId, CouponCode.New());
+        var query = new GetPublicCouponDetailsQuery(fixture.EventId, fixture.TeamId, CouponCode.New());
         var sut = NewHandler();
 
         // Act
@@ -76,7 +76,7 @@ public sealed class GetPublicCouponDetailsTests(TestContext testContext) : Aspir
 
         // Use a different EventId than the one the coupon belongs to
         var otherEventId = TicketedEventId.New();
-        var query = new GetPublicCouponDetailsQuery(otherEventId, fixture.CouponCode);
+        var query = new GetPublicCouponDetailsQuery(otherEventId, fixture.TeamId, fixture.CouponCode);
         var sut = NewHandler();
 
         // Act

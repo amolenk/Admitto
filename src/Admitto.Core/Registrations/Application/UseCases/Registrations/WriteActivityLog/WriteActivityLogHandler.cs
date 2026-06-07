@@ -11,6 +11,8 @@ internal sealed class WriteActivityLogHandler(IRegistrationsWriteStore writeStor
         CancellationToken cancellationToken)
     {
         writeStore.ActivityLog.Add(Domain.Entities.ActivityLog.Create(
+            teamId: command.TeamId,
+            eventId: command.EventId,
             registrationId: command.RegistrationId,
             activityType: command.ActivityType,
             occurredAt: command.OccurredAt,

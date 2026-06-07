@@ -15,6 +15,14 @@ internal sealed class ActivityLogEntityConfiguration : IEntityTypeConfiguration<
             .IsRequired()
             .ValueGeneratedNever();
 
+        builder.Property(e => e.TeamId)
+            .HasColumnName("team_id")
+            .IsRequired();
+
+        builder.Property(e => e.EventId)
+            .HasColumnName("event_id")
+            .IsRequired();
+
         builder.Property(e => e.RegistrationId)
             .HasColumnName("registration_id")
             .IsRequired();
@@ -33,7 +41,7 @@ internal sealed class ActivityLogEntityConfiguration : IEntityTypeConfiguration<
             .HasColumnName("metadata")
             .HasColumnType("text");
 
-        builder.HasIndex(e => new { e.RegistrationId, e.ActivityType, e.OccurredAt })
+        builder.HasIndex(e => new { e.TeamId, e.EventId, e.RegistrationId, e.ActivityType, e.OccurredAt })
             .HasDatabaseName("IX_activity_log_registration_type_occurred");
     }
 }

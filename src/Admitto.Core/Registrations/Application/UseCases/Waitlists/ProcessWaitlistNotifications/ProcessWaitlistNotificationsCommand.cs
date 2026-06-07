@@ -4,5 +4,6 @@ namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Waitlists.Proc
 
 internal sealed record ProcessWaitlistNotificationsCommand(
     Guid EventId,
+    Guid TeamId,
     Guid TicketTypeId,
     int FreedSlots) : Command;

@@ -27,7 +27,7 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
     public async Task AttendeeRequest_DispatchesCancellationEmail()
     {
         var facade = Substitute.For<IRegistrationsFacade>();
-        facade.GetEventRegistrationSnapshotAsync(EventGuid.Value, RegId, Arg.Any<CancellationToken>())
+        facade.GetEventRegistrationSnapshotAsync(TeamGuid.Value, EventGuid.Value, RegId, Arg.Any<CancellationToken>())
             .Returns(Context());
         var sendEmailHandler = Substitute.For<ICommandHandler<SendEmailCommand>>();
 
@@ -47,7 +47,7 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
     public async Task VisaLetterDenied_DispatchesVisaLetterDeniedEmail()
     {
         var facade = Substitute.For<IRegistrationsFacade>();
-        facade.GetEventRegistrationSnapshotAsync(EventGuid.Value, RegId, Arg.Any<CancellationToken>())
+        facade.GetEventRegistrationSnapshotAsync(TeamGuid.Value, EventGuid.Value, RegId, Arg.Any<CancellationToken>())
             .Returns(Context());
         var sendEmailHandler = Substitute.For<ICommandHandler<SendEmailCommand>>();
 
@@ -66,7 +66,7 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
     public async Task ReconfirmAutoCancel_DispatchesReconfirmCancelledEmail()
     {
         var facade = Substitute.For<IRegistrationsFacade>();
-        facade.GetEventRegistrationSnapshotAsync(EventGuid.Value, RegId, Arg.Any<CancellationToken>())
+        facade.GetEventRegistrationSnapshotAsync(TeamGuid.Value, EventGuid.Value, RegId, Arg.Any<CancellationToken>())
             .Returns(Context());
         var sendEmailHandler = Substitute.For<ICommandHandler<SendEmailCommand>>();
 
@@ -90,7 +90,7 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
         await sut.HandleAsync(Event("TicketTypesRemoved"), testContext.CancellationToken);
 
         await facade.DidNotReceive().GetEventRegistrationSnapshotAsync(
-            Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+            Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
         await sendEmailHandler.DidNotReceive().HandleAsync(
             Arg.Any<SendEmailCommand>(), Arg.Any<CancellationToken>());
     }
@@ -99,7 +99,7 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
     public async Task AttendeeRequest_PassesFirstNameFromContext()
     {
         var facade = Substitute.For<IRegistrationsFacade>();
-        facade.GetEventRegistrationSnapshotAsync(EventGuid.Value, RegId, Arg.Any<CancellationToken>())
+        facade.GetEventRegistrationSnapshotAsync(TeamGuid.Value, EventGuid.Value, RegId, Arg.Any<CancellationToken>())
             .Returns(Context());
         var sendEmailHandler = Substitute.For<ICommandHandler<SendEmailCommand>>();
 
@@ -117,7 +117,7 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
     public async Task AttendeeRequest_ParametersIncludeEventWebsite()
     {
         var facade = Substitute.For<IRegistrationsFacade>();
-        facade.GetEventRegistrationSnapshotAsync(EventGuid.Value, RegId, Arg.Any<CancellationToken>())
+        facade.GetEventRegistrationSnapshotAsync(TeamGuid.Value, EventGuid.Value, RegId, Arg.Any<CancellationToken>())
             .Returns(Context());
         var sendEmailHandler = Substitute.For<ICommandHandler<SendEmailCommand>>();
 

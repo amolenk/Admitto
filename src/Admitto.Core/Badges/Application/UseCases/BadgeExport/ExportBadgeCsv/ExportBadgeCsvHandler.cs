@@ -37,7 +37,7 @@ internal sealed class ExportBadgeCsvHandler(
 
         var content = badgeType.Kind == BadgeKind.Standalone
             ? await BuildStandaloneCsvAsync(teamId, eventId, badgeTypeId, cancellationToken)
-            : await BuildTicketBasedCsvAsync(eventId, badgeType, cancellationToken);
+            : await BuildTicketBasedCsvAsync(teamId, eventId, badgeType, cancellationToken);
 
         var fileName = $"badges-{badgeType.Name.Value.Kebaberize()}.csv";
         return (fileName, content);
@@ -75,6 +75,7 @@ internal sealed class ExportBadgeCsvHandler(
     }
 
     private async Task<byte[]> BuildTicketBasedCsvAsync(
+        TeamId teamId,
         TicketedEventId eventId,
         BadgeType badgeType,
         CancellationToken cancellationToken)
@@ -84,6 +85,7 @@ internal sealed class ExportBadgeCsvHandler(
             .ToList();
 
         var registrations = await registrationsFacade.GetRegistrationsAsync(
+            teamId.Value,
             eventId.Value,
             new QueryRegistrationsDto(
                 RegistrationStatus: RegistrationStatus.Registered,
@@ -91,6 +93,7 @@ internal sealed class ExportBadgeCsvHandler(
             cancellationToken);
 
         var schemaFields = await registrationsFacade.GetAdditionalDetailSchemaAsync(
+            teamId.Value,
             eventId.Value,
             cancellationToken);
 

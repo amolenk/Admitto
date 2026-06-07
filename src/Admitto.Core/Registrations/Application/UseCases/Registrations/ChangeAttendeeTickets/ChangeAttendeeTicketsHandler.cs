@@ -18,11 +18,12 @@ internal sealed class ChangeAttendeeTicketsHandler(
         CancellationToken cancellationToken)
     {
         TicketedEventId eventId = TicketedEventId.From(command.EventId);
+        TeamId teamId = TeamId.From(command.TeamId);
         RegistrationId registrationId = RegistrationId.From(command.RegistrationId);
 
         // 1. Load registration; reject if not found.
         var registration = await writeStore.Registrations.GetAsync(
-                 r => r.Id == registrationId && r.EventId == eventId,
+                 r => r.Id == registrationId && r.EventId == eventId && r.TeamId == teamId,
                  cancellationToken);
 
         // 2. Reject cancelled registrations.
@@ -31,7 +32,7 @@ internal sealed class ChangeAttendeeTicketsHandler(
 
         // 3. Load event; reject if not Active.
         var ticketedEvent = await writeStore.TicketedEvents
-            .FirstOrDefaultAsync(e => e.Id == eventId, cancellationToken);
+            .FirstOrDefaultAsync(e => e.Id == eventId && e.TeamId == teamId, cancellationToken);
 
         if (ticketedEvent is null || !ticketedEvent.IsActive)
             throw new BusinessRuleViolationException(Errors.EventNotActive);
@@ -47,7 +48,7 @@ internal sealed class ChangeAttendeeTicketsHandler(
 
         // 4. Load catalog.
         var catalog = await writeStore.TicketCatalogs
-            .FirstOrDefaultAsync(tc => tc.Id == eventId, cancellationToken);
+            .FirstOrDefaultAsync(tc => tc.Id == eventId && tc.TeamId == teamId, cancellationToken);
 
         if (catalog is null)
             throw new BusinessRuleViolationException(Errors.NoTicketTypesConfigured);

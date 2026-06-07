@@ -17,17 +17,18 @@ internal sealed class LeaveWaitlistHandler(IRegistrationsWriteStore writeStore)
             throw new BusinessRuleViolationException(Errors.InvalidEmail);
 
         var email = emailResult.ValueObject;
+        TeamId teamId = TeamId.From(command.TeamId);
         TicketedEventId eventId = TicketedEventId.From(command.EventId);
         TicketTypeId ticketTypeId = TicketTypeId.From(command.TicketTypeId);
 
         var catalog = await writeStore.TicketCatalogs.GetUntrackedAsync(
-            tc => tc.Id == eventId,
+            tc => tc.Id == eventId && tc.TeamId == teamId,
             cancellationToken);
 
         catalog.EnsureEventActive();
 
         var waitlist = await writeStore.Waitlists
-            .FirstOrDefaultAsync(w => w.Id == ticketTypeId && w.EventId == eventId, cancellationToken);
+            .FirstOrDefaultAsync(w => w.Id == ticketTypeId && w.EventId == eventId && w.TeamId == teamId, cancellationToken);
 
         if (waitlist is null)
             throw new BusinessRuleViolationException(Errors.WaitlistNotFound);

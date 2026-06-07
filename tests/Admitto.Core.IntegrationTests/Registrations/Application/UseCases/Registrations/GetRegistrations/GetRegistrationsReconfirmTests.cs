@@ -34,11 +34,11 @@ public sealed class GetRegistrationsReconfirmTests(TestContext testContext) : As
         });
 
         // First tick.
-        var first = await Query(eventId);
+        var first = await Query(teamId, eventId);
         first.Select(r => r.Email).ShouldBe(["bob@example.com"]);
 
         // Second tick (no state change): same exclusion.
-        var second = await Query(eventId);
+        var second = await Query(teamId, eventId);
         second.Select(r => r.Email).ShouldBe(["bob@example.com"]);
     }
 
@@ -55,7 +55,7 @@ public sealed class GetRegistrationsReconfirmTests(TestContext testContext) : As
             db.Registrations.Add(alice);
         });
 
-        var beforeReconfirm = await Query(eventId);
+        var beforeReconfirm = await Query(teamId, eventId);
         beforeReconfirm.ShouldHaveSingleItem().Email.ShouldBe("alice@example.com");
 
         // Simulate Alice reconfirming between ticks.
@@ -66,7 +66,7 @@ public sealed class GetRegistrationsReconfirmTests(TestContext testContext) : As
             fromDb.Reconfirm(DateTimeOffset.UtcNow);
         });
 
-        var afterReconfirm = await Query(eventId);
+        var afterReconfirm = await Query(teamId, eventId);
         afterReconfirm.ShouldBeEmpty();
     }
 
@@ -79,12 +79,12 @@ public sealed class GetRegistrationsReconfirmTests(TestContext testContext) : As
         await Environment.RegistrationsDatabase.SeedAsync(db =>
             db.Registrations.Add(NewRegistration(teamId, eventId, "alice@example.com", reconfirmed: false)));
 
-        (await Query(eventId)).Select(r => r.Email).ShouldBe(["alice@example.com"]);
+        (await Query(teamId, eventId)).Select(r => r.Email).ShouldBe(["alice@example.com"]);
 
         await Environment.RegistrationsDatabase.SeedAsync(db =>
             db.Registrations.Add(NewRegistration(teamId, eventId, "bob@example.com", reconfirmed: false)));
 
-        var second = await Query(eventId);
+        var second = await Query(teamId, eventId);
         second.Select(r => r.Email).OrderBy(e => e).ShouldBe(["alice@example.com", "bob@example.com"]);
     }
 
@@ -100,7 +100,7 @@ public sealed class GetRegistrationsReconfirmTests(TestContext testContext) : As
             db.Registrations.Add(NewRegistration(teamId, eventId, "bob@example.com", reconfirmed: true));
         });
 
-        (await Query(eventId)).ShouldBeEmpty();
+        (await Query(teamId, eventId)).ShouldBeEmpty();
     }
 
     [TestMethod]
@@ -123,7 +123,7 @@ public sealed class GetRegistrationsReconfirmTests(TestContext testContext) : As
             fromDb.Cancel(CancellationReason.AttendeeRequest);
         });
 
-        (await Query(eventId)).ShouldBeEmpty();
+        (await Query(teamId, eventId)).ShouldBeEmpty();
     }
 
     private static Registration NewRegistration(
@@ -147,8 +147,8 @@ public sealed class GetRegistrationsReconfirmTests(TestContext testContext) : As
     private static string Capitalize(string s) =>
         s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s[1..];
 
-    private async ValueTask<IReadOnlyList<GetRegistrationsNs.RegistrationListItemDto>> Query(TicketedEventId eventId) =>
+    private async ValueTask<IReadOnlyList<GetRegistrationsNs.RegistrationListItemDto>> Query(TeamId teamId, TicketedEventId eventId) =>
         (await new GetRegistrationsNs.GetRegistrationsHandler(Environment.RegistrationsDatabase.Context).HandleAsync(
-            new GetRegistrationsNs.GetRegistrationsQuery(eventId, Filter: ReconfirmFilter),
+            new GetRegistrationsNs.GetRegistrationsQuery(eventId, teamId, ReconfirmFilter),
             testContext.CancellationToken)) ?? [];
 }

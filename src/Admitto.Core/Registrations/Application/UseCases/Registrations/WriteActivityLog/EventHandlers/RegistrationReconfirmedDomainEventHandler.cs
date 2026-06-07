@@ -13,6 +13,8 @@ internal sealed class RegistrationReconfirmedDomainEventHandler(ICommandHandler<
     {
         await handler.HandleAsync(
             new WriteActivityLogCommand(
+                domainEvent.TeamId,
+                domainEvent.TicketedEventId,
                 domainEvent.RegistrationId,
                 ActivityType.Reconfirmed,
                 domainEvent.ReconfirmedAt),

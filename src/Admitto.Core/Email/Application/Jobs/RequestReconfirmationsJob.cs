@@ -47,6 +47,7 @@ internal sealed class RequestReconfirmationsJob(
 
         var now = timeProvider.GetUtcNow();
         var candidates = await registrationsFacade.GetRegistrationsAsync(
+            teamId.Value,
             ticketedEventId.Value,
             new QueryRegistrationsDto(
                 RegistrationStatus: RegistrationStatus.Registered,

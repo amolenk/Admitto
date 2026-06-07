@@ -284,7 +284,7 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
 
         var sender = new FakeBulkSmtpSender();
         var resolver = Substitute.For<IBulkEmailRecipientResolver>();
-        resolver.ResolveAsync(eventId, Arg.Any<BulkEmailJobSource>(), Arg.Any<CancellationToken>())
+        resolver.ResolveAsync(teamId, eventId, Arg.Any<BulkEmailJobSource>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(recipients));
 
         var fanOut = BuildFanOut(sender, resolver, perMessageDelay ?? TimeSpan.Zero);
@@ -348,7 +348,7 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
     {
         var resolver = Substitute.For<IBulkEmailRecipientResolver>();
         resolver
-            .WhenForAnyArgs(r => r.ResolveAsync(TicketedEventId.New(), default!, default))
+            .WhenForAnyArgs(r => r.ResolveAsync(TeamId.New(), TicketedEventId.New(), default!, default))
             .Do(_ => throw new InvalidOperationException("Resolver should not be called when resuming an in-flight job."));
         return resolver;
     }

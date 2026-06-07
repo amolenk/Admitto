@@ -102,7 +102,7 @@ internal sealed class SendBulkEmailJob(
                 IReadOnlyList<BulkEmailRecipient> recipients;
                 try
                 {
-                    recipients = await recipientResolver.ResolveAsync(job.TicketedEventId, job.Source, ct);
+                    recipients = await recipientResolver.ResolveAsync(job.TeamId, job.TicketedEventId, job.Source, ct);
                 }
                 catch (Exception ex)
                 {

@@ -196,6 +196,7 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
         var facade = Substitute.For<IRegistrationsFacade>();
         facade
             .GetRegistrationsAsync(
+                TeamId.Value,
                 eventId.Value,
                 Arg.Is<QueryRegistrationsDto>(q =>
                     q.RegistrationStatus == RegistrationStatus.Registered &&

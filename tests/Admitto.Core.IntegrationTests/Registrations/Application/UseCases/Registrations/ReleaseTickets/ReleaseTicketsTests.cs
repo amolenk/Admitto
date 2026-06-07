@@ -13,7 +13,7 @@ public sealed class ReleaseTicketsTests(TestContext testContext) : AspireIntegra
         var fixture = ReleaseTicketsFixture.WithCatalogAndRegistration(maxCapacity: 10, usedCapacity: 3);
         await fixture.SetupAsync(Environment);
 
-        var command = new ReleaseTicketsCommand(fixture.RegistrationId.Value, fixture.EventId.Value);
+        var command = new ReleaseTicketsCommand(fixture.RegistrationId.Value, fixture.EventId.Value, fixture.TeamId.Value);
         var sut = new ReleaseTicketsHandler(Environment.RegistrationsDatabase.Context);
 
         await sut.HandleAsync(command, testContext.CancellationToken);
@@ -34,7 +34,7 @@ public sealed class ReleaseTicketsTests(TestContext testContext) : AspireIntegra
         var fixture = ReleaseTicketsFixture.WithoutCatalog();
         await fixture.SetupAsync(Environment);
 
-        var command = new ReleaseTicketsCommand(fixture.RegistrationId.Value, fixture.EventId.Value);
+        var command = new ReleaseTicketsCommand(fixture.RegistrationId.Value, fixture.EventId.Value, fixture.TeamId.Value);
         var sut = new ReleaseTicketsHandler(Environment.RegistrationsDatabase.Context);
 
         // Should complete without throwing
@@ -48,7 +48,7 @@ public sealed class ReleaseTicketsTests(TestContext testContext) : AspireIntegra
         var fixture = ReleaseTicketsFixture.WithCatalogAtZeroCapacity();
         await fixture.SetupAsync(Environment);
 
-        var command = new ReleaseTicketsCommand(fixture.RegistrationId.Value, fixture.EventId.Value);
+        var command = new ReleaseTicketsCommand(fixture.RegistrationId.Value, fixture.EventId.Value, fixture.TeamId.Value);
         var sut = new ReleaseTicketsHandler(Environment.RegistrationsDatabase.Context);
 
         await sut.HandleAsync(command, testContext.CancellationToken);
@@ -69,7 +69,7 @@ public sealed class ReleaseTicketsTests(TestContext testContext) : AspireIntegra
         var fixture = ReleaseTicketsFixture.WithCatalogAndUnknownTicketTypeInRegistration();
         await fixture.SetupAsync(Environment);
 
-        var command = new ReleaseTicketsCommand(fixture.RegistrationId.Value, fixture.EventId.Value);
+        var command = new ReleaseTicketsCommand(fixture.RegistrationId.Value, fixture.EventId.Value, fixture.TeamId.Value);
         var sut = new ReleaseTicketsHandler(Environment.RegistrationsDatabase.Context);
 
         // Should complete without throwing; unknown ticket type is silently skipped

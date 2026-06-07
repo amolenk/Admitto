@@ -27,7 +27,7 @@ public sealed class AttendeeRegisteredIntegrationEventHandlerTests(TestContext t
     public async Task AttendeeRegistered_DispatchesTicketEmail()
     {
         var facade = Substitute.For<IRegistrationsFacade>();
-        facade.GetEventRegistrationSnapshotAsync(EventGuid.Value, RegId, Arg.Any<CancellationToken>())
+        facade.GetEventRegistrationSnapshotAsync(TeamGuid.Value, EventGuid.Value, RegId, Arg.Any<CancellationToken>())
             .Returns(Context());
         var sendEmailHandler = Substitute.For<ICommandHandler<SendEmailCommand>>();
 
@@ -47,7 +47,7 @@ public sealed class AttendeeRegisteredIntegrationEventHandlerTests(TestContext t
     public async Task AttendeeRegistered_ParametersIncludeEventWebsite()
     {
         var facade = Substitute.For<IRegistrationsFacade>();
-        facade.GetEventRegistrationSnapshotAsync(EventGuid.Value, RegId, Arg.Any<CancellationToken>())
+        facade.GetEventRegistrationSnapshotAsync(TeamGuid.Value, EventGuid.Value, RegId, Arg.Any<CancellationToken>())
             .Returns(Context());
         var sendEmailHandler = Substitute.For<ICommandHandler<SendEmailCommand>>();
 

@@ -28,6 +28,7 @@ public static class ChangeAttendeeTicketsHttpEndpoint
     {
         var command = new ChangeAttendeeTicketsCommand(
             eventId,
+            teamId,
             registrationId,
             request.TicketTypeIds!,
             ChangeMode.Admin);

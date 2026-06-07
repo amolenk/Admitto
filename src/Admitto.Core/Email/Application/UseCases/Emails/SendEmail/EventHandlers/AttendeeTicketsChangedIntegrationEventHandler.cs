@@ -21,6 +21,7 @@ internal sealed class AttendeeTicketsChangedIntegrationEventHandler(
         var idempotencyKey = $"tickets-changed:{integrationEvent.RegistrationId}:{changedAtMs}";
 
         var eventContext = await registrationsFacade.GetEventRegistrationSnapshotAsync(
+            integrationEvent.TeamId,
             integrationEvent.TicketedEventId,
             integrationEvent.RegistrationId,
             cancellationToken);

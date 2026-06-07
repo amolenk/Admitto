@@ -33,7 +33,7 @@ internal sealed class TicketedEventReconfirmPolicyChangedIntegrationEventHandler
         // Re-query to pick up the current TimeZone (and to confirm the event
         // is still Active and the policy has not been re-cleared concurrently).
         var spec = await registrationsFacade.GetReconfirmTriggerSpecAsync(
-            ticketedEventId.Value, cancellationToken);
+            integrationEvent.TeamId, ticketedEventId.Value, cancellationToken);
 
         await handler.HandleAsync(
             new ScheduleReconfirmationsCommand(integrationEvent.TicketedEventId, spec),

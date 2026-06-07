@@ -20,6 +20,7 @@ public sealed class ChangeAttendeeTicketsHandlerTests(TestContext testContext) :
 
         var command = new ChangeAttendeeTicketsCommand(
             fixture.EventId.Value,
+            fixture.TeamId.Value,
             fixture.RegistrationId.Value,
             [fixture.GetTicketTypeId("workshop").Value],
             ChangeMode.Admin);
@@ -52,6 +53,7 @@ public sealed class ChangeAttendeeTicketsHandlerTests(TestContext testContext) :
 
         var command = new ChangeAttendeeTicketsCommand(
             fixture.EventId.Value,
+            fixture.TeamId.Value,
             fixture.RegistrationId.Value,
             [fixture.GetTicketTypeId("workshop").Value],
             ChangeMode.Admin);
@@ -77,6 +79,7 @@ public sealed class ChangeAttendeeTicketsHandlerTests(TestContext testContext) :
 
         var command = new ChangeAttendeeTicketsCommand(
             fixture.EventId.Value,
+            fixture.TeamId.Value,
             fixture.RegistrationId.Value,
             [fixture.GetTicketTypeId("early-bird").Value],
             ChangeMode.Admin);
@@ -96,6 +99,7 @@ public sealed class ChangeAttendeeTicketsHandlerTests(TestContext testContext) :
 
         var command = new ChangeAttendeeTicketsCommand(
             fixture.EventId.Value,
+            fixture.TeamId.Value,
             fixture.RegistrationId.Value,
             [fixture.GetTicketTypeId("early-bird").Value],
             ChangeMode.Admin);

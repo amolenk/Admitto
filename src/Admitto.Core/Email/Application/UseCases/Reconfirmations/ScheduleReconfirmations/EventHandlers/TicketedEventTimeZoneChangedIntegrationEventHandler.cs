@@ -21,7 +21,7 @@ internal sealed class TicketedEventTimeZoneChangedIntegrationEventHandler(
         var ticketedEventId = TicketedEventId.From(integrationEvent.TicketedEventId);
 
         var spec = await registrationsFacade.GetReconfirmTriggerSpecAsync(
-            ticketedEventId.Value, cancellationToken);
+            integrationEvent.TeamId, ticketedEventId.Value, cancellationToken);
 
         if (spec is null)
             return;

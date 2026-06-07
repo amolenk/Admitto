@@ -23,10 +23,15 @@ internal sealed class ProcessWaitlistNotificationsHandler(
         CancellationToken cancellationToken)
     {
         var eventId = TicketedEventId.From(command.EventId);
+        var teamId = TeamId.From(command.TeamId);
         var ticketTypeId = TicketTypeId.From(command.TicketTypeId);
 
-        var ticketedEvent = await writeStore.TicketedEvents.GetAsync(eventId, cancellationToken);
-        var catalog = await writeStore.TicketCatalogs.GetAsync(eventId, cancellationToken);
+        var ticketedEvent = await writeStore.TicketedEvents.GetAsync(
+            e => e.Id == eventId && e.TeamId == teamId,
+            cancellationToken);
+        var catalog = await writeStore.TicketCatalogs.GetAsync(
+            c => c.Id == eventId && c.TeamId == teamId,
+            cancellationToken);
 
         if (!ticketedEvent.IsActive || catalog.EventStatus != EventLifecycleStatus.Active)
             return;
@@ -35,7 +40,9 @@ internal sealed class ProcessWaitlistNotificationsHandler(
         if (ticketType is null || !ticketType.WaitlistEnabled || !ticketType.WaitlistMode)
             return;
 
-        var waitlist = await writeStore.Waitlists.GetAsync(ticketTypeId, cancellationToken);
+        var waitlist = await writeStore.Waitlists.GetAsync(
+            w => w.Id == ticketTypeId && w.EventId == eventId && w.TeamId == teamId,
+            cancellationToken);
 
         // var activeEntryCount = waitlist.Entries.Count(e => e.Status == WaitlistEntryStatus.Active);
         var activeEntryCount = waitlist.ActiveEntryCount;

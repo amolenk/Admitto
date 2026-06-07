@@ -19,7 +19,9 @@ internal sealed class CreateCouponHandler(
         var teamId = TeamId.From(command.TeamId);
         var email = EmailAddress.From(command.Email);
 
-        var catalog = await writeStore.TicketCatalogs.GetUntrackedAsync(tc => tc.Id == eventId, cancellationToken);
+        var catalog = await writeStore.TicketCatalogs.GetUntrackedAsync(
+            tc => tc.Id == eventId && tc.TeamId == teamId,
+            cancellationToken);
         catalog.EnsureEventActive();
 
         var availableTicketTypes = catalog.TicketTypes

@@ -98,6 +98,7 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         // Requesting "general-admission" but coupon only allows "speaker-pass".
         var command = new RegisterAttendeeWithCouponCommand(
             fixture.EventId.Value,
+            fixture.TeamId.Value,
             fixture.CouponEmail.Value,
             "Coupon",
             "User",
@@ -334,6 +335,7 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
     private static RegisterAttendeeWithCouponCommand NewCommand(RegisterAttendeeFixture fixture, string email)
         => new(
             fixture.EventId.Value,
+            fixture.TeamId.Value,
             email,
             "Test",
             "User",
@@ -346,6 +348,7 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         IReadOnlyDictionary<string, string>? additionalDetails)
         => new(
             fixture.EventId.Value,
+            fixture.TeamId.Value,
             email,
             "Test",
             "User",

@@ -40,6 +40,7 @@ public static class RegisterAttendeeSelfServiceHttpEndpoint
 
         var command = new RegisterAttendeeSelfServiceCommand(
             eventId,
+            teamId,
             claims.Email.Value,
             request.FirstName,
             request.LastName,

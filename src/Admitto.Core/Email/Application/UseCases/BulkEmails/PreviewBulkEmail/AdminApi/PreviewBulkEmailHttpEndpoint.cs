@@ -27,6 +27,7 @@ public static class PreviewBulkEmailHttpEndpoint
     {
         var source = request.Source.ToDomain();
         var recipients = await recipientResolver.ResolveAsync(
+            TeamId.From(teamId),
             TicketedEventId.From(eventId),
             source,
             ct);

@@ -25,7 +25,7 @@ public sealed class ReconfirmIntegrationEventHandlerTests
         var spec = Spec(teamId, eventId);
 
         var facade = Substitute.For<IRegistrationsFacade>();
-        facade.GetReconfirmTriggerSpecAsync(eventId, Arg.Any<CancellationToken>())
+        facade.GetReconfirmTriggerSpecAsync(teamId, eventId, Arg.Any<CancellationToken>())
             .Returns(spec);
         var scheduleHandler = Substitute.For<ICommandHandler<ScheduleReconfirmationsCommand>>();
 
@@ -44,16 +44,17 @@ public sealed class ReconfirmIntegrationEventHandlerTests
     [TestMethod]
     public async Task TicketedEventCreatedIntegrationEvent_WithoutPolicy_DoesNotDispatch()
     {
+        var teamId = Guid.NewGuid();
         var eventId = Guid.NewGuid();
         var facade = Substitute.For<IRegistrationsFacade>();
-        facade.GetReconfirmTriggerSpecAsync(eventId, Arg.Any<CancellationToken>())
+        facade.GetReconfirmTriggerSpecAsync(teamId, eventId, Arg.Any<CancellationToken>())
             .Returns((ReconfirmTriggerSpecDto?)null);
         var scheduleHandler = Substitute.For<ICommandHandler<ScheduleReconfirmationsCommand>>();
 
         var handler = new TicketedEventCreatedIntegrationEventHandler(facade, scheduleHandler);
 
         await handler.HandleAsync(
-            new TicketedEventCreatedIntegrationEvent(Guid.NewGuid(), Guid.NewGuid(), eventId, "UTC"),
+            new TicketedEventCreatedIntegrationEvent(Guid.NewGuid(), teamId, eventId, "UTC"),
             default);
 
         await scheduleHandler.DidNotReceive().HandleAsync(
@@ -68,7 +69,7 @@ public sealed class ReconfirmIntegrationEventHandlerTests
         var spec = Spec(teamId, eventId);
 
         var facade = Substitute.For<IRegistrationsFacade>();
-        facade.GetReconfirmTriggerSpecAsync(eventId, Arg.Any<CancellationToken>())
+        facade.GetReconfirmTriggerSpecAsync(teamId, eventId, Arg.Any<CancellationToken>())
             .Returns(spec);
         var scheduleHandler = Substitute.For<ICommandHandler<ScheduleReconfirmationsCommand>>();
 
@@ -103,7 +104,7 @@ public sealed class ReconfirmIntegrationEventHandlerTests
             Arg.Is<ScheduleReconfirmationsCommand>(c =>
                 c.TicketedEventId == TicketedEventId.From(eventId) && c.Spec == null),
             Arg.Any<CancellationToken>());
-        await facade.DidNotReceive().GetReconfirmTriggerSpecAsync(Arg.Any<Guid>(), Arg.Any<CancellationToken>());
+        await facade.DidNotReceive().GetReconfirmTriggerSpecAsync(Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<CancellationToken>());
     }
 
     [TestMethod]
@@ -114,7 +115,7 @@ public sealed class ReconfirmIntegrationEventHandlerTests
         var spec = Spec(teamId, eventId);
 
         var facade = Substitute.For<IRegistrationsFacade>();
-        facade.GetReconfirmTriggerSpecAsync(eventId, Arg.Any<CancellationToken>())
+        facade.GetReconfirmTriggerSpecAsync(teamId, eventId, Arg.Any<CancellationToken>())
             .Returns(spec);
         var scheduleHandler = Substitute.For<ICommandHandler<ScheduleReconfirmationsCommand>>();
 
@@ -133,16 +134,17 @@ public sealed class ReconfirmIntegrationEventHandlerTests
     [TestMethod]
     public async Task TimeZoneChanged_WithoutPolicy_DoesNotDispatch()
     {
+        var teamId = Guid.NewGuid();
         var eventId = Guid.NewGuid();
         var facade = Substitute.For<IRegistrationsFacade>();
-        facade.GetReconfirmTriggerSpecAsync(eventId, Arg.Any<CancellationToken>())
+        facade.GetReconfirmTriggerSpecAsync(teamId, eventId, Arg.Any<CancellationToken>())
             .Returns((ReconfirmTriggerSpecDto?)null);
         var scheduleHandler = Substitute.For<ICommandHandler<ScheduleReconfirmationsCommand>>();
 
         var handler = new TicketedEventTimeZoneChangedIntegrationEventHandler(facade, scheduleHandler);
 
         await handler.HandleAsync(
-            new TicketedEventTimeZoneChangedIntegrationEvent(Guid.NewGuid(), eventId, "UTC"),
+            new TicketedEventTimeZoneChangedIntegrationEvent(teamId, eventId, "UTC"),
             default);
 
         await scheduleHandler.DidNotReceive().HandleAsync(

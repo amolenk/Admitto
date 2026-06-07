@@ -4,6 +4,7 @@ namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.
 
 internal sealed record RegisterAttendeeWithCouponCommand(
     Guid EventId,
+    Guid TeamId,
     string Email,
     string FirstName,
     string LastName,

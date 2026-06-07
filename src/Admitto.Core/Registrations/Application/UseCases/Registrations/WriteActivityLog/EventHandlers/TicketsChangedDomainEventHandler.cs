@@ -20,6 +20,8 @@ internal sealed class TicketsChangedDomainEventHandler(ICommandHandler<WriteActi
 
         await handler.HandleAsync(
             new WriteActivityLogCommand(
+                domainEvent.TeamId,
+                domainEvent.TicketedEventId,
                 domainEvent.RegistrationId,
                 ActivityType.TicketsChanged,
                 domainEvent.ChangedAt,

@@ -18,10 +18,11 @@ internal sealed class GetTicketedEventEmailContextHandler(
         CancellationToken cancellationToken)
     {
         var ticketedEventId = TicketedEventId.From(query.TicketedEventId);
+        var teamId = TeamId.From(query.TeamId);
 
         var fields = await writeStore.TicketedEvents
             .AsNoTracking()
-            .Where(e => e.Id == ticketedEventId)
+            .Where(e => e.Id == ticketedEventId && e.TeamId == teamId)
             .Select(e => new
             {
                 Name = e.Name.Value,
@@ -49,7 +50,7 @@ internal sealed class GetTicketedEventEmailContextHandler(
             var registrationId = RegistrationId.From(query.RegistrationId);
             var attendee = await writeStore.Registrations
                 .AsNoTracking()
-                .Where(r => r.Id == registrationId)
+                .Where(r => r.Id == registrationId && r.EventId == ticketedEventId && r.TeamId == teamId)
                 .Select(r => new { FirstName = r.FirstName.Value, LastName = r.LastName.Value })
                 .FirstOrDefaultAsync(cancellationToken);
 

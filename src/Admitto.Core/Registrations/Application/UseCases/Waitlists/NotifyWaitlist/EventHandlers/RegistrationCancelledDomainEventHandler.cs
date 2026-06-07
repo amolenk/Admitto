@@ -22,10 +22,16 @@ internal sealed class RegistrationCancelledDomainEventHandler(
         CancellationToken cancellationToken)
     {
         var registration = await writeStore.Registrations
-            .GetAsync(r => r.Id == domainEvent.RegistrationId, cancellationToken);
+            .GetAsync(
+                r => r.Id == domainEvent.RegistrationId
+                     && r.EventId == domainEvent.TicketedEventId
+                     && r.TeamId == domainEvent.TeamId,
+                cancellationToken);
 
         var catalog = await writeStore.TicketCatalogs
-            .FirstOrDefaultAsync(tc => tc.Id == domainEvent.TicketedEventId, cancellationToken);
+            .FirstOrDefaultAsync(
+                tc => tc.Id == domainEvent.TicketedEventId && tc.TeamId == domainEvent.TeamId,
+                cancellationToken);
 
         if (catalog is null)
             return;
@@ -45,7 +51,11 @@ internal sealed class RegistrationCancelledDomainEventHandler(
                 continue;
 
             await processWaitlistNotificationsHandler.HandleAsync(
-                new ProcessWaitlistNotificationsCommand(domainEvent.TicketedEventId.Value, ticketTypeId.Value, freedSlots),
+                new ProcessWaitlistNotificationsCommand(
+                    domainEvent.TicketedEventId.Value,
+                    domainEvent.TeamId.Value,
+                    ticketTypeId.Value,
+                    freedSlots),
                 cancellationToken);
         }
     }

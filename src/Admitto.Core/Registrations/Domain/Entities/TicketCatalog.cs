@@ -99,7 +99,7 @@ public class TicketCatalog : Aggregate<TicketedEventId>
             if (ticketType.WaitlistMode)
                 ticketType.DeactivateWaitlistMode();
             ticketType.DisableWaitlist();
-            AddDomainEvent(new WaitlistForcedDisabledDomainEvent(Id, id));
+            AddDomainEvent(new WaitlistForcedDisabledDomainEvent(TeamId, Id, id));
             ticketType.UpdateCapacity(maxCapacity);
             return;
         }
@@ -124,7 +124,7 @@ public class TicketCatalog : Aggregate<TicketedEventId>
             && ticketType.UsedCapacity >= ticketType.MaxCapacity.Value)
         {
             ticketType.ActivateWaitlistMode();
-            AddDomainEvent(new WaitlistModeActivatedDomainEvent(Id, id));
+            AddDomainEvent(new WaitlistModeActivatedDomainEvent(TeamId, Id, id));
         }
         // Capacity increase while WaitlistMode active → notify waiting attendees
         else if (ticketType.WaitlistMode && ticketType.MaxCapacity.HasValue)
@@ -133,7 +133,7 @@ public class TicketCatalog : Aggregate<TicketedEventId>
             var newAvailable = Math.Max(0, ticketType.MaxCapacity.Value - ticketType.UsedCapacity);
             var freedSlots = newAvailable - oldAvailable;
             if (freedSlots > 0)
-                AddDomainEvent(new WaitlistCapacityFreedDomainEvent(Id, id, freedSlots));
+                AddDomainEvent(new WaitlistCapacityFreedDomainEvent(TeamId, Id, id, freedSlots));
         }
     }
 
@@ -278,7 +278,7 @@ public class TicketCatalog : Aggregate<TicketedEventId>
                 && ticketType.UsedCapacity >= ticketType.MaxCapacity.Value)
             {
                 ticketType.ActivateWaitlistMode();
-                AddDomainEvent(new WaitlistModeActivatedDomainEvent(Id, id));
+                AddDomainEvent(new WaitlistModeActivatedDomainEvent(TeamId, Id, id));
             }
         }
 

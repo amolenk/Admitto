@@ -65,7 +65,7 @@ public class Waitlist : Aggregate<TicketTypeId>
 
         entry.Remove();
         RenumberPositions();
-        AddDomainEvent(new WaitlistEntryRemovedDomainEvent(EventId, Id, entry.Id, email));
+        AddDomainEvent(new WaitlistEntryRemovedDomainEvent(TeamId, EventId, Id, entry.Id, email));
         CheckExhausted();
     }
 
@@ -83,7 +83,7 @@ public class Waitlist : Aggregate<TicketTypeId>
 
         entry.Remove();
         RenumberPositions();
-        AddDomainEvent(new WaitlistEntryRemovedDomainEvent(EventId, Id, entry.Id, entry.Email));
+        AddDomainEvent(new WaitlistEntryRemovedDomainEvent(TeamId, EventId, Id, entry.Id, entry.Email));
         CheckExhausted();
     }
 
@@ -202,7 +202,7 @@ public class Waitlist : Aggregate<TicketTypeId>
         var hasIssuedCoupons = _coupons.Any(c => c.Status == WaitlistCouponStatus.Issued);
 
         if (!hasActiveEntries && !hasIssuedCoupons)
-            AddDomainEvent(new WaitlistExhaustedDomainEvent(EventId, Id));
+            AddDomainEvent(new WaitlistExhaustedDomainEvent(TeamId, EventId, Id));
     }
 
     internal static class Errors

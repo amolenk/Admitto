@@ -33,7 +33,7 @@ internal sealed class CancelRegistrationHandler(
         if (command.Reason == CancellationReason.AttendeeRequest)
         {
             var ticketedEvent = await writeStore.TicketedEvents
-                .FirstOrDefaultAsync(e => e.Id == ticketedEventId, cancellationToken);
+                .FirstOrDefaultAsync(e => e.Id == ticketedEventId && e.TeamId == teamId, cancellationToken);
 
             var now = timeProvider.GetUtcNow();
             if (ticketedEvent is not null && now >= ticketedEvent.StartsAt)

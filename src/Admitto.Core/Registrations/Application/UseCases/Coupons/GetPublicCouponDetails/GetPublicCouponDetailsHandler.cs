@@ -14,11 +14,11 @@ internal sealed class GetPublicCouponDetailsHandler(IRegistrationsWriteStore wri
         var now = DateTimeOffset.UtcNow;
 
         var coupon = await writeStore.Coupons.GetUntrackedAsync(
-            c => c.Code == query.Code && c.EventId == query.EventId,
+            c => c.Code == query.Code && c.EventId == query.EventId && c.TeamId == query.TeamId,
             cancellationToken);
 
         var catalog = await writeStore.TicketCatalogs.GetUntrackedAsync(
-            tc => tc.Id == query.EventId,
+            tc => tc.Id == query.EventId && tc.TeamId == query.TeamId,
             cancellationToken);
 
         var allowedTicketTypes = coupon.AllowedTicketTypeIds

@@ -25,6 +25,7 @@ public static class SelfChangeTicketsHttpEndpoint
     {
         var command = new ChangeAttendeeTicketsCommand(
             eventId,
+            teamId,
             registrationId,
             request.TicketTypeIds ?? [],
             ChangeMode.SelfService);

@@ -28,7 +28,7 @@ internal sealed class ExportRegistrationsCsvHandler(
 
         var ticketedEvent = await writeStore.TicketedEvents
             .AsNoTracking()
-            .FirstOrDefaultAsync(e => e.Id == eventId, cancellationToken);
+            .FirstOrDefaultAsync(e => e.Id == eventId && e.TeamId == teamId, cancellationToken);
 
         if (ticketedEvent is null)
             return null;

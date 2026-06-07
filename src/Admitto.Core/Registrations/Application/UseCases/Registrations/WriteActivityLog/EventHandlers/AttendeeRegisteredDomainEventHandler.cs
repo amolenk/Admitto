@@ -13,6 +13,8 @@ internal sealed class AttendeeRegisteredDomainEventHandler(ICommandHandler<Write
     {
         await handler.HandleAsync(
             new WriteActivityLogCommand(
+                domainEvent.TeamId,
+                domainEvent.TicketedEventId,
                 domainEvent.RegistrationId,
                 ActivityType.Registered,
                 domainEvent.OccurredOn),

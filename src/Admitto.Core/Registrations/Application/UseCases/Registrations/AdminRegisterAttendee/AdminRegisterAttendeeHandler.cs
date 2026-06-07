@@ -17,12 +17,13 @@ internal sealed class AdminRegisterAttendeeHandler(
         CancellationToken cancellationToken)
     {
         var eventId = TicketedEventId.From(command.EventId);
+        var teamId = TeamId.From(command.TeamId);
         var email = EmailAddress.From(command.Email);
         var firstName = FirstName.From(command.FirstName);
         var lastName = LastName.From(command.LastName);
 
         var ticketedEvent = await writeStore.TicketedEvents
-            .GetAsync(e => e.Id == eventId, cancellationToken);
+            .GetAsync(e => e.Id == eventId && e.TeamId == teamId, cancellationToken);
 
         if (!ticketedEvent.IsActive)
             throw new BusinessRuleViolationException(Errors.EventNotActive);
@@ -33,14 +34,14 @@ internal sealed class AdminRegisterAttendeeHandler(
 
         var existingRegistration = await writeStore.Registrations
             .SingleOrDefaultAsync(
-                r => r.EventId == eventId && r.Email == email,
+                r => r.EventId == eventId && r.TeamId == teamId && r.Email == email,
                 cancellationToken);
 
         if (existingRegistration?.Status == RegistrationStatus.Registered)
             throw new BusinessRuleViolationException(AlreadyExistsError.Create<Registration>());
 
         var catalog = await writeStore.TicketCatalogs
-            .GetAsync(tc => tc.Id == eventId, cancellationToken);
+            .GetAsync(tc => tc.Id == eventId && tc.TeamId == teamId, cancellationToken);
 
         var ticketTypeIds = command.TicketTypeIds.Select(TicketTypeId.From).ToList();
         var tickets = catalog.Claim(ticketTypeIds, enforce: false);

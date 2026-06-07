@@ -109,6 +109,8 @@ internal sealed class GetRegistrationDetailsFixture
         if (_withRegisteredActivity)
         {
             var registeredEntry = ActivityLogEntity.Create(
+                TeamId,
+                EventId,
                 registration.Id,
                 ActivityType.Registered,
                 RegisteredAt);
@@ -118,6 +120,8 @@ internal sealed class GetRegistrationDetailsFixture
         if (_withReconfirmedActivity)
         {
             var reconfirmedEntry = ActivityLogEntity.Create(
+                TeamId,
+                EventId,
                 registration.Id,
                 ActivityType.Reconfirmed,
                 ReconfirmedAt);
@@ -127,6 +131,8 @@ internal sealed class GetRegistrationDetailsFixture
         if (_withCancelledActivity)
         {
             var cancelledEntry = ActivityLogEntity.Create(
+                TeamId,
+                EventId,
                 registration.Id,
                 ActivityType.Cancelled,
                 DateTimeOffset.UtcNow.AddDays(-1),

@@ -16,6 +16,7 @@ public static class GetPublicCouponDetailsHttpEndpoint
     }
 
     private static async ValueTask<Ok<PublicCouponDetailsDto>> GetPublicCouponDetails(
+        Guid teamId,
         Guid eventId,
         Guid couponCode,
         IQueryHandler<GetPublicCouponDetailsQuery, PublicCouponDetailsDto> handler,
@@ -23,6 +24,7 @@ public static class GetPublicCouponDetailsHttpEndpoint
     {
         var query = new GetPublicCouponDetailsQuery(
             TicketedEventId.From(eventId),
+            TeamId.From(teamId),
             CouponCode.From(couponCode));
 
         var result = await handler.HandleAsync(query, cancellationToken);

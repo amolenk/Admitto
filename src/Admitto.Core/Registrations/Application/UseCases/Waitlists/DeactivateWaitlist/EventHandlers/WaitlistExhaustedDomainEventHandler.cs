@@ -17,7 +17,9 @@ internal sealed class WaitlistExhaustedDomainEventHandler(IRegistrationsWriteSto
         CancellationToken cancellationToken)
     {
         var catalog = await writeStore.TicketCatalogs
-            .FirstOrDefaultAsync(tc => tc.Id == domainEvent.TicketedEventId, cancellationToken);
+            .FirstOrDefaultAsync(
+                tc => tc.Id == domainEvent.TicketedEventId && tc.TeamId == domainEvent.TeamId,
+                cancellationToken);
 
         if (catalog is null)
             return;

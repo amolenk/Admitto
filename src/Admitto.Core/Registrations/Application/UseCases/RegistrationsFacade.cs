@@ -18,29 +18,32 @@ internal sealed class RegistrationsFacade(
     IRegistrationsWriteStore writeStore) : IRegistrationsFacade
 {
     public async ValueTask<EventRegistrationSnapshotDto> GetEventRegistrationSnapshotAsync(
+        Guid teamId,
         Guid ticketedEventId,
         Guid registrationId,
         CancellationToken cancellationToken = default)
     {
         return await getEmailContextHandler.HandleAsync(
-            new GetTicketedEventEmailContextQuery(ticketedEventId, registrationId),
+            new GetTicketedEventEmailContextQuery(teamId, ticketedEventId, registrationId),
             cancellationToken);
     }
 
     public async Task<IReadOnlyList<RegistrationListItemDto>> GetRegistrationsAsync(
+        Guid teamId,
         Guid eventId,
         QueryRegistrationsDto query,
         CancellationToken cancellationToken = default)
     {
         var ticketedEventId = TicketedEventId.From(eventId);
+        var team = TeamId.From(teamId);
 
         var result = await getRegistrationsHandler.HandleAsync(
-            new GetRegistrationsNs.GetRegistrationsQuery(ticketedEventId, Filter: query),
+            new GetRegistrationsNs.GetRegistrationsQuery(ticketedEventId, team, query),
             cancellationToken);
 
         var catalog = await writeStore.TicketCatalogs
             .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Id == ticketedEventId, cancellationToken);
+            .FirstOrDefaultAsync(c => c.Id == ticketedEventId && c.TeamId == team, cancellationToken);
 
         var maxAttemptsByTypeId = catalog?.TicketTypes
             .Where(t => t.MaxReconfirmAttempts.HasValue)
@@ -74,11 +77,12 @@ internal sealed class RegistrationsFacade(
     }
 
     public async Task<ReconfirmTriggerSpecDto?> GetReconfirmTriggerSpecAsync(
+        Guid teamId,
         Guid eventId,
         CancellationToken cancellationToken = default)
     {
         return await getReconfirmTriggerSpecHandler.HandleAsync(
-            new GetReconfirmTriggerSpecQuery(eventId),
+            new GetReconfirmTriggerSpecQuery(teamId, eventId),
             cancellationToken);
     }
 
@@ -91,14 +95,16 @@ internal sealed class RegistrationsFacade(
     }
 
     public async Task<IReadOnlyList<AdditionalDetailFieldDto>> GetAdditionalDetailSchemaAsync(
+        Guid teamId,
         Guid eventId,
         CancellationToken cancellationToken = default)
     {
         var ticketedEventId = TicketedEventId.From(eventId);
+        var team = TeamId.From(teamId);
 
         var ticketedEvent = await writeStore.TicketedEvents
             .AsNoTracking()
-            .FirstOrDefaultAsync(e => e.Id == ticketedEventId, cancellationToken);
+            .FirstOrDefaultAsync(e => e.Id == ticketedEventId && e.TeamId == team, cancellationToken);
 
         if (ticketedEvent is null)
             return [];

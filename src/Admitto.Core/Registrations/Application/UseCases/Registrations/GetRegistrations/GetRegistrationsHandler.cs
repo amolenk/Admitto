@@ -11,18 +11,15 @@ internal sealed class GetRegistrationsHandler(IRegistrationsWriteStore writeStor
         GetRegistrationsQuery query,
         CancellationToken cancellationToken)
     {
-        if (query.TeamId is { } teamId)
-        {
-            var eventExists = await writeStore.TicketedEvents
-                .AnyAsync(e => e.Id == query.EventId && e.TeamId == teamId, cancellationToken);
+        var eventExists = await writeStore.TicketedEvents
+            .AnyAsync(e => e.Id == query.EventId && e.TeamId == query.TeamId, cancellationToken);
 
-            if (!eventExists)
-                return null;
-        }
+        if (!eventExists)
+            return null;
 
         var q = writeStore.Registrations
             .AsNoTracking()
-            .Where(r => r.EventId == query.EventId);
+            .Where(r => r.EventId == query.EventId && r.TeamId == query.TeamId);
 
         if (query.Filter is { } filter)
         {
@@ -69,7 +66,7 @@ internal sealed class GetRegistrationsHandler(IRegistrationsWriteStore writeStor
 
         var catalog = await writeStore.TicketCatalogs
             .AsNoTracking()
-            .FirstOrDefaultAsync(c => c.Id == query.EventId, cancellationToken);
+            .FirstOrDefaultAsync(c => c.Id == query.EventId && c.TeamId == query.TeamId, cancellationToken);
 
         var nameById = catalog?.TicketTypes.ToDictionary(t => t.Id.Value, t => t.Name.Value)
                          ?? new Dictionary<Guid, string>();

@@ -17,13 +17,19 @@ internal sealed class WaitlistModeActivatedDomainEventHandler(IRegistrationsWrit
         CancellationToken cancellationToken)
     {
         var existing = await writeStore.Waitlists
-            .AnyAsync(w => w.Id == domainEvent.TicketTypeId, cancellationToken);
+            .AnyAsync(
+                w => w.Id == domainEvent.TicketTypeId
+                     && w.EventId == domainEvent.TicketedEventId
+                     && w.TeamId == domainEvent.TeamId,
+                cancellationToken);
 
         if (existing)
             return;
 
         var ticketedEvent = await writeStore.TicketedEvents
-            .FirstOrDefaultAsync(e => e.Id == domainEvent.TicketedEventId, cancellationToken);
+            .FirstOrDefaultAsync(
+                e => e.Id == domainEvent.TicketedEventId && e.TeamId == domainEvent.TeamId,
+                cancellationToken);
 
         if (ticketedEvent is null)
             return;
@@ -31,7 +37,7 @@ internal sealed class WaitlistModeActivatedDomainEventHandler(IRegistrationsWrit
         var waitlist = Domain.Entities.Waitlist.Create(
             domainEvent.TicketedEventId,
             domainEvent.TicketTypeId,
-            ticketedEvent.TeamId);
+            domainEvent.TeamId);
 
         await writeStore.Waitlists.AddAsync(waitlist, cancellationToken);
     }

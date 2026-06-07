@@ -20,6 +20,7 @@ internal sealed class AttendeeRegisteredIntegrationEventHandler(
         var idempotencyKey = $"attendee-registered:{integrationEvent.RegistrationId}";
 
         var eventContext = await registrationsFacade.GetEventRegistrationSnapshotAsync(
+            integrationEvent.TeamId,
             integrationEvent.TicketedEventId,
             integrationEvent.RegistrationId,
             cancellationToken);

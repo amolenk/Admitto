@@ -11,6 +11,7 @@ internal sealed class GetPublicCouponDetailsFixture
     private bool _redeemedCoupon;
 
     public TicketedEventId EventId { get; } = TicketedEventId.New();
+    public TeamId TeamId { get; } = TeamId.New();
     public TicketTypeId TicketTypeId { get; } = TicketTypeId.From(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
     public string TicketTypeName { get; } = "General Admission";
     public CouponCode CouponCode { get; private set; } = CouponCode.New();
@@ -33,13 +34,14 @@ internal sealed class GetPublicCouponDetailsFixture
 
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
     {
-        var catalog = TicketCatalog.Create(EventId, TeamId.New());
+        var catalog = TicketCatalog.Create(EventId, TeamId);
         catalog.AddTicketType(TicketTypeId, Amolenk.Admitto.Core.Registrations.Domain.ValueObjects.TicketTypeName.From(this.TicketTypeName), [], 100);
 
         if (_seedCoupon)
         {
             var coupon = new CouponBuilder()
                 .WithEventId(EventId)
+                .WithTeamId(TeamId)
                 .WithRequestedTicketTypeIds(TicketTypeId)
                 .WithAvailableTicketTypes(new TicketTypeInfo(TicketTypeId))
                 .WithExpiresAt(DateTimeOffset.UtcNow.AddDays(30))

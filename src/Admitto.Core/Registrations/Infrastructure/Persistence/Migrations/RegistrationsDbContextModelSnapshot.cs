@@ -19,7 +19,7 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("registrations")
-                .HasAnnotation("ProductVersion", "10.0.5")
+                .HasAnnotation("ProductVersion", "10.0.7")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -34,6 +34,10 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
                         .HasColumnType("integer")
                         .HasColumnName("activity_type");
 
+                    b.Property<Guid>("EventId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("event_id");
+
                     b.Property<string>("Metadata")
                         .HasColumnType("text")
                         .HasColumnName("metadata");
@@ -46,9 +50,13 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
                         .HasColumnType("uuid")
                         .HasColumnName("registration_id");
 
+                    b.Property<Guid>("TeamId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("team_id");
+
                     b.HasKey("Id");
 
-                    b.HasIndex("RegistrationId", "ActivityType", "OccurredAt")
+                    b.HasIndex("TeamId", "EventId", "RegistrationId", "ActivityType", "OccurredAt")
                         .HasDatabaseName("IX_activity_log_registration_type_occurred");
 
                     b.ToTable("activity_log", "registrations");

@@ -24,6 +24,7 @@ public static class RegisterAttendeeWithCouponHttpEndpoint
     {
         var command = new RegisterAttendeeWithCouponCommand(
             eventId,
+            teamId,
             request.Email,
             request.FirstName,
             request.LastName,
