@@ -9,7 +9,7 @@ resource serviceBus 'Microsoft.ServiceBus/namespaces@2024-01-01' = {
     disableLocalAuth: true
   }
   sku: {
-    name: 'Basic'
+    name: 'Standard'
   }
 }
 

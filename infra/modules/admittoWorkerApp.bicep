@@ -6,7 +6,6 @@ param applicationInsightsConnectionString string
 param keyVaultName string
 param managedIdentityClientId string
 param managedIdentityId string
-param storageAccountName string
 param serviceBusEndpoint string
 
 var resourceToken = uniqueString(resourceGroup().id)

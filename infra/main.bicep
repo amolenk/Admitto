@@ -101,8 +101,6 @@ module logAnalytics 'modules/logAnalyticsWorkspace.bicep' = {
   name: 'logAnalyticsWorkspace'
   params: {
     location: location
-    vnetId: network.outputs.vnetId
-//     subnetId: privateEndpointSubnetId
   }
 }
 
@@ -120,8 +118,6 @@ module applicationInsights 'modules/applicationInsights.bicep' = {
   params: {
     location: location
     logAnalyticsWorkspaceId: logAnalytics.outputs.id
-    vnetId: network.outputs.vnetId
-//     subnetId: network.outputs.privateEndpointSubnetId
   }
 }
 
@@ -130,8 +126,6 @@ module storageAccount 'modules/storageAccount.bicep' = {
   params: {
     location: location
     principalId: managedIdentity.outputs.principalId
-    vnetId: network.outputs.vnetId
-    subnetId: network.outputs.privateEndpointSubnetId
   }
 }
 
@@ -149,25 +143,12 @@ module postgres 'modules/postgres.bicep' = {
     administratorLoginPassword: postgresPassword
     keyVaultName: keyVault.outputs.name
     location: location
-    vnetId: network.outputs.vnetId
-    subnetId: network.outputs.privateEndpointSubnetId
   }
 }
 
-module frontDoor 'modules/frontDoor.bicep' = {
-  name: 'front-door'
-  params: {
-//     acaEnvironmentDomain: containerAppEnvironment.outputs.defaultDomain
-  }
-}
+// REMOVED: Front Door module (simplified deployment - using public Container Apps instead)
 
-module vpnGateway 'modules/vpnGateway.bicep' = {
-  name: 'vpn-gateway'
-  params: {
-    location: location
-    gatewaySubnetId: network.outputs.gatewaySubnetId
-  }
-}
+// REMOVED: VPN Gateway module (simplified deployment - no private VNET needed)
 
 module admittoApi 'modules/admittoApiApp.bicep' = {
   name: 'admitto-api-app'
@@ -180,12 +161,10 @@ module admittoApi 'modules/admittoApiApp.bicep' = {
     authAudience: authApiAudience
     msGraphTenantId: msGraphTenantId
     msGraphClientId: msGraphClientId
-    frontDoorId: frontDoor.outputs.frontDoorId
     keyVaultName: keyVault.outputs.name
     location: location
     managedIdentityClientId: managedIdentity.outputs.clientId
     managedIdentityId: managedIdentity.outputs.id
-    storageAccountName: storageAccount.outputs.storageAccountName
     serviceBusEndpoint: serviceBus.outputs.serviceBusEndpoint
   }
 }
@@ -200,7 +179,6 @@ module admittoWorker 'modules/admittoWorkerApp.bicep' = {
     location: location
     managedIdentityClientId: managedIdentity.outputs.clientId
     managedIdentityId: managedIdentity.outputs.id
-    storageAccountName: storageAccount.outputs.storageAccountName
     serviceBusEndpoint: serviceBus.outputs.serviceBusEndpoint
   }
 }

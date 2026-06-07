@@ -8,11 +8,9 @@ param authAuthority string
 param authAudience string
 param msGraphTenantId string
 param msGraphClientId string
-param frontDoorId string
 param keyVaultName string
 param managedIdentityClientId string
 param managedIdentityId string
-param storageAccountName string
 param serviceBusEndpoint string
 
 var resourceToken = uniqueString(resourceGroup().id)
@@ -111,10 +109,6 @@ resource containerApp 'Microsoft.App/containerApps@2025-02-02-preview' = {
             {
               name: 'ConnectionStrings__messaging'
               value: serviceBusEndpoint
-            }
-            {
-              name: 'FrontDoor__Id'
-              value: frontDoorId
             }
             {
               name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'

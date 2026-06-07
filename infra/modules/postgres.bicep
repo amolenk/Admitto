@@ -1,12 +1,9 @@
 param location string = resourceGroup().location
 param administratorLogin string = 'admitto_admin'
 
-param vnetId string
-param subnetId string
-param keyVaultName string
-
 @secure()
 param administratorLoginPassword string
+param keyVaultName string
 
 resource postgres 'Microsoft.DBforPostgreSQL/flexibleServers@2025-06-01-preview' = {
   name: take('pg-${uniqueString(resourceGroup().id)}', 63)
@@ -27,7 +24,7 @@ resource postgres 'Microsoft.DBforPostgreSQL/flexibleServers@2025-06-01-preview'
       mode: 'Disabled'
     }
     network: {
-      publicNetworkAccess: 'Disabled'
+      publicNetworkAccess: 'Enabled'
     }
     storage: {
       autoGrow: 'Enabled'
@@ -44,57 +41,17 @@ resource postgres 'Microsoft.DBforPostgreSQL/flexibleServers@2025-06-01-preview'
 }
 
 // Private endpoint for PostgreSQL
-resource privateEndpoint 'Microsoft.Network/privateEndpoints@2024-07-01' = {
-  name: 'pe-${postgres.name}'
-  location: location
-  properties: {
-    subnet: {
-      id: subnetId
-    }
-    privateLinkServiceConnections: [
-      {
-        name: 'postgres-connection'
-        properties: {
-          privateLinkServiceId: postgres.id
-          groupIds: [
-            'postgresqlServer'
-          ]
-        }
-      }
-    ]
-  }
-}
+// REMOVED: Now using public access with firewall rules instead
 
 // Private DNS zone for PostgreSQL
-resource privateDnsZone 'Microsoft.Network/privateDnsZones@2024-06-01' = {
-  name: 'privatelink.postgres.database.azure.com'
-  location: 'global'
-}
+// REMOVED: No longer needed with public access
 
-resource privateDnsZoneLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = {
-  name: 'postgres-link'
-  parent: privateDnsZone
-  location: 'global'
+resource allowAzureServices 'Microsoft.DBforPostgreSQL/flexibleServers/firewallRules@2024-08-01' = {
+  name: 'AllowAzureServices'
+  parent: postgres
   properties: {
-    registrationEnabled: false
-    virtualNetwork: {
-      id: vnetId
-    }
-  }
-}
-
-resource privateDnsZoneGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2024-07-01' = {
-  name: 'postgres-dns-group'
-  parent: privateEndpoint
-  properties: {
-    privateDnsZoneConfigs: [
-      {
-        name: 'postgres-config'
-        properties: {
-          privateDnsZoneId: privateDnsZone.id
-        }
-      }
-    ]
+    startIpAddress: '0.0.0.0'
+    endIpAddress: '0.0.0.0'
   }
 }
 
