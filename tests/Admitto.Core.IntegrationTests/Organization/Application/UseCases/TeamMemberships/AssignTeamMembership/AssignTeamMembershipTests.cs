@@ -38,7 +38,7 @@ public sealed class AssignTeamMembershipTests(TestContext testContext) : AspireI
             user.EmailAddress.Value.ShouldBe(command.EmailAddress);
             user.Memberships.ShouldHaveSingleItem().ShouldSatisfyAllConditions(m =>
             {
-                m.Id.Value.ShouldBe(fixture.TeamId);
+                m.TeamId.Value.ShouldBe(fixture.TeamId);
                 m.Role.ToDto().ShouldBe(command.Role);
             });
         });
@@ -67,7 +67,7 @@ public sealed class AssignTeamMembershipTests(TestContext testContext) : AspireI
             user.EmailAddress.Value.ShouldBe(command.EmailAddress);
             user.Memberships.ShouldHaveSingleItem().ShouldSatisfyAllConditions(m =>
             {
-                m.Id.Value.ShouldBe(fixture.TeamId);
+                m.TeamId.Value.ShouldBe(fixture.TeamId);
                 m.Role.ToDto().ShouldBe(command.Role);
             });
         });

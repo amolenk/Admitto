@@ -40,8 +40,8 @@ public class UserEntityConfiguration : IEntityTypeConfiguration<User>
             {
                 c.ToJson("memberships");
         
-                c.Property(m => m.Id)
-                    .HasJsonPropertyName("id");
+c.Property(m => m.TeamId)
+    .HasJsonPropertyName("id");
 
                 c.Property(m => m.Role)
                     .HasConversion<string>()

@@ -1,19 +1,21 @@
-using Amolenk.Admitto.Core.Shared.Kernel.Entities;
+using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Core.Organization.Domain.Entities;
 
-public class TeamMembership : Entity<TeamId>
+public class TeamMembership
 {
     private TeamMembership(
-        TeamId id,
+        TeamId teamId,
         TeamMembershipRole role)
-        : base(id)
     {
+        TeamId = teamId;
         Role = role;
     }
 
+    public TeamId TeamId { get; private set; }
+
     public TeamMembershipRole Role { get; private set; }
-    
+
     public static TeamMembership Create(
         TeamId teamId,
         TeamMembershipRole role) =>

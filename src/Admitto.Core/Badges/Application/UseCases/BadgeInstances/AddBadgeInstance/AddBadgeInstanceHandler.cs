@@ -2,7 +2,6 @@ using Amolenk.Admitto.Core.Badges.Application.Persistence;
 using Amolenk.Admitto.Core.Badges.Domain.Entities;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
-using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 
 namespace Amolenk.Admitto.Core.Badges.Application.UseCases.BadgeInstances.AddBadgeInstance;
 
@@ -14,36 +13,23 @@ internal sealed class AddBadgeInstanceHandler(IBadgesWriteStore writeStore)
         var eventId = TicketedEventId.From(command.EventId);
         var teamId = TeamId.From(command.TeamId);
 
+        // Load BadgeEvent (untracked for guard - we don't mutate it here)
         var badgeEvent = await writeStore.BadgeEvents.GetUntrackedAsync(
             be => be.Id == eventId && be.TeamId == teamId,
             cancellationToken);
 
-        badgeEvent.EnsureEventActive();
-
         var badgeTypeId = BadgeTypeId.From(command.BadgeTypeId);
 
-        var badgeType = await writeStore.BadgeTypes.GetUntrackedAsync(
-            bt => bt.Id == badgeTypeId && bt.EventId == eventId,
-            cancellationToken);
-
-        if (badgeType.Kind != BadgeKind.Standalone)
-            throw new BusinessRuleViolationException(Errors.NotStandaloneBadgeType);
+        // Call aggregate method which enforces all business rules
+        badgeEvent.EnsureCanManageInstances(badgeTypeId);
 
         var id = BadgeInstanceId.New();
         var displayName = BadgeInstanceDisplayName.From(command.DisplayName);
         var notes = BadgeInstanceNotes.From(command.Notes);
 
-        var instance = BadgeInstance.Create(id, badgeTypeId, displayName, notes);
+        var instance = BadgeInstance.Create(id, teamId, eventId, badgeTypeId, displayName, notes);
         writeStore.BadgeInstances.Add(instance);
 
         return id.Value;
-    }
-
-    internal static class Errors
-    {
-        public static readonly Error NotStandaloneBadgeType = new(
-            "badge_instance.not_standalone_badge_type",
-            "Badge instances can only be added to standalone badge types.",
-            Type: ErrorType.Validation);
     }
 }

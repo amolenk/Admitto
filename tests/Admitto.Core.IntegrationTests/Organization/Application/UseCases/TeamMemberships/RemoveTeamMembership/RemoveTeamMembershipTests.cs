@@ -33,8 +33,8 @@ public sealed class RemoveTeamMembershipTests(TestContext testContext) : AspireI
                 [UserId.From(fixture.UserId)], testContext.CancellationToken);
 
             user.ShouldNotBeNull();
-            user.Memberships.ShouldNotContain(m => m.Id.Value == fixture.TeamId);
-            user.Memberships.ShouldContain(m => m.Id.Value == fixture.OtherTeamId);
+            user.Memberships.ShouldNotContain(m => m.TeamId.Value == fixture.TeamId);
+            user.Memberships.ShouldContain(m => m.TeamId.Value == fixture.OtherTeamId);
             user.DeprovisionAfter.ShouldBeNull();
         });
     }

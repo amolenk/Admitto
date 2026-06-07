@@ -40,6 +40,8 @@ internal sealed class CancelRegistrationFixture
             DateTimeOffset.UtcNow.AddDays(61),
             TimeZoneId.From("UTC"));
 
+        var catalog = TicketCatalog.Create(eventId, team.Id);
+
         var registration = Registration.Create(
             team.Id,
             eventId,
@@ -53,6 +55,7 @@ internal sealed class CancelRegistrationFixture
         await environment.RegistrationsDatabase.SeedAsync(db =>
         {
             db.TicketedEvents.Add(ticketedEvent);
+            db.TicketCatalogs.Add(catalog);
             db.Registrations.Add(registration);
         });
     }

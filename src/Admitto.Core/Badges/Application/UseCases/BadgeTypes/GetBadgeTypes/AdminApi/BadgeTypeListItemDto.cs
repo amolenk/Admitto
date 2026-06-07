@@ -5,5 +5,4 @@ public sealed record BadgeTypeListItemDto(
     string Name,
     string Kind,
     IReadOnlyList<Guid> TicketTypeIds,
-    int InstanceCount,
-    uint Version);
+    int InstanceCount);

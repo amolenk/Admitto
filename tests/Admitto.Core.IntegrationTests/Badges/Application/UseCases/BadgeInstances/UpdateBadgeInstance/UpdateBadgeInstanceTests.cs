@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Badges.Application.UseCases.BadgeInstances.UpdateBadgeInstance;
+using Amolenk.Admitto.Core.Badges.Domain.Entities;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Should = Shouldly.Should;
@@ -63,5 +64,28 @@ public sealed class UpdateBadgeInstanceTests(TestContext testContext) : AspireIn
             async () => await sut.HandleAsync(command, testContext.CancellationToken));
 
         exception.Error.ShouldMatch(ConcurrencyConflictError.Create(wrongVersion, fixture.BadgeInstanceVersion));
+    }
+
+    [TestMethod]
+    public async ValueTask UpdateBadgeInstance_InstanceBelongsToDifferentEvent_ThrowsNotFoundError()
+    {
+        var fixture = UpdateBadgeInstanceFixture.InstanceInDifferentEvent();
+        await fixture.SetupAsync(Environment);
+
+        var command = new UpdateBadgeInstanceCommand(
+            fixture.EventId,
+            fixture.TeamId,
+            fixture.BadgeTypeId,
+            fixture.BadgeInstanceId,
+            DisplayName: "Alice Smith (Updated)",
+            Notes: "Workshop",
+            ExpectedVersion: fixture.BadgeInstanceVersion);
+
+        var sut = new UpdateBadgeInstanceHandler(Environment.BadgesDatabase.Context);
+
+        var result = await ErrorResult.CaptureAsync(
+            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
+
+        result.Error.ShouldMatch(NotFoundError.Create<BadgeInstance>());
     }
 }

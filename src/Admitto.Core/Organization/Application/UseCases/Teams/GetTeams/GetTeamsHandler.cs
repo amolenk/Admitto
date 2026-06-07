@@ -33,7 +33,7 @@ internal sealed class GetTeamsHandler(IOrganizationWriteStore writeStore)
         var memberTeamIds = await writeStore.Users
             .AsNoTracking()
             .Where(u => u.Id == userId)
-            .SelectMany(u => u.Memberships.Select(m => m.Id))
+            .SelectMany(u => u.Memberships.Select(m => m.TeamId))
             .ToListAsync(cancellationToken);
 
         return await writeStore.Teams

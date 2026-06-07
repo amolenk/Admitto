@@ -15,6 +15,14 @@ public class BadgeInstanceEntityConfiguration : IEntityTypeConfiguration<BadgeIn
             .IsRequired()
             .ValueGeneratedNever();
 
+        builder.Property(e => e.TeamId)
+            .HasColumnName("team_id")
+            .IsRequired();
+
+        builder.Property(e => e.EventId)
+            .HasColumnName("event_id")
+            .IsRequired();
+
         builder.Property(e => e.BadgeTypeId)
             .HasColumnName("badge_type_id")
             .IsRequired();
@@ -35,5 +43,8 @@ public class BadgeInstanceEntityConfiguration : IEntityTypeConfiguration<BadgeIn
 
         builder.HasIndex(e => e.BadgeTypeId)
             .HasDatabaseName("IX_badge_instances_badge_type_id");
+
+        builder.HasIndex(e => new { e.TeamId, e.EventId, e.BadgeTypeId })
+            .HasDatabaseName("IX_badge_instances_team_id_event_id_badge_type_id");
     }
 }

@@ -9,13 +9,22 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Badges.Application.UseCases.Badg
 
 internal sealed class UpdateBadgeInstanceFixture
 {
+    private readonly bool _instanceInDifferentEvent;
+
     public Guid EventId { get; private set; }
     public Guid TeamId { get; private set; }
     public Guid BadgeTypeId { get; private set; }
     public Guid BadgeInstanceId { get; private set; }
     public uint BadgeInstanceVersion { get; private set; }
 
+    private UpdateBadgeInstanceFixture(bool instanceInDifferentEvent = false)
+    {
+        _instanceInDifferentEvent = instanceInDifferentEvent;
+    }
+
     public static UpdateBadgeInstanceFixture ActiveEvent() => new();
+
+    public static UpdateBadgeInstanceFixture InstanceInDifferentEvent() => new(instanceInDifferentEvent: true);
 
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
     {
@@ -30,9 +39,9 @@ internal sealed class UpdateBadgeInstanceFixture
         var badgeTypeId = CoreBadgeTypeId.New();
         BadgeTypeId = badgeTypeId.Value;
 
-        var badgeType = BadgeType.Create(
+        // Add badge type directly to the aggregate via AddBadgeType method
+        badgesEvent.AddBadgeType(
             badgeTypeId,
-            eventId,
             BadgeTypeName.From("Speaker Badge"),
             BadgeKind.Standalone,
             []);
@@ -42,6 +51,8 @@ internal sealed class UpdateBadgeInstanceFixture
 
         var badgeInstance = BadgeInstance.Create(
             badgeInstanceId,
+            teamId,
+            _instanceInDifferentEvent ? TicketedEventId.New() : eventId,
             badgeTypeId,
             BadgeInstanceDisplayName.From("Alice Smith"),
             BadgeInstanceNotes.From(""));
@@ -49,7 +60,6 @@ internal sealed class UpdateBadgeInstanceFixture
         await environment.BadgesDatabase.SeedAsync(db =>
         {
             db.BadgeEvents.Add(badgesEvent);
-            db.BadgeTypes.Add(badgeType);
             db.BadgeInstances.Add(badgeInstance);
         });
 

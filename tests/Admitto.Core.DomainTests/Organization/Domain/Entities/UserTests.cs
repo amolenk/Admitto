@@ -39,7 +39,7 @@ public sealed class UserTests
         // Assert
         sut.Memberships.ShouldHaveSingleItem().ShouldSatisfyAllConditions(m =>
         {
-            m.Id.ShouldBe(teamId);
+            m.TeamId.ShouldBe(teamId);
             m.Role.ShouldBe(role);
         });
     }

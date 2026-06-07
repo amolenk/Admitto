@@ -15,10 +15,10 @@ internal sealed class GetTeamMembersHandler(IOrganizationWriteStore writeStore)
 
         return await writeStore.Users
             .AsNoTracking()
-            .Where(u => u.Memberships.Any(m => m.Id == teamId))
+            .Where(u => u.Memberships.Any(m => m.TeamId == teamId))
             .Select(u => new TeamMemberListItemDto(
                 u.EmailAddress.Value,
-                u.Memberships.First(m => m.Id == teamId).Role.ToDto()))
+                u.Memberships.First(m => m.TeamId == teamId).Role.ToDto()))
             .ToListAsync(cancellationToken);
     }
 }

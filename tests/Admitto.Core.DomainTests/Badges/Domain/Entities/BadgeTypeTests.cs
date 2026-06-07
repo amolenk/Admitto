@@ -9,8 +9,8 @@ namespace Amolenk.Admitto.Core.Badges.Domain.Tests.Entities;
 [TestClass]
 public sealed class BadgeTypeTests
 {
-    private static readonly BadgeTypeId DefaultId = BadgeTypeId.New();
     private static readonly TicketedEventId DefaultEventId = TicketedEventId.New();
+    private static readonly TeamId DefaultTeamId = TeamId.New();
     private static readonly BadgeTypeName DefaultName = BadgeTypeName.From("Speaker");
     private static readonly TicketTypeId DefaultTicketTypeId = TicketTypeId.New();
 
@@ -19,31 +19,34 @@ public sealed class BadgeTypeTests
     [TestMethod]
     public void Create_TicketBased_WithTicketTypeIds_Succeeds()
     {
-        var sut = BadgeType.Create(DefaultId, DefaultEventId, DefaultName, BadgeKind.TicketBased,
-            [DefaultTicketTypeId]);
+        var aggregate = BadgeEvent.Create(DefaultEventId, DefaultTeamId);
+        var badgeTypeId = aggregate.AddBadgeType(DefaultName, BadgeKind.TicketBased, [DefaultTicketTypeId]);
 
-        sut.Id.ShouldBe(DefaultId);
-        sut.EventId.ShouldBe(DefaultEventId);
-        sut.Name.ShouldBe(DefaultName);
-        sut.Kind.ShouldBe(BadgeKind.TicketBased);
-        sut.TicketTypeIds.ShouldBe([DefaultTicketTypeId]);
+        var badgeType = aggregate.BadgeTypes.First(bt => bt.Id == badgeTypeId);
+        badgeType.Id.ShouldBe(badgeTypeId);
+        badgeType.Name.ShouldBe(DefaultName);
+        badgeType.Kind.ShouldBe(BadgeKind.TicketBased);
+        badgeType.TicketTypeIds.ShouldBe([DefaultTicketTypeId]);
     }
 
     [TestMethod]
     public void Create_Standalone_WithEmptyTicketTypeIds_Succeeds()
     {
-        var sut = BadgeType.Create(DefaultId, DefaultEventId, DefaultName, BadgeKind.Standalone, []);
+        var aggregate = BadgeEvent.Create(DefaultEventId, DefaultTeamId);
+        var badgeTypeId = aggregate.AddBadgeType(DefaultName, BadgeKind.Standalone, []);
 
-        sut.Kind.ShouldBe(BadgeKind.Standalone);
-        sut.TicketTypeIds.ShouldBeEmpty();
+        var badgeType = aggregate.BadgeTypes.First(bt => bt.Id == badgeTypeId);
+        badgeType.Kind.ShouldBe(BadgeKind.Standalone);
+        badgeType.TicketTypeIds.ShouldBeEmpty();
     }
 
     [TestMethod]
     public void Create_TicketBased_WithEmptyTicketTypeIds_ThrowsBusinessRuleViolation()
     {
+        var aggregate = BadgeEvent.Create(DefaultEventId, DefaultTeamId);
         Should.Throw<BusinessRuleViolationException>(() =>
-            BadgeType.Create(DefaultId, DefaultEventId, DefaultName, BadgeKind.TicketBased, []))
-            .Error.Code.ShouldBe("badge_type.ticket_type_ids_required");
+            aggregate.AddBadgeType(DefaultName, BadgeKind.TicketBased, []))
+            .Error.Code.ShouldBe("badges_event.ticket_type_ids_required");
     }
 
     // ── Rename ───────────────────────────────────────────────────────────────
@@ -51,11 +54,13 @@ public sealed class BadgeTypeTests
     [TestMethod]
     public void Rename_ValidName_UpdatesName()
     {
-        var sut = BadgeType.Create(DefaultId, DefaultEventId, DefaultName, BadgeKind.Standalone, []);
+        var aggregate = BadgeEvent.Create(DefaultEventId, DefaultTeamId);
+        var badgeTypeId = aggregate.AddBadgeType(DefaultName, BadgeKind.Standalone, []);
         var newName = BadgeTypeName.From("Volunteer");
 
-        sut.Rename(newName);
+        aggregate.RenameBadgeType(badgeTypeId, newName);
 
-        sut.Name.ShouldBe(newName);
+        var badgeType = aggregate.BadgeTypes.First(bt => bt.Id == badgeTypeId);
+        badgeType.Name.ShouldBe(newName);
     }
 }

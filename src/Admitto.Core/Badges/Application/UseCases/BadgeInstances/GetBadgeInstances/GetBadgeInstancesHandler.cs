@@ -2,7 +2,6 @@ using Amolenk.Admitto.Core.Badges.Application.Persistence;
 using Amolenk.Admitto.Core.Badges.Application.UseCases.BadgeInstances.GetBadgeInstances.AdminApi;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
-using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 
 namespace Amolenk.Admitto.Core.Badges.Application.UseCases.BadgeInstances.GetBadgeInstances;
 
@@ -14,18 +13,20 @@ internal sealed class GetBadgeInstancesHandler(IBadgesWriteStore writeStore)
         CancellationToken cancellationToken)
     {
         var eventId = TicketedEventId.From(query.EventId);
+        var teamId = TeamId.From(query.TeamId);
         var badgeTypeId = BadgeTypeId.From(query.BadgeTypeId);
 
-        var badgeType = await writeStore.BadgeTypes.GetUntrackedAsync(
-            bt => bt.Id == badgeTypeId && bt.EventId == eventId,
+        // Load BadgeEvent (untracked for guard)
+        var badgeEvent = await writeStore.BadgeEvents.GetUntrackedAsync(
+            be => be.Id == eventId && be.TeamId == teamId,
             cancellationToken);
 
-        if (badgeType.Kind != BadgeKind.Standalone)
-            throw new BusinessRuleViolationException(Errors.NotStandaloneBadgeType);
+        // Call aggregate method which enforces all business rules
+        badgeEvent.EnsureCanManageInstances(badgeTypeId);
 
         var instances = await writeStore.BadgeInstances
             .AsNoTracking()
-            .Where(bi => bi.BadgeTypeId == badgeTypeId)
+            .Where(bi => bi.TeamId == teamId && bi.EventId == eventId && bi.BadgeTypeId == badgeTypeId)
             .OrderBy(bi => bi.DisplayName)
             .ToListAsync(cancellationToken);
 
@@ -36,13 +37,5 @@ internal sealed class GetBadgeInstancesHandler(IBadgesWriteStore writeStore)
                 bi.Notes.Value,
                 bi.Version))
             .ToList();
-    }
-
-    internal static class Errors
-    {
-        public static readonly Error NotStandaloneBadgeType = new(
-            "badge_instance.not_standalone_badge_type",
-            "Badge instances can only be listed for standalone badge types.",
-            Type: ErrorType.Validation);
     }
 }

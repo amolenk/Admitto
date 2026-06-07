@@ -12,19 +12,16 @@ internal sealed class RenameBadgeTypeHandler(IBadgesWriteStore writeStore)
         var eventId = TicketedEventId.From(command.EventId);
         var teamId = TeamId.From(command.TeamId);
 
-        var badgeEvent = await writeStore.BadgeEvents.GetUntrackedAsync(
+        // Load BadgeEvent (tracked so we can mutate it)
+        var badgeEvent = await writeStore.BadgeEvents.GetAsync(
             e => e.Id == eventId && e.TeamId == teamId,
-            cancellationToken);
-
-        badgeEvent.EnsureEventActive();
-
-        var badgeTypeId = BadgeTypeId.From(command.BadgeTypeId);
-
-        var badgeType = await writeStore.BadgeTypes.GetAsync(
-            bt => bt.Id == badgeTypeId && bt.EventId == eventId,
             command.ExpectedVersion,
             cancellationToken);
 
-        badgeType.Rename(BadgeTypeName.From(command.Name));
+        var badgeTypeId = BadgeTypeId.From(command.BadgeTypeId);
+        var newName = BadgeTypeName.From(command.Name);
+
+        // Call aggregate method which enforces all business rules
+        badgeEvent.RenameBadgeType(badgeTypeId, newName);
     }
 }

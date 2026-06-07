@@ -12,28 +12,24 @@ internal sealed class DeleteBadgeTypeHandler(IBadgesWriteStore writeStore)
         var eventId = TicketedEventId.From(command.EventId);
         var teamId = TeamId.From(command.TeamId);
 
-        var badgeEvent = await writeStore.BadgeEvents.GetUntrackedAsync(
-             e => e.Id == eventId && e.TeamId == teamId,
-             cancellationToken);
-
-        badgeEvent.EnsureEventActive();
+        // Load BadgeEvent (tracked so we can mutate it)
+        var badgeEvent = await writeStore.BadgeEvents.GetAsync(
+            e => e.Id == eventId && e.TeamId == teamId,
+            cancellationToken);
 
         var badgeTypeId = BadgeTypeId.From(command.BadgeTypeId);
 
-        var badgeType = await writeStore.BadgeTypes.GetAsync(
-             bt => bt.Id == badgeTypeId && bt.EventId == eventId,
-             cancellationToken);
+        // Call aggregate method which enforces all business rules and returns the kind
+        var kind = badgeEvent.DeleteBadgeType(badgeTypeId);
 
-        // Cascade delete instances for standalone types.
-        if (badgeType.Kind == BadgeKind.Standalone)
+        // Cascade delete instances for standalone types
+        if (kind == BadgeKind.Standalone)
         {
             var instances = await writeStore.BadgeInstances
-                .Where(bi => bi.BadgeTypeId == badgeTypeId)
+                .Where(bi => bi.TeamId == teamId && bi.EventId == eventId && bi.BadgeTypeId == badgeTypeId)
                 .ToListAsync(cancellationToken);
 
             writeStore.BadgeInstances.RemoveRange(instances);
         }
-
-        writeStore.BadgeTypes.Remove(badgeType);
     }
 }

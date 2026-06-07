@@ -77,7 +77,7 @@ public class User : Aggregate<UserId>
 
     public void AddTeamMembership(TeamId teamId, TeamMembershipRole role)
     {
-        if (_memberships.Any(m => m.Id == teamId))
+        if (_memberships.Any(m => m.TeamId == teamId))
         {
             throw new BusinessRuleViolationException(Errors.UserAlreadyTeamMember(Id, teamId));
         }
@@ -91,7 +91,7 @@ public class User : Aggregate<UserId>
 
     public void ChangeTeamMembershipRole(TeamId teamId, TeamMembershipRole newRole)
     {
-        var membership = _memberships.FirstOrDefault(m => m.Id == teamId);
+        var membership = _memberships.FirstOrDefault(m => m.TeamId == teamId);
         if (membership is null)
         {
             throw new BusinessRuleViolationException(Errors.UserNotTeamMember(Id, teamId));
@@ -106,7 +106,7 @@ public class User : Aggregate<UserId>
 
     public void RemoveTeamMembership(TeamId teamId)
     {
-        var membership = _memberships.FirstOrDefault(m => m.Id == teamId);
+        var membership = _memberships.FirstOrDefault(m => m.TeamId == teamId);
         if (membership is null)
         {
             throw new BusinessRuleViolationException(Errors.UserNotTeamMember(Id, teamId));

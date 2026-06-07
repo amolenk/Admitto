@@ -113,20 +113,29 @@ internal sealed class BadgesApiFixture
         }).ToList();
 
         var badgesEvent = BadgeEvent.Create(eventId, team.Id);
-        if (_archived)
-            badgesEvent.MarkArchived();
 
-        var badgeTypeEntities = _badgeTypeSeeds.Select(seed =>
+        // Add badge types directly to the aggregate via AddBadgeType method
+        // Must do this before marking as archived, since AddBadgeType checks EnsureEventActive()
+        foreach (var seed in _badgeTypeSeeds)
         {
             var ticketTypeVoIds = seed.TicketTypeIds
                 .Select(t => TicketTypeId.From(t))
                 .ToList();
-            return BadgeType.Create(seed.Id, eventId, BadgeTypeName.From(seed.Name), seed.Kind, ticketTypeVoIds);
-        }).ToList();
+            badgesEvent.AddBadgeType(
+                seed.Id,
+                BadgeTypeName.From(seed.Name),
+                seed.Kind,
+                ticketTypeVoIds);
+        }
+
+        if (_archived)
+            badgesEvent.MarkArchived();
 
         var badgeInstanceEntities = _badgeInstanceSeeds.Select(seed =>
             BadgeInstance.Create(
                 seed.Id,
+                team.Id,
+                eventId,
                 seed.BadgeTypeId,
                 BadgeInstanceDisplayName.From(seed.DisplayName),
                 BadgeInstanceNotes.From(seed.Notes))
@@ -143,14 +152,16 @@ internal sealed class BadgesApiFixture
         await environment.BadgesDatabase.SeedAsync(db =>
         {
             db.BadgeEvents.Add(badgesEvent);
-            foreach (var entity in badgeTypeEntities)
-                db.BadgeTypes.Add(entity);
             foreach (var entity in badgeInstanceEntities)
                 db.BadgeInstances.Add(entity);
         });
 
-        foreach (var (seed, entity) in _badgeTypeSeeds.Zip(badgeTypeEntities))
-            _badgeTypeVersions[seed.Id] = entity.Version;
+        // Extract badge type versions from the aggregate after it's been persisted
+        // All badge types in the aggregate share the BadgeEvent version
+        var badgeEventVersion = badgesEvent.Version;
+        foreach (var seed in _badgeTypeSeeds)
+            _badgeTypeVersions[seed.Id] = badgeEventVersion;
+            
         foreach (var (seed, entity) in _badgeInstanceSeeds.Zip(badgeInstanceEntities))
             _badgeInstanceVersions[seed.Id] = entity.Version;
     }

@@ -11,26 +11,34 @@ public sealed class BadgeInstance : Aggregate<BadgeInstanceId>
 
     private BadgeInstance(
         BadgeInstanceId id,
+        TeamId teamId,
+        TicketedEventId eventId,
         BadgeTypeId badgeTypeId,
         BadgeInstanceDisplayName displayName,
         BadgeInstanceNotes notes)
         : base(id)
     {
+        TeamId = teamId;
+        EventId = eventId;
         BadgeTypeId = badgeTypeId;
         DisplayName = displayName;
         Notes = notes;
     }
 
+    public TeamId TeamId { get; private set; }
+    public TicketedEventId EventId { get; private set; }
     public BadgeTypeId BadgeTypeId { get; private set; }
     public BadgeInstanceDisplayName DisplayName { get; private set; }
     public BadgeInstanceNotes Notes { get; private set; }
 
     public static BadgeInstance Create(
         BadgeInstanceId id,
+        TeamId teamId,
+        TicketedEventId eventId,
         BadgeTypeId badgeTypeId,
         BadgeInstanceDisplayName displayName,
         BadgeInstanceNotes notes)
-        => new(id, badgeTypeId, displayName, notes);
+        => new(id, teamId, eventId, badgeTypeId, displayName, notes);
 
     public void Update(BadgeInstanceDisplayName displayName, BadgeInstanceNotes notes)
     {

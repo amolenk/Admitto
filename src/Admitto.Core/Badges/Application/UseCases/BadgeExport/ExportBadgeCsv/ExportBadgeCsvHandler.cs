@@ -5,6 +5,7 @@ using Amolenk.Admitto.Core.Badges.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
+using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using CsvHelper;
 using Humanizer;
 
@@ -22,18 +23,20 @@ internal sealed class ExportBadgeCsvHandler(
         var eventId = TicketedEventId.From(query.EventId);
         var teamId = TeamId.From(query.TeamId);
 
-        await writeStore.BadgeEvents.GetUntrackedAsync(
+        // Load BadgeEvent (untracked)
+        var badgeEvent = await writeStore.BadgeEvents.GetUntrackedAsync(
             e => e.Id == eventId && e.TeamId == teamId,
             cancellationToken);
 
         var badgeTypeId = BadgeTypeId.From(query.BadgeTypeId);
 
-        var badgeType = await writeStore.BadgeTypes.GetUntrackedAsync(
-            bt => bt.Id == badgeTypeId && bt.EventId == eventId,
-            cancellationToken);
+        // Find the badge type in the event's collection
+        var badgeType = badgeEvent.BadgeTypes.FirstOrDefault(bt => bt.Id == badgeTypeId);
+        if (badgeType is null)
+            throw new BusinessRuleViolationException(BadgeEvent.Errors.BadgeTypeNotFound);
 
         var content = badgeType.Kind == BadgeKind.Standalone
-            ? await BuildStandaloneCsvAsync(badgeTypeId, cancellationToken)
+            ? await BuildStandaloneCsvAsync(teamId, eventId, badgeTypeId, cancellationToken)
             : await BuildTicketBasedCsvAsync(eventId, badgeType, cancellationToken);
 
         var fileName = $"badges-{badgeType.Name.Value.Kebaberize()}.csv";
@@ -41,12 +44,14 @@ internal sealed class ExportBadgeCsvHandler(
     }
 
     private async Task<byte[]> BuildStandaloneCsvAsync(
+        TeamId teamId,
+        TicketedEventId eventId,
         BadgeTypeId badgeTypeId,
         CancellationToken cancellationToken)
     {
         var instances = await writeStore.BadgeInstances
             .AsNoTracking()
-            .Where(bi => bi.BadgeTypeId == badgeTypeId)
+            .Where(bi => bi.TeamId == teamId && bi.EventId == eventId && bi.BadgeTypeId == badgeTypeId)
             .OrderBy(bi => bi.DisplayName)
             .ToListAsync(cancellationToken);
 

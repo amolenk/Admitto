@@ -1,5 +1,8 @@
+using Microsoft.EntityFrameworkCore;
 using Amolenk.Admitto.Core.Badges.Application.UseCases.BadgeTypes.RenameBadgeType;
+using Amolenk.Admitto.Core.Badges.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
+using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Should = Shouldly.Should;
 
@@ -25,15 +28,19 @@ public sealed class RenameBadgeTypeTests(TestContext testContext) : AspireIntegr
 
         await sut.HandleAsync(command, testContext.CancellationToken);
 
+        // Verify the rename was successful by querying the event
         await Environment.BadgesDatabase.AssertAsync(async db =>
         {
-            var badgeType = await db.BadgeTypes.FindAsync(
-                [Amolenk.Admitto.Core.Badges.Domain.ValueObjects.BadgeTypeId.From(fixture.BadgeTypeId)],
-                testContext.CancellationToken);
+            var badgeEvent = await db.BadgeEvents
+                .AsNoTracking()
+                .Where(e => e.Id == TicketedEventId.From(fixture.EventId))
+                .FirstOrDefaultAsync(testContext.CancellationToken);
 
+            badgeEvent.ShouldNotBeNull();
+            var badgeType = badgeEvent.BadgeTypes.FirstOrDefault(bt => bt.Id.Value == fixture.BadgeTypeId);
             badgeType.ShouldNotBeNull();
-            badgeType.Name.Value.ShouldBe("Renamed");
-            badgeType.Version.ShouldBeGreaterThan(fixture.BadgeTypeVersion);
+            badgeType!.Name.Value.ShouldBe("Renamed");
+            badgeEvent.Version.ShouldBeGreaterThan(fixture.BadgeTypeVersion);
         });
     }
 

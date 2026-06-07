@@ -1,28 +1,27 @@
 using Amolenk.Admitto.Core.Badges.Application.Persistence;
 using Amolenk.Admitto.Core.Badges.Application.UseCases.BadgeTypes.GetBadgeTypes.AdminApi;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
+using Amolenk.Admitto.Core.Shared.Application.Persistence;
 
 namespace Amolenk.Admitto.Core.Badges.Application.UseCases.BadgeTypes.GetBadgeTypes;
 
 internal sealed class GetBadgeTypesHandler(IBadgesWriteStore writeStore)
-    : IQueryHandler<GetBadgeTypesQuery, IReadOnlyList<BadgeTypeListItemDto>>
+    : IQueryHandler<GetBadgeTypesQuery, GetBadgeTypesResponse>
 {
-    public async ValueTask<IReadOnlyList<BadgeTypeListItemDto>> HandleAsync(
+    public async ValueTask<GetBadgeTypesResponse> HandleAsync(
         GetBadgeTypesQuery query,
         CancellationToken cancellationToken)
     {
         var eventId = TicketedEventId.From(query.EventId);
+        var teamId = TeamId.From(query.TeamId);
 
-        var badgeTypes = await writeStore.BadgeTypes
-            .AsNoTracking()
-            .Where(bt => bt.EventId == eventId)
-            .ToListAsync(cancellationToken);
+        // Load BadgeEvent (untracked)
+        var badgeEvent = await writeStore.BadgeEvents.GetUntrackedAsync(
+            e => e.Id == eventId && e.TeamId == teamId,
+            cancellationToken);
 
-        if (badgeTypes.Count == 0)
-            return [];
-
-        // Count instances per standalone badge type.
-        var standaloneIds = badgeTypes
+        // Get instance counts for standalone badge types
+        var standaloneIds = badgeEvent.BadgeTypes
             .Where(bt => bt.Kind == BadgeKind.Standalone)
             .Select(bt => bt.Id)
             .ToList();
@@ -32,20 +31,22 @@ internal sealed class GetBadgeTypesHandler(IBadgesWriteStore writeStore)
         {
             instanceCounts = await writeStore.BadgeInstances
                 .AsNoTracking()
-                .Where(bi => standaloneIds.Contains(bi.BadgeTypeId))
+                .Where(bi => bi.TeamId == teamId && bi.EventId == eventId && standaloneIds.Contains(bi.BadgeTypeId))
                 .GroupBy(bi => bi.BadgeTypeId)
                 .Select(g => new { BadgeTypeId = g.Key, Count = g.Count() })
                 .ToDictionaryAsync(x => x.BadgeTypeId, x => x.Count, cancellationToken);
         }
 
-        return badgeTypes
+        // Project badge types to DTOs
+        var badgeTypes = badgeEvent.BadgeTypes
             .Select(bt => new BadgeTypeListItemDto(
                 bt.Id.Value,
                 bt.Name.Value,
                 bt.Kind.ToString().ToLowerInvariant(),
                 bt.TicketTypeIds.Select(id => id.Value).ToList(),
-                instanceCounts.GetValueOrDefault(bt.Id, 0),
-                bt.Version))
+                instanceCounts.GetValueOrDefault(bt.Id, 0)))
             .ToList();
+
+        return new GetBadgeTypesResponse(badgeEvent.Version, badgeTypes);
     }
 }

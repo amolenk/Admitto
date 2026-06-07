@@ -11,7 +11,6 @@ public sealed class BadgesDbContext(DbContextOptions<BadgesDbContext> options)
     public static string SchemaName => "badges";
 
     public DbSet<BadgeEvent> BadgeEvents => Set<BadgeEvent>();
-    public DbSet<BadgeType> BadgeTypes => Set<BadgeType>();
     public DbSet<BadgeInstance> BadgeInstances => Set<BadgeInstance>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)

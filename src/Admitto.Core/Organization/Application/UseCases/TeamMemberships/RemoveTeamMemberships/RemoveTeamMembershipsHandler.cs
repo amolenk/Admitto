@@ -11,7 +11,7 @@ internal sealed class RemoveTeamMembershipsHandler(IOrganizationWriteStore write
         var teamId = TeamId.From(command.TeamId);
 
         var members = await writeStore.Users
-            .Where(u => u.Memberships.Any(m => m.Id == teamId))
+            .Where(u => u.Memberships.Any(m => m.TeamId == teamId))
             .ToListAsync(cancellationToken);
 
         foreach (var member in members)

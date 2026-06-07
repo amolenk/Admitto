@@ -28,9 +28,9 @@ internal sealed class RenameBadgeTypeFixture
         var badgeTypeId = CoreBadgeTypeId.New();
         BadgeTypeId = badgeTypeId.Value;
 
-        var badgeType = BadgeType.Create(
+        // Add badge type directly to the aggregate via AddBadgeType method
+        badgesEvent.AddBadgeType(
             badgeTypeId,
-            eventId,
             BadgeTypeName.From("Original Name"),
             BadgeKind.Standalone,
             []);
@@ -38,9 +38,8 @@ internal sealed class RenameBadgeTypeFixture
         await environment.BadgesDatabase.SeedAsync(db =>
         {
             db.BadgeEvents.Add(badgesEvent);
-            db.BadgeTypes.Add(badgeType);
         });
 
-        BadgeTypeVersion = badgeType.Version;
+        BadgeTypeVersion = badgesEvent.Version;
     }
 }

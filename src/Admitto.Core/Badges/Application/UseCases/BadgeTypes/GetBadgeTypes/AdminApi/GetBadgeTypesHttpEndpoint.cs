@@ -15,14 +15,14 @@ public static class GetBadgeTypesHttpEndpoint
         return group;
     }
 
-    private static async ValueTask<Ok<IReadOnlyList<BadgeTypeListItemDto>>> GetBadgeTypes(
+    private static async ValueTask<Ok<GetBadgeTypesResponse>> GetBadgeTypes(
         Guid teamId,
         Guid eventId,
-        IQueryHandler<GetBadgeTypesQuery, IReadOnlyList<BadgeTypeListItemDto>> handler,
+        IQueryHandler<GetBadgeTypesQuery, GetBadgeTypesResponse> handler,
         CancellationToken cancellationToken)
     {
         var result = await handler.HandleAsync(
-            new GetBadgeTypesQuery(eventId),
+            new GetBadgeTypesQuery(eventId, teamId),
             cancellationToken);
 
         return TypedResults.Ok(result);

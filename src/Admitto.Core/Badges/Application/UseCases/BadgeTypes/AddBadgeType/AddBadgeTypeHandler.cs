@@ -13,20 +13,19 @@ internal sealed class AddBadgeTypeHandler(IBadgesWriteStore writeStore)
         var eventId = TicketedEventId.From(command.EventId);
         var teamId = TeamId.From(command.TeamId);
 
-        var badgeEvent = await writeStore.BadgeEvents.GetUntrackedAsync(
+        // Load BadgeEvent (tracked so we can mutate it)
+        var badgeEvent = await writeStore.BadgeEvents.GetAsync(
             e => e.Id == eventId && e.TeamId == teamId,
             cancellationToken);
 
-        badgeEvent.EnsureEventActive();
-
         var kind = Enum.Parse<BadgeKind>(command.Kind, ignoreCase: true);
-        var id = BadgeTypeId.New();
         var name = BadgeTypeName.From(command.Name);
         var ticketTypeIds = TicketTypeId.ListFrom(command.TicketTypeIds);
 
-        var badgeType = BadgeType.Create(id, eventId, name, kind, ticketTypeIds);
-        writeStore.BadgeTypes.Add(badgeType);
+        // Call aggregate method which enforces all business rules
+        var badgeTypeId = badgeEvent.AddBadgeType(name, kind, ticketTypeIds);
 
-        return id.Value;
+        return badgeTypeId.Value;
     }
 }
+

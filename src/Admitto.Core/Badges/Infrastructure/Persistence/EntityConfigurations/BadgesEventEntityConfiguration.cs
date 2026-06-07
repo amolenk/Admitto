@@ -23,5 +23,31 @@ public class BadgesEventEntityConfiguration : IEntityTypeConfiguration<BadgeEven
             .HasColumnName("status")
             .HasConversion<int>()
             .IsRequired();
+
+        // Configure badge types as JSON column owned collection
+        builder.OwnsMany(
+            e => e.BadgeTypes,
+            b =>
+            {
+                b.ToJson("badge_types");
+
+                b.Property(bt => bt.Id)
+                    .HasConversion<BadgeTypeId.EfCoreValueConverter>()
+                    .HasJsonPropertyName("id");
+
+                b.Property(bt => bt.Name)
+                    .HasConversion<BadgeTypeName.EfCoreValueConverter>()
+                    .HasJsonPropertyName("name");
+
+                b.Property(bt => bt.Kind)
+                    .HasConversion<int>()
+                    .HasJsonPropertyName("kind");
+
+                b.PrimitiveCollection(bt => bt.TicketTypeIds)
+                    .ElementType(et => et.HasConversion<TicketTypeId.EfCoreValueConverter>())
+                    .HasJsonPropertyName("ticket_type_ids");
+            });
     }
 }
+
+

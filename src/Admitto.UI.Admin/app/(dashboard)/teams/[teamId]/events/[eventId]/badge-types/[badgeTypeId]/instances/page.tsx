@@ -6,6 +6,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     BadgeInstanceListItemDto,
     BadgeTypeListItemDto,
+    GetBadgeTypesResponse,
     TicketedEventDetailsDto,
 } from "@/lib/admitto-api/generated";
 import { apiClient } from "@/lib/api-client";
@@ -290,14 +291,14 @@ export default function BadgeInstancesPage() {
     const badgeTypes = useQuery({
         queryKey: ["badge-types", teamId, eventId],
         queryFn: () =>
-            apiClient.get<BadgeTypeListItemDto[]>(
+            apiClient.get<GetBadgeTypesResponse>(
                 `/api/teams/${teamId}/events/${eventId}/badge-types`
             ),
         throwOnError: false,
     });
 
     const eventName = event.data?.name ?? "";
-    const badgeType = badgeTypes.data?.find((bt) => bt.id === badgeTypeId);
+    const badgeType = badgeTypes.data?.badgeTypes?.find((bt) => bt.id === badgeTypeId);
     const badgeTypeName = badgeType?.name ?? "";
 
     const rows = instances ?? [];

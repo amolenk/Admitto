@@ -1,6 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
 using Amolenk.Admitto.Api.Tests.Infrastructure;
+using Amolenk.Admitto.Core.Badges.Domain.Entities;
+using Amolenk.Admitto.Core.Badges.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Shouldly;
 
 namespace Amolenk.Admitto.Api.Tests.Badges.BadgeInstances;
@@ -196,6 +199,33 @@ public sealed class BadgeInstanceManagementTests(TestContext testContext) : EndT
         items!.Count.ShouldBe(2);
         items.ShouldContain(i => i.DisplayName == "Alice Smith" && i.Notes == "Keynote");
         items.ShouldContain(i => i.DisplayName == "Bob Jones" && i.Notes == "Workshop");
+    }
+
+    [TestMethod]
+    public async Task ListBadgeInstances_OtherEventInstanceWithSameBadgeTypeId_ExcludesOtherEventInstance()
+    {
+        var fixture = BadgesApiFixture.Active();
+        var badgeTypeId = fixture.AddStandaloneBadgeType("Speaker Badge");
+        fixture.AddBadgeInstance(badgeTypeId, "Alice Smith", "Keynote");
+        await fixture.SetupAsync(Environment);
+
+        await Environment.BadgesDatabase.SeedAsync(db => db.BadgeInstances.Add(
+            BadgeInstance.Create(
+                BadgeInstanceId.New(),
+                TeamId.New(),
+                TicketedEventId.New(),
+                badgeTypeId,
+                BadgeInstanceDisplayName.From("Mallory Jones"),
+                BadgeInstanceNotes.From("Other event"))));
+
+        var response = await Environment.ApiClient.GetAsync(
+            fixture.BadgeInstancesRoute(badgeTypeId.Value), testContext.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+        var items = await response.Content.ReadFromJsonAsync<List<BadgeInstanceDto>>(testContext.CancellationToken);
+        items!.Count.ShouldBe(1);
+        items.ShouldContain(i => i.DisplayName == "Alice Smith");
+        items.ShouldNotContain(i => i.DisplayName == "Mallory Jones");
     }
 
     [TestMethod]

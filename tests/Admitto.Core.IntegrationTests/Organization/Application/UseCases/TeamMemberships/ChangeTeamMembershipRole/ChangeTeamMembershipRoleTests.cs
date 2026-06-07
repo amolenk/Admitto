@@ -34,7 +34,7 @@ public sealed class ChangeTeamMembershipRoleTests(TestContext testContext) : Asp
                 [UserId.From(fixture.UserId)], testContext.CancellationToken);
 
             user.ShouldNotBeNull();
-            var membership = user.Memberships.SingleOrDefault(m => m.Id.Value == fixture.TeamId);
+            var membership = user.Memberships.SingleOrDefault(m => m.TeamId.Value == fixture.TeamId);
             membership.ShouldNotBeNull();
             membership.Role.ShouldBe(TeamMembershipRole.Organizer);
         });

@@ -24,7 +24,7 @@ public sealed class CancelRegistrationTests(TestContext testContext) : AspireInt
             fixture.EventId.Value,
             fixture.TeamId.Value,
             CancellationReason.AttendeeRequest);
-        var sut = new CancelRegistrationHandler(Environment.RegistrationsDatabase.Context);
+        var sut = new CancelRegistrationHandler(Environment.RegistrationsDatabase.Context, TimeProvider.System);
 
         await sut.HandleAsync(command, testContext.CancellationToken);
 
@@ -49,7 +49,7 @@ public sealed class CancelRegistrationTests(TestContext testContext) : AspireInt
             fixture.EventId.Value,
             fixture.TeamId.Value,
             CancellationReason.VisaLetterDenied);
-        var sut = new CancelRegistrationHandler(Environment.RegistrationsDatabase.Context);
+        var sut = new CancelRegistrationHandler(Environment.RegistrationsDatabase.Context, TimeProvider.System);
 
         await sut.HandleAsync(command, testContext.CancellationToken);
 
@@ -74,7 +74,7 @@ public sealed class CancelRegistrationTests(TestContext testContext) : AspireInt
             fixture.EventId.Value,
             fixture.TeamId.Value,
             CancellationReason.AttendeeRequest);
-        var sut = new CancelRegistrationHandler(Environment.RegistrationsDatabase.Context);
+        var sut = new CancelRegistrationHandler(Environment.RegistrationsDatabase.Context, TimeProvider.System);
 
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
@@ -92,7 +92,7 @@ public sealed class CancelRegistrationTests(TestContext testContext) : AspireInt
             TicketedEventId.New().Value,
             TeamId.New().Value,
             CancellationReason.AttendeeRequest);
-        var sut = new CancelRegistrationHandler(Environment.RegistrationsDatabase.Context);
+        var sut = new CancelRegistrationHandler(Environment.RegistrationsDatabase.Context, TimeProvider.System);
 
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
@@ -112,7 +112,7 @@ public sealed class CancelRegistrationTests(TestContext testContext) : AspireInt
             TicketedEventId.New().Value,   // wrong event
             TeamId.New().Value,
             CancellationReason.AttendeeRequest);
-        var sut = new CancelRegistrationHandler(Environment.RegistrationsDatabase.Context);
+        var sut = new CancelRegistrationHandler(Environment.RegistrationsDatabase.Context, TimeProvider.System);
 
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
@@ -132,7 +132,7 @@ public sealed class CancelRegistrationTests(TestContext testContext) : AspireInt
             fixture.EventId.Value,
             fixture.TeamId.Value,
             CancellationReason.AttendeeRequest);
-        var sut = new CancelRegistrationHandler(Environment.RegistrationsDatabase.Context);
+        var sut = new CancelRegistrationHandler(Environment.RegistrationsDatabase.Context, TimeProvider.System);
 
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
@@ -152,7 +152,7 @@ public sealed class CancelRegistrationTests(TestContext testContext) : AspireInt
             fixture.EventId.Value,
             fixture.TeamId.Value,
             CancellationReason.AttendeeRequest);
-        var sut = new CancelRegistrationHandler(Environment.RegistrationsDatabase.Context);
+        var sut = new CancelRegistrationHandler(Environment.RegistrationsDatabase.Context, TimeProvider.System);
 
         await sut.HandleAsync(command, testContext.CancellationToken);
 

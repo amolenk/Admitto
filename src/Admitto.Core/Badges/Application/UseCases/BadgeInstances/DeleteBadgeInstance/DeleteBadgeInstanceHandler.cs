@@ -12,6 +12,7 @@ internal sealed class DeleteBadgeInstanceHandler(IBadgesWriteStore writeStore)
         var eventId = TicketedEventId.From(command.EventId);
         var teamId = TeamId.From(command.TeamId);
 
+        // Load BadgeEvent (untracked for guard - we don't mutate it here)
         var badgeEvent = await writeStore.BadgeEvents.GetUntrackedAsync(
             e => e.Id == eventId && e.TeamId == teamId,
             cancellationToken);
@@ -21,8 +22,12 @@ internal sealed class DeleteBadgeInstanceHandler(IBadgesWriteStore writeStore)
         var badgeTypeId = BadgeTypeId.From(command.BadgeTypeId);
         var badgeInstanceId = BadgeInstanceId.From(command.BadgeInstanceId);
 
-        var instance = await writeStore.BadgeInstances.GetAsync(
-            bi => bi.Id == badgeInstanceId && bi.BadgeTypeId == badgeTypeId,
+        // Load the instance (untracked for deletion - no version check needed for delete)
+        var instance = await writeStore.BadgeInstances.GetUntrackedAsync(
+            bi => bi.Id == badgeInstanceId
+                && bi.TeamId == teamId
+                && bi.EventId == eventId
+                && bi.BadgeTypeId == badgeTypeId,
             cancellationToken: cancellationToken);
 
         writeStore.BadgeInstances.Remove(instance);

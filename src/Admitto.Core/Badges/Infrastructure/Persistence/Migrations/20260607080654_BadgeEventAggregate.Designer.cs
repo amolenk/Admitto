@@ -3,6 +3,7 @@ using System;
 using Amolenk.Admitto.Core.Badges.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Amolenk.Admitto.Core.Badges.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(BadgesDbContext))]
-    partial class BadgesDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260607080654_BadgeEventAggregate")]
+    partial class BadgeEventAggregate
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -82,10 +85,6 @@ namespace Amolenk.Admitto.Core.Badges.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(200)")
                         .HasColumnName("display_name");
 
-                    b.Property<Guid>("EventId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("event_id");
-
                     b.Property<DateTimeOffset>("LastChangedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("last_changed_at");
@@ -102,10 +101,6 @@ namespace Amolenk.Admitto.Core.Badges.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(500)")
                         .HasColumnName("notes");
 
-                    b.Property<Guid>("TeamId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("team_id");
-
                     b.Property<uint>("Version")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
@@ -116,9 +111,6 @@ namespace Amolenk.Admitto.Core.Badges.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("BadgeTypeId")
                         .HasDatabaseName("IX_badge_instances_badge_type_id");
-
-                    b.HasIndex("TeamId", "EventId", "BadgeTypeId")
-                        .HasDatabaseName("IX_badge_instances_team_id_event_id_badge_type_id");
 
                     b.ToTable("badge_instances", "badges");
                 });

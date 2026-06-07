@@ -48,7 +48,7 @@ public sealed class UserContextResolver(
                 u.EmailAddress,
                 u.IsAdmin,
                 u.ExternalUserId,
-                Memberships = u.Memberships.Select(m => new { TeamId = m.Id, m.Role }).ToList(),
+                Memberships = u.Memberships.Select(m => new { m.TeamId, m.Role }).ToList(),
                 EventBelongsToTeam = teamId == null || eventId == null ||
                                      writeStore.Teams.Any(t =>
                                          t.Id == teamId &&

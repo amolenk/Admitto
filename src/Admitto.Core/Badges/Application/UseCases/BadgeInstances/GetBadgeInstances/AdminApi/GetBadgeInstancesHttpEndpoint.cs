@@ -23,7 +23,7 @@ public static class GetBadgeInstancesHttpEndpoint
         CancellationToken cancellationToken)
     {
         var result = await handler.HandleAsync(
-            new GetBadgeInstancesQuery(eventId, badgeTypeId),
+            new GetBadgeInstancesQuery(eventId, teamId, badgeTypeId),
             cancellationToken);
 
         return TypedResults.Ok(result);

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { BadgeTypeListItemDto, TicketTypeDto, TicketedEventDetailsDto } from "@/lib/admitto-api/generated";
+import { BadgeTypeListItemDto, TicketTypeDto, TicketedEventDetailsDto, GetBadgeTypesResponse } from "@/lib/admitto-api/generated";
 import { apiClient } from "@/lib/api-client";
 import { PageLayout } from "@/components/page-layout";
 import { Card } from "@/components/ui/card";
@@ -53,12 +53,14 @@ function RenameBadgeTypeForm({
     teamId,
     eventId,
     badgeType,
+    eventVersion,
     onSaved,
     onCancel,
 }: {
     teamId: string;
     eventId: string;
     badgeType: BadgeTypeListItemDto;
+    eventVersion: number;
     onSaved: () => void;
     onCancel: () => void;
 }) {
@@ -68,7 +70,7 @@ function RenameBadgeTypeForm({
     async function onSubmit(values: RenameValues) {
         await apiClient.put(
             `/api/teams/${teamId}/events/${eventId}/badge-types/${badgeType.id}`,
-            { name: values.name, expectedVersion: badgeType.version }
+            { name: values.name, expectedVersion: eventVersion }
         );
         await queryClient.invalidateQueries({ queryKey: ["badge-types", teamId, eventId] });
         onSaved();
@@ -116,10 +118,12 @@ function BadgeTypeCard({
     bt,
     teamId,
     eventId,
+    eventVersion,
 }: {
     bt: BadgeTypeListItemDto;
     teamId: string;
     eventId: string;
+    eventVersion: number;
 }) {
     const router = useRouter();
     const queryClient = useQueryClient();
@@ -236,6 +240,7 @@ function BadgeTypeCard({
                         teamId={teamId}
                         eventId={eventId}
                         badgeType={bt}
+                        eventVersion={eventVersion}
                         onSaved={() => setRenameOpen(false)}
                         onCancel={() => setRenameOpen(false)}
                     />
@@ -271,10 +276,10 @@ export default function BadgeTypesPage() {
     const { teamId, eventId } = useParams<{ teamId: string; eventId: string }>();
     const [addOpen, setAddOpen] = useState(false);
 
-    const { data: badgeTypes, isLoading } = useQuery({
+    const { data: response, isLoading } = useQuery({
         queryKey: ["badge-types", teamId, eventId],
         queryFn: () =>
-            apiClient.get<BadgeTypeListItemDto[]>(
+            apiClient.get<GetBadgeTypesResponse>(
                 `/api/teams/${teamId}/events/${eventId}/badge-types`
             ),
         throwOnError: false,
@@ -296,8 +301,8 @@ export default function BadgeTypesPage() {
     });
 
     const eventName = event.data?.name ?? "";
-
-    const types = badgeTypes ?? [];
+    const badgeTypes = response?.badgeTypes ?? [];
+    const eventVersion = response?.eventVersion ?? 0;
 
     return (
         <PageLayout>
@@ -323,7 +328,7 @@ export default function BadgeTypesPage() {
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-                    {[...types]
+                    {[...badgeTypes]
                         .sort((a, b) => a.name.localeCompare(b.name))
                         .map((bt) => (
                             <BadgeTypeCard
@@ -331,6 +336,7 @@ export default function BadgeTypesPage() {
                                 bt={bt}
                                 teamId={teamId}
                                 eventId={eventId}
+                                eventVersion={eventVersion}
                             />
                         ))}
                     <button
