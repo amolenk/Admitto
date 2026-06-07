@@ -51,6 +51,7 @@ public class ApiKeyEntityConfiguration : IEntityTypeConfiguration<ApiKey>
 
         builder.HasOne<Team>()
             .WithMany()
-            .HasForeignKey(e => e.TeamId);
+            .HasForeignKey(e => e.TeamId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

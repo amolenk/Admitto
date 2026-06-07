@@ -50,5 +50,9 @@ c.Property(m => m.TeamId)
         
         builder.HasIndex(e => e.EmailAddress)
             .IsUnique();
+
+        builder.HasIndex(e => e.DeprovisionAfter)
+            .HasDatabaseName("IX_users_deprovision_after")
+            .HasFilter("deprovision_after IS NOT NULL");
     }
 }

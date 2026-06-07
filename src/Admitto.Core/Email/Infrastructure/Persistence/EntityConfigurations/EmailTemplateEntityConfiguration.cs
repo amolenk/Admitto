@@ -45,5 +45,8 @@ internal sealed class EmailTemplateEntityConfiguration : IEntityTypeConfiguratio
         // (lower(name)) via raw SQL in the migration.
         // EF is not aware of this index; duplicate detection is done in handlers
         // before insert and surfaced via EmailPostgresExceptionMapping.
+
+        builder.HasIndex(e => new { e.TeamId, e.TicketedEventId })
+            .HasDatabaseName("IX_email_templates_team_id_ticketed_event_id");
     }
 }

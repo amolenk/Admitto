@@ -14,6 +14,7 @@ public static class ModelBuilderExtensions
                 {
                     modelBuilder.Entity(entityType.ClrType)
                         .Property(nameof(IIsVersioned.Version))
+                        .HasColumnName("xmin")
                         .IsRowVersion();
                 }
 

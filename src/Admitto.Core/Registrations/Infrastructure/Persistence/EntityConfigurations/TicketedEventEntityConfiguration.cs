@@ -1,4 +1,6 @@
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
+using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.EntityConfigurations;
@@ -91,11 +93,25 @@ public class TicketedEventEntityConfiguration : IEntityTypeConfiguration<Tickete
             p.Property(x => x.MinEmailInterval).HasColumnName("reconfirm_policy_min_email_interval");
         });
 
-        builder.Property(e => e.AdditionalDetailSchema)
+        builder.HasIndex(e => new { e.TeamId, e.Status })
+            .HasDatabaseName("IX_ticketed_events_team_id_status");
+
+        var schemaProperty = builder.Property(e => e.AdditionalDetailSchema)
             .HasColumnName("additional_detail_schema")
             .HasColumnType("jsonb")
             .HasConversion(AdditionalDetailJsonConverters.SchemaConverter)
             .HasDefaultValueSql("'[]'::jsonb")
             .IsRequired();
+
+        // AdditionalDetailSchema's record-generated Equals compares IReadOnlyList<AdditionalDetailField>
+        // by reference, so EF would detect a spurious change on every load-then-save cycle.
+        // The comparer does a deep field-by-field comparison instead.
+        schemaProperty.Metadata.SetValueComparer(new ValueComparer<AdditionalDetailSchema>(
+            (a, b) => (a == null && b == null) ||
+                      (a != null && b != null &&
+                       a.Fields.Count == b.Fields.Count &&
+                       a.Fields.Zip(b.Fields).All(p => p.First.Equals(p.Second))),
+            a => a == null ? 0 : a.Fields.Aggregate(0, (h, f) => HashCode.Combine(h, f.GetHashCode())),
+            a => a));
     }
 }

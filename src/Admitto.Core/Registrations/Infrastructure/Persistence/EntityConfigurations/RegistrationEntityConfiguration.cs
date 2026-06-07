@@ -86,11 +86,18 @@ public class RegistrationEntityConfiguration : IEntityTypeConfiguration<Registra
                 .ElementType(et => et.HasConversion<TimeSlot.EfCoreValueConverter>());
         });
 
-        builder.Property(e => e.AdditionalDetails)
+        var detailsProperty = builder.Property(e => e.AdditionalDetails)
             .HasColumnName("additional_details")
             .HasColumnType("jsonb")
             .HasConversion(AdditionalDetailJsonConverters.DetailsConverter)
             .HasDefaultValueSql("'{}'::jsonb")
             .IsRequired();
+
+        // AdditionalDetails implements IReadOnlyDictionary, so EF requires an explicit comparer
+        // to detect changes reliably. The type is immutable, so the snapshot is the identity.
+        detailsProperty.Metadata.SetValueComparer(new ValueComparer<AdditionalDetails>(
+            (a, b) => (a == null && b == null) || (a != null && a.Equals(b)),
+            a => a == null ? 0 : a.GetHashCode(),
+            a => a));
     }
 }

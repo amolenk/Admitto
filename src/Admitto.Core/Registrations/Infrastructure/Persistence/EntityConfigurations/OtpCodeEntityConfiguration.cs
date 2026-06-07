@@ -47,9 +47,6 @@ public class OtpCodeEntityConfiguration : IEntityTypeConfiguration<OtpCode>
         builder.Property(e => e.SupersededAt)
             .HasColumnName("superseded_at");
 
-        builder.Property(e => e.Version)
-            .IsRowVersion();
-
         builder.HasIndex(e => new { e.EmailHash, e.EventId });
     }
 }

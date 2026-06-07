@@ -59,6 +59,7 @@ public class CouponEntityConfiguration : IEntityTypeConfiguration<Coupon>
             .IsRequired()
             .ElementType(et => et.HasConversion<TicketTypeId.EfCoreValueConverter>());
 
-        builder.HasIndex(e => e.EventId);
+        builder.HasIndex(e => new { e.EventId, e.TeamId })
+            .HasDatabaseName("IX_coupons_event_id_team_id");
     }
 }

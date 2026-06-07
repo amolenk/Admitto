@@ -29,5 +29,9 @@ public class OutboxMessageEntityConfiguration : IEntityTypeConfiguration<OutboxM
             .HasConversion<string>()
             .IsRequired()
             .HasMaxLength(32);
+
+        builder.HasIndex(e => e.State)
+            .HasDatabaseName("IX_outbox_state")
+            .HasFilter("state = 'Pending'");
     }
 }

@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Email.Domain.Entities;
+using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence.EntityConfigurations;
@@ -30,7 +31,7 @@ internal sealed class EmailLogEntityConfiguration : IEntityTypeConfiguration<Ema
 
         builder.Property(e => e.Recipient)
             .HasColumnName("recipient")
-            .HasMaxLength(254)
+            .HasMaxLength(EmailAddress.MaxLength)
             .IsRequired();
 
         builder.Property(e => e.EmailType)
