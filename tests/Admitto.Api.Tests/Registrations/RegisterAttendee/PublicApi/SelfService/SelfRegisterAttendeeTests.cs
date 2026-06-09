@@ -26,7 +26,8 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : EndToEn
             FirstName = "Alice",
             LastName = "Anderson",
             Email = "alice@example.com",
-            TicketTypeIds = new[] { SelfRegisterAttendeeFixture.TicketTypeId.Value },
+            RegisterTicketTypeIds = new[] { SelfRegisterAttendeeFixture.TicketTypeId.Value },
+            WaitlistTicketTypeIds = Array.Empty<Guid>(),
             AdditionalDetails = new Dictionary<string, string>()
         };
 
@@ -35,5 +36,26 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : EndToEn
             fixture.Route, request, cancellationToken: testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+    }
+
+    [TestMethod]
+    public async Task SelfRegister_MissingExplicitTicketSets_Returns400ValidationProblem()
+    {
+        var fixture = SelfRegisterAttendeeFixture.HappyFlow();
+        await fixture.SetupAsync(Environment);
+
+        var request = new
+        {
+            FirstName = "Alice",
+            LastName = "Anderson",
+            Email = "alice@example.com",
+            AdditionalDetails = new Dictionary<string, string>()
+        };
+
+        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
+        var response = await client.PostAsJsonAsync(
+            fixture.Route, request, cancellationToken: testContext.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 }

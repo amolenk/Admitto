@@ -9,8 +9,12 @@ ability to manage entries (remove individuals, monitor pending notifications).
 
 ### Requirement: Organizer can view the waitlist for a ticket type
 
-The admin UI SHALL provide a waitlist management page per ticket type (accessible
-from the event's ticket types list). The page SHALL show:
+The admin UI SHALL provide a waitlist management page per ticket type. The page SHALL
+be accessible from:
+- The event's Waitlist overview page (via a row link in the summary table), and
+- The ticket types list (via the hourglass button on each ticket type card).
+
+The page SHALL show:
 
 - The ordered list of active waitlist entries: position, email (masked to first 3
   chars + domain, e.g. `ali***@example.com`), and join date.

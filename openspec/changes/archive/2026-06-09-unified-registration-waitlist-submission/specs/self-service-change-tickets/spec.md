@@ -1,10 +1,4 @@
-# Self-Service Change Tickets Specification
-
-## Purpose
-
-Attendees can change their own ticket selections for existing registrations through a public bearer-link endpoint.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Attendee can change their ticket selection via self-service
 The system SHALL expose a public endpoint `PUT /events/{teamSlug}/{eventSlug}/registrations/{registrationId}/tickets` that allows an attendee to change the ticket-type selection on their existing `Registered` registration. The `registrationId` in the URL path serves as the bearer credential. No additional authentication token is required. The endpoint SHALL NOT inspect the `Authorization` header and SHALL NOT require a bearer token of any kind.
@@ -15,7 +9,7 @@ The handler SHALL:
 1. Look up the `Registration` by `registrationId` and verify it belongs to the given event; return HTTP 404 if not found or the registration does not belong to this event.
 2. Verify the registration `Status` is `Registered`; return HTTP 409 if `Cancelled`.
 3. Load the `TicketedEvent` and verify `Status` is `Active`; reject with reason "event not active" if not.
-4. Verify registration is within the registration window (`now ∈ [opensAt, closesAt)`) and `EventRegistrationPolicy.RegistrationStatus` is `Open`; reject with reason "registration not open" if not.
+4. Verify registration is within the registration window (`now in [opensAt, closesAt)`) and `EventRegistrationPolicy.RegistrationStatus` is `Open`; reject with reason "registration not open" if not.
 5. If a waitlist coupon code is supplied, validate that the coupon is valid, unexpired, unredeemed, issued for the same event, issued to the registration email, and sourced from waitlist.
 6. Load the `TicketCatalog` and validate the new ticket selection: no duplicates, no unknown ticket types, no cancelled ticket types, no overlapping time slots.
 7. Compute capacity delta: `toRelease` = current ids minus new ids; `toClaim` = new ids minus current ids.
@@ -74,21 +68,3 @@ The `TicketsChangedDomainEvent` carries the same fields as for admin ticket chan
 - **GIVEN** a registration holding ["Workshop A"] and a valid waitlist coupon for overlapping "Workshop B"
 - **WHEN** the attendee submits a ticket change with `ticketTypeIds = [Workshop A, Workshop B]` and the waitlist coupon code
 - **THEN** the request is rejected with reason "overlapping time slots" and the coupon remains unredeemed
-
----
-
-### Requirement: Self-service ticket change rejects ticket types not enabled for self-service
-The system SHALL reject a self-service ticket change that would add a ticket type
-with `SelfServiceEnabled = false` to the registration. The check applies only to
-ticket types being newly claimed (i.e. in `toClaim`, not `toRelease`). Admin ticket
-changes are not subject to this check.
-
-#### Scenario: Self-service change rejected — new ticket type not self-service enabled
-- **GIVEN** a registration holding ["General Admission"] on event "conf-2026", and "vip" has `SelfServiceEnabled = false`
-- **WHEN** the attendee submits a self-service change to ["vip"]
-- **THEN** the response is HTTP 422 with reason "ticket type not available for self-service"
-
-#### Scenario: Self-service change allowed when all new ticket types are self-service enabled
-- **GIVEN** a registration holding ["General Admission"] on event "conf-2026", and "workshop" has `SelfServiceEnabled = true`
-- **WHEN** the attendee submits a self-service change to ["workshop"]
-- **THEN** the change succeeds (assuming capacity and window are valid)

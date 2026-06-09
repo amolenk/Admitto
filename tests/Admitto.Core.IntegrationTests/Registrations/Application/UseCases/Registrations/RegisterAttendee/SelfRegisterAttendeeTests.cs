@@ -23,13 +23,13 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var command = NewCommand(fixture, "dave@example.com", fixture.TicketTypeId.Value);
         var sut = NewHandler();
 
-        var registrationId = await sut.HandleAsync(command, testContext.CancellationToken);
+        var result = await sut.HandleAsync(command, testContext.CancellationToken);
 
         await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
         {
             var registration = await dbContext.Registrations.SingleOrDefaultAsync(testContext.CancellationToken);
             registration.ShouldNotBeNull();
-            registration.Id.Value.ShouldBe(registrationId);
+            result.RegistrationId.ShouldBe(registration.Id.Value);
             registration.Email.Value.ShouldBe("dave@example.com");
             registration.Tickets.ShouldHaveSingleItem().Id.ShouldBe(fixture.TicketTypeId);
 
@@ -145,13 +145,13 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var command = NewCommand(fixture, "employee@acme.com", fixture.GetTicketTypeId("general-admission").Value);
         var sut = NewHandler();
 
-        var registrationId = await sut.HandleAsync(command, testContext.CancellationToken);
+        var result = await sut.HandleAsync(command, testContext.CancellationToken);
 
         await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
         {
             var registration = await dbContext.Registrations.SingleOrDefaultAsync(testContext.CancellationToken);
             registration.ShouldNotBeNull();
-            registration.Id.Value.ShouldBe(registrationId);
+            result.RegistrationId.ShouldBe(registration.Id.Value);
             registration.Email.Value.ShouldBe("employee@acme.com");
         });
     }
@@ -247,7 +247,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.Code.ShouldBe("registration.event_not_active");
+        result.Error.ShouldMatch(TicketCatalog.Errors.EventNotActive);
     }
 
     // Rejected — TicketCatalog.EventStatus catches concurrent transition
@@ -307,9 +307,9 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
             new Dictionary<string, string> { ["tshirt"] = "M" });
         var sut = NewHandler();
 
-        var registrationId = await sut.HandleAsync(command, testContext.CancellationToken);
+        var result = await sut.HandleAsync(command, testContext.CancellationToken);
 
-        registrationId.ShouldBe(fixture.ExistingRegistrationId.Value);
+        result.RegistrationId.ShouldBe(fixture.ExistingRegistrationId.Value);
         await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
         {
             var registration = await dbContext.Registrations.SingleAsync(testContext.CancellationToken);
@@ -374,6 +374,132 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         result.Error.Code.ShouldBe("ticket_type.waitlist_mode");
     }
 
+    [TestMethod]
+    public async ValueTask SelfRegisterAttendee_MixedRegistrationAndWaitlist_CreatesBothAtomically()
+    {
+        var fixture = RegisterAttendeeFixture.WithRegistrationAndWaitlistTickets();
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(
+            fixture,
+            "dave@example.com",
+            [fixture.GetTicketTypeId("workshop-a").Value],
+            [fixture.GetTicketTypeId("workshop-b").Value]);
+        var sut = NewHandler();
+
+        var result = await sut.HandleAsync(command, testContext.CancellationToken);
+
+        result.RegistrationId.ShouldNotBeNull();
+        result.RegisteredTicketTypeIds.ShouldBe([fixture.GetTicketTypeId("workshop-a").Value]);
+        result.WaitlistedTicketTypeIds.ShouldBe([fixture.GetTicketTypeId("workshop-b").Value]);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var registration = await dbContext.Registrations.SingleAsync(testContext.CancellationToken);
+            registration.Tickets.ShouldHaveSingleItem().Id.ShouldBe(fixture.GetTicketTypeId("workshop-a"));
+
+            var waitlist = await dbContext.Waitlists.SingleAsync(testContext.CancellationToken);
+            waitlist.Id.ShouldBe(fixture.GetTicketTypeId("workshop-b"));
+            waitlist.Entries.ShouldHaveSingleItem().Email.Value.ShouldBe("dave@example.com");
+        });
+    }
+
+    [TestMethod]
+    public async ValueTask SelfRegisterAttendee_WaitlistOnly_CreatesWaitlistEntryWithoutRegistration()
+    {
+        var fixture = RegisterAttendeeFixture.WithRegistrationAndWaitlistTickets();
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(
+            fixture,
+            "dave@example.com",
+            [],
+            [fixture.GetTicketTypeId("workshop-b").Value]);
+        var sut = NewHandler();
+
+        var result = await sut.HandleAsync(command, testContext.CancellationToken);
+
+        result.RegistrationId.ShouldBeNull();
+        result.RegisteredTicketTypeIds.ShouldBeEmpty();
+        result.WaitlistedTicketTypeIds.ShouldBe([fixture.GetTicketTypeId("workshop-b").Value]);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            (await dbContext.Registrations.CountAsync(testContext.CancellationToken)).ShouldBe(0);
+            var waitlist = await dbContext.Waitlists.SingleAsync(testContext.CancellationToken);
+            waitlist.Entries.ShouldHaveSingleItem().Email.Value.ShouldBe("dave@example.com");
+        });
+    }
+
+    [TestMethod]
+    public async ValueTask SelfRegisterAttendee_StaleWaitlistState_ThrowsConflictAndPersistsNothing()
+    {
+        var fixture = RegisterAttendeeFixture.WithRegistrationAndWaitlistTickets(waitlistMode: false);
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(
+            fixture,
+            "dave@example.com",
+            [fixture.GetTicketTypeId("workshop-a").Value],
+            [fixture.GetTicketTypeId("workshop-b").Value]);
+        var sut = NewHandler();
+
+        var result = await ErrorResult.CaptureAsync(
+            async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
+
+        result.Error.ShouldMatch(RegisterAttendeeSelfServiceHandler.Errors.StaleTicketState(fixture.GetTicketTypeId("workshop-b")));
+
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            (await dbContext.Registrations.CountAsync(testContext.CancellationToken)).ShouldBe(0);
+            (await dbContext.Waitlists.CountAsync(testContext.CancellationToken)).ShouldBe(0);
+        });
+    }
+
+    [TestMethod]
+    public async ValueTask SelfRegisterAttendee_WaitlistOverlapsRegisteredTicket_CreatesBoth()
+    {
+        var fixture = RegisterAttendeeFixture.WithRegistrationAndWaitlistTickets();
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(
+            fixture,
+            "dave@example.com",
+            [fixture.GetTicketTypeId("workshop-a").Value],
+            [fixture.GetTicketTypeId("workshop-b").Value]);
+
+        await NewHandler().HandleAsync(command, testContext.CancellationToken);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            (await dbContext.Registrations.CountAsync(testContext.CancellationToken)).ShouldBe(1);
+            (await dbContext.Waitlists.CountAsync(testContext.CancellationToken)).ShouldBe(1);
+        });
+    }
+
+    [TestMethod]
+    public async ValueTask SelfRegisterAttendee_WaitlistTicketsOverlapEachOther_CreatesBothWaitlistEntries()
+    {
+        var fixture = RegisterAttendeeFixture.WithOverlappingWaitlistTickets();
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(
+            fixture,
+            "dave@example.com",
+            [],
+            [fixture.GetTicketTypeId("workshop-b").Value, fixture.GetTicketTypeId("workshop-c").Value]);
+
+        await NewHandler().HandleAsync(command, testContext.CancellationToken);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            (await dbContext.Registrations.CountAsync(testContext.CancellationToken)).ShouldBe(0);
+            var waitlists = await dbContext.Waitlists.ToListAsync(testContext.CancellationToken);
+            waitlists.Count.ShouldBe(2);
+            waitlists.ShouldAllBe(w => w.Entries.Count == 1);
+        });
+    }
+
     // ── Helpers ──────────────────────────────────────────────────────────────
 
     private static RegisterAttendeeSelfServiceCommand NewCommand(
@@ -386,7 +512,22 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
             email,
             "Test",
             "User",
-            ticketTypeIds);
+            ticketTypeIds,
+            []);
+
+    private static RegisterAttendeeSelfServiceCommand NewCommand(
+        RegisterAttendeeFixture fixture,
+        string email,
+        Guid[] registerTicketTypeIds,
+        Guid[] waitlistTicketTypeIds)
+        => new(
+            fixture.EventId.Value,
+            fixture.TeamId.Value,
+            email,
+            "Test",
+            "User",
+            registerTicketTypeIds,
+            waitlistTicketTypeIds);
 
     private static RegisterAttendeeSelfServiceCommand NewCommand(
         RegisterAttendeeFixture fixture,
@@ -400,6 +541,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
             "Test",
             "User",
             ticketTypeIds,
+            [],
             AdditionalDetails: additionalDetails);
 
     private static void AssertAttendeeRegisteredEvent(Registration registration)

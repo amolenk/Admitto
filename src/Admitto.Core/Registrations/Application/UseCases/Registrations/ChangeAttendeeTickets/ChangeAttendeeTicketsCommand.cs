@@ -7,4 +7,5 @@ internal sealed record ChangeAttendeeTicketsCommand(
     Guid TeamId,
     Guid RegistrationId,
     IReadOnlyList<Guid> TicketTypeIds,
-    ChangeMode Mode) : Command;
+    ChangeMode Mode,
+    Guid? WaitlistCouponCode = null) : Command;

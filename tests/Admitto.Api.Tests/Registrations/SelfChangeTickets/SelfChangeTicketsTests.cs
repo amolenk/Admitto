@@ -135,4 +135,25 @@ public sealed class SelfChangeTicketsTests(TestContext testContext) : EndToEndTe
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
     }
+
+    [TestMethod]
+    public async Task SelfChangeTickets_EmptyWaitlistCouponCode_Returns400ValidationProblem()
+    {
+        var fixture = SelfChangeTicketsFixture.WithOpenRegistration();
+        await fixture.SetupAsync(Environment);
+
+        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
+        var request = new HttpRequestMessage(HttpMethod.Put, fixture.ChangeTicketsRoute)
+        {
+            Content = JsonContent.Create(new
+            {
+                TicketTypeIds = new[] { SelfChangeTicketsFixture.WorkshopId.Value },
+                WaitlistCouponCode = Guid.Empty
+            })
+        };
+
+        var response = await client.SendAsync(request, testContext.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+    }
 }

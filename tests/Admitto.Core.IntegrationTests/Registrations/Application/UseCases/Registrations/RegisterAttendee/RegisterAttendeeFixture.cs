@@ -148,6 +148,7 @@ internal sealed class RegisterAttendeeFixture
         var generalId = TicketTypeId.New();
         f._ticketTypeIdsBySlug["general-admission"] = generalId;
         catalog.AddTicketType(generalId, TicketTypeName.From("General Admission"), [], 100);
+        catalog.MarkEventArchived();
         f._catalog = catalog;
         return f;
     }
@@ -259,6 +260,7 @@ internal sealed class RegisterAttendeeFixture
         var ticketTypeId = f.GetTicketTypeId("speaker-pass");
         f._coupon = new CouponBuilder()
             .WithEventId(f.EventId)
+            .WithTeamId(f.TeamId)
             .WithEmail(f.CouponEmail)
             .WithRequestedTicketTypeIds(ticketTypeId)
             .WithAvailableTicketTypes(new TicketTypeInfo(ticketTypeId))
@@ -368,6 +370,48 @@ internal sealed class RegisterAttendeeFixture
         return f;
     }
 
+    public static RegisterAttendeeFixture WithRegistrationAndWaitlistTickets(bool waitlistMode = true)
+    {
+        var f = new RegisterAttendeeFixture();
+        f._ticketedEvent = f.MakeActiveEventWithOpenWindow();
+
+        var catalog = TicketCatalog.Create(f.EventId, f.TeamId);
+        var workshopAId = TicketTypeId.New();
+        var workshopBId = TicketTypeId.New();
+        f._ticketTypeIdsBySlug["workshop-a"] = workshopAId;
+        f._ticketTypeIdsBySlug["workshop-b"] = workshopBId;
+
+        catalog.AddTicketType(workshopAId, TicketTypeName.From("Workshop A"), [TimeSlot.From("morning")], 20);
+        catalog.AddTicketType(workshopBId, TicketTypeName.From("Workshop B"), [TimeSlot.From("morning")], 1, waitlistEnabled: true);
+        if (waitlistMode)
+            catalog.Claim([workshopBId], enforce: true);
+
+        catalog.ClearDomainEvents();
+        f._catalog = catalog;
+        return f;
+    }
+
+    public static RegisterAttendeeFixture WithOverlappingWaitlistTickets()
+    {
+        var f = new RegisterAttendeeFixture();
+        f._ticketedEvent = f.MakeActiveEventWithOpenWindow();
+
+        var catalog = TicketCatalog.Create(f.EventId, f.TeamId);
+        var workshopBId = TicketTypeId.New();
+        var workshopCId = TicketTypeId.New();
+        f._ticketTypeIdsBySlug["workshop-b"] = workshopBId;
+        f._ticketTypeIdsBySlug["workshop-c"] = workshopCId;
+
+        catalog.AddTicketType(workshopBId, TicketTypeName.From("Workshop B"), [TimeSlot.From("morning")], 1, waitlistEnabled: true);
+        catalog.AddTicketType(workshopCId, TicketTypeName.From("Workshop C"), [TimeSlot.From("morning")], 1, waitlistEnabled: true);
+        catalog.Claim([workshopBId], enforce: true);
+        catalog.Claim([workshopCId], enforce: true);
+
+        catalog.ClearDomainEvents();
+        f._catalog = catalog;
+        return f;
+    }
+
     public static RegisterAttendeeFixture WaitlistCouponHappyFlow()
     {
         var f = new RegisterAttendeeFixture { TicketTypeSlug = "general-admission" };
@@ -377,6 +421,7 @@ internal sealed class RegisterAttendeeFixture
 
         f._coupon = new CouponBuilder()
             .WithEventId(f.EventId)
+            .WithTeamId(f.TeamId)
             .WithEmail(f.CouponEmail)
             .WithRequestedTicketTypeIds(ticketTypeId)
             .WithAvailableTicketTypes(new TicketTypeInfo(ticketTypeId))
@@ -402,6 +447,7 @@ internal sealed class RegisterAttendeeFixture
 
         f._coupon = new CouponBuilder()
             .WithEventId(f.EventId)
+            .WithTeamId(f.TeamId)
             .WithEmail(f.CouponEmail)
             .WithRequestedTicketTypeIds(ticketTypeId)
             .WithAvailableTicketTypes(new TicketTypeInfo(ticketTypeId))
@@ -469,6 +515,7 @@ internal sealed class RegisterAttendeeFixture
         var ticketTypeId = GetTicketTypeId(TicketTypeSlug);
         var coupon = new CouponBuilder()
             .WithEventId(EventId)
+            .WithTeamId(TeamId)
             .WithEmail(CouponEmail)
             .WithRequestedTicketTypeIds(ticketTypeId)
             .WithAvailableTicketTypes(new TicketTypeInfo(ticketTypeId))

@@ -22,7 +22,7 @@ public static class RegisterAttendeeSelfServiceHttpEndpoint
         RegisterAttendeeSelfServiceHttpRequest request,
         HttpRequest httpRequest,
         IVerificationTokenService verificationTokenService,
-        ICommandHandler<RegisterAttendeeSelfServiceCommand, Guid> handler,
+        ICommandHandler<RegisterAttendeeSelfServiceCommand, RegisterAttendeeSelfServiceResult> handler,
         [FromKeyedServices(RegistrationsModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
@@ -44,16 +44,24 @@ public static class RegisterAttendeeSelfServiceHttpEndpoint
             claims.Email.Value,
             request.FirstName,
             request.LastName,
-            request.TicketTypeIds,
+            request.RegisterTicketTypeIds,
+            request.WaitlistTicketTypeIds,
             AdditionalDetails: request.AdditionalDetails);
 
-        var registrationId = await handler.HandleAsync(command, cancellationToken);
+        var result = await handler.HandleAsync(command, cancellationToken);
 
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
+        var response = new RegisterAttendeeSelfServiceHttpResponse(
+            result.RegistrationId,
+            result.RegisteredTicketTypeIds,
+            result.WaitlistedTicketTypeIds);
+
         return Results.Created(
-            $"/teams/{teamId}/events/{eventId}/registrations/{registrationId}",
-            null);
+            result.RegistrationId is { } registrationId
+                ? $"/teams/{teamId}/events/{eventId}/registrations/{registrationId}"
+                : $"/teams/{teamId}/events/{eventId}/registrations",
+            response);
     }
 
     private static string? ExtractBearerToken(HttpRequest request)

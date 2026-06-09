@@ -255,6 +255,10 @@ public class TicketCatalog : Aggregate<TicketedEventId>
             var nonSelfService = ids.Where(id => !ticketTypeMap[id].SelfServiceEnabled).Select(id => id.Value).ToArray();
             if (nonSelfService.Length > 0)
                 throw new BusinessRuleViolationException(Errors.TicketTypesNotSelfService(nonSelfService));
+
+            var unavailable = ids.Where(id => ticketTypeMap[id].MaxCapacity is null).Select(id => id.Value).ToArray();
+            if (unavailable.Length > 0)
+                throw new BusinessRuleViolationException(Errors.TicketTypesNotAvailable(unavailable));
         }
 
         var allTimeSlots = ids
@@ -325,6 +329,11 @@ public class TicketCatalog : Aggregate<TicketedEventId>
 
         public static Error TicketTypesNotSelfService(Guid[] ids) =>
             new("ticket_type.not_self_service",
+                "One or more ticket types are not available for self-service registration.",
+                Details: new Dictionary<string, object?> { ["ids"] = ids });
+
+        public static Error TicketTypesNotAvailable(Guid[] ids) =>
+            new("ticket_type.not_available",
                 "One or more ticket types are not available for self-service registration.",
                 Details: new Dictionary<string, object?> { ["ids"] = ids });
 

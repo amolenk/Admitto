@@ -4,5 +4,6 @@ public sealed record RegisterAttendeeSelfServiceHttpRequest(
     string Email,
     string FirstName,
     string LastName,
-    Guid[] TicketTypeIds,
+    Guid[] RegisterTicketTypeIds,
+    Guid[] WaitlistTicketTypeIds,
     Dictionary<string, string>? AdditionalDetails = null);

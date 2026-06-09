@@ -28,7 +28,8 @@ public static class SelfChangeTicketsHttpEndpoint
             teamId,
             registrationId,
             request.TicketTypeIds ?? [],
-            ChangeMode.SelfService);
+            ChangeMode.SelfService,
+            request.WaitlistCouponCode);
 
         await handler.HandleAsync(command, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);

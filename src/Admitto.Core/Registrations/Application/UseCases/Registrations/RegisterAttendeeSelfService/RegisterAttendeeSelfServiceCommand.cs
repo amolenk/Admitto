@@ -8,5 +8,11 @@ internal sealed record RegisterAttendeeSelfServiceCommand(
     string Email,
     string FirstName,
     string LastName,
-    Guid[] TicketTypeIds,
-    IReadOnlyDictionary<string, string>? AdditionalDetails = null) : Command<Guid>;
+    Guid[] RegisterTicketTypeIds,
+    Guid[] WaitlistTicketTypeIds,
+    IReadOnlyDictionary<string, string>? AdditionalDetails = null) : Command<RegisterAttendeeSelfServiceResult>;
+
+internal sealed record RegisterAttendeeSelfServiceResult(
+    Guid? RegistrationId,
+    Guid[] RegisteredTicketTypeIds,
+    Guid[] WaitlistedTicketTypeIds);

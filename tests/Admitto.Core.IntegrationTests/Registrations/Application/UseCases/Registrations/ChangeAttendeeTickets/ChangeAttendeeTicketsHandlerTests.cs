@@ -1,4 +1,6 @@
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.ChangeAttendeeTickets;
+using Amolenk.Admitto.Core.Registrations.Domain.Entities;
+using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Microsoft.EntityFrameworkCore;
 
@@ -107,6 +109,91 @@ public sealed class ChangeAttendeeTicketsHandlerTests(TestContext testContext) :
         var result = await ErrorResult.CaptureAsync(
             async () => await CreateSut().HandleAsync(command, testContext.CancellationToken));
 
-        result.Error.ShouldMatch(ChangeAttendeeTicketsHandler.Errors.EventNotActive);
+        result.Error.ShouldMatch(TicketCatalog.Errors.EventNotActive);
+    }
+
+    [TestMethod]
+    public async ValueTask ChangeAttendeeTickets_WaitlistCouponForExistingRegistration_ChangesTicketsAndRedeemsCoupon()
+    {
+        var fixture = ChangeAttendeeTicketsFixture.WithWaitlistCoupon();
+        await fixture.SetupAsync(Environment);
+
+        var command = new ChangeAttendeeTicketsCommand(
+            fixture.EventId.Value,
+            fixture.TeamId.Value,
+            fixture.RegistrationId.Value,
+            [fixture.GetTicketTypeId("workshop").Value],
+            ChangeMode.SelfService,
+            fixture.WaitlistCouponCode);
+
+        await CreateSut().HandleAsync(command, testContext.CancellationToken);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var registration = await dbContext.Registrations.SingleAsync(testContext.CancellationToken);
+            registration.Tickets.ShouldHaveSingleItem().Id.ShouldBe(fixture.GetTicketTypeId("workshop"));
+
+            var coupon = await dbContext.Coupons.SingleAsync(testContext.CancellationToken);
+            coupon.RedeemedAt.ShouldNotBeNull();
+
+            var waitlist = await dbContext.Waitlists.SingleAsync(testContext.CancellationToken);
+            waitlist.Coupons.ShouldHaveSingleItem().Status.ShouldBe(WaitlistCouponStatus.Redeemed);
+
+            var catalog = await dbContext.TicketCatalogs.SingleAsync(testContext.CancellationToken);
+            catalog.GetTicketType(fixture.GetTicketTypeId("early-bird"))!.UsedCapacity.ShouldBe(0);
+            catalog.GetTicketType(fixture.GetTicketTypeId("workshop"))!.UsedCapacity.ShouldBe(2);
+        });
+    }
+
+    [TestMethod]
+    public async ValueTask ChangeAttendeeTickets_WaitlistCouponOfferedTicketMissing_ThrowsAndLeavesCouponUnredeemed()
+    {
+        var fixture = ChangeAttendeeTicketsFixture.WithWaitlistCoupon();
+        await fixture.SetupAsync(Environment);
+
+        var command = new ChangeAttendeeTicketsCommand(
+            fixture.EventId.Value,
+            fixture.TeamId.Value,
+            fixture.RegistrationId.Value,
+            [fixture.GetTicketTypeId("early-bird").Value],
+            ChangeMode.SelfService,
+            fixture.WaitlistCouponCode);
+
+        var result = await ErrorResult.CaptureAsync(
+            async () => await CreateSut().HandleAsync(command, testContext.CancellationToken));
+
+        result.Error.ShouldMatch(ChangeAttendeeTicketsHandler.Errors.WaitlistCouponTicketMissing(fixture.GetTicketTypeId("workshop")));
+
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var coupon = await dbContext.Coupons.SingleAsync(testContext.CancellationToken);
+            coupon.RedeemedAt.ShouldBeNull();
+        });
+    }
+
+    [TestMethod]
+    public async ValueTask ChangeAttendeeTickets_WaitlistCouponFinalSelectionOverlaps_ThrowsAndLeavesCouponUnredeemed()
+    {
+        var fixture = ChangeAttendeeTicketsFixture.WithWaitlistCoupon(overlappingTickets: true);
+        await fixture.SetupAsync(Environment);
+
+        var command = new ChangeAttendeeTicketsCommand(
+            fixture.EventId.Value,
+            fixture.TeamId.Value,
+            fixture.RegistrationId.Value,
+            [fixture.GetTicketTypeId("early-bird").Value, fixture.GetTicketTypeId("workshop").Value],
+            ChangeMode.SelfService,
+            fixture.WaitlistCouponCode);
+
+        var result = await ErrorResult.CaptureAsync(
+            async () => await CreateSut().HandleAsync(command, testContext.CancellationToken));
+
+        result.Error.Code.ShouldBe("ticket_catalog.overlapping_time_slots");
+
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            var coupon = await dbContext.Coupons.SingleAsync(testContext.CancellationToken);
+            coupon.RedeemedAt.ShouldBeNull();
+        });
     }
 }

@@ -141,9 +141,9 @@ sequenceDiagram
 
 Because `TicketCatalog.EventStatus` is updated in the same transaction as `TicketedEvent.Cancel/Archive`, any in-flight registration that has already loaded `TicketCatalog` at a prior version fails its claim with a `DbUpdateConcurrencyException` — no registration can slip past a lifecycle transition.
 
-## 6.6 Attendee registration (atomic status + capacity gate)
+## 6.6 Attendee registration and waitlist submission (atomic status + capacity gate)
 
-The registration handler (self-service or coupon) loads both `TicketedEvent` (for window / domain / active-status policy checks) and `TicketCatalog` (for the atomic claim) in the same unit of work.
+The registration handler (self-service or coupon) loads both `TicketedEvent` (for window / domain / schema policy checks) and `TicketCatalog` (for the active-status and atomic capacity claim) in the same unit of work. Public self-service registration accepts explicit `registerTicketTypeIds` and `waitlistTicketTypeIds`; capacity is claimed only for registration tickets, while waitlist entries are created for waitlist tickets in the same transaction.
 
 ```mermaid
 sequenceDiagram
@@ -155,12 +155,14 @@ sequenceDiagram
   Endpoint->>Handler: Send(RegisterCommand)
   Handler->>Event: load (policy invariants: window, domain, status)
   Handler->>Catalog: load
-  Handler->>Catalog: Claim(...)  // atomic on EventStatus + capacity
+  Handler->>Catalog: Claim(registerTicketTypeIds)  // atomic on EventStatus + capacity
+  Handler->>Catalog: Validate waitlistTicketTypeIds are in WaitlistMode
+  Handler->>Waitlist: Add entries for waitlistTicketTypeIds
   Note over Catalog: Refuses when EventStatus != Active (mapped to "event not active")
   Endpoint->>Endpoint: SaveChangesAsync (UoW)
 ```
 
-Coupons bypass capacity / window / domain checks but do not bypass the active-status gate.
+Waitlist-only submissions create waitlist entries without creating a `Registration`; the public response reports `registrationId = null` and the waitlisted ticket ids. Coupons bypass capacity / window / domain checks but do not bypass the active-status gate. Waitlist coupons can also be applied during self-service ticket change as a capacity grant for the offered ticket type only; the final registered ticket set is still validated for duplicates, unknown tickets, cancelled tickets, and overlapping time slots.
 
 ## 6.7 Policy mutation flow
 
