@@ -147,6 +147,13 @@ internal static class Extensions
                     15001,
                     adminPassword: keycloakAdminPassword)
                 .WithRealmImport("./KeycloakConfiguration/AdmittoRealm.json")
+                .WithBindMount(
+                    Path.Combine(builder.Environment.ContentRootPath, "KeycloakConfiguration", "themes", "admitto"),
+                    "/opt/keycloak/themes/admitto",
+                    isReadOnly: true)
+                .WithEnvironment("KC_SPI_THEME_CACHE_THEMES", "false")
+                .WithEnvironment("KC_SPI_THEME_CACHE_TEMPLATES", "false")
+                .WithEnvironment("KC_SPI_THEME_STATIC_MAX_AGE", "-1")
                 .WithDataVolume("admitto-keycloak-" + projectHashSuffix)
                 .WithOtlpExporter()
                 .WithLifetime(ContainerLifetime.Persistent);

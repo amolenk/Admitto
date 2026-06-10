@@ -16,6 +16,13 @@
 
 Start everything: `dotnet run --project src/Admitto.AppHost`
 
+The local `keycloak` resource mounts the custom login theme from
+`src/Admitto.AppHost/KeycloakConfiguration/themes/admitto` and the imported
+`admitto` realm selects that theme via `loginTheme`. Because Keycloak runs with a
+persistent data volume, an already-imported local realm may need the theme set in
+the Keycloak admin console or a fresh Keycloak volume before the realm-import
+setting is visible.
+
 ## 7.2 Production shape
 
 - **API** and **Worker** deploy as separate containerized workloads.
