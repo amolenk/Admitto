@@ -1,7 +1,7 @@
 # ADR-011: Auth0 with passkeys as the production identity provider
 
 ## Status
-Accepted.
+Superseded by [ADR-012](adr-012-keycloak-production-identity-provider.md).
 
 ## Context
 Admitto needs a production identity provider (IdP) for the Admin UI. The initial design referenced Microsoft Entra External ID. After evaluation, the following requirements shaped the decision:

@@ -13,6 +13,7 @@ Detailed ADRs are stored in [`/docs/adrs/`](../adrs/).
 | — | Lifecycle guard pattern in the Registrations module | Superseded by ADR-008 | [ADR-007](../adrs/adr-007-lifecycle-guard-pattern.md) |
 | — | TicketedEvent ownership moved to Registrations; EventStatus projected onto TicketCatalog | Accepted | [ADR-008](../adrs/adr-008-ticketed-event-ownership-in-registrations.md) |
 | — | Bulk-email fan-out: snapshot recipients, single SMTP connection, per-event time zone | Accepted | [ADR-009](../adrs/adr-009-bulk-email-design.md) |
+| 2026-06-10 | Keycloak as the production identity provider | Accepted | [ADR-012](../adrs/adr-012-keycloak-production-identity-provider.md) |
 
 ## Done-when
 

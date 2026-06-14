@@ -14,8 +14,8 @@ export async function GET(req: Request) {
 
     // Construct the Keycloak RP-Initiated Logout URL so the IdP SSO session
     // is also destroyed, preventing automatic re-login on the next visit.
-    const authority = process.env.BETTER_AUTH_AUTHORITY ?? "";
-    const clientId = process.env.BETTER_AUTH_CLIENT_ID ?? "";
+    const authority = process.env.AUTH_AUTHORITY ?? "";
+    const clientId = process.env.AUTH_CLIENT_ID ?? "";
     const baseUrl = process.env.PUBLIC_BASE_URL ?? new URL(req.url).origin;
 
     const endSessionUrl = new URL(`${authority}/protocol/openid-connect/logout`);

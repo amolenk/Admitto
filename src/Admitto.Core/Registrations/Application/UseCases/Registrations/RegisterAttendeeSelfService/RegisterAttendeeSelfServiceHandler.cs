@@ -56,6 +56,7 @@ internal sealed class RegisterAttendeeSelfServiceHandler(
             .GetAsync(tc => tc.Id == eventId && tc.TeamId == teamId, cancellationToken);
 
         catalog.EnsureEventActive();
+        EnsureRequestedTicketStatesMatch(catalog, registerTicketTypeIds, waitlistTicketTypeIds);
         ValidateWaitlistRequests(catalog, waitlistTicketTypeIds);
         var tickets = catalog.Claim(registerTicketTypeIds, enforce: true);
 
@@ -138,8 +139,120 @@ internal sealed class RegisterAttendeeSelfServiceHandler(
         }
     }
 
+    private static void EnsureRequestedTicketStatesMatch(
+        TicketCatalog catalog,
+        IReadOnlyList<TicketTypeId> registerTicketTypeIds,
+        IReadOnlyList<TicketTypeId> waitlistTicketTypeIds)
+    {
+        var states = ClassifyRequestedTicketStates(catalog, registerTicketTypeIds, waitlistTicketTypeIds);
+
+        var hasRegistrationMismatch = registerTicketTypeIds.Any(id => !states.RegisterableTicketTypeIds.Contains(id.Value));
+        var hasWaitlistMismatch = waitlistTicketTypeIds.Any(id => !states.WaitlistableTicketTypeIds.Contains(id.Value));
+        if (hasRegistrationMismatch || hasWaitlistMismatch)
+            throw new BusinessRuleViolationException(Errors.TicketStateConflict(states));
+    }
+
+    private static TicketStateConflict ClassifyRequestedTicketStates(
+        TicketCatalog catalog,
+        IReadOnlyList<TicketTypeId> registerTicketTypeIds,
+        IReadOnlyList<TicketTypeId> waitlistTicketTypeIds)
+    {
+        List<Guid> registerable = [];
+        List<Guid> waitlistable = [];
+        List<Guid> unavailable = [];
+        List<Guid> unknown = [];
+        List<Guid> invalidForRequestedAction = [];
+
+        foreach (var ticketTypeId in registerTicketTypeIds)
+        {
+            ClassifyRequestedTicket(catalog, ticketTypeId, registerable, waitlistable, unavailable, unknown);
+        }
+
+        foreach (var ticketTypeId in waitlistTicketTypeIds)
+        {
+            var beforeRegisterableCount = registerable.Count;
+            var beforeWaitlistableCount = waitlistable.Count;
+            var beforeUnavailableCount = unavailable.Count;
+            var beforeUnknownCount = unknown.Count;
+
+            ClassifyRequestedTicket(catalog, ticketTypeId, registerable, waitlistable, unavailable, unknown);
+
+            if (registerable.Count == beforeRegisterableCount
+                && waitlistable.Count == beforeWaitlistableCount
+                && unavailable.Count == beforeUnavailableCount
+                && unknown.Count == beforeUnknownCount)
+            {
+                invalidForRequestedAction.Add(ticketTypeId.Value);
+            }
+        }
+
+        return new TicketStateConflict(
+            registerable.ToArray(),
+            waitlistable.ToArray(),
+            unavailable.ToArray(),
+            unknown.ToArray(),
+            invalidForRequestedAction.ToArray());
+    }
+
+    private static void ClassifyRequestedTicket(
+        TicketCatalog catalog,
+        TicketTypeId ticketTypeId,
+        List<Guid> registerable,
+        List<Guid> waitlistable,
+        List<Guid> unavailable,
+        List<Guid> unknown)
+    {
+        var ticketType = catalog.GetTicketType(ticketTypeId);
+        if (ticketType is null)
+        {
+            unknown.Add(ticketTypeId.Value);
+            return;
+        }
+
+        if (!ticketType.SelfServiceEnabled)
+        {
+            unavailable.Add(ticketTypeId.Value);
+            return;
+        }
+
+        if (ticketType.WaitlistEnabled && ticketType.WaitlistMode)
+        {
+            waitlistable.Add(ticketTypeId.Value);
+            return;
+        }
+
+        if (!ticketType.WaitlistMode
+            && (ticketType.MaxCapacity is null || ticketType.UsedCapacity < ticketType.MaxCapacity.Value))
+        {
+            registerable.Add(ticketTypeId.Value);
+            return;
+        }
+
+        unavailable.Add(ticketTypeId.Value);
+    }
+
+    internal sealed record TicketStateConflict(
+        Guid[] RegisterableTicketTypeIds,
+        Guid[] WaitlistableTicketTypeIds,
+        Guid[] UnavailableTicketTypeIds,
+        Guid[] UnknownTicketTypeIds,
+        Guid[] InvalidForRequestedActionTicketTypeIds);
+
     internal static class Errors
     {
+        public static Error TicketStateConflict(TicketStateConflict conflict) => new(
+            "registration.ticket_state_conflict",
+            "The requested ticket type state no longer matches the submitted action.",
+            Type: ErrorType.Conflict,
+            Details: new Dictionary<string, object?>
+            {
+                ["registerableTicketTypeIds"] = conflict.RegisterableTicketTypeIds,
+                ["waitlistableTicketTypeIds"] = conflict.WaitlistableTicketTypeIds,
+                ["unavailableTicketTypeIds"] = conflict.UnavailableTicketTypeIds,
+                ["unknownTicketTypeIds"] = conflict.UnknownTicketTypeIds,
+                ["invalidForRequestedActionTicketTypeIds"] = conflict.InvalidForRequestedActionTicketTypeIds
+            });
+
         public static Error WaitlistNotEnabled(TicketTypeId id) => new(
             "registration.waitlist_not_enabled",
             "The waitlist is not enabled for this ticket type.",

@@ -19,6 +19,7 @@ public sealed class CreateCouponTests(TestContext testContext) : AspireIntegrati
 
         var command = NewCreateCouponCommand(
             fixture.EventId,
+            fixture.TeamId.Value,
             allowedTicketTypeIds: [fixture.TicketTypeId.Value]);
         var sut = NewCreateCouponHandler(fixture);
 
@@ -50,6 +51,7 @@ public sealed class CreateCouponTests(TestContext testContext) : AspireIntegrati
 
         var command = NewCreateCouponCommand(
             fixture.EventId,
+            fixture.TeamId.Value,
             allowedTicketTypeIds: [fixture.TicketTypeId.Value],
             bypassRegistrationWindow: true);
         var sut = NewCreateCouponHandler(fixture);
@@ -76,6 +78,7 @@ public sealed class CreateCouponTests(TestContext testContext) : AspireIntegrati
         var unknownId = Guid.NewGuid();
         var command = NewCreateCouponCommand(
             fixture.EventId,
+            fixture.TeamId.Value,
             allowedTicketTypeIds: [unknownId]);
         var sut = NewCreateCouponHandler(fixture);
 
@@ -97,6 +100,7 @@ public sealed class CreateCouponTests(TestContext testContext) : AspireIntegrati
 
         var command = NewCreateCouponCommand(
             fixture.EventId,
+            fixture.TeamId.Value,
             allowedTicketTypeIds: [fixture.TicketTypeId.Value],
             expiresAt: new DateTimeOffset(2020, 1, 1, 0, 0, 0, TimeSpan.Zero));
         var sut = NewCreateCouponHandler(fixture);

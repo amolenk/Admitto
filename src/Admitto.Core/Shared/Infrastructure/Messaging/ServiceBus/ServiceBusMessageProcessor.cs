@@ -15,17 +15,14 @@ namespace Amolenk.Admitto.Core.Shared.Infrastructure.Messaging.ServiceBus;
 /// poll interval this is bounded to 5 s in all environments including the emulator.
 /// </para>
 /// <para>
-/// This processor owns its own <see cref="ServiceBusClient"/> (separate from the singleton used
-/// for sending) so that it can fully recreate the AMQP connection when it detects stale state.
-/// The SB emulator has a known quirk where the AMQP connection can silently stop delivering
-/// messages after a period of inactivity without throwing an exception. After
-/// <see cref="MaxConsecutiveNullReceives"/> consecutive null results, both the client and the
-/// receiver are recreated, which forces a fresh AMQP connection and resolves the stale state.
-/// The same full recreation happens when an exception is caught during receive.
+/// The Aspire-registered <see cref="ServiceBusClient"/> is used so local emulator connection
+/// strings and published Azure managed identity endpoints are both handled by the same client
+/// registration. After <see cref="MaxConsecutiveNullReceives"/> consecutive null results, the
+/// receiver is recreated to refresh the AMQP link when the SB emulator silently stalls delivery.
 /// </para>
 /// </summary>
 internal sealed class ServiceBusMessageProcessor(
-    IConfiguration configuration,
+    ServiceBusClient client,
     IServiceScopeFactory scopeFactory,
     ILogger<ServiceBusMessageProcessor> logger) : BackgroundService
 {
@@ -33,8 +30,8 @@ internal sealed class ServiceBusMessageProcessor(
     private static readonly TimeSpan ReceiveWaitTime = TimeSpan.FromSeconds(5);
 
     /// <summary>
-    /// Recreate the client and receiver after this many consecutive null receives (~30 s idle)
-    /// to ensure a fresh AMQP connection when the SB emulator silently stalls delivery.
+    /// Recreate the receiver after this many consecutive null receives (~30 s idle)
+    /// to refresh the AMQP link when the SB emulator silently stalls delivery.
     /// </summary>
     private const int MaxConsecutiveNullReceives = 6;
 
@@ -42,7 +39,7 @@ internal sealed class ServiceBusMessageProcessor(
     {
         logger.LogInformation("Starting message queue processor for queue '{QueueName}'.", QueueName);
 
-        var (client, receiver) = CreateClientAndReceiver();
+        var receiver = CreateReceiver();
         var consecutiveNulls = 0;
         try
         {
@@ -61,9 +58,9 @@ internal sealed class ServiceBusMessageProcessor(
                 }
                 catch (Exception ex)
                 {
-                    logger.LogWarning(ex, "Transient error receiving from queue '{QueueName}'; recreating client and receiver.", QueueName);
-                    await DisposeClientAndReceiverAsync(client, receiver);
-                    (client, receiver) = CreateClientAndReceiver();
+                    logger.LogWarning(ex, "Transient error receiving from queue '{QueueName}'; recreating receiver.", QueueName);
+                    await DisposeReceiverAsync(receiver);
+                    receiver = CreateReceiver();
                     consecutiveNulls = 0;
                     await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
                     continue;
@@ -75,10 +72,10 @@ internal sealed class ServiceBusMessageProcessor(
                     if (consecutiveNulls >= MaxConsecutiveNullReceives)
                     {
                         logger.LogDebug(
-                            "Recreating client and receiver after {Count} consecutive empty polls to refresh AMQP connection.",
+                            "Recreating receiver after {Count} consecutive empty polls to refresh the AMQP link.",
                             consecutiveNulls);
-                        await DisposeClientAndReceiverAsync(client, receiver);
-                        (client, receiver) = CreateClientAndReceiver();
+                        await DisposeReceiverAsync(receiver);
+                        receiver = CreateReceiver();
                         consecutiveNulls = 0;
                     }
                     continue;
@@ -119,34 +116,21 @@ internal sealed class ServiceBusMessageProcessor(
         }
         finally
         {
-            await DisposeClientAndReceiverAsync(client, receiver);
+            await DisposeReceiverAsync(receiver);
         }
     }
 
-    private (ServiceBusClient Client, ServiceBusReceiver Receiver) CreateClientAndReceiver()
+    private ServiceBusReceiver CreateReceiver()
     {
-        var connectionString = configuration.GetConnectionString("messaging")
-            ?? throw new InvalidOperationException("Service Bus connection string 'messaging' not found.");
-
-        var client = new ServiceBusClient(connectionString, new ServiceBusClientOptions
-        {
-            RetryOptions = { TryTimeout = ReceiveWaitTime }
-        });
-
-        var receiver = client.CreateReceiver(QueueName, new ServiceBusReceiverOptions
+        return client.CreateReceiver(QueueName, new ServiceBusReceiverOptions
         {
             ReceiveMode = ServiceBusReceiveMode.PeekLock
         });
-
-        return (client, receiver);
     }
 
-    private async ValueTask DisposeClientAndReceiverAsync(ServiceBusClient client, ServiceBusReceiver receiver)
+    private async ValueTask DisposeReceiverAsync(ServiceBusReceiver receiver)
     {
         try { await receiver.DisposeAsync(); }
         catch (Exception ex) { logger.LogWarning(ex, "Failed to dispose receiver for queue '{QueueName}'.", QueueName); }
-
-        try { await client.DisposeAsync(); }
-        catch (Exception ex) { logger.LogWarning(ex, "Failed to dispose ServiceBusClient for queue '{QueueName}'.", QueueName); }
     }
 }

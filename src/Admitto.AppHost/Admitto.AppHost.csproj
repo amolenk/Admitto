@@ -1,4 +1,4 @@
-<Project Sdk="Aspire.AppHost.Sdk">
+<Project Sdk="Aspire.AppHost.Sdk/13.4.3">
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
@@ -11,12 +11,14 @@
     </ItemGroup>
 
     <ItemGroup>
+        <PackageReference Include="Aspire.Hosting.Azure.AppContainers" />
+        <PackageReference Include="Aspire.Hosting.Azure.ApplicationInsights" />
+        <PackageReference Include="Aspire.Hosting.Azure.OperationalInsights" />
         <PackageReference Include="Aspire.Hosting.Azure.PostgreSQL" />
         <PackageReference Include="Aspire.Hosting.Azure.ServiceBus" />
-        <PackageReference Include="Aspire.Hosting.Keycloak" />
         <PackageReference Include="Aspire.Hosting.PostgreSQL" />
         <PackageReference Include="Azure.Identity" />
-        <PackageReference Include="CommunityToolkit.Aspire.Hosting.NodeJS.Extensions" />
+        <PackageReference Include="Aspire.Hosting.JavaScript" />
     </ItemGroup>
 
 

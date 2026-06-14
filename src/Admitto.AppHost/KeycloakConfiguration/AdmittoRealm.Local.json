@@ -1098,19 +1098,19 @@
       "clientId": "admitto-ui",
       "name": "Admitto UI",
       "description": "",
-      "rootUrl": "http://localhost:3000",
-      "adminUrl": "http://localhost:3000",
+      "rootUrl": "${ADMITTO_UI_PUBLIC_URL}",
+      "adminUrl": "${ADMITTO_UI_PUBLIC_URL}",
       "baseUrl": "",
       "surrogateAuthRequired": false,
       "enabled": true,
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
       "redirectUris": [
-        "http://localhost:3000/*",
-        "http://localhost:3000/api/auth/callback/generic-oauth"
+        "${ADMITTO_UI_PUBLIC_URL}/*",
+        "${ADMITTO_UI_PUBLIC_URL}/api/auth/callback/generic-oauth"
       ],
       "webOrigins": [
-        "http://localhost:3000"
+        "${ADMITTO_UI_PUBLIC_URL}"
       ],
       "notBefore": 0,
       "bearerOnly": false,
@@ -1153,7 +1153,7 @@
         "organization",
         "microprofile-jwt"
       ],
-      "secret": "admitto-ui-dev-secret",
+      "secret": "${ADMITTO_UI_CLIENT_SECRET}",
       "protocolMappers": [
         {
           "id": "a3f8c2d1-5b7e-4a9f-8c3d-2e1f0a4b6c8d",

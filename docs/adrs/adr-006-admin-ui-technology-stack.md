@@ -10,7 +10,7 @@ Key requirements:
 - **Server-side rendering** for protected route enforcement (redirect unauthenticated users before hydration).
 - **Rich interactive forms** for event and ticket type management (dynamic field arrays, date ranges, validation).
 - **Data tables** with sorting, filtering, pagination, and faceted search for attendee management.
-- **OAuth2/OIDC authentication** against external identity providers (Keycloak locally, Auth0 with passkeys in production).
+- **OAuth2/OIDC authentication** against Keycloak in local development and production.
 - **Type-safe API consumption** aligned with the backend's OpenAPI specification.
 
 ## Decision

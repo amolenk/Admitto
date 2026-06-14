@@ -29,6 +29,7 @@ public sealed class GetRegistrationsReconfirmTests(TestContext testContext) : As
 
         await Environment.RegistrationsDatabase.SeedAsync(db =>
         {
+            db.TicketedEvents.Add(NewTicketedEvent(teamId, eventId));
             db.Registrations.Add(NewRegistration(teamId, eventId, "alice@example.com", reconfirmed: true));
             db.Registrations.Add(NewRegistration(teamId, eventId, "bob@example.com", reconfirmed: false));
         });
@@ -51,6 +52,7 @@ public sealed class GetRegistrationsReconfirmTests(TestContext testContext) : As
 
         await Environment.RegistrationsDatabase.SeedAsync(db =>
         {
+            db.TicketedEvents.Add(NewTicketedEvent(teamId, eventId));
             alice = NewRegistration(teamId, eventId, "alice@example.com", reconfirmed: false);
             db.Registrations.Add(alice);
         });
@@ -77,7 +79,10 @@ public sealed class GetRegistrationsReconfirmTests(TestContext testContext) : As
         var teamId = TeamId.New();
 
         await Environment.RegistrationsDatabase.SeedAsync(db =>
-            db.Registrations.Add(NewRegistration(teamId, eventId, "alice@example.com", reconfirmed: false)));
+        {
+            db.TicketedEvents.Add(NewTicketedEvent(teamId, eventId));
+            db.Registrations.Add(NewRegistration(teamId, eventId, "alice@example.com", reconfirmed: false));
+        });
 
         (await Query(teamId, eventId)).Select(r => r.Email).ShouldBe(["alice@example.com"]);
 
@@ -96,6 +101,7 @@ public sealed class GetRegistrationsReconfirmTests(TestContext testContext) : As
 
         await Environment.RegistrationsDatabase.SeedAsync(db =>
         {
+            db.TicketedEvents.Add(NewTicketedEvent(teamId, eventId));
             db.Registrations.Add(NewRegistration(teamId, eventId, "alice@example.com", reconfirmed: true));
             db.Registrations.Add(NewRegistration(teamId, eventId, "bob@example.com", reconfirmed: true));
         });
@@ -112,6 +118,7 @@ public sealed class GetRegistrationsReconfirmTests(TestContext testContext) : As
 
         await Environment.RegistrationsDatabase.SeedAsync(db =>
         {
+            db.TicketedEvents.Add(NewTicketedEvent(teamId, eventId));
             cancelled = NewRegistration(teamId, eventId, "alice@example.com", reconfirmed: false);
             db.Registrations.Add(cancelled);
         });
@@ -143,6 +150,18 @@ public sealed class GetRegistrationsReconfirmTests(TestContext testContext) : As
 
         return registration;
     }
+
+    private static TicketedEvent NewTicketedEvent(TeamId teamId, TicketedEventId eventId) =>
+        TicketedEvent.Create(
+            CreationRequestId.From(Guid.NewGuid()),
+            eventId,
+            teamId,
+            EventName.From("Test Event"),
+            AbsoluteUrl.From("https://example.com"),
+            AbsoluteUrl.From("https://tickets.example.com"),
+            DateTimeOffset.UtcNow.AddDays(30),
+            DateTimeOffset.UtcNow.AddDays(31),
+            TimeZoneId.From("UTC"));
 
     private static string Capitalize(string s) =>
         s.Length == 0 ? s : char.ToUpperInvariant(s[0]) + s[1..];

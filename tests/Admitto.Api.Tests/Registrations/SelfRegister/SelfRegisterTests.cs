@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text.Json;
 using Amolenk.Admitto.Api.Tests.Infrastructure;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
@@ -28,7 +29,8 @@ public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBas
                 Email = SelfRegisterFixture.AttendeeEmail,
                 FirstName = "Dave",
                 LastName = "Smith",
-                TicketTypeIds = new[] { SelfRegisterFixture.TicketTypeId.Value }
+                RegisterTicketTypeIds = new[] { SelfRegisterFixture.TicketTypeId.Value },
+                WaitlistTicketTypeIds = Array.Empty<Guid>()
             }),
             Headers = { Authorization = new("Bearer", token) }
         };
@@ -53,7 +55,8 @@ public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBas
                 Email = SelfRegisterFixture.AttendeeEmail,
                 FirstName = "Dave",
                 LastName = "Smith",
-                TicketTypeIds = new[] { SelfRegisterFixture.TicketTypeId.Value }
+                RegisterTicketTypeIds = new[] { SelfRegisterFixture.TicketTypeId.Value },
+                WaitlistTicketTypeIds = Array.Empty<Guid>()
             },
             cancellationToken: testContext.CancellationToken);
 
@@ -75,7 +78,8 @@ public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBas
                 Email = SelfRegisterFixture.AttendeeEmail,
                 FirstName = "Dave",
                 LastName = "Smith",
-                TicketTypeIds = new[] { SelfRegisterFixture.TicketTypeId.Value }
+                RegisterTicketTypeIds = new[] { SelfRegisterFixture.TicketTypeId.Value },
+                WaitlistTicketTypeIds = Array.Empty<Guid>()
             }),
             Headers = { Authorization = new("Bearer", "this.is.not.a.valid.token") }
         };
@@ -83,6 +87,49 @@ public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBas
         var response = await client.SendAsync(request, testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>(testContext.CancellationToken);
+        body.GetProperty("code").GetString().ShouldBe("email.verification_invalid");
+        body.TryGetProperty("registerableTicketTypeIds", out _).ShouldBeFalse();
+        body.TryGetProperty("waitlistableTicketTypeIds", out _).ShouldBeFalse();
+        body.TryGetProperty("unavailableTicketTypeIds", out _).ShouldBeFalse();
+        body.TryGetProperty("unknownTicketTypeIds", out _).ShouldBeFalse();
+        body.TryGetProperty("invalidForRequestedActionTicketTypeIds", out _).ShouldBeFalse();
+    }
+
+    [TestMethod]
+    public async Task SelfRegister_TicketBecameWaitlistable_Returns409WithTicketStates()
+    {
+        var fixture = SelfRegisterFixture.WithOpenRegistration();
+        await fixture.SetupAsync(Environment, waitlistMode: true);
+
+        var token = await fixture.GetVerificationTokenAsync(Environment, testContext.CancellationToken);
+
+        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
+        var request = new HttpRequestMessage(HttpMethod.Post, fixture.RegisterRoute)
+        {
+            Content = JsonContent.Create(new
+            {
+                Email = SelfRegisterFixture.AttendeeEmail,
+                FirstName = "Dave",
+                LastName = "Smith",
+                RegisterTicketTypeIds = new[] { SelfRegisterFixture.TicketTypeId.Value },
+                WaitlistTicketTypeIds = Array.Empty<Guid>()
+            }),
+            Headers = { Authorization = new("Bearer", token) }
+        };
+
+        var response = await client.SendAsync(request, testContext.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.Conflict);
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>(testContext.CancellationToken);
+        body.GetProperty("code").GetString().ShouldBe("registration.ticket_state_conflict");
+        body.GetProperty("waitlistableTicketTypeIds").EnumerateArray()
+            .Select(id => id.GetGuid())
+            .ShouldBe([SelfRegisterFixture.TicketTypeId.Value]);
+        body.GetProperty("registerableTicketTypeIds").EnumerateArray().ToList().ShouldBeEmpty();
+        body.GetProperty("unavailableTicketTypeIds").EnumerateArray().ToList().ShouldBeEmpty();
+        body.GetProperty("unknownTicketTypeIds").EnumerateArray().ToList().ShouldBeEmpty();
+        body.GetProperty("invalidForRequestedActionTicketTypeIds").EnumerateArray().ToList().ShouldBeEmpty();
     }
 
     // Token bound to different event returns 401 — uses one team with two events
@@ -127,7 +174,8 @@ public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBas
                 Email = SelfRegisterFixture.AttendeeEmail,
                 FirstName = "Dave",
                 LastName = "Smith",
-                TicketTypeIds = new[] { SelfRegisterFixture.TicketTypeId.Value }
+                RegisterTicketTypeIds = new[] { SelfRegisterFixture.TicketTypeId.Value },
+                WaitlistTicketTypeIds = Array.Empty<Guid>()
             }),
             Headers = { Authorization = new("Bearer", tokenForFirstEvent) }
         };
@@ -137,9 +185,8 @@ public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBas
         response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
 
-    // SC: Attempting to self-register with an admin-only (non-self-service) ticket type returns 400
     [TestMethod]
-    public async Task SelfRegister_NonSelfServiceTicketType_Returns400()
+    public async Task SelfRegister_NonSelfServiceTicketType_Returns409()
     {
         var fixture = SelfRegisterFixture.WithOpenRegistration();
         await fixture.SetupAsync(Environment, selfServiceEnabled: false);
@@ -154,13 +201,14 @@ public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBas
                 Email = SelfRegisterFixture.AttendeeEmail,
                 FirstName = "Dave",
                 LastName = "Smith",
-                TicketTypeIds = new[] { SelfRegisterFixture.TicketTypeId.Value }
+                RegisterTicketTypeIds = new[] { SelfRegisterFixture.TicketTypeId.Value },
+                WaitlistTicketTypeIds = Array.Empty<Guid>()
             }),
             Headers = { Authorization = new("Bearer", token) }
         };
 
         var response = await client.SendAsync(request, testContext.CancellationToken);
 
-        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+        response.StatusCode.ShouldBe(HttpStatusCode.Conflict);
     }
 }

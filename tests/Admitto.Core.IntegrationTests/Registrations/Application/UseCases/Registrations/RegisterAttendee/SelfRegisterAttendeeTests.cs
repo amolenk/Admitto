@@ -39,9 +39,8 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         });
     }
 
-    // Self-service rejected — capacity full
     [TestMethod]
-    public async ValueTask SelfRegisterAttendee_CapacityFull_ThrowsAtCapacityError()
+    public async ValueTask SelfRegisterAttendee_CapacityFull_ReturnsTicketStateConflictAndPersistsNothing()
     {
         var fixture = RegisterAttendeeFixture.CapacityFull();
         await fixture.SetupAsync(Environment);
@@ -52,12 +51,21 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.Code.ShouldBe("ticket_type.at_capacity");
+        AssertTicketStateConflict(
+            result.Error,
+            unavailableTicketTypeIds: [fixture.GetTicketTypeId("workshop").Value]);
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            (await dbContext.Registrations.CountAsync(testContext.CancellationToken)).ShouldBe(0);
+            (await dbContext.Waitlists.CountAsync(testContext.CancellationToken)).ShouldBe(0);
+            var ticketType = (await dbContext.TicketCatalogs.SingleAsync(testContext.CancellationToken))
+                .TicketTypes.Single(tt => tt.Id == fixture.GetTicketTypeId("workshop"));
+            ticketType.UsedCapacity.ShouldBe(20);
+        });
     }
 
-    // Self-service rejected — ticket type has self-service disabled
     [TestMethod]
-    public async ValueTask SelfRegisterAttendee_SelfServiceDisabled_ThrowsNotAvailableError()
+    public async ValueTask SelfRegisterAttendee_SelfServiceDisabled_ReturnsTicketStateConflict()
     {
         var fixture = RegisterAttendeeFixture.NoCapacitySet();
         await fixture.SetupAsync(Environment);
@@ -68,7 +76,9 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.Code.ShouldBe("ticket_type.not_self_service");
+        AssertTicketStateConflict(
+            result.Error,
+            unavailableTicketTypeIds: [fixture.GetTicketTypeId("speaker-pass").Value]);
     }
 
     // Self-service rejected — before registration window opens
@@ -200,20 +210,20 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         result.Error.Code.ShouldBe("ticket_catalog.duplicate_ticket_types");
     }
 
-    // Rejected — non-existent ticket type
     [TestMethod]
-    public async ValueTask SelfRegisterAttendee_UnknownTicketType_ThrowsUnknownTicketTypesError()
+    public async ValueTask SelfRegisterAttendee_UnknownTicketType_ReturnsTicketStateConflict()
     {
         var fixture = RegisterAttendeeFixture.OpenWindowWithCapacity();
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture, "dave@example.com", Guid.NewGuid());
+        var unknownTicketTypeId = Guid.NewGuid();
+        var command = NewCommand(fixture, "dave@example.com", unknownTicketTypeId);
         var sut = NewHandler();
 
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.Code.ShouldBe("ticket_catalog.unknown_ticket_types");
+        AssertTicketStateConflict(result.Error, unknownTicketTypeIds: [unknownTicketTypeId]);
     }
 
     // Rejected — overlapping time slots
@@ -358,9 +368,8 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         });
     }
 
-    // Self-service rejected — ticket type is in WaitlistMode
     [TestMethod]
-    public async ValueTask SelfRegisterAttendee_WaitlistModeActive_ThrowsWaitlistModeError()
+    public async ValueTask SelfRegisterAttendee_WaitlistModeActive_ReturnsTicketStateConflictAndPersistsNothing()
     {
         var fixture = RegisterAttendeeFixture.SelfServiceWithWaitlistMode();
         await fixture.SetupAsync(Environment);
@@ -371,7 +380,14 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.Code.ShouldBe("ticket_type.waitlist_mode");
+        AssertTicketStateConflict(
+            result.Error,
+            waitlistableTicketTypeIds: [fixture.GetTicketTypeId("general-admission").Value]);
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            (await dbContext.Registrations.CountAsync(testContext.CancellationToken)).ShouldBe(0);
+            (await dbContext.Waitlists.CountAsync(testContext.CancellationToken)).ShouldBe(0);
+        });
     }
 
     [TestMethod]
@@ -432,7 +448,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
     }
 
     [TestMethod]
-    public async ValueTask SelfRegisterAttendee_StaleWaitlistState_ThrowsConflictAndPersistsNothing()
+    public async ValueTask SelfRegisterAttendee_StaleWaitlistState_ReturnsTicketStateConflictAndPersistsNothing()
     {
         var fixture = RegisterAttendeeFixture.WithRegistrationAndWaitlistTickets(waitlistMode: false);
         await fixture.SetupAsync(Environment);
@@ -447,12 +463,53 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.ShouldMatch(RegisterAttendeeSelfServiceHandler.Errors.StaleTicketState(fixture.GetTicketTypeId("workshop-b")));
+        AssertTicketStateConflict(
+            result.Error,
+            registerableTicketTypeIds:
+            [
+                fixture.GetTicketTypeId("workshop-a").Value,
+                fixture.GetTicketTypeId("workshop-b").Value
+            ]);
 
         await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
         {
             (await dbContext.Registrations.CountAsync(testContext.CancellationToken)).ShouldBe(0);
             (await dbContext.Waitlists.CountAsync(testContext.CancellationToken)).ShouldBe(0);
+        });
+    }
+
+    [TestMethod]
+    public async ValueTask SelfRegisterAttendee_MixedTicketStateConflict_ReportsAllSubmittedStatesAndPersistsNothing()
+    {
+        var fixture = RegisterAttendeeFixture.WithMixedTicketStateConflict();
+        await fixture.SetupAsync(Environment);
+
+        var command = NewCommand(
+            fixture,
+            "dave@example.com",
+            [fixture.GetTicketTypeId("workshop-a").Value, fixture.GetTicketTypeId("workshop-b").Value],
+            [fixture.GetTicketTypeId("workshop-c").Value]);
+
+        var result = await ErrorResult.CaptureAsync(
+            async () => { await NewHandler().HandleAsync(command, testContext.CancellationToken); });
+
+        AssertTicketStateConflict(
+            result.Error,
+            registerableTicketTypeIds:
+            [
+                fixture.GetTicketTypeId("workshop-a").Value,
+                fixture.GetTicketTypeId("workshop-c").Value
+            ],
+            waitlistableTicketTypeIds: [fixture.GetTicketTypeId("workshop-b").Value]);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
+        {
+            (await dbContext.Registrations.CountAsync(testContext.CancellationToken)).ShouldBe(0);
+            (await dbContext.Waitlists.CountAsync(testContext.CancellationToken)).ShouldBe(0);
+            var catalog = await dbContext.TicketCatalogs.SingleAsync(testContext.CancellationToken);
+            catalog.TicketTypes.Single(tt => tt.Id == fixture.GetTicketTypeId("workshop-a")).UsedCapacity.ShouldBe(0);
+            catalog.TicketTypes.Single(tt => tt.Id == fixture.GetTicketTypeId("workshop-b")).UsedCapacity.ShouldBe(1);
+            catalog.TicketTypes.Single(tt => tt.Id == fixture.GetTicketTypeId("workshop-c")).UsedCapacity.ShouldBe(0);
         });
     }
 
@@ -554,6 +611,24 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         domainEvent.FirstName.ShouldBe(registration.FirstName);
         domainEvent.LastName.ShouldBe(registration.LastName);
         domainEvent.Tickets.ShouldBe(registration.Tickets);
+    }
+
+    private static void AssertTicketStateConflict(
+        Error error,
+        Guid[]? registerableTicketTypeIds = null,
+        Guid[]? waitlistableTicketTypeIds = null,
+        Guid[]? unavailableTicketTypeIds = null,
+        Guid[]? unknownTicketTypeIds = null,
+        Guid[]? invalidForRequestedActionTicketTypeIds = null)
+    {
+        error.Code.ShouldBe("registration.ticket_state_conflict");
+        error.Type.ShouldBe(ErrorType.Conflict);
+        error.Details.ShouldNotBeNull();
+        ((Guid[])error.Details["registerableTicketTypeIds"]!).ShouldBe(registerableTicketTypeIds ?? []);
+        ((Guid[])error.Details["waitlistableTicketTypeIds"]!).ShouldBe(waitlistableTicketTypeIds ?? []);
+        ((Guid[])error.Details["unavailableTicketTypeIds"]!).ShouldBe(unavailableTicketTypeIds ?? []);
+        ((Guid[])error.Details["unknownTicketTypeIds"]!).ShouldBe(unknownTicketTypeIds ?? []);
+        ((Guid[])error.Details["invalidForRequestedActionTicketTypeIds"]!).ShouldBe(invalidForRequestedActionTicketTypeIds ?? []);
     }
 
     private static RegisterAttendeeSelfServiceHandler NewHandler()

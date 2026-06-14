@@ -256,9 +256,6 @@ public class TicketCatalog : Aggregate<TicketedEventId>
             if (nonSelfService.Length > 0)
                 throw new BusinessRuleViolationException(Errors.TicketTypesNotSelfService(nonSelfService));
 
-            var unavailable = ids.Where(id => ticketTypeMap[id].MaxCapacity is null).Select(id => id.Value).ToArray();
-            if (unavailable.Length > 0)
-                throw new BusinessRuleViolationException(Errors.TicketTypesNotAvailable(unavailable));
         }
 
         var allTimeSlots = ids

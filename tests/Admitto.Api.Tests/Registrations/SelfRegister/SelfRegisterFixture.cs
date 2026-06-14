@@ -27,7 +27,10 @@ internal sealed class SelfRegisterFixture
 
     public static SelfRegisterFixture WithOpenRegistration() => new();
 
-    public async ValueTask SetupAsync(EndToEndTestEnvironment environment, bool selfServiceEnabled = true)
+    public async ValueTask SetupAsync(
+        EndToEndTestEnvironment environment,
+        bool selfServiceEnabled = true,
+        bool waitlistMode = false)
     {
         var team = new TeamBuilder()
             .Build();
@@ -52,8 +55,14 @@ internal sealed class SelfRegisterFixture
             DateTimeOffset.UtcNow.AddDays(30)));
 
         var catalog = TicketCatalog.Create(eventId, team.Id);
-        catalog.AddTicketType(TicketTypeId, TicketTypeName.From("General Admission"), [], 100,
-            selfServiceEnabled: selfServiceEnabled);
+        catalog.AddTicketType(TicketTypeId, TicketTypeName.From("General Admission"), [], waitlistMode ? 1 : 100,
+            selfServiceEnabled: selfServiceEnabled,
+            waitlistEnabled: waitlistMode);
+        if (waitlistMode)
+        {
+            catalog.Claim([TicketTypeId], enforce: true);
+            catalog.ClearDomainEvents();
+        }
 
         await environment.OrganizationDatabase.SeedAsync(db =>
         {

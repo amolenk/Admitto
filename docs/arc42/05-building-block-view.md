@@ -34,7 +34,7 @@ flowchart TB
 | `Admitto.Api` | API request handling | .NET |
 | `Admitto.Worker` | Background processing | .NET |
 | `Admitto.Migrations` | Database schema migration | .NET |
-| `Admitto.AppHost` | Aspire orchestration for local development | .NET |
+| `Admitto.AppHost` | Aspire orchestration for local development and Azure deployment | .NET |
 | `Admitto.Cli` | CLI management tool | .NET |
 | `Admitto.UI.Admin` | Frontend UI for admin/team member interaction | Next.js ([ADR-006](../adrs/adr-006-admin-ui-technology-stack.md)) |
 
@@ -45,8 +45,8 @@ The diagram uses concept names. Actual implementations vary by environment:
 | Concept | Local dev (Aspire) | Production |
 | :------ | :----------------- | :--------- |
 | Relational database | PostgreSQL container | Azure Database for PostgreSQL |
-| Message queue | Azure Storage Queue emulator (Azurite) | Azure Storage Queues |
-| Identity provider | Keycloak container | Auth0 (passkeys) |
+| Message queue | Azure Service Bus emulator | Azure Service Bus |
+| Identity provider | Keycloak container | Keycloak container app |
 | SMTP service | MailDev | 3rd Party SMTP service of choice |
 
 ## 5.2 Modules
@@ -133,7 +133,7 @@ The `Contracts/` sub-namespace within each module holds DTOs, facade interfaces,
 
 ### Organization module
 
-Manages teams, team membership and roles, and acts as the **gatekeeper** for ticketed-event creation. Does not own event metadata beyond a small set of per-team counters (`ActiveEventCount`, `CancelledEventCount`, `ArchivedEventCount`, `PendingEventCount`) and a bounded `TeamEventCreationRequest` child entity for in-flight creation requests. Publishes `TicketedEventCreationRequested` and consumes `TicketedEventCreated` / `TicketedEventCreationRejected` / `TicketedEventCancelled` / `TicketedEventArchived` integration events to keep the counters in sync. Integrates with external identity providers (Keycloak, Auth0) for user provisioning.
+Manages teams, team membership and roles, and acts as the **gatekeeper** for ticketed-event creation. Does not own event metadata beyond a small set of per-team counters (`ActiveEventCount`, `CancelledEventCount`, `ArchivedEventCount`, `PendingEventCount`) and a bounded `TeamEventCreationRequest` child entity for in-flight creation requests. Publishes `TicketedEventCreationRequested` and consumes `TicketedEventCreated` / `TicketedEventCreationRejected` / `TicketedEventCancelled` / `TicketedEventArchived` integration events to keep the counters in sync. Integrates with Keycloak for user provisioning.
 
 ### Registrations module
 

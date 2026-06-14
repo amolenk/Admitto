@@ -25,6 +25,10 @@ Reference: `Admitto.Api/Middleware/ValidationFilter.cs`, applied in `Admitto.Api
 
 Endpoints declare requirements with `policy.RequireAdminRole()` or `policy.RequireTeamMembership(role)`.
 
+### Public API rate limiting
+
+Public endpoints use ASP.NET Core rate limiting policies configured under `RateLimiting:Public` in `Admitto.Api`. The limits are IP-partitioned middleware guards, not business-level abuse controls. They must be sized for the expected deployment model where the external event website can proxy many attendees through a single source IP. Business-specific limits, such as OTP request throttling per email/event, remain enforced in application handlers.
+
 ## 8.4 Organization scope resolution and cross-module facades
 
 Admin endpoints declare `teamId` and `eventId` as explicit GUID path parameters in their handler signatures. No slug-to-ID translation is needed; the IDs from the route are used directly to load aggregates.
@@ -142,6 +146,14 @@ Handlers that require inbox protection insert a `ProcessedMessage` marker before
 
 Ticket type data is owned entirely by the Registrations module — no cross-module sync.
 
+## 8.6.1 Quartz scheduling
+
+Quartz is configured once in shared infrastructure (`AddSharedQuartzInfrastructure`) and uses the `quartz-db` PostgreSQL database as a persistent store with clustering enabled. Module extension methods register jobs and triggers through additive `AddQuartz(...)` calls; they must not configure their own scheduler store.
+
+The Worker host starts `QuartzHostedService`. API handlers may resolve `ISchedulerFactory` to persist schedules, but API does not host job execution. This lets schedules written by API or queue handlers be acquired by any Worker replica while Quartz guarantees that a trigger fires on only one cluster node.
+
+`Admitto.Migrations` owns the `QRTZ_` schema initialization for `quartz-db`, using Quartz's PostgreSQL table layout. The schema script is idempotent and is not managed by EF Core migrations because Quartz owns those tables.
+
 ## 8.7 Error handling
 
 ### Pipeline
@@ -153,6 +165,8 @@ Ticket type data is owned entirely by the Registrations module — no cross-modu
 - Optimistic concurrency conflicts (`DbUpdateConcurrencyException`) are mapped to `ConcurrencyConflictError`.
 
 ### Error placement — three tiers
+
+ProblemDetails responses include the stable `code` extension and any explicit `Error.Details` entries as additive top-level extensions. Public handlers must only put safe, client-actionable details into errors; for example, self-service registration ticket-state conflicts expose only the submitted ticket type IDs grouped by current state, after email-verification token validation succeeds.
 
 Errors are defined as close as possible to the code that throws them. Three tiers cover all cases:
 

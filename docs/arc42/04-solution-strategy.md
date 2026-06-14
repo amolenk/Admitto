@@ -14,4 +14,4 @@ The core strategic decisions:
 
 - **Transport layer owns the transaction boundary.** API endpoints — not command handlers — call `SaveChangesAsync`. This keeps handlers framework-agnostic and lets the endpoint decide when to commit (see [chapter 8](08-crosscutting-concepts.md)).
 
-- **External identity provider chosen by configuration.** The API authenticates bearer tokens using OIDC discovery against `Authentication:Bearer:Authority`. Which IdP backs the system is selected by configuration: `Authentication:Auth0` activates Auth0 (production passkeys); `Authentication:Keycloak` activates Keycloak (local development). See [ADR-011](../adrs/adr-011-auth0-passkeys.md).
+- **Keycloak-backed identity.** The API authenticates bearer tokens using OIDC discovery against `Authentication:Bearer:Authority`. Keycloak is used in local development and production; production deploys a Keycloak container with the Admitto realm and login theme baked into the image.

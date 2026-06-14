@@ -22,6 +22,7 @@
     <PackageReference Include="QRCoder" />
     <PackageReference Include="Quartz" />
     <PackageReference Include="Quartz.Extensions.Hosting" />
+    <PackageReference Include="Quartz.Serialization.SystemTextJson" />
     <PackageReference Include="Scriban" />
     <PackageReference Include="Vogen" />
   </ItemGroup>

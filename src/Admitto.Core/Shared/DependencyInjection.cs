@@ -106,6 +106,33 @@ public static class DependencyInjection
         return builder;
     }
 
+    public static IHostApplicationBuilder AddSharedQuartzInfrastructure(this IHostApplicationBuilder builder)
+    {
+        var quartzConnectionString = builder.Configuration.GetConnectionString("quartz-db");
+        if (string.IsNullOrWhiteSpace(quartzConnectionString))
+            return builder;
+
+        builder.Services.AddQuartz(options =>
+        {
+            options.SchedulerName = "Admitto";
+            options.SchedulerId = "AUTO";
+
+            options.UsePersistentStore(store =>
+            {
+                store.UseProperties = true;
+                store.UsePostgres(quartzConnectionString);
+                store.UseSystemTextJsonSerializer();
+                store.UseClustering(cluster =>
+                {
+                    cluster.CheckinInterval = TimeSpan.FromSeconds(10);
+                    cluster.CheckinMisfireThreshold = TimeSpan.FromSeconds(30);
+                });
+            });
+        });
+
+        return builder;
+    }
+
     // /// <summary>
     // /// Registers the message type registry singleton, built lazily from all
     // /// <see cref="Action{MessageTypeRegistryBuilder}"/> contributions registered by each module's
@@ -132,6 +159,7 @@ public static class DependencyInjection
     public static IHostApplicationBuilder AddSharedServices(this IHostApplicationBuilder builder)
     {
         builder.AddSharedInfrastructureMessagingServices();
+        builder.AddSharedQuartzInfrastructure();
         builder.Services
             .AddSharedInfrastructureServices()
             .AddCryptographyApplicationServices()

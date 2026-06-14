@@ -162,7 +162,7 @@ sequenceDiagram
   Endpoint->>Endpoint: SaveChangesAsync (UoW)
 ```
 
-Waitlist-only submissions create waitlist entries without creating a `Registration`; the public response reports `registrationId = null` and the waitlisted ticket ids. Coupons bypass capacity / window / domain checks but do not bypass the active-status gate. Waitlist coupons can also be applied during self-service ticket change as a capacity grant for the offered ticket type only; the final registered ticket set is still validated for duplicates, unknown tickets, cancelled tickets, and overlapping time slots.
+Waitlist-only submissions create waitlist entries without creating a `Registration`; the public response reports `registrationId = null` and the waitlisted ticket ids. After the public email-verification token is accepted and terminal event/window/domain/detail guards pass, self-service registration classifies submitted register/waitlist ticket IDs against the current `TicketCatalog` before mutating capacity or waitlists. Recoverable ticket-selection mismatches return a 409 `registration.ticket_state_conflict` problem response with grouped submitted IDs (`registerableTicketTypeIds`, `waitlistableTicketTypeIds`, `unavailableTicketTypeIds`, `unknownTicketTypeIds`, `invalidForRequestedActionTicketTypeIds`) and persist no partial registration, waitlist entry, or capacity change. Coupons bypass capacity / window / domain checks but do not bypass the active-status gate. Waitlist coupons can also be applied during self-service ticket change as a capacity grant for the offered ticket type only; the final registered ticket set is still validated for duplicates, unknown tickets, cancelled tickets, and overlapping time slots.
 
 ## 6.7 Policy mutation flow
 
@@ -274,14 +274,14 @@ The Email module owns one static Quartz job (`EvaluateReconfirmJob`) and registe
 sequenceDiagram
     participant RegOutbox as Reg outbox
     participant ReconfirmHandlers as Reconfirm scheduler handlers
-    participant Quartz as Quartz scheduler
+    participant Quartz as Clustered Quartz scheduler
     participant Eval as EvaluateReconfirmJob (per-event trigger)
     participant Facade as IRegistrationsFacade
     participant Job as BulkEmailJob (reconfirm)
     participant FanOut as BulkEmailFanOutJob
 
     RegOutbox->>ReconfirmHandlers: TicketedEventCreated / ReconfirmPolicyChanged / TimeZoneChanged / Cancelled / Archived
-    ReconfirmHandlers->>Quartz: upsert / remove per-event trigger (cron in event TZ)
+    ReconfirmHandlers->>Quartz: upsert / remove per-event trigger in quartz-db (cron in event TZ)
     Note over Quartz: fires per cadence inside reconfirm window
     Quartz->>Eval: trigger fires (eventId)
     Eval->>Facade: QueryRegistrationsAsync(Status=Registered, HasReconfirmed=false)
@@ -297,6 +297,8 @@ sequenceDiagram
 **Eligibility**: live `HasReconfirmed=false` is the only gate — no extra `email_log` cadence filter. The cron *is* the cadence; tightening the policy (e.g. 7d → 3d) immediately changes prompt frequency.
 
 **Lifecycle cleanup**: `TicketedEventCancelled` and `TicketedEventArchived` integration events remove the trigger so cancelled or archived events stop receiving reconfirm prompts.
+
+**Clustering**: Quartz uses the PostgreSQL-backed store in `quartz-db` with clustering enabled. API handlers can persist schedules, while Worker instances host the scheduler and execute jobs. During rolling deployments or temporary Worker scale-out, Quartz acquires each trigger on only one live scheduler instance.
 
 ## 6.11 User sign-in and ExternalUserId binding
 

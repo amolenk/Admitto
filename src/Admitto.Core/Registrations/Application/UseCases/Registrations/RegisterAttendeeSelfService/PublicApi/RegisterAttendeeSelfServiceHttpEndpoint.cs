@@ -11,7 +11,10 @@ public static class RegisterAttendeeSelfServiceHttpEndpoint
     public static RouteGroupBuilder MapRegisterAttendeeSelfService(this RouteGroupBuilder group)
     {
         group.MapPost("/registrations", RegisterAttendeeSelfService)
-            .WithName(nameof(RegisterAttendeeSelfService));
+            .WithName(nameof(RegisterAttendeeSelfService))
+            .Produces<RegisterAttendeeSelfServiceTicketStateConflictProblemDetails>(
+                StatusCodes.Status409Conflict,
+                "application/problem+json");
 
         return group;
     }

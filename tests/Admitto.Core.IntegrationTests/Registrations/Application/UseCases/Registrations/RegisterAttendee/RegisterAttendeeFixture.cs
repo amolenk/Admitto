@@ -391,6 +391,29 @@ internal sealed class RegisterAttendeeFixture
         return f;
     }
 
+    public static RegisterAttendeeFixture WithMixedTicketStateConflict()
+    {
+        var f = new RegisterAttendeeFixture();
+        f._ticketedEvent = f.MakeActiveEventWithOpenWindow();
+
+        var catalog = TicketCatalog.Create(f.EventId, f.TeamId);
+        var workshopAId = TicketTypeId.New();
+        var workshopBId = TicketTypeId.New();
+        var workshopCId = TicketTypeId.New();
+        f._ticketTypeIdsBySlug["workshop-a"] = workshopAId;
+        f._ticketTypeIdsBySlug["workshop-b"] = workshopBId;
+        f._ticketTypeIdsBySlug["workshop-c"] = workshopCId;
+
+        catalog.AddTicketType(workshopAId, TicketTypeName.From("Workshop A"), [], 20);
+        catalog.AddTicketType(workshopBId, TicketTypeName.From("Workshop B"), [], 1, waitlistEnabled: true);
+        catalog.AddTicketType(workshopCId, TicketTypeName.From("Workshop C"), [], 20, waitlistEnabled: true);
+        catalog.Claim([workshopBId], enforce: true);
+
+        catalog.ClearDomainEvents();
+        f._catalog = catalog;
+        return f;
+    }
+
     public static RegisterAttendeeFixture WithOverlappingWaitlistTickets()
     {
         var f = new RegisterAttendeeFixture();

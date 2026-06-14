@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
 using Amolenk.Admitto.Api.Auth;
+using Amolenk.Admitto.Api.Configuration;
 using Amolenk.Admitto.Api.Endpoints;
 using Amolenk.Admitto.ApiService.Middleware;
 using Amolenk.Admitto.ApiService.OpenApi;
@@ -29,34 +30,44 @@ builder
     .AddApiAuthorization();
 
 // Add rate limiting.
+var publicRateLimiting = builder.Configuration
+    .GetSection(PublicRateLimitingOptions.SectionName)
+    .Get<PublicRateLimitingOptions>() ?? new PublicRateLimitingOptions();
+
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
 
+    // Public traffic is expected to be proxied through the event website, so many
+    // attendees can legitimately share one source IP. Business-specific throttles
+    // such as OTP request limits remain enforced in the application layer.
     options.AddPolicy("public-strict", httpContext =>
         RateLimitPartition.GetSlidingWindowLimiter(
             httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-            _ => new SlidingWindowRateLimiterOptions
-            {
-                Window = TimeSpan.FromMinutes(1),
-                PermitLimit = 10,
-                SegmentsPerWindow = 6,
-                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                QueueLimit = 0
-            }));
+            _ => CreateSlidingWindowOptions(publicRateLimiting.Strict)));
 
     options.AddPolicy("public-standard", httpContext =>
         RateLimitPartition.GetSlidingWindowLimiter(
             httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
-            _ => new SlidingWindowRateLimiterOptions
-            {
-                Window = TimeSpan.FromMinutes(1),
-                PermitLimit = 30,
-                SegmentsPerWindow = 6,
-                QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                QueueLimit = 0
-            }));
+            _ => CreateSlidingWindowOptions(publicRateLimiting.Standard)));
 });
+
+static SlidingWindowRateLimiterOptions CreateSlidingWindowOptions(RateLimitPolicyOptions policyOptions)
+{
+    ArgumentOutOfRangeException.ThrowIfNegativeOrZero(policyOptions.PermitLimit);
+    ArgumentOutOfRangeException.ThrowIfNegativeOrZero(policyOptions.WindowSeconds);
+    ArgumentOutOfRangeException.ThrowIfNegativeOrZero(policyOptions.SegmentsPerWindow);
+    ArgumentOutOfRangeException.ThrowIfNegative(policyOptions.QueueLimit);
+
+    return new SlidingWindowRateLimiterOptions
+    {
+        Window = TimeSpan.FromSeconds(policyOptions.WindowSeconds),
+        PermitLimit = policyOptions.PermitLimit,
+        SegmentsPerWindow = policyOptions.SegmentsPerWindow,
+        QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+        QueueLimit = policyOptions.QueueLimit
+    };
+}
 
 // Add validation and error handling middleware.
 builder.Services
