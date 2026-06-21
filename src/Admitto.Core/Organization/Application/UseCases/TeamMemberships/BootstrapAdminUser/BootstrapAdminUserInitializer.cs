@@ -1,5 +1,7 @@
+using Amolenk.Admitto.Core.Organization.Application.ExternalUsers;
 using Amolenk.Admitto.Core.Organization.Application.Persistence;
 using Amolenk.Admitto.Core.Organization.Domain.Entities;
+using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Microsoft.Extensions.Options;
 
@@ -25,7 +27,7 @@ public sealed class BootstrapAdminUserInitializer(
 
         await using var scope = scopeFactory.CreateAsyncScope();
         var writeStore = scope.ServiceProvider.GetRequiredService<IOrganizationWriteStore>();
-        // var userDirectory = scope.ServiceProvider.GetRequiredService<IExternalUserDirectory>();
+        var userDirectory = scope.ServiceProvider.GetRequiredService<IExternalUserDirectory>();
         var unitOfWork = scope.ServiceProvider.GetRequiredKeyedService<IUnitOfWork>(OrganizationModule.Key);
 
         var emailAddress = EmailAddress.From(email);
@@ -40,16 +42,16 @@ public sealed class BootstrapAdminUserInitializer(
             await unitOfWork.SaveChangesAsync(cancellationToken);
             logger.LogInformation("Created bootstrap admin user {UserId}.", user.Id.Value);
         }
-        // TODO Should be able to remove this as domain event will take care of provisioning the external user
-        // if (user.ExternalUserId is null)
-        // {
-        //     logger.LogInformation("Inviting bootstrap admin user {UserId} to IdP.", user.Id.Value);
-        //     var externalUserId = await userDirectory.InviteUserAsync(email, cancellationToken);
-        //
-        //     user.AssignExternalUserId(ExternalUserId.From(externalUserId));
-        //     await unitOfWork.SaveChangesAsync(cancellationToken);
-        //     logger.LogInformation("Bootstrap admin user {UserId} provisioned in IdP.", user.Id.Value);
-        // }
+
+        if (user.ExternalUserId is null)
+        {
+            logger.LogInformation("Provisioning bootstrap admin user {UserId} in Keycloak.", user.Id.Value);
+            var externalUserId = await userDirectory.InviteUserAsync(email, cancellationToken);
+
+            user.AssignExternalUserId(ExternalUserId.From(externalUserId));
+            await unitOfWork.SaveChangesAsync(cancellationToken);
+            logger.LogInformation("Bootstrap admin user {UserId} provisioned in Keycloak.", user.Id.Value);
+        }
         else
         {
             logger.LogInformation("Bootstrap admin user {UserId} already provisioned, skipping.", user.Id.Value);

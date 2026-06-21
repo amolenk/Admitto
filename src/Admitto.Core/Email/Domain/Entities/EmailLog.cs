@@ -13,8 +13,8 @@ public class EmailLog : Entity<EmailLogId>
 
     private EmailLog(
         EmailLogId id,
-        TeamId teamId,
-        TicketedEventId ticketedEventId,
+        TeamId? teamId,
+        TicketedEventId? ticketedEventId,
         string idempotencyKey,
         EmailAddress recipient,
         string emailType,
@@ -45,8 +45,8 @@ public class EmailLog : Entity<EmailLogId>
         RegistrationId = registrationId;
     }
 
-    public TeamId TeamId { get; private set; }
-    public TicketedEventId TicketedEventId { get; private set; }
+    public TeamId? TeamId { get; private set; }
+    public TicketedEventId? TicketedEventId { get; private set; }
     public string IdempotencyKey { get; private set; } = default!;
     public EmailAddress Recipient { get; private set; }
     public string EmailType { get; private set; } = default!;
@@ -73,8 +73,8 @@ public class EmailLog : Entity<EmailLogId>
     public RegistrationId? RegistrationId { get; private set; }
 
     public static EmailLog Create(
-        TeamId teamId,
-        TicketedEventId ticketedEventId,
+        TeamId? teamId,
+        TicketedEventId? ticketedEventId,
         string idempotencyKey,
         EmailAddress recipient,
         string emailType,
@@ -104,5 +104,27 @@ public class EmailLog : Entity<EmailLogId>
             lastError,
             bulkEmailJobId,
             registrationId);
+    }
+
+    public void MarkSent(string subject, string provider, string? providerMessageId, DateTimeOffset sentAt)
+    {
+        Subject = subject;
+        Provider = provider;
+        ProviderMessageId = providerMessageId;
+        Status = EmailLogStatus.Sent;
+        SentAt = sentAt;
+        StatusUpdatedAt = sentAt;
+        LastError = null;
+    }
+
+    public void MarkFailed(string subject, string provider, string error, DateTimeOffset failedAt)
+    {
+        Subject = subject;
+        Provider = provider;
+        ProviderMessageId = null;
+        Status = EmailLogStatus.Failed;
+        SentAt = null;
+        StatusUpdatedAt = failedAt;
+        LastError = error;
     }
 }

@@ -1,11 +1,13 @@
 using System.Text.Json;
 using Amolenk.Admitto.Core.Organization.Application.ExternalUsers;
+using Microsoft.Extensions.Options;
 
 namespace Amolenk.Admitto.Core.Organization.Infrastructure.UserDirectories.Keycloak;
 
-public class KeycloakUserManagementService(HttpClient client) : IExternalUserDirectory
+public class KeycloakUserManagementService(HttpClient client, IOptions<KeycloakOptions> options) : IExternalUserDirectory
 {
     private const string Realm = "admitto";
+    private readonly KeycloakOptions _options = options.Value;
 
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -16,8 +18,12 @@ public class KeycloakUserManagementService(HttpClient client) : IExternalUserDir
     public async ValueTask<string> InviteUserAsync(string emailAddress, CancellationToken cancellationToken = default)
     {
         var userId = await GetUserByEmailAsync(emailAddress, cancellationToken);
-        if (userId is not null) return userId;
-        
+        if (userId is not null)
+        {
+            await SendExecuteActionsEmailAsync(userId, cancellationToken);
+            return userId;
+        }
+
         return await AddUserAsync(emailAddress, cancellationToken);
     }
 
@@ -105,10 +111,21 @@ public class KeycloakUserManagementService(HttpClient client) : IExternalUserDir
             System.Text.Encoding.UTF8,
             "application/json");
 
-        var response = await client.PutAsync(
-            $"/admin/realms/{Realm}/users/{userId}/execute-actions-email",
-            content,
-            cancellationToken);
+        var path = $"/admin/realms/{Realm}/users/{userId}/execute-actions-email";
+        var query = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(_options.ExecuteActionsClientId))
+        {
+            query.Add("client_id=" + Uri.EscapeDataString(_options.ExecuteActionsClientId));
+        }
+
+        if (!string.IsNullOrWhiteSpace(_options.ExecuteActionsRedirectUri))
+        {
+            query.Add("redirect_uri=" + Uri.EscapeDataString(_options.ExecuteActionsRedirectUri));
+        }
+
+        var requestUri = query.Count == 0 ? path : path + "?" + string.Join('&', query);
+        var response = await client.PutAsync(requestUri, content, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
         {

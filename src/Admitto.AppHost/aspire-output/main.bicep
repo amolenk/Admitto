@@ -97,24 +97,6 @@ module keycloak_roles_postgres_kv 'keycloak-roles-postgres-kv/keycloak-roles-pos
   }
 }
 
-module migrations_identity 'migrations-identity/migrations-identity.bicep' = {
-  name: 'migrations-identity'
-  scope: rg
-  params: {
-    location: location
-  }
-}
-
-module migrations_roles_postgres_kv 'migrations-roles-postgres-kv/migrations-roles-postgres-kv.bicep' = {
-  name: 'migrations-roles-postgres-kv'
-  scope: rg
-  params: {
-    location: location
-    postgres_kv_outputs_name: postgres_kv.outputs.name
-    principalId: migrations_identity.outputs.principalId
-  }
-}
-
 module api_identity 'api-identity/api-identity.bicep' = {
   name: 'api-identity'
   scope: rg
@@ -171,21 +153,21 @@ module worker_roles_postgres_kv 'worker-roles-postgres-kv/worker-roles-postgres-
   }
 }
 
-module admin_ui_identity 'admin-ui-identity/admin-ui-identity.bicep' = {
-  name: 'admin-ui-identity'
+module ui_identity 'ui-identity/ui-identity.bicep' = {
+  name: 'ui-identity'
   scope: rg
   params: {
     location: location
   }
 }
 
-module admin_ui_roles_postgres_kv 'admin-ui-roles-postgres-kv/admin-ui-roles-postgres-kv.bicep' = {
-  name: 'admin-ui-roles-postgres-kv'
+module ui_roles_postgres_kv 'ui-roles-postgres-kv/ui-roles-postgres-kv.bicep' = {
+  name: 'ui-roles-postgres-kv'
   scope: rg
   params: {
     location: location
     postgres_kv_outputs_name: postgres_kv.outputs.name
-    principalId: admin_ui_identity.outputs.principalId
+    principalId: ui_identity.outputs.principalId
   }
 }
 
@@ -205,19 +187,13 @@ output postgres_kv_vaultUri string = postgres_kv.outputs.vaultUri
 
 output keycloak_identity_clientId string = keycloak_identity.outputs.clientId
 
-output migrations_identity_id string = migrations_identity.outputs.id
+output api_identity_id string = api_identity.outputs.id
 
 output postgres_kv_name string = postgres_kv.outputs.name
 
-output app_insights_appInsightsConnectionString string = app_insights.outputs.appInsightsConnectionString
-
-output migrations_identity_clientId string = migrations_identity.outputs.clientId
-
-output api_identity_id string = api_identity.outputs.id
-
 output messaging_serviceBusEndpoint string = messaging.outputs.serviceBusEndpoint
 
-output messaging_serviceBusHostName string = messaging.outputs.serviceBusHostName
+output app_insights_appInsightsConnectionString string = app_insights.outputs.appInsightsConnectionString
 
 output api_identity_clientId string = api_identity.outputs.clientId
 
@@ -225,6 +201,6 @@ output worker_identity_id string = worker_identity.outputs.id
 
 output worker_identity_clientId string = worker_identity.outputs.clientId
 
-output admin_ui_identity_id string = admin_ui_identity.outputs.id
+output ui_identity_id string = ui_identity.outputs.id
 
-output admin_ui_identity_clientId string = admin_ui_identity.outputs.clientId
+output ui_identity_clientId string = ui_identity.outputs.clientId

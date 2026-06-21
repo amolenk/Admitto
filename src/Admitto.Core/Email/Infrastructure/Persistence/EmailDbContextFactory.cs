@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore.Design;
+using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence;
 
 namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence;
 
@@ -11,7 +12,7 @@ public sealed class EmailDbContextFactory : IDesignTimeDbContextFactory<EmailDbC
     public EmailDbContext CreateDbContext(string[] args)
     {
         var optionsBuilder = new DbContextOptionsBuilder<EmailDbContext>();
-        optionsBuilder.UseNpgsql();
+        optionsBuilder.UseModuleNpgsql<EmailDbContext>();
 
         return new EmailDbContext(optionsBuilder.Options);
     }

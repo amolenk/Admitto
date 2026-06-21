@@ -6,6 +6,7 @@ using Amolenk.Admitto.Api.Configuration;
 using Amolenk.Admitto.Api.Endpoints;
 using Amolenk.Admitto.ApiService.Middleware;
 using Amolenk.Admitto.ApiService.OpenApi;
+using Amolenk.Admitto.Core.Email;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
 using Scalar.AspNetCore;
 
@@ -127,6 +128,7 @@ app.UseRequestTimeouts();
 app.UseOutputCache();
 
 app.MapDefaultEndpoints();
+app.MapEmailInternalEndpoints();
 app.MapAdminEndpoints();
 app.MapPublicEndpoints();
 

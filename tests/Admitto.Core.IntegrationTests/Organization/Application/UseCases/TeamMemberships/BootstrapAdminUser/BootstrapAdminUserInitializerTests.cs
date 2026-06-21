@@ -1,5 +1,8 @@
 using Amolenk.Admitto.Core.Organization.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Organization.Domain.Entities;
+using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using NSubstitute;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Organization.Application.UseCases.TeamMemberships.BootstrapAdminUser;
 
@@ -11,7 +14,8 @@ public sealed class BootstrapAdminUserInitializerTests : AspireIntegrationTestBa
     {
         // Arrange
         // On a fresh database with no users, the initializer creates an Admin user for the configured email.
-        var sut = BootstrapAdminUserInitializerFixture.CreateInitializer(Environment);
+        var fixture = BootstrapAdminUserInitializerFixture.Create(Environment);
+        var sut = fixture.Initializer;
 
         // Act
         await sut.StartAsync(CancellationToken.None);
@@ -22,6 +26,7 @@ public sealed class BootstrapAdminUserInitializerTests : AspireIntegrationTestBa
             .SingleOrDefault(u => u.EmailAddress.Value == BootstrapAdminUserInitializerFixture.AdminEmail);
 
         trackedUser.ShouldNotBeNull();
+        trackedUser.ExternalUserId.ShouldBe(ExternalUserId.From(BootstrapAdminUserInitializerFixture.ExternalUserId));
         trackedUser.GetDomainEvents()
             .OfType<UserCreatedDomainEvent>()
             .ShouldHaveSingleItem()
@@ -33,11 +38,12 @@ public sealed class BootstrapAdminUserInitializerTests : AspireIntegrationTestBa
     }
 
     [TestMethod]
-    public async Task AdminAlreadyExists_SkipsCreation()
+    public async Task AdminAlreadyExistsWithExternalUserId_SkipsCreationAndProvisioning()
     {
         // Arrange
         // On a restart when the admin user already exists, the initializer must not create a duplicate user.
-        var sut = BootstrapAdminUserInitializerFixture.CreateInitializer(Environment);
+        var fixture = BootstrapAdminUserInitializerFixture.Create(Environment);
+        var sut = fixture.Initializer;
 
         // Run once to create the user
         await sut.StartAsync(CancellationToken.None);
@@ -56,5 +62,26 @@ public sealed class BootstrapAdminUserInitializerTests : AspireIntegrationTestBa
         trackedUser.GetDomainEvents()
             .OfType<UserCreatedDomainEvent>()
             .ShouldBeEmpty();
+        await fixture.ExternalUserDirectory.Received(1)
+            .InviteUserAsync(BootstrapAdminUserInitializerFixture.AdminEmail, Arg.Any<CancellationToken>());
+    }
+
+    [TestMethod]
+    public async Task ExistingAdminWithoutExternalUserId_ProvisionsAndStoresExternalUserId()
+    {
+        var fixture = BootstrapAdminUserInitializerFixture.Create(Environment);
+        var user = User.CreateAdmin(EmailAddress.From(BootstrapAdminUserInitializerFixture.AdminEmail));
+        await Environment.OrganizationDatabase.SeedAsync(db => db.Users.Add(user));
+
+        await fixture.Initializer.StartAsync(CancellationToken.None);
+
+        await Environment.OrganizationDatabase.AssertAsync(db =>
+        {
+            var persisted = db.Users.Single(u => u.EmailAddress == EmailAddress.From(BootstrapAdminUserInitializerFixture.AdminEmail));
+            persisted.ExternalUserId.ShouldBe(ExternalUserId.From(BootstrapAdminUserInitializerFixture.ExternalUserId));
+            return ValueTask.CompletedTask;
+        });
+        await fixture.ExternalUserDirectory.Received(1)
+            .InviteUserAsync(BootstrapAdminUserInitializerFixture.AdminEmail, Arg.Any<CancellationToken>());
     }
 }

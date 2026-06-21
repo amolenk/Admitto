@@ -19,7 +19,7 @@ namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("email")
-                .HasAnnotation("ProductVersion", "10.0.7")
+                .HasAnnotation("ProductVersion", "10.0.9")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -215,17 +215,22 @@ namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(500)")
                         .HasColumnName("subject");
 
-                    b.Property<Guid>("TeamId")
+                    b.Property<Guid?>("TeamId")
                         .HasColumnType("uuid")
                         .HasColumnName("team_id");
 
-                    b.Property<Guid>("TicketedEventId")
+                    b.Property<Guid?>("TicketedEventId")
                         .HasColumnType("uuid")
                         .HasColumnName("ticketed_event_id");
 
                     b.HasKey("Id");
 
                     b.HasIndex("BulkEmailJobId");
+
+                    b.HasIndex("Recipient", "IdempotencyKey")
+                        .IsUnique()
+                        .HasDatabaseName("IX_email_log_system_recipient_idempotency")
+                        .HasFilter("ticketed_event_id IS NULL");
 
                     b.HasIndex("TicketedEventId", "RegistrationId")
                         .HasDatabaseName("IX_email_log_event_registration");
@@ -236,7 +241,8 @@ namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("TicketedEventId", "Recipient", "IdempotencyKey")
                         .IsUnique()
-                        .HasDatabaseName("IX_email_log_event_recipient_idempotency");
+                        .HasDatabaseName("IX_email_log_event_recipient_idempotency")
+                        .HasFilter("ticketed_event_id IS NOT NULL");
 
                     b.ToTable("email_log", "email");
                 });

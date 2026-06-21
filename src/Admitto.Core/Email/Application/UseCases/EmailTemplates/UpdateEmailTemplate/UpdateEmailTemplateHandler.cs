@@ -47,7 +47,7 @@ internal sealed class UpdateEmailTemplateHandler(IEmailWriteStore writeStore)
             if (BuiltInEmailTemplateNames.IsReserved(template.Name))
                 throw new BusinessRuleViolationException(CannotRenameBuiltIn);
 
-            if (BuiltInEmailTemplateNames.IsReserved(command.Name!))
+            if (BuiltInEmailTemplateCatalog.GetByName(command.Name!) is { IsCustomizable: false })
                 throw new BusinessRuleViolationException(ReservedNameError);
 
             var alreadyExists = await writeStore.EmailTemplates.AnyAsync(

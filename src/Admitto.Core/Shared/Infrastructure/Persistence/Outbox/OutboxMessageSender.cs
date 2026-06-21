@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using Amolenk.Admitto.Core.Shared.Application;
-using Azure.Messaging;
 using Azure.Messaging.ServiceBus;
 
 namespace Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Outbox;
@@ -18,30 +18,33 @@ public class OutboxMessageSender(
         activity?.AddTag("admitto.message.id", message.Id);
         activity?.AddTag("admitto.message.type", message.Type);
 
-        var cloudEvent = new CloudEvent(
-            nameof(Admitto),
-            message.Type,
-            new BinaryData(message.Payload),
-            "application/json")
+        var cloudEvent = new JsonObject
         {
-            Id = message.Id.ToString()
+            ["specversion"] = "1.0",
+            ["id"] = message.Id.ToString(),
+            ["source"] = nameof(Admitto),
+            ["type"] = message.Type,
+            ["datacontenttype"] = "application/json",
+            ["data"] = JsonNode.Parse(message.Payload.RootElement.GetRawText())
         };
 
         var propagationActivity = activity ?? Activity.Current;
         if (propagationActivity is { IdFormat: ActivityIdFormat.W3C })
         {
-            cloudEvent.ExtensionAttributes[AdmittoActivitySource.TraceParentAttribute] = propagationActivity.Id!;
+            cloudEvent[AdmittoActivitySource.TraceParentAttribute] = propagationActivity.Id!;
             if (!string.IsNullOrEmpty(propagationActivity.TraceStateString))
             {
-                cloudEvent.ExtensionAttributes[AdmittoActivitySource.TraceStateAttribute] =
+                cloudEvent[AdmittoActivitySource.TraceStateAttribute] =
                     propagationActivity.TraceStateString;
             }
         }
 
         logger.LogInformation("Sending message to queue: {MessageType}", message.Type);
 
-        var serviceBusMessage =
-            new ServiceBusMessage(BinaryData.FromObjectAsJson(cloudEvent, JsonSerializerOptions.Web));
+        var serviceBusMessage = new ServiceBusMessage(BinaryData.FromString(cloudEvent.ToJsonString(JsonSerializerOptions.Web)))
+        {
+            ContentType = "application/cloudevents+json"
+        };
         await sender.SendMessageAsync(serviceBusMessage, cancellationToken);
     }
 }

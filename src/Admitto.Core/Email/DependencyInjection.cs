@@ -49,12 +49,14 @@ public static class EmailModuleExtensions
             //     EmailModule.NamespacePrefix));
 
             services.AddScoped<IEffectiveEmailSettingsResolver, EffectiveEmailSettingsResolver>();
+            services.AddScoped<ISystemEmailSettingsResolver, SystemEmailSettingsResolver>();
             services.AddScoped<IEmailTemplateService, EmailTemplateService>();
             services.AddScoped<IBulkEmailRecipientResolver, BulkEmailRecipientResolver>();
             services.AddSingleton<IEmailRenderer, ScribanEmailRenderer>();
-
             services.Configure<BulkEmailOptions>(
                 builder.Configuration.GetSection(BulkEmailOptions.SectionName));
+            services.Configure<SystemEmailOptions>(
+                builder.Configuration.GetSection(SystemEmailOptions.SectionName));
 
             // Infrastructure
             builder.AddModuleDatabaseServices<IEmailWriteStore, EmailDbContext>(EmailModule.Key);

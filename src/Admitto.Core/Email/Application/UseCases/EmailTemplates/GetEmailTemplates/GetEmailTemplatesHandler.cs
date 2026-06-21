@@ -21,7 +21,7 @@ internal sealed class GetEmailTemplatesHandler(IEmailWriteStore writeStore)
         var result = new List<EmailTemplateListItemDto>();
 
         // Built-in templates first (ordered by catalog definition).
-        foreach (var entry in BuiltInEmailTemplateCatalog.All)
+        foreach (var entry in BuiltInEmailTemplateCatalog.All.Where(e => e.IsCustomizable))
         {
             var row = dbRows.FirstOrDefault(
                 t => string.Equals(t.Name, entry.Name, StringComparison.OrdinalIgnoreCase));
@@ -51,7 +51,7 @@ internal sealed class GetEmailTemplatesHandler(IEmailWriteStore writeStore)
         }
 
         // Custom templates (rows not matching any built-in name).
-        foreach (var row in dbRows.Where(t => !BuiltInEmailTemplateNames.IsReserved(t.Name)))
+        foreach (var row in dbRows.Where(t => BuiltInEmailTemplateCatalog.GetByName(t.Name) is null))
         {
             result.Add(new EmailTemplateListItemDto(
                 Id: row.Id.Value,
@@ -73,7 +73,7 @@ internal sealed class GetEmailTemplatesHandler(IEmailWriteStore writeStore)
                             t.TicketedEventId == null)
                 .ToListAsync(ct);
 
-            var parentCustomRows = parentRows.Where(t => !BuiltInEmailTemplateNames.IsReserved(t.Name));
+            var parentCustomRows = parentRows.Where(t => BuiltInEmailTemplateCatalog.GetByName(t.Name) is null);
 
             foreach (var parentRow in parentCustomRows)
             {

@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore.Design;
+using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence;
 
 namespace Amolenk.Admitto.Core.Badges.Infrastructure.Persistence;
 
@@ -11,7 +12,7 @@ public class BadgesDbContextFactory : IDesignTimeDbContextFactory<BadgesDbContex
     public BadgesDbContext CreateDbContext(string[] args)
     {
         var optionsBuilder = new DbContextOptionsBuilder<BadgesDbContext>();
-        optionsBuilder.UseNpgsql();
+        optionsBuilder.UseModuleNpgsql<BadgesDbContext>();
 
         return new BadgesDbContext(optionsBuilder.Options);
     }

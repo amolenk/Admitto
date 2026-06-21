@@ -13,22 +13,27 @@ param api_containerport string
 
 param authapiaudience_value string
 
-param postgres_kv_outputs_name string
-
-param postgres_outputs_hostname string
-
-param postgresuser_value string
+param keycloakadminuser_value string
 
 @secure()
-param postgrespassword_value string
+param keycloakadminpassword_value string
+
+@secure()
+param keycloakidentityemailhmacsecret_value string
+
+param postgres_kv_outputs_name string
 
 param messaging_outputs_servicebusendpoint string
 
-param messaging_outputs_servicebushostname string
+param apibootstrapadmin_value string
 
 param app_insights_outputs_appinsightsconnectionstring string
 
 param api_identity_outputs_clientid string
+
+param apiCertificateName string
+
+param apiCustomDomain string
 
 param aca_env_outputs_azure_container_registry_endpoint string
 
@@ -55,37 +60,36 @@ resource api 'Microsoft.App/containerApps@2025-10-02-preview' = {
     configuration: {
       secrets: [
         {
+          name: 'organization--userdirectories--keycloak--password'
+          value: keycloakadminpassword_value
+        }
+        {
+          name: 'email--keycloakidentityemail--hmacsecret'
+          value: keycloakidentityemailhmacsecret_value
+        }
+        {
           name: 'connectionstrings--admitto-db'
           identity: api_identity_outputs_id
           keyVaultUrl: postgres_kv_connectionstrings__admitto_db.properties.secretUri
-        }
-        {
-          name: 'admitto-db-uri'
-          value: 'postgresql://${uriComponent(postgresuser_value)}:${uriComponent(postgrespassword_value)}@${postgres_outputs_hostname}/admitto-db'
-        }
-        {
-          name: 'admitto-db-password'
-          value: postgrespassword_value
         }
         {
           name: 'connectionstrings--quartz-db'
           identity: api_identity_outputs_id
           keyVaultUrl: postgres_kv_connectionstrings__quartz_db.properties.secretUri
         }
-        {
-          name: 'quartz-db-uri'
-          value: 'postgresql://${uriComponent(postgresuser_value)}:${uriComponent(postgrespassword_value)}@${postgres_outputs_hostname}/quartz-db'
-        }
-        {
-          name: 'quartz-db-password'
-          value: postgrespassword_value
-        }
       ]
       activeRevisionsMode: 'Single'
       ingress: {
-        external: false
+        external: true
         targetPort: int(api_containerport)
         transport: 'http'
+        customDomains: [
+          {
+            name: apiCustomDomain
+            bindingType: (apiCertificateName != '') ? 'SniEnabled' : 'Disabled'
+            certificateId: (apiCertificateName != '') ? '${aca_env_outputs_azure_container_apps_environment_id}/managedCertificates/${apiCertificateName}' : null
+          }
+        ]
       }
       registries: [
         {
@@ -127,80 +131,44 @@ resource api 'Microsoft.App/containerApps@2025-10-02-preview' = {
               value: authapiaudience_value
             }
             {
+              name: 'ORGANIZATION__USERDIRECTORIES__KEYCLOAK__AUTHORITY'
+              value: '${'https://keycloak.${aca_env_outputs_azure_container_apps_environment_default_domain}'}/realms/admitto'
+            }
+            {
+              name: 'ORGANIZATION__USERDIRECTORIES__KEYCLOAK__TOKENPATH'
+              value: '/realms/master/protocol/openid-connect/token'
+            }
+            {
+              name: 'ORGANIZATION__USERDIRECTORIES__KEYCLOAK__CLIENTID'
+              value: 'admin-cli'
+            }
+            {
+              name: 'ORGANIZATION__USERDIRECTORIES__KEYCLOAK__USERNAME'
+              value: keycloakadminuser_value
+            }
+            {
+              name: 'ORGANIZATION__USERDIRECTORIES__KEYCLOAK__PASSWORD'
+              secretRef: 'organization--userdirectories--keycloak--password'
+            }
+            {
+              name: 'EMAIL__KEYCLOAKIDENTITYEMAIL__HMACSECRET'
+              secretRef: 'email--keycloakidentityemail--hmacsecret'
+            }
+            {
               name: 'ConnectionStrings__admitto-db'
               secretRef: 'connectionstrings--admitto-db'
-            }
-            {
-              name: 'ADMITTO_DB_HOST'
-              value: postgres_outputs_hostname
-            }
-            {
-              name: 'ADMITTO_DB_PORT'
-              value: '5432'
-            }
-            {
-              name: 'ADMITTO_DB_URI'
-              secretRef: 'admitto-db-uri'
-            }
-            {
-              name: 'ADMITTO_DB_JDBCCONNECTIONSTRING'
-              value: 'jdbc:postgresql://${postgres_outputs_hostname}/admitto-db?sslmode=require&authenticationPluginClassName=com.azure.identity.extensions.jdbc.postgresql.AzurePostgresqlAuthenticationPlugin'
-            }
-            {
-              name: 'ADMITTO_DB_USERNAME'
-              value: postgresuser_value
-            }
-            {
-              name: 'ADMITTO_DB_PASSWORD'
-              secretRef: 'admitto-db-password'
-            }
-            {
-              name: 'ADMITTO_DB_DATABASENAME'
-              value: 'admitto-db'
             }
             {
               name: 'ConnectionStrings__quartz-db'
               secretRef: 'connectionstrings--quartz-db'
             }
             {
-              name: 'QUARTZ_DB_HOST'
-              value: postgres_outputs_hostname
-            }
-            {
-              name: 'QUARTZ_DB_PORT'
-              value: '5432'
-            }
-            {
-              name: 'QUARTZ_DB_URI'
-              secretRef: 'quartz-db-uri'
-            }
-            {
-              name: 'QUARTZ_DB_JDBCCONNECTIONSTRING'
-              value: 'jdbc:postgresql://${postgres_outputs_hostname}/quartz-db?sslmode=require&authenticationPluginClassName=com.azure.identity.extensions.jdbc.postgresql.AzurePostgresqlAuthenticationPlugin'
-            }
-            {
-              name: 'QUARTZ_DB_USERNAME'
-              value: postgresuser_value
-            }
-            {
-              name: 'QUARTZ_DB_PASSWORD'
-              secretRef: 'quartz-db-password'
-            }
-            {
-              name: 'QUARTZ_DB_DATABASENAME'
-              value: 'quartz-db'
-            }
-            {
               name: 'ConnectionStrings__messaging'
               value: messaging_outputs_servicebusendpoint
             }
             {
-              name: 'MESSAGING_HOST'
-              value: messaging_outputs_servicebushostname
-            }
-            {
-              name: 'MESSAGING_URI'
-              value: messaging_outputs_servicebusendpoint
+              name: 'ORGANIZATION__BOOTSTRAPADMIN__EMAILADDRESS'
+              value: apibootstrapadmin_value
             }
             {
               name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'

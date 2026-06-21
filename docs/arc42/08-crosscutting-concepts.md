@@ -18,12 +18,16 @@ Reference: `Admitto.Api/Middleware/ValidationFilter.cs`, applied in `Admitto.Api
 
 ## 8.3 Authentication and authorization
 
-- **Authentication:** JWT Bearer tokens validated against a configurable authority. Challenge and forbidden responses return ProblemDetails.
+- **Authentication:** JWT Bearer tokens validated against a configurable authority. Production Admin UI sign-in uses Keycloak's hosted passkey-only browser flow and starts directly at passkey detection; passwords and direct grants are not enabled for the production Admin UI client. The Keycloak account-console client is disabled; Admitto owns the user-facing account-management surface. Local development intentionally uses a separate Keycloak realm where the standard username/password form is shown first with passkey as an alternative; end-to-end tests retain local-only direct-grant clients. Challenge and forbidden responses return ProblemDetails.
 - **Admin authorization:** `AdminAuthorizationRequirement` checked by `AdminAuthorizationHandler` via `IAdministratorRoleService`.
 - **User context resolution:** `UserContextResolutionMiddleware` resolves the authenticated JWT subject to a domain user before authorization runs. When the route contains both `teamId` and `eventId`, `UserContextResolver` verifies that the event belongs to the team; non-admin mismatches return 403 before endpoint authorization or handler execution.
 - **Team membership authorization:** `TeamMembershipAuthorizationRequirement` checked by `TeamMembershipAuthorizationHandler` against the pre-resolved user context. Admin users bypass team checks.
 
 Endpoints declare requirements with `policy.RequireAdminRole()` or `policy.RequireTeamMembership(role)`.
+
+### Keycloak account-action email delivery
+
+Keycloak account-action emails are infrastructure-owned identity-provider emails. Admitto triggers them through Keycloak's Admin API `execute-actions-email` endpoint, and Keycloak sends them through its own SMTP configuration using the Admitto Keycloak email theme. They are intentionally outside Admitto's Email module templates, logs, outbox, and system-email SMTP settings.
 
 ### Public API rate limiting
 
@@ -76,7 +80,7 @@ UseCases/TeamManagement/
 | :--- | :------- | :------- |
 | `{Slice}Command.cs` / `{Slice}Query.cs` | Immutable record sent via `IMediator` | Always |
 | `{Slice}Handler.cs` | Business logic; must not inject or commit UoW | Always |
-| `{Surface}/{Slice}HttpEndpoint.cs` | Minimal API endpoint; owns the UoW commit. `Surface` follows the established module convention, such as `AdminApi/` or `Public/`. | When HTTP-exposed |
+| `{Surface}/{Slice}HttpEndpoint.cs` | Minimal API endpoint; owns the UoW commit. `Surface` follows the established module convention, such as `AdminApi/`, `PublicApi/`, or `InternalApi/`. | When HTTP-exposed |
 | `{Surface}/{Slice}HttpRequest.cs` | Inbound DTO with `ToCommand()` or `ToQuery()` helper | When the endpoint accepts structured input |
 | `{Surface}/{Slice}Validator.cs` | FluentValidation validator for the request DTO | When the endpoint uses a validated request DTO |
 | `EventHandlers/{Event}DomainEventHandler.cs` | Translates a domain event into the slice command | When triggered by domain event |
@@ -152,7 +156,7 @@ Quartz is configured once in shared infrastructure (`AddSharedQuartzInfrastructu
 
 The Worker host starts `QuartzHostedService`. API handlers may resolve `ISchedulerFactory` to persist schedules, but API does not host job execution. This lets schedules written by API or queue handlers be acquired by any Worker replica while Quartz guarantees that a trigger fires on only one cluster node.
 
-`Admitto.Migrations` owns the `QRTZ_` schema initialization for `quartz-db`, using Quartz's PostgreSQL table layout. The schema script is idempotent and is not managed by EF Core migrations because Quartz owns those tables.
+`Admitto.AppHost/DatabaseScripts/quartz.sql` owns the `QRTZ_` schema initialization for `quartz-db`, using Quartz's PostgreSQL table layout. The schema script is idempotent and is not managed by EF Core migrations because Quartz owns those tables.
 
 ## 8.7 Error handling
 
@@ -520,8 +524,8 @@ These are enforced via MSTest reflection checks on the loaded `Admitto.Core` ass
 | Class pattern | Required namespace suffix |
 | :------------ | :------------------------ |
 | `*DomainEventHandler`, `*IntegrationEventHandler` | `…EventHandlers` |
-| `*HttpEndpoint` | `…AdminApi` or `…PublicApi` |
-| `AbstractValidator<T>` subclasses | `…AdminApi` or `…PublicApi` |
+| `*HttpEndpoint` | `…AdminApi`, `…PublicApi`, or `…InternalApi` |
+| `AbstractValidator<T>` subclasses | `…AdminApi`, `…PublicApi`, or `…InternalApi` |
 | `*Command` or `*Query` | `*.Application.UseCases.*` |
 
 ### Contracts namespace convention

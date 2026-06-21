@@ -20,4 +20,8 @@ public class KeycloakOptions
 
     [Required] 
     public string Password { get; init; } = null!;
+
+    public string? ExecuteActionsClientId { get; init; }
+
+    public string? ExecuteActionsRedirectUri { get; init; }
 }

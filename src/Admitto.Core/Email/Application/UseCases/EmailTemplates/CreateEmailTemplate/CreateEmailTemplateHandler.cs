@@ -21,13 +21,14 @@ internal sealed class CreateEmailTemplateHandler(IEmailWriteStore writeStore)
         CreateEmailTemplateCommand command,
         CancellationToken ct)
     {
-        var isBuiltIn = BuiltInEmailTemplateNames.IsReserved(command.Name);
+        var catalogEntry = BuiltInEmailTemplateCatalog.GetByName(command.Name);
+        var isBuiltIn = catalogEntry is not null;
         var teamId = TeamId.From(command.TeamId);
         TicketedEventId? ticketedEventId = command.TicketedEventId.HasValue
             ? TicketedEventId.From(command.TicketedEventId.Value)
             : null;
 
-        if (!isBuiltIn && BuiltInEmailTemplateNames.IsReserved(command.Name))
+        if (catalogEntry is { IsCustomizable: false })
             throw new BusinessRuleViolationException(ReservedNameError);
 
         var alreadyExists = await writeStore.EmailTemplates.AnyAsync(
@@ -45,10 +46,10 @@ internal sealed class CreateEmailTemplateHandler(IEmailWriteStore writeStore)
 
         if (isBuiltIn)
         {
-            var catalogEntry = BuiltInEmailTemplateCatalog.GetByName(command.Name)!;
-            subject = command.Subject ?? catalogEntry.DefaultSubject;
-            textBody = command.TextBody ?? catalogEntry.DefaultTextBody;
-            htmlBody = command.HtmlBody ?? catalogEntry.DefaultHtmlBody;
+            var entry = catalogEntry ?? throw new InvalidOperationException("Built-in template entry was not found.");
+            subject = command.Subject ?? entry.DefaultSubject;
+            textBody = command.TextBody ?? entry.DefaultTextBody;
+            htmlBody = command.HtmlBody ?? entry.DefaultHtmlBody;
         }
         else
         {

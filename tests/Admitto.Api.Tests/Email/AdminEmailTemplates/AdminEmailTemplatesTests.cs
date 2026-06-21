@@ -258,4 +258,5 @@ public sealed class AdminEmailTemplatesTests(TestContext testContext) : EndToEnd
         ticket.GetProperty("kind").GetString().ShouldBe("builtin");
         ticket.GetProperty("isCustomised").GetBoolean().ShouldBeFalse();
     }
+
 }

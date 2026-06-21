@@ -50,15 +50,6 @@ internal sealed class EmailTemplateService(IEmailWriteStore writeStore) : IEmail
 
     private static EmailTemplate BuildFromCatalog(string name)
     {
-        var entry = BuiltInEmailTemplateCatalog.GetByName(name)
-            ?? throw new InvalidOperationException($"No template found for name '{name}' and no built-in default exists.");
-
-        return EmailTemplate.Create(
-            TeamId.New(),
-            null,
-            entry.Name,
-            entry.DefaultSubject,
-            entry.DefaultTextBody,
-            entry.DefaultHtmlBody);
+        return BuiltInEmailTemplateCatalog.CreateTemplate(name);
     }
 }

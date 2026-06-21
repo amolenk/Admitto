@@ -8,7 +8,6 @@
     <Project Path="src/Admitto.Api/Admitto.Api.csproj" />
     <Project Path="src/Admitto.AppHost/Admitto.AppHost.csproj" />
     <Project Path="src/Admitto.Core/Admitto.Core.csproj" />
-    <Project Path="src/Admitto.Migrations/Admitto.Migrations.csproj" />
     <Project Path="src/Admitto.ServiceDefaults/Admitto.ServiceDefaults.csproj" />
     <Project Path="src/Admitto.Worker/Admitto.Worker.csproj" />
   </Folder>

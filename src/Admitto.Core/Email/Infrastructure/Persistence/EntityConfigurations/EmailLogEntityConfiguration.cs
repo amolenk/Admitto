@@ -17,12 +17,10 @@ internal sealed class EmailLogEntityConfiguration : IEntityTypeConfiguration<Ema
             .ValueGeneratedNever();
 
         builder.Property(e => e.TeamId)
-            .HasColumnName("team_id")
-            .IsRequired();
+            .HasColumnName("team_id");
 
         builder.Property(e => e.TicketedEventId)
-            .HasColumnName("ticketed_event_id")
-            .IsRequired();
+            .HasColumnName("ticketed_event_id");
 
         builder.Property(e => e.IdempotencyKey)
             .HasColumnName("idempotency_key")
@@ -81,6 +79,12 @@ internal sealed class EmailLogEntityConfiguration : IEntityTypeConfiguration<Ema
 
         builder.HasIndex(e => new { e.TicketedEventId, e.Recipient, e.IdempotencyKey })
             .HasDatabaseName("IX_email_log_event_recipient_idempotency")
+            .HasFilter("ticketed_event_id IS NOT NULL")
+            .IsUnique();
+
+        builder.HasIndex(e => new { e.Recipient, e.IdempotencyKey })
+            .HasDatabaseName("IX_email_log_system_recipient_idempotency")
+            .HasFilter("ticketed_event_id IS NULL")
             .IsUnique();
 
         builder.HasIndex(e => new { e.TicketedEventId, e.SentAt })

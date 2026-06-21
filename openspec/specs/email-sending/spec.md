@@ -95,3 +95,5 @@ When email composition or rendering fails (e.g. malformed Scriban template, miss
 - **WHEN** the resolved `ticket` template for event "DevConf" contains an unparseable Scriban expression
 - **THEN** no SMTP send is attempted, the email log records a `Failed` row whose `LastError` describes the parse failure, and the queue message is acknowledged
 
+---
+

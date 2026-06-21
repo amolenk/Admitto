@@ -9,8 +9,8 @@ namespace Amolenk.Admitto.Core.ArchTests;
 /// Verifies that classes reside in the correct namespaces:
 /// <list type="bullet">
 ///   <item>*DomainEventHandler, *IntegrationEventHandler, *ModuleEventHandler → namespace must contain "EventHandlers"</item>
-///   <item>*HttpEndpoint → namespace must contain "AdminApi" or "PublicApi"</item>
-///   <item>AbstractValidator&lt;T&gt; subclasses → namespace must contain "AdminApi" or "PublicApi"</item>
+///   <item>*HttpEndpoint → namespace must contain "AdminApi", "PublicApi", or "InternalApi"</item>
+///   <item>AbstractValidator&lt;T&gt; subclasses → namespace must contain "AdminApi", "PublicApi", or "InternalApi"</item>
 ///   <item>*Command and *Query classes → namespace must match *.Application.UseCases.*</item>
 /// </list>
 /// </summary>
@@ -37,7 +37,7 @@ public class PlacementRulesTests
         AssertRule(Classes().That()
             .HaveNameEndingWith("HttpEndpoint")
             .Should()
-            .ResideInNamespaceMatching(".*\\.(AdminApi|PublicApi)($|\\..*)"));
+            .ResideInNamespaceMatching(".*\\.(AdminApi|PublicApi|InternalApi)($|\\..*)"));
     }
 
     [TestMethod]
@@ -47,7 +47,7 @@ public class PlacementRulesTests
             .AreAssignableTo(typeof(FluentValidation.AbstractValidator<>))
             .And().DoNotHaveNameEndingWith("AbstractValidator")
             .Should()
-            .ResideInNamespaceMatching(".*\\.(AdminApi|PublicApi)($|\\..*)"));
+            .ResideInNamespaceMatching(".*\\.(AdminApi|PublicApi|InternalApi)($|\\..*)"));
     }
 
     [TestMethod]

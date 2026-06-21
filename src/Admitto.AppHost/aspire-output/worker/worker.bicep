@@ -18,6 +18,19 @@ param postgres_kv_outputs_name string
 
 param messaging_outputs_servicebusendpoint string
 
+param systememailsmtphost_value string
+
+param systememailsmtpport_value string
+
+param systememailfromaddress_value string
+
+param systememailauthmode_value string
+
+param systememailusername_value string
+
+@secure()
+param systememailpassword_value string
+
 param app_insights_outputs_appinsightsconnectionstring string
 
 param worker_identity_outputs_clientid string
@@ -59,6 +72,10 @@ resource worker 'Microsoft.App/containerApps@2025-10-02-preview' = {
           name: 'connectionstrings--quartz-db'
           identity: worker_identity_outputs_id
           keyVaultUrl: postgres_kv_connectionstrings__quartz_db.properties.secretUri
+        }
+        {
+          name: 'email--system--password'
+          value: systememailpassword_value
         }
       ]
       activeRevisionsMode: 'Single'
@@ -116,6 +133,30 @@ resource worker 'Microsoft.App/containerApps@2025-10-02-preview' = {
             {
               name: 'ConnectionStrings__messaging'
               value: messaging_outputs_servicebusendpoint
+            }
+            {
+              name: 'EMAIL__SYSTEM__SMTPHOST'
+              value: systememailsmtphost_value
+            }
+            {
+              name: 'EMAIL__SYSTEM__SMTPPORT'
+              value: systememailsmtpport_value
+            }
+            {
+              name: 'EMAIL__SYSTEM__FROMADDRESS'
+              value: systememailfromaddress_value
+            }
+            {
+              name: 'EMAIL__SYSTEM__AUTHMODE'
+              value: systememailauthmode_value
+            }
+            {
+              name: 'EMAIL__SYSTEM__USERNAME'
+              value: systememailusername_value
+            }
+            {
+              name: 'EMAIL__SYSTEM__PASSWORD'
+              secretRef: 'email--system--password'
             }
             {
               name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'

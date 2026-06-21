@@ -1,6 +1,11 @@
 using Amolenk.Admitto.AppHost.Extensions;
+using Amolenk.Admitto.Core.Badges.Infrastructure.Persistence;
+using Amolenk.Admitto.Core.Email.Infrastructure.Persistence;
+using Amolenk.Admitto.Core.Organization.Infrastructure.Persistence;
+using Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence;
 using Azure.Provisioning.AppContainers;
 using Aspire.Hosting.Azure;
+using Aspire.Hosting.JavaScript;
 using Azure.Provisioning.PostgreSql;
 using Microsoft.Extensions.Hosting;
 
@@ -9,6 +14,18 @@ using Microsoft.Extensions.Hosting;
 #pragma warning disable ASPIREACADOMAINS001
 
 var builder = DistributedApplication.CreateBuilder(args);
+
+// Whether to only include the infrastructure components (e.g., databases, messaging) and exclude apps
+// (API, worker, UI) in the builder.
+var infraOnly = builder.ExecutionContext.IsRunMode && builder.Environment.IsIntegrationTesting();
+
+var uiPublicUrl = builder.ExecutionContext.IsPublishMode
+    ? builder.AddParameter("uiPublicUrl")
+    : builder.AddParameter("uiPublicUrl", "http://localhost:3000");
+
+var uiAuthClientSecret = builder.ExecutionContext.IsPublishMode
+    ? builder.AddParameter("uiAuthClientSecret", secret: true)
+    : builder.AddParameter("uiAuthClientSecret", value: "admitto-ui-dev-secret", secret: true);
 
 ///////////////////////////////////////////////////////////////////////////////
 // Azure Postgres Flexible Server
@@ -48,7 +65,8 @@ if (builder.ExecutionContext.IsRunMode)
         }
     });
 }
-else
+
+if (builder.ExecutionContext.IsPublishMode)
 {
     // Allow PGCRYPTO extension so we can generate a signing key in the database for use with protected data like
     // SMTP passwords.
@@ -68,7 +86,7 @@ else
     });
 }
 
-var postgresDb = postgres.AddDatabase("admitto-db");
+var admittoDb = postgres.AddDatabase("admitto-db");
 var quartzDb = postgres.AddDatabase("quartz-db");
 var betterAuthDb = postgres.AddDatabase("better-auth-db");
 var keycloakDb = postgres.AddDatabase("keycloak-db");
@@ -95,6 +113,24 @@ if (builder.ExecutionContext.IsRunMode &&
 serviceBus.AddServiceBusQueue("queue");
 
 ///////////////////////////////////////////////////////////////////////////////
+// MailDev
+///////////////////////////////////////////////////////////////////////////////
+
+IResourceBuilder<ContainerResource>? mailDev = null;
+
+if (builder.ExecutionContext.IsRunMode)
+{
+    mailDev = builder.AddContainer("maildev", "maildev/maildev:latest")
+        .WithHttpEndpoint(15002, targetPort: 1080)
+        .WithEndpoint(name: "smtp", scheme: "smtp", targetPort: 1025, isExternal: true, port: 1025);
+
+    if (builder.Environment.IsDevelopment())
+    {
+        mailDev.WithLifetime(ContainerLifetime.Persistent);
+    }
+}
+
+///////////////////////////////////////////////////////////////////////////////
 // Keycloak
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -111,10 +147,21 @@ IResourceBuilder<ContainerResource> keycloak;
 if (builder.ExecutionContext.IsPublishMode)
 {
     var keycloakPublicUrl = builder.AddParameter("keycloakPublicUrl");
+    var keycloakSmtpHost = builder.AddParameter("keycloakSmtpHost");
+    var keycloakSmtpPort = builder.AddParameter("keycloakSmtpPort", value: "587");
+    var keycloakSmtpFromAddress = builder.AddParameter("keycloakSmtpFromAddress");
+    var keycloakSmtpFromDisplayName = builder.AddParameter("keycloakSmtpFromDisplayName", value: "Admitto");
+    var keycloakSmtpAuth = builder.AddParameter("keycloakSmtpAuth", value: "true");
+    var keycloakSmtpUsername = builder.AddParameter("keycloakSmtpUsername");
+    var keycloakSmtpPassword = builder.AddParameter("keycloakSmtpPassword", secret: true);
+    var keycloakSmtpSsl = builder.AddParameter("keycloakSmtpSsl", value: "false");
+    var keycloakSmtpStartTls = builder.AddParameter("keycloakSmtpStartTls", value: "true");
 
     keycloak = builder.AddContainer("keycloak", "admitto-keycloak")
         .WithDockerfile("./KeycloakConfiguration")
+        .WithArgs("start", "--import-realm", "--spi-user-profile--declarative-user-profile--read-only-attributes=email")
         .WithHttpEndpoint(targetPort: 8080, name: "http")
+        .WithHttpHealthCheck("/realms/admitto/.well-known/openid-configuration")
         .WithExternalHttpEndpoints()
         .WithEnvironment("KC_BOOTSTRAP_ADMIN_USERNAME", keycloakAdminUser)
         .WithEnvironment("KC_BOOTSTRAP_ADMIN_PASSWORD", keycloakAdminPassword)
@@ -129,6 +176,15 @@ if (builder.ExecutionContext.IsPublishMode)
         .WithEnvironment("KC_PROXY_HEADERS", "xforwarded")
         .WithEnvironment("KC_HOSTNAME", keycloakPublicUrl)
         .WithEnvironment("KC_HEALTH_ENABLED", "true")
+        .WithEnvironment("KEYCLOAK_SMTP_HOST", keycloakSmtpHost)
+        .WithEnvironment("KEYCLOAK_SMTP_PORT", keycloakSmtpPort)
+        .WithEnvironment("KEYCLOAK_SMTP_FROM", keycloakSmtpFromAddress)
+        .WithEnvironment("KEYCLOAK_SMTP_FROM_DISPLAY_NAME", keycloakSmtpFromDisplayName)
+        .WithEnvironment("KEYCLOAK_SMTP_AUTH", keycloakSmtpAuth)
+        .WithEnvironment("KEYCLOAK_SMTP_USERNAME", keycloakSmtpUsername)
+        .WithEnvironment("KEYCLOAK_SMTP_PASSWORD", keycloakSmtpPassword)
+        .WithEnvironment("KEYCLOAK_SMTP_SSL", keycloakSmtpSsl)
+        .WithEnvironment("KEYCLOAK_SMTP_STARTTLS", keycloakSmtpStartTls)
         .WaitFor(keycloakDb);
 
 
@@ -148,15 +204,17 @@ else
     // tokens (which include the authority URL, with port) beyond the lifetime of the app host.
     var keycloakHttpPort = builder.Environment.IsDevelopment() ? 15001 : (int?)null;
 
-    keycloak = builder.AddContainer("keycloak", "quay.io/keycloak/keycloak:26.6")
-        .WithArgs("start-dev", "--import-realm")
+    keycloak = builder.AddContainer("keycloak", "admitto-keycloak")
+        .WithDockerfile("./KeycloakConfiguration")
+        .WithArgs("start-dev", "--import-realm", "--spi-user-profile--declarative-user-profile--read-only-attributes=email")
         .WithHttpEndpoint(port: keycloakHttpPort, targetPort: 8080, name: "http", isProxied: false)
+        .WithHttpHealthCheck("/realms/admitto/.well-known/openid-configuration")
         .WithEnvironment("KC_BOOTSTRAP_ADMIN_USERNAME", keycloakAdminUser)
         .WithEnvironment("KC_BOOTSTRAP_ADMIN_PASSWORD", keycloakAdminPassword)
         .WithEnvironment("KC_HTTP_ENABLED", "true")
         .WithEnvironment("KC_HEALTH_ENABLED", "true")
         .WithBindMount(
-            Path.Combine(builder.Environment.ContentRootPath, "KeycloakConfiguration", "AdmittoRealm.Deployment.json"),
+            Path.Combine(builder.Environment.ContentRootPath, "KeycloakConfiguration", "AdmittoRealm.Local.json"),
             "/opt/keycloak/data/import/admitto-realm.json",
             isReadOnly: true)
         .WithBindMount(
@@ -183,25 +241,9 @@ else
     }
 }
 
+keycloak.WaitFor(mailDev!);
+
 var keycloakAuthorityRef = ReferenceExpression.Create($"{keycloak.GetEndpoint("http")}/realms/admitto");
-
-///////////////////////////////////////////////////////////////////////////////
-// MailDev
-///////////////////////////////////////////////////////////////////////////////
-
-IResourceBuilder<ContainerResource>? mailDev = null;
-
-if (builder.ExecutionContext.IsRunMode)
-{
-    mailDev = builder.AddContainer("maildev", "maildev/maildev:latest")
-        .WithHttpEndpoint(15002, targetPort: 1080)
-        .WithEndpoint(name: "smtp", scheme: "smtp", targetPort: 1025, isExternal: true, port: 1025);
-
-    if (builder.Environment.IsDevelopment())
-    {
-        mailDev.WithLifetime(ContainerLifetime.Persistent);
-    }
-}
 
 ///////////////////////////////////////////////////////////////////////////////
 // Azure Log Analytics Workspace
@@ -236,36 +278,20 @@ if (builder.ExecutionContext.IsPublishMode)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-// Migrations
-///////////////////////////////////////////////////////////////////////////////
-
-var migrations = builder.AddProject<Projects.Admitto_Migrations>("migrations")
-    .WithReference(postgresDb).WaitFor(postgresDb)
-    .WithReference(quartzDb).WaitFor(quartzDb)
-    .WithReference(betterAuthDb).WaitFor(betterAuthDb);
-
-if (builder.ExecutionContext.IsPublishMode)
-{
-    migrations
-        .WithReference(appInsights!)
-        .PublishAsAzureContainerAppJob((_, job) =>
-        {
-            job.Configuration.TriggerType = ContainerAppJobTriggerType.Manual;
-            job.Configuration.ReplicaRetryLimit = 1;
-        });
-}
-
-///////////////////////////////////////////////////////////////////////////////
 // API
 ///////////////////////////////////////////////////////////////////////////////
 
 IResourceBuilder<ProjectResource>? api = null;
 ReferenceExpression? apiUrlRef = null;
 
-if (builder.ExecutionContext.IsPublishMode
-    || builder.Environment.IsDevelopment() || builder.Environment.IsEndToEndTesting())
+if (!infraOnly)
 {
     var authApiAudience = builder.AddParameter("authApiAudience", value: "admitto-api");
+
+    // Bootstrap admin user
+    var apiBootstrapAdmin = builder.ExecutionContext.IsPublishMode
+        ? builder.AddParameter("apiBootstrapAdmin")
+        : builder.AddParameter("apiBootstrapAdmin", value: "alice@example.com");
 
     api = builder.AddProject<Projects.Admitto_Api>("api")
         .WithUrlForEndpoint(
@@ -281,44 +307,39 @@ if (builder.ExecutionContext.IsPublishMode
         .WithEnvironment("AUTHENTICATION__BEARER__AUTHORITY", keycloakAuthorityRef)
         .WithEnvironment("AUTHENTICATION__BEARER__TOKENVALIDATIONPARAMETERS__VALIDAUDIENCE", authApiAudience)
         .WithEnvironment("ORGANIZATION__USERDIRECTORIES__KEYCLOAK__AUTHORITY", keycloakAuthorityRef)
-        .WithEnvironment("ORGANIZATION__USERDIRECTORIES__KEYCLOAK__TOKENPATH", "/realms/master/protocol/openid-connect/token")
+        .WithEnvironment(
+            "ORGANIZATION__USERDIRECTORIES__KEYCLOAK__TOKENPATH",
+            "/realms/master/protocol/openid-connect/token")
         .WithEnvironment("ORGANIZATION__USERDIRECTORIES__KEYCLOAK__CLIENTID", "admin-cli")
         .WithEnvironment("ORGANIZATION__USERDIRECTORIES__KEYCLOAK__USERNAME", keycloakAdminUser)
         .WithEnvironment("ORGANIZATION__USERDIRECTORIES__KEYCLOAK__PASSWORD", keycloakAdminPassword)
-        .WithReference(postgresDb)
+        .WithEnvironment("ORGANIZATION__USERDIRECTORIES__KEYCLOAK__EXECUTEACTIONSCLIENTID", "admitto-ui")
+        .WithEnvironment("ORGANIZATION__USERDIRECTORIES__KEYCLOAK__EXECUTEACTIONSREDIRECTURI", uiPublicUrl)
+        .WithEnvironment("ORGANIZATION__BOOTSTRAPADMIN__EMAILADDRESS", apiBootstrapAdmin)
+        .WithReference(admittoDb)
         .WithReference(quartzDb)
         .WithReference(serviceBus).WaitFor(serviceBus)
-        .WaitFor(keycloak)
-        .WaitForCompletion(migrations);
+        .WaitFor(keycloak);
 
-
-
-    // Bootstrap admin user
-    var apiBootstrapAdmin = builder.ExecutionContext.IsPublishMode
-        ? builder.AddParameter("apiBootstrapAdmin")
-        : builder.AddParameter("apiBootstrapAdmin", value: "alice@example.com");
-    //
-    api.WithEnvironment("ORGANIZATION__BOOTSTRAPADMIN__EMAILADDRESS", apiBootstrapAdmin);
-
-    if (builder.ExecutionContext.IsRunMode)
+    if (builder.ExecutionContext.IsRunMode && builder.Environment.IsEndToEndTesting())
     {
-        if (builder.Environment.IsEndToEndTesting())
-        {
-            api
-                .WithEnvironment("RATELIMITING__PUBLIC__STRICT__PERMITLIMIT", "1000")
-                .WithEnvironment("RATELIMITING__PUBLIC__STANDARD__PERMITLIMIT", "5000");
-        }
+        api
+            .WithEnvironment("RATELIMITING__PUBLIC__STRICT__PERMITLIMIT", "1000")
+            .WithEnvironment("RATELIMITING__PUBLIC__STANDARD__PERMITLIMIT", "5000");
     }
-    else
+
+    if (builder.ExecutionContext.IsPublishMode)
     {
         var apiCustomDomain = builder.AddParameter("apiCustomDomain");
         var apiCertificateName = builder.AddParameter("apiCertificateName");
 
-        api.WithReference(appInsights!).PublishAsAzureContainerApp((_, app) =>
-        {
-            app.Template.Scale = new ContainerAppScale { MinReplicas = 1, MaxReplicas = 1 };
-            app.ConfigureCustomDomain(apiCustomDomain, apiCertificateName);
-        });
+        api
+            .WithReference(appInsights!)
+            .PublishAsAzureContainerApp((_, app) =>
+            {
+                app.Template.Scale = new ContainerAppScale { MinReplicas = 1, MaxReplicas = 1 };
+                app.ConfigureCustomDomain(apiCustomDomain, apiCertificateName);
+            });
     }
 
     apiUrlRef = ReferenceExpression.Create($"{api.GetEndpoint("http")}");
@@ -328,8 +349,7 @@ if (builder.ExecutionContext.IsPublishMode
 // Worker
 ///////////////////////////////////////////////////////////////////////////////
 
-if (builder.ExecutionContext.IsPublishMode
-    || builder.Environment.IsDevelopment() || builder.Environment.IsEndToEndTesting())
+if (!infraOnly)
 {
     var worker = builder.AddProject<Projects.Admitto_Worker>("worker")
         .WithEnvironment("ORGANIZATION__USERDIRECTORIES__KEYCLOAK__AUTHORITY", keycloakAuthorityRef)
@@ -338,11 +358,11 @@ if (builder.ExecutionContext.IsPublishMode
         .WithEnvironment("ORGANIZATION__USERDIRECTORIES__KEYCLOAK__USERNAME", keycloakAdminUser)
         .WithEnvironment("ORGANIZATION__USERDIRECTORIES__KEYCLOAK__PASSWORD", keycloakAdminPassword)
         .WithReferenceEnvironment(ReferenceEnvironmentInjectionFlags.ConnectionString)
-        .WithReference(postgresDb)
+        .WithReference(admittoDb)
         .WithReference(quartzDb)
-        .WithReference(serviceBus).WaitFor(serviceBus)
-        .WaitFor(keycloak)
-        .WaitForCompletion(migrations);
+        .WithReference(serviceBus)
+        .WaitFor(mailDev!)
+        .WaitFor(api!);
 
     if (builder.ExecutionContext.IsRunMode)
     {
@@ -353,7 +373,8 @@ if (builder.ExecutionContext.IsPublishMode
             .WithEnvironment("BULKEMAIL__PERMESSAGEDELAY", "00:00:00")
             .WaitFor(mailDev!);
     }
-    else
+
+    if (builder.ExecutionContext.IsPublishMode)
     {
         worker
             .WithReference(appInsights!)
@@ -368,19 +389,13 @@ if (builder.ExecutionContext.IsPublishMode
 // UI
 ///////////////////////////////////////////////////////////////////////////////
 
-if (builder.ExecutionContext.IsPublishMode || builder.Environment.IsDevelopment())
-{
-    var uiPublicUrl = builder.ExecutionContext.IsPublishMode
-        ? builder.AddParameter("uiPublicUrl")
-        : builder.AddParameter("uiPublicUrl", "http://localhost:3000");
+IResourceBuilder<NextJsAppResource>? ui = null;
 
+if (!infraOnly)
+{
     var uiAuthSigningSecret = builder.ExecutionContext.IsPublishMode
         ? builder.AddParameter("uiAuthSigningSecret", secret: true)
         : builder.AddParameter("uiAuthSigningSecret", "development-secret-at-least-32-chars", secret: true);
-
-    var uiAuthClientSecret = builder.ExecutionContext.IsPublishMode
-        ? builder.AddParameter("uiAuthClientSecret", secret: true)
-        : builder.AddParameter("uiAuthClientSecret", value: "admitto-ui-dev-secret", secret: true);
 
     var uiKeycloakAuthorityRef = builder.ExecutionContext.IsPublishMode
         ? keycloakAuthorityRef
@@ -391,10 +406,7 @@ if (builder.ExecutionContext.IsPublishMode || builder.Environment.IsDevelopment(
         ? ReferenceExpression.Create($"{betterAuthDb.Resource.UriExpression}?sslmode=require")
         : betterAuthDb.Resource.UriExpression;
 
-    var uiCustomDomain = builder.AddParameter("uiCustomDomain");
-    var uiCertificateName = builder.AddParameter("uiCertificateName");
-
-    builder.AddNextJsApp("ui", "../Admitto.UI.Admin")
+    ui = builder.AddNextJsApp("ui", "../Admitto.UI.Admin")
         .WithPnpm()
         .WithHttpEndpoint(port: 3000, name: "http", isProxied: false)
         .WithExternalHttpEndpoints()
@@ -409,16 +421,96 @@ if (builder.ExecutionContext.IsPublishMode || builder.Environment.IsDevelopment(
         .WithEnvironment("ADMITTO_API_URL", apiUrlRef!)
         .WithEnvironment("PUBLIC_BASE_URL", uiPublicUrl)
         .WaitFor(betterAuthDb)
-        .WaitFor(api!)
-        .PublishAsAzureContainerApp((_, app) =>
+        .WaitFor(api!);
+
+    if (builder.ExecutionContext.IsPublishMode)
+    {
+        var uiCustomDomain = builder.AddParameter("uiCustomDomain");
+        var uiCertificateName = builder.AddParameter("uiCertificateName");
+
+        ui.PublishAsAzureContainerApp((_, app) =>
         {
             app.Template.Scale = new ContainerAppScale { MinReplicas = 1, MaxReplicas = 1 };
             app.ConfigureCustomDomain(uiCustomDomain, uiCertificateName);
         });
+    }
 
+    // Add UI redirect URI and client secret to keycloak.
     keycloak
         .WithEnvironment("ADMITTO_UI_PUBLIC_URL", uiPublicUrl)
         .WithEnvironment("ADMITTO_UI_CLIENT_SECRET", uiAuthClientSecret);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Database Migrations
+///////////////////////////////////////////////////////////////////////////////
+
+var databaseScriptsPath = Path.Combine(builder.Environment.ContentRootPath, "DatabaseScripts");
+
+if (api is not null)
+{
+    var organizationMigrations = api.AddEFMigrations(
+            "organization-migrations",
+            typeof(OrganizationDbContext).FullName!)
+        .WithMigrationsProject("../Admitto.Core/Admitto.Core.csproj")
+        .RunDatabaseUpdateOnStart()
+        .PublishAsMigrationScript()
+        .WithReference(admittoDb).WaitFor(admittoDb);
+
+    var emailMigrations = api.AddEFMigrations(
+            "email-migrations",
+            typeof(EmailDbContext).FullName!)
+        .WithMigrationsProject("../Admitto.Core/Admitto.Core.csproj")
+        .RunDatabaseUpdateOnStart()
+        .PublishAsMigrationScript()
+        .WithReference(admittoDb).WaitFor(admittoDb);
+
+    var registrationsMigrations = api.AddEFMigrations(
+            "registrations-migrations",
+            typeof(RegistrationsDbContext).FullName!)
+        .WithMigrationsProject("../Admitto.Core/Admitto.Core.csproj")
+        .RunDatabaseUpdateOnStart()
+        .PublishAsMigrationScript()
+        .WithReference(admittoDb).WaitFor(admittoDb);
+
+    var badgesMigrations = api.AddEFMigrations(
+            "badges-migrations",
+            typeof(BadgesDbContext).FullName!)
+        .WithMigrationsProject("../Admitto.Core/Admitto.Core.csproj")
+        .RunDatabaseUpdateOnStart()
+        .PublishAsMigrationScript()
+        .WithReference(admittoDb).WaitFor(admittoDb);
+
+    var quartzSchema = builder.AddContainer("quartz-schema", "postgres:17")
+        .WithArgs(
+            "sh",
+            "-c",
+            "psql \"$QUARTZ_DB_URI\" -v ON_ERROR_STOP=1 -f /scripts/quartz.sql")
+        .WithParentRelationship(api)
+        .WithBindMount(Path.Combine(databaseScriptsPath, "quartz.sql"), "/scripts/quartz.sql", isReadOnly: true)
+        .WithReference(quartzDb).WaitFor(quartzDb);
+
+    api
+        .WaitForCompletion(organizationMigrations)
+        .WaitForCompletion(emailMigrations)
+        .WaitForCompletion(registrationsMigrations)
+        .WaitForCompletion(badgesMigrations)
+        .WaitForCompletion(quartzSchema);
+}
+
+if (ui is not null)
+{
+    var betterAuthSchema = builder.AddContainer("better-auth-schema", "postgres:17")
+        .WithArgs(
+            "sh",
+            "-c",
+            "psql \"$BETTER_AUTH_DB_URI\" -v ON_ERROR_STOP=1 -f /scripts/better-auth.sql")
+        .WithParentRelationship(ui)
+        .WithBindMount(Path.Combine(databaseScriptsPath, "better-auth.sql"), "/scripts/better-auth.sql", isReadOnly: true)
+        .WithReference(betterAuthDb).WaitFor(betterAuthDb);
+
+    ui
+        .WaitForCompletion(betterAuthSchema);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

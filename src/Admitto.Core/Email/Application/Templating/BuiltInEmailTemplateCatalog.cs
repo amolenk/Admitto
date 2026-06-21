@@ -1,4 +1,5 @@
 using System.Reflection;
+using Amolenk.Admitto.Core.Email.Domain.Entities;
 
 namespace Amolenk.Admitto.Core.Email.Application.Templating;
 
@@ -10,7 +11,8 @@ internal sealed record BuiltInEmailTemplateCatalogEntry(
     string Description,
     string DefaultSubject,
     string DefaultTextBody,
-    string DefaultHtmlBody);
+    string DefaultHtmlBody,
+    bool IsCustomizable);
 
 /// <summary>
 /// Ordered catalog of all built-in email templates and their defaults.
@@ -31,6 +33,20 @@ internal static class BuiltInEmailTemplateCatalog
     /// </summary>
     public static BuiltInEmailTemplateCatalogEntry? GetByName(string name) =>
         _entries.FirstOrDefault(e => string.Equals(e.Name, name, StringComparison.OrdinalIgnoreCase));
+
+    public static EmailTemplate CreateTemplate(string name)
+    {
+        var entry = GetByName(name)
+            ?? throw new InvalidOperationException($"No built-in email template exists for name '{name}'.");
+
+        return EmailTemplate.Create(
+            TeamId.New(),
+            null,
+            entry.Name,
+            entry.DefaultSubject,
+            entry.DefaultTextBody,
+            entry.DefaultHtmlBody);
+    }
 
     private static IReadOnlyList<BuiltInEmailTemplateCatalogEntry> BuildEntries()
     {
@@ -63,7 +79,8 @@ internal static class BuiltInEmailTemplateCatalog
     private static BuiltInEmailTemplateCatalogEntry Build(
         string name,
         string description,
-        string resourceKey)
+        string resourceKey,
+        bool isCustomizable = true)
     {
         var textBody = ReadEmbedded($"{ResourcePrefix}{resourceKey}.txt")
             ?? throw new InvalidOperationException(
@@ -75,7 +92,7 @@ internal static class BuiltInEmailTemplateCatalog
 
         var subject = ExtractSubject(textBody);
 
-        return new BuiltInEmailTemplateCatalogEntry(name, description, subject, textBody, htmlBody);
+        return new BuiltInEmailTemplateCatalogEntry(name, description, subject, textBody, htmlBody, isCustomizable);
     }
 
     private static string? ReadEmbedded(string resourceName)

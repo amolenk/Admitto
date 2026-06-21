@@ -1,4 +1,4 @@
-<Project Sdk="Aspire.AppHost.Sdk/13.4.3">
+<Project Sdk="Aspire.AppHost.Sdk/13.4.4">
 
     <PropertyGroup>
         <OutputType>Exe</OutputType>
@@ -6,19 +6,24 @@
 
     <ItemGroup>
         <ProjectReference Include="..\Admitto.Api\Admitto.Api.csproj" />
-        <ProjectReference Include="..\Admitto.Migrations\Admitto.Migrations.csproj" />
+        <ProjectReference Include="..\Admitto.Core\Admitto.Core.csproj" IsAspireProjectResource="false" />
         <ProjectReference Include="..\Admitto.Worker\Admitto.Worker.csproj" />
     </ItemGroup>
 
     <ItemGroup>
         <PackageReference Include="Aspire.Hosting.Azure.AppContainers" />
         <PackageReference Include="Aspire.Hosting.Azure.ApplicationInsights" />
+        <PackageReference Include="Aspire.Hosting.EntityFrameworkCore" />
         <PackageReference Include="Aspire.Hosting.Azure.OperationalInsights" />
         <PackageReference Include="Aspire.Hosting.Azure.PostgreSQL" />
         <PackageReference Include="Aspire.Hosting.Azure.ServiceBus" />
         <PackageReference Include="Aspire.Hosting.PostgreSQL" />
         <PackageReference Include="Azure.Identity" />
         <PackageReference Include="Aspire.Hosting.JavaScript" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Content Include="DatabaseScripts\*.sql" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Always" />
     </ItemGroup>
 
 

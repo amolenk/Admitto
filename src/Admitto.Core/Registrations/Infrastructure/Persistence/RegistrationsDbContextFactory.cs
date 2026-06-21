@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore.Design;
+using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence;
 
 namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence;
 
@@ -11,7 +12,7 @@ public class RegistrationsDbContextFactory : IDesignTimeDbContextFactory<Registr
     public RegistrationsDbContext CreateDbContext(string[] args)
     {
         var optionsBuilder = new DbContextOptionsBuilder<RegistrationsDbContext>();
-        optionsBuilder.UseNpgsql();
+        optionsBuilder.UseModuleNpgsql<RegistrationsDbContext>();
         
         return new RegistrationsDbContext(optionsBuilder.Options);
     }

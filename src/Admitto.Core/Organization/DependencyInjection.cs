@@ -7,7 +7,6 @@ using Amolenk.Admitto.Core.Organization.Application.Persistence;
 using Amolenk.Admitto.Core.Organization.Application.UseCases.TeamMemberships.BootstrapAdminUser;
 using Amolenk.Admitto.Core.Organization.Contracts;
 using Amolenk.Admitto.Core.Organization.Infrastructure.Persistence;
-using Amolenk.Admitto.Core.Organization.Infrastructure.UserDirectories.Auth0;
 using Amolenk.Admitto.Core.Organization.Infrastructure.UserDirectories.Keycloak;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Messaging;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence;
@@ -105,28 +104,13 @@ public static class OrganizationModuleExtensions
 
         public IHostApplicationBuilder AddOrganizationIdentityServices()
         {
-            if (builder.Configuration.GetSection(Auth0Options.SectionName).Exists())
-                builder.AddAuth0Services();
-            else if (builder.Configuration.GetSection(KeycloakOptions.SectionName).Exists())
+            if (builder.Configuration.GetSection(KeycloakOptions.SectionName).Exists())
                 builder.AddKeycloakServices();
             else
                 throw new InvalidOperationException(
                     "No user management service configured. Please configure either Auth0 or Keycloak settings.");
 
             return builder;
-        }
-
-        private void AddAuth0Services()
-        {
-            var services = builder.Services;
-
-            services.Configure<Auth0Options>(builder.Configuration.GetSection(Auth0Options.SectionName));
-            services.AddOptions<Auth0Options>()
-                .ValidateDataAnnotations()
-                .ValidateOnStart();
-
-            services.AddScoped<IAuth0ManagementApiClient, Auth0ManagementApiAdapter>();
-            services.AddScoped<IExternalUserDirectory, Auth0UserDirectory>();
         }
 
         private void AddKeycloakServices()

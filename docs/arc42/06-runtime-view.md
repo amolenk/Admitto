@@ -302,6 +302,8 @@ sequenceDiagram
 
 ## 6.11 User sign-in and ExternalUserId binding
 
+In production, Admin UI users authenticate through Keycloak's hosted passkey-only browser flow. The production browser flow starts directly at WebAuthn passwordless authentication, so users are prompted by the browser/passkey provider rather than entering an email address first. Keycloak performs the WebAuthn assertion ceremony and returns OIDC tokens to the Admin UI; Admitto never handles passkey material or WebAuthn challenge/response details. Keycloak's account-console client is disabled so authenticated users cannot use the standalone Keycloak account UI for profile or credential management. Local development intentionally uses a separate Keycloak realm where the first screen remains the standard username/password form with a passkey alternative, and end-to-end tests keep test-only direct-grant clients so automation remains offline and repeatable.
+
 On every authenticated request the `UserContextResolver` maps the incoming JWT `sub` claim to an application `User` entity. The binding is established lazily on first sign-in and is permanent thereafter.
 
 ```mermaid
@@ -340,15 +342,37 @@ sequenceDiagram
 
 ## 6.12 Bootstrap admin provisioning
 
-On API startup, `BootstrapAdminInitializer` ensures the first admin account exists without requiring manual IdP console steps.
+On API startup, `BootstrapAdminInitializer` ensures the first admin account exists without requiring manual IdP console steps. Production bootstrap creates or reconciles the Admitto admin user, creates or finds the matching Keycloak user, and asks Keycloak to send a `webauthn-register-passwordless` execute-actions email through Keycloak's configured SMTP server. The action link leads the operator through Keycloak's passkey enrollment pages, not an Admitto-hosted WebAuthn flow. Local development keeps password-capable seeded users while also allowing passkey sign-in for users who enroll one.
 
 1. Reads `Organization:BootstrapAdmin:EmailAddress` from configuration.
 2. Queries `OrganizationDbContext` for a `User` with that email.
-3. **If the user does not exist**: creates a `User` entity, calls `IUserDirectoryService.InviteUserAsync` to provision an IdP account and generate a passkey-enrollment invitation ticket, and stores the returned `ExternalUserId` on the entity.
+3. **If the user does not exist**: creates a `User` entity, calls `IExternalUserDirectory.InviteUserAsync` to create or find the Keycloak account and trigger passkey-enrollment when required, and stores the returned `ExternalUserId` on the entity.
 4. **If the user already exists and has an `ExternalUserId`**: skips silently (idempotent).
 5. **If the user exists but has no `ExternalUserId`**: calls `InviteUserAsync` and stores the result (handles the case where a previous startup run created the user but failed before persisting the `sub`).
 
 The initialiser runs once per process start and is safe to run on every rolling deployment — repeated calls are no-ops when the bootstrap admin is already fully provisioned.
+
+## 6.13 Keycloak account-action email
+
+Keycloak owns account-action email rendering and SMTP delivery. Admitto provisions or reconciles the user through Keycloak's Admin API and then calls `execute-actions-email` with `client_id=admitto-ui` and the Admin UI public URL as the redirect target. Keycloak generates the action token, renders the account-action email with the Admitto email theme, and sends it through its configured SMTP server. The execute-actions copy is invitation-oriented and describes the user-facing passkey setup, not Keycloak required-action identifiers.
+
+```mermaid
+sequenceDiagram
+  participant Keycloak
+  participant Api as Admitto API
+  participant Directory as Keycloak user directory
+  participant SMTP
+
+  Api->>Directory: InviteUserAsync(email)
+  Directory->>Keycloak: create/find user
+  Directory->>Keycloak: PUT execute-actions-email [webauthn-register-passwordless]
+  Keycloak->>Keycloak: generate action token and render email
+  Keycloak->>SMTP: Send account-action email
+```
+
+The Email module is not involved in this flow: no Admitto email integration event is published, no `EmailLog` row is written, and no Admitto template is rendered. Application-owned emails still use the Email module flows in §6.8-§6.10.
+
+In Aspire run mode, the local realm keeps preprovisioned username/password users, shows the standard username/password form first with a passkey alternative, and points Keycloak SMTP at MailDev. Normal password sign-in does not send email. To verify the path locally, trigger a Keycloak execute-actions email such as `webauthn-register-passwordless`; Keycloak sends the final email to MailDev.
 
 ## Done-when
 

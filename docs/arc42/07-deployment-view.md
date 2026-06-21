@@ -9,10 +9,11 @@
 | `api` | API host |
 | `worker` | Worker host |
 | `admin-ui` | Next.js admin UI container |
-| `migrations` | Database migration runner |
+| `*-migrations` | Aspire EF migration resources for application schemas |
+| `quartz-schema`, `better-auth-schema` | Local-only SQL script runners for non-EF schemas |
 | `postgres` | Azure PostgreSQL Flexible Server; local runs as PostgreSQL container with databases: `admitto-db`, `quartz-db`, `better-auth-db` |
 | `messaging` | Azure Service Bus; local runs as Service Bus emulator with queue `queue` |
-| `appinsights` | Application Insights for API, Worker, migrations, and UI telemetry |
+| `appinsights` | Application Insights for API, Worker, and UI telemetry |
 | `log-analytics` | Shared Log Analytics workspace for Container Apps environment logs and Application Insights |
 | `aca-env` | Azure Container Apps environment |
 | `keycloak` | Identity provider; local uses the Aspire Keycloak resource, production uses the custom Keycloak image from `KeycloakConfiguration/Dockerfile` |
@@ -21,18 +22,20 @@
 Start everything: `aspire start --isolated`
 
 The local `keycloak` resource runs as an explicit HTTP Keycloak container on
-`http://localhost:15001`, mounts the custom login theme from
-`src/Admitto.AppHost/KeycloakConfiguration/themes/admitto`, and imports
-`AdmittoRealm.Local.json`, which includes local seed users such as Alice and Bob
-and local-only clients for tests and Scalar. In production, AppHost builds
-`KeycloakConfiguration/Dockerfile`; the image copies
-`AdmittoRealm.Deployment.json` and `themes/admitto` into the Keycloak image. HTTPS is
+`http://localhost:15001`. AppHost builds `KeycloakConfiguration/Dockerfile` in
+both run and publish modes. Local run mode bind-mounts `AdmittoRealm.Local.json`
+and the custom email theme over the image defaults, preserving seeded
+username/password users such as Alice and Bob and local-only clients for tests and
+Scalar. In production, the same image copies `AdmittoRealm.Deployment.json` and
+`themes/admitto` (the account-action email theme) into the Keycloak image. Login
+pages use the stock `keycloak.v2` theme until a Keycloakify-based login theme is
+reintroduced. HTTPS is
 terminated by Azure Container Apps ingress, while Keycloak listens on HTTP inside
 the container. This avoids depending on bind mounts or external theme files in Azure
 Container Apps and prevents local seed users and local-only clients from being
 imported into production. The deployment realm also omits exported local realm keys
 and MailDev SMTP settings so production generates its own signing keys and does not
-inherit local email configuration. Both local and deployment containers place the
+inherit local realm keys. Both local and deployment containers place the
 realm import at `/opt/keycloak/data/import/admitto-realm.json`, matching Keycloak's
 directory-import naming convention.
 
@@ -43,11 +46,23 @@ wires these from `publicAdmittoUiUrl` and `KeycloakUiClientSecret` in publish mo
 The Keycloak master-realm bootstrap administrator is also deployment-configured via
 the `keycloakAdminUser` and `keycloakAdminPassword` publish parameters; local dev
 keeps the `admin` / `admin` defaults.
+Keycloak account-action email uses Keycloak SMTP settings, not the Admitto Email
+module's system/application SMTP settings. Local `AdmittoRealm.Local.json` points
+Keycloak SMTP at MailDev (`maildev:1025`, no auth) so execute-actions emails can
+be inspected locally. Production `AdmittoRealm.Deployment.json` uses
+environment substitution for `KEYCLOAK_SMTP_HOST`, `KEYCLOAK_SMTP_PORT`,
+`KEYCLOAK_SMTP_FROM`, `KEYCLOAK_SMTP_FROM_DISPLAY_NAME`, `KEYCLOAK_SMTP_AUTH`,
+`KEYCLOAK_SMTP_USERNAME`, `KEYCLOAK_SMTP_PASSWORD`, `KEYCLOAK_SMTP_SSL`, and
+`KEYCLOAK_SMTP_STARTTLS`; AppHost exposes matching publish parameters, with the
+password marked secret. The Worker's `systemEmail*` parameters remain the Admitto
+application-email SMTP path for attendee, OTP, reconfirmation, cancellation,
+waitlist, and bulk emails.
 
 ## 7.2 Production shape
 
 - **API**, **Worker**, and **Admin UI** deploy as separate Azure Container Apps.
-- **Migrations** publish as a manual Azure Container App Job, because the migration process is finite and exits after applying schemas. It must not run as a long-running Container App, otherwise Azure Container Apps restarts it after a successful exit.
+- **Application schema migrations** are Aspire EF migration resources attached to the API startup project and `Admitto.Core` migrations project. Local Aspire runs apply them with `RunDatabaseUpdateOnStart()` before API and Worker start. Publish mode generates SQL artifacts for manual production application.
+- **Quartz** and **Better Auth** schemas are non-EF SQL files in `src/Admitto.AppHost/DatabaseScripts/`. Local Aspire runs apply them through one-shot `postgres` containers; production operators run these scripts manually against `quartz-db` and `better-auth-db`.
 - PostgreSQL is Azure Database for PostgreSQL Flexible Server with separate application, Quartz, and Better Auth databases.
 - Keycloak uses its own `keycloak-db` database on the same PostgreSQL Flexible Server and imports the Admitto realm on startup.
 - Messaging is Azure Service Bus with the shared queue `queue`.

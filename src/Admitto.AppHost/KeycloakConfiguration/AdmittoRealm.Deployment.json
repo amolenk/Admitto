@@ -28,7 +28,7 @@
   "oauth2DeviceCodeLifespan": 600,
   "oauth2DevicePollingInterval": 5,
   "enabled": true,
-  "loginTheme": "admitto",
+  "emailTheme": "admitto",
   "sslRequired": "external",
   "registrationAllowed": false,
   "registrationEmailAsUsername": false,
@@ -476,8 +476,8 @@
   "webAuthnPolicyPasswordlessRpId": "",
   "webAuthnPolicyPasswordlessAttestationConveyancePreference": "not specified",
   "webAuthnPolicyPasswordlessAuthenticatorAttachment": "not specified",
-  "webAuthnPolicyPasswordlessRequireResidentKey": "not specified",
-  "webAuthnPolicyPasswordlessUserVerificationRequirement": "not specified",
+  "webAuthnPolicyPasswordlessRequireResidentKey": "Yes",
+  "webAuthnPolicyPasswordlessUserVerificationRequirement": "required",
   "webAuthnPolicyPasswordlessCreateTimeout": 0,
   "webAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister": false,
   "webAuthnPolicyPasswordlessAcceptableAaguids": [],
@@ -557,7 +557,7 @@
       "rootUrl": "${authBaseUrl}",
       "baseUrl": "/realms/admitto/account/",
       "surrogateAuthRequired": false,
-      "enabled": true,
+      "enabled": false,
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
       "redirectUris": [
@@ -873,6 +873,8 @@
       "clientAuthenticatorType": "client-secret",
       "redirectUris": [
         "${ADMITTO_UI_PUBLIC_URL}/*",
+        "${ADMITTO_UI_PUBLIC_URL}",
+        "${ADMITTO_UI_PUBLIC_URL}/api/auth/oauth2/callback/generic-oauth",
         "${ADMITTO_UI_PUBLIC_URL}/api/auth/callback/generic-oauth"
       ],
       "webOrigins": [
@@ -1824,6 +1826,17 @@
     "xXSSProtection": "1; mode=block",
     "strictTransportSecurity": "max-age=31536000; includeSubDomains"
   },
+  "smtpServer": {
+    "host": "${KEYCLOAK_SMTP_HOST}",
+    "port": "${KEYCLOAK_SMTP_PORT}",
+    "from": "${KEYCLOAK_SMTP_FROM}",
+    "fromDisplayName": "${KEYCLOAK_SMTP_FROM_DISPLAY_NAME}",
+    "auth": "${KEYCLOAK_SMTP_AUTH}",
+    "user": "${KEYCLOAK_SMTP_USERNAME}",
+    "password": "${KEYCLOAK_SMTP_PASSWORD}",
+    "ssl": "${KEYCLOAK_SMTP_SSL}",
+    "starttls": "${KEYCLOAK_SMTP_STARTTLS}"
+  },
   "eventsEnabled": false,
   "eventsListeners": [
     "jboss-logging"
@@ -1944,6 +1957,58 @@
   },
   "internationalizationEnabled": false,
   "authenticationFlows": [
+    {
+      "id": "7f6e8d4c-8e8f-4f2f-9a9f-1e10bbf1a001",
+      "alias": "admitto passkey browser",
+      "description": "Production Admin UI browser flow: cookie or username plus WebAuthn passwordless; no password form fallback.",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "auth-cookie",
+          "authenticatorFlow": false,
+          "requirement": "ALTERNATIVE",
+          "priority": 10,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "identity-provider-redirector",
+          "authenticatorFlow": false,
+          "requirement": "DISABLED",
+          "priority": 20,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticatorFlow": true,
+          "requirement": "ALTERNATIVE",
+          "priority": 30,
+          "autheticatorFlow": true,
+          "flowAlias": "admitto passkey forms",
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
+      "id": "7f6e8d4c-8e8f-4f2f-9a9f-1e10bbf1a002",
+      "alias": "admitto passkey forms",
+      "description": "Requires a discoverable passwordless WebAuthn credential.",
+      "providerId": "basic-flow",
+      "topLevel": false,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "webauthn-authenticator-passwordless",
+          "authenticatorFlow": false,
+          "requirement": "REQUIRED",
+          "priority": 10,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        }
+      ]
+    },
     {
       "id": "f525b8ef-5114-4b9c-a7f9-8ccef09720bd",
       "alias": "Account verification options",
@@ -2675,7 +2740,7 @@
       "config": {}
     }
   ],
-  "browserFlow": "browser",
+  "browserFlow": "admitto passkey browser",
   "registrationFlow": "registration",
   "directGrantFlow": "direct grant",
   "resetCredentialsFlow": "reset credentials",

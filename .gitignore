@@ -421,3 +421,6 @@ FodyWeavers.xsd
 .agents/skills/repo-bootstrap
 .agents/skills/spec
 test.http
+
+# Aspire publish output
+src/Admitto.AppHost/aspire-output/

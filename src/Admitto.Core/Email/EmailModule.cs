@@ -15,7 +15,6 @@ using Amolenk.Admitto.Core.Email.Application.UseCases.EmailTemplates.GetEmailTem
 using Amolenk.Admitto.Core.Email.Application.UseCases.EmailTemplates.PreviewEmailTemplate.AdminApi;
 using Amolenk.Admitto.Core.Email.Application.UseCases.EmailTemplates.TestSendEmailTemplate.AdminApi;
 using Amolenk.Admitto.Core.Email.Application.UseCases.EmailTemplates.UpdateEmailTemplate.AdminApi;
-
 namespace Amolenk.Admitto.Core.Email;
 
 public static class EmailModule
@@ -78,5 +77,10 @@ public static class EmailModule
             .MapGetAttendeeEmails();
 
         return group;
+    }
+
+    public static IEndpointRouteBuilder MapEmailInternalEndpoints(this IEndpointRouteBuilder app)
+    {
+        return app;
     }
 }

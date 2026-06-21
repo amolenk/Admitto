@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore.Design;
+using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence;
 
 namespace Amolenk.Admitto.Core.Organization.Infrastructure.Persistence;
 
@@ -11,8 +12,8 @@ public sealed class OrganizationDbContextFactory : IDesignTimeDbContextFactory<O
     public OrganizationDbContext CreateDbContext(string[] args)
     {
         var optionsBuilder = new DbContextOptionsBuilder<OrganizationDbContext>();
-        optionsBuilder.UseNpgsql();
-        
+        optionsBuilder.UseModuleNpgsql<OrganizationDbContext>();
+
         return new OrganizationDbContext(optionsBuilder.Options);
     }
 }

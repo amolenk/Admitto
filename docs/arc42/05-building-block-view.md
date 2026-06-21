@@ -2,7 +2,7 @@
 
 ## 5.1 Hosts
 
-Admitto runs as multiple host processes. Each host has a distinct runtime responsibility but loads the same module libraries — activating only the capabilities it needs.
+Admitto runs as multiple long-running host processes plus AppHost-modeled schema setup resources. Each host has a distinct runtime responsibility but loads the same module libraries — activating only the capabilities it needs.
 
 ```mermaid
 flowchart TB
@@ -14,7 +14,7 @@ flowchart TB
   AdminUI["Admin UI"]
   api["API host"]
   worker["Worker host"]
-  migrations["Migrations host"]
+  migrations["Migration resources"]
 
   Admin -->|HTTPS| AdminUI
   AdminUI -->|HTTPS| api
@@ -33,10 +33,11 @@ flowchart TB
 | :--- | :------------- | :-------- |
 | `Admitto.Api` | API request handling | .NET |
 | `Admitto.Worker` | Background processing | .NET |
-| `Admitto.Migrations` | Database schema migration | .NET |
 | `Admitto.AppHost` | Aspire orchestration for local development and Azure deployment | .NET |
 | `Admitto.Cli` | CLI management tool | .NET |
 | `Admitto.UI.Admin` | Frontend UI for admin/team member interaction | Next.js ([ADR-006](../adrs/adr-006-admin-ui-technology-stack.md)) |
+
+Database schema setup is modeled in `Admitto.AppHost`: EF-owned application schemas use Aspire EF migration resources, while non-EF Quartz and Better Auth schemas are versioned SQL files under `Admitto.AppHost/DatabaseScripts/`.
 
 ### Infrastructure mapping
 

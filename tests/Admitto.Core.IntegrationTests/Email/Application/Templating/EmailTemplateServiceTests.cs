@@ -123,4 +123,5 @@ public sealed class EmailTemplateServiceTests(TestContext testContext) : AspireI
         result.HtmlBody.ShouldNotBeNull();
         result.HtmlBody.ShouldContain("automatically cancelled");
     }
+
 }

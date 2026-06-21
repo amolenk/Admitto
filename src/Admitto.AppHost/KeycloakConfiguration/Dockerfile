@@ -16,4 +16,4 @@ RUN chmod 0755 /opt/keycloak/data /opt/keycloak/data/import \
 USER 1000
 
 ENTRYPOINT ["/opt/keycloak/bin/kc.sh"]
-CMD ["start", "--import-realm"]
+CMD ["start", "--import-realm", "--spi-user-profile--declarative-user-profile--read-only-attributes=email"]

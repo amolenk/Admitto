@@ -180,10 +180,7 @@ public static class DependencyInjection
         {
             options.UseNpgsql(
                 admittoConnectionString,
-                npgsql =>
-                {
-                    npgsql.MigrationsHistoryTable("ef_migrations_history", TDbContext.SchemaName);
-                });
+                ModuleNpgsqlOptions.ConfigureMigrationsHistory<TDbContext>);
 
             options.AddInterceptors(
                 new AuditInterceptor(sp.GetRequiredService<IUserContextAccessor>()),

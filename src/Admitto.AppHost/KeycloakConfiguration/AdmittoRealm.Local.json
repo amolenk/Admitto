@@ -28,7 +28,7 @@
   "oauth2DeviceCodeLifespan": 600,
   "oauth2DevicePollingInterval": 5,
   "enabled": true,
-  "loginTheme": "admitto",
+  "emailTheme": "admitto",
   "sslRequired": "external",
   "registrationAllowed": false,
   "registrationEmailAsUsername": false,
@@ -478,8 +478,8 @@
   "webAuthnPolicyPasswordlessRpId": "",
   "webAuthnPolicyPasswordlessAttestationConveyancePreference": "not specified",
   "webAuthnPolicyPasswordlessAuthenticatorAttachment": "not specified",
-  "webAuthnPolicyPasswordlessRequireResidentKey": "not specified",
-  "webAuthnPolicyPasswordlessUserVerificationRequirement": "not specified",
+  "webAuthnPolicyPasswordlessRequireResidentKey": "Yes",
+  "webAuthnPolicyPasswordlessUserVerificationRequirement": "required",
   "webAuthnPolicyPasswordlessCreateTimeout": 0,
   "webAuthnPolicyPasswordlessAvoidSameAuthenticatorRegister": false,
   "webAuthnPolicyPasswordlessAcceptableAaguids": [],
@@ -650,7 +650,7 @@
       "rootUrl": "${authBaseUrl}",
       "baseUrl": "/realms/admitto/account/",
       "surrogateAuthRequired": false,
-      "enabled": true,
+      "enabled": false,
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
       "redirectUris": [
@@ -1107,6 +1107,8 @@
       "clientAuthenticatorType": "client-secret",
       "redirectUris": [
         "${ADMITTO_UI_PUBLIC_URL}/*",
+        "${ADMITTO_UI_PUBLIC_URL}",
+        "${ADMITTO_UI_PUBLIC_URL}/api/auth/oauth2/callback/generic-oauth",
         "${ADMITTO_UI_PUBLIC_URL}/api/auth/callback/generic-oauth"
       ],
       "webOrigins": [
@@ -2059,7 +2061,7 @@
     "strictTransportSecurity": "max-age=31536000; includeSubDomains"
   },
   "smtpServer": {
-    "host": "host.docker.internal",
+    "host": "maildev",
     "port": "1025",
     "from": "noreply@admitto.local",
     "fromDisplayName": "Admitto",
@@ -2548,6 +2550,40 @@
       ]
     },
     {
+      "id": "2fbebc31-b82f-4bdf-9300-b454cb3dc4a1",
+      "alias": "admitto local browser",
+      "description": "Local development browser flow: standard username/password first, passkey as an alternative.",
+      "providerId": "basic-flow",
+      "topLevel": true,
+      "builtIn": false,
+      "authenticationExecutions": [
+        {
+          "authenticator": "auth-cookie",
+          "authenticatorFlow": false,
+          "requirement": "ALTERNATIVE",
+          "priority": 10,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "auth-username-password-form",
+          "authenticatorFlow": false,
+          "requirement": "ALTERNATIVE",
+          "priority": 20,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        },
+        {
+          "authenticator": "webauthn-authenticator-passwordless",
+          "authenticatorFlow": false,
+          "requirement": "ALTERNATIVE",
+          "priority": 30,
+          "autheticatorFlow": false,
+          "userSetupAllowed": false
+        }
+      ]
+    },
+    {
       "id": "db1f790a-c3d3-4bd8-8c1a-7326f6f33ad1",
       "alias": "browser",
       "description": "Browser based authentication",
@@ -3000,7 +3036,7 @@
       "config": {}
     }
   ],
-  "browserFlow": "browser",
+  "browserFlow": "admitto local browser",
   "registrationFlow": "registration",
   "directGrantFlow": "direct grant",
   "resetCredentialsFlow": "reset credentials",

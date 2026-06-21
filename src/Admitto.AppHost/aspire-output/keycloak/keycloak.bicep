@@ -21,14 +21,21 @@ param postgresuser_value string
 @secure()
 param postgrespassword_value string
 
-param publickeycloakurl_value string
-
-param admittouipublicurl_value string
+param keycloakpublicurl_value string
 
 @secure()
-param admittouiclientsecret_value string
+param keycloakidentityemailhmacsecret_value string
+
+param uipublicurl_value string
+
+@secure()
+param uiauthclientsecret_value string
 
 param keycloak_identity_outputs_clientid string
+
+param keycloakCertificateName string
+
+param keycloakCustomDomain string
 
 param aca_env_outputs_azure_container_registry_endpoint string
 
@@ -49,8 +56,12 @@ resource keycloak 'Microsoft.App/containerApps@2025-07-01' = {
           value: postgrespassword_value
         }
         {
+          name: 'admitto-identity-email-hmac-secret'
+          value: keycloakidentityemailhmacsecret_value
+        }
+        {
           name: 'admitto-ui-client-secret'
-          value: admittouiclientsecret_value
+          value: uiauthclientsecret_value
         }
       ]
       activeRevisionsMode: 'Single'
@@ -58,6 +69,13 @@ resource keycloak 'Microsoft.App/containerApps@2025-07-01' = {
         external: true
         targetPort: 8080
         transport: 'http'
+        customDomains: [
+          {
+            name: keycloakCustomDomain
+            bindingType: (keycloakCertificateName != '') ? 'SniEnabled' : 'Disabled'
+            certificateId: (keycloakCertificateName != '') ? '${aca_env_outputs_azure_container_apps_environment_id}/managedCertificates/${keycloakCertificateName}' : null
+          }
+        ]
       }
       registries: [
         {
@@ -107,15 +125,35 @@ resource keycloak 'Microsoft.App/containerApps@2025-07-01' = {
             }
             {
               name: 'KC_HOSTNAME'
-              value: publickeycloakurl_value
+              value: keycloakpublicurl_value
             }
             {
               name: 'KC_HEALTH_ENABLED'
               value: 'true'
             }
             {
+              name: 'KC_SPI_EMAIL_TEMPLATE_PROVIDER'
+              value: 'admitto-identity-email'
+            }
+            {
+              name: 'ADMITTO_IDENTITY_EMAIL_ENABLED'
+              value: 'true'
+            }
+            {
+              name: 'ADMITTO_IDENTITY_EMAIL_API_BASE_URL'
+              value: 'https://api.${aca_env_outputs_azure_container_apps_environment_default_domain}'
+            }
+            {
+              name: 'ADMITTO_IDENTITY_EMAIL_HMAC_SECRET'
+              secretRef: 'admitto-identity-email-hmac-secret'
+            }
+            {
+              name: 'ADMITTO_IDENTITY_EMAIL_TIMEOUT_SECONDS'
+              value: '10'
+            }
+            {
               name: 'ADMITTO_UI_PUBLIC_URL'
-              value: admittouipublicurl_value
+              value: uipublicurl_value
             }
             {
               name: 'ADMITTO_UI_CLIENT_SECRET'
@@ -134,6 +172,7 @@ resource keycloak 'Microsoft.App/containerApps@2025-07-01' = {
       ]
       scale: {
         minReplicas: 1
+        maxReplicas: 1
       }
     }
   }
