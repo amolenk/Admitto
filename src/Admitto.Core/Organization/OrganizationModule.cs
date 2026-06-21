@@ -22,7 +22,8 @@ public static class OrganizationModule
 
     public static RouteGroupBuilder MapOrganizationAdminEndpoints(this RouteGroupBuilder group)
     {
-        var teams = group.MapGroup("/teams");
+        var teams = group.MapGroup("/teams")
+            .WithTags("Admin - Teams");
 
         teams
             .MapCreateTeam()

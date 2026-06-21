@@ -9,7 +9,7 @@ public static class ChangeAttendeeTicketsHttpEndpoint
     public static RouteGroupBuilder MapChangeAttendeeTickets(this RouteGroupBuilder group)
     {
         group
-            .MapPut("/registrations/{registrationId:guid}/tickets", ChangeAttendeeTickets)
+            .MapPut("/{registrationId:guid}/tickets", ChangeAttendeeTickets)
             .WithName(nameof(ChangeAttendeeTickets))
             .RequireAuthorization(policy => policy.RequireTeamMembership(TeamMembershipRole.Organizer));
 

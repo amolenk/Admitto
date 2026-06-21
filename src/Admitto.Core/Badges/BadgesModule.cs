@@ -18,7 +18,8 @@ public static class BadgesModule
     public static RouteGroupBuilder MapBadgesAdminEndpoints(this RouteGroupBuilder group)
     {
         var badgeTypesGroup = group
-            .MapGroup("/teams/{teamId:guid}/events/{eventId:guid}/badge-types");
+            .MapGroup("/teams/{teamId:guid}/events/{eventId:guid}/badge-types")
+            .WithTags("Admin - Badges");
 
         badgeTypesGroup
             .MapAddBadgeType()

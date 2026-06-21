@@ -9,7 +9,7 @@ public static class CreateCouponHttpEndpoint
     public static RouteGroupBuilder MapCreateCoupon(this RouteGroupBuilder group)
     {
         group
-            .MapPost("/coupons", CreateCoupon)
+            .MapPost("/", CreateCoupon)
             .WithName(nameof(CreateCoupon))
             .RequireAuthorization(policy => policy.RequireTeamMembership(TeamMembershipRole.Organizer));
 

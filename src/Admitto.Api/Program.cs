@@ -128,7 +128,6 @@ app.UseRequestTimeouts();
 app.UseOutputCache();
 
 app.MapDefaultEndpoints();
-app.MapEmailInternalEndpoints();
 app.MapAdminEndpoints();
 app.MapPublicEndpoints();
 

@@ -10,7 +10,7 @@ public static class CancelRegistrationHttpEndpoint
     public static RouteGroupBuilder MapCancelRegistration(this RouteGroupBuilder group)
     {
         group
-            .MapPost("/registrations/{registrationId:guid}/cancel", CancelRegistration)
+            .MapPost("/{registrationId:guid}/cancel", CancelRegistration)
             .WithName(nameof(CancelRegistration))
             .RequireAuthorization(policy => policy.RequireTeamMembership(TeamMembershipRole.Organizer));
 

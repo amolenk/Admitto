@@ -15,6 +15,7 @@ using Amolenk.Admitto.Core.Email.Application.UseCases.EmailTemplates.GetEmailTem
 using Amolenk.Admitto.Core.Email.Application.UseCases.EmailTemplates.PreviewEmailTemplate.AdminApi;
 using Amolenk.Admitto.Core.Email.Application.UseCases.EmailTemplates.TestSendEmailTemplate.AdminApi;
 using Amolenk.Admitto.Core.Email.Application.UseCases.EmailTemplates.UpdateEmailTemplate.AdminApi;
+
 namespace Amolenk.Admitto.Core.Email;
 
 public static class EmailModule
@@ -27,6 +28,7 @@ public static class EmailModule
         // Team-scoped email settings
         group
             .MapGroup("/teams/{teamId:guid}/email-settings")
+            .WithTags("Admin - Email Settings")
             .MapGetEmailSettings(isEventScoped: false)
             .MapUpsertEmailSettings(isEventScoped: false)
             .MapDeleteEmailSettings(isEventScoped: false)
@@ -35,6 +37,7 @@ public static class EmailModule
         // Event-scoped email settings
         group
             .MapGroup("/teams/{teamId:guid}/events/{eventId:guid}/email-settings")
+            .WithTags("Admin - Email Settings")
             .MapGetEmailSettings(isEventScoped: true)
             .MapUpsertEmailSettings(isEventScoped: true)
             .MapDeleteEmailSettings(isEventScoped: true)
@@ -43,6 +46,7 @@ public static class EmailModule
         // Team-scoped email templates
         group
             .MapGroup("/teams/{teamId:guid}/email-templates")
+            .WithTags("Admin - Email Templates")
             .MapGetEmailTemplates(isEventScoped: false)
             .MapCreateEmailTemplate(isEventScoped: false)
             .MapGetEmailTemplate(isEventScoped: false)
@@ -54,6 +58,7 @@ public static class EmailModule
         // Event-scoped email templates
         group
             .MapGroup("/teams/{teamId:guid}/events/{eventId:guid}/email-templates")
+            .WithTags("Admin - Email Templates")
             .MapGetEmailTemplates(isEventScoped: true)
             .MapCreateEmailTemplate(isEventScoped: true)
             .MapGetEmailTemplate(isEventScoped: true)
@@ -65,6 +70,7 @@ public static class EmailModule
         // Event-scoped bulk emails
         group
             .MapGroup("/teams/{teamId:guid}/events/{eventId:guid}/bulk-emails")
+            .WithTags("Admin - Bulk Emails")
             .MapPreviewBulkEmail()
             .MapCreateBulkEmail()
             .MapGetBulkEmails()
@@ -74,13 +80,9 @@ public static class EmailModule
         // Event-scoped attendee emails
         group
             .MapGroup("/teams/{teamId:guid}/events/{eventId:guid}/registrations/{registrationId:guid}")
+            .WithTags("Admin - Registrations")
             .MapGetAttendeeEmails();
 
         return group;
-    }
-
-    public static IEndpointRouteBuilder MapEmailInternalEndpoints(this IEndpointRouteBuilder app)
-    {
-        return app;
     }
 }

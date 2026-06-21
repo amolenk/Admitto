@@ -8,7 +8,7 @@ public static class ListCouponsHttpEndpoint
     public static RouteGroupBuilder MapListCoupons(this RouteGroupBuilder group)
     {
         group
-            .MapGet("/coupons", ListCoupons)
+            .MapGet("/", ListCoupons)
             .WithName(nameof(ListCoupons))
             .RequireAuthorization(policy => policy.RequireTeamMembership(TeamMembershipRole.Organizer));
 

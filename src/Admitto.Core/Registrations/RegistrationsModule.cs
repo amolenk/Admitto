@@ -44,10 +44,12 @@ public static class RegistrationsModule
     {
         group
             .MapGroup("/teams/{teamId:guid}/events")
+            .WithTags("Admin - Events")
             .MapGetTicketedEvents();
 
         var eventGroup = group
-            .MapGroup("/teams/{teamId:guid}/events/{eventId:guid}");
+            .MapGroup("/teams/{teamId:guid}/events/{eventId:guid}")
+            .WithTags("Admin - Events");
 
         eventGroup
             .MapGetTicketedEventDetails()
@@ -56,13 +58,19 @@ public static class RegistrationsModule
             .MapConfigureRegistrationPolicy()
             .MapConfigureReconfirmPolicy()
             .MapUpdateTicketedEventTimeZone()
-            .MapUpdateAdditionalDetailSchema()
+            .MapUpdateAdditionalDetailSchema();
+
+        eventGroup.MapGroup("/registrations")
+            .WithTags("Admin - Registrations")
             .MapAdminRegisterAttendee()
             .MapGetRegistrations()
             .MapExportRegistrationsCsv()
             .MapGetRegistrationDetails()
             .MapCancelRegistration()
-            .MapChangeAttendeeTickets()
+            .MapChangeAttendeeTickets();
+
+        eventGroup.MapGroup("/coupons")
+            .WithTags("Admin - Coupons")
             .MapCreateCoupon()
             .MapListCoupons()
             .MapGetCouponDetails()
@@ -70,12 +78,14 @@ public static class RegistrationsModule
 
         eventGroup
             .MapGroup("/ticket-types")
+            .WithTags("Admin - Ticket Types")
             .MapAddTicketType()
             .MapUpdateTicketType()
             .MapGetTicketTypes();
 
         eventGroup
             .MapGroup("/ticket-types/{ticketTypeId:guid}")
+            .WithTags("Admin - Waitlist")
             .MapRemoveWaitlistEntry()
             .MapGetWaitlistDetails();
 
@@ -86,6 +96,7 @@ public static class RegistrationsModule
     {
         group
             .MapGroup("/teams/{teamId:guid}/events/{eventId:guid}")
+            .WithTags("Public")
             .MapRequestOtp()
             .MapVerifyOtp()
             .MapRegisterAttendeeSelfService()

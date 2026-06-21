@@ -9,7 +9,7 @@ public static class GetRegistrationDetailsHttpEndpoint
     public static RouteGroupBuilder MapGetRegistrationDetails(this RouteGroupBuilder group)
     {
         group
-            .MapGet("/registrations/{registrationId:guid}", GetRegistrationDetails)
+            .MapGet("/{registrationId:guid}", GetRegistrationDetails)
             .WithName(nameof(GetRegistrationDetails))
             .RequireAuthorization(policy => policy.RequireTeamMembership(TeamMembershipRole.Organizer));
 

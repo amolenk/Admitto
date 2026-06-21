@@ -8,7 +8,7 @@ public static class ExportRegistrationsCsvHttpEndpoint
     public static RouteGroupBuilder MapExportRegistrationsCsv(this RouteGroupBuilder group)
     {
         group
-            .MapGet("/registrations/export", ExportRegistrationsCsv)
+            .MapGet("/export", ExportRegistrationsCsv)
             .WithName(nameof(ExportRegistrationsCsv))
             .RequireAuthorization(policy => policy.RequireTeamMembership(TeamMembershipRole.Organizer));
 

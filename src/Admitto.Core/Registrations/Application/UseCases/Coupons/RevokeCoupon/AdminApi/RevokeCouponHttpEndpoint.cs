@@ -9,7 +9,7 @@ public static class RevokeCouponHttpEndpoint
     public static RouteGroupBuilder MapRevokeCoupon(this RouteGroupBuilder group)
     {
         group
-            .MapPost("/coupons/{couponId:guid}/revoke", RevokeCoupon)
+            .MapPost("/{couponId:guid}/revoke", RevokeCoupon)
             .WithName(nameof(RevokeCoupon))
             .RequireAuthorization(policy => policy.RequireTeamMembership(TeamMembershipRole.Organizer));
 

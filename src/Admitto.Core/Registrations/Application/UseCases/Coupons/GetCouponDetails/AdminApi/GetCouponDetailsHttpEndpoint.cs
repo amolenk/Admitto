@@ -9,7 +9,7 @@ public static class GetCouponDetailsHttpEndpoint
     public static RouteGroupBuilder MapGetCouponDetails(this RouteGroupBuilder group)
     {
         group
-            .MapGet("/coupons/{couponId:guid}", GetCouponDetails)
+            .MapGet("/{couponId:guid}", GetCouponDetails)
             .WithName(nameof(GetCouponDetails))
             .RequireAuthorization(policy => policy.RequireTeamMembership(TeamMembershipRole.Organizer));
 

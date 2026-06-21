@@ -9,7 +9,7 @@ public static class AdminRegisterAttendeeHttpEndpoint
     public static RouteGroupBuilder MapAdminRegisterAttendee(this RouteGroupBuilder group)
     {
         group
-            .MapPost("/registrations", AdminRegisterAttendee)
+            .MapPost("/", AdminRegisterAttendee)
             .WithName(nameof(AdminRegisterAttendee))
             .RequireAuthorization(policy => policy.RequireTeamMembership(TeamMembershipRole.Organizer));
 
