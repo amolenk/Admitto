@@ -3,7 +3,9 @@ using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.GetRegistrationDetails;
 
-internal sealed class GetRegistrationDetailsHandler(IRegistrationsWriteStore writeStore)
+internal sealed class GetRegistrationDetailsHandler(
+    IRegistrationsWriteStore writeStore,
+    IRegistrationsReadStore readStore)
     : IQueryHandler<GetRegistrationDetailsQuery, RegistrationDetailDto?>
 {
     public async ValueTask<RegistrationDetailDto?> HandleAsync(
@@ -18,10 +20,10 @@ internal sealed class GetRegistrationDetailsHandler(IRegistrationsWriteStore wri
         if (registration is null)
             return null;
 
-        var activities = await writeStore.ActivityLog
-            .Where(a => a.RegistrationId == query.RegistrationId
-                        && a.EventId == query.EventId
-                        && a.TeamId == TeamId.From(query.TeamId))
+        var activities = await readStore.ActivityLog
+            .Where(a => a.RegistrationId == query.RegistrationId.Value
+                        && a.EventId == query.EventId.Value
+                        && a.TeamId == query.TeamId)
             .OrderBy(a => a.OccurredAt)
             .AsNoTracking()
             .ToListAsync(cancellationToken);

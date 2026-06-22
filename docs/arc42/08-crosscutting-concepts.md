@@ -101,6 +101,12 @@ UseCases/TeamManagement/
 
 The domain event handler lives in the feature folder of the aggregate that **reacts** (not the feature that produced the event).
 
+### Application projections / read models
+
+Read models that are derived from in-module domain events live under `<Module>/Application/Projections/{ProjectionName}/`. Their persisted row types are application projection types, not domain entities or aggregates. They may still be mapped by the module's EF Core infrastructure when the projection is stored in the module schema.
+
+Synchronous projections that must be transactionally consistent with the originating aggregate implement `IDomainEventHandler<T>` and are dispatched by `DomainEventsInterceptor` inside the same unit of work. They do not use Inbox processing because domain events are in-process and not redeliverable queue messages. Multi-event projection maintainers should be named `*Projector`, for example `ActivityLogProjector`, rather than being split into command slices solely to satisfy single-event handler naming.
+
 ### HTTP endpoint registration
 
 All admin endpoints are wired in the module's endpoint registration entry point
@@ -309,6 +315,10 @@ public readonly record struct ProtectedPassword
 - `DomainEventsInterceptor` dispatches domain events after `SaveChanges`; outbox messages are written inside `IDomainEventHandler<T>` implementations in the same transaction.
 - Value converters bridge value objects (§8.8) to their primitive column types.
 
+### Module stores
+
+Application code depends on module store interfaces rather than directly on the EF `DbContext`. Write paths use the module write store, such as `IRegistrationsWriteStore`, because they mutate aggregates, inbox state, or outbox state through the current unit of work. Persisted application projections/read models are exposed through companion read stores, such as `IRegistrationsReadStore` for `ActivityLogView`, to keep derived read-side storage distinct from command-side aggregate storage even when the current implementation is backed by the same EF context.
+
 ### Value converter wiring
 
 - **Shared kernel types** (`Slug`, `DisplayName`, `EmailAddress`, `TeamId`, …) have shared converters in `Admitto.Module.Shared/Infrastructure/Persistence/ValueConverters/`. They are registered globally by `ConfigureSharedConventions(...)`, which every module's `DbContext.ConfigureConventions` calls first.
@@ -515,7 +525,7 @@ These are enforced via MSTest reflection checks on the loaded `Admitto.Core` ass
 
 | Interface | Required class name |
 | :-------- | :------------------ |
-| `IDomainEventHandler<T>` | `{T.Name}Handler` |
+| `IDomainEventHandler<T>` | `{T.Name}Handler`, or role-based `*Publisher` / `*Projector` for multi-event side-effect classes |
 | `IIntegrationEventHandler<T>` | `{T.Name}Handler` |
 | `ICommandHandler<T>` | `T` name with `Command` replaced by `Handler` (e.g. `CreateTeamCommand` → `CreateTeamHandler`) |
 | `IQueryHandler<T,R>` | `T` name with `Query` replaced by `Handler` |

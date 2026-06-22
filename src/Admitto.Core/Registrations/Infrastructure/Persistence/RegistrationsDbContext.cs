@@ -1,5 +1,6 @@
 using System.Reflection;
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
+using Amolenk.Admitto.Core.Registrations.Application.Projections.ActivityLog;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
@@ -10,11 +11,11 @@ using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Outbox;
 namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence;
 
 public sealed class RegistrationsDbContext(DbContextOptions<RegistrationsDbContext> options)
-    : DbContext(options), IModuleDbContext, IRegistrationsWriteStore, IOutboxDbContext
+    : DbContext(options), IModuleDbContext, IRegistrationsReadStore, IRegistrationsWriteStore, IOutboxDbContext
 {
     public static string SchemaName => "registrations";
 
-    public DbSet<ActivityLog> ActivityLog => Set<ActivityLog>();
+    public DbSet<ActivityLogView> ActivityLog => Set<ActivityLogView>();
     public DbSet<Coupon> Coupons => Set<Coupon>();
     public DbSet<OtpCode> OtpCodes => Set<OtpCode>();
     public DbSet<ProcessedMessage> ProcessedMessages => Set<ProcessedMessage>();
@@ -92,10 +93,6 @@ public sealed class RegistrationsDbContext(DbContextOptions<RegistrationsDbConte
         configurationBuilder
             .Properties<OtpCodeId>()
             .HaveConversion<OtpCodeId.EfCoreValueConverter>();
-
-        configurationBuilder
-            .Properties<ActivityLogId>()
-            .HaveConversion<ActivityLogId.EfCoreValueConverter>();
 
         configurationBuilder
             .Properties<TicketTypeId>()

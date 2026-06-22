@@ -18,6 +18,7 @@ This file applies to `/src`.
 
 ## Persistence Rule
 - Use module write-store abstractions (`IOrganizationWriteStore`, `IRegistrationsWriteStore`) in handlers.
+- Use module read-store abstractions (for example `IRegistrationsReadStore`) for persisted application projections/read models when available.
 - Keep data ownership inside module boundaries (schema-per-module).
 - Resolve `IUnitOfWork` by module key (`OrganizationModuleKey.Value`, `RegistrationsModule.Key`).
 
@@ -79,12 +80,20 @@ HTTP-exposed use case subfolders typically contain:
 Internal event-driven slices omit the HTTP folder and keep event translation in
 `EventHandlers/`. Jobs live under `Application/Jobs/`.
 
+Application projections/read models derived from domain events live under
+`Application/Projections/{ProjectionName}/`. A synchronous multi-event projection
+may use a `*Projector` class that implements the relevant `IDomainEventHandler<T>`
+interfaces directly, without a command slice or Inbox processing.
+
 ### 6. Domain Event Handler Naming
 Domain event handler classes are named after the **domain event they handle**, not the
 side-effect they produce. The intent is clear from the use-case folder.
 
 ✅ `TicketsChangedDomainEventHandler` in `WriteActivityLog/EventHandlers/`  
 ❌ `WriteTicketsChangedActivityLogHandler` — describes the side-effect instead
+
+For multi-event application projections, use role-based `*Projector` naming instead
+of per-event forwarding handlers.
 
 ### 5. Wire the Endpoint
 Register the endpoint in the module's endpoint registration entry point.

@@ -13,7 +13,7 @@ internal sealed class GetCouponDetailsHandler(IRegistrationsWriteStore writeStor
     {
         var now = DateTimeOffset.UtcNow;
 
-        var coupon = await writeStore.Coupons.GetAsync(
+        var coupon = await writeStore.Coupons.GetUntrackedAsync(
                  c => c.Id == query.CouponId && c.EventId == query.EventId && c.TeamId == query.TeamId,
                  cancellationToken);
 

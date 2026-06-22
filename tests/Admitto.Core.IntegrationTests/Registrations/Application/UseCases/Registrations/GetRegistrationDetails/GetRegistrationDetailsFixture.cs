@@ -1,8 +1,8 @@
+using Amolenk.Admitto.Core.Registrations.Application.Projections.ActivityLog;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
-using ActivityLogEntity = Amolenk.Admitto.Core.Registrations.Domain.Entities.ActivityLog;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCases.Registrations.GetRegistrationDetails;
 
@@ -108,10 +108,10 @@ internal sealed class GetRegistrationDetailsFixture
 
         if (_withRegisteredActivity)
         {
-            var registeredEntry = ActivityLogEntity.Create(
-                TeamId,
-                EventId,
-                registration.Id,
+            var registeredEntry = ActivityLogView.Create(
+                TeamId.Value,
+                EventId.Value,
+                registration.Id.Value,
                 ActivityType.Registered,
                 RegisteredAt);
             await environment.RegistrationsDatabase.SeedAsync(db => db.ActivityLog.Add(registeredEntry));
@@ -119,10 +119,10 @@ internal sealed class GetRegistrationDetailsFixture
 
         if (_withReconfirmedActivity)
         {
-            var reconfirmedEntry = ActivityLogEntity.Create(
-                TeamId,
-                EventId,
-                registration.Id,
+            var reconfirmedEntry = ActivityLogView.Create(
+                TeamId.Value,
+                EventId.Value,
+                registration.Id.Value,
                 ActivityType.Reconfirmed,
                 ReconfirmedAt);
             await environment.RegistrationsDatabase.SeedAsync(db => db.ActivityLog.Add(reconfirmedEntry));
@@ -130,10 +130,10 @@ internal sealed class GetRegistrationDetailsFixture
 
         if (_withCancelledActivity)
         {
-            var cancelledEntry = ActivityLogEntity.Create(
-                TeamId,
-                EventId,
-                registration.Id,
+            var cancelledEntry = ActivityLogView.Create(
+                TeamId.Value,
+                EventId.Value,
+                registration.Id.Value,
                 ActivityType.Cancelled,
                 DateTimeOffset.UtcNow.AddDays(-1),
                 CancellationReason.AttendeeRequest.ToString());

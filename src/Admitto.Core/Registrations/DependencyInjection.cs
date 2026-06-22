@@ -61,6 +61,8 @@ public static class RegistrationsModuleExtensions
             builder.AddModuleDatabaseServices<IRegistrationsWriteStore, RegistrationsDbContext>(
                 RegistrationsModule.Key);
 
+            services.AddScoped<IRegistrationsReadStore>(sp => sp.GetRequiredService<RegistrationsDbContext>());
+
             services.AddKeyedScoped<IPostgresExceptionMapping, RegistrationsPostgresExceptionMapping>(
                 RegistrationsModule.Key);
 

@@ -1,13 +1,13 @@
-using Amolenk.Admitto.Core.Registrations.Domain.Entities;
+using Amolenk.Admitto.Core.Registrations.Application.Projections.ActivityLog;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.EntityConfigurations;
 
-internal sealed class ActivityLogEntityConfiguration : IEntityTypeConfiguration<ActivityLog>
+internal sealed class ActivityLogViewEntityConfiguration : IEntityTypeConfiguration<ActivityLogView>
 {
-    public void Configure(EntityTypeBuilder<ActivityLog> builder)
+    public void Configure(EntityTypeBuilder<ActivityLogView> builder)
     {
-        builder.ToTable("activity_log");
+        builder.ToTable("activity_log_view");
         builder.HasKey(e => e.Id);
 
         builder.Property(e => e.Id)
@@ -42,6 +42,6 @@ internal sealed class ActivityLogEntityConfiguration : IEntityTypeConfiguration<
             .HasColumnType("text");
 
         builder.HasIndex(e => new { e.TeamId, e.EventId, e.RegistrationId, e.ActivityType, e.OccurredAt })
-            .HasDatabaseName("IX_activity_log_registration_type_occurred");
+            .HasDatabaseName("IX_activity_log_view_registration_type_occurred");
     }
 }

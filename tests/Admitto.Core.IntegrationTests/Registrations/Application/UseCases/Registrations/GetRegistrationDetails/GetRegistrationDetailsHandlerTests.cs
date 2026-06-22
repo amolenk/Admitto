@@ -143,5 +143,5 @@ public sealed class GetRegistrationDetailsHandlerTests(TestContext testContext) 
     }
 
     private static GetRegistrationDetailsHandler NewHandler() =>
-        new(Environment.RegistrationsDatabase.Context);
+        new(Environment.RegistrationsDatabase.Context, Environment.RegistrationsDatabase.Context);
 }

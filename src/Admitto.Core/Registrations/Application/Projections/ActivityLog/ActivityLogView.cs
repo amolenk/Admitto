@@ -1,24 +1,22 @@
-using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
-using Amolenk.Admitto.Core.Shared.Kernel.Entities;
 
-namespace Amolenk.Admitto.Core.Registrations.Domain.Entities;
+namespace Amolenk.Admitto.Core.Registrations.Application.Projections.ActivityLog;
 
-public class ActivityLog : Entity<ActivityLogId>
+public class ActivityLogView
 {
     // Required for EF Core
-    private ActivityLog() { }
+    private ActivityLogView() { }
 
-    private ActivityLog(
-        ActivityLogId id,
-        TeamId teamId,
-        TicketedEventId eventId,
-        RegistrationId registrationId,
+    private ActivityLogView(
+        Guid id,
+        Guid teamId,
+        Guid eventId,
+        Guid registrationId,
         ActivityType activityType,
         DateTimeOffset occurredAt,
         string? metadata)
-        : base(id)
     {
+        Id = id;
         TeamId = teamId;
         EventId = eventId;
         RegistrationId = registrationId;
@@ -27,23 +25,24 @@ public class ActivityLog : Entity<ActivityLogId>
         Metadata = metadata;
     }
 
-    public TeamId TeamId { get; private set; }
-    public TicketedEventId EventId { get; private set; }
-    public RegistrationId RegistrationId { get; private set; }
+    public Guid Id { get; private set; }
+    public Guid TeamId { get; private set; }
+    public Guid EventId { get; private set; }
+    public Guid RegistrationId { get; private set; }
     public ActivityType ActivityType { get; private set; }
     public DateTimeOffset OccurredAt { get; private set; }
     public string? Metadata { get; private set; }
 
-    public static ActivityLog Create(
-        TeamId teamId,
-        TicketedEventId eventId,
-        RegistrationId registrationId,
+    public static ActivityLogView Create(
+        Guid teamId,
+        Guid eventId,
+        Guid registrationId,
         ActivityType activityType,
         DateTimeOffset occurredAt,
         string? metadata = null)
     {
-        return new ActivityLog(
-            ActivityLogId.New(),
+        return new ActivityLogView(
+            Guid.NewGuid(),
             teamId,
             eventId,
             registrationId,

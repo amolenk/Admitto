@@ -8,7 +8,7 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.ActivityLog;
 
 /// <summary>
 /// Verifies that the <c>DomainEventsInterceptor</c> correctly projects domain events into the
-/// ActivityLog table as part of the same database transaction — tested end-to-end through the
+/// activity-log view table as part of the same database transaction — tested end-to-end through the
 /// API so that the real DI pipeline and interceptor are in play.
 /// </summary>
 [TestClass]

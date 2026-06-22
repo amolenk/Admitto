@@ -26,16 +26,17 @@ public class NamingRulesTests
     public void DomainEventHandlers_FollowNamingConvention()
     {
         // Single-event handlers: {EventType}Handler.
-        // Multi-event publisher classes (implementing 2+ IDomainEventHandler<T>): {Module}IntegrationEventPublisher.
+        // Multi-event side-effect classes may be named for their role, such as *Publisher or *Projector.
         var violations = CheckHandlerNaming(
             typeof(IDomainEventHandler<>),
             (eventTypeName, className) =>
                 className == $"{eventTypeName}Handler" ||
-                className.EndsWith("Publisher"));
+                className.EndsWith("Publisher") ||
+                className.EndsWith("Projector"));
 
         if (violations.Count > 0)
             Assert.Fail(
-                $"DomainEventHandler naming violations (expected {{EventType}}Handler or *Publisher):\n" +
+                $"DomainEventHandler naming violations (expected {{EventType}}Handler, *Publisher, or *Projector):\n" +
                 string.Join("\n", violations));
     }
 

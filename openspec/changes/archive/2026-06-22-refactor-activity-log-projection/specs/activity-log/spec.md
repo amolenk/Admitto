@@ -1,10 +1,4 @@
-# Activity Log Specification
-
-## Purpose
-
-The ActivityLog is an application projection/read model in the Registrations module that records immutable lifecycle milestones for each registration. It is driven by domain events and provides an accurate, append-only history of what happened to a registration over time — supporting future scenarios where the same registration can be cancelled and then re-activated (e.g. re-registration). It is not a domain entity or command-side aggregate.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: ActivityLog records lifecycle milestones for each registration
 
@@ -45,19 +39,9 @@ Because these projections run from in-process domain events in the same database
 #### Scenario: SC005 Multiple milestones accumulate for the same registration
 
 - **GIVEN** a registration that was registered, then reconfirmed, then cancelled
-- **THEN** three `activity_log_view` rows exist for that registration, one per milestone, each with the correct type and timestamp
+- **THEN** three `activity_log` rows exist for that registration, one per milestone, each with the correct type and timestamp
 
 #### Scenario: SC007 Ticket change event projects a TicketsChanged entry
 
 - **WHEN** an admin changes the ticket selection on a registration, raising `TicketsChangedDomainEvent` with old slugs `["early-bird"]` and new slugs `["workshop","dinner"]`
 - **THEN** an `activity_log_view` row exists with `activity_type=TicketsChanged`, `occurred_at` set to the change timestamp, and `metadata` equal to `{"from":["early-bird"],"to":["workshop","dinner"]}`
-
-### Requirement: ActivityLog entries are queried as part of registration detail
-
-The system SHALL include `ActivityLog` entries for a given `registrationId` when responding to the `GetRegistrationDetails` query. Entries SHALL be returned ordered by `occurred_at` ascending.
-
-#### Scenario: SC006 Registration detail response includes activity entries
-
-- **GIVEN** a registration with Registered and Reconfirmed entries in the activity log
-- **WHEN** an admin queries the registration detail
-- **THEN** the response includes both activity entries ordered oldest-first
