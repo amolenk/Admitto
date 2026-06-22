@@ -62,9 +62,21 @@ public sealed class PublicTicketTypesTests(TestContext testContext) : EndToEndTe
 
         using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
         var response = await client.GetAsync(
-            $"/api/teams/{fixture.TeamId.Value}/events/{Guid.NewGuid()}/ticket-types",
+            $"/api/events/{Guid.NewGuid()}/ticket-types",
             testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+    }
+
+    [TestMethod]
+    public async Task GetPublicTicketTypes_MissingApiKey_Returns401()
+    {
+        var fixture = PublicTicketTypesFixture.Create();
+        await fixture.SetupAsync(Environment);
+
+        using var bareClient = new HttpClient { BaseAddress = Environment.ApiClient.BaseAddress };
+        var response = await bareClient.GetAsync(fixture.TicketTypesRoute, testContext.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
 }

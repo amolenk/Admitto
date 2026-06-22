@@ -15,7 +15,7 @@ internal sealed class OtpVerifyFixture
     public TicketedEventId EventId { get; private set; } = TicketedEventId.New();
     public string ApiKey => ApiKeyTestHelper.TestRawKey;
 
-    public string VerifyOtpRoute => $"/api/teams/{TeamId.Value}/events/{EventId.Value}/otp/verify";
+    public string VerifyOtpRoute => $"/api/events/{EventId.Value}/otp/verify";
 
     private OtpVerifyFixture() { }
 

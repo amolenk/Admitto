@@ -62,18 +62,16 @@ public sealed class GetQRCodeTests(TestContext testContext) : EndToEndTestBase
     }
 
     [TestMethod]
-    public async Task UnknownTeamSlug_Returns403()
+    public async Task MissingApiKey_Returns401()
     {
         var fixture = GetQRCodeFixture.HappyFlow();
         await fixture.SetupAsync(Environment);
 
-        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
-        var response = await client.GetAsync(
-            fixture.Route(
-                fixture.RegistrationId, fixture.ValidSignature, teamId: Guid.NewGuid()),
-            testContext.CancellationToken);
+        using var bareClient = new HttpClient { BaseAddress = Environment.ApiClient.BaseAddress };
+        var response = await bareClient.GetAsync(
+            fixture.Route(fixture.RegistrationId, fixture.ValidSignature), testContext.CancellationToken);
 
-        response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+        response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
 
     [TestMethod]

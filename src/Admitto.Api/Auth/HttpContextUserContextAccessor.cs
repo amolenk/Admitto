@@ -32,7 +32,7 @@ public class HttpContextUserContextAccessor(IHttpContextAccessor httpContextAcce
 
     private static UserContextDto BuildApiKeyUserContext(System.Security.Claims.ClaimsPrincipal user)
     {
-        var teamIdClaim = user.FindFirst(ApiKeyAuthenticationHandler.TeamIdClaimType);
+        var teamIdClaim = user.FindFirst(ApiKeyClaims.TeamIdClaimType);
         if (teamIdClaim is not null && Guid.TryParse(teamIdClaim.Value, out var teamId))
         {
             return new UserContextDto(teamId, $"api-key-{teamId}", $"{teamId}@apikey.admitto");

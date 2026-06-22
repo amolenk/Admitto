@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Core.Shared.Application.Auth;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 
@@ -15,7 +16,7 @@ public static class LeaveWaitlistHttpEndpoint
     }
 
     private static async ValueTask<Ok> LeaveWaitlist(
-        Guid teamId,
+        HttpContext httpContext,
         Guid eventId,
         Guid ticketTypeId,
         string email,
@@ -24,6 +25,7 @@ public static class LeaveWaitlistHttpEndpoint
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
+        var teamId = httpContext.User.GetRequiredTeamId();
         var command = new LeaveWaitlistCommand(teamId, eventId, ticketTypeId, email);
 
         await handler.HandleAsync(command, cancellationToken);

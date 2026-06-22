@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Core.Shared.Application.Auth;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 
@@ -15,7 +16,7 @@ public static class VerifyOtpHttpEndpoint
     }
 
     private static async ValueTask<IResult> VerifyOtp(
-        Guid teamId,
+        HttpContext httpContext,
         Guid eventId,
         VerifyOtpHttpRequest request,
         ICommandHandler<VerifyOtpCommand, string> handler,
@@ -23,6 +24,7 @@ public static class VerifyOtpHttpEndpoint
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
+        var teamId = httpContext.User.GetRequiredTeamId();
         var command = new VerifyOtpCommand(
             TeamId.From(teamId),
             TicketedEventId.From(eventId),

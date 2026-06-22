@@ -13,7 +13,7 @@ internal sealed class PublicTicketTypesFixture
     public TicketedEventId EventId { get; private set; } = TicketedEventId.New();
     public string ApiKey => ApiKeyTestHelper.TestRawKey;
 
-    public string TicketTypesRoute => $"/api/teams/{TeamId.Value}/events/{EventId.Value}/ticket-types";
+    public string TicketTypesRoute => $"/api/events/{EventId.Value}/ticket-types";
 
     private PublicTicketTypesFixture() { }
 

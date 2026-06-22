@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Registrations.Application.Security;
+using Amolenk.Admitto.Core.Shared.Application.Auth;
 using Amolenk.Admitto.Core.Shared.Application.Http;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
@@ -20,17 +21,17 @@ public static class RegisterAttendeeSelfServiceHttpEndpoint
     }
 
     private static async ValueTask<IResult> RegisterAttendeeSelfService(
-        Guid teamId,
+        HttpContext httpContext,
         Guid eventId,
         RegisterAttendeeSelfServiceHttpRequest request,
-        HttpRequest httpRequest,
         IVerificationTokenService verificationTokenService,
         ICommandHandler<RegisterAttendeeSelfServiceCommand, RegisterAttendeeSelfServiceResult> handler,
         [FromKeyedServices(RegistrationsModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
-        var bearerToken = ExtractBearerToken(httpRequest);
+        var teamId = httpContext.User.GetRequiredTeamId();
+        var bearerToken = ExtractBearerToken(httpContext.Request);
         if (bearerToken is null)
             return Errors.TokenRequired.ToProblemHttpResult();
 
@@ -62,8 +63,8 @@ public static class RegisterAttendeeSelfServiceHttpEndpoint
 
         return Results.Created(
             result.RegistrationId is { } registrationId
-                ? $"/teams/{teamId}/events/{eventId}/registrations/{registrationId}"
-                : $"/teams/{teamId}/events/{eventId}/registrations",
+                ? $"/api/events/{eventId}/registrations/{registrationId}"
+                : $"/api/events/{eventId}/registrations",
             response);
     }
 

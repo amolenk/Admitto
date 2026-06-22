@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Shared.Application.Auth;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Coupons.GetPublicCouponDetails.PublicApi;
@@ -9,19 +10,19 @@ public static class GetPublicCouponDetailsHttpEndpoint
     {
         group
             .MapGet("/coupons/{couponCode:guid}", GetPublicCouponDetails)
-            .WithName(nameof(GetPublicCouponDetails))
-            .AllowAnonymous();
+            .WithName(nameof(GetPublicCouponDetails));
 
         return group;
     }
 
     private static async ValueTask<Ok<PublicCouponDetailsDto>> GetPublicCouponDetails(
-        Guid teamId,
+        HttpContext httpContext,
         Guid eventId,
         Guid couponCode,
         IQueryHandler<GetPublicCouponDetailsQuery, PublicCouponDetailsDto> handler,
         CancellationToken cancellationToken)
     {
+        var teamId = httpContext.User.GetRequiredTeamId();
         var query = new GetPublicCouponDetailsQuery(
             TicketedEventId.From(eventId),
             TeamId.From(teamId),

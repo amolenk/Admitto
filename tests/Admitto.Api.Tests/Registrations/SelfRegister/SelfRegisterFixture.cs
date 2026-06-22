@@ -20,8 +20,8 @@ internal sealed class SelfRegisterFixture
 
     public static readonly TicketTypeId TicketTypeId = TicketTypeId.From(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
 
-    public string RegisterRoute => $"/api/teams/{TeamId.Value}/events/{EventId.Value}/registrations";
-    public string OtpVerifyRoute => $"/api/teams/{TeamId.Value}/events/{EventId.Value}/otp/verify";
+    public string RegisterRoute => $"/api/events/{EventId.Value}/registrations";
+    public string OtpVerifyRoute => $"/api/events/{EventId.Value}/otp/verify";
 
     private SelfRegisterFixture() { }
 

@@ -3,7 +3,7 @@
     "version": "10.0.100"
   },
   "msbuild-sdks": {
-    "Aspire.AppHost.Sdk": "13.4.4",
+    "Aspire.AppHost.Sdk": "13.4.6",
     "MSTest.Sdk": "4.2.3"
   },
   "test": {

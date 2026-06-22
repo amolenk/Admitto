@@ -135,7 +135,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
         // Use a bare HttpClient (no X-Api-Key header)
         using var bareClient = new HttpClient { BaseAddress = Environment.ApiClient.BaseAddress };
         var response = await bareClient.PostAsJsonAsync(
-            $"/api/teams/{fixture.TeamId}/events/{fixture.EventId}/otp/request",
+            $"/api/events/{fixture.EventId}/otp/request",
             new { Email = "test@example.com" },
             cancellationToken: testContext.CancellationToken);
 
@@ -151,7 +151,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
 
         using var client = Environment.CreatePublicApiClient("bogus-key-that-does-not-exist");
         var response = await client.PostAsJsonAsync(
-            $"/api/teams/{fixture.TeamId}/events/{fixture.EventId}/otp/request",
+            $"/api/events/{fixture.EventId}/otp/request",
             new { Email = "test@example.com" },
             cancellationToken: testContext.CancellationToken);
 
@@ -167,28 +167,28 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
 
         using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
         var response = await client.PostAsJsonAsync(
-            $"/api/teams/{fixture.TeamId}/events/{fixture.EventId}/otp/request",
+            $"/api/events/{fixture.EventId}/otp/request",
             new { Email = "test@example.com" },
             cancellationToken: testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
 
-    // API key for Team A used against Team B's route returns 403
+    // API key for Team A used against Team B's event returns normal not-found behavior
     [TestMethod]
-    public async Task PublicEndpoint_ApiKeyForOtherTeam_Returns403()
+    public async Task PublicEndpoint_ApiKeyForOtherTeam_Returns404()
     {
         var fixture = ApiKeyAuthFixture.WithTwoTeamsAndEvents();
         await fixture.SetupAsync(Environment);
 
-        // Use team-a's key against team-b's event route
+        // Use team-a's key against team-b's event.
         using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
         var response = await client.PostAsJsonAsync(
-            $"/api/teams/{fixture.OtherTeamId}/events/{fixture.OtherEventId}/otp/request",
+            $"/api/events/{fixture.OtherEventId}/otp/request",
             new { Email = "test@example.com" },
             cancellationToken: testContext.CancellationToken);
 
-        response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
     }
 
     // Valid API key for correct team returns 202
@@ -200,10 +200,36 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
 
         using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
         var response = await client.PostAsJsonAsync(
-            $"/api/teams/{fixture.TeamId}/events/{fixture.EventId}/otp/request",
+            $"/api/events/{fixture.EventId}/otp/request",
             new { Email = "test@example.com" },
             cancellationToken: testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.Accepted);
+    }
+
+    [TestMethod]
+    public async Task PublicEndpoint_OldTeamScopedRoute_Returns404()
+    {
+        var fixture = ApiKeyAuthFixture.WithTeamAndEvent();
+        await fixture.SetupAsync(Environment);
+
+        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
+        var response = await client.PostAsJsonAsync(
+            $"/api/teams/{fixture.TeamId}/events/{fixture.EventId}/otp/request",
+            new { Email = "test@example.com" },
+            cancellationToken: testContext.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+    }
+
+    [TestMethod]
+    public async Task PublicCouponDetails_NoApiKey_Returns401()
+    {
+        using var bareClient = new HttpClient { BaseAddress = Environment.ApiClient.BaseAddress };
+        var response = await bareClient.GetAsync(
+            $"/api/events/{Guid.NewGuid()}/coupons/{Guid.NewGuid()}",
+            testContext.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
 }

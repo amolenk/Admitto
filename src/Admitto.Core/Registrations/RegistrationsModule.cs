@@ -95,7 +95,7 @@ public static class RegistrationsModule
     public static RouteGroupBuilder MapRegistrationsPublicEndpoints(this RouteGroupBuilder group)
     {
         group
-            .MapGroup("/teams/{teamId:guid}/events/{eventId:guid}")
+            .MapGroup("/events/{eventId:guid}")
             .WithTags("Public")
             .MapRequestOtp()
             .MapVerifyOtp()

@@ -19,6 +19,7 @@ Reference: `Admitto.Api/Middleware/ValidationFilter.cs`, applied in `Admitto.Api
 ## 8.3 Authentication and authorization
 
 - **Authentication:** JWT Bearer tokens validated against a configurable authority. Production Admin UI sign-in uses Keycloak's hosted passkey-only browser flow and starts directly at passkey detection; passwords and direct grants are not enabled for the production Admin UI client. The Keycloak account-console client is disabled; Admitto owns the user-facing account-management surface. Local development intentionally uses a separate Keycloak realm where the standard username/password form is shown first with passkey as an alternative; end-to-end tests retain local-only direct-grant clients. Challenge and forbidden responses return ProblemDetails.
+- **Public API keys:** Every endpoint under `/api/...` requires `X-Api-Key`. The key authenticates as its owning team and carries the shared `team_id` claim defined in `Admitto.Core.Shared.Application.Auth.ApiKeyClaims`. Public routes use `/api/events/{eventId}/...`; they do not include team ID or team slug. Endpoint code extracts `TeamId` from the API-key principal and fails closed with 401 if the claim is missing or invalid.
 - **Admin authorization:** `AdminAuthorizationRequirement` checked by `AdminAuthorizationHandler` via `IAdministratorRoleService`.
 - **User context resolution:** `UserContextResolutionMiddleware` resolves the authenticated JWT subject to a domain user before authorization runs. When the route contains both `teamId` and `eventId`, `UserContextResolver` verifies that the event belongs to the team; non-admin mismatches return 403 before endpoint authorization or handler execution.
 - **Team membership authorization:** `TeamMembershipAuthorizationRequirement` checked by `TeamMembershipAuthorizationHandler` against the pre-resolved user context. Admin users bypass team checks.
@@ -225,7 +226,7 @@ The signing primitive lives in `Admitto.Module.Shared/Application/Cryptography/`
 
 Payload-shaping helpers (e.g. `RegistrationSigner`) compose the two for a specific consumer; the registration-id payload is the lowercase hex (`Guid.ToString("N")`) form.
 
-**Endpoint validation order** for signed public endpoints: resolve team by ID (404) → resolve event by ID (404) → verify signature (403 on missing or invalid, *before* any aggregate lookup) → load the aggregate and confirm scope (404 on missing/wrong event) → produce the response. Verifying before lookup prevents the endpoint from being used as an existence oracle for registration IDs.
+**Endpoint validation order** for signed public endpoints: authenticate `X-Api-Key` and resolve `TeamId` from the shared `team_id` claim (401) → resolve event by `(TeamId, eventId)` (404) → verify signature (403 on missing or invalid, *before* any registration lookup) → load the aggregate and confirm scope (404 on missing/wrong event/team) → produce the response. Verifying before lookup prevents the endpoint from being used as an existence oracle for registration IDs.
 
 ## 8.8 Value objects
 

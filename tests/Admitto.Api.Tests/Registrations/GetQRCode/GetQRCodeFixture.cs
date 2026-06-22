@@ -50,10 +50,9 @@ internal sealed class GetQRCodeFixture
     public string Route(
         Guid registrationId,
         string? signature,
-        Guid? teamId = null,
         Guid? eventId = null)
     {
-        var path = $"/api/teams/{teamId ?? TeamId}/events/{eventId ?? EventId}/registrations/{registrationId}/qr-code";
+        var path = $"/api/events/{eventId ?? EventId}/registrations/{registrationId}/qr-code";
         return signature is null ? path : $"{path}?signature={Uri.EscapeDataString(signature)}";
     }
 

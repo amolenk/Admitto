@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Core.Shared.Application.Auth;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 
@@ -14,7 +15,7 @@ public static class RegisterAttendeeWithCouponHttpEndpoint
     }
 
     private static async ValueTask<IResult> RegisterAttendeeWithCoupon(
-        Guid teamId,
+        HttpContext httpContext,
         Guid eventId,
         RegisterAttendeeWithCouponHttpRequest request,
         ICommandHandler<RegisterAttendeeWithCouponCommand, Guid> handler,
@@ -22,6 +23,7 @@ public static class RegisterAttendeeWithCouponHttpEndpoint
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
+        var teamId = httpContext.User.GetRequiredTeamId();
         var command = new RegisterAttendeeWithCouponCommand(
             eventId,
             teamId,
@@ -37,7 +39,7 @@ public static class RegisterAttendeeWithCouponHttpEndpoint
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Results.Created(
-            $"/teams/{teamId}/events/{eventId}/registrations/{registrationId}",
+            $"/api/events/{eventId}/registrations/{registrationId}",
             null);
     }
 }

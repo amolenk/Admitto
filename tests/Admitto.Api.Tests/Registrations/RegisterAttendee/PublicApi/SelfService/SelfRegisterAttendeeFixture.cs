@@ -16,7 +16,7 @@ internal sealed class SelfRegisterAttendeeFixture
     public Guid TeamId { get; private set; }
     public Guid EventId { get; private set; }
 
-    public string Route => $"/api/teams/{TeamId}/events/{EventId}/registrations";
+    public string Route => $"/api/events/{EventId}/registrations";
 
     private SelfRegisterAttendeeFixture() { }
 

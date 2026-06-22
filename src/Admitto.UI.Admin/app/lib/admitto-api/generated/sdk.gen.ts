@@ -1132,7 +1132,7 @@ export const requestOtp = <ThrowOnError extends boolean = false>(options: Option
                 type: 'http'
             }
         ],
-        url: '/api/teams/{teamId}/events/{eventId}/otp/request',
+        url: '/api/events/{eventId}/otp/request',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -1149,7 +1149,7 @@ export const verifyOtp = <ThrowOnError extends boolean = false>(options: Options
                 type: 'http'
             }
         ],
-        url: '/api/teams/{teamId}/events/{eventId}/otp/verify',
+        url: '/api/events/{eventId}/otp/verify',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -1166,7 +1166,7 @@ export const registerAttendeeSelfService = <ThrowOnError extends boolean = false
                 type: 'http'
             }
         ],
-        url: '/api/teams/{teamId}/events/{eventId}/registrations',
+        url: '/api/events/{eventId}/registrations',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -1183,7 +1183,7 @@ export const registerAttendeeWithCoupon = <ThrowOnError extends boolean = false>
                 type: 'http'
             }
         ],
-        url: '/api/teams/{teamId}/events/{eventId}/registrations/coupon',
+        url: '/api/events/{eventId}/registrations/coupon',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -1200,7 +1200,7 @@ export const getQrCode = <ThrowOnError extends boolean = false>(options: Options
                 type: 'http'
             }
         ],
-        url: '/api/teams/{teamId}/events/{eventId}/registrations/{registrationId}/qr-code',
+        url: '/api/events/{eventId}/registrations/{registrationId}/qr-code',
         ...options
     });
 };
@@ -1213,7 +1213,7 @@ export const selfCancelRegistration = <ThrowOnError extends boolean = false>(opt
                 type: 'http'
             }
         ],
-        url: '/api/teams/{teamId}/events/{eventId}/registrations/{registrationId}/cancel',
+        url: '/api/events/{eventId}/registrations/{registrationId}/cancel',
         ...options
     });
 };
@@ -1226,7 +1226,7 @@ export const selfChangeTickets = <ThrowOnError extends boolean = false>(options:
                 type: 'http'
             }
         ],
-        url: '/api/teams/{teamId}/events/{eventId}/registrations/{registrationId}/tickets',
+        url: '/api/events/{eventId}/registrations/{registrationId}/tickets',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -1243,7 +1243,7 @@ export const getPublicTicketTypes = <ThrowOnError extends boolean = false>(optio
                 type: 'http'
             }
         ],
-        url: '/api/teams/{teamId}/events/{eventId}/ticket-types',
+        url: '/api/events/{eventId}/ticket-types',
         ...options
     });
 };
@@ -1256,7 +1256,7 @@ export const leaveWaitlist = <ThrowOnError extends boolean = false>(options: Opt
                 type: 'http'
             }
         ],
-        url: '/api/teams/{teamId}/events/{eventId}/waitlist/{ticketTypeId}',
+        url: '/api/events/{eventId}/waitlist/{ticketTypeId}',
         ...options
     });
 };
@@ -1269,7 +1269,7 @@ export const joinWaitlist = <ThrowOnError extends boolean = false>(options: Opti
                 type: 'http'
             }
         ],
-        url: '/api/teams/{teamId}/events/{eventId}/waitlist/{ticketTypeId}',
+        url: '/api/events/{eventId}/waitlist/{ticketTypeId}',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -1286,7 +1286,7 @@ export const getPublicCouponDetails = <ThrowOnError extends boolean = false>(opt
                 type: 'http'
             }
         ],
-        url: '/api/teams/{teamId}/events/{eventId}/coupons/{couponCode}',
+        url: '/api/events/{eventId}/coupons/{couponCode}',
         ...options
     });
 };

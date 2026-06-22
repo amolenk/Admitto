@@ -6,14 +6,14 @@
   },
   "servers": [
     {
-      "url": "http://localhost:60537/"
+      "url": "http://localhost:54406/"
     }
   ],
   "paths": {
     "/admin/teams/{teamId}/email-settings": {
       "get": {
         "tags": [
-          "Handler"
+          "Admin - Email Settings"
         ],
         "operationId": "GetTeamEmailSettings",
         "parameters": [
@@ -100,7 +100,7 @@
       },
       "put": {
         "tags": [
-          "Handler"
+          "Admin - Email Settings"
         ],
         "operationId": "UpsertTeamEmailSettings",
         "parameters": [
@@ -193,7 +193,7 @@
       },
       "delete": {
         "tags": [
-          "Handler"
+          "Admin - Email Settings"
         ],
         "operationId": "DeleteTeamEmailSettings",
         "parameters": [
@@ -288,7 +288,7 @@
     "/admin/teams/{teamId}/email-settings/test": {
       "post": {
         "tags": [
-          "Handler"
+          "Admin - Email Settings"
         ],
         "operationId": "TestTeamEmailSettings",
         "parameters": [
@@ -380,7 +380,7 @@
     "/admin/teams/{teamId}/events/{eventId}/email-settings": {
       "get": {
         "tags": [
-          "Handler"
+          "Admin - Email Settings"
         ],
         "operationId": "GetEventEmailSettings",
         "parameters": [
@@ -468,7 +468,7 @@
       },
       "put": {
         "tags": [
-          "Handler"
+          "Admin - Email Settings"
         ],
         "operationId": "UpsertEventEmailSettings",
         "parameters": [
@@ -562,7 +562,7 @@
       },
       "delete": {
         "tags": [
-          "Handler"
+          "Admin - Email Settings"
         ],
         "operationId": "DeleteEventEmailSettings",
         "parameters": [
@@ -658,7 +658,7 @@
     "/admin/teams/{teamId}/events/{eventId}/email-settings/test": {
       "post": {
         "tags": [
-          "Handler"
+          "Admin - Email Settings"
         ],
         "operationId": "TestEventEmailSettings",
         "parameters": [
@@ -751,7 +751,7 @@
     "/admin/teams/{teamId}/email-templates": {
       "get": {
         "tags": [
-          "Handler"
+          "Admin - Email Templates"
         ],
         "operationId": "GetTeamEmailTemplates",
         "parameters": [
@@ -841,7 +841,7 @@
       },
       "post": {
         "tags": [
-          "Handler"
+          "Admin - Email Templates"
         ],
         "operationId": "CreateTeamEmailTemplate",
         "parameters": [
@@ -940,7 +940,7 @@
     "/admin/teams/{teamId}/email-templates/{id}": {
       "get": {
         "tags": [
-          "Handler"
+          "Admin - Email Templates"
         ],
         "operationId": "GetTeamEmailTemplate",
         "parameters": [
@@ -1036,7 +1036,7 @@
       },
       "put": {
         "tags": [
-          "Handler"
+          "Admin - Email Templates"
         ],
         "operationId": "UpdateTeamEmailTemplate",
         "parameters": [
@@ -1135,7 +1135,7 @@
       },
       "delete": {
         "tags": [
-          "Handler"
+          "Admin - Email Templates"
         ],
         "operationId": "DeleteTeamEmailTemplate",
         "parameters": [
@@ -1239,7 +1239,7 @@
     "/admin/teams/{teamId}/email-templates/preview": {
       "post": {
         "tags": [
-          "PreviewEmailTemplateHttpEndpoint"
+          "Admin - Email Templates"
         ],
         "operationId": "PreviewTeamEmailTemplate",
         "parameters": [
@@ -1338,7 +1338,7 @@
     "/admin/teams/{teamId}/email-templates/{id}/test-send": {
       "post": {
         "tags": [
-          "Handler"
+          "Admin - Email Templates"
         ],
         "operationId": "TestSendTeamEmailTemplate",
         "parameters": [
@@ -1439,7 +1439,7 @@
     "/admin/teams/{teamId}/events/{eventId}/email-templates": {
       "get": {
         "tags": [
-          "Handler"
+          "Admin - Email Templates"
         ],
         "operationId": "GetEventEmailTemplates",
         "parameters": [
@@ -1530,7 +1530,7 @@
       },
       "post": {
         "tags": [
-          "Handler"
+          "Admin - Email Templates"
         ],
         "operationId": "CreateEventEmailTemplate",
         "parameters": [
@@ -1630,7 +1630,7 @@
     "/admin/teams/{teamId}/events/{eventId}/email-templates/{id}": {
       "get": {
         "tags": [
-          "Handler"
+          "Admin - Email Templates"
         ],
         "operationId": "GetEventEmailTemplate",
         "parameters": [
@@ -1727,7 +1727,7 @@
       },
       "put": {
         "tags": [
-          "Handler"
+          "Admin - Email Templates"
         ],
         "operationId": "UpdateEventEmailTemplate",
         "parameters": [
@@ -1827,7 +1827,7 @@
       },
       "delete": {
         "tags": [
-          "Handler"
+          "Admin - Email Templates"
         ],
         "operationId": "DeleteEventEmailTemplate",
         "parameters": [
@@ -1932,7 +1932,7 @@
     "/admin/teams/{teamId}/events/{eventId}/email-templates/preview": {
       "post": {
         "tags": [
-          "PreviewEmailTemplateHttpEndpoint"
+          "Admin - Email Templates"
         ],
         "operationId": "PreviewEventEmailTemplate",
         "parameters": [
@@ -2032,7 +2032,7 @@
     "/admin/teams/{teamId}/events/{eventId}/email-templates/{id}/test-send": {
       "post": {
         "tags": [
-          "Handler"
+          "Admin - Email Templates"
         ],
         "operationId": "TestSendEventEmailTemplate",
         "parameters": [
@@ -2134,7 +2134,7 @@
     "/admin/teams/{teamId}/events/{eventId}/bulk-emails/preview": {
       "post": {
         "tags": [
-          "PreviewBulkEmailHttpEndpoint"
+          "Admin - Bulk Emails"
         ],
         "operationId": "PreviewBulkEmail",
         "parameters": [
@@ -2234,7 +2234,7 @@
     "/admin/teams/{teamId}/events/{eventId}/bulk-emails": {
       "post": {
         "tags": [
-          "CreateBulkEmailHttpEndpoint"
+          "Admin - Bulk Emails"
         ],
         "operationId": "CreateBulkEmail",
         "parameters": [
@@ -2332,7 +2332,7 @@
       },
       "get": {
         "tags": [
-          "GetBulkEmailsHttpEndpoint"
+          "Admin - Bulk Emails"
         ],
         "operationId": "GetBulkEmails",
         "parameters": [
@@ -2425,7 +2425,7 @@
     "/admin/teams/{teamId}/events/{eventId}/bulk-emails/{bulkEmailJobId}": {
       "get": {
         "tags": [
-          "GetBulkEmailHttpEndpoint"
+          "Admin - Bulk Emails"
         ],
         "operationId": "GetBulkEmail",
         "parameters": [
@@ -2524,7 +2524,7 @@
     "/admin/teams/{teamId}/events/{eventId}/bulk-emails/{bulkEmailJobId}/cancel": {
       "post": {
         "tags": [
-          "CancelBulkEmailHttpEndpoint"
+          "Admin - Bulk Emails"
         ],
         "operationId": "CancelBulkEmail",
         "parameters": [
@@ -2616,7 +2616,7 @@
     "/admin/teams/{teamId}/events/{eventId}/registrations/{registrationId}/emails": {
       "get": {
         "tags": [
-          "GetAttendeeEmailsHttpEndpoint"
+          "Admin - Registrations"
         ],
         "operationId": "GetAttendeeEmails",
         "parameters": [
@@ -2718,7 +2718,7 @@
     "/admin/teams": {
       "post": {
         "tags": [
-          "CreateTeamHttpEndpoint"
+          "Admin - Teams"
         ],
         "operationId": "CreateTeam",
         "requestBody": {
@@ -2796,7 +2796,7 @@
       },
       "get": {
         "tags": [
-          "GetTeamsHttpEndpoint"
+          "Admin - Teams"
         ],
         "operationId": "GetTeams",
         "responses": {
@@ -2869,7 +2869,7 @@
     "/admin/teams/{teamId}": {
       "get": {
         "tags": [
-          "GetTeamHttpEndpoint"
+          "Admin - Teams"
         ],
         "operationId": "GetTeam",
         "parameters": [
@@ -2948,7 +2948,7 @@
       },
       "put": {
         "tags": [
-          "UpdateTeamHttpEndpoint"
+          "Admin - Teams"
         ],
         "operationId": "UpdateTeam",
         "parameters": [
@@ -3032,7 +3032,7 @@
     "/admin/teams/{teamId}/archive": {
       "post": {
         "tags": [
-          "ArchiveTeamHttpEndpoint"
+          "Admin - Teams"
         ],
         "operationId": "ArchiveTeam",
         "parameters": [
@@ -3116,7 +3116,7 @@
     "/admin/teams/{teamId}/members": {
       "get": {
         "tags": [
-          "GetTeamMembersHttpEndpoint"
+          "Admin - Teams"
         ],
         "operationId": "GetTeamMembers",
         "parameters": [
@@ -3198,7 +3198,7 @@
       },
       "post": {
         "tags": [
-          "AssignTeamMembershipHttpEndpoint"
+          "Admin - Teams"
         ],
         "operationId": "AssignTeamMembership",
         "parameters": [
@@ -3282,7 +3282,7 @@
     "/admin/teams/{teamId}/events": {
       "post": {
         "tags": [
-          "RequestTicketedEventCreationHttpEndpoint"
+          "Admin - Teams"
         ],
         "operationId": "RequestTicketedEventCreation",
         "parameters": [
@@ -3364,7 +3364,7 @@
       },
       "get": {
         "tags": [
-          "GetTicketedEventsHttpEndpoint"
+          "Admin - Events"
         ],
         "operationId": "GetTicketedEvents",
         "parameters": [
@@ -3448,7 +3448,7 @@
     "/admin/teams/{teamId}/event-creations/{creationRequestId}": {
       "get": {
         "tags": [
-          "GetEventCreationRequestHttpEndpoint"
+          "Admin - Teams"
         ],
         "operationId": "GetEventCreationRequest",
         "parameters": [
@@ -3538,7 +3538,7 @@
     "/admin/teams/{teamId}/members/{email}": {
       "put": {
         "tags": [
-          "ChangeTeamMembershipRoleHttpEndpoint"
+          "Admin - Teams"
         ],
         "operationId": "ChangeTeamMembershipRole",
         "parameters": [
@@ -3628,7 +3628,7 @@
       },
       "delete": {
         "tags": [
-          "RemoveTeamMembershipHttpEndpoint"
+          "Admin - Teams"
         ],
         "operationId": "RemoveTeamMembership",
         "parameters": [
@@ -3710,7 +3710,7 @@
     "/admin/teams/{teamId}/api-keys": {
       "post": {
         "tags": [
-          "CreateApiKeyHttpEndpoint"
+          "Admin - Teams"
         ],
         "operationId": "CreateApiKey",
         "parameters": [
@@ -3799,7 +3799,7 @@
       },
       "get": {
         "tags": [
-          "GetApiKeysHttpEndpoint"
+          "Admin - Teams"
         ],
         "operationId": "GetApiKeys",
         "parameters": [
@@ -3883,7 +3883,7 @@
     "/admin/teams/{teamId}/api-keys/{keyId}": {
       "delete": {
         "tags": [
-          "RevokeApiKeyHttpEndpoint"
+          "Admin - Teams"
         ],
         "operationId": "RevokeApiKey",
         "parameters": [
@@ -3966,7 +3966,7 @@
     "/admin/teams/{teamId}/events/{eventId}": {
       "get": {
         "tags": [
-          "GetTicketedEventDetailsHttpEndpoint"
+          "Admin - Events"
         ],
         "operationId": "GetTicketedEventDetails",
         "parameters": [
@@ -4057,7 +4057,7 @@
       },
       "put": {
         "tags": [
-          "UpdateTicketedEventDetailsHttpEndpoint"
+          "Admin - Events"
         ],
         "operationId": "UpdateTicketedEventDetails",
         "parameters": [
@@ -4150,7 +4150,7 @@
     "/admin/teams/{teamId}/events/{eventId}/archive": {
       "post": {
         "tags": [
-          "ArchiveTicketedEventHttpEndpoint"
+          "Admin - Events"
         ],
         "operationId": "ArchiveTicketedEvent",
         "parameters": [
@@ -4233,7 +4233,7 @@
     "/admin/teams/{teamId}/events/{eventId}/registration-policy": {
       "put": {
         "tags": [
-          "ConfigureRegistrationPolicyHttpEndpoint"
+          "Admin - Events"
         ],
         "operationId": "ConfigureRegistrationPolicy",
         "parameters": [
@@ -4326,7 +4326,7 @@
     "/admin/teams/{teamId}/events/{eventId}/reconfirm-policy": {
       "put": {
         "tags": [
-          "ConfigureReconfirmPolicyHttpEndpoint"
+          "Admin - Events"
         ],
         "operationId": "ConfigureReconfirmPolicy",
         "parameters": [
@@ -4419,7 +4419,7 @@
     "/admin/teams/{teamId}/events/{eventId}/time-zone": {
       "put": {
         "tags": [
-          "UpdateTicketedEventTimeZoneHttpEndpoint"
+          "Admin - Events"
         ],
         "operationId": "UpdateTicketedEventTimeZone",
         "parameters": [
@@ -4512,7 +4512,7 @@
     "/admin/teams/{teamId}/events/{eventId}/additional-detail-schema": {
       "put": {
         "tags": [
-          "UpdateAdditionalDetailSchemaHttpEndpoint"
+          "Admin - Events"
         ],
         "operationId": "UpdateAdditionalDetailSchema",
         "parameters": [
@@ -4605,7 +4605,7 @@
     "/admin/teams/{teamId}/events/{eventId}/registrations": {
       "post": {
         "tags": [
-          "AdminRegisterAttendeeHttpEndpoint"
+          "Admin - Registrations"
         ],
         "operationId": "AdminRegisterAttendee",
         "parameters": [
@@ -4703,7 +4703,7 @@
       },
       "get": {
         "tags": [
-          "GetRegistrationsHttpEndpoint"
+          "Admin - Registrations"
         ],
         "operationId": "GetRegistrations",
         "parameters": [
@@ -4799,7 +4799,7 @@
     "/admin/teams/{teamId}/events/{eventId}/registrations/export": {
       "get": {
         "tags": [
-          "ExportRegistrationsCsvHttpEndpoint"
+          "Admin - Registrations"
         ],
         "operationId": "ExportRegistrationsCsv",
         "parameters": [
@@ -4882,7 +4882,7 @@
     "/admin/teams/{teamId}/events/{eventId}/registrations/{registrationId}": {
       "get": {
         "tags": [
-          "GetRegistrationDetailsHttpEndpoint"
+          "Admin - Registrations"
         ],
         "operationId": "GetRegistrationDetails",
         "parameters": [
@@ -4984,7 +4984,7 @@
     "/admin/teams/{teamId}/events/{eventId}/registrations/{registrationId}/cancel": {
       "post": {
         "tags": [
-          "CancelRegistrationHttpEndpoint"
+          "Admin - Registrations"
         ],
         "operationId": "CancelRegistration",
         "parameters": [
@@ -5086,7 +5086,7 @@
     "/admin/teams/{teamId}/events/{eventId}/registrations/{registrationId}/tickets": {
       "put": {
         "tags": [
-          "ChangeAttendeeTicketsHttpEndpoint"
+          "Admin - Registrations"
         ],
         "operationId": "ChangeAttendeeTickets",
         "parameters": [
@@ -5188,7 +5188,7 @@
     "/admin/teams/{teamId}/events/{eventId}/coupons": {
       "post": {
         "tags": [
-          "CreateCouponHttpEndpoint"
+          "Admin - Coupons"
         ],
         "operationId": "CreateCoupon",
         "parameters": [
@@ -5286,7 +5286,7 @@
       },
       "get": {
         "tags": [
-          "ListCouponsHttpEndpoint"
+          "Admin - Coupons"
         ],
         "operationId": "ListCoupons",
         "parameters": [
@@ -5376,7 +5376,7 @@
     "/admin/teams/{teamId}/events/{eventId}/coupons/{couponId}": {
       "get": {
         "tags": [
-          "GetCouponDetailsHttpEndpoint"
+          "Admin - Coupons"
         ],
         "operationId": "GetCouponDetails",
         "parameters": [
@@ -5475,7 +5475,7 @@
     "/admin/teams/{teamId}/events/{eventId}/coupons/{couponId}/revoke": {
       "post": {
         "tags": [
-          "RevokeCouponHttpEndpoint"
+          "Admin - Coupons"
         ],
         "operationId": "RevokeCoupon",
         "parameters": [
@@ -5567,7 +5567,7 @@
     "/admin/teams/{teamId}/events/{eventId}/ticket-types": {
       "post": {
         "tags": [
-          "AddTicketTypeHttpEndpoint"
+          "Admin - Ticket Types"
         ],
         "operationId": "AddTicketType",
         "parameters": [
@@ -5665,7 +5665,7 @@
       },
       "get": {
         "tags": [
-          "GetTicketTypesHttpEndpoint"
+          "Admin - Ticket Types"
         ],
         "operationId": "GetTicketTypes",
         "parameters": [
@@ -5758,7 +5758,7 @@
     "/admin/teams/{teamId}/events/{eventId}/ticket-types/{ticketTypeId}": {
       "put": {
         "tags": [
-          "UpdateTicketTypeHttpEndpoint"
+          "Admin - Ticket Types"
         ],
         "operationId": "UpdateTicketType",
         "parameters": [
@@ -5860,7 +5860,7 @@
     "/admin/teams/{teamId}/events/{eventId}/ticket-types/{ticketTypeId}/waitlist/{entryId}": {
       "delete": {
         "tags": [
-          "RemoveWaitlistEntryHttpEndpoint"
+          "Admin - Waitlist"
         ],
         "operationId": "RemoveWaitlistEntry",
         "parameters": [
@@ -5961,7 +5961,7 @@
     "/admin/teams/{teamId}/events/{eventId}/ticket-types/{ticketTypeId}/waitlist": {
       "get": {
         "tags": [
-          "GetWaitlistDetailsHttpEndpoint"
+          "Admin - Waitlist"
         ],
         "operationId": "GetWaitlistDetails",
         "parameters": [
@@ -6063,7 +6063,7 @@
     "/admin/teams/{teamId}/events/{eventId}/badge-types": {
       "post": {
         "tags": [
-          "AddBadgeTypeHttpEndpoint"
+          "Admin - Badges"
         ],
         "operationId": "AddBadgeType",
         "parameters": [
@@ -6161,7 +6161,7 @@
       },
       "get": {
         "tags": [
-          "GetBadgeTypesHttpEndpoint"
+          "Admin - Badges"
         ],
         "operationId": "GetBadgeTypes",
         "parameters": [
@@ -6251,7 +6251,7 @@
     "/admin/teams/{teamId}/events/{eventId}/badge-types/{badgeTypeId}": {
       "put": {
         "tags": [
-          "RenameBadgeTypeHttpEndpoint"
+          "Admin - Badges"
         ],
         "operationId": "RenameBadgeType",
         "parameters": [
@@ -6351,7 +6351,7 @@
       },
       "delete": {
         "tags": [
-          "DeleteBadgeTypeHttpEndpoint"
+          "Admin - Badges"
         ],
         "operationId": "DeleteBadgeType",
         "parameters": [
@@ -6443,7 +6443,7 @@
     "/admin/teams/{teamId}/events/{eventId}/badge-types/{badgeTypeId}/instances": {
       "post": {
         "tags": [
-          "AddBadgeInstanceHttpEndpoint"
+          "Admin - Badges"
         ],
         "operationId": "AddBadgeInstance",
         "parameters": [
@@ -6550,7 +6550,7 @@
       },
       "get": {
         "tags": [
-          "GetBadgeInstancesHttpEndpoint"
+          "Admin - Badges"
         ],
         "operationId": "ListBadgeInstances",
         "parameters": [
@@ -6652,7 +6652,7 @@
     "/admin/teams/{teamId}/events/{eventId}/badge-types/{badgeTypeId}/instances/{badgeInstanceId}": {
       "put": {
         "tags": [
-          "UpdateBadgeInstanceHttpEndpoint"
+          "Admin - Badges"
         ],
         "operationId": "UpdateBadgeInstance",
         "parameters": [
@@ -6761,7 +6761,7 @@
       },
       "delete": {
         "tags": [
-          "DeleteBadgeInstanceHttpEndpoint"
+          "Admin - Badges"
         ],
         "operationId": "DeleteBadgeInstance",
         "parameters": [
@@ -6862,7 +6862,7 @@
     "/admin/teams/{teamId}/events/{eventId}/badge-types/{badgeTypeId}/export": {
       "get": {
         "tags": [
-          "ExportBadgeCsvHttpEndpoint"
+          "Admin - Badges"
         ],
         "operationId": "ExportBadgeCsv",
         "parameters": [
@@ -6948,22 +6948,13 @@
         }
       }
     },
-    "/api/teams/{teamId}/events/{eventId}/otp/request": {
+    "/api/events/{eventId}/otp/request": {
       "post": {
         "tags": [
-          "RequestOtpHttpEndpoint"
+          "Public"
         ],
         "operationId": "RequestOtp",
         "parameters": [
-          {
-            "name": "teamId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
           {
             "name": "eventId",
             "in": "path",
@@ -7048,22 +7039,13 @@
         }
       }
     },
-    "/api/teams/{teamId}/events/{eventId}/otp/verify": {
+    "/api/events/{eventId}/otp/verify": {
       "post": {
         "tags": [
-          "VerifyOtpHttpEndpoint"
+          "Public"
         ],
         "operationId": "VerifyOtp",
         "parameters": [
-          {
-            "name": "teamId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
           {
             "name": "eventId",
             "in": "path",
@@ -7148,22 +7130,13 @@
         }
       }
     },
-    "/api/teams/{teamId}/events/{eventId}/registrations": {
+    "/api/events/{eventId}/registrations": {
       "post": {
         "tags": [
-          "RegisterAttendeeSelfServiceHttpEndpoint"
+          "Public"
         ],
         "operationId": "RegisterAttendeeSelfService",
         "parameters": [
-          {
-            "name": "teamId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
           {
             "name": "eventId",
             "in": "path",
@@ -7210,7 +7183,7 @@
             "content": {
               "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
+                  "$ref": "#/components/schemas/RegisterAttendeeSelfServiceTicketStateConflictProblemDetails"
                 }
               }
             }
@@ -7248,22 +7221,13 @@
         }
       }
     },
-    "/api/teams/{teamId}/events/{eventId}/registrations/coupon": {
+    "/api/events/{eventId}/registrations/coupon": {
       "post": {
         "tags": [
-          "RegisterAttendeeWithCouponHttpEndpoint"
+          "Public"
         ],
         "operationId": "RegisterAttendeeWithCoupon",
         "parameters": [
-          {
-            "name": "teamId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
           {
             "name": "eventId",
             "in": "path",
@@ -7348,22 +7312,13 @@
         }
       }
     },
-    "/api/teams/{teamId}/events/{eventId}/registrations/{registrationId}/qr-code": {
+    "/api/events/{eventId}/registrations/{registrationId}/qr-code": {
       "get": {
         "tags": [
-          "GetQRCodeHttpEndpoint"
+          "Public"
         ],
         "operationId": "GetQRCode",
         "parameters": [
-          {
-            "name": "teamId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
           {
             "name": "eventId",
             "in": "path",
@@ -7454,22 +7409,13 @@
         }
       }
     },
-    "/api/teams/{teamId}/events/{eventId}/registrations/{registrationId}/cancel": {
+    "/api/events/{eventId}/registrations/{registrationId}/cancel": {
       "post": {
         "tags": [
-          "SelfCancelRegistrationHttpEndpoint"
+          "Public"
         ],
         "operationId": "SelfCancelRegistration",
         "parameters": [
-          {
-            "name": "teamId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
           {
             "name": "eventId",
             "in": "path",
@@ -7553,22 +7499,13 @@
         }
       }
     },
-    "/api/teams/{teamId}/events/{eventId}/registrations/{registrationId}/tickets": {
+    "/api/events/{eventId}/registrations/{registrationId}/tickets": {
       "put": {
         "tags": [
-          "SelfChangeTicketsHttpEndpoint"
+          "Public"
         ],
         "operationId": "SelfChangeTickets",
         "parameters": [
-          {
-            "name": "teamId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
           {
             "name": "eventId",
             "in": "path",
@@ -7662,22 +7599,13 @@
         }
       }
     },
-    "/api/teams/{teamId}/events/{eventId}/ticket-types": {
+    "/api/events/{eventId}/ticket-types": {
       "get": {
         "tags": [
-          "GetPublicTicketTypesHttpEndpoint"
+          "Public"
         ],
         "operationId": "GetPublicTicketTypes",
         "parameters": [
-          {
-            "name": "teamId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
           {
             "name": "eventId",
             "in": "path",
@@ -7765,22 +7693,13 @@
         }
       }
     },
-    "/api/teams/{teamId}/events/{eventId}/waitlist/{ticketTypeId}": {
+    "/api/events/{eventId}/waitlist/{ticketTypeId}": {
       "post": {
         "tags": [
-          "JoinWaitlistHttpEndpoint"
+          "Public"
         ],
         "operationId": "JoinWaitlist",
         "parameters": [
-          {
-            "name": "teamId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
           {
             "name": "eventId",
             "in": "path",
@@ -7875,19 +7794,10 @@
       },
       "delete": {
         "tags": [
-          "LeaveWaitlistHttpEndpoint"
+          "Public"
         ],
         "operationId": "LeaveWaitlist",
         "parameters": [
-          {
-            "name": "teamId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
           {
             "name": "eventId",
             "in": "path",
@@ -7982,22 +7892,13 @@
         }
       }
     },
-    "/api/teams/{teamId}/events/{eventId}/coupons/{couponCode}": {
+    "/api/events/{eventId}/coupons/{couponCode}": {
       "get": {
         "tags": [
-          "GetPublicCouponDetailsHttpEndpoint"
+          "Public"
         ],
         "operationId": "GetPublicCouponDetails",
         "parameters": [
-          {
-            "name": "teamId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
           {
             "name": "eventId",
             "in": "path",
@@ -10187,6 +10088,82 @@
           }
         }
       },
+      "RegisterAttendeeSelfServiceTicketStateConflictProblemDetails": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "title": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "status": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          },
+          "detail": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "instance": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "code": {
+            "type": "string"
+          },
+          "registerableTicketTypeIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "waitlistableTicketTypeIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "unavailableTicketTypeIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "unknownTicketTypeIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "invalidForRequestedActionTicketTypeIds": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
       "RegisterAttendeeWithCouponHttpRequest": {
         "required": [
           "couponCode",
@@ -11206,8 +11183,8 @@
         "type": "oauth2",
         "flows": {
           "authorizationCode": {
-            "authorizationUrl": "http://localhost:60529/realms/admitto/protocol/openid-connect/auth",
-            "tokenUrl": "http://localhost:60529/realms/admitto/protocol/openid-connect/token",
+            "authorizationUrl": "http://localhost:15001/realms/admitto/protocol/openid-connect/auth",
+            "tokenUrl": "http://localhost:15001/realms/admitto/protocol/openid-connect/token",
             "scopes": {
               "openid": "OpenID Connect",
               "profile": "User profile",
@@ -11225,199 +11202,37 @@
   ],
   "tags": [
     {
-      "name": "Handler"
+      "name": "Admin - Email Settings"
     },
     {
-      "name": "PreviewEmailTemplateHttpEndpoint"
+      "name": "Admin - Email Templates"
     },
     {
-      "name": "PreviewBulkEmailHttpEndpoint"
+      "name": "Admin - Bulk Emails"
     },
     {
-      "name": "CreateBulkEmailHttpEndpoint"
+      "name": "Admin - Registrations"
     },
     {
-      "name": "GetBulkEmailsHttpEndpoint"
+      "name": "Admin - Teams"
     },
     {
-      "name": "GetBulkEmailHttpEndpoint"
+      "name": "Admin - Events"
     },
     {
-      "name": "CancelBulkEmailHttpEndpoint"
+      "name": "Admin - Coupons"
     },
     {
-      "name": "GetAttendeeEmailsHttpEndpoint"
+      "name": "Admin - Ticket Types"
     },
     {
-      "name": "CreateTeamHttpEndpoint"
+      "name": "Admin - Waitlist"
     },
     {
-      "name": "GetTeamsHttpEndpoint"
+      "name": "Admin - Badges"
     },
     {
-      "name": "GetTeamHttpEndpoint"
-    },
-    {
-      "name": "UpdateTeamHttpEndpoint"
-    },
-    {
-      "name": "ArchiveTeamHttpEndpoint"
-    },
-    {
-      "name": "GetTeamMembersHttpEndpoint"
-    },
-    {
-      "name": "AssignTeamMembershipHttpEndpoint"
-    },
-    {
-      "name": "RequestTicketedEventCreationHttpEndpoint"
-    },
-    {
-      "name": "GetTicketedEventsHttpEndpoint"
-    },
-    {
-      "name": "GetEventCreationRequestHttpEndpoint"
-    },
-    {
-      "name": "ChangeTeamMembershipRoleHttpEndpoint"
-    },
-    {
-      "name": "RemoveTeamMembershipHttpEndpoint"
-    },
-    {
-      "name": "CreateApiKeyHttpEndpoint"
-    },
-    {
-      "name": "GetApiKeysHttpEndpoint"
-    },
-    {
-      "name": "RevokeApiKeyHttpEndpoint"
-    },
-    {
-      "name": "GetTicketedEventDetailsHttpEndpoint"
-    },
-    {
-      "name": "UpdateTicketedEventDetailsHttpEndpoint"
-    },
-    {
-      "name": "ArchiveTicketedEventHttpEndpoint"
-    },
-    {
-      "name": "ConfigureRegistrationPolicyHttpEndpoint"
-    },
-    {
-      "name": "ConfigureReconfirmPolicyHttpEndpoint"
-    },
-    {
-      "name": "UpdateTicketedEventTimeZoneHttpEndpoint"
-    },
-    {
-      "name": "UpdateAdditionalDetailSchemaHttpEndpoint"
-    },
-    {
-      "name": "AdminRegisterAttendeeHttpEndpoint"
-    },
-    {
-      "name": "GetRegistrationsHttpEndpoint"
-    },
-    {
-      "name": "ExportRegistrationsCsvHttpEndpoint"
-    },
-    {
-      "name": "GetRegistrationDetailsHttpEndpoint"
-    },
-    {
-      "name": "CancelRegistrationHttpEndpoint"
-    },
-    {
-      "name": "ChangeAttendeeTicketsHttpEndpoint"
-    },
-    {
-      "name": "CreateCouponHttpEndpoint"
-    },
-    {
-      "name": "ListCouponsHttpEndpoint"
-    },
-    {
-      "name": "GetCouponDetailsHttpEndpoint"
-    },
-    {
-      "name": "RevokeCouponHttpEndpoint"
-    },
-    {
-      "name": "AddTicketTypeHttpEndpoint"
-    },
-    {
-      "name": "GetTicketTypesHttpEndpoint"
-    },
-    {
-      "name": "UpdateTicketTypeHttpEndpoint"
-    },
-    {
-      "name": "RemoveWaitlistEntryHttpEndpoint"
-    },
-    {
-      "name": "GetWaitlistDetailsHttpEndpoint"
-    },
-    {
-      "name": "AddBadgeTypeHttpEndpoint"
-    },
-    {
-      "name": "GetBadgeTypesHttpEndpoint"
-    },
-    {
-      "name": "RenameBadgeTypeHttpEndpoint"
-    },
-    {
-      "name": "DeleteBadgeTypeHttpEndpoint"
-    },
-    {
-      "name": "AddBadgeInstanceHttpEndpoint"
-    },
-    {
-      "name": "GetBadgeInstancesHttpEndpoint"
-    },
-    {
-      "name": "UpdateBadgeInstanceHttpEndpoint"
-    },
-    {
-      "name": "DeleteBadgeInstanceHttpEndpoint"
-    },
-    {
-      "name": "ExportBadgeCsvHttpEndpoint"
-    },
-    {
-      "name": "RequestOtpHttpEndpoint"
-    },
-    {
-      "name": "VerifyOtpHttpEndpoint"
-    },
-    {
-      "name": "RegisterAttendeeSelfServiceHttpEndpoint"
-    },
-    {
-      "name": "RegisterAttendeeWithCouponHttpEndpoint"
-    },
-    {
-      "name": "GetQRCodeHttpEndpoint"
-    },
-    {
-      "name": "SelfCancelRegistrationHttpEndpoint"
-    },
-    {
-      "name": "SelfChangeTicketsHttpEndpoint"
-    },
-    {
-      "name": "GetPublicTicketTypesHttpEndpoint"
-    },
-    {
-      "name": "JoinWaitlistHttpEndpoint"
-    },
-    {
-      "name": "LeaveWaitlistHttpEndpoint"
-    },
-    {
-      "name": "GetPublicCouponDetailsHttpEndpoint"
+      "name": "Public"
     }
   ]
 }

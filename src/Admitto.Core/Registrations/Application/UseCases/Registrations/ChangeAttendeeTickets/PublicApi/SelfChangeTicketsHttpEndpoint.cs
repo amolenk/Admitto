@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Core.Shared.Application.Auth;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 
@@ -14,7 +15,7 @@ public static class SelfChangeTicketsHttpEndpoint
     }
 
     private static async ValueTask<IResult> SelfChangeTickets(
-        Guid teamId,
+        HttpContext httpContext,
         Guid eventId,
         Guid registrationId,
         SelfChangeTicketsHttpRequest request,
@@ -23,6 +24,7 @@ public static class SelfChangeTicketsHttpEndpoint
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
+        var teamId = httpContext.User.GetRequiredTeamId();
         var command = new ChangeAttendeeTicketsCommand(
             eventId,
             teamId,

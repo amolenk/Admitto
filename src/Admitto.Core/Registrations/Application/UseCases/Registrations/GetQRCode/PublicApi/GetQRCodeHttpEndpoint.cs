@@ -1,6 +1,7 @@
 using Amolenk.Admitto.Core.Registrations.Application.Common.Cryptography;
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
+using Amolenk.Admitto.Core.Shared.Application.Auth;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using QRCoder;
 
@@ -17,7 +18,7 @@ public static class GetQRCodeHttpEndpoint
     }
 
     private static async ValueTask<FileContentHttpResult> GetQRCode(
-        Guid teamId,
+        HttpContext httpContext,
         Guid eventId,
         Guid registrationId,
         string? signature,
@@ -25,7 +26,16 @@ public static class GetQRCodeHttpEndpoint
         IRegistrationsWriteStore writeStore,
         CancellationToken cancellationToken)
     {
+        var teamId = httpContext.User.GetRequiredTeamId();
         var typedEventId = TicketedEventId.From(eventId);
+        var typedTeamId = TeamId.From(teamId);
+
+        var eventExists = await writeStore.TicketedEvents
+            .AsNoTracking()
+            .AnyAsync(e => e.Id == typedEventId && e.TeamId == typedTeamId, cancellationToken);
+
+        if (!eventExists)
+            throw new BusinessRuleViolationException(Errors.EventNotFound);
 
         if (string.IsNullOrEmpty(signature) ||
             !await registrationSigner.IsValidAsync(registrationId, signature, typedEventId, cancellationToken))
@@ -38,7 +48,7 @@ public static class GetQRCodeHttpEndpoint
         var registrationExists = await writeStore.Registrations
             .AsNoTracking()
             .AnyAsync(
-                r => r.Id == typedRegistrationId && r.EventId == typedEventId,
+                r => r.Id == typedRegistrationId && r.EventId == typedEventId && r.TeamId == typedTeamId,
                 cancellationToken);
 
         if (!registrationExists)
@@ -64,6 +74,11 @@ public static class GetQRCodeHttpEndpoint
             "registration.invalid_signature",
             "The provided signature is missing or invalid.",
             Type: ErrorType.Forbidden);
+
+        public static readonly Error EventNotFound = new(
+            "ticketed_event.not_found",
+            "The ticketed event could not be found.",
+            Type: ErrorType.NotFound);
 
         public static readonly Error RegistrationNotFound = new(
             "registration.not_found",

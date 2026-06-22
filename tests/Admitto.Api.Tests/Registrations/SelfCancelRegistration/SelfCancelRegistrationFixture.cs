@@ -17,7 +17,7 @@ internal sealed class SelfCancelRegistrationFixture
     public RegistrationId RegistrationId { get; private set; } = RegistrationId.New();
     public string ApiKey => ApiKeyTestHelper.TestRawKey;
 
-    public string CancelRoute => $"/api/teams/{TeamId.Value}/events/{EventId.Value}/registrations/{RegistrationId.Value}/cancel";
+    public string CancelRoute => $"/api/events/{EventId.Value}/registrations/{RegistrationId.Value}/cancel";
 
     private SelfCancelRegistrationFixture() { }
 

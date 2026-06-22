@@ -1,14 +1,14 @@
 ## ADDED Requirements
 
 ### Requirement: Attendee can request an OTP code for email verification
-The system SHALL expose a public endpoint `POST /events/{teamSlug}/{eventSlug}/otp/request` that accepts an email address and issues a 6-digit one-time password (OTP) delivered to that address. The 6-digit code SHALL be generated using a cryptographically secure random number generator (CSPRNG). The OTP SHALL be stored as a SHA-256 hash alongside the SHA-256 hash of the email (lowercased), the event scope, an expiry of 10 minutes from issuance, and a failed-attempts counter initialised to zero. Requesting a new OTP for the same email+event SHALL invalidate (mark as superseded) all previous unexpired codes for that email+event.
+The system SHALL expose an API-key-protected public endpoint `POST /api/events/{eventId}/otp/request` that accepts an email address and issues a 6-digit one-time password (OTP) delivered to that address. The endpoint SHALL derive `TeamId` from the authenticated API-key principal and use `{eventId}` from the route. The 6-digit code SHALL be generated using a cryptographically secure random number generator (CSPRNG). The OTP SHALL be stored as a SHA-256 hash alongside the SHA-256 hash of the email (lowercased), the event scope, an expiry of 10 minutes from issuance, and a failed-attempts counter initialised to zero. Requesting a new OTP for the same email+event SHALL invalidate (mark as superseded) all previous unexpired codes for that email+event.
 
 The system SHALL reject requests where more than 3 unexpired (or recently expired but still within the 10-minute window) OTP codes have already been issued for the same email+event combination, returning HTTP 429 Too Many Requests. The endpoint SHALL return HTTP 202 Accepted regardless of whether the email address has a current registration, to avoid email-address enumeration.
 
 OTP emails SHALL be delivered via the platform email infrastructure (not the per-event SMTP); delivery is asynchronous via the outbox. The system SHALL NOT expose the generated OTP code in the HTTP response.
 
 #### Scenario: SC001 Successful OTP request returns 202
-- **WHEN** an attendee posts `{"email": "dave@example.com"}` to the OTP request endpoint for an existing event
+- **WHEN** an attendee posts `{"email": "dave@example.com"}` to `POST /api/events/{eventId}/otp/request` for an existing event using a valid API key for the event's team
 - **THEN** the response is HTTP 202 Accepted, an OTP code is stored (hashed) for "dave@example.com" on that event, and an OTP delivery email is queued via the outbox
 
 #### Scenario: SC002 Unknown email returns 202 (no enumeration)
@@ -24,19 +24,19 @@ OTP emails SHALL be delivered via the platform email infrastructure (not the per
 - **THEN** the response is HTTP 429 Too Many Requests and no new OTP code is issued
 
 #### Scenario: SC005 Unknown event returns 404
-- **WHEN** an attendee posts an OTP request for a teamSlug/eventSlug that does not exist
+- **WHEN** an attendee posts an OTP request for an event ID that does not exist for the API key's team
 - **THEN** the response is HTTP 404 Not Found
 
 ---
 
 ### Requirement: Attendee can verify an OTP code and receive a verification token
-The system SHALL expose a public endpoint `POST /events/{teamSlug}/{eventSlug}/otp/verify` that accepts an email address and a 6-digit OTP code. On successful verification the system SHALL return a short-lived HMAC-signed JWT (HS256) containing `email`, `eventId`, `teamId`, and `exp` (15 minutes from issuance). The OTP code SHALL be marked as used (`UsedAt` set) and SHALL NOT be accepted again. The failed-attempts counter SHALL be incremented on each mismatch; after 5 failed attempts the code SHALL be permanently locked and return HTTP 422 Unprocessable Entity on any further attempt, even before expiry.
+The system SHALL expose an API-key-protected public endpoint `POST /api/events/{eventId}/otp/verify` that accepts an email address and a 6-digit OTP code. The endpoint SHALL derive `TeamId` from the authenticated API-key principal and use `{eventId}` from the route. On successful verification the system SHALL return a short-lived HMAC-signed JWT (HS256) containing `email`, `eventId`, `teamId`, and `exp` (15 minutes from issuance). The OTP code SHALL be marked as used (`UsedAt` set) and SHALL NOT be accepted again. The failed-attempts counter SHALL be incremented on each mismatch; after 5 failed attempts the code SHALL be permanently locked and return HTTP 422 Unprocessable Entity on any further attempt, even before expiry.
 
 The system SHALL reject: expired codes (HTTP 422), already-used codes (HTTP 422), locked codes (HTTP 422), codes not found for the supplied email+event (HTTP 422). All rejection reasons SHALL return the same HTTP status and a generic `"otp invalid or expired"` message to prevent oracle attacks.
 
 #### Scenario: SC006 Successful OTP verification returns token
 - **GIVEN** an unexpired, unused OTP code for "dave@example.com" on event "devconf-2026"
-- **WHEN** the attendee posts `{"email": "dave@example.com", "code": "<correct-code>"}` to the verify endpoint
+- **WHEN** the attendee posts `{"email": "dave@example.com", "code": "<correct-code>"}` to `POST /api/events/{eventId}/otp/verify` using a valid API key for the event's team
 - **THEN** the response is HTTP 200 with a signed JWT token containing email "dave@example.com" and the event's ID, and the OTP code is marked as used
 
 #### Scenario: SC007 Wrong OTP code increments failed attempts

@@ -27,7 +27,6 @@ internal sealed class GetTicketedEventEmailContextHandler(
             {
                 Name = e.Name.Value,
                 WebsiteUrl = e.WebsiteUrl.Value.ToString(),
-                TeamId = e.TeamId.Value,
                 EventId = e.Id.Value,
                 BaseUrl = e.BaseUrl.Value.ToString()
             })
@@ -39,7 +38,7 @@ internal sealed class GetTicketedEventEmailContextHandler(
             query.RegistrationId, ticketedEventId, cancellationToken);
 
         var qrCodeLink =
-            $"{fields.BaseUrl.TrimEnd('/')}/teams/{fields.TeamId}/events/{fields.EventId}" +
+            $"{fields.BaseUrl.TrimEnd('/')}/api/events/{fields.EventId}" +
             $"/registrations/{query.RegistrationId}/qr-code?signature={signature}";
 
         string? firstName = null;

@@ -20,7 +20,7 @@ internal sealed class SelfChangeTicketsFixture
     public string ApiKey => ApiKeyTestHelper.TestRawKey;
 
     public string ChangeTicketsRoute =>
-        $"/api/teams/{TeamId.Value}/events/{EventId.Value}/registrations/{RegistrationId.Value}/tickets";
+        $"/api/events/{EventId.Value}/registrations/{RegistrationId.Value}/tickets";
 
     private SelfChangeTicketsFixture() { }
 

@@ -6,17 +6,17 @@ TBD — capability added by change `add-qr-code-endpoint`.
 
 ### Requirement: Public QR-code endpoint returns a signed registration's PNG
 
-The Registrations module SHALL expose a public, unauthenticated HTTP endpoint at `GET /teams/{teamSlug}/events/{eventSlug}/registrations/{registrationId}/qr-code?signature={signature}` that returns a PNG image of a QR code for a successfully-validated registration. The response SHALL have content type `image/png` and a content-disposition that suggests the filename `qrcode.png`.
+The Registrations module SHALL expose an API-key-protected public HTTP endpoint at `GET /api/events/{eventId}/registrations/{registrationId}/qr-code?signature={signature}` that returns a PNG image of a successfully validated registration QR code. The endpoint SHALL derive `TeamId` from the authenticated API-key principal and SHALL use `{eventId}` and `{registrationId}` from the URL path. The response SHALL have content type `image/png` and a content-disposition that suggests the filename `qrcode.png`.
 
 The QR code's encoded payload SHALL be the literal string `"{registrationId}:{signature}"` so that an offline scanner can later verify the signature without an additional HTTP round-trip. The QR code SHALL be generated with error-correction level Q.
 
 #### Scenario: Successful retrieval returns a PNG
-- **WHEN** an attendee with `RegistrationId` "reg-123" for event "DevConf" on team "acme" requests the endpoint with a `signature` value that is the valid HMAC-SHA256 signature of "reg-123" under the event's signing key
+- **WHEN** an attendee with `RegistrationId` "reg-123" requests `GET /api/events/{eventId}/registrations/reg-123/qr-code?signature={signature}` with a valid API key for the event's team and a valid HMAC-SHA256 signature for that registration under the event's signing key
 - **THEN** the response is `200 OK` with content type `image/png`, content-disposition `attachment; filename="qrcode.png"`, and the PNG decodes to a QR code whose payload is `"reg-123:{signature}"`
 
-#### Scenario: Endpoint is unauthenticated
-- **WHEN** an unauthenticated client makes the request with a valid signature
-- **THEN** the response is `200 OK` (no auth challenge is issued)
+#### Scenario: Endpoint requires API key
+- **WHEN** an unauthenticated client makes the request with a valid signature but without `X-Api-Key`
+- **THEN** the response is HTTP 401 and no signature or registration lookup is performed
 
 ---
 
@@ -26,8 +26,8 @@ The endpoint SHALL verify the signature against `(registrationId, ticketedEventI
 
 The order of checks SHALL be:
 
-1. Resolve `teamId` from `teamSlug` (404 on unknown team slug).
-2. Resolve `ticketedEventId` from `(teamId, eventSlug)` (404 on unknown event slug).
+1. Authenticate the required `X-Api-Key` and resolve `TeamId` from the API-key principal (401 on missing, invalid, or revoked key).
+2. Resolve `ticketedEventId` from `(TeamId, eventId)` (404 on unknown event for the API key's team).
 3. Verify the signature against `(registrationId, ticketedEventId)` using the per-event signing key (403 on missing or invalid signature).
 4. Load the registration; reject with 404 if it does not exist or does not belong to the resolved event.
 5. Generate and return the PNG.
@@ -46,8 +46,8 @@ A missing `signature` query parameter SHALL be treated identically to an invalid
 - **WHEN** the endpoint is called with a `registrationId` that does not exist but a signature that would validate over that id under the event's signing key
 - **THEN** the response is `404 Not Found` after signature verification has already passed
 
-#### Scenario: Unknown team or event slug is rejected before signature checking
-- **WHEN** the endpoint is called for `teamSlug` "ghost" or `eventSlug` "missing"
+#### Scenario: Unknown event is rejected before signature checking
+- **WHEN** the endpoint is called for an event ID that does not exist for the API key's team
 - **THEN** the response is `404 Not Found` and no signing key is loaded
 
 #### Scenario: Comparison uses a timing-safe primitive
@@ -60,7 +60,7 @@ A missing `signature` query parameter SHALL be treated identically to an invalid
 
 A signature SHALL be the URL-safe Base64 encoding (with `+` → `-`, `/` → `_`, `=` padding stripped) of the HMAC-SHA256 of the registration ID's canonical lowercase hex string under the per-event signing key.
 
-The signing key SHALL be the `SigningKey` of the `TicketedEvent` identified by `(teamSlug, eventSlug)` in the request path. A signature produced for one event SHALL NOT validate against any other event, even for the same registration ID.
+The signing key SHALL be the `SigningKey` of the `TicketedEvent` identified by `(TeamId, eventId)`, where `TeamId` comes from the API-key principal and `eventId` comes from the request path. A signature produced for one event SHALL NOT validate against any other event, even for the same registration ID.
 
 #### Scenario: Signature format is URL-safe Base64
 - **WHEN** the system signs `RegistrationId` "reg-123" for event "DevConf"

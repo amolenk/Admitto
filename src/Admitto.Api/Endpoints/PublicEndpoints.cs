@@ -1,5 +1,5 @@
-using Amolenk.Admitto.Api.Auth;
 using Amolenk.Admitto.ApiService.Middleware;
+using Amolenk.Admitto.Api.Auth;
 using Amolenk.Admitto.Core.Registrations;
 
 namespace Amolenk.Admitto.Api.Endpoints;
@@ -15,7 +15,6 @@ public static class PublicEndpoints
             .ProducesProblem(StatusCodes.Status429TooManyRequests)
             .ProducesProblem(StatusCodes.Status500InternalServerError)
             .AddEndpointFilter<ValidationFilter>()
-            .AddEndpointFilter<ApiKeyTeamScopeFilter>()
             .ProducesValidationProblem()
             .RequireAuthorization(policy =>
                 policy.AddAuthenticationSchemes(ApiKeyAuthenticationHandler.SchemeName)

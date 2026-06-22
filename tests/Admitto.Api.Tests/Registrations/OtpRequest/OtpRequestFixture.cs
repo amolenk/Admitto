@@ -14,7 +14,7 @@ internal sealed class OtpRequestFixture
     public TicketedEventId EventId { get; private set; } = TicketedEventId.New();
     public string ApiKey => ApiKeyTestHelper.TestRawKey;
 
-    public string RequestOtpRoute => $"/api/teams/{TeamId.Value}/events/{EventId.Value}/otp/request";
+    public string RequestOtpRoute => $"/api/events/{EventId.Value}/otp/request";
 
     private OtpRequestFixture() { }
 

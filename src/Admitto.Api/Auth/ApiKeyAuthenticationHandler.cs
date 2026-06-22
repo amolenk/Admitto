@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Encodings.Web;
 using Amolenk.Admitto.Core.Organization.Contracts;
+using Amolenk.Admitto.Core.Shared.Application.Auth;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
 
@@ -16,7 +17,6 @@ public class ApiKeyAuthenticationHandler(
     : AuthenticationHandler<ApiKeyAuthenticationOptions>(options, logger, encoder)
 {
     public const string SchemeName = "ApiKey";
-    public const string TeamIdClaimType = "team_id";
 
     protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
     {
@@ -41,7 +41,7 @@ public class ApiKeyAuthenticationHandler(
 
         var claims = new[]
         {
-            new Claim(TeamIdClaimType, teamId.Value.ToString())
+            new Claim(ApiKeyClaims.TeamIdClaimType, teamId.Value.ToString())
         };
 
         var identity = new ClaimsIdentity(claims, SchemeName);

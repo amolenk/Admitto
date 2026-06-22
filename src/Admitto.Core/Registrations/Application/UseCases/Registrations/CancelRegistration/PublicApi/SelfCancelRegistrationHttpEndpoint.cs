@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Shared.Application.Auth;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 
@@ -15,7 +16,7 @@ public static class SelfCancelRegistrationHttpEndpoint
     }
 
     private static async ValueTask<IResult> SelfCancelRegistration(
-        Guid teamId,
+        HttpContext httpContext,
         Guid eventId,
         Guid registrationId,
         ICommandHandler<CancelRegistrationCommand> handler,
@@ -23,6 +24,7 @@ public static class SelfCancelRegistrationHttpEndpoint
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
+        var teamId = httpContext.User.GetRequiredTeamId();
         var command = new CancelRegistrationCommand(
             registrationId,
             eventId,
