@@ -30,8 +30,17 @@ public class OutboxMessageEntityConfiguration : IEntityTypeConfiguration<OutboxM
             .IsRequired()
             .HasMaxLength(32);
 
+        builder.Property(e => e.CreatedAt)
+            .HasColumnName("created_at")
+            .HasColumnType("timestamptz")
+            .IsRequired();
+
         builder.HasIndex(e => e.State)
             .HasDatabaseName("IX_outbox_state")
+            .HasFilter("state = 'Pending'");
+
+        builder.HasIndex(e => new { e.State, e.CreatedAt })
+            .HasDatabaseName("IX_outbox_pending_created_at")
             .HasFilter("state = 'Pending'");
     }
 }

@@ -2,6 +2,7 @@ using Amolenk.Admitto.Core.Email.Application.Persistence;
 using Amolenk.Admitto.Core.Email.Application.Sending;
 using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
 using Amolenk.Admitto.Core.Email.Application.Templating;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.DeliverEmail;
 using Amolenk.Admitto.Core.Email.Domain.Entities;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
@@ -14,7 +15,7 @@ internal sealed class SendEmailHandler(
     IEffectiveEmailSettingsResolver settingsResolver,
     IEmailTemplateService templateService,
     IEmailRenderer renderer,
-    IEmailSender emailSender) : ICommandHandler<SendEmailCommand>, IWorkerOnly
+    [FromKeyedServices(EmailModule.Key)] IOutbox outbox) : ICommandHandler<SendEmailCommand>, IWorkerOnly
 {
     public async ValueTask HandleAsync(SendEmailCommand command, CancellationToken cancellationToken)
     {
@@ -25,15 +26,16 @@ internal sealed class SendEmailHandler(
             ? RegistrationId.From(command.RegistrationId.Value)
             : null;
 
-        // Dedup: skip if already processed.
-        var alreadySent = await writeStore.EmailLog
-            .AnyAsync(
+        // Dedup: skip terminal rows; pending rows can be retried by enqueueing delivery again.
+        var existing = await writeStore.EmailLog
+            .FirstOrDefaultAsync(
                 l => l.TeamId == teamId &&
                      l.TicketedEventId == ticketedEventId &&
+                     l.Recipient == recipient &&
                      l.IdempotencyKey == command.IdempotencyKey,
                 cancellationToken);
 
-        if (alreadySent)
+        if (existing is not null && existing.IsTerminal)
             return;
 
         var now = DateTimeOffset.UtcNow;
@@ -46,21 +48,25 @@ internal sealed class SendEmailHandler(
 
         if (settings is null || !settings.IsValid())
         {
-            writeStore.EmailLog.Add(
-                EmailLog.Create(
+            if (existing is null)
+            {
+                writeStore.EmailLog.Add(EmailLog.Create(
                     teamId: teamId,
                     ticketedEventId: ticketedEventId,
                     idempotencyKey: command.IdempotencyKey,
                     recipient: recipient,
                     emailType: command.EmailType,
                     subject: string.Empty,
-                    provider: emailSender.Provider,
-                    providerMessageId: null,
                     status: EmailLogStatus.Failed,
                     sentAt: null,
                     statusUpdatedAt: now,
                     lastError: "Email settings not configured or incomplete.",
                     registrationId: registrationId));
+            }
+            else
+            {
+                existing.MarkFailed(string.Empty, "Email settings not configured or incomplete.", now);
+            }
             return;
         }
 
@@ -77,70 +83,52 @@ internal sealed class SendEmailHandler(
         }
         catch (EmailRenderException ex)
         {
-            writeStore.EmailLog.Add(
-                EmailLog.Create(
+            if (existing is null)
+            {
+                writeStore.EmailLog.Add(EmailLog.Create(
                     teamId: teamId,
                     ticketedEventId: ticketedEventId,
                     idempotencyKey: command.IdempotencyKey,
                     recipient: recipient,
                     emailType: command.EmailType,
                     subject: string.Empty,
-                    provider: emailSender.Provider,
-                    providerMessageId: null,
                     status: EmailLogStatus.Failed,
                     sentAt: null,
                     statusUpdatedAt: now,
                     lastError: ex.Message,
                     registrationId: registrationId));
+            }
+            else
+            {
+                existing.MarkFailed(string.Empty, ex.Message, now);
+            }
             return;
         }
 
-        // Send.
-        try
+        if (existing is null)
         {
-            var message = new EmailMessage(
-                RecipientAddress: command.RecipientAddress,
-                RecipientName: command.RecipientName,
-                Subject: rendered.Subject,
-                TextBody: rendered.TextBody,
-                HtmlBody: rendered.HtmlBody);
-
-            var providerMessageId = await emailSender.SendAsync(settings, message, cancellationToken);
-
-            writeStore.EmailLog.Add(
-                EmailLog.Create(
-                    teamId: teamId,
-                    ticketedEventId: ticketedEventId,
-                    idempotencyKey: command.IdempotencyKey,
-                    recipient: recipient,
-                    emailType: command.EmailType,
-                    subject: rendered.Subject,
-                    provider: emailSender.Provider,
-                    providerMessageId: providerMessageId,
-                    status: EmailLogStatus.Sent,
-                    sentAt: now,
-                    statusUpdatedAt: now,
-                    registrationId: registrationId));
+            writeStore.EmailLog.Add(EmailLog.Create(
+                teamId: teamId,
+                ticketedEventId: ticketedEventId,
+                idempotencyKey: command.IdempotencyKey,
+                recipient: recipient,
+                emailType: command.EmailType,
+                subject: rendered.Subject,
+                status: EmailLogStatus.Pending,
+                sentAt: null,
+                statusUpdatedAt: now,
+                registrationId: registrationId));
         }
-        catch (Exception ex)
-        {
-            writeStore.EmailLog.Add(
-                EmailLog.Create(
-                    teamId: teamId,
-                    ticketedEventId: ticketedEventId,
-                    idempotencyKey: command.IdempotencyKey,
-                    recipient: recipient,
-                    emailType: command.EmailType,
-                    subject: rendered.Subject,
-                    provider: emailSender.Provider,
-                    providerMessageId: null,
-                    status: EmailLogStatus.Failed,
-                    sentAt: null,
-                    statusUpdatedAt: DateTimeOffset.UtcNow,
-                    lastError: ex.Message,
-                    registrationId: registrationId));
 
-            throw;
-        }
+        outbox.Enqueue(new DeliverEmailCommand(
+            command.TeamId,
+            command.TicketedEventId,
+            command.RecipientAddress,
+            command.RecipientName,
+            command.EmailType,
+            command.IdempotencyKey,
+            rendered.Subject,
+            rendered.TextBody,
+            rendered.HtmlBody));
     }
 }

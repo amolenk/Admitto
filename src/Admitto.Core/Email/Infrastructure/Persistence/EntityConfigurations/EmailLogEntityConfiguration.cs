@@ -42,15 +42,6 @@ internal sealed class EmailLogEntityConfiguration : IEntityTypeConfiguration<Ema
             .HasMaxLength(500)
             .IsRequired();
 
-        builder.Property(e => e.Provider)
-            .HasColumnName("provider")
-            .HasMaxLength(100)
-            .IsRequired();
-
-        builder.Property(e => e.ProviderMessageId)
-            .HasColumnName("provider_message_id")
-            .HasMaxLength(200);
-
         builder.Property(e => e.Status)
             .HasColumnName("status")
             .HasConversion<int>()
@@ -68,6 +59,10 @@ internal sealed class EmailLogEntityConfiguration : IEntityTypeConfiguration<Ema
         builder.Property(e => e.LastError)
             .HasColumnName("last_error")
             .HasColumnType("text");
+
+        builder.Property(e => e.DeliveryAttemptCount)
+            .HasColumnName("delivery_attempt_count")
+            .IsRequired();
 
         builder.Property(e => e.BulkEmailJobId)
             .HasColumnName("bulk_email_job_id");
@@ -96,5 +91,6 @@ internal sealed class EmailLogEntityConfiguration : IEntityTypeConfiguration<Ema
 
         builder.HasIndex(e => new { e.TicketedEventId, e.RegistrationId })
             .HasDatabaseName("IX_email_log_event_registration");
+
     }
 }

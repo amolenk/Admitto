@@ -73,8 +73,6 @@ internal sealed class GetAttendeeEmailsFixture
                 recipient: EmailAddress.From("alice@example.com"),
                 emailType: "Confirmation",
                 subject: "Your DevConf registration",
-                provider: "test",
-                providerMessageId: null,
                 status: EmailLogStatus.Sent,
                 sentAt: sentAt,
                 statusUpdatedAt: sentAt,

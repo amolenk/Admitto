@@ -55,6 +55,8 @@ public static class EmailModuleExtensions
             services.AddSingleton<IEmailRenderer, ScribanEmailRenderer>();
             services.Configure<BulkEmailOptions>(
                 builder.Configuration.GetSection(BulkEmailOptions.SectionName));
+            services.Configure<EmailDeliveryOptions>(
+                builder.Configuration.GetSection("Email:Delivery"));
             services.Configure<SystemEmailOptions>(
                 builder.Configuration.GetSection(SystemEmailOptions.SectionName));
 

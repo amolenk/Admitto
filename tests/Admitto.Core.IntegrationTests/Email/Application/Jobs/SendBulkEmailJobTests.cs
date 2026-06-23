@@ -81,6 +81,31 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
     }
 
     [TestMethod]
+    public async ValueTask Execute_BeforeSmtpSend_WritesPendingEmailLog()
+    {
+        var (job, fakeSender, fanOut) = await SetupAsync(
+            recipients: [Recipient("alice@example.com")]);
+
+        var sawPendingLog = false;
+        fakeSender.OnBeforeSendAsync = async message =>
+        {
+            var idempotencyKey = $"bulk:{job.Id.Value:N}:{message.RecipientAddress.ToLowerInvariant()}";
+            var log = await Environment.EmailDatabase.Context.EmailLog
+                .AsNoTracking()
+                .SingleAsync(l => l.IdempotencyKey == idempotencyKey, testContext.CancellationToken);
+
+            log.Status.ShouldBe(EmailLogStatus.Pending);
+            sawPendingLog = true;
+        };
+
+        await fanOut.Execute(JobContext(job));
+
+        sawPendingLog.ShouldBeTrue();
+        fakeSender.SentMessages.Count.ShouldBe(1);
+    }
+
+
+    [TestMethod]
     public async ValueTask Execute_SomeRecipientsFail_TransitionsToPartiallyFailed()
     {
         var (job, fakeSender, fanOut) = await SetupAsync(
@@ -150,20 +175,6 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
     [TestMethod]
     public async ValueTask Execute_PreExistingEmailLogRow_DedupsViaUniqueIndex()
     {
-        // Arrange: create a job + pre-insert an email_log row with the
-        // idempotency key the fan-out worker will compute, simulating a partial
-        // commit from a previous pickup. SaveChanges() on the worker's row
-        // should hit IX_email_log_event_recipient_idempotency, get caught by
-        // SendBulkEmailJob.IsEmailLogIdempotencyViolation, and let the job
-        // continue. The single-recipient batch then completes without
-        // duplicating the row.
-        //
-        // Note: this test currently exposes an implementation gap — the catch
-        // in ProcessRecipientAsync swallows the DbUpdateException but the
-        // failed Added entity remains tracked, so the final SaveChanges at
-        // line 182 retries and rethrows. Track as a follow-up; for now the
-        // test asserts the gap so it can be re-enabled when the worker
-        // detaches the failed entry on dedup.
         var (job, fakeSender, fanOut) = await SetupAsync(
             recipients: [Recipient("alice@example.com")]);
 
@@ -175,23 +186,79 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
             recipient: EmailAddress.From("alice@example.com"),
             emailType: DefaultEmailType,
             subject: "Pre-existing",
-            provider: "FakeBulk",
-            providerMessageId: "previous-msg",
             status: EmailLogStatus.Sent,
             sentAt: DateTimeOffset.UtcNow,
             statusUpdatedAt: DateTimeOffset.UtcNow,
             bulkEmailJobId: job.Id);
         await Environment.EmailDatabase.SeedAsync(db => db.EmailLog.Add(preExisting));
 
-        // Act + Assert: the worker should NOT throw once the dedup recovery
-        // gap is fixed. Until then we capture current behaviour.
-        await Should.ThrowAsync<JobExecutionException>(() => fanOut.Execute(JobContext(job)));
+        await fanOut.Execute(JobContext(job));
+
+        fakeSender.SentMessages.ShouldBeEmpty();
 
         var logs = await Environment.EmailDatabase.Context.EmailLog.AsNoTracking()
             .Where(l => l.IdempotencyKey == idempotencyKey)
             .ToListAsync(testContext.CancellationToken);
         logs.Count.ShouldBe(1);
-        logs[0].ProviderMessageId.ShouldBe("previous-msg");
+
+        var reloaded = await ReloadJobAsync(job.Id);
+        reloaded.Status.ShouldBe(BulkEmailJobStatus.Completed);
+        reloaded.SentCount.ShouldBe(1);
+    }
+
+    [TestMethod]
+    public async ValueTask Execute_PreExistingFailedEmailLogRow_RecordsFailedRecipientWithoutSmtp()
+    {
+        var (job, fakeSender, fanOut) = await SetupAsync(
+            recipients: [Recipient("alice@example.com")]);
+
+        var idempotencyKey = $"bulk:{job.Id.Value:N}:alice@example.com";
+        var preExisting = EmailLog.Create(
+            teamId: job.TeamId,
+            ticketedEventId: job.TicketedEventId,
+            idempotencyKey: idempotencyKey,
+            recipient: EmailAddress.From("alice@example.com"),
+            emailType: DefaultEmailType,
+            subject: "Pre-existing",
+            status: EmailLogStatus.Failed,
+            sentAt: null,
+            statusUpdatedAt: DateTimeOffset.UtcNow,
+            lastError: "Previous deterministic failure.",
+            bulkEmailJobId: job.Id);
+        await Environment.EmailDatabase.SeedAsync(db => db.EmailLog.Add(preExisting));
+
+        await fanOut.Execute(JobContext(job));
+
+        fakeSender.SendAttempts.ShouldBeEmpty();
+
+        var reloaded = await ReloadJobAsync(job.Id);
+        reloaded.Status.ShouldBe(BulkEmailJobStatus.Failed);
+        reloaded.FailedCount.ShouldBe(1);
+        reloaded.Recipients.Single().LastError.ShouldBe("Previous deterministic failure.");
+    }
+
+    [TestMethod]
+    public async ValueTask Execute_TransientRecipientFailure_RetriesInlineBeforeRecordingFailure()
+    {
+        var (job, fakeSender, fanOut) = await SetupAsync(
+            recipients: [Recipient("alice@example.com")],
+            inlineRetryCount: 2);
+        fakeSender.FailOn("alice@example.com");
+
+        await fanOut.Execute(JobContext(job));
+
+        fakeSender.SendAttempts.Count(a => a == "alice@example.com").ShouldBe(3);
+
+        var reloaded = await ReloadJobAsync(job.Id);
+        reloaded.Status.ShouldBe(BulkEmailJobStatus.Failed);
+        reloaded.FailedCount.ShouldBe(1);
+
+        var log = await Environment.EmailDatabase.Context.EmailLog
+            .AsNoTracking()
+            .SingleAsync(l => l.BulkEmailJobId == job.Id, testContext.CancellationToken);
+        log.Status.ShouldBe(EmailLogStatus.Failed);
+        log.LastError.ShouldNotBeNull();
+        log.LastError.ShouldContain("SMTP error (fake)");
     }
 
     [TestMethod]
@@ -270,7 +337,8 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
 
     private async ValueTask<(BulkEmailJob Job, FakeBulkSmtpSender Sender, SendBulkEmailJob FanOut)> SetupAsync(
         IReadOnlyList<BulkEmailRecipient> recipients,
-        TimeSpan? perMessageDelay = null)
+        TimeSpan? perMessageDelay = null,
+        int? inlineRetryCount = null)
     {
         var teamId = TeamId.New();
         var eventId = TicketedEventId.New();
@@ -287,7 +355,7 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
         resolver.ResolveAsync(teamId, eventId, Arg.Any<BulkEmailJobSource>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(recipients));
 
-        var fanOut = BuildFanOut(sender, resolver, perMessageDelay ?? TimeSpan.Zero);
+        var fanOut = BuildFanOut(sender, resolver, perMessageDelay ?? TimeSpan.Zero, inlineRetryCount);
         return (job, sender, fanOut);
     }
 
@@ -315,7 +383,8 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
     private static SendBulkEmailJob BuildFanOut(
         FakeBulkSmtpSender sender,
         IBulkEmailRecipientResolver? recipientResolver = null,
-        TimeSpan? perMessageDelay = null)
+        TimeSpan? perMessageDelay = null,
+        int? inlineRetryCount = null)
     {
         var ctx = Environment.EmailDatabase.Context;
         var protectedSecret = TestProtectedSecretFactory.Create();
@@ -328,7 +397,9 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
 
         var options = new BulkEmailOptions
         {
-            PerMessageDelay = perMessageDelay ?? TimeSpan.Zero
+            PerMessageDelay = perMessageDelay ?? TimeSpan.Zero,
+            InlineRetryCount = inlineRetryCount ?? new BulkEmailOptions().InlineRetryCount,
+            InlineRetryDelay = TimeSpan.Zero
         };
         var monitor = new StaticOptionsMonitor<BulkEmailOptions>(options);
 

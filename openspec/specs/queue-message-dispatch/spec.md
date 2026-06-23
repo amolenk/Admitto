@@ -62,6 +62,21 @@ The queue consumer SHALL use a push-based delivery mechanism. Messages SHALL be 
 - **WHEN** a message is received and processing throws an exception
 - **THEN** the message is abandoned and becomes available for redelivery
 
+### Requirement: Pending outbox rows are retried after an age gate
+Every module DbContext that implements `IOutboxDbContext` SHALL be registered for Worker-owned outbox retry processing. The retry scanner SHALL read bounded batches of `Pending` outbox rows older than the configured retry minimum age, send each row to the queue, and mark it `Sent` after successful queue send. The minimum age SHALL prevent the retry scanner from racing the unit-of-work's immediate post-commit outbox dispatch for newly committed rows.
+
+#### Scenario: Old pending outbox row is dispatched
+- **WHEN** a module outbox contains a `Pending` row older than the configured retry minimum age
+- **THEN** the Worker retry scanner sends the message to the queue and marks the row `Sent`
+
+#### Scenario: Recent pending outbox row is skipped
+- **WHEN** a module outbox contains a `Pending` row newer than the configured retry minimum age
+- **THEN** the Worker retry scanner leaves it `Pending` for a later scan
+
+#### Scenario: Duplicate scanner race is tolerated
+- **WHEN** two Worker instances race while dispatching the same eligible pending outbox row
+- **THEN** at least one queue send succeeds, the row eventually becomes `Sent`, and downstream idempotency handles any duplicate delivery
+
 ### Requirement: Assembly scanning for message type registry
 The system SHALL provide an `AddFromAssembly(Assembly)` method on `MessageTypeRegistryBuilder` that scans the given assembly for concrete implementations of `ICommand` and `IIntegrationEvent` and registers each in the registry, equivalent to calling `AddCommand<T>()` or `AddIntegrationEvent<T>()` for each discovered type individually.
 

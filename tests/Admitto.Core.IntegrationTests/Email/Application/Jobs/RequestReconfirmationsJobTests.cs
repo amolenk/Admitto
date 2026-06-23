@@ -215,8 +215,6 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
             recipient: EmailAddress.From(recipientEmail),
             emailType: BuiltInEmailTemplateNames.Reconfirmation,
             subject: "Please reconfirm",
-            provider: "Test",
-            providerMessageId: null,
             status: EmailLogStatus.Sent,
             sentAt: sentAt,
             statusUpdatedAt: sentAt);

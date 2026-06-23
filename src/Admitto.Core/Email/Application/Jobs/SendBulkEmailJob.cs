@@ -215,6 +215,7 @@ internal sealed class SendBulkEmailJob(
     {
         var idempotencyKey = $"bulk:{job.Id.Value:N}:{recipient.Email.Value.ToLowerInvariant()}";
         var now = DateTimeOffset.UtcNow;
+        EmailLog? log = null;
 
         try
         {
@@ -235,36 +236,27 @@ internal sealed class SendBulkEmailJob(
                 TextBody: rendered.TextBody,
                 HtmlBody: rendered.HtmlBody);
 
-            var providerMessageId = await session.SendAsync(message, ct);
+            log = await ClaimRecipientAsync(job, recipient, idempotencyKey, rendered.Subject, now, ct);
+            if (log.Status is EmailLogStatus.Sent or EmailLogStatus.Delivered)
+            {
+                job.RecordSentRecipient(recipient.Email.Value);
+                await unitOfWork.SaveChangesAsync(ct);
+                return;
+            }
 
-            writeStore.EmailLog.Add(EmailLog.Create(
-                teamId: job.TeamId,
-                ticketedEventId: job.TicketedEventId,
-                idempotencyKey: idempotencyKey,
-                recipient: recipient.Email,
-                emailType: job.EmailType,
-                subject: rendered.Subject,
-                provider: bulkSmtpSender.Provider,
-                providerMessageId: providerMessageId,
-                status: EmailLogStatus.Sent,
-                sentAt: now,
-                statusUpdatedAt: now,
-                bulkEmailJobId: job.Id,
-                registrationId: recipient.RegistrationId));
+            if (log.Status is EmailLogStatus.Failed or EmailLogStatus.Bounced)
+            {
+                job.RecordFailedRecipient(recipient.Email.Value, log.LastError ?? "Previous delivery attempt failed.");
+                await unitOfWork.SaveChangesAsync(ct);
+                return;
+            }
 
+            await SendWithInlineRetriesAsync(session, message, ct);
+
+            log.MarkSent(rendered.Subject, now);
             job.RecordSentRecipient(recipient.Email.Value);
 
-            try
-            {
-                await unitOfWork.SaveChangesAsync(ct);
-            }
-            catch (DbUpdateException dbEx) when (IsEmailLogIdempotencyViolation(dbEx))
-            {
-                // Another pickup already wrote this row; recipient is in fact Sent.
-                logger.LogDebug(
-                    "Idempotent skip for bulk-email job {BulkEmailJobId} recipient {Recipient}",
-                    job.Id.Value, recipient.Email);
-            }
+            await unitOfWork.SaveChangesAsync(ct);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -276,33 +268,102 @@ internal sealed class SendBulkEmailJob(
                 "Bulk-email job {BulkEmailJobId} failed to send to {Recipient}",
                 job.Id.Value, recipient.Email);
 
-            writeStore.EmailLog.Add(EmailLog.Create(
-                teamId: job.TeamId,
-                ticketedEventId: job.TicketedEventId,
-                idempotencyKey: idempotencyKey,
-                recipient: recipient.Email,
-                emailType: job.EmailType,
-                subject: job.Subject ?? string.Empty,
-                provider: bulkSmtpSender.Provider,
-                providerMessageId: null,
-                status: EmailLogStatus.Failed,
-                sentAt: null,
-                statusUpdatedAt: now,
-                lastError: ex.Message,
-                bulkEmailJobId: job.Id,
-                registrationId: recipient.RegistrationId));
+            if (log is null)
+            {
+                log = EmailLog.Create(
+                    teamId: job.TeamId,
+                    ticketedEventId: job.TicketedEventId,
+                    idempotencyKey: idempotencyKey,
+                    recipient: recipient.Email,
+                    emailType: job.EmailType,
+                    subject: job.Subject ?? string.Empty,
+                    status: EmailLogStatus.Failed,
+                    sentAt: null,
+                    statusUpdatedAt: now,
+                    lastError: ex.Message,
+                    bulkEmailJobId: job.Id,
+                    registrationId: recipient.RegistrationId);
+
+                writeStore.EmailLog.Add(log);
+            }
+            else
+            {
+                log.MarkFailed(job.Subject ?? string.Empty, ex.Message, now);
+            }
 
             job.RecordFailedRecipient(recipient.Email.Value, ex.Message);
 
-            try
-            {
-                await unitOfWork.SaveChangesAsync(ct);
-            }
-            catch (DbUpdateException dbEx) when (IsEmailLogIdempotencyViolation(dbEx))
-            {
-                // A previous pickup already recorded an outcome — keep going.
-            }
+            await unitOfWork.SaveChangesAsync(ct);
         }
+    }
+
+    private async Task<EmailLog> ClaimRecipientAsync(
+        BulkEmailJob job,
+        BulkEmailRecipient recipient,
+        string idempotencyKey,
+        string subject,
+        DateTimeOffset now,
+        CancellationToken ct)
+    {
+        var existing = await FindRecipientLogAsync(job, recipient, idempotencyKey, ct);
+        if (existing is not null)
+            return existing;
+
+        var log = EmailLog.Create(
+            teamId: job.TeamId,
+            ticketedEventId: job.TicketedEventId,
+            idempotencyKey: idempotencyKey,
+            recipient: recipient.Email,
+            emailType: job.EmailType,
+            subject: subject,
+            status: EmailLogStatus.Pending,
+            sentAt: null,
+            statusUpdatedAt: now,
+            bulkEmailJobId: job.Id,
+            registrationId: recipient.RegistrationId);
+
+        writeStore.EmailLog.Add(log);
+
+        try
+        {
+            await unitOfWork.SaveChangesAsync(ct);
+            return log;
+        }
+        catch (DbUpdateException dbEx) when (IsEmailLogIdempotencyViolation(dbEx))
+        {
+            Detach(log);
+            return await GetRecipientLogAsync(job, recipient, idempotencyKey, ct);
+        }
+    }
+
+    private async Task<EmailLog> GetRecipientLogAsync(
+        BulkEmailJob job,
+        BulkEmailRecipient recipient,
+        string idempotencyKey,
+        CancellationToken ct)
+    {
+        return await FindRecipientLogAsync(job, recipient, idempotencyKey, ct)
+               ?? throw new InvalidOperationException(
+                   $"Email log claim not found for bulk-email job {job.Id.Value} recipient {recipient.Email.Value}.");
+    }
+
+    private async Task<EmailLog?> FindRecipientLogAsync(
+        BulkEmailJob job,
+        BulkEmailRecipient recipient,
+        string idempotencyKey,
+        CancellationToken ct)
+    {
+        return await writeStore.EmailLog.FirstOrDefaultAsync(
+            log => log.TicketedEventId == job.TicketedEventId
+                   && log.Recipient == recipient.Email
+                   && log.IdempotencyKey == idempotencyKey,
+            ct);
+    }
+
+    private void Detach(EmailLog log)
+    {
+        if (writeStore is DbContext dbContext)
+            dbContext.Entry(log).State = EntityState.Detached;
     }
 
     private async Task<bool> IsCancellationRequestedAsync(
@@ -320,4 +381,32 @@ internal sealed class SendBulkEmailJob(
     private static bool IsEmailLogIdempotencyViolation(DbUpdateException ex)
         => ex.InnerException is PostgresException pg
            && pg.ConstraintName == "IX_email_log_event_recipient_idempotency";
+
+    private async ValueTask<string?> SendWithInlineRetriesAsync(
+        IBulkSmtpSession session,
+        EmailMessage message,
+        CancellationToken ct)
+    {
+        Exception? lastException = null;
+        for (var attempt = 0; attempt <= options.CurrentValue.InlineRetryCount; attempt++)
+        {
+            if (attempt > 0 && options.CurrentValue.InlineRetryDelay > TimeSpan.Zero)
+                await Task.Delay(options.CurrentValue.InlineRetryDelay, ct);
+
+            try
+            {
+                return await session.SendAsync(message, ct);
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                lastException = ex;
+            }
+        }
+
+        throw lastException ?? new InvalidOperationException("SMTP delivery failed.");
+    }
 }

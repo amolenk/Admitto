@@ -26,8 +26,6 @@ public sealed class GetAttendeeEmailsHandlerTests(TestContext testContext) : Asp
             recipient: EmailAddress.From("alice@example.com"),
             emailType: "Confirmation",
             subject: "Your registration",
-            provider: "test",
-            providerMessageId: null,
             status: EmailLogStatus.Sent,
             sentAt: olderSentAt,
             statusUpdatedAt: olderSentAt,
@@ -40,8 +38,6 @@ public sealed class GetAttendeeEmailsHandlerTests(TestContext testContext) : Asp
             recipient: EmailAddress.From("alice@example.com"),
             emailType: "Reminder",
             subject: "Upcoming event reminder",
-            provider: "test",
-            providerMessageId: null,
             status: EmailLogStatus.Delivered,
             sentAt: newerSentAt,
             statusUpdatedAt: newerSentAt,
@@ -85,12 +81,12 @@ public sealed class GetAttendeeEmailsHandlerTests(TestContext testContext) : Asp
         var forThisEvent = 
 EmailLog.Create(
             teamId, eventId, "key-1", EmailAddress.From("alice@example.com"), "Confirmation", "Your registration",
-            "test", null, EmailLogStatus.Sent, now, now, registrationId: registrationId);
+            EmailLogStatus.Sent, now, now, registrationId: registrationId);
 
         var forOtherEvent = 
 EmailLog.Create(
             teamId, otherEventId, "key-2", EmailAddress.From("alice@example.com"), "Confirmation", "Other event",
-            "test", null, EmailLogStatus.Sent, now, now, registrationId: registrationId);
+            EmailLogStatus.Sent, now, now, registrationId: registrationId);
 
         await Environment.EmailDatabase.SeedAsync(db =>
         {
@@ -117,12 +113,12 @@ EmailLog.Create(
         var forThisRegistration = 
 EmailLog.Create(
             teamId, eventId, "key-1", EmailAddress.From("alice@example.com"), "Confirmation", "Alice's confirmation",
-            "test", null, EmailLogStatus.Sent, now, now, registrationId: registrationId);
+            EmailLogStatus.Sent, now, now, registrationId: registrationId);
 
         var forOtherRegistration = 
 EmailLog.Create(
             teamId, eventId, "key-2", EmailAddress.From("bob@example.com"), "Confirmation", "Bob's confirmation",
-            "test", null, EmailLogStatus.Sent, now, now, registrationId: otherRegistrationId);
+            EmailLogStatus.Sent, now, now, registrationId: otherRegistrationId);
 
         await Environment.EmailDatabase.SeedAsync(db =>
         {
@@ -148,7 +144,7 @@ EmailLog.Create(
         var withoutRegistration = 
 EmailLog.Create(
             teamId, eventId, "key-1", EmailAddress.From("alice@example.com"), "Confirmation", "Bulk email subject",
-            "test", null, EmailLogStatus.Sent, now, now, registrationId: null);
+            EmailLogStatus.Sent, now, now, registrationId: null);
 
         await Environment.EmailDatabase.SeedAsync(db => db.EmailLog.Add(withoutRegistration));
 
@@ -171,7 +167,7 @@ EmailLog.Create(
         var forTeamA =
 EmailLog.Create(
             teamIdA, eventId, "key-cross-team", EmailAddress.From("alice@example.com"), "Confirmation", "Team A email",
-            "test", null, EmailLogStatus.Sent, now, now, registrationId: registrationId);
+            EmailLogStatus.Sent, now, now, registrationId: registrationId);
 
         await Environment.EmailDatabase.SeedAsync(db => db.EmailLog.Add(forTeamA));
 

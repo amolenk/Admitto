@@ -26,9 +26,30 @@ internal class OutboxDispatcher(IOutboxDbContext dbContext, IOutboxMessageSender
         return true;
     }
     
-    public ValueTask<bool> DispatchOrphanedAsync(CancellationToken cancellationToken = default)
+    public async ValueTask<bool> DispatchOrphanedAsync(
+        int batchSize,
+        TimeSpan minimumAge,
+        CancellationToken cancellationToken = default)
     {
-        // TODO Dispatches orphaned outbox messages that were not tracked by the current DbContext.
-        throw new NotImplementedException();
+        var eligibleCreatedAt = DateTimeOffset.UtcNow.Subtract(minimumAge);
+        var outboxMessages = await dbContext.OutboxMessages
+            .Where(m => m.State == OutboxMessageState.Pending && m.CreatedAt <= eligibleCreatedAt)
+            .OrderBy(m => m.Id)
+            .Take(batchSize)
+            .ToListAsync(cancellationToken);
+
+        if (outboxMessages.Count == 0)
+            return false;
+
+        foreach (var outboxMessage in outboxMessages)
+        {
+            await messageSender.SendAsync(outboxMessage, cancellationToken);
+            outboxMessage.State = OutboxMessageState.Sent;
+        }
+
+        if (dbContext is DbContext context)
+            await context.SaveChangesAsync(cancellationToken);
+
+        return true;
     }
 }

@@ -78,11 +78,13 @@ When a job transitions from `Pending` to `Resolving`, the resolver SHALL persist
 
 The bulk fan-out worker, upon picking up a `BulkEmailJob` with status `Sending`, SHALL open exactly one SMTP connection (per pickup) and stream every still-`Pending` recipient through it. The worker SHALL NOT publish per-recipient `SendEmailCommand` messages and SHALL NOT use the single-send command pipeline for bulk fan-out.
 
-For each recipient the worker SHALL, in order: (1) render the message (template + ad-hoc overrides), (2) send it on the open SMTP connection, (3) write a single `email_log` row with `bulk_email_job_id` set and `IdempotencyKey = "bulk:{bulkJobId}:{normalisedRecipientEmail}"`, (4) update the per-recipient `Status` on the snapshot to `Sent` or `Failed`, (5) update the parent job's running `SentCount` / `FailedCount`. The existing unique index on `email_log` `(ticketed_event_id, recipient, idempotency_key)` SHALL ensure that a re-run of the fan-out for the same recipient is a no-op at the log level even if the per-recipient status update was lost.
+For each recipient the worker SHALL, in order: (1) render the message (template + ad-hoc overrides), (2) acquire or observe the per-recipient `email_log` claim with `bulk_email_job_id` set and `IdempotencyKey = "bulk:{bulkJobId}:{normalisedRecipientEmail}"`, (3) skip SMTP when a terminal log already exists, (4) send it on the open SMTP connection when the claim is pending, (5) update the log row and per-recipient snapshot to `Sent` or `Failed`, (6) update the parent job's running `SentCount` / `FailedCount`. The existing unique index on `email_log` `(ticketed_event_id, recipient, idempotency_key)` SHALL ensure that a re-run of the fan-out for the same recipient is a no-op at the log level even if the per-recipient status update was lost.
 
 The worker SHALL close the SMTP connection cleanly when the snapshot is exhausted, on cancellation, or on a connection-level failure.
 
 Between consecutive recipient sends, the worker SHALL wait `BulkEmailOptions.PerMessageDelay` (configurable; default `500ms`). The wait SHALL be cancellable so that a cancellation request observed during the wait causes the worker to stop sending immediately without consuming the full delay.
+
+Transient SMTP failures for a recipient SHALL be retried inline a bounded number of times using `BulkEmailOptions.InlineRetryCount`, with `BulkEmailOptions.InlineRetryDelay` between retry attempts. If the attempts are exhausted, that recipient SHALL be recorded as failed and the worker SHALL continue with the next recipient on the same SMTP connection.
 
 #### Scenario: Per-message delay is applied between sends
 - **WHEN** a job with 10 recipients is processed with `PerMessageDelay=500ms`
@@ -111,6 +113,10 @@ Between consecutive recipient sends, the worker SHALL wait `BulkEmailOptions.Per
 #### Scenario: Per-recipient failure marks PartiallyFailed not Failed
 - **WHEN** a 100-recipient job sends 99 successfully and 1 hits a terminal SMTP error
 - **THEN** the job ends in `PartiallyFailed` with `SentCount=99`, `FailedCount=1`, and `LastError` describing the last failure
+
+#### Scenario: Transient recipient failure retries inline
+- **WHEN** a recipient send fails with a transient SMTP transport error and retry attempts remain
+- **THEN** the worker waits the configured inline retry delay and retries the same recipient before recording a terminal recipient failure
 
 #### Scenario: All recipients failing marks Failed
 - **WHEN** every recipient hits a terminal failure

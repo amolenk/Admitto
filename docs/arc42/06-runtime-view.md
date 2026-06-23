@@ -59,6 +59,8 @@ sequenceDiagram
 
 Message type naming: module events use `{module}.{event-name}` (e.g. `organization.user-created`); integration events use `integration.{module}.{event-name}`.
 
+Pending outbox rows are not lost when the immediate post-commit dispatch fails. The Worker host runs a bounded retry scanner for every module DbContext that implements `IOutboxDbContext`: it reads `Pending` rows older than the configured retry minimum age, sends them to the queue, and marks them `Sent` after a successful queue send. The age gate avoids racing the same unit of work's immediate post-commit dispatch. Multiple Worker instances may still race and produce duplicate queue deliveries if a send succeeds but marking `Sent` fails; downstream handlers must remain idempotent.
+
 ## 6.3 Cross-module query
 
 Modules never access each other's DbContext. Instead, the consuming module calls a facade defined in the provider's Contracts project.
@@ -186,7 +188,7 @@ sequenceDiagram
 
 ## 6.8 Registration-confirmation email flow
 
-When an attendee registers successfully, the API handler emits an `AttendeeRegistered` integration event via the outbox. The Worker picks it up and attempts to send a confirmation email.
+When an attendee registers successfully, the API handler emits an `AttendeeRegistered` integration event via the outbox. The Worker picks it up and prepares durable e-mail delivery work. SMTP is attempted only after the Email module has committed an `EmailLog` claim and an internal delivery command.
 
 ```mermaid
 sequenceDiagram
@@ -195,34 +197,36 @@ sequenceDiagram
     participant Worker as Worker host
     participant EmailHandler as AttendeeRegistered handler (Email module)
     participant EmailOutbox as Email outbox
-    participant SMTP as SMTP server (MailDev / real)
     participant EmailLog as email.email_log
+    participant Delivery as DeliverEmail command handler
+    participant SMTP as SMTP server (MailDev / real)
 
     Api->>Outbox: AttendeeRegistered (in same UoW transaction)
     Worker->>Outbox: poll & dequeue
     Worker->>EmailHandler: dispatch AttendeeRegistered
-    EmailHandler->>EmailLog: check idempotency key (attendee-registered:<registrationId>)
-    alt already Sent
+    EmailHandler->>EmailLog: check send claim (attendee-registered:<registrationId>:<registeredAt>)
+    alt terminal claim exists
         EmailHandler-->>Worker: ack (no-op, idempotency guard)
-    else not yet sent
+    else no terminal claim exists
         EmailHandler->>EmailHandler: resolve effective EmailSettings (event → team)
         alt no settings
             EmailHandler->>EmailLog: insert Failed (email not configured)
         else settings found
             EmailHandler->>EmailHandler: resolve EmailTemplate (event → team → built-in)
             EmailHandler->>EmailHandler: render subject + bodies via Scriban
-            EmailHandler->>EmailOutbox: enqueue SendEmail command (in same UoW)
-            EmailHandler->>EmailLog: insert Pending
-            Worker->>EmailOutbox: poll & dequeue SendEmail
-            Worker->>SMTP: SMTP send
-            Worker->>EmailLog: update Sent (or Failed on SMTP error)
+            EmailHandler->>EmailLog: insert Pending claim
+            EmailHandler->>EmailOutbox: enqueue DeliverEmail command (same UoW)
+            Worker->>EmailOutbox: poll & dequeue DeliverEmail
+            Worker->>Delivery: load committed claim
+            Delivery->>SMTP: SMTP send with bounded inline retries
+            Delivery->>EmailLog: update Sent, terminal Failed, or retryable Pending
         end
     end
 ```
 
-**Idempotency**: the `EmailLog` row with key `attendee-registered:<registrationId>` is checked before every send attempt. A re-delivered integration event that already produced a `Sent` log row is acked without a second send.
+**Idempotency**: the `EmailLog` row with key `attendee-registered:<registrationId>:<registeredAt>` is the send claim. A re-delivered integration event that observes a terminal claim is acked without another SMTP attempt; a pending claim can enqueue delivery again for recovery. SMTP itself is not transactional, so rare duplicate delivery races or a crash after SMTP success but before updating the log can still produce a later duplicate during recovery.
 
-**Degraded mode**: if no effective email settings exist for the event, a `Failed` log row is written with reason "email not configured" and the integration event is still acked — registration itself is unaffected.
+**Degraded mode**: if no effective email settings exist for the event, a terminal `Failed` log row is written with reason "email not configured" and the integration event is still acked — registration itself is unaffected. Transient SMTP failures remain retryable until the configured delivery attempt limit is reached.
 
 ## 6.9 Bulk-email fan-out (single SMTP connection)
 
@@ -255,8 +259,9 @@ sequenceDiagram
     FanOut->>SMTP: connect (single connection)
     loop for each Pending recipient
       FanOut->>FanOut: check CancellationRequestedAt
+      FanOut->>EmailLog: insert Pending claim key=bulk:{jobId}:{email}
       FanOut->>SMTP: MAIL FROM / RCPT TO / DATA
-      FanOut->>EmailLog: insert key=bulk:{jobId}:{email} (Sent or Failed)
+      FanOut->>EmailLog: update claim to Sent or Failed
       FanOut->>Job: update per-recipient status + counters
       FanOut->>FanOut: Task.Delay(PerMessageDelay, ct)
     end
@@ -264,7 +269,7 @@ sequenceDiagram
     Job->>Job: finalise → Completed / PartiallyFailed / Cancelled / Failed
 ```
 
-**Resume-after-crash**: only `Pending` rows on the snapshot are picked up on the next run; per-recipient `EmailLog` uniqueness on `(ticketed_event_id, recipient, idempotency_key)` is the second line of defence.
+**Resume-after-crash**: only `Pending` rows on the snapshot are picked up on the next run; per-recipient `EmailLog` uniqueness on `(ticketed_event_id, recipient, idempotency_key)` is the database-backed claim that prevents pre-existing terminal recipient logs from sending again.
 
 **Cancellation**: `POST /admin/.../bulk-emails/{id}/cancel` sets `CancellationRequestedAt` on the aggregate; the worker observes it between recipients and during the per-message delay, transitions remaining `Pending` rows to `Cancelled`, and closes the SMTP session cleanly.
 

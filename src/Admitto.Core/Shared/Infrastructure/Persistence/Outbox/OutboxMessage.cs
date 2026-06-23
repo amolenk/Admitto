@@ -15,12 +15,18 @@ public class OutboxMessage
     public required string Type { get; init; }
     public required JsonDocument Payload { get; init; }
     public required OutboxMessageState State { get; set; }
+    public required DateTimeOffset CreatedAt { get; init; }
 
-    public static OutboxMessage From(ICommand command) => Create(command);
+    public static OutboxMessage From(ICommand command) => Create(command, DateTimeOffset.UtcNow);
 
-    public static OutboxMessage From(IIntegrationEvent integrationEvent) => Create(integrationEvent);
+    public static OutboxMessage From(IIntegrationEvent integrationEvent) => Create(integrationEvent, DateTimeOffset.UtcNow);
 
-    private static OutboxMessage Create(object message)
+    public static OutboxMessage From(ICommand command, DateTimeOffset createdAt) => Create(command, createdAt);
+
+    public static OutboxMessage From(IIntegrationEvent integrationEvent, DateTimeOffset createdAt) =>
+        Create(integrationEvent, createdAt);
+
+    private static OutboxMessage Create(object message, DateTimeOffset createdAt)
     {
         var type = GetMessageType(message);
         var payload = JsonSerializer.SerializeToDocument(
@@ -33,7 +39,8 @@ public class OutboxMessage
             Id = Guid.NewGuid(),
             Type = type,
             Payload = payload,
-            State = OutboxMessageState.Pending
+            State = OutboxMessageState.Pending,
+            CreatedAt = createdAt
         };
     }
 

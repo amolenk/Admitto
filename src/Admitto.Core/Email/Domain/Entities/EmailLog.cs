@@ -19,12 +19,11 @@ public class EmailLog : Entity<EmailLogId>
         EmailAddress recipient,
         string emailType,
         string subject,
-        string provider,
-        string? providerMessageId,
         EmailLogStatus status,
         DateTimeOffset? sentAt,
         DateTimeOffset statusUpdatedAt,
         string? lastError,
+        int deliveryAttemptCount,
         BulkEmailJobId? bulkEmailJobId,
         RegistrationId? registrationId)
         : base(id)
@@ -35,12 +34,11 @@ public class EmailLog : Entity<EmailLogId>
         Recipient = recipient;
         EmailType = emailType;
         Subject = subject;
-        Provider = provider;
-        ProviderMessageId = providerMessageId;
         Status = status;
         SentAt = sentAt;
         StatusUpdatedAt = statusUpdatedAt;
         LastError = lastError;
+        DeliveryAttemptCount = deliveryAttemptCount;
         BulkEmailJobId = bulkEmailJobId;
         RegistrationId = registrationId;
     }
@@ -51,12 +49,11 @@ public class EmailLog : Entity<EmailLogId>
     public EmailAddress Recipient { get; private set; }
     public string EmailType { get; private set; } = default!;
     public string Subject { get; private set; } = default!;
-    public string Provider { get; private set; } = default!;
-    public string? ProviderMessageId { get; private set; }
     public EmailLogStatus Status { get; private set; }
     public DateTimeOffset? SentAt { get; private set; }
     public DateTimeOffset StatusUpdatedAt { get; private set; }
     public string? LastError { get; private set; }
+    public int DeliveryAttemptCount { get; private set; }
 
     /// <summary>
     /// When this log row was produced by a bulk-email fan-out, links back to
@@ -79,12 +76,11 @@ public class EmailLog : Entity<EmailLogId>
         EmailAddress recipient,
         string emailType,
         string subject,
-        string provider,
-        string? providerMessageId,
         EmailLogStatus status,
         DateTimeOffset? sentAt,
         DateTimeOffset statusUpdatedAt,
         string? lastError = null,
+        int deliveryAttemptCount = 0,
         BulkEmailJobId? bulkEmailJobId = null,
         RegistrationId? registrationId = null)
     {
@@ -96,35 +92,42 @@ public class EmailLog : Entity<EmailLogId>
             recipient,
             emailType,
             subject,
-            provider,
-            providerMessageId,
             status,
             sentAt,
             statusUpdatedAt,
             lastError,
+            deliveryAttemptCount,
             bulkEmailJobId,
             registrationId);
     }
 
-    public void MarkSent(string subject, string provider, string? providerMessageId, DateTimeOffset sentAt)
+    public bool IsTerminal => Status is EmailLogStatus.Sent or EmailLogStatus.Delivered or EmailLogStatus.Failed or EmailLogStatus.Bounced;
+
+    public void MarkSent(string subject, DateTimeOffset sentAt)
     {
         Subject = subject;
-        Provider = provider;
-        ProviderMessageId = providerMessageId;
         Status = EmailLogStatus.Sent;
         SentAt = sentAt;
         StatusUpdatedAt = sentAt;
         LastError = null;
     }
 
-    public void MarkFailed(string subject, string provider, string error, DateTimeOffset failedAt)
+    public void MarkFailed(string subject, string error, DateTimeOffset failedAt)
     {
         Subject = subject;
-        Provider = provider;
-        ProviderMessageId = null;
         Status = EmailLogStatus.Failed;
         SentAt = null;
         StatusUpdatedAt = failedAt;
         LastError = error;
+    }
+
+    public void MarkRetryableFailure(string subject, string error, DateTimeOffset failedAt)
+    {
+        Subject = subject;
+        Status = EmailLogStatus.Pending;
+        SentAt = null;
+        StatusUpdatedAt = failedAt;
+        LastError = error;
+        DeliveryAttemptCount++;
     }
 }

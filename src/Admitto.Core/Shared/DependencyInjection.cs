@@ -97,6 +97,9 @@ public static class DependencyInjection
     {
         builder.Services.AddScoped<QueueMessageDispatcher>();
         builder.Services.AddHostedService<ServiceBusMessageProcessor>();
+        builder.Services.Configure<OutboxRetryOptions>(
+            builder.Configuration.GetSection(OutboxRetryOptions.SectionName));
+        builder.Services.AddHostedService<OutboxRetryBackgroundService>();
 
         builder.Services.AddQuartzHostedService(options =>
         {
@@ -208,6 +211,7 @@ public static class DependencyInjection
 
         if (typeof(IOutboxDbContext).IsAssignableFrom(typeof(TDbContext)))
         {
+            builder.Services.AddSingleton(new OutboxDbContextRegistration(moduleKey, typeof(TDbContext)));
             builder.Services.AddKeyedScoped<IOutbox>(moduleKey, (sp, _) =>
                 new Outbox((IOutboxDbContext)sp.GetRequiredService<TDbContext>()));
         }

@@ -13,4 +13,7 @@ public sealed class BulkEmailOptions
     /// fan-out pickup. Cancellation observed after the wait. Default 500ms.
     /// </summary>
     public TimeSpan PerMessageDelay { get; set; } = TimeSpan.FromMilliseconds(500);
+
+    public int InlineRetryCount { get; set; } = 2;
+    public TimeSpan InlineRetryDelay { get; set; } = TimeSpan.FromMilliseconds(250);
 }

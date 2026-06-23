@@ -18,6 +18,7 @@ internal sealed class FakeBulkSmtpSender : IBulkSmtpSender
 
     public int SessionsOpened { get; private set; }
     public int SessionsClosed { get; private set; }
+    public List<string> SendAttempts { get; } = [];
     public List<EmailMessage> SentMessages { get; } = [];
     public Func<EmailMessage, Task>? OnBeforeSendAsync { get; set; }
 
@@ -35,6 +36,8 @@ internal sealed class FakeBulkSmtpSender : IBulkSmtpSender
     {
         public async Task<string?> SendAsync(EmailMessage message, CancellationToken cancellationToken = default)
         {
+            owner.SendAttempts.Add(message.RecipientAddress);
+
             if (owner.OnBeforeSendAsync is not null)
                 await owner.OnBeforeSendAsync(message);
 

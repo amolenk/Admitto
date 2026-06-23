@@ -4,7 +4,7 @@
 TBD - created by archiving change add-email-module. Update Purpose after archive.
 ## Requirements
 ### Requirement: Every send attempt is recorded in the email log
-The Email module SHALL persist one row in the `email_log` table for every email it attempts to send, regardless of whether it was a single-send (e.g. registration confirmation) or part of a bulk fan-out. Each row SHALL record at minimum: id, team id, ticketed event id, idempotency key, recipient, email type, subject, provider (sender implementation name), status, sent-at, status-updated-at, last-error (nullable), `bulk_email_job_id` (nullable), and `registration_id` (nullable). Status SHALL be one of `Sent`, `Delivered`, `Bounced`, or `Failed`.
+The Email module SHALL persist one row in the `email_log` table for every email it attempts to send, regardless of whether it was a single-send (e.g. registration confirmation) or part of a bulk fan-out. Each row SHALL record at minimum: id, team id, ticketed event id, idempotency key, recipient, email type, subject, status, sent-at, status-updated-at, last-error (nullable), `bulk_email_job_id` (nullable), and `registration_id` (nullable). Status SHALL be one of `Sent`, `Delivered`, `Bounced`, or `Failed`.
 
 `bulk_email_job_id` SHALL be set to the parent `BulkEmailJob.Id` for any send dispatched as part of a bulk fan-out (the bulk worker writes the row directly), and SHALL be null for single-recipient sends triggered by integration events such as `AttendeeRegistered`.
 
@@ -12,7 +12,7 @@ The Email module SHALL persist one row in the `email_log` table for every email 
 
 #### Scenario: Successful single send is logged with null bulk job id
 - **WHEN** the SMTP sender successfully delivers a `ticket` email to "alice@example.com" for event "DevConf" in response to an `AttendeeRegistered` integration event
-- **THEN** an `email_log` row exists with status=`Sent`, sent_at=now, recipient="alice@example.com", email_type="ticket", non-null provider name, `bulk_email_job_id` is null, and `registration_id` is set to the registration's GUID
+- **THEN** an `email_log` row exists with status=`Sent`, sent_at=now, recipient="alice@example.com", email_type="ticket", `bulk_email_job_id` is null, and `registration_id` is set to the registration's GUID
 
 #### Scenario: Successful bulk send with registration is logged with both job id and registration id
 - **WHEN** the bulk fan-out worker successfully delivers a `reconfirm` email to "alice@example.com" as part of bulk job `B` where Alice's `BulkEmailRecipient.RegistrationId` is non-null
@@ -55,4 +55,3 @@ The `email_log` table SHALL live in the `email` PostgreSQL schema and SHALL be r
 #### Scenario: Cross-module read attempt
 - **WHEN** another module needs to know whether an email was sent
 - **THEN** it MUST go through an Email module facade, not query `email_log` directly
-

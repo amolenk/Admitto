@@ -140,7 +140,9 @@ Two event tiers, each with distinct scope:
 - `ICommand` — used for internal, within-module async work (e.g. a scheduled Quartz fan-out triggered by a domain event). Type key: `command.{module-kebab}.{command-name-kebab}` (strips `-command` suffix). The `QueueMessageDispatcher` deserialises and routes these to the module's `IMediator`.
 - `IIntegrationEvent` — used for cross-module contracts. Type key: `integration.{module-kebab}.{event-name-kebab}` (strips `-integration-event` suffix). Lives in `*.Contracts/IntegrationEvents/`.
 
-`OutboxDispatcher` attempts best-effort dispatch immediately, with background retry via the Worker host.
+`OutboxDispatcher` attempts best-effort dispatch immediately after a successful unit-of-work commit. The Worker host also runs `OutboxRetryBackgroundService`, which scans every registered module `IOutboxDbContext` for bounded batches of `Pending` rows older than the configured retry minimum age and marks them `Sent` after queue send succeeds. The minimum age avoids racing the unit-of-work's immediate post-commit dispatch. Duplicate queue sends are still tolerated because the outbox cannot atomically couple the external queue send with the database update; receiving handlers must therefore stay idempotent.
+
+For Email module SMTP delivery, `EmailLog` is the send claim. Trigger handlers write a pending log row and enqueue internal delivery work before SMTP is attempted. Delivery handlers and bulk fan-out treat terminal rows as no-ops and retryable pending rows as recoverable work. SMTP itself is non-transactional, so the documented guarantee is duplicate minimization through database-backed claims, not perfect exactly-once delivery.
 
 ### Cross-module lifecycle events
 

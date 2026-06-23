@@ -24,8 +24,6 @@ public sealed class EmailLogTests
             recipient: EmailAddress.From("attendee@example.com"),
             emailType: BuiltInEmailTemplateNames.TicketConfirmation,
             subject: "Your ticket",
-            provider: "smtp",
-            providerMessageId: "msg-123",
             status: EmailLogStatus.Sent,
             sentAt: Now,
             statusUpdatedAt: Now);
@@ -37,8 +35,6 @@ public sealed class EmailLogTests
         log.Recipient.ShouldBe(EmailAddress.From("attendee@example.com"));
         log.EmailType.ShouldBe(BuiltInEmailTemplateNames.TicketConfirmation);
         log.Subject.ShouldBe("Your ticket");
-        log.Provider.ShouldBe("smtp");
-        log.ProviderMessageId.ShouldBe("msg-123");
         log.Status.ShouldBe(EmailLogStatus.Sent);
         log.SentAt.ShouldBe(Now);
         log.StatusUpdatedAt.ShouldBe(Now);
@@ -55,14 +51,11 @@ public sealed class EmailLogTests
             recipient: EmailAddress.From("attendee@example.com"),
             emailType: BuiltInEmailTemplateNames.TicketConfirmation,
             subject: "Your ticket",
-            provider: "smtp",
-            providerMessageId: null,
             status: EmailLogStatus.Failed,
             sentAt: null,
             statusUpdatedAt: Now,
             lastError: "Connection refused");
 
-        log.ProviderMessageId.ShouldBeNull();
         log.SentAt.ShouldBeNull();
         log.LastError.ShouldBe("Connection refused");
         log.Status.ShouldBe(EmailLogStatus.Failed);
@@ -71,8 +64,8 @@ public sealed class EmailLogTests
     [TestMethod]
     public void Create_TwoLogs_HaveDistinctIds()
     {
-        var log1 = EmailLog.Create(TeamId.New(), TicketedEventId.New(), "k1", EmailAddress.From("a@b.com"), BuiltInEmailTemplateNames.TicketConfirmation, "S", "smtp", null, EmailLogStatus.Sent, Now, Now);
-        var log2 = EmailLog.Create(TeamId.New(), TicketedEventId.New(), "k2", EmailAddress.From("a@b.com"), BuiltInEmailTemplateNames.TicketConfirmation, "S", "smtp", null, EmailLogStatus.Sent, Now, Now);
+        var log1 = EmailLog.Create(TeamId.New(), TicketedEventId.New(), "k1", EmailAddress.From("a@b.com"), BuiltInEmailTemplateNames.TicketConfirmation, "S", EmailLogStatus.Sent, Now, Now);
+        var log2 = EmailLog.Create(TeamId.New(), TicketedEventId.New(), "k2", EmailAddress.From("a@b.com"), BuiltInEmailTemplateNames.TicketConfirmation, "S", EmailLogStatus.Sent, Now, Now);
 
         log1.Id.ShouldNotBe(log2.Id);
     }

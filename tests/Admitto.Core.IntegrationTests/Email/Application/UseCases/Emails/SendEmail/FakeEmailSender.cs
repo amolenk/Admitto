@@ -11,6 +11,7 @@ internal sealed class FakeEmailSender : IEmailSender
     public string Provider => "Fake";
 
     public List<(EffectiveEmailSettings Settings, EmailMessage Message)> SentMessages { get; } = [];
+    public int SendAttempts { get; private set; }
 
     public bool ShouldThrow { get; set; }
 
@@ -19,6 +20,8 @@ internal sealed class FakeEmailSender : IEmailSender
         EmailMessage message,
         CancellationToken cancellationToken = default)
     {
+        SendAttempts++;
+
         if (ShouldThrow)
             throw new InvalidOperationException("SMTP error (fake)");
 
