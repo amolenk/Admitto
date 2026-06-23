@@ -6,6 +6,8 @@ using Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence;
 using Azure.Provisioning.AppContainers;
 using Aspire.Hosting.Azure;
 using Aspire.Hosting.JavaScript;
+using Azure.Provisioning.ApplicationInsights;
+using Azure.Provisioning.OperationalInsights;
 using Azure.Provisioning.PostgreSql;
 using Microsoft.Extensions.Hosting;
 
@@ -26,6 +28,8 @@ var uiPublicUrl = builder.ExecutionContext.IsPublishMode
 var uiAuthClientSecret = builder.ExecutionContext.IsPublishMode
     ? builder.AddParameter("uiAuthClientSecret", secret: true)
     : builder.AddParameter("uiAuthClientSecret", value: "admitto-ui-dev-secret", secret: true);
+
+var azureMonitorSamplingRatio = builder.AddParameter("azureMonitorSamplingRatio", value: string.Empty);
 
 ///////////////////////////////////////////////////////////////////////////////
 // Azure Postgres Flexible Server
@@ -76,13 +80,14 @@ if (builder.ExecutionContext.IsPublishMode)
             .OfType<PostgreSqlFlexibleServer>()
             .Single();
 
-        infra.Add(new PostgreSqlFlexibleServerConfiguration("postgresAzureExtensions")
-        {
-            Parent = server,
-            Name = "azure.extensions",
-            Source = "user-override",
-            Value = "PGCRYPTO"
-        });
+        infra.Add(
+            new PostgreSqlFlexibleServerConfiguration("postgresAzureExtensions")
+            {
+                Parent = server,
+                Name = "azure.extensions",
+                Source = "user-override",
+                Value = "PGCRYPTO"
+            });
     });
 }
 
@@ -206,7 +211,10 @@ else
 
     keycloak = builder.AddContainer("keycloak", "admitto-keycloak")
         .WithDockerfile("./KeycloakConfiguration")
-        .WithArgs("start-dev", "--import-realm", "--spi-user-profile--declarative-user-profile--read-only-attributes=email")
+        .WithArgs(
+            "start-dev",
+            "--import-realm",
+            "--spi-user-profile--declarative-user-profile--read-only-attributes=email")
         .WithHttpEndpoint(port: keycloakHttpPort, targetPort: 8080, name: "http", isProxied: false)
         .WithHttpHealthCheck("/realms/admitto/.well-known/openid-configuration")
         .WithEnvironment("KC_BOOTSTRAP_ADMIN_USERNAME", keycloakAdminUser)
@@ -241,7 +249,10 @@ else
     }
 }
 
-keycloak.WaitFor(mailDev!);
+if (mailDev is not null)
+{
+    keycloak.WaitFor(mailDev);
+}
 
 var keycloakAuthorityRef = ReferenceExpression.Create($"{keycloak.GetEndpoint("http")}/realms/admitto");
 
@@ -275,6 +286,26 @@ IResourceBuilder<AzureApplicationInsightsResource>? appInsights = null;
 if (builder.ExecutionContext.IsPublishMode)
 {
     appInsights = builder.AddAzureApplicationInsights("app-insights", logAnalytics);
+
+    var operatorAlertEmail = builder.AddParameter("operatorAlertEmail");
+    var operatorAlertWebhookUrl = builder.AddParameter("operatorAlertWebhookUrl", value: string.Empty, secret: true);
+
+    appInsights.ConfigureInfrastructure(infra =>
+    {
+        var insights = infra.GetProvisionableResources()
+            .OfType<ApplicationInsightsComponent>()
+            .Single();
+
+        insights.RetentionInDays = 90;
+        insights.IngestionMode = ComponentIngestionMode.LogAnalytics;
+        insights.Tags.Add("environment", "production");
+    });
+
+    builder.AddBicepTemplate("observability-alerts", "Observability/alerts.bicep")
+        .WithParameter("workspaceName", logAnalytics!.Resource.NameOutputReference)
+        .WithParameter("appInsightsName", appInsights.Resource.NameOutputReference)
+        .WithParameter("operatorAlertEmail", operatorAlertEmail)
+        .WithParameter("operatorAlertWebhookUrl", operatorAlertWebhookUrl);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -316,6 +347,7 @@ if (!infraOnly)
         .WithEnvironment("ORGANIZATION__USERDIRECTORIES__KEYCLOAK__EXECUTEACTIONSCLIENTID", "admitto-ui")
         .WithEnvironment("ORGANIZATION__USERDIRECTORIES__KEYCLOAK__EXECUTEACTIONSREDIRECTURI", uiPublicUrl)
         .WithEnvironment("ORGANIZATION__BOOTSTRAPADMIN__EMAILADDRESS", apiBootstrapAdmin)
+        .WithEnvironment("OBSERVABILITY__AZUREMONITOR__SAMPLINGRATIO", azureMonitorSamplingRatio)
         .WithReference(admittoDb)
         .WithReference(quartzDb)
         .WithReference(serviceBus).WaitFor(serviceBus)
@@ -353,16 +385,23 @@ if (!infraOnly)
 {
     var worker = builder.AddProject<Projects.Admitto_Worker>("worker")
         .WithEnvironment("ORGANIZATION__USERDIRECTORIES__KEYCLOAK__AUTHORITY", keycloakAuthorityRef)
-        .WithEnvironment("ORGANIZATION__USERDIRECTORIES__KEYCLOAK__TOKENPATH", "/realms/master/protocol/openid-connect/token")
+        .WithEnvironment(
+            "ORGANIZATION__USERDIRECTORIES__KEYCLOAK__TOKENPATH",
+            "/realms/master/protocol/openid-connect/token")
         .WithEnvironment("ORGANIZATION__USERDIRECTORIES__KEYCLOAK__CLIENTID", "admin-cli")
         .WithEnvironment("ORGANIZATION__USERDIRECTORIES__KEYCLOAK__USERNAME", keycloakAdminUser)
         .WithEnvironment("ORGANIZATION__USERDIRECTORIES__KEYCLOAK__PASSWORD", keycloakAdminPassword)
+        .WithEnvironment("OBSERVABILITY__AZUREMONITOR__SAMPLINGRATIO", azureMonitorSamplingRatio)
         .WithReferenceEnvironment(ReferenceEnvironmentInjectionFlags.ConnectionString)
         .WithReference(admittoDb)
         .WithReference(quartzDb)
         .WithReference(serviceBus)
-        .WaitFor(mailDev!)
         .WaitFor(api!);
+
+    if (mailDev is not null)
+    {
+        worker.WaitFor(mailDev);
+    }
 
     if (builder.ExecutionContext.IsRunMode)
     {
@@ -506,7 +545,10 @@ if (ui is not null)
             "-c",
             "psql \"$BETTER_AUTH_DB_URI\" -v ON_ERROR_STOP=1 -f /scripts/better-auth.sql")
         .WithParentRelationship(ui)
-        .WithBindMount(Path.Combine(databaseScriptsPath, "better-auth.sql"), "/scripts/better-auth.sql", isReadOnly: true)
+        .WithBindMount(
+            Path.Combine(databaseScriptsPath, "better-auth.sql"),
+            "/scripts/better-auth.sql",
+            isReadOnly: true)
         .WithReference(betterAuthDb).WaitFor(betterAuthDb);
 
     ui

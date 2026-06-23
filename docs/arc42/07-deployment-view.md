@@ -67,6 +67,9 @@ waitlist, and bulk emails.
 - Keycloak uses its own `keycloak-db` database on the same PostgreSQL Flexible Server and imports the Admitto realm on startup.
 - Messaging is Azure Service Bus with the shared queue `queue`.
 - Application telemetry goes to Application Insights backed by the same Log Analytics workspace used by the Container Apps environment.
+- AppHost publish mode also deploys `src/Admitto.AppHost/Observability/alerts.bicep`, which creates an Azure Monitor action group plus scheduled query alerts over the workspace-backed Application Insights tables. The initial alerts evaluate API/Worker `AppExceptions` and API/Worker `AppTraces` with `SeverityLevel >= 3` every five minutes and notify the action group when the count is greater than zero.
+- Operator alerting publish parameters are `operatorAlertEmail` (required) and `operatorAlertWebhookUrl` (optional, secret). The optional Application Insights sampling publish parameter is `azureMonitorSamplingRatio`; leave it empty to use the service default `0.1`, or set it to a value between `0` and `1`. AppHost injects it into API and Worker as `OBSERVABILITY__AZUREMONITOR__SAMPLINGRATIO`.
+- Failed-request alerting is intentionally deferred for the initial baseline because expected public/admin 4xx responses can create noise. Add a thresholded `AppRequests` scheduled query only after production traffic patterns establish a useful failed-request threshold.
 - The Worker Container App allows more than one replica so overlapping revisions and temporary scale-out are supported; Quartz clustering against `quartz-db` prevents duplicate trigger execution.
 - No service mesh or discovery needed — the API and Worker share the same database and queue.
 - **Keycloak** is the production identity provider. API bearer validation and the Admin UI OAuth flow use the public Keycloak realm URL, while backend user provisioning uses the configured Keycloak admin client settings.

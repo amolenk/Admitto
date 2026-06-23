@@ -423,6 +423,37 @@ Service defaults (`Admitto.ServiceDefaults`) configure:
 - Request timeouts
 - Output caching
 
+### Production logging policy
+
+API and Worker production configuration keeps Admitto application logs visible while suppressing routine framework and SDK noise before telemetry ingestion:
+
+| Category | Production level | Rationale |
+| :------- | :--------------- | :-------- |
+| `Default` | `Information` | Keeps general operational signal. |
+| `Amolenk.Admitto` | `Information` | Keeps domain/application lifecycle logs. |
+| `Microsoft.AspNetCore` | `Warning` | Suppresses routine framework request logs. |
+| `Microsoft.EntityFrameworkCore.Database.Command` | `Warning` | Suppresses SQL command chatter while retaining command failures. |
+| `Azure.Messaging.ServiceBus` | `Warning` | Suppresses idle receive/link logs while retaining queue warnings and errors. |
+| `Azure.Core` | `Warning` | Suppresses Azure SDK internals except warnings/errors. |
+| `Quartz` | `Warning` | Suppresses scheduler chatter while retaining job/scheduler failures. |
+| `Microsoft.Hosting.Lifetime` | `Information` | Keeps startup/shutdown signal. |
+
+The production suppressions live in `appsettings.Production.json`. Local development inherits the shared `Default=Information` baseline from `appsettings.json`, while `appsettings.Development.json` only raises `Amolenk.Admitto` to `Debug`. Developers can temporarily raise any category in production through normal configuration overrides during an incident.
+
+### Log severity expectations
+
+`Error` and `Critical` application logs are operator-actionable and feed Azure alert evaluation. Use them for unexpected failures such as unhandled API exceptions, failed queue message processing, unrecoverable job failures, or startup reconciliation failures. Expected validation, authorization, not-found, concurrency, and business-rule outcomes must stay below `Error` and be returned as ProblemDetails or domain errors rather than logged as alerting failures.
+
+The existing API and Worker `LogError` calls are reserved for unhandled exceptions, queue processing failures, bulk-email failures that require operator attention, and reconfirm scheduling reconciliation failures.
+
+### Azure Monitor sampling
+
+When `APPLICATIONINSIGHTS_CONNECTION_STRING` is present, `Admitto.ServiceDefaults` enables Azure Monitor export and reads `Observability:AzureMonitor:SamplingRatio`. If the setting is absent or empty, the code default is `0.1`; configured values must be between `0` and `1`. AppHost publish mode wires the same setting to API and Worker through `OBSERVABILITY__AZUREMONITOR__SAMPLINGRATIO` from the optional `azureMonitorSamplingRatio` publish parameter.
+
+The sampling ratio is trace sampling. `Admitto.ServiceDefaults` keeps Azure Monitor trace-based log sampling enabled (`EnableTraceBasedLogsSampler=true`) so logs associated with sampled-out traces are also dropped. This keeps the Azure Monitor setup close to defaults and provides a stronger ingestion-cost reduction than trace sampling alone. Operators can temporarily increase `Observability:AzureMonitor:SamplingRatio` during incidents when higher trace/log fidelity is needed.
+
+Local Aspire diagnostics use the OTLP exporter when `OTEL_EXPORTER_OTLP_ENDPOINT` is present, so local visibility does not depend on the Azure Monitor sampling ratio.
+
 ## 8.13 Scheduled jobs (Quartz.NET)
 
 Background work that cannot be expressed as a domain or integration event — for example, polling for records whose grace period has expired — is implemented as a Quartz `IJob`.

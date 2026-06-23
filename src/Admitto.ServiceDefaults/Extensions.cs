@@ -1,6 +1,7 @@
 using Azure.Monitor.OpenTelemetry.AspNetCore;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
@@ -15,6 +16,13 @@ namespace Microsoft.Extensions.Hosting;
 // To learn more about using this project, see https://aka.ms/dotnet/aspire/service-defaults
 public static class Extensions
 {
+    private const float DefaultAzureMonitorSamplingRatio = 0.1f;
+
+    private sealed class AzureMonitorObservabilityOptions
+    {
+        public float? SamplingRatio { get; set; }
+    }
+
     extension<TBuilder>(TBuilder builder) where TBuilder : IHostApplicationBuilder
     {
         public void AddServiceDefaults()
@@ -37,7 +45,7 @@ public static class Extensions
             });
 
             builder.AddDataProtection();
-                
+
             // TODO Optimize cache size
             builder.Services.AddMemoryCache();
 
@@ -47,7 +55,7 @@ public static class Extensions
                 // .AddInfrastructureDatabaseServices()
                 // .AddInfrastructureMessagingServices()
                 // .AddInfrastructureJobServices();
-        
+
             // Add default application services.
             // TODO
             // builder.Services
@@ -100,11 +108,23 @@ public static class Extensions
             // Enable Azure Monitor exporter for Application Insights
             if (!string.IsNullOrEmpty(builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"]))
             {
+                var azureMonitorOptions = new AzureMonitorObservabilityOptions();
+                builder.Configuration.GetSection("Observability:AzureMonitor").Bind(azureMonitorOptions);
+                azureMonitorOptions.SamplingRatio ??= DefaultAzureMonitorSamplingRatio;
+
+                builder.Services.AddOptions<AzureMonitorObservabilityOptions>()
+                    .Bind(builder.Configuration.GetSection("Observability:AzureMonitor"))
+                    .PostConfigure(options => options.SamplingRatio ??= DefaultAzureMonitorSamplingRatio)
+                    .Validate(
+                        options => options.SamplingRatio is >= 0 and <= 1,
+                        "Observability:AzureMonitor:SamplingRatio must be between 0 and 1.")
+                    .ValidateOnStart();
+
                 builder.Services.AddOpenTelemetry()
                     .UseAzureMonitor(options =>
                     {
                         options.ConnectionString = builder.Configuration["APPLICATIONINSIGHTS_CONNECTION_STRING"];
-                        options.SamplingRatio = 0.1f; // Sample 10% of telemetry
+                        options.SamplingRatio = azureMonitorOptions.SamplingRatio.Value;
                     });
             }
         }
@@ -124,7 +144,7 @@ public static class Extensions
                 // Add a default liveness check to ensure app is responsive
                 .AddCheck("self", () => HealthCheckResult.Healthy(), ["live"]);
         }
-        
+
         private void AddDataProtection()
         {
             builder.Services.AddDataProtection()
