@@ -7,6 +7,7 @@ This is the most important flow — it shows how a write request moves through v
 ```mermaid
 sequenceDiagram
   participant Client
+  participant Context as UserContextResolutionMiddleware
   participant Endpoint as API Endpoint
   participant Filter as ValidationFilter
   participant Auth as Authorization
@@ -18,6 +19,8 @@ sequenceDiagram
   participant Outbox as OutboxWriter
 
   Client->>Endpoint: POST /admin/...
+  Endpoint->>Context: Resolve JWT user context from route scope
+  Context-->>Endpoint: Cached user context or 403
   Endpoint->>Filter: FluentValidation on request DTO
   Filter-->>Endpoint: Valid or 400
   Endpoint->>Auth: Policy check (admin / team role)

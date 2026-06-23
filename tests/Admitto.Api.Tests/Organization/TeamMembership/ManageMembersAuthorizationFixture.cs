@@ -18,6 +18,8 @@ internal sealed class ManageMembersAuthorizationFixture
 
     public static ManageMembersAuthorizationFixture BobIsCrewMember() => new();
 
+    public static ManageMembersAuthorizationFixture BobIsOwnerOfDifferentTeam() => new();
+
     public static ManageMembersAuthorizationFixture NoTeamMembers() => new();
 
     public async ValueTask SetupAsync(EndToEndTestEnvironment environment)
@@ -47,6 +49,23 @@ internal sealed class ManageMembersAuthorizationFixture
         await environment.OrganizationDatabase.SeedAsync(dbContext =>
         {
             dbContext.Teams.Add(team);
+        });
+    }
+
+    public async ValueTask SetupWithOtherTeamMembershipAsync(EndToEndTestEnvironment environment)
+    {
+        var requestedTeam = new TeamBuilder().Build();
+        var otherTeam = new TeamBuilder().Build();
+        TeamId = requestedTeam.Id.Value;
+
+        var bob = await environment.OrganizationDatabase.Context.Users.GetAsync(u =>
+            u.EmailAddress == EmailAddress.From("bob@example.com"));
+
+        await environment.OrganizationDatabase.SeedAsync(dbContext =>
+        {
+            bob.AddTeamMembership(otherTeam.Id, TeamMembershipRole.Owner);
+
+            dbContext.Teams.AddRange(requestedTeam, otherTeam);
         });
     }
 }

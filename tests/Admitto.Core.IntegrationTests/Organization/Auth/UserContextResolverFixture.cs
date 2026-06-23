@@ -72,6 +72,31 @@ internal sealed class UserContextResolverFixture
         TeamId = team.Id.Value;
     }
 
+    public async ValueTask SeedUserWithMembershipInOtherTeamAsync(
+        IntegrationTestEnvironment environment,
+        TeamMembershipRole role = TeamMembershipRole.Crew)
+    {
+        var requestedTeam = new TeamBuilder().Build();
+        var otherTeam = new TeamBuilder().Build();
+        var otherTeamId = TeamIdVO.From(otherTeam.Id.Value);
+
+        var user = new UserBuilder()
+            .WithEmailAddress(EmailAddress.From(UserEmail))
+            .WithMembership(otherTeamId, role)
+            .Build();
+
+        user.AssignExternalUserId(ExternalUserIdVO.From(ExternalUserId));
+
+        await environment.OrganizationDatabase.SeedAsync(dbContext =>
+        {
+            dbContext.Teams.AddRange(requestedTeam, otherTeam);
+            dbContext.Users.Add(user);
+        });
+
+        UserId = user.Id.Value;
+        TeamId = requestedTeam.Id.Value;
+    }
+
     public async ValueTask SeedUserWithTeamAndEventAsync(
         IntegrationTestEnvironment environment,
         TeamMembershipRole role = TeamMembershipRole.Crew)

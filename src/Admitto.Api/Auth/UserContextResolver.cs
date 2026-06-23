@@ -25,10 +25,12 @@ public sealed class UserContextResolver(
 {
     public async ValueTask<UserContextDto?> ResolveAsync(
         ClaimsPrincipal principal,
-        TeamId? teamId,
-        TicketedEventId? eventId,
+        RouteScope routeScope,
         CancellationToken cancellationToken)
     {
+        var routeTeamId = GetTeamId(routeScope);
+        var routeEventId = GetEventId(routeScope);
+
         var sub = principal.FindFirstValue(ClaimTypes.NameIdentifier);
         var email = principal.FindFirstValue(ClaimTypes.Email)
                     ?? principal.FindFirstValue("email");
@@ -48,11 +50,16 @@ public sealed class UserContextResolver(
                 u.EmailAddress,
                 u.IsAdmin,
                 u.ExternalUserId,
-                Memberships = u.Memberships.Select(m => new { m.TeamId, m.Role }).ToList(),
-                EventBelongsToTeam = teamId == null || eventId == null ||
-                                     writeStore.Teams.Any(t =>
-                                         t.Id == teamId &&
-                                         t.EventCreationRequests.Any(ecr => ecr.TicketedEventId == eventId))
+                RouteRole = routeTeamId == null
+                    ? null
+                    : u.Memberships
+                        .Where(m => m.TeamId == routeTeamId)
+                        .Select(m => (TeamMembershipRole?)m.Role)
+                        .SingleOrDefault(),
+                EventBelongsToTeam = routeTeamId == null || routeEventId == null ||
+                                      writeStore.Teams.Any(t =>
+                                          t.Id == routeTeamId &&
+                                          t.EventCreationRequests.Any(ecr => ecr.TicketedEventId == routeEventId))
             })
             .SingleOrDefaultAsync(cancellationToken);
 
@@ -67,7 +74,7 @@ public sealed class UserContextResolver(
                 result.Id.Value,
                 name,
                 result.EmailAddress.Value,
-                result.Memberships.Select(m => m.Role).SingleOrDefault(),
+                result.RouteRole,
                 result.IsAdmin);
         }
 
@@ -85,11 +92,29 @@ public sealed class UserContextResolver(
         byEmail.AssignExternalUserId(externalId);
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
+        var role = routeTeamId is null
+            ? null
+            : byEmail.Memberships
+                .Where(m => m.TeamId == routeTeamId)
+                .Select(m => (TeamMembershipRole?)m.Role)
+                .SingleOrDefault();
+
         return new UserContextDto(
             byEmail.Id.Value,
             name,
             byEmail.EmailAddress.Value,
-            byEmail.Memberships.Select(m => m.Role).SingleOrDefault(),
+            role,
             byEmail.IsAdmin);
     }
+
+    private static TeamId? GetTeamId(RouteScope routeScope)
+        => routeScope switch
+        {
+            RouteScope.Team team => team.TeamId,
+            RouteScope.Event @event => @event.TeamId,
+            _ => null
+        };
+
+    private static TicketedEventId? GetEventId(RouteScope routeScope)
+        => routeScope is RouteScope.Event @event ? @event.EventId : null;
 }

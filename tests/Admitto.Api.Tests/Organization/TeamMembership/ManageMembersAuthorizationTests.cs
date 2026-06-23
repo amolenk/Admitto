@@ -31,6 +31,25 @@ public sealed class ManageMembersAuthorizationTests(TestContext testContext) : E
         response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
     }
 
+    [TestMethod]
+    public async Task OwnerOfDifferentTeam_CannotManageMembers_Returns403Forbidden()
+    {
+        // Arrange
+        var fixture = ManageMembersAuthorizationFixture.BobIsOwnerOfDifferentTeam();
+        await fixture.SetupWithOtherTeamMembershipAsync(Environment);
+
+        var request = new { Email = "newmember@example.com", Role = TeamMembershipRoleDto.Crew };
+
+        // Act
+        var response = await Environment.BobApiClient.PostAsJsonAsync(
+            fixture.MembersRoute,
+            request,
+            cancellationToken: testContext.CancellationToken);
+
+        // Assert
+        response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+    }
+
     // SC-015: Given the requester is an admin but not a member of team "acme",
     //         when they add "alice@example.com" as a Crew member of team "acme",
     //         then "alice@example.com" has a Crew membership in team "acme".

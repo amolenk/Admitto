@@ -22,11 +22,13 @@ public sealed class UserContextResolutionMiddleware(RequestDelegate next)
         if (user.Identity?.IsAuthenticated == true
             && user.Identity.AuthenticationType != ApiKeyAuthenticationHandler.SchemeName)
         {
-            // Parse route context.
-            var teamId = TryParseTeamId(context);
-            var eventId = TryParseEventId(context);
+            if (!TryGetRouteScope(context, out var routeScope))
+            {
+                context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                return;
+            }
 
-            var userContext = await resolver.ResolveAsync(user, teamId, eventId, context.RequestAborted);
+            var userContext = await resolver.ResolveAsync(user, routeScope, context.RequestAborted);
             if (userContext is null)
             {
                 context.Response.StatusCode = StatusCodes.Status403Forbidden;
@@ -39,15 +41,50 @@ public sealed class UserContextResolutionMiddleware(RequestDelegate next)
         await next(context);
     }
 
-    private static TeamId? TryParseTeamId(HttpContext httpContext)
+    private static bool TryGetRouteScope(HttpContext httpContext, out RouteScope routeScope)
     {
-        var v = httpContext.GetRouteValue("teamId")?.ToString();
-        return v is null ? null : TeamId.Parse(v);
+        routeScope = new RouteScope.Global();
+
+        var teamIdValue = httpContext.GetRouteValue("teamId")?.ToString();
+        var eventIdValue = httpContext.GetRouteValue("eventId")?.ToString();
+
+        if (teamIdValue is null && eventIdValue is null)
+            return true;
+
+        if (teamIdValue is null)
+            return false;
+
+        var teamId = ParseTeamId(teamIdValue);
+        if (teamId is not { } parsedTeamId)
+            return false;
+
+        if (eventIdValue is null)
+        {
+            routeScope = new RouteScope.Team(parsedTeamId);
+            return true;
+        }
+
+        var eventId = ParseEventId(eventIdValue);
+        if (eventId is not { } parsedEventId)
+            return false;
+
+        routeScope = new RouteScope.Event(parsedTeamId, parsedEventId);
+        return true;
     }
 
-    private static TicketedEventId? TryParseEventId(HttpContext httpContext)
+    private static TeamId? ParseTeamId(string value)
     {
-        var v = httpContext.GetRouteValue("eventId")?.ToString();
-        return v is null ? null : TicketedEventId.Parse(v);
+        if (!Guid.TryParse(value, out var id) || id == Guid.Empty)
+            return null;
+
+        return TeamId.From(id);
+    }
+
+    private static TicketedEventId? ParseEventId(string value)
+    {
+        if (!Guid.TryParse(value, out var id) || id == Guid.Empty)
+            return null;
+
+        return TicketedEventId.From(id);
     }
 }
