@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Amolenk.Admitto.Api.Auth;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.OpenApi;
@@ -7,8 +8,8 @@ using Microsoft.OpenApi;
 namespace Amolenk.Admitto.ApiService.OpenApi;
 
 /// <summary>
-/// Populates the OpenAPI security scheme by fetching the OIDC discovery document from the configured
-/// <c>Authentication:Bearer:Authority</c>. Works with any standards-compliant IdP (Keycloak, Auth0, …).
+/// Populates OpenAPI security schemes. OAuth endpoints are discovered from the configured
+/// <c>Authentication:Bearer:Authority</c> when available.
 /// </summary>
 internal sealed class BearerSecuritySchemeTransformer(
     IAuthenticationSchemeProvider authenticationSchemeProvider,
@@ -51,6 +52,15 @@ internal sealed class BearerSecuritySchemeTransformer(
 
         document.Components ??= new OpenApiComponents();
         document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
+
+        document.Components.SecuritySchemes[ApiKeyAuthenticationHandler.SchemeName] = new OpenApiSecurityScheme
+        {
+            Type = SecuritySchemeType.ApiKey,
+            Name = "X-Api-Key",
+            In = ParameterLocation.Header,
+            Description = "Public API key for the owning team."
+        };
+
         document.Components.SecuritySchemes[JwtBearerDefaults.AuthenticationScheme] = new OpenApiSecurityScheme
         {
             Type = SecuritySchemeType.OAuth2,
@@ -70,12 +80,14 @@ internal sealed class BearerSecuritySchemeTransformer(
             }
         };
 
-        document.Security = [
-            new OpenApiSecurityRequirement
+        document.Components.SecuritySchemes[EndpointSecurityRequirementTransformer.EmailVerificationSchemeName] =
+            new OpenApiSecurityScheme
             {
-                [new OpenApiSecuritySchemeReference(JwtBearerDefaults.AuthenticationScheme)] = []
-            }
-        ];
+                Type = SecuritySchemeType.Http,
+                Scheme = "bearer",
+                BearerFormat = "email-verification-token",
+                Description = "Email-verification token returned by the public OTP verification endpoint."
+            };
 
         document.SetReferenceHostDocument();
     }

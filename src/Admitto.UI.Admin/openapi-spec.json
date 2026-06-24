@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:54406/"
+      "url": "http://localhost:53374/"
     }
   ],
   "paths": {
@@ -96,7 +96,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       },
       "put": {
         "tags": [
@@ -189,7 +194,12 @@
           "201": {
             "description": "Created"
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       },
       "delete": {
         "tags": [
@@ -282,7 +292,12 @@
           "204": {
             "description": "No Content"
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/email-settings/test": {
@@ -374,7 +389,12 @@
           "200": {
             "description": "OK"
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/events/{eventId}/email-settings": {
@@ -464,7 +484,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       },
       "put": {
         "tags": [
@@ -558,7 +583,12 @@
           "201": {
             "description": "Created"
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       },
       "delete": {
         "tags": [
@@ -652,7 +682,12 @@
           "204": {
             "description": "No Content"
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/events/{eventId}/email-settings/test": {
@@ -745,7 +780,12 @@
           "200": {
             "description": "OK"
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/email-templates": {
@@ -837,7 +877,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       },
       "post": {
         "tags": [
@@ -934,7 +979,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/email-templates/{id}": {
@@ -1032,7 +1082,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       },
       "put": {
         "tags": [
@@ -1131,7 +1186,12 @@
           "200": {
             "description": "OK"
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       },
       "delete": {
         "tags": [
@@ -1233,7 +1293,12 @@
           "204": {
             "description": "No Content"
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/email-templates/preview": {
@@ -1332,7 +1397,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/email-templates/{id}/test-send": {
@@ -1433,7 +1503,12 @@
           "200": {
             "description": "OK"
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/events/{eventId}/email-templates": {
@@ -1526,7 +1601,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       },
       "post": {
         "tags": [
@@ -1624,7 +1704,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/events/{eventId}/email-templates/{id}": {
@@ -1723,7 +1808,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       },
       "put": {
         "tags": [
@@ -1823,7 +1913,12 @@
           "200": {
             "description": "OK"
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       },
       "delete": {
         "tags": [
@@ -1926,7 +2021,12 @@
           "204": {
             "description": "No Content"
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/events/{eventId}/email-templates/preview": {
@@ -2026,7 +2126,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/events/{eventId}/email-templates/{id}/test-send": {
@@ -2128,7 +2233,12 @@
           "200": {
             "description": "OK"
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/events/{eventId}/bulk-emails/preview": {
@@ -2228,7 +2338,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/events/{eventId}/bulk-emails": {
@@ -2328,7 +2443,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       },
       "get": {
         "tags": [
@@ -2419,7 +2539,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/events/{eventId}/bulk-emails/{bulkEmailJobId}": {
@@ -2518,7 +2643,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/events/{eventId}/bulk-emails/{bulkEmailJobId}/cancel": {
@@ -2610,7 +2740,12 @@
           "202": {
             "description": "Accepted"
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/events/{eventId}/registrations/{registrationId}/emails": {
@@ -2712,7 +2847,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams": {
@@ -2792,7 +2932,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       },
       "get": {
         "tags": [
@@ -2863,7 +3008,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}": {
@@ -2944,7 +3094,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       },
       "put": {
         "tags": [
@@ -3026,7 +3181,12 @@
           "200": {
             "description": "OK"
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/archive": {
@@ -3110,7 +3270,12 @@
           "200": {
             "description": "OK"
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/members": {
@@ -3194,7 +3359,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       },
       "post": {
         "tags": [
@@ -3276,7 +3446,12 @@
           "200": {
             "description": "OK"
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/events": {
@@ -3360,7 +3535,12 @@
           "202": {
             "description": "Accepted"
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       },
       "get": {
         "tags": [
@@ -3442,7 +3622,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/event-creations/{creationRequestId}": {
@@ -3532,7 +3717,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/members/{email}": {
@@ -3624,7 +3814,12 @@
           "200": {
             "description": "OK"
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       },
       "delete": {
         "tags": [
@@ -3704,7 +3899,12 @@
           "200": {
             "description": "OK"
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/api-keys": {
@@ -3795,7 +3995,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       },
       "get": {
         "tags": [
@@ -3877,7 +4082,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/api-keys/{keyId}": {
@@ -3960,7 +4170,12 @@
           "204": {
             "description": "No Content"
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/events/{eventId}": {
@@ -4053,7 +4268,12 @@
           "404": {
             "description": "Not Found"
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       },
       "put": {
         "tags": [
@@ -4144,7 +4364,12 @@
           "204": {
             "description": "No Content"
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/events/{eventId}/archive": {
@@ -4227,7 +4452,12 @@
           "204": {
             "description": "No Content"
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/events/{eventId}/registration-policy": {
@@ -4320,7 +4550,12 @@
           "204": {
             "description": "No Content"
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/events/{eventId}/reconfirm-policy": {
@@ -4413,7 +4648,12 @@
           "204": {
             "description": "No Content"
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/events/{eventId}/time-zone": {
@@ -4506,7 +4746,12 @@
           "204": {
             "description": "No Content"
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/events/{eventId}/additional-detail-schema": {
@@ -4599,7 +4844,12 @@
           "204": {
             "description": "No Content"
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/events/{eventId}/registrations": {
@@ -4699,7 +4949,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       },
       "get": {
         "tags": [
@@ -4793,7 +5048,12 @@
           "404": {
             "description": "Not Found"
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/events/{eventId}/registrations/export": {
@@ -4876,7 +5136,12 @@
           "404": {
             "description": "Not Found"
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/events/{eventId}/registrations/{registrationId}": {
@@ -4978,7 +5243,12 @@
           "404": {
             "description": "Not Found"
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/events/{eventId}/registrations/{registrationId}/cancel": {
@@ -5080,7 +5350,12 @@
           "204": {
             "description": "No Content"
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/events/{eventId}/registrations/{registrationId}/tickets": {
@@ -5182,7 +5457,12 @@
           "204": {
             "description": "No Content"
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/events/{eventId}/coupons": {
@@ -5282,7 +5562,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       },
       "get": {
         "tags": [
@@ -5370,7 +5655,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/events/{eventId}/coupons/{couponId}": {
@@ -5469,7 +5759,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/events/{eventId}/coupons/{couponId}/revoke": {
@@ -5561,7 +5856,12 @@
           "200": {
             "description": "OK"
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/events/{eventId}/ticket-types": {
@@ -5661,7 +5961,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       },
       "get": {
         "tags": [
@@ -5752,7 +6057,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/events/{eventId}/ticket-types/{ticketTypeId}": {
@@ -5854,7 +6164,12 @@
           "204": {
             "description": "No Content"
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/events/{eventId}/ticket-types/{ticketTypeId}/waitlist/{entryId}": {
@@ -5955,7 +6270,12 @@
           "200": {
             "description": "OK"
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/events/{eventId}/ticket-types/{ticketTypeId}/waitlist": {
@@ -6057,7 +6377,12 @@
           "404": {
             "description": "Not Found"
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/events/{eventId}/badge-types": {
@@ -6157,7 +6482,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       },
       "get": {
         "tags": [
@@ -6245,7 +6575,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/events/{eventId}/badge-types/{badgeTypeId}": {
@@ -6347,7 +6682,12 @@
           "204": {
             "description": "No Content"
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       },
       "delete": {
         "tags": [
@@ -6437,7 +6777,12 @@
           "204": {
             "description": "No Content"
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/events/{eventId}/badge-types/{badgeTypeId}/instances": {
@@ -6546,7 +6891,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       },
       "get": {
         "tags": [
@@ -6646,7 +6996,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/events/{eventId}/badge-types/{badgeTypeId}/instances/{badgeInstanceId}": {
@@ -6757,7 +7112,12 @@
           "204": {
             "description": "No Content"
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       },
       "delete": {
         "tags": [
@@ -6856,7 +7216,12 @@
           "204": {
             "description": "No Content"
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/admin/teams/{teamId}/events/{eventId}/badge-types/{badgeTypeId}/export": {
@@ -6945,7 +7310,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
       }
     },
     "/api/events/{eventId}/otp/request": {
@@ -7036,7 +7406,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "ApiKey": [ ]
+          }
+        ]
       }
     },
     "/api/events/{eventId}/otp/verify": {
@@ -7127,7 +7502,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "ApiKey": [ ]
+          }
+        ]
       }
     },
     "/api/events/{eventId}/registrations": {
@@ -7218,7 +7598,13 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "ApiKey": [ ],
+            "EmailVerificationBearer": [ ]
+          }
+        ]
       }
     },
     "/api/events/{eventId}/registrations/coupon": {
@@ -7309,7 +7695,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "ApiKey": [ ]
+          }
+        ]
       }
     },
     "/api/events/{eventId}/registrations/{registrationId}/qr-code": {
@@ -7335,13 +7726,6 @@
             "schema": {
               "type": "string",
               "format": "uuid"
-            }
-          },
-          {
-            "name": "signature",
-            "in": "query",
-            "schema": {
-              "type": "string"
             }
           }
         ],
@@ -7406,7 +7790,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "ApiKey": [ ]
+          }
+        ]
       }
     },
     "/api/events/{eventId}/registrations/{registrationId}/cancel": {
@@ -7496,7 +7885,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "ApiKey": [ ]
+          }
+        ]
       }
     },
     "/api/events/{eventId}/registrations/{registrationId}/tickets": {
@@ -7596,7 +7990,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "ApiKey": [ ]
+          }
+        ]
       }
     },
     "/api/events/{eventId}/ticket-types": {
@@ -7690,7 +8089,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "ApiKey": [ ]
+          }
+        ]
       }
     },
     "/api/events/{eventId}/waitlist/{ticketTypeId}": {
@@ -7790,7 +8194,13 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "ApiKey": [ ],
+            "EmailVerificationBearer": [ ]
+          }
+        ]
       },
       "delete": {
         "tags": [
@@ -7889,7 +8299,12 @@
           "200": {
             "description": "OK"
           }
-        }
+        },
+        "security": [
+          {
+            "ApiKey": [ ]
+          }
+        ]
       }
     },
     "/api/events/{eventId}/coupons/{couponCode}": {
@@ -7989,7 +8404,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "ApiKey": [ ]
+          }
+        ]
       }
     }
   },
@@ -11179,6 +11599,12 @@
       }
     },
     "securitySchemes": {
+      "ApiKey": {
+        "type": "apiKey",
+        "description": "Public API key for the owning team.",
+        "name": "X-Api-Key",
+        "in": "header"
+      },
       "Bearer": {
         "type": "oauth2",
         "flows": {
@@ -11192,14 +11618,15 @@
             }
           }
         }
+      },
+      "EmailVerificationBearer": {
+        "type": "http",
+        "description": "Email-verification token returned by the public OTP verification endpoint.",
+        "scheme": "bearer",
+        "bearerFormat": "email-verification-token"
       }
     }
   },
-  "security": [
-    {
-      "Bearer": [ ]
-    }
-  ],
   "tags": [
     {
       "name": "Admin - Email Settings"

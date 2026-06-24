@@ -16,11 +16,10 @@ public static class DependencyInjection
         {
             services.AddHttpClient();
 
-            // Add OpenAPI/Swagger generation with Bearer token security scheme.
             services.AddOpenApi(options =>
             {
-                // Add Bearer token security scheme to the OpenAPI output.
                 options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
+                options.AddOperationTransformer<EndpointSecurityRequirementTransformer>();
 
                 options.AddSchemaTransformer<NumberTypeTransformer>();
                 NumberTypeTransformer.MapType<TimeSpan>(

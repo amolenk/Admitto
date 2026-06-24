@@ -1128,8 +1128,8 @@ export const requestOtp = <ThrowOnError extends boolean = false>(options: Option
     return (options.client ?? client).post<unknown, RequestOtpErrors, ThrowOnError>({
         security: [
             {
-                scheme: 'bearer',
-                type: 'http'
+                name: 'X-Api-Key',
+                type: 'apiKey'
             }
         ],
         url: '/api/events/{eventId}/otp/request',
@@ -1145,8 +1145,8 @@ export const verifyOtp = <ThrowOnError extends boolean = false>(options: Options
     return (options.client ?? client).post<unknown, VerifyOtpErrors, ThrowOnError>({
         security: [
             {
-                scheme: 'bearer',
-                type: 'http'
+                name: 'X-Api-Key',
+                type: 'apiKey'
             }
         ],
         url: '/api/events/{eventId}/otp/verify',
@@ -1161,6 +1161,10 @@ export const verifyOtp = <ThrowOnError extends boolean = false>(options: Options
 export const registerAttendeeSelfService = <ThrowOnError extends boolean = false>(options: Options<RegisterAttendeeSelfServiceData, ThrowOnError>) => {
     return (options.client ?? client).post<unknown, RegisterAttendeeSelfServiceErrors, ThrowOnError>({
         security: [
+            {
+                name: 'X-Api-Key',
+                type: 'apiKey'
+            },
             {
                 scheme: 'bearer',
                 type: 'http'
@@ -1179,8 +1183,8 @@ export const registerAttendeeWithCoupon = <ThrowOnError extends boolean = false>
     return (options.client ?? client).post<unknown, RegisterAttendeeWithCouponErrors, ThrowOnError>({
         security: [
             {
-                scheme: 'bearer',
-                type: 'http'
+                name: 'X-Api-Key',
+                type: 'apiKey'
             }
         ],
         url: '/api/events/{eventId}/registrations/coupon',
@@ -1196,8 +1200,8 @@ export const getQrCode = <ThrowOnError extends boolean = false>(options: Options
     return (options.client ?? client).get<unknown, GetQrCodeErrors, ThrowOnError>({
         security: [
             {
-                scheme: 'bearer',
-                type: 'http'
+                name: 'X-Api-Key',
+                type: 'apiKey'
             }
         ],
         url: '/api/events/{eventId}/registrations/{registrationId}/qr-code',
@@ -1209,8 +1213,8 @@ export const selfCancelRegistration = <ThrowOnError extends boolean = false>(opt
     return (options.client ?? client).post<unknown, SelfCancelRegistrationErrors, ThrowOnError>({
         security: [
             {
-                scheme: 'bearer',
-                type: 'http'
+                name: 'X-Api-Key',
+                type: 'apiKey'
             }
         ],
         url: '/api/events/{eventId}/registrations/{registrationId}/cancel',
@@ -1222,8 +1226,8 @@ export const selfChangeTickets = <ThrowOnError extends boolean = false>(options:
     return (options.client ?? client).put<unknown, SelfChangeTicketsErrors, ThrowOnError>({
         security: [
             {
-                scheme: 'bearer',
-                type: 'http'
+                name: 'X-Api-Key',
+                type: 'apiKey'
             }
         ],
         url: '/api/events/{eventId}/registrations/{registrationId}/tickets',
@@ -1239,8 +1243,8 @@ export const getPublicTicketTypes = <ThrowOnError extends boolean = false>(optio
     return (options.client ?? client).get<GetPublicTicketTypesResponses, GetPublicTicketTypesErrors, ThrowOnError>({
         security: [
             {
-                scheme: 'bearer',
-                type: 'http'
+                name: 'X-Api-Key',
+                type: 'apiKey'
             }
         ],
         url: '/api/events/{eventId}/ticket-types',
@@ -1252,8 +1256,8 @@ export const leaveWaitlist = <ThrowOnError extends boolean = false>(options: Opt
     return (options.client ?? client).delete<LeaveWaitlistResponses, LeaveWaitlistErrors, ThrowOnError>({
         security: [
             {
-                scheme: 'bearer',
-                type: 'http'
+                name: 'X-Api-Key',
+                type: 'apiKey'
             }
         ],
         url: '/api/events/{eventId}/waitlist/{ticketTypeId}',
@@ -1264,6 +1268,10 @@ export const leaveWaitlist = <ThrowOnError extends boolean = false>(options: Opt
 export const joinWaitlist = <ThrowOnError extends boolean = false>(options: Options<JoinWaitlistData, ThrowOnError>) => {
     return (options.client ?? client).post<unknown, JoinWaitlistErrors, ThrowOnError>({
         security: [
+            {
+                name: 'X-Api-Key',
+                type: 'apiKey'
+            },
             {
                 scheme: 'bearer',
                 type: 'http'
@@ -1282,8 +1290,8 @@ export const getPublicCouponDetails = <ThrowOnError extends boolean = false>(opt
     return (options.client ?? client).get<GetPublicCouponDetailsResponses, GetPublicCouponDetailsErrors, ThrowOnError>({
         security: [
             {
-                scheme: 'bearer',
-                type: 'http'
+                name: 'X-Api-Key',
+                type: 'apiKey'
             }
         ],
         url: '/api/events/{eventId}/coupons/{couponCode}',
