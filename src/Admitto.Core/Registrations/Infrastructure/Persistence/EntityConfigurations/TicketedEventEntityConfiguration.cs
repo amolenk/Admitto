@@ -67,11 +67,6 @@ public class TicketedEventEntityConfiguration : IEntityTypeConfiguration<Tickete
             .HasConversion<int>()
             .IsRequired();
 
-        builder.Property(e => e.SigningKey)
-            .HasColumnName("signing_key")
-            .IsRequired()
-            .HasMaxLength(64);
-
         builder.Property(e => e.Version)
             .HasColumnName("xmin")
             .IsRowVersion();

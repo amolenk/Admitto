@@ -51,4 +51,78 @@ public sealed class OpenApiSecuritySchemeTests(TestContext testContext) : EndToE
         authUrl.ShouldNotBeNullOrWhiteSpace();
         tokenUrl.ShouldNotBeNullOrWhiteSpace();
     }
+
+    [TestMethod]
+    public async Task OpenApiSpec_PublicEndpointsRequireApiKeyOnlyByDefault()
+    {
+        // Act
+        using var doc = await GetOpenApiDocumentAsync();
+
+        // Assert
+        var root = doc.RootElement;
+        root.TryGetProperty("security", out _).ShouldBeFalse();
+
+        var securitySchemes = root.GetProperty("components").GetProperty("securitySchemes");
+        securitySchemes.GetProperty("ApiKey").GetProperty("name").GetString().ShouldBe("X-Api-Key");
+        securitySchemes.GetProperty("ApiKey").GetProperty("in").GetString().ShouldBe("header");
+
+        GetSecuritySchemeNames(root, "/api/events/{eventId}/otp/request", "post")
+            .ShouldBe(["ApiKey"]);
+    }
+
+    [TestMethod]
+    public async Task OpenApiSpec_EmailVerificationEndpointsRequireApiKeyAndVerificationBearer()
+    {
+        // Act
+        using var doc = await GetOpenApiDocumentAsync();
+
+        // Assert
+        var root = doc.RootElement;
+        var securitySchemes = root.GetProperty("components").GetProperty("securitySchemes");
+        securitySchemes.GetProperty("EmailVerificationBearer").GetProperty("scheme").GetString().ShouldBe("bearer");
+
+        GetSecuritySchemeNames(root, "/api/events/{eventId}/registrations", "post")
+            .ShouldBe(["ApiKey", "EmailVerificationBearer"], ignoreOrder: true);
+        GetSecuritySchemeNames(root, "/api/events/{eventId}/waitlist/{ticketTypeId}", "post")
+            .ShouldBe(["ApiKey", "EmailVerificationBearer"], ignoreOrder: true);
+    }
+
+    [TestMethod]
+    public async Task OpenApiSpec_AdminEndpointsRequireBearer()
+    {
+        // Act
+        using var doc = await GetOpenApiDocumentAsync();
+
+        // Assert
+        GetSecuritySchemeNames(doc.RootElement, "/admin/teams/{teamId}/events", "get")
+            .ShouldBe(["Bearer"]);
+    }
+
+    private async Task<JsonDocument> GetOpenApiDocumentAsync()
+    {
+        var response = await Environment.PublicApiClient.GetAsync(
+            "/openapi/v1.json",
+            testContext.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+
+        var json = await response.Content.ReadAsStringAsync(testContext.CancellationToken);
+        return JsonDocument.Parse(json);
+    }
+
+    private static string[] GetSecuritySchemeNames(JsonElement root, string path, string method)
+    {
+        var securityRequirement = root
+            .GetProperty("paths")
+            .GetProperty(path)
+            .GetProperty(method)
+            .GetProperty("security")
+            .EnumerateArray()
+            .ShouldHaveSingleItem();
+
+        return securityRequirement
+            .EnumerateObject()
+            .Select(property => property.Name)
+            .ToArray();
+    }
 }

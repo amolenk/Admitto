@@ -13,6 +13,7 @@ public static class RegisterAttendeeSelfServiceHttpEndpoint
     {
         group.MapPost("/registrations", RegisterAttendeeSelfService)
             .WithName(nameof(RegisterAttendeeSelfService))
+            .RequireEmailVerificationBearerToken()
             .Produces<RegisterAttendeeSelfServiceTicketStateConflictProblemDetails>(
                 StatusCodes.Status409Conflict,
                 "application/problem+json");

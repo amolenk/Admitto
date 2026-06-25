@@ -223,18 +223,15 @@ Per-event SMTP passwords (and similar at-rest secrets owned by a module) are pro
 
 The Data Protection key ring is **persisted to a stable backing store and shared across hosts** (API and Worker). Without a shared, persistent key ring, secrets written by one host would become unreadable after a restart or by another host. See `Admitto.Module.Email/Infrastructure/` for the reference implementation.
 
-### URL signing (per-event HMAC)
+### Registration-bound public links
 
-Registration-bound public URLs (e.g. the QR-code endpoint) are protected by **HMAC-SHA256 signatures keyed per `TicketedEvent`**. Every `TicketedEvent` carries an internal `SigningKey` (32 random bytes, Base64-encoded) generated at aggregate creation. The key is owned by the Registrations module and never leaves the server: it does not appear in DTOs, integration events, structured logs, or admin read endpoints.
+Attendee-held registration links, including QR-code retrieval and self-service cancellation, treat `RegistrationId` as a high-entropy bearer secret. These endpoints are still protected by `X-Api-Key`; the API key resolves `TeamId`, the route resolves `eventId`, and the handler loads registrations only by `(TeamId, eventId, registrationId)`.
 
-The signing primitive lives in `Admitto.Module.Shared/Application/Cryptography/`:
+QR codes encode the literal registration ID string. They do not include a per-event HMAC signature, and `TicketedEvent` does not carry a QR signing key. Future check-in flows should validate QR payloads server-side under the selected event/team, or introduce a dedicated check-in token design if offline validation becomes a real requirement.
 
-- `ISigningService` — stateless HMAC-SHA256 over a payload + key, encoded as URL-safe Base64 (`+`→`-`, `/`→`_`, `=` stripped). Verification uses `CryptographicOperations.FixedTimeEquals` to avoid timing leaks.
-- `IEventSigningKeyProvider` — contract for resolving an event's signing key. The Registrations module supplies the implementation (caching in `IMemoryCache`) so other modules (e.g. Email verification tokens, future) can sign per-event without crossing module DbContexts.
+**Endpoint validation order** for registration-bound public endpoints: authenticate `X-Api-Key` and resolve `TeamId` from the shared `team_id` claim (401) → resolve event by `(TeamId, eventId)` when the route is event-scoped (404) → load the aggregate by `(TeamId, eventId, registrationId)` (404 on missing/wrong event/team) → perform the requested operation or return the response.
 
-Payload-shaping helpers (e.g. `RegistrationSigner`) compose the two for a specific consumer; the registration-id payload is the lowercase hex (`Guid.ToString("N")`) form.
-
-**Endpoint validation order** for signed public endpoints: authenticate `X-Api-Key` and resolve `TeamId` from the shared `team_id` claim (401) → resolve event by `(TeamId, eventId)` (404) → verify signature (403 on missing or invalid, *before* any registration lookup) → load the aggregate and confirm scope (404 on missing/wrong event/team) → produce the response. Verifying before lookup prevents the endpoint from being used as an existence oracle for registration IDs.
+The only remaining registration signing mechanism is the short-lived email-verification token issued by the OTP flow. It is HMAC-signed with the configured `Registrations:VerificationToken:SigningKey`, embeds event/team/email claims, and is independent of `TicketedEvent` state.
 
 ## 8.8 Value objects
 

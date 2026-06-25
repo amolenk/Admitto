@@ -1,5 +1,3 @@
-using System.Security.Cryptography;
-using System.Text;
 using Amolenk.Admitto.Api.Tests.Infrastructure;
 using Amolenk.Admitto.Api.Tests.Infrastructure.Hosting;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
@@ -15,45 +13,32 @@ internal sealed class GetQRCodeFixture
 
     public Guid TeamId { get; private set; }
     public Guid EventId { get; private set; }
-    public Guid OtherEventId { get; private set; }
-
     private readonly bool _seedRegistration;
     private readonly bool _cancelRegistration;
-    private readonly bool _seedSecondEvent;
 
-    private GetQRCodeFixture(bool seedRegistration, bool cancelRegistration, bool seedSecondEvent)
+    private GetQRCodeFixture(bool seedRegistration, bool cancelRegistration)
     {
         _seedRegistration = seedRegistration;
         _cancelRegistration = cancelRegistration;
-        _seedSecondEvent = seedSecondEvent;
     }
 
     public Guid RegistrationId { get; private set; }
-    public string SigningKeyBase64 { get; private set; } = "";
-    public string OtherEventSigningKeyBase64 { get; private set; } = "";
     public string ApiKey => ApiKeyTestHelper.TestRawKey;
 
-    public string ValidSignature => Sign(RegistrationId, SigningKeyBase64);
-
     public static GetQRCodeFixture HappyFlow() => new(
-        seedRegistration: true, cancelRegistration: false, seedSecondEvent: false);
+        seedRegistration: true, cancelRegistration: false);
 
     public static GetQRCodeFixture WithCancelledRegistration() => new(
-        seedRegistration: true, cancelRegistration: true, seedSecondEvent: false);
+        seedRegistration: true, cancelRegistration: true);
 
     public static GetQRCodeFixture WithoutRegistration() => new(
-        seedRegistration: false, cancelRegistration: false, seedSecondEvent: false);
-
-    public static GetQRCodeFixture WithSecondEvent() => new(
-        seedRegistration: true, cancelRegistration: false, seedSecondEvent: true);
+        seedRegistration: false, cancelRegistration: false);
 
     public string Route(
         Guid registrationId,
-        string? signature,
         Guid? eventId = null)
     {
-        var path = $"/api/events/{eventId ?? EventId}/registrations/{registrationId}/qr-code";
-        return signature is null ? path : $"{path}?signature={Uri.EscapeDataString(signature)}";
+        return $"/api/events/{eventId ?? EventId}/registrations/{registrationId}/qr-code";
     }
 
     public async ValueTask SetupAsync(EndToEndTestEnvironment environment)
@@ -64,16 +49,7 @@ internal sealed class GetQRCodeFixture
         TeamId = team.Id.Value;
 
         var primaryEvent = BuildEvent(team.Id, "DevConf");
-        SigningKeyBase64 = primaryEvent.SigningKey;
         EventId = primaryEvent.Id.Value;
-
-        TicketedEvent? otherEvent = null;
-        if (_seedSecondEvent)
-        {
-            otherEvent = BuildEvent(team.Id, "OtherConf");
-            OtherEventSigningKeyBase64 = otherEvent.SigningKey;
-            OtherEventId = otherEvent.Id.Value;
-        }
 
         var primaryCatalog = TicketCatalog.Create(primaryEvent.Id, team.Id);
         primaryCatalog.AddTicketType(
@@ -107,38 +83,13 @@ internal sealed class GetQRCodeFixture
             db.TicketCatalogs.Add(primaryCatalog);
             if (primaryRegistration is not null)
                 db.Registrations.Add(primaryRegistration);
-
-            if (otherEvent is not null)
-            {
-                db.TicketedEvents.Add(otherEvent);
-                var otherCatalog = TicketCatalog.Create(otherEvent.Id, team.Id);
-                otherCatalog.AddTicketType(
-                    TicketTypeId, TicketTypeName.From("General Admission"), [], 100);
-                db.TicketCatalogs.Add(otherCatalog);
-            }
         });
     }
 
-    public static string Sign(Guid registrationId, string keyBase64)
-    {
-        var key = Convert.FromBase64String(keyBase64);
-        var payload = Encoding.ASCII.GetBytes(registrationId.ToString("N"));
-
-        Span<byte> hash = stackalloc byte[HMACSHA256.HashSizeInBytes];
-        HMACSHA256.HashData(key, payload, hash);
-
-        return Convert.ToBase64String(hash)
-            .Replace('+', '-')
-            .Replace('/', '_')
-            .TrimEnd('=');
-    }
-
-    public static byte[] GenerateExpectedQRCode(Guid registrationId, string signature)
+    public static byte[] GenerateExpectedQRCode(Guid registrationId)
     {
         using var qrGenerator = new QRCoder.QRCodeGenerator();
-        var qrCodeData = qrGenerator.CreateQrCode(
-            $"{registrationId}:{signature}",
-            QRCoder.QRCodeGenerator.ECCLevel.Q);
+        var qrCodeData = qrGenerator.CreateQrCode(registrationId.ToString(), QRCoder.QRCodeGenerator.ECCLevel.Q);
 
         using var qrCode = new QRCoder.PngByteQRCode(qrCodeData);
         return qrCode.GetGraphic(20);

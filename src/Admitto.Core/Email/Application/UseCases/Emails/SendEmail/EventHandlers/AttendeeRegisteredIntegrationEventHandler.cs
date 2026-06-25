@@ -43,6 +43,7 @@ internal sealed class AttendeeRegisteredIntegrationEventHandler(
                 EventName = eventContext.Name,
                 EventWebsite = eventContext.WebsiteUrl,
                 eventContext.QRCodeLink,
+                eventContext.CancelLink,
                 TicketTypes = ticketTypeNames
             },
             RegistrationId: integrationEvent.RegistrationId);

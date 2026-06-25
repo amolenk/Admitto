@@ -13,7 +13,8 @@ public static class JoinWaitlistHttpEndpoint
     {
         group
             .MapPost("/waitlist/{ticketTypeId:guid}", JoinWaitlist)
-            .WithName(nameof(JoinWaitlist));
+            .WithName(nameof(JoinWaitlist))
+            .RequireEmailVerificationBearerToken();
 
         return group;
     }

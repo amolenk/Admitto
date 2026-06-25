@@ -1,4 +1,3 @@
-using Amolenk.Admitto.Core.Registrations.Application.Common.Cryptography;
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
@@ -21,8 +20,6 @@ public static class GetQRCodeHttpEndpoint
         HttpContext httpContext,
         Guid eventId,
         Guid registrationId,
-        string? signature,
-        RegistrationSigner registrationSigner,
         IRegistrationsWriteStore writeStore,
         CancellationToken cancellationToken)
     {
@@ -37,12 +34,6 @@ public static class GetQRCodeHttpEndpoint
         if (!eventExists)
             throw new BusinessRuleViolationException(Errors.EventNotFound);
 
-        if (string.IsNullOrEmpty(signature) ||
-            !await registrationSigner.IsValidAsync(registrationId, signature, typedEventId, cancellationToken))
-        {
-            throw new BusinessRuleViolationException(Errors.InvalidSignature);
-        }
-
         var typedRegistrationId = RegistrationId.From(registrationId);
 
         var registrationExists = await writeStore.Registrations
@@ -54,7 +45,7 @@ public static class GetQRCodeHttpEndpoint
         if (!registrationExists)
             throw new BusinessRuleViolationException(Errors.RegistrationNotFound);
 
-        var qrCodeBytes = GenerateQRCode($"{registrationId}:{signature}");
+        var qrCodeBytes = GenerateQRCode(registrationId.ToString());
 
         return TypedResults.File(qrCodeBytes, "image/png", "qrcode.png");
     }
@@ -70,11 +61,6 @@ public static class GetQRCodeHttpEndpoint
 
     internal static class Errors
     {
-        public static readonly Error InvalidSignature = new(
-            "registration.invalid_signature",
-            "The provided signature is missing or invalid.",
-            Type: ErrorType.Forbidden);
-
         public static readonly Error EventNotFound = new(
             "ticketed_event.not_found",
             "The ticketed event could not be found.",

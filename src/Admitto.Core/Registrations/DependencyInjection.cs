@@ -1,13 +1,11 @@
 using System.Reflection;
 using Amolenk.Admitto.Core.Registrations;
-using Amolenk.Admitto.Core.Registrations.Application.Common.Cryptography;
 using Amolenk.Admitto.Core.Registrations.Application.Jobs;
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
 using Amolenk.Admitto.Core.Registrations.Application.Security;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence;
-using Amolenk.Admitto.Core.Shared.Application.Cryptography;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Messaging;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence;
 using Quartz;
@@ -45,10 +43,6 @@ public static class RegistrationsModuleExtensions
             //     RegistrationsModule.NamespacePrefix));
 
             services.AddScoped<IRegistrationsFacade, RegistrationsFacade>();
-
-            services.AddMemoryCache();
-            services.AddScoped<IEventSigningKeyProvider, EventSigningKeyProvider>();
-            services.AddScoped<RegistrationSigner>();
 
             services.Configure<VerificationTokenOptions>(
                 configuration.GetSection(VerificationTokenOptions.SectionName));

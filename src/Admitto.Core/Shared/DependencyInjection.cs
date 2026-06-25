@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Core.Shared.Application.Auth;
-using Amolenk.Admitto.Core.Shared.Application.Cryptography;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Messaging;
@@ -20,13 +19,6 @@ namespace Microsoft.Extensions.DependencyInjection;
 
 public static class DependencyInjection
 {
-    public static IServiceCollection AddCryptographyApplicationServices(this IServiceCollection services)
-    {
-        services.AddSingleton<ISigningService, SigningService>();
-
-        return services;
-    }
-
     public static IServiceCollection AddValidationApplicationServices(this IServiceCollection services)
     {
         // Use camel case for FluentValidation property names
@@ -165,7 +157,6 @@ public static class DependencyInjection
         builder.AddSharedQuartzInfrastructure();
         builder.Services
             .AddSharedInfrastructureServices()
-            .AddCryptographyApplicationServices()
             .AddValidationApplicationServices();
         // builder.AddMessageTypeRegistry();
         return builder;

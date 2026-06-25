@@ -36,33 +36,6 @@ public sealed class TicketedEventTests
     }
 
     [TestMethod]
-    public void Create_GeneratesSigningKey_DecodingToAtLeast32Bytes()
-    {
-        var sut = NewEvent();
-
-        sut.SigningKey.ShouldNotBeNullOrWhiteSpace();
-        Convert.FromBase64String(sut.SigningKey).Length.ShouldBeGreaterThanOrEqualTo(32);
-    }
-
-    [TestMethod]
-    public void Create_TwoEvents_HaveDifferentSigningKeys()
-    {
-        var first = NewEvent();
-        var second = TicketedEvent.Create(
-        CreationRequestId.From(Guid.NewGuid()),
-            TicketedEventId.New(),
-            DefaultTeamId,
-            DefaultName,
-            DefaultWebsite,
-            DefaultBaseUrl,
-            DefaultStart,
-            DefaultEnd,
-            TimeZoneId.From("UTC"));
-
-        second.SigningKey.ShouldNotBe(first.SigningKey);
-    }
-
-    [TestMethod]
     public void Create_EndBeforeStart_Throws()
     {
         var act = () => TicketedEvent.Create(

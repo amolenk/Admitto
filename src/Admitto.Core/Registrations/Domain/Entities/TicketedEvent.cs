@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.Entities;
@@ -28,8 +27,7 @@ public class TicketedEvent : Aggregate<TicketedEventId>
         AbsoluteUrl baseUrl,
         DateTimeOffset startsAt,
         DateTimeOffset endsAt,
-        TimeZoneId timeZone,
-        string signingKey)
+        TimeZoneId timeZone)
         : base(id)
     {
         TeamId = teamId;
@@ -40,7 +38,6 @@ public class TicketedEvent : Aggregate<TicketedEventId>
         EndsAt = endsAt;
         TimeZone = timeZone;
         Status = EventLifecycleStatus.Active;
-        SigningKey = signingKey;
     }
 
     public TeamId TeamId { get; private set; }
@@ -58,14 +55,6 @@ public class TicketedEvent : Aggregate<TicketedEventId>
     public TicketedEventReconfirmPolicy? ReconfirmPolicy { get; private set; }
     public AdditionalDetailSchema AdditionalDetailSchema { get; private set; } = AdditionalDetailSchema.Empty;
 
-    /// <summary>
-    /// Per-event HMAC key used to sign registration-bound URLs (QR codes, future
-    /// signed-link flows). Generated at creation time, never exposed via DTOs,
-    /// integration events, or logs. Visible only inside the Registrations module
-    /// so signing helpers can read it.
-    /// </summary>
-    public string SigningKey { get; private set; } = null!;
-
     public bool IsActive => Status == EventLifecycleStatus.Active;
 
     public static TicketedEvent Create(
@@ -82,10 +71,8 @@ public class TicketedEvent : Aggregate<TicketedEventId>
         if (endsAt < startsAt)
             throw new BusinessRuleViolationException(Errors.EndBeforeStart);
 
-        var signingKey = Convert.ToBase64String(RandomNumberGenerator.GetBytes(32));
-
         var ticketedEvent = new TicketedEvent(
-            id, teamId, name, websiteUrl, baseUrl, startsAt, endsAt, timeZone, signingKey);
+            id, teamId, name, websiteUrl, baseUrl, startsAt, endsAt, timeZone);
 
         ticketedEvent.AddDomainEvent(
             new TicketedEventCreatedDomainEvent(creationRequestId, teamId, id, timeZone));

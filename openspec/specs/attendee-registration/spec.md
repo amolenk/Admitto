@@ -39,6 +39,12 @@ verification invalid". The verification check SHALL run before any event,
 catalog, coupon, or ticket-type lookups so that token-related failures do not
 leak information about other resources.
 
+Email-verification tokens SHALL be short-lived HMAC-signed tokens issued by the
+OTP verification flow. They SHALL use the configured verification-token signing
+key and SHALL be bound to the event and team through token claims. They are the
+only registration signing mechanism; self-service registration SHALL NOT require
+or validate per-event registration signatures.
+
 Whether registration is open SHALL be derived from the registration window
 (`now ∈ [opensAt, closesAt)`) combined with the event's lifecycle status read from
 the `TicketedEvent` aggregate (see event-management). There is no separate stored

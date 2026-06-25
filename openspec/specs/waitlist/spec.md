@@ -38,6 +38,10 @@ no separate confirmation step. The attendee is assigned the next position in the
 queue. An attendee with the same email address SHALL NOT be added twice for the same
 ticket type; a duplicate request SHALL succeed silently (idempotent).
 
+The OTP verification token SHALL be the same short-lived HMAC-signed token used by
+self-service registration. It SHALL use the configured verification-token signing
+key and SHALL NOT depend on a per-event signing key.
+
 #### Scenario: Successfully join the waitlist
 - **WHEN** attendee "alice@example.com" submits a waitlist join request for ticket
   type "General Admission" on event "DevConf" which is in WaitlistOnly mode, including

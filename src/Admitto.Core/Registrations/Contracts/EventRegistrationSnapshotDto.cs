@@ -5,5 +5,6 @@ public sealed record EventRegistrationSnapshotDto(
     string WebsiteUrl,
     string RegisterLink,
     string QRCodeLink,
+    string CancelLink,
     string? FirstName = null,
     string? LastName = null);
