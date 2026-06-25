@@ -177,8 +177,8 @@ public static class DependencyInjection
                 ModuleNpgsqlOptions.ConfigureMigrationsHistory<TDbContext>);
 
             options.AddInterceptors(
-                new AuditInterceptor(sp.GetRequiredService<IUserContextAccessor>()),
-                new DomainEventsInterceptor(sp));
+                new DomainEventsInterceptor(sp),
+                new AuditInterceptor(sp.GetRequiredService<IUserContextAccessor>()));
         });
 
         builder.EnrichNpgsqlDbContext<TDbContext>();

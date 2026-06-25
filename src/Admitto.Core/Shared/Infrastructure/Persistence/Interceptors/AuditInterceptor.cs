@@ -19,6 +19,9 @@ public class AuditInterceptor(IUserContextAccessor userContextAccessor) : SaveCh
 
         foreach (var entry in dbContext.ChangeTracker.Entries<IIsAuditable>())
         {
+            if (entry.State is not (EntityState.Added or EntityState.Modified))
+                continue;
+
             if (entry.State == EntityState.Added)
             {
                 entry.Entity.CreatedAt = now;

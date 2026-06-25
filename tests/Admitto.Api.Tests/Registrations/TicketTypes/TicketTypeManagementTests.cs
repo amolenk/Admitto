@@ -131,5 +131,37 @@ public sealed class TicketTypeManagementTests(TestContext testContext) : EndToEn
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 
+    [TestMethod]
+    public async Task UpdateTicketType_EnableWaitlistOnSoldOutTicketType_PersistsWaitlist()
+    {
+        var fixture = TicketTypeManagementFixture.WithSoldOutTicketType();
+        await fixture.SetupAsync(Environment);
+
+        var response = await Environment.ApiClient.PutAsJsonAsync(
+            fixture.ExistingTicketTypeRoute,
+            new
+            {
+                MaxCapacity = 1,
+                WaitlistEnabled = true
+            },
+            cancellationToken: testContext.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+
+        await Environment.RegistrationsDatabase.WithContextAsync(async db =>
+        {
+            var catalog = await db.TicketCatalogs.AsNoTracking()
+                .SingleAsync(c => c.Id == TicketedEventId.From(fixture.EventId), testContext.CancellationToken);
+            var ticketType = catalog.TicketTypes.Single(t => t.Id == TicketTypeManagementFixture.ExistingTicketTypeId);
+            ticketType.WaitlistEnabled.ShouldBeTrue();
+            ticketType.WaitlistMode.ShouldBeTrue();
+
+            var waitlist = await db.Waitlists.AsNoTracking()
+                .SingleAsync(w => w.Id == TicketTypeManagementFixture.ExistingTicketTypeId,
+                    testContext.CancellationToken);
+            waitlist.EventId.ShouldBe(TicketedEventId.From(fixture.EventId));
+        });
+    }
+
     private sealed record IdResponse(Guid Id);
 }
