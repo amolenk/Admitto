@@ -8,7 +8,7 @@ namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents
 /// <summary>
 /// Projects a <see cref="TicketedEventStatusChangedDomainEvent"/> onto the owning event's
 /// <c>TicketCatalog</c> in the *same* unit of work as the <c>TicketedEvent</c> lifecycle change,
-/// so that a concurrent registration cannot slip past the atomic capacity claim after cancel/archive.
+/// so that a concurrent registration cannot slip past the atomic capacity claim after archive.
 /// </summary>
 internal sealed class TicketedEventStatusChangedDomainEventHandler(IRegistrationsWriteStore writeStore)
     : IDomainEventHandler<TicketedEventStatusChangedDomainEvent>

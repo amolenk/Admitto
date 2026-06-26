@@ -120,9 +120,9 @@ Key properties:
 - `CreationRequestId` is the idempotency key on every response event. Organization handlers are idempotent on redelivery and also tolerate out-of-order arrival of `TicketedEventCreated` vs the original request's own commit.
 - A Quartz job (`ExpireStaleEventCreationRequestsJob`) expires `Pending` requests older than a configurable timeout and rolls back `PendingEventCount`, so team-archive is never blocked indefinitely by lost or unprocessable requests.
 
-## 6.5 Event cancel / archive (Registrations → Organization)
+## 6.5 Event archive (Registrations → Organization)
 
-`Cancel` and `Archive` operations target the authoritative `TicketedEvent` aggregate in Registrations. The lifecycle transition is projected atomically onto `TicketCatalog.EventStatus` (via an in-module domain event in the same unit of work), and propagated to Organization as an integration event so the team's counters can be updated.
+`Archive` targets the authoritative `TicketedEvent` aggregate in Registrations. The lifecycle transition is projected atomically onto `TicketCatalog.EventStatus` (via an in-module domain event in the same unit of work), and propagated to Organization as an integration event so the team's counters can be updated.
 
 ```mermaid
 sequenceDiagram
@@ -134,17 +134,17 @@ sequenceDiagram
   participant OrgHandler as Organization integration-event handler
   participant Team
 
-  UI->>RegEp: POST /admin/.../events/{eventSlug}/cancel (or /archive)
-  RegEp->>Event: Cancel() / Archive()
+  UI->>RegEp: POST /admin/.../events/{eventSlug}/archive
+  RegEp->>Event: Archive()
   Event-->>Event: raises TicketedEventStatusChanged (in-module)
   Event->>Catalog: project EventStatus (same UoW)
-  RegEp->>RegOutbox: TicketedEventCancelled / TicketedEventArchived (same UoW)
+  RegEp->>RegOutbox: TicketedEventArchived (same UoW)
   RegOutbox->>OrgHandler: deliver (idempotent on TicketedEventId + transition)
-  OrgHandler->>Team: RegisterEventCancelled / RegisterEventArchived
-  Team->>Team: ActiveEventCount-- ; CancelledEventCount++ (or Archived++)
+  OrgHandler->>Team: RegisterEventArchived
+  Team->>Team: ActiveEventCount-- ; ArchivedEventCount++
 ```
 
-Because `TicketCatalog.EventStatus` is updated in the same transaction as `TicketedEvent.Cancel/Archive`, any in-flight registration that has already loaded `TicketCatalog` at a prior version fails its claim with a `DbUpdateConcurrencyException` — no registration can slip past a lifecycle transition.
+Because `TicketCatalog.EventStatus` is updated in the same transaction as `TicketedEvent.Archive`, any in-flight registration that has already loaded `TicketCatalog` at a prior version fails its claim with a `DbUpdateConcurrencyException` — no registration can slip past a lifecycle transition.
 
 ## 6.6 Attendee registration and waitlist submission (atomic status + capacity gate)
 
@@ -169,11 +169,11 @@ sequenceDiagram
   Endpoint->>Endpoint: SaveChangesAsync (UoW)
 ```
 
-Waitlist-only submissions create waitlist entries without creating a `Registration`; the public response reports `registrationId = null` and the waitlisted ticket ids. After the public email-verification token is accepted and terminal event/window/domain/detail guards pass, self-service registration classifies submitted register/waitlist ticket IDs against the current `TicketCatalog` before mutating capacity or waitlists. Recoverable ticket-selection mismatches return a 409 `registration.ticket_state_conflict` problem response with grouped submitted IDs (`registerableTicketTypeIds`, `waitlistableTicketTypeIds`, `unavailableTicketTypeIds`, `unknownTicketTypeIds`, `invalidForRequestedActionTicketTypeIds`) and persist no partial registration, waitlist entry, or capacity change. Coupons bypass capacity / window / domain checks but do not bypass the active-status gate. Waitlist coupons can also be applied during self-service ticket change as a capacity grant for the offered ticket type only; the final registered ticket set is still validated for duplicates, unknown tickets, cancelled tickets, and overlapping time slots.
+Waitlist-only submissions create waitlist entries without creating a `Registration`; the public response reports `registrationId = null` and the waitlisted ticket ids. After the public email-verification token is accepted and terminal event/window/domain/detail guards pass, self-service registration classifies submitted register/waitlist ticket IDs against the current `TicketCatalog` before mutating capacity or waitlists. Recoverable ticket-selection mismatches return a 409 `registration.ticket_state_conflict` problem response with grouped submitted IDs (`registerableTicketTypeIds`, `waitlistableTicketTypeIds`, `unavailableTicketTypeIds`, `unknownTicketTypeIds`, `invalidForRequestedActionTicketTypeIds`) and persist no partial registration, waitlist entry, or capacity change. Coupons bypass capacity / window / domain checks but do not bypass the active-status gate. Waitlist coupons can also be applied during self-service ticket change as a capacity grant for the offered ticket type only; the final registered ticket set is still validated for duplicates, unknown ticket types, and overlapping time slots.
 
 ## 6.7 Policy mutation flow
 
-Policy commands (`ConfigureRegistrationPolicyCommand`, `ConfigureCancellationPolicyCommand`, `ConfigureReconfirmPolicyCommand`) load the `TicketedEvent` aggregate and call the matching policy mutator directly. Each mutator refuses when the event's status is not Active, so there is no separate lifecycle guard. Optimistic concurrency is supplied by `TicketedEvent.Version`.
+Policy commands (`ConfigureRegistrationPolicyCommand`, `ConfigureReconfirmPolicyCommand`) load the `TicketedEvent` aggregate and call the matching policy mutator directly. Each mutator refuses when the event's status is not Active, so there is no separate lifecycle guard. Optimistic concurrency is supplied by `TicketedEvent.Version`.
 
 ```mermaid
 sequenceDiagram
@@ -290,7 +290,7 @@ sequenceDiagram
     participant Job as BulkEmailJob (reconfirm)
     participant FanOut as BulkEmailFanOutJob
 
-    RegOutbox->>ReconfirmHandlers: TicketedEventCreated / ReconfirmPolicyChanged / TimeZoneChanged / Cancelled / Archived
+    RegOutbox->>ReconfirmHandlers: TicketedEventCreated / ReconfirmPolicyChanged / TimeZoneChanged / Archived
     ReconfirmHandlers->>Quartz: upsert / remove per-event trigger in quartz-db (cron in event TZ)
     Note over Quartz: fires per cadence inside reconfirm window
     Quartz->>Eval: trigger fires (eventId)
@@ -306,7 +306,7 @@ sequenceDiagram
 
 **Eligibility**: live `HasReconfirmed=false` is the only gate — no extra `email_log` cadence filter. The cron *is* the cadence; tightening the policy (e.g. 7d → 3d) immediately changes prompt frequency.
 
-**Lifecycle cleanup**: `TicketedEventCancelled` and `TicketedEventArchived` integration events remove the trigger so cancelled or archived events stop receiving reconfirm prompts.
+**Lifecycle cleanup**: `TicketedEventArchived` integration events remove the trigger so archived events stop receiving reconfirm prompts.
 
 **Clustering**: Quartz uses the PostgreSQL-backed store in `quartz-db` with clustering enabled. API handlers can persist schedules, while Worker instances host the scheduler and execute jobs. During rolling deployments or temporary Worker scale-out, Quartz acquires each trigger on only one live scheduler instance.
 

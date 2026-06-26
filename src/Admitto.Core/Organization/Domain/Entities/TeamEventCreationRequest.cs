@@ -39,7 +39,7 @@ public class TeamEventCreationRequest : Entity<CreationRequestId>
     /// Most recent <see cref="EventStatus"/> observed for the materialised
     /// <c>TicketedEvent</c>. Only meaningful once <see cref="Status"/> is
     /// <see cref="TeamEventCreationRequestStatus.Created"/>; used by the integration-event
-    /// handlers to make cancel/archive counter swaps idempotent on redelivery.
+    /// handlers to make archive counter swaps idempotent on redelivery.
     /// </summary>
     public EventStatus? ObservedEventStatus { get; private set; }
 

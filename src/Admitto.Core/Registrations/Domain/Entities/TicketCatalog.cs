@@ -197,7 +197,7 @@ public class TicketCatalog : Aggregate<TicketedEventId>
 
     /// <summary>
     /// Validates that the given ID selection has no duplicates, unknown IDs,
-    /// cancelled IDs, or overlapping time slots. Does not modify capacity.
+    /// or overlapping time slots. Does not modify capacity.
     /// Use this before delta-based claim/release operations to enforce invariants
     /// on the full new selection.
     /// </summary>

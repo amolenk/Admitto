@@ -134,20 +134,19 @@ The `Contracts/` sub-namespace within each module holds DTOs, facade interfaces,
 
 ### Organization module
 
-Manages teams, team membership and roles, and acts as the **gatekeeper** for ticketed-event creation. Does not own event metadata beyond a small set of per-team counters (`ActiveEventCount`, `CancelledEventCount`, `ArchivedEventCount`, `PendingEventCount`) and a bounded `TeamEventCreationRequest` child entity for in-flight creation requests. Publishes `TicketedEventCreationRequested` and consumes `TicketedEventCreated` / `TicketedEventCreationRejected` / `TicketedEventCancelled` / `TicketedEventArchived` integration events to keep the counters in sync. Integrates with Keycloak for user provisioning.
+Manages teams, team membership and roles, and acts as the **gatekeeper** for ticketed-event creation. Does not own event metadata beyond a small set of per-team counters (`ActiveEventCount`, `ArchivedEventCount`, `PendingEventCount`) and a bounded `TeamEventCreationRequest` child entity for in-flight creation requests. Publishes `TicketedEventCreationRequested` and consumes `TicketedEventCreated` / `TicketedEventCreationRejected` / `TicketedEventArchived` integration events to keep the counters in sync. Integrates with Keycloak for user provisioning.
 
 ### Registrations module
 
 Owns the authoritative `TicketedEvent` aggregate (name, dates, IANA `TimeZone`, lifecycle status, and consolidated policy value objects) as well as attendee registration flows (both admin-initiated and public self-service) and ticket type configuration (the `TicketCatalog` aggregate). The `Registration` aggregate carries `FirstName`/`LastName`, a lifecycle `Status` (`Registered`/`Cancelled`), and a `HasReconfirmed`/`ReconfirmedAt?` pair — exposed to other modules via `IRegistrationsFacade.QueryRegistrationsAsync`.
 
-Publishes the `TicketedEventCreated` / `TicketedEventCancelled` / `TicketedEventArchived` lifecycle integration events plus `TicketedEventReconfirmPolicyChanged` and `TicketedEventTimeZoneChanged`, both consumed by the Email module to drive the per-event reconfirm Quartz trigger.
+Publishes the `TicketedEventCreated` / `TicketedEventArchived` lifecycle integration events plus `TicketedEventReconfirmPolicyChanged` and `TicketedEventTimeZoneChanged`, both consumed by the Email module to drive the per-event reconfirm Quartz trigger.
 
-`TicketedEvent` consolidates three policy value objects:
+`TicketedEvent` consolidates policy value objects:
 
 | Value object | Purpose |
 | :----------- | :------ |
 | `TicketedEventRegistrationPolicy` | Registration window (opens/closes at) and optional email-domain restriction. |
-| `TicketedEventCancellationPolicy` | Late-cancellation cutoff. Optional — absence means no cancellation is ever late. |
 | `TicketedEventReconfirmPolicy` | Reconfirmation window (opens/closes at) and cadence. Optional — absence means no reconfirmation. |
 
 Policy mutators on `TicketedEvent` reject when the event's status is not Active, so there is no separate lifecycle-guard aggregate. The existing `TicketCatalog` aggregate is extended with a single `EventStatus` field that is projected from `TicketedEvent` in the same unit of work as any lifecycle transition, providing an atomic status + capacity gate on ticket claims. See [ADR-008](../adrs/adr-008-ticketed-event-ownership-in-registrations.md) for the ownership rationale.
@@ -163,7 +162,7 @@ Owns all email concerns: server settings, customisable templates, outgoing-email
 - **Email log** — each send attempt is recorded as an `EmailLog` row for idempotency (redelivered integration events do not produce duplicate sends) and observability.
 - **Sending** — the Worker host handles `AttendeeRegistered` integration events by resolving effective settings and templates, rendering the email, and dispatching it via SMTP. This path requires `HostCapability.Email` (see capability gating, §5.4).
 - **Bulk email** — the `BulkEmailJob` aggregate (in the `email` schema) tracks lifecycle, totals, and a frozen recipient snapshot for either an attendee source (resolved against Registrations via `IRegistrationsFacade.QueryRegistrationsAsync`) or an external list. A Quartz fan-out job (`BulkEmailFanOutJob`, gated on `HostCapability.Jobs | HostCapability.Email`) opens a single SMTP connection per pickup and streams all messages, writing one `EmailLog` row per recipient with key `bulk:{jobId}:{email}`. Per-recipient state on the snapshot drives resume-after-crash; cooperative cancellation is observed between recipients. See [ADR-009](../adrs/adr-009-bulk-email-design.md).
-- **Reconfirm sending** — `EvaluateReconfirmJob` is a per-event Quartz trigger derived from `TicketedEventReconfirmPolicy`; each tick creates a `BulkEmailJob` (`email_type='reconfirm'`) filtered to `Status=Registered AND HasReconfirmed=false`, evaluated in the event's IANA `TimeZone`. Triggers are (re)scheduled in response to `TicketedEventCreated`, `TicketedEventReconfirmPolicyChanged`, `TicketedEventTimeZoneChanged`, `TicketedEventCancelled`, and `TicketedEventArchived` integration events from Registrations.
+- **Reconfirm sending** — `EvaluateReconfirmJob` is a per-event Quartz trigger derived from `TicketedEventReconfirmPolicy`; each tick creates a `BulkEmailJob` (`email_type='reconfirm'`) filtered to `Status=Registered AND HasReconfirmed=false`, evaluated in the event's IANA `TimeZone`. Triggers are (re)scheduled in response to `TicketedEventCreated`, `TicketedEventReconfirmPolicyChanged`, `TicketedEventTimeZoneChanged`, and `TicketedEventArchived` integration events from Registrations.
 
 Exposes `IEventEmailFacade` via `Admitto.Core.Module.Email.Contracts` so the Registrations module can check whether email is configured before allowing registration to open. SMTP passwords are protected at rest via ASP.NET Data Protection (see [§8.7.x Secret protection](08-crosscutting-concepts.md#secret-protection)).
 

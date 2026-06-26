@@ -5,7 +5,7 @@ namespace Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 
 /// <summary>
 /// Raised by the <c>TicketedEvent</c> aggregate when its lifecycle status transitions
-/// (Active→Cancelled, Active→Archived, Cancelled→Archived). Consumed within the
+/// (Active→Archived). Consumed within the
 /// Registrations module to project <c>EventStatus</c> onto the event's <c>TicketCatalog</c>
 /// in the same unit of work as the lifecycle change.
 /// </summary>

@@ -148,12 +148,12 @@ For Email module SMTP delivery, `EmailLog` is the send claim. Trigger handlers w
 
 Event creation is a Registrations-owned operation *gated* by Organization. Organization emits `TicketedEventCreationRequested` (carrying a `CreationRequestId`) to request materialisation; Registrations inserts the authoritative `TicketedEvent`, creates an Active `TicketCatalog` in the same unit of work, and emits `TicketedEventCreated` or — on other validation failure — `TicketedEventCreationRejected`.
 
-Lifecycle transitions on the `TicketedEvent` aggregate (`Cancel`, `Archive`) raise an in-module `TicketedEventStatusChanged` domain event that projects onto `TicketCatalog.EventStatus` in the same transaction as the source-of-truth status change. In parallel, a separate `IDomainEventHandler<TicketedEventStatusChangedDomainEvent>` outboxes `TicketedEventCancelled` / `TicketedEventArchived` integration events so Organization can advance the team's counters (`ActiveEventCount`, `CancelledEventCount`, `ArchivedEventCount`).
+Lifecycle transitions on the `TicketedEvent` aggregate (`Archive`) raise an in-module `TicketedEventStatusChanged` domain event that projects onto `TicketCatalog.EventStatus` in the same transaction as the source-of-truth status change. In parallel, a separate `IDomainEventHandler<TicketedEventStatusChangedDomainEvent>` outboxes `TicketedEventArchived` integration events so Organization can advance the team's counters (`ActiveEventCount`, `ArchivedEventCount`).
 
 All cross-module integration-event handlers are idempotent:
 
 - Organization's `TicketedEventCreated` / `TicketedEventCreationRejected` handlers key off `CreationRequestId`.
-- Organization's `TicketedEventCancelled` / `TicketedEventArchived` handlers key off `TicketedEventId` plus the observed transition (so redelivery after the counter has already moved is a no-op).
+- Organization's `TicketedEventArchived` handler keys off `TicketedEventId` plus the observed transition (so redelivery after the counter has already moved is a no-op).
 
 Handlers that require inbox protection insert a `ProcessedMessage` marker before mutating state. The marker is committed in the same unit of work as the handler's aggregate changes. If two deliveries race, both can pass the initial marker lookup, but the unique `message_key` constraint makes one `SaveChangesAsync` fail; the module `UnitOfWork` converts that database conflict to `DuplicateProcessedMessageException`, and the queue dispatcher acknowledges it as an already-processed delivery.
 
@@ -369,9 +369,9 @@ The `Version` property on all aggregates (`[Timestamp]`, `uint`) is the EF row-v
 
 When one aggregate must protect against concurrent modifications triggered by another aggregate, store a monotonically-incrementing counter (or equivalent bounded state) on the first aggregate and advance it whenever the second is modified. This forces a write to the first aggregate's row, advancing its `Version` token, so any concurrent operation holding the old token fails at commit.
 
-Example: the `Team` aggregate's `ActiveEventCount` / `PendingEventCount` (advanced by integration-event handlers reacting to `TicketedEventCreationRequested` / `TicketedEventCreated` / `TicketedEventCancelled` / `TicketedEventArchived`) close the TOCTOU window between the active/pending-events guard in `Team.Archive()` and its commit: a concurrent event creation or lifecycle transition writes the team row, and the archive's optimistic concurrency check fails.
+Example: the `Team` aggregate's `ActiveEventCount` / `PendingEventCount` (advanced by integration-event handlers reacting to `TicketedEventCreationRequested` / `TicketedEventCreated` / `TicketedEventArchived`) close the TOCTOU window between the active/pending-events guard in `Team.Archive()` and its commit: a concurrent event creation or lifecycle transition writes the team row, and the archive's optimistic concurrency check fails.
 
-A second example inside a single module: Registrations projects `TicketedEvent.Status` onto `TicketCatalog.EventStatus` in the *same* unit of work as a cancel/archive. An in-flight registration that loaded `TicketCatalog` at a prior version fails its claim with a `DbUpdateConcurrencyException`.
+A second example inside a single module: Registrations projects `TicketedEvent.Status` onto `TicketCatalog.EventStatus` in the *same* unit of work as archive. An in-flight registration that loaded `TicketCatalog` at a prior version fails its claim with a `DbUpdateConcurrencyException`.
 
 ## 8.10 Domain event dispatch — in-process pattern
 
@@ -513,24 +513,24 @@ A thin `DbContextUnitOfWork` adapter is used in tests to forward `SaveChangesAsy
 
 ## 8.14 In-aggregate lifecycle invariants
 
-The Registrations module enforces "no policy edits / no registrations after cancel or archive" directly on the `TicketedEvent` aggregate (for policy mutators) and on the `TicketCatalog` aggregate (for the registration claim).
+The Registrations module enforces "no policy edits / no registrations after archive" directly on the `TicketedEvent` aggregate (for policy mutators) and on the `TicketCatalog` aggregate (for the registration claim).
 
 ### `TicketedEvent` policy mutators
 
-Every policy mutator (`ConfigureRegistrationPolicy`, `ConfigureCancellationPolicy`, `ConfigureReconfirmPolicy`, `UpdateDetails`) refuses when the aggregate's `Status` is not Active. Optimistic concurrency is supplied by the aggregate's own `Version` (EF `[Timestamp]` row-version). A concurrent `Cancel()` / `Archive()` on the same aggregate advances the row-version, so any policy edit loaded at the prior version fails its commit with a `DbUpdateConcurrencyException`.
+Every policy mutator (`ConfigureRegistrationPolicy`, `ConfigureReconfirmPolicy`, `UpdateDetails`) refuses when the aggregate's `Status` is not Active. Optimistic concurrency is supplied by the aggregate's own `Version` (EF `[Timestamp]` row-version). A concurrent `Archive()` on the same aggregate advances the row-version, so any policy edit loaded at the prior version fails its commit with a `DbUpdateConcurrencyException`.
 
 ### `TicketCatalog.EventStatus` projection
 
-`TicketCatalog` stores a single read-only `EventStatus` field projected from `TicketedEvent` in the *same unit of work* as the lifecycle transition. `TicketCatalog.Claim(...)` refuses when `EventStatus` is Cancelled or Archived, giving an atomic status + capacity gate on ticket allocation:
+`TicketCatalog` stores a single read-only `EventStatus` field projected from `TicketedEvent` in the *same unit of work* as the lifecycle transition. `TicketCatalog.Claim(...)` refuses when `EventStatus` is Archived, giving an atomic status + capacity gate on ticket allocation:
 
 ```
 TicketCatalog
-├── EventStatus : EventStatus (Active / Cancelled / Archived)
+├── EventStatus : EventStatus (Active / Archived)
 ├── capacity / reservations (existing)
 └── Version : uint (EF [Timestamp] row-version)
 ```
 
-Because a `TicketedEvent.Cancel()` or `.Archive()` commits the projection onto `TicketCatalog` in the same transaction as the source-of-truth status change, an in-flight registration that loaded `TicketCatalog` at a prior version fails at `SaveChanges` — the write-amplifier mechanism described in §8.9.
+Because `TicketedEvent.Archive()` commits the projection onto `TicketCatalog` in the same transaction as the source-of-truth status change, an in-flight registration that loaded `TicketCatalog` at a prior version fails at `SaveChanges` — the write-amplifier mechanism described in §8.9.
 
 ### Why not a separate lifecycle-guard aggregate?
 
