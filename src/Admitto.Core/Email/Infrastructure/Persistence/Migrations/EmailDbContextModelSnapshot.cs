@@ -114,11 +114,6 @@ namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("team_id");
 
-                    b.Property<string>("TemplateName")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("template_name");
-
                     b.Property<string>("TextBody")
                         .HasColumnType("text")
                         .HasColumnName("text_body");
@@ -246,6 +241,14 @@ namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<string>("AccentColor")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasDefaultValue("#2563eb")
+                        .HasColumnName("accent_color");
+
                     b.Property<int>("AuthMode")
                         .HasColumnType("integer")
                         .HasColumnName("auth_mode");
@@ -253,6 +256,14 @@ namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
+
+                    b.Property<string>("FontFamily")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)")
+                        .HasDefaultValue("Arial, sans-serif")
+                        .HasColumnName("font_family");
 
                     b.Property<string>("FromAddress")
                         .IsRequired()
@@ -288,10 +299,6 @@ namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("team_id");
 
-                    b.Property<Guid?>("TicketedEventId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("ticketed_event_id");
-
                     b.Property<string>("Username")
                         .HasMaxLength(255)
                         .HasColumnType("character varying(255)")
@@ -307,78 +314,9 @@ namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence.Migrations
 
                     b.HasIndex("TeamId")
                         .IsUnique()
-                        .HasDatabaseName("IX_email_settings_team")
-                        .HasFilter("ticketed_event_id IS NULL");
-
-                    b.HasIndex("TeamId", "TicketedEventId")
-                        .IsUnique()
-                        .HasDatabaseName("IX_email_settings_team_event")
-                        .HasFilter("ticketed_event_id IS NOT NULL");
+                        .HasDatabaseName("IX_email_settings_team");
 
                     b.ToTable("email_settings", "email");
-                });
-
-            modelBuilder.Entity("Amolenk.Admitto.Core.Email.Domain.Entities.EmailTemplate", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<string>("HtmlBody")
-                        .HasColumnType("text")
-                        .HasColumnName("html_body");
-
-                    b.Property<DateTimeOffset>("LastChangedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("last_changed_at");
-
-                    b.Property<string>("LastChangedBy")
-                        .IsRequired()
-                        .HasMaxLength(320)
-                        .HasColumnType("character varying(320)")
-                        .HasColumnName("last_changed_by");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("name");
-
-                    b.Property<string>("Subject")
-                        .IsRequired()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasColumnName("subject");
-
-                    b.Property<Guid>("TeamId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("team_id");
-
-                    b.Property<string>("TextBody")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("text_body");
-
-                    b.Property<Guid?>("TicketedEventId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("ticketed_event_id");
-
-                    b.Property<uint>("Version")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TeamId", "TicketedEventId")
-                        .HasDatabaseName("IX_email_templates_team_id_ticketed_event_id");
-
-                    b.ToTable("email_templates", "email");
                 });
 
             modelBuilder.Entity("Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Outbox.OutboxMessage", b =>

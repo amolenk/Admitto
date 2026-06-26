@@ -21,7 +21,6 @@ public sealed class BulkEmailJob : Aggregate<BulkEmailJobId>
         TeamId teamId,
         TicketedEventId ticketedEventId,
         string emailType,
-        string? templateName,
         string? subject,
         string? textBody,
         string? htmlBody,
@@ -34,7 +33,6 @@ public sealed class BulkEmailJob : Aggregate<BulkEmailJobId>
         TeamId = teamId;
         TicketedEventId = ticketedEventId;
         EmailType = emailType;
-        TemplateName = templateName;
         Subject = subject;
         TextBody = textBody;
         HtmlBody = htmlBody;
@@ -48,7 +46,6 @@ public sealed class BulkEmailJob : Aggregate<BulkEmailJobId>
     public TeamId TeamId { get; private set; }
     public TicketedEventId TicketedEventId { get; private set; }
     public string EmailType { get; private set; }
-    public string? TemplateName { get; private set; }
     public string? Subject { get; private set; }
     public string? TextBody { get; private set; }
     public string? HtmlBody { get; private set; }
@@ -86,7 +83,6 @@ public sealed class BulkEmailJob : Aggregate<BulkEmailJobId>
         TeamId teamId,
         TicketedEventId ticketedEventId,
         string emailType,
-        string? templateName,
         string? subject,
         string? textBody,
         string? htmlBody,
@@ -99,7 +95,6 @@ public sealed class BulkEmailJob : Aggregate<BulkEmailJobId>
             teamId,
             ticketedEventId,
             emailType,
-            templateName,
             subject,
             textBody,
             htmlBody,
@@ -127,7 +122,6 @@ public sealed class BulkEmailJob : Aggregate<BulkEmailJobId>
             teamId,
             ticketedEventId,
             emailType,
-            templateName: null,
             subject,
             textBody,
             htmlBody,

@@ -22,9 +22,7 @@ export default function EmailsLayout({ children }: { children: React.ReactNode }
     const eventName = event?.name ?? "";
 
     const tabs = [
-        { label: "Bulk emails", href: `${base}/campaigns` },
-        { label: "Templates", href: `${base}/templates` },
-        { label: "Sending", href: `${base}/setup` },
+        { label: "Campaigns", href: `${base}/campaigns` },
     ];
 
     return (

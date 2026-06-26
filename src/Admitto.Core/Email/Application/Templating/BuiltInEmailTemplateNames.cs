@@ -17,6 +17,7 @@ public static class BuiltInEmailTemplateNames
     public const string WaitlistVerification = "Waitlist verification";
     public const string CouponInvitation   = "Coupon invitation";
     public const string WaitlistNotification = "Waitlist notification";
+    public const string BulkCustom = "bulk-custom";
 
     /// <summary>
     /// Returns true if the given name (case-insensitive) matches a reserved built-in name.
@@ -35,5 +36,6 @@ public static class BuiltInEmailTemplateNames
         WaitlistVerification,
         CouponInvitation,
         WaitlistNotification,
+        BulkCustom,
     };
 }

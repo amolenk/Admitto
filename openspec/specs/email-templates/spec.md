@@ -1,161 +1,63 @@
 # email-templates Specification
 
 ## Purpose
-TBD - created by archiving change add-email-module. Update Purpose after archive.
+
+The Email module renders transactional and custom bulk email content with Scriban. Transactional templates are code-owned built-in resources themed with team branding; organizers do not manage persisted transactional template overrides.
+
 ## Requirements
-### Requirement: Email templates are configurable per team and per event
-The Email module SHALL persist `EmailTemplate` records scoped to either a team or a specific ticketed event. Each template SHALL carry required `TeamId` and nullable `TicketedEventId`; team-level rows SHALL use `TicketedEventId=null` and event-level rows SHALL use the event id. Each template SHALL carry a `Type`, a `Subject`, a `TextBody`, and an `HtmlBody`. A team SHALL have at most one template per `Type`; an event SHALL have at most one template per `Type`.
 
-The supported `Type` values SHALL be: `ticket` (single registration confirmation), `cancellation` (attendee-request cancellation), `visa-letter-denied` (visa denial cancellation), `ticket-types-removed` (system/admin cancellation due to removed ticket types), `reconfirm` (recurring reconfirm-attendance prompt), `reconfirm-cancelled` (notification sent when a registration is auto-cancelled after exhausting reconfirm attempts), and `bulk-custom` (catch-all type used when ad-hoc subject/body fully overrides the resolved template; see `bulk-email` capability).
+### Requirement: Transactional email templates are built-in and themed
 
-#### Scenario: Create a team-scoped template
-- **WHEN** an organizer creates a `ticket` template for team "acme" with subject "Welcome to {{ event_name }}", a text body, and an html body
-- **THEN** an `EmailTemplate` is persisted in the `email` schema with `TeamId=acmeTeamId`, `TicketedEventId=null`, type="ticket"
+The Email module SHALL render transactional emails from code-owned built-in templates. Built-in transactional templates SHALL NOT be persisted as `EmailTemplate` rows and SHALL NOT be editable by organizers. Rendering SHALL apply the owning team's email branding values: accent color and font-family string.
 
-#### Scenario: Create an event-scoped template
-- **WHEN** an organizer creates a `ticket` template for event "devconf-2026" on team "acme"
-- **THEN** an `EmailTemplate` is persisted with `TeamId=acmeTeamId`, `TicketedEventId=devconfEventId`, type="ticket"
+#### Scenario: Confirmation email uses built-in content and team branding
 
-#### Scenario: At most one template per scope per type
-- **WHEN** an organizer creates a second `ticket` template for the same event
-- **THEN** the request is rejected with an "already exists" error
+- **WHEN** an attendee registers for event "DevConf" owned by team "acme"
+- **THEN** the confirmation email is rendered from the built-in `ticket` content with team "acme" branding values applied
 
-#### Scenario: Create a reconfirm template
-- **WHEN** an organizer creates a `reconfirm` team-scoped template for team "acme"
-- **THEN** an `EmailTemplate` is persisted with `TicketedEventId=null`, type="reconfirm" and is used by the reconfirm scheduler for any of the team's events lacking an event-scoped override
+#### Scenario: Organizer cannot edit transactional copy
 
-#### Scenario: Create a cancellation template
-- **WHEN** an organizer creates a `cancellation` template for team "acme"
-- **THEN** an `EmailTemplate` is persisted with `TicketedEventId=null`, type="cancellation" and is used for attendee-request cancellations for any of the team's events lacking an event-scoped override
+- **WHEN** an organizer opens email settings in the Admin UI
+- **THEN** no transactional template subject/body editor is available
 
-#### Scenario: Create a visa-letter-denied template
-- **WHEN** an organizer creates a `visa-letter-denied` template for team "acme"
-- **THEN** an `EmailTemplate` is persisted with `TicketedEventId=null`, type="visa-letter-denied"
+#### Scenario: Font string is applied to transactional HTML
 
-#### Scenario: Create a ticket-types-removed template
-- **WHEN** an organizer creates a `ticket-types-removed` template for team "acme"
-- **THEN** an `EmailTemplate` is persisted with `TicketedEventId=null`, type="ticket-types-removed"
-
-#### Scenario: Create a reconfirm-cancelled template
-
-- **WHEN** an organizer creates a `reconfirm-cancelled` template for team "acme"
-- **THEN** an `EmailTemplate` is persisted with `TicketedEventId=null`, type="reconfirm-cancelled" and is used as the auto-cancel notification for any of the team's events lacking an event-scoped override
-
-#### Scenario: bulk-custom type cannot be persisted as a template
-- **WHEN** an organizer attempts to create or upsert a template with `type="bulk-custom"`
-- **THEN** the request is rejected with a validation error stating that `bulk-custom` is reserved for ad-hoc bulk-email content carried on the job and not for stored templates
-
----
-
-### Requirement: Template lookup precedence is event > team > built-in default
-When the Email module needs a template of type `T` for event `E` on team `Team(E)`, it SHALL resolve in this order: (1) the event-scoped template for `(TeamId=Team(E), TicketedEventId=E, type=T)` if present; otherwise (2) the team-scoped template for `(TeamId=Team(E), TicketedEventId=null, type=T)` if present; otherwise (3) the built-in default template for type `T` shipped as an embedded resource. The lookup SHALL be a single resolution pass — no field-level merging across scopes.
-
-#### Scenario: Event-scoped template wins over team-scoped
-- **WHEN** both a team-scoped `ticket` template and an event-scoped `ticket` template exist for the event in question
-- **THEN** the event-scoped template's subject, text body, and html body are used
-
-#### Scenario: Team-scoped template used when no event-scoped exists
-- **WHEN** no event-scoped `ticket` template exists but the owning team has one
-- **THEN** the team-scoped template is used
-
-#### Scenario: Built-in default used when neither exists
-- **WHEN** neither an event-scoped nor a team-scoped `ticket` template exists
-- **THEN** the built-in default `ticket` template (embedded resource) is used
-
-#### Scenario: Unknown template type
-- **WHEN** the system requests a template of type `unknown-type` and no team- or event-scoped template exists
-- **THEN** template resolution fails with a "template not supported" error rather than silently substituting another type
+- **WHEN** team "acme" has selected font `Inter`
+- **THEN** the built-in transactional HTML uses the configured `Inter` font-family value
 
 ---
 
 ### Requirement: Template rendering uses Scriban with parameters from the triggering event
-Templates SHALL be rendered with the Scriban templating engine. The renderer SHALL import the triggering event's parameter object as Scriban global variables (e.g. `{{ event_name }}`, `{{ first_name }}`, `{{ register_link }}`). Rendering SHALL produce three strings: rendered subject, rendered text body, rendered html body.
 
-When the calling code (the bulk-email composer) supplies an ad-hoc `Subject`, `TextBody`, or `HtmlBody`, the renderer SHALL use those strings instead of the corresponding template field. Ad-hoc strings SHALL be rendered through Scriban with the same parameter set as the resolved template would have been.
+Built-in transactional templates and custom bulk email job content SHALL be rendered with the Scriban templating engine. The renderer SHALL import the triggering event's parameter object as Scriban global variables (e.g. `{{ event_name }}`, `{{ first_name }}`, `{{ register_link }}`). Rendering SHALL produce three strings: rendered subject, rendered text body, and rendered html body.
 
-The `ticket` template type SHALL receive a `ticket_types` parameter containing the list of ticket type names the attendee is registered for. This parameter SHALL be supplied by both the initial-registration email handler (`AttendeeRegisteredIntegrationEventHandler`) and the ticket-change email handler (`AttendeeTicketsChangedIntegrationEventHandler`). The built-in default `ticket` templates (HTML and text) SHALL display the ticket type list. Custom `ticket` templates that omit `{{ ticket_types }}` are unaffected because Scriban silently ignores unused variables.
+Custom bulk email jobs SHALL supply complete job-owned `Subject`, `TextBody`, and `HtmlBody`; those fields SHALL be rendered through Scriban with the same recipient/event parameter set. Transactional email callers SHALL render code-owned built-in templates only.
+
+The `ticket` built-in template SHALL receive a `ticket_types` parameter containing the list of ticket type names the attendee is registered for. This parameter SHALL be supplied by both the initial-registration email handler (`AttendeeRegisteredIntegrationEventHandler`) and the ticket-change email handler (`AttendeeTicketsChangedIntegrationEventHandler`). The built-in default `ticket` templates (HTML and text) SHALL display the ticket type list.
 
 #### Scenario: Variables are substituted
-- **WHEN** a template subject is "Your {{ event_name }} Ticket" and the parameters provide `event_name = "DevConf"`
+
+- **WHEN** a built-in template subject is "Your {{ event_name }} Ticket" and the parameters provide `event_name = "DevConf"`
 - **THEN** the rendered subject is "Your DevConf Ticket"
 
 #### Scenario: Parse error surfaces as a render failure
-- **WHEN** a template body contains an unparseable Scriban expression
+
+- **WHEN** built-in template content or custom bulk job content contains an unparseable Scriban expression
 - **THEN** rendering throws a deterministic error that callers can catch and record (see `email-sending`)
 
-#### Scenario: Ad-hoc subject overrides template subject
-- **WHEN** the composer is given an ad-hoc subject "Schedule update for {{ event_name }}" and a resolved template whose subject is "Your {{ event_name }} Ticket"
-- **THEN** the rendered subject is "Schedule update for DevConf" — the ad-hoc string was rendered, the template subject was ignored
+#### Scenario: Custom bulk fields are rendered from job content
 
-#### Scenario: Partial ad-hoc override falls back to template for missing fields
-- **WHEN** the composer supplies only an ad-hoc subject, and the resolved template provides text+html bodies
-- **THEN** the rendered text body and html body come from the template, rendered with the same parameters
+- **WHEN** a custom bulk job carries `Subject="Schedule update for {{ event_name }}"`, `TextBody`, and `HtmlBody`
+- **THEN** the rendered email uses those job-owned fields and does not load a stored template
 
 #### Scenario: ticket_types variable lists registered ticket names in confirmation email
+
 - **GIVEN** a registration for "alice@example.com" holding ticket types "Early Bird" and "Workshop"
 - **WHEN** a `ticket` confirmation email is rendered for either initial registration or ticket change
 - **THEN** the rendered output contains "Early Bird" and "Workshop"
 
 #### Scenario: ticket_types is empty list when no catalog exists
+
 - **GIVEN** a registration created via a coupon for an event with no ticket catalog and no ticket type snapshots
 - **WHEN** the `ticket` confirmation email is rendered
 - **THEN** rendering succeeds and the `{{ ticket_types }}` block renders as empty or is hidden by the template guard
-
----
-
-### Requirement: Admin endpoints manage team-scoped and event-scoped templates
-The Email module SHALL expose admin HTTP endpoints to read, upsert, and delete templates at both team and event scope. Endpoints SHALL be authorized via membership on the team that owns the scope. Updates SHALL accept the current `Version` for optimistic concurrency.
-
-#### Scenario: Upsert team-scoped template
-- **WHEN** an organizer of team "acme" sends an upsert for a `ticket` team-scoped template with subject "Welcome"
-- **THEN** the template is created or updated, and a subsequent GET returns the new content
-
-#### Scenario: Delete event-scoped template falls back to team or default
-- **WHEN** an organizer deletes the event-scoped `ticket` template for event "devconf-2026" while a team-scoped one still exists
-- **THEN** template resolution for event "devconf-2026" subsequently returns the team-scoped template
-
-#### Scenario: Non-team-member denied
-- **WHEN** a user who is not a member of the owning team attempts to upsert a template
-- **THEN** the request is denied with a 403 response
-
----
-
-### Requirement: Admin endpoint returns the resolved (effective) template for preview
-The Email module SHALL expose a `GET /admin/teams/{teamSlug}/email-templates/{type}/preview` endpoint (and its event-scoped equivalent at `/admin/teams/{teamSlug}/events/{eventSlug}/email-templates/{type}/preview`) that resolves the effective template for the given type and scope using the precedence rules defined in the main `email-templates` spec, then renders it with a fixed set of sample placeholder values (see rendering spec). The response SHALL return the rendered subject, text body, and HTML body as a JSON object. The endpoint SHALL NOT send any email.
-
-#### Scenario: Preview team-scoped custom template
-- **WHEN** an organizer requests a preview of the `ticket` template for team "acme" and a custom team-scoped template exists
-- **THEN** the response contains the rendered subject, text body, and HTML body from that custom template with sample variables substituted
-
-#### Scenario: Preview falls back to built-in default when no custom template exists
-- **WHEN** an organizer requests a preview of the `ticket` template for team "acme" and no custom team-scoped template exists
-- **THEN** the response contains the rendered subject, text body, and HTML body from the built-in default `ticket` template with sample variables substituted
-
-#### Scenario: Preview event-scoped template wins over team-scoped
-- **WHEN** an organizer requests a preview of the `ticket` template for event "devconf-2026" on team "acme" and both an event-scoped and a team-scoped custom template exist
-- **THEN** the response contains the rendered output from the event-scoped template
-
-#### Scenario: Unknown template type returns 400
-- **WHEN** an organizer requests a preview for type `unknown-type`
-- **THEN** the endpoint returns a 400 error indicating the template type is not supported
-
-#### Scenario: Non-team-member denied
-- **WHEN** a user who is not a member of the owning team requests a preview
-- **THEN** the endpoint returns 403
-
----
-
-### Requirement: Admin endpoint sends a rendered test email for a template type
-The Email module SHALL expose a `POST /admin/teams/{teamSlug}/email-templates/{type}/test-send` endpoint (and its event-scoped equivalent) that resolves the effective template for the given type, renders it with sample placeholder values, and dispatches the rendered email to a caller-supplied recipient address using the email settings resolved for the scope. The endpoint SHALL return 200 on success. If no email settings are configured for the scope, the endpoint SHALL return a business-rule error.
-
-#### Scenario: Send test email using team-scoped effective template
-- **WHEN** an organizer posts `{ "recipient": "bob@example.com" }` to the team-scoped test-send endpoint for the `ticket` type and the team has email settings configured
-- **THEN** one email is sent to "bob@example.com" with the rendered content of the resolved `ticket` template
-
-#### Scenario: Test send fails when no email settings configured
-- **WHEN** an organizer posts to the test-send endpoint and the team has no email settings configured
-- **THEN** the endpoint returns a 422 error with code `email_settings.not_configured`
-
-#### Scenario: Non-team-member denied test send
-- **WHEN** a user who is not a member of the owning team attempts a test send
-- **THEN** the endpoint returns 403

@@ -5,10 +5,11 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.EmailSettings.CreateEm
 
 internal sealed record CreateEmailSettingsCommand(
     Guid TeamId,
-    Guid? TicketedEventId,
     string SmtpHost,
     int SmtpPort,
     string FromAddress,
     EmailAuthMode AuthMode,
     string? Username,
-    string? Password) : Command;
+    string? Password,
+    string? AccentColor,
+    string? FontFamily) : Command;

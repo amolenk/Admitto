@@ -15,7 +15,6 @@ public sealed class BulkEmailListAndDetailTests(TestContext testContext) : EndTo
     public async Task ListAndDetail_ReturnPerRecipientStatus()
     {
         var fixture = BulkEmailFixture.Empty()
-            .WithTicketTemplate()
             .WithRegistration("ann@example.com", "Ann", "A")
             .WithRegistration("ben@example.com", "Ben", "B");
         await fixture.SetupAsync(Environment);
@@ -24,7 +23,10 @@ public sealed class BulkEmailListAndDetailTests(TestContext testContext) : EndTo
             fixture.CreateRoute,
             new
             {
-                BulkEmailFixture.EmailType,
+                EmailType = "bulk-custom",
+                Subject = "Hello {{ first_name }}",
+                TextBody = "Hi {{ first_name }}",
+                HtmlBody = "<p>Hi {{ first_name }}</p>",
                 Source = new { Attendee = new { } }
             },
             cancellationToken: testContext.CancellationToken);

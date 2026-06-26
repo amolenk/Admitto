@@ -79,7 +79,11 @@ internal sealed class SendEmailHandler(
                 teamId,
                 ticketedEventId,
                 cancellationToken);
-            rendered = renderer.Render(template, command.Parameters);
+            var parameters = EmailTemplateParameters.WithBranding(
+                command.Parameters,
+                settings.AccentColor,
+                settings.FontFamily);
+            rendered = renderer.Render(template, parameters);
         }
         catch (EmailRenderException ex)
         {

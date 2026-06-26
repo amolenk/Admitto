@@ -7,34 +7,24 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.EmailSettings.SendTest
 public static class SendTestEmailHttpEndpoint
 {
     public static RouteGroupBuilder MapSendTestEmail(
-        this RouteGroupBuilder group,
-        bool isEventScoped)
+        this RouteGroupBuilder group)
     {
-        var endpointName = isEventScoped ? "TestEventEmailSettings" : "TestTeamEmailSettings";
-        var handler = new Handler(isEventScoped);
-
         group
-            .MapPost("/test", handler.HandleAsync)
-            .WithName(endpointName)
+            .MapPost("/test", HandleAsync)
+            .WithName("TestTeamEmailSettings")
             .RequireAuthorization(policy => policy.RequireTeamMembership(TeamMembershipRole.Organizer));
 
         return group;
     }
 
-    private sealed class Handler(bool isEventScoped)
+    private static async ValueTask<Ok> HandleAsync(
+        Guid teamId,
+        SendTestEmailHttpRequest request,
+        ICommandHandler<SendTestEmailCommand> handler,
+        CancellationToken ct)
     {
-        public async ValueTask<Ok> HandleAsync(
-            Guid teamId,
-            Guid? eventId,
-            SendTestEmailHttpRequest request,
-            ICommandHandler<SendTestEmailCommand> handler,
-            CancellationToken ct)
-        {
-            var ticketedEventId = isEventScoped ? eventId!.Value : (Guid?)null;
+        await handler.HandleAsync(request.ToCommand(teamId), ct);
 
-            await handler.HandleAsync(request.ToCommand(teamId, ticketedEventId), ct);
-
-            return TypedResults.Ok();
-        }
+        return TypedResults.Ok();
     }
 }

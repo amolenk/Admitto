@@ -6,8 +6,7 @@ using Amolenk.Admitto.Core.Email.Infrastructure.Security;
 namespace Amolenk.Admitto.Core.Email.Application.Sending.Settings;
 
 /// <summary>
-/// Email-module-internal contract for resolving effective SMTP settings for a given event,
-/// falling back to team-scoped settings when no event-scoped settings exist.
+/// Email-module-internal contract for resolving team SMTP settings for a given event.
 /// </summary>
 internal interface IEffectiveEmailSettingsResolver
 {
@@ -16,9 +15,6 @@ internal interface IEffectiveEmailSettingsResolver
         TicketedEventId eventId,
         CancellationToken cancellationToken = default);
 
-    /// <summary>
-    /// Resolves effective SMTP settings for a team scope (no event-level fallback).
-    /// </summary>
     ValueTask<EffectiveEmailSettings?> ResolveAsync(
         TeamId teamId,
         CancellationToken cancellationToken = default);
@@ -33,18 +29,7 @@ internal sealed class EffectiveEmailSettingsResolver(
         TicketedEventId eventId,
         CancellationToken cancellationToken = default)
     {
-        // Try event-scoped first, then fall back to team-scoped.
-        var settings = await writeStore.EmailSettings
-            .AsNoTracking()
-            .Where(s =>
-                s.TeamId == teamId &&
-                (s.TicketedEventId == eventId || s.TicketedEventId == null))
-            .ToListAsync(cancellationToken);
-
-        var effective = settings.FirstOrDefault(s => s.TicketedEventId == eventId)
-                     ?? settings.FirstOrDefault(s => s.TicketedEventId == null);
-
-        return effective is null ? null : ToEffective(effective);
+        return await ResolveAsync(teamId, cancellationToken);
     }
 
     public async ValueTask<EffectiveEmailSettings?> ResolveAsync(
@@ -54,8 +39,7 @@ internal sealed class EffectiveEmailSettingsResolver(
         var settings = await writeStore.EmailSettings
             .AsNoTracking()
             .FirstOrDefaultAsync(
-                s => s.TeamId == teamId &&
-                     s.TicketedEventId == null,
+                s => s.TeamId == teamId,
                 cancellationToken);
 
         return settings is null ? null : ToEffective(settings);
@@ -73,6 +57,8 @@ internal sealed class EffectiveEmailSettingsResolver(
             settings.FromAddress,
             settings.AuthMode,
             settings.Username?.Value,
-            password);
+            password,
+            settings.AccentColor,
+            settings.FontFamily);
     }
 }

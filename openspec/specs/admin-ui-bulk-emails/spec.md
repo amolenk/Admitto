@@ -2,7 +2,7 @@
 
 ## Purpose
 
-TBD
+The Admin UI lets organizers view, audit, create, and cancel event bulk email campaigns. Custom campaign content is authored directly in the send flow and stored on the bulk email job.
 
 ## Requirements
 
@@ -43,9 +43,9 @@ The Bulk Emails list page is accessed via the **Campaigns** tab in the unified E
 
 ### Requirement: Bulk Email job detail page shows audit information and supports cancellation
 
-The Admin UI SHALL render a detail page at `/teams/{teamSlug}/events/{eventSlug}/emails/campaigns/{jobId}` that fetches job details from `GET /admin/…/bulk-emails/{id}`. The page SHALL display: job status, email type, trigger, source descriptor (attendee filters or "External list (N recipients)"), ad-hoc subject/body if present, timestamps (created, started, completed), totals (recipient count, sent, failed, cancelled), and a list or count of failed recipients with their last error. A "Back to bulk emails" link SHALL navigate to the campaigns tab.
+The Admin UI SHALL render a detail page at `/teams/{teamSlug}/events/{eventSlug}/emails/campaigns/{jobId}` that fetches job details from `GET /admin/.../bulk-emails/{id}`. The page SHALL display: job status, email type, trigger, source descriptor (attendee filters or "External list (N recipients)"), job-owned subject/body if present, timestamps (created, started, completed), totals (recipient count, sent, failed, cancelled), and a list or count of failed recipients with their last error. A "Back to bulk emails" link SHALL navigate to the campaigns tab.
 
-For jobs in a non-terminal state (Pending, Resolving, Sending), a "Cancel" button SHALL be shown. Clicking it SHALL call `POST /admin/…/bulk-emails/{id}/cancel`, show a success notification, and refresh the job status.
+For jobs in a non-terminal state (Pending, Resolving, Sending), a "Cancel" button SHALL be shown. Clicking it SHALL call `POST /admin/.../bulk-emails/{id}/cancel`, show a success notification, and refresh the job status.
 
 #### Scenario: Detail page shows job summary
 
@@ -76,12 +76,22 @@ For jobs in a non-terminal state (Pending, Resolving, Sending), a "Cancel" butto
 
 ### Requirement: Send bulk email action uses a Sheet panel
 
-The "Send bulk email" action SHALL be presented as a `Sheet` slide-in panel rather than a modal dialog. The Sheet SHALL slide from the right on desktop and from the bottom on mobile. The form content (recipient selection, subject, body) SHALL be identical to the previous dialog implementation.
+The "Send bulk email" action SHALL be presented as a `Sheet` slide-in panel rather than a modal dialog. The Sheet SHALL slide from the right on desktop and from the bottom on mobile. The form SHALL collect custom bulk content directly: Subject, Text Body, HTML Body, and recipient selection. It SHALL NOT require or allow selecting a stored template.
 
 #### Scenario: Send bulk email opens as Sheet
 
 - **WHEN** an organizer clicks "Send bulk email"
 - **THEN** a Sheet panel slides in from the right (desktop) or bottom (mobile) with the send form
+
+#### Scenario: Sheet collects direct content
+
+- **WHEN** the Sheet opens
+- **THEN** it shows required fields for Subject, Text Body, and HTML Body before or alongside recipient selection
+
+#### Scenario: Template selection is absent
+
+- **WHEN** the Sheet opens
+- **THEN** it does not load or render a stored template selector
 
 #### Scenario: Sheet closes on successful submission
 
@@ -92,22 +102,27 @@ The "Send bulk email" action SHALL be presented as a `Sheet` slide-in panel rath
 
 ### Requirement: Unified Email tabbed page groups all email concerns
 
-The Admin UI SHALL render a unified Email page at `/teams/{teamSlug}/events/{eventSlug}/emails` that presents three tabs: **Campaigns**, **Templates**, and **Setup**. The **Campaigns** tab is the default. Navigating to the bare `/emails` path SHALL redirect to `/emails/campaigns`. Each tab SHALL be an independently routable sub-page. The active tab SHALL be visually highlighted.
+The Admin UI SHALL render a unified Email page at `/teams/{teamSlug}/events/{eventSlug}/emails` that presents the event email concerns that remain after simplification. The **Campaigns** tab SHALL be the default. Navigating to the bare `/emails` path SHALL redirect to `/emails/campaigns`. Template and event SMTP setup tabs SHALL NOT be shown because transactional templates are not editable and SMTP settings are team-scoped.
 
 #### Scenario: Navigating to /emails shows Campaigns tab by default
 
 - **WHEN** an organizer clicks "Email" in the event sidebar
-- **THEN** the browser navigates to the Campaigns tab at `…/emails/campaigns`
+- **THEN** the browser navigates to the Campaigns tab at `.../emails/campaigns`
 
-#### Scenario: Tab navigation switches between Email sub-pages
+#### Scenario: Campaigns remains available
 
-- **WHEN** an organizer clicks the "Templates" tab
-- **THEN** the URL changes to `…/emails/templates` and the template list loads
+- **WHEN** an organizer opens `.../emails/campaigns`
+- **THEN** the campaigns list loads
 
-#### Scenario: Tab navigation to Setup
+#### Scenario: Templates tab removed
 
-- **WHEN** an organizer clicks the "Setup" tab
-- **THEN** the URL changes to `…/emails/setup` and the email settings form loads
+- **WHEN** an organizer opens the event email page
+- **THEN** no Templates tab is shown
+
+#### Scenario: Setup tab removed
+
+- **WHEN** an organizer opens the event email page
+- **THEN** no event-scoped Setup tab or settings form is shown
 
 ---
 
@@ -115,21 +130,23 @@ The Admin UI SHALL render a unified Email page at `/teams/{teamSlug}/events/{eve
 
 The Admin UI SHALL provide Next.js API routes that forward requests to the backend bulk-email endpoints, attaching the auth-token header. Required proxy routes:
 
-- `GET  /api/teams/[teamSlug]/events/[eventSlug]/bulk-emails` → `GET  /admin/teams/{teamSlug}/events/{eventSlug}/bulk-emails`
-- `POST /api/teams/[teamSlug]/events/[eventSlug]/bulk-emails` → `POST /admin/teams/{teamSlug}/events/{eventSlug}/bulk-emails`
-- `POST /api/teams/[teamSlug]/events/[eventSlug]/bulk-emails/preview` → `POST /admin/teams/{teamSlug}/events/{eventSlug}/bulk-emails/preview`
-- `GET  /api/teams/[teamSlug]/events/[eventSlug]/bulk-emails/[jobId]` → `GET  /admin/teams/{teamSlug}/events/{eventSlug}/bulk-emails/{id}`
-- `POST /api/teams/[teamSlug]/events/[eventSlug]/bulk-emails/[jobId]/cancel` → `POST /admin/teams/{teamSlug}/events/{eventSlug}/bulk-emails/{id}/cancel`
+- `GET  /api/teams/[teamSlug]/events/[eventSlug]/bulk-emails` -> `GET  /admin/teams/{teamSlug}/events/{eventSlug}/bulk-emails`
+- `POST /api/teams/[teamSlug]/events/[eventSlug]/bulk-emails` -> `POST /admin/teams/{teamSlug}/events/{eventSlug}/bulk-emails`
+- `POST /api/teams/[teamSlug]/events/[eventSlug]/bulk-emails/preview` -> `POST /admin/teams/{teamSlug}/events/{eventSlug}/bulk-emails/preview`
+- `GET  /api/teams/[teamSlug]/events/[eventSlug]/bulk-emails/[jobId]` -> `GET /admin/teams/{teamSlug}/events/{eventSlug}/bulk-emails/{id}`
+- `POST /api/teams/[teamSlug]/events/[eventSlug]/bulk-emails/[jobId]/cancel` -> `POST /admin/teams/{teamSlug}/events/{eventSlug}/bulk-emails/{id}/cancel`
+
+Bulk email create proxying SHALL forward the direct content fields (`subject`, `textBody`, `htmlBody`) supplied by the Sheet and SHALL NOT fetch or copy content from a stored template.
 
 #### Scenario: List proxy forwards GET
 
 - **WHEN** the Admin UI requests `GET /api/teams/acme/events/devconf-2026/bulk-emails`
 - **THEN** the proxy forwards to `GET /admin/teams/acme/events/devconf-2026/bulk-emails` with the auth token and relays the response
 
-#### Scenario: Create proxy forwards POST
+#### Scenario: Create proxy forwards direct content POST
 
-- **WHEN** the Admin UI posts to `/api/teams/acme/events/devconf-2026/bulk-emails`
-- **THEN** the proxy forwards to `POST /admin/teams/acme/events/devconf-2026/bulk-emails` with the auth token and relays the response
+- **WHEN** the Admin UI posts to `/api/teams/acme/events/devconf-2026/bulk-emails` with subject, text body, HTML body, and source
+- **THEN** the proxy forwards those fields to `POST /admin/teams/acme/events/devconf-2026/bulk-emails` with the auth token and relays the response
 
 #### Scenario: Cancel proxy forwards POST
 

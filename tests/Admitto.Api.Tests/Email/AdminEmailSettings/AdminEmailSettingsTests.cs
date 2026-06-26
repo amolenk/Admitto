@@ -38,34 +38,6 @@ public sealed class AdminEmailSettingsTests(TestContext testContext) : EndToEndT
         response.StatusCode.ShouldBe(HttpStatusCode.Created);
     }
 
-    // Scenario: Create event-scoped email settings
-    // WHEN an organizer creates email settings for event "settingsconf" with no version
-    // THEN the response is 201 Created
-    [TestMethod]
-    public async Task CreateEventSettings_ReturnsCreated()
-    {
-        var fixture = AdminEmailSettingsFixture.EmptySettings();
-        await fixture.SetupEmptyAsync(Environment);
-
-        var request = new
-        {
-            SmtpHost = "smtp.acme.org",
-            SmtpPort = 587,
-            FromAddress = "event@acme.org",
-            AuthMode = "none",
-            Username = (string?)null,
-            Password = (string?)null,
-            Version = (uint?)null
-        };
-
-        var response = await Environment.ApiClient.PutAsJsonAsync(
-            fixture.EventSettingsRoute,
-            request,
-            cancellationToken: testContext.CancellationToken);
-
-        response.StatusCode.ShouldBe(HttpStatusCode.Created);
-    }
-
     // Scenario: Admin GET masks the password — team scope
     // WHEN an organizer reads team-scoped settings
     // THEN the response contains HasPassword and does not expose the plaintext password field
@@ -87,26 +59,6 @@ public sealed class AdminEmailSettingsTests(TestContext testContext) : EndToEndT
         body.GetProperty("fromAddress").GetString().ShouldBe("team@example.com");
         body.GetProperty("hasPassword").GetBoolean().ShouldBe(false);
         body.TryGetProperty("password", out _).ShouldBeFalse();
-    }
-
-    // Scenario: Admin GET masks the password — event scope
-    // WHEN an organizer reads event-scoped settings
-    // THEN the response is 200 OK with the expected fields
-    [TestMethod]
-    public async Task GetEventSettings_ReturnsMaskedResponse()
-    {
-        var fixture = AdminEmailSettingsFixture.WithBothSettings();
-        await fixture.SetupBothSettingsAsync(Environment);
-
-        var response = await Environment.ApiClient.GetAsync(
-            fixture.EventSettingsRoute,
-            testContext.CancellationToken);
-
-        response.StatusCode.ShouldBe(HttpStatusCode.OK);
-
-        var body = await response.Content.ReadFromJsonAsync<JsonElement>(
-            cancellationToken: testContext.CancellationToken);
-        body.GetProperty("fromAddress").GetString().ShouldBe("event@example.com");
     }
 
     // Scenario: Update from-address only — team scope
@@ -137,34 +89,6 @@ public sealed class AdminEmailSettingsTests(TestContext testContext) : EndToEndT
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
     }
 
-    // Scenario: Update from-address only — event scope
-    // WHEN an organizer submits an update to event-scoped settings with the correct Version
-    // THEN the response is 200 OK
-    [TestMethod]
-    public async Task UpdateEventSettings_WithCorrectVersion_ReturnsOk()
-    {
-        var fixture = AdminEmailSettingsFixture.WithBothSettings();
-        var (_, eventVersion) = await fixture.SetupBothSettingsAsync(Environment);
-
-        var request = new
-        {
-            SmtpHost = "smtp.acme.org",
-            SmtpPort = 587,
-            FromAddress = "updated-event@acme.org",
-            AuthMode = "none",
-            Username = (string?)null,
-            Password = (string?)null,
-            Version = eventVersion
-        };
-
-        var response = await Environment.ApiClient.PutAsJsonAsync(
-            fixture.EventSettingsRoute,
-            request,
-            cancellationToken: testContext.CancellationToken);
-
-        response.StatusCode.ShouldBe(HttpStatusCode.OK);
-    }
-
     // Scenario: DELETE team-scoped email settings
     // WHEN an organizer deletes team-scoped settings
     // THEN the response is 204 No Content and a subsequent GET returns 404
@@ -184,22 +108,6 @@ public sealed class AdminEmailSettingsTests(TestContext testContext) : EndToEndT
             fixture.TeamSettingsRoute,
             testContext.CancellationToken);
         getResponse.StatusCode.ShouldBe(HttpStatusCode.NotFound);
-    }
-
-    // Scenario: DELETE event-scoped email settings
-    // WHEN an organizer deletes event-scoped settings
-    // THEN the response is 204 No Content
-    [TestMethod]
-    public async Task DeleteEventSettings_ReturnsNoContent()
-    {
-        var fixture = AdminEmailSettingsFixture.WithBothSettings();
-        var (_, eventVersion) = await fixture.SetupBothSettingsAsync(Environment);
-
-        var response = await Environment.ApiClient.DeleteAsync(
-            $"{fixture.EventSettingsRoute}?version={eventVersion}",
-            testContext.CancellationToken);
-
-        response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
     }
 
     // Scenario: Reject update with stale version
@@ -257,30 +165,6 @@ public sealed class AdminEmailSettingsTests(TestContext testContext) : EndToEndT
 
         var response = await Environment.ApiClient.PostAsJsonAsync(
             fixture.TeamSettingsTestRoute,
-            new { Recipient = "ops@acme.org" },
-            cancellationToken: testContext.CancellationToken);
-
-        response.StatusCode.ShouldBe(HttpStatusCode.OK);
-
-        var messages = await Environment.Email.WaitForAsync(
-            1,
-            TimeSpan.FromSeconds(10),
-            testContext.CancellationToken);
-
-        EmailTestContext.GetLowercaseRecipientAddresses(messages).ShouldContain("ops@acme.org");
-    }
-
-    // Scenario: Diagnostic send succeeds at event scope without consulting the team scope
-    // WHEN an organizer tests event-scoped email settings
-    // THEN the response is 200 OK and MailDev receives the diagnostic message
-    [TestMethod]
-    public async Task TestEventSettings_ReturnsOkAndSendsDiagnostic()
-    {
-        var fixture = AdminEmailSettingsFixture.WithBothSettings();
-        await fixture.SetupBothSmtpSettingsAsync(Environment);
-
-        var response = await Environment.ApiClient.PostAsJsonAsync(
-            fixture.EventSettingsTestRoute,
             new { Recipient = "ops@acme.org" },
             cancellationToken: testContext.CancellationToken);
 

@@ -11,7 +11,7 @@ public static class ResultHttpExtensions
     {
         return result.IsSuccess ? onSuccess(result.Value) : result.Error.ToProblemHttpResult();
     }
-    
+
     public static ProblemHttpResult ToProblemHttpResult(this Error error)
     {
         var extensions = new Dictionary<string, object?> { ["code"] = error.Code };
@@ -39,6 +39,7 @@ public static class ResultHttpExtensions
 
             ErrorType.Unauthorized => TypedResults.Problem(
                 title: "Unauthorized",
+                detail: error.Message,
                 statusCode: StatusCodes.Status401Unauthorized,
                 extensions: extensions),
 

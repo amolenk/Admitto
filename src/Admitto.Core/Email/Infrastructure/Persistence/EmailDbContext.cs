@@ -15,7 +15,6 @@ public sealed class EmailDbContext(DbContextOptions<EmailDbContext> options)
     public static string SchemaName => "email";
 
     public DbSet<EmailSettings> EmailSettings => Set<EmailSettings>();
-    public DbSet<EmailTemplate> EmailTemplates => Set<EmailTemplate>();
     public DbSet<EmailLog> EmailLog => Set<EmailLog>();
     public DbSet<BulkEmailJob> BulkEmailJobs => Set<BulkEmailJob>();
 
@@ -88,7 +87,11 @@ public sealed class EmailDbContext(DbContextOptions<EmailDbContext> options)
             .HaveConversion<EmailSettingsId.EfCoreValueConverter>();
 
         configurationBuilder
-            .Properties<EmailTemplateId>()
-            .HaveConversion<EmailTemplateId.EfCoreValueConverter>();
+            .Properties<EmailAccentColor>()
+            .HaveConversion<EmailAccentColor.EfCoreValueConverter>();
+
+        configurationBuilder
+            .Properties<EmailFontFamily>()
+            .HaveConversion<EmailFontFamily.EfCoreValueConverter>();
     }
 }

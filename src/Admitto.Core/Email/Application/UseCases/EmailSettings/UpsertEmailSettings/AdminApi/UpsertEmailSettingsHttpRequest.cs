@@ -17,11 +17,13 @@ public sealed record UpsertEmailSettingsHttpRequest(
     EmailAuthMode AuthMode,
     string? Username,
     string? Password,
+    string? AccentColor,
+    string? FontFamily,
     uint? Version)
 {
-    internal CreateEmailSettingsCommand ToCreateCommand(Guid teamId, Guid? ticketedEventId) =>
-        new(teamId, ticketedEventId, SmtpHost, SmtpPort, FromAddress, AuthMode, Username, Password);
+    internal CreateEmailSettingsCommand ToCreateCommand(Guid teamId) =>
+        new(teamId, SmtpHost, SmtpPort, FromAddress, AuthMode, Username, Password, AccentColor, FontFamily);
 
-    internal UpdateEmailSettingsCommand ToUpdateCommand(Guid teamId, Guid? ticketedEventId, uint expectedVersion) =>
-        new(teamId, ticketedEventId, SmtpHost, SmtpPort, FromAddress, AuthMode, Username, Password, expectedVersion);
+    internal UpdateEmailSettingsCommand ToUpdateCommand(Guid teamId, uint expectedVersion) =>
+        new(teamId, SmtpHost, SmtpPort, FromAddress, AuthMode, Username, Password, AccentColor, FontFamily, expectedVersion);
 }

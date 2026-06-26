@@ -366,17 +366,9 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
             .ForTeamAndEvent(teamId, eventId)
             .WithBasicAuth(protectedPassword: protectedSecret.Protect("pass"))
             .Build();
-        var template = new EmailTemplateBuilder()
-            .ForTeamAndEvent(teamId, eventId)
-            .WithName(DefaultEmailType)
-            .WithSubject("Hi {{ first_name }}")
-            .WithTextBody("Hello {{ first_name }}")
-            .WithHtmlBody("<p>Hello {{ first_name }}</p>")
-            .Build();
         await Environment.EmailDatabase.SeedAsync(db =>
         {
             db.EmailSettings.Add(settings);
-            db.EmailTemplates.Add(template);
         });
     }
 
@@ -391,7 +383,7 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
 
         IEmailWriteStore writeStore = ctx;
         var settingsResolver = new EffectiveEmailSettingsResolver(ctx, protectedSecret);
-        var templateService = new EmailTemplateService(ctx);
+        var templateService = new EmailTemplateService();
         var renderer = new ScribanEmailRenderer();
         IUnitOfWork unitOfWork = new UnitOfWork<EmailDbContext>(ctx, new NoOpOutboxMessageSender(), NullLogger<UnitOfWork<EmailDbContext>>.Instance);
 

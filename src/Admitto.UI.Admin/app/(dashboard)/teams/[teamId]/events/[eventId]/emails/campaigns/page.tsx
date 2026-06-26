@@ -164,7 +164,7 @@ export default function CampaignsPage() {
                                         (window.location.href = `/teams/${teamId}/events/${eventId}/emails/campaigns/${job.id}`)
                                     }
                                 >
-                                    <TableCell className="font-medium text-[13px]">{job.templateName ?? job.emailType}</TableCell>
+                                    <TableCell className="font-medium text-[13px]">{job.emailType}</TableCell>
                                     <TableCell>
                                         <Badge variant={STATUS_VARIANT[job.status]}>
                                             {STATUS_LABEL[job.status]}

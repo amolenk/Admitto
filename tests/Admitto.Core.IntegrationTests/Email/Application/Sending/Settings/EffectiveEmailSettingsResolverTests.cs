@@ -9,7 +9,7 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.Sending.Settin
 public sealed class EffectiveEmailSettingsResolverTests(TestContext testContext) : AspireIntegrationTestBase
 {
     [TestMethod]
-    public async ValueTask ResolveAsync_EventScopedOnly_ReturnsEventSettings()
+    public async ValueTask ResolveAsync_TeamSettings_ReturnsTeamSettingsForEvent()
     {
         var teamId = TeamId.New();
         var eventId = TicketedEventId.New();
@@ -17,8 +17,8 @@ public sealed class EffectiveEmailSettingsResolverTests(TestContext testContext)
 
         var settings = new EventEmailSettingsBuilder()
             .ForTeamAndEvent(teamId, eventId)
-            .WithSmtpHost("event-smtp.example.com")
-            .WithBasicAuth(protectedPassword: protectedSecret.Protect("event-pass"))
+            .WithSmtpHost("team-smtp.example.com")
+            .WithBasicAuth(protectedPassword: protectedSecret.Protect("team-pass"))
             .Build();
         await Environment.EmailDatabase.SeedAsync(db => db.EmailSettings.Add(settings));
 
@@ -26,8 +26,8 @@ public sealed class EffectiveEmailSettingsResolverTests(TestContext testContext)
         var result = await resolver.ResolveAsync(teamId, eventId, testContext.CancellationToken);
 
         result.ShouldNotBeNull();
-        result.SmtpHost.Value.ShouldBe("event-smtp.example.com");
-        result.Password.ShouldBe("event-pass");
+        result.SmtpHost.Value.ShouldBe("team-smtp.example.com");
+        result.Password.ShouldBe("team-pass");
     }
 
     [TestMethod]
@@ -51,34 +51,6 @@ public sealed class EffectiveEmailSettingsResolverTests(TestContext testContext)
     }
 
     [TestMethod]
-    public async ValueTask ResolveAsync_BothPresent_EventWins()
-    {
-        var teamId = TeamId.New();
-        var eventId = TicketedEventId.New();
-        var protectedSecret = TestProtectedSecretFactory.Create();
-
-        var eventSettings = new EventEmailSettingsBuilder()
-            .ForTeamAndEvent(teamId, eventId)
-            .WithSmtpHost("event-smtp.example.com")
-            .Build();
-        var teamSettings = new EventEmailSettingsBuilder()
-            .ForTeam(teamId)
-            .WithSmtpHost("team-smtp.example.com")
-            .Build();
-        await Environment.EmailDatabase.SeedAsync(db =>
-        {
-            db.EmailSettings.Add(eventSettings);
-            db.EmailSettings.Add(teamSettings);
-        });
-
-        var resolver = new EffectiveEmailSettingsResolver(Environment.EmailDatabase.Context, protectedSecret);
-        var result = await resolver.ResolveAsync(teamId, eventId, testContext.CancellationToken);
-
-        result.ShouldNotBeNull();
-        result.SmtpHost.Value.ShouldBe("event-smtp.example.com");
-    }
-
-    [TestMethod]
     public async ValueTask ResolveAsync_NeitherPresent_ReturnsNull()
     {
         var teamId = TeamId.New();
@@ -92,7 +64,7 @@ public sealed class EffectiveEmailSettingsResolverTests(TestContext testContext)
     }
 
     [TestMethod]
-    public async ValueTask ResolveAsync_EventSettingsForDifferentTeam_ReturnsNull()
+    public async ValueTask ResolveAsync_SettingsForDifferentTeam_ReturnsNull()
     {
         var teamId = TeamId.New();
         var otherTeamId = TeamId.New();
@@ -111,33 +83,4 @@ public sealed class EffectiveEmailSettingsResolverTests(TestContext testContext)
         result.ShouldBeNull();
     }
 
-    [TestMethod]
-    public async ValueTask ResolveAsync_EventSettingsPresent_ReturnedRegardlessOfValidity()
-    {
-        // The resolver does NOT skip invalid settings — the caller decides what to do.
-        // Event-scoped settings always win over team-scoped when present.
-        var teamId = TeamId.New();
-        var eventId = TicketedEventId.New();
-        var protectedSecret = TestProtectedSecretFactory.Create();
-
-        var eventSettings = new EventEmailSettingsBuilder()
-            .ForTeamAndEvent(teamId, eventId)
-            .WithSmtpHost("event-smtp.example.com")
-            .Build();
-        var teamSettings = new EventEmailSettingsBuilder()
-            .ForTeam(teamId)
-            .WithSmtpHost("team-smtp.example.com")
-            .Build();
-        await Environment.EmailDatabase.SeedAsync(db =>
-        {
-            db.EmailSettings.Add(eventSettings);
-            db.EmailSettings.Add(teamSettings);
-        });
-
-        var resolver = new EffectiveEmailSettingsResolver(Environment.EmailDatabase.Context, protectedSecret);
-        var result = await resolver.ResolveAsync(teamId, eventId, testContext.CancellationToken);
-
-        result.ShouldNotBeNull();
-        result.SmtpHost.Value.ShouldBe("event-smtp.example.com");
-    }
 }

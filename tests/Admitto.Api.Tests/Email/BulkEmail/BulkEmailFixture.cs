@@ -127,7 +127,6 @@ internal sealed class BulkEmailFixture
 
         var emailSettings = EmailSettings.Create(
             teamId: team.Id,
-            ticketedEventId: null,
             smtpHost: Hostname.From(smtpHost),
             smtpPort: Port.From(smtpPort),
             fromAddress: EmailAddress.From("noreply@admitto.io"),
@@ -148,29 +147,6 @@ internal sealed class BulkEmailFixture
         {
             db.EmailSettings.Add(emailSettings);
 
-            if (_seedTicketTemplate)
-            {
-                db.EmailTemplates.Add(
-                    new EmailTemplateBuilder()
-                        .ForTeam(team.Id)
-                        .WithName(EmailType)
-                        .WithSubject("Hello {{ first_name }}")
-                        .WithTextBody("Hi {{ first_name }} {{ last_name }}")
-                        .WithHtmlBody("<p>Hi {{ first_name }} {{ last_name }}</p>")
-                        .Build());
-            }
-
-            if (_seedReconfirmTemplate)
-            {
-                db.EmailTemplates.Add(
-                    new EmailTemplateBuilder()
-                        .ForTeam(team.Id)
-                        .WithName(ReconfirmEmailType)
-                        .WithSubject("Please reconfirm")
-                        .WithTextBody("Please reconfirm {{ first_name }}")
-                        .WithHtmlBody("<p>Please reconfirm {{ first_name }}</p>")
-                        .Build());
-            }
         });
     }
 

@@ -33,7 +33,17 @@ internal sealed class ScribanEmailRenderer : IEmailRenderer
 
         var context = new TemplateContext { StrictVariables = false };
         var scriptObject = new ScriptObject();
-        scriptObject.Import(parameters, renamer: member => StandardMemberRenamer.Rename(member));
+        if (parameters is IReadOnlyDictionary<string, object?> dictionary)
+        {
+            foreach (var (key, value) in dictionary)
+            {
+                scriptObject.SetValue(key, value, readOnly: true);
+            }
+        }
+        else
+        {
+            scriptObject.Import(parameters, renamer: member => StandardMemberRenamer.Rename(member));
+        }
         context.PushGlobal(scriptObject);
 
         try

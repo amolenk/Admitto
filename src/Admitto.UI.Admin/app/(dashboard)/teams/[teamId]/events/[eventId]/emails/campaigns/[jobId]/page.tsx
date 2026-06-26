@@ -153,7 +153,7 @@ export default function BulkEmailDetailPage() {
                     <div className="rounded-lg border p-4">
                         <h3 className="font-medium text-[14px] mb-2">Summary</h3>
                         <DetailRow label="Status" value={<Badge variant={STATUS_VARIANT[job.status]}>{STATUS_LABEL[job.status]}</Badge>} />
-                        <DetailRow label="Type" value={job.templateName ?? job.emailType} />
+                        <DetailRow label="Type" value={job.emailType} />
                         <DetailRow label="Triggered by" value={job.isSystemTriggered ? "System" : (job.triggeredBy ?? "—")} />
                         <DetailRow label="Recipients" value={String(Number(job.recipientCount))} />
                         <DetailRow label="Sent" value={String(Number(job.sentCount))} />

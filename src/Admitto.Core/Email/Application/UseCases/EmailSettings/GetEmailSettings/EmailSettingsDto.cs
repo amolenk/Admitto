@@ -13,4 +13,6 @@ public sealed record EmailSettingsDto(
     EmailAuthMode AuthMode,
     string? Username,
     bool HasPassword,
+    string AccentColor,
+    string FontFamily,
     uint Version);

@@ -28,7 +28,6 @@ public static class CreateBulkEmailHttpEndpoint
             teamId,
             eventId,
             request.EmailType,
-            request.TemplateName,
             request.Subject,
             request.TextBody,
             request.HtmlBody,

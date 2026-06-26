@@ -25,5 +25,13 @@ public sealed class UpsertEmailSettingsValidator : AbstractValidator<UpsertEmail
             RuleFor(x => x.Username)
                 .MustBeParseable(SmtpUsername.TryFrom!);
         });
+
+        RuleFor(x => x.AccentColor)
+            .MustBeParseable(EmailAccentColor.TryFrom!)
+            .When(x => x.AccentColor is not null);
+
+        RuleFor(x => x.FontFamily)
+            .MustBeParseable(EmailFontFamily.TryFrom!)
+            .When(x => x.FontFamily is not null);
     }
 }

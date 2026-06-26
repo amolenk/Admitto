@@ -10,48 +10,34 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.EmailSettings.UpsertEm
 public static class UpsertEmailSettingsHttpEndpoint
 {
     public static RouteGroupBuilder MapUpsertEmailSettings(
-        this RouteGroupBuilder group,
-        bool isEventScoped)
+        this RouteGroupBuilder group)
     {
-        var endpointName = isEventScoped ? "UpsertEventEmailSettings" : "UpsertTeamEmailSettings";
-        var handler = new Handler(isEventScoped);
-
         group
-            .MapPut("/", handler.HandleAsync)
-            .WithName(endpointName)
+            .MapPut("/", HandleAsync)
+            .WithName("UpsertTeamEmailSettings")
             .RequireAuthorization(policy => policy.RequireTeamMembership(TeamMembershipRole.Organizer));
 
         return group;
     }
 
-    private sealed class Handler(bool isEventScoped)
+    private static async ValueTask<Results<Ok, Created>> HandleAsync(
+        Guid teamId,
+        UpsertEmailSettingsHttpRequest request,
+        ICommandHandler<CreateEmailSettingsCommand> createHandler,
+        ICommandHandler<UpdateEmailSettingsCommand> updateHandler,
+        [FromKeyedServices(EmailModule.Key)] IUnitOfWork unitOfWork,
+        CancellationToken ct)
     {
-        public async ValueTask<Results<Ok, Created>> HandleAsync(
-            Guid teamId,
-            Guid? eventId,
-            UpsertEmailSettingsHttpRequest request,
-            ICommandHandler<CreateEmailSettingsCommand> createHandler,
-            ICommandHandler<UpdateEmailSettingsCommand> updateHandler,
-            [FromKeyedServices(EmailModule.Key)] IUnitOfWork unitOfWork,
-            CancellationToken ct)
+        if (request.Version is { } expectedVersion)
         {
-            var ticketedEventId = isEventScoped ? eventId!.Value : (Guid?)null;
-
-            if (request.Version is { } expectedVersion)
-            {
-                await updateHandler.HandleAsync(request.ToUpdateCommand(teamId, ticketedEventId, expectedVersion), ct);
-                await unitOfWork.SaveChangesAsync(ct);
-                return TypedResults.Ok();
-            }
-
-            await createHandler.HandleAsync(request.ToCreateCommand(teamId, ticketedEventId), ct);
+            await updateHandler.HandleAsync(request.ToUpdateCommand(teamId, expectedVersion), ct);
             await unitOfWork.SaveChangesAsync(ct);
-
-            var location = eventId is not null
-                ? $"/admin/teams/{teamId}/events/{eventId}/email-settings"
-                : $"/admin/teams/{teamId}/email-settings";
-
-            return TypedResults.Created(location);
+            return TypedResults.Ok();
         }
+
+        await createHandler.HandleAsync(request.ToCreateCommand(teamId), ct);
+        await unitOfWork.SaveChangesAsync(ct);
+
+        return TypedResults.Created($"/admin/teams/{teamId}/email-settings");
     }
 }

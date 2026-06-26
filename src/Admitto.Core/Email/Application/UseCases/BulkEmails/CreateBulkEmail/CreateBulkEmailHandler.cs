@@ -27,7 +27,6 @@ internal sealed class CreateBulkEmailHandler(
             teamId,
             ticketedEventId,
             command.EmailType,
-            command.TemplateName,
             command.Subject,
             command.TextBody,
             command.HtmlBody,

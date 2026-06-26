@@ -19,8 +19,7 @@ internal sealed class SendTestEmailHandler(
         var settings = await writeStore.EmailSettings
             .AsNoTracking()
             .FirstOrDefaultAsync(
-                s => s.TeamId == TeamId.From(command.TeamId) &&
-                     s.TicketedEventId == (command.TicketedEventId.HasValue ? TicketedEventId.From(command.TicketedEventId.Value) : null),
+                s => s.TeamId == TeamId.From(command.TeamId),
                 cancellationToken)
             ?? throw new BusinessRuleViolationException(Errors.SettingsNotConfigured);
 
@@ -35,14 +34,37 @@ internal sealed class SendTestEmailHandler(
             throw new BusinessRuleViolationException(Errors.IncompleteSettings);
         }
 
+        var accentColor = settings.AccentColor.Value;
+        var fontFamily = NormalizePreviewFontFamily(settings.FontFamily.Value);
+
         var message = new EmailMessage(
             RecipientAddress: command.Recipient,
             RecipientName: command.Recipient,
             Subject: "Admitto SMTP settings test",
             TextBody:
-                "This is a test email from Admitto. If you received it, the saved SMTP settings for this scope can send email.",
+                $"This is a test email from Admitto. If you received it, the saved SMTP settings can send email. Branding preview: accent color {accentColor}, font family {fontFamily}.",
             HtmlBody:
-                "<p>This is a test email from Admitto.</p><p>If you received it, the saved SMTP settings for this scope can send email.</p>");
+                $$"""
+                <!DOCTYPE html>
+                <html>
+                <body style="margin:0;padding:0;background:#f6f7fb;font-family:{{fontFamily}};color:#111827;">
+                    <div style="max-width:560px;margin:24px auto;background:#ffffff;border:1px solid #e5e7eb;border-radius:14px;overflow:hidden;">
+                        <div style="height:8px;background:{{accentColor}};"></div>
+                        <div style="padding:28px;">
+                            <p style="margin:0 0 10px 0;color:{{accentColor}};font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;">Admitto test email</p>
+                            <h1 style="margin:0 0 14px 0;font-size:28px;line-height:1.15;color:#111827;">Your email branding is active</h1>
+                            <p style="margin:0 0 20px 0;font-size:15px;line-height:1.6;color:#4b5563;">If you received this message, the saved SMTP settings can send email. This preview uses the configured team font and accent color.</p>
+                            <div style="border:1px solid #e5e7eb;border-radius:10px;padding:16px;margin:20px 0;background:#fafafa;">
+                                <div style="font-size:13px;color:#6b7280;margin-bottom:8px;">Branding values</div>
+                                <div style="font-size:14px;line-height:1.7;"><strong>Accent color:</strong> <span style="color:{{accentColor}};">{{accentColor}}</span></div>
+                                <div style="font-size:14px;line-height:1.7;"><strong>Font family:</strong> {{fontFamily}}</div>
+                            </div>
+                            <a href="#" style="display:inline-block;background:{{accentColor}};color:#ffffff;text-decoration:none;font-weight:700;padding:11px 18px;border-radius:8px;">Sample action button</a>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                """);
 
         try
         {
@@ -70,7 +92,20 @@ internal sealed class SendTestEmailHandler(
             settings.FromAddress,
             settings.AuthMode,
             settings.Username?.Value,
-            password);
+            password,
+            settings.AccentColor,
+            settings.FontFamily);
+    }
+
+    private static string NormalizePreviewFontFamily(string fontFamily)
+    {
+        if (fontFamily.StartsWith("Roboto", StringComparison.OrdinalIgnoreCase))
+            return "'Helvetica Neue', Helvetica, Arial, sans-serif";
+
+        if (fontFamily.StartsWith("Inter", StringComparison.OrdinalIgnoreCase))
+            return "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif";
+
+        return fontFamily;
     }
 
     internal static class Errors

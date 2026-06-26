@@ -4,5 +4,4 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.EmailSettings.DeleteEm
 
 internal sealed record DeleteEmailSettingsCommand(
     Guid TeamId,
-    Guid? TicketedEventId,
     uint ExpectedVersion) : Command;

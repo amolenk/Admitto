@@ -9,15 +9,9 @@ internal sealed class EmailPostgresExceptionMapping : IPostgresExceptionMapping
 {
     public bool TryMapToError(PostgresException ex, out Error error)
     {
-        if (ex.ConstraintName is "IX_email_settings_team" or "IX_email_settings_team_event")
+        if (ex.ConstraintName is "IX_email_settings_team")
         {
             error = AlreadyExistsError.Create<EmailSettings>();
-            return true;
-        }
-
-        if (ex.ConstraintName is "IX_email_templates_team_name" or "IX_email_templates_team_event_name")
-        {
-            error = AlreadyExistsError.Create<Domain.Entities.EmailTemplate>();
             return true;
         }
 

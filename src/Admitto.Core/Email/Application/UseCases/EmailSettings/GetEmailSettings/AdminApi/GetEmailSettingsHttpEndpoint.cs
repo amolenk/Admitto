@@ -8,38 +8,27 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.EmailSettings.GetEmail
 public static class GetEmailSettingsHttpEndpoint
 {
     public static RouteGroupBuilder MapGetEmailSettings(
-        this RouteGroupBuilder group,
-        bool isEventScoped)
+        this RouteGroupBuilder group)
     {
-        var endpointName = isEventScoped ? "GetEventEmailSettings" : "GetTeamEmailSettings";
-        var handler = new Handler(isEventScoped);
-
         group
-            .MapGet("/", handler.HandleAsync)
-            .WithName(endpointName)
+            .MapGet("/", HandleAsync)
+            .WithName("GetTeamEmailSettings")
             .RequireAuthorization(policy => policy.RequireTeamMembership(TeamMembershipRole.Organizer));
 
         return group;
     }
 
-    private sealed class Handler(bool isEventScoped)
+    private static async ValueTask<Ok<EmailSettingsDto>> HandleAsync(
+        Guid teamId,
+        IQueryHandler<GetEmailSettingsQuery, EmailSettingsDto?> handler,
+        CancellationToken ct)
     {
-        public async ValueTask<Ok<EmailSettingsDto>> HandleAsync(
-            Guid teamId,
-            Guid? eventId,
-            IQueryHandler<GetEmailSettingsQuery, EmailSettingsDto?> handler,
-            CancellationToken ct)
-        {
-            var ticketedEventId = isEventScoped ? eventId!.Value : (Guid?)null;
+        var dto = await handler.HandleAsync(new GetEmailSettingsQuery(teamId), ct);
 
-            var dto = await handler.HandleAsync(
-                new GetEmailSettingsQuery(teamId, ticketedEventId), ct);
+        if (dto is null)
+            throw new BusinessRuleViolationException(
+                NotFoundError.Create<Domain.Entities.EmailSettings>());
 
-            if (dto is null)
-                throw new BusinessRuleViolationException(
-                    NotFoundError.Create<Domain.Entities.EmailSettings>());
-
-            return TypedResults.Ok(dto);
-        }
+        return TypedResults.Ok(dto);
     }
 }

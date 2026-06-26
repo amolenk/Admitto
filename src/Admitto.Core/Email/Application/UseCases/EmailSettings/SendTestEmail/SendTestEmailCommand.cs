@@ -4,5 +4,4 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.EmailSettings.SendTest
 
 internal sealed record SendTestEmailCommand(
     Guid TeamId,
-    Guid? TicketedEventId,
     string Recipient) : Command;

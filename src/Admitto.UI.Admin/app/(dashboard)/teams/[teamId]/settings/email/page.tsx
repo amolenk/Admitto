@@ -110,6 +110,8 @@ export default function TeamEmailSettingsPage() {
                     fromAddress: settings?.fromAddress ?? "",
                     authMode: (settings?.authMode as "none" | "basic") ?? "none",
                     username: settings?.username ?? "",
+                    accentColor: settings?.accentColor ?? "#2563eb",
+                    fontFamily: settings?.fontFamily ?? "Arial, sans-serif",
                 }}
                 renderTestEmail={settings !== null
                     ? () => (
@@ -141,7 +143,7 @@ export default function TeamEmailSettingsPage() {
                             <AlertDialogHeader>
                                 <AlertDialogTitle>Delete team email settings?</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                    This will remove the team-level email configuration. Events that rely on it will fall back to no email settings until individual event settings are configured.
+                                    This will remove the team-level email configuration. Event emails for this team will not be sent until settings are configured again.
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>

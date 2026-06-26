@@ -14,7 +14,6 @@ internal sealed class SendTestEmailFixture
 {
     private const string ProtectedPasswordPlaintext = "secret";
     private bool _seedTeamSettings;
-    private bool _seedEventSettings;
     private bool _eventSettingsIncomplete;
 
     private SendTestEmailFixture()
@@ -33,8 +32,7 @@ internal sealed class SendTestEmailFixture
 
     public static SendTestEmailFixture EventAndTeamSettings() => new()
     {
-        _seedTeamSettings = true,
-        _seedEventSettings = true
+        _seedTeamSettings = true
     };
 
     public static SendTestEmailFixture TeamSettingsOnly() => new()
@@ -44,7 +42,7 @@ internal sealed class SendTestEmailFixture
 
     public static SendTestEmailFixture IncompleteEventSettings() => new()
     {
-        _seedEventSettings = true,
+        _seedTeamSettings = true,
         _eventSettingsIncomplete = true
     };
 
@@ -54,29 +52,26 @@ internal sealed class SendTestEmailFixture
         {
             if (_seedTeamSettings)
             {
-                db.EmailSettings.Add(new EventEmailSettingsBuilder()
+                var builder = new EventEmailSettingsBuilder()
                     .ForTeam(TeamId)
                     .WithSmtpHost("team.smtp.example.com")
-                    .WithFromAddress("team@example.com")
-                    .Build());
+                    .WithFromAddress("team@example.com");
+
+                if (_eventSettingsIncomplete)
+                {
+                    builder.WithBasicAuth(protectedPassword: ProtectedSecret.Protect(ProtectedPasswordPlaintext));
+                }
+
+                db.EmailSettings.Add(builder.Build());
             }
 
-            if (_seedEventSettings)
-            {
-                db.EmailSettings.Add(new EventEmailSettingsBuilder()
-                    .ForTeamAndEvent(TeamId, EventId)
-                    .WithSmtpHost("event.smtp.example.com")
-                    .WithFromAddress("event@example.com")
-                    .WithBasicAuth(protectedPassword: ProtectedSecret.Protect(ProtectedPasswordPlaintext))
-                    .Build());
-            }
         }, ct);
 
         if (_eventSettingsIncomplete)
         {
             await environment.EmailDatabase.Context.Database.ExecuteSqlRawAsync(
-                "UPDATE email.email_settings SET protected_password = NULL WHERE ticketed_event_id = {0}",
-                [EventId.Value],
+                "UPDATE email.email_settings SET protected_password = NULL WHERE team_id = {0}",
+                [TeamId.Value],
                 ct);
             environment.EmailDatabase.Context.ChangeTracker.Clear();
         }
@@ -86,10 +81,10 @@ internal sealed class SendTestEmailFixture
         new(environment.EmailDatabase.Context, ProtectedSecret, EmailSender);
 
     public SendTestEmailCommand TeamCommand(string recipient = "ops@acme.org") =>
-        new(TeamId.Value, null, recipient);
+        new(TeamId.Value, recipient);
 
     public SendTestEmailCommand EventCommand(string recipient = "ops@acme.org") =>
-        new(TeamId.Value, EventId.Value, recipient);
+        new(TeamId.Value, recipient);
 }
 
 internal sealed class FakeTestEmailSender : IEmailSender

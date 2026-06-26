@@ -19,8 +19,7 @@ internal sealed class UpdateEmailSettingsHandler(
     public async ValueTask HandleAsync(UpdateEmailSettingsCommand command, CancellationToken cancellationToken)
     {
         var settings = await writeStore.EmailSettings.GetAsync(
-             s => s.TeamId == TeamId.From(command.TeamId) &&
-                  s.TicketedEventId == (command.TicketedEventId.HasValue ? TicketedEventId.From(command.TicketedEventId.Value) : null),
+             s => s.TeamId == TeamId.From(command.TeamId),
              command.ExpectedVersion,
              cancellationToken);
 
@@ -34,7 +33,13 @@ internal sealed class UpdateEmailSettingsHandler(
         var protectedPassword = command.Password is not null
             ? ProtectedPassword.FromCiphertext(protectedSecret.Protect(command.Password))
             : (ProtectedPassword?)null;
+        var accentColor = command.AccentColor is not null
+            ? EmailAccentColor.From(command.AccentColor)
+            : (EmailAccentColor?)null;
+        var fontFamily = command.FontFamily is not null
+            ? EmailFontFamily.From(command.FontFamily)
+            : (EmailFontFamily?)null;
 
-        settings.Update(smtpHost, smtpPort, fromAddress, command.AuthMode, username, protectedPassword);
+        settings.Update(smtpHost, smtpPort, fromAddress, command.AuthMode, username, protectedPassword, accentColor, fontFamily);
     }
 }

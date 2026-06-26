@@ -93,50 +93,6 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
     }
 
     [TestMethod]
-    public async ValueTask HandleAsync_RenderError_WritesFailedLog()
-    {
-        // Arrange — a broken template
-        var (teamId, eventId, protectedSecret, fakeSender, handler) = BuildHandler();
-
-        var settings = new EventEmailSettingsBuilder()
-            .ForTeamAndEvent(teamId, eventId)
-            .Build();
-        var brokenTemplate = new EmailTemplateBuilder()
-            .ForTeamAndEvent(teamId, eventId)
-            .WithSubject("{{ for }}")
-            .Build();
-        await Environment.EmailDatabase.SeedAsync(db =>
-        {
-            db.EmailSettings.Add(settings);
-            db.EmailTemplates.Add(brokenTemplate);
-        });
-
-        var command = new SendEmailCommand(
-            teamId.Value, eventId.Value,
-            "alice@example.com", "Alice",
-            BuiltInEmailTemplateNames.TicketConfirmation,
-            IdempotencyKey: "test-key-render-error",
-            Parameters: new { });
-
-        // Act
-        await handler.HandleAsync(command, testContext.CancellationToken);
-        await Environment.EmailDatabase.Context.SaveChangesAsync(testContext.CancellationToken);
-
-        // Assert — failed log, nothing sent
-        await Environment.EmailDatabase.AssertAsync(async db =>
-        {
-            var log = await db.EmailLog
-                .AsNoTracking()
-                .FirstOrDefaultAsync(l => l.IdempotencyKey == "test-key-render-error", testContext.CancellationToken);
-
-            log.ShouldNotBeNull();
-            log.Status.ShouldBe(EmailLogStatus.Failed);
-        });
-
-        fakeSender.SentMessages.ShouldBeEmpty();
-    }
-
-    [TestMethod]
     public async ValueTask HandleAsync_DuplicateIdempotencyKey_DoesNotDoubleSend()
     {
         // Arrange
@@ -263,7 +219,7 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
         var fakeSender = new FakeEmailSender();
 
         var settingsResolver = new EffectiveEmailSettingsResolver(Environment.EmailDatabase.Context, protectedSecret);
-        var templateService = new EmailTemplateService(Environment.EmailDatabase.Context);
+        var templateService = new EmailTemplateService();
         var renderer = new ScribanEmailRenderer();
         var outbox = new Outbox(Environment.EmailDatabase.Context);
 

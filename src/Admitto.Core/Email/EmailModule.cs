@@ -8,13 +8,6 @@ using Amolenk.Admitto.Core.Email.Application.UseCases.EmailSettings.DeleteEmailS
 using Amolenk.Admitto.Core.Email.Application.UseCases.EmailSettings.GetEmailSettings.AdminApi;
 using Amolenk.Admitto.Core.Email.Application.UseCases.EmailSettings.SendTestEmail.AdminApi;
 using Amolenk.Admitto.Core.Email.Application.UseCases.EmailSettings.UpsertEmailSettings.AdminApi;
-using Amolenk.Admitto.Core.Email.Application.UseCases.EmailTemplates.CreateEmailTemplate.AdminApi;
-using Amolenk.Admitto.Core.Email.Application.UseCases.EmailTemplates.DeleteEmailTemplate.AdminApi;
-using Amolenk.Admitto.Core.Email.Application.UseCases.EmailTemplates.GetEmailTemplate.AdminApi;
-using Amolenk.Admitto.Core.Email.Application.UseCases.EmailTemplates.GetEmailTemplates.AdminApi;
-using Amolenk.Admitto.Core.Email.Application.UseCases.EmailTemplates.PreviewEmailTemplate.AdminApi;
-using Amolenk.Admitto.Core.Email.Application.UseCases.EmailTemplates.TestSendEmailTemplate.AdminApi;
-using Amolenk.Admitto.Core.Email.Application.UseCases.EmailTemplates.UpdateEmailTemplate.AdminApi;
 
 namespace Amolenk.Admitto.Core.Email;
 
@@ -29,43 +22,10 @@ public static class EmailModule
         group
             .MapGroup("/teams/{teamId:guid}/email-settings")
             .WithTags("Admin - Email Settings")
-            .MapGetEmailSettings(isEventScoped: false)
-            .MapUpsertEmailSettings(isEventScoped: false)
-            .MapDeleteEmailSettings(isEventScoped: false)
-            .MapSendTestEmail(isEventScoped: false);
-
-        // Event-scoped email settings
-        group
-            .MapGroup("/teams/{teamId:guid}/events/{eventId:guid}/email-settings")
-            .WithTags("Admin - Email Settings")
-            .MapGetEmailSettings(isEventScoped: true)
-            .MapUpsertEmailSettings(isEventScoped: true)
-            .MapDeleteEmailSettings(isEventScoped: true)
-            .MapSendTestEmail(isEventScoped: true);
-
-        // Team-scoped email templates
-        group
-            .MapGroup("/teams/{teamId:guid}/email-templates")
-            .WithTags("Admin - Email Templates")
-            .MapGetEmailTemplates(isEventScoped: false)
-            .MapCreateEmailTemplate(isEventScoped: false)
-            .MapGetEmailTemplate(isEventScoped: false)
-            .MapUpdateEmailTemplate(isEventScoped: false)
-            .MapDeleteEmailTemplate(isEventScoped: false)
-            .MapPreviewEmailTemplate(isEventScoped: false)
-            .MapTestSendEmailTemplate(isEventScoped: false);
-
-        // Event-scoped email templates
-        group
-            .MapGroup("/teams/{teamId:guid}/events/{eventId:guid}/email-templates")
-            .WithTags("Admin - Email Templates")
-            .MapGetEmailTemplates(isEventScoped: true)
-            .MapCreateEmailTemplate(isEventScoped: true)
-            .MapGetEmailTemplate(isEventScoped: true)
-            .MapUpdateEmailTemplate(isEventScoped: true)
-            .MapDeleteEmailTemplate(isEventScoped: true)
-            .MapPreviewEmailTemplate(isEventScoped: true)
-            .MapTestSendEmailTemplate(isEventScoped: true);
+            .MapGetEmailSettings()
+            .MapUpsertEmailSettings()
+            .MapDeleteEmailSettings()
+            .MapSendTestEmail();
 
         // Event-scoped bulk emails
         group

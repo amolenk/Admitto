@@ -11,8 +11,7 @@ internal sealed class GetEmailSettingsHandler(IEmailWriteStore writeStore)
         var settings = await writeStore.EmailSettings
             .AsNoTracking()
             .FirstOrDefaultAsync(
-                s => s.TeamId == TeamId.From(query.TeamId) &&
-                     s.TicketedEventId == (query.TicketedEventId.HasValue ? TicketedEventId.From(query.TicketedEventId.Value) : null),
+                s => s.TeamId == TeamId.From(query.TeamId),
                 ct);
 
         if (settings is null)
@@ -25,6 +24,8 @@ internal sealed class GetEmailSettingsHandler(IEmailWriteStore writeStore)
             settings.AuthMode,
             settings.Username?.Value,
             settings.ProtectedPassword is not null,
+            settings.AccentColor.Value,
+            settings.FontFamily.Value,
             settings.Version);
     }
 }

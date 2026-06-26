@@ -13,7 +13,7 @@ public sealed class BulkEmailAuthorizationTests(TestContext testContext) : EndTo
     [TestMethod]
     public async Task NonOrganizer_GetsForbiddenOnEveryEndpoint()
     {
-        var fixture = BulkEmailFixture.Empty().WithTicketTemplate();
+        var fixture = BulkEmailFixture.Empty();
         await fixture.SetupAsync(Environment);
 
         var preview = await Environment.BobApiClient.PostAsJsonAsync(
@@ -35,7 +35,10 @@ public sealed class BulkEmailAuthorizationTests(TestContext testContext) : EndTo
             fixture.CreateRoute,
             new
             {
-                EmailType = BulkEmailFixture.EmailType,
+                EmailType = "bulk-custom",
+                Subject = "Hello",
+                TextBody = "Hello",
+                HtmlBody = "<p>Hello</p>",
                 Source = new
                 {
                     ExternalList = new

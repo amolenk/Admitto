@@ -211,12 +211,11 @@ sequenceDiagram
     alt terminal claim exists
         EmailHandler-->>Worker: ack (no-op, idempotency guard)
     else no terminal claim exists
-        EmailHandler->>EmailHandler: resolve effective EmailSettings (event → team)
+        EmailHandler->>EmailHandler: resolve team EmailSettings
         alt no settings
             EmailHandler->>EmailLog: insert Failed (email not configured)
         else settings found
-            EmailHandler->>EmailHandler: resolve EmailTemplate (event → team → built-in)
-            EmailHandler->>EmailHandler: render subject + bodies via Scriban
+            EmailHandler->>EmailHandler: render built-in themed content via Scriban
             EmailHandler->>EmailLog: insert Pending claim
             EmailHandler->>EmailOutbox: enqueue DeliverEmail command (same UoW)
             Worker->>EmailOutbox: poll & dequeue DeliverEmail
@@ -229,7 +228,7 @@ sequenceDiagram
 
 **Idempotency**: the `EmailLog` row with key `attendee-registered:<registrationId>:<registeredAt>` is the send claim. A re-delivered integration event that observes a terminal claim is acked without another SMTP attempt; a pending claim can enqueue delivery again for recovery. SMTP itself is not transactional, so rare duplicate delivery races or a crash after SMTP success but before updating the log can still produce a later duplicate during recovery.
 
-**Degraded mode**: if no effective email settings exist for the event, a terminal `Failed` log row is written with reason "email not configured" and the integration event is still acked — registration itself is unaffected. Transient SMTP failures remain retryable until the configured delivery attempt limit is reached.
+**Degraded mode**: if no team email settings exist for the event's owning team, a terminal `Failed` log row is written with reason "email not configured" and the integration event is still acked — registration itself is unaffected. Transient SMTP failures remain retryable until the configured delivery attempt limit is reached.
 
 ## 6.9 Bulk-email fan-out (single SMTP connection)
 
@@ -246,8 +245,8 @@ sequenceDiagram
     participant SMTP as SMTP server
     participant EmailLog as email.email_log
 
-    Admin->>Endpoint: start bulk send
-    Endpoint->>Job: create (Pending) with Source
+    Admin->>Endpoint: start bulk send with Subject/TextBody/HtmlBody
+    Endpoint->>Job: create (Pending) with Source and job-owned content
     Endpoint-->>Admin: 202 Accepted (jobId)
     FanOut->>Job: pick up (DisallowConcurrentExecution per jobId)
     Job->>Job: transition Pending → Resolving
@@ -262,6 +261,7 @@ sequenceDiagram
     FanOut->>SMTP: connect (single connection)
     loop for each Pending recipient
       FanOut->>FanOut: check CancellationRequestedAt
+      FanOut->>FanOut: render job-owned or built-in content
       FanOut->>EmailLog: insert Pending claim key=bulk:{jobId}:{email}
       FanOut->>SMTP: MAIL FROM / RCPT TO / DATA
       FanOut->>EmailLog: update claim to Sent or Failed

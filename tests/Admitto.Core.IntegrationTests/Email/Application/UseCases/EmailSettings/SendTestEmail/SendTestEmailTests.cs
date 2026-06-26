@@ -28,7 +28,7 @@ public sealed class SendTestEmailTests(TestContext testContext) : AspireIntegrat
     }
 
     [TestMethod]
-    public async ValueTask SendTestEmail_EventScope_UsesEventSettingsWhenTeamSettingsExist()
+    public async ValueTask SendTestEmail_EventCommand_UsesTeamSettings()
     {
         var fixture = SendTestEmailFixture.EventAndTeamSettings();
         await fixture.SetupAsync(Environment, testContext.CancellationToken);
@@ -38,23 +38,9 @@ public sealed class SendTestEmailTests(TestContext testContext) : AspireIntegrat
 
         fixture.EmailSender.SentMessages.Count.ShouldBe(1);
         var sent = fixture.EmailSender.SentMessages.Single();
-        sent.Settings.SmtpHost.Value.ShouldBe("event.smtp.example.com");
-        sent.Settings.FromAddress.Value.ShouldBe("event@example.com");
-        sent.Settings.Password.ShouldBe("secret");
-    }
-
-    [TestMethod]
-    public async ValueTask SendTestEmail_EventScopeWithoutRow_DoesNotFallbackToTeamSettings()
-    {
-        var fixture = SendTestEmailFixture.TeamSettingsOnly();
-        await fixture.SetupAsync(Environment, testContext.CancellationToken);
-        var sut = fixture.CreateHandler(Environment);
-
-        var result = await ErrorResult.CaptureAsync(
-            () => sut.HandleAsync(fixture.EventCommand(), testContext.CancellationToken));
-
-        result.Error.ShouldMatch(SendTestEmailHandler.Errors.SettingsNotConfigured);
-        fixture.EmailSender.SentMessages.ShouldBeEmpty();
+        sent.Settings.SmtpHost.Value.ShouldBe("team.smtp.example.com");
+        sent.Settings.FromAddress.Value.ShouldBe("team@example.com");
+        sent.Settings.Password.ShouldBeNull();
     }
 
     [TestMethod]

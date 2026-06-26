@@ -4,12 +4,10 @@ internal sealed record SendTestEmailHttpRequest(
     string Recipient)
 {
     public SendTestEmailCommand ToCommand(
-        Guid teamId,
-        Guid? ticketedEventId)
+        Guid teamId)
     {
         return new SendTestEmailCommand(
             teamId,
-            ticketedEventId,
             Recipient);
     }
 }

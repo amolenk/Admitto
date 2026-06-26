@@ -3,15 +3,12 @@
 import { useState, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, Upload, X } from "lucide-react";
-import Link from "next/link";
 import { toast } from "sonner";
 import { apiClient } from "@/lib/api-client";
 import { FormError } from "@/components/form-error";
 import {
     BulkEmailRecipientPreviewDto,
     CreateBulkEmailResponse,
-    EmailTemplateListItemDto,
-    EmailTemplateDto,
     TicketTypeDto,
 } from "@/lib/admitto-api/generated";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -33,7 +30,8 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
-import { Skeleton } from "@/components/ui/skeleton";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 const CSV_ROW_LIMIT = 5000;
 
@@ -74,9 +72,10 @@ export function SendBulkEmailSheet({ teamId, eventId, open, onClose }: SendBulkE
     const queryClient = useQueryClient();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
-    const [step, setStep] = useState<1 | 2>(1);
-    const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
     const [recipientSource, setRecipientSource] = useState<RecipientSource>("attendees");
+    const [subject, setSubject] = useState("");
+    const [textBody, setTextBody] = useState("");
+    const [htmlBody, setHtmlBody] = useState("");
 
     const [attendeeTicketType, setAttendeeTicketType] = useState<string>("");
     const [attendeeStatus, setAttendeeStatus] = useState<string>("");
@@ -89,33 +88,6 @@ export function SendBulkEmailSheet({ teamId, eventId, open, onClose }: SendBulkE
 
     const [sendError, setSendError] = useState<string | null>(null);
 
-    const { data: eventTemplates, isLoading: isLoadingEventTemplates } = useQuery({
-        queryKey: ["event-email-templates", teamId, eventId],
-        queryFn: () =>
-            apiClient.get<EmailTemplateListItemDto[]>(
-                `/api/teams/${teamId}/events/${eventId}/email-templates`
-            ),
-        enabled: open,
-        throwOnError: false,
-    });
-
-    const { data: teamTemplates, isLoading: isLoadingTeamTemplates } = useQuery({
-        queryKey: ["team-email-templates", teamId],
-        queryFn: () =>
-            apiClient.get<EmailTemplateListItemDto[]>(
-                `/api/teams/${teamId}/email-templates`
-            ),
-        enabled: open,
-        throwOnError: false,
-    });
-
-    const isLoadingTemplates = isLoadingEventTemplates || isLoadingTeamTemplates;
-
-    const templates: (EmailTemplateListItemDto & { scope: "event" | "team" })[] = [
-        ...(eventTemplates ?? []).filter((t) => t.kind === "custom" && t.id).map((t) => ({ ...t, scope: "event" as const })),
-        ...(teamTemplates ?? []).filter((t) => t.kind === "custom" && t.id).map((t) => ({ ...t, scope: "team" as const })),
-    ].sort((a, b) => a.name.localeCompare(b.name));
-
     const { data: ticketTypes } = useQuery({
         queryKey: ["ticket-types", teamId, eventId],
         queryFn: () =>
@@ -126,11 +98,6 @@ export function SendBulkEmailSheet({ teamId, eventId, open, onClose }: SendBulkE
 
     const sendMutation = useMutation({
         mutationFn: async () => {
-            const selectedTemplate = templates.find((t) => t.id === selectedTemplateId);
-            const templateApiUrl = selectedTemplate?.scope === "team"
-                ? `/api/teams/${teamId}/email-templates/${selectedTemplateId}`
-                : `/api/teams/${teamId}/events/${eventId}/email-templates/${selectedTemplateId}`;
-            const template = await apiClient.get<EmailTemplateDto>(templateApiUrl);
             const source =
                 recipientSource === "attendees"
                     ? {
@@ -151,10 +118,9 @@ export function SendBulkEmailSheet({ teamId, eventId, open, onClose }: SendBulkE
                 `/api/teams/${teamId}/events/${eventId}/bulk-emails`,
                 {
                     emailType: "bulk-custom",
-                    templateName: selectedTemplate?.name ?? null,
-                    subject: template.subject,
-                    textBody: template.textBody,
-                    htmlBody: template.htmlBody,
+                    subject,
+                    textBody,
+                    htmlBody,
                     source,
                 }
             );
@@ -170,9 +136,10 @@ export function SendBulkEmailSheet({ teamId, eventId, open, onClose }: SendBulkE
     });
 
     function handleClose() {
-        setStep(1);
-        setSelectedTemplateId("");
         setRecipientSource("attendees");
+        setSubject("");
+        setTextBody("");
+        setHtmlBody("");
         setAttendeeTicketType("");
         setAttendeeStatus("");
         setPreviewResult(null);
@@ -228,13 +195,12 @@ export function SendBulkEmailSheet({ teamId, eventId, open, onClose }: SendBulkE
         reader.readAsText(file);
     }
 
-    const canProceedToStep2 = !!selectedTemplateId && (templates?.length ?? 0) > 0;
+    const hasContent = subject.trim().length > 0 && textBody.trim().length > 0 && htmlBody.trim().length > 0;
     const canSend =
-        recipientSource === "attendees"
+        hasContent && recipientSource === "attendees"
             ? true
-            : csvRows.length > 0 && !csvError;
+            : hasContent && csvRows.length > 0 && !csvError;
 
-    const selectedTemplateName = templates?.find((t) => t.id === selectedTemplateId)?.name;
     const recipientCount =
         recipientSource === "attendees"
             ? previewResult?.count
@@ -246,11 +212,11 @@ export function SendBulkEmailSheet({ teamId, eventId, open, onClose }: SendBulkE
                 <SheetHeader>
                     <SheetTitle>Send bulk email</SheetTitle>
                     <SheetDescription>
-                        Step {step} of 2: {step === 1 ? "Select a template" : "Choose recipients"}
+                        Write one-off content, then choose recipients.
                     </SheetDescription>
                 </SheetHeader>
 
-                <SheetBody className="space-y-4">
+                <SheetBody className="space-y-5">
                     {sendError && (
                         <Alert variant="destructive">
                             <AlertCircle className="h-4 w-4" />
@@ -259,63 +225,26 @@ export function SendBulkEmailSheet({ teamId, eventId, open, onClose }: SendBulkE
                         </Alert>
                     )}
 
-                    {step === 1 && (
-                        <div className="space-y-4">
-                            {isLoadingTemplates ? (
-                                <div className="space-y-2">
-                                    <Skeleton className="h-4 w-20" />
-                                    <Skeleton className="h-9 w-full" />
-                                </div>
-                            ) : !templates || templates.length === 0 ? (
-                                <div className="rounded-lg border border-dashed p-6 text-center space-y-2">
-                                    <p className="text-[13.5px] text-muted-foreground">
-                                        No custom templates yet.
-                                    </p>
-                                    <Link
-                                        href={`/teams/${teamId}/events/${eventId}/emails/templates`}
-                                        className="text-[13.5px] text-primary underline"
-                                        onClick={handleClose}
-                                    >
-                                        Create a template →
-                                    </Link>
-                                </div>
-                            ) : (
-                                <div className="space-y-2">
-                                    <Label>Template</Label>
-                                    <Select value={selectedTemplateId} onValueChange={setSelectedTemplateId}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select a template..." />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {templates.map((t) => (
-                                                <SelectItem key={t.id!} value={t.id!}>
-                                                    <span className="flex items-center gap-2">
-                                                        {t.name}
-                                                        {t.scope === "team" && (
-                                                            <span className="text-[10px] text-muted-foreground border rounded px-1">Team</span>
-                                                        )}
-                                                    </span>
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <p className="text-[12px] text-muted-foreground">
-                                        Need a new template?{" "}
-                                        <Link
-                                            href={`/teams/${teamId}/events/${eventId}/emails/templates`}
-                                            className="text-primary underline"
-                                            onClick={handleClose}
-                                        >
-                                            Create one
-                                        </Link>
-                                    </p>
-                                </div>
-                            )}
+                    <div className="space-y-4">
+                        <div className="space-y-1.5">
+                            <Label>Subject</Label>
+                            <Input value={subject} onChange={(event) => setSubject(event.target.value)} placeholder="Important update for {{ event_name }}" />
                         </div>
-                    )}
+                        <div className="space-y-1.5">
+                            <Label>Text body</Label>
+                            <Textarea value={textBody} onChange={(event) => setTextBody(event.target.value)} rows={5} placeholder="Plain-text version. Scriban variables like {{ first_name }} are supported." />
+                        </div>
+                        <div className="space-y-1.5">
+                            <Label>HTML body</Label>
+                            <Textarea value={htmlBody} onChange={(event) => setHtmlBody(event.target.value)} rows={7} className="font-mono text-[13px]" placeholder="<p>Hello {{ first_name }},</p>" />
+                        </div>
+                    </div>
 
-                    {step === 2 && (
-                        <div className="space-y-4">
+                    <div className="space-y-4 border-t pt-4">
+                        <div>
+                            <h3 className="text-sm font-medium">Recipients</h3>
+                            <p className="text-[12px] text-muted-foreground">Choose registered attendees or upload an external CSV list.</p>
+                        </div>
                             <div className="flex gap-2">
                                 <Button
                                     variant={recipientSource === "attendees" ? "default" : "outline"}
@@ -451,39 +380,23 @@ export function SendBulkEmailSheet({ teamId, eventId, open, onClose }: SendBulkE
                                 <div className="rounded-md border p-3 text-[13px]">
                                     <p className="font-medium">Ready to send</p>
                                     <p className="text-muted-foreground">
-                                        Template: <span className="text-foreground">{selectedTemplateName}</span>
-                                        {recipientCount !== undefined && (
-                                            <> · {recipientCount} recipient{recipientCount !== 1 ? "s" : ""}</>
-                                        )}
+                                        {recipientCount !== undefined
+                                            ? `${recipientCount} recipient${recipientCount !== 1 ? "s" : ""}`
+                                            : "Recipients selected"}
                                     </p>
                                 </div>
                             )}
                         </div>
-                    )}
                 </SheetBody>
 
                 <SheetFooter>
-                    {step === 1 ? (
-                        <>
-                            <Button variant="outline" onClick={handleClose}>Cancel</Button>
-                            <Button
-                                onClick={() => setStep(2)}
-                                disabled={!canProceedToStep2}
-                            >
-                                Next
-                            </Button>
-                        </>
-                    ) : (
-                        <>
-                            <Button variant="outline" onClick={() => setStep(1)}>Back</Button>
-                            <Button
-                                onClick={() => sendMutation.mutate()}
-                                disabled={!canSend || sendMutation.isPending}
-                            >
-                                {sendMutation.isPending ? "Sending…" : "Send"}
-                            </Button>
-                        </>
-                    )}
+                    <Button variant="outline" onClick={handleClose}>Cancel</Button>
+                    <Button
+                        onClick={() => sendMutation.mutate()}
+                        disabled={!canSend || sendMutation.isPending}
+                    >
+                        {sendMutation.isPending ? "Sending…" : "Send"}
+                    </Button>
                 </SheetFooter>
             </SheetContent>
         </Sheet>

@@ -1,15 +1,11 @@
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.BulkEmails.CreateBulkEmail.AdminApi;
 
 /// <summary>
-/// POST request body for creating a new bulk-email job. Either an
-/// <see cref="EmailType"/> resolving to a stored template, or ad-hoc
-/// <see cref="Subject"/>/<see cref="TextBody"/>/<see cref="HtmlBody"/>
-/// overrides may be supplied; the validator enforces the policy.
+/// POST request body for creating a new custom bulk-email job with direct content.
 /// </summary>
 public sealed record CreateBulkEmailHttpRequest(
     string EmailType,
-    string? TemplateName,
-    string? Subject,
-    string? TextBody,
-    string? HtmlBody,
+    string Subject,
+    string TextBody,
+    string HtmlBody,
     BulkEmailSourceHttpDto Source);

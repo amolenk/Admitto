@@ -6,11 +6,11 @@ using Amolenk.Admitto.Core.Shared.Application.Messaging;
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.EmailSettings.CreateEmailSettings;
 
 /// <summary>
-/// Creates the <see cref="Domain.Entities.EmailSettings"/> aggregate for a given scope.
+/// Creates the team-scoped <see cref="Domain.Entities.EmailSettings"/> aggregate.
 /// </summary>
 /// <remarks>
-/// Uniqueness (one settings record per scope) is enforced by the unique index on
-/// <c>(Scope, ScopeId)</c>; <see cref="Infrastructure.Persistence.EmailPostgresExceptionMapping"/>
+/// Uniqueness (one settings record per team) is enforced by the unique index on
+/// <c>team_id</c>; <see cref="Infrastructure.Persistence.EmailPostgresExceptionMapping"/>
 /// translates the resulting Postgres error into <see cref="Shared.Kernel.ErrorHandling.AlreadyExistsError"/> on commit.
 /// </remarks>
 internal sealed class CreateEmailSettingsHandler(
@@ -26,13 +26,14 @@ internal sealed class CreateEmailSettingsHandler(
 
         var settings = Domain.Entities.EmailSettings.Create(
             TeamId.From(command.TeamId),
-            command.TicketedEventId.HasValue ? TicketedEventId.From(command.TicketedEventId.Value) : null,
             Hostname.From(command.SmtpHost),
             Port.From(command.SmtpPort),
             EmailAddress.From(command.FromAddress),
             command.AuthMode,
             command.Username is not null ? SmtpUsername.From(command.Username) : (SmtpUsername?)null,
-            protectedPassword);
+            protectedPassword,
+            command.AccentColor is not null ? EmailAccentColor.From(command.AccentColor) : null,
+            command.FontFamily is not null ? EmailFontFamily.From(command.FontFamily) : null);
 
         writeStore.EmailSettings.Add(settings);
 

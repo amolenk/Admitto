@@ -40,7 +40,6 @@ public sealed class EventEmailSettingsTests
         var ex = Should.Throw<BusinessRuleViolationException>(() =>
             EmailSettings.Create(
                 TeamId.New(),
-                TicketedEventId.New(),
                 Hostname.From("smtp.example.com"),
                 Port.From(587),
                 EmailAddress.From("noreply@example.com"),
@@ -58,7 +57,7 @@ public sealed class EventEmailSettingsTests
         var originalHost = settings.SmtpHost;
         var originalProtectedPassword = settings.ProtectedPassword;
 
-        settings.Update(smtpHost: null, smtpPort: Port.From(2525), fromAddress: null, authMode: null, username: null, protectedPassword: null);
+        settings.Update(smtpHost: null, smtpPort: Port.From(2525), fromAddress: null, authMode: null, username: null, protectedPassword: null, accentColor: null, fontFamily: null);
 
         settings.SmtpHost.ShouldBe(originalHost);
         settings.SmtpPort.Value.ShouldBe(2525);
@@ -70,7 +69,7 @@ public sealed class EventEmailSettingsTests
     {
         var settings = new EventEmailSettingsBuilder().WithBasicAuth(protectedPassword: "ENCRYPTED:old").Build();
 
-        settings.Update(null, null, null, null, username: SmtpUsername.From("bob"), protectedPassword: null);
+        settings.Update(null, null, null, null, username: SmtpUsername.From("bob"), protectedPassword: null, accentColor: null, fontFamily: null);
 
         settings.Username!.Value.Value.ShouldBe("bob");
         settings.ProtectedPassword!.Value.Ciphertext.ShouldBe("ENCRYPTED:old");
@@ -81,7 +80,7 @@ public sealed class EventEmailSettingsTests
     {
         var settings = new EventEmailSettingsBuilder().WithBasicAuth().Build();
 
-        settings.Update(null, null, null, EmailAuthMode.None, null, null);
+        settings.Update(null, null, null, EmailAuthMode.None, null, null, null, null);
 
         settings.AuthMode.ShouldBe(EmailAuthMode.None);
         settings.Username.ShouldBeNull();
@@ -105,21 +104,23 @@ public sealed class EventEmailSettingsTests
     }
 
     [TestMethod]
-    public void Create_WithTeamScope_SetsTeamScopeCorrectly()
+    public void Create_WithBranding_SetsTeamBranding()
     {
         var teamId = TeamId.New();
         var settings = EmailSettings.Create(
             teamId,
-            null,
             Hostname.From("smtp.team.com"),
             Port.From(587),
             EmailAddress.From("team@example.com"),
             EmailAuthMode.None,
             username: null,
-            protectedPassword: null);
+            protectedPassword: null,
+            EmailAccentColor.From("#123456"),
+            EmailFontFamily.From("Inter"));
 
         settings.TeamId.ShouldBe(teamId);
-        settings.TicketedEventId.ShouldBeNull();
         settings.SmtpHost.Value.ShouldBe("smtp.team.com");
+        settings.AccentColor.Value.ShouldBe("#123456");
+        settings.FontFamily.Value.ShouldBe("Inter");
     }
 }

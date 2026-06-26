@@ -6,12 +6,12 @@
     <title>Your verification code for {{ event_name }}</title>
 </head>
 
-<body style="margin: 0; padding: 0; background-color: #f9f9f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+<body style="margin: 0; padding: 0; background-color: #f9f9f9; font-family: {{ font_family }};">
 
 <div style="width: 560px; line-height: 1.5; background-color: #ffffff; margin: 20px auto; padding: 20px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
 
     <div>
-        <h1 style="font-size: 24px; font-weight: bold; color: #0e1b4d; margin-top: 0; padding-bottom: 10px;">
+        <h1 style="font-size: 24px; font-weight: bold; color: {{ accent_color }}; margin-top: 0; padding-bottom: 10px;">
             Your verification code
         </h1>
         <p style="margin-top: 0;">Hi,</p>
@@ -20,7 +20,7 @@
 
     <div style="text-align: center; margin: 30px 0; padding: 20px; background-color: #f5f7ff; border-radius: 6px; border: 1px solid #dde2ff;">
         <p style="margin: 0 0 8px 0; font-size: 14px; color: #666;">Your verification code</p>
-        <p style="margin: 0; font-size: 36px; font-weight: bold; letter-spacing: 8px; color: #0e1b4d;">{{ plain_code }}</p>
+        <p style="margin: 0; font-size: 36px; font-weight: bold; letter-spacing: 8px; color: {{ accent_color }};">{{ plain_code }}</p>
     </div>
 
     <p style="font-size: 14px; color: #666;">This code expires in 10 minutes.</p>

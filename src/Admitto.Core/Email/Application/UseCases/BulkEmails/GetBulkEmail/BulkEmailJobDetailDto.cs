@@ -7,7 +7,6 @@ public sealed record BulkEmailJobDetailDto(
     Guid TeamId,
     Guid TicketedEventId,
     string EmailType,
-    string? TemplateName,
     string? Subject,
     string? TextBody,
     string? HtmlBody,

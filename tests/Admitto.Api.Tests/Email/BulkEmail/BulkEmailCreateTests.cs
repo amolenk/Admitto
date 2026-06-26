@@ -12,20 +12,20 @@ namespace Amolenk.Admitto.Api.Tests.Email.BulkEmail;
 [TestClass]
 public sealed class BulkEmailCreateTests(TestContext testContext) : EndToEndTestBase
 {
-    // SC-8.2: saved-template path creates a job that fans out, hits MailDev, and produces
-    // EmailLog rows tagged with the bulk-job id.
     [TestMethod]
-    public async Task CreateWithSavedTemplate_FansOutAndLogsEachRecipient()
+    public async Task CreateWithDirectContent_FansOutAndLogsEachRecipient()
     {
         var fixture = BulkEmailFixture.Empty()
-            .WithTicketTemplate()
             .WithRegistration("alice@example.com", "Alice", "Anderson")
             .WithRegistration("bob@example.com", "Bob", "Brown");
         await fixture.SetupAsync(Environment);
 
         var request = new
         {
-            EmailType = BulkEmailFixture.EmailType,
+            EmailType = "bulk-custom",
+            Subject = "Hello {{ first_name }}",
+            TextBody = "Hi {{ first_name }}",
+            HtmlBody = "<p>Hi {{ first_name }}</p>",
             Source = new { Attendee = new { } }
         };
 
@@ -66,13 +66,12 @@ public sealed class BulkEmailCreateTests(TestContext testContext) : EndToEndTest
     public async Task CreateWithAdHocOverrides_FansOutAndLogsEachRecipient()
     {
         var fixture = BulkEmailFixture.Empty()
-            .WithTicketTemplate() // template still required, ad-hoc only overrides
             .WithRegistration("dana@example.com", "Dana", "Daniels");
         await fixture.SetupAsync(Environment);
 
         var request = new
         {
-            EmailType = BulkEmailFixture.EmailType,
+            EmailType = "bulk-custom",
             Subject = "Custom subject for {{ first_name }}",
             TextBody = "Custom text for {{ first_name }}",
             HtmlBody = "<p>Custom html for {{ first_name }}</p>",

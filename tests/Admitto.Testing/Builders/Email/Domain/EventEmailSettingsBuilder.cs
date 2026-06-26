@@ -13,20 +13,23 @@ public class EventEmailSettingsBuilder
     public static readonly EmailAddress DefaultFromAddress = EmailAddress.From("noreply@example.com");
 
     private TeamId _teamId = DefaultTeamId;
-    private TicketedEventId? _eventId = DefaultEventId;
     private Hostname _smtpHost = Hostname.From(DefaultSmtpHost);
     private Port _smtpPort = Port.From(DefaultSmtpPort);
     private EmailAddress _fromAddress = DefaultFromAddress;
     private EmailAuthMode _authMode = EmailAuthMode.None;
     private SmtpUsername? _username;
     private ProtectedPassword? _protectedPassword;
+    private EmailAccentColor _accentColor = EmailAccentColor.From(EmailSettings.DefaultAccentColor);
+    private EmailFontFamily _fontFamily = EmailFontFamily.From(EmailSettings.DefaultFontFamily);
 
-    public EventEmailSettingsBuilder ForEvent(TicketedEventId id) { _eventId = id; return this; }
-    public EventEmailSettingsBuilder ForTeam(TeamId id) { _teamId = id; _eventId = null; return this; }
-    public EventEmailSettingsBuilder ForTeamAndEvent(TeamId teamId, TicketedEventId eventId) { _teamId = teamId; return ForEvent(eventId); }
+    public EventEmailSettingsBuilder ForEvent(TicketedEventId id) { return this; }
+    public EventEmailSettingsBuilder ForTeam(TeamId id) { _teamId = id; return this; }
+    public EventEmailSettingsBuilder ForTeamAndEvent(TeamId teamId, TicketedEventId eventId) { _teamId = teamId; return this; }
     public EventEmailSettingsBuilder WithSmtpHost(string host) { _smtpHost = Hostname.From(host); return this; }
     public EventEmailSettingsBuilder WithSmtpPort(int port) { _smtpPort = Port.From(port); return this; }
     public EventEmailSettingsBuilder WithFromAddress(string address) { _fromAddress = EmailAddress.From(address); return this; }
+    public EventEmailSettingsBuilder WithBranding(string accentColor, string fontFamily)
+    { _accentColor = EmailAccentColor.From(accentColor); _fontFamily = EmailFontFamily.From(fontFamily); return this; }
 
     public EventEmailSettingsBuilder WithBasicAuth(string username = "user", string protectedPassword = "ENCRYPTED:secret")
     {
@@ -37,5 +40,5 @@ public class EventEmailSettingsBuilder
     }
 
     public EmailSettings Build() =>
-        EmailSettings.Create(_teamId, _eventId, _smtpHost, _smtpPort, _fromAddress, _authMode, _username, _protectedPassword);
+        EmailSettings.Create(_teamId, _smtpHost, _smtpPort, _fromAddress, _authMode, _username, _protectedPassword, _accentColor, _fontFamily);
 }

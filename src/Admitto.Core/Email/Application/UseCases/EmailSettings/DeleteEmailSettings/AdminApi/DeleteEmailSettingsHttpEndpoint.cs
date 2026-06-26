@@ -9,36 +9,26 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.EmailSettings.DeleteEm
 public static class DeleteEmailSettingsHttpEndpoint
 {
     public static RouteGroupBuilder MapDeleteEmailSettings(
-        this RouteGroupBuilder group,
-        bool isEventScoped)
+        this RouteGroupBuilder group)
     {
-        var endpointName = isEventScoped ? "DeleteEventEmailSettings" : "DeleteTeamEmailSettings";
-        var handler = new Handler(isEventScoped);
-
         group
-            .MapDelete("/", handler.HandleAsync)
-            .WithName(endpointName)
+            .MapDelete("/", HandleAsync)
+            .WithName("DeleteTeamEmailSettings")
             .RequireAuthorization(policy => policy.RequireTeamMembership(TeamMembershipRole.Organizer));
 
         return group;
     }
 
-    private sealed class Handler(bool isEventScoped)
+    private static async ValueTask<NoContent> HandleAsync(
+        Guid teamId,
+        [FromQuery] uint version,
+        ICommandHandler<DeleteEmailSettingsCommand> handler,
+        [FromKeyedServices(EmailModule.Key)] IUnitOfWork unitOfWork,
+        CancellationToken ct)
     {
-        public async ValueTask<NoContent> HandleAsync(
-            Guid teamId,
-            Guid? eventId,
-            [FromQuery] uint version,
-            ICommandHandler<DeleteEmailSettingsCommand> handler,
-            [FromKeyedServices(EmailModule.Key)] IUnitOfWork unitOfWork,
-            CancellationToken ct)
-        {
-            var ticketedEventId = isEventScoped ? eventId!.Value : (Guid?)null;
+        await handler.HandleAsync(new DeleteEmailSettingsCommand(teamId, version), ct);
+        await unitOfWork.SaveChangesAsync(ct);
 
-            await handler.HandleAsync(new DeleteEmailSettingsCommand(teamId, ticketedEventId, version), ct);
-            await unitOfWork.SaveChangesAsync(ct);
-
-            return TypedResults.NoContent();
-        }
+        return TypedResults.NoContent();
     }
 }

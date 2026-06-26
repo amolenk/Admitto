@@ -21,7 +21,7 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
         new(TeamGuid.Value, EventGuid.Value, RegId, "alice@example.com", reason);
 
     private static EventRegistrationSnapshotDto Context() =>
-        new("DevConf 2025", "https://devconf.example.com", "https://tickets.example.com", "https://devconf.example.com/qr", "Alice", "Test");
+        new("DevConf 2025", "https://devconf.example.com", "https://tickets.example.com", "https://devconf.example.com/qr", "https://tickets.example.com/cancel", "Alice", "Test");
 
     [TestMethod]
     public async Task AttendeeRequest_DispatchesCancellationEmail()

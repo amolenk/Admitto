@@ -1,51 +1,25 @@
-using Amolenk.Admitto.Core.Email.Application.Persistence;
 using Amolenk.Admitto.Core.Email.Domain.Entities;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Core.Email.Application.Templating;
 
-internal sealed class EmailTemplateService(IEmailWriteStore writeStore) : IEmailTemplateService
+internal sealed class EmailTemplateService : IEmailTemplateService
 {
-    public async ValueTask<EmailTemplate> LoadAsync(
+    public ValueTask<EmailTemplate> LoadAsync(
         string name,
         TeamId teamId,
         TicketedEventId eventId,
         CancellationToken cancellationToken = default)
     {
-        // Load all matching templates in one query, then pick by precedence.
-        var candidates = await writeStore.EmailTemplates
-            .AsNoTracking()
-            .Where(t => t.Name == name &&
-                        t.TeamId == teamId &&
-                        (t.TicketedEventId == eventId || t.TicketedEventId == null))
-            .ToListAsync(cancellationToken);
-
-        var template = candidates.FirstOrDefault(t => t.TicketedEventId == eventId)
-                    ?? candidates.FirstOrDefault(t => t.TicketedEventId == null);
-
-        if (template is not null)
-            return template;
-
-        return BuildFromCatalog(name);
+        return ValueTask.FromResult(BuildFromCatalog(name));
     }
 
-    public async ValueTask<EmailTemplate> LoadAsync(
+    public ValueTask<EmailTemplate> LoadAsync(
         string name,
         TeamId teamId,
         CancellationToken cancellationToken = default)
     {
-        var template = await writeStore.EmailTemplates
-            .AsNoTracking()
-            .FirstOrDefaultAsync(
-                t => t.Name == name &&
-                     t.TeamId == teamId &&
-                     t.TicketedEventId == null,
-                cancellationToken);
-
-        if (template is not null)
-            return template;
-
-        return BuildFromCatalog(name);
+        return ValueTask.FromResult(BuildFromCatalog(name));
     }
 
     private static EmailTemplate BuildFromCatalog(string name)

@@ -126,35 +126,29 @@ internal sealed class SendBulkEmailJob(
             }
 
             // Phase 2: stream the snapshot through a single SMTP session.
-            // Custom bulk emails embed their content inline; built-in types
-            // (e.g. reconfirm) load from the named-template store.
+            // Custom bulk emails render job-owned content; system bulk emails
+            // (for example reconfirm) render code-owned built-in content.
             EmailTemplate template;
-            if (job.Subject is not null && job.TextBody is not null)
+            try
             {
-                template = EmailTemplate.Create(
-                    job.TeamId,
-                    job.TicketedEventId,
-                    job.EmailType,
-                    job.Subject,
-                    job.TextBody,
-                    job.HtmlBody);
+                template = job.Subject is not null && job.TextBody is not null && job.HtmlBody is not null
+                    ? EmailTemplate.Create(
+                        job.TeamId,
+                        job.TicketedEventId,
+                        job.EmailType,
+                        job.Subject ?? throw new InvalidOperationException("Custom bulk email subject is required."),
+                        job.TextBody ?? throw new InvalidOperationException("Custom bulk email text body is required."),
+                        job.HtmlBody ?? throw new InvalidOperationException("Custom bulk email HTML body is required."))
+                    : await templateService.LoadAsync(job.EmailType, job.TeamId, job.TicketedEventId, ct);
             }
-            else
+            catch (Exception ex)
             {
-                try
-                {
-                    template = await templateService.LoadAsync(
-                        job.EmailType, job.TeamId, job.TicketedEventId, ct);
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex,
-                        "Failed to load template '{EmailType}' for bulk-email job {BulkEmailJobId}",
-                        job.EmailType, bulkJobIdValue);
-                    job.Fail($"Template load failed: {ex.Message}", DateTimeOffset.UtcNow);
-                    await unitOfWork.SaveChangesAsync(ct);
-                    return;
-                }
+                logger.LogError(ex,
+                    "Failed to prepare content for bulk-email job {BulkEmailJobId}",
+                    bulkJobIdValue);
+                job.Fail($"Content preparation failed: {ex.Message}", DateTimeOffset.UtcNow);
+                await unitOfWork.SaveChangesAsync(ct);
+                return;
             }
 
             var pending = job.Recipients
@@ -172,7 +166,7 @@ internal sealed class SendBulkEmailJob(
                     if (await IsCancellationRequestedAsync(bulkJobId, teamId, ticketedEventId, ct))
                         break;
 
-                    await ProcessRecipientAsync(job, recipient, template, session, ct);
+                    await ProcessRecipientAsync(job, recipient, template, settings, session, ct);
 
                     if (await IsCancellationRequestedAsync(bulkJobId, teamId, ticketedEventId, ct))
                         break;
@@ -210,6 +204,7 @@ internal sealed class SendBulkEmailJob(
         BulkEmailJob job,
         BulkEmailRecipient recipient,
         EmailTemplate template,
+        EffectiveEmailSettings settings,
         IBulkSmtpSession session,
         CancellationToken ct)
     {
@@ -221,13 +216,15 @@ internal sealed class SendBulkEmailJob(
         {
             var parameters = JsonSerializer.Deserialize<Dictionary<string, object?>>(
                 recipient.ParametersJson, ParametersJsonOptions) ?? new Dictionary<string, object?>();
+            parameters["accent_color"] = settings.AccentColor.Value;
+            parameters["font_family"] = settings.FontFamily.Value;
 
             var rendered = renderer.Render(
                 template,
                 parameters,
-                subjectOverride: job.Subject,
-                textBodyOverride: job.TextBody,
-                htmlBodyOverride: job.HtmlBody);
+                subjectOverride: null,
+                textBodyOverride: null,
+                htmlBodyOverride: null);
 
             var message = new EmailMessage(
                 RecipientAddress: recipient.Email.Value,

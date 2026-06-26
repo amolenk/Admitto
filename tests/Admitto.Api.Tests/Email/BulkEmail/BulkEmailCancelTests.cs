@@ -14,7 +14,6 @@ public sealed class BulkEmailCancelTests(TestContext testContext) : EndToEndTest
     public async Task CancelFromTerminalState_ReturnsConflict()
     {
         var fixture = BulkEmailFixture.Empty()
-            .WithTicketTemplate()
             .WithRegistration("solo@example.com", "Solo", "Sender");
         await fixture.SetupAsync(Environment);
 
@@ -22,7 +21,10 @@ public sealed class BulkEmailCancelTests(TestContext testContext) : EndToEndTest
             fixture.CreateRoute,
             new
             {
-                EmailType = BulkEmailFixture.EmailType,
+                EmailType = "bulk-custom",
+                Subject = "Hello {{ first_name }}",
+                TextBody = "Hi {{ first_name }}",
+                HtmlBody = "<p>Hi {{ first_name }}</p>",
                 Source = new { Attendee = new { } }
             },
             cancellationToken: testContext.CancellationToken);

@@ -5,11 +5,12 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.EmailSettings.UpdateEm
 
 internal sealed record UpdateEmailSettingsCommand(
     Guid TeamId,
-    Guid? TicketedEventId,
     string? SmtpHost,
     int? SmtpPort,
     string? FromAddress,
     EmailAuthMode? AuthMode,
     string? Username,
     string? Password,
+    string? AccentColor,
+    string? FontFamily,
     uint ExpectedVersion) : Command;

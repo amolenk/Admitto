@@ -20,9 +20,6 @@ internal sealed class EmailSettingsEntityConfiguration : IEntityTypeConfiguratio
             .HasColumnName("team_id")
             .IsRequired();
 
-        builder.Property(e => e.TicketedEventId)
-            .HasColumnName("ticketed_event_id");
-
         builder.Property(e => e.SmtpHost)
             .HasColumnName("smtp_host")
             .HasMaxLength(Hostname.MaxLength)
@@ -49,14 +46,20 @@ internal sealed class EmailSettingsEntityConfiguration : IEntityTypeConfiguratio
         builder.Property(e => e.ProtectedPassword)
             .HasColumnName("protected_password");
 
+        builder.Property(e => e.AccentColor)
+            .HasColumnName("accent_color")
+            .HasMaxLength(EmailAccentColor.MaxLength)
+            .HasDefaultValue(EmailAccentColor.From(EmailSettings.DefaultAccentColor))
+            .IsRequired();
+
+        builder.Property(e => e.FontFamily)
+            .HasColumnName("font_family")
+            .HasMaxLength(EmailFontFamily.MaxLength)
+            .HasDefaultValue(EmailFontFamily.From(EmailSettings.DefaultFontFamily))
+            .IsRequired();
+
         builder.HasIndex(e => e.TeamId)
             .HasDatabaseName("IX_email_settings_team")
-            .HasFilter("ticketed_event_id IS NULL")
-            .IsUnique();
-
-        builder.HasIndex(e => new { e.TeamId, e.TicketedEventId })
-            .HasDatabaseName("IX_email_settings_team_event")
-            .HasFilter("ticketed_event_id IS NOT NULL")
             .IsUnique();
     }
 }

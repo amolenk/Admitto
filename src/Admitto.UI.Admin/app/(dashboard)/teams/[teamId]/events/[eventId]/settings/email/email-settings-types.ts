@@ -8,6 +8,8 @@ export const emailSettingsSchema = z
         authMode: z.enum(["none", "basic"]),
         username: z.string().optional(),
         password: z.string().optional(),
+        accentColor: z.string().min(1, "Accent color is required").max(32),
+        fontFamily: z.string().min(1, "Font is required").max(200),
     })
     .refine((d) => d.authMode === "none" || (d.username && d.username.length > 0), {
         path: ["username"],
@@ -22,4 +24,6 @@ export type EmailSettingsInitialValues = {
     fromAddress: string;
     authMode: "none" | "basic";
     username: string;
+    accentColor: string;
+    fontFamily: string;
 };

@@ -18,6 +18,15 @@ import { useCustomForm } from "@/hooks/use-custom-form";
 import { apiClient } from "@/lib/api-client";
 import { emailSettingsSchema, EmailSettingsValues, EmailSettingsInitialValues } from "./email-settings-types";
 
+const fontOptions = [
+    { label: "System", value: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" },
+    { label: "Arial", value: "Arial, sans-serif" },
+    { label: "Georgia", value: "Georgia, serif" },
+    { label: "Helvetica Neue", value: "'Helvetica Neue', Helvetica, Arial, sans-serif" },
+    { label: "Verdana", value: "Verdana, Geneva, sans-serif" },
+    { label: "Courier New", value: "'Courier New', Courier, monospace" },
+];
+
 function Field({ label, hint, badge, children }: {
     label: string;
     hint?: string;
@@ -72,6 +81,8 @@ export function EmailSettingsForm({
         authMode: initialValues.authMode,
         username: initialValues.username,
         password: "",
+        accentColor: initialValues.accentColor,
+        fontFamily: initialValues.fontFamily,
     });
 
     async function onSubmit(values: EmailSettingsValues) {
@@ -82,6 +93,8 @@ export function EmailSettingsForm({
             authMode: values.authMode,
             username: values.authMode === "basic" ? values.username || null : null,
             password: values.password ? values.password : null,
+            accentColor: values.accentColor,
+            fontFamily: values.fontFamily,
             version,
         };
 
@@ -125,6 +138,50 @@ export function EmailSettingsForm({
                     <Card>
                         <div className="px-6 divide-y">
                             {callout}
+                            <FormField
+                                control={form.control}
+                                name="accentColor"
+                                render={({ field }) => (
+                                    <Field label="Accent color" hint="Used for headings, buttons, and links in built-in event emails.">
+                                        <FormItem className="space-y-1">
+                                            <FormControl>
+                                                <div className="flex items-center gap-2">
+                                                    <Input type="color" className="h-9 w-14 p-1" {...field} />
+                                                    <Input className="max-w-[140px] font-mono" {...field} />
+                                                </div>
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    </Field>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="fontFamily"
+                                render={({ field }) => (
+                                    <Field label="Font" hint="A simple font-family string stored with the team settings.">
+                                        <FormItem className="space-y-1">
+                                            <Select onValueChange={field.onChange} value={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    {fontOptions.map((option) => (
+                                                        <SelectItem key={option.value} value={option.value}>
+                                                            {option.label}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    </Field>
+                                )}
+                            />
+
                             <FormField
                                 control={form.control}
                                 name="fromAddress"

@@ -11,8 +11,14 @@ public sealed class CreateBulkEmailValidator : AbstractValidator<CreateBulkEmail
             .MaximumLength(100);
 
         RuleFor(x => x.Subject)
-            .MaximumLength(200)
-            .When(x => x.Subject is not null);
+            .NotEmpty()
+            .MaximumLength(500);
+
+        RuleFor(x => x.TextBody)
+            .NotEmpty();
+
+        RuleFor(x => x.HtmlBody)
+            .NotEmpty();
 
         RuleFor(x => x.Source).NotNull();
 

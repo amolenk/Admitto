@@ -11,7 +11,9 @@ public sealed record EffectiveEmailSettings(
     EmailAddress FromAddress,
     EmailAuthMode AuthMode,
     string? Username,
-    string? Password)
+    string? Password,
+    EmailAccentColor AccentColor,
+    EmailFontFamily FontFamily)
 {
     public bool IsValid() =>
         AuthMode == EmailAuthMode.None

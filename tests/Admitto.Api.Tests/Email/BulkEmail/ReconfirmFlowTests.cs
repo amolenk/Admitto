@@ -28,7 +28,6 @@ public sealed class ReconfirmFlowTests(TestContext testContext) : EndToEndTestBa
     public async Task ReconfirmFanOut_OnlyMailsRegisteredAndNotReconfirmedAttendees()
     {
         var fixture = BulkEmailFixture.Empty()
-            .WithReconfirmTemplate()
             .WithRegistration("needs-reconfirm@example.com", "Needs", "Reconfirm")
             .WithRegistration("already-reconfirmed@example.com", "Already", "Reconfirmed", reconfirmed: true)
             .WithRegistration("cancelled@example.com", "Was", "Cancelled", cancelled: true);
@@ -38,7 +37,10 @@ public sealed class ReconfirmFlowTests(TestContext testContext) : EndToEndTestBa
             fixture.CreateRoute,
             new
             {
-                EmailType = BulkEmailFixture.ReconfirmEmailType,
+                EmailType = "bulk-custom",
+                Subject = "Please reconfirm {{ first_name }}",
+                TextBody = "Please reconfirm {{ first_name }}",
+                HtmlBody = "<p>Please reconfirm {{ first_name }}</p>",
                 Source = new
                 {
                     Attendee = new

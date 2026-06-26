@@ -21,10 +21,9 @@ public sealed class GetBulkEmailsHandlerTests(TestContext testContext) : AspireI
             teamId: teamIdA,
             ticketedEventId: eventId,
             emailType: "Confirmation",
-            templateName: "confirmation",
             subject: "Your ticket",
-            textBody: null,
-            htmlBody: null,
+            textBody: "Your ticket",
+            htmlBody: "<p>Your ticket</p>",
             source: new AttendeeSource(new QueryRegistrationsDto()),
             triggeredBy: EmailAddress.From("admin@example.com"),
             now: DateTimeOffset.UtcNow);

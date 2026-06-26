@@ -7,8 +7,7 @@ internal sealed record CreateBulkEmailCommand(
     Guid TeamId,
     Guid TicketedEventId,
     string EmailType,
-    string? TemplateName,
-    string? Subject,
-    string? TextBody,
-    string? HtmlBody,
+    string Subject,
+    string TextBody,
+    string HtmlBody,
     BulkEmailJobSource Source) : Command<Guid>;
