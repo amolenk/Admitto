@@ -221,8 +221,7 @@ internal sealed class RegisterAttendeeSelfServiceHandler(
             return;
         }
 
-        if (!ticketType.WaitlistMode
-            && (ticketType.MaxCapacity is null || ticketType.UsedCapacity < ticketType.MaxCapacity.Value))
+        if (!ticketType.WaitlistMode && !ticketType.IsSoldOut)
         {
             registerable.Add(ticketTypeId.Value);
             return;

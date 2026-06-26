@@ -21,10 +21,14 @@ internal sealed class GetPublicTicketTypesHandler(IRegistrationsWriteStore write
                 tt.Id.Value,
                 tt.Name.Value,
                 tt.TimeSlots.Select(ts => ts.Value).ToArray(),
-                tt.MaxCapacity,
-                tt.UsedCapacity,
-                tt.WaitlistEnabled,
-                tt.WaitlistMode))
+                GetStatus(tt.WaitlistMode, tt.IsSoldOut)))
             .ToList();
     }
+
+    private static PublicTicketStatus GetStatus(bool waitlistMode, bool isSoldOut) =>
+        waitlistMode
+            ? PublicTicketStatus.Waitlist
+            : isSoldOut
+                ? PublicTicketStatus.SoldOut
+                : PublicTicketStatus.Available;
 }

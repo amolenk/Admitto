@@ -64,6 +64,30 @@ public sealed class TicketTypeTests
     }
 
     [TestMethod]
+    public void IsSoldOut_WhenBoundedAndAtCapacity_ReturnsTrue()
+    {
+        var sut = CreateTicketType(maxCapacity: 10, usedCapacity: 10);
+
+        sut.IsSoldOut.ShouldBeTrue();
+    }
+
+    [TestMethod]
+    public void IsSoldOut_WhenBoundedAndUnderCapacity_ReturnsFalse()
+    {
+        var sut = CreateTicketType(maxCapacity: 10, usedCapacity: 9);
+
+        sut.IsSoldOut.ShouldBeFalse();
+    }
+
+    [TestMethod]
+    public void IsSoldOut_WhenCapacityIsNull_ReturnsFalse()
+    {
+        var sut = CreateTicketType(maxCapacity: null, usedCapacity: 10);
+
+        sut.IsSoldOut.ShouldBeFalse();
+    }
+
+    [TestMethod]
     public void UpdateMaxReconfirmAttempts_ValidValue_SetsProperty()
     {
         var ticketType = CreateTicketType();

@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:53374/"
+      "url": "http://localhost:57040/"
     }
   ],
   "paths": {
@@ -10315,15 +10315,19 @@
           }
         }
       },
+      "PublicTicketStatus": {
+        "enum": [
+          "available",
+          "waitlist",
+          "soldOut"
+        ]
+      },
       "PublicTicketTypeDto": {
         "required": [
           "id",
           "name",
           "timeSlots",
-          "maxCapacity",
-          "usedCapacity",
-          "waitlistEnabled",
-          "waitlistMode"
+          "status"
         ],
         "type": "object",
         "properties": {
@@ -10340,28 +10344,8 @@
               "type": "string"
             }
           },
-          "maxCapacity": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "usedCapacity": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "waitlistEnabled": {
-            "type": "boolean"
-          },
-          "waitlistMode": {
-            "type": "boolean"
+          "status": {
+            "$ref": "#/components/schemas/PublicTicketStatus"
           }
         }
       },

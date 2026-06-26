@@ -119,9 +119,7 @@ public class TicketCatalog : Aggregate<TicketedEventId>
         ticketType.UpdateCapacity(maxCapacity);
 
         // Retroactive WaitlistMode activation: enabled on a sold-out type
-        if (ticketType.WaitlistEnabled && !ticketType.WaitlistMode
-            && ticketType.MaxCapacity.HasValue
-            && ticketType.UsedCapacity >= ticketType.MaxCapacity.Value)
+        if (ticketType.WaitlistEnabled && !ticketType.WaitlistMode && ticketType.IsSoldOut)
         {
             ticketType.ActivateWaitlistMode();
             AddDomainEvent(new WaitlistModeActivatedDomainEvent(TeamId, Id, id));
@@ -274,9 +272,7 @@ public class TicketCatalog : Aggregate<TicketedEventId>
                 ticketType.ClaimUncapped();
 
             // Activate WaitlistMode when the last slot is claimed on a WaitlistEnabled type
-            if (enforce && ticketType.WaitlistEnabled && !ticketType.WaitlistMode
-                && ticketType.MaxCapacity.HasValue
-                && ticketType.UsedCapacity >= ticketType.MaxCapacity.Value)
+            if (enforce && ticketType.WaitlistEnabled && !ticketType.WaitlistMode && ticketType.IsSoldOut)
             {
                 ticketType.ActivateWaitlistMode();
                 AddDomainEvent(new WaitlistModeActivatedDomainEvent(TeamId, Id, id));

@@ -42,6 +42,7 @@ public class TicketType : Entity<TicketTypeId>
     public bool WaitlistMode { get; private set; }
     public int ClaimWindowHours { get; private set; } = 8;
     public int? MaxReconfirmAttempts { get; private set; }
+    public bool IsSoldOut => MaxCapacity is not null && UsedCapacity >= MaxCapacity.Value;
 
     public void UpdateName(TicketTypeName name)
     {
@@ -99,7 +100,7 @@ public class TicketType : Entity<TicketTypeId>
         if (WaitlistMode)
             throw new BusinessRuleViolationException(Errors.TicketTypeInWaitlistMode(Id));
 
-        if (MaxCapacity is not null && UsedCapacity >= MaxCapacity.Value)
+        if (IsSoldOut)
             throw new BusinessRuleViolationException(Errors.TicketTypeAtCapacity(Id));
 
         UsedCapacity++;
