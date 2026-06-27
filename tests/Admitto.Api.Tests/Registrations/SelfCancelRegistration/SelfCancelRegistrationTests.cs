@@ -14,7 +14,7 @@ public sealed class SelfCancelRegistrationTests(TestContext testContext) : EndTo
         var fixture = SelfCancelRegistrationFixture.WithActiveRegistration();
         await fixture.SetupAsync(Environment);
 
-        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         var response = await client.PostAsync(fixture.CancelRoute, null, testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
@@ -29,7 +29,7 @@ public sealed class SelfCancelRegistrationTests(TestContext testContext) : EndTo
 
         var unknownRoute = $"/api/events/{fixture.EventId.Value}/registrations/{Guid.NewGuid()}/cancel";
 
-        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         var response = await client.PostAsync(unknownRoute, null, testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
@@ -42,7 +42,7 @@ public sealed class SelfCancelRegistrationTests(TestContext testContext) : EndTo
         var fixture = SelfCancelRegistrationFixture.WithCancelledRegistration();
         await fixture.SetupAsync(Environment, alreadyCancelled: true);
 
-        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         var response = await client.PostAsync(fixture.CancelRoute, null, testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.Conflict);

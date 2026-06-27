@@ -21,7 +21,7 @@ public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBas
 
         var token = await fixture.GetVerificationTokenAsync(Environment, testContext.CancellationToken);
 
-        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         var request = new HttpRequestMessage(HttpMethod.Post, fixture.RegisterRoute)
         {
             Content = JsonContent.Create(new
@@ -47,7 +47,7 @@ public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBas
         var fixture = SelfRegisterFixture.WithOpenRegistration();
         await fixture.SetupAsync(Environment);
 
-        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         var response = await client.PostAsJsonAsync(
             fixture.RegisterRoute,
             new
@@ -70,7 +70,7 @@ public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBas
         var fixture = SelfRegisterFixture.WithOpenRegistration();
         await fixture.SetupAsync(Environment);
 
-        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         var request = new HttpRequestMessage(HttpMethod.Post, fixture.RegisterRoute)
         {
             Content = JsonContent.Create(new
@@ -104,7 +104,7 @@ public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBas
 
         var token = await fixture.GetVerificationTokenAsync(Environment, testContext.CancellationToken);
 
-        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         var request = new HttpRequestMessage(HttpMethod.Post, fixture.RegisterRoute)
         {
             Content = JsonContent.Create(new
@@ -164,7 +164,7 @@ public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBas
             db.TicketCatalogs.Add(secondCatalog);
         });
 
-        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         var request = new HttpRequestMessage(
             HttpMethod.Post,
             $"/api/events/{Guid.NewGuid()}/registrations")
@@ -193,7 +193,7 @@ public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBas
 
         var token = await fixture.GetVerificationTokenAsync(Environment, testContext.CancellationToken);
 
-        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         var request = new HttpRequestMessage(HttpMethod.Post, fixture.RegisterRoute)
         {
             Content = JsonContent.Create(new

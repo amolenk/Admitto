@@ -24,7 +24,7 @@ public sealed class PublicTicketTypesTests(TestContext testContext) : EndToEndTe
             catalog.AddTicketType(vipId, TicketTypeName.From("VIP Pass"), [], 50, selfServiceEnabled: false);
         });
 
-        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         var response = await client.GetAsync(fixture.TicketTypesRoute, testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -46,7 +46,7 @@ public sealed class PublicTicketTypesTests(TestContext testContext) : EndToEndTe
             catalog.GetTicketType(generalId)!.ClaimUncapped();
         });
 
-        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         var response = await client.GetAsync(fixture.TicketTypesRoute, testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -66,7 +66,7 @@ public sealed class PublicTicketTypesTests(TestContext testContext) : EndToEndTe
             catalog.Claim([generalId], enforce: true);
         });
 
-        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         var response = await client.GetAsync(fixture.TicketTypesRoute, testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -86,7 +86,7 @@ public sealed class PublicTicketTypesTests(TestContext testContext) : EndToEndTe
             catalog.Claim([generalId], enforce: true);
         });
 
-        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         var response = await client.GetAsync(fixture.TicketTypesRoute, testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -105,7 +105,7 @@ public sealed class PublicTicketTypesTests(TestContext testContext) : EndToEndTe
             catalog.AddTicketType(generalId, TicketTypeName.From("General Admission"), [], 200, selfServiceEnabled: true);
         });
 
-        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         var response = await client.GetAsync(fixture.TicketTypesRoute, testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -131,7 +131,7 @@ public sealed class PublicTicketTypesTests(TestContext testContext) : EndToEndTe
             catalog.AddTicketType(vipId2, TicketTypeName.From("VIP Pass"), [], 50, selfServiceEnabled: false);
         });
 
-        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         var response = await client.GetAsync(fixture.TicketTypesRoute, testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
@@ -146,7 +146,7 @@ public sealed class PublicTicketTypesTests(TestContext testContext) : EndToEndTe
         var fixture = PublicTicketTypesFixture.Create();
         await fixture.SetupAsync(Environment);
 
-        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         var response = await client.GetAsync(
             $"/api/events/{Guid.NewGuid()}/ticket-types",
             testContext.CancellationToken);

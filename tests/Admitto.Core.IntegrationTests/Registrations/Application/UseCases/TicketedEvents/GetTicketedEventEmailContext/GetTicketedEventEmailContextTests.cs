@@ -27,7 +27,7 @@ public sealed class GetTicketedEventEmailContextTests(TestContext testContext) :
         result.PublicEventLink.ShouldBe("https://tickets.admitto.org/e/azure-fest-2026");
         result.QRCodeLink.ShouldStartWith("https://tickets.admitto.org/e/azure-fest-2026/");
         result.CancelLink.ShouldStartWith("https://tickets.admitto.org/e/azure-fest-2026/");
-        result.ChangeTicketsLink.ShouldBe($"https://tickets.admitto.org/e/azure-fest-2026/registrations/{registrationId}/tickets");
+        result.ChangeTicketsLink.ShouldBe($"https://tickets.admitto.org/e/azure-fest-2026/edit/{registrationId}");
         result.TeamAccentColor.ShouldBe("#0f766e");
     }
 
@@ -86,6 +86,6 @@ public sealed class GetTicketedEventEmailContextTests(TestContext testContext) :
         return new GetTicketedEventEmailContextHandler(
             Environment.RegistrationsDatabase.Context,
             organizationFacade,
-            Options.Create(new PublicTicketsOptions { BaseUrl = publicBaseUrl }));
+            Options.Create(new PublicEventLinksOptions { BaseUrl = publicBaseUrl }));
     }
 }

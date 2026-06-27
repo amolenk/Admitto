@@ -129,6 +129,7 @@ app.UseOutputCache();
 
 app.MapDefaultEndpoints();
 app.MapAdminEndpoints();
+app.MapPartnerEndpoints();
 app.MapPublicEndpoints();
 
 var logger = app.Services.GetRequiredService<ILogger<AppDomain>>();

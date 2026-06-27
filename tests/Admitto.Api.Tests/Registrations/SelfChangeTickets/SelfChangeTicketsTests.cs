@@ -15,7 +15,7 @@ public sealed class SelfChangeTicketsTests(TestContext testContext) : EndToEndTe
         var fixture = SelfChangeTicketsFixture.WithOpenRegistration();
         await fixture.SetupAsync(Environment, workshopCapacity: 20, workshopUsed: 5);
 
-        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         var request = new HttpRequestMessage(HttpMethod.Put, fixture.ChangeTicketsRoute)
         {
             Content = JsonContent.Create(new { TicketTypeIds = new[] { SelfChangeTicketsFixture.WorkshopId.Value } })
@@ -35,7 +35,7 @@ public sealed class SelfChangeTicketsTests(TestContext testContext) : EndToEndTe
 
         var unknownRoute = $"/api/events/{fixture.EventId.Value}/registrations/{Guid.NewGuid()}/tickets";
 
-        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         var request = new HttpRequestMessage(HttpMethod.Put, unknownRoute)
         {
             Content = JsonContent.Create(new { TicketTypeIds = new[] { SelfChangeTicketsFixture.WorkshopId.Value } })
@@ -53,7 +53,7 @@ public sealed class SelfChangeTicketsTests(TestContext testContext) : EndToEndTe
         var fixture = SelfChangeTicketsFixture.WithOpenRegistration();
         await fixture.SetupAsync(Environment, workshopCapacity: 20, workshopUsed: 20);
 
-        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         var request = new HttpRequestMessage(HttpMethod.Put, fixture.ChangeTicketsRoute)
         {
             Content = JsonContent.Create(new { TicketTypeIds = new[] { SelfChangeTicketsFixture.WorkshopId.Value } })
@@ -71,7 +71,7 @@ public sealed class SelfChangeTicketsTests(TestContext testContext) : EndToEndTe
         var fixture = SelfChangeTicketsFixture.WithOpenRegistration();
         await fixture.SetupAsync(Environment, registrationWindowClosed: true);
 
-        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         var request = new HttpRequestMessage(HttpMethod.Put, fixture.ChangeTicketsRoute)
         {
             Content = JsonContent.Create(new { TicketTypeIds = new[] { SelfChangeTicketsFixture.WorkshopId.Value } })
@@ -89,7 +89,7 @@ public sealed class SelfChangeTicketsTests(TestContext testContext) : EndToEndTe
         var fixture = SelfChangeTicketsFixture.WithOpenRegistration();
         await fixture.SetupAsync(Environment, alreadyCancelled: true);
 
-        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         var request = new HttpRequestMessage(HttpMethod.Put, fixture.ChangeTicketsRoute)
         {
             Content = JsonContent.Create(new { TicketTypeIds = new[] { SelfChangeTicketsFixture.WorkshopId.Value } })
@@ -107,7 +107,7 @@ public sealed class SelfChangeTicketsTests(TestContext testContext) : EndToEndTe
         var fixture = SelfChangeTicketsFixture.WithOpenRegistration();
         await fixture.SetupAsync(Environment);
 
-        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         var request = new HttpRequestMessage(HttpMethod.Put, fixture.ChangeTicketsRoute)
         {
             Content = JsonContent.Create(new { TicketTypeIds = new[] { Guid.NewGuid() } })
@@ -125,7 +125,7 @@ public sealed class SelfChangeTicketsTests(TestContext testContext) : EndToEndTe
         var fixture = SelfChangeTicketsFixture.WithOpenRegistration();
         await fixture.SetupAsync(Environment);
 
-        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         var request = new HttpRequestMessage(HttpMethod.Put, fixture.ChangeTicketsRoute)
         {
             Content = JsonContent.Create(new { TicketTypeIds = new[] { SelfChangeTicketsFixture.GeneralAdmissionId.Value } })
@@ -142,7 +142,7 @@ public sealed class SelfChangeTicketsTests(TestContext testContext) : EndToEndTe
         var fixture = SelfChangeTicketsFixture.WithOpenRegistration();
         await fixture.SetupAsync(Environment);
 
-        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         var request = new HttpRequestMessage(HttpMethod.Put, fixture.ChangeTicketsRoute)
         {
             Content = JsonContent.Create(new

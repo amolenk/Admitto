@@ -6,41 +6,40 @@ TBD — capability added by change `add-qr-code-endpoint`.
 
 ### Requirement: Public QR-code endpoint returns a registration ID PNG
 
-The Registrations module SHALL expose an API-key-protected public HTTP endpoint at `GET /api/events/{eventId}/registrations/{registrationId}/qr-code` that returns a PNG image of a registration QR code. The endpoint SHALL derive `TeamId` from the authenticated API-key principal and SHALL use `{eventId}` and `{registrationId}` from the URL path. The response SHALL have content type `image/png` and a content-disposition that suggests the filename `qrcode.png`.
+The Registrations module SHALL expose an anonymous Public API HTTP endpoint at `GET /e/{publicSlug}/qr-code/{registrationId}` that returns a PNG image of a registration QR code. The endpoint SHALL resolve the ticketed event by `{publicSlug}` and SHALL use `{registrationId}` from the URL path. The response SHALL have content type `image/png` and a content-disposition that suggests the filename `qrcode.png`.
 
 The QR code's encoded payload SHALL be the literal registration ID string. The QR code SHALL be generated with error-correction level Q.
 
 #### Scenario: Successful retrieval returns a PNG
-- **WHEN** an attendee with `RegistrationId` "reg-123" requests `GET /api/events/{eventId}/registrations/reg-123/qr-code` with a valid API key for the event's team
-- **THEN** the response is `200 OK` with content type `image/png`, content-disposition `attachment; filename="qrcode.png"`, and the PNG decodes to a QR code whose payload is `"reg-123"`
+- **WHEN** an attendee with `RegistrationId` `11111111-1111-1111-1111-111111111111` requests `GET /e/azure-fest-2026/qr-code/11111111-1111-1111-1111-111111111111` for an existing registration on the event with public slug `azure-fest-2026`
+- **THEN** the response is `200 OK` with content type `image/png`, content-disposition `attachment; filename="qrcode.png"`, and the PNG decodes to a QR code whose payload is `11111111-1111-1111-1111-111111111111`
 
-#### Scenario: Endpoint requires API key
+#### Scenario: Endpoint does not require API key
 - **WHEN** an unauthenticated client makes the request without `X-Api-Key`
-- **THEN** the response is HTTP 401 and no registration lookup is performed
+- **THEN** the request can proceed to event and registration lookup
 
 ---
 
-### Requirement: QR-code retrieval is scoped by API key, event, and registration ID
+### Requirement: QR-code retrieval is scoped by public slug and registration ID
 
-The endpoint SHALL authenticate the required `X-Api-Key`, resolve `TeamId` from the API-key principal, resolve the event by `(TeamId, eventId)`, and then load the registration by `(TeamId, eventId, registrationId)`. A registration ID SHALL be treated as an attendee-held bearer secret; no additional QR-code signature SHALL be required.
+The endpoint SHALL resolve the event by `TicketedEvent.PublicSlug`, then load the registration by `(eventId, registrationId)`. A registration ID SHALL be treated as an attendee-held bearer secret; no additional QR-code signature or API key SHALL be required.
 
 The order of checks SHALL be:
 
-1. Authenticate the required `X-Api-Key` and resolve `TeamId` from the API-key principal (401 on missing, invalid, or revoked key).
-2. Resolve `ticketedEventId` from `(TeamId, eventId)` (404 on unknown event for the API key's team).
-3. Load the registration; reject with 404 if it does not exist or does not belong to the resolved event and team.
-4. Generate and return the PNG.
+1. Resolve `ticketedEventId` from `{publicSlug}` (404 on unknown public slug).
+2. Load the registration; reject with 404 if it does not exist or does not belong to the resolved event.
+3. Generate and return the PNG.
 
 #### Scenario: Unknown registration is rejected
-- **WHEN** the endpoint is called with a `registrationId` that does not exist for the resolved event and API-key team
+- **WHEN** the endpoint is called with a `registrationId` that does not exist for the resolved event
 - **THEN** the response is `404 Not Found`
 
 #### Scenario: Unknown event is rejected before registration lookup
-- **WHEN** the endpoint is called for an event ID that does not exist for the API key's team
+- **WHEN** the endpoint is called for a public slug that does not resolve to an event
 - **THEN** the response is `404 Not Found` and no registration lookup is performed
 
 #### Scenario: Signature parameter is not required
-- **WHEN** the endpoint is called without a `signature` query parameter for an existing registration under the resolved event and API-key team
+- **WHEN** the endpoint is called without a `signature` query parameter for an existing registration under the resolved event
 - **THEN** the response is `200 OK` with the PNG body
 
 ---

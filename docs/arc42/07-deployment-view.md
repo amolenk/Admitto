@@ -21,6 +21,8 @@
 
 The Worker receives Admitto application-email SMTP configuration from AppHost as `Email:System:*` settings. Local development points these settings at MailDev; production publish mode exposes matching `systemEmail*` parameters for the SMTP host, port, Admitto-controlled sender address, auth mode, username, and secret password. Public attendee links are generated from `Registrations:PublicTickets:BaseUrl` plus `/e/{TicketedEvent.PublicSlug}`.
 
+`tickets.admitto.org` is intended to be a second custom domain bound directly to the API Container App for anonymous Public API links. It is a host alias, not an HTTP redirect. For Azure Container Apps managed certificate issuance and renewal, create a direct CNAME from `tickets.admitto.org` to the generated Container Apps hostname, then bind `tickets.admitto.org` as a custom domain on the API app with its own certificate. Avoid chaining the CNAME through another hostname that performs redirects; mail clients should request `/e/...` directly from the API ingress.
+
 Start everything: `aspire start --isolated`
 
 The local `keycloak` resource runs as an explicit HTTP Keycloak container on

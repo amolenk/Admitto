@@ -52,8 +52,8 @@ public static class RegistrationsModuleExtensions
             services.Configure<OtpOptions>(
                 configuration.GetSection(OtpOptions.SectionName));
 
-            services.Configure<PublicTicketsOptions>(
-                configuration.GetSection(PublicTicketsOptions.SectionName));
+            services.Configure<PublicEventLinksOptions>(
+                configuration.GetSection(PublicEventLinksOptions.SectionName));
 
             // Infrastructure
             builder.AddModuleDatabaseServices<IRegistrationsWriteStore, RegistrationsDbContext>(

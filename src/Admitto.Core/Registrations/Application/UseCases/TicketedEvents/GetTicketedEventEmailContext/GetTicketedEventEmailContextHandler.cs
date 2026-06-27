@@ -13,7 +13,7 @@ namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents
 internal sealed class GetTicketedEventEmailContextHandler(
     IRegistrationsWriteStore writeStore,
     IOrganizationFacade organizationFacade,
-    IOptions<PublicTicketsOptions> publicTicketsOptions)
+    IOptions<PublicEventLinksOptions> publicEventLinksOptions)
     : IQueryHandler<GetTicketedEventEmailContextQuery, EventRegistrationSnapshotDto>
 {
     public async ValueTask<EventRegistrationSnapshotDto> HandleAsync(
@@ -38,7 +38,7 @@ internal sealed class GetTicketedEventEmailContextHandler(
             ?? throw new BusinessRuleViolationException(
                 NotFoundError.Create<TicketedEvent>());
 
-        var publicEventLink = $"{publicTicketsOptions.Value.BaseUrl.TrimEnd('/')}/e/{fields.PublicSlug}";
+        var publicEventLink = $"{publicEventLinksOptions.Value.BaseUrl.TrimEnd('/')}/{fields.PublicSlug}";
         var registerLink = $"{publicEventLink}/register";
         var qrCodeLink = $"{publicEventLink}/qr-code/{query.RegistrationId}";
         var cancelLink = $"{publicEventLink}/cancel/{query.RegistrationId}";
@@ -50,7 +50,7 @@ internal sealed class GetTicketedEventEmailContextHandler(
             .FirstOrDefaultAsync(cancellationToken);
 
         var changeTicketsLink = selfServiceTicketCount >= 2
-            ? $"{publicEventLink}/registrations/{query.RegistrationId}/tickets"
+            ? $"{publicEventLink}/edit/{query.RegistrationId}"
             : null;
 
         var branding = await organizationFacade.GetTeamBrandingAsync(teamId.Value, cancellationToken);

@@ -18,7 +18,7 @@ public sealed class OpenApiSecuritySchemeTests(TestContext testContext) : EndToE
         // document at startup rather than hard-coding it.
 
         // Act
-        var response = await Environment.PublicApiClient.GetAsync(
+        var response = await Environment.AnonymousApiClient.GetAsync(
             "/openapi/v1.json",
             testContext.CancellationToken);
 
@@ -53,7 +53,7 @@ public sealed class OpenApiSecuritySchemeTests(TestContext testContext) : EndToE
     }
 
     [TestMethod]
-    public async Task OpenApiSpec_PublicEndpointsRequireApiKeyOnlyByDefault()
+    public async Task OpenApiSpec_PartnerEndpointsRequireApiKeyOnlyByDefault()
     {
         // Act
         using var doc = await GetOpenApiDocumentAsync();
@@ -100,7 +100,7 @@ public sealed class OpenApiSecuritySchemeTests(TestContext testContext) : EndToE
 
     private async Task<JsonDocument> GetOpenApiDocumentAsync()
     {
-        var response = await Environment.PublicApiClient.GetAsync(
+        var response = await Environment.AnonymousApiClient.GetAsync(
             "/openapi/v1.json",
             testContext.CancellationToken);
 

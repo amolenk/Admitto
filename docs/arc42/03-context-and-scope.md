@@ -29,10 +29,12 @@ flowchart LR
 flowchart LR
   Admin["Admin"] -->|HTTPS| AdminUI["Admin UI"]
   TeamMember["Team member"] -->|HTTPS| AdminUI
-  EventSite["External event site"] <-->|HTTPS| PublicAPI["Public API"]
+  EventSite["External event site"] <-->|HTTPS| PartnerAPI["Partner API"]
+  Attendee["Attendee"] -->|HTTPS /e links| PublicAPI["Public API"]
 
   subgraph Admitto
     AdminUI
+    PartnerAPI
     PublicAPI
   end
 
@@ -42,6 +44,6 @@ flowchart LR
 | Interface | Consumers | Protocol / format |
 | :-------- | :-------- | :---------------- |
 | Admin UI | Admins, team members | HTTPS |
-| Public API | External event sites | HTTPS / JSON |
+| Partner API | External event sites | HTTPS / JSON with `X-Api-Key` |
+| Public API | Attendees, mail clients | HTTPS redirects and PNG QR codes under `/e/...` |
 | E-mail | Attendees | SMTP |
-

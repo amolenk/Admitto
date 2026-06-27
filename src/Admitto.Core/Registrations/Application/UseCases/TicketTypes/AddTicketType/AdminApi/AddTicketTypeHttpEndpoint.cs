@@ -9,7 +9,7 @@ public static class AddTicketTypeHttpEndpoint
     public static RouteGroupBuilder MapAddTicketType(this RouteGroupBuilder group)
     {
         group
-            .MapPost("/", AddTicketType)
+            .MapPost("", AddTicketType)
             .WithName(nameof(AddTicketType))
             .RequireAuthorization(policy => policy.RequireTeamMembership(TeamMembershipRole.Organizer));
 

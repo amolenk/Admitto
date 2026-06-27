@@ -10,6 +10,7 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.GetQRCode;
 internal sealed class GetQRCodeFixture
 {
     public static readonly TicketTypeId TicketTypeId = TicketTypeId.From(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
+    public const string PublicSlug = "devconf-2026";
 
     public Guid TeamId { get; private set; }
     public Guid EventId { get; private set; }
@@ -34,12 +35,21 @@ internal sealed class GetQRCodeFixture
     public static GetQRCodeFixture WithoutRegistration() => new(
         seedRegistration: false, cancelRegistration: false);
 
-    public string Route(
-        Guid registrationId,
-        Guid? eventId = null)
-    {
-        return $"/api/events/{eventId ?? EventId}/registrations/{registrationId}/qr-code";
-    }
+    public string QRCodeRoute(Guid registrationId, string publicSlug = PublicSlug) =>
+        $"/e/{publicSlug}/qr-code/{registrationId}";
+
+    public string OldPartnerQRCodeRoute(Guid registrationId, Guid? eventId = null) =>
+        $"/api/events/{eventId ?? EventId}/registrations/{registrationId}/qr-code";
+
+    public string PublicEventRoute(string publicSlug = PublicSlug) => $"/e/{publicSlug}";
+
+    public string RegisterRoute(string publicSlug = PublicSlug) => $"/e/{publicSlug}/register";
+
+    public string CancelRoute(Guid registrationId, string publicSlug = PublicSlug) =>
+        $"/e/{publicSlug}/cancel/{registrationId}";
+
+    public string EditRoute(Guid registrationId, string publicSlug = PublicSlug) =>
+        $"/e/{publicSlug}/edit/{registrationId}";
 
     public async ValueTask SetupAsync(EndToEndTestEnvironment environment)
     {
@@ -102,8 +112,9 @@ internal sealed class GetQRCodeFixture
             TicketedEventId.New(),
             teamId,
             EventName.From(displayName),
-            AbsoluteUrl.From("https://example.com"),
-            AbsoluteUrl.From("https://tickets.example.com"),
+            AbsoluteUrl.From("https://partner.example.com"),
+            AbsoluteUrl.From("https://partner.example.com/tickets"),
+            Slug.From(PublicSlug),
             DateTimeOffset.UtcNow.AddDays(60),
             DateTimeOffset.UtcNow.AddDays(61),
             TimeZoneId.From("UTC"));

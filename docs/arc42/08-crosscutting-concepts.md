@@ -18,8 +18,10 @@ Reference: `Admitto.Api/Middleware/ValidationFilter.cs`, applied in `Admitto.Api
 
 ## 8.3 Authentication and authorization
 
+- **Admin API:** Endpoints under `/admin/...` serve the Admin UI and require JWT bearer authentication plus the relevant admin or team-membership authorization policy. Admin handlers use explicit team/event IDs from the route after `UserContextResolutionMiddleware` has resolved and checked the route scope.
+- **Partner API:** Endpoints under `/api/...` serve trusted partner event websites and require `X-Api-Key`. The key authenticates as its owning team and carries the shared `team_id` claim defined in `Admitto.Core.Shared.Application.Auth.ApiKeyClaims`. Partner routes use `/api/events/{eventId}/...`; they do not include team ID or team slug. Endpoint code extracts `TeamId` from the API-key principal and fails closed with 401 if the claim is missing or invalid.
+- **Public API:** Anonymous attendee-facing routes live under `/e/...`. They resolve Admitto-owned public event slugs and either redirect to the configured partner website URL/path or return a registration QR-code PNG. These routes do not accept request-controlled redirect targets and do not require `X-Api-Key`.
 - **Authentication:** JWT Bearer tokens validated against a configurable authority. Production Admin UI sign-in uses Keycloak's hosted passkey-only browser flow and starts directly at passkey detection; passwords and direct grants are not enabled for the production Admin UI client. The Keycloak account-console client is disabled; Admitto owns the user-facing account-management surface. Local development intentionally uses a separate Keycloak realm where the standard username/password form is shown first with passkey as an alternative; end-to-end tests retain local-only direct-grant clients. Challenge and forbidden responses return ProblemDetails.
-- **Public API keys:** Every endpoint under `/api/...` requires `X-Api-Key`. The key authenticates as its owning team and carries the shared `team_id` claim defined in `Admitto.Core.Shared.Application.Auth.ApiKeyClaims`. Public routes use `/api/events/{eventId}/...`; they do not include team ID or team slug. Endpoint code extracts `TeamId` from the API-key principal and fails closed with 401 if the claim is missing or invalid.
 - **Admin authorization:** `AdminAuthorizationRequirement` checked by `AdminAuthorizationHandler` via `IAdministratorRoleService`.
 - **User context resolution:** `UserContextResolutionMiddleware` resolves the authenticated JWT subject to a domain user before authorization runs. It classifies admin route values into explicit global, team, or event scope first. Malformed route values, or `eventId` without `teamId`, fail closed with 403 before authorization or endpoint handlers run. When the route is event-scoped, `UserContextResolver` verifies that the event belongs to the team; non-admin mismatches return 403 before endpoint authorization or handler execution.
 - **Team membership authorization:** `TeamMembershipAuthorizationRequirement` checked by `TeamMembershipAuthorizationHandler` against the pre-resolved user context. Admin users bypass team checks.
@@ -30,9 +32,9 @@ Endpoints declare requirements with `policy.RequireAdminRole()` or `policy.Requi
 
 Keycloak account-action emails are infrastructure-owned identity-provider emails. Admitto triggers them through Keycloak's Admin API `execute-actions-email` endpoint, and Keycloak sends them through its own SMTP configuration using the Admitto Keycloak email theme. They are intentionally outside Admitto's Email module templates, logs, outbox, and system-email SMTP settings.
 
-### Public API rate limiting
+### Public and Partner API rate limiting
 
-Public endpoints use ASP.NET Core rate limiting policies configured under `RateLimiting:Public` in `Admitto.Api`. The limits are IP-partitioned middleware guards, not business-level abuse controls. They must be sized for the expected deployment model where the external event website can proxy many attendees through a single source IP. Business-specific limits, such as OTP request throttling per email/event, remain enforced in application handlers.
+Public and Partner endpoints use ASP.NET Core rate limiting policies configured under `RateLimiting:Public` in `Admitto.Api`. The limits are IP-partitioned middleware guards, not business-level abuse controls. They must be sized for the expected deployment model where the external event website can proxy many attendees through a single source IP. Business-specific limits, such as OTP request throttling per email/event, remain enforced in application handlers.
 
 ## 8.4 Organization scope resolution and cross-module facades
 
@@ -79,7 +81,7 @@ UseCases/TeamManagement/
 | :--- | :------- | :------- |
 | `{Slice}Command.cs` / `{Slice}Query.cs` | Immutable record sent via `IMediator` | Always |
 | `{Slice}Handler.cs` | Business logic; must not inject or commit UoW | Always |
-| `{Surface}/{Slice}HttpEndpoint.cs` | Minimal API endpoint; owns the UoW commit. `Surface` follows the established module convention, such as `AdminApi/`, `PublicApi/`, or `InternalApi/`. | When HTTP-exposed |
+| `{Surface}/{Slice}HttpEndpoint.cs` | Minimal API endpoint; owns the UoW commit. `Surface` follows the established module convention, such as `AdminApi/`, `PartnerApi/`, `PublicApi/`, or `InternalApi/`. | When HTTP-exposed |
 | `{Surface}/{Slice}HttpRequest.cs` | Inbound DTO with `ToCommand()` or `ToQuery()` helper | When the endpoint accepts structured input |
 | `{Surface}/{Slice}Validator.cs` | FluentValidation validator for the request DTO | When the endpoint uses a validated request DTO |
 | `EventHandlers/{Event}DomainEventHandler.cs` | Translates a domain event into the slice command | When triggered by domain event |
@@ -221,11 +223,11 @@ Application-email SMTP credentials are deployment secrets, supplied through host
 
 ### Registration-bound public links
 
-Attendee-held registration links, including QR-code retrieval and self-service cancellation, treat `RegistrationId` as a high-entropy bearer secret. These endpoints are still protected by `X-Api-Key`; the API key resolves `TeamId`, the route resolves `eventId`, and the handler loads registrations only by `(TeamId, eventId, registrationId)`.
+Attendee-held registration links, including QR-code retrieval and self-service cancellation/edit redirects, treat `RegistrationId` as a high-entropy bearer secret. Anonymous Public API links use `/e/{eventSlug}/...`; the event slug resolves `TicketedEventId`, and QR-code retrieval loads registrations only by `(eventId, registrationId)`. Partner self-service mutation endpoints remain under `/api/events/{eventId}/...` and still require `X-Api-Key`.
 
 QR codes encode the literal registration ID string. They do not include a per-event HMAC signature, and `TicketedEvent` does not carry a QR signing key. Future check-in flows should validate QR payloads server-side under the selected event/team, or introduce a dedicated check-in token design if offline validation becomes a real requirement.
 
-**Endpoint validation order** for registration-bound public endpoints: authenticate `X-Api-Key` and resolve `TeamId` from the shared `team_id` claim (401) → resolve event by `(TeamId, eventId)` when the route is event-scoped (404) → load the aggregate by `(TeamId, eventId, registrationId)` (404 on missing/wrong event/team) → perform the requested operation or return the response.
+**Endpoint validation order** for anonymous public QR-code retrieval: resolve event by `PublicSlug` (404) → load the aggregate by `(eventId, registrationId)` (404 on missing/wrong event) → return the PNG. Partner registration-bound mutation endpoints first authenticate `X-Api-Key` and resolve `TeamId` from the shared `team_id` claim (401), then resolve event and registration within that team scope.
 
 The only remaining registration signing mechanism is the short-lived email-verification token issued by the OTP flow. It is HMAC-signed with the configured `Registrations:VerificationToken:SigningKey`, embeds event/team/email claims, and is independent of `TicketedEvent` state.
 
@@ -561,8 +563,8 @@ These are enforced via MSTest reflection checks on the loaded `Admitto.Core` ass
 | Class pattern | Required namespace suffix |
 | :------------ | :------------------------ |
 | `*DomainEventHandler`, `*IntegrationEventHandler` | `…EventHandlers` |
-| `*HttpEndpoint` | `…AdminApi`, `…PublicApi`, or `…InternalApi` |
-| `AbstractValidator<T>` subclasses | `…AdminApi`, `…PublicApi`, or `…InternalApi` |
+| `*HttpEndpoint` | `…AdminApi`, `…PartnerApi`, `…PublicApi`, or `…InternalApi` |
+| `AbstractValidator<T>` subclasses | `…AdminApi`, `…PartnerApi`, `…PublicApi`, or `…InternalApi` |
 | `*Command` or `*Query` | `*.Application.UseCases.*` |
 
 ### Contracts namespace convention

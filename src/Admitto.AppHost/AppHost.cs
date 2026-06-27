@@ -313,6 +313,7 @@ if (builder.ExecutionContext.IsPublishMode)
 ///////////////////////////////////////////////////////////////////////////////
 
 IResourceBuilder<ProjectResource>? api = null;
+IResourceBuilder<ParameterResource>? externalLinkCustomDomain = null;
 ReferenceExpression? apiUrlRef = null;
 
 if (!infraOnly)
@@ -322,7 +323,9 @@ if (!infraOnly)
     // Bootstrap admin user
     var apiBootstrapAdmin = builder.ExecutionContext.IsPublishMode
         ? builder.AddParameter("apiBootstrapAdmin")
-        : builder.AddParameter("apiBootstrapAdmin", value: "alice@example.com");
+        : builder.AddParameter(
+            "apiBootstrapAdmin",
+            value: builder.Environment.IsEndToEndTesting() ? string.Empty : "alice@example.com");
 
     api = builder.AddProject<Projects.Admitto_Api>("api")
         .WithUrlForEndpoint(
@@ -347,7 +350,6 @@ if (!infraOnly)
         .WithEnvironment("ORGANIZATION__USERDIRECTORIES__KEYCLOAK__EXECUTEACTIONSCLIENTID", "admitto-ui")
         .WithEnvironment("ORGANIZATION__USERDIRECTORIES__KEYCLOAK__EXECUTEACTIONSREDIRECTURI", uiPublicUrl)
         .WithEnvironment("ORGANIZATION__BOOTSTRAPADMIN__EMAILADDRESS", apiBootstrapAdmin)
-        .WithEnvironment("REGISTRATIONS__PUBLICTICKETS__BASEURL", uiPublicUrl)
         .WithEnvironment("OBSERVABILITY__AZUREMONITOR__SAMPLINGRATIO", azureMonitorSamplingRatio)
         .WithReference(admittoDb)
         .WithReference(quartzDb)
@@ -366,12 +368,16 @@ if (!infraOnly)
         var apiCustomDomain = builder.AddParameter("apiCustomDomain");
         var apiCertificateName = builder.AddParameter("apiCertificateName");
 
+        externalLinkCustomDomain = builder.AddParameter("externalLinkCustomDomain");
+        var externalLinkCertificateName = builder.AddParameter("externalLinkCertificateName");
+
         api
             .WithReference(appInsights!)
             .PublishAsAzureContainerApp((_, app) =>
             {
                 app.Template.Scale = new ContainerAppScale { MinReplicas = 1, MaxReplicas = 1 };
                 app.ConfigureCustomDomain(apiCustomDomain, apiCertificateName);
+                app.ConfigureCustomDomain(externalLinkCustomDomain, externalLinkCertificateName);
             });
     }
 
@@ -392,7 +398,6 @@ if (!infraOnly)
         .WithEnvironment("ORGANIZATION__USERDIRECTORIES__KEYCLOAK__CLIENTID", "admin-cli")
         .WithEnvironment("ORGANIZATION__USERDIRECTORIES__KEYCLOAK__USERNAME", keycloakAdminUser)
         .WithEnvironment("ORGANIZATION__USERDIRECTORIES__KEYCLOAK__PASSWORD", keycloakAdminPassword)
-        .WithEnvironment("REGISTRATIONS__PUBLICTICKETS__BASEURL", uiPublicUrl)
         .WithEnvironment("EMAIL__SYSTEM__FROMADDRESS", "tickets@admitto.local")
         .WithEnvironment("EMAIL__SYSTEM__AUTHMODE", "None")
         .WithEnvironment("OBSERVABILITY__AZUREMONITOR__SAMPLINGRATIO", azureMonitorSamplingRatio)
@@ -413,9 +418,12 @@ if (!infraOnly)
             // Disable caching to avoid stale data issues in tests
             .WithEnvironment("CACHING__ENABLED", builder.Environment.IsDevelopment().ToString())
             .WithEnvironment("EMAIL__SYSTEM__SMTPHOST", "localhost")
-            .WithEnvironment("EMAIL__SYSTEM__SMTPPORT", ReferenceExpression.Create($"{mailDev!.GetEndpoint("smtp").Property(EndpointProperty.Port)}"))
+            .WithEnvironment(
+                "EMAIL__SYSTEM__SMTPPORT",
+                ReferenceExpression.Create($"{mailDev!.GetEndpoint("smtp").Property(EndpointProperty.Port)}"))
             // Disable the per-message delay so bulk-email fan-out completes quickly
             .WithEnvironment("BULKEMAIL__PERMESSAGEDELAY", "00:00:00")
+            .WithEnvironment("REGISTRATIONS__PUBLICEVENTLINKS__BASEURL", ReferenceExpression.Create($"{apiUrlRef!}/e"))
             .WaitFor(mailDev!);
     }
 
@@ -423,6 +431,9 @@ if (!infraOnly)
     {
         worker
             .WithReference(appInsights!)
+            .WithEnvironment(
+                "REGISTRATIONS__PUBLICEVENTLINKS__BASEURL",
+                ReferenceExpression.Create($"https://{externalLinkCustomDomain!}/e"))
             .PublishAsAzureContainerApp((_, app) =>
             {
                 app.Template.Scale = new ContainerAppScale { MinReplicas = 1, MaxReplicas = 1 };

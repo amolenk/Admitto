@@ -32,7 +32,7 @@ public sealed class RegistrationsPostgresExceptionMappingTests
         var ex = new PostgresException(
             "duplicate key value violates unique constraint",
             "ERROR", "ERROR", "23505",
-            constraintName: "IX_ticketed_events_team_id_slug");
+            constraintName: "IX_ticketed_events_public_slug");
 
         var result = sut.TryMapToError(ex, out var error);
 

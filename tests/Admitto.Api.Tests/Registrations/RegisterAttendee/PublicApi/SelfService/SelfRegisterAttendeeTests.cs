@@ -31,7 +31,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : EndToEn
             AdditionalDetails = new Dictionary<string, string>()
         };
 
-        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         var response = await client.PostAsJsonAsync(
             fixture.Route, request, cancellationToken: testContext.CancellationToken);
 
@@ -52,7 +52,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : EndToEn
             AdditionalDetails = new Dictionary<string, string>()
         };
 
-        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         var response = await client.PostAsJsonAsync(
             fixture.Route, request, cancellationToken: testContext.CancellationToken);
 

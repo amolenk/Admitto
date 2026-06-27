@@ -89,7 +89,7 @@ internal sealed class SelfRegisterFixture
             DateTimeOffset.UtcNow.AddMinutes(10));
         await environment.RegistrationsDatabase.SeedAsync(db => db.OtpCodes.Add(otpCode));
 
-        using var client = environment.CreatePublicApiClient(ApiKeyTestHelper.TestRawKey);
+        using var client = environment.CreatePartnerApiClient(ApiKeyTestHelper.TestRawKey);
         var response = await client.PostAsJsonAsync(
             OtpVerifyRoute,
             new { Email = email, Code = KnownOtpCode },

@@ -17,7 +17,7 @@ public sealed class OtpVerifyTests(TestContext testContext) : EndToEndTestBase
         await fixture.SetupAsync(Environment);
         await fixture.SeedValidCodeAsync(Environment);
 
-        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         var response = await client.PostAsJsonAsync(
             fixture.VerifyOtpRoute,
             new { Email = OtpVerifyFixture.AttendeeEmail, Code = OtpVerifyFixture.KnownPlainCode },
@@ -39,7 +39,7 @@ public sealed class OtpVerifyTests(TestContext testContext) : EndToEndTestBase
         await fixture.SetupAsync(Environment);
         await fixture.SeedValidCodeAsync(Environment);
 
-        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         var response = await client.PostAsJsonAsync(
             fixture.VerifyOtpRoute,
             new { Email = OtpVerifyFixture.AttendeeEmail, Code = "000000" },
@@ -56,7 +56,7 @@ public sealed class OtpVerifyTests(TestContext testContext) : EndToEndTestBase
         await fixture.SetupAsync(Environment);
         await fixture.SeedLockedCodeAsync(Environment);
 
-        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         // 5th wrong attempt should lock and return 422
         var response = await client.PostAsJsonAsync(
             fixture.VerifyOtpRoute,
@@ -74,7 +74,7 @@ public sealed class OtpVerifyTests(TestContext testContext) : EndToEndTestBase
         await fixture.SetupAsync(Environment);
         await fixture.SeedExpiredCodeAsync(Environment);
 
-        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         var response = await client.PostAsJsonAsync(
             fixture.VerifyOtpRoute,
             new { Email = OtpVerifyFixture.AttendeeEmail, Code = OtpVerifyFixture.KnownPlainCode },
@@ -91,7 +91,7 @@ public sealed class OtpVerifyTests(TestContext testContext) : EndToEndTestBase
         await fixture.SetupAsync(Environment);
         await fixture.SeedUsedCodeAsync(Environment);
 
-        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         var response = await client.PostAsJsonAsync(
             fixture.VerifyOtpRoute,
             new { Email = OtpVerifyFixture.AttendeeEmail, Code = OtpVerifyFixture.KnownPlainCode },
@@ -107,7 +107,7 @@ public sealed class OtpVerifyTests(TestContext testContext) : EndToEndTestBase
         var fixture = OtpVerifyFixture.WithActiveCode();
         await fixture.SetupAsync(Environment);
 
-        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         var response = await client.PostAsJsonAsync(
             fixture.VerifyOtpRoute,
             new { Email = "nobody@example.com", Code = "123456" },

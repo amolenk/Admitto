@@ -127,7 +127,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
 
     // No X-Api-Key header returns 401
     [TestMethod]
-    public async Task PublicEndpoint_NoApiKey_Returns401()
+    public async Task PartnerEndpoint_NoApiKey_Returns401()
     {
         var fixture = ApiKeyAuthFixture.WithTeamAndEvent();
         await fixture.SetupAsync(Environment);
@@ -144,12 +144,12 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
 
     // Bogus/unknown API key returns 401
     [TestMethod]
-    public async Task PublicEndpoint_BogusApiKey_Returns401()
+    public async Task PartnerEndpoint_BogusApiKey_Returns401()
     {
         var fixture = ApiKeyAuthFixture.WithTeamAndEvent();
         await fixture.SetupAsync(Environment);
 
-        using var client = Environment.CreatePublicApiClient("bogus-key-that-does-not-exist");
+        using var client = Environment.CreatePartnerApiClient("bogus-key-that-does-not-exist");
         var response = await client.PostAsJsonAsync(
             $"/api/events/{fixture.EventId}/otp/request",
             new { Email = "test@example.com" },
@@ -160,12 +160,12 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
 
     // Revoked API key returns 401
     [TestMethod]
-    public async Task PublicEndpoint_RevokedApiKey_Returns401()
+    public async Task PartnerEndpoint_RevokedApiKey_Returns401()
     {
         var fixture = ApiKeyAuthFixture.WithTeamAndRevokedApiKey();
         await fixture.SetupAsync(Environment);
 
-        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         var response = await client.PostAsJsonAsync(
             $"/api/events/{fixture.EventId}/otp/request",
             new { Email = "test@example.com" },
@@ -176,13 +176,13 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
 
     // API key for Team A used against Team B's event returns normal not-found behavior
     [TestMethod]
-    public async Task PublicEndpoint_ApiKeyForOtherTeam_Returns404()
+    public async Task PartnerEndpoint_ApiKeyForOtherTeam_Returns404()
     {
         var fixture = ApiKeyAuthFixture.WithTwoTeamsAndEvents();
         await fixture.SetupAsync(Environment);
 
         // Use team-a's key against team-b's event.
-        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         var response = await client.PostAsJsonAsync(
             $"/api/events/{fixture.OtherEventId}/otp/request",
             new { Email = "test@example.com" },
@@ -193,12 +193,12 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
 
     // Valid API key for correct team returns 202
     [TestMethod]
-    public async Task PublicEndpoint_ValidApiKey_Returns202()
+    public async Task PartnerEndpoint_ValidApiKey_Returns202()
     {
         var fixture = ApiKeyAuthFixture.WithTeamAndEvent();
         await fixture.SetupAsync(Environment);
 
-        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         var response = await client.PostAsJsonAsync(
             $"/api/events/{fixture.EventId}/otp/request",
             new { Email = "test@example.com" },
@@ -208,12 +208,12 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
     }
 
     [TestMethod]
-    public async Task PublicEndpoint_OldTeamScopedRoute_Returns404()
+    public async Task PartnerEndpoint_OldTeamScopedRoute_Returns404()
     {
         var fixture = ApiKeyAuthFixture.WithTeamAndEvent();
         await fixture.SetupAsync(Environment);
 
-        using var client = Environment.CreatePublicApiClient(fixture.ApiKey);
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         var response = await client.PostAsJsonAsync(
             $"/api/teams/{fixture.TeamId}/events/{fixture.EventId}/otp/request",
             new { Email = "test@example.com" },
@@ -223,7 +223,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
     }
 
     [TestMethod]
-    public async Task PublicCouponDetails_NoApiKey_Returns401()
+    public async Task PartnerCouponDetails_NoApiKey_Returns401()
     {
         using var bareClient = new HttpClient { BaseAddress = Environment.ApiClient.BaseAddress };
         var response = await bareClient.GetAsync(

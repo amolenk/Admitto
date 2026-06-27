@@ -146,15 +146,15 @@ sequenceDiagram
 
 Because `TicketCatalog.EventStatus` is updated in the same transaction as `TicketedEvent.Archive`, any in-flight registration that has already loaded `TicketCatalog` at a prior version fails its claim with a `DbUpdateConcurrencyException` — no registration can slip past a lifecycle transition.
 
-## 6.6 Attendee registration and waitlist submission (atomic status + capacity gate)
+## 6.6 Partner attendee registration and waitlist submission (atomic status + capacity gate)
 
-Public attendee endpoints are mounted under `/api/events/{eventId}/...` and require `X-Api-Key`. API-key authentication resolves the owning team into a `team_id` claim, and public endpoints derive `TeamId` from that claim rather than from the URL. Handlers still receive both `TeamId` and `TicketedEventId`, so event/resource lookups remain scoped to the API key owner's team and a valid key for another team receives the normal not-found behavior.
+Partner attendee endpoints are mounted under `/api/events/{eventId}/...` and require `X-Api-Key`. API-key authentication resolves the owning team into a `team_id` claim, and partner endpoints derive `TeamId` from that claim rather than from the URL. Handlers still receive both `TeamId` and `TicketedEventId`, so event/resource lookups remain scoped to the API key owner's team and a valid key for another team receives the normal not-found behavior.
 
 The registration handler (self-service or coupon) loads both `TicketedEvent` (for window / domain / schema policy checks) and `TicketCatalog` (for the active-status and atomic capacity claim) in the same unit of work. Public self-service registration accepts explicit `registerTicketTypeIds` and `waitlistTicketTypeIds`; capacity is claimed only for registration tickets, while waitlist entries are created for waitlist tickets in the same transaction.
 
 ```mermaid
 sequenceDiagram
-  participant Endpoint as Public endpoint
+  participant Endpoint as Partner endpoint
   participant Handler
   participant Event as TicketedEvent
   participant Catalog as TicketCatalog
@@ -169,7 +169,37 @@ sequenceDiagram
   Endpoint->>Endpoint: SaveChangesAsync (UoW)
 ```
 
-Waitlist-only submissions create waitlist entries without creating a `Registration`; the public response reports `registrationId = null` and the waitlisted ticket ids. After the public email-verification token is accepted and terminal event/window/domain/detail guards pass, self-service registration classifies submitted register/waitlist ticket IDs against the current `TicketCatalog` before mutating capacity or waitlists. Recoverable ticket-selection mismatches return a 409 `registration.ticket_state_conflict` problem response with grouped submitted IDs (`registerableTicketTypeIds`, `waitlistableTicketTypeIds`, `unavailableTicketTypeIds`, `unknownTicketTypeIds`, `invalidForRequestedActionTicketTypeIds`) and persist no partial registration, waitlist entry, or capacity change. Coupons bypass capacity / window / domain checks but do not bypass the active-status gate. Waitlist coupons can also be applied during self-service ticket change as a capacity grant for the offered ticket type only; the final registered ticket set is still validated for duplicates, unknown ticket types, and overlapping time slots.
+Waitlist-only submissions create waitlist entries without creating a `Registration`; the partner response reports `registrationId = null` and the waitlisted ticket ids. After the email-verification token is accepted and terminal event/window/domain/detail guards pass, self-service registration classifies submitted register/waitlist ticket IDs against the current `TicketCatalog` before mutating capacity or waitlists. Recoverable ticket-selection mismatches return a 409 `registration.ticket_state_conflict` problem response with grouped submitted IDs (`registerableTicketTypeIds`, `waitlistableTicketTypeIds`, `unavailableTicketTypeIds`, `unknownTicketTypeIds`, `invalidForRequestedActionTicketTypeIds`) and persist no partial registration, waitlist entry, or capacity change. Coupons bypass capacity / window / domain checks but do not bypass the active-status gate. Waitlist coupons can also be applied during self-service ticket change as a capacity grant for the offered ticket type only; the final registered ticket set is still validated for duplicates, unknown ticket types, and overlapping time slots.
+
+## 6.6.1 Anonymous public event links
+
+Anonymous Public API routes are mounted under `/e/{eventSlug}`. They resolve `TicketedEvent.PublicSlug` and never accept request-controlled redirect targets. The canonical event route redirects to the stored event website URL; action routes append website-relative paths while preserving any existing path prefix on the stored website URL.
+
+```mermaid
+sequenceDiagram
+  participant Attendee
+  participant Endpoint as Public /e endpoint
+  participant Handler as DirectPublicEventLinksHandler
+  participant Event as TicketedEvent
+
+  Attendee->>Endpoint: GET /e/{eventSlug}/register
+  Endpoint->>Handler: DirectPublicEventLinksQuery(eventSlug, register)
+  Handler->>Event: resolve by PublicSlug
+  alt slug exists
+    Handler-->>Endpoint: website URL + /register
+    Endpoint-->>Attendee: 302 Location: partner website register path
+  else unknown slug
+    Endpoint-->>Attendee: 404
+  end
+```
+
+`/e/{eventSlug}/cancel/{registrationId}` and `/e/{eventSlug}/edit/{registrationId}` follow the same lookup path and append `cancel/{registrationId}` or `edit/{registrationId}`. Query-string values such as `redirect=` are ignored.
+
+## 6.6.2 Anonymous public QR-code retrieval
+
+QR-code retrieval is exposed only as `GET /e/{eventSlug}/qr-code/{registrationId}`. The handler resolves the event by public slug, then loads the registration by `(eventId, registrationId)`, and returns a PNG whose payload is the literal registration ID. Cancelled registrations still resolve; QR-code revocation is not part of this flow.
+
+The previous Partner API route `GET /api/events/{eventId}/registrations/{registrationId}/qr-code` is no longer exposed.
 
 ## 6.7 Policy mutation flow
 

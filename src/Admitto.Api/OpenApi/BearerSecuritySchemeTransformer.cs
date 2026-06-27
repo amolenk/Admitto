@@ -58,7 +58,7 @@ internal sealed class BearerSecuritySchemeTransformer(
             Type = SecuritySchemeType.ApiKey,
             Name = "X-Api-Key",
             In = ParameterLocation.Header,
-            Description = "Public API key for the owning team."
+            Description = "Partner API key for the owning team."
         };
 
         document.Components.SecuritySchemes[JwtBearerDefaults.AuthenticationScheme] = new OpenApiSecurityScheme
