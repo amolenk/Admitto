@@ -2,7 +2,7 @@
 
 ## Purpose
 
-The Registrations module owns each event's `EventRegistrationPolicy`, including an explicit `RegistrationStatus` (`Draft`, `Open`, `Closed`) that organizers transition via admin endpoints. Opening registration is gated by the Email module's configuration status (consulted through `IEventEmailFacade`) and by the event's lifecycle status. Policies are created exclusively in response to a `TicketedEventCreatedModuleEvent` published by the Organization module — handlers never create policies on demand and surface NotFound errors when a policy is missing.
+The Registrations module owns each event's `EventRegistrationPolicy`, including an explicit `RegistrationStatus` (`Draft`, `Open`, `Closed`) that organizers transition via admin endpoints. Opening registration is gated by the event's lifecycle status, not by organizer-managed email settings. Policies are created exclusively in response to a `TicketedEventCreatedModuleEvent` published by the Organization module — handlers never create policies on demand and surface NotFound errors when a policy is missing.
 
 ## Requirements
 
@@ -28,23 +28,22 @@ The system SHALL track an explicit `RegistrationStatus` on each `EventRegistrati
 ---
 
 ### Requirement: Organizer can open an event for registration
-The system SHALL allow organizers (Owner or Organizer role) to transition an event's registration status from `Draft` or `Closed` to `Open` via an admin endpoint. The transition SHALL be rejected when the Email module reports that email is not configured for the event. The check SHALL be performed synchronously by calling `IEventEmailFacade.IsEmailConfiguredAsync` from the Registrations command handler before the status transition. Lifecycle status (Cancelled or Archived) SHALL also block the transition.
+The system SHALL allow organizers (Owner or Organizer role) to transition an event's registration status from `Draft` or `Closed` to `Open` via an admin endpoint. Registration policy configuration and registration-open status SHALL NOT depend on team-scoped or event-scoped organizer email settings. Application email is platform configured through the Admitto system sender, so missing organizer SMTP settings SHALL NOT block opening or configuring registration. Lifecycle status (Cancelled or Archived) SHALL block the transition.
 
-#### Scenario: Open event when email is configured
-- **WHEN** an organizer opens registration for "devconf-2026" and the Email module reports email is configured
+#### Scenario: Open event when lifecycle allows it
+- **WHEN** an organizer opens registration for active event "devconf-2026"
 - **THEN** the registration status becomes `Open`
 
-#### Scenario: Open rejected when email is not configured
-- **WHEN** an organizer opens registration for "devconf-2026" and the Email module reports email is not configured
-- **THEN** the request is rejected with a validation error indicating email must be configured first
-- **AND** the registration status remains unchanged
+#### Scenario: Configure registration policy without team email settings
+- **WHEN** an organizer configures a registration policy for an active event and no team email settings row exists
+- **THEN** the policy configuration is accepted when all registration-policy rules pass
 
 #### Scenario: Open rejected when event lifecycle is Cancelled
 - **WHEN** an organizer attempts to open registration for an event whose lifecycle status is `Cancelled`
 - **THEN** the request is rejected with a validation error
 
 #### Scenario: Re-open a previously closed event
-- **WHEN** an organizer opens registration for an event whose status is `Closed` and email is configured
+- **WHEN** an organizer opens registration for an active event whose status is `Closed`
 - **THEN** the registration status becomes `Open`
 
 ---
@@ -63,15 +62,15 @@ The system SHALL allow organizers (Owner or Organizer role) to transition an eve
 ---
 
 ### Requirement: Registrations module exposes can-open status for the admin UI
-The Registrations module SHALL expose an admin query endpoint that reports whether the "Open for registration" action is currently allowed for an event. The response SHALL include the current `RegistrationStatus` and a boolean indicating whether opening is permitted. The implementation SHALL consult `IEventEmailFacade` and the lifecycle status. The endpoint exists so the Admin UI can reflect backend gating without bypassing module boundaries.
+The Registrations module SHALL expose an admin query endpoint that reports whether the "Open for registration" action is currently allowed for an event. The response SHALL include the current `RegistrationStatus` and a boolean indicating whether opening is permitted. The implementation SHALL use registration policy and event lifecycle state, not email-settings existence. The endpoint exists so the Admin UI can reflect backend gating without bypassing module boundaries.
 
 #### Scenario: Status reports can-open=true when conditions are met
-- **WHEN** the admin UI queries can-open status for an event with `Draft` status, email configured, and lifecycle `Active`
+- **WHEN** the admin UI queries can-open status for an event with `Draft` status and lifecycle `Active`
 - **THEN** the response is `{ status: "Draft", canOpen: true }`
 
-#### Scenario: Status reports can-open=false when email is not configured
-- **WHEN** the admin UI queries can-open status for an event with `Draft` status and email not configured
-- **THEN** the response is `{ status: "Draft", canOpen: false, reason: "email-not-configured" }`
+#### Scenario: Open-status response does not require email settings
+- **WHEN** the admin UI queries registration-open status for an active event with a valid registration window and no organizer SMTP settings
+- **THEN** the response is based on the registration policy and event lifecycle, not on email-settings existence
 
 ---
 

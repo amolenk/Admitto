@@ -20,6 +20,7 @@ internal sealed class GetTicketedEventsHandler(IRegistrationsWriteStore writeSto
             .Select(e => new TicketedEventListItemDto(
                 e.Id.Value,
                 e.Name.Value,
+                e.PublicSlug.Value,
                 e.StartsAt,
                 e.EndsAt,
                 e.TimeZone.Value,

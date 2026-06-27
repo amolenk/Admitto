@@ -60,12 +60,12 @@ internal sealed class SendEmailHandler(
                     status: EmailLogStatus.Failed,
                     sentAt: null,
                     statusUpdatedAt: now,
-                    lastError: "Email settings not configured or incomplete.",
+                    lastError: "System email settings are not configured or incomplete.",
                     registrationId: registrationId));
             }
             else
             {
-                existing.MarkFailed(string.Empty, "Email settings not configured or incomplete.", now);
+                existing.MarkFailed(string.Empty, "System email settings are not configured or incomplete.", now);
             }
             return;
         }
@@ -81,7 +81,7 @@ internal sealed class SendEmailHandler(
                 cancellationToken);
             var parameters = EmailTemplateParameters.WithBranding(
                 command.Parameters,
-                settings.AccentColor,
+                TryGetAccentColor(command.Parameters) ?? settings.AccentColor,
                 settings.FontFamily);
             rendered = renderer.Render(template, parameters);
         }
@@ -134,5 +134,11 @@ internal sealed class SendEmailHandler(
             rendered.Subject,
             rendered.TextBody,
             rendered.HtmlBody));
+    }
+
+    private static EmailAccentColor? TryGetAccentColor(object parameters)
+    {
+        var value = parameters.GetType().GetProperty("TeamAccentColor")?.GetValue(parameters) as string;
+        return string.IsNullOrWhiteSpace(value) ? null : EmailAccentColor.From(value);
     }
 }

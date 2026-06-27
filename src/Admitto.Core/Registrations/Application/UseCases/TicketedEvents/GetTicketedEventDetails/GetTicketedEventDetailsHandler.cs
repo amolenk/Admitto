@@ -26,6 +26,7 @@ internal sealed class GetTicketedEventDetailsHandler(
             ticketedEvent.Name.Value,
             ticketedEvent.WebsiteUrl.Value.ToString(),
             ticketedEvent.BaseUrl.Value.ToString(),
+            ticketedEvent.PublicSlug.Value,
             ticketedEvent.StartsAt,
             ticketedEvent.EndsAt,
             ticketedEvent.TimeZone.Value,

@@ -235,90 +235,6 @@ namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence.Migrations
                     b.ToTable("email_log", "email");
                 });
 
-            modelBuilder.Entity("Amolenk.Admitto.Core.Email.Domain.Entities.EmailSettings", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<string>("AccentColor")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)")
-                        .HasDefaultValue("#2563eb")
-                        .HasColumnName("accent_color");
-
-                    b.Property<int>("AuthMode")
-                        .HasColumnType("integer")
-                        .HasColumnName("auth_mode");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<string>("FontFamily")
-                        .IsRequired()
-                        .ValueGeneratedOnAdd()
-                        .HasMaxLength(200)
-                        .HasColumnType("character varying(200)")
-                        .HasDefaultValue("Arial, sans-serif")
-                        .HasColumnName("font_family");
-
-                    b.Property<string>("FromAddress")
-                        .IsRequired()
-                        .HasMaxLength(320)
-                        .HasColumnType("character varying(320)")
-                        .HasColumnName("from_address");
-
-                    b.Property<DateTimeOffset>("LastChangedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("last_changed_at");
-
-                    b.Property<string>("LastChangedBy")
-                        .IsRequired()
-                        .HasMaxLength(320)
-                        .HasColumnType("character varying(320)")
-                        .HasColumnName("last_changed_by");
-
-                    b.Property<string>("ProtectedPassword")
-                        .HasColumnType("text")
-                        .HasColumnName("protected_password");
-
-                    b.Property<string>("SmtpHost")
-                        .IsRequired()
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("smtp_host");
-
-                    b.Property<int>("SmtpPort")
-                        .HasColumnType("integer")
-                        .HasColumnName("smtp_port");
-
-                    b.Property<Guid>("TeamId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("team_id");
-
-                    b.Property<string>("Username")
-                        .HasMaxLength(255)
-                        .HasColumnType("character varying(255)")
-                        .HasColumnName("username");
-
-                    b.Property<uint>("Version")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TeamId")
-                        .IsUnique()
-                        .HasDatabaseName("IX_email_settings_team");
-
-                    b.ToTable("email_settings", "email");
-                });
-
             modelBuilder.Entity("Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Outbox.OutboxMessage", b =>
                 {
                     b.Property<Guid>("Id")
@@ -357,28 +273,6 @@ namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence.Migrations
                         .HasFilter("state = 'Pending'");
 
                     b.ToTable("outbox", "email");
-                });
-
-            modelBuilder.Entity("Microsoft.AspNetCore.DataProtection.EntityFrameworkCore.DataProtectionKey", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("FriendlyName")
-                        .HasColumnType("text")
-                        .HasColumnName("friendly_name");
-
-                    b.Property<string>("Xml")
-                        .HasColumnType("text")
-                        .HasColumnName("xml");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("data_protection_keys", "email");
                 });
 
             modelBuilder.Entity("Amolenk.Admitto.Core.Email.Domain.Entities.BulkEmailJob", b =>

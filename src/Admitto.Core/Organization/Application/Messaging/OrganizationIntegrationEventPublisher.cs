@@ -20,7 +20,8 @@ internal sealed class OrganizationIntegrationEventPublisher(
             domainEvent.BaseUrl.Value,
             domainEvent.StartsAt,
             domainEvent.EndsAt,
-            domainEvent.TimeZone.Value));
+            domainEvent.TimeZone.Value,
+            domainEvent.PublicSlug.Value));
 
         return ValueTask.CompletedTask;
     }

@@ -6,365 +6,10 @@
   },
   "servers": [
     {
-      "url": "http://localhost:57648/"
+      "url": "http://localhost:59142/"
     }
   ],
   "paths": {
-    "/admin/teams/{teamId}/email-settings": {
-      "get": {
-        "tags": [
-          "Admin - Email Settings"
-        ],
-        "operationId": "GetTeamEmailSettings",
-        "parameters": [
-          {
-            "name": "teamId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/EmailSettingsDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "Bearer": [ ]
-          }
-        ]
-      },
-      "put": {
-        "tags": [
-          "Admin - Email Settings"
-        ],
-        "operationId": "UpsertTeamEmailSettings",
-        "parameters": [
-          {
-            "name": "teamId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpsertEmailSettingsHttpRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "OK"
-          },
-          "201": {
-            "description": "Created"
-          }
-        },
-        "security": [
-          {
-            "Bearer": [ ]
-          }
-        ]
-      },
-      "delete": {
-        "tags": [
-          "Admin - Email Settings"
-        ],
-        "operationId": "DeleteTeamEmailSettings",
-        "parameters": [
-          {
-            "name": "teamId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "version",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "pattern": "^-?(?:0|[1-9]\\d*)$",
-              "type": [
-                "integer",
-                "string"
-              ],
-              "format": "uint32"
-            }
-          }
-        ],
-        "responses": {
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "204": {
-            "description": "No Content"
-          }
-        },
-        "security": [
-          {
-            "Bearer": [ ]
-          }
-        ]
-      }
-    },
-    "/admin/teams/{teamId}/email-settings/test": {
-      "post": {
-        "tags": [
-          "Admin - Email Settings"
-        ],
-        "operationId": "TestTeamEmailSettings",
-        "parameters": [
-          {
-            "name": "teamId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SendTestEmailHttpRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "OK"
-          }
-        },
-        "security": [
-          {
-            "Bearer": [ ]
-          }
-        ]
-      }
-    },
     "/admin/teams/{teamId}/events/{eventId}/bulk-emails/preview": {
       "post": {
         "tags": [
@@ -6535,6 +6180,32 @@
           }
         ]
       }
+    },
+    "/e/{publicSlug}": {
+      "get": {
+        "tags": [
+          "Public Event Links"
+        ],
+        "operationId": "ResolvePublicEventLink",
+        "parameters": [
+          {
+            "name": "publicSlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "Not Found"
+          },
+          "302": {
+            "description": "Found"
+          }
+        }
+      }
     }
   },
   "components": {
@@ -7803,6 +7474,12 @@
         "properties": {
           "name": {
             "type": "string"
+          },
+          "accentColor": {
+            "type": [
+              "null",
+              "string"
+            ]
           }
         }
       },
@@ -7819,68 +7496,6 @@
         }
       },
       "EmailAddress": { },
-      "EmailAuthMode": {
-        "enum": [
-          "none",
-          "basic"
-        ]
-      },
-      "EmailSettingsDto": {
-        "required": [
-          "smtpHost",
-          "smtpPort",
-          "fromAddress",
-          "authMode",
-          "username",
-          "hasPassword",
-          "accentColor",
-          "fontFamily",
-          "version"
-        ],
-        "type": "object",
-        "properties": {
-          "smtpHost": {
-            "type": "string"
-          },
-          "smtpPort": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "fromAddress": {
-            "type": "string"
-          },
-          "authMode": {
-            "$ref": "#/components/schemas/EmailAuthMode"
-          },
-          "username": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "hasPassword": {
-            "type": "boolean"
-          },
-          "accentColor": {
-            "type": "string"
-          },
-          "fontFamily": {
-            "type": "string"
-          },
-          "version": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "uint32"
-          }
-        }
-      },
       "EventCreationRequestDto": {
         "required": [
           "creationRequestId",
@@ -8723,6 +8338,7 @@
           "name",
           "websiteUrl",
           "baseUrl",
+          "publicSlug",
           "startsAt",
           "endsAt",
           "timeZone"
@@ -8736,6 +8352,9 @@
             "type": "string"
           },
           "baseUrl": {
+            "type": "string"
+          },
+          "publicSlug": {
             "type": "string"
           },
           "startsAt": {
@@ -8776,21 +8395,11 @@
           }
         }
       },
-      "SendTestEmailHttpRequest": {
-        "required": [
-          "recipient"
-        ],
-        "type": "object",
-        "properties": {
-          "recipient": {
-            "type": "string"
-          }
-        }
-      },
       "TeamDto": {
         "required": [
           "teamId",
           "name",
+          "accentColor",
           "version"
         ],
         "type": "object",
@@ -8800,6 +8409,9 @@
             "format": "uuid"
           },
           "name": {
+            "type": "string"
+          },
+          "accentColor": {
             "type": "string"
           },
           "version": {
@@ -8816,6 +8428,7 @@
         "required": [
           "teamId",
           "name",
+          "accentColor",
           "version"
         ],
         "type": "object",
@@ -8825,6 +8438,9 @@
             "format": "uuid"
           },
           "name": {
+            "type": "string"
+          },
+          "accentColor": {
             "type": "string"
           },
           "version": {
@@ -8882,6 +8498,7 @@
           "name",
           "websiteUrl",
           "baseUrl",
+          "publicSlug",
           "startsAt",
           "endsAt",
           "timeZone",
@@ -8911,6 +8528,9 @@
             "type": "string"
           },
           "baseUrl": {
+            "type": "string"
+          },
+          "publicSlug": {
             "type": "string"
           },
           "startsAt": {
@@ -8978,6 +8598,7 @@
         "required": [
           "id",
           "name",
+          "publicSlug",
           "startsAt",
           "endsAt",
           "timeZone",
@@ -8990,6 +8611,9 @@
             "format": "uuid"
           },
           "name": {
+            "type": "string"
+          },
+          "publicSlug": {
             "type": "string"
           },
           "startsAt": {
@@ -9151,11 +8775,18 @@
       "UpdateTeamHttpRequest": {
         "required": [
           "name",
+          "accentColor",
           "expectedVersion"
         ],
         "type": "object",
         "properties": {
           "name": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "accentColor": {
             "type": [
               "null",
               "string"
@@ -9177,6 +8808,7 @@
           "name",
           "websiteUrl",
           "baseUrl",
+          "publicSlug",
           "startsAt",
           "endsAt",
           "quietHoursStart",
@@ -9191,6 +8823,9 @@
             "type": "string"
           },
           "baseUrl": {
+            "type": "string"
+          },
+          "publicSlug": {
             "type": "string"
           },
           "startsAt": {
@@ -9287,72 +8922,6 @@
               "string"
             ],
             "format": "int32"
-          }
-        }
-      },
-      "UpsertEmailSettingsHttpRequest": {
-        "required": [
-          "smtpHost",
-          "smtpPort",
-          "fromAddress",
-          "authMode",
-          "username",
-          "password",
-          "accentColor",
-          "fontFamily",
-          "version"
-        ],
-        "type": "object",
-        "properties": {
-          "smtpHost": {
-            "type": "string"
-          },
-          "smtpPort": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "fromAddress": {
-            "type": "string"
-          },
-          "authMode": {
-            "$ref": "#/components/schemas/EmailAuthMode"
-          },
-          "username": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "password": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "accentColor": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "fontFamily": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "version": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
-            "format": "uint32"
           }
         }
       },
@@ -9492,9 +9061,6 @@
   },
   "tags": [
     {
-      "name": "Admin - Email Settings"
-    },
-    {
       "name": "Admin - Bulk Emails"
     },
     {
@@ -9520,6 +9086,9 @@
     },
     {
       "name": "Public"
+    },
+    {
+      "name": "Public Event Links"
     }
   ]
 }

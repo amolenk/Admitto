@@ -39,6 +39,10 @@ public sealed class OrganizationDbContext(DbContextOptions<OrganizationDbContext
             .HaveConversion<TeamName.EfCoreValueConverter>();
 
         configurationBuilder
+            .Properties<TeamAccentColor>()
+            .HaveConversion<TeamAccentColor.EfCoreValueConverter>();
+
+        configurationBuilder
             .Properties<ApiKeyName>()
             .HaveConversion<ApiKeyName.EfCoreValueConverter>();
 

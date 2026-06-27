@@ -33,14 +33,17 @@ public class Team : Aggregate<TeamId>
     private Team(
         TeamId id,
         TeamName name,
+        TeamAccentColor accentColor,
         DateTimeOffset? archivedAt)
         : base(id)
     {
         Name = name;
+        AccentColor = accentColor;
         ArchivedAt = archivedAt;
     }
 
     public TeamName Name { get; private set; }
+    public TeamAccentColor AccentColor { get; private set; } = TeamAccentColor.From(TeamAccentColor.Default);
     public DateTimeOffset? ArchivedAt { get; private set; }
 
     public int ActiveEventCount { get; private set; }
@@ -52,16 +55,23 @@ public class Team : Aggregate<TeamId>
 
     public bool IsArchived => ArchivedAt.HasValue;
 
-    public static Team Create(TeamName name) =>
+    public static Team Create(TeamName name, TeamAccentColor? accentColor = null) =>
         new(
             TeamId.New(),
             name,
+            accentColor ?? TeamAccentColor.From(TeamAccentColor.Default),
             archivedAt: null);
 
     public void ChangeName(TeamName name)
     {
         EnsureNotArchived();
         Name = name;
+    }
+
+    public void ChangeAccentColor(TeamAccentColor accentColor)
+    {
+        EnsureNotArchived();
+        AccentColor = accentColor;
     }
 
     public void Archive(DateTimeOffset archivedAt)
@@ -111,6 +121,7 @@ public class Team : Aggregate<TeamId>
         EventName name,
         AbsoluteUrl websiteUrl,
         AbsoluteUrl baseUrl,
+        Slug publicSlug,
         DateTimeOffset startsAt,
         DateTimeOffset endsAt,
         TimeZoneId timeZone,
@@ -127,7 +138,8 @@ public class Team : Aggregate<TeamId>
             baseUrl,
             startsAt,
             endsAt,
-            timeZone));
+            timeZone,
+            publicSlug));
 
         return request;
     }

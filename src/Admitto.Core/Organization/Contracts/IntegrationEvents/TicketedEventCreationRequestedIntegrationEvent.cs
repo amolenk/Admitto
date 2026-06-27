@@ -18,6 +18,7 @@ namespace Amolenk.Admitto.Core.Organization.Contracts.IntegrationEvents;
 /// <param name="Name">Display name.</param>
 /// <param name="WebsiteUrl">Public event website URL.</param>
 /// <param name="BaseUrl">Base URL used for event links (QR codes, cancellations, etc.).</param>
+/// <param name="PublicSlug">Globally unique public slug for Admitto-owned event links.</param>
 /// <param name="StartsAt">Event start (UTC).</param>
 /// <param name="EndsAt">Event end (UTC).</param>
 /// <param name="TimeZone">IANA time-zone id used to render local times for this event (e.g. <c>Europe/Amsterdam</c>).</param>
@@ -29,4 +30,5 @@ public sealed record TicketedEventCreationRequestedIntegrationEvent(
     string BaseUrl,
     DateTimeOffset StartsAt,
     DateTimeOffset EndsAt,
-    string TimeZone) : IntegrationEvent;
+    string TimeZone,
+    string PublicSlug) : IntegrationEvent;

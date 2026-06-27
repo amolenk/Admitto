@@ -19,6 +19,8 @@
 | `keycloak` | Identity provider; local uses the Aspire Keycloak resource, production uses the custom Keycloak image from `KeycloakConfiguration/Dockerfile` |
 | `maildev` | Local SMTP server with web UI |
 
+The Worker receives Admitto application-email SMTP configuration from AppHost as `Email:System:*` settings. Local development points these settings at MailDev; production publish mode exposes matching `systemEmail*` parameters for the SMTP host, port, Admitto-controlled sender address, auth mode, username, and secret password. Public attendee links are generated from `Registrations:PublicTickets:BaseUrl` plus `/e/{TicketedEvent.PublicSlug}`.
+
 Start everything: `aspire start --isolated`
 
 The local `keycloak` resource runs as an explicit HTTP Keycloak container on

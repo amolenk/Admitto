@@ -21,5 +21,9 @@ public static class PublicEndpoints
                       .RequireAuthenticatedUser())
             .RequireRateLimiting("public-standard")
             .MapRegistrationsPublicEndpoints();
+
+        app.MapGroup(string.Empty)
+            .RequireRateLimiting("public-standard")
+            .MapRegistrationsPublicEventLinkEndpoints();
     }
 }

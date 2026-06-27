@@ -5,11 +5,8 @@ using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.DeliverEmail;
 using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail;
 using Amolenk.Admitto.Core.Email.Domain.Entities;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
-using Amolenk.Admitto.Core.Email.Infrastructure.Security;
-using Amolenk.Admitto.Core.Email.Tests.Application.Infrastructure;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Outbox;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
-using Amolenk.Admitto.Testing.Builders.Email.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
@@ -22,13 +19,7 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
     public async ValueTask HandleAsync_ValidSettings_WritesPendingLogAndDeliveryCommand()
     {
         // Arrange
-        var (teamId, eventId, protectedSecret, fakeSender, handler) = BuildHandler();
-
-        var settings = new EventEmailSettingsBuilder()
-            .ForTeamAndEvent(teamId, eventId)
-            .WithBasicAuth(protectedPassword: protectedSecret.Protect("pass"))
-            .Build();
-        await Environment.EmailDatabase.SeedAsync(db => db.EmailSettings.Add(settings));
+        var (teamId, eventId, fakeSender, handler) = BuildHandler();
 
         var command = new SendEmailCommand(
             teamId.Value, eventId.Value,
@@ -66,7 +57,7 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
     public async ValueTask HandleAsync_NoSettings_WritesFailedLog()
     {
         // Arrange — no settings seeded
-        var (teamId, eventId, _, _, handler) = BuildHandler();
+        var (teamId, eventId, _, handler) = BuildHandler(configureSystemEmail: false);
 
         var command = new SendEmailCommand(
             teamId.Value, eventId.Value,
@@ -96,13 +87,7 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
     public async ValueTask HandleAsync_DuplicateIdempotencyKey_DoesNotDoubleSend()
     {
         // Arrange
-        var (teamId, eventId, protectedSecret, fakeSender, handler) = BuildHandler();
-
-        var settings = new EventEmailSettingsBuilder()
-            .ForTeamAndEvent(teamId, eventId)
-            .WithBasicAuth(protectedPassword: protectedSecret.Protect("pass"))
-            .Build();
-        await Environment.EmailDatabase.SeedAsync(db => db.EmailSettings.Add(settings));
+        var (teamId, eventId, fakeSender, handler) = BuildHandler();
 
         var command = new SendEmailCommand(
             teamId.Value, eventId.Value,
@@ -130,8 +115,7 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
     [TestMethod]
     public async ValueTask HandleAsync_PreExistingPendingLog_PreparesDeliveryCommandForRecovery()
     {
-        var (teamId, eventId, protectedSecret, fakeSender, handler) = BuildHandler();
-        await SeedSettingsAsync(teamId, eventId, protectedSecret);
+        var (teamId, eventId, fakeSender, handler) = BuildHandler();
         await SeedLogAsync(teamId, eventId, "test-key-pending-recovery", EmailLogStatus.Pending);
 
         var command = new SendEmailCommand(
@@ -154,7 +138,7 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
     [TestMethod]
     public async ValueTask DeliverEmail_SentLogExists_DoesNotSendAgain()
     {
-        var (teamId, eventId, _, fakeSender, handler) = BuildDeliverHandler();
+        var (teamId, eventId, fakeSender, handler) = BuildDeliverHandler();
         await SeedLogAsync(teamId, eventId, "sent-key", EmailLogStatus.Sent, sentAt: DateTimeOffset.UtcNow);
 
         await handler.HandleAsync(DeliverCommand(teamId, eventId, "sent-key"), testContext.CancellationToken);
@@ -166,8 +150,7 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
     [TestMethod]
     public async ValueTask DeliverEmail_PendingLogExists_SendsAndMarksSent()
     {
-        var (teamId, eventId, protectedSecret, fakeSender, handler) = BuildDeliverHandler();
-        await SeedSettingsAsync(teamId, eventId, protectedSecret);
+        var (teamId, eventId, fakeSender, handler) = BuildDeliverHandler();
         await SeedLogAsync(teamId, eventId, "deliver-key", EmailLogStatus.Pending);
 
         await handler.HandleAsync(DeliverCommand(teamId, eventId, "deliver-key"), testContext.CancellationToken);
@@ -183,7 +166,7 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
     [TestMethod]
     public async ValueTask DeliverEmail_TransientSmtpFailure_RetriesInlineAndRequeues()
     {
-        var (teamId, eventId, protectedSecret, fakeSender, handler) = BuildDeliverHandler(
+        var (teamId, eventId, fakeSender, handler) = BuildDeliverHandler(
             new EmailDeliveryOptions
             {
                 InlineRetryCount = 2,
@@ -191,7 +174,6 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
                 MaxDeliveryAttempts = 3
             });
         fakeSender.ShouldThrow = true;
-        await SeedSettingsAsync(teamId, eventId, protectedSecret);
         await SeedLogAsync(teamId, eventId, "retry-key", EmailLogStatus.Pending);
 
         await handler.HandleAsync(DeliverCommand(teamId, eventId, "retry-key"), testContext.CancellationToken);
@@ -211,14 +193,13 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
         requeued.ShouldBeTrue();
     }
 
-    private (TeamId, TicketedEventId, IProtectedSecret, FakeEmailSender, SendEmailHandler) BuildHandler()
+    private (TeamId, TicketedEventId, FakeEmailSender, SendEmailHandler) BuildHandler(bool configureSystemEmail = true)
     {
         var teamId = TeamId.New();
         var eventId = TicketedEventId.New();
-        var protectedSecret = TestProtectedSecretFactory.Create();
         var fakeSender = new FakeEmailSender();
 
-        var settingsResolver = new EffectiveEmailSettingsResolver(Environment.EmailDatabase.Context, protectedSecret);
+        var settingsResolver = BuildSettingsResolver(configureSystemEmail);
         var templateService = new EmailTemplateService();
         var renderer = new ScribanEmailRenderer();
         var outbox = new Outbox(Environment.EmailDatabase.Context);
@@ -230,17 +211,16 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
             renderer,
             outbox);
 
-        return (teamId, eventId, protectedSecret, fakeSender, handler);
+        return (teamId, eventId, fakeSender, handler);
     }
 
-    private (TeamId, TicketedEventId, IProtectedSecret, FakeEmailSender, DeliverEmailHandler) BuildDeliverHandler(
+    private (TeamId, TicketedEventId, FakeEmailSender, DeliverEmailHandler) BuildDeliverHandler(
         EmailDeliveryOptions? deliveryOptions = null)
     {
         var teamId = TeamId.New();
         var eventId = TicketedEventId.New();
-        var protectedSecret = TestProtectedSecretFactory.Create();
         var fakeSender = new FakeEmailSender();
-        var settingsResolver = new EffectiveEmailSettingsResolver(Environment.EmailDatabase.Context, protectedSecret);
+        var settingsResolver = BuildSettingsResolver();
         var outbox = new Outbox(Environment.EmailDatabase.Context);
         var options = new StaticOptionsMonitor<EmailDeliveryOptions>(deliveryOptions ?? new EmailDeliveryOptions());
 
@@ -251,17 +231,19 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
             outbox,
             options);
 
-        return (teamId, eventId, protectedSecret, fakeSender, handler);
+        return (teamId, eventId, fakeSender, handler);
     }
 
-    private async ValueTask SeedSettingsAsync(TeamId teamId, TicketedEventId eventId, IProtectedSecret protectedSecret)
-    {
-        var settings = new EventEmailSettingsBuilder()
-            .ForTeamAndEvent(teamId, eventId)
-            .WithBasicAuth(protectedPassword: protectedSecret.Protect("pass"))
-            .Build();
-        await Environment.EmailDatabase.SeedAsync(db => db.EmailSettings.Add(settings));
-    }
+    private static EffectiveEmailSettingsResolver BuildSettingsResolver(bool configureSystemEmail = true) =>
+        new(new SystemEmailSettingsResolver(Options.Create(configureSystemEmail
+            ? new SystemEmailOptions
+            {
+                SmtpHost = "smtp.example.com",
+                SmtpPort = 587,
+                FromAddress = "tickets@admitto.org",
+                AuthMode = "None"
+            }
+            : new SystemEmailOptions())));
 
     private async ValueTask SeedLogAsync(
         TeamId teamId,

@@ -25,6 +25,7 @@ public class TicketedEvent : Aggregate<TicketedEventId>
         EventName name,
         AbsoluteUrl websiteUrl,
         AbsoluteUrl baseUrl,
+        Slug publicSlug,
         DateTimeOffset startsAt,
         DateTimeOffset endsAt,
         TimeZoneId timeZone)
@@ -34,6 +35,7 @@ public class TicketedEvent : Aggregate<TicketedEventId>
         Name = name;
         WebsiteUrl = websiteUrl;
         BaseUrl = baseUrl;
+        PublicSlug = publicSlug;
         StartsAt = startsAt;
         EndsAt = endsAt;
         TimeZone = timeZone;
@@ -44,6 +46,7 @@ public class TicketedEvent : Aggregate<TicketedEventId>
     public EventName Name { get; private set; }
     public AbsoluteUrl WebsiteUrl { get; private set; }
     public AbsoluteUrl BaseUrl { get; private set; }
+    public Slug PublicSlug { get; private set; }
     public DateTimeOffset StartsAt { get; private set; }
     public DateTimeOffset EndsAt { get; private set; }
     public TimeZoneId TimeZone { get; private set; }
@@ -64,6 +67,7 @@ public class TicketedEvent : Aggregate<TicketedEventId>
         EventName name,
         AbsoluteUrl websiteUrl,
         AbsoluteUrl baseUrl,
+        Slug publicSlug,
         DateTimeOffset startsAt,
         DateTimeOffset endsAt,
         TimeZoneId timeZone)
@@ -72,13 +76,35 @@ public class TicketedEvent : Aggregate<TicketedEventId>
             throw new BusinessRuleViolationException(Errors.EndBeforeStart);
 
         var ticketedEvent = new TicketedEvent(
-            id, teamId, name, websiteUrl, baseUrl, startsAt, endsAt, timeZone);
+            id, teamId, name, websiteUrl, baseUrl, publicSlug, startsAt, endsAt, timeZone);
 
         ticketedEvent.AddDomainEvent(
             new TicketedEventCreatedDomainEvent(creationRequestId, teamId, id, timeZone));
 
         return ticketedEvent;
     }
+
+    public static TicketedEvent Create(
+        CreationRequestId creationRequestId,
+        TicketedEventId id,
+        TeamId teamId,
+        EventName name,
+        AbsoluteUrl websiteUrl,
+        AbsoluteUrl baseUrl,
+        DateTimeOffset startsAt,
+        DateTimeOffset endsAt,
+        TimeZoneId timeZone) =>
+        Create(
+            creationRequestId,
+            id,
+            teamId,
+            name,
+            websiteUrl,
+            baseUrl,
+            Slug.From(name.Value),
+            startsAt,
+            endsAt,
+            timeZone);
 
     public void UpdateQuietHours(TimeOnly start, TimeOnly end)
     {
@@ -103,6 +129,7 @@ public class TicketedEvent : Aggregate<TicketedEventId>
         EventName name,
         AbsoluteUrl websiteUrl,
         AbsoluteUrl baseUrl,
+        Slug publicSlug,
         DateTimeOffset startsAt,
         DateTimeOffset endsAt)
     {
@@ -120,9 +147,18 @@ public class TicketedEvent : Aggregate<TicketedEventId>
         Name = name;
         WebsiteUrl = websiteUrl;
         BaseUrl = baseUrl;
+        PublicSlug = publicSlug;
         StartsAt = startsAt;
         EndsAt = endsAt;
     }
+
+    public void UpdateDetails(
+        EventName name,
+        AbsoluteUrl websiteUrl,
+        AbsoluteUrl baseUrl,
+        DateTimeOffset startsAt,
+        DateTimeOffset endsAt) =>
+        UpdateDetails(name, websiteUrl, baseUrl, PublicSlug, startsAt, endsAt);
 
     public void Archive()
     {

@@ -8,6 +8,7 @@ public sealed record TicketedEventDetailsDto(
     string Name,
     string WebsiteUrl,
     string BaseUrl,
+    string PublicSlug,
     DateTimeOffset StartsAt,
     DateTimeOffset EndsAt,
     string TimeZone,

@@ -1,6 +1,7 @@
 import { PageLayout } from "@/components/page-layout";
 import { getTeam } from "@/lib/admitto-api/generated/sdk.gen";
 import { NavLinks } from "./nav-links";
+import type { CSSProperties } from "react";
 
 export default async function SettingsLayout({
     children,
@@ -12,11 +13,15 @@ export default async function SettingsLayout({
     const { teamId } = await params;
     const result = await getTeam({ path: { teamId } });
     const teamName = result.data?.name ?? "";
+    const teamAccentColor = result.data?.accentColor;
     const basePath = `/teams/${teamId}/settings`;
+    const accentStyle = teamAccentColor
+        ? ({ "--team-accent-color": teamAccentColor } as CSSProperties)
+        : undefined;
 
     return (
         <PageLayout>
-            <div className="mb-5">
+            <div className="mb-5" style={accentStyle}>
                 <div className="text-[0.6875rem] uppercase tracking-widest text-muted-foreground font-semibold">
                     Settings
                 </div>
@@ -33,4 +38,3 @@ export default async function SettingsLayout({
         </PageLayout>
     );
 }
-

@@ -23,6 +23,7 @@ internal sealed class GetTeamsHandler(IOrganizationWriteStore writeStore)
                 .Select(t => new TeamListItemDto(
                     t.Id.Value,
                     t.Name.Value,
+                    t.AccentColor.Value,
                     t.Version))
                 .ToListAsync(cancellationToken);
         }
@@ -42,6 +43,7 @@ internal sealed class GetTeamsHandler(IOrganizationWriteStore writeStore)
             .Select(t => new TeamListItemDto(
                 t.Id.Value,
                 t.Name.Value,
+                t.AccentColor.Value,
                 t.Version))
             .ToListAsync(cancellationToken);
     }

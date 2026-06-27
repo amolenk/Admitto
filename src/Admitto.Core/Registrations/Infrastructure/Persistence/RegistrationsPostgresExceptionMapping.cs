@@ -15,7 +15,7 @@ internal sealed class RegistrationsPostgresExceptionMapping : IPostgresException
             return true;
         }
 
-        if (ex.ConstraintName == "IX_ticketed_events_team_id_slug")
+        if (ex.ConstraintName == "IX_ticketed_events_public_slug")
         {
             error = AlreadyExistsError.Create<TicketedEvent>();
             return true;

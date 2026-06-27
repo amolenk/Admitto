@@ -5,5 +5,6 @@ namespace Amolenk.Admitto.Core.Organization.Application.UseCases.Teams.UpdateTea
 internal sealed record UpdateTeamCommand(
     Guid TeamId,
     string? Name,
-    uint? ExpectedVersion)
+    uint? ExpectedVersion,
+    string? AccentColor = null)
     : Command;

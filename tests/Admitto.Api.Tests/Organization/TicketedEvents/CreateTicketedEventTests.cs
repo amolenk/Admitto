@@ -12,6 +12,7 @@ public sealed class CreateTicketedEventTests(TestContext testContext) : EndToEnd
     {
         Slug = "my-conference",
         Name = "My Conference",
+        PublicSlug = "my-conference",
         WebsiteUrl = "https://example.com",
         BaseUrl = "https://example.com/events",
         StartsAt = new DateTimeOffset(2026, 9, 1, 9, 0, 0, TimeSpan.Zero),

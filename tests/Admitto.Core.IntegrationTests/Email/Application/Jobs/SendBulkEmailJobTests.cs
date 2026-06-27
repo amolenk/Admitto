@@ -7,7 +7,6 @@ using Amolenk.Admitto.Core.Email.Application.Templating;
 using Amolenk.Admitto.Core.Email.Domain.Entities;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Email.Infrastructure.Persistence;
-using Amolenk.Admitto.Core.Email.Tests.Application.Infrastructure;
 using Amolenk.Admitto.Core.IntegrationTests.Email.Application.Jobs.Fakes;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Messaging;
@@ -142,7 +141,6 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
         // Sending status with one recipient marked Sent and one still Pending.
         var teamId = TeamId.New();
         var eventId = TicketedEventId.New();
-        await SeedSettingsAndTemplateAsync(teamId, eventId);
 
         var alice = BulkEmailJobBuilder.Recipient("alice@example.com", "Alice");
         var bob = BulkEmailJobBuilder.Recipient("bob@example.com", "Bob");
@@ -299,7 +297,6 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
         // (Status=Cancelled, remaining recipients=Cancelled, no extra sends).
         var teamId = TeamId.New();
         var eventId = TicketedEventId.New();
-        await SeedSettingsAndTemplateAsync(teamId, eventId);
 
         var alice = BulkEmailJobBuilder.Recipient("alice@example.com", "Alice");
         var bob = BulkEmailJobBuilder.Recipient("bob@example.com", "Bob");
@@ -342,7 +339,6 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
     {
         var teamId = TeamId.New();
         var eventId = TicketedEventId.New();
-        await SeedSettingsAndTemplateAsync(teamId, eventId);
 
         var job = new BulkEmailJobBuilder()
             .ForTeam(teamId).ForEvent(eventId)
@@ -359,19 +355,6 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
         return (job, sender, fanOut);
     }
 
-    private async ValueTask SeedSettingsAndTemplateAsync(TeamId teamId, TicketedEventId eventId)
-    {
-        var protectedSecret = TestProtectedSecretFactory.Create();
-        var settings = new EventEmailSettingsBuilder()
-            .ForTeamAndEvent(teamId, eventId)
-            .WithBasicAuth(protectedPassword: protectedSecret.Protect("pass"))
-            .Build();
-        await Environment.EmailDatabase.SeedAsync(db =>
-        {
-            db.EmailSettings.Add(settings);
-        });
-    }
-
     private static SendBulkEmailJob BuildFanOut(
         FakeBulkSmtpSender sender,
         IBulkEmailRecipientResolver? recipientResolver = null,
@@ -379,10 +362,15 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
         int? inlineRetryCount = null)
     {
         var ctx = Environment.EmailDatabase.Context;
-        var protectedSecret = TestProtectedSecretFactory.Create();
 
         IEmailWriteStore writeStore = ctx;
-        var settingsResolver = new EffectiveEmailSettingsResolver(ctx, protectedSecret);
+        var settingsResolver = new EffectiveEmailSettingsResolver(new SystemEmailSettingsResolver(Options.Create(new SystemEmailOptions
+        {
+            SmtpHost = "smtp.example.com",
+            SmtpPort = 587,
+            FromAddress = "tickets@admitto.org",
+            AuthMode = "None"
+        })));
         var templateService = new EmailTemplateService();
         var renderer = new ScribanEmailRenderer();
         IUnitOfWork unitOfWork = new UnitOfWork<EmailDbContext>(ctx, new NoOpOutboxMessageSender(), NullLogger<UnitOfWork<EmailDbContext>>.Instance);

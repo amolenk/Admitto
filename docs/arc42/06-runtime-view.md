@@ -211,24 +211,20 @@ sequenceDiagram
     alt terminal claim exists
         EmailHandler-->>Worker: ack (no-op, idempotency guard)
     else no terminal claim exists
-        EmailHandler->>EmailHandler: resolve team EmailSettings
-        alt no settings
-            EmailHandler->>EmailLog: insert Failed (email not configured)
-        else settings found
-            EmailHandler->>EmailHandler: render built-in themed content via Scriban
-            EmailHandler->>EmailLog: insert Pending claim
-            EmailHandler->>EmailOutbox: enqueue DeliverEmail command (same UoW)
-            Worker->>EmailOutbox: poll & dequeue DeliverEmail
-            Worker->>Delivery: load committed claim
-            Delivery->>SMTP: SMTP send with bounded inline retries
-            Delivery->>EmailLog: update Sent, terminal Failed, or retryable Pending
-        end
+        EmailHandler->>EmailHandler: resolve deployment system SMTP settings
+        EmailHandler->>EmailHandler: render built-in content via Scriban with team accent color and public event links
+        EmailHandler->>EmailLog: insert Pending claim
+        EmailHandler->>EmailOutbox: enqueue DeliverEmail command (same UoW)
+        Worker->>EmailOutbox: poll & dequeue DeliverEmail
+        Worker->>Delivery: load committed claim
+        Delivery->>SMTP: SMTP send with bounded inline retries
+        Delivery->>EmailLog: update Sent, terminal Failed, or retryable Pending
     end
 ```
 
 **Idempotency**: the `EmailLog` row with key `attendee-registered:<registrationId>:<registeredAt>` is the send claim. A re-delivered integration event that observes a terminal claim is acked without another SMTP attempt; a pending claim can enqueue delivery again for recovery. SMTP itself is not transactional, so rare duplicate delivery races or a crash after SMTP success but before updating the log can still produce a later duplicate during recovery.
 
-**Degraded mode**: if no team email settings exist for the event's owning team, a terminal `Failed` log row is written with reason "email not configured" and the integration event is still acked — registration itself is unaffected. Transient SMTP failures remain retryable until the configured delivery attempt limit is reached.
+**Configuration failure**: if deployment system SMTP settings are missing or invalid, registration itself is unaffected. The email work records the failure through the normal `EmailLog`/delivery-error path and operator telemetry; this is an operability issue, not team-owned event state. Transient SMTP failures remain retryable until the configured delivery attempt limit is reached.
 
 ## 6.9 Bulk-email fan-out (single SMTP connection)
 

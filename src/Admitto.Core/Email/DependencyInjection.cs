@@ -8,11 +8,9 @@ using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
 using Amolenk.Admitto.Core.Email.Application.Templating;
 using Amolenk.Admitto.Core.Email.Application.UseCases.Reconfirmations.ReconcileReconfirmationScheduling;
 using Amolenk.Admitto.Core.Email.Infrastructure.Persistence;
-using Amolenk.Admitto.Core.Email.Infrastructure.Security;
 using Amolenk.Admitto.Core.Email.Infrastructure.Sending;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Messaging;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence;
-using Microsoft.AspNetCore.DataProtection;
 using Quartz;
 
 // ReSharper disable once CheckNamespace
@@ -48,8 +46,9 @@ public static class EmailModuleExtensions
             //     assembly,
             //     EmailModule.NamespacePrefix));
 
-            services.AddScoped<IEffectiveEmailSettingsResolver, EffectiveEmailSettingsResolver>();
             services.AddScoped<ISystemEmailSettingsResolver, SystemEmailSettingsResolver>();
+            services.AddScoped<IEffectiveEmailSettingsResolver>(sp =>
+                new EffectiveEmailSettingsResolver(sp.GetRequiredService<ISystemEmailSettingsResolver>()));
             services.AddScoped<IEmailTemplateService, EmailTemplateService>();
             services.AddScoped<IBulkEmailRecipientResolver, BulkEmailRecipientResolver>();
             services.AddSingleton<IEmailRenderer, ScribanEmailRenderer>();
@@ -66,14 +65,6 @@ public static class EmailModuleExtensions
             services.AddKeyedScoped<IPostgresExceptionMapping, EmailPostgresExceptionMapping>(
                 EmailModule.Key);
 
-            // Shared Data Protection key ring persisted to the email schema so the API and Worker hosts
-            // can decrypt secrets written by either side.
-            services
-                .AddDataProtection()
-                .SetApplicationName("Admitto")
-                .PersistKeysToDbContext<EmailDbContext>();
-
-            services.AddSingleton<IProtectedSecret, ProtectedSecret>();
             services.AddSingleton<IEmailSender, MailKitEmailSender>();
             services.AddSingleton<IBulkSmtpSender, MailKitBulkSmtpSender>();
 

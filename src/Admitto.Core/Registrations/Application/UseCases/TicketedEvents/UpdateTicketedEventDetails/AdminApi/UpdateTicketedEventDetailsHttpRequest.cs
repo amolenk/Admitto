@@ -4,6 +4,7 @@ public sealed record UpdateTicketedEventDetailsHttpRequest(
     string Name,
     string WebsiteUrl,
     string BaseUrl,
+    string PublicSlug,
     DateTimeOffset StartsAt,
     DateTimeOffset EndsAt,
     TimeOnly QuietHoursStart,
@@ -20,5 +21,6 @@ public sealed record UpdateTicketedEventDetailsHttpRequest(
         StartsAt,
         EndsAt,
         QuietHoursStart,
-        QuietHoursEnd);
+        QuietHoursEnd,
+        PublicSlug);
 }

@@ -34,7 +34,6 @@ flowchart TB
 | `Admitto.Api` | API request handling | .NET |
 | `Admitto.Worker` | Background processing | .NET |
 | `Admitto.AppHost` | Aspire orchestration for local development and Azure deployment | .NET |
-| `Admitto.Cli` | CLI management tool | .NET |
 | `Admitto.UI.Admin` | Frontend UI for admin/team member interaction | Next.js ([ADR-006](../adrs/adr-006-admin-ui-technology-stack.md)) |
 
 Database schema setup is modeled in `Admitto.AppHost`: EF-owned application schemas use Aspire EF migration resources, while non-EF Quartz and Better Auth schemas are versioned SQL files under `Admitto.AppHost/DatabaseScripts/`.
@@ -157,14 +156,15 @@ Registration openness is derived from `now ∈ [opensAt, closesAt)` combined wit
 
 Owns all email concerns: server settings, customisable templates, outgoing-email log, and actual SMTP sending.
 
-- **Settings** — a team-scoped `EmailSettings` aggregate keyed by required `TeamId`. Settings store SMTP host/port, from-address, auth mode, encrypted credentials, and simple team branding (`AccentColor`, `FontFamily`). Event-owned application emails use only the owning team's row; there are no event-scoped settings.
+- **System sender settings** — SMTP host/port, authenticated Admitto-controlled `FromAddress`, and optional credentials are deployment configuration (`Email:System`), not organizer-owned data. The Worker uses these settings for transactional, waitlist, reconfirmation, cancellation, OTP, and bulk email delivery.
 - **Templates** — transactional templates are code-owned built-in embedded resources rendered with Scriban and the team's branding values. They are not persisted and are not organizer-editable.
 - **Email log** — each send attempt is recorded as an `EmailLog` row for idempotency (redelivered integration events do not produce duplicate sends) and observability.
-- **Sending** — the Worker host handles `AttendeeRegistered` integration events by resolving effective settings and templates, rendering the email, and dispatching it via SMTP. This path requires `HostCapability.Email` (see capability gating, §5.4).
+- **Branding and links** — built-in templates receive team-owned `Team.AccentColor` plus Registrations-owned public event links generated from `TicketedEvent.PublicSlug` and the configured public tickets base URL.
+- **Sending** — the Worker host handles `AttendeeRegistered` integration events by resolving system sender settings and templates, rendering the email, and dispatching it via SMTP. This path requires `HostCapability.Email` (see capability gating, §5.4).
 - **Bulk email** — the `BulkEmailJob` aggregate (in the `email` schema) tracks lifecycle, totals, and a frozen recipient snapshot for either an attendee source (resolved against Registrations via `IRegistrationsFacade.QueryRegistrationsAsync`) or an external list. Custom bulk jobs persist complete job-owned content (`Subject`, `TextBody`, `HtmlBody`); system bulk types use built-in code-owned content. A Quartz fan-out job (`BulkEmailFanOutJob`, gated on `HostCapability.Jobs | HostCapability.Email`) opens a single SMTP connection per pickup and streams all messages, writing one `EmailLog` row per recipient with key `bulk:{jobId}:{email}`. Per-recipient state on the snapshot drives resume-after-crash; cooperative cancellation is observed between recipients. See [ADR-009](../adrs/adr-009-bulk-email-design.md).
 - **Reconfirm sending** — `EvaluateReconfirmJob` is a per-event Quartz trigger derived from `TicketedEventReconfirmPolicy`; each tick creates a `BulkEmailJob` (`email_type='reconfirm'`) filtered to `Status=Registered AND HasReconfirmed=false`, evaluated in the event's IANA `TimeZone`. Triggers are (re)scheduled in response to `TicketedEventCreated`, `TicketedEventReconfirmPolicyChanged`, `TicketedEventTimeZoneChanged`, and `TicketedEventArchived` integration events from Registrations.
 
-SMTP passwords are protected at rest via ASP.NET Data Protection (see [§8.7.x Secret protection](08-crosscutting-concepts.md#secret-protection)).
+SMTP secrets are supplied by host configuration/secret providers; the Email module no longer persists organizer SMTP credentials.
 
 ### Shared module
 

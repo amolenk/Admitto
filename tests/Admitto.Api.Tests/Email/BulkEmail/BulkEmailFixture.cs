@@ -2,9 +2,6 @@ using System.Net.Http.Json;
 using System.Text.Json;
 using Amolenk.Admitto.Api.Tests.Infrastructure.Hosting;
 using Amolenk.Admitto.Core.Email.Application.Templating;
-using Amolenk.Admitto.Core.Email.Domain.Entities;
-using Amolenk.Admitto.Testing.Builders.Email.Domain;
-using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
@@ -41,8 +38,6 @@ internal sealed class BulkEmailFixture
     public TicketedEventId EventId { get; private set; }
     public List<Registration> Registrations { get; } = [];
 
-    private bool _seedTicketTemplate;
-    private bool _seedReconfirmTemplate;
     private readonly List<RegistrationSeed> _registrationSeeds = [];
 
     private BulkEmailFixture()
@@ -50,18 +45,6 @@ internal sealed class BulkEmailFixture
     }
 
     public static BulkEmailFixture Empty() => new();
-
-    public BulkEmailFixture WithTicketTemplate()
-    {
-        _seedTicketTemplate = true;
-        return this;
-    }
-
-    public BulkEmailFixture WithReconfirmTemplate()
-    {
-        _seedReconfirmTemplate = true;
-        return this;
-    }
 
     public BulkEmailFixture WithRegistration(
         string email,
@@ -122,18 +105,6 @@ internal sealed class BulkEmailFixture
             Registrations.Add(registration);
         }
 
-        var smtpHost = environment.Email.SmtpEndpoint.Host;
-        var smtpPort = environment.Email.SmtpEndpoint.Port;
-
-        var emailSettings = EmailSettings.Create(
-            teamId: team.Id,
-            smtpHost: Hostname.From(smtpHost),
-            smtpPort: Port.From(smtpPort),
-            fromAddress: EmailAddress.From("noreply@admitto.io"),
-            authMode: EmailAuthMode.None,
-            username: null,
-            protectedPassword: null);
-
         await environment.OrganizationDatabase.SeedAsync(db => db.Teams.Add(team));
         await environment.RegistrationsDatabase.SeedAsync(db =>
         {
@@ -143,11 +114,6 @@ internal sealed class BulkEmailFixture
                 db.Registrations.Add(registration);
         });
 
-        await environment.EmailDatabase.SeedAsync(db =>
-        {
-            db.EmailSettings.Add(emailSettings);
-
-        });
     }
 
     public async Task<JsonElement> PollUntilTerminalAsync(

@@ -16,5 +16,5 @@ public sealed record TicketedEventCreationRequestedDomainEvent(
     AbsoluteUrl BaseUrl,
     DateTimeOffset StartsAt,
     DateTimeOffset EndsAt,
-    TimeZoneId TimeZone)
-    : DomainEvent;
+    TimeZoneId TimeZone,
+    Slug PublicSlug) : DomainEvent;

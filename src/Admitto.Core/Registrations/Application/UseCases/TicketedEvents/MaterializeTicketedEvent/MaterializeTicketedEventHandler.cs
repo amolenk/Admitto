@@ -22,6 +22,7 @@ internal sealed class MaterializeTicketedEventHandler(IRegistrationsWriteStore w
             EventName.From(command.Name),
             AbsoluteUrl.From(command.WebsiteUrl),
             AbsoluteUrl.From(command.BaseUrl),
+            Slug.From(command.PublicSlug),
             command.StartsAt,
             command.EndsAt,
             timeZone);

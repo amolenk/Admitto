@@ -10,4 +10,5 @@ internal sealed record MaterializeTicketedEventCommand(
     string BaseUrl,
     DateTimeOffset StartsAt,
     DateTimeOffset EndsAt,
-    string TimeZone) : Command;
+    string TimeZone,
+    string PublicSlug) : Command;

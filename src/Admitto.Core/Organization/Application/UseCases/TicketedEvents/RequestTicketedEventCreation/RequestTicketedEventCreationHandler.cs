@@ -20,6 +20,7 @@ internal sealed class RequestTicketedEventCreationHandler(IOrganizationWriteStor
             EventName.From(command.Name),
             AbsoluteUrl.From(command.WebsiteUrl),
             AbsoluteUrl.From(command.BaseUrl),
+            Slug.From(command.PublicSlug),
             command.StartsAt,
             command.EndsAt,
             TimeZoneId.From(command.TimeZone),

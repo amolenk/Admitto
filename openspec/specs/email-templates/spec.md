@@ -2,28 +2,28 @@
 
 ## Purpose
 
-The Email module renders transactional and custom bulk email content with Scriban. Transactional templates are code-owned built-in resources themed with team branding; organizers do not manage persisted transactional template overrides.
+The Email module renders transactional and custom bulk email content with Scriban. Transactional templates are code-owned built-in resources themed with team accent color; organizers do not manage persisted transactional template overrides.
 
 ## Requirements
 
 ### Requirement: Transactional email templates are built-in and themed
 
-The Email module SHALL render transactional emails from code-owned built-in templates. Built-in transactional templates SHALL NOT be persisted as `EmailTemplate` rows and SHALL NOT be editable by organizers. Rendering SHALL apply the owning team's email branding values: accent color and font-family string.
+The Email module SHALL render transactional emails from code-owned built-in templates. Built-in transactional templates SHALL NOT be persisted as `EmailTemplate` rows and SHALL NOT be editable by organizers. Rendering SHALL apply the owning team's accent color, falling back to the system default accent color when the team has no explicit value.
 
 #### Scenario: Confirmation email uses built-in content and team branding
 
 - **WHEN** an attendee registers for event "DevConf" owned by team "acme"
-- **THEN** the confirmation email is rendered from the built-in `ticket` content with team "acme" branding values applied
+- **THEN** the confirmation email is rendered from the built-in `ticket` content with team "acme" accent color applied
 
 #### Scenario: Organizer cannot edit transactional copy
 
-- **WHEN** an organizer opens email settings in the Admin UI
+- **WHEN** an organizer opens event email pages in the Admin UI
 - **THEN** no transactional template subject/body editor is available
 
-#### Scenario: Font string is applied to transactional HTML
+#### Scenario: Accent color is applied to transactional HTML
 
-- **WHEN** team "acme" has selected font `Inter`
-- **THEN** the built-in transactional HTML uses the configured `Inter` font-family value
+- **WHEN** team "acme" has accent color `#0f766e`
+- **THEN** the built-in transactional HTML uses `#0f766e` for accent-colored template elements
 
 ---
 

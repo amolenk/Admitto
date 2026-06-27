@@ -29,10 +29,31 @@ public sealed class TicketedEventTests
         sut.Id.ShouldBe(DefaultEventId);
         sut.TeamId.ShouldBe(DefaultTeamId);
         sut.Name.ShouldBe(DefaultName);
+        sut.PublicSlug.ShouldBe(Slug.From(DefaultName.Value));
         sut.Status.ShouldBe(EventLifecycleStatus.Active);
         sut.IsActive.ShouldBeTrue();
         sut.RegistrationPolicy.ShouldBeNull();
         sut.ReconfirmPolicy.ShouldBeNull();
+    }
+
+    [TestMethod]
+    public void Create_PublicSlug_StoresPublicSlug()
+    {
+        var publicSlug = Slug.From("azure-fest-2026");
+
+        var sut = TicketedEvent.Create(
+            CreationRequestId.From(Guid.NewGuid()),
+            DefaultEventId,
+            DefaultTeamId,
+            DefaultName,
+            DefaultWebsite,
+            DefaultBaseUrl,
+            publicSlug,
+            DefaultStart,
+            DefaultEnd,
+            TimeZoneId.From("UTC"));
+
+        sut.PublicSlug.ShouldBe(publicSlug);
     }
 
     [TestMethod]
@@ -60,12 +81,14 @@ public sealed class TicketedEventTests
     {
         var sut = NewEvent();
         var newName = EventName.From("Renamed Event");
+        var newPublicSlug = Slug.From("renamed-event");
         var newStart = DefaultStart.AddDays(1);
         var newEnd = DefaultEnd.AddDays(1);
 
-        sut.UpdateDetails(newName, DefaultWebsite, DefaultBaseUrl, newStart, newEnd);
+        sut.UpdateDetails(newName, DefaultWebsite, DefaultBaseUrl, newPublicSlug, newStart, newEnd);
 
         sut.Name.ShouldBe(newName);
+        sut.PublicSlug.ShouldBe(newPublicSlug);
         sut.StartsAt.ShouldBe(newStart);
         sut.EndsAt.ShouldBe(newEnd);
     }

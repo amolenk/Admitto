@@ -2,18 +2,18 @@
 
 ## Purpose
 
-The Email module sends application-owned transactional and bulk email through durable claims, outbox-backed work, and SMTP delivery hosted by workers with the Email capability. Transactional emails use team email settings and code-owned built-in themed content.
+The Email module sends application-owned transactional and bulk email through durable claims, outbox-backed work, and SMTP delivery hosted by workers with the Email capability. Transactional emails use deployment-provided system SMTP settings and code-owned built-in themed content.
 
 ## Requirements
 
 ### Requirement: Email module sends a registration-confirmation email when an attendee is registered
 
-The Email module SHALL send one registration-confirmation ("ticket") email per successful attendee registration when a worker can acquire the e-mail send claim for that registration occurrence. The email SHALL be triggered by the `AttendeeRegisteredIntegrationEvent` published by the Registrations module. The trigger handler SHALL prepare durable e-mail work by writing an `EmailLog` claim and enqueueing an internal delivery command in the Email outbox; actual SMTP delivery SHALL happen only from the delivery command after that claim has been committed by the message dispatcher. The email SHALL be sent via the SMTP server identified by the owning team's email settings (see `email-settings`). Email composition SHALL use built-in themed content for type `ticket` (see `email-templates`). Sending SHALL happen out-of-band from the originating registration request; the registration MUST succeed even if the email cannot be sent. A successfully committed outbox message that cannot be flushed to the queue immediately SHALL remain pending and be dispatched later by Worker-owned outbox retry processing.
+The Email module SHALL send one registration-confirmation ("ticket") email per successful attendee registration when a worker can acquire the e-mail send claim for that registration occurrence. The email SHALL be triggered by the `AttendeeRegisteredIntegrationEvent` published by the Registrations module. The trigger handler SHALL prepare durable e-mail work by writing an `EmailLog` claim and enqueueing an internal delivery command in the Email outbox; actual SMTP delivery SHALL happen only from the delivery command after that claim has been committed by the message dispatcher. The email SHALL be sent via the Admitto system SMTP sender configured for the deployment. Email composition SHALL use the resolved built-in template for type `ticket` and SHALL include team branding values and event public-link values from module-owned context. Sending SHALL happen out-of-band from the originating registration request; the registration MUST succeed even if the email cannot be sent. A successfully committed outbox message that cannot be flushed to the queue immediately SHALL remain pending and be dispatched later by Worker-owned outbox retry processing.
 
 #### Scenario: Successful send for a self-service registration
 
-- **WHEN** an attendee "alice@example.com" successfully self-registers for event "DevConf" whose owning team has valid email settings
-- **THEN** within the worker's processing window, one email of type `ticket` is sent to "alice@example.com" via the configured SMTP server, addressed from the configured from-address, rendered from built-in themed content, and the email log records the send as `Sent`
+- **WHEN** an attendee "alice@example.com" successfully self-registers for event "DevConf" and the deployment has valid system SMTP configuration
+- **THEN** within the worker's processing window, one email of type `ticket` is sent to "alice@example.com" via the configured Admitto SMTP sender, addressed from the configured Admitto from-address, and the email log records the send as `Sent`
 
 #### Scenario: Send is not coupled to the registration request
 
@@ -30,10 +30,58 @@ The Email module SHALL send one registration-confirmation ("ticket") email per s
 - **WHEN** the Email module handles an `AttendeeRegisteredIntegrationEvent`
 - **THEN** it commits the `EmailLog` claim and internal delivery command before any SMTP send is attempted
 
-#### Scenario: No email configuration no send no error to attendee
+#### Scenario: Missing system SMTP configuration no error to attendee
 
-- **WHEN** an attendee successfully registers for an event whose owning team's email settings are absent or invalid
-- **THEN** the registration succeeds, no SMTP send is attempted, and the email log records a terminal `Failed` entry with reason "email not configured"
+- **WHEN** an attendee successfully registers but the deployment's system SMTP configuration is missing or invalid
+- **THEN** the registration succeeds, no SMTP send is attempted successfully, and the email log or operational telemetry records the configuration failure
+
+---
+
+### Requirement: Application email uses Admitto system sender identity
+
+All application email sent by the Email module SHALL use a configured Admitto-controlled sender address for the SMTP `From` address. The visible display name MAY include the event name or another Admitto-controlled display value, but the sender email-address domain SHALL remain Admitto-controlled.
+
+#### Scenario: Event display name with Admitto from-address
+
+- **WHEN** the system sends a ticket email for event "Azure Fest 2026"
+- **THEN** the message uses an Admitto-controlled `From` address and may use "Azure Fest 2026" as the display name
+
+---
+
+### Requirement: Built-in email templates use team accent color
+
+Built-in email templates SHALL receive the owning team's accent color as a rendering parameter. When the team has no explicit accent color, the system default accent color SHALL be used.
+
+#### Scenario: Team accent color is rendered in ticket email
+
+- **WHEN** team "acme" has accent color `#0f766e` and a ticket email is rendered for one of its events
+- **THEN** the rendered email uses `#0f766e` for accent-colored template elements
+
+---
+
+### Requirement: Ticket email includes change-tickets link only for multiple public ticket types
+
+The ticket-confirmation email SHALL include a change-tickets link only when the event has at least two ticket types with `SelfServiceEnabled == true`. Sold-out state and waitlist mode SHALL NOT suppress the link. When fewer than two public self-service ticket types exist, the template SHALL omit the change-tickets section entirely.
+
+#### Scenario: Change-tickets link included for two public ticket types
+
+- **WHEN** a ticket email is prepared for an event with two self-service-enabled ticket types
+- **THEN** the email parameters include a change-tickets link and the rendered ticket email shows the change-tickets CTA
+
+#### Scenario: Change-tickets link omitted for one public ticket type
+
+- **WHEN** a ticket email is prepared for an event with one self-service-enabled ticket type
+- **THEN** the email parameters do not include a change-tickets link and the rendered ticket email omits the change-tickets CTA
+
+#### Scenario: Sold-out public ticket still counts
+
+- **WHEN** a ticket email is prepared for an event with two self-service-enabled ticket types and one is sold out
+- **THEN** the email parameters include a change-tickets link
+
+#### Scenario: Waitlist-mode public ticket still counts
+
+- **WHEN** a ticket email is prepared for an event with two self-service-enabled ticket types and one is in waitlist mode
+- **THEN** the email parameters include a change-tickets link
 
 ---
 
@@ -149,11 +197,11 @@ The Email module SHALL handle `RegistrationCancelledIntegrationEvent` and dispat
 - **WHEN** the same event is processed again
 - **THEN** no additional email is sent (idempotency key `registration-cancelled:{registrationId}`)
 
-#### Scenario: No email configuration skips send without error
+#### Scenario: Missing system SMTP configuration skips send without error
 
-- **GIVEN** a ticketed event whose owning team has no email configuration
+- **GIVEN** the deployment's system SMTP configuration is missing or invalid
 - **WHEN** the handler processes the event
-- **THEN** no email is sent and no error is raised
+- **THEN** no email is sent successfully and no error is raised to the caller
 
 #### Scenario: Template parameters are populated
 

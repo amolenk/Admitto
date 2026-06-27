@@ -5,6 +5,7 @@ namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents
 public sealed record TicketedEventListItemDto(
     Guid Id,
     string Name,
+    string PublicSlug,
     DateTimeOffset StartsAt,
     DateTimeOffset EndsAt,
     string TimeZone,

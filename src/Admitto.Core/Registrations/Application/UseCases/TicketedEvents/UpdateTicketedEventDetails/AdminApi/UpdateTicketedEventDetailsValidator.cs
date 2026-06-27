@@ -16,6 +16,9 @@ public sealed class UpdateTicketedEventDetailsValidator : AbstractValidator<Upda
         RuleFor(x => x.BaseUrl)
             .MustBeParseable(AbsoluteUrl.TryFrom);
 
+        RuleFor(x => x.PublicSlug)
+            .MustBeParseable(Slug.TryFrom);
+
         RuleFor(x => x.EndsAt)
             .GreaterThanOrEqualTo(x => x.StartsAt)
             .WithMessage("Event end time must be on or after the start time.");

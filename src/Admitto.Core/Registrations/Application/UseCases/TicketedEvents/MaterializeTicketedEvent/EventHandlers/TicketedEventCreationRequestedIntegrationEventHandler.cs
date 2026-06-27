@@ -27,7 +27,8 @@ internal sealed class TicketedEventCreationRequestedIntegrationEventHandler(
                 integrationEvent.BaseUrl,
                 integrationEvent.StartsAt,
                 integrationEvent.EndsAt,
-                integrationEvent.TimeZone),
+                integrationEvent.TimeZone,
+                integrationEvent.PublicSlug),
             cancellationToken);
     }
 }

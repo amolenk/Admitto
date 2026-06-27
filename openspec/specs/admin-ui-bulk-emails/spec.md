@@ -102,7 +102,7 @@ The "Send bulk email" action SHALL be presented as a `Sheet` slide-in panel rath
 
 ### Requirement: Unified Email tabbed page groups all email concerns
 
-The Admin UI SHALL render a unified Email page at `/teams/{teamSlug}/events/{eventSlug}/emails` that presents the event email concerns that remain after simplification. The **Campaigns** tab SHALL be the default. Navigating to the bare `/emails` path SHALL redirect to `/emails/campaigns`. Template and event SMTP setup tabs SHALL NOT be shown because transactional templates are not editable and SMTP settings are team-scoped.
+The Admin UI SHALL render a unified Email page at `/teams/{teamSlug}/events/{eventSlug}/emails` that presents the event email concerns that remain after simplification. The **Campaigns** tab SHALL be the default. Navigating to the bare `/emails` path SHALL redirect to `/emails/campaigns`. Template and event SMTP setup tabs SHALL NOT be shown because transactional templates are not editable and SMTP settings are deployment-managed.
 
 #### Scenario: Navigating to /emails shows Campaigns tab by default
 

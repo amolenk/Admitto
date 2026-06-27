@@ -11,7 +11,7 @@ lifecycle integration events back to Organization.
 
 ### Requirement: Organizer can create a ticketed event
 The system SHALL allow organizers to request creation of a ticketed event with a
-name, website URL, base URL, and start/end dates. A slug is no longer required.
+name, globally unique public slug, website URL, base URL, and start/end dates.
 Event creation remains a two-phase asynchronous flow:
 
 1. The **Organization** module receives the request at
@@ -32,12 +32,12 @@ Organization handles both response events to advance team counters and to mark
 the `TeamEventCreationRequest` terminal (see team-management).
 
 #### Scenario: Successfully accept a creation request
-- **WHEN** an organizer of team with ID "11111111-0000-0000-0000-000000000001" posts a creation request for an event with name "Acme Conf 2026", website "https://conf.acme.org", base URL "https://tickets.acme.org", starting 2026-06-01 and ending 2026-06-03
+- **WHEN** an organizer of team with ID "11111111-0000-0000-0000-000000000001" posts a creation request for an event with name "Acme Conf 2026", public slug `acme-conf-2026`, website "https://conf.acme.org", base URL "https://tickets.acme.org", starting 2026-06-01 and ending 2026-06-03
 - **THEN** the response is `202 Accepted`, the `Location` header points to the creation-status endpoint, the team's `PendingEventCount` is incremented, and a `TicketedEventCreationRequested` event is outboxed
 
 #### Scenario: Registrations materialises the event
-- **WHEN** Registrations processes a `TicketedEventCreationRequested` for name "Acme Conf 2026" that contains no validation errors
-- **THEN** a `TicketedEvent` aggregate is created with the provided details and a system-assigned UUID, its status is Active, and a `TicketedEventCreated` integration event is outboxed
+- **WHEN** Registrations processes a `TicketedEventCreationRequested` for name "Acme Conf 2026" and public slug `acme-conf-2026` that contains no validation errors
+- **THEN** a `TicketedEvent` aggregate is created with the provided details, public slug, and a system-assigned UUID, its status is Active, and a `TicketedEventCreated` integration event is outboxed
 
 #### Scenario: Reject end date before start date (synchronous)
 - **WHEN** an organizer posts a creation request with start 2026-06-03 and end 2026-06-01
@@ -58,7 +58,7 @@ Registrations module and the read is served from there.
 
 #### Scenario: View event details
 - **WHEN** a Crew member views the event with ID "22222222-0000-0000-0000-000000000001"
-- **THEN** the event's ID, name, dates, URLs, and status are returned
+- **THEN** the event's ID, name, public slug, dates, URLs, and status are returned
 
 #### Scenario: Non-member cannot view events
 - **WHEN** a user who is not a member of the team owning the event attempts to view it
@@ -91,9 +91,31 @@ only non-archived events.
 
 ---
 
+### Requirement: TicketedEvent has a globally unique public slug
+
+The `TicketedEvent` aggregate SHALL own a required `PublicSlug` used for Admitto-owned public links. The slug SHALL be globally unique across all ticketed events, SHALL be URL-safe, and SHALL be returned by event create/status, detail, and list responses where event identity fields are returned. Event `WebsiteUrl` and `BaseUrl` SHALL remain event-owned URL fields and SHALL NOT be replaced by the public slug.
+
+#### Scenario: Create event with public slug
+- **WHEN** an organizer requests creation of event "Azure Fest 2026" with public slug `azure-fest-2026`
+- **THEN** the materialized `TicketedEvent` stores `PublicSlug = azure-fest-2026` alongside its website URL and base URL
+
+#### Scenario: Reject duplicate public slug
+- **WHEN** an organizer requests creation of an event with public slug `azure-fest-2026` and another event already uses that slug
+- **THEN** the request is rejected with a conflict or validation error and no new `TicketedEvent` is materialized with that slug
+
+#### Scenario: Update public slug
+- **WHEN** an organizer updates an active event's public slug from `azure-fest-2026` to `azure-fest-eu-2026` with the correct version
+- **THEN** the event stores the new public slug and its version is incremented
+
+#### Scenario: Base URL remains available
+- **WHEN** event details are queried for an event with public slug `azure-fest-2026` and base URL `https://azurefest.com`
+- **THEN** the response includes both the public slug and the base URL
+
+---
+
 ### Requirement: Organizer can update event details
 The system SHALL allow organizers to update a `TicketedEvent`'s name, website
-URL, base URL, and start/end dates. Updates are handled by the Registrations
+URL, base URL, public slug, and start/end dates. Updates are handled by the Registrations
 module. The system SHALL use optimistic concurrency (expected version) to
 prevent lost updates. The `TicketedEvent` aggregate SHALL reject modifications
 to itself when its own status is Cancelled or Archived. When start/end dates

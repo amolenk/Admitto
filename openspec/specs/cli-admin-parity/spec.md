@@ -20,10 +20,6 @@ The Admitto CLI (`src/Admitto.Cli`) SHALL expose a Spectre.Console.Cli command f
 - **THEN** the CLI SHALL call `GET /admin/teams/{team}/events/{event}/registration/open-status` via `ApiClient`
 - **AND** SHALL print whether registration is currently open (derived from the configured window and the event's lifecycle status)
 
-#### Scenario: Event email settings
-- **WHEN** an operator runs `admitto event email show -t <team> -e <event>` or `admitto event email update -t <team> -e <event> [...]`
-- **THEN** the CLI SHALL call the corresponding `GET`/`PUT` `/admin/teams/{team}/events/{event}/email-settings` endpoints via `ApiClient`
-
 ### Requirement: Generated API client is the single HTTP boundary
 
 `src/Admitto.Cli/Api/ApiClient.g.cs` SHALL be produced exclusively by `src/Admitto.Cli/generate-api-client.sh` (which invokes NSwag against the live API's OpenAPI document). Hand-edits to `ApiClient.g.cs` SHALL NOT be committed.
@@ -131,21 +127,3 @@ The Admitto CLI SHALL expose commands under `admitto event bulk-email` to previe
 #### Scenario: Cancel a pending job
 - **WHEN** an operator runs `admitto event bulk-email cancel -t <team> -e <event> --id <jobId>`
 - **THEN** the CLI SHALL call `POST /admin/teams/{team}/events/{event}/bulk-emails/{jobId}/cancel` and SHALL exit `0` on success or `1` if the job is no longer cancellable
-
-### Requirement: CLI exposes a send-test-email command for both scopes
-
-The Admitto CLI SHALL expose a `email settings test` command that mirrors the new send-test-email admin endpoint at both team and event scope, calling the endpoint via the regenerated `ApiClient`. The command SHALL accept the team slug, an optional event slug, and a required recipient address. When the event slug is omitted the command SHALL invoke the team-scoped endpoint; when present it SHALL invoke the event-scoped endpoint. The command SHALL print a success message that includes the recipient on success, and SHALL print a non-zero-exit error message containing the server's error text on failure.
-
-#### Scenario: Team-scoped test via CLI
-- **WHEN** an operator runs `admitto email settings test --team acme --recipient ops@acme.org`
-- **THEN** the CLI calls `POST /admin/teams/acme/email-settings/test` via `ApiClient` with `{"recipient": "ops@acme.org"}`
-- **AND** prints a success message identifying the recipient on a `200` response
-
-#### Scenario: Event-scoped test via CLI
-- **WHEN** an operator runs `admitto email settings test --team acme --event devconf-2026 --recipient ops@acme.org`
-- **THEN** the CLI calls `POST /admin/teams/acme/events/devconf-2026/email-settings/test` via `ApiClient` with `{"recipient": "ops@acme.org"}`
-
-#### Scenario: Server error is surfaced to the operator
-- **WHEN** the API responds with a business-rule error (e.g. "Failed to send test email: Authentication failed")
-- **THEN** the CLI exits with a non-zero status
-- **AND** prints an error message containing the server-supplied text

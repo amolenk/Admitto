@@ -21,6 +21,7 @@ using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.Con
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.ConfigureRegistrationPolicy.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.GetTicketedEventDetails.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.GetTicketedEvents.AdminApi;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.ResolvePublicEventLink.PublicApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.UpdateAdditionalDetailSchema.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.UpdateTicketedEventDetails.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.UpdateTicketedEventTimeZone.AdminApi;
@@ -108,6 +109,16 @@ public static class RegistrationsModule
             .MapJoinWaitlist()
             .MapLeaveWaitlist()
             .MapGetPublicCouponDetails();
+
+        return group;
+    }
+
+    public static RouteGroupBuilder MapRegistrationsPublicEventLinkEndpoints(this RouteGroupBuilder group)
+    {
+        group
+            .MapGroup("/e")
+            .WithTags("Public Event Links")
+            .MapResolvePublicEventLink();
 
         return group;
     }

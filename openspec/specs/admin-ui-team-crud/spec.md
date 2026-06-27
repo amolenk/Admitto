@@ -23,11 +23,15 @@ The Admin UI SHALL provide a "Create Team" page with a form for name only (no em
 ---
 
 ### Requirement: Team owner can update team details via the UI
-The Admin UI SHALL provide a "Team Settings" page with a form pre-filled with the team's current name only (no email address field, no slug field). The form SHALL send partial updates (only changed fields) with the team's current version for optimistic concurrency. On successful update, the UI SHALL reflect the updated name in the team switcher and sidebar.
+The Admin UI SHALL provide a "Team Settings" page with a form pre-filled with the team's current name and accent color (no email address field, no slug field). The form SHALL send partial updates (only changed fields) with the team's current version for optimistic concurrency. On successful update, the UI SHALL reflect the updated name in the team switcher and sidebar and retain the saved accent color in the form.
 
 #### Scenario: Successfully update team name
 - **WHEN** a team owner navigates to the settings page for a team, changes the name, and submits
 - **THEN** the team name is updated, the team switcher reflects the new name, and a success message is shown
+
+#### Scenario: Successfully update team accent color
+- **WHEN** a team owner navigates to the settings page for a team, changes the accent color to `#0f766e`, and submits
+- **THEN** the team accent color is updated and a success message is shown
 
 #### Scenario: Display concurrency conflict error
 - **WHEN** a team owner submits an update but the team's version in the database no longer matches the version that was loaded with the form

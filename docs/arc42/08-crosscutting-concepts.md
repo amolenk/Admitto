@@ -49,8 +49,6 @@ Some workflows need to consult another module's state inside the same request wi
 | Facade | Module | Used by | Purpose |
 | :----- | :----- | :------ | :------ |
 | `IOrganizationFacade` | Organization | Registrations | Check team membership, look up team by ID |
-| `IEventEmailFacade` | Email | Registrations | Check whether the owning team's SMTP credentials are configured before allowing registration to open |
-
 Facades are read-only and side-effect-free. Cross-module *writes* still go through commands and integration events on the outbox (see §8.6).
 
 ## 8.5 Use case slice layout
@@ -217,11 +215,9 @@ class or code is caught at compile time.
 The static error object is `internal`, so test projects require `InternalsVisibleTo` access
 (already configured for all module test projects).
 
-### Secret protection
+### System SMTP secrets
 
-Team SMTP passwords (and similar at-rest secrets owned by a module) are protected with **ASP.NET Data Protection**. Each module that stores secrets injects an `IProtectedSecret` adapter that wraps `IDataProtectionProvider` with a stable purpose string (e.g. `"Admitto.Email.ConnectionString.v1"`). The adapter is wired into EF as a value converter or property accessor on the secret column, so encryption on write and decryption on read are transparent to handlers.
-
-The Data Protection key ring is **persisted to a stable backing store and shared across hosts** (API and Worker). Without a shared, persistent key ring, secrets written by one host would become unreadable after a restart or by another host. See `Admitto.Module.Email/Infrastructure/` for the reference implementation.
+Application-email SMTP credentials are deployment secrets, supplied through host configuration and secret providers under `Email:System`. They are not persisted in module-owned tables and are not managed by organizers through the API or Admin UI.
 
 ### Registration-bound public links
 

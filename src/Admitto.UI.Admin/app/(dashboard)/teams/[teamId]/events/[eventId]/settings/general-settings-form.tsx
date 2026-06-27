@@ -43,6 +43,7 @@ function Field({ label, hint, badge, children }: {
 const generalSchema = z
     .object({
         name: z.string().min(1, "Name is required"),
+        publicSlug: z.string().min(1, "Public slug is required").max(64).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Use lowercase letters, numbers, and dashes"),
         websiteUrl: z.string().url("Must be a valid URL").min(1, "Website URL is required"),
         baseUrl: z.string().url("Must be a valid URL").min(1, "Base URL is required"),
         timeZone: z
@@ -67,6 +68,7 @@ export function GeneralSettingsForm({ event }: { event: TicketedEventDetailsDto 
 
     const form = useCustomForm<GeneralValues>(generalSchema, {
         name: event.name,
+        publicSlug: event.publicSlug,
         websiteUrl: event.websiteUrl,
         baseUrl: event.baseUrl,
         timeZone: event.timeZone,
@@ -79,6 +81,7 @@ export function GeneralSettingsForm({ event }: { event: TicketedEventDetailsDto 
     async function onSubmit(values: GeneralValues) {
         const detailsChanged =
             values.name !== event.name ||
+            values.publicSlug !== event.publicSlug ||
             values.websiteUrl !== event.websiteUrl ||
             values.baseUrl !== event.baseUrl ||
             values.startsAt !== event.startsAt ||
@@ -90,6 +93,7 @@ export function GeneralSettingsForm({ event }: { event: TicketedEventDetailsDto 
             await apiClient.put(`/api/teams/${teamId}/events/${eventId}`, {
                 expectedVersion: Number(event.version),
                 name: values.name,
+                publicSlug: values.publicSlug,
                 websiteUrl: values.websiteUrl,
                 baseUrl: values.baseUrl,
                 startsAt: values.startsAt,
@@ -148,6 +152,21 @@ export function GeneralSettingsForm({ event }: { event: TicketedEventDetailsDto 
                                         <FormItem className="space-y-1">
                                             <FormControl>
                                                 <Input placeholder="e.g. Azure Fest" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    </Field>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="publicSlug"
+                                render={({ field }) => (
+                                    <Field label="Public slug" hint="Used for Admitto links like /e/azure-fest-2026.">
+                                        <FormItem className="space-y-1">
+                                            <FormControl>
+                                                <Input placeholder="azure-fest-2026" {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>

@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Email.Application.Templating;
+using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
@@ -10,6 +11,7 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail.Event
 /// Idempotency key: <c>otp-requested:{otpCodeId}</c>.
 /// </summary>
 internal sealed class OtpCodeRequestedIntegrationEventHandler(
+    IRegistrationsFacade registrationsFacade,
     ICommandHandler<SendEmailCommand> sendEmailHandler)
     : IIntegrationEventHandler<OtpCodeRequestedIntegrationEvent>
 {
@@ -18,6 +20,11 @@ internal sealed class OtpCodeRequestedIntegrationEventHandler(
         CancellationToken cancellationToken)
     {
         var idempotencyKey = $"otp-requested:{integrationEvent.OtpCodeId}";
+        var eventContext = await registrationsFacade.GetEventRegistrationSnapshotAsync(
+            integrationEvent.TeamId,
+            integrationEvent.TicketedEventId,
+            registrationId: Guid.Empty,
+            cancellationToken);
 
         var command = new SendEmailCommand(
             TeamId: integrationEvent.TeamId,
@@ -30,7 +37,8 @@ internal sealed class OtpCodeRequestedIntegrationEventHandler(
             {
                 integrationEvent.PlainCode,
                 integrationEvent.EventName,
-                integrationEvent.RecipientEmail
+                integrationEvent.RecipientEmail,
+                eventContext.TeamAccentColor
             },
             RegistrationId: null);
 

@@ -1,6 +1,4 @@
 using Amolenk.Admitto.Api.Tests.Infrastructure.Hosting;
-using Amolenk.Admitto.Core.Email.Domain.Entities;
-using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
@@ -51,26 +49,11 @@ internal sealed class SendRegistrationEmailFixture
         var catalog = TicketCatalog.Create(eventId, team.Id);
         catalog.AddTicketType(TicketTypeId, TicketTypeName.From("General Admission"), [], 100);
 
-        // Seed team-scoped email settings pointing at MailDev SMTP.
-        // Use the dynamic endpoint from the test environment to avoid port conflicts.
-        var smtpHost = environment.Email.SmtpEndpoint.Host;
-        var smtpPort = environment.Email.SmtpEndpoint.Port;
-
-        var emailSettings = EmailSettings.Create(
-            teamId: team.Id,
-            smtpHost: Hostname.From(smtpHost),
-            smtpPort: Port.From(smtpPort),
-            fromAddress: EmailAddress.From("noreply@admitto.io"),
-            authMode: EmailAuthMode.None,
-            username: null,
-            protectedPassword: null);
-
         await environment.OrganizationDatabase.SeedAsync(db => db.Teams.Add(team));
         await environment.RegistrationsDatabase.SeedAsync(db =>
         {
             db.TicketedEvents.Add(ticketedEvent);
             db.TicketCatalogs.Add(catalog);
         });
-        await environment.EmailDatabase.SeedAsync(db => db.EmailSettings.Add(emailSettings));
     }
 }

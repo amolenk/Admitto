@@ -7,10 +7,11 @@ public sealed record RequestTicketedEventCreationHttpRequest(
     string Name,
     string WebsiteUrl,
     string BaseUrl,
+    string PublicSlug,
     DateTimeOffset StartsAt,
     DateTimeOffset EndsAt,
     string TimeZone)
 {
     internal RequestTicketedEventCreationCommand ToCommand(Guid teamId, Guid requesterId) =>
-        new(teamId, requesterId, Name, WebsiteUrl, BaseUrl, StartsAt, EndsAt, TimeZone);
+        new(teamId, requesterId, Name, WebsiteUrl, BaseUrl, StartsAt, EndsAt, TimeZone, PublicSlug);
 }

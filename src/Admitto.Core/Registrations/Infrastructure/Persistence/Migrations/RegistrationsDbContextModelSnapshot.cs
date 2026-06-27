@@ -368,6 +368,14 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
                         .HasColumnType("character varying(64)")
                         .HasColumnName("name");
 
+                    b.Property<string>("PublicSlug")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("public_slug")
+                        .HasDefaultValueSql("'event-' || substr(md5(random()::text), 1, 12)");
+
                     b.Property<TimeOnly>("QuietHoursEnd")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("time")
@@ -413,6 +421,10 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
                         .HasColumnName("website_url");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("PublicSlug")
+                        .IsUnique()
+                        .HasDatabaseName("IX_ticketed_events_public_slug");
 
                     b.HasIndex("TeamId", "Status")
                         .HasDatabaseName("IX_ticketed_events_team_id_status");

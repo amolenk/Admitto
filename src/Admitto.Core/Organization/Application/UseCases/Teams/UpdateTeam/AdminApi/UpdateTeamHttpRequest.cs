@@ -2,11 +2,13 @@ namespace Amolenk.Admitto.Core.Organization.Application.UseCases.Teams.UpdateTea
 
 public sealed record UpdateTeamHttpRequest(
     string? Name,
+    string? AccentColor,
     uint? ExpectedVersion)
 {
     internal UpdateTeamCommand ToCommand(Guid teamId)
         => new(
             teamId,
             Name,
-            ExpectedVersion);
+            ExpectedVersion,
+            AccentColor);
 }

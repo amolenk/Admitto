@@ -4,10 +4,6 @@ using Amolenk.Admitto.Core.Email.Application.UseCases.BulkEmails.CreateBulkEmail
 using Amolenk.Admitto.Core.Email.Application.UseCases.BulkEmails.GetBulkEmail.AdminApi;
 using Amolenk.Admitto.Core.Email.Application.UseCases.BulkEmails.GetBulkEmails.AdminApi;
 using Amolenk.Admitto.Core.Email.Application.UseCases.BulkEmails.PreviewBulkEmail.AdminApi;
-using Amolenk.Admitto.Core.Email.Application.UseCases.EmailSettings.DeleteEmailSettings.AdminApi;
-using Amolenk.Admitto.Core.Email.Application.UseCases.EmailSettings.GetEmailSettings.AdminApi;
-using Amolenk.Admitto.Core.Email.Application.UseCases.EmailSettings.SendTestEmail.AdminApi;
-using Amolenk.Admitto.Core.Email.Application.UseCases.EmailSettings.UpsertEmailSettings.AdminApi;
 
 namespace Amolenk.Admitto.Core.Email;
 
@@ -18,15 +14,6 @@ public static class EmailModule
 
     public static RouteGroupBuilder MapEmailAdminEndpoints(this RouteGroupBuilder group)
     {
-        // Team-scoped email settings
-        group
-            .MapGroup("/teams/{teamId:guid}/email-settings")
-            .WithTags("Admin - Email Settings")
-            .MapGetEmailSettings()
-            .MapUpsertEmailSettings()
-            .MapDeleteEmailSettings()
-            .MapSendTestEmail();
-
         // Event-scoped bulk emails
         group
             .MapGroup("/teams/{teamId:guid}/events/{eventId:guid}/bulk-emails")

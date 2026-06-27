@@ -15,6 +15,7 @@ import { TeamDto } from "@/lib/admitto-api/generated";
 
 const teamSettingsSchema = z.object({
     name: z.string().min(1, "Name is required"),
+    accentColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Use a hex color like #0f766e"),
 });
 
 type TeamSettingsValues = z.infer<typeof teamSettingsSchema>;
@@ -52,6 +53,7 @@ export function TeamSettingsForm({ team }: TeamSettingsFormProps) {
 
     const form = useCustomForm<TeamSettingsValues>(teamSettingsSchema, {
         name: team.name,
+        accentColor: team.accentColor,
     });
 
     async function onSubmit(values: TeamSettingsValues) {
@@ -60,6 +62,7 @@ export function TeamSettingsForm({ team }: TeamSettingsFormProps) {
         };
 
         if (values.name !== team.name) body.name = values.name;
+        if (values.accentColor !== team.accentColor) body.accentColor = values.accentColor;
 
         await apiClient.put(`/api/teams/${team.teamId}`, body);
 
@@ -105,6 +108,24 @@ export function TeamSettingsForm({ team }: TeamSettingsFormProps) {
                                         <FormItem className="space-y-1">
                                             <FormControl>
                                                 <Input placeholder="e.g. My Team" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    </Field>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="accentColor"
+                                render={({ field }) => (
+                                    <Field label="Accent color" hint="Used for team branding in built-in emails.">
+                                        <FormItem className="space-y-1">
+                                            <FormControl>
+                                                <div className="flex items-center gap-3">
+                                                    <Input type="color" className="h-10 w-16 p-1" {...field} />
+                                                    <Input placeholder="#0f766e" {...field} />
+                                                </div>
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>

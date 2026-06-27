@@ -1,13 +1,19 @@
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
+using Amolenk.Admitto.Core.Registrations.Application.PublicEventLinks;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
+using Amolenk.Admitto.Core.Organization.Contracts;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
+using Microsoft.Extensions.Options;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.GetTicketedEventEmailContext;
 
-internal sealed class GetTicketedEventEmailContextHandler(IRegistrationsWriteStore writeStore)
+internal sealed class GetTicketedEventEmailContextHandler(
+    IRegistrationsWriteStore writeStore,
+    IOrganizationFacade organizationFacade,
+    IOptions<PublicTicketsOptions> publicTicketsOptions)
     : IQueryHandler<GetTicketedEventEmailContextQuery, EventRegistrationSnapshotDto>
 {
     public async ValueTask<EventRegistrationSnapshotDto> HandleAsync(
@@ -25,15 +31,30 @@ internal sealed class GetTicketedEventEmailContextHandler(IRegistrationsWriteSto
                 Name = e.Name.Value,
                 WebsiteUrl = e.WebsiteUrl.Value.ToString(),
                 EventId = e.Id.Value,
-                BaseUrl = e.BaseUrl.Value.ToString()
+                BaseUrl = e.BaseUrl.Value.ToString(),
+                PublicSlug = e.PublicSlug.Value
             })
             .FirstOrDefaultAsync(cancellationToken)
             ?? throw new BusinessRuleViolationException(
                 NotFoundError.Create<TicketedEvent>());
 
-        var registerLink = $"{fields.BaseUrl.TrimEnd('/')}/register";
-        var qrCodeLink = $"{fields.BaseUrl.TrimEnd('/')}/qr-code/{query.RegistrationId}";
-        var cancelLink = $"{fields.BaseUrl.TrimEnd('/')}/cancel/{query.RegistrationId}";
+        var publicEventLink = $"{publicTicketsOptions.Value.BaseUrl.TrimEnd('/')}/e/{fields.PublicSlug}";
+        var registerLink = $"{publicEventLink}/register";
+        var qrCodeLink = $"{publicEventLink}/qr-code/{query.RegistrationId}";
+        var cancelLink = $"{publicEventLink}/cancel/{query.RegistrationId}";
+
+        var selfServiceTicketCount = await writeStore.TicketCatalogs
+            .AsNoTracking()
+            .Where(c => c.Id == ticketedEventId && c.TeamId == teamId)
+            .Select(c => c.TicketTypes.Count(t => t.SelfServiceEnabled))
+            .FirstOrDefaultAsync(cancellationToken);
+
+        var changeTicketsLink = selfServiceTicketCount >= 2
+            ? $"{publicEventLink}/registrations/{query.RegistrationId}/tickets"
+            : null;
+
+        var branding = await organizationFacade.GetTeamBrandingAsync(teamId.Value, cancellationToken);
+        var accentColor = branding?.AccentColor ?? "#2563eb";
 
         string? firstName = null;
         string? lastName = null;
@@ -54,9 +75,12 @@ internal sealed class GetTicketedEventEmailContextHandler(IRegistrationsWriteSto
         return new EventRegistrationSnapshotDto(
             fields.Name,
             fields.WebsiteUrl,
+            publicEventLink,
             registerLink,
             qrCodeLink,
             cancelLink,
+            accentColor,
+            changeTicketsLink,
             firstName,
             lastName);
     }

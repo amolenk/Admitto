@@ -1,6 +1,6 @@
 ## Purpose
 
-Admins create ticketed events and manage their core metadata, registration policy, ticket catalog, and email settings from the Admin UI through tabbed event-settings pages. Creation is async — the UI submits and polls the Organization creation-status endpoint until the event materialises in Registrations.
+Admins create ticketed events and manage their core metadata, registration policy, and ticket catalog from the Admin UI through tabbed event-settings pages. Creation is async — the UI submits and polls the Organization creation-status endpoint until the event materialises in Registrations.
 
 ## Requirements
 
@@ -23,13 +23,17 @@ The check-in card SHALL display check-in timing information, a QR scanner button
 ---
 
 ### Requirement: Admin can create a ticketed event via the UI
-The Admin UI SHALL provide a "Create Event" page reachable from the team's events list. The form SHALL collect name, start datetime, and end datetime (no slug field). The form SHALL validate inputs client-side and surface server-side validation errors inline.
+The Admin UI SHALL provide a "Create Event" page reachable from the team's events list. The form SHALL collect name, public slug, start datetime, and end datetime. The form SHALL validate inputs client-side and surface server-side validation errors inline.
 
 Submission SHALL `POST` to the Organization create-event endpoint, which responds `202 Accepted` with a `Location` header pointing to a creation-status URL (see event-management). The UI SHALL then poll that URL until status becomes `Created`, `Rejected`, or `Expired`. While polling, the UI SHALL display a non-blocking spinner and disable the form. On `Created`, the UI SHALL navigate to the new event's Edit Event page (General tab) using the event's UUID. On `Rejected`, the UI SHALL render the rejection reason inline so the user can edit and resubmit. On `Expired`, the UI SHALL render a generic "creation timed out, please try again" error.
 
 #### Scenario: Successfully create an event (async)
-- **WHEN** an organizer submits the create event form for name "DevConf 2026", start "2026-06-01T09:00Z", end "2026-06-03T17:00Z" and the backend returns `202 Accepted`, then polling eventually returns status `Created` with the new event's ID
+- **WHEN** an organizer submits the create event form for name "DevConf 2026", public slug `devconf-2026`, start "2026-06-01T09:00Z", end "2026-06-03T17:00Z" and the backend returns `202 Accepted`, then polling eventually returns status `Created` with the new event's ID
 - **THEN** the organizer is redirected to `/teams/{teamId}/events/{eventId}/edit/general`
+
+#### Scenario: Duplicate public slug rejection is shown
+- **WHEN** the backend rejects a submitted public slug because it is already in use
+- **THEN** the UI shows the duplicate-slug error to the organizer and does not report the save as successful
 
 #### Scenario: Display client-side validation error on create
 - **WHEN** an organizer submits the create event form with an empty name
@@ -101,15 +105,29 @@ After a successful event creation the UI SHALL navigate to `/teams/{teamId}/even
 ---
 
 ### Requirement: General tab manages event metadata
-The General tab SHALL show a form pre-filled with the event's name, start datetime, and end datetime. There is no slug field. The form SHALL submit partial updates with the event's current `Version` for optimistic concurrency. On a concurrency conflict the UI SHALL display an error and refetch the latest values.
+The General tab SHALL show a form pre-filled with the event's name, public slug, start datetime, and end datetime. The public slug field SHALL be required and SHALL use the backend slug validation rules. The form SHALL submit partial updates with the event's current `Version` for optimistic concurrency. On a concurrency conflict the UI SHALL display an error and refetch the latest values.
 
 #### Scenario: Successfully update event name
 - **WHEN** an organizer changes the event name and submits
 - **THEN** the event metadata is updated and a success message is shown
 
+#### Scenario: Edit form shows current public slug
+- **WHEN** an organizer opens the event General page for an event whose public slug is `azure-fest-2026`
+- **THEN** the public slug field is pre-filled with `azure-fest-2026`
+
 #### Scenario: Display concurrency conflict
 - **WHEN** an organizer submits General-tab changes with a stale `Version`
 - **THEN** the UI displays a concurrency conflict error and refetches the current values
+
+---
+
+### Requirement: Admin UI can apply team accent color as a scoped visual accent
+
+When team detail data includes an accent color, the Admin UI MAY expose it through a scoped CSS variable for selected-team UI affordances. This SHALL be limited to small accents and SHALL NOT require a full design-system retheme.
+
+#### Scenario: Selected team accent variable is available
+- **WHEN** the dashboard renders for selected team "acme" with accent color `#0f766e`
+- **THEN** team-scoped UI can read a CSS variable or equivalent value containing `#0f766e`
 
 ---
 
@@ -155,73 +173,6 @@ The ticket type list row SHALL display a visual indicator (e.g., a badge or icon
 - **THEN** each row shows a distinct visual indicator for self-service status
 
 ---
-
-### Requirement: Open-registration action is gated by email configuration in the UI
-The Registration tab SHALL disable the "Open for registration" action and display an inline hint when the backend reports that email is not configured for the event. The hint SHALL link to the Email tab. The disabled state is a UX guard only; the backend remains the source of truth and SHALL also reject the action when email is not configured (see registration-policy spec).
-
-#### Scenario: Open action disabled when email not configured
-- **WHEN** an organizer views the Registration tab for an event whose email is not configured
-- **THEN** the "Open for registration" button is disabled and a hint links to the Email tab
-
-#### Scenario: Open action enabled when email is configured
-- **WHEN** an organizer views the Registration tab for an event whose email is configured
-- **THEN** the "Open for registration" button is enabled
-
-#### Scenario: Backend rejection still shown on race
-- **WHEN** an organizer clicks "Open for registration" but the backend rejects because email was just unconfigured
-- **THEN** the UI displays the server-side error returned by the backend
-
----
-
-### Requirement: Email tab manages event email server settings
-
-The Email tab SHALL show a form for the event's email settings (SMTP host, port, from-address, authentication mode, and credentials when applicable). Existing secret fields (e.g. password) SHALL be displayed masked, and updating them SHALL require re-entry rather than reusing the masked value. The form SHALL submit with the email-settings `Version` for optimistic concurrency. After a successful save the Email tab SHALL display "Email is configured".
-
-The Email tab SHALL also surface the relationship between event-scoped and team-scoped settings by querying the team-scoped admin endpoint (`GET /admin/teams/{teamSlug}/email-settings`) in parallel with the event-scoped GET, treating `404` as "no row". The result SHALL drive an inheritance callout displayed alongside the form:
-
-- When team-scoped settings exist AND the event has no event-scoped row, the callout SHALL read "Inherited from team settings" and SHALL link to `/teams/{teamSlug}/settings/email`. The form SHALL render in its empty/unconfigured state and remain editable so the organizer can create an event-scoped override.
-- When team-scoped settings exist AND the event has its own event-scoped row, the callout SHALL read "Overriding team settings" and SHALL link to `/teams/{teamSlug}/settings/email`. The form SHALL render pre-filled from the event-scoped row.
-- When team-scoped settings do NOT exist, the callout SHALL NOT be displayed (existing behaviour).
-
-The callout is informational only — it SHALL NOT change save or delete behaviour, which continue to operate on the event-scoped row exclusively.
-
-#### Scenario: Configure email settings for the first time
-
-- **WHEN** an organizer fills in SMTP host "smtp.acme.org", port 587, from-address "events@acme.org", username "noreply", password "•••••" and submits
-- **THEN** the email settings are saved and the Email tab shows "Email is configured"
-
-#### Scenario: Secret fields are masked on read
-
-- **WHEN** an organizer reopens the Email tab after saving credentials
-- **THEN** the password field is rendered masked and empty; the user must re-enter to change it
-
-#### Scenario: Update non-secret fields without re-entering password
-
-- **WHEN** an organizer changes only the from-address and submits without re-entering the password
-- **THEN** the from-address is updated and the stored password is unchanged
-
-#### Scenario: Inherited callout shown when only team-scoped settings exist
-
-- **WHEN** an organizer opens the Email tab for event "devconf-2026" (team "acme") and the team-scoped GET returns settings while the event-scoped GET returns `404`
-- **THEN** the page shows an "Inherited from team settings" callout linking to `/teams/acme/settings/email`, and the form renders empty
-
-#### Scenario: Overriding callout shown when both scopes exist
-
-- **WHEN** an organizer opens the Email tab and both the team-scoped and event-scoped GETs return settings
-- **THEN** the page shows an "Overriding team settings" callout linking to `/teams/acme/settings/email`, and the form is pre-filled from the event-scoped row
-
-#### Scenario: No callout when team-scoped settings do not exist
-
-- **WHEN** an organizer opens the Email tab and the team-scoped GET returns `404` (regardless of whether the event-scoped GET returns `404` or settings)
-- **THEN** the page does not show any inheritance callout
-
-#### Scenario: Callout link navigates to team Email page
-
-- **WHEN** an organizer clicks the link inside the inheritance callout on the event Email tab for team "acme"
-- **THEN** the browser navigates to `/teams/acme/settings/email`
-
----
-
 
 ### Requirement: Add ticket type form supports time slots
 The Admin UI **Add ticket type** dialog SHALL include a "Time slots" input that lets organizers attach zero or more time-slot slugs to a new ticket type. Each entered token SHALL be validated against the slug format `^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$` before it is accepted as a chip. The form SHALL submit the resulting array as `timeSlots` on the existing `POST /admin/teams/{teamSlug}/events/{eventSlug}/ticket-types` request, sending an empty array (not `null`) when no slots are entered.
@@ -395,44 +346,9 @@ Read-only displays of event datetimes (e.g. event list, navigation, dashboard ti
 
 ---
 
-### Requirement: Event Email tab exposes a Send-test-email action with a recipient picker
-
-The event Email tab (`/teams/{teamSlug}/events/{eventSlug}/settings/email`) SHALL render a "Send test email" action below the email settings form whenever the event has its own saved email settings. The action SHALL consist of a recipient dropdown and a button. The dropdown SHALL be populated client-side from the team's contact email (read via `GET /api/teams/{teamSlug}`) and the email addresses of the current team members (read via `GET /api/teams/{teamSlug}/members`), with duplicate addresses collapsed and the team's contact email selected by default. The dropdown SHALL NOT include any event-scoped contact list — the recipient set is the same on both scopes.
-
-When the button is clicked, the page SHALL `POST /api/teams/{teamSlug}/events/{eventSlug}/email-settings/test` with the chosen recipient in the body. While the request is in flight, the button SHALL be disabled. On success, the page SHALL render an inline non-destructive `Alert` near the button identifying the recipient ("Test email sent to <address>"). On failure, the page SHALL render an inline destructive `Alert` near the button containing the server's error message. The action SHALL NOT be rendered when the event has no event-scoped settings — even if team-scoped settings exist — because the test endpoint targets only the saved settings of the current scope.
-
-#### Scenario: Action hidden when the event inherits from team
-- **GIVEN** team "acme" has team-scoped settings AND event "devconf-2026" has no event-scoped row
-- **WHEN** an organizer opens `/teams/acme/events/devconf-2026/settings/email`
-- **THEN** the inheritance callout is shown
-- **AND** the Send-test-email action is not rendered
-
-#### Scenario: Action shown when event has its own settings
-- **GIVEN** event "devconf-2026" has its own event-scoped settings
-- **WHEN** an organizer opens `/teams/acme/events/devconf-2026/settings/email`
-- **THEN** the Send-test-email action is rendered below the form, alongside the existing Delete action
-
-#### Scenario: Recipient dropdown matches the team page
-- **GIVEN** team "acme" has contact email `events@acme.org` and members `alice@example.com`, `bob@example.com`
-- **WHEN** an organizer opens the event Email tab for any event owned by "acme"
-- **THEN** the recipient dropdown lists exactly the same options as on the team Email page (`events@acme.org`, `alice@example.com`, `bob@example.com`), with `events@acme.org` selected by default
-
-#### Scenario: Successful test
-- **GIVEN** recipient `bob@example.com` is selected on the event Email tab
-- **WHEN** the organizer clicks "Send test email" and the API responds `200 OK`
-- **THEN** the page renders a non-destructive inline alert reading "Test email sent to bob@example.com"
-
-#### Scenario: Failed test surfaces the server error
-- **WHEN** the organizer clicks "Send test email" and the API responds with an error containing "Connection refused"
-- **THEN** the page renders a destructive inline alert containing "Connection refused"
-
----
-
 ### Requirement: Event main sidebar includes a dedicated Bulk Emails entry
 
-The Admin UI event sidebar (the persistent side-navigation shown when an organizer is viewing any page under `/teams/{teamSlug}/events/{eventSlug}/`) SHALL include an "Emails" entry that links to the Bulk Emails list page at `/teams/{teamSlug}/events/{eventSlug}/emails`. This entry SHALL be active when the current path is `/emails` or starts with `/emails/`. It SHALL NOT be active when the organizer is on settings sub-pages such as `/settings/email` or `/settings/email/templates`.
-
-The event email settings page remains accessible via the Settings sidebar entry → Email sub-tab.
+The Admin UI event sidebar (the persistent side-navigation shown when an organizer is viewing any page under `/teams/{teamSlug}/events/{eventSlug}/`) SHALL include an "Emails" entry that links to the Bulk Emails list page at `/teams/{teamSlug}/events/{eventSlug}/emails`. This entry SHALL be active when the current path is `/emails` or starts with `/emails/`. It SHALL NOT be active when the organizer is on event edit pages.
 
 #### Scenario: Emails sidebar entry links to bulk emails list
 
@@ -444,10 +360,10 @@ The event email settings page remains accessible via the Settings sidebar entry 
 - **WHEN** the current URL is `/teams/acme/events/devconf-2026/emails`
 - **THEN** the "Emails" sidebar entry is rendered with the active style
 
-#### Scenario: Emails entry is NOT active on the email settings page
+#### Scenario: Emails entry is NOT active on the event edit page
 
-- **WHEN** the current URL is `/teams/acme/events/devconf-2026/settings/email`
-- **THEN** the "Emails" sidebar entry is NOT rendered as active; instead the "Settings" entry is active
+- **WHEN** the current URL is `/teams/acme/events/devconf-2026/edit/general`
+- **THEN** the "Emails" sidebar entry is NOT rendered as active; instead the "Edit Event" entry is active
 
 #### Scenario: Emails entry is active on the bulk email detail page
 

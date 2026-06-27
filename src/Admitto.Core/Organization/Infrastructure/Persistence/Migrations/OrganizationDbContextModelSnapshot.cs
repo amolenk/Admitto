@@ -82,6 +82,14 @@ namespace Amolenk.Admitto.Core.Organization.Infrastructure.Persistence.Migration
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<string>("AccentColor")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(7)
+                        .HasColumnType("character varying(7)")
+                        .HasDefaultValue("#2563eb")
+                        .HasColumnName("accent_color");
+
                     b.Property<int>("ActiveEventCount")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")

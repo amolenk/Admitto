@@ -12,4 +12,5 @@ internal sealed record UpdateTicketedEventDetailsCommand(
     DateTimeOffset StartsAt,
     DateTimeOffset EndsAt,
     TimeOnly QuietHoursStart,
-    TimeOnly QuietHoursEnd) : Command;
+    TimeOnly QuietHoursEnd,
+    string? PublicSlug = null) : Command;

@@ -16,13 +16,14 @@ internal sealed class UpdateTicketedEventDetailsHandler(IRegistrationsWriteStore
         EventName name = EventName.From(command.Name);
         AbsoluteUrl websiteUrl = AbsoluteUrl.From(command.WebsiteUrl);
         AbsoluteUrl baseUrl = AbsoluteUrl.From(command.BaseUrl);
+        Slug publicSlug = Slug.From(command.PublicSlug ?? command.Name);
 
         var ticketedEvent = await writeStore.TicketedEvents.GetAsync(
             e => e.Id == eventId && e.TeamId == teamId,
             command.ExpectedVersion,
             cancellationToken);
 
-        ticketedEvent.UpdateDetails(name, websiteUrl, baseUrl, command.StartsAt, command.EndsAt);
+        ticketedEvent.UpdateDetails(name, websiteUrl, baseUrl, publicSlug, command.StartsAt, command.EndsAt);
         ticketedEvent.UpdateQuietHours(command.QuietHoursStart, command.QuietHoursEnd);
     }
 }

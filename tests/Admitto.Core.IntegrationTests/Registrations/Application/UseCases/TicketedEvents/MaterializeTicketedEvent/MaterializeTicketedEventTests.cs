@@ -27,7 +27,8 @@ public sealed class MaterializeTicketedEventTests(TestContext testContext) : Asp
             "https://tickets.example.com",
             DateTimeOffset.UtcNow.AddDays(30),
             DateTimeOffset.UtcNow.AddDays(31),
-            "UTC");
+            "UTC",
+            "my-conference");
 
         var sut = new TicketedEventCreationRequestedIntegrationEventHandler(
             new MaterializeTicketedEventHandler(Environment.RegistrationsDatabase.Context));
@@ -51,10 +52,48 @@ public sealed class MaterializeTicketedEventTests(TestContext testContext) : Asp
                 .FirstOrDefaultAsync(e => e.TeamId == fixture.TeamId, testContext.CancellationToken);
             te.ShouldNotBeNull();
             te.TeamId.ShouldBe(fixture.TeamId);
+            te.PublicSlug.Value.ShouldBe("my-conference");
 
             var catalog = await ctx.TicketCatalogs
                 .FirstOrDefaultAsync(tc => tc.Id == te.Id, testContext.CancellationToken);
             catalog.ShouldNotBeNull();
         });
+    }
+
+    [TestMethod]
+    public async ValueTask Materialize_DuplicatePublicSlug_ThrowsDatabaseConflict()
+    {
+        var fixture = MaterializeTicketedEventFixture.New();
+        var publicSlug = "my-conference";
+        var existing = TicketedEvent.Create(
+            Amolenk.Admitto.Core.Shared.Kernel.ValueObjects.CreationRequestId.From(Guid.NewGuid()),
+            Amolenk.Admitto.Core.Shared.Kernel.ValueObjects.TicketedEventId.New(),
+            fixture.TeamId,
+            Amolenk.Admitto.Core.Shared.Kernel.ValueObjects.EventName.From("Existing Conference"),
+            Amolenk.Admitto.Core.Shared.Kernel.ValueObjects.AbsoluteUrl.From("https://existing.example.com"),
+            Amolenk.Admitto.Core.Shared.Kernel.ValueObjects.AbsoluteUrl.From("https://tickets.example.com"),
+            Amolenk.Admitto.Core.Shared.Kernel.ValueObjects.Slug.From(publicSlug),
+            DateTimeOffset.UtcNow.AddDays(30),
+            DateTimeOffset.UtcNow.AddDays(31),
+            Amolenk.Admitto.Core.Shared.Kernel.ValueObjects.TimeZoneId.From("UTC"));
+        await Environment.RegistrationsDatabase.SeedAsync(db => db.TicketedEvents.Add(existing));
+
+        var evt = new TicketedEventCreationRequestedIntegrationEvent(
+            Guid.NewGuid(),
+            fixture.TeamId.Value,
+            "New Conference",
+            "https://new.example.com",
+            "https://tickets.example.com",
+            DateTimeOffset.UtcNow.AddDays(60),
+            DateTimeOffset.UtcNow.AddDays(61),
+            "UTC",
+            publicSlug);
+        var sut = new TicketedEventCreationRequestedIntegrationEventHandler(
+            new MaterializeTicketedEventHandler(Environment.RegistrationsDatabase.Context));
+
+        await sut.HandleAsync(evt, testContext.CancellationToken);
+
+        await Should.ThrowAsync<DbUpdateException>(() =>
+            Environment.RegistrationsDatabase.Context.SaveChangesAsync(testContext.CancellationToken));
     }
 }

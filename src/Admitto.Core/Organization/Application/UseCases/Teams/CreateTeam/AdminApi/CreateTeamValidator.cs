@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Validation;
 using FluentValidation;
 
@@ -9,5 +10,8 @@ public sealed class CreateTeamValidator : AbstractValidator<CreateTeamHttpReques
     {
         RuleFor(x => x.Name)
             .MustBeParseable(TeamName.TryFrom);
+
+        RuleFor(x => x.AccentColor)
+            .MustBeNullOrParseable(TeamAccentColor.TryFrom);
     }
 }

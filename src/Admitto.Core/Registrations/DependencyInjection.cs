@@ -2,6 +2,7 @@ using System.Reflection;
 using Amolenk.Admitto.Core.Registrations;
 using Amolenk.Admitto.Core.Registrations.Application.Jobs;
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
+using Amolenk.Admitto.Core.Registrations.Application.PublicEventLinks;
 using Amolenk.Admitto.Core.Registrations.Application.Security;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases;
 using Amolenk.Admitto.Core.Registrations.Contracts;
@@ -50,6 +51,9 @@ public static class RegistrationsModuleExtensions
 
             services.Configure<OtpOptions>(
                 configuration.GetSection(OtpOptions.SectionName));
+
+            services.Configure<PublicTicketsOptions>(
+                configuration.GetSection(PublicTicketsOptions.SectionName));
 
             // Infrastructure
             builder.AddModuleDatabaseServices<IRegistrationsWriteStore, RegistrationsDbContext>(

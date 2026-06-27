@@ -1,5 +1,6 @@
 using Amolenk.Admitto.Core.Organization.Application.Persistence;
 using Amolenk.Admitto.Core.Organization.Domain.Entities;
+using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Vogen;
@@ -21,7 +22,11 @@ internal sealed class CreateTeamHandler(IOrganizationWriteStore writeStore)
             throw new BusinessRuleViolationException(CommonErrors.TextEmpty);
         }
 
-        var team = Team.Create(name);
+        TeamAccentColor? accentColor = command.AccentColor is null
+            ? null
+            : TeamAccentColor.From(command.AccentColor);
+
+        var team = Team.Create(name, accentColor);
 
         await writeStore.Teams.AddAsync(team, cancellationToken);
 

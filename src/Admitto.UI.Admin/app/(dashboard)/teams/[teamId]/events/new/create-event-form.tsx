@@ -38,6 +38,7 @@ function Field({ label, hint, children }: {
 const createEventSchema = z
     .object({
         name: z.string().min(1, "Name is required"),
+        publicSlug: z.string().min(1, "Public slug is required").max(64).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Use lowercase letters, numbers, and dashes"),
         websiteUrl: z.string().url("Must be a valid URL").min(1, "Website URL is required"),
         baseUrl: z.string().url("Must be a valid URL").min(1, "Base URL is required"),
         timeZone: z
@@ -87,6 +88,7 @@ export function CreateEventForm() {
 
     const form = useCustomForm<CreateEventValues>(createEventSchema, {
         name: "",
+        publicSlug: "",
         websiteUrl: "",
         baseUrl: "",
         timeZone: detectBrowserTimeZone(),
@@ -186,6 +188,7 @@ export function CreateEventForm() {
     async function onSubmit(values: CreateEventValues) {
         const body = {
             name: values.name,
+            publicSlug: values.publicSlug,
             websiteUrl: values.websiteUrl,
             baseUrl: values.baseUrl,
             timeZone: values.timeZone,
@@ -277,6 +280,21 @@ export function CreateEventForm() {
                                             <FormItem className="space-y-1">
                                                 <FormControl>
                                                     <Input placeholder="e.g. DevConf 2026" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        </Field>
+                                    )}
+                                />
+
+                                <FormField
+                                    control={form.control}
+                                    name="publicSlug"
+                                    render={({ field }) => (
+                                        <Field label="Public slug" hint="Used for Admitto links like /e/azure-fest-2026.">
+                                            <FormItem className="space-y-1">
+                                                <FormControl>
+                                                    <Input placeholder="azure-fest-2026" {...field} />
                                                 </FormControl>
                                                 <FormMessage />
                                             </FormItem>

@@ -14,6 +14,7 @@ Detailed ADRs are stored in [`/docs/adrs/`](../adrs/).
 | — | TicketedEvent ownership moved to Registrations; EventStatus projected onto TicketCatalog | Accepted | [ADR-008](../adrs/adr-008-ticketed-event-ownership-in-registrations.md) |
 | — | Bulk-email fan-out: snapshot recipients, single SMTP connection, per-event time zone | Accepted | [ADR-009](../adrs/adr-009-bulk-email-design.md) |
 | 2026-06-10 | Keycloak as the production identity provider | Accepted | [ADR-012](../adrs/adr-012-keycloak-production-identity-provider.md) |
+| 2026-06-26 | Platform SMTP sender, public event links, and team-owned email branding | Accepted | [ADR-013](../adrs/adr-013-platform-sender-public-links.md) |
 
 ## Done-when
 

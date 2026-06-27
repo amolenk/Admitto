@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
-using EmailSettings = Amolenk.Admitto.Core.Email.Domain.Entities.EmailSettings;
 using Microsoft.Extensions.Options;
 
 namespace Amolenk.Admitto.Core.Email.Application.Sending.Settings;
@@ -28,7 +27,7 @@ internal sealed class SystemEmailSettingsResolver(IOptions<SystemEmailOptions> o
             authMode,
             authMode == EmailAuthMode.Basic ? value.Username : null,
             authMode == EmailAuthMode.Basic ? value.Password : null,
-            EmailAccentColor.From(EmailSettings.DefaultAccentColor),
-            EmailFontFamily.From(EmailSettings.DefaultFontFamily));
+            EmailAccentColor.From("#2563eb"),
+            EmailFontFamily.From("Inter, sans-serif"));
     }
 }

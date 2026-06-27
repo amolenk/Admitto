@@ -51,6 +51,19 @@
         </p>
     </div>
 
+    {{ if change_tickets_link }}
+    <div style="border-top: 1px solid #ddd; margin-top: 20px;">
+        <h2 style="font-size: 14px; color: {{ accent_color }}; font-weight: bold;">Need a different ticket?</h2>
+        <p>You can update your ticket selection while changes are available.</p>
+        <p style="margin-top: 10px;">
+            <a href="{{ change_tickets_link }}"
+               style="background-color: {{ accent_color }}; color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 4px; display: inline-block;">
+                Change My Tickets
+            </a>
+        </p>
+    </div>
+    {{ end }}
+
     <div style="border-top: 1px solid #ddd; margin-top: 20px;">
         <p>For more details about the event, visit <a
                 href="{{ event_website }}" target="_blank" rel="noopener noreferrer"

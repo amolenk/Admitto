@@ -36,6 +36,12 @@ public class TicketedEventEntityConfiguration : IEntityTypeConfiguration<Tickete
             .IsRequired()
             .HasMaxLength(320);
 
+        builder.Property(e => e.PublicSlug)
+            .HasColumnName("public_slug")
+            .IsRequired()
+            .HasMaxLength(Slug.MaxLength)
+            .HasDefaultValueSql("'event-' || substr(md5(random()::text), 1, 12)");
+
         builder.Property(e => e.StartsAt)
             .HasColumnName("starts_at")
             .IsRequired();
@@ -90,6 +96,10 @@ public class TicketedEventEntityConfiguration : IEntityTypeConfiguration<Tickete
 
         builder.HasIndex(e => new { e.TeamId, e.Status })
             .HasDatabaseName("IX_ticketed_events_team_id_status");
+
+        builder.HasIndex(e => e.PublicSlug)
+            .IsUnique()
+            .HasDatabaseName("IX_ticketed_events_public_slug");
 
         var schemaProperty = builder.Property(e => e.AdditionalDetailSchema)
             .HasColumnName("additional_detail_schema")

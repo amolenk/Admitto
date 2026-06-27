@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Organization.Domain.Entities;
+using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Testing.Builders.Organization.Domain;
@@ -8,6 +9,7 @@ public class TeamBuilder
     public static readonly TeamName DefaultName = TeamName.From("Test Team");
 
     private TeamName _name = DefaultName;
+    private TeamAccentColor? _accentColor;
     private bool _archived;
 
     public TeamBuilder WithName(string name)
@@ -22,9 +24,15 @@ public class TeamBuilder
         return this;
     }
 
+    public TeamBuilder WithAccentColor(string accentColor)
+    {
+        _accentColor = TeamAccentColor.From(accentColor);
+        return this;
+    }
+
     public Team Build()
     {
-        var team = Team.Create(_name);
+        var team = Team.Create(_name, _accentColor);
 
         if (_archived)
         {

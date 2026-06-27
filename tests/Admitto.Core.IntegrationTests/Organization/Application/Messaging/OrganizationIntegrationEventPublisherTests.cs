@@ -17,6 +17,7 @@ public sealed class OrganizationIntegrationEventPublisherTests
         var creationRequestId = CreationRequestId.New();
         var startsAt = DateTimeOffset.UtcNow.AddDays(10);
         var endsAt = startsAt.AddDays(1);
+        var publicSlug = Slug.From("my-conference");
 
         var domainEvent = new TicketedEventCreationRequestedDomainEvent(
             creationRequestId,
@@ -26,7 +27,8 @@ public sealed class OrganizationIntegrationEventPublisherTests
             AbsoluteUrl.From("https://tickets.example.com"),
             startsAt,
             endsAt,
-            TimeZoneId.From("UTC"));
+            TimeZoneId.From("UTC"),
+            publicSlug);
 
         IIntegrationEvent? captured = null;
         var outbox = Substitute.For<IOutbox>();
@@ -43,5 +45,6 @@ public sealed class OrganizationIntegrationEventPublisherTests
         evt.StartsAt.ShouldBe(startsAt);
         evt.EndsAt.ShouldBe(endsAt);
         evt.TimeZone.ShouldBe("UTC");
+        evt.PublicSlug.ShouldBe(publicSlug.Value);
     }
 }

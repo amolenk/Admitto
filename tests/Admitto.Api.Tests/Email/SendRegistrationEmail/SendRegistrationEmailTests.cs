@@ -11,7 +11,7 @@ namespace Amolenk.Admitto.Api.Tests.Email.SendRegistrationEmail;
 public sealed class SendRegistrationEmailTests(TestContext testContext) : EndToEndTestBase
 {
     [TestMethod]
-    public async Task RegisterAttendee_WithEmailSettings_SendsExactlyOneEmailAndLogsIt()
+    public async Task RegisterAttendee_WithSystemEmailSettings_SendsExactlyOneEmailAndLogsIt()
     {
         var fixture = SendRegistrationEmailFixture.HappyFlow();
         await fixture.SetupAsync(Environment);
@@ -54,7 +54,7 @@ public sealed class SendRegistrationEmailTests(TestContext testContext) : EndToE
     }
 
     [TestMethod]
-    public async Task RegisterAttendee_WithEmailSettings_RedeliveredEventDoesNotDoubleSend()
+    public async Task RegisterAttendee_WithSystemEmailSettings_RedeliveredEventDoesNotDoubleSend()
     {
         var fixture = SendRegistrationEmailFixture.HappyFlow();
         await fixture.SetupAsync(Environment);
