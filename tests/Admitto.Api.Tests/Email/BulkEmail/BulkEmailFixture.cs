@@ -140,7 +140,12 @@ internal sealed class BulkEmailFixture
                 isArchived: false,
                 DateTimeOffset.UtcNow);
             var teamContext = TeamEmailContextView.CreatePartial(TeamId, DateTimeOffset.UtcNow);
-            teamContext.UpdateTeamContext(team.Name.Value, team.AccentColor.Value, team.Version, DateTimeOffset.UtcNow);
+            teamContext.UpdateTeamContext(
+                team.Name.Value,
+                team.AccentColor.Value,
+                team.ReplyToEmailAddress?.Value,
+                team.Version,
+                DateTimeOffset.UtcNow);
             db.EventEmailContexts.Add(context);
             db.TeamEmailContexts.Add(teamContext);
         });

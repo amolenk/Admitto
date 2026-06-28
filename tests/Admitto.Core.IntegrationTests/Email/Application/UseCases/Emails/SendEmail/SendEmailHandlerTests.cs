@@ -193,6 +193,55 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
         requeued.ShouldBeTrue();
     }
 
+    [TestMethod]
+    public void TicketConfirmationTemplate_EventWebsiteLink_UsesPublicEventLink()
+    {
+        var template = BuiltInEmailTemplateCatalog.CreateTemplate(BuiltInEmailTemplateNames.TicketConfirmation);
+        var parameters = EmailTemplateParameters.WithBranding(
+            new
+            {
+                FirstName = "Alice",
+                EventName = "DevConf",
+                EventWebsite = "https://devconf.example.com",
+                PublicEventLink = "https://admitto.example.com/e/devconf",
+                QRCodeLink = "https://admitto.example.com/e/devconf/qr-code/registration-id",
+                CancelLink = "https://admitto.example.com/e/devconf/cancel/registration-id",
+                TicketTypes = Array.Empty<string>()
+            },
+            EmailAccentColor.From("#0f766e"),
+            EmailFontFamily.From("Arial"));
+
+        var rendered = new ScribanEmailRenderer().Render(template, parameters);
+
+        rendered.HtmlBody.ShouldContain("href=\"https://admitto.example.com/e/devconf\"");
+        rendered.HtmlBody.ShouldContain(">our website</a>");
+        rendered.HtmlBody.ShouldNotContain("https://devconf.example.com");
+        rendered.TextBody.ShouldContain("https://admitto.example.com/e/devconf");
+        rendered.TextBody.ShouldNotContain("https://devconf.example.com");
+    }
+
+    [TestMethod]
+    public void BuiltInEmailTemplates_RenderConfiguredFontAndAccentColor()
+    {
+        var renderer = new ScribanEmailRenderer();
+        var parameters = EmailTemplateParameters.WithBranding(
+            EmailTemplateSampleParameters.Create(),
+            EmailAccentColor.From("#0f766e"),
+            EmailFontFamily.From("Georgia, serif"));
+
+        foreach (var entry in BuiltInEmailTemplateCatalog.All)
+        {
+            var template = BuiltInEmailTemplateCatalog.CreateTemplate(entry.Name);
+
+            var rendered = renderer.Render(template, parameters);
+
+            rendered.HtmlBody.Contains("font-family: Georgia, serif")
+                .ShouldBeTrue($"Built-in template '{entry.Name}' must render the configured font family.");
+            rendered.HtmlBody.Contains("#0f766e")
+                .ShouldBeTrue($"Built-in template '{entry.Name}' must render the configured accent color.");
+        }
+    }
+
     private (TeamId, TicketedEventId, FakeEmailSender, SendEmailHandler) BuildHandler(bool configureSystemEmail = true)
     {
         var teamId = TeamId.New();
@@ -234,8 +283,8 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
         return (teamId, eventId, fakeSender, handler);
     }
 
-    private static EffectiveEmailSettingsResolver BuildSettingsResolver(bool configureSystemEmail = true) =>
-        new(new SystemEmailSettingsResolver(Options.Create(configureSystemEmail
+    private EffectiveEmailSettingsResolver BuildSettingsResolver(bool configureSystemEmail = true) =>
+        new(Options.Create(configureSystemEmail
             ? new SystemEmailOptions
             {
                 SmtpHost = "smtp.example.com",
@@ -243,7 +292,8 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
                 FromAddress = "tickets@admitto.org",
                 AuthMode = "None"
             }
-            : new SystemEmailOptions())));
+            : new SystemEmailOptions()),
+            Environment.EmailDatabase.Context);
 
     private async ValueTask SeedLogAsync(
         TeamId teamId,

@@ -71,6 +71,36 @@ public sealed class TeamTests
     }
 
     [TestMethod]
+    public void ChangeReplyToEmailAddress_ActiveTeam_UpdatesReplyToEmailAddress()
+    {
+        var sut = new TeamBuilder().Build();
+
+        sut.ChangeReplyToEmailAddress(EmailAddress.From("help@example.com"));
+
+        sut.ReplyToEmailAddress.ShouldBe(EmailAddress.From("help@example.com"));
+    }
+
+    [TestMethod]
+    public void ChangeReplyToEmailAddress_Null_ClearsReplyToEmailAddress()
+    {
+        var sut = new TeamBuilder().WithReplyToEmailAddress("help@example.com").Build();
+
+        sut.ChangeReplyToEmailAddress(null);
+
+        sut.ReplyToEmailAddress.ShouldBeNull();
+    }
+
+    [TestMethod]
+    public void ChangeReplyToEmailAddress_ArchivedTeam_ThrowsTeamArchived()
+    {
+        var sut = new TeamBuilder().AsArchived().Build();
+
+        var result = ErrorResult.Capture(() => sut.ChangeReplyToEmailAddress(EmailAddress.From("help@example.com")));
+
+        result.Error.ShouldMatch(Team.Errors.TeamArchived(sut.Id));
+    }
+
+    [TestMethod]
     public void TeamAccentColor_InvalidFormat_Throws()
     {
         void Act() => TeamAccentColor.From("not-a-color");

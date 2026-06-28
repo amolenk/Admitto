@@ -10,6 +10,8 @@ The Email module uses deployment-provided system SMTP configuration for applicat
 
 The Email module SHALL send application email using SMTP settings supplied through host configuration. Required configuration SHALL include SMTP host, port, authenticated sender address, and authentication mode/credentials when applicable. The configured sender address SHALL use an Admitto-controlled domain.
 
+Team-owned reply-to email addresses are not SMTP sender settings. They SHALL be stored as team metadata and projected into Email's context for the `Reply-To` header only.
+
 #### Scenario: Worker resolves system SMTP settings
 
 - **WHEN** the Worker sends an application email and valid system SMTP configuration is present

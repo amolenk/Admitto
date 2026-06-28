@@ -35,14 +35,17 @@ internal sealed class MailKitBulkSmtpSender : IBulkSmtpSender
             await client.AuthenticateAsync(settings.Username, settings.Password, cancellationToken);
         }
 
-        return new MailKitBulkSmtpSession(client, settings.FromAddress);
+        return new MailKitBulkSmtpSession(client, settings.FromAddress, settings.ReplyToAddress);
     }
 
-    private sealed class MailKitBulkSmtpSession(SmtpClient client, EmailAddress fromAddress) : IBulkSmtpSession
+    private sealed class MailKitBulkSmtpSession(
+        SmtpClient client,
+        EmailAddress fromAddress,
+        EmailAddress? replyToAddress) : IBulkSmtpSession
     {
         public async Task<string?> SendAsync(EmailMessage message, CancellationToken cancellationToken = default)
         {
-            var mimeMessage = BuildMimeMessage(fromAddress, message);
+            var mimeMessage = BuildMimeMessage(fromAddress, replyToAddress, message);
             return await client.SendAsync(mimeMessage, cancellationToken);
         }
 
@@ -59,10 +62,15 @@ internal sealed class MailKitBulkSmtpSender : IBulkSmtpSender
             }
         }
 
-        private static MimeMessage BuildMimeMessage(EmailAddress fromAddress, EmailMessage message)
+        private static MimeMessage BuildMimeMessage(
+            EmailAddress fromAddress,
+            EmailAddress? replyToAddress,
+            EmailMessage message)
         {
             var mimeMessage = new MimeMessage();
             mimeMessage.From.Add(new MailboxAddress(fromAddress.Value, fromAddress.Value));
+            if (replyToAddress is not null)
+                mimeMessage.ReplyTo.Add(new MailboxAddress(replyToAddress.Value.Value, replyToAddress.Value.Value));
             mimeMessage.To.Add(new MailboxAddress(message.RecipientName, message.RecipientAddress));
             mimeMessage.Subject = message.Subject;
 

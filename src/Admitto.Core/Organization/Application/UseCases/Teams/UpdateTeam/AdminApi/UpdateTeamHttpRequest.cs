@@ -3,6 +3,8 @@ namespace Amolenk.Admitto.Core.Organization.Application.UseCases.Teams.UpdateTea
 public sealed record UpdateTeamHttpRequest(
     string? Name,
     string? AccentColor,
+    string? ReplyToEmailAddress,
+    bool? ClearReplyToEmailAddress,
     uint? ExpectedVersion)
 {
     internal UpdateTeamCommand ToCommand(Guid teamId)
@@ -10,5 +12,7 @@ public sealed record UpdateTeamHttpRequest(
             teamId,
             Name,
             ExpectedVersion,
-            AccentColor);
+            AccentColor,
+            ReplyToEmailAddress,
+            ClearReplyToEmailAddress == true);
 }

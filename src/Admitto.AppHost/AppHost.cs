@@ -7,7 +7,6 @@ using Azure.Provisioning.AppContainers;
 using Aspire.Hosting.Azure;
 using Aspire.Hosting.JavaScript;
 using Azure.Provisioning.ApplicationInsights;
-using Azure.Provisioning.OperationalInsights;
 using Azure.Provisioning.PostgreSql;
 using Microsoft.Extensions.Hosting;
 
@@ -147,29 +146,48 @@ var keycloakAdminPassword = builder.ExecutionContext.IsPublishMode
     ? builder.AddParameter("keycloakAdminPassword", secret: true)
     : builder.AddParameter("keycloakAdminPassword", value: "admin", secret: true);
 
-IResourceBuilder<ContainerResource> keycloak;
+var keycloakSmtpFromAddress = builder.ExecutionContext.IsPublishMode
+    ? builder.AddParameter("keycloakSmtpFromAddress")
+    : builder.AddParameter("keycloakSmtpFromAddress", value: "noreply@admitto.local");
+var keycloakSmtpFromDisplayName = builder.AddParameter("keycloakSmtpFromDisplayName", value: "Admitto");
+var keycloakSmtpAuth = builder.ExecutionContext.IsPublishMode
+    ? builder.AddParameter("keycloakSmtpAuth", value: "true")
+    : builder.AddParameter("keycloakSmtpAuth", value: "false");
+var keycloakSmtpUsername = builder.ExecutionContext.IsPublishMode
+    ? builder.AddParameter("keycloakSmtpUsername")
+    : builder.AddParameter("keycloakSmtpUsername", value: string.Empty);
+var keycloakSmtpPassword = builder.ExecutionContext.IsPublishMode
+    ? builder.AddParameter("keycloakSmtpPassword", secret: true)
+    : builder.AddParameter("keycloakSmtpPassword", value: string.Empty, secret: true);
+var keycloakSmtpSsl = builder.AddParameter("keycloakSmtpSsl", value: "false");
+var keycloakSmtpStartTls = builder.ExecutionContext.IsPublishMode
+    ? builder.AddParameter("keycloakSmtpStartTls", value: "true")
+    : builder.AddParameter("keycloakSmtpStartTls", value: "false");
+
+var keycloak = builder.AddContainer("keycloak", "admitto-keycloak")
+    .WithDockerfile("./KeycloakConfiguration")
+    .WithEnvironment("KC_BOOTSTRAP_ADMIN_USERNAME", keycloakAdminUser)
+    .WithEnvironment("KC_BOOTSTRAP_ADMIN_PASSWORD", keycloakAdminPassword)
+    .WithEnvironment("KC_HTTP_ENABLED", "true")
+    .WithEnvironment("KC_HEALTH_ENABLED", "true")
+    .WithEnvironment("KEYCLOAK_SMTP_FROM", keycloakSmtpFromAddress)
+    .WithEnvironment("KEYCLOAK_SMTP_FROM_DISPLAY_NAME", keycloakSmtpFromDisplayName)
+    .WithEnvironment("KEYCLOAK_SMTP_AUTH", keycloakSmtpAuth)
+    .WithEnvironment("KEYCLOAK_SMTP_USERNAME", keycloakSmtpUsername)
+    .WithEnvironment("KEYCLOAK_SMTP_PASSWORD", keycloakSmtpPassword)
+    .WithEnvironment("KEYCLOAK_SMTP_SSL", keycloakSmtpSsl)
+    .WithEnvironment("KEYCLOAK_SMTP_STARTTLS", keycloakSmtpStartTls);
 
 if (builder.ExecutionContext.IsPublishMode)
 {
     var keycloakPublicUrl = builder.AddParameter("keycloakPublicUrl");
     var keycloakSmtpHost = builder.AddParameter("keycloakSmtpHost");
     var keycloakSmtpPort = builder.AddParameter("keycloakSmtpPort", value: "587");
-    var keycloakSmtpFromAddress = builder.AddParameter("keycloakSmtpFromAddress");
-    var keycloakSmtpFromDisplayName = builder.AddParameter("keycloakSmtpFromDisplayName", value: "Admitto");
-    var keycloakSmtpAuth = builder.AddParameter("keycloakSmtpAuth", value: "true");
-    var keycloakSmtpUsername = builder.AddParameter("keycloakSmtpUsername");
-    var keycloakSmtpPassword = builder.AddParameter("keycloakSmtpPassword", secret: true);
-    var keycloakSmtpSsl = builder.AddParameter("keycloakSmtpSsl", value: "false");
-    var keycloakSmtpStartTls = builder.AddParameter("keycloakSmtpStartTls", value: "true");
 
-    keycloak = builder.AddContainer("keycloak", "admitto-keycloak")
-        .WithDockerfile("./KeycloakConfiguration")
+    keycloak
         .WithArgs("start", "--import-realm", "--spi-user-profile--declarative-user-profile--read-only-attributes=email")
         .WithHttpEndpoint(targetPort: 8080, name: "http")
-        .WithHttpHealthCheck("/realms/admitto/.well-known/openid-configuration")
         .WithExternalHttpEndpoints()
-        .WithEnvironment("KC_BOOTSTRAP_ADMIN_USERNAME", keycloakAdminUser)
-        .WithEnvironment("KC_BOOTSTRAP_ADMIN_PASSWORD", keycloakAdminPassword)
         .WithEnvironment("KC_DB", "postgres")
         .WithEnvironment(
             "KC_DB_URL",
@@ -177,19 +195,10 @@ if (builder.ExecutionContext.IsPublishMode)
                 $"jdbc:postgresql://{postgres.Resource.HostName}/keycloak-db?sslmode=require"))
         .WithEnvironment("KC_DB_USERNAME", postgres.Resource.UserName!)
         .WithEnvironment("KC_DB_PASSWORD", postgres.Resource.Password!)
-        .WithEnvironment("KC_HTTP_ENABLED", "true")
         .WithEnvironment("KC_PROXY_HEADERS", "xforwarded")
         .WithEnvironment("KC_HOSTNAME", keycloakPublicUrl)
-        .WithEnvironment("KC_HEALTH_ENABLED", "true")
         .WithEnvironment("KEYCLOAK_SMTP_HOST", keycloakSmtpHost)
         .WithEnvironment("KEYCLOAK_SMTP_PORT", keycloakSmtpPort)
-        .WithEnvironment("KEYCLOAK_SMTP_FROM", keycloakSmtpFromAddress)
-        .WithEnvironment("KEYCLOAK_SMTP_FROM_DISPLAY_NAME", keycloakSmtpFromDisplayName)
-        .WithEnvironment("KEYCLOAK_SMTP_AUTH", keycloakSmtpAuth)
-        .WithEnvironment("KEYCLOAK_SMTP_USERNAME", keycloakSmtpUsername)
-        .WithEnvironment("KEYCLOAK_SMTP_PASSWORD", keycloakSmtpPassword)
-        .WithEnvironment("KEYCLOAK_SMTP_SSL", keycloakSmtpSsl)
-        .WithEnvironment("KEYCLOAK_SMTP_STARTTLS", keycloakSmtpStartTls)
         .WaitFor(keycloakDb);
 
 
@@ -209,18 +218,18 @@ else
     // tokens (which include the authority URL, with port) beyond the lifetime of the app host.
     var keycloakHttpPort = builder.Environment.IsDevelopment() ? 15001 : (int?)null;
 
-    keycloak = builder.AddContainer("keycloak", "admitto-keycloak")
-        .WithDockerfile("./KeycloakConfiguration")
+    keycloak
         .WithArgs(
             "start-dev",
             "--import-realm",
             "--spi-user-profile--declarative-user-profile--read-only-attributes=email")
         .WithHttpEndpoint(port: keycloakHttpPort, targetPort: 8080, name: "http", isProxied: false)
-        .WithHttpHealthCheck("/realms/admitto/.well-known/openid-configuration")
-        .WithEnvironment("KC_BOOTSTRAP_ADMIN_USERNAME", keycloakAdminUser)
-        .WithEnvironment("KC_BOOTSTRAP_ADMIN_PASSWORD", keycloakAdminPassword)
-        .WithEnvironment("KC_HTTP_ENABLED", "true")
-        .WithEnvironment("KC_HEALTH_ENABLED", "true")
+        .WithEnvironment(
+            "KEYCLOAK_SMTP_HOST",
+            ReferenceExpression.Create($"{mailDev!.GetEndpoint("smtp").Property(EndpointProperty.Host)}"))
+        .WithEnvironment(
+            "KEYCLOAK_SMTP_PORT",
+            ReferenceExpression.Create($"{mailDev!.GetEndpoint("smtp").Property(EndpointProperty.Port)}"))
         .WithBindMount(
             Path.Combine(builder.Environment.ContentRootPath, "KeycloakConfiguration", "AdmittoRealm.Local.json"),
             "/opt/keycloak/data/import/admitto-realm.json",
@@ -248,6 +257,9 @@ else
             .WithEnvironment("ADMITTO_UI_CLIENT_SECRET", "admitto-ui-dev-secret");
     }
 }
+
+// Can only set healthcheck after having specified the endpoint.
+keycloak.WithHttpHealthCheck("/realms/admitto/.well-known/openid-configuration");
 
 if (mailDev is not null)
 {

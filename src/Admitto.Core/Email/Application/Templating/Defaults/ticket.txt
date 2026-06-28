@@ -26,7 +26,7 @@ Change your tickets:
 {{ change_tickets_link }}
 {{ end }}
 
-For more details about the event, visit: {{ event_website }}
+For more details about the event, visit our website: {{ public_event_link }}
 
 We look forward to seeing you there!
 

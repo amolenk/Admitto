@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Core.Email.Application.Sending.Settings;
 
@@ -9,6 +10,7 @@ public sealed record EffectiveEmailSettings(
     Hostname SmtpHost,
     Port SmtpPort,
     EmailAddress FromAddress,
+    EmailAddress? ReplyToAddress,
     EmailAuthMode AuthMode,
     string? Username,
     string? Password,

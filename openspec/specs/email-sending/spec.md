@@ -39,12 +39,17 @@ The Email module SHALL send one registration-confirmation ("ticket") email per s
 
 ### Requirement: Application email uses Admitto system sender identity
 
-All application email sent by the Email module SHALL use a configured Admitto-controlled sender address for the SMTP `From` address. The visible display name MAY include the event name or another Admitto-controlled display value, but the sender email-address domain SHALL remain Admitto-controlled.
+All application email sent by the Email module SHALL use a configured Admitto-controlled sender address for the SMTP `From` address. The visible display name MAY include the event name or another Admitto-controlled display value, but the sender email-address domain SHALL remain Admitto-controlled. When the owning team has an optional reply-to email address, the Email module SHALL set the SMTP `Reply-To` header to that address without changing the `From` address.
 
 #### Scenario: Event display name with Admitto from-address
 
 - **WHEN** the system sends a ticket email for event "Azure Fest 2026"
 - **THEN** the message uses an Admitto-controlled `From` address and may use "Azure Fest 2026" as the display name
+
+#### Scenario: Team reply-to does not replace from-address
+
+- **WHEN** the system sends a ticket email for a team with reply-to email address `help@example.com`
+- **THEN** the message uses the Admitto-controlled `From` address and `Reply-To: help@example.com`
 
 ---
 
@@ -229,7 +234,7 @@ When email composition or rendering fails (e.g. malformed built-in content or ma
 
 ### Requirement: Email owns team and event rendering context
 
-The Email module SHALL persist an Email-owned rendering context projection for each ticketed event that can receive application email. The projection SHALL contain only email-rendering and scheduling facts, including the owning team id, ticketed event id, team accent color, event name, event website URL, public event slug or equivalent link inputs, event time zone, reconfirm policy snapshot when present, self-service ticket-type count, and lifecycle state needed by Email.
+The Email module SHALL persist Email-owned rendering context projections for each team and ticketed event that can receive application email. The projections SHALL contain only email-rendering, reply routing, and scheduling facts, including the owning team id, ticketed event id, team accent color, optional team reply-to email address, event name, event website URL, public event slug or equivalent link inputs, event time zone, reconfirm policy snapshot when present, self-service ticket-type count, and lifecycle state needed by Email.
 
 The projection SHALL be updated from Organization and Registrations integration events. Email SHALL NOT call Organization synchronously for team branding while preparing application email.
 
@@ -237,6 +242,11 @@ The projection SHALL be updated from Organization and Registrations integration 
 
 - **WHEN** a ticket email is prepared for an event whose Email projection has team accent color `#0f766e`
 - **THEN** the email render parameters use `#0f766e` without calling the Organization facade for branding
+
+#### Scenario: Team reply-to comes from Email projection
+
+- **WHEN** a ticket email is sent for a team whose Email projection has reply-to email address `help@example.com`
+- **THEN** the SMTP message uses `Reply-To: help@example.com` without calling the Organization facade for team contact metadata
 
 #### Scenario: Event links come from Email projection inputs
 

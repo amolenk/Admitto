@@ -10,6 +10,7 @@ public class TeamBuilder
 
     private TeamName _name = DefaultName;
     private TeamAccentColor? _accentColor;
+    private EmailAddress? _replyToEmailAddress;
     private bool _archived;
 
     public TeamBuilder WithName(string name)
@@ -30,9 +31,15 @@ public class TeamBuilder
         return this;
     }
 
+    public TeamBuilder WithReplyToEmailAddress(string replyToEmailAddress)
+    {
+        _replyToEmailAddress = EmailAddress.From(replyToEmailAddress);
+        return this;
+    }
+
     public Team Build()
     {
-        var team = Team.Create(_name, _accentColor);
+        var team = Team.Create(_name, _accentColor, _replyToEmailAddress);
 
         if (_archived)
         {

@@ -51,16 +51,17 @@ The Keycloak master-realm bootstrap administrator is also deployment-configured 
 the `keycloakAdminUser` and `keycloakAdminPassword` publish parameters; local dev
 keeps the `admin` / `admin` defaults.
 Keycloak account-action email uses Keycloak SMTP settings, not the Admitto Email
-module's system/application SMTP settings. Local `AdmittoRealm.Local.json` points
-Keycloak SMTP at MailDev (`maildev:1025`, no auth) so execute-actions emails can
-be inspected locally. Production `AdmittoRealm.Deployment.json` uses
-environment substitution for `KEYCLOAK_SMTP_HOST`, `KEYCLOAK_SMTP_PORT`,
-`KEYCLOAK_SMTP_FROM`, `KEYCLOAK_SMTP_FROM_DISPLAY_NAME`, `KEYCLOAK_SMTP_AUTH`,
+module's system/application SMTP settings. Both `AdmittoRealm.Local.json` and
+`AdmittoRealm.Deployment.json` use environment substitution for
+`KEYCLOAK_SMTP_HOST`, `KEYCLOAK_SMTP_PORT`, `KEYCLOAK_SMTP_FROM`,
+`KEYCLOAK_SMTP_FROM_DISPLAY_NAME`, `KEYCLOAK_SMTP_AUTH`,
 `KEYCLOAK_SMTP_USERNAME`, `KEYCLOAK_SMTP_PASSWORD`, `KEYCLOAK_SMTP_SSL`, and
-`KEYCLOAK_SMTP_STARTTLS`; AppHost exposes matching publish parameters, with the
-password marked secret. The Worker's `systemEmail*` parameters remain the Admitto
-application-email SMTP path for attendee, OTP, reconfirmation, cancellation,
-waitlist, and bulk emails.
+`KEYCLOAK_SMTP_STARTTLS`. AppHost wires local run mode host and port from the
+MailDev `smtp` endpoint and uses no-auth defaults so execute-actions emails can
+be inspected locally, while publish mode requires the deployment-specific host,
+sender, username, and secret password values. The
+Worker's `systemEmail*` parameters remain the Admitto application-email SMTP path
+for attendee, OTP, reconfirmation, cancellation, waitlist, and bulk emails.
 
 ## 7.2 Production shape
 

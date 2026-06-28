@@ -1,5 +1,6 @@
 using Amolenk.Admitto.Core.Organization.Domain.Entities;
 using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Amolenk.Admitto.Core.Organization.Infrastructure.Persistence.EntityConfigurations;
@@ -26,6 +27,10 @@ public class TeamEntityConfiguration : IEntityTypeConfiguration<Team>
             .IsRequired()
             .HasMaxLength(TeamAccentColor.MaxLength)
             .HasDefaultValue(TeamAccentColor.From(TeamAccentColor.Default));
+
+        builder.Property(e => e.ReplyToEmailAddress)
+            .HasColumnName("reply_to_email_address")
+            .HasMaxLength(EmailAddress.MaxLength);
 
         builder.Property(e => e.ArchivedAt)
             .HasColumnName("archived_at");

@@ -22,6 +22,7 @@ internal sealed class TeamEmailContextProjector(IEmailReadStore readStore)
             integrationEvent.TeamId,
             integrationEvent.Name,
             integrationEvent.AccentColor,
+            integrationEvent.ReplyToEmailAddress,
             integrationEvent.TeamVersion,
             cancellationToken);
     }
@@ -34,6 +35,7 @@ internal sealed class TeamEmailContextProjector(IEmailReadStore readStore)
             integrationEvent.TeamId,
             integrationEvent.Name,
             integrationEvent.AccentColor,
+            integrationEvent.ReplyToEmailAddress,
             integrationEvent.TeamVersion,
             cancellationToken);
     }
@@ -42,6 +44,7 @@ internal sealed class TeamEmailContextProjector(IEmailReadStore readStore)
         Guid teamIdValue,
         string name,
         string accentColor,
+        string? replyToEmailAddress,
         uint teamVersion,
         CancellationToken cancellationToken)
     {
@@ -49,7 +52,7 @@ internal sealed class TeamEmailContextProjector(IEmailReadStore readStore)
         var teamId = TeamId.From(teamIdValue);
         var view = await GetOrCreateAsync(teamId, now, cancellationToken);
 
-        view.UpdateTeamContext(name, accentColor, teamVersion, now);
+        view.UpdateTeamContext(name, accentColor, replyToEmailAddress, teamVersion, now);
     }
 
     private async Task<TeamEmailContextView> GetOrCreateAsync(

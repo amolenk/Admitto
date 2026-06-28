@@ -2,6 +2,7 @@ using Amolenk.Admitto.Core.Organization.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.Entities;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
+using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Core.Organization.Domain.Entities;
 
@@ -34,16 +35,19 @@ public class Team : Aggregate<TeamId>
         TeamId id,
         TeamName name,
         TeamAccentColor accentColor,
+        EmailAddress? replyToEmailAddress,
         DateTimeOffset? archivedAt)
         : base(id)
     {
         Name = name;
         AccentColor = accentColor;
+        ReplyToEmailAddress = replyToEmailAddress;
         ArchivedAt = archivedAt;
     }
 
     public TeamName Name { get; private set; }
     public TeamAccentColor AccentColor { get; private set; } = TeamAccentColor.From(TeamAccentColor.Default);
+    public EmailAddress? ReplyToEmailAddress { get; private set; }
     public DateTimeOffset? ArchivedAt { get; private set; }
 
     public int ActiveEventCount { get; private set; }
@@ -55,40 +59,54 @@ public class Team : Aggregate<TeamId>
 
     public bool IsArchived => ArchivedAt.HasValue;
 
-    public static Team Create(TeamName name, TeamAccentColor? accentColor = null)
+    public static Team Create(
+        TeamName name,
+        TeamAccentColor? accentColor = null,
+        EmailAddress? replyToEmailAddress = null)
     {
         var team = new Team(
             TeamId.New(),
             name,
             accentColor ?? TeamAccentColor.From(TeamAccentColor.Default),
+            replyToEmailAddress,
             archivedAt: null);
 
         team.AddDomainEvent(new TeamCreatedDomainEvent(
             team.Id,
             team.Name,
             team.AccentColor,
+            team.ReplyToEmailAddress,
             team.Version));
 
         return team;
     }
 
-    public void UpdateDetails(TeamName? name, TeamAccentColor? accentColor)
+    public void UpdateDetails(
+        TeamName? name,
+        TeamAccentColor? accentColor,
+        bool updateReplyToEmailAddress = false,
+        EmailAddress? replyToEmailAddress = null)
     {
         EnsureNotArchived();
 
         var newName = name ?? Name;
         var newAccentColor = accentColor ?? AccentColor;
+        var newReplyToEmailAddress = updateReplyToEmailAddress
+            ? replyToEmailAddress
+            : ReplyToEmailAddress;
 
-        if (Name == newName && AccentColor == newAccentColor)
+        if (Name == newName && AccentColor == newAccentColor && ReplyToEmailAddress == newReplyToEmailAddress)
             return;
 
         Name = newName;
         AccentColor = newAccentColor;
+        ReplyToEmailAddress = newReplyToEmailAddress;
 
         AddDomainEvent(new TeamDetailsUpdatedDomainEvent(
             Id,
             Name,
             AccentColor,
+            ReplyToEmailAddress,
             Version));
     }
 
@@ -96,6 +114,9 @@ public class Team : Aggregate<TeamId>
 
     public void ChangeAccentColor(TeamAccentColor accentColor)
         => UpdateDetails(name: null, accentColor);
+
+    public void ChangeReplyToEmailAddress(EmailAddress? replyToEmailAddress)
+        => UpdateDetails(name: null, accentColor: null, updateReplyToEmailAddress: true, replyToEmailAddress);
 
     public void Archive(DateTimeOffset archivedAt)
     {

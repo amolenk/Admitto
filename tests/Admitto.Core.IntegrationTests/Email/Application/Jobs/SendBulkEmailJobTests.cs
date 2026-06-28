@@ -367,13 +367,13 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
         var ctx = Environment.EmailDatabase.Context;
 
         IEmailWriteStore writeStore = ctx;
-        var settingsResolver = new EffectiveEmailSettingsResolver(new SystemEmailSettingsResolver(Options.Create(new SystemEmailOptions
+        var settingsResolver = new EffectiveEmailSettingsResolver(Options.Create(new SystemEmailOptions
         {
             SmtpHost = "smtp.example.com",
             SmtpPort = 587,
             FromAddress = "tickets@admitto.org",
             AuthMode = "None"
-        })));
+        }), ctx);
         var templateService = new EmailTemplateService();
         var renderer = new ScribanEmailRenderer();
         var eventContextQuery = Substitute.For<IQueryHandler<GetEventEmailRenderingContextQuery, EventEmailContextDto>>();

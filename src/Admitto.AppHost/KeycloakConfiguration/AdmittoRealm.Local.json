@@ -2061,13 +2061,15 @@
     "strictTransportSecurity": "max-age=31536000; includeSubDomains"
   },
   "smtpServer": {
-    "host": "maildev",
-    "port": "1025",
-    "from": "noreply@admitto.local",
-    "fromDisplayName": "Admitto",
-    "ssl": "false",
-    "starttls": "false",
-    "auth": "false"
+    "host": "${KEYCLOAK_SMTP_HOST}",
+    "port": "${KEYCLOAK_SMTP_PORT}",
+    "from": "${KEYCLOAK_SMTP_FROM}",
+    "fromDisplayName": "${KEYCLOAK_SMTP_FROM_DISPLAY_NAME}",
+    "auth": "${KEYCLOAK_SMTP_AUTH}",
+    "user": "${KEYCLOAK_SMTP_USERNAME}",
+    "password": "${KEYCLOAK_SMTP_PASSWORD}",
+    "ssl": "${KEYCLOAK_SMTP_SSL}",
+    "starttls": "${KEYCLOAK_SMTP_STARTTLS}"
   },
   "eventsEnabled": false,
   "eventsListeners": [

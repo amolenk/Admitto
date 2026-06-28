@@ -17,11 +17,12 @@ internal class GetTeamHandler(IOrganizationWriteStore writeStore)
         return await writeStore.Teams
                    .AsNoTracking()
                    .Where(t => t.Id == teamId)
-                   .Select(t => new TeamDto(
-                       t.Id.Value,
-                       t.Name.Value,
-                       t.AccentColor.Value,
-                       t.Version))
+                    .Select(t => new TeamDto(
+                        t.Id.Value,
+                        t.Name.Value,
+                        t.AccentColor.Value,
+                        t.ReplyToEmailAddress == null ? null : t.ReplyToEmailAddress.Value.Value,
+                        t.Version))
                    .FirstOrDefaultAsync(cancellationToken)
                ?? throw new BusinessRuleViolationException(NotFoundError.Create<Team>());
     }

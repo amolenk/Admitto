@@ -89,4 +89,58 @@ public sealed class UpdateTeamTests(TestContext testContext) : AspireIntegration
 
         exception.Error.ShouldMatch(Team.Errors.TeamArchived(TeamId.From(fixture.TeamId)));
     }
+
+    [TestMethod]
+    public async ValueTask UpdateTeam_ReplyToEmailAddress_UpdatesReplyToEmailAddress()
+    {
+        var fixture = UpdateTeamFixture.ActiveTeam();
+        await fixture.SetupAsync(Environment);
+
+        var command = new UpdateTeamCommand(
+            fixture.TeamId,
+            Name: null,
+            ExpectedVersion: fixture.TeamVersion,
+            ReplyToEmailAddress: "help@example.com");
+
+        var sut = new UpdateTeamHandler(Environment.OrganizationDatabase.Context);
+
+        await sut.HandleAsync(command, testContext.CancellationToken);
+
+        await Environment.OrganizationDatabase.AssertAsync(async dbContext =>
+        {
+            var team = await dbContext.Teams.FindAsync(
+                [TeamId.From(fixture.TeamId)],
+                testContext.CancellationToken);
+
+            team.ShouldNotBeNull();
+            team.ReplyToEmailAddress.ShouldBe(EmailAddress.From("help@example.com"));
+        });
+    }
+
+    [TestMethod]
+    public async ValueTask UpdateTeam_ClearReplyToEmailAddress_ClearsReplyToEmailAddress()
+    {
+        var fixture = UpdateTeamFixture.ActiveTeam(replyToEmailAddress: "help@example.com");
+        await fixture.SetupAsync(Environment);
+
+        var command = new UpdateTeamCommand(
+            fixture.TeamId,
+            Name: null,
+            ExpectedVersion: fixture.TeamVersion,
+            ClearReplyToEmailAddress: true);
+
+        var sut = new UpdateTeamHandler(Environment.OrganizationDatabase.Context);
+
+        await sut.HandleAsync(command, testContext.CancellationToken);
+
+        await Environment.OrganizationDatabase.AssertAsync(async dbContext =>
+        {
+            var team = await dbContext.Teams.FindAsync(
+                [TeamId.From(fixture.TeamId)],
+                testContext.CancellationToken);
+
+            team.ShouldNotBeNull();
+            team.ReplyToEmailAddress.ShouldBeNull();
+        });
+    }
 }

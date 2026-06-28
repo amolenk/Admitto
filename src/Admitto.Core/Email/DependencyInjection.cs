@@ -47,9 +47,7 @@ public static class EmailModuleExtensions
             //     assembly,
             //     EmailModule.NamespacePrefix));
 
-            services.AddScoped<ISystemEmailSettingsResolver, SystemEmailSettingsResolver>();
-            services.AddScoped<IEffectiveEmailSettingsResolver>(sp =>
-                new EffectiveEmailSettingsResolver(sp.GetRequiredService<ISystemEmailSettingsResolver>()));
+            services.AddScoped<IEffectiveEmailSettingsResolver, EffectiveEmailSettingsResolver>();
             services.AddScoped<IEmailTemplateService, EmailTemplateService>();
             services.AddScoped<IBulkEmailRecipientResolver, BulkEmailRecipientResolver>();
             services.AddSingleton<IEmailRenderer, ScribanEmailRenderer>();

@@ -47,6 +47,8 @@ internal sealed class MailKitEmailSender : IEmailSender
     {
         var mimeMessage = new MimeMessage();
         mimeMessage.From.Add(new MailboxAddress(settings.FromAddress.Value, settings.FromAddress.Value));
+        if (settings.ReplyToAddress is not null)
+            mimeMessage.ReplyTo.Add(new MailboxAddress(settings.ReplyToAddress.Value.Value, settings.ReplyToAddress.Value.Value));
         mimeMessage.To.Add(new MailboxAddress(message.RecipientName, message.RecipientAddress));
         mimeMessage.Subject = message.Subject;
 

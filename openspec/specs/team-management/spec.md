@@ -25,7 +25,7 @@ details by team ID.
 
 #### Scenario: View team details by ID
 - **WHEN** a user with Crew role requests the details of team with ID "11111111-0000-0000-0000-000000000001"
-- **THEN** the team's ID, name, accent color, and version are returned
+- **THEN** the team's ID, name, accent color, optional reply-to email address, and version are returned
 
 #### Scenario: Reject unauthorized team view
 - **WHEN** a user who is not a member of the requested team requests its details
@@ -58,7 +58,7 @@ Archived teams SHALL be excluded.
 ---
 
 ### Requirement: Team owner can update team details
-The system SHALL allow team owners to update a team's name and accent color as a partial update.
+The system SHALL allow team owners to update a team's name, accent color, and optional reply-to email address as a partial update.
 The system SHALL use optimistic concurrency (expected version) to prevent lost updates.
 
 #### Scenario: Update team details with partial fields
@@ -69,13 +69,21 @@ The system SHALL use optimistic concurrency (expected version) to prevent lost u
 - **WHEN** an owner of team "acme" updates the accent color to `#0f766e` with the correct expected version
 - **THEN** the team stores `#0f766e` and increments its version
 
+#### Scenario: Team owner updates reply-to email address
+- **WHEN** an owner of team "acme" updates the reply-to email address to `help@example.com` with the correct expected version
+- **THEN** the team stores `help@example.com` and increments its version
+
+#### Scenario: Team owner clears reply-to email address
+- **WHEN** an owner of team "acme" clears the reply-to email address with the correct expected version
+- **THEN** the team stores no reply-to email address and increments its version
+
 #### Scenario: Invalid accent color is rejected
 - **WHEN** an owner updates the team accent color to `not-a-color`
 - **THEN** the request is rejected with a validation error and the team is unchanged
 
 #### Scenario: Team details include accent color
 - **WHEN** a team member retrieves team details
-- **THEN** the response includes the team's accent color
+- **THEN** the response includes the team's accent color and optional reply-to email address
 
 #### Scenario: Concurrent update conflict
 - **WHEN** an owner of team "acme" at version 2 submits an update with expected version 1

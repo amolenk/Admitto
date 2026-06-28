@@ -55,17 +55,25 @@ assert(localAccountConsole?.enabled === false, "Local realm must disable the Key
 
 const smtp = realm.smtpServer;
 assert(smtp, "Deployment realm must configure Keycloak SMTP settings.");
-assert(smtp.host === "${KEYCLOAK_SMTP_HOST}", "Keycloak SMTP host must use environment substitution.");
-assert(smtp.port === "${KEYCLOAK_SMTP_PORT}", "Keycloak SMTP port must use environment substitution.");
-assert(smtp.from === "${KEYCLOAK_SMTP_FROM}", "Keycloak SMTP from address must use environment substitution.");
-assert(
-  smtp.fromDisplayName === "${KEYCLOAK_SMTP_FROM_DISPLAY_NAME}",
-  "Keycloak SMTP from display name must use environment substitution.");
-assert(smtp.auth === "${KEYCLOAK_SMTP_AUTH}", "Keycloak SMTP auth flag must use environment substitution.");
-assert(smtp.user === "${KEYCLOAK_SMTP_USERNAME}", "Keycloak SMTP user must use environment substitution.");
-assert(smtp.password === "${KEYCLOAK_SMTP_PASSWORD}", "Keycloak SMTP password must use environment substitution.");
-assert(smtp.ssl === "${KEYCLOAK_SMTP_SSL}", "Keycloak SMTP SSL flag must use environment substitution.");
-assert(smtp.starttls === "${KEYCLOAK_SMTP_STARTTLS}", "Keycloak SMTP STARTTLS flag must use environment substitution.");
+assertSmtpUsesEnvironmentSubstitution(smtp, "Deployment");
+
+const localSmtp = localRealm.smtpServer;
+assert(localSmtp, "Local realm must configure Keycloak SMTP settings.");
+assertSmtpUsesEnvironmentSubstitution(localSmtp, "Local");
+
+function assertSmtpUsesEnvironmentSubstitution(smtpServer, label) {
+  assert(smtpServer.host === "${KEYCLOAK_SMTP_HOST}", `${label} Keycloak SMTP host must use environment substitution.`);
+  assert(smtpServer.port === "${KEYCLOAK_SMTP_PORT}", `${label} Keycloak SMTP port must use environment substitution.`);
+  assert(smtpServer.from === "${KEYCLOAK_SMTP_FROM}", `${label} Keycloak SMTP from address must use environment substitution.`);
+  assert(
+    smtpServer.fromDisplayName === "${KEYCLOAK_SMTP_FROM_DISPLAY_NAME}",
+    `${label} Keycloak SMTP from display name must use environment substitution.`);
+  assert(smtpServer.auth === "${KEYCLOAK_SMTP_AUTH}", `${label} Keycloak SMTP auth flag must use environment substitution.`);
+  assert(smtpServer.user === "${KEYCLOAK_SMTP_USERNAME}", `${label} Keycloak SMTP user must use environment substitution.`);
+  assert(smtpServer.password === "${KEYCLOAK_SMTP_PASSWORD}", `${label} Keycloak SMTP password must use environment substitution.`);
+  assert(smtpServer.ssl === "${KEYCLOAK_SMTP_SSL}", `${label} Keycloak SMTP SSL flag must use environment substitution.`);
+  assert(smtpServer.starttls === "${KEYCLOAK_SMTP_STARTTLS}", `${label} Keycloak SMTP STARTTLS flag must use environment substitution.`);
+}
 
 // Custom Keycloak login-page theming has been removed; production login pages use
 // the stock keycloak.v2 theme until a Keycloakify-based theme is reintroduced. The

@@ -25,6 +25,10 @@ internal sealed class TeamEmailContextViewEntityConfiguration
             .HasColumnName("accent_color")
             .HasMaxLength(EmailAccentColor.MaxLength);
 
+        builder.Property(e => e.ReplyToEmailAddress)
+            .HasColumnName("reply_to_email_address")
+            .HasMaxLength(EmailAddress.MaxLength);
+
         builder.Property(e => e.TeamVersion)
             .HasColumnName("team_version")
             .IsRequired();

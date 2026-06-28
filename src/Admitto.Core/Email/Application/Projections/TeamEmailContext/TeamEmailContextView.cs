@@ -1,5 +1,6 @@
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.Abstractions;
+using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Core.Email.Application.Projections.TeamEmailContext;
 
@@ -19,6 +20,7 @@ public sealed class TeamEmailContextView : IIsVersioned
     public TeamId TeamId { get; private set; }
     public string? TeamName { get; private set; }
     public EmailAccentColor? AccentColor { get; private set; }
+    public EmailAddress? ReplyToEmailAddress { get; private set; }
     public uint TeamVersion { get; private set; }
     public DateTimeOffset CreatedAt { get; private set; }
     public DateTimeOffset LastUpdatedAt { get; private set; }
@@ -26,13 +28,19 @@ public sealed class TeamEmailContextView : IIsVersioned
 
     public static TeamEmailContextView CreatePartial(TeamId teamId, DateTimeOffset now) => new(teamId, now);
 
-    public bool UpdateTeamContext(string teamName, string accentColor, uint teamVersion, DateTimeOffset now)
+    public bool UpdateTeamContext(
+        string teamName,
+        string accentColor,
+        string? replyToEmailAddress,
+        uint teamVersion,
+        DateTimeOffset now)
     {
         if (teamVersion < TeamVersion)
             return false;
 
         TeamName = teamName;
         AccentColor = EmailAccentColor.From(accentColor);
+        ReplyToEmailAddress = replyToEmailAddress is null ? null : EmailAddress.From(replyToEmailAddress);
         TeamVersion = teamVersion;
         LastUpdatedAt = now;
         return true;
