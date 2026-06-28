@@ -69,6 +69,7 @@ for attendee, OTP, reconfirmation, cancellation, waitlist, and bulk emails.
 - **Application schema migrations** are Aspire EF migration resources attached to the API startup project and `Admitto.Core` migrations project. Local Aspire runs apply them with `RunDatabaseUpdateOnStart()` before API and Worker start. Publish mode generates SQL artifacts for manual production application.
 - **Quartz** and **Better Auth** schemas are non-EF SQL files in `src/Admitto.AppHost/DatabaseScripts/`. Local Aspire runs apply them through one-shot `postgres` containers; production operators run these scripts manually against `quartz-db` and `better-auth-db`.
 - PostgreSQL is Azure Database for PostgreSQL Flexible Server with separate application, Quartz, and Better Auth databases.
+- AppHost publish mode sizes PostgreSQL as General Purpose `Standard_D2ds_v5`, 64 GB `P6` storage with autogrow, 30-day local backups, and high availability disabled. This is the cost-controlled production baseline for normal operation and conference-day check-in traffic; operators can temporarily scale compute up, for example to `Standard_D4ds_v5`, before larger events.
 - Keycloak uses its own `keycloak-db` database on the same PostgreSQL Flexible Server and imports the Admitto realm on startup.
 - Messaging is Azure Service Bus with the shared queue `queue`.
 - Application telemetry goes to Application Insights backed by the same Log Analytics workspace used by the Container Apps environment.

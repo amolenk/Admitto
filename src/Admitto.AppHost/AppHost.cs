@@ -71,14 +71,38 @@ if (builder.ExecutionContext.IsRunMode)
 
 if (builder.ExecutionContext.IsPublishMode)
 {
-    // Allow PGCRYPTO extension so we can generate a signing key in the database for use with protected data like
-    // SMTP passwords.
     postgres.ConfigureInfrastructure(infra =>
     {
         var server = infra.GetProvisionableResources()
             .OfType<PostgreSqlFlexibleServer>()
             .Single();
 
+        server.Sku = new PostgreSqlFlexibleServerSku
+        {
+            Name = "Standard_D2ds_v5",
+            Tier = PostgreSqlFlexibleServerSkuTier.GeneralPurpose
+        };
+
+        server.Storage = new PostgreSqlFlexibleServerStorage
+        {
+            StorageSizeInGB = 64,
+            AutoGrow = StorageAutoGrow.Enabled,
+            Tier = PostgreSqlManagedDiskPerformanceTier.P6
+        };
+
+        server.Backup = new PostgreSqlFlexibleServerBackupProperties
+        {
+            BackupRetentionDays = 30,
+            GeoRedundantBackup = PostgreSqlFlexibleServerGeoRedundantBackupEnum.Disabled
+        };
+
+        server.HighAvailability = new PostgreSqlFlexibleServerHighAvailability
+        {
+            Mode = PostgreSqlFlexibleServerHighAvailabilityMode.Disabled
+        };
+
+        // Allow PGCRYPTO extension so we can generate a signing key in the database for use with protected data like
+        // SMTP passwords.
         infra.Add(
             new PostgreSqlFlexibleServerConfiguration("postgresAzureExtensions")
             {
