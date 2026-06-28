@@ -13,4 +13,14 @@ namespace Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 public sealed record TicketedEventReconfirmPolicyChangedDomainEvent(
     TeamId TeamId,
     TicketedEventId TicketedEventId,
-    TicketedEventReconfirmPolicy? Policy) : DomainEvent;
+    uint TicketedEventVersion,
+    TicketedEventReconfirmPolicy? Policy) : DomainEvent
+{
+    public TicketedEventReconfirmPolicyChangedDomainEvent(
+        TeamId TeamId,
+        TicketedEventId TicketedEventId,
+        TicketedEventReconfirmPolicy? Policy)
+        : this(TeamId, TicketedEventId, TicketedEventVersion: 0, Policy)
+    {
+    }
+}

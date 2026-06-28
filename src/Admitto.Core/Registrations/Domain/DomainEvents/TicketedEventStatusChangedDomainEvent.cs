@@ -12,4 +12,14 @@ namespace Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 public record TicketedEventStatusChangedDomainEvent(
     TicketedEventId TicketedEventId,
     TeamId TeamId,
-    EventLifecycleStatus NewStatus) : DomainEvent;
+    uint TicketedEventVersion,
+    EventLifecycleStatus NewStatus) : DomainEvent
+{
+    public TicketedEventStatusChangedDomainEvent(
+        TicketedEventId ticketedEventId,
+        TeamId teamId,
+        EventLifecycleStatus newStatus)
+        : this(ticketedEventId, teamId, TicketedEventVersion: 0, newStatus)
+    {
+    }
+}

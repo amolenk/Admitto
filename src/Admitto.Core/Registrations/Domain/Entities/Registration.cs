@@ -81,7 +81,7 @@ public class Registration : Aggregate<RegistrationId>
         Status = RegistrationStatus.Cancelled;
         CancellationReason = reason;
 
-        AddDomainEvent(new RegistrationCancelledDomainEvent(TeamId, EventId, Id, Email, reason));
+        AddDomainEvent(new RegistrationCancelledDomainEvent(TeamId, EventId, Id, Email, FirstName, LastName, reason));
     }
 
     public void Reset(

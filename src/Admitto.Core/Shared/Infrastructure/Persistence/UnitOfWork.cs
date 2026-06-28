@@ -15,7 +15,9 @@ public sealed class UnitOfWork<TDbContext>(
 {
     private const string UniqueViolation = "23505";
 
-    public async ValueTask SaveChangesAsync(CancellationToken cancellationToken = default)
+    public async ValueTask SaveChangesAsync(
+        CancellationToken cancellationToken = default,
+        bool retryConcurrencyConflicts = false)
     {
         int result;
         try
@@ -38,7 +40,7 @@ public sealed class UnitOfWork<TDbContext>(
 
             throw;
         }
-        catch (DbUpdateConcurrencyException)
+        catch (DbUpdateConcurrencyException) when (!retryConcurrencyConflicts)
         {
             throw new BusinessRuleViolationException(ConcurrencyConflictError.Create());
         }

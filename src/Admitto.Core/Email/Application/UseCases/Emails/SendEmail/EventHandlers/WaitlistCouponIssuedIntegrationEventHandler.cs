@@ -1,5 +1,7 @@
 using Amolenk.Admitto.Core.Email.Application.Templating;
+using Amolenk.Admitto.Core.Email.Application.UseCases.EventEmailContexts.GetEventEmailRenderingContext;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail.EventHandlers;
@@ -10,6 +12,7 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail.Event
 /// Idempotency key: <c>waitlist-coupon-issued:{teamId}:{ticketedEventId}:{couponCode}</c>.
 /// </summary>
 internal sealed class WaitlistCouponIssuedIntegrationEventHandler(
+    IQueryHandler<GetEventEmailRenderingContextQuery, EventEmailContextDto> eventContextQuery,
     ICommandHandler<SendEmailCommand> sendEmailHandler)
     : IIntegrationEventHandler<WaitlistCouponIssuedIntegrationEvent>
 {
@@ -19,6 +22,12 @@ internal sealed class WaitlistCouponIssuedIntegrationEventHandler(
     {
         var idempotencyKey =
             $"waitlist-coupon-issued:{integrationEvent.TeamId}:{integrationEvent.TicketedEventId}:{integrationEvent.CouponCode}";
+        var eventContext = await eventContextQuery.HandleAsync(
+            new GetEventEmailRenderingContextQuery(
+                TeamId.From(integrationEvent.TeamId),
+                TicketedEventId.From(integrationEvent.TicketedEventId),
+                RegistrationId: null),
+            cancellationToken);
 
         var command = new SendEmailCommand(
             TeamId: integrationEvent.TeamId,
@@ -32,6 +41,10 @@ internal sealed class WaitlistCouponIssuedIntegrationEventHandler(
                 integrationEvent.CouponCode,
                 integrationEvent.TicketTypeName,
                 ExpiresAt = integrationEvent.ExpiresAt.ToString("f"),
+                eventContext.EventName,
+                EventWebsite = eventContext.WebsiteUrl,
+                eventContext.RegisterLink,
+                eventContext.TeamAccentColor
             },
             RegistrationId: null);
 

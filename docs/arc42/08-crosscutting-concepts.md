@@ -53,6 +53,8 @@ Some workflows need to consult another module's state inside the same request wi
 | `IOrganizationFacade` | Organization | Registrations | Check team membership, look up team by ID |
 Facades are read-only and side-effect-free. Cross-module *writes* still go through commands and integration events on the outbox (see §8.6).
 
+Email does not synchronously query Organization or Registrations for reusable email rendering context. It owns eventually consistent team/event context projections populated from integration events and uses live Registrations facade reads only for attendee-source recipient resolution and reconfirm candidate eligibility.
+
 ## 8.5 Use case slice layout
 
 Each use case lives in a vertical slice folder under `Application/UseCases/{FeatureGroup}/{SliceName}/`.
@@ -158,6 +160,12 @@ All cross-module integration-event handlers are idempotent:
 Handlers that require inbox protection insert a `ProcessedMessage` marker before mutating state. The marker is committed in the same unit of work as the handler's aggregate changes. If two deliveries race, both can pass the initial marker lookup, but the unique `message_key` constraint makes one `SaveChangesAsync` fail; the module `UnitOfWork` converts that database conflict to `DuplicateProcessedMessageException`, and the queue dispatcher acknowledges it as an already-processed delivery.
 
 Ticket type data is owned entirely by the Registrations module — no cross-module sync.
+
+### Email context projections
+
+The Email module persists one `email.team_email_context_view` row per `team_id` and one `email.event_email_context_view` row per `(team_id, ticketed_event_id)`. These are application read models (`TeamEmailContextView` and `EventEmailContextView` under `Application/Projections/`), maintained by focused role-based projectors (`TeamEmailContextProjector` for Organization team events and `EventEmailContextProjector` for Registrations event events), and exposed only through the module read store (`IEmailReadStore`) — projectors write projections through the read store, mirroring the Registrations `ActivityLogView`/`ActivityLogProjector` convention. Organization publishes team-level created/details-updated events; it never enumerates events for Email branding. Registrations `TicketedEventDetailsChanged` events update event name, website URL, public slug, and time zone; other Registrations events update reconfirm policy, self-service ticket count, and lifecycle state.
+
+Projection events carry source aggregate versions (`TeamVersion`, `TicketedEventVersion`, and `TicketCatalogVersion`). Projection rows store the last applied source version and ignore older deliveries, so duplicate and late Service Bus messages cannot overwrite newer source state. Projection rows also use EF row-version concurrency; queue handlers save with retryable concurrency semantics so races between workers are retried instead of acknowledged as deterministic failures. The projector may create partial rows so out-of-order delivery can be filled in by later events, and it re-issues the per-event reconfirm trigger only when a schedule-affecting event update is actually applied. Reusable reads are their own query slices under `Application/UseCases/EventEmailContexts/` (`GetEventEmailRenderingContext`, `GetActiveReconfirmTriggerSpecs`); rendering reads validate required team and event fields and fail/defer deterministically when either projection is not ready.
 
 ## 8.6.1 Quartz scheduling
 

@@ -55,24 +55,47 @@ public class Team : Aggregate<TeamId>
 
     public bool IsArchived => ArchivedAt.HasValue;
 
-    public static Team Create(TeamName name, TeamAccentColor? accentColor = null) =>
-        new(
+    public static Team Create(TeamName name, TeamAccentColor? accentColor = null)
+    {
+        var team = new Team(
             TeamId.New(),
             name,
             accentColor ?? TeamAccentColor.From(TeamAccentColor.Default),
             archivedAt: null);
 
-    public void ChangeName(TeamName name)
-    {
-        EnsureNotArchived();
-        Name = name;
+        team.AddDomainEvent(new TeamCreatedDomainEvent(
+            team.Id,
+            team.Name,
+            team.AccentColor,
+            team.Version));
+
+        return team;
     }
 
-    public void ChangeAccentColor(TeamAccentColor accentColor)
+    public void UpdateDetails(TeamName? name, TeamAccentColor? accentColor)
     {
         EnsureNotArchived();
-        AccentColor = accentColor;
+
+        var newName = name ?? Name;
+        var newAccentColor = accentColor ?? AccentColor;
+
+        if (Name == newName && AccentColor == newAccentColor)
+            return;
+
+        Name = newName;
+        AccentColor = newAccentColor;
+
+        AddDomainEvent(new TeamDetailsUpdatedDomainEvent(
+            Id,
+            Name,
+            AccentColor,
+            Version));
     }
+
+    public void ChangeName(TeamName name) => UpdateDetails(name, accentColor: null);
+
+    public void ChangeAccentColor(TeamAccentColor accentColor)
+        => UpdateDetails(name: null, accentColor);
 
     public void Archive(DateTimeOffset archivedAt)
     {

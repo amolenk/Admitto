@@ -34,7 +34,7 @@ The aggregate's `Recipients` snapshot tracks per-recipient send state (`Pending`
 
 `TicketedEvent` gains a required `TimeZone` (IANA zone id) as a first-class field. The reconfirm Quartz trigger's cron is evaluated in this zone. Without it, a "daily at 09:00" reconfirm would either drift across DST (UTC) or implicitly assume the operator's server zone — both surprising to organizers. Per-event grain (rather than per-team) is correct because a single team can legitimately run events in different zones.
 
-A new `TicketedEventTimeZoneChanged` integration event from Registrations triggers the Email module to recompute and re-register the per-event Quartz trigger.
+`TicketedEventDetailsChanged` integration events from Registrations carry the event time zone and trigger the Email module to recompute and re-register the per-event Quartz trigger when the projected update applies.
 
 ## Rationale
 

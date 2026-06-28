@@ -156,6 +156,32 @@ public sealed class RegistrationsIntegrationEventPublisherTests
     }
 
     [TestMethod]
+    public async ValueTask TicketedEventDetailsChanged_EnqueuesDetailsChangedIntegrationEventWithTimeZone()
+    {
+        var teamId = TeamId.New();
+        var eventId = TicketedEventId.New();
+
+        var domainEvent = new TicketedEventDetailsChangedDomainEvent(
+            teamId,
+            eventId,
+            EventName.From("Spring Conf"),
+            AbsoluteUrl.From("https://example.com"),
+            Slug.From("spring-conf"),
+            TimeZoneId.From("Europe/Amsterdam"));
+
+        await _publisher.HandleAsync(domainEvent, CancellationToken.None);
+
+        _captured.ShouldNotBeNull();
+        var evt = _captured.ShouldBeOfType<TicketedEventDetailsChangedIntegrationEvent>();
+        evt.TeamId.ShouldBe(teamId.Value);
+        evt.TicketedEventId.ShouldBe(eventId.Value);
+        evt.Name.ShouldBe("Spring Conf");
+        evt.WebsiteUrl.ShouldBe("https://example.com");
+        evt.PublicSlug.ShouldBe("spring-conf");
+        evt.TimeZone.ShouldBe("Europe/Amsterdam");
+    }
+
+    [TestMethod]
     public async ValueTask TicketedEventReconfirmPolicyChanged_EnqueuesIntegrationEvent()
     {
         var teamId = TeamId.New();
@@ -212,26 +238,6 @@ public sealed class RegistrationsIntegrationEventPublisherTests
         var evt = _captured.ShouldBeOfType<TicketedEventArchivedIntegrationEvent>();
         evt.TicketedEventId.ShouldBe(eventId.Value);
         evt.TeamId.ShouldBe(teamId.Value);
-    }
-
-    [TestMethod]
-    public async ValueTask TicketedEventTimeZoneChanged_EnqueuesTimeZoneChangedIntegrationEvent()
-    {
-        var teamId = TeamId.New();
-        var eventId = TicketedEventId.New();
-
-        var domainEvent = new TicketedEventTimeZoneChangedDomainEvent(
-            teamId,
-            eventId,
-            TimeZoneId.From("Europe/Amsterdam"));
-
-        await _publisher.HandleAsync(domainEvent, CancellationToken.None);
-
-        _captured.ShouldNotBeNull();
-        var evt = _captured.ShouldBeOfType<TicketedEventTimeZoneChangedIntegrationEvent>();
-        evt.TeamId.ShouldBe(teamId.Value);
-        evt.TicketedEventId.ShouldBe(eventId.Value);
-        evt.TimeZone.ShouldBe("Europe/Amsterdam");
     }
 
     [TestMethod]

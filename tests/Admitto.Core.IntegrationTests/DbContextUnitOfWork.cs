@@ -9,6 +9,8 @@ namespace Amolenk.Admitto.Core.IntegrationTests;
 /// </summary>
 internal sealed class DbContextUnitOfWork(DbContext context) : IUnitOfWork
 {
-    public async ValueTask SaveChangesAsync(CancellationToken cancellationToken = default)
+    public async ValueTask SaveChangesAsync(
+        CancellationToken cancellationToken = default,
+        bool retryConcurrencyConflicts = false)
         => await context.SaveChangesAsync(cancellationToken);
 }

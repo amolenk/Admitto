@@ -130,7 +130,7 @@ internal sealed partial class QueueMessageDispatcher(
 
                 // Commit the module's unit of work.
                 var unitOfWork = serviceProvider.GetRequiredKeyedService<IUnitOfWork>(moduleKey);
-                await unitOfWork.SaveChangesAsync(cancellationToken);
+                await unitOfWork.SaveChangesAsync(cancellationToken, retryConcurrencyConflicts: true);
             }
             catch (BusinessRuleViolationException ex)
             {

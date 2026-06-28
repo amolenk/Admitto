@@ -45,15 +45,19 @@ public class NamingRulesTests
     {
         // Integration event types typically don't end in "IntegrationEvent", so the convention
         // allows {T.Name}Handler or {T.Name}IntegrationEventHandler for disambiguation.
+        // Multi-event side-effect classes may be named for their role, such as *Publisher or
+        // *Projector (e.g. an application projection fed by several integration events).
         var violations = CheckHandlerNaming(
             typeof(IIntegrationEventHandler<>),
             (eventTypeName, className) =>
                 className == $"{eventTypeName}Handler" ||
-                className == $"{eventTypeName}IntegrationEventHandler");
+                className == $"{eventTypeName}IntegrationEventHandler" ||
+                className.EndsWith("Publisher") ||
+                className.EndsWith("Projector"));
 
         if (violations.Count > 0)
             Assert.Fail(
-                $"IntegrationEventHandler naming violations (expected {{EventType}}Handler or {{EventType}}IntegrationEventHandler):\n" +
+                $"IntegrationEventHandler naming violations (expected {{EventType}}Handler, {{EventType}}IntegrationEventHandler, *Publisher, or *Projector):\n" +
                 string.Join("\n", violations));
     }
 

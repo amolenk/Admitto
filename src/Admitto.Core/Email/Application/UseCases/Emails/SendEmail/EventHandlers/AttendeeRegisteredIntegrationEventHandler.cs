@@ -1,6 +1,7 @@
 using Amolenk.Admitto.Core.Email.Application.Templating;
-using Amolenk.Admitto.Core.Registrations.Contracts;
+using Amolenk.Admitto.Core.Email.Application.UseCases.EventEmailContexts.GetEventEmailRenderingContext;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail.EventHandlers;
@@ -9,7 +10,7 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail.Event
 /// Sends a TicketConfirmation email when an attendee has registered.
 /// </summary>
 internal sealed class AttendeeRegisteredIntegrationEventHandler(
-    IRegistrationsFacade registrationsFacade,
+    IQueryHandler<GetEventEmailRenderingContextQuery, EventEmailContextDto> eventContextQuery,
     ICommandHandler<SendEmailCommand> sendEmailHandler)
     : IIntegrationEventHandler<AttendeeRegisteredIntegrationEvent>
 {
@@ -19,10 +20,11 @@ internal sealed class AttendeeRegisteredIntegrationEventHandler(
     {
         var idempotencyKey = $"attendee-registered:{integrationEvent.RegistrationId}:{integrationEvent.RegisteredAt:O}";
 
-        var eventContext = await registrationsFacade.GetEventRegistrationSnapshotAsync(
-            integrationEvent.TeamId,
-            integrationEvent.TicketedEventId,
-            integrationEvent.RegistrationId,
+        var eventContext = await eventContextQuery.HandleAsync(
+            new GetEventEmailRenderingContextQuery(
+                TeamId.From(integrationEvent.TeamId),
+                TicketedEventId.From(integrationEvent.TicketedEventId),
+                RegistrationId.From(integrationEvent.RegistrationId)),
             cancellationToken);
 
         var fullName = $"{integrationEvent.FirstName} {integrationEvent.LastName}".Trim();
@@ -40,7 +42,7 @@ internal sealed class AttendeeRegisteredIntegrationEventHandler(
                 RecipientName = fullName,
                 integrationEvent.FirstName,
                 integrationEvent.LastName,
-                EventName = eventContext.Name,
+                eventContext.EventName,
                 EventWebsite = eventContext.WebsiteUrl,
                 eventContext.PublicEventLink,
                 eventContext.QRCodeLink,

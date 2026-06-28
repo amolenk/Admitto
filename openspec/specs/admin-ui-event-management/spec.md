@@ -306,7 +306,7 @@ The Admin UI Ticket Types page SHALL style ticket type cards with (a) a noticeab
 
 ### Requirement: Event create/edit forms include a required time zone
 
-The "Create Event" form and the General tab of the event editor SHALL include a required `TimeZone` selector populated from the IANA zone database (e.g. via a searchable combobox of common zones plus free-text fallback for less common ones). The selected value SHALL be submitted to the create endpoint and to the (new) `PUT /admin/teams/{teamSlug}/events/{eventSlug}/time-zone` update endpoint.
+The "Create Event" form and the General tab of the event editor SHALL include a required `TimeZone` selector populated from the IANA zone database (e.g. via a searchable combobox of common zones plus free-text fallback for less common ones). The selected value SHALL be submitted to the create endpoint when creating an event and to the general event details update endpoint when editing an event.
 
 When creating a new event the selector SHALL default to the browser's detected zone (`Intl.DateTimeFormat().resolvedOptions().timeZone`) but the organizer SHALL be required to confirm it explicitly.
 
@@ -316,7 +316,7 @@ When creating a new event the selector SHALL default to the browser's detected z
 
 #### Scenario: General tab edits the time zone
 - **WHEN** an organizer changes the time zone on the General tab from `Europe/Amsterdam` to `Europe/London` and saves
-- **THEN** the UI calls the time-zone update endpoint, on success refreshes the page and displays the new zone alongside event datetimes
+- **THEN** the UI calls the general event details update endpoint once, on success refreshes the page and displays the new zone alongside event datetimes
 
 #### Scenario: Unknown IANA zone rejected
 - **WHEN** the form somehow submits a non-IANA value

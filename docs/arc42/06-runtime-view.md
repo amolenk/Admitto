@@ -242,7 +242,7 @@ sequenceDiagram
         EmailHandler-->>Worker: ack (no-op, idempotency guard)
     else no terminal claim exists
         EmailHandler->>EmailHandler: resolve deployment system SMTP settings
-        EmailHandler->>EmailHandler: render built-in content via Scriban with team accent color and public event links
+    EmailHandler->>EmailHandler: read Email event context projection and render built-in content via Scriban
         EmailHandler->>EmailLog: insert Pending claim
         EmailHandler->>EmailOutbox: enqueue DeliverEmail command (same UoW)
         Worker->>EmailOutbox: poll & dequeue DeliverEmail
@@ -316,8 +316,9 @@ sequenceDiagram
     participant Job as BulkEmailJob (reconfirm)
     participant FanOut as BulkEmailFanOutJob
 
-    RegOutbox->>ReconfirmHandlers: TicketedEventCreated / ReconfirmPolicyChanged / TimeZoneChanged / Archived
-    ReconfirmHandlers->>Quartz: upsert / remove per-event trigger in quartz-db (cron in event TZ)
+    RegOutbox->>ReconfirmHandlers: TicketedEventCreated / DetailsChanged / ReconfirmPolicyChanged / Archived
+    ReconfirmHandlers->>Projection: upsert Email event context scheduling snapshot
+    ReconfirmHandlers->>Quartz: upsert / remove per-event trigger from projected policy/time zone
     Note over Quartz: fires per cadence inside reconfirm window
     Quartz->>Eval: trigger fires (eventId)
     Eval->>Facade: QueryRegistrationsAsync(Status=Registered, HasReconfirmed=false)
@@ -332,7 +333,9 @@ sequenceDiagram
 
 **Eligibility**: live `HasReconfirmed=false` is the only gate — no extra `email_log` cadence filter. The cron *is* the cadence; tightening the policy (e.g. 7d → 3d) immediately changes prompt frequency.
 
-**Lifecycle cleanup**: `TicketedEventArchived` integration events remove the trigger so archived events stop receiving reconfirm prompts.
+**Lifecycle cleanup**: `TicketedEventArchived` integration events mark the Email projection archived and remove the trigger so archived events stop receiving reconfirm prompts.
+
+**Projection consistency**: Email rendering and scheduling use the latest `email.event_email_context_view` row available when the worker handles a message. Recent Organization/Registrations edits may lag by queue delivery time; this staleness is accepted for email rendering and does not affect registration correctness.
 
 **Clustering**: Quartz uses the PostgreSQL-backed store in `quartz-db` with clustering enabled. API handlers can persist schedules, while Worker instances host the scheduler and execute jobs. During rolling deployments or temporary Worker scale-out, Quartz acquires each trigger on only one live scheduler instance.
 

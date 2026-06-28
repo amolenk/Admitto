@@ -24,6 +24,131 @@ namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("Amolenk.Admitto.Core.Email.Application.Projections.EventEmailContext.EventEmailContextView", b =>
+                {
+                    b.Property<Guid>("TeamId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("team_id");
+
+                    b.Property<Guid>("TicketedEventId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("ticketed_event_id");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<string>("EventName")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("event_name");
+
+                    b.Property<bool>("IsArchived")
+                        .HasColumnType("boolean")
+                        .HasColumnName("is_archived");
+
+                    b.Property<DateTimeOffset>("LastUpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("last_updated_at");
+
+                    b.Property<string>("PublicSlug")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("public_slug");
+
+                    b.Property<int?>("ReconfirmCadenceHours")
+                        .HasColumnType("integer")
+                        .HasColumnName("reconfirm_cadence_hours");
+
+                    b.Property<DateTimeOffset?>("ReconfirmClosesAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("reconfirm_closes_at");
+
+                    b.Property<int?>("ReconfirmMinEmailIntervalHours")
+                        .HasColumnType("integer")
+                        .HasColumnName("reconfirm_min_email_interval_hours");
+
+                    b.Property<DateTimeOffset?>("ReconfirmOpensAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("reconfirm_opens_at");
+
+                    b.Property<int?>("SelfServiceTicketTypeCount")
+                        .HasColumnType("integer")
+                        .HasColumnName("self_service_ticket_type_count");
+
+                    b.Property<long>("TicketCatalogVersion")
+                        .HasColumnType("bigint")
+                        .HasColumnName("ticket_catalog_version");
+
+                    b.Property<long>("TicketedEventVersion")
+                        .HasColumnType("bigint")
+                        .HasColumnName("ticketed_event_version");
+
+                    b.Property<string>("TimeZone")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("time_zone");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.Property<string>("WebsiteUrl")
+                        .HasColumnType("text")
+                        .HasColumnName("website_url");
+
+                    b.HasKey("TeamId", "TicketedEventId");
+
+                    b.HasIndex("TeamId")
+                        .HasDatabaseName("IX_event_email_context_view_team_id");
+
+                    b.HasIndex("IsArchived", "ReconfirmOpensAt", "ReconfirmClosesAt")
+                        .HasDatabaseName("IX_event_email_context_view_reconfirm_schedule");
+
+                    b.ToTable("event_email_context_view", "email");
+                });
+
+            modelBuilder.Entity("Amolenk.Admitto.Core.Email.Application.Projections.TeamEmailContext.TeamEmailContextView", b =>
+                {
+                    b.Property<Guid>("TeamId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("team_id");
+
+                    b.Property<string>("AccentColor")
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("accent_color");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTimeOffset>("LastUpdatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("last_updated_at");
+
+                    b.Property<string>("TeamName")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("team_name");
+
+                    b.Property<long>("TeamVersion")
+                        .HasColumnType("bigint")
+                        .HasColumnName("team_version");
+
+                    b.Property<uint>("Version")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
+
+                    b.HasKey("TeamId");
+
+                    b.ToTable("team_email_context_view", "email");
+                });
+
             modelBuilder.Entity("Amolenk.Admitto.Core.Email.Domain.Entities.BulkEmailJob", b =>
                 {
                     b.Property<Guid>("Id")

@@ -79,7 +79,15 @@ public class TicketedEvent : Aggregate<TicketedEventId>
             id, teamId, name, websiteUrl, baseUrl, publicSlug, startsAt, endsAt, timeZone);
 
         ticketedEvent.AddDomainEvent(
-            new TicketedEventCreatedDomainEvent(creationRequestId, teamId, id, timeZone));
+            new TicketedEventCreatedDomainEvent(
+                creationRequestId,
+                teamId,
+                id,
+                ticketedEvent.Version,
+                name,
+                websiteUrl,
+                publicSlug,
+                timeZone));
 
         return ticketedEvent;
     }
@@ -114,22 +122,12 @@ public class TicketedEvent : Aggregate<TicketedEventId>
         QuietHoursEnd = end;
     }
 
-    public void ChangeTimeZone(TimeZoneId timeZone)
-    {
-        EnsureActive();
-
-        if (TimeZone == timeZone)
-            return;
-
-        TimeZone = timeZone;
-        AddDomainEvent(new TicketedEventTimeZoneChangedDomainEvent(TeamId, Id, timeZone));
-    }
-
     public void UpdateDetails(
         EventName name,
         AbsoluteUrl websiteUrl,
         AbsoluteUrl baseUrl,
         Slug publicSlug,
+        TimeZoneId timeZone,
         DateTimeOffset startsAt,
         DateTimeOffset endsAt)
     {
@@ -148,8 +146,18 @@ public class TicketedEvent : Aggregate<TicketedEventId>
         WebsiteUrl = websiteUrl;
         BaseUrl = baseUrl;
         PublicSlug = publicSlug;
+        TimeZone = timeZone;
         StartsAt = startsAt;
         EndsAt = endsAt;
+
+        AddDomainEvent(new TicketedEventDetailsChangedDomainEvent(
+            TeamId,
+            Id,
+            Version,
+            Name,
+            WebsiteUrl,
+            PublicSlug,
+            TimeZone));
     }
 
     public void UpdateDetails(
@@ -158,14 +166,14 @@ public class TicketedEvent : Aggregate<TicketedEventId>
         AbsoluteUrl baseUrl,
         DateTimeOffset startsAt,
         DateTimeOffset endsAt) =>
-        UpdateDetails(name, websiteUrl, baseUrl, PublicSlug, startsAt, endsAt);
+        UpdateDetails(name, websiteUrl, baseUrl, PublicSlug, TimeZone, startsAt, endsAt);
 
     public void Archive()
     {
         EnsureActive();
 
         Status = EventLifecycleStatus.Archived;
-        AddDomainEvent(new TicketedEventStatusChangedDomainEvent(Id, TeamId, Status));
+        AddDomainEvent(new TicketedEventStatusChangedDomainEvent(Id, TeamId, Version, Status));
     }
 
     public void ConfigureRegistrationPolicy(TicketedEventRegistrationPolicy? policy)
@@ -186,7 +194,7 @@ public class TicketedEvent : Aggregate<TicketedEventId>
             throw new BusinessRuleViolationException(Errors.ReconfirmWindowClosesAfterEventStart);
 
         ReconfirmPolicy = policy;
-        AddDomainEvent(new TicketedEventReconfirmPolicyChangedDomainEvent(TeamId, Id, policy));
+        AddDomainEvent(new TicketedEventReconfirmPolicyChangedDomainEvent(TeamId, Id, Version, policy));
     }
 
     public void UpdateAdditionalDetailSchema(IReadOnlyList<AdditionalDetailField> fields)

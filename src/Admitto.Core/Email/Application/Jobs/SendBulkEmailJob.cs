@@ -4,8 +4,11 @@ using Amolenk.Admitto.Core.Email.Application.Sending;
 using Amolenk.Admitto.Core.Email.Application.Sending.Bulk;
 using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
 using Amolenk.Admitto.Core.Email.Application.Templating;
+using Amolenk.Admitto.Core.Email.Application.UseCases.EventEmailContexts.GetEventEmailRenderingContext;
 using Amolenk.Admitto.Core.Email.Domain.Entities;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Microsoft.Extensions.Options;
 using Npgsql;
@@ -33,6 +36,7 @@ namespace Amolenk.Admitto.Core.Email.Application.Jobs;
 internal sealed class SendBulkEmailJob(
     IEmailWriteStore writeStore,
     IBulkEmailRecipientResolver recipientResolver,
+    IQueryHandler<GetEventEmailRenderingContextQuery, EventEmailContextDto> eventContextQuery,
     IEffectiveEmailSettingsResolver settingsResolver,
     IEmailTemplateService templateService,
     IEmailRenderer renderer,
@@ -129,8 +133,16 @@ internal sealed class SendBulkEmailJob(
             // Custom bulk emails render job-owned content; system bulk emails
             // (for example reconfirm) render code-owned built-in content.
             EmailTemplate template;
+            EventEmailContextDto eventContext;
             try
             {
+                eventContext = await eventContextQuery.HandleAsync(
+                    new GetEventEmailRenderingContextQuery(
+                        job.TeamId,
+                        job.TicketedEventId,
+                        RegistrationId: null),
+                    ct);
+
                 template = job.Subject is not null && job.TextBody is not null && job.HtmlBody is not null
                     ? EmailTemplate.Create(
                         job.TeamId,
@@ -166,7 +178,7 @@ internal sealed class SendBulkEmailJob(
                     if (await IsCancellationRequestedAsync(bulkJobId, teamId, ticketedEventId, ct))
                         break;
 
-                    await ProcessRecipientAsync(job, recipient, template, settings, session, ct);
+                    await ProcessRecipientAsync(job, recipient, template, settings, eventContext, session, ct);
 
                     if (await IsCancellationRequestedAsync(bulkJobId, teamId, ticketedEventId, ct))
                         break;
@@ -205,6 +217,7 @@ internal sealed class SendBulkEmailJob(
         BulkEmailRecipient recipient,
         EmailTemplate template,
         EffectiveEmailSettings settings,
+        EventEmailContextDto eventContext,
         IBulkSmtpSession session,
         CancellationToken ct)
     {
@@ -216,8 +229,15 @@ internal sealed class SendBulkEmailJob(
         {
             var parameters = JsonSerializer.Deserialize<Dictionary<string, object?>>(
                 recipient.ParametersJson, ParametersJsonOptions) ?? new Dictionary<string, object?>();
-            parameters["accent_color"] = settings.AccentColor.Value;
+            parameters["accent_color"] = eventContext.TeamAccentColor;
             parameters["font_family"] = settings.FontFamily.Value;
+            parameters["event_name"] = eventContext.EventName;
+            parameters["event_website"] = eventContext.WebsiteUrl;
+            parameters["public_event_link"] = eventContext.PublicEventLink;
+            parameters["register_link"] = eventContext.RegisterLink;
+            parameters["cancel_link"] = BuildRegistrationLink(eventContext.PublicEventLink, "cancel", recipient.RegistrationId);
+            parameters["qr_code_link"] = BuildRegistrationLink(eventContext.PublicEventLink, "qr-code", recipient.RegistrationId);
+            parameters["team_accent_color"] = eventContext.TeamAccentColor;
 
             var rendered = renderer.Render(
                 template,
@@ -332,6 +352,11 @@ internal sealed class SendBulkEmailJob(
             return await GetRecipientLogAsync(job, recipient, idempotencyKey, ct);
         }
     }
+
+    private static string BuildRegistrationLink(string publicEventLink, string action, RegistrationId? registrationId) =>
+        registrationId is null
+            ? publicEventLink
+            : $"{publicEventLink}/{action}/{registrationId.Value.Value}";
 
     private async Task<EmailLog> GetRecipientLogAsync(
         BulkEmailJob job,

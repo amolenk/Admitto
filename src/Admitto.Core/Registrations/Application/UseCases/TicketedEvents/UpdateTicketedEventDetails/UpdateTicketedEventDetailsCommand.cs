@@ -9,6 +9,7 @@ internal sealed record UpdateTicketedEventDetailsCommand(
     string Name,
     string WebsiteUrl,
     string BaseUrl,
+    string TimeZone,
     DateTimeOffset StartsAt,
     DateTimeOffset EndsAt,
     TimeOnly QuietHoursStart,

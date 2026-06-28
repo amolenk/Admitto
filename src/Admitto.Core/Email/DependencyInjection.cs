@@ -6,6 +6,7 @@ using Amolenk.Admitto.Core.Email.Application.Sending;
 using Amolenk.Admitto.Core.Email.Application.Sending.Bulk;
 using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
 using Amolenk.Admitto.Core.Email.Application.Templating;
+using Amolenk.Admitto.Core.Email.Application.UseCases.EventEmailContexts.GetEventEmailRenderingContext;
 using Amolenk.Admitto.Core.Email.Application.UseCases.Reconfirmations.ReconcileReconfirmationScheduling;
 using Amolenk.Admitto.Core.Email.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.Email.Infrastructure.Sending;
@@ -58,9 +59,14 @@ public static class EmailModuleExtensions
                 builder.Configuration.GetSection("Email:Delivery"));
             services.Configure<SystemEmailOptions>(
                 builder.Configuration.GetSection(SystemEmailOptions.SectionName));
+            services.Configure<PublicEventLinksOptions>(
+                builder.Configuration.GetSection(PublicEventLinksOptions.SectionName));
 
             // Infrastructure
             builder.AddModuleDatabaseServices<IEmailWriteStore, EmailDbContext>(EmailModule.Key);
+
+            // Read store for Email-owned projections (same DbContext instance).
+            services.AddScoped<IEmailReadStore>(sp => sp.GetRequiredService<EmailDbContext>());
 
             services.AddKeyedScoped<IPostgresExceptionMapping, EmailPostgresExceptionMapping>(
                 EmailModule.Key);

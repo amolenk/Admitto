@@ -62,6 +62,11 @@ public class TicketCatalog : Aggregate<TicketedEventId>
             throw new BusinessRuleViolationException(Errors.WaitlistRequiresBoundedCapacity(id));
 
         _ticketTypes.Add(new TicketType(id, name, timeSlots, maxCapacity, selfServiceEnabled, waitlistEnabled, claimWindowHours, maxReconfirmAttempts));
+        AddDomainEvent(new TicketCatalogSelfServiceTicketTypeCountChangedDomainEvent(
+            TeamId,
+            Id,
+            Version,
+            _ticketTypes.Count(t => t.SelfServiceEnabled)));
     }
 
     public void UpdateTicketType(
@@ -75,6 +80,8 @@ public class TicketCatalog : Aggregate<TicketedEventId>
         bool updateMaxReconfirmAttempts = false)
     {
         EnsureEventActive();
+
+        var previousSelfServiceCount = _ticketTypes.Count(t => t.SelfServiceEnabled);
 
         var ticketType = FindTicketType(id);
 
@@ -101,6 +108,15 @@ public class TicketCatalog : Aggregate<TicketedEventId>
             ticketType.DisableWaitlist();
             AddDomainEvent(new WaitlistForcedDisabledDomainEvent(TeamId, Id, id));
             ticketType.UpdateCapacity(maxCapacity);
+            var forcedBranchSelfServiceCount = _ticketTypes.Count(t => t.SelfServiceEnabled);
+            if (forcedBranchSelfServiceCount != previousSelfServiceCount)
+            {
+                AddDomainEvent(new TicketCatalogSelfServiceTicketTypeCountChangedDomainEvent(
+                    TeamId,
+                    Id,
+                    Version,
+                    forcedBranchSelfServiceCount));
+            }
             return;
         }
 
@@ -132,6 +148,16 @@ public class TicketCatalog : Aggregate<TicketedEventId>
             var freedSlots = newAvailable - oldAvailable;
             if (freedSlots > 0)
                 AddDomainEvent(new WaitlistCapacityFreedDomainEvent(TeamId, Id, id, freedSlots));
+        }
+
+        var currentSelfServiceCount = _ticketTypes.Count(t => t.SelfServiceEnabled);
+        if (currentSelfServiceCount != previousSelfServiceCount)
+        {
+            AddDomainEvent(new TicketCatalogSelfServiceTicketTypeCountChangedDomainEvent(
+                TeamId,
+                Id,
+                Version,
+                currentSelfServiceCount));
         }
     }
 

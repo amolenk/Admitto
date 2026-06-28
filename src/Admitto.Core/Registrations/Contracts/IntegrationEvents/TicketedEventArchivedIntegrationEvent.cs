@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
 namespace Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
@@ -8,6 +9,14 @@ namespace Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 /// owning team's counters (active or cancelled → archived); it determines the
 /// source counter from its locally-tracked event record.
 /// </summary>
+[method: JsonConstructor]
 public sealed record TicketedEventArchivedIntegrationEvent(
     Guid TeamId,
-    Guid TicketedEventId) : IntegrationEvent;
+    Guid TicketedEventId,
+    uint TicketedEventVersion) : IntegrationEvent
+{
+    public TicketedEventArchivedIntegrationEvent(Guid TeamId, Guid TicketedEventId)
+        : this(TeamId, TicketedEventId, TicketedEventVersion: 0)
+    {
+    }
+}

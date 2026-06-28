@@ -7,7 +7,7 @@ using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.Projections.ActivityLog;
 
-internal sealed class ActivityLogProjector(IRegistrationsWriteStore writeStore)
+internal sealed class ActivityLogProjector(IRegistrationsReadStore readStore)
     : IDomainEventHandler<AttendeeRegisteredDomainEvent>,
       IDomainEventHandler<RegistrationReconfirmedDomainEvent>,
       IDomainEventHandler<RegistrationCancelledDomainEvent>,
@@ -85,7 +85,7 @@ internal sealed class ActivityLogProjector(IRegistrationsWriteStore writeStore)
         DateTimeOffset occurredAt,
         string? metadata = null)
     {
-        writeStore.ActivityLog.Add(ActivityLogView.Create(
+        readStore.ActivityLog.Add(ActivityLogView.Create(
             teamId.Value,
             eventId.Value,
             registrationId.Value,

@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:55656/"
+      "url": "http://localhost:52198/"
     }
   ],
   "paths": {
@@ -2358,104 +2358,6 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ConfigureReconfirmPolicyHttpRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "204": {
-            "description": "No Content"
-          }
-        },
-        "security": [
-          {
-            "Bearer": [ ]
-          }
-        ]
-      }
-    },
-    "/admin/teams/{teamId}/events/{eventId}/time-zone": {
-      "put": {
-        "tags": [
-          "Admin - Events"
-        ],
-        "operationId": "UpdateTicketedEventTimeZone",
-        "parameters": [
-          {
-            "name": "teamId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "eventId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/UpdateTicketedEventTimeZoneHttpRequest"
               }
             }
           },
@@ -8933,6 +8835,7 @@
           "websiteUrl",
           "baseUrl",
           "publicSlug",
+          "timeZone",
           "startsAt",
           "endsAt",
           "quietHoursStart",
@@ -8952,6 +8855,9 @@
           "publicSlug": {
             "type": "string"
           },
+          "timeZone": {
+            "type": "string"
+          },
           "startsAt": {
             "type": "string",
             "format": "date-time"
@@ -8967,26 +8873,6 @@
           "quietHoursEnd": {
             "type": "string",
             "format": "time"
-          },
-          "expectedVersion": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
-            "format": "uint32"
-          }
-        }
-      },
-      "UpdateTicketedEventTimeZoneHttpRequest": {
-        "required": [
-          "timeZone"
-        ],
-        "type": "object",
-        "properties": {
-          "timeZone": {
-            "type": "string"
           },
           "expectedVersion": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",

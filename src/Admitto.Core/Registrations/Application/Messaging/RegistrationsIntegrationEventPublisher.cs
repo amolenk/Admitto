@@ -12,9 +12,10 @@ internal sealed class RegistrationsIntegrationEventPublisher(
       IDomainEventHandler<RegistrationCancelledDomainEvent>,
       IDomainEventHandler<RegistrationReconfirmedDomainEvent>,
       IDomainEventHandler<TicketedEventCreatedDomainEvent>,
+      IDomainEventHandler<TicketedEventDetailsChangedDomainEvent>,
       IDomainEventHandler<TicketedEventReconfirmPolicyChangedDomainEvent>,
       IDomainEventHandler<TicketedEventStatusChangedDomainEvent>,
-      IDomainEventHandler<TicketedEventTimeZoneChangedDomainEvent>,
+      IDomainEventHandler<TicketCatalogSelfServiceTicketTypeCountChangedDomainEvent>,
       IDomainEventHandler<TicketsChangedDomainEvent>,
       IDomainEventHandler<WaitlistCouponIssuedDomainEvent>
 {
@@ -64,6 +65,8 @@ internal sealed class RegistrationsIntegrationEventPublisher(
             domainEvent.TicketedEventId.Value,
             domainEvent.RegistrationId.Value,
             domainEvent.Email.Value,
+            domainEvent.FirstName.Value,
+            domainEvent.LastName.Value,
             domainEvent.Reason.ToString()));
 
         return ValueTask.CompletedTask;
@@ -87,6 +90,27 @@ internal sealed class RegistrationsIntegrationEventPublisher(
             domainEvent.CreationRequestId.Value,
             domainEvent.TeamId.Value,
             domainEvent.TicketedEventId.Value,
+            domainEvent.TicketedEventVersion,
+            domainEvent.Name.Value,
+            domainEvent.WebsiteUrl.Value.ToString(),
+            domainEvent.PublicSlug.Value,
+            domainEvent.TimeZone.Value,
+            SelfServiceTicketTypeCount: 0,
+            ReconfirmPolicy: null,
+            IsArchived: false));
+
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask HandleAsync(TicketedEventDetailsChangedDomainEvent domainEvent, CancellationToken cancellationToken)
+    {
+        outbox.Enqueue(new TicketedEventDetailsChangedIntegrationEvent(
+            domainEvent.TeamId.Value,
+            domainEvent.TicketedEventId.Value,
+            domainEvent.TicketedEventVersion,
+            domainEvent.Name.Value,
+            domainEvent.WebsiteUrl.Value.ToString(),
+            domainEvent.PublicSlug.Value,
             domainEvent.TimeZone.Value));
 
         return ValueTask.CompletedTask;
@@ -99,6 +123,7 @@ internal sealed class RegistrationsIntegrationEventPublisher(
         outbox.Enqueue(new TicketedEventReconfirmPolicyChangedIntegrationEvent(
             domainEvent.TeamId.Value,
             domainEvent.TicketedEventId.Value,
+            domainEvent.TicketedEventVersion,
             domainEvent.Policy is null
                 ? null
                 : new TicketedEventReconfirmPolicySnapshot(
@@ -114,19 +139,21 @@ internal sealed class RegistrationsIntegrationEventPublisher(
     {
         outbox.Enqueue(new TicketedEventArchivedIntegrationEvent(
             domainEvent.TeamId.Value,
-            domainEvent.TicketedEventId.Value));
+            domainEvent.TicketedEventId.Value,
+            domainEvent.TicketedEventVersion));
 
         return ValueTask.CompletedTask;
     }
 
     public ValueTask HandleAsync(
-        TicketedEventTimeZoneChangedDomainEvent domainEvent,
+        TicketCatalogSelfServiceTicketTypeCountChangedDomainEvent domainEvent,
         CancellationToken cancellationToken)
     {
-        outbox.Enqueue(new TicketedEventTimeZoneChangedIntegrationEvent(
+        outbox.Enqueue(new TicketedEventSelfServiceTicketTypeCountChangedIntegrationEvent(
             domainEvent.TeamId.Value,
             domainEvent.TicketedEventId.Value,
-            domainEvent.TimeZone.Value));
+            domainEvent.TicketCatalogVersion,
+            domainEvent.SelfServiceTicketTypeCount));
 
         return ValueTask.CompletedTask;
     }

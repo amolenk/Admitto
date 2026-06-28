@@ -1,7 +1,10 @@
 using System.Net.Http.Json;
 using System.Text.Json;
 using Amolenk.Admitto.Api.Tests.Infrastructure.Hosting;
+using Amolenk.Admitto.Core.Email.Application.Projections.EventEmailContext;
+using Amolenk.Admitto.Core.Email.Application.Projections.TeamEmailContext;
 using Amolenk.Admitto.Core.Email.Application.Templating;
+using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
@@ -114,6 +117,33 @@ internal sealed class BulkEmailFixture
                 db.Registrations.Add(registration);
         });
 
+        // Seed the Email-owned rendering projection directly. In production this
+        // row is maintained by EventEmailContextProjector from Organization /
+        // Registrations integration events; the fixture seeds the events
+        // synchronously, so we materialise the equivalent projection state here.
+        await environment.EmailDatabase.SeedAsync(db =>
+        {
+            var context = EventEmailContextView.CreatePartial(
+                TeamId, EventId, DateTimeOffset.UtcNow);
+            context.UpdateEventContext(
+                ticketedEventVersion: 0,
+                "Bulk Conf",
+                "https://example.com",
+                ticketedEvent.PublicSlug.Value,
+                "UTC",
+                selfServiceTicketTypeCount: 1,
+                reconfirmPolicy: new TicketedEventReconfirmPolicySnapshot(
+                    DateTimeOffset.UtcNow.AddDays(-1),
+                    DateTimeOffset.UtcNow.AddDays(30),
+                    CadenceHours: 24,
+                    MinEmailIntervalHours: 24),
+                isArchived: false,
+                DateTimeOffset.UtcNow);
+            var teamContext = TeamEmailContextView.CreatePartial(TeamId, DateTimeOffset.UtcNow);
+            teamContext.UpdateTeamContext(team.Name.Value, team.AccentColor.Value, team.Version, DateTimeOffset.UtcNow);
+            db.EventEmailContexts.Add(context);
+            db.TeamEmailContexts.Add(teamContext);
+        });
     }
 
     public async Task<JsonElement> PollUntilTerminalAsync(

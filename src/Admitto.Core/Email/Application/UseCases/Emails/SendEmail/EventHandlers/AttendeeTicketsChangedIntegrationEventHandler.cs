@@ -1,6 +1,7 @@
 using Amolenk.Admitto.Core.Email.Application.Templating;
-using Amolenk.Admitto.Core.Registrations.Contracts;
+using Amolenk.Admitto.Core.Email.Application.UseCases.EventEmailContexts.GetEventEmailRenderingContext;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail.EventHandlers;
@@ -9,7 +10,7 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail.Event
 /// Sends a new TicketConfirmation email when an attendee's tickets have changed.
 /// </summary>
 internal sealed class AttendeeTicketsChangedIntegrationEventHandler(
-    IRegistrationsFacade registrationsFacade,
+    IQueryHandler<GetEventEmailRenderingContextQuery, EventEmailContextDto> eventContextQuery,
     ICommandHandler<SendEmailCommand> sendEmailHandler)
     : IIntegrationEventHandler<AttendeeTicketsChangedIntegrationEvent>
 {
@@ -20,10 +21,11 @@ internal sealed class AttendeeTicketsChangedIntegrationEventHandler(
         var changedAtMs = integrationEvent.ChangedAt.ToUnixTimeMilliseconds();
         var idempotencyKey = $"tickets-changed:{integrationEvent.RegistrationId}:{changedAtMs}";
 
-        var eventContext = await registrationsFacade.GetEventRegistrationSnapshotAsync(
-            integrationEvent.TeamId,
-            integrationEvent.TicketedEventId,
-            integrationEvent.RegistrationId,
+        var eventContext = await eventContextQuery.HandleAsync(
+            new GetEventEmailRenderingContextQuery(
+                TeamId.From(integrationEvent.TeamId),
+                TicketedEventId.From(integrationEvent.TicketedEventId),
+                RegistrationId.From(integrationEvent.RegistrationId)),
             cancellationToken);
 
         var fullName = $"{integrationEvent.FirstName} {integrationEvent.LastName}".Trim();
@@ -41,9 +43,13 @@ internal sealed class AttendeeTicketsChangedIntegrationEventHandler(
                 RecipientName = fullName,
                 integrationEvent.FirstName,
                 integrationEvent.LastName,
-                EventName = eventContext.Name,
+                eventContext.EventName,
                 EventWebsite = eventContext.WebsiteUrl,
+                eventContext.PublicEventLink,
                 QRCodeLink = eventContext.QRCodeLink,
+                eventContext.CancelLink,
+                eventContext.TeamAccentColor,
+                eventContext.ChangeTicketsLink,
                 TicketTypes = ticketTypeNames
             },
             RegistrationId: integrationEvent.RegistrationId);

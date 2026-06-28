@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
 namespace Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
@@ -22,10 +23,22 @@ public sealed record TicketedEventReconfirmPolicySnapshot(
 /// </summary>
 /// <param name="TeamId">Owning team.</param>
 /// <param name="TicketedEventId">Ticketed event whose policy changed.</param>
+/// <param name="TicketedEventVersion">Source aggregate version for stale-message detection.</param>
 /// <param name="Policy">
 /// New policy snapshot, or <c>null</c> when the policy has been cleared.
 /// </param>
+[method: JsonConstructor]
 public sealed record TicketedEventReconfirmPolicyChangedIntegrationEvent(
     Guid TeamId,
     Guid TicketedEventId,
-    TicketedEventReconfirmPolicySnapshot? Policy) : IntegrationEvent;
+    uint TicketedEventVersion,
+    TicketedEventReconfirmPolicySnapshot? Policy) : IntegrationEvent
+{
+    public TicketedEventReconfirmPolicyChangedIntegrationEvent(
+        Guid TeamId,
+        Guid TicketedEventId,
+        TicketedEventReconfirmPolicySnapshot? Policy)
+        : this(TeamId, TicketedEventId, TicketedEventVersion: 0, Policy)
+    {
+    }
+}

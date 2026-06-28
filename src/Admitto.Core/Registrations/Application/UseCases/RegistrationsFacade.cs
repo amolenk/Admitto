@@ -1,33 +1,15 @@
 using GetRegistrationsNs = Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.GetRegistrations;
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.GetActiveReconfirmTriggerSpecs;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.GetReconfirmTriggerSpec;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.GetTicketedEventEmailContext;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
 namespace Amolenk.Admitto.Core.Registrations.Application.UseCases;
 
 internal sealed class RegistrationsFacade(
-    IQueryHandler<GetTicketedEventEmailContextQuery, EventRegistrationSnapshotDto> getEmailContextHandler,
     IQueryHandler<GetRegistrationsNs.GetRegistrationsQuery, IReadOnlyList<GetRegistrationsNs.RegistrationListItemDto>?>
         getRegistrationsHandler,
-    IQueryHandler<GetReconfirmTriggerSpecQuery, ReconfirmTriggerSpecDto?> getReconfirmTriggerSpecHandler,
-    IQueryHandler<GetActiveReconfirmTriggerSpecsQuery, IReadOnlyList<ReconfirmTriggerSpecDto>>
-        getActiveReconfirmTriggerSpecsHandler,
     IRegistrationsWriteStore writeStore) : IRegistrationsFacade
 {
-    public async ValueTask<EventRegistrationSnapshotDto> GetEventRegistrationSnapshotAsync(
-        Guid teamId,
-        Guid ticketedEventId,
-        Guid registrationId,
-        CancellationToken cancellationToken = default)
-    {
-        return await getEmailContextHandler.HandleAsync(
-            new GetTicketedEventEmailContextQuery(teamId, ticketedEventId, registrationId),
-            cancellationToken);
-    }
-
     public async Task<IReadOnlyList<RegistrationListItemDto>> GetRegistrationsAsync(
         Guid teamId,
         Guid eventId,
@@ -74,24 +56,6 @@ internal sealed class RegistrationsFacade(
                     effectiveMax);
             })
             .ToList();
-    }
-
-    public async Task<ReconfirmTriggerSpecDto?> GetReconfirmTriggerSpecAsync(
-        Guid teamId,
-        Guid eventId,
-        CancellationToken cancellationToken = default)
-    {
-        return await getReconfirmTriggerSpecHandler.HandleAsync(
-            new GetReconfirmTriggerSpecQuery(teamId, eventId),
-            cancellationToken);
-    }
-
-    public async Task<IReadOnlyList<ReconfirmTriggerSpecDto>> GetActiveReconfirmTriggerSpecsAsync(
-        CancellationToken cancellationToken = default)
-    {
-        return await getActiveReconfirmTriggerSpecsHandler.HandleAsync(
-            new GetActiveReconfirmTriggerSpecsQuery(),
-            cancellationToken);
     }
 
     public async Task<IReadOnlyList<AdditionalDetailFieldDto>> GetAdditionalDetailSchemaAsync(

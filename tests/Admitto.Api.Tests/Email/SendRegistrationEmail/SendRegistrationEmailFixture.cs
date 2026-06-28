@@ -1,4 +1,6 @@
 using Amolenk.Admitto.Api.Tests.Infrastructure.Hosting;
+using Amolenk.Admitto.Core.Email.Application.Projections.EventEmailContext;
+using Amolenk.Admitto.Core.Email.Application.Projections.TeamEmailContext;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
@@ -54,6 +56,30 @@ internal sealed class SendRegistrationEmailFixture
         {
             db.TicketedEvents.Add(ticketedEvent);
             db.TicketCatalogs.Add(catalog);
+        });
+
+        // Seed the Email-owned rendering projection directly. In production this
+        // row is maintained by EventEmailContextProjector from integration
+        // events; the fixture seeds the event synchronously, so we materialise
+        // the equivalent projection state here.
+        await environment.EmailDatabase.SeedAsync(db =>
+        {
+            var context = EventEmailContextView.CreatePartial(
+                team.Id, eventId, DateTimeOffset.UtcNow);
+            context.UpdateEventContext(
+                ticketedEventVersion: 0,
+                "MailConf",
+                "https://example.com",
+                ticketedEvent.PublicSlug.Value,
+                "UTC",
+                selfServiceTicketTypeCount: 1,
+                reconfirmPolicy: null,
+                isArchived: false,
+                DateTimeOffset.UtcNow);
+            var teamContext = TeamEmailContextView.CreatePartial(team.Id, DateTimeOffset.UtcNow);
+            teamContext.UpdateTeamContext(team.Name.Value, team.AccentColor.Value, team.Version, DateTimeOffset.UtcNow);
+            db.EventEmailContexts.Add(context);
+            db.TeamEmailContexts.Add(teamContext);
         });
     }
 }

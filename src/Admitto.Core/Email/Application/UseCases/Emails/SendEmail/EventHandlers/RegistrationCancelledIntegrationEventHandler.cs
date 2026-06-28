@@ -1,6 +1,7 @@
 using Amolenk.Admitto.Core.Email.Application.Templating;
-using Amolenk.Admitto.Core.Registrations.Contracts;
+using Amolenk.Admitto.Core.Email.Application.UseCases.EventEmailContexts.GetEventEmailRenderingContext;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail.EventHandlers;
@@ -15,7 +16,7 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail.Event
 /// Idempotency key: <c>registration-cancelled:{registrationId}</c>.
 /// </remarks>
 internal sealed class RegistrationCancelledIntegrationEventHandler(
-    IRegistrationsFacade registrationsFacade,
+    IQueryHandler<GetEventEmailRenderingContextQuery, EventEmailContextDto> eventContextQuery,
     ICommandHandler<SendEmailCommand> sendEmailHandler)
     : IIntegrationEventHandler<RegistrationCancelledIntegrationEvent>
 {
@@ -29,14 +30,15 @@ internal sealed class RegistrationCancelledIntegrationEventHandler(
 
         var idempotencyKey = $"registration-cancelled:{integrationEvent.RegistrationId}";
 
-        var eventContext = await registrationsFacade.GetEventRegistrationSnapshotAsync(
-            integrationEvent.TeamId,
-            integrationEvent.TicketedEventId,
-            integrationEvent.RegistrationId,
+        var eventContext = await eventContextQuery.HandleAsync(
+            new GetEventEmailRenderingContextQuery(
+                TeamId.From(integrationEvent.TeamId),
+                TicketedEventId.From(integrationEvent.TicketedEventId),
+                RegistrationId.From(integrationEvent.RegistrationId)),
             cancellationToken);
 
-        var firstName = eventContext.FirstName ?? string.Empty;
-        var lastName = eventContext.LastName ?? string.Empty;
+        var firstName = integrationEvent.FirstName;
+        var lastName = integrationEvent.LastName;
 
         var command = new SendEmailCommand(
             TeamId: integrationEvent.TeamId,
@@ -50,10 +52,11 @@ internal sealed class RegistrationCancelledIntegrationEventHandler(
             {
                 FirstName = firstName,
                 LastName = lastName,
-                EventName = eventContext.Name,
+                eventContext.EventName,
                 EventWebsite = eventContext.WebsiteUrl,
                 RegisterLink = eventContext.RegisterLink,
-                QRCodeLink = eventContext.QRCodeLink
+                eventContext.QRCodeLink,
+                eventContext.TeamAccentColor
             });
 
         await sendEmailHandler.HandleAsync(command, cancellationToken);

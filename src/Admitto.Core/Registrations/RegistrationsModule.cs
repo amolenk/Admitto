@@ -24,7 +24,6 @@ using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.Get
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.DirectPublicEventLinks.PublicApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.UpdateAdditionalDetailSchema.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.UpdateTicketedEventDetails.AdminApi;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.UpdateTicketedEventTimeZone.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypes.AddTicketType.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypes.GetPublicTicketTypes.PartnerApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypes.GetTicketTypes.AdminApi;
@@ -58,7 +57,6 @@ public static class RegistrationsModule
             .MapArchiveTicketedEvent()
             .MapConfigureRegistrationPolicy()
             .MapConfigureReconfirmPolicy()
-            .MapUpdateTicketedEventTimeZone()
             .MapUpdateAdditionalDetailSchema();
 
         eventGroup.MapGroup("/registrations")

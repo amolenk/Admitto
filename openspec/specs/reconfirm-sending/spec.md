@@ -71,7 +71,7 @@ For every `TicketedEvent` with an active `TicketedEventReconfirmPolicy` and stat
 
 - The `TicketedEventCreated` integration event (initial creation when a policy is set at creation).
 - A `TicketedEventReconfirmPolicyChanged` integration event (published by Registrations when the policy is set, updated, or cleared — `MinEmailInterval`, `AutoCancelEnabled`, and `MaxReconfirmAttempts` are all included in the payload). The trigger SHALL be removed when the policy is cleared.
-- The `TicketedEventTimeZoneChanged` integration event. The trigger SHALL be replaced atomically with one keyed to the new zone.
+- A `TicketedEventDetailsChanged` integration event carrying the event's `TimeZone`. The trigger SHALL be replaced atomically with one keyed to the current zone when the projected details update applies.
 - The `TicketedEventArchived` integration event (trigger removed).
 
 #### Scenario: Policy added → trigger registered in event time zone
@@ -97,8 +97,8 @@ For every `TicketedEvent` with an active `TicketedEventReconfirmPolicy` and stat
 - **WHEN** an active event's reconfirm policy `MinEmailInterval` changes from 24h to 48h
 - **THEN** the updated policy (including new MinEmailInterval) is stored so the next tick uses the new value; the Quartz trigger schedule is unchanged if only MinEmailInterval changed
 
-#### Scenario: Time zone change → trigger replaced
-- **WHEN** an active event's time zone changes from `Europe/Amsterdam` to `America/Los_Angeles`
+#### Scenario: Time zone change in details → trigger replaced
+- **WHEN** an active event's details-changed integration event updates the time zone from `Europe/Amsterdam` to `America/Los_Angeles`
 - **THEN** the existing trigger is unscheduled and a new trigger with the same cadence cron evaluated in `America/Los_Angeles` is scheduled atomically
 
 #### Scenario: Policy cleared → trigger unregistered
@@ -112,6 +112,48 @@ For every `TicketedEvent` with an active `TicketedEventReconfirmPolicy` and stat
 #### Scenario: Policy updated → trigger replaced atomically
 - **WHEN** an active event's policy cadence changes from 7d to 3d
 - **THEN** the existing trigger is unscheduled and a new trigger with the 3d cron is scheduled, with no period during which two triggers exist for the event
+
+---
+
+### Requirement: Reconfirm scheduling uses Email-owned event context
+
+The Email module SHALL use its Email-owned event rendering/scheduling context projection to register, replace, or remove per-event reconfirm Quartz triggers. The projection SHALL be synchronized from Registrations integration events that describe event creation, event archive, event detail changes including time zone, and reconfirm policy changes.
+
+Email SHALL continue to evaluate reconfirm candidates against live Registrations data when a trigger fires.
+
+#### Scenario: Policy change updates projected trigger context
+
+- **WHEN** Registrations publishes a reconfirm-policy-changed integration event with a non-null policy snapshot
+- **THEN** Email updates the event context projection and upserts the per-event reconfirm trigger from projected policy and time-zone context
+
+#### Scenario: Time zone change updates scheduling context
+
+- **WHEN** Registrations publishes a details-changed integration event carrying a new time zone for an event with an active reconfirm policy
+- **THEN** Email updates the event context projection and replaces the per-event trigger so future ticks use the new IANA time zone
+
+#### Scenario: Candidate selection remains live
+
+- **WHEN** a reconfirm trigger fires
+- **THEN** Email queries Registrations for currently registered, unreconfirmed attendees and does not use the event context projection as an attendee source
+
+#### Scenario: Archived event removes trigger
+
+- **WHEN** Registrations publishes an event-archived integration event
+- **THEN** Email marks or removes the active scheduling context for that event and removes the corresponding reconfirm trigger
+
+### Requirement: Reconfirm scheduling reconciliation rebuilds from Email context
+
+On worker startup or scheduling reconciliation, Email SHALL rebuild per-event reconfirm triggers from active Email event context projection rows that have an active reconfirm policy. Reconciliation SHALL NOT require a synchronous enumeration of active reconfirm trigger specs from Registrations.
+
+#### Scenario: Worker restart restores trigger from projection
+
+- **WHEN** the worker starts and the Email projection contains an active event with a reconfirm policy
+- **THEN** reconciliation registers the corresponding Quartz trigger from the projection row
+
+#### Scenario: Event without policy is ignored
+
+- **WHEN** the worker starts and the Email projection contains an active event without a reconfirm policy
+- **THEN** reconciliation does not register a reconfirm trigger for that event
 
 ---
 

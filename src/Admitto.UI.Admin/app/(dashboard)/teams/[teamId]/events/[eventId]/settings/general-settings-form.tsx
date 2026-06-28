@@ -84,6 +84,7 @@ export function GeneralSettingsForm({ event }: { event: TicketedEventDetailsDto 
             values.publicSlug !== event.publicSlug ||
             values.websiteUrl !== event.websiteUrl ||
             values.baseUrl !== event.baseUrl ||
+            values.timeZone !== event.timeZone ||
             values.startsAt !== event.startsAt ||
             values.endsAt !== event.endsAt ||
             values.quietHoursStart !== (event.quietHoursStart?.substring(0, 5) ?? "00:00") ||
@@ -96,17 +97,11 @@ export function GeneralSettingsForm({ event }: { event: TicketedEventDetailsDto 
                 publicSlug: values.publicSlug,
                 websiteUrl: values.websiteUrl,
                 baseUrl: values.baseUrl,
+                timeZone: values.timeZone,
                 startsAt: values.startsAt,
                 endsAt: values.endsAt,
                 quietHoursStart: values.quietHoursStart + ":00",
                 quietHoursEnd: values.quietHoursEnd + ":00",
-            });
-        }
-
-        if (values.timeZone !== event.timeZone) {
-            await apiClient.put(`/api/teams/${teamId}/events/${eventId}/time-zone`, {
-                timeZone: values.timeZone,
-                expectedVersion: Number(event.version) + (detailsChanged ? 1 : 0),
             });
         }
 

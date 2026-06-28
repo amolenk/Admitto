@@ -14,14 +14,8 @@ internal sealed class UpdateTeamHandler(IOrganizationWriteStore writeStore)
 
         var team = await writeStore.Teams.GetAsync(teamId, command.ExpectedVersion, cancellationToken);
 
-        if (command.Name is not null)
-        {
-            team.ChangeName(TeamName.From(command.Name));
-        }
-
-        if (command.AccentColor is not null)
-        {
-            team.ChangeAccentColor(TeamAccentColor.From(command.AccentColor));
-        }
+        team.UpdateDetails(
+            command.Name is null ? null : TeamName.From(command.Name),
+            command.AccentColor is null ? null : TeamAccentColor.From(command.AccentColor));
     }
 }

@@ -24,6 +24,7 @@ public sealed class UpdateTicketedEventDetailsTests(TestContext testContext) : A
             "New Name",
             "https://example.com",
             "https://tickets.example.com",
+            "Europe/Amsterdam",
             newStart,
             newEnd,
             QuietHoursStart: new TimeOnly(22, 0),
@@ -39,6 +40,7 @@ public sealed class UpdateTicketedEventDetailsTests(TestContext testContext) : A
                 .FirstOrDefaultAsync(e => e.Id == fixture.EventId, testContext.CancellationToken);
             te.ShouldNotBeNull();
             te.Name.Value.ShouldBe("New Name");
+            te.TimeZone.Value.ShouldBe("Europe/Amsterdam");
             te.StartsAt.ShouldBe(newStart);
             te.EndsAt.ShouldBe(newEnd);
         });
@@ -58,6 +60,7 @@ public sealed class UpdateTicketedEventDetailsTests(TestContext testContext) : A
             "New Name",
             "https://example.com",
             "https://tickets.example.com",
+            "Europe/Amsterdam",
             DateTimeOffset.UtcNow.AddDays(10),
             DateTimeOffset.UtcNow.AddDays(11),
             QuietHoursStart: new TimeOnly(22, 0),
@@ -85,6 +88,7 @@ public sealed class UpdateTicketedEventDetailsTests(TestContext testContext) : A
             "New Name",
             "https://example.com",
             "https://tickets.example.com",
+            "Europe/Amsterdam",
             DateTimeOffset.UtcNow.AddDays(10),
             DateTimeOffset.UtcNow.AddDays(11),
             QuietHoursStart: new TimeOnly(22, 0),

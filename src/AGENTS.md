@@ -17,10 +17,12 @@ This file applies to `/src`.
 - Endpoint handlers should assume validated request DTOs on admin routes and avoid duplicate validation logic.
 
 ## Persistence Rule
-- Use module write-store abstractions (`IOrganizationWriteStore`, `IRegistrationsWriteStore`) in handlers.
-- Use module read-store abstractions (for example `IRegistrationsReadStore`) for persisted application projections/read models when available.
+- Use module write-store abstractions (`IOrganizationWriteStore`, `IRegistrationsWriteStore`, `IEmailWriteStore`) in handlers that mutate aggregates.
+- Use module read-store abstractions (`IRegistrationsReadStore`, `IEmailReadStore`) for persisted application projections/read models.
+- Each persisted `DbSet` lives on exactly one store abstraction: aggregates on the write store, projections/read models on the read store. Do not expose the same `DbSet` on both.
+- Projections are written through the read store too: a `*Projector` (or projection upsert) mutates projection rows via the read store, not the write store.
 - Keep data ownership inside module boundaries (schema-per-module).
-- Resolve `IUnitOfWork` by module key (`OrganizationModuleKey.Value`, `RegistrationsModule.Key`).
+- Resolve `IUnitOfWork` by module key (`OrganizationModuleKey.Value`, `RegistrationsModule.Key`, `EmailModule.Key`).
 
 ## Messaging and Events Rule
 - Domain events live in `Domain/DomainEvents/` within each module project.

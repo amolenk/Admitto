@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
 namespace Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
@@ -12,8 +13,64 @@ namespace Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 /// Email module's reconfirm scheduler can register the per-event trigger
 /// without an additional read against Registrations.
 /// </summary>
+[method: JsonConstructor]
 public sealed record TicketedEventCreatedIntegrationEvent(
     Guid CreationRequestId,
     Guid TeamId,
     Guid TicketedEventId,
-    string TimeZone) : IntegrationEvent;
+    uint TicketedEventVersion,
+    string Name,
+    string WebsiteUrl,
+    string PublicSlug,
+    string TimeZone,
+    int SelfServiceTicketTypeCount,
+    TicketedEventReconfirmPolicySnapshot? ReconfirmPolicy,
+    bool IsArchived) : IntegrationEvent
+{
+    public TicketedEventCreatedIntegrationEvent(
+        Guid CreationRequestId,
+        Guid TeamId,
+        Guid TicketedEventId,
+        string TeamAccentColor,
+        string Name,
+        string WebsiteUrl,
+        string PublicSlug,
+        string TimeZone,
+        int SelfServiceTicketTypeCount,
+        TicketedEventReconfirmPolicySnapshot? ReconfirmPolicy,
+        bool IsArchived)
+        : this(
+            CreationRequestId,
+            TeamId,
+            TicketedEventId,
+            TicketedEventVersion: 0,
+            Name,
+            WebsiteUrl,
+            PublicSlug,
+            TimeZone,
+            SelfServiceTicketTypeCount,
+            ReconfirmPolicy,
+            IsArchived)
+    {
+    }
+
+    public TicketedEventCreatedIntegrationEvent(
+        Guid CreationRequestId,
+        Guid TeamId,
+        Guid TicketedEventId,
+        string TimeZone)
+        : this(
+            CreationRequestId,
+            TeamId,
+            TicketedEventId,
+            TicketedEventVersion: 0,
+            string.Empty,
+            string.Empty,
+            string.Empty,
+            TimeZone,
+            0,
+            null,
+            false)
+    {
+    }
+}

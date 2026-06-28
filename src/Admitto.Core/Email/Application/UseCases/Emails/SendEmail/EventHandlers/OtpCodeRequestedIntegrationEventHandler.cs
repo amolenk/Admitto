@@ -1,6 +1,7 @@
 using Amolenk.Admitto.Core.Email.Application.Templating;
-using Amolenk.Admitto.Core.Registrations.Contracts;
+using Amolenk.Admitto.Core.Email.Application.UseCases.EventEmailContexts.GetEventEmailRenderingContext;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail.EventHandlers;
@@ -11,7 +12,7 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail.Event
 /// Idempotency key: <c>otp-requested:{otpCodeId}</c>.
 /// </summary>
 internal sealed class OtpCodeRequestedIntegrationEventHandler(
-    IRegistrationsFacade registrationsFacade,
+    IQueryHandler<GetEventEmailRenderingContextQuery, EventEmailContextDto> eventContextQuery,
     ICommandHandler<SendEmailCommand> sendEmailHandler)
     : IIntegrationEventHandler<OtpCodeRequestedIntegrationEvent>
 {
@@ -20,10 +21,11 @@ internal sealed class OtpCodeRequestedIntegrationEventHandler(
         CancellationToken cancellationToken)
     {
         var idempotencyKey = $"otp-requested:{integrationEvent.OtpCodeId}";
-        var eventContext = await registrationsFacade.GetEventRegistrationSnapshotAsync(
-            integrationEvent.TeamId,
-            integrationEvent.TicketedEventId,
-            registrationId: Guid.Empty,
+        var eventContext = await eventContextQuery.HandleAsync(
+            new GetEventEmailRenderingContextQuery(
+                TeamId.From(integrationEvent.TeamId),
+                TicketedEventId.From(integrationEvent.TicketedEventId),
+                RegistrationId: null),
             cancellationToken);
 
         var command = new SendEmailCommand(
@@ -36,7 +38,7 @@ internal sealed class OtpCodeRequestedIntegrationEventHandler(
             Parameters: new
             {
                 integrationEvent.PlainCode,
-                integrationEvent.EventName,
+                eventContext.EventName,
                 integrationEvent.RecipientEmail,
                 eventContext.TeamAccentColor
             },

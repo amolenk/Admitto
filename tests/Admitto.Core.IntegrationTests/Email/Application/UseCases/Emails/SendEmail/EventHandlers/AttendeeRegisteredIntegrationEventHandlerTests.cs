@@ -1,8 +1,9 @@
 using Amolenk.Admitto.Core.Email.Application.Templating;
 using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail;
 using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail.EventHandlers;
-using Amolenk.Admitto.Core.Registrations.Contracts;
+using Amolenk.Admitto.Core.Email.Application.UseCases.EventEmailContexts.GetEventEmailRenderingContext;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using NSubstitute;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
@@ -20,18 +21,26 @@ public sealed class AttendeeRegisteredIntegrationEventHandlerTests(TestContext t
     private static AttendeeRegisteredIntegrationEvent Event() =>
         new(TeamGuid.Value, EventGuid.Value, RegId, "alice@example.com", "Alice", "Anderson", [], DateTimeOffset.UtcNow);
 
-    private static EventRegistrationSnapshotDto Context() =>
-        new("DevConf 2025", "https://devconf.example.com", "https://tickets.example.com", "https://devconf.example.com/qr", "Alice", "Anderson");
+    private static EventEmailContextDto Context() =>
+        new(TeamGuid.Value, EventGuid.Value, "DevConf 2025", "https://devconf.example.com", "https://tickets.example.com", "https://tickets.example.com/register", "https://tickets.example.com/qr-code/" + RegId, "https://tickets.example.com/cancel/" + RegId, "#0f766e", null, "Europe/Amsterdam", null, null, null, null, false);
+
+    private static IQueryHandler<GetEventEmailRenderingContextQuery, EventEmailContextDto> ContextQuery()
+    {
+        var query = Substitute.For<IQueryHandler<GetEventEmailRenderingContextQuery, EventEmailContextDto>>();
+        query.HandleAsync(
+                Arg.Is<GetEventEmailRenderingContextQuery>(q =>
+                    q.TeamId == TeamGuid && q.TicketedEventId == EventGuid),
+                Arg.Any<CancellationToken>())
+            .Returns(Context());
+        return query;
+    }
 
     [TestMethod]
     public async Task AttendeeRegistered_DispatchesTicketEmail()
     {
-        var facade = Substitute.For<IRegistrationsFacade>();
-        facade.GetEventRegistrationSnapshotAsync(TeamGuid.Value, EventGuid.Value, RegId, Arg.Any<CancellationToken>())
-            .Returns(Context());
         var sendEmailHandler = Substitute.For<ICommandHandler<SendEmailCommand>>();
 
-        var sut = new AttendeeRegisteredIntegrationEventHandler(facade, sendEmailHandler);
+        var sut = new AttendeeRegisteredIntegrationEventHandler(ContextQuery(), sendEmailHandler);
 
         var evt = Event();
         await sut.HandleAsync(evt, testContext.CancellationToken);
@@ -47,9 +56,6 @@ public sealed class AttendeeRegisteredIntegrationEventHandlerTests(TestContext t
     [TestMethod]
     public async Task AttendeeRegistered_ParametersIncludeEventWebsite()
     {
-        var facade = Substitute.For<IRegistrationsFacade>();
-        facade.GetEventRegistrationSnapshotAsync(TeamGuid.Value, EventGuid.Value, RegId, Arg.Any<CancellationToken>())
-            .Returns(Context());
         var sendEmailHandler = Substitute.For<ICommandHandler<SendEmailCommand>>();
 
         SendEmailCommand? captured = null;
@@ -57,7 +63,7 @@ public sealed class AttendeeRegisteredIntegrationEventHandlerTests(TestContext t
             .HandleAsync(Arg.Do<SendEmailCommand>(c => captured = c), Arg.Any<CancellationToken>())
             .Returns(ValueTask.CompletedTask);
 
-        var sut = new AttendeeRegisteredIntegrationEventHandler(facade, sendEmailHandler);
+        var sut = new AttendeeRegisteredIntegrationEventHandler(ContextQuery(), sendEmailHandler);
 
         await sut.HandleAsync(Event(), testContext.CancellationToken);
 

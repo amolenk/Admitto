@@ -16,6 +16,7 @@ internal sealed class UpdateTicketedEventDetailsHandler(IRegistrationsWriteStore
         EventName name = EventName.From(command.Name);
         AbsoluteUrl websiteUrl = AbsoluteUrl.From(command.WebsiteUrl);
         AbsoluteUrl baseUrl = AbsoluteUrl.From(command.BaseUrl);
+        TimeZoneId timeZone = TimeZoneId.From(command.TimeZone);
         Slug publicSlug = Slug.From(command.PublicSlug ?? command.Name);
 
         var ticketedEvent = await writeStore.TicketedEvents.GetAsync(
@@ -23,7 +24,7 @@ internal sealed class UpdateTicketedEventDetailsHandler(IRegistrationsWriteStore
             command.ExpectedVersion,
             cancellationToken);
 
-        ticketedEvent.UpdateDetails(name, websiteUrl, baseUrl, publicSlug, command.StartsAt, command.EndsAt);
+        ticketedEvent.UpdateDetails(name, websiteUrl, baseUrl, publicSlug, timeZone, command.StartsAt, command.EndsAt);
         ticketedEvent.UpdateQuietHours(command.QuietHoursStart, command.QuietHoursEnd);
     }
 }

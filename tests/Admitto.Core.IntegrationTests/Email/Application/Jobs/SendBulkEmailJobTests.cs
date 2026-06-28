@@ -4,10 +4,13 @@ using Amolenk.Admitto.Core.Email.Application.Sending;
 using Amolenk.Admitto.Core.Email.Application.Sending.Bulk;
 using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
 using Amolenk.Admitto.Core.Email.Application.Templating;
+using Amolenk.Admitto.Core.Email.Application.UseCases.EventEmailContexts.GetEventEmailRenderingContext;
 using Amolenk.Admitto.Core.Email.Domain.Entities;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Email.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.IntegrationTests.Email.Application.Jobs.Fakes;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Messaging;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence;
@@ -373,6 +376,29 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
         })));
         var templateService = new EmailTemplateService();
         var renderer = new ScribanEmailRenderer();
+        var eventContextQuery = Substitute.For<IQueryHandler<GetEventEmailRenderingContextQuery, EventEmailContextDto>>();
+        eventContextQuery.HandleAsync(Arg.Any<GetEventEmailRenderingContextQuery>(), Arg.Any<CancellationToken>())
+            .Returns(call =>
+            {
+                var query = call.Arg<GetEventEmailRenderingContextQuery>();
+                return new EventEmailContextDto(
+                    query.TeamId.Value,
+                    query.TicketedEventId.Value,
+                    "DevConf",
+                    "https://example.com",
+                    "https://tickets.example.com/e/devconf",
+                    "https://tickets.example.com/e/devconf/register",
+                    "https://tickets.example.com/e/devconf/qr-code",
+                    "https://tickets.example.com/e/devconf/cancel",
+                    "#0f766e",
+                    null,
+                    "UTC",
+                    null,
+                    null,
+                    null,
+                    null,
+                    false);
+            });
         IUnitOfWork unitOfWork = new UnitOfWork<EmailDbContext>(ctx, new NoOpOutboxMessageSender(), NullLogger<UnitOfWork<EmailDbContext>>.Instance);
 
         var options = new BulkEmailOptions
@@ -386,6 +412,7 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
         return new SendBulkEmailJob(
             writeStore,
             recipientResolver ?? Substitute.For<IBulkEmailRecipientResolver>(),
+            eventContextQuery,
             settingsResolver,
             templateService,
             renderer,

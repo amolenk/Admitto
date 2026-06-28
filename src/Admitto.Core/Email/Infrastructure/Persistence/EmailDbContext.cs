@@ -1,4 +1,6 @@
 using Amolenk.Admitto.Core.Email.Application.Persistence;
+using Amolenk.Admitto.Core.Email.Application.Projections.EventEmailContext;
+using Amolenk.Admitto.Core.Email.Application.Projections.TeamEmailContext;
 using Amolenk.Admitto.Core.Email.Domain.Entities;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
@@ -8,12 +10,14 @@ using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Outbox;
 namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence;
 
 public sealed class EmailDbContext(DbContextOptions<EmailDbContext> options)
-    : DbContext(options), IModuleDbContext, IEmailWriteStore, IOutboxDbContext
+    : DbContext(options), IModuleDbContext, IEmailReadStore, IEmailWriteStore, IOutboxDbContext
 {
     public static string SchemaName => "email";
 
     public DbSet<EmailLog> EmailLog => Set<EmailLog>();
     public DbSet<BulkEmailJob> BulkEmailJobs => Set<BulkEmailJob>();
+    public DbSet<EventEmailContextView> EventEmailContexts => Set<EventEmailContextView>();
+    public DbSet<TeamEmailContextView> TeamEmailContexts => Set<TeamEmailContextView>();
 
     public DbSet<OutboxMessage> OutboxMessages => Set<OutboxMessage>();
 

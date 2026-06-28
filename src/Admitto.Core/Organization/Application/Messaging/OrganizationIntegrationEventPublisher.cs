@@ -6,7 +6,9 @@ namespace Amolenk.Admitto.Core.Organization.Application.Messaging;
 
 internal sealed class OrganizationIntegrationEventPublisher(
     [FromKeyedServices(OrganizationModule.Key)] IOutbox outbox)
-    : IDomainEventHandler<TicketedEventCreationRequestedDomainEvent>
+    : IDomainEventHandler<TicketedEventCreationRequestedDomainEvent>,
+      IDomainEventHandler<TeamCreatedDomainEvent>,
+      IDomainEventHandler<TeamDetailsUpdatedDomainEvent>
 {
     public ValueTask HandleAsync(
         TicketedEventCreationRequestedDomainEvent domainEvent,
@@ -22,6 +24,28 @@ internal sealed class OrganizationIntegrationEventPublisher(
             domainEvent.EndsAt,
             domainEvent.TimeZone.Value,
             domainEvent.PublicSlug.Value));
+
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask HandleAsync(TeamCreatedDomainEvent domainEvent, CancellationToken cancellationToken)
+    {
+        outbox.Enqueue(new TeamCreatedIntegrationEvent(
+            domainEvent.TeamId.Value,
+            domainEvent.Name.Value,
+            domainEvent.AccentColor.Value,
+            domainEvent.TeamVersion));
+
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask HandleAsync(TeamDetailsUpdatedDomainEvent domainEvent, CancellationToken cancellationToken)
+    {
+        outbox.Enqueue(new TeamDetailsUpdatedIntegrationEvent(
+            domainEvent.TeamId.Value,
+            domainEvent.Name.Value,
+            domainEvent.AccentColor.Value,
+            domainEvent.TeamVersion));
 
         return ValueTask.CompletedTask;
     }
