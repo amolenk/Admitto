@@ -33,7 +33,7 @@ public sealed class SelfChangeTicketsTests(TestContext testContext) : EndToEndTe
         var fixture = SelfChangeTicketsFixture.WithOpenRegistration();
         await fixture.SetupAsync(Environment);
 
-        var unknownRoute = $"/api/events/{fixture.EventId.Value}/registrations/{Guid.NewGuid()}/tickets";
+        var unknownRoute = $"/api/events/{fixture.EventSlug}/registrations/{Guid.NewGuid()}/tickets";
 
         using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         var request = new HttpRequestMessage(HttpMethod.Put, unknownRoute)

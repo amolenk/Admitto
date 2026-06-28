@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Registrations.Application.Security;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.ResolvePartnerTicketedEvent.PartnerApi;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
 using Amolenk.Admitto.Core.Shared.Application.Http;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
@@ -23,20 +24,22 @@ public static class RegisterAttendeeSelfServiceHttpEndpoint
 
     private static async ValueTask<IResult> RegisterAttendeeSelfService(
         HttpContext httpContext,
-        Guid eventId,
+        string eventSlug,
         RegisterAttendeeSelfServiceHttpRequest request,
         IVerificationTokenService verificationTokenService,
+        PartnerTicketedEventResolver eventResolver,
         ICommandHandler<RegisterAttendeeSelfServiceCommand, RegisterAttendeeSelfServiceResult> handler,
         [FromKeyedServices(RegistrationsModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
         var teamId = httpContext.User.GetRequiredTeamId();
+        var eventId = await eventResolver.ResolveAsync(TeamId.From(teamId), eventSlug, cancellationToken);
         var bearerToken = ExtractBearerToken(httpContext.Request);
         if (bearerToken is null)
             return Errors.TokenRequired.ToProblemHttpResult();
 
-        var claims = verificationTokenService.Validate(bearerToken, TicketedEventId.From(eventId));
+        var claims = verificationTokenService.Validate(bearerToken, eventId);
         if (claims is null)
             return Errors.TokenInvalid.ToProblemHttpResult();
 
@@ -44,7 +47,7 @@ public static class RegisterAttendeeSelfServiceHttpEndpoint
             return Errors.EmailMismatch.ToProblemHttpResult();
 
         var command = new RegisterAttendeeSelfServiceCommand(
-            eventId,
+            eventId.Value,
             teamId,
             claims.Email.Value,
             request.FirstName,
@@ -64,8 +67,8 @@ public static class RegisterAttendeeSelfServiceHttpEndpoint
 
         return Results.Created(
             result.RegistrationId is { } registrationId
-                ? $"/api/events/{eventId}/registrations/{registrationId}"
-                : $"/api/events/{eventId}/registrations",
+                ? $"/api/events/{eventSlug}/registrations/{registrationId}"
+                : $"/api/events/{eventSlug}/registrations",
             response);
     }
 

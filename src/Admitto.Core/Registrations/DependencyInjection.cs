@@ -5,6 +5,7 @@ using Amolenk.Admitto.Core.Registrations.Application.Persistence;
 using Amolenk.Admitto.Core.Registrations.Application.PublicEventLinks;
 using Amolenk.Admitto.Core.Registrations.Application.Security;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.ResolvePartnerTicketedEvent.PartnerApi;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Messaging;
@@ -44,6 +45,7 @@ public static class RegistrationsModuleExtensions
             //     RegistrationsModule.NamespacePrefix));
 
             services.AddScoped<IRegistrationsFacade, RegistrationsFacade>();
+            services.AddScoped<PartnerTicketedEventResolver>();
 
             services.Configure<VerificationTokenOptions>(
                 configuration.GetSection(VerificationTokenOptions.SectionName));

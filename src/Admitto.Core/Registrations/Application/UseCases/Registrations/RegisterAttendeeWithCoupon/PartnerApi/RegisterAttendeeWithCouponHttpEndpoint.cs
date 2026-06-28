@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.ResolvePartnerTicketedEvent.PartnerApi;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
@@ -16,16 +17,18 @@ public static class RegisterAttendeeWithCouponHttpEndpoint
 
     private static async ValueTask<IResult> RegisterAttendeeWithCoupon(
         HttpContext httpContext,
-        Guid eventId,
+        string eventSlug,
         RegisterAttendeeWithCouponHttpRequest request,
+        PartnerTicketedEventResolver eventResolver,
         ICommandHandler<RegisterAttendeeWithCouponCommand, Guid> handler,
         [FromKeyedServices(RegistrationsModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
         var teamId = httpContext.User.GetRequiredTeamId();
+        var eventId = await eventResolver.ResolveAsync(TeamId.From(teamId), eventSlug, cancellationToken);
         var command = new RegisterAttendeeWithCouponCommand(
-            eventId,
+            eventId.Value,
             teamId,
             request.Email,
             request.FirstName,
@@ -39,7 +42,7 @@ public static class RegisterAttendeeWithCouponHttpEndpoint
         await unitOfWork.SaveChangesAsync(cancellationToken);
 
         return Results.Created(
-            $"/api/events/{eventId}/registrations/{registrationId}",
+            $"/api/events/{eventSlug}/registrations/{registrationId}",
             null);
     }
 }

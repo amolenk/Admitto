@@ -16,12 +16,13 @@ internal sealed class SelfRegisterFixture
 
     public TeamId TeamId { get; private set; } = TeamId.New();
     public TicketedEventId EventId { get; private set; } = TicketedEventId.New();
+    public string EventSlug { get; private set; } = string.Empty;
     public string ApiKey => ApiKeyTestHelper.TestRawKey;
 
     public static readonly TicketTypeId TicketTypeId = TicketTypeId.From(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
 
-    public string RegisterRoute => $"/api/events/{EventId.Value}/registrations";
-    public string OtpVerifyRoute => $"/api/events/{EventId.Value}/otp/verify";
+    public string RegisterRoute => $"/api/events/{EventSlug}/registrations";
+    public string OtpVerifyRoute => $"/api/events/{EventSlug}/otp/verify";
 
     private SelfRegisterFixture() { }
 
@@ -49,6 +50,7 @@ internal sealed class SelfRegisterFixture
             DateTimeOffset.UtcNow.AddDays(60),
             DateTimeOffset.UtcNow.AddDays(61),
             TimeZoneId.From("UTC"));
+        EventSlug = ticketedEvent.PublicSlug.Value;
 
         ticketedEvent.ConfigureRegistrationPolicy(TicketedEventRegistrationPolicy.Create(
             DateTimeOffset.UtcNow.AddDays(-1),

@@ -15,8 +15,9 @@ internal sealed class SelfRegisterAttendeeFixture
 
     public Guid TeamId { get; private set; }
     public Guid EventId { get; private set; }
+    public string EventSlug { get; private set; } = string.Empty;
 
-    public string Route => $"/api/events/{EventId}/registrations";
+    public string Route => $"/api/events/{EventSlug}/registrations";
 
     private SelfRegisterAttendeeFixture() { }
 
@@ -41,6 +42,7 @@ internal sealed class SelfRegisterAttendeeFixture
             DateTimeOffset.UtcNow.AddDays(60),
             DateTimeOffset.UtcNow.AddDays(61),
                 TimeZoneId.From("UTC"));
+        EventSlug = ticketedEvent.PublicSlug.Value;
         ticketedEvent.ConfigureRegistrationPolicy(
             TicketedEventRegistrationPolicy.Create(
                 DateTimeOffset.UtcNow.AddDays(-1),

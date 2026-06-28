@@ -11,9 +11,10 @@ internal sealed class PublicTicketTypesFixture
 {
     public TeamId TeamId { get; private set; } = TeamId.New();
     public TicketedEventId EventId { get; private set; } = TicketedEventId.New();
+    public string EventSlug { get; private set; } = string.Empty;
     public string ApiKey => ApiKeyTestHelper.TestRawKey;
 
-    public string TicketTypesRoute => $"/api/events/{EventId.Value}/ticket-types";
+    public string TicketTypesRoute => $"/api/events/{EventSlug}/ticket-types";
 
     private PublicTicketTypesFixture() { }
 
@@ -40,6 +41,7 @@ internal sealed class PublicTicketTypesFixture
             DateTimeOffset.UtcNow.AddDays(60),
             DateTimeOffset.UtcNow.AddDays(61),
             TimeZoneId.From("UTC"));
+        EventSlug = ticketedEvent.PublicSlug.Value;
 
         ticketedEvent.ConfigureRegistrationPolicy(TicketedEventRegistrationPolicy.Create(
             DateTimeOffset.UtcNow.AddDays(-1),

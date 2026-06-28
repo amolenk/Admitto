@@ -34,6 +34,8 @@ internal sealed class ApiKeyAuthFixture
     public Guid OtherTeamId { get; private set; }
     public Guid EventId { get; private set; }
     public Guid OtherEventId { get; private set; }
+    public string EventSlug { get; private set; } = string.Empty;
+    public string OtherEventSlug { get; private set; } = string.Empty;
     public Guid ApiKeyId { get; private set; }
     public Guid OtherTeamApiKeyId { get; private set; }
 
@@ -83,6 +85,7 @@ internal sealed class ApiKeyAuthFixture
             {
                 var primaryEvent = BuildEvent(team.Id, "DevConf");
                 EventId = primaryEvent.Id.Value;
+                EventSlug = primaryEvent.PublicSlug.Value;
                 var primaryCatalog = TicketCatalog.Create(primaryEvent.Id, team.Id);
                 primaryCatalog.AddTicketType(
                     TicketTypeId.From(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")), TicketTypeName.From("General Admission"), [], 100);
@@ -93,6 +96,7 @@ internal sealed class ApiKeyAuthFixture
                 {
                     var otherEvent = BuildEvent(otherTeam.Id, "OtherConf");
                     OtherEventId = otherEvent.Id.Value;
+                    OtherEventSlug = otherEvent.PublicSlug.Value;
                     var otherCatalog = TicketCatalog.Create(otherEvent.Id, otherTeam.Id);
                     otherCatalog.AddTicketType(
                         TicketTypeId.From(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa")), TicketTypeName.From("General Admission"), [], 100);

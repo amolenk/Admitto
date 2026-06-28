@@ -148,7 +148,7 @@ public sealed class PublicTicketTypesTests(TestContext testContext) : EndToEndTe
 
         using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         var response = await client.GetAsync(
-            $"/api/events/{Guid.NewGuid()}/ticket-types",
+            "/api/events/unknown-event/ticket-types",
             testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);

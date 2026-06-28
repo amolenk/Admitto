@@ -16,11 +16,12 @@ internal sealed class SelfChangeTicketsFixture
 
     public TeamId TeamId { get; private set; } = TeamId.New();
     public TicketedEventId EventId { get; private set; } = TicketedEventId.New();
+    public string EventSlug { get; private set; } = string.Empty;
     public RegistrationId RegistrationId { get; private set; } = RegistrationId.New();
     public string ApiKey => ApiKeyTestHelper.TestRawKey;
 
     public string ChangeTicketsRoute =>
-        $"/api/events/{EventId.Value}/registrations/{RegistrationId.Value}/tickets";
+        $"/api/events/{EventSlug}/registrations/{RegistrationId.Value}/tickets";
 
     private SelfChangeTicketsFixture() { }
 
@@ -50,6 +51,7 @@ internal sealed class SelfChangeTicketsFixture
             DateTimeOffset.UtcNow.AddDays(60),
             DateTimeOffset.UtcNow.AddDays(61),
             TimeZoneId.From("UTC"));
+        EventSlug = ticketedEvent.PublicSlug.Value;
 
         if (!registrationWindowClosed)
         {

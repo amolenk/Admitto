@@ -167,7 +167,7 @@ public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBas
         using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         var request = new HttpRequestMessage(
             HttpMethod.Post,
-            $"/api/events/{Guid.NewGuid()}/registrations")
+            $"/api/events/{secondEvent.PublicSlug.Value}/registrations")
         {
             Content = JsonContent.Create(new
             {

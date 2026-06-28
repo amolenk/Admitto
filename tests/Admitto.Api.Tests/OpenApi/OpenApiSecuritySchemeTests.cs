@@ -66,7 +66,7 @@ public sealed class OpenApiSecuritySchemeTests(TestContext testContext) : EndToE
         securitySchemes.GetProperty("ApiKey").GetProperty("name").GetString().ShouldBe("X-Api-Key");
         securitySchemes.GetProperty("ApiKey").GetProperty("in").GetString().ShouldBe("header");
 
-        GetSecuritySchemeNames(root, "/api/events/{eventId}/otp/request", "post")
+        GetSecuritySchemeNames(root, "/api/events/{eventSlug}/otp/request", "post")
             .ShouldBe(["ApiKey"]);
     }
 
@@ -81,9 +81,9 @@ public sealed class OpenApiSecuritySchemeTests(TestContext testContext) : EndToE
         var securitySchemes = root.GetProperty("components").GetProperty("securitySchemes");
         securitySchemes.GetProperty("EmailVerificationBearer").GetProperty("scheme").GetString().ShouldBe("bearer");
 
-        GetSecuritySchemeNames(root, "/api/events/{eventId}/registrations", "post")
+        GetSecuritySchemeNames(root, "/api/events/{eventSlug}/registrations", "post")
             .ShouldBe(["ApiKey", "EmailVerificationBearer"], ignoreOrder: true);
-        GetSecuritySchemeNames(root, "/api/events/{eventId}/waitlist/{ticketTypeId}", "post")
+        GetSecuritySchemeNames(root, "/api/events/{eventSlug}/waitlist/{ticketTypeId}", "post")
             .ShouldBe(["ApiKey", "EmailVerificationBearer"], ignoreOrder: true);
     }
 

@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.ResolvePartnerTicketedEvent.PartnerApi;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
@@ -15,12 +16,14 @@ public static class GetPublicTicketTypesHttpEndpoint
 
     private static async ValueTask<Ok<IReadOnlyList<PublicTicketTypeDto>>> GetPublicTicketTypes(
         HttpContext httpContext,
-        Guid eventId,
+        string eventSlug,
+        PartnerTicketedEventResolver eventResolver,
         IQueryHandler<GetPublicTicketTypesQuery, IReadOnlyList<PublicTicketTypeDto>> handler,
         CancellationToken cancellationToken)
     {
         var teamId = httpContext.User.GetRequiredTeamId();
-        var query = new GetPublicTicketTypesQuery(TicketedEventId.From(eventId), TeamId.From(teamId));
+        var eventId = await eventResolver.ResolveAsync(TeamId.From(teamId), eventSlug, cancellationToken);
+        var query = new GetPublicTicketTypesQuery(eventId, TeamId.From(teamId));
 
         var result = await handler.HandleAsync(query, cancellationToken);
 

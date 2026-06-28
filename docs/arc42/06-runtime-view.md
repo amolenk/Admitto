@@ -148,7 +148,7 @@ Because `TicketCatalog.EventStatus` is updated in the same transaction as `Ticke
 
 ## 6.6 Partner attendee registration and waitlist submission (atomic status + capacity gate)
 
-Partner attendee endpoints are mounted under `/api/events/{eventId}/...` and require `X-Api-Key`. API-key authentication resolves the owning team into a `team_id` claim, and partner endpoints derive `TeamId` from that claim rather than from the URL. Handlers still receive both `TeamId` and `TicketedEventId`, so event/resource lookups remain scoped to the API key owner's team and a valid key for another team receives the normal not-found behavior.
+Partner attendee endpoints are mounted under `/api/events/{eventSlug}/...` and require `X-Api-Key`. API-key authentication resolves the owning team into a `team_id` claim, and partner endpoints derive `TeamId` from that claim rather than from the URL. Endpoint code resolves `TicketedEvent.PublicSlug` within the API-key owner's team scope before dispatching handlers. Handlers still receive both `TeamId` and `TicketedEventId`, so event/resource lookups remain scoped to the API key owner's team and a valid key for another team receives the normal not-found behavior.
 
 The registration handler (self-service or coupon) loads both `TicketedEvent` (for window / domain / schema policy checks) and `TicketCatalog` (for the active-status and atomic capacity claim) in the same unit of work. Public self-service registration accepts explicit `registerTicketTypeIds` and `waitlistTicketTypeIds`; capacity is claimed only for registration tickets, while waitlist entries are created for waitlist tickets in the same transaction.
 

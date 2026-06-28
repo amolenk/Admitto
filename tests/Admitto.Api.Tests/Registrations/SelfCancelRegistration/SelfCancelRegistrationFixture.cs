@@ -14,10 +14,11 @@ internal sealed class SelfCancelRegistrationFixture
 
     public TeamId TeamId { get; private set; } = TeamId.New();
     public TicketedEventId EventId { get; private set; } = TicketedEventId.New();
+    public string EventSlug { get; private set; } = string.Empty;
     public RegistrationId RegistrationId { get; private set; } = RegistrationId.New();
     public string ApiKey => ApiKeyTestHelper.TestRawKey;
 
-    public string CancelRoute => $"/api/events/{EventId.Value}/registrations/{RegistrationId.Value}/cancel";
+    public string CancelRoute => $"/api/events/{EventSlug}/registrations/{RegistrationId.Value}/cancel";
 
     private SelfCancelRegistrationFixture() { }
 
@@ -43,6 +44,7 @@ internal sealed class SelfCancelRegistrationFixture
             DateTimeOffset.UtcNow.AddDays(60),
             DateTimeOffset.UtcNow.AddDays(61),
             TimeZoneId.From("UTC"));
+        EventSlug = ticketedEvent.PublicSlug.Value;
 
         var catalog = TicketCatalog.Create(eventId, team.Id);
 

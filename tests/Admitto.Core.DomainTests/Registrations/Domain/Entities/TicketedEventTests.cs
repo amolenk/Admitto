@@ -82,13 +82,15 @@ public sealed class TicketedEventTests
         var sut = NewEvent();
         var newName = EventName.From("Renamed Event");
         var newPublicSlug = Slug.From("renamed-event");
+        var newTimeZone = TimeZoneId.From("Europe/Berlin");
         var newStart = DefaultStart.AddDays(1);
         var newEnd = DefaultEnd.AddDays(1);
 
-        sut.UpdateDetails(newName, DefaultWebsite, DefaultBaseUrl, newPublicSlug, newStart, newEnd);
+        sut.UpdateDetails(newName, DefaultWebsite, DefaultBaseUrl, newPublicSlug, newTimeZone, newStart, newEnd);
 
         sut.Name.ShouldBe(newName);
         sut.PublicSlug.ShouldBe(newPublicSlug);
+        sut.TimeZone.ShouldBe(newTimeZone);
         sut.StartsAt.ShouldBe(newStart);
         sut.EndsAt.ShouldBe(newEnd);
     }

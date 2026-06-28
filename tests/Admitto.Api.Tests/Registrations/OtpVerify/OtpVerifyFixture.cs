@@ -13,9 +13,10 @@ internal sealed class OtpVerifyFixture
 
     public TeamId TeamId { get; private set; } = TeamId.New();
     public TicketedEventId EventId { get; private set; } = TicketedEventId.New();
+    public string EventSlug { get; private set; } = string.Empty;
     public string ApiKey => ApiKeyTestHelper.TestRawKey;
 
-    public string VerifyOtpRoute => $"/api/events/{EventId.Value}/otp/verify";
+    public string VerifyOtpRoute => $"/api/events/{EventSlug}/otp/verify";
 
     private OtpVerifyFixture() { }
 
@@ -40,6 +41,7 @@ internal sealed class OtpVerifyFixture
             DateTimeOffset.UtcNow.AddDays(60),
             DateTimeOffset.UtcNow.AddDays(61),
             TimeZoneId.From("UTC"));
+        EventSlug = ticketedEvent.PublicSlug.Value;
 
         await environment.OrganizationDatabase.SeedAsync(db =>
         {

@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.ResolvePartnerTicketedEvent.PartnerApi;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
@@ -17,17 +18,19 @@ public static class RequestOtpHttpEndpoint
 
     private static async ValueTask<IResult> RequestOtp(
         HttpContext httpContext,
-        Guid eventId,
+        string eventSlug,
         RequestOtpHttpRequest request,
+        PartnerTicketedEventResolver eventResolver,
         ICommandHandler<RequestOtpCommand> handler,
         [FromKeyedServices(RegistrationsModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
         var teamId = httpContext.User.GetRequiredTeamId();
+        var eventId = await eventResolver.ResolveAsync(TeamId.From(teamId), eventSlug, cancellationToken);
         var command = new RequestOtpCommand(
             TeamId.From(teamId),
-            TicketedEventId.From(eventId),
+            eventId,
             request.Email);
 
         await handler.HandleAsync(command, cancellationToken);

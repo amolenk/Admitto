@@ -84,7 +84,7 @@ public sealed class OtpRequestTests(TestContext testContext) : EndToEndTestBase
         await fixture.SetupAsync(Environment);
 
         using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
-        var unknownRoute = $"/api/events/{Guid.NewGuid()}/otp/request";
+        var unknownRoute = "/api/events/unknown-event/otp/request";
         var response = await client.PostAsJsonAsync(
             unknownRoute,
             new { Email = OtpRequestFixture.AttendeeEmail },

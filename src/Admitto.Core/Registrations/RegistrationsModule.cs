@@ -94,7 +94,7 @@ public static class RegistrationsModule
     public static RouteGroupBuilder MapRegistrationsPartnerEndpoints(this RouteGroupBuilder group)
     {
         group
-            .MapGroup("/events/{eventId:guid}")
+            .MapGroup("/events/{eventSlug}")
             .WithTags("Partner")
             .MapRequestOtp()
             .MapVerifyOtp()

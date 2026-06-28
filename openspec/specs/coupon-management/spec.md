@@ -112,10 +112,10 @@ The `Coupon` aggregate gains a `Source` field with values `Organiser` (existing,
 The system SHALL expose an API-key-protected public endpoint:
 
 ```
-GET /api/events/{eventId}/coupons/{couponCode}
+GET /api/events/{eventSlug}/coupons/{couponCode}
 ```
 
-that returns the coupon's status and allowlisted ticket types. The endpoint SHALL derive `TeamId` from the authenticated API-key principal and SHALL use `{eventId}` and `{couponCode}` from the URL path. This allows the external event website to parse a coupon code received by the attendee and pre-select the correct ticket type in the registration form before the attendee begins filling in their details.
+that returns the coupon's status and allowlisted ticket types. The endpoint SHALL derive `TeamId` from the authenticated API-key principal and SHALL use `{eventSlug}` and `{couponCode}` from the URL path. `{eventSlug}` SHALL be resolved to the event's internal ID within the API-key owner's team scope. This allows the external event website to parse a coupon code received by the attendee and pre-select the correct ticket type in the registration form before the attendee begins filling in their details.
 
 The response SHALL include:
 - `status`: `"active"` | `"expired"` | `"redeemed"` | `"revoked"`
@@ -124,7 +124,7 @@ The response SHALL include:
 
 The target email SHALL NOT be returned.
 
-The endpoint SHALL return `404 Not Found` when the coupon code does not exist for the specified event and API-key team scope.
+The endpoint SHALL return `404 Not Found` when the coupon code does not exist for the specified event slug and API-key team scope.
 
 #### Scenario: Look up an active waitlist coupon
 - **WHEN** a public client requests coupon code "abc-123" for an event using a valid API key for the event's team and the coupon is active and allowlists ticket type "General Admission"
@@ -139,7 +139,7 @@ The endpoint SHALL return `404 Not Found` when the coupon code does not exist fo
 - **THEN** the response is `404 Not Found`
 
 #### Scenario: Look up a coupon that belongs to a different event
-- **WHEN** a public client requests a valid coupon code but uses the ID of a different event
+- **WHEN** a public client requests a valid coupon code but uses the slug of a different event
 - **THEN** the response is `404 Not Found`
 
 #### Scenario: Missing API key is rejected

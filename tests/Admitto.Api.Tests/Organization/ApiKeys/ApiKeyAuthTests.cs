@@ -135,7 +135,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
         // Use a bare HttpClient (no X-Api-Key header)
         using var bareClient = new HttpClient { BaseAddress = Environment.ApiClient.BaseAddress };
         var response = await bareClient.PostAsJsonAsync(
-            $"/api/events/{fixture.EventId}/otp/request",
+            $"/api/events/{fixture.EventSlug}/otp/request",
             new { Email = "test@example.com" },
             cancellationToken: testContext.CancellationToken);
 
@@ -151,7 +151,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
 
         using var client = Environment.CreatePartnerApiClient("bogus-key-that-does-not-exist");
         var response = await client.PostAsJsonAsync(
-            $"/api/events/{fixture.EventId}/otp/request",
+            $"/api/events/{fixture.EventSlug}/otp/request",
             new { Email = "test@example.com" },
             cancellationToken: testContext.CancellationToken);
 
@@ -167,7 +167,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
 
         using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         var response = await client.PostAsJsonAsync(
-            $"/api/events/{fixture.EventId}/otp/request",
+            $"/api/events/{fixture.EventSlug}/otp/request",
             new { Email = "test@example.com" },
             cancellationToken: testContext.CancellationToken);
 
@@ -184,7 +184,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
         // Use team-a's key against team-b's event.
         using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         var response = await client.PostAsJsonAsync(
-            $"/api/events/{fixture.OtherEventId}/otp/request",
+            $"/api/events/{fixture.OtherEventSlug}/otp/request",
             new { Email = "test@example.com" },
             cancellationToken: testContext.CancellationToken);
 
@@ -200,7 +200,7 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
 
         using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         var response = await client.PostAsJsonAsync(
-            $"/api/events/{fixture.EventId}/otp/request",
+            $"/api/events/{fixture.EventSlug}/otp/request",
             new { Email = "test@example.com" },
             cancellationToken: testContext.CancellationToken);
 
@@ -223,11 +223,26 @@ public sealed class ApiKeyAuthTests(TestContext testContext) : EndToEndTestBase
     }
 
     [TestMethod]
+    public async Task PartnerEndpoint_EventIdRoute_Returns404()
+    {
+        var fixture = ApiKeyAuthFixture.WithTeamAndEvent();
+        await fixture.SetupAsync(Environment);
+
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
+        var response = await client.PostAsJsonAsync(
+            $"/api/events/{fixture.EventId}/otp/request",
+            new { Email = "test@example.com" },
+            cancellationToken: testContext.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
+    }
+
+    [TestMethod]
     public async Task PartnerCouponDetails_NoApiKey_Returns401()
     {
         using var bareClient = new HttpClient { BaseAddress = Environment.ApiClient.BaseAddress };
         var response = await bareClient.GetAsync(
-            $"/api/events/{Guid.NewGuid()}/coupons/{Guid.NewGuid()}",
+            $"/api/events/unknown-event/coupons/{Guid.NewGuid()}",
             testContext.CancellationToken);
 
         response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);

@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.ResolvePartnerTicketedEvent.PartnerApi;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
@@ -17,17 +18,19 @@ public static class SelfCancelRegistrationHttpEndpoint
 
     private static async ValueTask<IResult> SelfCancelRegistration(
         HttpContext httpContext,
-        Guid eventId,
+        string eventSlug,
         Guid registrationId,
+        PartnerTicketedEventResolver eventResolver,
         ICommandHandler<CancelRegistrationCommand> handler,
         [FromKeyedServices(RegistrationsModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
         var teamId = httpContext.User.GetRequiredTeamId();
+        var eventId = await eventResolver.ResolveAsync(TeamId.From(teamId), eventSlug, cancellationToken);
         var command = new CancelRegistrationCommand(
             registrationId,
-            eventId,
+            eventId.Value,
             teamId,
             CancellationReason.AttendeeRequest);
 

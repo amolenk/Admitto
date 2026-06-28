@@ -1,3 +1,4 @@
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.ResolvePartnerTicketedEvent.PartnerApi;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
@@ -17,16 +18,18 @@ public static class LeaveWaitlistHttpEndpoint
 
     private static async ValueTask<Ok> LeaveWaitlist(
         HttpContext httpContext,
-        Guid eventId,
+        string eventSlug,
         Guid ticketTypeId,
         string email,
+        PartnerTicketedEventResolver eventResolver,
         ICommandHandler<LeaveWaitlistCommand> handler,
         [FromKeyedServices(RegistrationsModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
         var teamId = httpContext.User.GetRequiredTeamId();
-        var command = new LeaveWaitlistCommand(teamId, eventId, ticketTypeId, email);
+        var eventId = await eventResolver.ResolveAsync(TeamId.From(teamId), eventSlug, cancellationToken);
+        var command = new LeaveWaitlistCommand(teamId, eventId.Value, ticketTypeId, email);
 
         await handler.HandleAsync(command, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);

@@ -27,7 +27,7 @@ public sealed class SelfCancelRegistrationTests(TestContext testContext) : EndTo
         var fixture = SelfCancelRegistrationFixture.WithActiveRegistration();
         await fixture.SetupAsync(Environment);
 
-        var unknownRoute = $"/api/events/{fixture.EventId.Value}/registrations/{Guid.NewGuid()}/cancel";
+        var unknownRoute = $"/api/events/{fixture.EventSlug}/registrations/{Guid.NewGuid()}/cancel";
 
         using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
         var response = await client.PostAsync(unknownRoute, null, testContext.CancellationToken);

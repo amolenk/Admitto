@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Registrations.Application.Security;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.ResolvePartnerTicketedEvent.PartnerApi;
 using Amolenk.Admitto.Core.Shared.Application.Auth;
 using Amolenk.Admitto.Core.Shared.Application.Http;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
@@ -21,21 +22,23 @@ public static class JoinWaitlistHttpEndpoint
 
     private static async ValueTask<IResult> JoinWaitlist(
         HttpContext httpContext,
-        Guid eventId,
+        string eventSlug,
         Guid ticketTypeId,
         JoinWaitlistHttpRequest request,
         IVerificationTokenService verificationTokenService,
+        PartnerTicketedEventResolver eventResolver,
         ICommandHandler<JoinWaitlistCommand> handler,
         [FromKeyedServices(RegistrationsModule.Key)]
         IUnitOfWork unitOfWork,
         CancellationToken cancellationToken)
     {
         var teamId = httpContext.User.GetRequiredTeamId();
+        var eventId = await eventResolver.ResolveAsync(TeamId.From(teamId), eventSlug, cancellationToken);
         var bearerToken = ExtractBearerToken(httpContext.Request);
         if (bearerToken is null)
             return Errors.TokenRequired.ToProblemHttpResult();
 
-        var claims = verificationTokenService.Validate(bearerToken, TicketedEventId.From(eventId));
+        var claims = verificationTokenService.Validate(bearerToken, eventId);
         if (claims is null)
             return Errors.TokenInvalid.ToProblemHttpResult();
 
@@ -44,7 +47,7 @@ public static class JoinWaitlistHttpEndpoint
 
         var command = new JoinWaitlistCommand(
             teamId,
-            eventId,
+            eventId.Value,
             ticketTypeId,
             claims.Email.Value);
 
