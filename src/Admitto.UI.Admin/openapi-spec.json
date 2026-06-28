@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:49498/"
+      "url": "http://localhost:62664/"
     }
   ],
   "paths": {
@@ -2358,6 +2358,104 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ConfigureReconfirmPolicyHttpRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "204": {
+            "description": "No Content"
+          }
+        },
+        "security": [
+          {
+            "Bearer": [ ]
+          }
+        ]
+      }
+    },
+    "/admin/teams/{teamId}/events/{eventId}/waitlist-policy": {
+      "put": {
+        "tags": [
+          "Admin - Events"
+        ],
+        "operationId": "ConfigureWaitlistPolicy",
+        "parameters": [
+          {
+            "name": "teamId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "eventId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfigureWaitlistPolicyHttpRequest"
               }
             }
           },
@@ -7245,6 +7343,32 @@
           }
         }
       },
+      "ConfigureWaitlistPolicyHttpRequest": {
+        "required": [
+          "quietHoursStart",
+          "quietHoursEnd"
+        ],
+        "type": "object",
+        "properties": {
+          "quietHoursStart": {
+            "type": "string",
+            "format": "time"
+          },
+          "quietHoursEnd": {
+            "type": "string",
+            "format": "time"
+          },
+          "expectedVersion": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "null",
+              "integer",
+              "string"
+            ],
+            "format": "uint32"
+          }
+        }
+      },
       "CouponDetailsDto": {
         "required": [
           "id",
@@ -8523,9 +8647,8 @@
           "isRegistrationOpen",
           "registrationPolicy",
           "reconfirmPolicy",
-          "additionalDetailSchema",
-          "quietHoursStart",
-          "quietHoursEnd"
+          "waitlistPolicy",
+          "additionalDetailSchema"
         ],
         "type": "object",
         "properties": {
@@ -8594,19 +8717,14 @@
               }
             ]
           },
+          "waitlistPolicy": {
+            "$ref": "#/components/schemas/WaitlistPolicyDto"
+          },
           "additionalDetailSchema": {
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/AdditionalDetailFieldDto"
             }
-          },
-          "quietHoursStart": {
-            "type": "string",
-            "format": "time"
-          },
-          "quietHoursEnd": {
-            "type": "string",
-            "format": "time"
           }
         }
       },
@@ -8827,9 +8945,7 @@
           "publicSlug",
           "timeZone",
           "startsAt",
-          "endsAt",
-          "quietHoursStart",
-          "quietHoursEnd"
+          "endsAt"
         ],
         "type": "object",
         "properties": {
@@ -8855,14 +8971,6 @@
           "endsAt": {
             "type": "string",
             "format": "date-time"
-          },
-          "quietHoursStart": {
-            "type": "string",
-            "format": "time"
-          },
-          "quietHoursEnd": {
-            "type": "string",
-            "format": "time"
           },
           "expectedVersion": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -8992,6 +9100,23 @@
           "joinedAt": {
             "type": "string",
             "format": "date-time"
+          }
+        }
+      },
+      "WaitlistPolicyDto": {
+        "required": [
+          "quietHoursStart",
+          "quietHoursEnd"
+        ],
+        "type": "object",
+        "properties": {
+          "quietHoursStart": {
+            "type": "string",
+            "format": "time"
+          },
+          "quietHoursEnd": {
+            "type": "string",
+            "format": "time"
           }
         }
       },

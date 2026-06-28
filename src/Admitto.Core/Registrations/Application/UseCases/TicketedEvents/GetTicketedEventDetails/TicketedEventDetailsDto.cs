@@ -17,9 +17,8 @@ public sealed record TicketedEventDetailsDto(
     bool IsRegistrationOpen,
     RegistrationPolicyDto? RegistrationPolicy,
     ReconfirmPolicyDto? ReconfirmPolicy,
-    IReadOnlyList<AdditionalDetailFieldDto> AdditionalDetailSchema,
-    TimeOnly QuietHoursStart,
-    TimeOnly QuietHoursEnd);
+    WaitlistPolicyDto WaitlistPolicy,
+    IReadOnlyList<AdditionalDetailFieldDto> AdditionalDetailSchema);
 
 public sealed record AdditionalDetailFieldDto(string Key, string Name, int MaxLength);
 
@@ -33,3 +32,7 @@ public sealed record ReconfirmPolicyDto(
     DateTimeOffset ClosesAt,
     int CadenceHours,
     int MinEmailIntervalHours);
+
+public sealed record WaitlistPolicyDto(
+    TimeOnly QuietHoursStart,
+    TimeOnly QuietHoursEnd);

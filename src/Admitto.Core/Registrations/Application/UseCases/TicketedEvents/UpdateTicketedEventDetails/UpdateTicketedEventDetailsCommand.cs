@@ -12,6 +12,4 @@ internal sealed record UpdateTicketedEventDetailsCommand(
     string TimeZone,
     DateTimeOffset StartsAt,
     DateTimeOffset EndsAt,
-    TimeOnly QuietHoursStart,
-    TimeOnly QuietHoursEnd,
     string? PublicSlug = null) : Command;

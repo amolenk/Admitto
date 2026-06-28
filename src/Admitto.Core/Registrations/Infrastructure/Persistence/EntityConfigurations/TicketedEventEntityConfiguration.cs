@@ -56,18 +56,6 @@ public class TicketedEventEntityConfiguration : IEntityTypeConfiguration<Tickete
             .HasDefaultValue(TimeZoneId.From("UTC"))
             .IsRequired();
 
-        builder.Property(e => e.QuietHoursStart)
-            .HasColumnName("quiet_hours_start")
-            .HasColumnType("time")
-            .HasDefaultValue(new TimeOnly(22, 0))
-            .IsRequired();
-
-        builder.Property(e => e.QuietHoursEnd)
-            .HasColumnName("quiet_hours_end")
-            .HasColumnType("time")
-            .HasDefaultValue(new TimeOnly(8, 0))
-            .IsRequired();
-
         builder.Property(e => e.Status)
             .HasColumnName("status")
             .HasConversion<int>()
@@ -93,6 +81,22 @@ public class TicketedEventEntityConfiguration : IEntityTypeConfiguration<Tickete
             p.Property(x => x.Cadence).HasColumnName("reconfirm_policy_cadence");
             p.Property(x => x.MinEmailInterval).HasColumnName("reconfirm_policy_min_email_interval");
         });
+
+        builder.OwnsOne(e => e.WaitlistPolicy, p =>
+        {
+            p.Property(x => x.QuietHoursStart)
+                .HasColumnName("waitlist_policy_quiet_hours_start")
+                .HasColumnType("time")
+                .HasDefaultValue(TicketedEventWaitlistPolicy.DefaultQuietHoursStart)
+                .IsRequired();
+
+            p.Property(x => x.QuietHoursEnd)
+                .HasColumnName("waitlist_policy_quiet_hours_end")
+                .HasColumnType("time")
+                .HasDefaultValue(TicketedEventWaitlistPolicy.DefaultQuietHoursEnd)
+                .IsRequired();
+        });
+        builder.Navigation(e => e.WaitlistPolicy).IsRequired();
 
         builder.HasIndex(e => new { e.TeamId, e.Status })
             .HasDatabaseName("IX_ticketed_events_team_id_status");

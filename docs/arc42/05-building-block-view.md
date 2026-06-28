@@ -147,6 +147,7 @@ Publishes the `TicketedEventCreated` / `TicketedEventArchived` lifecycle integra
 | :----------- | :------ |
 | `TicketedEventRegistrationPolicy` | Registration window (opens/closes at) and optional email-domain restriction. |
 | `TicketedEventReconfirmPolicy` | Reconfirmation window (opens/closes at) and cadence. Optional — absence means no reconfirmation. |
+| `TicketedEventWaitlistPolicy` | Event-wide waitlist quiet hours used to extend waitlist offer claim deadlines. Required with defaults. |
 
 Policy mutators on `TicketedEvent` reject when the event's status is not Active, so there is no separate lifecycle-guard aggregate. The existing `TicketCatalog` aggregate is extended with a single `EventStatus` field that is projected from `TicketedEvent` in the same unit of work as any lifecycle transition, providing an atomic status + capacity gate on ticket claims. See [ADR-008](../adrs/adr-008-ticketed-event-ownership-in-registrations.md) for the ownership rationale.
 

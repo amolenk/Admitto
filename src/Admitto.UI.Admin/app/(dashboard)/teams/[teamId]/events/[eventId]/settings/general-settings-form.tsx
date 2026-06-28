@@ -52,8 +52,6 @@ const generalSchema = z
             .refine((v) => isValidTimeZone(v), "Unknown IANA time zone"),
         startsAt: z.string().min(1, "Start is required"),
         endsAt: z.string().min(1, "End is required"),
-        quietHoursStart: z.string().regex(/^\d{2}:\d{2}$/, "Must be HH:MM"),
-        quietHoursEnd: z.string().regex(/^\d{2}:\d{2}$/, "Must be HH:MM"),
     })
     .refine((d) => new Date(d.startsAt) < new Date(d.endsAt), {
         path: ["endsAt"],
@@ -74,8 +72,6 @@ export function GeneralSettingsForm({ event }: { event: TicketedEventDetailsDto 
         timeZone: event.timeZone,
         startsAt: event.startsAt,
         endsAt: event.endsAt,
-        quietHoursStart: event.quietHoursStart?.substring(0, 5) ?? "00:00",
-        quietHoursEnd: event.quietHoursEnd?.substring(0, 5) ?? "00:00",
     });
 
     async function onSubmit(values: GeneralValues) {
@@ -86,9 +82,7 @@ export function GeneralSettingsForm({ event }: { event: TicketedEventDetailsDto 
             values.baseUrl !== event.baseUrl ||
             values.timeZone !== event.timeZone ||
             values.startsAt !== event.startsAt ||
-            values.endsAt !== event.endsAt ||
-            values.quietHoursStart !== (event.quietHoursStart?.substring(0, 5) ?? "00:00") ||
-            values.quietHoursEnd !== (event.quietHoursEnd?.substring(0, 5) ?? "00:00");
+            values.endsAt !== event.endsAt;
 
         if (detailsChanged) {
             await apiClient.put(`/api/teams/${teamId}/events/${eventId}`, {
@@ -100,8 +94,6 @@ export function GeneralSettingsForm({ event }: { event: TicketedEventDetailsDto 
                 timeZone: values.timeZone,
                 startsAt: values.startsAt,
                 endsAt: values.endsAt,
-                quietHoursStart: values.quietHoursStart + ":00",
-                quietHoursEnd: values.quietHoursEnd + ":00",
             });
         }
 
@@ -211,39 +203,6 @@ export function GeneralSettingsForm({ event }: { event: TicketedEventDetailsDto 
                                                     onChange={field.onChange}
                                                     onBlur={field.onBlur}
                                                 />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    </Field>
-                                )}
-                            />
-
-                            <FormField
-                                control={form.control}
-                                name="quietHoursStart"
-                                render={({ field }) => (
-                                    <Field
-                                        label="Quiet hours start"
-                                        hint="Waitlist claim windows extend rather than notify during quiet hours."
-                                    >
-                                        <FormItem className="space-y-1">
-                                            <FormControl>
-                                                <Input type="time" {...field} className="w-36" />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    </Field>
-                                )}
-                            />
-
-                            <FormField
-                                control={form.control}
-                                name="quietHoursEnd"
-                                render={({ field }) => (
-                                    <Field label="Quiet hours end" hint="Notifications resume after this time.">
-                                        <FormItem className="space-y-1">
-                                            <FormControl>
-                                                <Input type="time" {...field} className="w-36" />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>

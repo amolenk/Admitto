@@ -203,7 +203,7 @@ The previous Partner API route `GET /api/events/{eventId}/registrations/{registr
 
 ## 6.7 Policy mutation flow
 
-Policy commands (`ConfigureRegistrationPolicyCommand`, `ConfigureReconfirmPolicyCommand`) load the `TicketedEvent` aggregate and call the matching policy mutator directly. Each mutator refuses when the event's status is not Active, so there is no separate lifecycle guard. Optimistic concurrency is supplied by `TicketedEvent.Version`.
+Policy commands (`ConfigureRegistrationPolicyCommand`, `ConfigureReconfirmPolicyCommand`, `ConfigureWaitlistPolicyCommand`) load the `TicketedEvent` aggregate and call the matching policy mutator directly. Each mutator refuses when the event's status is not Active, so there is no separate lifecycle guard. Optimistic concurrency is supplied by `TicketedEvent.Version`.
 
 ```mermaid
 sequenceDiagram

@@ -11,6 +11,7 @@ import { EventStatusBanner } from "../../settings/event-status-banner";
 import { AdditionalDetailsEditor } from "../../settings/registration/additional-details-editor";
 import { RegistrationPolicyForm } from "../../settings/registration/registration-policy-form";
 import { ReconfirmPolicyForm } from "../../settings/reconfirm/reconfirm-policy-form";
+import { WaitlistPolicyForm } from "../../settings/waitlist/waitlist-policy-form";
 
 export default function EditPoliciesPage() {
     const { teamId, eventId } = useParams<{ teamId: string; eventId: string }>();
@@ -38,6 +39,14 @@ export default function EditPoliciesPage() {
 
             <RegistrationPolicyForm
                 key={`registration-${event.data.version}`}
+                event={event.data}
+                teamId={teamId}
+                eventId={eventId}
+                disabled={disabled}
+            />
+
+            <WaitlistPolicyForm
+                key={`waitlist-${event.data.version}`}
                 event={event.data}
                 teamId={teamId}
                 eventId={eventId}

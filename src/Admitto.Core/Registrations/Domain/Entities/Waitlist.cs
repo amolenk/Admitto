@@ -125,8 +125,8 @@ public class Waitlist : Aggregate<TicketTypeId>
         var expiresAt = WaitlistClaimWindowCalculator.ComputeExpiresAt(
             now,
             ticketedEvent.TimeZone,
-            ticketedEvent.QuietHoursStart,
-            ticketedEvent.QuietHoursEnd,
+            ticketedEvent.WaitlistPolicy.QuietHoursStart,
+            ticketedEvent.WaitlistPolicy.QuietHoursEnd,
             ticketType.ClaimWindowHours);
 
         var coupon = Coupon.Create(

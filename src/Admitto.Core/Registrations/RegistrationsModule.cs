@@ -19,6 +19,7 @@ using Amolenk.Admitto.Core.Registrations.Application.UseCases.EmailVerification.
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.ArchiveTicketedEvent.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.ConfigureReconfirmPolicy.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.ConfigureRegistrationPolicy.AdminApi;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.ConfigureWaitlistPolicy.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.GetTicketedEventDetails.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.GetTicketedEvents.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.DirectPublicEventLinks.PublicApi;
@@ -57,6 +58,7 @@ public static class RegistrationsModule
             .MapArchiveTicketedEvent()
             .MapConfigureRegistrationPolicy()
             .MapConfigureReconfirmPolicy()
+            .MapConfigureWaitlistPolicy()
             .MapUpdateAdditionalDetailSchema();
 
         eventGroup.MapGroup("/registrations")

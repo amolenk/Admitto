@@ -34,6 +34,8 @@ public sealed class TicketedEventTests
         sut.IsActive.ShouldBeTrue();
         sut.RegistrationPolicy.ShouldBeNull();
         sut.ReconfirmPolicy.ShouldBeNull();
+        sut.WaitlistPolicy.QuietHoursStart.ShouldBe(new TimeOnly(22, 0));
+        sut.WaitlistPolicy.QuietHoursEnd.ShouldBe(new TimeOnly(8, 0));
     }
 
     [TestMethod]
@@ -317,6 +319,31 @@ public sealed class TicketedEventTests
         sut.ConfigureReconfirmPolicy(null);
 
         sut.ReconfirmPolicy.ShouldBeNull();
+    }
+
+    // ── ConfigureWaitlistPolicy ──────────────────────────────────────────────
+
+    [TestMethod]
+    public void ConfigureWaitlistPolicy_Active_StoresPolicy()
+    {
+        var sut = NewEvent();
+
+        sut.ConfigureWaitlistPolicy(new TimeOnly(23, 0), new TimeOnly(7, 0));
+
+        sut.WaitlistPolicy.QuietHoursStart.ShouldBe(new TimeOnly(23, 0));
+        sut.WaitlistPolicy.QuietHoursEnd.ShouldBe(new TimeOnly(7, 0));
+    }
+
+    [TestMethod]
+    public void ConfigureWaitlistPolicy_NotActive_Throws()
+    {
+        var sut = NewEvent();
+        sut.Archive();
+
+        var act = () => sut.ConfigureWaitlistPolicy(new TimeOnly(23, 0), new TimeOnly(7, 0));
+
+        var ex = Should.Throw<BusinessRuleViolationException>(act);
+        ex.Error.Code.ShouldBe("ticketed_event.event_not_active");
     }
 
     // ── UpdateAdditionalDetailSchema ─────────────────────────────────────────

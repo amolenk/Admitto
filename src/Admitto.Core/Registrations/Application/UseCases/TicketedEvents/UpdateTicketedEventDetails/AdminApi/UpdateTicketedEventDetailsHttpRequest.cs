@@ -8,8 +8,6 @@ public sealed record UpdateTicketedEventDetailsHttpRequest(
     string TimeZone,
     DateTimeOffset StartsAt,
     DateTimeOffset EndsAt,
-    TimeOnly QuietHoursStart,
-    TimeOnly QuietHoursEnd,
     uint? ExpectedVersion = null)
 {
     internal UpdateTicketedEventDetailsCommand ToCommand(Guid eventId, Guid teamId) => new(
@@ -22,7 +20,5 @@ public sealed record UpdateTicketedEventDetailsHttpRequest(
         TimeZone,
         StartsAt,
         EndsAt,
-        QuietHoursStart,
-        QuietHoursEnd,
         PublicSlug);
 }

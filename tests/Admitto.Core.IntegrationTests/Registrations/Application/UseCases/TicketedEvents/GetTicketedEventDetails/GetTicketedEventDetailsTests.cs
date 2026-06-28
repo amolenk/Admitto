@@ -39,6 +39,7 @@ public sealed class GetTicketedEventDetailsTests(TestContext testContext) : Aspi
                     reconfirmCloses,
                     TimeSpan.FromDays(7),
                     TimeSpan.FromHours(24)));
+            te.ConfigureWaitlistPolicy(new TimeOnly(23, 0), new TimeOnly(7, 0));
 
             ctx.TicketedEvents.Add(te);
         });
@@ -64,6 +65,9 @@ public sealed class GetTicketedEventDetailsTests(TestContext testContext) : Aspi
         result.ReconfirmPolicy.ClosesAt.ShouldBe(reconfirmCloses);
         result.ReconfirmPolicy.CadenceHours.ShouldBe(168);
         result.ReconfirmPolicy.MinEmailIntervalHours.ShouldBe(24);
+
+        result.WaitlistPolicy.QuietHoursStart.ShouldBe(new TimeOnly(23, 0));
+        result.WaitlistPolicy.QuietHoursEnd.ShouldBe(new TimeOnly(7, 0));
     }
 
     [TestMethod]
@@ -96,6 +100,8 @@ public sealed class GetTicketedEventDetailsTests(TestContext testContext) : Aspi
         result.ShouldNotBeNull();
         result.RegistrationPolicy.ShouldBeNull();
         result.ReconfirmPolicy.ShouldBeNull();
+        result.WaitlistPolicy.QuietHoursStart.ShouldBe(new TimeOnly(22, 0));
+        result.WaitlistPolicy.QuietHoursEnd.ShouldBe(new TimeOnly(8, 0));
         result.IsRegistrationOpen.ShouldBeFalse();
     }
 

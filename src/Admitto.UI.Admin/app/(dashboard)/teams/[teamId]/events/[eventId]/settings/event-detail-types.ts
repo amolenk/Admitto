@@ -13,6 +13,11 @@ export interface ReconfirmPolicy {
     minEmailIntervalHours: number;
 }
 
+export interface WaitlistPolicy {
+    quietHoursStart: string;
+    quietHoursEnd: string;
+}
+
 export interface AdditionalDetailField {
     key: string;
     name: string;
@@ -32,6 +37,7 @@ export interface TicketedEventDetails {
     isRegistrationOpen: boolean;
     registrationPolicy: RegistrationPolicy | null;
     reconfirmPolicy: ReconfirmPolicy | null;
+    waitlistPolicy: WaitlistPolicy;
     additionalDetailSchema?: AdditionalDetailField[];
     websiteUrl?: string;
     baseUrl?: string;

@@ -7,8 +7,7 @@ namespace Amolenk.Admitto.Core.Registrations.Domain.Entities;
 
 /// <summary>
 /// Authoritative aggregate for a ticketed event in the Registrations module.
-/// Owns the name/dates, the lifecycle status, and the two policies
-/// (registration, reconfirm) as value objects.
+/// Owns the name/dates, the lifecycle status, and event policies as value objects.
 /// </summary>
 /// <remarks>
 /// Policy mutators reject when the aggregate is not Active; lifecycle
@@ -50,12 +49,11 @@ public class TicketedEvent : Aggregate<TicketedEventId>
     public DateTimeOffset StartsAt { get; private set; }
     public DateTimeOffset EndsAt { get; private set; }
     public TimeZoneId TimeZone { get; private set; }
-    public TimeOnly QuietHoursStart { get; private set; } = new(22, 0);
-    public TimeOnly QuietHoursEnd { get; private set; } = new(8, 0);
     public EventLifecycleStatus Status { get; private set; }
 
     public TicketedEventRegistrationPolicy? RegistrationPolicy { get; private set; }
     public TicketedEventReconfirmPolicy? ReconfirmPolicy { get; private set; }
+    public TicketedEventWaitlistPolicy WaitlistPolicy { get; private set; } = TicketedEventWaitlistPolicy.Default();
     public AdditionalDetailSchema AdditionalDetailSchema { get; private set; } = AdditionalDetailSchema.Empty;
 
     public bool IsActive => Status == EventLifecycleStatus.Active;
@@ -114,12 +112,11 @@ public class TicketedEvent : Aggregate<TicketedEventId>
             endsAt,
             timeZone);
 
-    public void UpdateQuietHours(TimeOnly start, TimeOnly end)
+    public void ConfigureWaitlistPolicy(TimeOnly quietHoursStart, TimeOnly quietHoursEnd)
     {
         EnsureActive();
 
-        QuietHoursStart = start;
-        QuietHoursEnd = end;
+        WaitlistPolicy = TicketedEventWaitlistPolicy.Create(quietHoursStart, quietHoursEnd);
     }
 
     public void UpdateDetails(

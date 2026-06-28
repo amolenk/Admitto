@@ -523,7 +523,7 @@ The Registrations module enforces "no policy edits / no registrations after arch
 
 ### `TicketedEvent` policy mutators
 
-Every policy mutator (`ConfigureRegistrationPolicy`, `ConfigureReconfirmPolicy`, `UpdateDetails`) refuses when the aggregate's `Status` is not Active. Optimistic concurrency is supplied by the aggregate's own `Version` (EF `[Timestamp]` row-version). A concurrent `Archive()` on the same aggregate advances the row-version, so any policy edit loaded at the prior version fails its commit with a `DbUpdateConcurrencyException`.
+Every policy mutator (`ConfigureRegistrationPolicy`, `ConfigureReconfirmPolicy`, `ConfigureWaitlistPolicy`, `UpdateDetails`) refuses when the aggregate's `Status` is not Active. Optimistic concurrency is supplied by the aggregate's own `Version` (EF `[Timestamp]` row-version). A concurrent `Archive()` on the same aggregate advances the row-version, so any policy edit loaded at the prior version fails its commit with a `DbUpdateConcurrencyException`.
 
 ### `TicketCatalog.EventStatus` projection
 

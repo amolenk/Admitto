@@ -46,10 +46,11 @@ internal sealed class GetTicketedEventDetailsHandler(
                     ticketedEvent.ReconfirmPolicy.ClosesAt,
                     (int)ticketedEvent.ReconfirmPolicy.Cadence.TotalHours,
                     (int)ticketedEvent.ReconfirmPolicy.MinEmailInterval.TotalHours),
+            new WaitlistPolicyDto(
+                ticketedEvent.WaitlistPolicy.QuietHoursStart,
+                ticketedEvent.WaitlistPolicy.QuietHoursEnd),
             ticketedEvent.AdditionalDetailSchema.Fields
                 .Select(f => new AdditionalDetailFieldDto(f.Key, f.Name, f.MaxLength))
-                .ToArray(),
-            ticketedEvent.QuietHoursStart,
-            ticketedEvent.QuietHoursEnd);
+                .ToArray());
     }
 }
