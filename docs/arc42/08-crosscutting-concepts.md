@@ -30,7 +30,7 @@ Endpoints declare requirements with `policy.RequireAdminRole()` or `policy.Requi
 
 ### Keycloak account-action email delivery
 
-Keycloak account-action emails are infrastructure-owned identity-provider emails. Admitto triggers them through Keycloak's Admin API `execute-actions-email` endpoint, and Keycloak sends them through its own SMTP configuration using the Admitto Keycloak email theme. They are intentionally outside Admitto's Email module templates, logs, outbox, and system-email SMTP settings.
+Keycloak account-action emails are infrastructure-owned identity-provider emails. Admitto triggers them through Keycloak's Admin API `execute-actions-email` endpoint, and Keycloak sends them through its own SMTP configuration using the Admitto Keycloak email theme. They use the same deployment SMTP parameter set as the Worker, but remain outside Admitto's Email module templates, logs, and outbox.
 
 ### Public and Partner API rate limiting
 

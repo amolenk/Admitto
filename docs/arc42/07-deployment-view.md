@@ -19,7 +19,7 @@
 | `keycloak` | Identity provider; local uses the Aspire Keycloak resource, production uses the custom Keycloak image from `KeycloakConfiguration/Dockerfile` |
 | `maildev` | Local SMTP server with web UI |
 
-The Worker receives Admitto application-email SMTP configuration from AppHost as `Email:System:*` settings. Local development points these settings at MailDev; production publish mode exposes matching `systemEmail*` parameters for the SMTP host, port, Admitto-controlled sender address, auth mode, username, and secret password. Public attendee links are generated from `Registrations:PublicTickets:BaseUrl` plus `/e/{TicketedEvent.PublicSlug}`.
+The Worker receives Admitto application-email SMTP configuration from AppHost as `Email:System:*` settings. Local development points these settings at MailDev. Production publish mode exposes one shared SMTP parameter set (`smtpHost`, `smtpPort`, `smtpFromAddress`, `smtpFromDisplayName`, `smtpAuth`, `smtpUsername`, `smtpPassword`, `smtpSsl`, and `smtpStartTls`) and wires it to both Keycloak account-action email and the Worker application-email path. Public attendee links are generated from `Registrations:PublicTickets:BaseUrl` plus `/e/{TicketedEvent.PublicSlug}`.
 
 `tickets.admitto.org` is intended to be a second custom domain bound directly to the API Container App for anonymous Public API links. It is a host alias, not an HTTP redirect. For Azure Container Apps managed certificate issuance and renewal, create a direct CNAME from `tickets.admitto.org` to the generated Container Apps hostname, then bind `tickets.admitto.org` as a custom domain on the API app with its own certificate. Avoid chaining the CNAME through another hostname that performs redirects; mail clients should request `/e/...` directly from the API ingress.
 
@@ -50,18 +50,18 @@ wires these from `publicAdmittoUiUrl` and `KeycloakUiClientSecret` in publish mo
 The Keycloak master-realm bootstrap administrator is also deployment-configured via
 the `keycloakAdminUser` and `keycloakAdminPassword` publish parameters; local dev
 keeps the `admin` / `admin` defaults.
-Keycloak account-action email uses Keycloak SMTP settings, not the Admitto Email
-module's system/application SMTP settings. Both `AdmittoRealm.Local.json` and
-`AdmittoRealm.Deployment.json` use environment substitution for
+Keycloak account-action email uses the shared deployment SMTP parameter set, while
+remaining outside the Admitto Email module's templates, logs, and outbox. Both
+`AdmittoRealm.Local.json` and `AdmittoRealm.Deployment.json` use environment substitution for
 `KEYCLOAK_SMTP_HOST`, `KEYCLOAK_SMTP_PORT`, `KEYCLOAK_SMTP_FROM`,
 `KEYCLOAK_SMTP_FROM_DISPLAY_NAME`, `KEYCLOAK_SMTP_AUTH`,
 `KEYCLOAK_SMTP_USERNAME`, `KEYCLOAK_SMTP_PASSWORD`, `KEYCLOAK_SMTP_SSL`, and
 `KEYCLOAK_SMTP_STARTTLS`. AppHost wires local run mode host and port from the
 MailDev `smtp` endpoint and uses no-auth defaults so execute-actions emails can
-be inspected locally, while publish mode requires the deployment-specific host,
-sender, username, and secret password values. The
-Worker's `systemEmail*` parameters remain the Admitto application-email SMTP path
-for attendee, OTP, reconfirmation, cancellation, waitlist, and bulk emails.
+be inspected locally, while publish mode requires the shared deployment-specific
+host, sender, username, and secret password values. The same shared values are also
+mapped into the Worker's `Email:System:*` settings for attendee, OTP,
+reconfirmation, cancellation, waitlist, and bulk emails.
 
 ## 7.2 Production shape
 

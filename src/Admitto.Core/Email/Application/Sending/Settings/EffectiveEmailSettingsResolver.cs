@@ -40,9 +40,7 @@ internal sealed class EffectiveEmailSettingsResolver(
         if (string.IsNullOrWhiteSpace(value.SmtpHost) || string.IsNullOrWhiteSpace(value.FromAddress))
             return null;
 
-        var authMode = Enum.TryParse<EmailAuthMode>(value.AuthMode, ignoreCase: true, out var parsed)
-            ? parsed
-            : EmailAuthMode.None;
+        var authMode = ResolveAuthMode(value.AuthMode);
 
         var replyToAddress = await readStore.TeamEmailContexts
             .AsNoTracking()
@@ -53,6 +51,8 @@ internal sealed class EffectiveEmailSettingsResolver(
         return new EffectiveEmailSettings(
             Hostname.From(value.SmtpHost),
             Port.From(value.SmtpPort),
+            value.SmtpSsl,
+            value.SmtpStartTls,
             EmailAddress.From(value.FromAddress),
             replyToAddress,
             authMode,
@@ -60,5 +60,15 @@ internal sealed class EffectiveEmailSettingsResolver(
             authMode == EmailAuthMode.Basic ? value.Password : null,
             EmailAccentColor.From("#2563eb"),
             EmailFontFamily.From("Inter, sans-serif"));
+    }
+
+    private static EmailAuthMode ResolveAuthMode(string? value)
+    {
+        if (bool.TryParse(value, out var enabled))
+            return enabled ? EmailAuthMode.Basic : EmailAuthMode.None;
+
+        return Enum.TryParse<EmailAuthMode>(value, ignoreCase: true, out var parsed)
+            ? parsed
+            : EmailAuthMode.None;
     }
 }

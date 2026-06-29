@@ -18,6 +18,7 @@ public sealed class EffectiveEmailSettingsResolverTests(TestContext testContext)
         {
             SmtpHost = "smtp.admitto.org",
             SmtpPort = 587,
+            SmtpStartTls = true,
             FromAddress = "tickets@admitto.org",
             AuthMode = nameof(EmailAuthMode.Basic),
             Username = "smtp-user",
@@ -29,6 +30,8 @@ public sealed class EffectiveEmailSettingsResolverTests(TestContext testContext)
         result.ShouldNotBeNull();
         result.SmtpHost.Value.ShouldBe("smtp.admitto.org");
         result.SmtpPort.Value.ShouldBe(587);
+        result.SmtpSsl.ShouldBeFalse();
+        result.SmtpStartTls.ShouldBeTrue();
         result.FromAddress.Value.ShouldBe("tickets@admitto.org");
         result.ReplyToAddress.ShouldBeNull();
         result.AuthMode.ShouldBe(EmailAuthMode.Basic);
@@ -58,6 +61,27 @@ public sealed class EffectiveEmailSettingsResolverTests(TestContext testContext)
 
         result.ShouldNotBeNull();
         result.ReplyToAddress.ShouldBe(EmailAddress.From("help@example.com"));
+    }
+
+    [TestMethod]
+    public async Task ResolveAsync_BooleanAuthConfiguration_ReturnsBasicAuthSettings()
+    {
+        var resolver = new EffectiveEmailSettingsResolver(Options.Create(new SystemEmailOptions
+        {
+            SmtpHost = "smtp.admitto.org",
+            SmtpPort = 587,
+            FromAddress = "tickets@admitto.org",
+            AuthMode = "true",
+            Username = "smtp-user",
+            Password = "smtp-password"
+        }), Environment.EmailDatabase.Context);
+
+        var result = await resolver.ResolveAsync(TeamId.New(), testContext.CancellationToken);
+
+        result.ShouldNotBeNull();
+        result.AuthMode.ShouldBe(EmailAuthMode.Basic);
+        result.Username.ShouldBe("smtp-user");
+        result.Password.ShouldBe("smtp-password");
     }
 
     [TestMethod]

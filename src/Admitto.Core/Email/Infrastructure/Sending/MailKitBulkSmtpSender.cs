@@ -18,9 +18,7 @@ internal sealed class MailKitBulkSmtpSender : IBulkSmtpSender
     {
         var client = new SmtpClient();
 
-        var secureSocketOptions = settings.SmtpPort.Value == 465
-            ? SecureSocketOptions.SslOnConnect
-            : SecureSocketOptions.StartTlsWhenAvailable;
+        var secureSocketOptions = GetSecureSocketOptions(settings);
 
         await client.ConnectAsync(
             settings.SmtpHost.Value,
@@ -37,6 +35,13 @@ internal sealed class MailKitBulkSmtpSender : IBulkSmtpSender
 
         return new MailKitBulkSmtpSession(client, settings.FromAddress, settings.ReplyToAddress);
     }
+
+    private static SecureSocketOptions GetSecureSocketOptions(EffectiveEmailSettings settings) =>
+        settings.SmtpSsl
+            ? SecureSocketOptions.SslOnConnect
+            : settings.SmtpStartTls
+                ? SecureSocketOptions.StartTls
+                : SecureSocketOptions.None;
 
     private sealed class MailKitBulkSmtpSession(
         SmtpClient client,

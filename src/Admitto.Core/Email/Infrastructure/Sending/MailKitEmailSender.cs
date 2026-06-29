@@ -20,9 +20,7 @@ internal sealed class MailKitEmailSender : IEmailSender
 
         using var client = new SmtpClient();
 
-        var secureSocketOptions = settings.SmtpPort.Value == 465
-            ? SecureSocketOptions.SslOnConnect
-            : SecureSocketOptions.StartTlsWhenAvailable;
+        var secureSocketOptions = GetSecureSocketOptions(settings);
 
         await client.ConnectAsync(
             settings.SmtpHost.Value,
@@ -61,4 +59,11 @@ internal sealed class MailKitEmailSender : IEmailSender
 
         return mimeMessage;
     }
+
+    private static SecureSocketOptions GetSecureSocketOptions(EffectiveEmailSettings settings) =>
+        settings.SmtpSsl
+            ? SecureSocketOptions.SslOnConnect
+            : settings.SmtpStartTls
+                ? SecureSocketOptions.StartTls
+                : SecureSocketOptions.None;
 }

@@ -12,6 +12,10 @@ public sealed class SystemEmailOptions
     [Range(1, 65535)]
     public int SmtpPort { get; init; } = 587;
 
+    public bool SmtpSsl { get; init; }
+
+    public bool SmtpStartTls { get; init; }
+
     [Required]
     public string FromAddress { get; init; } = string.Empty;
 

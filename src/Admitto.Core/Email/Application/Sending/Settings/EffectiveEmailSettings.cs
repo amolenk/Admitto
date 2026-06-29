@@ -9,6 +9,8 @@ namespace Amolenk.Admitto.Core.Email.Application.Sending.Settings;
 public sealed record EffectiveEmailSettings(
     Hostname SmtpHost,
     Port SmtpPort,
+    bool SmtpSsl,
+    bool SmtpStartTls,
     EmailAddress FromAddress,
     EmailAddress? ReplyToAddress,
     EmailAuthMode AuthMode,

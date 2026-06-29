@@ -159,6 +159,43 @@ if (builder.ExecutionContext.IsRunMode)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// SMTP
+///////////////////////////////////////////////////////////////////////////////
+
+IResourceBuilder<ParameterResource>? smtpHost = null;
+IResourceBuilder<ParameterResource>? smtpPort = null;
+
+if (builder.ExecutionContext.IsPublishMode)
+{
+    smtpHost = builder.AddParameter("smtpHost");
+    smtpPort = builder.AddParameter("smtpPort");
+}
+
+var smtpFromAddress = builder.ExecutionContext.IsPublishMode
+    ? builder.AddParameter("smtpFromAddress")
+    : builder.AddParameter("smtpFromAddress", value: "noreply@tickets.admitto.local");
+
+var smtpFromDisplayName = builder.AddParameter("smtpFromDisplayName", value: "Admitto");
+
+var smtpAuth = builder.ExecutionContext.IsPublishMode
+    ? builder.AddParameter("smtpAuth", value: "true")
+    : builder.AddParameter("smtpAuth", value: "false");
+
+var smtpUsername = builder.ExecutionContext.IsPublishMode
+    ? builder.AddParameter("smtpUsername")
+    : builder.AddParameter("smtpUsername", value: string.Empty);
+
+var smtpPassword = builder.ExecutionContext.IsPublishMode
+    ? builder.AddParameter("smtpPassword", secret: true)
+    : builder.AddParameter("smtpPassword", value: string.Empty, secret: true);
+
+var smtpSsl = builder.AddParameter("smtpSsl", value: "false");
+
+var smtpStartTls = builder.ExecutionContext.IsPublishMode
+    ? builder.AddParameter("smtpStartTls", value: "true")
+    : builder.AddParameter("smtpStartTls", value: "false");
+
+///////////////////////////////////////////////////////////////////////////////
 // Keycloak
 ///////////////////////////////////////////////////////////////////////////////
 
@@ -170,43 +207,23 @@ var keycloakAdminPassword = builder.ExecutionContext.IsPublishMode
     ? builder.AddParameter("keycloakAdminPassword", secret: true)
     : builder.AddParameter("keycloakAdminPassword", value: "admin", secret: true);
 
-var keycloakSmtpFromAddress = builder.ExecutionContext.IsPublishMode
-    ? builder.AddParameter("keycloakSmtpFromAddress")
-    : builder.AddParameter("keycloakSmtpFromAddress", value: "noreply@admitto.local");
-var keycloakSmtpFromDisplayName = builder.AddParameter("keycloakSmtpFromDisplayName", value: "Admitto");
-var keycloakSmtpAuth = builder.ExecutionContext.IsPublishMode
-    ? builder.AddParameter("keycloakSmtpAuth", value: "true")
-    : builder.AddParameter("keycloakSmtpAuth", value: "false");
-var keycloakSmtpUsername = builder.ExecutionContext.IsPublishMode
-    ? builder.AddParameter("keycloakSmtpUsername")
-    : builder.AddParameter("keycloakSmtpUsername", value: string.Empty);
-var keycloakSmtpPassword = builder.ExecutionContext.IsPublishMode
-    ? builder.AddParameter("keycloakSmtpPassword", secret: true)
-    : builder.AddParameter("keycloakSmtpPassword", value: string.Empty, secret: true);
-var keycloakSmtpSsl = builder.AddParameter("keycloakSmtpSsl", value: "false");
-var keycloakSmtpStartTls = builder.ExecutionContext.IsPublishMode
-    ? builder.AddParameter("keycloakSmtpStartTls", value: "true")
-    : builder.AddParameter("keycloakSmtpStartTls", value: "false");
-
 var keycloak = builder.AddContainer("keycloak", "admitto-keycloak")
     .WithDockerfile("./KeycloakConfiguration")
     .WithEnvironment("KC_BOOTSTRAP_ADMIN_USERNAME", keycloakAdminUser)
     .WithEnvironment("KC_BOOTSTRAP_ADMIN_PASSWORD", keycloakAdminPassword)
     .WithEnvironment("KC_HTTP_ENABLED", "true")
     .WithEnvironment("KC_HEALTH_ENABLED", "true")
-    .WithEnvironment("KEYCLOAK_SMTP_FROM", keycloakSmtpFromAddress)
-    .WithEnvironment("KEYCLOAK_SMTP_FROM_DISPLAY_NAME", keycloakSmtpFromDisplayName)
-    .WithEnvironment("KEYCLOAK_SMTP_AUTH", keycloakSmtpAuth)
-    .WithEnvironment("KEYCLOAK_SMTP_USERNAME", keycloakSmtpUsername)
-    .WithEnvironment("KEYCLOAK_SMTP_PASSWORD", keycloakSmtpPassword)
-    .WithEnvironment("KEYCLOAK_SMTP_SSL", keycloakSmtpSsl)
-    .WithEnvironment("KEYCLOAK_SMTP_STARTTLS", keycloakSmtpStartTls);
+    .WithEnvironment("KEYCLOAK_SMTP_FROM", smtpFromAddress)
+    .WithEnvironment("KEYCLOAK_SMTP_FROM_DISPLAY_NAME", smtpFromDisplayName)
+    .WithEnvironment("KEYCLOAK_SMTP_AUTH", smtpAuth)
+    .WithEnvironment("KEYCLOAK_SMTP_USERNAME", smtpUsername)
+    .WithEnvironment("KEYCLOAK_SMTP_PASSWORD", smtpPassword)
+    .WithEnvironment("KEYCLOAK_SMTP_SSL", smtpSsl)
+    .WithEnvironment("KEYCLOAK_SMTP_STARTTLS", smtpStartTls);
 
 if (builder.ExecutionContext.IsPublishMode)
 {
     var keycloakPublicUrl = builder.AddParameter("keycloakPublicUrl");
-    var keycloakSmtpHost = builder.AddParameter("keycloakSmtpHost");
-    var keycloakSmtpPort = builder.AddParameter("keycloakSmtpPort", value: "587");
 
     keycloak
         .WithArgs("start", "--import-realm", "--spi-user-profile--declarative-user-profile--read-only-attributes=email")
@@ -221,8 +238,8 @@ if (builder.ExecutionContext.IsPublishMode)
         .WithEnvironment("KC_DB_PASSWORD", postgres.Resource.Password!)
         .WithEnvironment("KC_PROXY_HEADERS", "xforwarded")
         .WithEnvironment("KC_HOSTNAME", keycloakPublicUrl)
-        .WithEnvironment("KEYCLOAK_SMTP_HOST", keycloakSmtpHost)
-        .WithEnvironment("KEYCLOAK_SMTP_PORT", keycloakSmtpPort)
+        .WithEnvironment("KEYCLOAK_SMTP_HOST", smtpHost!)
+        .WithEnvironment("KEYCLOAK_SMTP_PORT", smtpPort!)
         .WaitFor(keycloakDb);
 
 
@@ -434,8 +451,12 @@ if (!infraOnly)
         .WithEnvironment("ORGANIZATION__USERDIRECTORIES__KEYCLOAK__CLIENTID", "admin-cli")
         .WithEnvironment("ORGANIZATION__USERDIRECTORIES__KEYCLOAK__USERNAME", keycloakAdminUser)
         .WithEnvironment("ORGANIZATION__USERDIRECTORIES__KEYCLOAK__PASSWORD", keycloakAdminPassword)
-        .WithEnvironment("EMAIL__SYSTEM__FROMADDRESS", "tickets@admitto.local")
-        .WithEnvironment("EMAIL__SYSTEM__AUTHMODE", "None")
+        .WithEnvironment("EMAIL__SYSTEM__FROMADDRESS", smtpFromAddress)
+        .WithEnvironment("EMAIL__SYSTEM__AUTHMODE", smtpAuth)
+        .WithEnvironment("EMAIL__SYSTEM__USERNAME", smtpUsername)
+        .WithEnvironment("EMAIL__SYSTEM__PASSWORD", smtpPassword)
+        .WithEnvironment("EMAIL__SYSTEM__SMTPSSL", smtpSsl)
+        .WithEnvironment("EMAIL__SYSTEM__SMTPSTARTTLS", smtpStartTls)
         .WithEnvironment("OBSERVABILITY__AZUREMONITOR__SAMPLINGRATIO", azureMonitorSamplingRatio)
         .WithReferenceEnvironment(ReferenceEnvironmentInjectionFlags.ConnectionString)
         .WithReference(admittoDb)
@@ -453,7 +474,8 @@ if (!infraOnly)
         worker
             // Disable caching to avoid stale data issues in tests
             .WithEnvironment("CACHING__ENABLED", builder.Environment.IsDevelopment().ToString())
-            .WithEnvironment("EMAIL__SYSTEM__SMTPHOST", "localhost")
+            .WithEnvironment("EMAIL__SYSTEM__SMTPHOST",
+                ReferenceExpression.Create($"{mailDev!.GetEndpoint("smtp").Property(EndpointProperty.Host)}"))
             .WithEnvironment(
                 "EMAIL__SYSTEM__SMTPPORT",
                 ReferenceExpression.Create($"{mailDev!.GetEndpoint("smtp").Property(EndpointProperty.Port)}"))
@@ -467,6 +489,8 @@ if (!infraOnly)
     {
         worker
             .WithReference(appInsights!)
+            .WithEnvironment("EMAIL__SYSTEM__SMTPHOST", smtpHost!)
+            .WithEnvironment("EMAIL__SYSTEM__SMTPPORT", smtpPort!)
             .WithEnvironment(
                 "REGISTRATIONS__PUBLICEVENTLINKS__BASEURL",
                 ReferenceExpression.Create($"https://{externalLinkCustomDomain!}/e"))
@@ -573,24 +597,29 @@ if (api is not null)
         .PublishAsMigrationScript()
         .WithReference(admittoDb).WaitFor(admittoDb);
 
-    var quartzSchema = builder.AddContainer("quartz-schema", "postgres:17")
-        .WithArgs(
-            "sh",
-            "-c",
-            "psql \"$QUARTZ_DB_URI\" -v ON_ERROR_STOP=1 -f /scripts/quartz.sql")
-        .WithParentRelationship(api)
-        .WithBindMount(Path.Combine(databaseScriptsPath, "quartz.sql"), "/scripts/quartz.sql", isReadOnly: true)
-        .WithReference(quartzDb).WaitFor(quartzDb);
 
     api
         .WaitForCompletion(organizationMigrations)
         .WaitForCompletion(emailMigrations)
         .WaitForCompletion(registrationsMigrations)
-        .WaitForCompletion(badgesMigrations)
-        .WaitForCompletion(quartzSchema);
+        .WaitForCompletion(badgesMigrations);
+
+    if (builder.ExecutionContext.IsRunMode)
+    {
+        var quartzSchema = builder.AddContainer("quartz-schema", "postgres:17")
+            .WithArgs(
+                "sh",
+                "-c",
+                "psql \"$QUARTZ_DB_URI\" -v ON_ERROR_STOP=1 -f /scripts/quartz.sql")
+            .WithParentRelationship(api)
+            .WithBindMount(Path.Combine(databaseScriptsPath, "quartz.sql"), "/scripts/quartz.sql", isReadOnly: true)
+            .WithReference(quartzDb).WaitFor(quartzDb);
+
+        api.WaitForCompletion(quartzSchema);
+    }
 }
 
-if (ui is not null)
+if (builder.ExecutionContext.IsRunMode && ui is not null)
 {
     var betterAuthSchema = builder.AddContainer("better-auth-schema", "postgres:17")
         .WithArgs(
