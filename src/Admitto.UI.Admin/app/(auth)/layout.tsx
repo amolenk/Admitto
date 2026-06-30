@@ -20,7 +20,11 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
     title: "Admitto - Admin Dashboard",
-    description: "Dashboard for managing events in Admitto"
+    description: "Dashboard for managing events in Admitto",
+    icons: {
+        icon: [{ url: "/favicon.svg?v=2", type: "image/svg+xml" }],
+        shortcut: "/favicon.svg?v=2"
+    }
 };
 
 export default async function RootLayout({
