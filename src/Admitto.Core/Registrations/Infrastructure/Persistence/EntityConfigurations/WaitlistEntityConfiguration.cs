@@ -54,7 +54,7 @@ public class WaitlistEntityConfiguration : IEntityTypeConfiguration<Waitlist>
 
             b.Property(e => e.Status)
                 .HasJsonPropertyName("status")
-                .HasConversion<int>()
+                .HasConversion<string>()
                 .IsRequired();
         });
 
@@ -68,7 +68,7 @@ public class WaitlistEntityConfiguration : IEntityTypeConfiguration<Waitlist>
 
             b.Property(e => e.Status)
                 .HasJsonPropertyName("status")
-                .HasConversion<int>()
+                .HasConversion<string>()
                 .IsRequired();
 
             b.Property(e => e.IssuedAt)

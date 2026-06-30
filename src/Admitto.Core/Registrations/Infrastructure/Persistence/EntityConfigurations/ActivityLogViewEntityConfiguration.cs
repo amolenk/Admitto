@@ -29,7 +29,8 @@ internal sealed class ActivityLogViewEntityConfiguration : IEntityTypeConfigurat
 
         builder.Property(e => e.ActivityType)
             .HasColumnName("activity_type")
-            .HasConversion<int>()
+            .HasConversion<string>()
+            .HasMaxLength(32)
             .IsRequired();
 
         builder.Property(e => e.OccurredAt)

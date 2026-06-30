@@ -21,7 +21,8 @@ public class BadgesEventEntityConfiguration : IEntityTypeConfiguration<BadgeEven
 
         builder.Property(e => e.Status)
             .HasColumnName("status")
-            .HasConversion<int>()
+            .HasConversion<string>()
+            .HasMaxLength(32)
             .IsRequired();
 
         // Configure badge types as JSON column owned collection
@@ -40,7 +41,7 @@ public class BadgesEventEntityConfiguration : IEntityTypeConfiguration<BadgeEven
                     .HasJsonPropertyName("name");
 
                 b.Property(bt => bt.Kind)
-                    .HasConversion<int>()
+                    .HasConversion<string>()
                     .HasJsonPropertyName("kind");
 
                 b.PrimitiveCollection(bt => bt.TicketTypeIds)
@@ -49,5 +50,4 @@ public class BadgesEventEntityConfiguration : IEntityTypeConfiguration<BadgeEven
             });
     }
 }
-
 

@@ -76,7 +76,8 @@ public class TeamEntityConfiguration : IEntityTypeConfiguration<Team>
 
                 req.Property(r => r.Status)
                     .HasColumnName("status")
-                    .HasConversion<int>()
+                    .HasConversion<string>()
+                    .HasMaxLength(32)
                     .IsRequired();
 
                 req.Property(r => r.TicketedEventId)
@@ -91,7 +92,8 @@ public class TeamEntityConfiguration : IEntityTypeConfiguration<Team>
 
                 req.Property(r => r.ObservedEventStatus)
                     .HasColumnName("observed_event_status")
-                    .HasConversion<int?>();
+                    .HasConversion<string>()
+                    .HasMaxLength(32);
 
                 req.HasIndex("team_id", nameof(TeamEventCreationRequest.Status));
             });

@@ -26,7 +26,8 @@ public class TicketCatalogEntityConfiguration : IEntityTypeConfiguration<TicketC
 
         builder.Property(e => e.EventStatus)
             .HasColumnName("event_status")
-            .HasConversion<int>()
+            .HasConversion<string>()
+            .HasMaxLength(32)
             .IsRequired()
             .HasDefaultValue(EventLifecycleStatus.Active);
 

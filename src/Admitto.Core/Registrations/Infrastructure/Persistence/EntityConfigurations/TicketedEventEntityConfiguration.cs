@@ -58,7 +58,8 @@ public class TicketedEventEntityConfiguration : IEntityTypeConfiguration<Tickete
 
         builder.Property(e => e.Status)
             .HasColumnName("status")
-            .HasConversion<int>()
+            .HasConversion<string>()
+            .HasMaxLength(32)
             .IsRequired();
 
         builder.Property(e => e.Version)

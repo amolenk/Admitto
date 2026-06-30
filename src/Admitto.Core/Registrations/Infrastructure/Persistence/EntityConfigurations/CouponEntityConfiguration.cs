@@ -52,7 +52,8 @@ public class CouponEntityConfiguration : IEntityTypeConfiguration<Coupon>
         builder.Property(e => e.Source)
             .HasColumnName("source")
             .IsRequired()
-            .HasConversion<int>();
+            .HasConversion<string>()
+            .HasMaxLength(32);
 
         builder.PrimitiveCollection(e => e.AllowedTicketTypeIds)
             .HasColumnName("allowed_ticket_type_ids")

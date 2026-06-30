@@ -97,7 +97,7 @@ internal sealed class ProcessExpiredWaitlistCouponsJobFixture
         var cutoff = DateTimeOffset.UtcNow - offsetFromNow;
 
         await environment.RegistrationsDatabase.Context.Database.ExecuteSqlAsync(
-            $"UPDATE registrations.coupons SET expires_at = {cutoff} WHERE source = 1 AND redeemed_at IS NULL AND revoked_at IS NULL",
+            $"UPDATE registrations.coupons SET expires_at = {cutoff} WHERE source = {nameof(CouponSource.Waitlist)} AND redeemed_at IS NULL AND revoked_at IS NULL",
             cancellationToken);
 
         environment.RegistrationsDatabase.Context.ChangeTracker.Clear();

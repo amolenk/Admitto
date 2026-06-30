@@ -319,6 +319,7 @@ public readonly record struct ProtectedPassword
 - `AuditInterceptor` populates `CreatedAt`, `LastChangedAt`, `LastChangedBy` on auditable entities.
 - `DomainEventsInterceptor` dispatches domain events after `SaveChanges`; outbox messages are written inside `IDomainEventHandler<T>` implementations in the same transaction.
 - Value converters bridge value objects (§8.8) to their primitive column types.
+- Enum values are stored as text (`HasConversion<string>()`) rather than ordinals so database rows stay readable during debugging and operations.
 
 ### Module stores
 
