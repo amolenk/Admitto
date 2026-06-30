@@ -1,10 +1,4 @@
-# Email Settings Specification
-
-## Purpose
-
-The Email module uses deployment-provided system SMTP configuration for application email. Organizers do not manage SMTP settings through Admitto, and no per-team or per-event SMTP credentials are persisted.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: System SMTP settings come from host configuration
 

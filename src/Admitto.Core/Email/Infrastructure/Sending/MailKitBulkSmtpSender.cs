@@ -4,7 +4,6 @@ using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using MailKit.Net.Smtp;
 using MailKit.Security;
-using MimeKit;
 
 namespace Amolenk.Admitto.Core.Email.Infrastructure.Sending;
 
@@ -50,7 +49,7 @@ internal sealed class MailKitBulkSmtpSender : IBulkSmtpSender
     {
         public async Task<string?> SendAsync(EmailMessage message, CancellationToken cancellationToken = default)
         {
-            var mimeMessage = BuildMimeMessage(fromAddress, replyToAddress, message);
+            var mimeMessage = MailKitMimeMessageBuilder.Build(fromAddress, replyToAddress, message);
             return await client.SendAsync(mimeMessage, cancellationToken);
         }
 
@@ -65,28 +64,6 @@ internal sealed class MailKitBulkSmtpSender : IBulkSmtpSender
             {
                 client.Dispose();
             }
-        }
-
-        private static MimeMessage BuildMimeMessage(
-            EmailAddress fromAddress,
-            EmailAddress? replyToAddress,
-            EmailMessage message)
-        {
-            var mimeMessage = new MimeMessage();
-            mimeMessage.From.Add(new MailboxAddress(fromAddress.Value, fromAddress.Value));
-            if (replyToAddress is not null)
-                mimeMessage.ReplyTo.Add(new MailboxAddress(replyToAddress.Value.Value, replyToAddress.Value.Value));
-            mimeMessage.To.Add(new MailboxAddress(message.RecipientName, message.RecipientAddress));
-            mimeMessage.Subject = message.Subject;
-
-            var body = new BodyBuilder
-            {
-                TextBody = message.TextBody,
-                HtmlBody = message.HtmlBody
-            };
-            mimeMessage.Body = body.ToMessageBody();
-
-            return mimeMessage;
         }
     }
 }
