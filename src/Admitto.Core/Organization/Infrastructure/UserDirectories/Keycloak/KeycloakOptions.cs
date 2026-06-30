@@ -5,23 +5,25 @@ namespace Amolenk.Admitto.Core.Organization.Infrastructure.UserDirectories.Keycl
 public class KeycloakOptions
 {
     public const string SectionName = "Organization:UserDirectories:Keycloak";
-    
+
     [Required]
     public string Authority { get; init; } = null!;
-    
-    [Required] 
+
+    [Required]
     public string TokenPath { get; init; } = null!;
 
-    [Required] 
+    [Required]
     public string ClientId { get; init; } = null!;
 
-    [Required] 
+    [Required]
     public string Username { get; init; } = null!;
 
-    [Required] 
+    [Required]
     public string Password { get; init; } = null!;
 
-    public string? ExecuteActionsClientId { get; init; }
+    [Required]
+    public string ExecuteActionsClientId { get; init; } = null!;
 
-    public string? ExecuteActionsRedirectUri { get; init; }
+    [Required]
+    public string ExecuteActionsRedirectUri { get; init; } = null!;
 }

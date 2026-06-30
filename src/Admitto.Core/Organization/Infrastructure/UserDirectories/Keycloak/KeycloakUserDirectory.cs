@@ -14,7 +14,7 @@ public class KeycloakUserManagementService(HttpClient client, IOptions<KeycloakO
         PropertyNameCaseInsensitive = false,
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
-    
+
     public async ValueTask<string> InviteUserAsync(string emailAddress, CancellationToken cancellationToken = default)
     {
         var userId = await GetUserByEmailAsync(emailAddress, cancellationToken);
@@ -113,16 +113,8 @@ public class KeycloakUserManagementService(HttpClient client, IOptions<KeycloakO
 
         var path = $"/admin/realms/{Realm}/users/{userId}/execute-actions-email";
         var query = new List<string>();
-
-        if (!string.IsNullOrWhiteSpace(_options.ExecuteActionsClientId))
-        {
-            query.Add("client_id=" + Uri.EscapeDataString(_options.ExecuteActionsClientId));
-        }
-
-        if (!string.IsNullOrWhiteSpace(_options.ExecuteActionsRedirectUri))
-        {
-            query.Add("redirect_uri=" + Uri.EscapeDataString(_options.ExecuteActionsRedirectUri));
-        }
+        query.Add("client_id=" + Uri.EscapeDataString(_options.ExecuteActionsClientId));
+        query.Add("redirect_uri=" + Uri.EscapeDataString(_options.ExecuteActionsRedirectUri));
 
         var requestUri = query.Count == 0 ? path : path + "?" + string.Join('&', query);
         var response = await client.PutAsync(requestUri, content, cancellationToken);

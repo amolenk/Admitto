@@ -80,8 +80,6 @@ public static class DependencyInjection
                 .AddScheme<ApiKeyAuthenticationOptions, ApiKeyAuthenticationHandler>(
                     ApiKeyAuthenticationHandler.SchemeName, _ => { });
 
-            builder.AddOrganizationIdentityServices();
-
             return builder;
         }
 

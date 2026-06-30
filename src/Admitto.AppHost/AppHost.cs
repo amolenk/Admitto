@@ -189,7 +189,8 @@ var smtpPassword = builder.ExecutionContext.IsPublishMode
     ? builder.AddParameter("smtpPassword", secret: true)
     : builder.AddParameter("smtpPassword", value: string.Empty, secret: true);
 
-var smtpSsl = builder.AddParameter("smtpSsl", value: "false");
+// TODO Mailgun doesn't seem to work with only TLS (port 465)
+var smtpSsl = builder.AddParameter("smtpSsl", value: "true");
 
 var smtpStartTls = builder.ExecutionContext.IsPublishMode
     ? builder.AddParameter("smtpStartTls", value: "true")
@@ -373,13 +374,6 @@ if (!infraOnly)
 {
     var authApiAudience = builder.AddParameter("authApiAudience", value: "admitto-api");
 
-    // Bootstrap admin user
-    var apiBootstrapAdmin = builder.ExecutionContext.IsPublishMode
-        ? builder.AddParameter("apiBootstrapAdmin")
-        : builder.AddParameter(
-            "apiBootstrapAdmin",
-            value: builder.Environment.IsEndToEndTesting() ? string.Empty : "alice@example.com");
-
     api = builder.AddProject<Projects.Admitto_Api>("api")
         .WithUrlForEndpoint(
             "http",
@@ -393,16 +387,6 @@ if (!infraOnly)
         .WithReferenceEnvironment(ReferenceEnvironmentInjectionFlags.ConnectionString)
         .WithEnvironment("AUTHENTICATION__BEARER__AUTHORITY", keycloakAuthorityRef)
         .WithEnvironment("AUTHENTICATION__BEARER__TOKENVALIDATIONPARAMETERS__VALIDAUDIENCE", authApiAudience)
-        .WithEnvironment("ORGANIZATION__USERDIRECTORIES__KEYCLOAK__AUTHORITY", keycloakAuthorityRef)
-        .WithEnvironment(
-            "ORGANIZATION__USERDIRECTORIES__KEYCLOAK__TOKENPATH",
-            "/realms/master/protocol/openid-connect/token")
-        .WithEnvironment("ORGANIZATION__USERDIRECTORIES__KEYCLOAK__CLIENTID", "admin-cli")
-        .WithEnvironment("ORGANIZATION__USERDIRECTORIES__KEYCLOAK__USERNAME", keycloakAdminUser)
-        .WithEnvironment("ORGANIZATION__USERDIRECTORIES__KEYCLOAK__PASSWORD", keycloakAdminPassword)
-        .WithEnvironment("ORGANIZATION__USERDIRECTORIES__KEYCLOAK__EXECUTEACTIONSCLIENTID", "admitto-ui")
-        .WithEnvironment("ORGANIZATION__USERDIRECTORIES__KEYCLOAK__EXECUTEACTIONSREDIRECTURI", uiPublicUrl)
-        .WithEnvironment("ORGANIZATION__BOOTSTRAPADMIN__EMAILADDRESS", apiBootstrapAdmin)
         .WithEnvironment("OBSERVABILITY__AZUREMONITOR__SAMPLINGRATIO", azureMonitorSamplingRatio)
         .WithReference(admittoDb)
         .WithReference(quartzDb)
@@ -443,7 +427,15 @@ if (!infraOnly)
 
 if (!infraOnly)
 {
+    // Bootstrap admin user
+    var apiBootstrapAdmin = builder.ExecutionContext.IsPublishMode
+        ? builder.AddParameter("apiBootstrapAdmin")
+        : builder.AddParameter(
+            "apiBootstrapAdmin",
+            value: builder.Environment.IsEndToEndTesting() ? string.Empty : "alice@example.com");
+
     var worker = builder.AddProject<Projects.Admitto_Worker>("worker")
+        .WithEnvironment("ORGANIZATION__BOOTSTRAPADMIN__EMAILADDRESS", apiBootstrapAdmin)
         .WithEnvironment("ORGANIZATION__USERDIRECTORIES__KEYCLOAK__AUTHORITY", keycloakAuthorityRef)
         .WithEnvironment(
             "ORGANIZATION__USERDIRECTORIES__KEYCLOAK__TOKENPATH",
@@ -451,6 +443,8 @@ if (!infraOnly)
         .WithEnvironment("ORGANIZATION__USERDIRECTORIES__KEYCLOAK__CLIENTID", "admin-cli")
         .WithEnvironment("ORGANIZATION__USERDIRECTORIES__KEYCLOAK__USERNAME", keycloakAdminUser)
         .WithEnvironment("ORGANIZATION__USERDIRECTORIES__KEYCLOAK__PASSWORD", keycloakAdminPassword)
+        .WithEnvironment("ORGANIZATION__USERDIRECTORIES__KEYCLOAK__EXECUTEACTIONSCLIENTID", "admitto-ui")
+        .WithEnvironment("ORGANIZATION__USERDIRECTORIES__KEYCLOAK__EXECUTEACTIONSREDIRECTURI", uiPublicUrl)
         .WithEnvironment("EMAIL__SYSTEM__FROMADDRESS", smtpFromAddress)
         .WithEnvironment("EMAIL__SYSTEM__AUTHMODE", smtpAuth)
         .WithEnvironment("EMAIL__SYSTEM__USERNAME", smtpUsername)

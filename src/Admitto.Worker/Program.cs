@@ -14,7 +14,6 @@ builder.Services.AddSingleton<IUserContextAccessor>(
 builder.AddBadgesModuleWorker();
 builder.AddEmailModuleWorker();
 builder.AddOrganizationModuleWorker();
-builder.AddOrganizationIdentityServices();
 builder.AddRegistrationsModuleWorker();
 
 // Add shared services.

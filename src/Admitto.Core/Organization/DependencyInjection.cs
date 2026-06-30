@@ -49,15 +49,6 @@ public static class OrganizationModuleExtensions
             services.AddKeyedScoped<IPostgresExceptionMapping, PostgresExceptionMapping>(
                 OrganizationModule.Key);
 
-            // Bootstrap admin (only when configured)
-            var bootstrapEmail = builder.Configuration[$"{BootstrapAdminUserOptions.SectionName}:EmailAddress"];
-            if (!string.IsNullOrWhiteSpace(bootstrapEmail))
-            {
-                services.Configure<BootstrapAdminUserOptions>(
-                    builder.Configuration.GetSection(BootstrapAdminUserOptions.SectionName));
-                services.AddHostedService<BootstrapAdminUserInitializer>();
-            }
-
             return builder;
         }
 
@@ -99,21 +90,21 @@ public static class OrganizationModuleExtensions
                     .StartNow());
             });
 
+            builder.AddKeycloakUserManagementServices();
+
+            // Bootstrap admin (only when configured)
+            var bootstrapEmail = builder.Configuration[$"{BootstrapAdminUserOptions.SectionName}:EmailAddress"];
+            if (!string.IsNullOrWhiteSpace(bootstrapEmail))
+            {
+                services.Configure<BootstrapAdminUserOptions>(
+                    builder.Configuration.GetSection(BootstrapAdminUserOptions.SectionName));
+                services.AddHostedService<BootstrapAdminUserInitializer>();
+            }
+
             return builder;
         }
 
-        public IHostApplicationBuilder AddOrganizationIdentityServices()
-        {
-            if (builder.Configuration.GetSection(KeycloakOptions.SectionName).Exists())
-                builder.AddKeycloakServices();
-            else
-                throw new InvalidOperationException(
-                    "No user management service configured. Please configure either Auth0 or Keycloak settings.");
-
-            return builder;
-        }
-
-        private void AddKeycloakServices()
+        private void AddKeycloakUserManagementServices()
         {
             var services = builder.Services;
 
