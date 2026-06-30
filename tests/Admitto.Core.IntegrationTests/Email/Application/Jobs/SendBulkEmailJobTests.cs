@@ -1,5 +1,6 @@
 using Amolenk.Admitto.Core.Email.Application.Jobs;
 using Amolenk.Admitto.Core.Email.Application.Persistence;
+using Amolenk.Admitto.Core.Email.Application.Projections.TeamEmailContext;
 using Amolenk.Admitto.Core.Email.Application.Sending;
 using Amolenk.Admitto.Core.Email.Application.Sending.Bulk;
 using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
@@ -58,6 +59,22 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
         var logs = await Environment.EmailDatabase.Context.EmailLog.AsNoTracking().ToListAsync(testContext.CancellationToken);
         logs.Count.ShouldBe(2);
         logs.ShouldAllBe(l => l.Status == EmailLogStatus.Sent && l.BulkEmailJobId == job.Id);
+    }
+
+    [TestMethod]
+    public async ValueTask Execute_ProjectedTeamName_OpensBulkSmtpSessionWithTeamDisplayName()
+    {
+        var (job, fakeSender, fanOut) = await SetupAsync(
+            recipients: [Recipient("alice@example.com", "Alice")],
+            teamName: "Acme Events",
+            replyToEmailAddress: "help@example.com");
+
+        await fanOut.Execute(JobContext(job));
+
+        fakeSender.LastOpenedSettings.ShouldNotBeNull();
+        fakeSender.LastOpenedSettings.FromAddress.Value.ShouldBe("tickets@admitto.org");
+        fakeSender.LastOpenedSettings.FromDisplayName.ShouldBe("Acme Events");
+        fakeSender.LastOpenedSettings.ReplyToAddress.ShouldBe(EmailAddress.From("help@example.com"));
     }
 
     [TestMethod]
@@ -338,7 +355,9 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
     private async ValueTask<(BulkEmailJob Job, FakeBulkSmtpSender Sender, SendBulkEmailJob FanOut)> SetupAsync(
         IReadOnlyList<BulkEmailRecipient> recipients,
         TimeSpan? perMessageDelay = null,
-        int? inlineRetryCount = null)
+        int? inlineRetryCount = null,
+        string? teamName = null,
+        string? replyToEmailAddress = null)
     {
         var teamId = TeamId.New();
         var eventId = TicketedEventId.New();
@@ -347,7 +366,17 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
             .ForTeam(teamId).ForEvent(eventId)
             .WithEmailType(DefaultEmailType)
             .Build();
-        await Environment.EmailDatabase.SeedAsync(db => db.BulkEmailJobs.Add(job));
+        await Environment.EmailDatabase.SeedAsync(db =>
+        {
+            db.BulkEmailJobs.Add(job);
+
+            if (teamName is not null)
+            {
+                var teamContext = TeamEmailContextView.CreatePartial(teamId, DateTimeOffset.UtcNow);
+                teamContext.UpdateTeamContext(teamName, "#0f766e", replyToEmailAddress, teamVersion: 1, DateTimeOffset.UtcNow);
+                db.TeamEmailContexts.Add(teamContext);
+            }
+        });
 
         var sender = new FakeBulkSmtpSender();
         var resolver = Substitute.For<IBulkEmailRecipientResolver>();

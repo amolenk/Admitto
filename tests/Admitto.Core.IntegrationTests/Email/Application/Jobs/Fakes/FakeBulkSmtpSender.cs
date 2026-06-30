@@ -18,6 +18,7 @@ internal sealed class FakeBulkSmtpSender : IBulkSmtpSender
 
     public int SessionsOpened { get; private set; }
     public int SessionsClosed { get; private set; }
+    public EffectiveEmailSettings? LastOpenedSettings { get; private set; }
     public List<string> SendAttempts { get; } = [];
     public List<EmailMessage> SentMessages { get; } = [];
     public Func<EmailMessage, Task>? OnBeforeSendAsync { get; set; }
@@ -29,6 +30,7 @@ internal sealed class FakeBulkSmtpSender : IBulkSmtpSender
         CancellationToken cancellationToken = default)
     {
         SessionsOpened++;
+        LastOpenedSettings = settings;
         return Task.FromResult<IBulkSmtpSession>(new Session(this));
     }
 

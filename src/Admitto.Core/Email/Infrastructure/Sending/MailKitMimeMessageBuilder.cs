@@ -9,14 +9,15 @@ namespace Amolenk.Admitto.Core.Email.Infrastructure.Sending;
 internal static class MailKitMimeMessageBuilder
 {
     public static MimeMessage Build(EffectiveEmailSettings settings, EmailMessage message)
-        => Build(settings.FromAddress, settings.ReplyToAddress, message);
+        => Build(settings.FromAddress, settings.FromDisplayName, settings.ReplyToAddress, message);
 
-    public static MimeMessage Build(EmailAddress fromAddress, EmailAddress? replyToAddress, EmailMessage message)
+    public static MimeMessage Build(
+        EmailAddress fromAddress,
+        string fromDisplayName,
+        EmailAddress? replyToAddress,
+        EmailMessage message)
     {
         var mimeMessage = new MimeMessage();
-        var fromDisplayName = replyToAddress is null
-            ? fromAddress.Value
-            : replyToAddress.Value.Value;
 
         mimeMessage.From.Add(new MailboxAddress(fromDisplayName, fromAddress.Value));
         if (replyToAddress is not null)

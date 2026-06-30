@@ -42,19 +42,29 @@ internal sealed class EffectiveEmailSettingsResolver(
 
         var authMode = ResolveAuthMode(value.AuthMode);
 
-        var replyToAddress = await readStore.TeamEmailContexts
+        var teamContext = await readStore.TeamEmailContexts
             .AsNoTracking()
             .Where(c => c.TeamId == teamId)
-            .Select(c => c.ReplyToEmailAddress)
+            .Select(c => new
+            {
+                c.TeamName,
+                c.ReplyToEmailAddress
+            })
             .SingleOrDefaultAsync(cancellationToken);
+
+        var fromAddress = EmailAddress.From(value.FromAddress);
+        var fromDisplayName = string.IsNullOrWhiteSpace(teamContext?.TeamName)
+            ? fromAddress.Value
+            : teamContext.TeamName;
 
         return new EffectiveEmailSettings(
             Hostname.From(value.SmtpHost),
             Port.From(value.SmtpPort),
             value.SmtpSsl,
             value.SmtpStartTls,
-            EmailAddress.From(value.FromAddress),
-            replyToAddress,
+            fromAddress,
+            fromDisplayName,
+            teamContext?.ReplyToEmailAddress,
             authMode,
             authMode == EmailAuthMode.Basic ? value.Username : null,
             authMode == EmailAuthMode.Basic ? value.Password : null,

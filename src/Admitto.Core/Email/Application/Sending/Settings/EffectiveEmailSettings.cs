@@ -12,6 +12,7 @@ public sealed record EffectiveEmailSettings(
     bool SmtpSsl,
     bool SmtpStartTls,
     EmailAddress FromAddress,
+    string FromDisplayName,
     EmailAddress? ReplyToAddress,
     EmailAuthMode AuthMode,
     string? Username,
