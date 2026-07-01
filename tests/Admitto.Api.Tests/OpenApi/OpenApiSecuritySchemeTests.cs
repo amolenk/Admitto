@@ -68,6 +68,8 @@ public sealed class OpenApiSecuritySchemeTests(TestContext testContext) : EndToE
 
         GetSecuritySchemeNames(root, "/api/events/{eventSlug}/otp/request", "post")
             .ShouldBe(["ApiKey"]);
+        GetSecuritySchemeNames(root, "/api/events/{eventSlug}/registrations/{registrationId}/ticket-email/resend", "post")
+            .ShouldBe(["ApiKey"]);
     }
 
     [TestMethod]

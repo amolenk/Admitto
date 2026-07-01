@@ -10,6 +10,8 @@ using Amolenk.Admitto.Core.Registrations.Application.UseCases.Coupons.RevokeCoup
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.GetQRCode.PublicApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.GetRegistrationDetails.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.GetRegistrations.AdminApi;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RequestTicketConfirmationResend.AdminApi;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RequestTicketConfirmationResend.PartnerApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.ExportRegistrationsCsv.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.AdminRegisterAttendee.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendeeWithCoupon.PartnerApi;
@@ -68,7 +70,8 @@ public static class RegistrationsModule
             .MapExportRegistrationsCsv()
             .MapGetRegistrationDetails()
             .MapCancelRegistration()
-            .MapChangeAttendeeTickets();
+            .MapChangeAttendeeTickets()
+            .MapRequestTicketConfirmationResend();
 
         eventGroup.MapGroup("/coupons")
             .WithTags("Admin - Coupons")
@@ -104,6 +107,7 @@ public static class RegistrationsModule
             .MapRegisterAttendeeWithCoupon()
             .MapSelfCancelRegistration()
             .MapSelfChangeTickets()
+            .MapPartnerRequestTicketConfirmationResend()
             .MapGetPublicTicketTypes()
             .MapJoinWaitlist()
             .MapLeaveWaitlist()

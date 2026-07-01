@@ -61,7 +61,7 @@ MailDev `smtp` endpoint and uses no-auth defaults so execute-actions emails can
 be inspected locally, while publish mode requires the shared deployment-specific
 host, sender, username, and secret password values. The same shared values are also
 mapped into the Worker's `Email:System:*` settings for attendee, OTP,
-reconfirmation, cancellation, waitlist, and bulk emails.
+reconfirmation, cancellation, waitlist, admin-triggered resend, and bulk emails.
 
 ## 7.2 Production shape
 

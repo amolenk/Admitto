@@ -254,6 +254,8 @@ sequenceDiagram
 
 **Idempotency**: the `EmailLog` row with key `attendee-registered:<registrationId>:<registeredAt>` is the send claim. A re-delivered integration event that observes a terminal claim is acked without another SMTP attempt; a pending claim can enqueue delivery again for recovery. SMTP itself is not transactional, so rare duplicate delivery races or a crash after SMTP success but before updating the log can still produce a later duplicate during recovery.
 
+Admin and Partner ticket-confirmation resends are requested through Registrations-owned endpoints. The API validates the scoped registration, writes a Registrations outbox message carrying the resend snapshot, and returns `202 Accepted`. Partner requests derive the team scope from the API-key principal and resolve the event slug within that team before dispatching the shared resend command. The Worker delivers `TicketConfirmationResendRequestedIntegrationEvent` to the Email module, which then uses the normal `SendEmailCommand` claim/render/outbox pipeline with idempotency key `ticket-confirmation-resend:<registrationId>:<resendRequestId>`. SMTP delivery remains Worker-only through `DeliverEmailCommand`; the API host neither creates EmailLog claims nor opens SMTP connections.
+
 **Configuration failure**: if deployment system SMTP settings are missing or invalid, registration itself is unaffected. The email work records the failure through the normal `EmailLog`/delivery-error path and operator telemetry; this is an operability issue, not team-owned event state. Transient SMTP failures remain retryable until the configured delivery attempt limit is reached.
 
 ## 6.9 Bulk-email fan-out (single SMTP connection)
