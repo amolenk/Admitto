@@ -1,60 +1,94 @@
+using System.Text.Json;
+using Amolenk.Admitto.Api.Auth;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.OpenApi;
 using Microsoft.OpenApi;
 
 namespace Amolenk.Admitto.ApiService.OpenApi;
 
-internal sealed class BearerSecuritySchemeTransformer : IOpenApiDocumentTransformer
+/// <summary>
+/// Populates OpenAPI security schemes. OAuth endpoints are discovered from the configured
+/// <c>Authentication:Bearer:Authority</c> when available.
+/// </summary>
+internal sealed class BearerSecuritySchemeTransformer(
+    IAuthenticationSchemeProvider authenticationSchemeProvider,
+    IConfiguration configuration,
+    IHttpClientFactory httpClientFactory) : IOpenApiDocumentTransformer
 {
-    public Task TransformAsync(
+    public async Task TransformAsync(
         OpenApiDocument document,
         OpenApiDocumentTransformerContext context,
         CancellationToken cancellationToken)
     {
+        var authenticationSchemes = await authenticationSchemeProvider.GetAllSchemesAsync();
+        if (!authenticationSchemes.Any(s => s.Name == JwtBearerDefaults.AuthenticationScheme))
+            return;
+
+        string? authorizationEndpoint = null;
+        string? tokenEndpoint = null;
+
+        var authority = configuration["Authentication:Bearer:Authority"];
+        if (!string.IsNullOrEmpty(authority))
+        {
+            try
+            {
+                var discoveryUrl = authority.TrimEnd('/') + "/.well-known/openid-configuration";
+                var httpClient = httpClientFactory.CreateClient();
+                var json = await httpClient.GetStringAsync(discoveryUrl, cancellationToken);
+                using var doc = JsonDocument.Parse(json);
+                authorizationEndpoint = doc.RootElement.TryGetProperty("authorization_endpoint", out var ae)
+                    ? ae.GetString()
+                    : null;
+                tokenEndpoint = doc.RootElement.TryGetProperty("token_endpoint", out var te)
+                    ? te.GetString()
+                    : null;
+            }
+            catch
+            {
+                // Discovery is best-effort; fall back to no endpoints (still adds the security scheme).
+            }
+        }
+
         document.Components ??= new OpenApiComponents();
         document.Components.SecuritySchemes ??= new Dictionary<string, IOpenApiSecurityScheme>();
 
-        var configuration = context.ApplicationServices.GetRequiredService<IConfiguration>();
-        var authority = configuration["Authentication:Bearer:Authority"];
-        
-        // Add OAuth2 security scheme (Authorization Code flow only)
-        document.Components.SecuritySchemes.Add("oauth2", new OpenApiSecurityScheme
+        document.Components.SecuritySchemes[ApiKeyAuthenticationHandler.SchemeName] = new OpenApiSecurityScheme
+        {
+            Type = SecuritySchemeType.ApiKey,
+            Name = "X-Api-Key",
+            In = ParameterLocation.Header,
+            Description = "Partner API key for the owning team."
+        };
+
+        document.Components.SecuritySchemes[JwtBearerDefaults.AuthenticationScheme] = new OpenApiSecurityScheme
         {
             Type = SecuritySchemeType.OAuth2,
             Flows = new OpenApiOAuthFlows
             {
                 AuthorizationCode = new OpenApiOAuthFlow
                 {
-                    // These URLs are specific to Keycloak's OpenID Connect implementation, but that's okay because
-                    // we only enable OpenAPI for local development.
-                    AuthorizationUrl = new Uri($"{authority}/protocol/openid-connect/auth"),
-                    TokenUrl = new Uri($"{authority}/protocol/openid-connect/token"),
+                    AuthorizationUrl = authorizationEndpoint is not null ? new Uri(authorizationEndpoint) : null,
+                    TokenUrl = tokenEndpoint is not null ? new Uri(tokenEndpoint) : null,
                     Scopes = new Dictionary<string, string>
                     {
-                        { "manage", "Access the Management API" },
-                        { "openid", "Access the OpenID Connect user profile" },
-                        { "email", "Access the user's email address" },
-                        { "profile", "Access the user's profile" }
+                        { "openid", "OpenID Connect" },
+                        { "profile", "User profile" },
+                        { "email", "Email address" }
                     }
                 }
             }
-        });
-        
-        // Apply security requirement globally
-        // TODO Not all endpoints require authorization at the moment
-        document.Security = [
-            new OpenApiSecurityRequirement
-            {
-                {
-                    new OpenApiSecuritySchemeReference("oauth2"),
-                    ["manage", "profile", "email", "openid"]
-                }
-            }
-        ];
-        
-        // Set the host document for all elements
-        // including the security scheme references
-        document.SetReferenceHostDocument();
+        };
 
-        return Task.CompletedTask;
+        document.Components.SecuritySchemes[EndpointSecurityRequirementTransformer.EmailVerificationSchemeName] =
+            new OpenApiSecurityScheme
+            {
+                Type = SecuritySchemeType.Http,
+                Scheme = "bearer",
+                BearerFormat = "email-verification-token",
+                Description = "Email-verification token returned by the public OTP verification endpoint."
+            };
+
+        document.SetReferenceHostDocument();
     }
 }

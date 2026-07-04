@@ -1,0 +1,16 @@
+using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
+
+namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Coupons.GetCouponDetails;
+
+public sealed record CouponDetailsDto(
+    Guid Id,
+    Guid Code,
+    string Email,
+    CouponStatus Status,
+    CouponSource Source,
+    Guid[] AllowedTicketTypeIds,
+    DateTimeOffset ExpiresAt,
+    bool BypassRegistrationWindow,
+    DateTimeOffset? RedeemedAt,
+    DateTimeOffset? RevokedAt,
+    DateTimeOffset CreatedAt);

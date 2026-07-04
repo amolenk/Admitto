@@ -1,0 +1,41 @@
+namespace Amolenk.Admitto.Core.Registrations.Contracts;
+
+/// <summary>
+/// Reusable filter shape for cross-module registration queries (e.g. used by the
+/// Email module to resolve bulk-email recipients via
+/// <see cref="IRegistrationsFacade.GetRegistrationsAsync"/>). All filters are
+/// optional; an empty <see cref="QueryRegistrationsDto"/> matches every
+/// registration on the target ticketed event.
+/// </summary>
+/// <param name="TicketTypeIds">
+/// Optional any-of match against the IDs of the ticket types held by the
+/// registration. A registration matches when at least one of its ticket
+/// snapshots has an ID in this set.
+/// </param>
+/// <param name="RegistrationStatus">Optional registration status filter.</param>
+/// <param name="HasReconfirmed">
+/// Optional reconfirmation filter. <c>true</c> matches registrations that have
+/// reconfirmed; <c>false</c> matches registrations that have not.
+/// </param>
+/// <param name="RegisteredAfter">
+/// Optional inclusive lower bound on the registration's creation timestamp.
+/// </param>
+/// <param name="RegisteredBefore">
+/// Optional exclusive upper bound on the registration's creation timestamp.
+/// </param>
+/// <param name="AdditionalDetailEquals">
+/// Optional equality filter against entries in the registration's
+/// <c>AdditionalDetails</c> map. Each key/value pair must match exactly.
+/// </param>
+/// <param name="RegistrationIds">
+/// Optional allowlist of registration IDs. When set, only registrations whose
+/// ID appears in this collection are returned regardless of other filters.
+/// </param>
+public sealed record QueryRegistrationsDto(
+    IReadOnlyCollection<Guid>? TicketTypeIds = null,
+    RegistrationStatus? RegistrationStatus = null,
+    bool? HasReconfirmed = null,
+    DateTimeOffset? RegisteredAfter = null,
+    DateTimeOffset? RegisteredBefore = null,
+    IReadOnlyDictionary<string, string>? AdditionalDetailEquals = null,
+    IReadOnlyCollection<Guid>? RegistrationIds = null);

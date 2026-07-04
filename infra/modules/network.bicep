@@ -28,18 +28,6 @@ resource vnet 'Microsoft.Network/virtualNetworks@2024-07-01' = {
           ]
         }
       }
-      {
-        name: 'GatewaySubnet'
-        properties: {
-          addressPrefix: '10.20.2.0/24'
-        }
-      }
-      {
-        name: 'snet-private-endpoints'
-        properties: {
-          addressPrefix: '10.20.3.0/24'
-        }
-      }
     ]
   }
 }
@@ -50,18 +38,6 @@ resource acaSubnet 'Microsoft.Network/virtualNetworks/subnets@2024-07-01' existi
   name: 'snet-aca'
 }
 
-resource gatewaySubnet 'Microsoft.Network/virtualNetworks/subnets@2024-07-01' existing = {
-  parent: vnet
-  name: 'GatewaySubnet'
-}
-
-resource privateEndpointSubnet 'Microsoft.Network/virtualNetworks/subnets@2024-07-01' existing = {
-  parent: vnet
-  name: 'snet-private-endpoints'
-}
-
 output vnetId string = vnet.id
 output vnetName string = vnet.name
 output acaSubnetId string = acaSubnet.id
-output gatewaySubnetId string = gatewaySubnet.id
-output privateEndpointSubnetId string = privateEndpointSubnet.id

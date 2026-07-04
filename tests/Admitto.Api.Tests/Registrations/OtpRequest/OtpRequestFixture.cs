@@ -1,0 +1,65 @@
+using Amolenk.Admitto.Api.Tests.Infrastructure;
+using Amolenk.Admitto.Api.Tests.Infrastructure.Hosting;
+using Amolenk.Admitto.Core.Registrations.Domain.Entities;
+using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using TeamBuilder = Amolenk.Admitto.Testing.Builders.Organization.Application.TeamBuilder;
+
+namespace Amolenk.Admitto.Api.Tests.Registrations.OtpRequest;
+
+internal sealed class OtpRequestFixture
+{
+    public const string AttendeeEmail = "dave@example.com";
+
+    public TeamId TeamId { get; private set; } = TeamId.New();
+    public TicketedEventId EventId { get; private set; } = TicketedEventId.New();
+    public string EventSlug { get; private set; } = string.Empty;
+    public string ApiKey => ApiKeyTestHelper.TestRawKey;
+
+    public string RequestOtpRoute => $"/api/events/{EventSlug}/otp/request";
+
+    private OtpRequestFixture() { }
+
+    public static OtpRequestFixture ActiveEvent() => new();
+
+    public async ValueTask SetupAsync(EndToEndTestEnvironment environment)
+    {
+        var team = new TeamBuilder()
+            .Build();
+        TeamId = team.Id;
+
+        var eventId = TicketedEventId.New();
+        EventId = eventId;
+
+        var ticketedEvent = TicketedEvent.Create(
+            CreationRequestId.From(Guid.NewGuid()),
+            eventId,
+            team.Id,
+            EventName.From("DevConf"),
+            AbsoluteUrl.From("https://example.com"),
+            AbsoluteUrl.From("https://tickets.example.com"),
+            DateTimeOffset.UtcNow.AddDays(60),
+            DateTimeOffset.UtcNow.AddDays(61),
+            TimeZoneId.From("UTC"));
+        EventSlug = ticketedEvent.PublicSlug.Value;
+
+        await environment.OrganizationDatabase.SeedAsync(db =>
+        {
+            db.Teams.Add(team);
+            db.ApiKeys.Add(ApiKeyTestHelper.CreateApiKeyEntity(team.Id));
+        });
+        await environment.RegistrationsDatabase.SeedAsync(db => db.TicketedEvents.Add(ticketedEvent));
+    }
+
+    public async ValueTask SeedRateLimitedCodesAsync(
+        EndToEndTestEnvironment environment,
+        string email)
+    {
+        // Seed 3 OTP codes within the rate limit window to trigger the limit
+        for (var i = 0; i < 3; i++)
+        {
+            var code = OtpCode.Create(TeamId, EventId, EventName.From("DevConf"), EmailAddress.From(email), "123456",
+                DateTimeOffset.UtcNow.AddMinutes(10));
+            await environment.RegistrationsDatabase.SeedAsync(db => db.OtpCodes.Add(code));
+        }
+    }
+}

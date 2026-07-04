@@ -1,0 +1,18 @@
+Please reconfirm your attendance at {{ event_name }}
+
+Hi {{ first_name }},
+
+The {{ event_name }} event is coming up soon! To help us plan ahead, please take a moment to confirm you'll be there.
+
+Confirm your attendance:
+{{ register_link }}
+
+If you can no longer attend, please cancel so we can offer your spot to someone else:
+{{ cancel_link }}
+
+For more details about the event, visit: {{ event_website }}
+
+We hope to see you there!
+
+Best regards,
+The {{ event_name }} Team

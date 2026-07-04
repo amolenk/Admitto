@@ -1,35 +1,25 @@
-using Amolenk.Admitto.Application.Common.Messaging;
-using Amolenk.Admitto.Worker;
-using Quartz;
+using Amolenk.Admitto.Core.Shared.Application.Auth;
 
 var builder = Host.CreateApplicationBuilder(args);
 
 // Add default services.
 builder.AddServiceDefaults();
 
-// Add application services.
-builder.Services
-    .AddApplicationCommandHandlers(HostCapability.Email)
-    .AddApplicationApplicationEventHandlers()
-    .AddApplicationEventualDomainEventHandlers()
-    .AddApplicationTransactionalDomainEventHandlers()
-    .AddApplicationJobs();
+// The Worker has no HTTP context, so provide a fixed system identity
+// for the AuditInterceptor used by EF Core.
+builder.Services.AddSingleton<IUserContextAccessor>(
+    new StaticUserContextAccessor(StaticUserContextAccessor.SystemUser));
 
-// Add Quartz.NET hosted service.
-builder.Services.AddQuartzHostedService(options => { options.WaitForJobsToComplete = true; });
+// Add modules (application + infrastructure) and their worker-specific services.
+builder.AddBadgesModuleWorker();
+builder.AddEmailModuleWorker();
+builder.AddOrganizationModuleWorker();
+builder.AddRegistrationsModuleWorker();
 
-// Add email services.
-builder.Services
-    .AddApplicationEmailServices()
-    .AddInfrastructureEmailServices();
-
-// Add message queue processor for processing internal messages.
-builder.Services
-    .AddHostedService<MessageQueueProcessor>()
-    .AddOptions<MessageQueueProcessorOptions>()
-    .Bind(builder.Configuration.GetSection(MessageQueueProcessorOptions.SectionName))
-    .ValidateDataAnnotations()
-    .ValidateOnStart();
+// Add shared services.
+builder
+    .AddSharedServices()
+    .AddSharedInfrastructureQueueConsumer();
 
 var host = builder.Build();
 host.Run();

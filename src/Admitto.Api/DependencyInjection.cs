@@ -1,4 +1,4 @@
-using Amolenk.Admitto.ApiService.Auth;
+using Amolenk.Admitto.Api.Auth;
 using Amolenk.Admitto.ApiService.OpenApi;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -14,12 +14,13 @@ public static class DependencyInjection
     {
         public void AddApiOpenApiServices()
         {
-            // Add OpenAPI/Swagger generation with Bearer token security scheme.
+            services.AddHttpClient();
+
             services.AddOpenApi(options =>
             {
-                // Add Bearer token security scheme to the OpenAPI output.
                 options.AddDocumentTransformer<BearerSecuritySchemeTransformer>();
-                
+                options.AddOperationTransformer<EndpointSecurityRequirementTransformer>();
+
                 options.AddSchemaTransformer<NumberTypeTransformer>();
                 NumberTypeTransformer.MapType<TimeSpan>(
                     new OpenApiSchema { Type = JsonSchemaType.String, Format = "duration" });
@@ -75,9 +76,9 @@ public static class DependencyInjection
                             return context.Response.WriteAsJsonAsync(problem);
                         }
                     };
-                });
-
-            builder.AddInfrastructureUserManagementServices();
+                })
+                .AddScheme<ApiKeyAuthenticationOptions, ApiKeyAuthenticationHandler>(
+                    ApiKeyAuthenticationHandler.SchemeName, _ => { });
 
             return builder;
         }
@@ -85,9 +86,8 @@ public static class DependencyInjection
         public TBuilder AddApiAuthorization()
         {
             builder.Services
-                .AddApplicationAuthorizationServices()
                 .AddScoped<IAuthorizationHandler, AdminAuthorizationHandler>()
-                .AddScoped<IAuthorizationHandler, TeamMemberRoleAuthorizationHandler>()
+                .AddScoped<IAuthorizationHandler, TeamMembershipAuthorizationHandler>()
                 .AddAuthorization();
 
             return builder;

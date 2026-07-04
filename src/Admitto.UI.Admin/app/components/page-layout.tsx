@@ -1,22 +1,7 @@
-"use client";
-
-import { useEffect } from "react";
-import { useHeader } from "@/components/header-context";
-
-interface PageLayoutProps
-{
-    title: string;
+interface PageLayoutProps {
     children: React.ReactNode;
 }
 
-export function PageLayout({ title, children }: PageLayoutProps)
-{
-    const { setTitle } = useHeader();
-
-    useEffect(() =>
-    {
-        setTitle(title);
-    }, [setTitle, title]);
-
+export function PageLayout({ children }: PageLayoutProps) {
     return <div className="space-y-6">{children}</div>;
 }

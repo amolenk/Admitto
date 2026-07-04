@@ -1,0 +1,36 @@
+using Amolenk.Admitto.Core.Shared.Application.Auth;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
+using Amolenk.Admitto.Core.Shared.Application.Persistence;
+
+namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.ConfigureRegistrationPolicy.AdminApi;
+
+public static class ConfigureRegistrationPolicyHttpEndpoint
+{
+    public static RouteGroupBuilder MapConfigureRegistrationPolicy(this RouteGroupBuilder group)
+    {
+        group
+            .MapPut("/registration-policy", ConfigureRegistrationPolicy)
+            .WithName(nameof(ConfigureRegistrationPolicy))
+            .RequireAuthorization(policy => policy.RequireTeamMembership(TeamMembershipRole.Organizer));
+
+        return group;
+    }
+
+    private static async ValueTask<NoContent> ConfigureRegistrationPolicy(
+        Guid teamId,
+        Guid eventId,
+        ConfigureRegistrationPolicyHttpRequest request,
+        ICommandHandler<ConfigureRegistrationPolicyCommand> handler,
+        [FromKeyedServices(RegistrationsModule.Key)]
+        IUnitOfWork unitOfWork,
+        CancellationToken cancellationToken)
+    {
+        var command = request.ToCommand(eventId, teamId);
+
+        await handler.HandleAsync(command, cancellationToken);
+
+        await unitOfWork.SaveChangesAsync(cancellationToken);
+
+        return TypedResults.NoContent();
+    }
+}

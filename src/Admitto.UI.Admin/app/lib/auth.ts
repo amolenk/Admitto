@@ -13,11 +13,11 @@ export const auth = betterAuth({
             config: [
                 {
                     providerId: "generic-oauth",
-                    discoveryUrl: `${process.env.BETTER_AUTH_AUTHORITY || ""}/.well-known/openid-configuration`,
-                    clientId: process.env.BETTER_AUTH_CLIENT_ID || "",
-                    clientSecret: process.env.BETTER_AUTH_CLIENT_SECRET || "",
-                    scopes: (process.env.BETTER_AUTH_SCOPES || "").split(" "),
-                    prompt: process.env.BETTER_AUTH_PROMPT as "select_account" | "login" || "select_account",
+                    discoveryUrl: `${process.env.AUTH_AUTHORITY || ""}/.well-known/openid-configuration`,
+                    clientId: process.env.AUTH_CLIENT_ID || "",
+                    clientSecret: process.env.AUTH_CLIENT_SECRET || "",
+                    scopes: (process.env.AUTH_SCOPES || "").split(" "),
+                    prompt: process.env.AUTH_PROMPT as "select_account" | "login" || "select_account",
                 }
             ]
         }),

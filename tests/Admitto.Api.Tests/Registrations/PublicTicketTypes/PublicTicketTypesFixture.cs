@@ -1,0 +1,64 @@
+using Amolenk.Admitto.Api.Tests.Infrastructure;
+using Amolenk.Admitto.Api.Tests.Infrastructure.Hosting;
+using Amolenk.Admitto.Core.Registrations.Domain.Entities;
+using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using TeamBuilder = Amolenk.Admitto.Testing.Builders.Organization.Application.TeamBuilder;
+
+namespace Amolenk.Admitto.Api.Tests.Registrations.PublicTicketTypes;
+
+internal sealed class PublicTicketTypesFixture
+{
+    public TeamId TeamId { get; private set; } = TeamId.New();
+    public TicketedEventId EventId { get; private set; } = TicketedEventId.New();
+    public string EventSlug { get; private set; } = string.Empty;
+    public string ApiKey => ApiKeyTestHelper.TestRawKey;
+
+    public string TicketTypesRoute => $"/api/events/{EventSlug}/ticket-types";
+
+    private PublicTicketTypesFixture() { }
+
+    public static PublicTicketTypesFixture Create() => new();
+
+    public async ValueTask SetupAsync(
+        EndToEndTestEnvironment environment,
+        Action<TicketCatalog>? configureCatalog = null)
+    {
+        var team = new TeamBuilder()
+            .Build();
+        TeamId = team.Id;
+
+        var eventId = TicketedEventId.New();
+        EventId = eventId;
+
+        var ticketedEvent = TicketedEvent.Create(
+            CreationRequestId.From(Guid.NewGuid()),
+            eventId,
+            team.Id,
+            EventName.From("DevConf"),
+            AbsoluteUrl.From("https://example.com"),
+            AbsoluteUrl.From("https://tickets.example.com"),
+            DateTimeOffset.UtcNow.AddDays(60),
+            DateTimeOffset.UtcNow.AddDays(61),
+            TimeZoneId.From("UTC"));
+        EventSlug = ticketedEvent.PublicSlug.Value;
+
+        ticketedEvent.ConfigureRegistrationPolicy(TicketedEventRegistrationPolicy.Create(
+            DateTimeOffset.UtcNow.AddDays(-1),
+            DateTimeOffset.UtcNow.AddDays(30)));
+
+        var catalog = TicketCatalog.Create(eventId, team.Id);
+        configureCatalog?.Invoke(catalog);
+
+        await environment.OrganizationDatabase.SeedAsync(db =>
+        {
+            db.Teams.Add(team);
+            db.ApiKeys.Add(ApiKeyTestHelper.CreateApiKeyEntity(team.Id));
+        });
+        await environment.RegistrationsDatabase.SeedAsync(db =>
+        {
+            db.TicketedEvents.Add(ticketedEvent);
+            db.TicketCatalogs.Add(catalog);
+        });
+    }
+}

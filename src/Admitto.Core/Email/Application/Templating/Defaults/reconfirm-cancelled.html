@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration Cancelled</title>
+</head>
+
+<body style="margin: 0; padding: 0; background-color: #f9f9f9; font-family: {{ font_family }};">
+
+<div style="width: 560px; line-height: 1.5; background-color: #ffffff; margin: 20px auto; padding: 20px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+
+    <div>
+        <h1 style="font-size: 24px; font-weight: bold; color: {{ accent_color }}; margin-top: 0; padding-bottom: 10px;">Your {{ event_name }} Registration Has Been Cancelled</h1>
+
+        <p style="margin-top: 0;">Hi {{ first_name }},</p>
+        <p>Unfortunately, your registration for <strong>{{ event_name }}</strong> has been automatically cancelled because we did not receive a reconfirmation of your attendance within the required period.</p>
+    </div>
+
+    <div style="border-top: 1px solid #ddd; margin-top: 20px;">
+        <h2 style="font-size: 14px; color: {{ accent_color }}; font-weight: bold;">Still interested in attending?</h2>
+        <p>If you would still like to attend, please register again while spots are available:</p>
+        <p style="margin-top: 10px;">
+            <a href="{{ register_link }}"
+               style="background-color: {{ accent_color }}; color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 4px; display: inline-block;">
+                Register Here
+            </a>
+        </p>
+        <p style="font-size: 14px; color: #666;">
+            Or use this link: <br>
+            <a href="{{ register_link }}" style="color: {{ accent_color }};">{{ register_link }}</a>
+        </p>
+    </div>
+
+    <div style="border-top: 1px solid #ddd; margin-top: 20px;">
+        <p>For more details about the event, visit <a
+                href="{{ event_website }}" target="_blank" rel="noopener noreferrer"
+                style="color: {{ accent_color }}; text-decoration: underline;">{{ event_website }}</a>.</p>
+
+        <p>We hope to see you at a future event!</p>
+        <p>Best regards,<br>The {{ event_name }} Team</p>
+    </div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,16 @@
+<Project Sdk="MSTest.Sdk">
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.Testing" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" />
+    <PackageReference Include="NSubstitute" />
+    <PackageReference Include="Respawn" />
+    <PackageReference Include="Shouldly" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/Admitto.Core/Admitto.Core.csproj" />
+    <ProjectReference Include="../../src/Admitto.AppHost/Admitto.AppHost.csproj" />
+    <ProjectReference Include="../../src/Admitto.Api/Admitto.Api.csproj" />
+    <ProjectReference Include="../Admitto.Testing/Admitto.Testing.csproj" />
+  </ItemGroup>
+</Project>

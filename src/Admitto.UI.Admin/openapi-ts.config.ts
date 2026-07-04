@@ -1,7 +1,7 @@
 import { defineConfig } from '@hey-api/openapi-ts';
 
 export default defineConfig({
-    input: 'http://localhost:5100/openapi/v1.json',
+    input: './openapi-spec.json',
     output: 'app/lib/admitto-api/generated',
     plugins: [
         {

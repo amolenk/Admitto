@@ -1,0 +1,27 @@
+Your {{ event_name }} Ticket
+
+Hi {{ first_name }},
+
+Your registration has been confirmed. Here's your ticket for {{ event_name }}!
+
+Scan this QR code at the entrance:
+{{ qrcode_link }}
+
+{{ if ticket_types && ticket_types.size > 0 }}
+Your ticket type(s):
+{{ for ticket_type in ticket_types }}
+- {{ ticket_type }}
+{{ end }}
+{{ end }}
+You can present this QR code on your mobile device or bring a printed copy to the event.
+
+Modify/Cancel your Registration
+Need to make changes or cancel? Manage your registration on the event website:
+{{ edit_registration_link }}
+
+For more details about the event, visit our website: {{ public_event_link }}
+
+We look forward to seeing you there!
+
+Best regards,
+The {{ event_name }} Team

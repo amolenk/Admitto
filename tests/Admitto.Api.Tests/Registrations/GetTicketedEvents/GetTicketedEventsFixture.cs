@@ -1,0 +1,62 @@
+using Amolenk.Admitto.Api.Tests.Infrastructure.Hosting;
+using Amolenk.Admitto.Testing.Builders.Organization.Application;
+using Amolenk.Admitto.Core.Registrations.Domain.Entities;
+using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+
+namespace Amolenk.Admitto.Api.Tests.Registrations.GetTicketedEvents;
+
+internal sealed class GetTicketedEventsFixture
+{
+    public Guid TeamId { get; private set; }
+
+    public string Route => $"/admin/teams/{TeamId}/events";
+
+    private GetTicketedEventsFixture() { }
+
+    public static GetTicketedEventsFixture WithMixedStatuses() => new();
+
+    public async ValueTask SetupAsync(EndToEndTestEnvironment environment)
+    {
+        var team = new TeamBuilder()
+            .Build();
+        TeamId = team.Id.Value;
+
+        var active = TicketedEvent.Create(
+            CreationRequestId.From(Guid.NewGuid()),
+            TicketedEventId.New(),
+            team.Id,
+            EventName.From("Conf 2026"),
+            AbsoluteUrl.From("https://example.com"),
+            AbsoluteUrl.From("https://tickets.example.com"),
+            DateTimeOffset.UtcNow.AddDays(30),
+            DateTimeOffset.UtcNow.AddDays(32),
+            TimeZoneId.From("UTC"));
+
+        var active2 = TicketedEvent.Create(
+            CreationRequestId.From(Guid.NewGuid()),
+            TicketedEventId.New(),
+            team.Id,
+            EventName.From("Meetup Q1"),
+            AbsoluteUrl.From("https://example.com"),
+            AbsoluteUrl.From("https://tickets.example.com"),
+            DateTimeOffset.UtcNow.AddDays(10),
+            DateTimeOffset.UtcNow.AddDays(11),
+            TimeZoneId.From("UTC"));
+
+        var archived = TicketedEvent.Create(
+            CreationRequestId.From(Guid.NewGuid()),
+            TicketedEventId.New(),
+            team.Id,
+            EventName.From("Conf 2025"),
+            AbsoluteUrl.From("https://example.com"),
+            AbsoluteUrl.From("https://tickets.example.com"),
+            DateTimeOffset.UtcNow.AddDays(-60),
+            DateTimeOffset.UtcNow.AddDays(-58),
+            TimeZoneId.From("UTC"));
+        archived.Archive();
+
+        await environment.OrganizationDatabase.SeedAsync(db => db.Teams.Add(team));
+        await environment.RegistrationsDatabase.SeedAsync(db =>
+            db.TicketedEvents.AddRange(active, active2, archived));
+    }
+}

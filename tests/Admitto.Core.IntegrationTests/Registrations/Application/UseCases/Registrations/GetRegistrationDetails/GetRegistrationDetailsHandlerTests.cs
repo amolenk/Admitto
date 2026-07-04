@@ -1,0 +1,147 @@
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.GetRegistrationDetails;
+using Amolenk.Admitto.Core.Registrations.Contracts;
+using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
+
+namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCases.Registrations.GetRegistrationDetails;
+
+[TestClass]
+public sealed class GetRegistrationDetailsHandlerTests(TestContext testContext) : AspireIntegrationTestBase
+{
+    [TestMethod]
+    public async ValueTask ActiveRegistration_ReturnsFullDetail()
+    {
+        var fixture = GetRegistrationDetailsFixture.WithRegisteredAttendee();
+        await fixture.SetupAsync(Environment);
+
+        var result = await NewHandler().HandleAsync(
+            new GetRegistrationDetailsQuery(fixture.TeamId.Value, fixture.EventId, fixture.RegistrationId),
+            testContext.CancellationToken);
+
+        result.ShouldNotBeNull();
+        result.Id.ShouldBe(fixture.RegistrationId.Value);
+        result.Email.ShouldBe("alice@example.com");
+        result.FirstName.ShouldBe("Alice");
+        result.LastName.ShouldBe("Doe");
+        result.Status.ShouldBe(RegistrationStatus.Registered);
+        result.HasReconfirmed.ShouldBeFalse();
+        result.ReconfirmedAt.ShouldBeNull();
+        result.CancellationReason.ShouldBeNull();
+        result.Tickets.ShouldHaveSingleItem().Id.ShouldBe(fixture.TicketTypeId.Value);
+        result.Tickets[0].Name.ShouldBe(GetRegistrationDetailsFixture.TicketTypeNameStr);
+        result.Activities.ShouldHaveSingleItem().ActivityType.ShouldBe(nameof(ActivityType.Registered));
+    }
+
+    [TestMethod]
+    public async ValueTask ReconfirmedRegistration_ReturnsReconfirmedStatus()
+    {
+        var fixture = GetRegistrationDetailsFixture.WithReconfirmedAttendee();
+        await fixture.SetupAsync(Environment);
+
+        var result = await NewHandler().HandleAsync(
+            new GetRegistrationDetailsQuery(fixture.TeamId.Value, fixture.EventId, fixture.RegistrationId),
+            testContext.CancellationToken);
+
+        result.ShouldNotBeNull();
+        result.HasReconfirmed.ShouldBeTrue();
+        result.ReconfirmedAt.ShouldNotBeNull();
+        result.Status.ShouldBe(RegistrationStatus.Registered);
+        result.Activities.Count.ShouldBe(2);
+        result.Activities.ShouldContain(a => a.ActivityType == nameof(ActivityType.Registered));
+        result.Activities.ShouldContain(a => a.ActivityType == nameof(ActivityType.Reconfirmed));
+    }
+
+    [TestMethod]
+    public async ValueTask CancelledRegistration_ReturnsCancelledStatus()
+    {
+        var fixture = GetRegistrationDetailsFixture.WithCancelledAttendee();
+        await fixture.SetupAsync(Environment);
+
+        var result = await NewHandler().HandleAsync(
+            new GetRegistrationDetailsQuery(fixture.TeamId.Value, fixture.EventId, fixture.RegistrationId),
+            testContext.CancellationToken);
+
+        result.ShouldNotBeNull();
+        result.Status.ShouldBe(RegistrationStatus.Cancelled);
+        result.CancellationReason.ShouldNotBeNull();
+        result.Activities.Count.ShouldBe(2);
+        result.Activities.ShouldContain(a => a.ActivityType == nameof(ActivityType.Cancelled));
+    }
+
+    [TestMethod]
+    public async ValueTask RegistrationWithAdditionalDetails_ReturnsDetails()
+    {
+        var fixture = GetRegistrationDetailsFixture.WithAdditionalDetails();
+        await fixture.SetupAsync(Environment);
+
+        var result = await NewHandler().HandleAsync(
+            new GetRegistrationDetailsQuery(fixture.TeamId.Value, fixture.EventId, fixture.RegistrationId),
+            testContext.CancellationToken);
+
+        result.ShouldNotBeNull();
+        result.AdditionalDetails.ShouldNotBeNull();
+        result.AdditionalDetails["dietary"].ShouldBe("vegan");
+    }
+
+    [TestMethod]
+    public async ValueTask RegistrationWithMultipleTickets_ReturnsBothTickets()
+    {
+        var fixture = GetRegistrationDetailsFixture.WithMultipleTickets();
+        await fixture.SetupAsync(Environment);
+
+        var result = await NewHandler().HandleAsync(
+            new GetRegistrationDetailsQuery(fixture.TeamId.Value, fixture.EventId, fixture.RegistrationId),
+            testContext.CancellationToken);
+
+        result.ShouldNotBeNull();
+        result.Tickets.Count.ShouldBe(2);
+        result.Tickets.ShouldContain(t => t.Id == fixture.TicketTypeId.Value);
+        result.Tickets.ShouldContain(t => t.Id == fixture.VipId.Value);
+    }
+
+    [TestMethod]
+    public async ValueTask UnknownRegistrationId_ReturnsNull()
+    {
+        var fixture = GetRegistrationDetailsFixture.WithRegisteredAttendee();
+        await fixture.SetupAsync(Environment);
+
+        var result = await NewHandler().HandleAsync(
+            new GetRegistrationDetailsQuery(fixture.TeamId.Value, fixture.EventId, RegistrationId.New()),
+            testContext.CancellationToken);
+
+        result.ShouldBeNull();
+    }
+
+    [TestMethod]
+    public async ValueTask RegistrationExistsButDifferentEvent_ReturnsNull()
+    {
+        var fixture = GetRegistrationDetailsFixture.WithRegisteredAttendee();
+        await fixture.SetupAsync(Environment);
+
+        var result = await NewHandler().HandleAsync(
+            new GetRegistrationDetailsQuery(fixture.TeamId.Value, fixture.OtherEventId, fixture.RegistrationId),
+            testContext.CancellationToken);
+
+        result.ShouldBeNull();
+    }
+
+    [TestMethod]
+    public async ValueTask ActivitiesReturnedInChronologicalOrder()
+    {
+        var fixture = GetRegistrationDetailsFixture.WithReconfirmedAttendee();
+        await fixture.SetupAsync(Environment);
+
+        var result = await NewHandler().HandleAsync(
+            new GetRegistrationDetailsQuery(fixture.TeamId.Value, fixture.EventId, fixture.RegistrationId),
+            testContext.CancellationToken);
+
+        result.ShouldNotBeNull();
+        result.Activities.Count.ShouldBe(2);
+        result.Activities[0].ActivityType.ShouldBe(nameof(ActivityType.Registered));
+        result.Activities[1].ActivityType.ShouldBe(nameof(ActivityType.Reconfirmed));
+        result.Activities[0].OccurredAt.ShouldBeLessThan(result.Activities[1].OccurredAt);
+    }
+
+    private static GetRegistrationDetailsHandler NewHandler() =>
+        new(Environment.RegistrationsDatabase.Context, Environment.RegistrationsDatabase.Context);
+}

@@ -1,0 +1,21 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/src/">
+    <Project Path="src/Admitto.Api/Admitto.Api.csproj" />
+    <Project Path="src/Admitto.AppHost/Admitto.AppHost.csproj" />
+    <Project Path="src/Admitto.Core/Admitto.Core.csproj" />
+    <Project Path="src/Admitto.ServiceDefaults/Admitto.ServiceDefaults.csproj" />
+    <Project Path="src/Admitto.Worker/Admitto.Worker.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Admitto.Api.Tests/Admitto.Api.Tests.csproj" />
+    <Project Path="tests/Admitto.Core.ArchTests/Admitto.Core.ArchTests.csproj" />
+    <Project Path="tests/Admitto.Core.DomainTests/Admitto.Core.DomainTests.csproj" />
+    <Project Path="tests/Admitto.Core.IntegrationTests/Admitto.Core.IntegrationTests.csproj" />
+    <Project Path="tests/Admitto.Testing/Admitto.Testing.csproj" />
+  </Folder>
+</Solution>

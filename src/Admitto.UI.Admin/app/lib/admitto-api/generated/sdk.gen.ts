@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AddContributorData, AddContributorErrors, AddContributorResponses, AddEmailRecipientListData, AddEmailRecipientListErrors, AddEmailRecipientListResponses, AddTeamMemberData, AddTeamMemberErrors, AddTeamMemberResponses, AddTicketTypeData, AddTicketTypeErrors, AddTicketTypeResponses, CancelData, CancelErrors, CancelRegistrationData, CancelRegistrationErrors, CancelRegistrationResponses, CancelResponses, CancelTicketTypeData, CancelTicketTypeErrors, CancelTicketTypeResponses, ChangeTicketsData, ChangeTicketsErrors, ChangeTicketsResponses, CheckInData, CheckInErrors, CheckInResponses, ClearEventEmailTemplateData, ClearEventEmailTemplateErrors, ClearEventEmailTemplateResponses, ClearReconfirmPolicyData, ClearReconfirmPolicyErrors, ClearReconfirmPolicyResponses, ClearTeamEmailTemplateData, ClearTeamEmailTemplateErrors, ClearTeamEmailTemplateResponses, CreateTeamData, CreateTeamErrors, CreateTeamResponses, CreateTicketedEventData, CreateTicketedEventErrors, CreateTicketedEventResponses, DenyVisaLetterData, DenyVisaLetterErrors, DenyVisaLetterResponses, FindAttendeeData, FindAttendeeErrors, FindAttendeeResponses, GetAttendeeData, GetAttendeeErrors, GetAttendeeResponses, GetAttendeesData, GetAttendeesErrors, GetAttendeesResponses, GetAvailabilityData, GetAvailabilityErrors, GetAvailabilityResponses, GetContributorsData, GetContributorsErrors, GetContributorsResponses, GetEmailRecipientListsData, GetEmailRecipientListsErrors, GetEmailRecipientListsResponses, GetEventEmailTemplatesData, GetEventEmailTemplatesErrors, GetEventEmailTemplatesResponses, GetQrCodeData, GetQrCodeErrors, GetTeamData, GetTeamEmailTemplatesData, GetTeamEmailTemplatesErrors, GetTeamEmailTemplatesResponses, GetTeamErrors, GetTeamResponses, GetTeamsData, GetTeamsErrors, GetTeamsResponses, GetTicketedEventData, GetTicketedEventErrors, GetTicketedEventResponses, GetTicketedEventsData, GetTicketedEventsErrors, GetTicketedEventsResponses, GetTicketsData, GetTicketsErrors, GetTicketsResponses, PrivilegedCheckInData, PrivilegedCheckInErrors, PrivilegedCheckInResponses, ReconfirmData, ReconfirmErrors, ReconfirmRegistrationData, ReconfirmRegistrationErrors, ReconfirmRegistrationResponses, ReconfirmResponses, RegisterAttendeeData, RegisterAttendeeErrors, RegisterAttendeeResponses, RegisterData, RegisterErrors, RegisterResponses, RemoveContributorData, RemoveContributorErrors, RemoveContributorResponses, RemoveEmailRecipientListData, RemoveEmailRecipientListErrors, RemoveEmailRecipientListResponses, RequestOtpData, RequestOtpErrors, RequestOtpResponses, SendCustomBulkEmailData, SendCustomBulkEmailErrors, SendCustomBulkEmailResponses, SendEmailData, SendEmailErrors, SendEmailResponses, SendReconfirmBulkEmailData, SendReconfirmBulkEmailErrors, SendReconfirmBulkEmailResponses, SendReconfirmEmailData, SendReconfirmEmailErrors, SendReconfirmEmailResponses, SetEventEmailTemplateData, SetEventEmailTemplateErrors, SetEventEmailTemplateResponses, SetReconfirmPolicyData, SetReconfirmPolicyErrors, SetReconfirmPolicyResponses, SetRegistrationPolicyData, SetRegistrationPolicyErrors, SetRegistrationPolicyResponses, SetTeamEmailTemplateData, SetTeamEmailTemplateErrors, SetTeamEmailTemplateResponses, TestEmailData, TestEmailErrors, TestEmailResponses, UpdateAttendeeData, UpdateAttendeeErrors, UpdateAttendeeResponses, UpdateContributorData, UpdateContributorErrors, UpdateContributorResponses, UpdateTeamData, UpdateTeamErrors, UpdateTeamResponses, UpdateTicketedEventData, UpdateTicketedEventErrors, UpdateTicketedEventResponses, UpdateTicketTypeData, UpdateTicketTypeErrors, UpdateTicketTypeResponses, VerifyOtpCodeData, VerifyOtpCodeErrors, VerifyOtpCodeResponses } from './types.gen';
+import type { AddBadgeInstanceData, AddBadgeInstanceErrors, AddBadgeInstanceResponses, AddBadgeTypeData, AddBadgeTypeErrors, AddBadgeTypeResponses, AddTicketTypeData, AddTicketTypeErrors, AddTicketTypeResponses, AdminRegisterAttendeeData, AdminRegisterAttendeeErrors, AdminRegisterAttendeeResponses, ArchiveTeamData, ArchiveTeamErrors, ArchiveTeamResponses, ArchiveTicketedEventData, ArchiveTicketedEventErrors, ArchiveTicketedEventResponses, AssignTeamMembershipData, AssignTeamMembershipErrors, AssignTeamMembershipResponses, CancelBulkEmailData, CancelBulkEmailErrors, CancelBulkEmailResponses, CancelRegistrationData, CancelRegistrationErrors, CancelRegistrationResponses, ChangeAttendeeTicketsData, ChangeAttendeeTicketsErrors, ChangeAttendeeTicketsResponses, ChangeTeamMembershipRoleData, ChangeTeamMembershipRoleErrors, ChangeTeamMembershipRoleResponses, ConfigureReconfirmPolicyData, ConfigureReconfirmPolicyErrors, ConfigureReconfirmPolicyResponses, ConfigureRegistrationPolicyData, ConfigureRegistrationPolicyErrors, ConfigureRegistrationPolicyResponses, ConfigureWaitlistPolicyData, ConfigureWaitlistPolicyErrors, ConfigureWaitlistPolicyResponses, CreateApiKeyData, CreateApiKeyErrors, CreateApiKeyResponses, CreateBulkEmailData, CreateBulkEmailErrors, CreateBulkEmailResponses, CreateCouponData, CreateCouponErrors, CreateCouponResponses, CreateTeamData, CreateTeamErrors, CreateTeamResponses, DeleteBadgeInstanceData, DeleteBadgeInstanceErrors, DeleteBadgeInstanceResponses, DeleteBadgeTypeData, DeleteBadgeTypeErrors, DeleteBadgeTypeResponses, ExportBadgeCsvData, ExportBadgeCsvErrors, ExportRegistrationsCsvData, ExportRegistrationsCsvErrors, GetApiKeysData, GetApiKeysErrors, GetApiKeysResponses, GetAttendeeEmailsData, GetAttendeeEmailsErrors, GetAttendeeEmailsResponses, GetBadgeTypesData, GetBadgeTypesErrors, GetBadgeTypesResponses, GetBulkEmailData, GetBulkEmailErrors, GetBulkEmailResponses, GetBulkEmailsData, GetBulkEmailsErrors, GetBulkEmailsResponses, GetCouponDetailsData, GetCouponDetailsErrors, GetCouponDetailsResponses, GetEventCreationRequestData, GetEventCreationRequestErrors, GetEventCreationRequestResponses, GetPartnerRegistrationDetailsData, GetPartnerRegistrationDetailsErrors, GetPartnerRegistrationDetailsResponses, GetPublicCouponDetailsData, GetPublicCouponDetailsErrors, GetPublicCouponDetailsResponses, GetPublicTicketTypesData, GetPublicTicketTypesErrors, GetPublicTicketTypesResponses, GetQrCodeData, GetQrCodeErrors, GetQrCodeResponses, GetRegistrationDetailsData, GetRegistrationDetailsErrors, GetRegistrationDetailsResponses, GetRegistrationsData, GetRegistrationsErrors, GetRegistrationsResponses, GetTeamData, GetTeamErrors, GetTeamMembersData, GetTeamMembersErrors, GetTeamMembersResponses, GetTeamResponses, GetTeamsData, GetTeamsErrors, GetTeamsResponses, GetTicketedEventDetailsData, GetTicketedEventDetailsErrors, GetTicketedEventDetailsResponses, GetTicketedEventsData, GetTicketedEventsErrors, GetTicketedEventsResponses, GetTicketTypesData, GetTicketTypesErrors, GetTicketTypesResponses, GetWaitlistDetailsData, GetWaitlistDetailsErrors, GetWaitlistDetailsResponses, JoinWaitlistData, JoinWaitlistErrors, LeaveWaitlistData, LeaveWaitlistErrors, LeaveWaitlistResponses, ListBadgeInstancesData, ListBadgeInstancesErrors, ListBadgeInstancesResponses, ListCouponsData, ListCouponsErrors, ListCouponsResponses, PartnerRequestTicketConfirmationResendData, PartnerRequestTicketConfirmationResendErrors, PartnerRequestTicketConfirmationResendResponses, PreviewBulkEmailData, PreviewBulkEmailErrors, PreviewBulkEmailResponses, RedirectToCancelData, RedirectToCancelErrors, RedirectToEditData, RedirectToEditErrors, RedirectToEventWebsiteData, RedirectToEventWebsiteErrors, RedirectToRegisterData, RedirectToRegisterErrors, RegisterAttendeeSelfServiceData, RegisterAttendeeSelfServiceErrors, RegisterAttendeeWithCouponData, RegisterAttendeeWithCouponErrors, RemoveTeamMembershipData, RemoveTeamMembershipErrors, RemoveTeamMembershipResponses, RemoveWaitlistEntryData, RemoveWaitlistEntryErrors, RemoveWaitlistEntryResponses, RenameBadgeTypeData, RenameBadgeTypeErrors, RenameBadgeTypeResponses, RequestOtpData, RequestOtpErrors, RequestTicketConfirmationResendData, RequestTicketConfirmationResendErrors, RequestTicketConfirmationResendResponses, RequestTicketedEventCreationData, RequestTicketedEventCreationErrors, RequestTicketedEventCreationResponses, ResolvePartnerRegistrationData, ResolvePartnerRegistrationErrors, RevokeApiKeyData, RevokeApiKeyErrors, RevokeApiKeyResponses, RevokeCouponData, RevokeCouponErrors, RevokeCouponResponses, SelfCancelRegistrationData, SelfCancelRegistrationErrors, UpdateAdditionalDetailSchemaData, UpdateAdditionalDetailSchemaErrors, UpdateAdditionalDetailSchemaResponses, UpdateBadgeInstanceData, UpdateBadgeInstanceErrors, UpdateBadgeInstanceResponses, UpdatePartnerRegistrationData, UpdatePartnerRegistrationErrors, UpdateTeamData, UpdateTeamErrors, UpdateTeamResponses, UpdateTicketedEventDetailsData, UpdateTicketedEventDetailsErrors, UpdateTicketedEventDetailsResponses, UpdateTicketTypeData, UpdateTicketTypeErrors, UpdateTicketTypeResponses, VerifyOtpData, VerifyOtpErrors } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -18,41 +18,15 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
     meta?: Record<string, unknown>;
 };
 
-export const cancelRegistration = <ThrowOnError extends boolean = false>(options: Options<CancelRegistrationData, ThrowOnError>) => {
-    return (options.client ?? client).delete<CancelRegistrationResponses, CancelRegistrationErrors, ThrowOnError>({
+export const previewBulkEmail = <ThrowOnError extends boolean = false>(options: Options<PreviewBulkEmailData, ThrowOnError>) => {
+    return (options.client ?? client).post<PreviewBulkEmailResponses, PreviewBulkEmailErrors, ThrowOnError>({
         security: [
             {
                 scheme: 'bearer',
                 type: 'http'
             }
         ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/attendees/{attendeeId}',
-        ...options
-    });
-};
-
-export const getAttendee = <ThrowOnError extends boolean = false>(options: Options<GetAttendeeData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetAttendeeResponses, GetAttendeeErrors, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/attendees/{attendeeId}',
-        ...options
-    });
-};
-
-export const updateAttendee = <ThrowOnError extends boolean = false>(options: Options<UpdateAttendeeData, ThrowOnError>) => {
-    return (options.client ?? client).put<UpdateAttendeeResponses, UpdateAttendeeErrors, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/attendees/{attendeeId}',
+        url: '/admin/teams/{teamId}/events/{eventId}/bulk-emails/preview',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -61,67 +35,28 @@ export const updateAttendee = <ThrowOnError extends boolean = false>(options: Op
     });
 };
 
-export const privilegedCheckIn = <ThrowOnError extends boolean = false>(options: Options<PrivilegedCheckInData, ThrowOnError>) => {
-    return (options.client ?? client).post<PrivilegedCheckInResponses, PrivilegedCheckInErrors, ThrowOnError>({
+export const getBulkEmails = <ThrowOnError extends boolean = false>(options: Options<GetBulkEmailsData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetBulkEmailsResponses, GetBulkEmailsErrors, ThrowOnError>({
         security: [
             {
                 scheme: 'bearer',
                 type: 'http'
             }
         ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/attendees/{attendeeId}/privileged-check-in',
+        url: '/admin/teams/{teamId}/events/{eventId}/bulk-emails',
         ...options
     });
 };
 
-export const denyVisaLetter = <ThrowOnError extends boolean = false>(options: Options<DenyVisaLetterData, ThrowOnError>) => {
-    return (options.client ?? client).post<DenyVisaLetterResponses, DenyVisaLetterErrors, ThrowOnError>({
+export const createBulkEmail = <ThrowOnError extends boolean = false>(options: Options<CreateBulkEmailData, ThrowOnError>) => {
+    return (options.client ?? client).post<CreateBulkEmailResponses, CreateBulkEmailErrors, ThrowOnError>({
         security: [
             {
                 scheme: 'bearer',
                 type: 'http'
             }
         ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/attendees/{attendeeId}/deny-visa',
-        ...options
-    });
-};
-
-export const findAttendee = <ThrowOnError extends boolean = false>(options: Options<FindAttendeeData, ThrowOnError>) => {
-    return (options.client ?? client).get<FindAttendeeResponses, FindAttendeeErrors, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/attendees/by-email',
-        ...options
-    });
-};
-
-export const getAttendees = <ThrowOnError extends boolean = false>(options: Options<GetAttendeesData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetAttendeesResponses, GetAttendeesErrors, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/attendees',
-        ...options
-    });
-};
-
-export const registerAttendee = <ThrowOnError extends boolean = false>(options: Options<RegisterAttendeeData, ThrowOnError>) => {
-    return (options.client ?? client).post<RegisterAttendeeResponses, RegisterAttendeeErrors, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/attendees',
+        url: '/admin/teams/{teamId}/events/{eventId}/bulk-emails',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -130,453 +65,42 @@ export const registerAttendee = <ThrowOnError extends boolean = false>(options: 
     });
 };
 
-export const reconfirmRegistration = <ThrowOnError extends boolean = false>(options: Options<ReconfirmRegistrationData, ThrowOnError>) => {
-    return (options.client ?? client).post<ReconfirmRegistrationResponses, ReconfirmRegistrationErrors, ThrowOnError>({
+export const getBulkEmail = <ThrowOnError extends boolean = false>(options: Options<GetBulkEmailData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetBulkEmailResponses, GetBulkEmailErrors, ThrowOnError>({
         security: [
             {
                 scheme: 'bearer',
                 type: 'http'
             }
         ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/attendees/{attendeeId}/reconfirm',
+        url: '/admin/teams/{teamId}/events/{eventId}/bulk-emails/{bulkEmailJobId}',
         ...options
     });
 };
 
-export const sendCustomBulkEmail = <ThrowOnError extends boolean = false>(options: Options<SendCustomBulkEmailData, ThrowOnError>) => {
-    return (options.client ?? client).post<SendCustomBulkEmailResponses, SendCustomBulkEmailErrors, ThrowOnError>({
+export const cancelBulkEmail = <ThrowOnError extends boolean = false>(options: Options<CancelBulkEmailData, ThrowOnError>) => {
+    return (options.client ?? client).post<CancelBulkEmailResponses, CancelBulkEmailErrors, ThrowOnError>({
         security: [
             {
                 scheme: 'bearer',
                 type: 'http'
             }
         ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/emails/bulk/custom',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const sendReconfirmBulkEmail = <ThrowOnError extends boolean = false>(options: Options<SendReconfirmBulkEmailData, ThrowOnError>) => {
-    return (options.client ?? client).post<SendReconfirmBulkEmailResponses, SendReconfirmBulkEmailErrors, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/emails/bulk/reconfirm',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const getContributors = <ThrowOnError extends boolean = false>(options: Options<GetContributorsData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetContributorsResponses, GetContributorsErrors, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/contributors',
+        url: '/admin/teams/{teamId}/events/{eventId}/bulk-emails/{bulkEmailJobId}/cancel',
         ...options
     });
 };
 
-export const addContributor = <ThrowOnError extends boolean = false>(options: Options<AddContributorData, ThrowOnError>) => {
-    return (options.client ?? client).post<AddContributorResponses, AddContributorErrors, ThrowOnError>({
+export const getAttendeeEmails = <ThrowOnError extends boolean = false>(options: Options<GetAttendeeEmailsData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetAttendeeEmailsResponses, GetAttendeeEmailsErrors, ThrowOnError>({
         security: [
             {
                 scheme: 'bearer',
                 type: 'http'
             }
         ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/contributors',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const removeContributor = <ThrowOnError extends boolean = false>(options: Options<RemoveContributorData, ThrowOnError>) => {
-    return (options.client ?? client).delete<RemoveContributorResponses, RemoveContributorErrors, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/contributors/{contributorId}',
+        url: '/admin/teams/{teamId}/events/{eventId}/registrations/{registrationId}/emails',
         ...options
-    });
-};
-
-export const updateContributor = <ThrowOnError extends boolean = false>(options: Options<UpdateContributorData, ThrowOnError>) => {
-    return (options.client ?? client).patch<UpdateContributorResponses, UpdateContributorErrors, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/contributors/{contributorId}',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const sendEmail = <ThrowOnError extends boolean = false>(options: Options<SendEmailData, ThrowOnError>) => {
-    return (options.client ?? client).post<SendEmailResponses, SendEmailErrors, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/emails/{emailType}',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const testEmail = <ThrowOnError extends boolean = false>(options: Options<TestEmailData, ThrowOnError>) => {
-    return (options.client ?? client).post<TestEmailResponses, TestEmailErrors, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/emails/{emailType}/test',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const sendReconfirmEmail = <ThrowOnError extends boolean = false>(options: Options<SendReconfirmEmailData, ThrowOnError>) => {
-    return (options.client ?? client).post<SendReconfirmEmailResponses, SendReconfirmEmailErrors, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/emails/reconfirm',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const getEmailRecipientLists = <ThrowOnError extends boolean = false>(options: Options<GetEmailRecipientListsData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetEmailRecipientListsResponses, GetEmailRecipientListsErrors, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/email-recipient-lists',
-        ...options
-    });
-};
-
-export const addEmailRecipientList = <ThrowOnError extends boolean = false>(options: Options<AddEmailRecipientListData, ThrowOnError>) => {
-    return (options.client ?? client).post<AddEmailRecipientListResponses, AddEmailRecipientListErrors, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/email-recipient-lists',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const removeEmailRecipientList = <ThrowOnError extends boolean = false>(options: Options<RemoveEmailRecipientListData, ThrowOnError>) => {
-    return (options.client ?? client).delete<RemoveEmailRecipientListResponses, RemoveEmailRecipientListErrors, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/email-recipient-lists/{name}',
-        ...options
-    });
-};
-
-export const clearEventEmailTemplate = <ThrowOnError extends boolean = false>(options: Options<ClearEventEmailTemplateData, ThrowOnError>) => {
-    return (options.client ?? client).delete<ClearEventEmailTemplateResponses, ClearEventEmailTemplateErrors, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/email-templates/{emailType}',
-        ...options
-    });
-};
-
-export const setEventEmailTemplate = <ThrowOnError extends boolean = false>(options: Options<SetEventEmailTemplateData, ThrowOnError>) => {
-    return (options.client ?? client).put<SetEventEmailTemplateResponses, SetEventEmailTemplateErrors, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/email-templates/{emailType}',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const clearTeamEmailTemplate = <ThrowOnError extends boolean = false>(options: Options<ClearTeamEmailTemplateData, ThrowOnError>) => {
-    return (options.client ?? client).delete<ClearTeamEmailTemplateResponses, ClearTeamEmailTemplateErrors, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/teams/{teamSlug}/email-templates/{emailType}',
-        ...options
-    });
-};
-
-export const setTeamEmailTemplate = <ThrowOnError extends boolean = false>(options: Options<SetTeamEmailTemplateData, ThrowOnError>) => {
-    return (options.client ?? client).put<SetTeamEmailTemplateResponses, SetTeamEmailTemplateErrors, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/teams/{teamSlug}/email-templates/{emailType}',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const getEventEmailTemplates = <ThrowOnError extends boolean = false>(options: Options<GetEventEmailTemplatesData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetEventEmailTemplatesResponses, GetEventEmailTemplatesErrors, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/email-templates',
-        ...options
-    });
-};
-
-export const getTeamEmailTemplates = <ThrowOnError extends boolean = false>(options: Options<GetTeamEmailTemplatesData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetTeamEmailTemplatesResponses, GetTeamEmailTemplatesErrors, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/teams/{teamSlug}/email-templates',
-        ...options
-    });
-};
-
-export const cancel = <ThrowOnError extends boolean = false>(options: Options<CancelData, ThrowOnError>) => {
-    return (options.client ?? client).delete<CancelResponses, CancelErrors, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/public/{publicId}',
-        ...options
-    });
-};
-
-export const getTickets = <ThrowOnError extends boolean = false>(options: Options<GetTicketsData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetTicketsResponses, GetTicketsErrors, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/public/{publicId}/tickets',
-        ...options
-    });
-};
-
-export const changeTickets = <ThrowOnError extends boolean = false>(options: Options<ChangeTicketsData, ThrowOnError>) => {
-    return (options.client ?? client).put<ChangeTicketsResponses, ChangeTicketsErrors, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/public/{publicId}/tickets',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const checkIn = <ThrowOnError extends boolean = false>(options: Options<CheckInData, ThrowOnError>) => {
-    return (options.client ?? client).post<CheckInResponses, CheckInErrors, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/public/{publicId}/check-in',
-        ...options
-    });
-};
-
-export const getAvailability = <ThrowOnError extends boolean = false>(options: Options<GetAvailabilityData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetAvailabilityResponses, GetAvailabilityErrors, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/public/availability',
-        ...options
-    });
-};
-
-export const getQrCode = <ThrowOnError extends boolean = false>(options: Options<GetQrCodeData, ThrowOnError>) => {
-    return (options.client ?? client).get<unknown, GetQrCodeErrors, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/public/{publicId}/qr-code',
-        ...options
-    });
-};
-
-export const reconfirm = <ThrowOnError extends boolean = false>(options: Options<ReconfirmData, ThrowOnError>) => {
-    return (options.client ?? client).post<ReconfirmResponses, ReconfirmErrors, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/public/{publicId}/reconfirm',
-        ...options
-    });
-};
-
-export const register = <ThrowOnError extends boolean = false>(options: Options<RegisterData, ThrowOnError>) => {
-    return (options.client ?? client).post<RegisterResponses, RegisterErrors, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/public/register',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const requestOtp = <ThrowOnError extends boolean = false>(options: Options<RequestOtpData, ThrowOnError>) => {
-    return (options.client ?? client).post<RequestOtpResponses, RequestOtpErrors, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/public/otp',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const verifyOtpCode = <ThrowOnError extends boolean = false>(options: Options<VerifyOtpCodeData, ThrowOnError>) => {
-    return (options.client ?? client).post<VerifyOtpCodeResponses, VerifyOtpCodeErrors, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/public/verify',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const addTeamMember = <ThrowOnError extends boolean = false>(options: Options<AddTeamMemberData, ThrowOnError>) => {
-    return (options.client ?? client).post<AddTeamMemberResponses, AddTeamMemberErrors, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/teams/{teamSlug}/members',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
     });
 };
 
@@ -588,7 +112,7 @@ export const getTeams = <ThrowOnError extends boolean = false>(options?: Options
                 type: 'http'
             }
         ],
-        url: '/teams',
+        url: '/admin/teams',
         ...options
     });
 };
@@ -601,7 +125,7 @@ export const createTeam = <ThrowOnError extends boolean = false>(options: Option
                 type: 'http'
             }
         ],
-        url: '/teams',
+        url: '/admin/teams',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -618,20 +142,20 @@ export const getTeam = <ThrowOnError extends boolean = false>(options: Options<G
                 type: 'http'
             }
         ],
-        url: '/teams/{teamSlug}',
+        url: '/admin/teams/{teamId}',
         ...options
     });
 };
 
 export const updateTeam = <ThrowOnError extends boolean = false>(options: Options<UpdateTeamData, ThrowOnError>) => {
-    return (options.client ?? client).patch<UpdateTeamResponses, UpdateTeamErrors, ThrowOnError>({
+    return (options.client ?? client).put<UpdateTeamResponses, UpdateTeamErrors, ThrowOnError>({
         security: [
             {
                 scheme: 'bearer',
                 type: 'http'
             }
         ],
-        url: '/teams/{teamSlug}',
+        url: '/admin/teams/{teamId}',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -640,15 +164,15 @@ export const updateTeam = <ThrowOnError extends boolean = false>(options: Option
     });
 };
 
-export const addTicketType = <ThrowOnError extends boolean = false>(options: Options<AddTicketTypeData, ThrowOnError>) => {
-    return (options.client ?? client).post<AddTicketTypeResponses, AddTicketTypeErrors, ThrowOnError>({
+export const archiveTeam = <ThrowOnError extends boolean = false>(options: Options<ArchiveTeamData, ThrowOnError>) => {
+    return (options.client ?? client).post<ArchiveTeamResponses, ArchiveTeamErrors, ThrowOnError>({
         security: [
             {
                 scheme: 'bearer',
                 type: 'http'
             }
         ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/ticket-types',
+        url: '/admin/teams/{teamId}/archive',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -657,58 +181,28 @@ export const addTicketType = <ThrowOnError extends boolean = false>(options: Opt
     });
 };
 
-export const cancelTicketType = <ThrowOnError extends boolean = false>(options: Options<CancelTicketTypeData, ThrowOnError>) => {
-    return (options.client ?? client).delete<CancelTicketTypeResponses, CancelTicketTypeErrors, ThrowOnError>({
+export const getTeamMembers = <ThrowOnError extends boolean = false>(options: Options<GetTeamMembersData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetTeamMembersResponses, GetTeamMembersErrors, ThrowOnError>({
         security: [
             {
                 scheme: 'bearer',
                 type: 'http'
             }
         ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/ticket-types/{slug}',
+        url: '/admin/teams/{teamId}/members',
         ...options
     });
 };
 
-export const updateTicketType = <ThrowOnError extends boolean = false>(options: Options<UpdateTicketTypeData, ThrowOnError>) => {
-    return (options.client ?? client).patch<UpdateTicketTypeResponses, UpdateTicketTypeErrors, ThrowOnError>({
+export const assignTeamMembership = <ThrowOnError extends boolean = false>(options: Options<AssignTeamMembershipData, ThrowOnError>) => {
+    return (options.client ?? client).post<AssignTeamMembershipResponses, AssignTeamMembershipErrors, ThrowOnError>({
         security: [
             {
                 scheme: 'bearer',
                 type: 'http'
             }
         ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/ticket-types/{slug}',
-        ...options,
-        headers: {
-            'Content-Type': 'application/json',
-            ...options.headers
-        }
-    });
-};
-
-export const clearReconfirmPolicy = <ThrowOnError extends boolean = false>(options: Options<ClearReconfirmPolicyData, ThrowOnError>) => {
-    return (options.client ?? client).delete<ClearReconfirmPolicyResponses, ClearReconfirmPolicyErrors, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/policies/reconfirm',
-        ...options
-    });
-};
-
-export const setReconfirmPolicy = <ThrowOnError extends boolean = false>(options: Options<SetReconfirmPolicyData, ThrowOnError>) => {
-    return (options.client ?? client).put<SetReconfirmPolicyResponses, SetReconfirmPolicyErrors, ThrowOnError>({
-        security: [
-            {
-                scheme: 'bearer',
-                type: 'http'
-            }
-        ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/policies/reconfirm',
+        url: '/admin/teams/{teamId}/members',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -725,20 +219,20 @@ export const getTicketedEvents = <ThrowOnError extends boolean = false>(options:
                 type: 'http'
             }
         ],
-        url: '/teams/{teamSlug}/events',
+        url: '/admin/teams/{teamId}/events',
         ...options
     });
 };
 
-export const createTicketedEvent = <ThrowOnError extends boolean = false>(options: Options<CreateTicketedEventData, ThrowOnError>) => {
-    return (options.client ?? client).post<CreateTicketedEventResponses, CreateTicketedEventErrors, ThrowOnError>({
+export const requestTicketedEventCreation = <ThrowOnError extends boolean = false>(options: Options<RequestTicketedEventCreationData, ThrowOnError>) => {
+    return (options.client ?? client).post<RequestTicketedEventCreationResponses, RequestTicketedEventCreationErrors, ThrowOnError>({
         security: [
             {
                 scheme: 'bearer',
                 type: 'http'
             }
         ],
-        url: '/teams/{teamSlug}/events',
+        url: '/admin/teams/{teamId}/events',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -747,28 +241,41 @@ export const createTicketedEvent = <ThrowOnError extends boolean = false>(option
     });
 };
 
-export const getTicketedEvent = <ThrowOnError extends boolean = false>(options: Options<GetTicketedEventData, ThrowOnError>) => {
-    return (options.client ?? client).get<GetTicketedEventResponses, GetTicketedEventErrors, ThrowOnError>({
+export const getEventCreationRequest = <ThrowOnError extends boolean = false>(options: Options<GetEventCreationRequestData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetEventCreationRequestResponses, GetEventCreationRequestErrors, ThrowOnError>({
         security: [
             {
                 scheme: 'bearer',
                 type: 'http'
             }
         ],
-        url: '/teams/{teamSlug}/events/{eventSlug}',
+        url: '/admin/teams/{teamId}/event-creations/{creationRequestId}',
         ...options
     });
 };
 
-export const updateTicketedEvent = <ThrowOnError extends boolean = false>(options: Options<UpdateTicketedEventData, ThrowOnError>) => {
-    return (options.client ?? client).patch<UpdateTicketedEventResponses, UpdateTicketedEventErrors, ThrowOnError>({
+export const removeTeamMembership = <ThrowOnError extends boolean = false>(options: Options<RemoveTeamMembershipData, ThrowOnError>) => {
+    return (options.client ?? client).delete<RemoveTeamMembershipResponses, RemoveTeamMembershipErrors, ThrowOnError>({
         security: [
             {
                 scheme: 'bearer',
                 type: 'http'
             }
         ],
-        url: '/teams/{teamSlug}/events/{eventSlug}',
+        url: '/admin/teams/{teamId}/members/{email}',
+        ...options
+    });
+};
+
+export const changeTeamMembershipRole = <ThrowOnError extends boolean = false>(options: Options<ChangeTeamMembershipRoleData, ThrowOnError>) => {
+    return (options.client ?? client).put<ChangeTeamMembershipRoleResponses, ChangeTeamMembershipRoleErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/members/{email}',
         ...options,
         headers: {
             'Content-Type': 'application/json',
@@ -777,19 +284,761 @@ export const updateTicketedEvent = <ThrowOnError extends boolean = false>(option
     });
 };
 
-export const setRegistrationPolicy = <ThrowOnError extends boolean = false>(options: Options<SetRegistrationPolicyData, ThrowOnError>) => {
-    return (options.client ?? client).put<SetRegistrationPolicyResponses, SetRegistrationPolicyErrors, ThrowOnError>({
+export const getApiKeys = <ThrowOnError extends boolean = false>(options: Options<GetApiKeysData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetApiKeysResponses, GetApiKeysErrors, ThrowOnError>({
         security: [
             {
                 scheme: 'bearer',
                 type: 'http'
             }
         ],
-        url: '/teams/{teamSlug}/events/{eventSlug}/policies/registration',
+        url: '/admin/teams/{teamId}/api-keys',
+        ...options
+    });
+};
+
+export const createApiKey = <ThrowOnError extends boolean = false>(options: Options<CreateApiKeyData, ThrowOnError>) => {
+    return (options.client ?? client).post<CreateApiKeyResponses, CreateApiKeyErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/api-keys',
         ...options,
         headers: {
             'Content-Type': 'application/json',
             ...options.headers
         }
+    });
+};
+
+export const revokeApiKey = <ThrowOnError extends boolean = false>(options: Options<RevokeApiKeyData, ThrowOnError>) => {
+    return (options.client ?? client).delete<RevokeApiKeyResponses, RevokeApiKeyErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/api-keys/{keyId}',
+        ...options
+    });
+};
+
+export const getTicketedEventDetails = <ThrowOnError extends boolean = false>(options: Options<GetTicketedEventDetailsData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetTicketedEventDetailsResponses, GetTicketedEventDetailsErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}',
+        ...options
+    });
+};
+
+export const updateTicketedEventDetails = <ThrowOnError extends boolean = false>(options: Options<UpdateTicketedEventDetailsData, ThrowOnError>) => {
+    return (options.client ?? client).put<UpdateTicketedEventDetailsResponses, UpdateTicketedEventDetailsErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+export const archiveTicketedEvent = <ThrowOnError extends boolean = false>(options: Options<ArchiveTicketedEventData, ThrowOnError>) => {
+    return (options.client ?? client).post<ArchiveTicketedEventResponses, ArchiveTicketedEventErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}/archive',
+        ...options
+    });
+};
+
+export const configureRegistrationPolicy = <ThrowOnError extends boolean = false>(options: Options<ConfigureRegistrationPolicyData, ThrowOnError>) => {
+    return (options.client ?? client).put<ConfigureRegistrationPolicyResponses, ConfigureRegistrationPolicyErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}/registration-policy',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+export const configureReconfirmPolicy = <ThrowOnError extends boolean = false>(options: Options<ConfigureReconfirmPolicyData, ThrowOnError>) => {
+    return (options.client ?? client).put<ConfigureReconfirmPolicyResponses, ConfigureReconfirmPolicyErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}/reconfirm-policy',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+export const configureWaitlistPolicy = <ThrowOnError extends boolean = false>(options: Options<ConfigureWaitlistPolicyData, ThrowOnError>) => {
+    return (options.client ?? client).put<ConfigureWaitlistPolicyResponses, ConfigureWaitlistPolicyErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}/waitlist-policy',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+export const updateAdditionalDetailSchema = <ThrowOnError extends boolean = false>(options: Options<UpdateAdditionalDetailSchemaData, ThrowOnError>) => {
+    return (options.client ?? client).put<UpdateAdditionalDetailSchemaResponses, UpdateAdditionalDetailSchemaErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}/additional-detail-schema',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+export const getRegistrations = <ThrowOnError extends boolean = false>(options: Options<GetRegistrationsData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetRegistrationsResponses, GetRegistrationsErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}/registrations',
+        ...options
+    });
+};
+
+export const adminRegisterAttendee = <ThrowOnError extends boolean = false>(options: Options<AdminRegisterAttendeeData, ThrowOnError>) => {
+    return (options.client ?? client).post<AdminRegisterAttendeeResponses, AdminRegisterAttendeeErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}/registrations',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+export const exportRegistrationsCsv = <ThrowOnError extends boolean = false>(options: Options<ExportRegistrationsCsvData, ThrowOnError>) => {
+    return (options.client ?? client).get<unknown, ExportRegistrationsCsvErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}/registrations/export',
+        ...options
+    });
+};
+
+export const getRegistrationDetails = <ThrowOnError extends boolean = false>(options: Options<GetRegistrationDetailsData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetRegistrationDetailsResponses, GetRegistrationDetailsErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}/registrations/{registrationId}',
+        ...options
+    });
+};
+
+export const cancelRegistration = <ThrowOnError extends boolean = false>(options: Options<CancelRegistrationData, ThrowOnError>) => {
+    return (options.client ?? client).post<CancelRegistrationResponses, CancelRegistrationErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}/registrations/{registrationId}/cancel',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+export const changeAttendeeTickets = <ThrowOnError extends boolean = false>(options: Options<ChangeAttendeeTicketsData, ThrowOnError>) => {
+    return (options.client ?? client).put<ChangeAttendeeTicketsResponses, ChangeAttendeeTicketsErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}/registrations/{registrationId}/tickets',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+export const requestTicketConfirmationResend = <ThrowOnError extends boolean = false>(options: Options<RequestTicketConfirmationResendData, ThrowOnError>) => {
+    return (options.client ?? client).post<RequestTicketConfirmationResendResponses, RequestTicketConfirmationResendErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}/registrations/{registrationId}/ticket-email/resend',
+        ...options
+    });
+};
+
+export const listCoupons = <ThrowOnError extends boolean = false>(options: Options<ListCouponsData, ThrowOnError>) => {
+    return (options.client ?? client).get<ListCouponsResponses, ListCouponsErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}/coupons',
+        ...options
+    });
+};
+
+export const createCoupon = <ThrowOnError extends boolean = false>(options: Options<CreateCouponData, ThrowOnError>) => {
+    return (options.client ?? client).post<CreateCouponResponses, CreateCouponErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}/coupons',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+export const getCouponDetails = <ThrowOnError extends boolean = false>(options: Options<GetCouponDetailsData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetCouponDetailsResponses, GetCouponDetailsErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}/coupons/{couponId}',
+        ...options
+    });
+};
+
+export const revokeCoupon = <ThrowOnError extends boolean = false>(options: Options<RevokeCouponData, ThrowOnError>) => {
+    return (options.client ?? client).post<RevokeCouponResponses, RevokeCouponErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}/coupons/{couponId}/revoke',
+        ...options
+    });
+};
+
+export const getTicketTypes = <ThrowOnError extends boolean = false>(options: Options<GetTicketTypesData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetTicketTypesResponses, GetTicketTypesErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}/ticket-types',
+        ...options
+    });
+};
+
+export const addTicketType = <ThrowOnError extends boolean = false>(options: Options<AddTicketTypeData, ThrowOnError>) => {
+    return (options.client ?? client).post<AddTicketTypeResponses, AddTicketTypeErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}/ticket-types',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+export const updateTicketType = <ThrowOnError extends boolean = false>(options: Options<UpdateTicketTypeData, ThrowOnError>) => {
+    return (options.client ?? client).put<UpdateTicketTypeResponses, UpdateTicketTypeErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}/ticket-types/{ticketTypeId}',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+export const removeWaitlistEntry = <ThrowOnError extends boolean = false>(options: Options<RemoveWaitlistEntryData, ThrowOnError>) => {
+    return (options.client ?? client).delete<RemoveWaitlistEntryResponses, RemoveWaitlistEntryErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}/ticket-types/{ticketTypeId}/waitlist/{entryId}',
+        ...options
+    });
+};
+
+export const getWaitlistDetails = <ThrowOnError extends boolean = false>(options: Options<GetWaitlistDetailsData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetWaitlistDetailsResponses, GetWaitlistDetailsErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}/ticket-types/{ticketTypeId}/waitlist',
+        ...options
+    });
+};
+
+export const getBadgeTypes = <ThrowOnError extends boolean = false>(options: Options<GetBadgeTypesData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetBadgeTypesResponses, GetBadgeTypesErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}/badge-types',
+        ...options
+    });
+};
+
+export const addBadgeType = <ThrowOnError extends boolean = false>(options: Options<AddBadgeTypeData, ThrowOnError>) => {
+    return (options.client ?? client).post<AddBadgeTypeResponses, AddBadgeTypeErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}/badge-types',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+export const deleteBadgeType = <ThrowOnError extends boolean = false>(options: Options<DeleteBadgeTypeData, ThrowOnError>) => {
+    return (options.client ?? client).delete<DeleteBadgeTypeResponses, DeleteBadgeTypeErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}/badge-types/{badgeTypeId}',
+        ...options
+    });
+};
+
+export const renameBadgeType = <ThrowOnError extends boolean = false>(options: Options<RenameBadgeTypeData, ThrowOnError>) => {
+    return (options.client ?? client).put<RenameBadgeTypeResponses, RenameBadgeTypeErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}/badge-types/{badgeTypeId}',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+export const listBadgeInstances = <ThrowOnError extends boolean = false>(options: Options<ListBadgeInstancesData, ThrowOnError>) => {
+    return (options.client ?? client).get<ListBadgeInstancesResponses, ListBadgeInstancesErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}/badge-types/{badgeTypeId}/instances',
+        ...options
+    });
+};
+
+export const addBadgeInstance = <ThrowOnError extends boolean = false>(options: Options<AddBadgeInstanceData, ThrowOnError>) => {
+    return (options.client ?? client).post<AddBadgeInstanceResponses, AddBadgeInstanceErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}/badge-types/{badgeTypeId}/instances',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+export const deleteBadgeInstance = <ThrowOnError extends boolean = false>(options: Options<DeleteBadgeInstanceData, ThrowOnError>) => {
+    return (options.client ?? client).delete<DeleteBadgeInstanceResponses, DeleteBadgeInstanceErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}/badge-types/{badgeTypeId}/instances/{badgeInstanceId}',
+        ...options
+    });
+};
+
+export const updateBadgeInstance = <ThrowOnError extends boolean = false>(options: Options<UpdateBadgeInstanceData, ThrowOnError>) => {
+    return (options.client ?? client).put<UpdateBadgeInstanceResponses, UpdateBadgeInstanceErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}/badge-types/{badgeTypeId}/instances/{badgeInstanceId}',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+export const exportBadgeCsv = <ThrowOnError extends boolean = false>(options: Options<ExportBadgeCsvData, ThrowOnError>) => {
+    return (options.client ?? client).get<unknown, ExportBadgeCsvErrors, ThrowOnError>({
+        security: [
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/admin/teams/{teamId}/events/{eventId}/badge-types/{badgeTypeId}/export',
+        ...options
+    });
+};
+
+export const requestOtp = <ThrowOnError extends boolean = false>(options: Options<RequestOtpData, ThrowOnError>) => {
+    return (options.client ?? client).post<unknown, RequestOtpErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'X-Api-Key',
+                type: 'apiKey'
+            }
+        ],
+        url: '/api/events/{eventSlug}/otp/request',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+export const verifyOtp = <ThrowOnError extends boolean = false>(options: Options<VerifyOtpData, ThrowOnError>) => {
+    return (options.client ?? client).post<unknown, VerifyOtpErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'X-Api-Key',
+                type: 'apiKey'
+            }
+        ],
+        url: '/api/events/{eventSlug}/otp/verify',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+export const registerAttendeeSelfService = <ThrowOnError extends boolean = false>(options: Options<RegisterAttendeeSelfServiceData, ThrowOnError>) => {
+    return (options.client ?? client).post<unknown, RegisterAttendeeSelfServiceErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'X-Api-Key',
+                type: 'apiKey'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/api/events/{eventSlug}/registrations',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+export const registerAttendeeWithCoupon = <ThrowOnError extends boolean = false>(options: Options<RegisterAttendeeWithCouponData, ThrowOnError>) => {
+    return (options.client ?? client).post<unknown, RegisterAttendeeWithCouponErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'X-Api-Key',
+                type: 'apiKey'
+            }
+        ],
+        url: '/api/events/{eventSlug}/registrations/coupon',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+export const resolvePartnerRegistration = <ThrowOnError extends boolean = false>(options: Options<ResolvePartnerRegistrationData, ThrowOnError>) => {
+    return (options.client ?? client).get<unknown, ResolvePartnerRegistrationErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'X-Api-Key',
+                type: 'apiKey'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/api/events/{eventSlug}/registrations/resolve',
+        ...options
+    });
+};
+
+export const getPartnerRegistrationDetails = <ThrowOnError extends boolean = false>(options: Options<GetPartnerRegistrationDetailsData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetPartnerRegistrationDetailsResponses, GetPartnerRegistrationDetailsErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'X-Api-Key',
+                type: 'apiKey'
+            }
+        ],
+        url: '/api/events/{eventSlug}/registrations/{registrationId}',
+        ...options
+    });
+};
+
+export const updatePartnerRegistration = <ThrowOnError extends boolean = false>(options: Options<UpdatePartnerRegistrationData, ThrowOnError>) => {
+    return (options.client ?? client).put<unknown, UpdatePartnerRegistrationErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'X-Api-Key',
+                type: 'apiKey'
+            }
+        ],
+        url: '/api/events/{eventSlug}/registrations/{registrationId}',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+export const selfCancelRegistration = <ThrowOnError extends boolean = false>(options: Options<SelfCancelRegistrationData, ThrowOnError>) => {
+    return (options.client ?? client).post<unknown, SelfCancelRegistrationErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'X-Api-Key',
+                type: 'apiKey'
+            }
+        ],
+        url: '/api/events/{eventSlug}/registrations/{registrationId}/cancel',
+        ...options
+    });
+};
+
+export const partnerRequestTicketConfirmationResend = <ThrowOnError extends boolean = false>(options: Options<PartnerRequestTicketConfirmationResendData, ThrowOnError>) => {
+    return (options.client ?? client).post<PartnerRequestTicketConfirmationResendResponses, PartnerRequestTicketConfirmationResendErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'X-Api-Key',
+                type: 'apiKey'
+            }
+        ],
+        url: '/api/events/{eventSlug}/registrations/{registrationId}/ticket-email/resend',
+        ...options
+    });
+};
+
+export const getPublicTicketTypes = <ThrowOnError extends boolean = false>(options: Options<GetPublicTicketTypesData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetPublicTicketTypesResponses, GetPublicTicketTypesErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'X-Api-Key',
+                type: 'apiKey'
+            }
+        ],
+        url: '/api/events/{eventSlug}/ticket-types',
+        ...options
+    });
+};
+
+export const leaveWaitlist = <ThrowOnError extends boolean = false>(options: Options<LeaveWaitlistData, ThrowOnError>) => {
+    return (options.client ?? client).delete<LeaveWaitlistResponses, LeaveWaitlistErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'X-Api-Key',
+                type: 'apiKey'
+            }
+        ],
+        url: '/api/events/{eventSlug}/waitlist/{ticketTypeId}',
+        ...options
+    });
+};
+
+export const joinWaitlist = <ThrowOnError extends boolean = false>(options: Options<JoinWaitlistData, ThrowOnError>) => {
+    return (options.client ?? client).post<unknown, JoinWaitlistErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'X-Api-Key',
+                type: 'apiKey'
+            },
+            {
+                scheme: 'bearer',
+                type: 'http'
+            }
+        ],
+        url: '/api/events/{eventSlug}/waitlist/{ticketTypeId}',
+        ...options,
+        headers: {
+            'Content-Type': 'application/json',
+            ...options.headers
+        }
+    });
+};
+
+export const getPublicCouponDetails = <ThrowOnError extends boolean = false>(options: Options<GetPublicCouponDetailsData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetPublicCouponDetailsResponses, GetPublicCouponDetailsErrors, ThrowOnError>({
+        security: [
+            {
+                name: 'X-Api-Key',
+                type: 'apiKey'
+            }
+        ],
+        url: '/api/events/{eventSlug}/coupons/{couponCode}',
+        ...options
+    });
+};
+
+export const redirectToEventWebsite = <ThrowOnError extends boolean = false>(options: Options<RedirectToEventWebsiteData, ThrowOnError>) => {
+    return (options.client ?? client).get<unknown, RedirectToEventWebsiteErrors, ThrowOnError>({
+        url: '/e/{eventSlug}',
+        ...options
+    });
+};
+
+export const redirectToRegister = <ThrowOnError extends boolean = false>(options: Options<RedirectToRegisterData, ThrowOnError>) => {
+    return (options.client ?? client).get<unknown, RedirectToRegisterErrors, ThrowOnError>({
+        url: '/e/{eventSlug}/register',
+        ...options
+    });
+};
+
+export const redirectToCancel = <ThrowOnError extends boolean = false>(options: Options<RedirectToCancelData, ThrowOnError>) => {
+    return (options.client ?? client).get<unknown, RedirectToCancelErrors, ThrowOnError>({
+        url: '/e/{eventSlug}/cancel/{registrationId}',
+        ...options
+    });
+};
+
+export const redirectToEdit = <ThrowOnError extends boolean = false>(options: Options<RedirectToEditData, ThrowOnError>) => {
+    return (options.client ?? client).get<unknown, RedirectToEditErrors, ThrowOnError>({
+        url: '/e/{eventSlug}/edit/{registrationId}',
+        ...options
+    });
+};
+
+export const getQrCode = <ThrowOnError extends boolean = false>(options: Options<GetQrCodeData, ThrowOnError>) => {
+    return (options.client ?? client).get<GetQrCodeResponses, GetQrCodeErrors, ThrowOnError>({
+        url: '/e/{eventSlug}/qr-code/{registrationId}',
+        ...options
     });
 };

@@ -1,88 +1,88 @@
 "use client"
 
-import {TicketedEventDto} from "@/lib/admitto-api/generated";
-import { useRouter } from "next/navigation"
+import { TicketedEventListItemDto } from "@/lib/admitto-api/generated";
+import { useRouter, useParams } from "next/navigation"
 
-import { SquarePlus, } from "lucide-react"
+import { Plus } from "lucide-react"
 import {
     SidebarGroup,
     SidebarGroupLabel,
     SidebarMenu,
-    SidebarMenuButton,
     SidebarMenuItem,
-    useSidebar,
 } from "@/components/ui/sidebar"
-import {useEffect, useState} from "react";
+import { useQuery } from "@tanstack/react-query";
+import { apiClient } from "@/lib/api-client";
+import { formatInEventZone } from "@/lib/time-zones";
+
+async function fetchEvents(teamId: string): Promise<TicketedEventListItemDto[]> {
+    return apiClient.get<TicketedEventListItemDto[]>(`/api/teams/${teamId}/events`);
+}
 
 export function NavEvents({
-                              teamSlug,
-                              // events,
-                          }: {
-    teamSlug: string,
-    // events: {
-    //     id: string
-    //     name: string
-    // }[]
+                               teamId,
+                               canCreateEvents,
+                           }: {
+    teamId: string,
+    canCreateEvents: boolean,
 }) {
-    const {isMobile} = useSidebar()
     const router = useRouter()
+    const params = useParams<{ eventId?: string }>();
+    const activeEventId = params.eventId ?? null;
 
-    const [events, setEvents] = useState<Array<TicketedEventDto>>([]);
+    const { data: events = [] } = useQuery({
+        queryKey: ["events", teamId],
+        queryFn: () => fetchEvents(teamId),
+        throwOnError: false,
+    });
 
-    useEffect(() =>
-    {
-        async function fetchEvents()
-        {
-            console.log("Fetching events for team slug:", teamSlug);
-
-            try
-            {
-                console.log(`/api/teams/${teamSlug}/events`)
-
-                const response = await fetch(`/api/teams/${teamSlug}/events`, { method: "GET" });
-                if (!response.ok)
-                {
-                    throw new Error("Failed to fetch events");
-                }
-
-                const data = (await response.json()) as Array<TicketedEventDto>;
-                console.log(data)
-                setEvents(data);
-            }
-            catch (error)
-            {
-                console.error("Error fetching events:", error);
-            }
-
-            router.push("/")
-        }
-
-        fetchEvents();
-    }, [router]);
+    const visibleEvents = events.filter(e => e.status !== "archived");
 
     return (
         <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-            <SidebarGroupLabel>Events</SidebarGroupLabel>
+            <SidebarGroupLabel className="uppercase tracking-wider">Events</SidebarGroupLabel>
             <SidebarMenu>
-                {events.map((ticketedEvent) => (
-                    <SidebarMenuItem key={ticketedEvent.slug}>
-                        <SidebarMenuButton
-                            asChild
-                            onClick={() => router.push(`/teams/${teamSlug}/events/${ticketedEvent.slug}`)}
+                {visibleEvents.map((ticketedEvent) => {
+                    const isActive = ticketedEvent.id === activeEventId;
+                    const dateLabel = formatInEventZone(
+                        ticketedEvent.startsAt,
+                        ticketedEvent.timeZone,
+                        "MMM d",
+                    ).toUpperCase();
+
+                    return (
+                        <SidebarMenuItem key={ticketedEvent.id}>
+                            <button
+                                onClick={() => router.push(`/teams/${teamId}/events/${ticketedEvent.id}`)}
+                                data-active={isActive ? "true" : "false"}
+                                className="side-item"
+                            >
+                                <span
+                                    className={`h-1.5 w-1.5 rounded-full shrink-0 ${
+                                        isActive ? "bg-primary" : ""
+                                    }`}
+                                    style={!isActive ? { background: "var(--border)" } : undefined}
+                                />
+                                <span className="truncate flex-1 text-left">{ticketedEvent.name}</span>
+                                {isActive && (
+                                    <span className="text-[10px] text-muted-foreground font-mono">
+                                        {dateLabel}
+                                    </span>
+                                )}
+                            </button>
+                        </SidebarMenuItem>
+                    );
+                })}
+                {canCreateEvents && (
+                    <SidebarMenuItem>
+                        <button
+                            className="side-item text-muted-foreground"
+                            onClick={() => router.push(`/teams/${teamId}/events/new`)}
                         >
-                            <a href="#">{ticketedEvent.name}</a>
-                        </SidebarMenuButton>
+                            <Plus className="size-3.5" />
+                            <span>New event</span>
+                        </button>
                     </SidebarMenuItem>
-                ))}
-                <SidebarMenuItem>
-                    <SidebarMenuButton
-                        className="text-sidebar-foreground/70"
-                        onClick={() => router.push(`/teams/${teamSlug}/events/add`)}
-                    >
-                        <SquarePlus className="text-sidebar-foreground/70"/>
-                        <a href="#">New event</a>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
+                )}
             </SidebarMenu>
         </SidebarGroup>
     )
