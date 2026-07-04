@@ -18,7 +18,14 @@ public sealed class KeycloakUserManagementServiceTests
 
             return new HttpResponseMessage(HttpStatusCode.NoContent);
         });
-        var sut = new KeycloakUserManagementService(NewClient(handler), Options.Create(new KeycloakOptions()));
+
+        var options = new KeycloakOptions
+        {
+            ExecuteActionsClientId = "admitto-ui",
+            ExecuteActionsRedirectUri = "http://localhost"
+        };
+
+        var sut = new KeycloakUserManagementService(NewClient(handler), Options.Create(options));
 
         var result = await sut.InviteUserAsync("admin@example.com");
 
@@ -44,7 +51,14 @@ public sealed class KeycloakUserManagementServiceTests
 
             return new HttpResponseMessage(HttpStatusCode.NoContent);
         });
-        var sut = new KeycloakUserManagementService(NewClient(handler), Options.Create(new KeycloakOptions()));
+
+        var options = new KeycloakOptions
+        {
+            ExecuteActionsClientId = "admitto-ui",
+            ExecuteActionsRedirectUri = "http://localhost"
+        };
+
+        var sut = new KeycloakUserManagementService(NewClient(handler), Options.Create(options));
 
         var result = await sut.InviteUserAsync("admin@example.com");
 

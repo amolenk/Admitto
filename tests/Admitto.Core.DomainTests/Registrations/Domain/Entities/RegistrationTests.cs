@@ -152,7 +152,7 @@ public sealed class RegistrationTests
     }
 
     [TestMethod]
-    public void Registration_ChangeTickets_SameSelection_StillRaisesEvent()
+    public void Registration_ChangeTickets_SameSelection_DoesNotRaiseEvent()
     {
         var generalId = TicketTypeId.New();
         var sut = Registration.Create(DefaultTeamId, DefaultEventId, DefaultEmail, DefaultFirstName, DefaultLastName,
@@ -166,7 +166,64 @@ public sealed class RegistrationTests
         sut.ChangeTickets(sameTickets, DateTimeOffset.UtcNow);
 
         sut.Tickets.Count.ShouldBe(1);
+        sut.GetDomainEvents().OfType<TicketsChangedDomainEvent>().ShouldBeEmpty();
+    }
+
+    [TestMethod]
+    public void Registration_ReplaceAttendeeEditableState_ValidInput_ReplacesDetailsAndTickets()
+    {
+        var sut = NewRegistration();
+        ClearEvents(sut);
+        var workshopId = TicketTypeId.New();
+
+        sut.ReplaceAttendeeEditableState(
+            FirstName.From("Alice"),
+            LastName.From("Anderson"),
+            AdditionalDetails.From(new Dictionary<string, string> { ["dietary"] = "vegan" }),
+            [new TicketTypeSnapshot(workshopId, TicketTypeName.From("Workshop"), [TimeSlot.From("morning")])],
+            DateTimeOffset.UtcNow);
+
+        sut.FirstName.ShouldBe(FirstName.From("Alice"));
+        sut.LastName.ShouldBe(LastName.From("Anderson"));
+        sut.AdditionalDetails["dietary"].ShouldBe("vegan");
+        sut.Tickets.ShouldHaveSingleItem().Id.ShouldBe(workshopId);
         sut.GetDomainEvents().OfType<TicketsChangedDomainEvent>().ShouldHaveSingleItem();
+    }
+
+    [TestMethod]
+    public void Registration_ReplaceAttendeeEditableState_DetailsOnly_DoesNotRaiseTicketChangeEvent()
+    {
+        var generalId = TicketTypeId.New();
+        var sut = Registration.Create(DefaultTeamId, DefaultEventId, DefaultEmail, DefaultFirstName, DefaultLastName,
+            [new TicketTypeSnapshot(generalId, TicketTypeName.From("General Admission"), [])]);
+        ClearEvents(sut);
+
+        sut.ReplaceAttendeeEditableState(
+            FirstName.From("Alice"),
+            LastName.From("Anderson"),
+            AdditionalDetails.From(new Dictionary<string, string> { ["dietary"] = "vegan" }),
+            [new TicketTypeSnapshot(generalId, TicketTypeName.From("General Admission"), [])],
+            DateTimeOffset.UtcNow);
+
+        sut.LastName.ShouldBe(LastName.From("Anderson"));
+        sut.AdditionalDetails["dietary"].ShouldBe("vegan");
+        sut.GetDomainEvents().OfType<TicketsChangedDomainEvent>().ShouldBeEmpty();
+    }
+
+    [TestMethod]
+    public void Registration_ReplaceAttendeeEditableState_Cancelled_Throws()
+    {
+        var sut = NewRegistration();
+        sut.Cancel(CancellationReason.AttendeeRequest);
+
+        var result = ErrorResult.Capture(() => sut.ReplaceAttendeeEditableState(
+            FirstName.From("Alice"),
+            LastName.From("Anderson"),
+            AdditionalDetails.Empty,
+            [new TicketTypeSnapshot(TicketTypeId.New(), TicketTypeName.From("Workshop"), [])],
+            DateTimeOffset.UtcNow));
+
+        result.Error.ShouldMatch(Registration.Errors.RegistrationIsCancelled);
     }
 
     [TestMethod]

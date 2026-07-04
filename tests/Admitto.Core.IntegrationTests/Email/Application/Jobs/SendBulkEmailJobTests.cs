@@ -73,7 +73,7 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
 
         fakeSender.LastOpenedSettings.ShouldNotBeNull();
         fakeSender.LastOpenedSettings.FromAddress.Value.ShouldBe("tickets@admitto.org");
-        fakeSender.LastOpenedSettings.FromDisplayName.ShouldBe("Acme Events");
+        fakeSender.LastOpenedSettings.FromDisplayName.ShouldBe("Acme Events via Admitto");
         fakeSender.LastOpenedSettings.ReplyToAddress.ShouldBe(EmailAddress.From("help@example.com"));
     }
 
@@ -173,7 +173,11 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
         job.BeginSending([alice, bob]);
         job.RecordSentRecipient("alice@example.com");
 
-        await Environment.EmailDatabase.SeedAsync(db => db.BulkEmailJobs.Add(job));
+        await Environment.EmailDatabase.SeedAsync(db =>
+        {
+            db.BulkEmailJobs.Add(job);
+            db.TeamEmailContexts.Add(CreateTeamEmailContext(teamId));
+        });
 
         var fakeSender = new FakeBulkSmtpSender();
         var fanOut = BuildFanOut(fakeSender, recipientResolver: NeverCalledResolver());
@@ -330,7 +334,11 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
         job.RecordSentRecipient("alice@example.com");
         job.RequestCancellation(DateTimeOffset.UtcNow);
 
-        await Environment.EmailDatabase.SeedAsync(db => db.BulkEmailJobs.Add(job));
+        await Environment.EmailDatabase.SeedAsync(db =>
+        {
+            db.BulkEmailJobs.Add(job);
+            db.TeamEmailContexts.Add(CreateTeamEmailContext(teamId));
+        });
 
         var fakeSender = new FakeBulkSmtpSender();
         var fanOut = BuildFanOut(fakeSender, recipientResolver: NeverCalledResolver());
@@ -369,13 +377,7 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
         await Environment.EmailDatabase.SeedAsync(db =>
         {
             db.BulkEmailJobs.Add(job);
-
-            if (teamName is not null)
-            {
-                var teamContext = TeamEmailContextView.CreatePartial(teamId, DateTimeOffset.UtcNow);
-                teamContext.UpdateTeamContext(teamName, "#0f766e", replyToEmailAddress, teamVersion: 1, DateTimeOffset.UtcNow);
-                db.TeamEmailContexts.Add(teamContext);
-            }
+            db.TeamEmailContexts.Add(CreateTeamEmailContext(teamId, teamName, replyToEmailAddress));
         });
 
         var sender = new FakeBulkSmtpSender();
@@ -413,6 +415,7 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
                 return new EventEmailContextDto(
                     query.TeamId.Value,
                     query.TicketedEventId.Value,
+                    "DevConf Team",
                     "DevConf",
                     "https://example.com",
                     "https://tickets.example.com/e/devconf",
@@ -420,7 +423,7 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
                     "https://tickets.example.com/e/devconf/qr-code",
                     "https://tickets.example.com/e/devconf/cancel",
                     "#0f766e",
-                    null,
+                    "https://tickets.example.com/e/devconf/edit",
                     "UTC",
                     null,
                     null,
@@ -449,6 +452,17 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
             unitOfWork,
             monitor,
             NullLogger<SendBulkEmailJob>.Instance);
+    }
+
+    private static TeamEmailContextView CreateTeamEmailContext(
+        TeamId teamId,
+        string? teamName = null,
+        string? replyToEmailAddress = null)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var teamContext = TeamEmailContextView.CreatePartial(teamId, now);
+        teamContext.UpdateTeamContext(teamName ?? "DevConf Team", "#0f766e", replyToEmailAddress, teamVersion: 1, now);
+        return teamContext;
     }
 
     private static IBulkEmailRecipientResolver NeverCalledResolver()

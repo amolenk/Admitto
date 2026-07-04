@@ -1,7 +1,6 @@
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.CancelRegistration.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.CancelRegistration.PartnerApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.ChangeAttendeeTickets.AdminApi;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.ChangeAttendeeTickets.PartnerApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Coupons.CreateCoupon.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Coupons.GetCouponDetails.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Coupons.GetPublicCouponDetails.PartnerApi;
@@ -9,13 +8,16 @@ using Amolenk.Admitto.Core.Registrations.Application.UseCases.Coupons.ListCoupon
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Coupons.RevokeCoupon.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.GetQRCode.PublicApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.GetRegistrationDetails.AdminApi;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.GetPartnerRegistrationDetails.PartnerApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.GetRegistrations.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RequestTicketConfirmationResend.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RequestTicketConfirmationResend.PartnerApi;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.ResolvePartnerRegistration.PartnerApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.ExportRegistrationsCsv.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.AdminRegisterAttendee.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendeeWithCoupon.PartnerApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RegisterAttendeeSelfService.PartnerApi;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.UpdatePartnerRegistration.PartnerApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.EmailVerification.RequestOtp.PartnerApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.EmailVerification.VerifyOtp.PartnerApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.ArchiveTicketedEvent.AdminApi;
@@ -105,8 +107,10 @@ public static class RegistrationsModule
             .MapVerifyOtp()
             .MapRegisterAttendeeSelfService()
             .MapRegisterAttendeeWithCoupon()
+            .MapResolvePartnerRegistration()
+            .MapGetPartnerRegistrationDetails()
             .MapSelfCancelRegistration()
-            .MapSelfChangeTickets()
+            .MapUpdatePartnerRegistration()
             .MapPartnerRequestTicketConfirmationResend()
             .MapGetPublicTicketTypes()
             .MapJoinWaitlist()

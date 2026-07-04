@@ -37,32 +37,19 @@
         <p>You can present this QR code on your mobile device or bring a printed copy to the event.</p>
 
     <div style="border-top: 1px solid #ddd; margin-top: 20px;">
-        <h2 style="font-size: 14px; color: {{ accent_color }}; font-weight: bold;">Can't make it?</h2>
-        <p>If you can't attend, please cancel in advance so someone else can take your spot and we don't waste food.</p>
+        <h2 style="font-size: 14px; color: {{ accent_color }}; font-weight: bold;">Modify/Cancel your Registration</h2>
+        <p>Need to make changes or cancel? Manage your registration on the event website.</p>
         <p style="margin-top: 10px;">
-            <a href="{{ cancel_link }}"
+            <a href="{{ edit_registration_link }}"
                style="background-color: {{ accent_color }}; color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 4px; display: inline-block;">
-                Cancel My Registration
+                Modify/Cancel Registration
             </a>
         </p>
         <p style="font-size: 14px; color: #666;">
             Or use this link: <br>
-            <a href="{{ cancel_link }}" style="color: {{ accent_color }};">{{ cancel_link }}</a>
+            <a href="{{ edit_registration_link }}" style="color: {{ accent_color }};">{{ edit_registration_link }}</a>
         </p>
     </div>
-
-    {{ if change_tickets_link }}
-    <div style="border-top: 1px solid #ddd; margin-top: 20px;">
-        <h2 style="font-size: 14px; color: {{ accent_color }}; font-weight: bold;">Need a different ticket?</h2>
-        <p>You can update your ticket selection while changes are available.</p>
-        <p style="margin-top: 10px;">
-            <a href="{{ change_tickets_link }}"
-               style="background-color: {{ accent_color }}; color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 4px; display: inline-block;">
-                Change My Tickets
-            </a>
-        </p>
-    </div>
-    {{ end }}
 
     <div style="border-top: 1px solid #ddd; margin-top: 20px;">
         <p>For more details about the event, visit <a

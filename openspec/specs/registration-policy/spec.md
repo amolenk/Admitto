@@ -10,7 +10,7 @@ The Registrations module owns each event's `EventRegistrationPolicy`, including 
 The system SHALL track an explicit `RegistrationStatus` on each `EventRegistrationPolicy` with values `Draft`, `Open`, and `Closed`. Newly created policies for events created through the admin UI SHALL default to `Draft`. Policies migrated from pre-existing data SHALL default to `Open` to preserve current behavior. Self-service registration and coupon-based registration SHALL be rejected unless the status is `Open` (in addition to existing window and lifecycle checks).
 
 #### Scenario: New event defaults to Draft
-- **WHEN** an organizer creates a new ticketed event "devconf-2026" via the admin UI
+- **WHEN** a team owner creates a new ticketed event "devconf-2026" via the admin UI
 - **THEN** its `EventRegistrationPolicy.RegistrationStatus` is `Draft`
 
 #### Scenario: Self-service registration blocked when status is Draft

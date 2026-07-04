@@ -31,6 +31,10 @@ internal sealed class GetTeamsFixture
     public static GetTeamsFixture UserListsOwnTeamsWithArchivedMembership() =>
         new(includeArchivedMembership: true);
 
+    public static GetTeamsFixture AdminListsTeamsWithMixedCaseNames() => new();
+
+    public static GetTeamsFixture UserListsOwnTeamsWithMixedCaseNames() => new();
+
     public async ValueTask SetupAdminTeamsAsync(IntegrationTestEnvironment environment)
     {
         var acme = new TeamBuilder().WithName("Acme Events").Build();
@@ -58,8 +62,8 @@ internal sealed class GetTeamsFixture
         var gamma = new TeamBuilder().WithName("Gamma Events").Build();
 
         var user = User.Create(EmailAddress.From("member@example.com"));
-        user.AddTeamMembership(acme.Id, TeamMembershipRole.Crew);
-        user.AddTeamMembership(beta.Id, TeamMembershipRole.Crew);
+        user.AddTeamMembership(acme.Id, TeamMembershipRole.Owner);
+        user.AddTeamMembership(beta.Id, TeamMembershipRole.Organizer);
 
         await environment.OrganizationDatabase.SeedAsync(dbContext =>
         {
@@ -72,6 +76,43 @@ internal sealed class GetTeamsFixture
         MemberTeamAcmeId = acme.Id.Value;
         MemberTeamBetaId = beta.Id.Value;
         NonMemberTeamGammaId = gamma.Id.Value;
+        UserId = user.Id.Value;
+    }
+
+    // SC: teams listed in alphabetical order (case-insensitive)
+    public async ValueTask SetupAdminTeamsWithMixedCaseNamesAsync(IntegrationTestEnvironment environment)
+    {
+        var zebra = new TeamBuilder().WithName("Zebra Events").Build();
+        var acme = new TeamBuilder().WithName("acme").Build();
+        var beta = new TeamBuilder().WithName("Beta Corp").Build();
+
+        await environment.OrganizationDatabase.SeedAsync(dbContext =>
+        {
+            dbContext.Teams.Add(zebra);
+            dbContext.Teams.Add(acme);
+            dbContext.Teams.Add(beta);
+        });
+    }
+
+    public async ValueTask SetupMemberTeamsWithMixedCaseNamesAsync(IntegrationTestEnvironment environment)
+    {
+        var zebra = new TeamBuilder().WithName("Zebra Events").Build();
+        var acme = new TeamBuilder().WithName("acme").Build();
+        var beta = new TeamBuilder().WithName("Beta Corp").Build();
+
+        var user = User.Create(EmailAddress.From("member@example.com"));
+        user.AddTeamMembership(zebra.Id, TeamMembershipRole.Owner);
+        user.AddTeamMembership(acme.Id, TeamMembershipRole.Owner);
+        user.AddTeamMembership(beta.Id, TeamMembershipRole.Owner);
+
+        await environment.OrganizationDatabase.SeedAsync(dbContext =>
+        {
+            dbContext.Teams.Add(zebra);
+            dbContext.Teams.Add(acme);
+            dbContext.Teams.Add(beta);
+            dbContext.Users.Add(user);
+        });
+
         UserId = user.Id.Value;
     }
 }

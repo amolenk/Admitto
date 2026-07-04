@@ -43,13 +43,14 @@ internal sealed class AttendeeTicketsChangedIntegrationEventHandler(
                 RecipientName = fullName,
                 integrationEvent.FirstName,
                 integrationEvent.LastName,
+                eventContext.TeamName,
                 eventContext.EventName,
                 EventWebsite = eventContext.WebsiteUrl,
                 eventContext.PublicEventLink,
                 QRCodeLink = eventContext.QRCodeLink,
                 eventContext.CancelLink,
                 eventContext.TeamAccentColor,
-                eventContext.ChangeTicketsLink,
+                eventContext.EditRegistrationLink,
                 TicketTypes = ticketTypeNames
             },
             RegistrationId: integrationEvent.RegistrationId);

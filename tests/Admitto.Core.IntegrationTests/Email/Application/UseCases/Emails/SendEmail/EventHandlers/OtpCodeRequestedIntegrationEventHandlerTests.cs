@@ -29,6 +29,7 @@ public sealed class OtpCodeRequestedIntegrationEventHandlerTests(TestContext tes
             .Returns(new EventEmailContextDto(
                 teamId,
                 eventId,
+                "DevConf Team",
                 "Azure Fest",
                 "https://example.com",
                 "https://tickets.admitto.org/e/azure-fest",
@@ -36,7 +37,7 @@ public sealed class OtpCodeRequestedIntegrationEventHandlerTests(TestContext tes
                 "https://tickets.admitto.org/e/azure-fest/qr-code/00000000-0000-0000-0000-000000000000",
                 "https://tickets.admitto.org/e/azure-fest/cancel/00000000-0000-0000-0000-000000000000",
                 "#0f766e",
-                null,
+                "https://tickets.admitto.org/e/azure-fest/edit/00000000-0000-0000-0000-000000000000",
                 "UTC",
                 null,
                 null,

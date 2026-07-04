@@ -1,6 +1,6 @@
 ## Purpose
 
-Organizers create and manage ticketed events within their teams. The `TicketedEvent`
+Team owners create ticketed events; organizers manage ticketed events within their teams. The `TicketedEvent`
 aggregate lives in the Registrations module and owns the event's lifecycle status
 along with its registration, cancellation, and reconfirm policies. Event creation is
 asynchronous: the Organization module accepts the request and tracks pending creations
@@ -9,8 +9,8 @@ lifecycle integration events back to Organization.
 
 ## Requirements
 
-### Requirement: Organizer can create a ticketed event
-The system SHALL allow organizers to request creation of a ticketed event with a
+### Requirement: Team owner can create a ticketed event
+The system SHALL allow team owners to request creation of a ticketed event with a
 name, globally unique public slug, website URL, base URL, and start/end dates.
 Event creation remains a two-phase asynchronous flow:
 
@@ -32,7 +32,7 @@ Organization handles both response events to advance team counters and to mark
 the `TeamEventCreationRequest` terminal (see team-management).
 
 #### Scenario: Successfully accept a creation request
-- **WHEN** an organizer of team with ID "11111111-0000-0000-0000-000000000001" posts a creation request for an event with name "Acme Conf 2026", public slug `acme-conf-2026`, website "https://conf.acme.org", base URL "https://tickets.acme.org", starting 2026-06-01 and ending 2026-06-03
+- **WHEN** a team owner of team with ID "11111111-0000-0000-0000-000000000001" posts a creation request for an event with name "Acme Conf 2026", public slug `acme-conf-2026`, website "https://conf.acme.org", base URL "https://tickets.acme.org", starting 2026-06-01 and ending 2026-06-03
 - **THEN** the response is `202 Accepted`, the `Location` header points to the creation-status endpoint, the team's `PendingEventCount` is incremented, and a `TicketedEventCreationRequested` event is outboxed
 
 #### Scenario: Registrations materialises the event
@@ -40,15 +40,15 @@ the `TeamEventCreationRequest` terminal (see team-management).
 - **THEN** a `TicketedEvent` aggregate is created with the provided details, public slug, and a system-assigned UUID, its status is Active, and a `TicketedEventCreated` integration event is outboxed
 
 #### Scenario: Reject end date before start date (synchronous)
-- **WHEN** an organizer posts a creation request with start 2026-06-03 and end 2026-06-01
+- **WHEN** a team owner posts a creation request with start 2026-06-03 and end 2026-06-01
 - **THEN** Organization rejects the request with a `400` validation error and does not increment `PendingEventCount`
 
 #### Scenario: Reject creating an event for an archived team (synchronous)
-- **WHEN** a team is archived and an organizer posts a creation request for it
+- **WHEN** a team is archived and a team owner posts a creation request for it
 - **THEN** Organization rejects the request with a `409` error because the team is archived and does not increment `PendingEventCount`
 
-#### Scenario: Crew member cannot create events
-- **WHEN** a Crew member posts a creation request
+#### Scenario: Non-owner team member cannot create events
+- **WHEN** an Organizer or Crew member posts a creation request
 - **THEN** Organization rejects the request as unauthorized
 
 ### Requirement: Team member can view event details

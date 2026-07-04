@@ -30,9 +30,14 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
     title: "Admitto - Admin Dashboard",
     description: "Dashboard for managing events in Admitto",
+    manifest: "/manifest.webmanifest",
     icons: {
         icon: [{ url: "/favicon.svg?v=2", type: "image/svg+xml" }],
-        shortcut: "/favicon.svg?v=2"
+        shortcut: "/favicon.svg?v=2",
+        apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }]
+    },
+    appleWebApp: {
+        title: "Admitto"
     }
 };
 

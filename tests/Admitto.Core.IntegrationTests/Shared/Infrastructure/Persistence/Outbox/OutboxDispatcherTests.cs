@@ -180,13 +180,18 @@ public sealed class OutboxDispatcherTests(TestContext testContext) : AspireInteg
     {
         private readonly TaskCompletionSource _allSendersArrived = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly TaskCompletionSource _releaseSenders = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly object _gate = new();
         private int _senderCount;
 
         public List<Guid> SentMessageIds { get; } = [];
 
         public async ValueTask SendAsync(OutboxMessage message, CancellationToken cancellationToken = default)
         {
-            SentMessageIds.Add(message.Id);
+            lock (_gate)
+            {
+                SentMessageIds.Add(message.Id);
+            }
+
             if (Interlocked.Increment(ref _senderCount) == expectedSenders)
                 _allSendersArrived.SetResult();
 

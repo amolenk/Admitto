@@ -11,7 +11,6 @@ import {
     Mail,
     Sparkles,
     Trash2,
-    Eye,
     RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -235,6 +234,7 @@ export default function AttendeeDetailPage() {
     const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
     const [cancelReason, setCancelReason] = useState("");
     const [isCancelling, setIsCancelling] = useState(false);
+    const [isResendingTicketEmail, setIsResendingTicketEmail] = useState(false);
 
     const [changeTicketsDialogOpen, setChangeTicketsDialogOpen] = useState(false);
     const [selectedTicketTypeIds, setSelectedTicketTypeIds] = useState<string[]>([]);
@@ -287,6 +287,23 @@ export default function AttendeeDetailPage() {
             toast.error("Failed to cancel registration. Please try again.");
         } finally {
             setIsCancelling(false);
+        }
+    }
+
+    async function handleResendTicketEmail() {
+        setIsResendingTicketEmail(true);
+        try {
+            await apiClient.post(
+                `/api/teams/${teamId}/events/${eventId}/registrations/${registrationId}/ticket-email/resend`,
+            );
+            await queryClient.invalidateQueries({
+                queryKey: ["attendee-emails", teamId, eventId, registrationId],
+            });
+            toast.success("Ticket email resend requested.");
+        } catch {
+            toast.error("Failed to request ticket email resend. Please try again.");
+        } finally {
+            setIsResendingTicketEmail(false);
         }
     }
 
@@ -421,20 +438,31 @@ export default function AttendeeDetailPage() {
                                 </div>
                             </div>
                             <div className="flex items-center gap-2 flex-none">
-                                 {registration.status === "registered" && (
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="text-destructive border-destructive/35 hover:bg-destructive/10 hover:text-destructive"
-                                        onClick={() => {
-                                            setCancelReason("");
-                                            setCancelDialogOpen(true);
-                                        }}
-                                    >
-                                        <Trash2 className="size-3.5" />
-                                        Cancel registration
-                                    </Button>
-                                 )}
+                                {registration.status === "registered" && (
+                                    <>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            disabled={isResendingTicketEmail}
+                                            onClick={handleResendTicketEmail}
+                                        >
+                                            <RotateCcw className="size-3.5" />
+                                            {isResendingTicketEmail ? "Requesting…" : "Resend ticket email"}
+                                        </Button>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="text-destructive border-destructive/35 hover:bg-destructive/10 hover:text-destructive"
+                                            onClick={() => {
+                                                setCancelReason("");
+                                                setCancelDialogOpen(true);
+                                            }}
+                                        >
+                                            <Trash2 className="size-3.5" />
+                                            Cancel registration
+                                        </Button>
+                                    </>
+                                )}
                             </div>
                         </div>
                     </Card>
@@ -760,30 +788,6 @@ function TimelineItem({ entry }: { entry: TimelineEntry }) {
                         </Badge>
                     </div>
                     <div className="text-[12.5px] text-muted-foreground mt-0.5">{entry.detail}</div>
-                    {entry.kind === "email" && (
-                        <div className="mt-2 flex items-center gap-2">
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-7 text-[12px]"
-                                onClick={() =>
-                                    toast.info("View email", { description: "This feature is coming soon." })
-                                }
-                            >
-                                <Eye className="size-3" /> View
-                            </Button>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-7 text-[12px]"
-                                onClick={() =>
-                                    toast.info("Resend email", { description: "This feature is coming soon." })
-                                }
-                            >
-                                <RotateCcw className="size-3" /> Resend
-                            </Button>
-                        </div>
-                    )}
                 </div>
                 <span className="text-[11.5px] text-muted-foreground whitespace-nowrap flex-none font-mono tabular-nums">
                     {formatRelative(entry.ts)}

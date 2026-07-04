@@ -124,6 +124,35 @@ public class Registration : Aggregate<RegistrationId>
         _tickets.Clear();
         _tickets.AddRange(newTickets);
 
+        if (HasSameTicketSelection(oldTickets, newTickets))
+            return;
+
+        AddDomainEvent(new TicketsChangedDomainEvent(
+            TeamId, EventId, Id, Email, FirstName, LastName,
+            oldTickets, newTickets, changedAt));
+    }
+
+    public void ReplaceAttendeeEditableState(
+        FirstName firstName,
+        LastName lastName,
+        AdditionalDetails additionalDetails,
+        IReadOnlyList<TicketTypeSnapshot> newTickets,
+        DateTimeOffset changedAt)
+    {
+        if (Status == RegistrationStatus.Cancelled)
+            throw new BusinessRuleViolationException(Errors.RegistrationIsCancelled);
+
+        var oldTickets = _tickets.ToList();
+
+        FirstName = firstName;
+        LastName = lastName;
+        AdditionalDetails = additionalDetails;
+        _tickets.Clear();
+        _tickets.AddRange(newTickets);
+
+        if (HasSameTicketSelection(oldTickets, newTickets))
+            return;
+
         AddDomainEvent(new TicketsChangedDomainEvent(
             TeamId, EventId, Id, Email, FirstName, LastName,
             oldTickets, newTickets, changedAt));
@@ -141,6 +170,17 @@ public class Registration : Aggregate<RegistrationId>
         ReconfirmedAt = now;
 
         AddDomainEvent(new RegistrationReconfirmedDomainEvent(TeamId, EventId, Id, Email, now));
+    }
+
+    private static bool HasSameTicketSelection(
+        IReadOnlyList<TicketTypeSnapshot> currentTickets,
+        IReadOnlyList<TicketTypeSnapshot> newTickets)
+    {
+        if (currentTickets.Count != newTickets.Count)
+            return false;
+
+        var currentIds = currentTickets.Select(t => t.Id).ToHashSet();
+        return newTickets.All(t => currentIds.Contains(t.Id));
     }
 
     internal static class Errors

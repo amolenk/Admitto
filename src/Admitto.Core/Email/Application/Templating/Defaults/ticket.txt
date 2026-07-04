@@ -15,16 +15,9 @@ Your ticket type(s):
 {{ end }}
 You can present this QR code on your mobile device or bring a printed copy to the event.
 
-Can't make it?
-If you can't attend, please cancel in advance so someone else can take your spot and we don't waste food.
-Cancel your registration:
-{{ cancel_link }}
-
-{{ if change_tickets_link }}
-Need a different ticket?
-Change your tickets:
-{{ change_tickets_link }}
-{{ end }}
+Modify/Cancel your Registration
+Need to make changes or cancel? Manage your registration on the event website:
+{{ edit_registration_link }}
 
 For more details about the event, visit our website: {{ public_event_link }}
 

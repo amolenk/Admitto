@@ -236,6 +236,7 @@ internal sealed class SendBulkEmailJob(
             parameters["public_event_link"] = eventContext.PublicEventLink;
             parameters["register_link"] = eventContext.RegisterLink;
             parameters["cancel_link"] = BuildRegistrationLink(eventContext.PublicEventLink, "cancel", recipient.RegistrationId);
+            parameters["edit_registration_link"] = BuildRegistrationLink(eventContext.PublicEventLink, "edit", recipient.RegistrationId);
             parameters["qr_code_link"] = BuildRegistrationLink(eventContext.PublicEventLink, "qr-code", recipient.RegistrationId);
             parameters["team_accent_color"] = eventContext.TeamAccentColor;
 

@@ -1,6 +1,7 @@
 using Amolenk.Admitto.Core.Organization.Application.Persistence;
 using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
+using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Core.Organization.Application.UseCases.Teams.GetTeams;
 
@@ -20,31 +21,56 @@ internal sealed class GetTeamsHandler(IOrganizationWriteStore writeStore)
             return await writeStore.Teams
                 .AsNoTracking()
                 .Where(t => t.ArchivedAt == null)
+                .OrderBy(t => t.Name)
                 .Select(t => new TeamListItemDto(
                     t.Id.Value,
                     t.Name.Value,
                     t.AccentColor.Value,
-                    t.Version))
+                    t.Version,
+                    CanManageTeamSettings: true,
+                    CanCreateEvents: true))
                 .ToListAsync(cancellationToken);
         }
 
         // Non-admin: return only teams the caller is a member of.
         var userId = UserId.From(query.CallerId);
 
-        var memberTeamIds = await writeStore.Users
+        var memberships = await writeStore.Users
             .AsNoTracking()
             .Where(u => u.Id == userId)
-            .SelectMany(u => u.Memberships.Select(m => m.TeamId))
+            .SelectMany(u => u.Memberships.Select(m => new { m.TeamId, m.Role }))
             .ToListAsync(cancellationToken);
 
-        return await writeStore.Teams
+        var memberTeamIds = memberships.Select(m => m.TeamId).ToList();
+        var rolesByTeamId = memberships.ToDictionary(m => m.TeamId, m => m.Role);
+
+        var teams = await writeStore.Teams
             .AsNoTracking()
             .Where(t => t.ArchivedAt == null && memberTeamIds.Contains(t.Id))
-            .Select(t => new TeamListItemDto(
-                t.Id.Value,
-                t.Name.Value,
-                t.AccentColor.Value,
-                t.Version))
+            .OrderBy(t => t.Name)
+            .Select(t => new
+            {
+                t.Id,
+                TeamId = t.Id.Value,
+                Name = t.Name.Value,
+                AccentColor = t.AccentColor.Value,
+                t.Version
+            })
             .ToListAsync(cancellationToken);
+
+        return teams
+            .Select(t =>
+            {
+                var isOwner = rolesByTeamId[t.Id] == TeamMembershipRole.Owner;
+
+                return new TeamListItemDto(
+                    t.TeamId,
+                    t.Name,
+                    t.AccentColor,
+                    t.Version,
+                    CanManageTeamSettings: isOwner,
+                    CanCreateEvents: isOwner);
+            })
+            .ToList();
     }
 }

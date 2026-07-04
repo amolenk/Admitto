@@ -1,6 +1,6 @@
 ## Purpose
 
-Admins create ticketed events and manage their core metadata, registration policy, and ticket catalog from the Admin UI through tabbed event-settings pages. Creation is async — the UI submits and polls the Organization creation-status endpoint until the event materialises in Registrations.
+Team owners create ticketed events, and organizers manage their core metadata, registration policy, and ticket catalog from the Admin UI through tabbed event-settings pages. Creation is async — the UI submits and polls the Organization creation-status endpoint until the event materialises in Registrations.
 
 ## Requirements
 
@@ -22,13 +22,13 @@ The check-in card SHALL display check-in timing information, a QR scanner button
 
 ---
 
-### Requirement: Admin can create a ticketed event via the UI
-The Admin UI SHALL provide a "Create Event" page reachable from the team's events list. The form SHALL collect name, public slug, start datetime, and end datetime. The form SHALL validate inputs client-side and surface server-side validation errors inline.
+### Requirement: Team owner can create a ticketed event via the UI
+The Admin UI SHALL provide a "Create Event" page reachable from the team's events list for team owners. The form SHALL collect name, public slug, start datetime, and end datetime. The form SHALL validate inputs client-side and surface server-side validation errors inline.
 
 Submission SHALL `POST` to the Organization create-event endpoint, which responds `202 Accepted` with a `Location` header pointing to a creation-status URL (see event-management). The UI SHALL then poll that URL until status becomes `Created`, `Rejected`, or `Expired`. While polling, the UI SHALL display a non-blocking spinner and disable the form. On `Created`, the UI SHALL navigate to the new event's Edit Event page (General tab) using the event's UUID. On `Rejected`, the UI SHALL render the rejection reason inline so the user can edit and resubmit. On `Expired`, the UI SHALL render a generic "creation timed out, please try again" error.
 
 #### Scenario: Successfully create an event (async)
-- **WHEN** an organizer submits the create event form for name "DevConf 2026", public slug `devconf-2026`, start "2026-06-01T09:00Z", end "2026-06-03T17:00Z" and the backend returns `202 Accepted`, then polling eventually returns status `Created` with the new event's ID
+- **WHEN** a team owner submits the create event form for name "DevConf 2026", public slug `devconf-2026`, start "2026-06-01T09:00Z", end "2026-06-03T17:00Z" and the backend returns `202 Accepted`, then polling eventually returns status `Created` with the new event's ID
 - **THEN** the organizer is redirected to `/teams/{teamId}/events/{eventId}/edit/general`
 
 #### Scenario: Duplicate public slug rejection is shown
@@ -36,8 +36,12 @@ Submission SHALL `POST` to the Organization create-event endpoint, which respond
 - **THEN** the UI shows the duplicate-slug error to the organizer and does not report the save as successful
 
 #### Scenario: Display client-side validation error on create
-- **WHEN** an organizer submits the create event form with an empty name
+- **WHEN** a team owner submits the create event form with an empty name
 - **THEN** the form displays an inline validation error on the name field without calling the backend
+
+#### Scenario: Create event option is hidden for non-owners
+- **WHEN** an Organizer or Crew member views a team's events list in the sidebar
+- **THEN** the "New event" option is not shown
 
 #### Scenario: Display rejection from polling
 - **WHEN** the polling endpoint reports status `Rejected` with a reason
@@ -99,7 +103,7 @@ After a successful event creation the UI SHALL navigate to `/teams/{teamId}/even
 
 #### Scenario: Post-creation redirect lands on General tab
 
-- **WHEN** an organizer completes the create-event flow and the event is successfully created
+- **WHEN** a team owner completes the create-event flow and the event is successfully created
 - **THEN** the UI navigates to `/teams/{teamId}/events/{eventId}/edit/general`
 
 ---

@@ -41,6 +41,7 @@ internal sealed class WaitlistCouponIssuedIntegrationEventHandler(
                 integrationEvent.CouponCode,
                 integrationEvent.TicketTypeName,
                 ExpiresAt = integrationEvent.ExpiresAt.ToString("f"),
+                eventContext.TeamName,
                 eventContext.EventName,
                 EventWebsite = eventContext.WebsiteUrl,
                 eventContext.RegisterLink,

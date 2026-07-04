@@ -19,10 +19,35 @@ public sealed class AttendeeRegisteredIntegrationEventHandlerTests(TestContext t
     private static readonly Guid RegId = Guid.NewGuid();
 
     private static AttendeeRegisteredIntegrationEvent Event() =>
-        new(TeamGuid.Value, EventGuid.Value, RegId, "alice@example.com", "Alice", "Anderson", [], DateTimeOffset.UtcNow);
+        new(
+            TeamGuid.Value,
+            EventGuid.Value,
+            RegId,
+            "alice@example.com",
+            "Alice",
+            "Anderson",
+            [],
+            DateTimeOffset.UtcNow);
 
     private static EventEmailContextDto Context() =>
-        new(TeamGuid.Value, EventGuid.Value, "DevConf 2025", "https://devconf.example.com", "https://tickets.example.com", "https://tickets.example.com/register", "https://tickets.example.com/qr-code/" + RegId, "https://tickets.example.com/cancel/" + RegId, "#0f766e", null, "Europe/Amsterdam", null, null, null, null, false);
+        new(
+            TeamGuid.Value,
+            EventGuid.Value,
+            "DevConf Team",
+            "DevConf 2025",
+            "https://devconf.example.com",
+            "https://tickets.example.com",
+            "https://tickets.example.com/register",
+            "https://tickets.example.com/qr-code/" + RegId,
+            "https://tickets.example.com/cancel/" + RegId,
+            "#0f766e",
+            "https://tickets.example.com/edit/" + RegId,
+            "Europe/Amsterdam",
+            null,
+            null,
+            null,
+            null,
+            false);
 
     private static IQueryHandler<GetEventEmailRenderingContextQuery, EventEmailContextDto> ContextQuery()
     {
@@ -73,6 +98,25 @@ public sealed class AttendeeRegisteredIntegrationEventHandlerTests(TestContext t
         // 'EventWebsiteUrl' (→ 'event_website_url') which would leave {{ event_website }} empty.
         var eventWebsite = GetParam(captured.Parameters, "EventWebsite");
         eventWebsite.ShouldBe("https://devconf.example.com");
+    }
+
+    [TestMethod]
+    public async Task AttendeeRegistered_ParametersIncludeEditRegistrationLink()
+    {
+        var sendEmailHandler = Substitute.For<ICommandHandler<SendEmailCommand>>();
+
+        SendEmailCommand? captured = null;
+        sendEmailHandler
+            .HandleAsync(Arg.Do<SendEmailCommand>(c => captured = c), Arg.Any<CancellationToken>())
+            .Returns(ValueTask.CompletedTask);
+
+        var sut = new AttendeeRegisteredIntegrationEventHandler(ContextQuery(), sendEmailHandler);
+
+        await sut.HandleAsync(Event(), testContext.CancellationToken);
+
+        captured.ShouldNotBeNull();
+        GetParam(captured.Parameters, "EditRegistrationLink")
+            .ShouldBe("https://tickets.example.com/edit/" + RegId);
     }
 
     private static object? GetParam(object parameters, string name) =>

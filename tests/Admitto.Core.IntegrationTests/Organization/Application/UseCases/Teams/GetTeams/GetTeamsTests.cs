@@ -23,8 +23,8 @@ public sealed class GetTeamsTests(TestContext testContext) : AspireIntegrationTe
         // Assert
         result.ShouldNotBeNull();
         result.Count.ShouldBe(2);
-        result.ShouldContain(t => t.Name == "Acme Events");
-        result.ShouldContain(t => t.Name == "Beta Events");
+        result.ShouldContain(t => t.Name == "Acme Events" && t.CanManageTeamSettings && t.CanCreateEvents);
+        result.ShouldContain(t => t.Name == "Beta Events" && t.CanManageTeamSettings && t.CanCreateEvents);
         result.ShouldNotContain(t => t.Name == "Retired Team");
     }
 
@@ -46,8 +46,8 @@ public sealed class GetTeamsTests(TestContext testContext) : AspireIntegrationTe
         // Assert
         result.ShouldNotBeNull();
         result.Count.ShouldBe(2);
-        result.ShouldContain(t => t.Name == "Acme Events");
-        result.ShouldContain(t => t.Name == "Beta Events");
+        result.ShouldContain(t => t.Name == "Acme Events" && t.CanManageTeamSettings && t.CanCreateEvents);
+        result.ShouldContain(t => t.Name == "Beta Events" && !t.CanManageTeamSettings && !t.CanCreateEvents);
         result.ShouldNotContain(t => t.Name == "Gamma Events");
     }
 
@@ -70,6 +70,52 @@ public sealed class GetTeamsTests(TestContext testContext) : AspireIntegrationTe
         result.ShouldNotBeNull();
         result.ShouldHaveSingleItem();
         result[0].Name.ShouldBe("Acme Events");
+        result[0].CanManageTeamSettings.ShouldBeTrue();
+        result[0].CanCreateEvents.ShouldBeTrue();
         result.ShouldNotContain(t => t.Name == "Beta Events");
+    }
+
+    [TestMethod]
+    public async ValueTask GetTeams_AdminListsAllTeams_ReturnsInAlphabeticalOrder()
+    {
+        // Arrange
+        // Teams "Zebra Events", "acme", "Beta Corp" are returned case-insensitively
+        // alphabetical: "acme", "Beta Corp", "Zebra Events".
+        var fixture = GetTeamsFixture.AdminListsTeamsWithMixedCaseNames();
+        await fixture.SetupAdminTeamsWithMixedCaseNamesAsync(Environment);
+
+        var query = new GetTeamsQuery(Guid.NewGuid(), CallerIsAdmin: true);
+        var sut = new GetTeamsHandler(Environment.OrganizationDatabase.Context);
+
+        // Act
+        var result = await sut.HandleAsync(query, testContext.CancellationToken);
+
+        // Assert
+        result.Count.ShouldBe(3);
+        result[0].Name.ShouldBe("acme");
+        result[1].Name.ShouldBe("Beta Corp");
+        result[2].Name.ShouldBe("Zebra Events");
+    }
+
+    [TestMethod]
+    public async ValueTask GetTeams_NonAdminListsOwnTeams_ReturnsInAlphabeticalOrder()
+    {
+        // Arrange
+        // Teams "Zebra Events", "acme", "Beta Corp" are returned case-insensitively
+        // alphabetical: "acme", "Beta Corp", "Zebra Events".
+        var fixture = GetTeamsFixture.UserListsOwnTeamsWithMixedCaseNames();
+        await fixture.SetupMemberTeamsWithMixedCaseNamesAsync(Environment);
+
+        var query = new GetTeamsQuery(fixture.UserId, CallerIsAdmin: false);
+        var sut = new GetTeamsHandler(Environment.OrganizationDatabase.Context);
+
+        // Act
+        var result = await sut.HandleAsync(query, testContext.CancellationToken);
+
+        // Assert
+        result.Count.ShouldBe(3);
+        result[0].Name.ShouldBe("acme");
+        result[1].Name.ShouldBe("Beta Corp");
+        result[2].Name.ShouldBe("Zebra Events");
     }
 }

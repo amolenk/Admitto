@@ -37,9 +37,12 @@ export function AppSidebar({ ...props }: AppSidebarProps)
             <SidebarContent>
                 {selectedTeam && (
                     <>
-                        <NavEvents teamId={selectedTeam.teamId} />
+                        <NavEvents teamId={selectedTeam.teamId} canCreateEvents={selectedTeam.canCreateEvents} />
                         <NavEventPages teamId={selectedTeam.teamId} />
-                        <NavSettings teamId={selectedTeam.teamId} />
+                        <NavSettings
+                            teamId={selectedTeam.teamId}
+                            canManageTeamSettings={selectedTeam.canManageTeamSettings}
+                        />
                     </>
                 )}
             </SidebarContent>

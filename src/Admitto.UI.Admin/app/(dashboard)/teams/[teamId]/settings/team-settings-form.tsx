@@ -16,10 +16,6 @@ import { TeamDto } from "@/lib/admitto-api/generated";
 const teamSettingsSchema = z.object({
     name: z.string().min(1, "Name is required"),
     accentColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Use a hex color like #0f766e"),
-    replyToEmailAddress: z.union([
-        z.literal(""),
-        z.string().trim().email("Use a valid email address"),
-    ]),
 });
 
 type TeamSettingsValues = z.infer<typeof teamSettingsSchema>;
@@ -58,7 +54,6 @@ export function TeamSettingsForm({ team }: TeamSettingsFormProps) {
     const form = useCustomForm<TeamSettingsValues>(teamSettingsSchema, {
         name: team.name,
         accentColor: team.accentColor,
-        replyToEmailAddress: team.replyToEmailAddress ?? "",
     });
 
     async function onSubmit(values: TeamSettingsValues) {
@@ -68,15 +63,6 @@ export function TeamSettingsForm({ team }: TeamSettingsFormProps) {
 
         if (values.name !== team.name) body.name = values.name;
         if (values.accentColor !== team.accentColor) body.accentColor = values.accentColor;
-        const replyToEmailAddress = values.replyToEmailAddress.trim();
-        const currentReplyToEmailAddress = team.replyToEmailAddress ?? "";
-        if (replyToEmailAddress !== currentReplyToEmailAddress) {
-            if (replyToEmailAddress) {
-                body.replyToEmailAddress = replyToEmailAddress;
-            } else {
-                body.clearReplyToEmailAddress = true;
-            }
-        }
 
         await apiClient.put(`/api/teams/${team.teamId}`, body);
 
@@ -140,24 +126,6 @@ export function TeamSettingsForm({ team }: TeamSettingsFormProps) {
                                                     <Input type="color" className="h-10 w-16 p-1" {...field} />
                                                     <Input placeholder="#0f766e" {...field} />
                                                 </div>
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    </Field>
-                                )}
-                            />
-
-                            <FormField
-                                control={form.control}
-                                name="replyToEmailAddress"
-                                render={({ field }) => (
-                                    <Field
-                                        label="Reply-to email"
-                                        hint="Optional. Replies to Admitto emails for this team go to this address."
-                                    >
-                                        <FormItem className="space-y-1">
-                                            <FormControl>
-                                                <Input type="email" placeholder="help@example.com" {...field} />
                                             </FormControl>
                                             <FormMessage />
                                         </FormItem>

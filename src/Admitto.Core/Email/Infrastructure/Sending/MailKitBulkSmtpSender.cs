@@ -36,7 +36,8 @@ internal sealed class MailKitBulkSmtpSender : IBulkSmtpSender
             client,
             settings.FromAddress,
             settings.FromDisplayName,
-            settings.ReplyToAddress);
+            settings.ReplyToAddress,
+            settings.ReplyToDisplayName);
     }
 
     private static SecureSocketOptions GetSecureSocketOptions(EffectiveEmailSettings settings) =>
@@ -50,11 +51,17 @@ internal sealed class MailKitBulkSmtpSender : IBulkSmtpSender
         SmtpClient client,
         EmailAddress fromAddress,
         string fromDisplayName,
-        EmailAddress? replyToAddress) : IBulkSmtpSession
+        EmailAddress? replyToAddress,
+        string? replyToDisplayName) : IBulkSmtpSession
     {
         public async Task<string?> SendAsync(EmailMessage message, CancellationToken cancellationToken = default)
         {
-            var mimeMessage = MailKitMimeMessageBuilder.Build(fromAddress, fromDisplayName, replyToAddress, message);
+            var mimeMessage = MailKitMimeMessageBuilder.Build(
+                fromAddress,
+                fromDisplayName,
+                replyToAddress,
+                replyToDisplayName,
+                message);
             return await client.SendAsync(mimeMessage, cancellationToken);
         }
 

@@ -19,9 +19,11 @@ async function fetchEvents(teamId: string): Promise<TicketedEventListItemDto[]> 
 }
 
 export function NavEvents({
-                              teamId,
-                          }: {
+                               teamId,
+                               canCreateEvents,
+                           }: {
     teamId: string,
+    canCreateEvents: boolean,
 }) {
     const router = useRouter()
     const params = useParams<{ eventId?: string }>();
@@ -70,15 +72,17 @@ export function NavEvents({
                         </SidebarMenuItem>
                     );
                 })}
-                <SidebarMenuItem>
-                    <button
-                        className="side-item text-muted-foreground"
-                        onClick={() => router.push(`/teams/${teamId}/events/new`)}
-                    >
-                        <Plus className="size-3.5" />
-                        <span>New event</span>
-                    </button>
-                </SidebarMenuItem>
+                {canCreateEvents && (
+                    <SidebarMenuItem>
+                        <button
+                            className="side-item text-muted-foreground"
+                            onClick={() => router.push(`/teams/${teamId}/events/new`)}
+                        >
+                            <Plus className="size-3.5" />
+                            <span>New event</span>
+                        </button>
+                    </SidebarMenuItem>
+                )}
             </SidebarMenu>
         </SidebarGroup>
     )

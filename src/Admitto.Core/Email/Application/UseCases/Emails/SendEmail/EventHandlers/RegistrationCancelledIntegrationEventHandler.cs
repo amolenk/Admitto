@@ -52,6 +52,7 @@ internal sealed class RegistrationCancelledIntegrationEventHandler(
             {
                 FirstName = firstName,
                 LastName = lastName,
+                eventContext.TeamName,
                 eventContext.EventName,
                 EventWebsite = eventContext.WebsiteUrl,
                 RegisterLink = eventContext.RegisterLink,

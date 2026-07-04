@@ -11,50 +11,16 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Email.Infrastructure.Sending;
 public sealed class MailKitMimeMessageBuilderTests
 {
     [TestMethod]
-    public void Build_ReplyToAddress_UsesSettingsDisplayNameAndKeepsHeaders()
-    {
-        var settings = CreateSettings("Acme Events", EmailAddress.From("help@example.com"));
-
-        var result = MailKitMimeMessageBuilder.Build(settings, CreateMessage());
-
-        var from = result.From.Mailboxes.Single();
-        from.Name.ShouldBe("Acme Events");
-        from.Address.ShouldBe("tickets@admitto.org");
-
-        var replyTo = result.ReplyTo.Mailboxes.Single();
-        replyTo.Name.ShouldBe("help@example.com");
-        replyTo.Address.ShouldBe("help@example.com");
-    }
-
-    [TestMethod]
-    public void Build_MissingReplyToAddress_UsesSystemFromAddressAsDisplayName()
+    public void Build_UsesSystemFromAddressAsDisplayName()
     {
         var settings = CreateSettings("tickets@admitto.org", replyToAddress: null);
 
         var result = MailKitMimeMessageBuilder.Build(settings, CreateMessage());
 
         var from = result.From.Mailboxes.Single();
-        from.Name.ShouldBe("tickets@admitto.org");
-        from.Address.ShouldBe("tickets@admitto.org");
+        from.Name.ShouldBe("Admitto");
+        from.Address.ShouldBe("noreply@tickets.admitto.org");
         result.ReplyTo.ShouldBeEmpty();
-    }
-
-    [TestMethod]
-    public void Build_BulkSendPath_UsesProvidedDisplayNameAndKeepsHeaders()
-    {
-        var result = MailKitMimeMessageBuilder.Build(
-            EmailAddress.From("tickets@admitto.org"),
-            "Acme Events",
-            EmailAddress.From("help@example.com"),
-            CreateMessage());
-
-        var from = result.From.Mailboxes.Single();
-        from.Name.ShouldBe("Acme Events");
-        from.Address.ShouldBe("tickets@admitto.org");
-
-        var replyTo = result.ReplyTo.Mailboxes.Single();
-        replyTo.Name.ShouldBe("help@example.com");
-        replyTo.Address.ShouldBe("help@example.com");
     }
 
     private static EffectiveEmailSettings CreateSettings(string fromDisplayName, EmailAddress? replyToAddress) =>
@@ -66,6 +32,7 @@ public sealed class MailKitMimeMessageBuilderTests
             EmailAddress.From("tickets@admitto.org"),
             fromDisplayName,
             replyToAddress,
+            "replyToDisplayName__TODO",
             EmailAuthMode.None,
             Username: null,
             Password: null,

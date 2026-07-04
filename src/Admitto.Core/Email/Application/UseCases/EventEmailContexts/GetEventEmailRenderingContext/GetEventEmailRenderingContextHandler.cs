@@ -38,6 +38,7 @@ internal sealed class GetEventEmailRenderingContextHandler(
         return new EventEmailContextDto(
             query.TeamId.Value,
             query.TicketedEventId.Value,
+            teamContext.TeamName!,
             projection.EventName!,
             projection.WebsiteUrl!,
             publicEventLink,
@@ -45,9 +46,7 @@ internal sealed class GetEventEmailRenderingContextHandler(
             hasRegistration ? $"{publicEventLink}/qr-code/{registrationSuffix}" : publicEventLink,
             hasRegistration ? $"{publicEventLink}/cancel/{registrationSuffix}" : publicEventLink,
             teamContext.AccentColor!.Value.Value,
-            projection.SelfServiceTicketTypeCount >= 2 && hasRegistration
-                ? $"{publicEventLink}/edit/{registrationSuffix}"
-                : null,
+            hasRegistration ? $"{publicEventLink}/edit/{registrationSuffix}" : publicEventLink,
             projection.TimeZone ?? string.Empty,
             projection.ReconfirmOpensAt,
             projection.ReconfirmClosesAt,

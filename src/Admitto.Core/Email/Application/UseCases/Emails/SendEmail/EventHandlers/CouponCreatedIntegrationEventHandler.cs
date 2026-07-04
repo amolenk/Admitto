@@ -37,6 +37,7 @@ internal sealed class CouponCreatedIntegrationEventHandler(
             {
                 integrationEvent.RecipientEmail,
                 integrationEvent.CouponCode,
+                eventContext.TeamName,
                 eventContext.EventName,
                 EventWebsite = eventContext.WebsiteUrl,
                 eventContext.PublicEventLink,

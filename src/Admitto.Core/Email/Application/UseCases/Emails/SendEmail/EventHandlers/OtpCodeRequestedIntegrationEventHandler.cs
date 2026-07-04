@@ -38,6 +38,7 @@ internal sealed class OtpCodeRequestedIntegrationEventHandler(
             Parameters: new
             {
                 integrationEvent.PlainCode,
+                eventContext.TeamName,
                 eventContext.EventName,
                 integrationEvent.RecipientEmail,
                 eventContext.TeamAccentColor

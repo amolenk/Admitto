@@ -9,10 +9,20 @@ import {
     SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
-export function NavSettings({ teamId }: { teamId: string }) {
+export function NavSettings({
+    teamId,
+    canManageTeamSettings,
+}: {
+    teamId: string;
+    canManageTeamSettings: boolean;
+}) {
     const router = useRouter();
     const pathname = usePathname();
     const isActive = pathname.startsWith(`/teams/${teamId}/settings`);
+
+    if (!canManageTeamSettings) {
+        return null;
+    }
 
     return (
         <SidebarGroup className="group-data-[collapsible=icon]:hidden">

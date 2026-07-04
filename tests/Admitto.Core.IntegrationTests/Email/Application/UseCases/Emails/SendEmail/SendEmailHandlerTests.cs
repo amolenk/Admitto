@@ -1,6 +1,7 @@
 using Amolenk.Admitto.Core.Email.Application.Sending;
 using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
 using Amolenk.Admitto.Core.Email.Application.Templating;
+using Amolenk.Admitto.Core.Email.Application.Projections.TeamEmailContext;
 using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.DeliverEmail;
 using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail;
 using Amolenk.Admitto.Core.Email.Domain.Entities;
@@ -19,7 +20,7 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
     public async ValueTask HandleAsync_ValidSettings_WritesPendingLogAndDeliveryCommand()
     {
         // Arrange
-        var (teamId, eventId, fakeSender, handler) = BuildHandler();
+        var (teamId, eventId, fakeSender, handler) = await BuildHandlerAsync();
 
         var command = new SendEmailCommand(
             teamId.Value, eventId.Value,
@@ -57,7 +58,7 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
     public async ValueTask HandleAsync_NoSettings_WritesFailedLog()
     {
         // Arrange — no settings seeded
-        var (teamId, eventId, _, handler) = BuildHandler(configureSystemEmail: false);
+        var (teamId, eventId, _, handler) = await BuildHandlerAsync(configureSystemEmail: false);
 
         var command = new SendEmailCommand(
             teamId.Value, eventId.Value,
@@ -87,7 +88,7 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
     public async ValueTask HandleAsync_DuplicateIdempotencyKey_DoesNotDoubleSend()
     {
         // Arrange
-        var (teamId, eventId, fakeSender, handler) = BuildHandler();
+        var (teamId, eventId, fakeSender, handler) = await BuildHandlerAsync();
 
         var command = new SendEmailCommand(
             teamId.Value, eventId.Value,
@@ -115,7 +116,7 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
     [TestMethod]
     public async ValueTask HandleAsync_PreExistingPendingLog_PreparesDeliveryCommandForRecovery()
     {
-        var (teamId, eventId, fakeSender, handler) = BuildHandler();
+        var (teamId, eventId, fakeSender, handler) = await BuildHandlerAsync();
         await SeedLogAsync(teamId, eventId, "test-key-pending-recovery", EmailLogStatus.Pending);
 
         var command = new SendEmailCommand(
@@ -138,7 +139,7 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
     [TestMethod]
     public async ValueTask DeliverEmail_SentLogExists_DoesNotSendAgain()
     {
-        var (teamId, eventId, fakeSender, handler) = BuildDeliverHandler();
+        var (teamId, eventId, fakeSender, handler) = await BuildDeliverHandlerAsync();
         await SeedLogAsync(teamId, eventId, "sent-key", EmailLogStatus.Sent, sentAt: DateTimeOffset.UtcNow);
 
         await handler.HandleAsync(DeliverCommand(teamId, eventId, "sent-key"), testContext.CancellationToken);
@@ -150,7 +151,7 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
     [TestMethod]
     public async ValueTask DeliverEmail_PendingLogExists_SendsAndMarksSent()
     {
-        var (teamId, eventId, fakeSender, handler) = BuildDeliverHandler();
+        var (teamId, eventId, fakeSender, handler) = await BuildDeliverHandlerAsync();
         await SeedLogAsync(teamId, eventId, "deliver-key", EmailLogStatus.Pending);
 
         await handler.HandleAsync(DeliverCommand(teamId, eventId, "deliver-key"), testContext.CancellationToken);
@@ -166,7 +167,7 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
     [TestMethod]
     public async ValueTask DeliverEmail_TransientSmtpFailure_RetriesInlineAndRequeues()
     {
-        var (teamId, eventId, fakeSender, handler) = BuildDeliverHandler(
+        var (teamId, eventId, fakeSender, handler) = await BuildDeliverHandlerAsync(
             new EmailDeliveryOptions
             {
                 InlineRetryCount = 2,
@@ -206,6 +207,7 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
                 PublicEventLink = "https://admitto.example.com/e/devconf",
                 QRCodeLink = "https://admitto.example.com/e/devconf/qr-code/registration-id",
                 CancelLink = "https://admitto.example.com/e/devconf/cancel/registration-id",
+                EditRegistrationLink = "https://admitto.example.com/e/devconf/edit/registration-id",
                 TicketTypes = Array.Empty<string>()
             },
             EmailAccentColor.From("#0f766e"),
@@ -215,8 +217,14 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
 
         rendered.HtmlBody.ShouldContain("href=\"https://admitto.example.com/e/devconf\"");
         rendered.HtmlBody.ShouldContain(">our website</a>");
+        rendered.HtmlBody.ShouldContain("Modify/Cancel Registration");
+        rendered.HtmlBody.ShouldContain("href=\"https://admitto.example.com/e/devconf/edit/registration-id\"");
+        rendered.HtmlBody.ShouldNotContain("Cancel My Registration");
         rendered.HtmlBody.ShouldNotContain("https://devconf.example.com");
         rendered.TextBody.ShouldContain("https://admitto.example.com/e/devconf");
+        rendered.TextBody.ShouldContain("Modify/Cancel your Registration");
+        rendered.TextBody.ShouldContain("https://admitto.example.com/e/devconf/edit/registration-id");
+        rendered.TextBody.ShouldNotContain("Cancel your registration:");
         rendered.TextBody.ShouldNotContain("https://devconf.example.com");
     }
 
@@ -242,11 +250,15 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
         }
     }
 
-    private (TeamId, TicketedEventId, FakeEmailSender, SendEmailHandler) BuildHandler(bool configureSystemEmail = true)
+    private async ValueTask<(TeamId, TicketedEventId, FakeEmailSender, SendEmailHandler)> BuildHandlerAsync(
+        bool configureSystemEmail = true)
     {
         var teamId = TeamId.New();
         var eventId = TicketedEventId.New();
         var fakeSender = new FakeEmailSender();
+
+        if (configureSystemEmail)
+            await SeedTeamEmailContextAsync(teamId);
 
         var settingsResolver = BuildSettingsResolver(configureSystemEmail);
         var templateService = new EmailTemplateService();
@@ -263,12 +275,15 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
         return (teamId, eventId, fakeSender, handler);
     }
 
-    private (TeamId, TicketedEventId, FakeEmailSender, DeliverEmailHandler) BuildDeliverHandler(
+    private async ValueTask<(TeamId, TicketedEventId, FakeEmailSender, DeliverEmailHandler)> BuildDeliverHandlerAsync(
         EmailDeliveryOptions? deliveryOptions = null)
     {
         var teamId = TeamId.New();
         var eventId = TicketedEventId.New();
         var fakeSender = new FakeEmailSender();
+
+        await SeedTeamEmailContextAsync(teamId);
+
         var settingsResolver = BuildSettingsResolver();
         var outbox = new Outbox(Environment.EmailDatabase.Context);
         var options = new StaticOptionsMonitor<EmailDeliveryOptions>(deliveryOptions ?? new EmailDeliveryOptions());
@@ -294,6 +309,15 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
             }
             : new SystemEmailOptions()),
             Environment.EmailDatabase.Context);
+
+    private async ValueTask SeedTeamEmailContextAsync(TeamId teamId)
+    {
+        var now = DateTimeOffset.UtcNow;
+        var teamContext = TeamEmailContextView.CreatePartial(teamId, now);
+        teamContext.UpdateTeamContext("DevConf Team", "#0f766e", null, teamVersion: 1, now);
+
+        await Environment.EmailDatabase.SeedAsync(db => db.TeamEmailContexts.Add(teamContext));
+    }
 
     private async ValueTask SeedLogAsync(
         TeamId teamId,

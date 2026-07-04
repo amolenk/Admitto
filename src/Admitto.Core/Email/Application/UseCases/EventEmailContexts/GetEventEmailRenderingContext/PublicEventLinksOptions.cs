@@ -2,7 +2,7 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.EventEmailContexts.Get
 
 /// <summary>
 /// Deployment configuration for the public base URL used to derive per-event
-/// public links (register/cancel/QR/change-tickets) from the stored public slug.
+/// public links (register/cancel/QR/edit) from the stored public slug.
 /// </summary>
 public sealed class PublicEventLinksOptions
 {

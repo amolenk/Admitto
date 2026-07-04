@@ -85,6 +85,8 @@ public sealed class OpenApiSecuritySchemeTests(TestContext testContext) : EndToE
 
         GetSecuritySchemeNames(root, "/api/events/{eventSlug}/registrations", "post")
             .ShouldBe(["ApiKey", "EmailVerificationBearer"], ignoreOrder: true);
+        GetSecuritySchemeNames(root, "/api/events/{eventSlug}/registrations/resolve", "get")
+            .ShouldBe(["ApiKey", "EmailVerificationBearer"], ignoreOrder: true);
         GetSecuritySchemeNames(root, "/api/events/{eventSlug}/waitlist/{ticketTypeId}", "post")
             .ShouldBe(["ApiKey", "EmailVerificationBearer"], ignoreOrder: true);
     }

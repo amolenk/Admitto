@@ -10,6 +10,7 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.EventEmailContexts.Get
 internal sealed record EventEmailContextDto(
     Guid TeamId,
     Guid TicketedEventId,
+    string TeamName,
     string EventName,
     string WebsiteUrl,
     string PublicEventLink,
@@ -17,7 +18,7 @@ internal sealed record EventEmailContextDto(
     string QRCodeLink,
     string CancelLink,
     string TeamAccentColor,
-    string? ChangeTicketsLink,
+    string EditRegistrationLink,
     string TimeZone,
     DateTimeOffset? ReconfirmOpensAt,
     DateTimeOffset? ReconfirmClosesAt,

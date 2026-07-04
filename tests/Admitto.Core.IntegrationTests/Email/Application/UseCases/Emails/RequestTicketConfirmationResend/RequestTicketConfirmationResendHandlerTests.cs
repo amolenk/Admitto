@@ -1,6 +1,7 @@
 using Amolenk.Admitto.Core.Email.Application.Sending;
 using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
 using Amolenk.Admitto.Core.Email.Application.Templating;
+using Amolenk.Admitto.Core.Email.Application.Projections.TeamEmailContext;
 using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail;
 using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail.EventHandlers;
 using Amolenk.Admitto.Core.Email.Application.UseCases.EventEmailContexts.GetEventEmailRenderingContext;
@@ -29,7 +30,7 @@ public sealed class RequestTicketConfirmationResendHandlerTests(TestContext test
     public async ValueTask HandleAsync_OriginalSentLogExists_CreatesResendLog()
     {
         await SeedOriginalSentLogAsync();
-        var sut = BuildHandler();
+        var sut = await BuildHandlerAsync();
 
         await sut.HandleAsync(Command(), testContext.CancellationToken);
         await Environment.EmailDatabase.Context.SaveChangesAsync(testContext.CancellationToken);
@@ -50,7 +51,7 @@ public sealed class RequestTicketConfirmationResendHandlerTests(TestContext test
     [TestMethod]
     public async ValueTask HandleAsync_SameResendRequestHandledTwice_CreatesOneResendLog()
     {
-        var sut = BuildHandler();
+        var sut = await BuildHandlerAsync();
         var command = Command();
 
         await sut.HandleAsync(command, testContext.CancellationToken);
@@ -65,14 +66,17 @@ public sealed class RequestTicketConfirmationResendHandlerTests(TestContext test
         resendLogCount.ShouldBe(1);
     }
 
-    private TicketConfirmationResendRequestedIntegrationEventHandler BuildHandler()
+    private async ValueTask<TicketConfirmationResendRequestedIntegrationEventHandler> BuildHandlerAsync()
     {
+        await SeedTeamEmailContextAsync();
+
         var eventContextQuery = Substitute.For<IQueryHandler<GetEventEmailRenderingContextQuery, EventEmailContextDto>>();
         eventContextQuery
             .HandleAsync(Arg.Any<GetEventEmailRenderingContextQuery>(), Arg.Any<CancellationToken>())
             .Returns(new EventEmailContextDto(
                 TeamId.Value,
                 EventId.Value,
+                "DevConf Team",
                 "DevConf",
                 "https://devconf.example.com",
                 "https://tickets.example.com/devconf",
@@ -80,7 +84,7 @@ public sealed class RequestTicketConfirmationResendHandlerTests(TestContext test
                 $"https://tickets.example.com/devconf/qr-code/{RegistrationId}",
                 $"https://tickets.example.com/devconf/cancel/{RegistrationId}",
                 "#0f766e",
-                null,
+                $"https://tickets.example.com/devconf/edit/{RegistrationId}",
                 "UTC",
                 null,
                 null,
@@ -89,6 +93,15 @@ public sealed class RequestTicketConfirmationResendHandlerTests(TestContext test
                 false));
 
         return new TicketConfirmationResendRequestedIntegrationEventHandler(eventContextQuery, BuildSendEmailHandler());
+    }
+
+    private async ValueTask SeedTeamEmailContextAsync()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var teamContext = TeamEmailContextView.CreatePartial(TeamId, now);
+        teamContext.UpdateTeamContext("DevConf Team", "#0f766e", null, teamVersion: 1, now);
+
+        await Environment.EmailDatabase.SeedAsync(db => db.TeamEmailContexts.Add(teamContext));
     }
 
     private SendEmailHandler BuildSendEmailHandler() =>

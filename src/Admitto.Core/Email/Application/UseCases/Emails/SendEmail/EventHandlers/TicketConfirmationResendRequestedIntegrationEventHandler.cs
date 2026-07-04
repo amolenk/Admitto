@@ -39,13 +39,14 @@ internal sealed class TicketConfirmationResendRequestedIntegrationEventHandler(
                 RecipientName = fullName,
                 integrationEvent.FirstName,
                 integrationEvent.LastName,
+                eventContext.TeamName,
                 eventContext.EventName,
                 EventWebsite = eventContext.WebsiteUrl,
                 eventContext.PublicEventLink,
                 eventContext.QRCodeLink,
                 eventContext.CancelLink,
                 eventContext.TeamAccentColor,
-                eventContext.ChangeTicketsLink,
+                eventContext.EditRegistrationLink,
                 TicketTypes = integrationEvent.TicketNames
             },
             RegistrationId: integrationEvent.RegistrationId);

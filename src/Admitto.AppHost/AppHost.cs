@@ -190,7 +190,9 @@ var smtpPassword = builder.ExecutionContext.IsPublishMode
     : builder.AddParameter("smtpPassword", value: string.Empty, secret: true);
 
 // TODO Mailgun doesn't seem to work with only TLS (port 465)
-var smtpSsl = builder.AddParameter("smtpSsl", value: "true");
+var smtpSsl = builder.AddParameter(
+    "smtpSsl",
+    value: builder.ExecutionContext.IsPublishMode ? "true" : "false");
 
 var smtpStartTls = builder.ExecutionContext.IsPublishMode
     ? builder.AddParameter("smtpStartTls", value: "true")
@@ -468,7 +470,8 @@ if (!infraOnly)
         worker
             // Disable caching to avoid stale data issues in tests
             .WithEnvironment("CACHING__ENABLED", builder.Environment.IsDevelopment().ToString())
-            .WithEnvironment("EMAIL__SYSTEM__SMTPHOST",
+            .WithEnvironment(
+                "EMAIL__SYSTEM__SMTPHOST",
                 ReferenceExpression.Create($"{mailDev!.GetEndpoint("smtp").Property(EndpointProperty.Host)}"))
             .WithEnvironment(
                 "EMAIL__SYSTEM__SMTPPORT",

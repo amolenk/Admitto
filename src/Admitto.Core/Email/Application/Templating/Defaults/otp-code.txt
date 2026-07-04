@@ -1,14 +1,18 @@
-Your verification code for {{ event_name }}
+Your {{ event_name }} registration code
 
 Hi,
 
-You requested a one-time verification code to register for {{ event_name }}.
+Use this code to continue your {{ event_name }} registration:
 
 Your code is:
 
 {{ plain_code }}
 
-This code expires in 10 minutes. If you did not request this code, you can safely ignore this email.
+This code expires in 10 minutes.
+
+This message was sent by Admitto, the ticket registration system used for {{ event_name }}.
+
+If you did not request this code, you can safely ignore this email.
 
 Best regards,
-The {{ event_name }} Team
+The {{ team_name }} Team

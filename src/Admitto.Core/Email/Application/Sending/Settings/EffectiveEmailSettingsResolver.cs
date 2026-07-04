@@ -48,14 +48,26 @@ internal sealed class EffectiveEmailSettingsResolver(
             .Select(c => new
             {
                 c.TeamName,
-                c.ReplyToEmailAddress
+                c.ReplyToEmailAddress,
+                c.AccentColor
             })
             .SingleOrDefaultAsync(cancellationToken);
 
+        if (teamContext is null)
+        {
+            throw new InvalidOperationException($"No email context found for team {teamId.Value}");
+        }
+
         var fromAddress = EmailAddress.From(value.FromAddress);
-        var fromDisplayName = string.IsNullOrWhiteSpace(teamContext?.TeamName)
-            ? fromAddress.Value
-            : teamContext.TeamName;
+        var fromDisplayName = $"{teamContext.TeamName} via Admitto";
+
+        EmailAddress? replyToAddress = null;
+        string? replyToDisplayName = null;
+        if (teamContext.ReplyToEmailAddress is not null)
+        {
+            replyToAddress = teamContext.ReplyToEmailAddress;
+            replyToDisplayName = $"{teamContext.TeamName} Team";
+        }
 
         return new EffectiveEmailSettings(
             Hostname.From(value.SmtpHost),
@@ -64,11 +76,12 @@ internal sealed class EffectiveEmailSettingsResolver(
             value.SmtpStartTls,
             fromAddress,
             fromDisplayName,
-            teamContext?.ReplyToEmailAddress,
+            replyToAddress,
+            replyToDisplayName,
             authMode,
             authMode == EmailAuthMode.Basic ? value.Username : null,
             authMode == EmailAuthMode.Basic ? value.Password : null,
-            EmailAccentColor.From("#2563eb"),
+            teamContext.AccentColor!.Value,
             EmailFontFamily.From("Inter, sans-serif"));
     }
 
