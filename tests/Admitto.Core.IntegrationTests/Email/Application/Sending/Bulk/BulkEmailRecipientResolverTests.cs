@@ -12,13 +12,14 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.Sending.Bulk;
 public sealed class BulkEmailRecipientResolverTests
 {
     [TestMethod]
-    public async Task ResolveAsync_AttendeeSource_PassesFilterToFacadeAndProjectsRows()
+    public async Task ResolveAsync_AttendeeFilter_MapsFilterToContractAndProjectsRows()
     {
         // Arrange
         var eventId = TicketedEventId.New();
         var teamId = TeamId.New();
-        var filter = new QueryRegistrationsDto(
-            TicketTypeIds: [Guid.NewGuid()],
+        var ticketTypeId = Guid.NewGuid();
+        var attendeeFilter = new BulkEmailAttendeeFilter(
+            TicketTypeIds: [ticketTypeId],
             RegistrationStatus: RegistrationStatus.Registered,
             HasReconfirmed: false);
 
@@ -40,7 +41,7 @@ public sealed class BulkEmailRecipientResolverTests
                 RegistrationId: Guid.NewGuid(),
                 Email: "bob@example.com",
                 FirstName: "Bob",
-                LastName: "",
+                LastName: "Jones",
                 TicketTypeIds: [],
                 AdditionalDetails: new Dictionary<string, string>(),
                 CreatedAt: DateTimeOffset.UtcNow,
@@ -51,18 +52,29 @@ public sealed class BulkEmailRecipientResolverTests
         };
 
         var facade = Substitute.For<IRegistrationsFacade>();
-        facade.GetRegistrationsAsync(teamId.Value, eventId.Value, filter, Arg.Any<CancellationToken>())
+        facade.GetRegistrationsAsync(
+                teamId.Value,
+                eventId.Value,
+                Arg.Any<QueryRegistrationsDto>(),
+                Arg.Any<CancellationToken>())
             .Returns(rows);
 
         var resolver = new BulkEmailRecipientResolver(facade);
 
         // Act
         var recipients = await resolver.ResolveAsync(
-            teamId, eventId, new AttendeeSource(filter), CancellationToken.None);
+            teamId, eventId, attendeeFilter, CancellationToken.None);
 
-        // Assert
-        await facade.Received(1)
-            .GetRegistrationsAsync(teamId.Value, eventId.Value, filter, Arg.Any<CancellationToken>());
+        // Assert — the Email-owned filter is translated to the Registrations query contract.
+        await facade.Received(1).GetRegistrationsAsync(
+            teamId.Value,
+            eventId.Value,
+            Arg.Is<QueryRegistrationsDto>(q =>
+                q.TicketTypeIds!.Contains(ticketTypeId)
+                && q.RegistrationStatus == RegistrationStatus.Registered
+                && q.HasReconfirmed == false),
+            Arg.Any<CancellationToken>());
+
         recipients.Count.ShouldBe(2);
 
         var alice = recipients[0];
@@ -75,35 +87,12 @@ public sealed class BulkEmailRecipientResolverTests
         aliceParams.GetProperty("email").GetString().ShouldBe("Alice@Example.com");
 
         var bob = recipients[1];
-        bob.DisplayName.ShouldBe("Bob");
+        bob.DisplayName.ShouldBe("Bob Jones");
+        bob.RegistrationId.ShouldBe(RegistrationId.From(rows[1].RegistrationId));
     }
 
     [TestMethod]
-    public async Task ResolveAsync_ExternalListSource_ReturnsLiteralItems()
-    {
-        var resolver = new BulkEmailRecipientResolver(Substitute.For<IRegistrationsFacade>());
-        var source = new ExternalListSource(
-        [
-            new ExternalListItem(EmailAddress.From("alice@example.com"), "Alice"),
-            new ExternalListItem(EmailAddress.From("bob@example.com"), DisplayName: null),
-        ]);
-
-        var recipients = await resolver.ResolveAsync(
-            TeamId.New(), TicketedEventId.New(), source, CancellationToken.None);
-
-        recipients.Count.ShouldBe(2);
-        recipients[0].Email.ShouldBe(EmailAddress.From("alice@example.com"));
-        recipients[0].DisplayName.ShouldBe("Alice");
-        recipients[0].RegistrationId.ShouldBeNull();
-        recipients[1].DisplayName.ShouldBeNull();
-
-        var bobParams = JsonSerializer.Deserialize<JsonElement>(recipients[1].ParametersJson);
-        bobParams.GetProperty("email").GetString().ShouldBe("bob@example.com");
-        bobParams.GetProperty("display_name").ValueKind.ShouldBe(JsonValueKind.Null);
-    }
-
-    [TestMethod]
-    public async Task ResolveAsync_AttendeeSource_NoMatches_ReturnsEmptyList()
+    public async Task ResolveAsync_AttendeeFilter_NoMatches_ReturnsEmptyList()
     {
         var facade = Substitute.For<IRegistrationsFacade>();
         facade.GetRegistrationsAsync(TeamId.New().Value, TicketedEventId.New().Value, default!, default)
@@ -114,21 +103,7 @@ public sealed class BulkEmailRecipientResolverTests
         var recipients = await resolver.ResolveAsync(
             TeamId.New(),
             TicketedEventId.New(),
-            new AttendeeSource(new QueryRegistrationsDto()),
-            CancellationToken.None);
-
-        recipients.ShouldBeEmpty();
-    }
-
-    [TestMethod]
-    public async Task ResolveAsync_ExternalListSource_Empty_ReturnsEmptyList()
-    {
-        var resolver = new BulkEmailRecipientResolver(Substitute.For<IRegistrationsFacade>());
-
-        var recipients = await resolver.ResolveAsync(
-            TeamId.New(),
-            TicketedEventId.New(),
-            new ExternalListSource(Array.Empty<ExternalListItem>()),
+            new BulkEmailAttendeeFilter(),
             CancellationToken.None);
 
         recipients.ShouldBeEmpty();

@@ -18,9 +18,15 @@ These three decisions are tightly coupled — snapshot semantics enable single-c
 
 ### D1 — Recipients are snapshotted once when a `BulkEmailJob` starts and frozen for its lifetime
 
-When a `BulkEmailJob` transitions `Pending → Resolving`, the resolver calls `IRegistrationsFacade.QueryRegistrationsAsync(eventId, filters)` (for an attendee source) or reads the embedded list (for an external source) and persists a `BulkEmailRecipient` snapshot on the job: `(email, displayName, registrationId?, parametersJson, status)`. Subsequent retries of the fan-out re-read the snapshot; they do **not** re-query Registrations.
+When a `BulkEmailJob` transitions `Pending → Resolving`, the resolver maps the job's Email-owned `BulkEmailAttendeeFilter` to the Registrations `QueryRegistrationsDto` contract, calls `IRegistrationsFacade.GetRegistrationsAsync(eventId, filter)`, and persists a `BulkEmailRecipient` snapshot on the job: `(email, displayName, registrationId, parametersJson, status)`. Subsequent retries of the fan-out re-read the snapshot; they do **not** re-query Registrations.
 
 Reconfirm jobs are scheduled per cadence tick — each tick is a fresh job, so the at-tick state is naturally captured.
+
+**Single recipient source (updated by `remove-bulk-email-csv`).** A bulk-email job targets registered attendees only. The earlier discriminated-source model (`BulkEmailJobSource` with `AttendeeSource` + `ExternalListSource`, the CSV / arbitrary-recipient path) was removed to protect the sending domain's reputation; there is no longer a second recipient source. With one source, the polymorphic value object was collapsed:
+
+- The job persists a single Email-module-owned `BulkEmailAttendeeFilter` value object (jsonb column `attendee_filter`), **not** the Registrations `QueryRegistrationsDto` contract type. Email owns its persisted shape and translates to the contract only transiently, in `BulkEmailRecipientResolver` at the facade-call boundary. Residual coupling is limited to the shared contract primitives `RegistrationStatus` and `RegistrationId`.
+- Because every recipient now originates from a registration, `BulkEmailRecipient.DisplayName` and `RegistrationId` are non-nullable, and the fan-out always builds per-registration action links.
+- The create/preview HTTP contract carries the attendee filter directly; the "exactly one of attendee/external-list" validation and the external-list DTOs were removed.
 
 ### D2 — Bulk fan-out uses a single SMTP connection per worker pickup, with per-recipient `EmailLog` idempotency
 

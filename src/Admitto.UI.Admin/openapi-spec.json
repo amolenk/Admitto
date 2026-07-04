@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:60261/"
+      "url": "http://localhost:62341/"
     }
   ],
   "paths": {
@@ -7072,7 +7072,7 @@
           }
         }
       },
-      "AttendeeSourceHttpDto": {
+      "AttendeeFilterHttpDto": {
         "type": "object",
         "properties": {
           "ticketTypeIds": {
@@ -7192,6 +7192,70 @@
           }
         }
       },
+      "BulkEmailAttendeeFilter": {
+        "type": "object",
+        "properties": {
+          "ticketTypeIds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          "registrationStatus": {
+            "oneOf": [
+              {
+                "type": "null"
+              },
+              {
+                "$ref": "#/components/schemas/RegistrationStatus"
+              }
+            ]
+          },
+          "hasReconfirmed": {
+            "type": [
+              "null",
+              "boolean"
+            ]
+          },
+          "registeredAfter": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "registeredBefore": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "additionalDetailEquals": {
+            "type": [
+              "null",
+              "object"
+            ],
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "registrationIds": {
+            "type": [
+              "null",
+              "array"
+            ],
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        }
+      },
       "BulkEmailJobDetailDto": {
         "required": [
           "id",
@@ -7201,7 +7265,7 @@
           "subject",
           "textBody",
           "htmlBody",
-          "source",
+          "attendeeFilter",
           "status",
           "recipientCount",
           "sentCount",
@@ -7253,8 +7317,8 @@
               "string"
             ]
           },
-          "source": {
-            "$ref": "#/components/schemas/BulkEmailJobSource"
+          "attendeeFilter": {
+            "$ref": "#/components/schemas/BulkEmailAttendeeFilter"
           },
           "status": {
             "$ref": "#/components/schemas/BulkEmailJobStatus"
@@ -7350,62 +7414,6 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/BulkEmailRecipientDto"
-            }
-          }
-        }
-      },
-      "BulkEmailJobSource": {
-        "required": [
-          "$type"
-        ],
-        "type": "object",
-        "anyOf": [
-          {
-            "$ref": "#/components/schemas/BulkEmailJobSourceAttendeeSource"
-          },
-          {
-            "$ref": "#/components/schemas/BulkEmailJobSourceExternalListSource"
-          }
-        ],
-        "discriminator": {
-          "propertyName": "$type",
-          "mapping": {
-            "attendee": "#/components/schemas/BulkEmailJobSourceAttendeeSource",
-            "external_list": "#/components/schemas/BulkEmailJobSourceExternalListSource"
-          }
-        }
-      },
-      "BulkEmailJobSourceAttendeeSource": {
-        "required": [
-          "filter"
-        ],
-        "properties": {
-          "$type": {
-            "enum": [
-              "attendee"
-            ],
-            "type": "string"
-          },
-          "filter": {
-            "$ref": "#/components/schemas/QueryRegistrationsDto"
-          }
-        }
-      },
-      "BulkEmailJobSourceExternalListSource": {
-        "required": [
-          "items"
-        ],
-        "properties": {
-          "$type": {
-            "enum": [
-              "external_list"
-            ],
-            "type": "string"
-          },
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ExternalListItem"
             }
           }
         }
@@ -7539,16 +7547,10 @@
             "type": "string"
           },
           "displayName": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": "string"
           },
           "registrationId": {
-            "type": [
-              "null",
-              "string"
-            ],
+            "type": "string",
             "format": "uuid"
           },
           "status": {
@@ -7573,10 +7575,7 @@
             "type": "string"
           },
           "displayName": {
-            "type": [
-              "null",
-              "string"
-            ]
+            "type": "string"
           }
         }
       },
@@ -7587,31 +7586,6 @@
           "failed",
           "cancelled"
         ]
-      },
-      "BulkEmailSourceHttpDto": {
-        "type": "object",
-        "properties": {
-          "attendee": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/AttendeeSourceHttpDto"
-              }
-            ]
-          },
-          "externalList": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/ExternalListSourceHttpDto"
-              }
-            ]
-          }
-        }
       },
       "CancelRegistrationHttpRequest": {
         "required": [
@@ -7926,7 +7900,7 @@
           "subject",
           "textBody",
           "htmlBody",
-          "source"
+          "attendeeFilter"
         ],
         "type": "object",
         "properties": {
@@ -7942,8 +7916,8 @@
           "htmlBody": {
             "type": "string"
           },
-          "source": {
-            "$ref": "#/components/schemas/BulkEmailSourceHttpDto"
+          "attendeeFilter": {
+            "$ref": "#/components/schemas/AttendeeFilterHttpDto"
           }
         }
       },
@@ -8028,7 +8002,6 @@
           }
         }
       },
-      "EmailAddress": { },
       "EventCreationRequestDto": {
         "required": [
           "creationRequestId",
@@ -8088,56 +8061,6 @@
           "active",
           "archived"
         ]
-      },
-      "ExternalListItem": {
-        "required": [
-          "email",
-          "displayName"
-        ],
-        "type": "object",
-        "properties": {
-          "email": {
-            "$ref": "#/components/schemas/EmailAddress"
-          },
-          "displayName": {
-            "type": [
-              "null",
-              "string"
-            ]
-          }
-        }
-      },
-      "ExternalListRecipientHttpDto": {
-        "required": [
-          "email",
-          "displayName"
-        ],
-        "type": "object",
-        "properties": {
-          "email": {
-            "type": "string"
-          },
-          "displayName": {
-            "type": [
-              "null",
-              "string"
-            ]
-          }
-        }
-      },
-      "ExternalListSourceHttpDto": {
-        "required": [
-          "items"
-        ],
-        "type": "object",
-        "properties": {
-          "items": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ExternalListRecipientHttpDto"
-            }
-          }
-        }
       },
       "FieldDto": {
         "required": [
@@ -8347,12 +8270,12 @@
       },
       "PreviewBulkEmailHttpRequest": {
         "required": [
-          "source"
+          "attendeeFilter"
         ],
         "type": "object",
         "properties": {
-          "source": {
-            "$ref": "#/components/schemas/BulkEmailSourceHttpDto"
+          "attendeeFilter": {
+            "$ref": "#/components/schemas/AttendeeFilterHttpDto"
           }
         }
       },
@@ -8474,70 +8397,6 @@
           },
           "status": {
             "$ref": "#/components/schemas/PublicTicketStatus"
-          }
-        }
-      },
-      "QueryRegistrationsDto": {
-        "type": "object",
-        "properties": {
-          "ticketTypeIds": {
-            "type": [
-              "null",
-              "array"
-            ],
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          "registrationStatus": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/RegistrationStatus"
-              }
-            ]
-          },
-          "hasReconfirmed": {
-            "type": [
-              "null",
-              "boolean"
-            ]
-          },
-          "registeredAfter": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          },
-          "registeredBefore": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          },
-          "additionalDetailEquals": {
-            "type": [
-              "null",
-              "object"
-            ],
-            "additionalProperties": {
-              "type": "string"
-            }
-          },
-          "registrationIds": {
-            "type": [
-              "null",
-              "array"
-            ],
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            }
           }
         }
       },

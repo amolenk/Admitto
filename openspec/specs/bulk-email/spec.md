@@ -3,12 +3,10 @@
 ## Purpose
 
 The Email module supports sending bulk emails to groups of attendees or external recipients, driven by a persistent `BulkEmailJob` aggregate that tracks lifecycle, recipients, complete job-owned content for custom sends, and send progress. Bulk sends fan out over a single SMTP connection per worker pickup and support cooperative cancellation at any point before completion.
-
 ## Requirements
-
 ### Requirement: Bulk-email jobs are first-class aggregates with a tracked lifecycle
 
-The Email module SHALL persist a `BulkEmailJob` aggregate (in the `email` schema) for every bulk send. Each job SHALL carry a unique `Id`, the owning `TeamId` and `TicketedEventId`, the `EmailType` (one of the canonical set including `reconfirm` and `bulk-custom`), the content fields required for its type, the resolved `Source` descriptor, the user identity that triggered it (or a system-user marker for scheduled reconfirm jobs), the resolved `Recipients` snapshot, the running totals `RecipientCount`/`SentCount`/`FailedCount`/`CancelledCount`, the `Status`, an optional `LastError`, timestamps `CreatedAt`/`StartedAt`/`CompletedAt`/`CancellationRequestedAt?`/`CancelledAt?`, and a `Version` token for optimistic concurrency.
+The Email module SHALL persist a `BulkEmailJob` aggregate (in the `email` schema) for every bulk send. Each job SHALL carry a unique `Id`, the owning `TeamId` and `TicketedEventId`, the `EmailType` (one of the canonical set including `reconfirm` and `bulk-custom`), the content fields required for its type, the resolved attendee recipient filter (an Email-owned value persisted independently of the Registrations query contract), the user identity that triggered it (or a system-user marker for scheduled reconfirm jobs), the resolved `Recipients` snapshot, the running totals `RecipientCount`/`SentCount`/`FailedCount`/`CancelledCount`, the `Status`, an optional `LastError`, timestamps `CreatedAt`/`StartedAt`/`CompletedAt`/`CancellationRequestedAt?`/`CancelledAt?`, and a `Version` token for optimistic concurrency.
 
 For `bulk-custom`, `Subject`, `TextBody`, and `HtmlBody` SHALL all be required and persisted on the job as the immutable content snapshot. System-triggered built-in email types such as `reconfirm` MAY use code-owned built-in content instead of job-owned content.
 
@@ -16,8 +14,8 @@ Status SHALL be one of: `Pending` (created, not yet picked up), `Resolving` (rec
 
 #### Scenario: Custom job created in Pending state with complete content
 
-- **WHEN** an organizer triggers a custom bulk send for event "DevConf" with `Subject`, `TextBody`, `HtmlBody`, and an attendee source
-- **THEN** a new `BulkEmailJob` row is persisted with `Status=Pending`, `RecipientCount=0`, the trigger user id, the content fields, and the source descriptor
+- **WHEN** an organizer triggers a custom bulk send for event "DevConf" with `Subject`, `TextBody`, `HtmlBody`, and an attendee filter
+- **THEN** a new `BulkEmailJob` row is persisted with `Status=Pending`, `RecipientCount=0`, the trigger user id, the content fields, and the attendee filter
 
 #### Scenario: Lifecycle transitions are linear
 
@@ -39,41 +37,19 @@ Status SHALL be one of: `Pending` (created, not yet picked up), `Resolving` (rec
 - **WHEN** a cancel request is issued against a job in `Completed`, `PartiallyFailed`, `Failed`, or `Cancelled`
 - **THEN** the request is rejected with a domain error and the status is unchanged
 
----
-
-### Requirement: A bulk-email job has exactly one recipient source - attendee or external list
-
-A `BulkEmailJob.Source` SHALL be exactly one of two discriminated value types: `AttendeeSource` or `ExternalListSource`. There SHALL NOT be a combined / multi-source shape; an organizer who needs to email both registered attendees and an external list SHALL create two separate jobs.
-
-`AttendeeSource` SHALL carry filters consumable by `IRegistrationsFacade.GetRegistrationsAsync`, including at minimum: `TicketTypeSlugs?` (any-of match), `RegistrationStatus?`, `HasReconfirmed?`, `RegisteredAfter?`/`RegisteredBefore?`, and `AdditionalDetailEquals?` (key/value pairs).
-
-`ExternalListSource` SHALL carry an array of `(Email, DisplayName?)` items supplied at request time. There SHALL NOT be a separate persisted "saved recipient list" entity.
-
-#### Scenario: Attendee source resolves against live Registrations data at job start
-
-- **WHEN** a job with `AttendeeSource(ticketTypeSlugs=["workshop-a"])` enters `Resolving`
-- **THEN** the resolver calls `IRegistrationsFacade.GetRegistrationsAsync` with the filters and receives one row per matching registration
-
-#### Scenario: External list source needs no facade call
-
-- **WHEN** a job with `ExternalListSource([("alice@x.org","Alice"),("bob@x.org",null)])` enters `Resolving`
-- **THEN** the resolver materialises exactly those two recipients without calling the Registrations facade
-
-#### Scenario: Two-job pattern for mixed audiences
-
-- **WHEN** an organizer needs to email both all "workshop-a" attendees and an external invite list
-- **THEN** they submit two separate bulk jobs and each carries its own audit record
-
----
-
 ### Requirement: Recipient resolution snapshots once and freezes
 
-When a job transitions from `Pending` to `Resolving`, the resolver SHALL persist the resolved recipient set as `BulkEmailRecipient` value objects on the job (each with `Email`, `DisplayName?`, `RegistrationId?`, `ParametersJson` for any per-recipient template parameters, and a per-recipient `Status` field with values `Pending`/`Sent`/`Failed`/`Cancelled` plus optional `LastError`). Subsequent re-runs of the fan-out SHALL re-read from this snapshot and SHALL NOT re-query the Registrations facade for attendee sources.
+When a job transitions from `Pending` to `Resolving`, the resolver SHALL persist the resolved recipient set as `BulkEmailRecipient` value objects on the job (each with `Email`, `DisplayName`, `RegistrationId`, `ParametersJson` for any per-recipient template parameters, and a per-recipient `Status` field with values `Pending`/`Sent`/`Failed`/`Cancelled` plus optional `LastError`). Because every recipient originates from a registered attendee, `DisplayName` and `RegistrationId` SHALL always be populated. Subsequent re-runs of the fan-out SHALL re-read from this snapshot and SHALL NOT re-query the Registrations facade.
 
 #### Scenario: Snapshot persisted before fan-out begins
 
 - **WHEN** the resolver finishes
 - **THEN** the job carries a complete `Recipients` collection with every entry in per-recipient `Status=Pending` and the job transitions to `Sending`, all in the same database transaction
+
+#### Scenario: Every recipient carries a registration identity
+
+- **WHEN** the resolver materialises the attendee snapshot
+- **THEN** every `BulkEmailRecipient` has a non-null `RegistrationId` and a non-null `DisplayName` derived from the attendee's first and last name
 
 #### Scenario: Worker restart resumes from snapshot
 
@@ -84,8 +60,6 @@ When a job transitions from `Pending` to `Resolving`, the resolver SHALL persist
 
 - **WHEN** a registration matching the criteria is cancelled in Registrations after the snapshot but before its email is sent
 - **THEN** the bulk send still attempts to email that recipient because the snapshot is authoritative
-
----
 
 ### Requirement: Fan-out streams over a single SMTP connection per worker pickup
 
@@ -219,8 +193,8 @@ The Email module SHALL expose a query that returns, for any `BulkEmailJob`, the 
 
 The Email module SHALL expose admin HTTP endpoints under `/admin/teams/{teamSlug}/events/{eventSlug}/bulk-emails`:
 
-- `POST /preview` - synchronously resolve a recipient source against live data and return `{count, sample[]}` (sample capped, default 100). Does NOT create a job.
-- `POST /` - create a `BulkEmailJob` from a request DTO (`emailType`, required `subject`/`textBody`/`htmlBody` for `bulk-custom`, `source` - exactly one of `attendee`/`externalList`). Returns `Created` with the new job id.
+- `POST /preview` - synchronously resolve an attendee recipient filter against live data and return `{count, sample[]}` (sample capped, default 100). Does NOT create a job.
+- `POST /` - create a `BulkEmailJob` from a request DTO (`emailType`, required `subject`/`textBody`/`htmlBody` for `bulk-custom`, and an attendee recipient filter). Returns `Created` with the new job id.
 - `GET /` - list jobs for the event, newest first, with status and totals.
 - `GET /{id}` - fetch one job's audit detail.
 - `POST /{id}/cancel` - cooperatively cancel a job that has not yet reached a terminal state (`Pending`, `Resolving`, or `Sending`). Sets `CancellationRequestedAt` and returns immediately; the worker observes the flag and finalises the job to `Cancelled` between recipients.
@@ -229,22 +203,17 @@ All endpoints SHALL require team-membership authorisation on the team owning the
 
 #### Scenario: Preview returns count and sample without persisting
 
-- **WHEN** an organizer previews an `AttendeeSource(ticketTypeSlugs=["workshop-a"])` source on event "DevConf"
+- **WHEN** an organizer previews an attendee filter (`ticketTypeIds=["workshop-a"]`) on event "DevConf"
 - **THEN** the response contains the matched count and a sample of up to 100 recipient emails, and no `BulkEmailJob` row is created
 
 #### Scenario: Create returns 201 with the job id
 
-- **WHEN** an organizer posts a valid custom bulk-send request with subject, text body, HTML body, and one source
+- **WHEN** an organizer posts a valid custom bulk-send request with subject, text body, HTML body, and an attendee filter
 - **THEN** the response is `201 Created` and includes the new `BulkEmailJob` id; the job is persisted in `Pending`
 
 #### Scenario: Create rejects missing body content
 
 - **WHEN** an organizer posts a `bulk-custom` request missing `TextBody` or `HtmlBody`
-- **THEN** the request is rejected with a validation error
-
-#### Scenario: Create rejects a request carrying both source shapes
-
-- **WHEN** the request body somehow contains both `attendee` and `externalList` source fields
 - **THEN** the request is rejected with a validation error
 
 #### Scenario: Cancel during Sending is accepted and finalises cooperatively
@@ -261,8 +230,6 @@ All endpoints SHALL require team-membership authorisation on the team owning the
 
 - **WHEN** a user who is not a member of the owning team calls any bulk-emails endpoint
 - **THEN** the response is `403 Forbidden`
-
----
 
 ### Requirement: Bulk built-in template rendering uses Email event context
 
@@ -284,3 +251,22 @@ Custom bulk-email jobs SHALL continue to use job-owned subject/body content and 
 
 - **WHEN** a `bulk-custom` job is processed
 - **THEN** the worker renders the persisted job-owned subject and body content, using the Email projection only for reusable branding/context parameters and not as the source of custom content
+
+### Requirement: A bulk-email job targets registered attendees via an Email-owned filter
+
+A `BulkEmailJob` SHALL resolve its recipients from registered attendees only. The job SHALL persist a single attendee recipient filter that is consumable by `IRegistrationsFacade.GetRegistrationsAsync`, including at minimum: `TicketTypeIds?` (any-of match), `RegistrationStatus?`, `HasReconfirmed?`, `RegisteredAfter?`/`RegisteredBefore?`, `AdditionalDetailEquals?` (key/value pairs), and `RegistrationIds?` (allowlist for system-triggered sends).
+
+The persisted filter SHALL be an Email-module-owned value object, NOT the Registrations query contract type. The Email module SHALL translate its owned filter into the Registrations query contract only transiently at the facade call boundary, so the Registrations query DTO SHALL NOT be part of the Email module's durable state.
+
+There SHALL NOT be any recipient source other than registered attendees; arbitrary/external recipient lists SHALL NOT be supported.
+
+#### Scenario: Attendee filter resolves against live Registrations data at job start
+
+- **WHEN** a job with an attendee filter (`ticketTypeIds=["workshop-a"]`) enters `Resolving`
+- **THEN** the resolver maps the Email-owned filter to the Registrations query contract, calls `IRegistrationsFacade.GetRegistrationsAsync`, and receives one row per matching registration
+
+#### Scenario: Registrations query contract is not persisted
+
+- **WHEN** a bulk-email job is persisted
+- **THEN** the stored filter is the Email-owned value object and no `Registrations.Contracts` query DTO is written to the Email schema
+

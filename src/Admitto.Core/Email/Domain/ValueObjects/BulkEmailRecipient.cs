@@ -16,13 +16,14 @@ public sealed class BulkEmailRecipient
 #pragma warning disable VOG009
         Email = default!;
 #pragma warning restore VOG009
+        DisplayName = default!;
         ParametersJson = "{}";
     }
 
     public BulkEmailRecipient(
         EmailAddress email,
-        string? displayName,
-        RegistrationId? registrationId,
+        string displayName,
+        RegistrationId registrationId,
         string parametersJson)
     {
         Email = email;
@@ -34,8 +35,8 @@ public sealed class BulkEmailRecipient
     }
 
     public EmailAddress Email { get; private set; }
-    public string? DisplayName { get; private set; }
-    public RegistrationId? RegistrationId { get; private set; }
+    public string DisplayName { get; private set; }
+    public RegistrationId RegistrationId { get; private set; }
     public string ParametersJson { get; private set; }
     public BulkEmailRecipientStatus Status { get; private set; }
     public string? LastError { get; private set; }

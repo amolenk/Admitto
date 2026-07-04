@@ -31,7 +31,7 @@ public static class CreateBulkEmailHttpEndpoint
             request.Subject,
             request.TextBody,
             request.HtmlBody,
-            request.Source.ToDomain());
+            request.AttendeeFilter.ToDomain());
 
         var bulkEmailJobId = await handler.HandleAsync(command, ct);
 

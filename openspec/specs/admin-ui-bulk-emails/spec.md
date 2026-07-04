@@ -3,9 +3,7 @@
 ## Purpose
 
 The Admin UI lets organizers view, audit, create, and cancel event bulk email campaigns. Custom campaign content is authored directly in the send flow and stored on the bulk email job.
-
 ## Requirements
-
 ### Requirement: Bulk Emails list page shows all bulk email jobs for an event
 
 The Admin UI SHALL render a Bulk Emails list page at `/teams/{teamSlug}/events/{eventSlug}/emails/campaigns`. The page SHALL fetch all bulk email jobs from `GET /admin/teams/{teamSlug}/events/{eventSlug}/bulk-emails` and display them in a table. Each row SHALL show at minimum: a human-readable label for the email type (e.g. "Custom" for `bulk-custom`, "Reconfirm" for `reconfirm`), the job status with a colour-coded badge, recipient count, sent count, failed count, the trigger (organizer name or "System"), and the creation timestamp. The table SHALL default to newest-first order.
@@ -43,7 +41,7 @@ The Bulk Emails list page is accessed via the **Campaigns** tab in the unified E
 
 ### Requirement: Bulk Email job detail page shows audit information and supports cancellation
 
-The Admin UI SHALL render a detail page at `/teams/{teamSlug}/events/{eventSlug}/emails/campaigns/{jobId}` that fetches job details from `GET /admin/.../bulk-emails/{id}`. The page SHALL display: job status, email type, trigger, source descriptor (attendee filters or "External list (N recipients)"), job-owned subject/body if present, timestamps (created, started, completed), totals (recipient count, sent, failed, cancelled), and a list or count of failed recipients with their last error. A "Back to bulk emails" link SHALL navigate to the campaigns tab.
+The Admin UI SHALL render a detail page at `/teams/{teamSlug}/events/{eventSlug}/emails/campaigns/{jobId}` that fetches job details from `GET /admin/.../bulk-emails/{id}`. The page SHALL display: job status, email type, trigger, the attendee recipient filter that scoped the send, job-owned subject/body if present, timestamps (created, started, completed), totals (recipient count, sent, failed, cancelled), and a list or count of failed recipients with their last error. A "Back to bulk emails" link SHALL navigate to the campaigns tab.
 
 For jobs in a non-terminal state (Pending, Resolving, Sending), a "Cancel" button SHALL be shown. Clicking it SHALL call `POST /admin/.../bulk-emails/{id}/cancel`, show a success notification, and refresh the job status.
 
@@ -51,6 +49,11 @@ For jobs in a non-terminal state (Pending, Resolving, Sending), a "Cancel" butto
 
 - **WHEN** an organizer opens the detail page for a Completed bulk email job at the new URL
 - **THEN** the page shows status "Completed", sent count, failed count, creation and completion timestamps
+
+#### Scenario: Detail page shows the attendee filter
+
+- **WHEN** an organizer opens the detail page for a job scoped by ticket type
+- **THEN** the page shows the attendee recipient filter and does not offer an "External list" source descriptor
 
 #### Scenario: Cancel button present for active jobs
 
@@ -72,11 +75,9 @@ For jobs in a non-terminal state (Pending, Resolving, Sending), a "Cancel" butto
 - **WHEN** a browser navigates to `/teams/acme/events/devconf-2026/emails/abc123`
 - **THEN** the browser is permanently redirected to `/teams/acme/events/devconf-2026/emails/campaigns/abc123`
 
----
-
 ### Requirement: Send bulk email action uses a Sheet panel
 
-The "Send bulk email" action SHALL be presented as a `Sheet` slide-in panel rather than a modal dialog. The Sheet SHALL slide from the right on desktop and from the bottom on mobile. The form SHALL collect custom bulk content directly: Subject, Text Body, HTML Body, and recipient selection. It SHALL NOT require or allow selecting a stored template.
+The "Send bulk email" action SHALL be presented as a `Sheet` slide-in panel rather than a modal dialog. The Sheet SHALL slide from the right on desktop and from the bottom on mobile. The form SHALL collect custom bulk content directly: Subject, Text Body, HTML Body, and attendee recipient selection. It SHALL NOT require or allow selecting a stored template. Recipient selection SHALL target registered attendees only: the Sheet SHALL NOT offer CSV/file upload or any arbitrary/external recipient list input, and SHALL NOT parse recipient files client-side.
 
 #### Scenario: Send bulk email opens as Sheet
 
@@ -88,6 +89,11 @@ The "Send bulk email" action SHALL be presented as a `Sheet` slide-in panel rath
 - **WHEN** the Sheet opens
 - **THEN** it shows required fields for Subject, Text Body, and HTML Body before or alongside recipient selection
 
+#### Scenario: Recipient selection is attendee-only
+
+- **WHEN** the Sheet opens
+- **THEN** it presents attendee filter controls only and shows no CSV/file upload control or external recipient list input
+
 #### Scenario: Template selection is absent
 
 - **WHEN** the Sheet opens
@@ -97,8 +103,6 @@ The "Send bulk email" action SHALL be presented as a `Sheet` slide-in panel rath
 
 - **WHEN** an organizer submits a valid bulk email form
 - **THEN** the Sheet closes and the campaigns list refreshes
-
----
 
 ### Requirement: Unified Email tabbed page groups all email concerns
 
@@ -152,3 +156,4 @@ Bulk email create proxying SHALL forward the direct content fields (`subject`, `
 
 - **WHEN** the Admin UI posts to `/api/teams/acme/events/devconf-2026/bulk-emails/some-job-id/cancel`
 - **THEN** the proxy forwards to `POST /admin/teams/acme/events/devconf-2026/bulk-emails/some-job-id/cancel` with the auth token and relays the response
+

@@ -10,4 +10,4 @@ internal sealed record CreateBulkEmailCommand(
     string Subject,
     string TextBody,
     string HtmlBody,
-    BulkEmailJobSource Source) : Command<Guid>;
+    BulkEmailAttendeeFilter AttendeeFilter) : Command<Guid>;

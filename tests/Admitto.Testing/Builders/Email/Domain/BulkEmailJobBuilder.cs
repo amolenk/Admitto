@@ -1,7 +1,7 @@
 using Amolenk.Admitto.Core.Email.Application.Templating;
 using Amolenk.Admitto.Core.Email.Domain.Entities;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
-using Amolenk.Admitto.Core.Registrations.Contracts;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
 namespace Amolenk.Admitto.Testing.Builders.Email.Domain;
@@ -14,7 +14,7 @@ public sealed class BulkEmailJobBuilder
     private string? _subject;
     private string? _textBody;
     private string? _htmlBody;
-    private BulkEmailJobSource _source = new AttendeeSource(new QueryRegistrationsDto());
+    private BulkEmailAttendeeFilter _attendeeFilter = new();
     private EmailAddress _triggeredBy = EmailAddress.From("admin@example.com");
     private bool _systemTriggered;
     private DateTimeOffset _now = DateTimeOffset.UtcNow;
@@ -24,7 +24,7 @@ public sealed class BulkEmailJobBuilder
     public BulkEmailJobBuilder WithEmailType(string type) { _emailType = type; return this; }
     public BulkEmailJobBuilder WithAdHocBodies(string? subject, string? text, string? html)
     { _subject = subject; _textBody = text; _htmlBody = html; return this; }
-    public BulkEmailJobBuilder WithSource(BulkEmailJobSource source) { _source = source; return this; }
+    public BulkEmailJobBuilder WithAttendeeFilter(BulkEmailAttendeeFilter filter) { _attendeeFilter = filter; return this; }
     public BulkEmailJobBuilder TriggeredBy(string email) { _triggeredBy = EmailAddress.From(email); return this; }
     public BulkEmailJobBuilder AsSystemTriggered() { _systemTriggered = true; return this; }
     public BulkEmailJobBuilder At(DateTimeOffset now) { _now = now; return this; }
@@ -32,10 +32,14 @@ public sealed class BulkEmailJobBuilder
     public BulkEmailJob Build() =>
         _systemTriggered
             ? BulkEmailJob.CreateSystemTriggered(
-                _teamId, _eventId, _emailType, _subject, _textBody, _htmlBody, _source, _now)
+                _teamId, _eventId, _emailType, _subject, _textBody, _htmlBody, _attendeeFilter, _now)
             : BulkEmailJob.Create(
-                _teamId, _eventId, _emailType, _subject, _textBody, _htmlBody, _source, _triggeredBy, _now);
+                _teamId, _eventId, _emailType, _subject, _textBody, _htmlBody, _attendeeFilter, _triggeredBy, _now);
 
     public static BulkEmailRecipient Recipient(string email, string? displayName = null) =>
-        new(EmailAddress.From(email), displayName, registrationId: null, parametersJson: "{}");
+        new(
+            EmailAddress.From(email),
+            displayName ?? email,
+            RegistrationId.New(),
+            parametersJson: "{}");
 }

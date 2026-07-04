@@ -10,4 +10,4 @@ public sealed record PreviewBulkEmailResponse(
 
 public sealed record BulkEmailRecipientPreviewDto(
     string Email,
-    string? DisplayName);
+    string DisplayName);

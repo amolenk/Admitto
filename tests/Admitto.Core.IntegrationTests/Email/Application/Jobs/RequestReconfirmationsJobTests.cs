@@ -79,9 +79,9 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
 
         var jobs = await LoadBulkEmailJobsAsync();
         jobs.Count.ShouldBe(1);
-        var source = jobs[0].Source.ShouldBeOfType<AttendeeSource>();
-        source.Filter.RegistrationIds.ShouldNotBeNull();
-        source.Filter.RegistrationIds.ShouldContain(attendeeId);
+        var filter = jobs[0].AttendeeFilter;
+        filter.RegistrationIds.ShouldNotBeNull();
+        filter.RegistrationIds.ShouldContain(attendeeId);
         (await LoadOutboxMessagesAsync()).ShouldBeEmpty();
     }
 
@@ -110,8 +110,8 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
 
         var bulkJobs = await LoadBulkEmailJobsAsync();
         bulkJobs.Count.ShouldBe(1);
-        var source = bulkJobs[0].Source.ShouldBeOfType<AttendeeSource>();
-        source.Filter.RegistrationIds.ShouldBe([sessionId], ignoreOrder: true);
+        var filter = bulkJobs[0].AttendeeFilter;
+        filter.RegistrationIds.ShouldBe([sessionId], ignoreOrder: true);
 
         var outboxMessages = await LoadOutboxMessagesAsync();
         outboxMessages.Count.ShouldBe(1);
@@ -144,7 +144,7 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
 
         var bulkJobs = await LoadBulkEmailJobsAsync();
         bulkJobs.Count.ShouldBe(1);
-        bulkJobs[0].Source.ShouldBeOfType<AttendeeSource>().Filter.RegistrationIds.ShouldBe([firstId, secondId], ignoreOrder: true);
+        bulkJobs[0].AttendeeFilter.RegistrationIds.ShouldBe([firstId, secondId], ignoreOrder: true);
         (await LoadOutboxMessagesAsync()).ShouldBeEmpty();
     }
 
@@ -167,9 +167,9 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
 
         var bulkJobs = await LoadBulkEmailJobsAsync();
         bulkJobs.Count.ShouldBe(1);
-        var source = bulkJobs[0].Source.ShouldBeOfType<AttendeeSource>();
-        source.Filter.RegistrationIds.ShouldNotBeNull();
-        source.Filter.RegistrationIds.ShouldContain(attendeeId);
+        var filter = bulkJobs[0].AttendeeFilter;
+        filter.RegistrationIds.ShouldNotBeNull();
+        filter.RegistrationIds.ShouldContain(attendeeId);
         (await LoadOutboxMessagesAsync()).ShouldBeEmpty();
     }
 

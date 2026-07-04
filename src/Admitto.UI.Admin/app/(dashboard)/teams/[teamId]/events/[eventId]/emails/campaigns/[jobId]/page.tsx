@@ -190,17 +190,35 @@ export default function BulkEmailDetailPage() {
                         </div>
                     )}
 
-                    {job.source && (
-                        <div className="rounded-lg border p-4">
-                            <h3 className="font-medium text-[14px] mb-2">Source</h3>
-                            <DetailRow
-                                label="Type"
-                                value={job.source.$type === "attendee" ? "Registered attendees" : "External list"}
-                            />
-                        </div>
-                    )}
+                    <div className="rounded-lg border p-4">
+                        <h3 className="font-medium text-[14px] mb-2">Recipients</h3>
+                        <DetailRow label="Audience" value="Registered attendees" />
+                        {describeAttendeeFilter(job.attendeeFilter).map((row) => (
+                            <DetailRow key={row.label} label={row.label} value={row.value} />
+                        ))}
+                    </div>
                 </>
             )}
         </PageLayout>
     );
+}
+
+function describeAttendeeFilter(
+    filter: BulkEmailJobDetailDto["attendeeFilter"] | null | undefined
+): { label: string; value: string }[] {
+    if (!filter) return [];
+
+    const rows: { label: string; value: string }[] = [];
+
+    if (filter.ticketTypeIds && filter.ticketTypeIds.length > 0) {
+        rows.push({ label: "Ticket types", value: String(filter.ticketTypeIds.length) });
+    }
+    if (filter.registrationStatus) {
+        rows.push({ label: "Status", value: filter.registrationStatus });
+    }
+    if (filter.hasReconfirmed !== null && filter.hasReconfirmed !== undefined) {
+        rows.push({ label: "Reconfirmed", value: filter.hasReconfirmed ? "Yes" : "No" });
+    }
+
+    return rows;
 }

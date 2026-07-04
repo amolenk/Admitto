@@ -276,16 +276,13 @@ sequenceDiagram
     participant EmailLog as email.email_log
 
     Admin->>Endpoint: start bulk send with Subject/TextBody/HtmlBody
-    Endpoint->>Job: create (Pending) with Source and job-owned content
+    Endpoint->>Job: create (Pending) with AttendeeFilter and job-owned content
     Endpoint-->>Admin: 202 Accepted (jobId)
     FanOut->>Job: pick up (DisallowConcurrentExecution per jobId)
     Job->>Job: transition Pending → Resolving
-    alt AttendeeSource
-      Resolver->>Facade: QueryRegistrationsAsync(eventId, filters)
-      Facade-->>Resolver: projection rows
-    else ExternalListSource
-      Resolver->>Job: read embedded list
-    end
+    Resolver->>Resolver: map BulkEmailAttendeeFilter → QueryRegistrationsDto
+    Resolver->>Facade: GetRegistrationsAsync(eventId, filter)
+    Facade-->>Resolver: projection rows
     Resolver->>Job: persist frozen Recipients snapshot
     Job->>Job: transition Resolving → Sending
     FanOut->>SMTP: connect (single connection)
@@ -303,6 +300,8 @@ sequenceDiagram
 ```
 
 **Resume-after-crash**: only `Pending` rows on the snapshot are picked up on the next run; per-recipient `EmailLog` uniqueness on `(ticketed_event_id, recipient, idempotency_key)` is the database-backed claim that prevents pre-existing terminal recipient logs from sending again.
+
+**Recipient source**: bulk email targets registered attendees only. The job persists an Email-owned `BulkEmailAttendeeFilter`; the resolver maps it to the Registrations `QueryRegistrationsDto` contract at the facade-call boundary, so the query contract is never part of Email's durable state. There is no external/CSV source.
 
 **Cancellation**: `POST /admin/.../bulk-emails/{id}/cancel` sets `CancellationRequestedAt` on the aggregate; the worker observes it between recipients and during the per-message delay, transitions remaining `Pending` rows to `Cancelled`, and closes the SMTP session cleanly.
 

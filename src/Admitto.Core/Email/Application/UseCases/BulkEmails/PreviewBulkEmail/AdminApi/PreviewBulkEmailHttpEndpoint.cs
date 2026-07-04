@@ -25,11 +25,11 @@ public static class PreviewBulkEmailHttpEndpoint
         IBulkEmailRecipientResolver recipientResolver,
         CancellationToken ct)
     {
-        var source = request.Source.ToDomain();
+        var attendeeFilter = request.AttendeeFilter.ToDomain();
         var recipients = await recipientResolver.ResolveAsync(
             TeamId.From(teamId),
             TicketedEventId.From(eventId),
-            source,
+            attendeeFilter,
             ct);
 
         var sample = recipients

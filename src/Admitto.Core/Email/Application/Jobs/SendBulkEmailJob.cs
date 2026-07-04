@@ -106,7 +106,7 @@ internal sealed class SendBulkEmailJob(
                 IReadOnlyList<BulkEmailRecipient> recipients;
                 try
                 {
-                    recipients = await recipientResolver.ResolveAsync(job.TeamId, job.TicketedEventId, job.Source, ct);
+                    recipients = await recipientResolver.ResolveAsync(job.TeamId, job.TicketedEventId, job.AttendeeFilter, ct);
                 }
                 catch (Exception ex)
                 {
@@ -249,7 +249,7 @@ internal sealed class SendBulkEmailJob(
 
             var message = new EmailMessage(
                 RecipientAddress: recipient.Email.Value,
-                RecipientName: recipient.DisplayName ?? recipient.Email.Value,
+                RecipientName: recipient.DisplayName,
                 Subject: rendered.Subject,
                 TextBody: rendered.TextBody,
                 HtmlBody: rendered.HtmlBody);
@@ -354,10 +354,8 @@ internal sealed class SendBulkEmailJob(
         }
     }
 
-    private static string BuildRegistrationLink(string publicEventLink, string action, RegistrationId? registrationId) =>
-        registrationId is null
-            ? publicEventLink
-            : $"{publicEventLink}/{action}/{registrationId.Value.Value}";
+    private static string BuildRegistrationLink(string publicEventLink, string action, RegistrationId registrationId) =>
+        $"{publicEventLink}/{action}/{registrationId.Value}";
 
     private async Task<EmailLog> GetRecipientLogAsync(
         BulkEmailJob job,

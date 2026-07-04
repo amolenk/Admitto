@@ -126,7 +126,7 @@ internal sealed class RequestReconfirmationsJob(
                 eventIdValue,
                 reconfirmRegistrationIds.Count);
 
-            var filter = new QueryRegistrationsDto(
+            var filter = new BulkEmailAttendeeFilter(
                 RegistrationStatus: RegistrationStatus.Registered,
                 HasReconfirmed: false,
                 RegistrationIds: reconfirmRegistrationIds);
@@ -138,7 +138,7 @@ internal sealed class RequestReconfirmationsJob(
                 subject: null,
                 textBody: null,
                 htmlBody: null,
-                source: new AttendeeSource(filter),
+                attendeeFilter: filter,
                 now: now);
 
             writeStore.BulkEmailJobs.Add(job);

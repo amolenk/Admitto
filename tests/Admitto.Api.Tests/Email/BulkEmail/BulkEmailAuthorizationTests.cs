@@ -20,13 +20,7 @@ public sealed class BulkEmailAuthorizationTests(TestContext testContext) : EndTo
             fixture.PreviewRoute,
             new
             {
-                Source = new
-                {
-                    ExternalList = new
-                    {
-                        Items = new[] { new { Email = "x@example.com", DisplayName = (string?)null } }
-                    }
-                }
+                AttendeeFilter = new { }
             },
             cancellationToken: testContext.CancellationToken);
         preview.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
@@ -39,13 +33,7 @@ public sealed class BulkEmailAuthorizationTests(TestContext testContext) : EndTo
                 Subject = "Hello",
                 TextBody = "Hello",
                 HtmlBody = "<p>Hello</p>",
-                Source = new
-                {
-                    ExternalList = new
-                    {
-                        Items = new[] { new { Email = "x@example.com", DisplayName = (string?)null } }
-                    }
-                }
+                AttendeeFilter = new { }
             },
             cancellationToken: testContext.CancellationToken);
         create.StatusCode.ShouldBe(HttpStatusCode.Forbidden);

@@ -382,7 +382,7 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
 
         var sender = new FakeBulkSmtpSender();
         var resolver = Substitute.For<IBulkEmailRecipientResolver>();
-        resolver.ResolveAsync(teamId, eventId, Arg.Any<BulkEmailJobSource>(), Arg.Any<CancellationToken>())
+        resolver.ResolveAsync(teamId, eventId, Arg.Any<BulkEmailAttendeeFilter>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(recipients));
 
         var fanOut = BuildFanOut(sender, resolver, perMessageDelay ?? TimeSpan.Zero, inlineRetryCount);

@@ -8,4 +8,4 @@ public sealed record CreateBulkEmailHttpRequest(
     string Subject,
     string TextBody,
     string HtmlBody,
-    BulkEmailSourceHttpDto Source);
+    AttendeeFilterHttpDto AttendeeFilter);

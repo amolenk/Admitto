@@ -8,7 +8,7 @@ namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence.EntityConfigurat
 
 internal sealed class BulkEmailJobEntityConfiguration : IEntityTypeConfiguration<BulkEmailJob>
 {
-    private static readonly JsonSerializerOptions SourceJsonOptions = new(JsonSerializerDefaults.Web);
+    private static readonly JsonSerializerOptions FilterJsonOptions = new(JsonSerializerDefaults.Web);
 
     public void Configure(EntityTypeBuilder<BulkEmailJob> builder)
     {
@@ -45,14 +45,14 @@ internal sealed class BulkEmailJobEntityConfiguration : IEntityTypeConfiguration
             .HasColumnName("html_body")
             .HasColumnType("text");
 
-        var sourceConverter = new ValueConverter<BulkEmailJobSource, string>(
-            v => JsonSerializer.Serialize(v, SourceJsonOptions),
-            v => JsonSerializer.Deserialize<BulkEmailJobSource>(v, SourceJsonOptions)!);
+        var filterConverter = new ValueConverter<BulkEmailAttendeeFilter, string>(
+            v => JsonSerializer.Serialize(v, FilterJsonOptions),
+            v => JsonSerializer.Deserialize<BulkEmailAttendeeFilter>(v, FilterJsonOptions)!);
 
-        builder.Property(e => e.Source)
-            .HasColumnName("source")
+        builder.Property(e => e.AttendeeFilter)
+            .HasColumnName("attendee_filter")
             .HasColumnType("jsonb")
-            .HasConversion(sourceConverter)
+            .HasConversion(filterConverter)
             .IsRequired();
 
         builder.Property(e => e.TriggeredBy)
@@ -114,10 +114,12 @@ internal sealed class BulkEmailJobEntityConfiguration : IEntityTypeConfiguration
                 .IsRequired();
 
             b.Property(r => r.DisplayName)
-                .HasJsonPropertyName("display_name");
+                .HasJsonPropertyName("display_name")
+                .IsRequired();
 
             b.Property(r => r.RegistrationId)
-                .HasJsonPropertyName("registration_id");
+                .HasJsonPropertyName("registration_id")
+                .IsRequired();
 
             b.Property(r => r.ParametersJson)
                 .HasJsonPropertyName("parameters")

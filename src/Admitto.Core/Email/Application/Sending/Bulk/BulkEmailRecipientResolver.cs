@@ -6,17 +6,18 @@ using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 namespace Amolenk.Admitto.Core.Email.Application.Sending.Bulk;
 
 /// <summary>
-/// Materialises a <see cref="BulkEmailJobSource"/> into a frozen recipient
+/// Materialises a <see cref="BulkEmailAttendeeFilter"/> into a frozen recipient
 /// snapshot at the start of a bulk-email fan-out (D3 — snapshot-on-resolve).
-/// For <see cref="AttendeeSource"/> it queries Registrations via the facade;
-/// for <see cref="ExternalListSource"/> it returns the literal items.
+/// The Email-owned filter is translated into the Registrations query contract
+/// (<see cref="QueryRegistrationsDto"/>) only here, at the facade-call boundary,
+/// and resolved via <c>IRegistrationsFacade.GetRegistrationsAsync</c>.
 /// </summary>
 public interface IBulkEmailRecipientResolver
 {
     Task<IReadOnlyList<BulkEmailRecipient>> ResolveAsync(
         TeamId teamId,
         TicketedEventId eventId,
-        BulkEmailJobSource source,
+        BulkEmailAttendeeFilter attendeeFilter,
         CancellationToken cancellationToken = default);
 }
 
@@ -28,26 +29,20 @@ internal sealed class BulkEmailRecipientResolver(IRegistrationsFacade registrati
     public async Task<IReadOnlyList<BulkEmailRecipient>> ResolveAsync(
         TeamId teamId,
         TicketedEventId eventId,
-        BulkEmailJobSource source,
+        BulkEmailAttendeeFilter attendeeFilter,
         CancellationToken cancellationToken = default)
     {
-        return source switch
-        {
-            AttendeeSource attendee => await ResolveAttendeesAsync(teamId, eventId, attendee, cancellationToken),
-            ExternalListSource external => ResolveExternalList(external),
-            _ => throw new InvalidOperationException(
-                $"Unknown {nameof(BulkEmailJobSource)} type '{source.GetType().Name}'.")
-        };
-    }
+        var query = new QueryRegistrationsDto(
+            TicketTypeIds: attendeeFilter.TicketTypeIds,
+            RegistrationStatus: attendeeFilter.RegistrationStatus,
+            HasReconfirmed: attendeeFilter.HasReconfirmed,
+            RegisteredAfter: attendeeFilter.RegisteredAfter,
+            RegisteredBefore: attendeeFilter.RegisteredBefore,
+            AdditionalDetailEquals: attendeeFilter.AdditionalDetailEquals,
+            RegistrationIds: attendeeFilter.RegistrationIds);
 
-    private async Task<IReadOnlyList<BulkEmailRecipient>> ResolveAttendeesAsync(
-        TeamId teamId,
-        TicketedEventId eventId,
-        AttendeeSource source,
-        CancellationToken cancellationToken)
-    {
         var rows = await registrationsFacade.GetRegistrationsAsync(
-            teamId.Value, eventId.Value, source.Filter, cancellationToken);
+            teamId.Value, eventId.Value, query, cancellationToken);
 
         var recipients = new List<BulkEmailRecipient>(rows.Count);
         foreach (var row in rows)
@@ -66,29 +61,8 @@ internal sealed class BulkEmailRecipientResolver(IRegistrationsFacade registrati
 
             recipients.Add(new BulkEmailRecipient(
                 email: EmailAddress.From(row.Email),
-                displayName: string.IsNullOrWhiteSpace(displayName) ? null : displayName,
+                displayName: displayName,
                 registrationId: RegistrationId.From(row.RegistrationId),
-                parametersJson: JsonSerializer.Serialize(parameters, ParametersJsonOptions)));
-        }
-
-        return recipients;
-    }
-
-    private static IReadOnlyList<BulkEmailRecipient> ResolveExternalList(ExternalListSource source)
-    {
-        var recipients = new List<BulkEmailRecipient>(source.Items.Count);
-        foreach (var item in source.Items)
-        {
-            var parameters = new Dictionary<string, object?>
-            {
-                ["email"] = item.Email.Value,
-                ["display_name"] = item.DisplayName
-            };
-
-            recipients.Add(new BulkEmailRecipient(
-                email: item.Email,
-                displayName: item.DisplayName,
-                registrationId: null,
                 parametersJson: JsonSerializer.Serialize(parameters, ParametersJsonOptions)));
         }
 

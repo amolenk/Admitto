@@ -13,7 +13,7 @@ public sealed class BulkEmailJob : Aggregate<BulkEmailJobId>
     private BulkEmailJob()
     {
         EmailType = default!;
-        Source = default!;
+        AttendeeFilter = default!;
     }
 
     private BulkEmailJob(
@@ -24,7 +24,7 @@ public sealed class BulkEmailJob : Aggregate<BulkEmailJobId>
         string? subject,
         string? textBody,
         string? htmlBody,
-        BulkEmailJobSource source,
+        BulkEmailAttendeeFilter attendeeFilter,
         EmailAddress? triggeredBy,
         bool isSystemTriggered,
         DateTimeOffset createdAt)
@@ -36,7 +36,7 @@ public sealed class BulkEmailJob : Aggregate<BulkEmailJobId>
         Subject = subject;
         TextBody = textBody;
         HtmlBody = htmlBody;
-        Source = source;
+        AttendeeFilter = attendeeFilter;
         TriggeredBy = triggeredBy;
         IsSystemTriggered = isSystemTriggered;
         Status = BulkEmailJobStatus.Pending;
@@ -49,7 +49,7 @@ public sealed class BulkEmailJob : Aggregate<BulkEmailJobId>
     public string? Subject { get; private set; }
     public string? TextBody { get; private set; }
     public string? HtmlBody { get; private set; }
-    public BulkEmailJobSource Source { get; private set; }
+    public BulkEmailAttendeeFilter AttendeeFilter { get; private set; }
 
     /// <summary>
     /// Email address of the user that triggered the job, or <c>null</c> for
@@ -86,7 +86,7 @@ public sealed class BulkEmailJob : Aggregate<BulkEmailJobId>
         string? subject,
         string? textBody,
         string? htmlBody,
-        BulkEmailJobSource source,
+        BulkEmailAttendeeFilter attendeeFilter,
         EmailAddress triggeredBy,
         DateTimeOffset now)
     {
@@ -98,7 +98,7 @@ public sealed class BulkEmailJob : Aggregate<BulkEmailJobId>
             subject,
             textBody,
             htmlBody,
-            source,
+            attendeeFilter,
             triggeredBy,
             isSystemTriggered: false,
             createdAt: now);
@@ -114,7 +114,7 @@ public sealed class BulkEmailJob : Aggregate<BulkEmailJobId>
         string? subject,
         string? textBody,
         string? htmlBody,
-        BulkEmailJobSource source,
+        BulkEmailAttendeeFilter attendeeFilter,
         DateTimeOffset now)
     {
         var job = new BulkEmailJob(
@@ -125,7 +125,7 @@ public sealed class BulkEmailJob : Aggregate<BulkEmailJobId>
             subject,
             textBody,
             htmlBody,
-            source,
+            attendeeFilter,
             triggeredBy: null,
             isSystemTriggered: true,
             createdAt: now);

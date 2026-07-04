@@ -26,7 +26,7 @@ public sealed class BulkEmailCreateTests(TestContext testContext) : EndToEndTest
             Subject = "Hello {{ first_name }}",
             TextBody = "Hi {{ first_name }}",
             HtmlBody = "<p>Hi {{ first_name }}</p>",
-            Source = new { Attendee = new { } }
+            AttendeeFilter = new { }
         };
 
         var createResponse = await Environment.ApiClient.PostAsJsonAsync(
@@ -75,7 +75,7 @@ public sealed class BulkEmailCreateTests(TestContext testContext) : EndToEndTest
             Subject = "Custom subject for {{ first_name }}",
             TextBody = "Custom text for {{ first_name }}",
             HtmlBody = "<p>Custom html for {{ first_name }}</p>",
-            Source = new { Attendee = new { } }
+            AttendeeFilter = new { }
         };
 
         var createResponse = await Environment.ApiClient.PostAsJsonAsync(

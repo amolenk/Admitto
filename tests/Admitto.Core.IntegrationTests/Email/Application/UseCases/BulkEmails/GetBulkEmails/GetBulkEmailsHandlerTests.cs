@@ -24,7 +24,7 @@ public sealed class GetBulkEmailsHandlerTests(TestContext testContext) : AspireI
             subject: "Your ticket",
             textBody: "Your ticket",
             htmlBody: "<p>Your ticket</p>",
-            source: new AttendeeSource(new QueryRegistrationsDto()),
+            attendeeFilter: new BulkEmailAttendeeFilter(),
             triggeredBy: EmailAddress.From("admin@example.com"),
             now: DateTimeOffset.UtcNow);
 

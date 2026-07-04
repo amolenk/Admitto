@@ -25,7 +25,7 @@ public sealed class BulkEmailCancelTests(TestContext testContext) : EndToEndTest
                 Subject = "Hello {{ first_name }}",
                 TextBody = "Hi {{ first_name }}",
                 HtmlBody = "<p>Hi {{ first_name }}</p>",
-                Source = new { Attendee = new { } }
+                AttendeeFilter = new { }
             },
             cancellationToken: testContext.CancellationToken);
         createResponse.StatusCode.ShouldBe(HttpStatusCode.Created);

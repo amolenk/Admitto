@@ -19,7 +19,7 @@ internal sealed class GetBulkEmailHandler(IEmailWriteStore writeStore)
             .Select(r => new BulkEmailRecipientDto(
                 r.Email.Value,
                 r.DisplayName,
-                r.RegistrationId?.Value,
+                r.RegistrationId.Value,
                 r.Status,
                 r.LastError))
             .ToList();
@@ -32,7 +32,7 @@ internal sealed class GetBulkEmailHandler(IEmailWriteStore writeStore)
             job.Subject,
             job.TextBody,
             job.HtmlBody,
-            job.Source,
+            job.AttendeeFilter,
             job.Status,
             job.RecipientCount,
             job.SentCount,

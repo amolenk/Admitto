@@ -9,9 +9,9 @@ namespace Amolenk.Admitto.Api.Tests.Email.BulkEmail;
 [TestClass]
 public sealed class BulkEmailPreviewTests(TestContext testContext) : EndToEndTestBase
 {
-    // SC-8.1: POST /preview returns expected count + sample for the attendee source shape.
+    // POST /preview returns expected count + sample for the attendee filter.
     [TestMethod]
-    public async Task Preview_AttendeeSource_ReturnsCountAndSample()
+    public async Task Preview_AttendeeFilter_ReturnsCountAndSample()
     {
         var fixture = BulkEmailFixture.Empty()
             .WithRegistration("alice@example.com", "Alice", "Anderson")
@@ -21,10 +21,7 @@ public sealed class BulkEmailPreviewTests(TestContext testContext) : EndToEndTes
 
         var request = new
         {
-            Source = new
-            {
-                Attendee = new { HasReconfirmed = false }
-            }
+            AttendeeFilter = new { HasReconfirmed = false }
         };
 
         var response = await Environment.ApiClient.PostAsJsonAsync(
@@ -43,71 +40,5 @@ public sealed class BulkEmailPreviewTests(TestContext testContext) : EndToEndTes
             .Select(s => s.GetProperty("email").GetString()!)
             .ToList();
         sampleEmails.ShouldBe(new[] { "alice@example.com", "bob@example.com" }, ignoreOrder: true);
-    }
-
-    // SC-8.1: POST /preview returns expected count + sample for the external-list source shape.
-    [TestMethod]
-    public async Task Preview_ExternalListSource_ReturnsCountAndSample()
-    {
-        var fixture = BulkEmailFixture.Empty();
-        await fixture.SetupAsync(Environment);
-
-        var request = new
-        {
-            Source = new
-            {
-                ExternalList = new
-                {
-                    Items = new[]
-                    {
-                        new { Email = "external1@example.com", DisplayName = "Ext One" },
-                        new { Email = "external2@example.com", DisplayName = (string?)null! }
-                    }
-                }
-            }
-        };
-
-        var response = await Environment.ApiClient.PostAsJsonAsync(
-            fixture.PreviewRoute,
-            request,
-            cancellationToken: testContext.CancellationToken);
-
-        response.StatusCode.ShouldBe(HttpStatusCode.OK);
-
-        var body = await response.Content.ReadFromJsonAsync<JsonElement>(
-            cancellationToken: testContext.CancellationToken);
-        body.GetProperty("count").GetInt32().ShouldBe(2);
-
-        var sample = body.GetProperty("sample").EnumerateArray().ToList();
-        sample.Count.ShouldBe(2);
-        sample.Select(s => s.GetProperty("email").GetString())
-            .ShouldBe(new[] { "external1@example.com", "external2@example.com" }, ignoreOrder: true);
-    }
-
-    // Validator: requests carrying both source shapes must be rejected.
-    [TestMethod]
-    public async Task Preview_BothSourcesProvided_ReturnsBadRequest()
-    {
-        var fixture = BulkEmailFixture.Empty();
-        await fixture.SetupAsync(Environment);
-
-        var request = new
-        {
-            Source = new
-            {
-                Attendee = new { },
-                ExternalList = new
-                {
-                    Items = new[] { new { Email = "x@example.com", DisplayName = (string?)null } }
-                }
-            }
-        };
-
-        var response = await Environment.ApiClient.PostAsJsonAsync(
-            fixture.PreviewRoute,
-            request,
-            cancellationToken: testContext.CancellationToken);
-
-        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 }

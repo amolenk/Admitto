@@ -30,7 +30,7 @@ internal sealed class CreateBulkEmailHandler(
             command.Subject,
             command.TextBody,
             command.HtmlBody,
-            command.Source,
+            command.AttendeeFilter,
             triggeredBy,
             timeProvider.GetUtcNow());
 

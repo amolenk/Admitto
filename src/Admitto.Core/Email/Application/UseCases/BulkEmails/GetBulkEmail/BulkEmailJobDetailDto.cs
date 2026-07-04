@@ -10,7 +10,7 @@ public sealed record BulkEmailJobDetailDto(
     string? Subject,
     string? TextBody,
     string? HtmlBody,
-    BulkEmailJobSource Source,
+    BulkEmailAttendeeFilter AttendeeFilter,
     BulkEmailJobStatus Status,
     int RecipientCount,
     int SentCount,
@@ -29,7 +29,7 @@ public sealed record BulkEmailJobDetailDto(
 
 public sealed record BulkEmailRecipientDto(
     string Email,
-    string? DisplayName,
-    Guid? RegistrationId,
+    string DisplayName,
+    Guid RegistrationId,
     BulkEmailRecipientStatus Status,
     string? LastError);

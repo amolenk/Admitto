@@ -41,13 +41,10 @@ public sealed class ReconfirmFlowTests(TestContext testContext) : EndToEndTestBa
                 Subject = "Please reconfirm {{ first_name }}",
                 TextBody = "Please reconfirm {{ first_name }}",
                 HtmlBody = "<p>Please reconfirm {{ first_name }}</p>",
-                Source = new
+                AttendeeFilter = new
                 {
-                    Attendee = new
-                    {
-                        RegistrationStatus = "registered",
-                        HasReconfirmed = false
-                    }
+                    RegistrationStatus = "registered",
+                    HasReconfirmed = false
                 }
             },
             cancellationToken: testContext.CancellationToken);
