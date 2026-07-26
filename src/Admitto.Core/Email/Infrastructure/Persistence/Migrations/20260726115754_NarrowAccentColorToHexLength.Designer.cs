@@ -4,6 +4,7 @@ using System.Text.Json;
 using Amolenk.Admitto.Core.Email.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -12,9 +13,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence.Migrations
 {
     [DbContext(typeof(EmailDbContext))]
-    partial class EmailDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260726115754_NarrowAccentColorToHexLength")]
+    partial class NarrowAccentColorToHexLength
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -117,7 +120,6 @@ namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence.Migrations
                         .HasColumnName("team_id");
 
                     b.Property<string>("AccentColor")
-                        .IsRequired()
                         .HasMaxLength(7)
                         .HasColumnType("character varying(7)")
                         .HasColumnName("accent_color");
@@ -130,8 +132,12 @@ namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamptz")
                         .HasColumnName("last_updated_at");
 
+                    b.Property<string>("ReplyToEmailAddress")
+                        .HasMaxLength(320)
+                        .HasColumnType("character varying(320)")
+                        .HasColumnName("reply_to_email_address");
+
                     b.Property<string>("TeamName")
-                        .IsRequired()
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)")
                         .HasColumnName("team_name");

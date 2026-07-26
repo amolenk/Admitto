@@ -13,13 +13,4 @@ public record TicketedEventStatusChangedDomainEvent(
     TicketedEventId TicketedEventId,
     TeamId TeamId,
     uint TicketedEventVersion,
-    EventLifecycleStatus NewStatus) : DomainEvent
-{
-    public TicketedEventStatusChangedDomainEvent(
-        TicketedEventId ticketedEventId,
-        TeamId teamId,
-        EventLifecycleStatus newStatus)
-        : this(ticketedEventId, teamId, TicketedEventVersion: 0, newStatus)
-    {
-    }
-}
+    EventLifecycleStatus NewStatus) : DomainEvent;

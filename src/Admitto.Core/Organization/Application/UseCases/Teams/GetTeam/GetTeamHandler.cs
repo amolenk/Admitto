@@ -21,7 +21,6 @@ internal class GetTeamHandler(IOrganizationWriteStore writeStore)
                         t.Id.Value,
                         t.Name.Value,
                         t.AccentColor.Value,
-                        t.ReplyToEmailAddress == null ? null : t.ReplyToEmailAddress.Value.Value,
                         t.Version))
                    .FirstOrDefaultAsync(cancellationToken)
                ?? throw new BusinessRuleViolationException(NotFoundError.Create<Team>());

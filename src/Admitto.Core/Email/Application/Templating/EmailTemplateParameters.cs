@@ -8,7 +8,7 @@ internal static class EmailTemplateParameters
 {
     public static IReadOnlyDictionary<string, object?> WithBranding(
         object parameters,
-        EmailAccentColor accentColor,
+        AccentColor accentColor,
         EmailFontFamily fontFamily)
     {
         var result = new Dictionary<string, object?>(StringComparer.OrdinalIgnoreCase)

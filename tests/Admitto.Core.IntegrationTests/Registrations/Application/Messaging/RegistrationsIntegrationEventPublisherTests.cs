@@ -93,6 +93,8 @@ public sealed class RegistrationsIntegrationEventPublisherTests
             eventId,
             registrationId,
             EmailAddress.From("carol@example.com"),
+            FirstName.From("Carol"),
+            LastName.From("Clark"),
             CancellationReason.AttendeeRequest);
 
         await _publisher.HandleAsync(domainEvent, CancellationToken.None);
@@ -143,6 +145,10 @@ public sealed class RegistrationsIntegrationEventPublisherTests
             creationRequestId,
             teamId,
             eventId,
+            TicketedEventVersion: 1,
+            EventName.From("Spring Conf"),
+            AbsoluteUrl.From("https://example.com"),
+            Slug.From("spring-conf"),
             TimeZoneId.From("Europe/Amsterdam"));
 
         await _publisher.HandleAsync(domainEvent, CancellationToken.None);
@@ -164,6 +170,7 @@ public sealed class RegistrationsIntegrationEventPublisherTests
         var domainEvent = new TicketedEventDetailsChangedDomainEvent(
             teamId,
             eventId,
+            TicketedEventVersion: 1,
             EventName.From("Spring Conf"),
             AbsoluteUrl.From("https://example.com"),
             Slug.From("spring-conf"),
@@ -192,6 +199,7 @@ public sealed class RegistrationsIntegrationEventPublisherTests
         var domainEvent = new TicketedEventReconfirmPolicyChangedDomainEvent(
             teamId,
             eventId,
+            TicketedEventVersion: 1,
             TicketedEventReconfirmPolicy.Create(
                 opensAt,
                 closesAt,
@@ -217,7 +225,8 @@ public sealed class RegistrationsIntegrationEventPublisherTests
         var teamId = TeamId.New();
         var eventId = TicketedEventId.New();
 
-        var domainEvent = new TicketedEventReconfirmPolicyChangedDomainEvent(teamId, eventId, Policy: null);
+        var domainEvent = new TicketedEventReconfirmPolicyChangedDomainEvent(
+            teamId, eventId, TicketedEventVersion: 1, Policy: null);
 
         await _publisher.HandleAsync(domainEvent, CancellationToken.None);
 
@@ -231,7 +240,8 @@ public sealed class RegistrationsIntegrationEventPublisherTests
     {
         var eventId = TicketedEventId.New();
         var teamId = TeamId.New();
-        var domainEvent = new TicketedEventStatusChangedDomainEvent(eventId, teamId, EventLifecycleStatus.Archived);
+        var domainEvent = new TicketedEventStatusChangedDomainEvent(
+            eventId, teamId, TicketedEventVersion: 1, EventLifecycleStatus.Archived);
 
         await _publisher.HandleAsync(domainEvent, CancellationToken.None);
 

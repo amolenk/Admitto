@@ -6,5 +6,4 @@ public sealed record TeamCreatedIntegrationEvent(
     Guid TeamId,
     string Name,
     string AccentColor,
-    string? ReplyToEmailAddress,
     uint TeamVersion) : IntegrationEvent;

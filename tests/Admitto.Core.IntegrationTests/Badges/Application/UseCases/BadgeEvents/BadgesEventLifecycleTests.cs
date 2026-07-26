@@ -6,6 +6,7 @@ using Amolenk.Admitto.Core.Badges.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
+using Amolenk.Admitto.Testing.Builders.Registrations.Contracts;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Badges.Application.UseCases.BadgeEvents;
 
@@ -15,11 +16,7 @@ public sealed class BadgeEventTests(TestContext testContext) : AspireIntegration
     [TestMethod]
     public async ValueTask TicketedEventCreated_CreatesActiveBadgesEvent()
     {
-        var integrationEvent = new TicketedEventCreatedIntegrationEvent(
-            CreationRequestId: Guid.NewGuid(),
-            TeamId: Guid.NewGuid(),
-            TicketedEventId: Guid.NewGuid(),
-            TimeZone: "UTC");
+        var integrationEvent = new TicketedEventCreatedIntegrationEventBuilder().Build();
 
         var handler = new TicketedEventCreatedIntegrationEventHandler(
             new CreateBadgeEventHandler(Environment.BadgesDatabase.Context));
@@ -41,11 +38,7 @@ public sealed class BadgeEventTests(TestContext testContext) : AspireIntegration
     [TestMethod]
     public async ValueTask TicketedEventCreated_IsIdempotentOnRedelivery()
     {
-        var integrationEvent = new TicketedEventCreatedIntegrationEvent(
-            CreationRequestId: Guid.NewGuid(),
-            TeamId: Guid.NewGuid(),
-            TicketedEventId: Guid.NewGuid(),
-            TimeZone: "UTC");
+        var integrationEvent = new TicketedEventCreatedIntegrationEventBuilder().Build();
 
         var createHandler = new CreateBadgeEventHandler(Environment.BadgesDatabase.Context);
         var handler = new TicketedEventCreatedIntegrationEventHandler(createHandler);
@@ -70,11 +63,9 @@ public sealed class BadgeEventTests(TestContext testContext) : AspireIntegration
     {
         // Arrange: create event first
         var ticketedEventId = Guid.NewGuid();
-        var createEvent = new TicketedEventCreatedIntegrationEvent(
-            CreationRequestId: Guid.NewGuid(),
-            TeamId: Guid.NewGuid(),
-            TicketedEventId: ticketedEventId,
-            TimeZone: "UTC");
+        var createEvent = new TicketedEventCreatedIntegrationEventBuilder()
+            .WithTicketedEventId(ticketedEventId)
+            .Build();
 
         var createHandler = new TicketedEventCreatedIntegrationEventHandler(
             new CreateBadgeEventHandler(Environment.BadgesDatabase.Context));
@@ -84,7 +75,8 @@ public sealed class BadgeEventTests(TestContext testContext) : AspireIntegration
         // Act: archive
         var archiveEvent = new TicketedEventArchivedIntegrationEvent(
             TeamId: Guid.NewGuid(),
-            TicketedEventId: ticketedEventId);
+            TicketedEventId: ticketedEventId,
+            TicketedEventVersion: 1);
 
         var archiveHandler = new TicketedEventArchivedIntegrationEventHandler(
             new ArchiveBadgeEventHandler(Environment.BadgesDatabase.Context));
@@ -109,7 +101,8 @@ public sealed class BadgeEventTests(TestContext testContext) : AspireIntegration
         // Archive handler uses null-safe ?.MarkArchived() — must not throw for unknown event
         var archiveEvent = new TicketedEventArchivedIntegrationEvent(
             TeamId: Guid.NewGuid(),
-            TicketedEventId: Guid.NewGuid());
+            TicketedEventId: Guid.NewGuid(),
+            TicketedEventVersion: 1);
 
         var archiveHandler = new TicketedEventArchivedIntegrationEventHandler(
             new ArchiveBadgeEventHandler(Environment.BadgesDatabase.Context));

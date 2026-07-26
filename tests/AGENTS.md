@@ -8,7 +8,9 @@ Before any other test suite, verify architectural rules pass:
 ```bash
 dotnet test --project tests/Admitto.Core.ArchTests/Admitto.Core.ArchTests.csproj
 ```
-Architecture tests enforce dependency direction, naming conventions, and placement rules (see §8.15 in `docs/arc42/08-crosscutting-concepts.md`). Fix violations before running other suites.
+Architecture tests enforce dependency direction, naming conventions, placement rules, and messaging conventions (see §8.15 in `docs/arc42/08-crosscutting-concepts.md`). Fix violations before running other suites.
+
+One rule worth knowing up front: message contracts — integration events, commands, and domain events — must declare exactly one public constructor. If you need a shorter way to build one in a test, add a builder under `Admitto.Testing/Builders/` — do not add a convenience overload to the contract.
 
 ## Choosing the Right Suite
 - Domain rule or value-object behavior → `Admitto.Core.DomainTests`

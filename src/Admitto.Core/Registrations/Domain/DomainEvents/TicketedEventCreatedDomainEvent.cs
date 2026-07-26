@@ -16,34 +16,4 @@ public record TicketedEventCreatedDomainEvent(
     EventName Name,
     AbsoluteUrl WebsiteUrl,
     Slug PublicSlug,
-    TimeZoneId TimeZone) : DomainEvent
-{
-    public TicketedEventCreatedDomainEvent(
-        CreationRequestId creationRequestId,
-        TeamId teamId,
-        TicketedEventId ticketedEventId,
-        TimeZoneId timeZone)
-        : this(
-            creationRequestId,
-            teamId,
-            ticketedEventId,
-            TicketedEventVersion: 0,
-            EventName.From("Unknown event"),
-            AbsoluteUrl.From("https://example.com"),
-            Slug.From("unknown-event"),
-            timeZone)
-    {
-    }
-
-    public TicketedEventCreatedDomainEvent(
-        CreationRequestId creationRequestId,
-        TeamId teamId,
-        TicketedEventId ticketedEventId,
-        EventName name,
-        AbsoluteUrl websiteUrl,
-        Slug publicSlug,
-        TimeZoneId timeZone)
-        : this(creationRequestId, teamId, ticketedEventId, TicketedEventVersion: 0, name, websiteUrl, publicSlug, timeZone)
-    {
-    }
-}
+    TimeZoneId TimeZone) : DomainEvent;

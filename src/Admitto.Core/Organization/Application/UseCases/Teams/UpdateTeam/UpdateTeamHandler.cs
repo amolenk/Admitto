@@ -17,8 +17,6 @@ internal sealed class UpdateTeamHandler(IOrganizationWriteStore writeStore)
 
         team.UpdateDetails(
             command.Name is null ? null : TeamName.From(command.Name),
-            command.AccentColor is null ? null : TeamAccentColor.From(command.AccentColor),
-            command.ReplyToEmailAddress is not null || command.ClearReplyToEmailAddress,
-            command.ReplyToEmailAddress is null ? null : EmailAddress.From(command.ReplyToEmailAddress));
+            command.AccentColor is null ? null : AccentColor.From(command.AccentColor));
     }
 }

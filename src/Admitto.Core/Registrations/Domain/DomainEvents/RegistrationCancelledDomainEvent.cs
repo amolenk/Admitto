@@ -11,15 +11,4 @@ public record RegistrationCancelledDomainEvent(
     EmailAddress Email,
     FirstName FirstName,
     LastName LastName,
-    CancellationReason Reason) : DomainEvent
-{
-    public RegistrationCancelledDomainEvent(
-        TeamId teamId,
-        TicketedEventId ticketedEventId,
-        RegistrationId registrationId,
-        EmailAddress email,
-        CancellationReason reason)
-        : this(teamId, ticketedEventId, registrationId, email, FirstName.From("Unknown"), LastName.From("Attendee"), reason)
-    {
-    }
-}
+    CancellationReason Reason) : DomainEvent;

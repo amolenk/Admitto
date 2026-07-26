@@ -42,7 +42,6 @@ internal sealed class CouponCreatedIntegrationEventHandler(
                 EventWebsite = eventContext.WebsiteUrl,
                 eventContext.PublicEventLink,
                 eventContext.RegisterLink,
-                eventContext.TeamAccentColor
             },
             RegistrationId: null);
 

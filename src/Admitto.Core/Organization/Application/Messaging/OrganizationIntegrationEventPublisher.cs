@@ -34,7 +34,6 @@ internal sealed class OrganizationIntegrationEventPublisher(
             domainEvent.TeamId.Value,
             domainEvent.Name.Value,
             domainEvent.AccentColor.Value,
-            domainEvent.ReplyToEmailAddress?.Value,
             domainEvent.TeamVersion));
 
         return ValueTask.CompletedTask;
@@ -46,7 +45,6 @@ internal sealed class OrganizationIntegrationEventPublisher(
             domainEvent.TeamId.Value,
             domainEvent.Name.Value,
             domainEvent.AccentColor.Value,
-            domainEvent.ReplyToEmailAddress?.Value,
             domainEvent.TeamVersion));
 
         return ValueTask.CompletedTask;

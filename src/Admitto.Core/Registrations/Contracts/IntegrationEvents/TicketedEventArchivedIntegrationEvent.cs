@@ -13,10 +13,4 @@ namespace Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 public sealed record TicketedEventArchivedIntegrationEvent(
     Guid TeamId,
     Guid TicketedEventId,
-    uint TicketedEventVersion) : IntegrationEvent
-{
-    public TicketedEventArchivedIntegrationEvent(Guid TeamId, Guid TicketedEventId)
-        : this(TeamId, TicketedEventId, TicketedEventVersion: 0)
-    {
-    }
-}
+    uint TicketedEventVersion) : IntegrationEvent;

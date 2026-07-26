@@ -31,6 +31,8 @@ The Email module SHALL render transactional emails from code-owned built-in temp
 
 Built-in transactional templates and custom bulk email job content SHALL be rendered with the Scriban templating engine. The renderer SHALL import the triggering event's parameter object as Scriban global variables (e.g. `{{ event_name }}`, `{{ first_name }}`, `{{ register_link }}`). Rendering SHALL produce three strings: rendered subject, rendered text body, and rendered html body.
 
+The canonical branding parameter SHALL be `accent_color`, supplied once by the send pipeline from the resolved effective email settings. Template parameter objects assembled by transactional event handlers SHALL NOT carry their own accent color, and no duplicate `team_accent_color` alias SHALL be exposed. The `font_family` parameter SHALL likewise be supplied by the send pipeline from a fixed system constant, not from team or event data. Registration QR-code links SHALL use the canonical `qrcode_link` parameter for both transactional and bulk rendering.
+
 Custom bulk email jobs SHALL supply complete job-owned `Subject`, `TextBody`, and `HtmlBody`; those fields SHALL be rendered through Scriban with the same recipient/event parameter set. Transactional email callers SHALL render code-owned built-in templates only.
 
 The `ticket` built-in template SHALL receive a `ticket_types` parameter containing the list of ticket type names the attendee is registered for. This parameter SHALL be supplied by both the initial-registration email handler (`AttendeeRegisteredIntegrationEventHandler`) and the ticket-change email handler (`AttendeeTicketsChangedIntegrationEventHandler`). The built-in default `ticket` templates (HTML and text) SHALL display the ticket type list.

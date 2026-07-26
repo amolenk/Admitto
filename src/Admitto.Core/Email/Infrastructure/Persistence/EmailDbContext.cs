@@ -65,11 +65,7 @@ public sealed class EmailDbContext(DbContextOptions<EmailDbContext> options)
             .HaveConversion<EmailLogId.EfCoreValueConverter>();
 
         configurationBuilder
-            .Properties<EmailAccentColor>()
-            .HaveConversion<EmailAccentColor.EfCoreValueConverter>();
-
-        configurationBuilder
-            .Properties<EmailFontFamily>()
-            .HaveConversion<EmailFontFamily.EfCoreValueConverter>();
+            .Properties<AccentColor>()
+            .HaveConversion<AccentColor.EfCoreValueConverter>();
     }
 }

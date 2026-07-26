@@ -10,6 +10,7 @@ using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Amolenk.Admitto.Testing.Builders.Organization.Application;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
+using Amolenk.Admitto.Testing.Builders.Registrations.Contracts;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Organization.Application.UseCases.TicketedEvents.RegisterTicketedEventCreated;
 
@@ -41,11 +42,12 @@ internal sealed class RegisterTicketedEventCreatedFixture
 
         TeamId = team.Id.Value;
         CreationRequestId = pendingRequest.Id.Value;
-        IntegrationEvent = new TicketedEventCreatedIntegrationEvent(
-            CreationRequestId,
-            TeamId,
-            TicketedEventId,
-            TimeZone);
+        IntegrationEvent = new TicketedEventCreatedIntegrationEventBuilder()
+            .WithCreationRequestId(CreationRequestId)
+            .WithTeamId(TeamId)
+            .WithTicketedEventId(TicketedEventId)
+            .WithTimeZone(TimeZone)
+            .Build();
 
         await environment.OrganizationDatabase.SeedAsync(ctx =>
         {

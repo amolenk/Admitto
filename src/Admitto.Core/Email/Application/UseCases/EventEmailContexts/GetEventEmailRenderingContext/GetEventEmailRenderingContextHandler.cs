@@ -25,8 +25,7 @@ internal sealed class GetEventEmailRenderingContextHandler(
 
         if (projection is null
             || !projection.HasRequiredRenderingContext
-            || teamContext is null
-            || !teamContext.HasRequiredRenderingContext)
+            || teamContext is null)
         {
             throw new EventEmailContextMissingException(query.TeamId.Value, query.TicketedEventId.Value);
         }
@@ -45,7 +44,6 @@ internal sealed class GetEventEmailRenderingContextHandler(
             $"{publicEventLink}/register",
             hasRegistration ? $"{publicEventLink}/qr-code/{registrationSuffix}" : publicEventLink,
             hasRegistration ? $"{publicEventLink}/cancel/{registrationSuffix}" : publicEventLink,
-            teamContext.AccentColor!.Value.Value,
             hasRegistration ? $"{publicEventLink}/edit/{registrationSuffix}" : publicEventLink,
             projection.TimeZone ?? string.Empty,
             projection.ReconfirmOpensAt,

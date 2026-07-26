@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:62341/"
+      "url": "http://localhost:59255/"
     }
   ],
   "paths": {
@@ -8833,7 +8833,6 @@
           "teamId",
           "name",
           "accentColor",
-          "replyToEmailAddress",
           "version"
         ],
         "type": "object",
@@ -8847,12 +8846,6 @@
           },
           "accentColor": {
             "type": "string"
-          },
-          "replyToEmailAddress": {
-            "type": [
-              "null",
-              "string"
-            ]
           },
           "version": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -9260,8 +9253,6 @@
         "required": [
           "name",
           "accentColor",
-          "replyToEmailAddress",
-          "clearReplyToEmailAddress",
           "expectedVersion"
         ],
         "type": "object",
@@ -9276,18 +9267,6 @@
             "type": [
               "null",
               "string"
-            ]
-          },
-          "replyToEmailAddress": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "clearReplyToEmailAddress": {
-            "type": [
-              "null",
-              "boolean"
             ]
           },
           "expectedVersion": {

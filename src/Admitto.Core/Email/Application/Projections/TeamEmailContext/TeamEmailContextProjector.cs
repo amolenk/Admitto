@@ -22,7 +22,6 @@ internal sealed class TeamEmailContextProjector(IEmailReadStore readStore)
             integrationEvent.TeamId,
             integrationEvent.Name,
             integrationEvent.AccentColor,
-            integrationEvent.ReplyToEmailAddress,
             integrationEvent.TeamVersion,
             cancellationToken);
     }
@@ -35,7 +34,6 @@ internal sealed class TeamEmailContextProjector(IEmailReadStore readStore)
             integrationEvent.TeamId,
             integrationEvent.Name,
             integrationEvent.AccentColor,
-            integrationEvent.ReplyToEmailAddress,
             integrationEvent.TeamVersion,
             cancellationToken);
     }
@@ -44,35 +42,35 @@ internal sealed class TeamEmailContextProjector(IEmailReadStore readStore)
         Guid teamIdValue,
         string name,
         string accentColor,
-        string? replyToEmailAddress,
         uint teamVersion,
         CancellationToken cancellationToken)
     {
         var now = DateTimeOffset.UtcNow;
         var teamId = TeamId.From(teamIdValue);
-        var view = await GetOrCreateAsync(teamId, now, cancellationToken);
+        var existing = await FindAsync(teamId, cancellationToken);
 
-        view.UpdateTeamContext(name, accentColor, replyToEmailAddress, teamVersion, now);
+        if (existing is not null)
+        {
+            existing.UpdateTeamContext(name, accentColor, teamVersion, now);
+            return;
+        }
+
+        readStore.TeamEmailContexts.Add(TeamEmailContextView.Create(
+            teamId,
+            name,
+            accentColor,
+            teamVersion,
+            now));
     }
 
-    private async Task<TeamEmailContextView> GetOrCreateAsync(
-        TeamId teamId,
-        DateTimeOffset now,
-        CancellationToken cancellationToken)
+    private async Task<TeamEmailContextView?> FindAsync(TeamId teamId, CancellationToken cancellationToken)
     {
         var tracked = readStore.TeamEmailContexts.Local
             .FirstOrDefault(c => c.TeamId == teamId);
         if (tracked is not null)
             return tracked;
 
-        var view = await readStore.TeamEmailContexts
+        return await readStore.TeamEmailContexts
             .FirstOrDefaultAsync(c => c.TeamId == teamId, cancellationToken);
-
-        if (view is not null)
-            return view;
-
-        view = TeamEmailContextView.CreatePartial(teamId, now);
-        readStore.TeamEmailContexts.Add(view);
-        return view;
     }
 }

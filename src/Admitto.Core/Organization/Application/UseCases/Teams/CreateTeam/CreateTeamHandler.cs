@@ -22,9 +22,9 @@ internal sealed class CreateTeamHandler(IOrganizationWriteStore writeStore)
             throw new BusinessRuleViolationException(CommonErrors.TextEmpty);
         }
 
-        TeamAccentColor? accentColor = command.AccentColor is null
+        AccentColor? accentColor = command.AccentColor is null
             ? null
-            : TeamAccentColor.From(command.AccentColor);
+            : AccentColor.From(command.AccentColor);
 
         var team = Team.Create(name, accentColor);
 

@@ -9,16 +9,13 @@ internal sealed class UpdateTeamFixture
     public uint TeamVersion { get; private set; }
 
     private readonly bool _archived;
-    private readonly string? _replyToEmailAddress;
 
-    private UpdateTeamFixture(bool archived = false, string? replyToEmailAddress = null)
+    private UpdateTeamFixture(bool archived = false)
     {
         _archived = archived;
-        _replyToEmailAddress = replyToEmailAddress;
     }
 
-    public static UpdateTeamFixture ActiveTeam(string? replyToEmailAddress = null)
-        => new(replyToEmailAddress: replyToEmailAddress);
+    public static UpdateTeamFixture ActiveTeam() => new();
 
     public static UpdateTeamFixture ArchivedTeam() => new(archived: true);
 
@@ -30,11 +27,6 @@ internal sealed class UpdateTeamFixture
         if (_archived)
         {
             builder = builder.AsArchived();
-        }
-
-        if (_replyToEmailAddress is not null)
-        {
-            builder = builder.WithReplyToEmailAddress(_replyToEmailAddress);
         }
 
         var team = builder.Build();

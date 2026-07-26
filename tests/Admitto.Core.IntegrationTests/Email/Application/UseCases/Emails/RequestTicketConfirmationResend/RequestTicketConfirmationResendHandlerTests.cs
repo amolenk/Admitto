@@ -83,7 +83,6 @@ public sealed class RequestTicketConfirmationResendHandlerTests(TestContext test
                 "https://tickets.example.com/devconf/register",
                 $"https://tickets.example.com/devconf/qr-code/{RegistrationId}",
                 $"https://tickets.example.com/devconf/cancel/{RegistrationId}",
-                "#0f766e",
                 $"https://tickets.example.com/devconf/edit/{RegistrationId}",
                 "UTC",
                 null,
@@ -98,8 +97,8 @@ public sealed class RequestTicketConfirmationResendHandlerTests(TestContext test
     private async ValueTask SeedTeamEmailContextAsync()
     {
         var now = DateTimeOffset.UtcNow;
-        var teamContext = TeamEmailContextView.CreatePartial(TeamId, now);
-        teamContext.UpdateTeamContext("DevConf Team", "#0f766e", null, teamVersion: 1, now);
+        var teamContext = TeamEmailContextView.Create(
+            TeamId, "DevConf Team", "#0f766e", teamVersion: 1, now);
 
         await Environment.EmailDatabase.SeedAsync(db => db.TeamEmailContexts.Add(teamContext));
     }

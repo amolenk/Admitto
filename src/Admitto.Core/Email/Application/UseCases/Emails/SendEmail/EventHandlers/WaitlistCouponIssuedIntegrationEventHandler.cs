@@ -45,7 +45,6 @@ internal sealed class WaitlistCouponIssuedIntegrationEventHandler(
                 eventContext.EventName,
                 EventWebsite = eventContext.WebsiteUrl,
                 eventContext.RegisterLink,
-                eventContext.TeamAccentColor
             },
             RegistrationId: null);
 

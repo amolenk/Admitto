@@ -7,6 +7,5 @@ namespace Amolenk.Admitto.Core.Organization.Domain.DomainEvents;
 public sealed record TeamCreatedDomainEvent(
     TeamId TeamId,
     TeamName Name,
-    TeamAccentColor AccentColor,
-    EmailAddress? ReplyToEmailAddress,
+    AccentColor AccentColor,
     uint TeamVersion) : DomainEvent;

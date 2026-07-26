@@ -34,20 +34,17 @@ public class Team : Aggregate<TeamId>
     private Team(
         TeamId id,
         TeamName name,
-        TeamAccentColor accentColor,
-        EmailAddress? replyToEmailAddress,
+        AccentColor accentColor,
         DateTimeOffset? archivedAt)
         : base(id)
     {
         Name = name;
         AccentColor = accentColor;
-        ReplyToEmailAddress = replyToEmailAddress;
         ArchivedAt = archivedAt;
     }
 
     public TeamName Name { get; private set; }
-    public TeamAccentColor AccentColor { get; private set; } = TeamAccentColor.From(TeamAccentColor.Default);
-    public EmailAddress? ReplyToEmailAddress { get; private set; }
+    public AccentColor AccentColor { get; private set; } = AccentColor.From(AccentColor.Default);
     public DateTimeOffset? ArchivedAt { get; private set; }
 
     public int ActiveEventCount { get; private set; }
@@ -61,62 +58,43 @@ public class Team : Aggregate<TeamId>
 
     public static Team Create(
         TeamName name,
-        TeamAccentColor? accentColor = null,
-        EmailAddress? replyToEmailAddress = null)
+        AccentColor? accentColor = null)
     {
         var team = new Team(
             TeamId.New(),
             name,
-            accentColor ?? TeamAccentColor.From(TeamAccentColor.Default),
-            replyToEmailAddress,
+            accentColor ?? AccentColor.From(AccentColor.Default),
             archivedAt: null);
 
         team.AddDomainEvent(new TeamCreatedDomainEvent(
             team.Id,
             team.Name,
             team.AccentColor,
-            team.ReplyToEmailAddress,
             team.Version));
 
         return team;
     }
 
-    public void UpdateDetails(
-        TeamName? name,
-        TeamAccentColor? accentColor,
-        bool updateReplyToEmailAddress = false,
-        EmailAddress? replyToEmailAddress = null)
+    public void UpdateDetails(TeamName? name, AccentColor? accentColor)
     {
         EnsureNotArchived();
 
         var newName = name ?? Name;
         var newAccentColor = accentColor ?? AccentColor;
-        var newReplyToEmailAddress = updateReplyToEmailAddress
-            ? replyToEmailAddress
-            : ReplyToEmailAddress;
 
-        if (Name == newName && AccentColor == newAccentColor && ReplyToEmailAddress == newReplyToEmailAddress)
+        if (Name == newName && AccentColor == newAccentColor)
             return;
 
         Name = newName;
         AccentColor = newAccentColor;
-        ReplyToEmailAddress = newReplyToEmailAddress;
 
-        AddDomainEvent(new TeamDetailsUpdatedDomainEvent(
-            Id,
-            Name,
-            AccentColor,
-            ReplyToEmailAddress,
-            Version));
+        AddDomainEvent(new TeamDetailsUpdatedDomainEvent(Id, Name, AccentColor, Version));
     }
 
     public void ChangeName(TeamName name) => UpdateDetails(name, accentColor: null);
 
-    public void ChangeAccentColor(TeamAccentColor accentColor)
+    public void ChangeAccentColor(AccentColor accentColor)
         => UpdateDetails(name: null, accentColor);
-
-    public void ChangeReplyToEmailAddress(EmailAddress? replyToEmailAddress)
-        => UpdateDetails(name: null, accentColor: null, updateReplyToEmailAddress: true, replyToEmailAddress);
 
     public void Archive(DateTimeOffset archivedAt)
     {

@@ -86,6 +86,8 @@ public sealed class ActivityLogProjectorTests(TestContext testContext) : AspireI
             eventId,
             registrationId,
             EmailAddress.From("alice@example.com"),
+            FirstName.From("Alice"),
+            LastName.From("Anderson"),
             CancellationReason.VisaLetterDenied) with { OccurredOn = occurredOn };
 
         var projector = new ActivityLogProjector(Environment.RegistrationsDatabase.Context);

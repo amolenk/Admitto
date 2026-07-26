@@ -14,15 +14,4 @@ public sealed record RegistrationCancelledIntegrationEvent(
     string RecipientEmail,
     string FirstName,
     string LastName,
-    string Reason) : IntegrationEvent
-{
-    public RegistrationCancelledIntegrationEvent(
-        Guid teamId,
-        Guid ticketedEventId,
-        Guid registrationId,
-        string recipientEmail,
-        string reason)
-        : this(teamId, ticketedEventId, registrationId, recipientEmail, string.Empty, string.Empty, reason)
-    {
-    }
-}
+    string Reason) : IntegrationEvent;

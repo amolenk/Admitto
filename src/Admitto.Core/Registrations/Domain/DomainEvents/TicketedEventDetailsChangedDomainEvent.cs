@@ -9,16 +9,4 @@ public sealed record TicketedEventDetailsChangedDomainEvent(
     EventName Name,
     AbsoluteUrl WebsiteUrl,
     Slug PublicSlug,
-    TimeZoneId TimeZone) : DomainEvent
-{
-    public TicketedEventDetailsChangedDomainEvent(
-        TeamId teamId,
-        TicketedEventId ticketedEventId,
-        EventName name,
-        AbsoluteUrl websiteUrl,
-        Slug publicSlug,
-        TimeZoneId timeZone)
-        : this(teamId, ticketedEventId, TicketedEventVersion: 0, name, websiteUrl, publicSlug, timeZone)
-    {
-    }
-}
+    TimeZoneId TimeZone) : DomainEvent;

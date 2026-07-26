@@ -14,13 +14,4 @@ public sealed record TicketedEventReconfirmPolicyChangedDomainEvent(
     TeamId TeamId,
     TicketedEventId TicketedEventId,
     uint TicketedEventVersion,
-    TicketedEventReconfirmPolicy? Policy) : DomainEvent
-{
-    public TicketedEventReconfirmPolicyChangedDomainEvent(
-        TeamId TeamId,
-        TicketedEventId TicketedEventId,
-        TicketedEventReconfirmPolicy? Policy)
-        : this(TeamId, TicketedEventId, TicketedEventVersion: 0, Policy)
-    {
-    }
-}
+    TicketedEventReconfirmPolicy? Policy) : DomainEvent;

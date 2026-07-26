@@ -12,12 +12,10 @@ public sealed record EffectiveEmailSettings(
     bool SmtpStartTls,
     EmailAddress FromAddress,
     string FromDisplayName,
-    EmailAddress? ReplyToAddress,
-    string? ReplyToDisplayName,
     EmailAuthMode AuthMode,
     string? Username,
     string? Password,
-    EmailAccentColor AccentColor,
+    AccentColor AccentColor,
     EmailFontFamily FontFamily)
 {
     public bool IsValid() =>

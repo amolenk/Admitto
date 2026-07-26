@@ -81,7 +81,7 @@ internal sealed class SendEmailHandler(
                 cancellationToken);
             var parameters = EmailTemplateParameters.WithBranding(
                 command.Parameters,
-                TryGetAccentColor(command.Parameters) ?? settings.AccentColor,
+                settings.AccentColor,
                 settings.FontFamily);
             rendered = renderer.Render(template, parameters);
         }
@@ -134,11 +134,5 @@ internal sealed class SendEmailHandler(
             rendered.Subject,
             rendered.TextBody,
             rendered.HtmlBody));
-    }
-
-    private static EmailAccentColor? TryGetAccentColor(object parameters)
-    {
-        var value = parameters.GetType().GetProperty("TeamAccentColor")?.GetValue(parameters) as string;
-        return string.IsNullOrWhiteSpace(value) ? null : EmailAccentColor.From(value);
     }
 }

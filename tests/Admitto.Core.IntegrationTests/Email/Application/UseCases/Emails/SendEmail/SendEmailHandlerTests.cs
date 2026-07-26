@@ -210,7 +210,7 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
                 EditRegistrationLink = "https://admitto.example.com/e/devconf/edit/registration-id",
                 TicketTypes = Array.Empty<string>()
             },
-            EmailAccentColor.From("#0f766e"),
+            AccentColor.From("#0f766e"),
             EmailFontFamily.From("Arial"));
 
         var rendered = new ScribanEmailRenderer().Render(template, parameters);
@@ -234,7 +234,7 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
         var renderer = new ScribanEmailRenderer();
         var parameters = EmailTemplateParameters.WithBranding(
             EmailTemplateSampleParameters.Create(),
-            EmailAccentColor.From("#0f766e"),
+            AccentColor.From("#0f766e"),
             EmailFontFamily.From("Georgia, serif"));
 
         foreach (var entry in BuiltInEmailTemplateCatalog.All)
@@ -248,6 +248,19 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
             rendered.HtmlBody.Contains("#0f766e")
                 .ShouldBeTrue($"Built-in template '{entry.Name}' must render the configured accent color.");
         }
+    }
+
+    [TestMethod]
+    public void EmailTemplateParameters_AccentColorArgument_ExportsCanonicalAccentColor()
+    {
+        var parameters = EmailTemplateParameters.WithBranding(
+            new { FirstName = "Alice" },
+            AccentColor.From("#dc2626"),
+            EmailFontFamily.From("Arial"));
+
+        parameters["accent_color"].ShouldBe("#dc2626");
+        parameters["font_family"].ShouldBe("Arial");
+        parameters.ShouldNotContainKey("team_accent_color");
     }
 
     private async ValueTask<(TeamId, TicketedEventId, FakeEmailSender, SendEmailHandler)> BuildHandlerAsync(
@@ -273,6 +286,19 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
             outbox);
 
         return (teamId, eventId, fakeSender, handler);
+    }
+
+    [TestMethod]
+    public async ValueTask ResolveAsync_NoTeamContextRow_UsesDefaultBrandingAndSystemSenderLabel()
+    {
+        // The projection is eventually consistent: the team's branding integration event
+        // has not reached Email yet, so there is no row at all. Sending must still work.
+        var settings = await BuildSettingsResolver().ResolveAsync(TeamId.New(), testContext.CancellationToken);
+
+        settings.ShouldNotBeNull();
+        settings.AccentColor.ShouldBe(AccentColor.From(AccentColor.Default));
+        settings.FontFamily.ShouldBe(EmailFontFamily.From(EmailFontFamily.Default));
+        settings.FromDisplayName.ShouldBe("Admitto");
     }
 
     private async ValueTask<(TeamId, TicketedEventId, FakeEmailSender, DeliverEmailHandler)> BuildDeliverHandlerAsync(
@@ -313,8 +339,8 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
     private async ValueTask SeedTeamEmailContextAsync(TeamId teamId)
     {
         var now = DateTimeOffset.UtcNow;
-        var teamContext = TeamEmailContextView.CreatePartial(teamId, now);
-        teamContext.UpdateTeamContext("DevConf Team", "#0f766e", null, teamVersion: 1, now);
+        var teamContext = TeamEmailContextView.Create(
+            teamId, "DevConf Team", "#0f766e", teamVersion: 1, now);
 
         await Environment.EmailDatabase.SeedAsync(db => db.TeamEmailContexts.Add(teamContext));
     }

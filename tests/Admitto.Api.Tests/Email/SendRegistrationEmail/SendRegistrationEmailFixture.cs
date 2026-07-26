@@ -76,11 +76,10 @@ internal sealed class SendRegistrationEmailFixture
                 reconfirmPolicy: null,
                 isArchived: false,
                 DateTimeOffset.UtcNow);
-            var teamContext = TeamEmailContextView.CreatePartial(team.Id, DateTimeOffset.UtcNow);
-            teamContext.UpdateTeamContext(
+            var teamContext = TeamEmailContextView.Create(
+                team.Id,
                 team.Name.Value,
                 team.AccentColor.Value,
-                team.ReplyToEmailAddress?.Value,
                 team.Version,
                 DateTimeOffset.UtcNow);
             db.EventEmailContexts.Add(context);

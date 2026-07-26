@@ -502,7 +502,6 @@ export type TeamDto = {
     teamId: string;
     name: string;
     accentColor: string;
-    replyToEmailAddress: null | string;
     version: number | string;
 };
 
@@ -598,8 +597,6 @@ export type UpdatePartnerRegistrationHttpRequest = {
 export type UpdateTeamHttpRequest = {
     name: null | string;
     accentColor: null | string;
-    replyToEmailAddress: null | string;
-    clearReplyToEmailAddress: null | boolean;
     expectedVersion: null | number | string;
 };
 

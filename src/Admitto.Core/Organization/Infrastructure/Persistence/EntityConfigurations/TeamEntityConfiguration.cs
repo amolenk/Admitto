@@ -25,12 +25,8 @@ public class TeamEntityConfiguration : IEntityTypeConfiguration<Team>
         builder.Property(e => e.AccentColor)
             .HasColumnName("accent_color")
             .IsRequired()
-            .HasMaxLength(TeamAccentColor.MaxLength)
-            .HasDefaultValue(TeamAccentColor.From(TeamAccentColor.Default));
-
-        builder.Property(e => e.ReplyToEmailAddress)
-            .HasColumnName("reply_to_email_address")
-            .HasMaxLength(EmailAddress.MaxLength);
+            .HasMaxLength(AccentColor.MaxLength)
+            .HasDefaultValue(AccentColor.From(AccentColor.Default));
 
         builder.Property(e => e.ArchivedAt)
             .HasColumnName("archived_at");

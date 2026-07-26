@@ -17,7 +17,6 @@ internal sealed record EventEmailContextDto(
     string RegisterLink,
     string QRCodeLink,
     string CancelLink,
-    string TeamAccentColor,
     string EditRegistrationLink,
     string TimeZone,
     DateTimeOffset? ReconfirmOpensAt,

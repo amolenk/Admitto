@@ -42,47 +42,28 @@ internal sealed class EffectiveEmailSettingsResolver(
 
         var authMode = ResolveAuthMode(value.AuthMode);
 
-        var teamContext = await readStore.TeamEmailContexts
+        // Sender identity is entirely deployment configuration (see ADR-013), so the only
+        // team-owned fact the send pipeline needs is the accent color. The projection is
+        // eventually consistent: a team whose branding event has not reached Email yet has
+        // no row at all, which must not block a send — fall back to the default brand color.
+        var accentColor = await readStore.TeamEmailContexts
             .AsNoTracking()
             .Where(c => c.TeamId == teamId)
-            .Select(c => new
-            {
-                c.TeamName,
-                c.ReplyToEmailAddress,
-                c.AccentColor
-            })
+            .Select(c => (AccentColor?)c.AccentColor)
             .SingleOrDefaultAsync(cancellationToken);
-
-        if (teamContext is null)
-        {
-            throw new InvalidOperationException($"No email context found for team {teamId.Value}");
-        }
-
-        var fromAddress = EmailAddress.From(value.FromAddress);
-        var fromDisplayName = $"{teamContext.TeamName} via Admitto";
-
-        EmailAddress? replyToAddress = null;
-        string? replyToDisplayName = null;
-        if (teamContext.ReplyToEmailAddress is not null)
-        {
-            replyToAddress = teamContext.ReplyToEmailAddress;
-            replyToDisplayName = $"{teamContext.TeamName} Team";
-        }
 
         return new EffectiveEmailSettings(
             Hostname.From(value.SmtpHost),
             Port.From(value.SmtpPort),
             value.SmtpSsl,
             value.SmtpStartTls,
-            fromAddress,
-            fromDisplayName,
-            replyToAddress,
-            replyToDisplayName,
+            EmailAddress.From(value.FromAddress),
+            value.FromDisplayName,
             authMode,
             authMode == EmailAuthMode.Basic ? value.Username : null,
             authMode == EmailAuthMode.Basic ? value.Password : null,
-            teamContext.AccentColor!.Value,
-            EmailFontFamily.From("Inter, sans-serif"));
+            accentColor ?? AccentColor.From(AccentColor.Default),
+            EmailFontFamily.From(EmailFontFamily.Default));
     }
 
     private static EmailAuthMode ResolveAuthMode(string? value)

@@ -11,16 +11,4 @@ public sealed record TicketedEventDetailsChangedIntegrationEvent(
     string Name,
     string WebsiteUrl,
     string PublicSlug,
-    string TimeZone) : IntegrationEvent
-{
-    public TicketedEventDetailsChangedIntegrationEvent(
-        Guid TeamId,
-        Guid TicketedEventId,
-        string Name,
-        string WebsiteUrl,
-        string PublicSlug,
-        string TimeZone)
-        : this(TeamId, TicketedEventId, TicketedEventVersion: 0, Name, WebsiteUrl, PublicSlug, TimeZone)
-    {
-    }
-}
+    string TimeZone) : IntegrationEvent;
