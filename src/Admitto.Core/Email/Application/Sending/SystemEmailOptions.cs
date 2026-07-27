@@ -19,6 +19,13 @@ public sealed class SystemEmailOptions
     [Required]
     public string FromAddress { get; init; } = string.Empty;
 
+    /// <summary>
+    /// Visible MIME <c>From</c> display name. The platform always sends under its own
+    /// identity rather than a team's, so this is deployment configuration and is never
+    /// derived from team data.
+    /// </summary>
+    public string FromDisplayName { get; init; } = "Admitto";
+
     public string AuthMode { get; init; } = "None";
 
     public string? Username { get; init; }

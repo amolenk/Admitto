@@ -57,7 +57,6 @@ internal sealed class RegistrationCancelledIntegrationEventHandler(
                 EventWebsite = eventContext.WebsiteUrl,
                 RegisterLink = eventContext.RegisterLink,
                 eventContext.QRCodeLink,
-                eventContext.TeamAccentColor
             });
 
         await sendEmailHandler.HandleAsync(command, cancellationToken);

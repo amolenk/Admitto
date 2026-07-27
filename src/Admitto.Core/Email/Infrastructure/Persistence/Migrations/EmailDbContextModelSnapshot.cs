@@ -117,8 +117,9 @@ namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence.Migrations
                         .HasColumnName("team_id");
 
                     b.Property<string>("AccentColor")
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)")
+                        .IsRequired()
+                        .HasMaxLength(7)
+                        .HasColumnType("character varying(7)")
                         .HasColumnName("accent_color");
 
                     b.Property<DateTimeOffset>("CreatedAt")
@@ -129,12 +130,8 @@ namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence.Migrations
                         .HasColumnType("timestamptz")
                         .HasColumnName("last_updated_at");
 
-                    b.Property<string>("ReplyToEmailAddress")
-                        .HasMaxLength(320)
-                        .HasColumnType("character varying(320)")
-                        .HasColumnName("reply_to_email_address");
-
                     b.Property<string>("TeamName")
+                        .IsRequired()
                         .HasMaxLength(64)
                         .HasColumnType("character varying(64)")
                         .HasColumnName("team_name");

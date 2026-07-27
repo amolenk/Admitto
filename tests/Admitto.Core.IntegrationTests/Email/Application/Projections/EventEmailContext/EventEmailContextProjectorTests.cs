@@ -7,6 +7,7 @@ using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using NSubstitute;
+using Amolenk.Admitto.Testing.Builders.Registrations.Contracts;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.Projections.EventEmailContext;
 
@@ -31,10 +32,12 @@ public sealed class EventEmailContextProjectorTests(TestContext testContext) : A
         var (projector, schedule) = CreateProjector();
 
         await projector.HandleAsync(
-            new TicketedEventCreatedIntegrationEvent(
-                Guid.NewGuid(), teamId.Value, eventId.Value, "#0f766e", "DevConf",
-                "https://example.com", "devconf", "UTC", 2,
-                new TicketedEventReconfirmPolicySnapshot(Opens, Closes, 1, 24), false),
+            new TicketedEventCreatedIntegrationEventBuilder()
+                .WithTeamId(teamId.Value)
+                .WithTicketedEventId(eventId.Value)
+                .WithSelfServiceTicketTypeCount(2)
+                .WithReconfirmPolicy(new TicketedEventReconfirmPolicySnapshot(Opens, Closes, 1, 24))
+                .Build(),
             testContext.CancellationToken);
 
         await Environment.EmailDatabase.AssertAsync(async db =>
@@ -67,9 +70,10 @@ public sealed class EventEmailContextProjectorTests(TestContext testContext) : A
         var (projector, schedule) = CreateProjector();
 
         await projector.HandleAsync(
-            new TicketedEventCreatedIntegrationEvent(
-                Guid.NewGuid(), teamId.Value, eventId.Value, "#0f766e", "DevConf",
-                "https://example.com", "devconf", "UTC", 1, null, false),
+            new TicketedEventCreatedIntegrationEventBuilder()
+                .WithTeamId(teamId.Value)
+                .WithTicketedEventId(eventId.Value)
+                .Build(),
             testContext.CancellationToken);
 
         await Environment.EmailDatabase.AssertAsync(async db =>
@@ -93,7 +97,8 @@ public sealed class EventEmailContextProjectorTests(TestContext testContext) : A
         var (projector, schedule) = CreateProjector();
 
         await projector.HandleAsync(
-            new TicketedEventReconfirmPolicyChangedIntegrationEvent(teamId.Value, eventId.Value, Policy: null),
+            new TicketedEventReconfirmPolicyChangedIntegrationEvent(
+                teamId.Value, eventId.Value, TicketedEventVersion: 1, Policy: null),
             testContext.CancellationToken);
 
         await schedule.Received(1).HandleAsync(
@@ -121,7 +126,7 @@ public sealed class EventEmailContextProjectorTests(TestContext testContext) : A
         var (projector, schedule) = CreateProjector();
 
         await projector.HandleAsync(
-            new TicketedEventArchivedIntegrationEvent(teamId.Value, eventId.Value),
+            new TicketedEventArchivedIntegrationEvent(teamId.Value, eventId.Value, TicketedEventVersion: 1),
             testContext.CancellationToken);
 
         await Environment.EmailDatabase.AssertAsync(async db =>
@@ -159,9 +164,10 @@ public sealed class EventEmailContextProjectorTests(TestContext testContext) : A
             testContext.CancellationToken);
 
         await projector.HandleAsync(
-            new TicketedEventCreatedIntegrationEvent(
-                Guid.NewGuid(), teamId.Value, eventId.Value, TicketedEventVersion: 0, "DevConf",
-                "https://example.com", "devconf", "UTC", 1, null, false),
+            new TicketedEventCreatedIntegrationEventBuilder()
+                .WithTeamId(teamId.Value)
+                .WithTicketedEventId(eventId.Value)
+                .Build(),
             testContext.CancellationToken);
 
         await Environment.EmailDatabase.AssertAsync(async db =>
@@ -239,9 +245,10 @@ public sealed class EventEmailContextProjectorTests(TestContext testContext) : A
         var teamId = TeamId.New();
         var eventId = TicketedEventId.New();
 
-        var createdEvent = new TicketedEventCreatedIntegrationEvent(
-            Guid.NewGuid(), teamId.Value, eventId.Value, "#0f766e", "DevConf",
-            "https://example.com", "devconf", "UTC", 1, null, false);
+        var createdEvent = new TicketedEventCreatedIntegrationEventBuilder()
+            .WithTeamId(teamId.Value)
+            .WithTicketedEventId(eventId.Value)
+            .Build();
 
         var (projector, _) = CreateProjector();
 

@@ -8,13 +8,4 @@ public sealed record TicketedEventSelfServiceTicketTypeCountChangedIntegrationEv
     Guid TeamId,
     Guid TicketedEventId,
     uint TicketCatalogVersion,
-    int SelfServiceTicketTypeCount) : IntegrationEvent
-{
-    public TicketedEventSelfServiceTicketTypeCountChangedIntegrationEvent(
-        Guid TeamId,
-        Guid TicketedEventId,
-        int SelfServiceTicketTypeCount)
-        : this(TeamId, TicketedEventId, TicketCatalogVersion: 0, SelfServiceTicketTypeCount)
-    {
-    }
-}
+    int SelfServiceTicketTypeCount) : IntegrationEvent;

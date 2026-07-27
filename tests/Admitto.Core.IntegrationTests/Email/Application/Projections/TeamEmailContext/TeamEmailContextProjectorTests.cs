@@ -17,7 +17,7 @@ public sealed class TeamEmailContextProjectorTests(TestContext testContext) : As
 
         await projector.HandleAsync(
             new TeamDetailsUpdatedIntegrationEvent(
-                teamId.Value, "Updated Team", "#ff0000", "help@example.com", TeamVersion: 3),
+                teamId.Value, "Updated Team", "#ff0000", TeamVersion: 3),
             testContext.CancellationToken);
 
         await Environment.EmailDatabase.AssertAsync(async db =>
@@ -26,8 +26,7 @@ public sealed class TeamEmailContextProjectorTests(TestContext testContext) : As
                 c => c.TeamId == teamId,
                 testContext.CancellationToken);
             view.TeamName.ShouldBe("Updated Team");
-            view.AccentColor.ShouldBe(EmailAccentColor.From("#ff0000"));
-            view.ReplyToEmailAddress.ShouldBe(EmailAddress.From("help@example.com"));
+            view.AccentColor.ShouldBe(AccentColor.From("#ff0000"));
             view.TeamVersion.ShouldBe(3u);
         });
     }
@@ -39,10 +38,10 @@ public sealed class TeamEmailContextProjectorTests(TestContext testContext) : As
         var projector = new TeamEmailContextProjector(Environment.EmailDatabase.Context);
 
         await projector.HandleAsync(
-            new TeamDetailsUpdatedIntegrationEvent(teamId.Value, "Blue Team", "#0000ff", "blue@example.com", TeamVersion: 3),
+            new TeamDetailsUpdatedIntegrationEvent(teamId.Value, "Blue Team", "#0000ff", TeamVersion: 3),
             testContext.CancellationToken);
         await projector.HandleAsync(
-            new TeamDetailsUpdatedIntegrationEvent(teamId.Value, "Green Team", "#00ff00", "green@example.com", TeamVersion: 2),
+            new TeamDetailsUpdatedIntegrationEvent(teamId.Value, "Green Team", "#00ff00", TeamVersion: 2),
             testContext.CancellationToken);
 
         await Environment.EmailDatabase.AssertAsync(async db =>
@@ -51,8 +50,7 @@ public sealed class TeamEmailContextProjectorTests(TestContext testContext) : As
                 c => c.TeamId == teamId,
                 testContext.CancellationToken);
             view.TeamName.ShouldBe("Blue Team");
-            view.AccentColor.ShouldBe(EmailAccentColor.From("#0000ff"));
-            view.ReplyToEmailAddress.ShouldBe(EmailAddress.From("blue@example.com"));
+            view.AccentColor.ShouldBe(AccentColor.From("#0000ff"));
             view.TeamVersion.ShouldBe(3u);
         });
     }

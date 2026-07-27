@@ -45,7 +45,6 @@ internal sealed class TicketConfirmationResendRequestedIntegrationEventHandler(
                 eventContext.PublicEventLink,
                 eventContext.QRCodeLink,
                 eventContext.CancelLink,
-                eventContext.TeamAccentColor,
                 eventContext.EditRegistrationLink,
                 TicketTypes = integrationEvent.TicketNames
             },

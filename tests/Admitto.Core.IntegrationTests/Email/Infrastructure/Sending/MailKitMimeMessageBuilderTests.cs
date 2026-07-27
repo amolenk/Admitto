@@ -11,19 +11,21 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Email.Infrastructure.Sending;
 public sealed class MailKitMimeMessageBuilderTests
 {
     [TestMethod]
-    public void Build_UsesSystemFromAddressAsDisplayName()
+    public void Build_UsesConfiguredSystemSenderAndNeverSetsReplyTo()
     {
-        var settings = CreateSettings("tickets@admitto.org", replyToAddress: null);
+        var settings = CreateSettings("Admitto");
 
         var result = MailKitMimeMessageBuilder.Build(settings, CreateMessage());
 
         var from = result.From.Mailboxes.Single();
         from.Name.ShouldBe("Admitto");
-        from.Address.ShouldBe("noreply@tickets.admitto.org");
+        from.Address.ShouldBe("tickets@admitto.org");
+
+        // Sending on behalf of a team hurts deliverability, so no Reply-To is ever set.
         result.ReplyTo.ShouldBeEmpty();
     }
 
-    private static EffectiveEmailSettings CreateSettings(string fromDisplayName, EmailAddress? replyToAddress) =>
+    private static EffectiveEmailSettings CreateSettings(string fromDisplayName) =>
         new(
             Hostname.From("smtp.admitto.org"),
             Port.From(587),
@@ -31,12 +33,10 @@ public sealed class MailKitMimeMessageBuilderTests
             SmtpStartTls: true,
             EmailAddress.From("tickets@admitto.org"),
             fromDisplayName,
-            replyToAddress,
-            "replyToDisplayName__TODO",
             EmailAuthMode.None,
             Username: null,
             Password: null,
-            EmailAccentColor.From("#0f766e"),
+            AccentColor.From("#0f766e"),
             EmailFontFamily.From("Arial"));
 
     private static EmailMessage CreateMessage() =>

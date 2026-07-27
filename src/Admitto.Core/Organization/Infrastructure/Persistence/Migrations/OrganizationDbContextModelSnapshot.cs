@@ -132,11 +132,6 @@ namespace Amolenk.Admitto.Core.Organization.Infrastructure.Persistence.Migration
                         .HasDefaultValue(0)
                         .HasColumnName("pending_event_count");
 
-                    b.Property<string>("ReplyToEmailAddress")
-                        .HasMaxLength(320)
-                        .HasColumnType("character varying(320)")
-                        .HasColumnName("reply_to_email_address");
-
                     b.Property<uint>("Version")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()

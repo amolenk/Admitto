@@ -35,7 +35,8 @@ internal sealed class RegisterTicketedEventArchivedFixture
         team.RegisterEventCreated(pendingRequest.Id, TicketedEventId, DateTimeOffset.UtcNow);
 
         TeamId = team.Id.Value;
-        IntegrationEvent = new TicketedEventArchivedIntegrationEvent(TeamId, TicketedEventId.Value);
+        IntegrationEvent = new TicketedEventArchivedIntegrationEvent(
+            TeamId, TicketedEventId.Value, TicketedEventVersion: 1);
 
         await environment.OrganizationDatabase.SeedAsync(ctx =>
         {

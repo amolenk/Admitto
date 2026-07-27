@@ -229,16 +229,16 @@ internal sealed class SendBulkEmailJob(
         {
             var parameters = JsonSerializer.Deserialize<Dictionary<string, object?>>(
                 recipient.ParametersJson, ParametersJsonOptions) ?? new Dictionary<string, object?>();
-            parameters["accent_color"] = eventContext.TeamAccentColor;
+            parameters["accent_color"] = settings.AccentColor.Value;
             parameters["font_family"] = settings.FontFamily.Value;
+            parameters["team_name"] = eventContext.TeamName;
             parameters["event_name"] = eventContext.EventName;
             parameters["event_website"] = eventContext.WebsiteUrl;
             parameters["public_event_link"] = eventContext.PublicEventLink;
             parameters["register_link"] = eventContext.RegisterLink;
             parameters["cancel_link"] = BuildRegistrationLink(eventContext.PublicEventLink, "cancel", recipient.RegistrationId);
             parameters["edit_registration_link"] = BuildRegistrationLink(eventContext.PublicEventLink, "edit", recipient.RegistrationId);
-            parameters["qr_code_link"] = BuildRegistrationLink(eventContext.PublicEventLink, "qr-code", recipient.RegistrationId);
-            parameters["team_accent_color"] = eventContext.TeamAccentColor;
+            parameters["qrcode_link"] = BuildRegistrationLink(eventContext.PublicEventLink, "qr-code", recipient.RegistrationId);
 
             var rendered = renderer.Render(
                 template,

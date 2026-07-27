@@ -9,8 +9,7 @@ public class TeamBuilder
     public static readonly TeamName DefaultName = TeamName.From("Test Team");
 
     private TeamName _name = DefaultName;
-    private TeamAccentColor? _accentColor;
-    private EmailAddress? _replyToEmailAddress;
+    private AccentColor? _accentColor;
     private bool _archived;
 
     public TeamBuilder WithName(string name)
@@ -27,19 +26,13 @@ public class TeamBuilder
 
     public TeamBuilder WithAccentColor(string accentColor)
     {
-        _accentColor = TeamAccentColor.From(accentColor);
-        return this;
-    }
-
-    public TeamBuilder WithReplyToEmailAddress(string replyToEmailAddress)
-    {
-        _replyToEmailAddress = EmailAddress.From(replyToEmailAddress);
+        _accentColor = AccentColor.From(accentColor);
         return this;
     }
 
     public Team Build()
     {
-        var team = Team.Create(_name, _accentColor, _replyToEmailAddress);
+        var team = Team.Create(_name, _accentColor);
 
         if (_archived)
         {

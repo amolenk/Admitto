@@ -49,7 +49,6 @@ internal sealed class AttendeeTicketsChangedIntegrationEventHandler(
                 eventContext.PublicEventLink,
                 QRCodeLink = eventContext.QRCodeLink,
                 eventContext.CancelLink,
-                eventContext.TeamAccentColor,
                 eventContext.EditRegistrationLink,
                 TicketTypes = ticketTypeNames
             },

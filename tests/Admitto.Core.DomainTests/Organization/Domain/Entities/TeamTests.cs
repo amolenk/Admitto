@@ -47,7 +47,7 @@ public sealed class TeamTests
     {
         var sut = Team.Create(TeamName.From("New Team"));
 
-        sut.AccentColor.ShouldBe(TeamAccentColor.From(TeamAccentColor.Default));
+        sut.AccentColor.ShouldBe(AccentColor.From(AccentColor.Default));
     }
 
     [TestMethod]
@@ -55,7 +55,7 @@ public sealed class TeamTests
     {
         var sut = new TeamBuilder().Build();
 
-        sut.ChangeAccentColor(TeamAccentColor.From("#0f766e"));
+        sut.ChangeAccentColor(AccentColor.From("#0f766e"));
 
         sut.AccentColor.Value.ShouldBe("#0f766e");
     }
@@ -65,45 +65,15 @@ public sealed class TeamTests
     {
         var sut = new TeamBuilder().AsArchived().Build();
 
-        var result = ErrorResult.Capture(() => sut.ChangeAccentColor(TeamAccentColor.From("#0f766e")));
+        var result = ErrorResult.Capture(() => sut.ChangeAccentColor(AccentColor.From("#0f766e")));
 
         result.Error.ShouldMatch(Team.Errors.TeamArchived(sut.Id));
     }
 
     [TestMethod]
-    public void ChangeReplyToEmailAddress_ActiveTeam_UpdatesReplyToEmailAddress()
+    public void AccentColor_InvalidFormat_Throws()
     {
-        var sut = new TeamBuilder().Build();
-
-        sut.ChangeReplyToEmailAddress(EmailAddress.From("help@example.com"));
-
-        sut.ReplyToEmailAddress.ShouldBe(EmailAddress.From("help@example.com"));
-    }
-
-    [TestMethod]
-    public void ChangeReplyToEmailAddress_Null_ClearsReplyToEmailAddress()
-    {
-        var sut = new TeamBuilder().WithReplyToEmailAddress("help@example.com").Build();
-
-        sut.ChangeReplyToEmailAddress(null);
-
-        sut.ReplyToEmailAddress.ShouldBeNull();
-    }
-
-    [TestMethod]
-    public void ChangeReplyToEmailAddress_ArchivedTeam_ThrowsTeamArchived()
-    {
-        var sut = new TeamBuilder().AsArchived().Build();
-
-        var result = ErrorResult.Capture(() => sut.ChangeReplyToEmailAddress(EmailAddress.From("help@example.com")));
-
-        result.Error.ShouldMatch(Team.Errors.TeamArchived(sut.Id));
-    }
-
-    [TestMethod]
-    public void TeamAccentColor_InvalidFormat_Throws()
-    {
-        void Act() => TeamAccentColor.From("not-a-color");
+        void Act() => AccentColor.From("not-a-color");
 
         Should.Throw<ValueObjectValidationException>(Act);
     }

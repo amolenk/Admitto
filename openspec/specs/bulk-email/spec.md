@@ -233,14 +233,14 @@ All endpoints SHALL require team-membership authorisation on the team owning the
 
 ### Requirement: Bulk built-in template rendering uses Email event context
 
-For built-in or system bulk email types, including reconfirm email, bulk fan-out SHALL enrich per-recipient template parameters with reusable team/event rendering facts from the Email-owned event context projection. The projection SHALL provide event name, event website URL, public links where applicable, team accent color, and other reusable rendering inputs needed by the selected template.
+For built-in or system bulk email types, including reconfirm email, bulk fan-out SHALL enrich per-recipient template parameters with reusable team/event rendering facts from the Email-owned event context projection. The projection SHALL provide team name, event name, event website URL, public links where applicable, and other reusable rendering inputs needed by the selected template. Branding parameters (accent color and font family) SHALL come from the resolved effective email settings rather than the event context, so transactional and bulk sending share one branding source.
 
-Custom bulk-email jobs SHALL continue to use job-owned subject/body content and SHALL still receive standard branding parameters during rendering.
+Custom bulk-email jobs SHALL continue to use job-owned subject/body content and SHALL still receive standard branding parameters during rendering. Bulk rendering SHALL expose the canonical `accent_color` and `qrcode_link` parameters, not duplicate `team_accent_color` or `qr_code_link` aliases.
 
 #### Scenario: Reconfirm recipient receives projected event links
 
 - **WHEN** a reconfirm bulk-email job processes a recipient
-- **THEN** the built-in reconfirm template receives event name, event website URL, register link, cancel link, team accent color, and recipient-specific values from the Email projection plus the recipient snapshot
+- **THEN** the built-in reconfirm template receives event name, event website URL, register link, cancel link, and recipient-specific values from the Email projection plus the recipient snapshot, and the team accent color from the resolved effective email settings
 
 #### Scenario: Attendee source still resolves against Registrations
 
@@ -250,7 +250,7 @@ Custom bulk-email jobs SHALL continue to use job-owned subject/body content and 
 #### Scenario: Custom job content remains job-owned
 
 - **WHEN** a `bulk-custom` job is processed
-- **THEN** the worker renders the persisted job-owned subject and body content, using the Email projection only for reusable branding/context parameters and not as the source of custom content
+- **THEN** the worker renders the persisted job-owned subject and body content with reusable branding/context parameters including `team_name`, using the Email projection only for those parameters and not as the source of custom content
 
 ### Requirement: A bulk-email job targets registered attendees via an Email-owned filter
 
@@ -269,4 +269,3 @@ There SHALL NOT be any recipient source other than registered attendees; arbitra
 
 - **WHEN** a bulk-email job is persisted
 - **THEN** the stored filter is the Email-owned value object and no `Registrations.Contracts` query DTO is written to the Email schema
-

@@ -139,11 +139,10 @@ internal sealed class BulkEmailFixture
                     MinEmailIntervalHours: 24),
                 isArchived: false,
                 DateTimeOffset.UtcNow);
-            var teamContext = TeamEmailContextView.CreatePartial(TeamId, DateTimeOffset.UtcNow);
-            teamContext.UpdateTeamContext(
+            var teamContext = TeamEmailContextView.Create(
+                TeamId,
                 team.Name.Value,
                 team.AccentColor.Value,
-                team.ReplyToEmailAddress?.Value,
                 team.Version,
                 DateTimeOffset.UtcNow);
             db.EventEmailContexts.Add(context);

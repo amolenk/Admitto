@@ -32,13 +32,4 @@ public sealed record TicketedEventReconfirmPolicyChangedIntegrationEvent(
     Guid TeamId,
     Guid TicketedEventId,
     uint TicketedEventVersion,
-    TicketedEventReconfirmPolicySnapshot? Policy) : IntegrationEvent
-{
-    public TicketedEventReconfirmPolicyChangedIntegrationEvent(
-        Guid TeamId,
-        Guid TicketedEventId,
-        TicketedEventReconfirmPolicySnapshot? Policy)
-        : this(TeamId, TicketedEventId, TicketedEventVersion: 0, Policy)
-    {
-    }
-}
+    TicketedEventReconfirmPolicySnapshot? Policy) : IntegrationEvent;

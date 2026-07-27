@@ -19,15 +19,13 @@ internal sealed class TeamEmailContextViewEntityConfiguration
 
         builder.Property(e => e.TeamName)
             .HasColumnName("team_name")
-            .HasMaxLength(TeamName.MaxLength);
+            .HasMaxLength(TeamName.MaxLength)
+            .IsRequired();
 
         builder.Property(e => e.AccentColor)
             .HasColumnName("accent_color")
-            .HasMaxLength(EmailAccentColor.MaxLength);
-
-        builder.Property(e => e.ReplyToEmailAddress)
-            .HasColumnName("reply_to_email_address")
-            .HasMaxLength(EmailAddress.MaxLength);
+            .HasMaxLength(AccentColor.MaxLength)
+            .IsRequired();
 
         builder.Property(e => e.TeamVersion)
             .HasColumnName("team_version")

@@ -12,6 +12,6 @@ public sealed class CreateTeamValidator : AbstractValidator<CreateTeamHttpReques
             .MustBeParseable(TeamName.TryFrom);
 
         RuleFor(x => x.AccentColor)
-            .MustBeNullOrParseable(TeamAccentColor.TryFrom);
+            .MustBeNullOrParseable(AccentColor.TryFrom);
     }
 }

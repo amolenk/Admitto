@@ -14,7 +14,7 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.UseCases.Email
 public sealed class OtpCodeRequestedIntegrationEventHandlerTests(TestContext testContext)
 {
     [TestMethod]
-    public async ValueTask HandleAsync_EventHasTeamAccentColor_IncludesTeamAccentColorParameter()
+    public async ValueTask HandleAsync_OtpCodeRequested_LeavesBrandingToEffectiveEmailSettings()
     {
         var teamId = Guid.NewGuid();
         var eventId = Guid.NewGuid();
@@ -36,7 +36,6 @@ public sealed class OtpCodeRequestedIntegrationEventHandlerTests(TestContext tes
                 "https://tickets.admitto.org/e/azure-fest/register",
                 "https://tickets.admitto.org/e/azure-fest/qr-code/00000000-0000-0000-0000-000000000000",
                 "https://tickets.admitto.org/e/azure-fest/cancel/00000000-0000-0000-0000-000000000000",
-                "#0f766e",
                 "https://tickets.admitto.org/e/azure-fest/edit/00000000-0000-0000-0000-000000000000",
                 "UTC",
                 null,
@@ -57,10 +56,12 @@ public sealed class OtpCodeRequestedIntegrationEventHandlerTests(TestContext tes
 
         sendEmailHandler.Command.ShouldNotBeNull();
         sendEmailHandler.Command.EmailType.ShouldBe(BuiltInEmailTemplateNames.VerificationCode);
-        var teamAccentColor = sendEmailHandler.Command.Parameters.GetType()
-            .GetProperty("TeamAccentColor")
-            ?.GetValue(sendEmailHandler.Command.Parameters);
-        teamAccentColor.ShouldBe("#0f766e");
+
+        // Branding is resolved once at send time from EffectiveEmailSettings, so the
+        // event handler must not smuggle an accent color through the parameters object.
+        sendEmailHandler.Command.Parameters.GetType()
+            .GetProperty("AccentColor")
+            .ShouldBeNull();
     }
 
     private sealed class CapturingSendEmailHandler : ICommandHandler<SendEmailCommand>

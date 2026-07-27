@@ -143,33 +143,39 @@ On success, the endpoint SHALL return `202 Accepted` after the resend request ha
 
 ### Requirement: Application email uses Admitto system sender identity
 
-All application email sent by the Email module SHALL use a configured Admitto-controlled sender address for the SMTP and MIME `From` address. When the owning team's projected team name is available, the Email module SHALL use that team name as the visible MIME `From` display name. When the owning team has an optional reply-to email address, the Email module SHALL set the SMTP `Reply-To` header to that address without changing the `From` address or display name. When the projected team name is unavailable, the visible MIME `From` display name SHALL remain the configured Admitto-controlled sender address.
+All application email sent by the Email module SHALL be sent under the platform's own identity. The SMTP and MIME `From` address SHALL be the deployment-configured system sender address (`Email:System:FromAddress`), and the visible MIME `From` display name SHALL be the deployment-configured system sender display name (`Email:System:FromDisplayName`).
 
-#### Scenario: Team name labels Admitto from-address and reply-to routes replies
+Sender identity SHALL NOT be derived from team data. The Email module SHALL NOT use a team name as the `From` display name, and SHALL NOT set a `Reply-To` header. Sending on behalf of a team makes messages resemble spoofed third-party mail and harms deliverability; teams are identified inside the message body instead. Consequently no team-owned reply-to address is stored or projected.
 
-- **WHEN** the system sends a ticket email for team "Acme Events" with reply-to email address `help@example.com`
-- **THEN** the message uses the Admitto-controlled `From` address, uses `Acme Events` as the visible `From` display name, and sets `Reply-To: help@example.com`
+#### Scenario: Platform sender identity is used for all application email
 
-#### Scenario: Missing team reply-to keeps team display name
+- **WHEN** the system sends a ticket email for team "Acme Events"
+- **THEN** the message uses the configured system sender address as the `From` address, the configured system sender display name as the visible `From` display name, and sets no `Reply-To` header
 
-- **WHEN** the system sends a ticket email for team "Acme Events" without a reply-to email address
-- **THEN** the message uses the Admitto-controlled `From` address, uses `Acme Events` as the visible `From` display name, and omits the `Reply-To` header
+#### Scenario: Sender identity is independent of projection state
 
-#### Scenario: Missing projected team name keeps system sender label
-
-- **WHEN** the system sends a ticket email before the owning team's projected team name is available
-- **THEN** the message uses the Admitto-controlled `From` address and uses the configured Admitto-controlled sender address as the visible `From` display name
+- **WHEN** the system sends a ticket email before the owning team's context has reached the Email projection
+- **THEN** the message uses exactly the same configured sender address and display name, because sender identity does not depend on team data
 
 ---
 
 ### Requirement: Built-in email templates use team accent color
 
-Built-in email templates SHALL receive the owning team's accent color as a rendering parameter. When the team has no explicit accent color, the system default accent color SHALL be used.
+Built-in email templates SHALL receive the owning team's accent color as a rendering parameter. When the team has no explicit accent color, the system default accent color SHALL be used. A missing accent color SHALL NOT fail or block a send.
+
+The accent color SHALL be a strict `#rrggbb` hex value, since it is interpolated directly into template style attributes. It SHALL be represented by a single shared value object (`Shared.Kernel.ValueObjects.AccentColor`) used by both the owning `Team` aggregate and the Email module's projected team context, so the Organization and Email sides cannot drift apart in validation.
+
+Font family SHALL NOT be team-owned. It is a fixed system-wide constant (`EmailFontFamily.Default`) applied to every built-in template; it is not persisted, not projected, and not organizer-configurable.
 
 #### Scenario: Team accent color is rendered in ticket email
 
 - **WHEN** team "acme" has accent color `#0f766e` and a ticket email is rendered for one of its events
 - **THEN** the rendered email uses `#0f766e` for accent-colored template elements
+
+#### Scenario: Missing accent color falls back to the default
+
+- **WHEN** an email is sent for a team whose branding has not yet reached the Email projection, so no team context row exists
+- **THEN** the send proceeds and renders with the system default accent color rather than failing
 
 ---
 
@@ -343,9 +349,11 @@ When email composition or rendering fails (e.g. malformed built-in content or ma
 
 ### Requirement: Email owns team and event rendering context
 
-The Email module SHALL persist Email-owned rendering context projections for each team and ticketed event that can receive application email. The projections SHALL contain only email-rendering, reply routing, sender-label, and scheduling facts, including the owning team id, ticketed event id, team name, team accent color, optional team reply-to email address, event name, event website URL, public event slug or equivalent link inputs, event time zone, reconfirm policy snapshot when present, self-service ticket-type count, and lifecycle state needed by Email.
+The Email module SHALL persist Email-owned rendering context projections for each team and ticketed event that can receive application email. The projections SHALL contain only email-rendering and scheduling facts, including the owning team id, ticketed event id, team name, team accent color, event name, event website URL, public event slug or equivalent link inputs, event time zone, reconfirm policy snapshot when present, self-service ticket-type count, and lifecycle state needed by Email.
 
-The projection SHALL be updated from Organization and Registrations integration events. Email SHALL NOT call Organization synchronously for team branding, sender labels, or reply routing while preparing application email.
+The projection SHALL be updated from Organization and Registrations integration events. Email SHALL NOT call Organization synchronously for team branding while preparing application email.
+
+The team-level projection SHALL NOT hold partially-populated rows: every source event carries the complete team field set, so a team row SHALL always have a team name and accent color. A team whose branding has not yet reached Email SHALL be represented by the absence of a row, not by a partial one, and the send pipeline SHALL treat that absence as the default-branding case.
 
 #### Scenario: Team accent color comes from Email projection
 
@@ -354,13 +362,8 @@ The projection SHALL be updated from Organization and Registrations integration 
 
 #### Scenario: Team name comes from Email projection
 
-- **WHEN** a ticket email is sent for a team whose Email projection has team name "Acme Events"
-- **THEN** the SMTP message uses `Acme Events` as the visible `From` display name without calling the Organization facade for sender metadata
-
-#### Scenario: Team reply-to comes from Email projection
-
-- **WHEN** a ticket email is sent for a team whose Email projection has reply-to email address `help@example.com`
-- **THEN** the SMTP message sets `Reply-To: help@example.com` and does not use the reply-to address as the visible `From` display name
+- **WHEN** a ticket email is rendered for a team whose Email projection has team name "Acme Events"
+- **THEN** the `team_name` template parameter is `Acme Events`, resolved without calling the Organization facade
 
 #### Scenario: Event links come from Email projection inputs
 
@@ -374,14 +377,14 @@ The projection SHALL be updated from Organization and Registrations integration 
 
 ### Requirement: Transactional email handlers combine trigger payload facts with Email context
 
-Transactional email handlers SHALL use the triggering integration-event payload for occurrence-specific facts such as recipient address, registration id, attendee name when supplied, ticket names, OTP code, coupon code, cancellation reason, and idempotency timestamp. They SHALL use the Email-owned event rendering context projection for reusable team/event facts such as event name, website URL, public links, team accent color, and change-ticket availability.
+Transactional email handlers SHALL use the triggering integration-event payload for occurrence-specific facts such as recipient address, registration id, attendee name when supplied, ticket names, OTP code, coupon code, cancellation reason, and idempotency timestamp. They SHALL use the Email-owned event rendering context projection for reusable team/event facts such as event name, website URL, public links, and change-ticket availability. Handlers SHALL NOT pass branding (accent color, font family) themselves; the send pipeline SHALL apply branding from the resolved effective email settings.
 
 Transactional email handlers SHALL NOT use `IRegistrationsFacade.GetEventRegistrationSnapshotAsync` to obtain reusable team/event rendering context.
 
 #### Scenario: Registration confirmation combines payload and projection
 
 - **WHEN** Email handles an `AttendeeRegisteredIntegrationEvent`
-- **THEN** recipient, attendee name, ticket names, registration id, and idempotency timestamp come from the event payload, while event name, website URL, public links, team accent color, and change-ticket availability come from the Email projection
+- **THEN** recipient, attendee name, ticket names, registration id, and idempotency timestamp come from the event payload, event name, website URL, public links, and change-ticket availability come from the Email projection, and the team accent color comes from the resolved effective email settings
 
 #### Scenario: OTP email uses projected branding
 

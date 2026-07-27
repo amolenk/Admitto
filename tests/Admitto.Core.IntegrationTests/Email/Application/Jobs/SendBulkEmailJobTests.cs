@@ -62,19 +62,55 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
     }
 
     [TestMethod]
-    public async ValueTask Execute_ProjectedTeamName_OpensBulkSmtpSessionWithTeamDisplayName()
+    public async ValueTask Execute_OpensBulkSmtpSessionWithConfiguredPlatformSender()
     {
         var (job, fakeSender, fanOut) = await SetupAsync(
             recipients: [Recipient("alice@example.com", "Alice")],
-            teamName: "Acme Events",
-            replyToEmailAddress: "help@example.com");
+            teamName: "Acme Events");
 
         await fanOut.Execute(JobContext(job));
 
+        // Sender identity is deployment configuration and never derived from the team.
         fakeSender.LastOpenedSettings.ShouldNotBeNull();
         fakeSender.LastOpenedSettings.FromAddress.Value.ShouldBe("tickets@admitto.org");
-        fakeSender.LastOpenedSettings.FromDisplayName.ShouldBe("Acme Events via Admitto");
-        fakeSender.LastOpenedSettings.ReplyToAddress.ShouldBe(EmailAddress.From("help@example.com"));
+        fakeSender.LastOpenedSettings.FromDisplayName.ShouldBe("Admitto");
+    }
+
+    [TestMethod]
+    public async ValueTask Execute_CustomContentWithTeamName_RendersProjectedTeamName()
+    {
+        var (job, fakeSender, fanOut) = await SetupAsync(
+            recipients: [Recipient("alice@example.com", "Alice")],
+            emailType: BuiltInEmailTemplateNames.BulkCustom,
+            subject: "Update from {{ team_name }}",
+            textBody: "Regards, {{ team_name }}",
+            htmlBody: "<p>Regards, {{ team_name }}</p>");
+
+        await fanOut.Execute(JobContext(job));
+
+        var message = fakeSender.SentMessages.Single();
+        message.Subject.ShouldBe("Update from DevConf Team");
+        message.TextBody.ShouldBe("Regards, DevConf Team");
+        message.HtmlBody.ShouldBe("<p>Regards, DevConf Team</p>");
+    }
+
+    [TestMethod]
+    public async ValueTask Execute_CustomContentWithBrandingAndQrCode_RendersCanonicalParameters()
+    {
+        var recipient = Recipient("alice@example.com", "Alice");
+        var (job, fakeSender, fanOut) = await SetupAsync(
+            recipients: [recipient],
+            emailType: BuiltInEmailTemplateNames.BulkCustom,
+            subject: "{{ accent_color }} {{ team_accent_color }}",
+            textBody: "{{ qrcode_link }}",
+            htmlBody: "{{ qr_code_link }}");
+
+        await fanOut.Execute(JobContext(job));
+
+        var message = fakeSender.SentMessages.Single();
+        message.Subject.ShouldBe("#0f766e ");
+        message.TextBody.ShouldBe($"https://tickets.example.com/e/devconf/qr-code/{recipient.RegistrationId.Value}");
+        message.HtmlBody.ShouldBeEmpty();
     }
 
     [TestMethod]
@@ -365,19 +401,23 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
         TimeSpan? perMessageDelay = null,
         int? inlineRetryCount = null,
         string? teamName = null,
-        string? replyToEmailAddress = null)
+        string? emailType = null,
+        string? subject = null,
+        string? textBody = null,
+        string? htmlBody = null)
     {
         var teamId = TeamId.New();
         var eventId = TicketedEventId.New();
 
         var job = new BulkEmailJobBuilder()
             .ForTeam(teamId).ForEvent(eventId)
-            .WithEmailType(DefaultEmailType)
+            .WithEmailType(emailType ?? DefaultEmailType)
+            .WithAdHocBodies(subject, textBody, htmlBody)
             .Build();
         await Environment.EmailDatabase.SeedAsync(db =>
         {
             db.BulkEmailJobs.Add(job);
-            db.TeamEmailContexts.Add(CreateTeamEmailContext(teamId, teamName, replyToEmailAddress));
+            db.TeamEmailContexts.Add(CreateTeamEmailContext(teamId, teamName));
         });
 
         var sender = new FakeBulkSmtpSender();
@@ -422,7 +462,6 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
                     "https://tickets.example.com/e/devconf/register",
                     "https://tickets.example.com/e/devconf/qr-code",
                     "https://tickets.example.com/e/devconf/cancel",
-                    "#0f766e",
                     "https://tickets.example.com/e/devconf/edit",
                     "UTC",
                     null,
@@ -454,15 +493,11 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
             NullLogger<SendBulkEmailJob>.Instance);
     }
 
-    private static TeamEmailContextView CreateTeamEmailContext(
-        TeamId teamId,
-        string? teamName = null,
-        string? replyToEmailAddress = null)
+    private static TeamEmailContextView CreateTeamEmailContext(TeamId teamId, string? teamName = null)
     {
         var now = DateTimeOffset.UtcNow;
-        var teamContext = TeamEmailContextView.CreatePartial(teamId, now);
-        teamContext.UpdateTeamContext(teamName ?? "DevConf Team", "#0f766e", replyToEmailAddress, teamVersion: 1, now);
-        return teamContext;
+        return TeamEmailContextView.Create(
+            teamId, teamName ?? "DevConf Team", "#0f766e", teamVersion: 1, now);
     }
 
     private static IBulkEmailRecipientResolver NeverCalledResolver()

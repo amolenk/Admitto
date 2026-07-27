@@ -32,7 +32,6 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
             "https://tickets.example.com/register",
             "https://tickets.example.com/qr-code/" + RegId,
             "https://tickets.example.com/cancel/" + RegId,
-            "#0f766e",
             "https://tickets.example.com/edit/" + RegId,
             "Europe/Amsterdam",
             null,

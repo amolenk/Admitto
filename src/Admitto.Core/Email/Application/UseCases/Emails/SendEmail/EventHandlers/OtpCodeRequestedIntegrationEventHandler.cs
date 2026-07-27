@@ -41,7 +41,6 @@ internal sealed class OtpCodeRequestedIntegrationEventHandler(
                 eventContext.TeamName,
                 eventContext.EventName,
                 integrationEvent.RecipientEmail,
-                eventContext.TeamAccentColor
             },
             RegistrationId: null);
 

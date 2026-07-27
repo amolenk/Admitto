@@ -288,7 +288,7 @@ sequenceDiagram
     FanOut->>SMTP: connect (single connection)
     loop for each Pending recipient
       FanOut->>FanOut: check CancellationRequestedAt
-      FanOut->>FanOut: render job-owned or built-in content
+      FanOut->>FanOut: render job-owned or built-in content with team/event context
       FanOut->>EmailLog: insert Pending claim key=bulk:{jobId}:{email}
       FanOut->>SMTP: MAIL FROM / RCPT TO / DATA
       FanOut->>EmailLog: update claim to Sent or Failed
@@ -302,6 +302,8 @@ sequenceDiagram
 **Resume-after-crash**: only `Pending` rows on the snapshot are picked up on the next run; per-recipient `EmailLog` uniqueness on `(ticketed_event_id, recipient, idempotency_key)` is the database-backed claim that prevents pre-existing terminal recipient logs from sending again.
 
 **Recipient source**: bulk email targets registered attendees only. The job persists an Email-owned `BulkEmailAttendeeFilter`; the resolver maps it to the Registrations `QueryRegistrationsDto` contract at the facade-call boundary, so the query contract is never part of Email's durable state. There is no external/CSV source.
+
+**Rendering context**: bulk fan-out merges the frozen recipient parameters with Email's projected team/event context, including `team_name`, event details, public links, and `qrcode_link`, plus the branding parameters `accent_color` and `font_family` taken from the resolved `EffectiveEmailSettings` (the same source the transactional path uses). This same parameter set is available to both built-in templates and custom job-owned content; duplicate aliases such as `team_accent_color` and `qr_code_link` are not exposed.
 
 **Cancellation**: `POST /admin/.../bulk-emails/{id}/cancel` sets `CancellationRequestedAt` on the aggregate; the worker observes it between recipients and during the per-message delay, transitions remaining `Pending` rows to `Cancelled`, and closes the SMTP session cleanly.
 

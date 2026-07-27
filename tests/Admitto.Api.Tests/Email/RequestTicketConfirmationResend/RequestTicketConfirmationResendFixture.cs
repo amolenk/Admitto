@@ -129,11 +129,10 @@ internal sealed class RequestTicketConfirmationResendFixture
                 isArchived: false,
                 DateTimeOffset.UtcNow);
 
-            var teamContext = TeamEmailContextView.CreatePartial(team.Id, DateTimeOffset.UtcNow);
-            teamContext.UpdateTeamContext(
+            var teamContext = TeamEmailContextView.Create(
+                team.Id,
                 team.Name.Value,
                 team.AccentColor.Value,
-                team.ReplyToEmailAddress?.Value,
                 team.Version,
                 DateTimeOffset.UtcNow);
 

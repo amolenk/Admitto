@@ -13,13 +13,6 @@ public sealed class UpdateTeamValidator : AbstractValidator<UpdateTeamHttpReques
             .MustBeNullOrParseable(TeamName.TryFrom);
 
         RuleFor(x => x.AccentColor)
-            .MustBeNullOrParseable(TeamAccentColor.TryFrom);
-
-        RuleFor(x => x.ReplyToEmailAddress)
-            .MustBeNullOrParseable(EmailAddress.TryFrom);
-
-        RuleFor(x => x.ReplyToEmailAddress)
-            .Null()
-            .When(x => x.ClearReplyToEmailAddress == true);
+            .MustBeNullOrParseable(AccentColor.TryFrom);
     }
 }

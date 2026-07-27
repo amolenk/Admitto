@@ -6,7 +6,5 @@ internal sealed record UpdateTeamCommand(
     Guid TeamId,
     string? Name,
     uint? ExpectedVersion,
-    string? AccentColor = null,
-    string? ReplyToEmailAddress = null,
-    bool ClearReplyToEmailAddress = false)
+    string? AccentColor = null)
     : Command;
