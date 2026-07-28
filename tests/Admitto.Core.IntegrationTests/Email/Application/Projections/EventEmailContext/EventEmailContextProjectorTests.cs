@@ -58,7 +58,7 @@ public sealed class EventEmailContextProjectorTests(TestContext testContext) : A
 
         await schedule.Received(1).HandleAsync(
             Arg.Is<ScheduleReconfirmationsCommand>(c =>
-                c.TicketedEventId == eventId.Value && c.Spec != null),
+                c != null && c.TicketedEventId == eventId.Value && c.Spec != null),
             Arg.Any<CancellationToken>());
     }
 
@@ -103,7 +103,7 @@ public sealed class EventEmailContextProjectorTests(TestContext testContext) : A
 
         await schedule.Received(1).HandleAsync(
             Arg.Is<ScheduleReconfirmationsCommand>(c =>
-                c.TicketedEventId == eventId.Value && c.Spec == null),
+                c != null && c.TicketedEventId == eventId.Value && c.Spec == null),
             Arg.Any<CancellationToken>());
     }
 
@@ -140,7 +140,7 @@ public sealed class EventEmailContextProjectorTests(TestContext testContext) : A
 
         await schedule.Received(1).HandleAsync(
             Arg.Is<ScheduleReconfirmationsCommand>(c =>
-                c.TicketedEventId == eventId.Value && c.Spec == null),
+                c != null && c.TicketedEventId == eventId.Value && c.Spec == null),
             Arg.Any<CancellationToken>());
     }
 
@@ -233,7 +233,8 @@ public sealed class EventEmailContextProjectorTests(TestContext testContext) : A
 
         await schedule.Received(1).HandleAsync(
             Arg.Is<ScheduleReconfirmationsCommand>(c =>
-                c.TicketedEventId == eventId.Value
+                c != null
+                && c.TicketedEventId == eventId.Value
                 && c.Spec != null
                 && c.Spec.TimeZone == "America/Los_Angeles"),
             Arg.Any<CancellationToken>());

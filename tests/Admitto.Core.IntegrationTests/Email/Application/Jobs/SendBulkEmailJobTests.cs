@@ -451,7 +451,7 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
         eventContextQuery.HandleAsync(Arg.Any<GetEventEmailRenderingContextQuery>(), Arg.Any<CancellationToken>())
             .Returns(call =>
             {
-                var query = call.Arg<GetEventEmailRenderingContextQuery>();
+                var query = call.Arg<GetEventEmailRenderingContextQuery>()!;
                 return new EventEmailContextDto(
                     query.TeamId.Value,
                     query.TicketedEventId.Value,

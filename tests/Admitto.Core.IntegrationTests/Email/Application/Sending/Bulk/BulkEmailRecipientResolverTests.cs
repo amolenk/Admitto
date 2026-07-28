@@ -70,7 +70,8 @@ public sealed class BulkEmailRecipientResolverTests
             teamId.Value,
             eventId.Value,
             Arg.Is<QueryRegistrationsDto>(q =>
-                q.TicketTypeIds!.Contains(ticketTypeId)
+                q != null
+                && q.TicketTypeIds!.Contains(ticketTypeId)
                 && q.RegistrationStatus == RegistrationStatus.Registered
                 && q.HasReconfirmed == false),
             Arg.Any<CancellationToken>());

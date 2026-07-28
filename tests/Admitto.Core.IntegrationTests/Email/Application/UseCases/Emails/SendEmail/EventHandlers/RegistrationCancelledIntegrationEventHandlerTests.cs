@@ -45,7 +45,7 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
         var query = Substitute.For<IQueryHandler<GetEventEmailRenderingContextQuery, EventEmailContextDto>>();
         query.HandleAsync(
                 Arg.Is<GetEventEmailRenderingContextQuery>(q =>
-                    q.TeamId == TeamGuid && q.TicketedEventId == EventGuid),
+                    q != null && q.TeamId == TeamGuid && q.TicketedEventId == EventGuid),
                 Arg.Any<CancellationToken>())
             .Returns(Context());
         return query;
@@ -62,6 +62,7 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
 
         await sendEmailHandler.Received(1).HandleAsync(
             Arg.Is<SendEmailCommand>(c =>
+                c != null &&
                 c.EmailType == BuiltInEmailTemplateNames.Cancellation &&
                 c.RecipientAddress == "alice@example.com" &&
                 c.IdempotencyKey == $"registration-cancelled:{RegId}"),
@@ -79,6 +80,7 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
 
         await sendEmailHandler.Received(1).HandleAsync(
             Arg.Is<SendEmailCommand>(c =>
+                c != null &&
                 c.EmailType == BuiltInEmailTemplateNames.VisaLetterDenied &&
                 c.RecipientAddress == "alice@example.com"),
             Arg.Any<CancellationToken>());
@@ -94,7 +96,7 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
         await sut.HandleAsync(Event("ReconfirmAutoCancel"), testContext.CancellationToken);
 
         await sendEmailHandler.Received(1).HandleAsync(
-            Arg.Is<SendEmailCommand>(c => c.EmailType == BuiltInEmailTemplateNames.ReconfirmCancelled),
+            Arg.Is<SendEmailCommand>(c => c != null && c.EmailType == BuiltInEmailTemplateNames.ReconfirmCancelled),
             Arg.Any<CancellationToken>());
     }
 
@@ -124,6 +126,7 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
 
         await sendEmailHandler.Received(1).HandleAsync(
             Arg.Is<SendEmailCommand>(c =>
+                c != null &&
                 c.RecipientName == "Alice Test"),
             Arg.Any<CancellationToken>());
     }

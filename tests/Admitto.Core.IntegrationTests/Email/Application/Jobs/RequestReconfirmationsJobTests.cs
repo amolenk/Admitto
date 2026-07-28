@@ -199,6 +199,7 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
                 TeamId.Value,
                 eventId.Value,
                 Arg.Is<QueryRegistrationsDto>(q =>
+                    q != null &&
                     q.RegistrationStatus == RegistrationStatus.Registered &&
                     q.HasReconfirmed == false &&
                     q.RegistrationIds == null),

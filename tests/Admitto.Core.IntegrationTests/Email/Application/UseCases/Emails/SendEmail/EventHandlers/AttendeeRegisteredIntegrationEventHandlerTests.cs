@@ -53,7 +53,7 @@ public sealed class AttendeeRegisteredIntegrationEventHandlerTests(TestContext t
         var query = Substitute.For<IQueryHandler<GetEventEmailRenderingContextQuery, EventEmailContextDto>>();
         query.HandleAsync(
                 Arg.Is<GetEventEmailRenderingContextQuery>(q =>
-                    q.TeamId == TeamGuid && q.TicketedEventId == EventGuid),
+                    q != null && q.TeamId == TeamGuid && q.TicketedEventId == EventGuid),
                 Arg.Any<CancellationToken>())
             .Returns(Context());
         return query;
@@ -71,6 +71,7 @@ public sealed class AttendeeRegisteredIntegrationEventHandlerTests(TestContext t
 
         await sendEmailHandler.Received(1).HandleAsync(
             Arg.Is<SendEmailCommand>(c =>
+                c != null &&
                 c.EmailType == BuiltInEmailTemplateNames.TicketConfirmation &&
                 c.RecipientAddress == "alice@example.com" &&
                 c.IdempotencyKey == $"attendee-registered:{RegId}:{evt.RegisteredAt:O}"),
