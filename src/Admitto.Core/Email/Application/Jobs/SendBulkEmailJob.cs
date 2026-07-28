@@ -144,13 +144,11 @@ internal sealed class SendBulkEmailJob(
                     ct);
 
                 template = job.Subject is not null && job.TextBody is not null && job.HtmlBody is not null
-                    ? EmailTemplate.Create(
-                        job.TeamId,
-                        job.TicketedEventId,
+                    ? new EmailTemplate(
                         job.EmailType,
-                        job.Subject ?? throw new InvalidOperationException("Custom bulk email subject is required."),
-                        job.TextBody ?? throw new InvalidOperationException("Custom bulk email text body is required."),
-                        job.HtmlBody ?? throw new InvalidOperationException("Custom bulk email HTML body is required."))
+                        job.Subject,
+                        job.TextBody,
+                        job.HtmlBody)
                     : await templateService.LoadAsync(job.EmailType, job.TeamId, job.TicketedEventId, ct);
             }
             catch (Exception ex)

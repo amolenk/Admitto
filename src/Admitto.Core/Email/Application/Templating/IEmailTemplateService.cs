@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Email.Domain.Entities;
+using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Core.Email.Application.Templating;
 

@@ -22,6 +22,7 @@ public sealed class OtpCodeRequestedIntegrationEventHandlerTests(TestContext tes
         contextQuery
             .HandleAsync(
                 Arg.Is<GetEventEmailRenderingContextQuery>(q =>
+                    q != null &&
                     q.TeamId == TeamId.From(teamId)
                     && q.TicketedEventId == TicketedEventId.From(eventId)
                     && q.RegistrationId == null),

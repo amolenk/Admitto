@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Email.Domain.Entities;
+using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Scriban;
 using Scriban.Runtime;
 

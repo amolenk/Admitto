@@ -1,18 +1,7 @@
 using System.Reflection;
-using Amolenk.Admitto.Core.Email.Domain.Entities;
+using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 
 namespace Amolenk.Admitto.Core.Email.Application.Templating;
-
-/// <summary>
-/// Represents a single built-in email template entry in the catalog.
-/// </summary>
-internal sealed record BuiltInEmailTemplateCatalogEntry(
-    string Name,
-    string Description,
-    string DefaultSubject,
-    string DefaultTextBody,
-    string DefaultHtmlBody,
-    bool IsCustomizable);
 
 /// <summary>
 /// Ordered catalog of all built-in email templates and their defaults.
@@ -24,63 +13,44 @@ internal static class BuiltInEmailTemplateCatalog
     private const string ResourcePrefix = "Amolenk.Admitto.Core.Email.Application.Templating.Defaults.";
 
     // Ordered list — determines display order in the UI.
-    private static readonly IReadOnlyList<BuiltInEmailTemplateCatalogEntry> _entries = BuildEntries();
+    private static readonly IReadOnlyList<EmailTemplate> Entries = BuildEntries();
 
-    public static IReadOnlyList<BuiltInEmailTemplateCatalogEntry> All => _entries;
+    public static IReadOnlyList<EmailTemplate> All => Entries;
+
+    public static EmailTemplate CreateTemplate(string name)
+    {
+        return GetByName(name)
+            ?? throw new InvalidOperationException($"No built-in email template exists for name '{name}'.");
+    }
 
     /// <summary>
     /// Finds a catalog entry by reserved name (case-insensitive). Returns null if not found.
     /// </summary>
-    public static BuiltInEmailTemplateCatalogEntry? GetByName(string name) =>
-        _entries.FirstOrDefault(e => string.Equals(e.Name, name, StringComparison.OrdinalIgnoreCase));
+    private static EmailTemplate? GetByName(string name) =>
+        Entries.FirstOrDefault(e => string.Equals(e.Name, name, StringComparison.OrdinalIgnoreCase));
 
-    public static EmailTemplate CreateTemplate(string name)
-    {
-        var entry = GetByName(name)
-            ?? throw new InvalidOperationException($"No built-in email template exists for name '{name}'.");
-
-        return EmailTemplate.Create(
-            TeamId.New(),
-            null,
-            entry.Name,
-            entry.DefaultSubject,
-            entry.DefaultTextBody,
-            entry.DefaultHtmlBody);
-    }
-
-    private static IReadOnlyList<BuiltInEmailTemplateCatalogEntry> BuildEntries()
+    private static IReadOnlyList<EmailTemplate> BuildEntries()
     {
         return
         [
             Build(BuiltInEmailTemplateNames.TicketConfirmation,
-                description:  "Sent after successful registration",
                 resourceKey:  "ticket"),
             Build(BuiltInEmailTemplateNames.Reconfirmation,
-                description:  "One-week-out reconfirmation request",
                 resourceKey:  "reconfirm"),
             Build(BuiltInEmailTemplateNames.Cancellation,
-                description:  "Sent when an attendee cancels",
                 resourceKey:  "cancellation"),
             Build(BuiltInEmailTemplateNames.ReconfirmCancelled,
-                description:  "Sent when a registration is auto-cancelled after no reconfirmation response",
                 resourceKey:  "reconfirm-cancelled"),
             Build(BuiltInEmailTemplateNames.VisaLetterDenied,
-                description:  "Sent when a visa letter request is declined",
                 resourceKey:  "visa-letter-denied"),
             Build(BuiltInEmailTemplateNames.VerificationCode,
-                description:  "Sent when someone starts registration",
                 resourceKey:  "otp-code"),
             Build(BuiltInEmailTemplateNames.WaitlistNotification,
-                description:  "Sent when a waitlist spot becomes available",
                 resourceKey:  "waitlist-notification"),
         ];
     }
 
-    private static BuiltInEmailTemplateCatalogEntry Build(
-        string name,
-        string description,
-        string resourceKey,
-        bool isCustomizable = true)
+    private static EmailTemplate Build(string name, string resourceKey)
     {
         var textBody = ReadEmbedded($"{ResourcePrefix}{resourceKey}.txt")
             ?? throw new InvalidOperationException(
@@ -92,7 +62,7 @@ internal static class BuiltInEmailTemplateCatalog
 
         var subject = ExtractSubject(textBody);
 
-        return new BuiltInEmailTemplateCatalogEntry(name, description, subject, textBody, htmlBody, isCustomizable);
+        return new EmailTemplate(name, subject, textBody, htmlBody);
     }
 
     private static string? ReadEmbedded(string resourceName)
