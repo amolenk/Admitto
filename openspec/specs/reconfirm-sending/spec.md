@@ -197,6 +197,12 @@ When `AutoCancelEnabled=false`, all candidates remain in the reconfirm set and n
 
 The reconfirm `BulkEmailJob` SHALL NOT carry ad-hoc subject/body content; it SHALL rely entirely on the `email-templates` capability with `EmailType=reconfirm`, resolving via the standard event > team > built-in default precedence.
 
+The reconfirm email's primary call-to-action SHALL be a `reconfirm_link` built from the public event link and the recipient's registration id (`{publicEventLink}/reconfirm/{registrationId}`), so the attendee is routed through the Admitto public reconfirm redirect to the event website, which then records the reconfirmation via the public reconfirm endpoint (see `public-event-links`). The `register_link` SHALL NOT be used as the reconfirm CTA.
+
 #### Scenario: Built-in default reconfirm template used when no override exists
 - **WHEN** the reconfirm tick fires for an event whose team and event have no `reconfirm` template configured
 - **THEN** the built-in default `reconfirm` template is used for every recipient
+
+#### Scenario: Reconfirm CTA targets the reconfirm link
+- **WHEN** a reconfirm email is prepared for registration `R1` on event slug `azure-fest-2026`
+- **THEN** the primary confirm-attendance link is the `reconfirm_link` ending in `/reconfirm/{R1}`, not the generic `register_link`
