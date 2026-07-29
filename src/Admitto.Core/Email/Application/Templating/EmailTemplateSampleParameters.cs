@@ -14,6 +14,7 @@ internal static class EmailTemplateSampleParameters
         QrcodeLink    = "https://example.com/qrcode",
         TicketTypes   = new[] { "Conference Pass" },
         CancelLink    = "https://example.com/cancel",
+        ReconfirmLink = "https://example.com/reconfirm",
         EditRegistrationLink = "https://example.com/edit",
         EventWebsite  = "https://example.com",
         PlainCode     = "123456",

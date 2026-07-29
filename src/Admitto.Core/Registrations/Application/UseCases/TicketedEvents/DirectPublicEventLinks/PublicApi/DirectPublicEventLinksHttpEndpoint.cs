@@ -22,6 +22,10 @@ public static class DirectPublicEventLinksHttpEndpoint
             .MapGet("/{eventSlug}/edit/{registrationId:guid}", RedirectToEdit)
             .WithName(nameof(RedirectToEdit));
 
+        group
+            .MapGet("/{eventSlug}/reconfirm/{registrationId:guid}", RedirectToReconfirm)
+            .WithName(nameof(RedirectToReconfirm));
+
         return group;
     }
 
@@ -46,6 +50,12 @@ public static class DirectPublicEventLinksHttpEndpoint
         Guid registrationId,
         IQueryHandler<DirectPublicEventLinksQuery, DirectPublicEventLinkDto?> handler,
         CancellationToken ct) => RedirectToLink(eventSlug, "edit", registrationId, handler, ct);
+
+    private static ValueTask<Results<RedirectHttpResult, NotFound>> RedirectToReconfirm(
+        string eventSlug,
+        Guid registrationId,
+        IQueryHandler<DirectPublicEventLinksQuery, DirectPublicEventLinkDto?> handler,
+        CancellationToken ct) => RedirectToLink(eventSlug, "reconfirm", registrationId, handler, ct);
 
     private static async ValueTask<Results<RedirectHttpResult, NotFound>> RedirectToLink(
         string eventSlug,
