@@ -92,4 +92,52 @@ public sealed class OtpRequestTests(TestContext testContext) : EndToEndTestBase
 
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
     }
+
+    // Email whose domain is not allowed for the event returns 400
+    [TestMethod]
+    public async Task RequestOtp_DisallowedDomain_Returns400()
+    {
+        var fixture = OtpRequestFixture.WithEmailDomainRestriction("@allowed.com");
+        await fixture.SetupAsync(Environment);
+
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
+        var response = await client.PostAsJsonAsync(
+            fixture.RequestOtpRoute,
+            new { Email = "dave@notallowed.com" },
+            cancellationToken: testContext.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
+    }
+
+    // Email whose domain matches the restriction returns 202
+    [TestMethod]
+    public async Task RequestOtp_AllowedDomain_Returns202()
+    {
+        var fixture = OtpRequestFixture.WithEmailDomainRestriction("@allowed.com");
+        await fixture.SetupAsync(Environment);
+
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
+        var response = await client.PostAsJsonAsync(
+            fixture.RequestOtpRoute,
+            new { Email = "dave@allowed.com" },
+            cancellationToken: testContext.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.Accepted);
+    }
+
+    // Any domain is accepted when the event has no domain restriction
+    [TestMethod]
+    public async Task RequestOtp_NoDomainRestriction_Returns202()
+    {
+        var fixture = OtpRequestFixture.ActiveEvent();
+        await fixture.SetupAsync(Environment);
+
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
+        var response = await client.PostAsJsonAsync(
+            fixture.RequestOtpRoute,
+            new { Email = "dave@anything.example" },
+            cancellationToken: testContext.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.Accepted);
+    }
 }
