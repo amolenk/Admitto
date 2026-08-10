@@ -31,6 +31,7 @@ using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.Dir
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.UpdateAdditionalDetailSchema.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.UpdateTicketedEventDetails.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypes.AddTicketType.AdminApi;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.GetPartnerTicketedEventDetails.PartnerApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypes.GetPublicTicketTypes.PartnerApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypes.GetTicketTypes.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypes.UpdateTicketType.AdminApi;
@@ -104,6 +105,7 @@ public static class RegistrationsModule
         group
             .MapGroup("/events/{eventSlug}")
             .WithTags("Partner")
+            .MapGetPartnerTicketedEventDetails()
             .MapRequestOtp()
             .MapVerifyOtp()
             .MapRegisterAttendeeSelfService()

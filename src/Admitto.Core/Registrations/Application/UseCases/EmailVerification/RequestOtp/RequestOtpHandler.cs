@@ -32,10 +32,16 @@ internal sealed class RequestOtpHandler(
         if (!ticketedEvent.IsActive)
             throw new BusinessRuleViolationException(Errors.EventNotActive);
 
+        // Reject email addresses whose domain is not allowed for this event before consuming
+        // the attendee's rate-limit budget. Throws registration.email_domain_not_allowed (400).
+        ticketedEvent.EnsureEmailDomainAllowed(email);
+
         var now = timeProvider.GetUtcNow();
         var rateLimitWindow = now.AddMinutes(-options.Value.RateLimitWindowMinutes);
 
-        var emailHash = OtpCode.ComputeEmailHash(email.Value);
+        // Hash the lowercased email to match OtpCode.Create, which lowercases before hashing;
+        // otherwise mixed-case addresses would bypass supersede/rate-limit lookups.
+        var emailHash = OtpCode.ComputeEmailHash(email.Value.ToLowerInvariant());
 
         var recentCount = await writeStore.OtpCodes
             .CountAsync(
