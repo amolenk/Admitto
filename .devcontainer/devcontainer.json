@@ -1,16 +1,23 @@
 {
 	"name": "Admitto",
-	"image": "mcr.microsoft.com/devcontainers/dotnet:dev-10.0-noble",
+
+    "build": {
+        "dockerfile": "Dockerfile",
+        "context": ".."
+    },
+
     "runArgs": ["--name", "admitto-devcontainer"],
-	"features": {
+
+    "features": {
 		"ghcr.io/microsoft/aspire-devcontainer-feature/aspire:2": {},
 		"ghcr.io/devcontainers/features/docker-in-docker:4.0.0": {},
 		"ghcr.io/devcontainers/features/powershell:2.0.2": {},
 		"ghcr.io/devcontainers/features/node:2.1.0": {},
 		"ghcr.io/devcontainers/features/python:1": {},
-		"ghcr.io/devcontainers-extra/features/uv:1": {},
-        "ghcr.io/anthropics/devcontainer-features/claude-code:1.0": {}
+		"ghcr.io/devcontainers-extra/features/uv:1": {}
 	},
+
+    "remoteUser": "vscode",
 
 	"hostRequirements": {
 		"cpus": 4,
@@ -32,7 +39,8 @@
     "mounts": [
         "source=claude-code-config,target=/home/vscode/.claude,type=volume",
         "source=${localEnv:HOME}/AGENTS.md,target=/home/vscode/AGENTS.md,type=bind,ro",
-        "source=${localEnv:HOME}/AGENTS.md,target=/home/vscode/CLAUDE.md,type=bind,ro"
+        "source=${localEnv:HOME}/AGENTS.md,target=/home/vscode/CLAUDE.md,type=bind,ro",
+        "source=${localEnv:HOME}/.aspnet/https,target=/home/vscode/.aspnet/https,type=bind,ro"
     ],
 
     "containerEnv": {
@@ -40,15 +48,14 @@
         "CLAUDE_CONFIG_DIR": "/home/vscode/.claude"
     },
 
-	// Use 'postCreateCommand' to run commands after the container is created.
-	// "postCreateCommand": "dotnet restore",
     "remoteEnv": {
-      "SSL_CERT_DIR": "/home/vscode/.aspnet/dev-certs/trust:/etc/ssl/certs"
+        "ASPNETCORE_Kestrel__Certificates__Default__Path": "/home/vscode/.aspnet/https/aspnetapp.pfx",
+        "ASPNETCORE_Kestrel__Certificates__Default__Password": "${localEnv:ASPNETAPP_HTTPS_PASSWORD}"
     },
 
     "postStartCommand": {
         "trust-dotnet-dev-cert": "dotnet dev-certs https --trust",
-        "fix-claude-permissions": "sudo chown -R vscode:vscode /home/vscode/.claude",
+//        "fix-claude-permissions": "sudo chown -R vscode:vscode /home/vscode/.claude",
         "fix-workspace-permissions": "sudo chown -R vscode:vscode /workspace"
     },
 
@@ -61,9 +68,4 @@
 			]
 		}
 	}
-	// Configure tool-specific properties.
-	// "customizations": {},
-
-	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
-	// "remoteUser": "root"
 }
