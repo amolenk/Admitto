@@ -7,7 +7,7 @@ Detailed ADRs are stored in [`/docs/adrs/`](../adrs/).
 | — | Modular monolith with multiple hosts | Accepted | [ADR-001](../adrs/adr-001-modular-monolith.md) |
 | — | Minimal APIs with feature-sliced endpoint organization | Accepted | [ADR-002](../adrs/adr-002-minimal-api.md) |
 | — | EF Core with PostgreSQL | Accepted | [ADR-003](../adrs/adr-003-ef-core-postgresql.md) |
-| — | Azure Storage Queues for async messaging | Accepted | [ADR-004](../adrs/adr-004-azure-storage-queues.md) |
+| — | Azure Storage Queues for async messaging | Superseded by ADR-015 | [ADR-004](../adrs/adr-004-azure-storage-queues.md) |
 | — | Capability gating for host-specific handlers | Accepted | [ADR-005](../adrs/adr-005-capability-gating.md) |
 | — | Admin UI technology stack | Accepted | [ADR-006](../adrs/adr-006-admin-ui-technology-stack.md) |
 | — | Lifecycle guard pattern in the Registrations module | Superseded by ADR-008 | [ADR-007](../adrs/adr-007-lifecycle-guard-pattern.md) |
@@ -16,6 +16,7 @@ Detailed ADRs are stored in [`/docs/adrs/`](../adrs/).
 | 2026-06-10 | Keycloak as the production identity provider | Accepted | [ADR-012](../adrs/adr-012-keycloak-production-identity-provider.md) |
 | 2026-06-26 | Platform SMTP sender, public event links, and team-owned email branding | Accepted | [ADR-013](../adrs/adr-013-platform-sender-public-links.md) |
 | 2026-06-27 | Email-owned event rendering context projection | Accepted | [ADR-014](../adrs/adr-014-email-event-context-projection.md) |
+| 2026-08-16 | Azure Service Bus with push-based consumption | Accepted | [ADR-015](../adrs/adr-015-service-bus-push-based-consumption.md) |
 
 ## Done-when
 

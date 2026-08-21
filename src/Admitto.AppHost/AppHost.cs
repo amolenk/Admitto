@@ -148,7 +148,10 @@ IResourceBuilder<ContainerResource>? mailDev = null;
 
 if (builder.ExecutionContext.IsRunMode)
 {
-    mailDev = builder.AddContainer("maildev", "maildev/maildev:latest")
+    // Pinned rather than :latest — the image jumped to a v3 rewrite with a
+    // different REST API base path (/api/email instead of /email), which
+    // silently broke every E2E test that talks to MailDev's HTTP API.
+    mailDev = builder.AddContainer("maildev", "maildev/maildev:3.0.0-rc.1")
         .WithHttpEndpoint(15002, targetPort: 1080)
         .WithEndpoint(name: "smtp", scheme: "smtp", targetPort: 1025, isExternal: true, port: 1025);
 
@@ -460,6 +463,13 @@ if (!infraOnly)
         .WithReference(quartzDb)
         .WithReference(serviceBus)
         .WaitFor(api!);
+
+    // Local development only: the Worker owns the idempotent demo data seed.
+    // Keep this opt-in and out of published manifests.
+    if (builder.ExecutionContext.IsRunMode && builder.Environment.IsDevelopment())
+    {
+        worker.WithEnvironment("DEVELOPMENT__LOCALDEMOSEED__ENABLED", "true");
+    }
 
     if (mailDev is not null)
     {

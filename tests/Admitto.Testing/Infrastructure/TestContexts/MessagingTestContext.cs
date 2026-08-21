@@ -1,6 +1,5 @@
 using Aspire.Hosting.Testing;
 using Azure.Messaging.ServiceBus;
-using Azure.Messaging.ServiceBus.Administration;
 
 namespace Amolenk.Admitto.Testing.Infrastructure.TestContexts;
 
@@ -8,14 +7,11 @@ public class MessagingTestContext
 {
     private const string ServiceBusQueueName = "queue";
 
-    private readonly ServiceBusAdministrationClient _administrationClient;
-
     public ServiceBusClient Client { get; }
 
-    private MessagingTestContext(ServiceBusClient client, ServiceBusAdministrationClient administrationClient)
+    private MessagingTestContext(ServiceBusClient client)
     {
         Client = client;
-        _administrationClient = administrationClient;
     }
 
     public static async ValueTask<MessagingTestContext> CreateAsync(DistributedApplicationFactory appHost)
@@ -26,21 +22,36 @@ public class MessagingTestContext
             throw new InvalidOperationException("Connection string for Service Bus not found.");
         }
 
-        var emulatorEndpoint = appHost.GetEndpoint("messaging", "emulator");
-        var healthEndpoint = appHost.GetEndpoint("messaging", "emulatorhealth");
-
-        // Admin endpoint runs on the same port as the health endpoint that's already configured by Aspire.
-        var adminConnectionString = emulatorConnectionString.Replace($":{emulatorEndpoint.Port}", $":{healthEndpoint.Port}");
-
         var serviceBusClient = new ServiceBusClient(emulatorConnectionString);
-        var serviceBusAdministrationClient = new ServiceBusAdministrationClient(adminConnectionString);
 
-        return new MessagingTestContext(serviceBusClient, serviceBusAdministrationClient);
+        return new MessagingTestContext(serviceBusClient);
     }
 
+    /// <summary>
+    /// Drains the queue and its dead-letter sub-queue rather than deleting and
+    /// recreating the entity, so the Worker's long-lived
+    /// <c>ServiceBusProcessor</c> link never has to detach and reconnect
+    /// (recreating the queue 200+ times a run was a source of Service Bus
+    /// flakiness against the running Worker).
+    /// </summary>
     public async Task ResetAsync()
     {
-        await _administrationClient.DeleteQueueAsync(ServiceBusQueueName);
-        await _administrationClient.CreateQueueAsync(ServiceBusQueueName);
+        await DrainAsync(new ServiceBusReceiverOptions());
+        await DrainAsync(new ServiceBusReceiverOptions { SubQueue = SubQueue.DeadLetter });
+    }
+
+    private async Task DrainAsync(ServiceBusReceiverOptions options)
+    {
+        options.ReceiveMode = ServiceBusReceiveMode.ReceiveAndDelete;
+        await using var receiver = Client.CreateReceiver(ServiceBusQueueName, options);
+
+        while (true)
+        {
+            var messages = await receiver.ReceiveMessagesAsync(
+                maxMessages: 100,
+                maxWaitTime: TimeSpan.FromMilliseconds(500));
+            if (messages.Count == 0)
+                break;
+        }
     }
 }

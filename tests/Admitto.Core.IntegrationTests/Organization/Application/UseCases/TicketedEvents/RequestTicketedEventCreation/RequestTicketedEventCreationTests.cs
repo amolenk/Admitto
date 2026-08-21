@@ -1,4 +1,6 @@
 using Amolenk.Admitto.Core.Organization.Application.UseCases.TicketedEvents.RequestTicketedEventCreation;
+using Amolenk.Admitto.Core.Organization.Application.UseCases.Development;
+using Amolenk.Admitto.Core.Organization.Domain.Entities;
 using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
@@ -10,6 +12,50 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Organization.Application.UseCase
 [TestClass]
 public sealed class RequestTicketedEventCreationTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    [TestMethod]
+    public void LocalDemoSeedRequestState_PendingAndCreatedRequests_AreIdempotent()
+    {
+        var team = new TeamBuilder().Build();
+        var request = team.RequestEventCreation(
+            EventName.From("Demo Event"),
+            AbsoluteUrl.From("https://demo.example.com"),
+            AbsoluteUrl.From("https://demo.example.com"),
+            Slug.From("admitto-demo"),
+            DateTimeOffset.UtcNow.AddDays(1),
+            DateTimeOffset.UtcNow.AddDays(2),
+            TimeZoneId.From("UTC"),
+            UserId.New(),
+            DateTimeOffset.UtcNow);
+
+        LocalDemoSeedRequestState.Decide(request, Slug.From("admitto-demo"))
+            .ShouldBe(LocalDemoSeedRequestDecision.AlreadyInFlight);
+
+        team.RegisterEventCreated(request.Id, TicketedEventId.New(), DateTimeOffset.UtcNow);
+
+        LocalDemoSeedRequestState.Decide(request, Slug.From("admitto-demo"))
+            .ShouldBe(LocalDemoSeedRequestDecision.AlreadyCreated);
+    }
+
+    [TestMethod]
+    public void LocalDemoSeedRequestState_RejectedRequest_IsTerminal()
+    {
+        var team = new TeamBuilder().Build();
+        var request = team.RequestEventCreation(
+            EventName.From("Demo Event"),
+            AbsoluteUrl.From("https://demo.example.com"),
+            AbsoluteUrl.From("https://demo.example.com"),
+            Slug.From("admitto-demo"),
+            DateTimeOffset.UtcNow.AddDays(1),
+            DateTimeOffset.UtcNow.AddDays(2),
+            TimeZoneId.From("UTC"),
+            UserId.New(),
+            DateTimeOffset.UtcNow);
+        team.RegisterEventCreationRejected(request.Id, "rejected", DateTimeOffset.UtcNow);
+
+        LocalDemoSeedRequestState.Decide(request, Slug.From("admitto-demo"))
+            .ShouldBe(LocalDemoSeedRequestDecision.Terminal);
+    }
+
     [TestMethod]
     public async ValueTask AcceptsRequest_OnActiveTeam_PersistsPendingRequestAndIncrementsCounter()
     {

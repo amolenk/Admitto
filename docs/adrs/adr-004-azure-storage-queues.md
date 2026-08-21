@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Superseded by [ADR-015](adr-015-service-bus-push-based-consumption.md)
 
 ## Context
 

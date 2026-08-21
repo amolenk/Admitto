@@ -58,15 +58,15 @@ public static class DependencyInjection
     public static IHostApplicationBuilder AddSharedInfrastructureMessagingServices(
         this IHostApplicationBuilder builder)
     {
-        // Configure a short TryTimeout so the SDK re-issues AMQP receive requests frequently.
-        // The Azure SB emulator only checks for new messages when it receives a fresh AMQP credit;
-        // with the default 60 s TryTimeout a message arriving after the initial check sits undelivered
-        // for up to 90 s. 5 s keeps emulator tests fast and has no adverse effect on production SB.
+        // Bound how long the SDK backs off before retrying after a link or connection fault. The
+        // default MaxDelay of 60 s lets a consumer sit idle for a minute after a blip, which is a
+        // long time for a queue whose whole job is timely background work. 5 s keeps recovery
+        // prompt without retrying so aggressively that a real outage turns into a hot loop.
         builder.AddAzureServiceBusClient(
             connectionName: "messaging",
             configureClientBuilder: clientBuilder => clientBuilder.ConfigureOptions(options =>
             {
-                options.RetryOptions.TryTimeout = TimeSpan.FromSeconds(5);
+                options.RetryOptions.MaxDelay = TimeSpan.FromSeconds(5);
             }));
 
         builder.Services.AddSingleton<ServiceBusSender>(serviceProvider =>
@@ -79,8 +79,8 @@ public static class DependencyInjection
     }
 
     /// <summary>
-    /// Registers the queue consumer pipeline (dispatcher and the <see cref="BackgroundService"/> that
-    /// polls the queue), and starts the Quartz job scheduler hosted service.
+    /// Registers the queue consumer pipeline (dispatcher and the hosted service that consumes the
+    /// queue), and starts the Quartz job scheduler hosted service.
     /// Call <see cref="AddMessageTypeRegistry"/> separately to register the message type registry.
     /// Each module registers its own Quartz jobs via <c>AddQuartz</c> in its worker setup method.
     /// </summary>

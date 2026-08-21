@@ -19,3 +19,4 @@
 | Admin UI dead code and unused dependencies | Maintenance burden, confusion for contributors | Medium | Tracked in audit plan; dead components, commented-out code blocks, and unused npm packages to remove |
 | Admin UI has no tests | No regression safety for frontend changes | Medium | Test infrastructure (Vitest + React Testing Library) to be added |
 | Admin UI has no error boundaries | Runtime errors crash pages with no recovery | Low | Add `error.tsx` files per route segment |
+| E2E suite deletes and recreates the queue before every test | Forces a link detach on the running Worker 200+ times per run, a long-standing source of Service Bus flakiness in `Admitto.Api.Tests` | Medium | `MessagingTestContext.ResetAsync` could drain the queue and its dead-letter queue instead of calling `DeleteQueueAsync`/`CreateQueueAsync`, so the consumer never has to reconnect |

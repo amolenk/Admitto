@@ -424,3 +424,8 @@ test.http
 
 # Aspire publish output
 src/Admitto.AppHost/aspire-output/
+
+# pnpm local package cache
+.pnpm-store/
+
+dotnet

@@ -5,6 +5,7 @@ using Amolenk.Admitto.Core.Organization.Application.ExternalUsers;
 using Amolenk.Admitto.Core.Organization.Application.Jobs;
 using Amolenk.Admitto.Core.Organization.Application.Persistence;
 using Amolenk.Admitto.Core.Organization.Application.UseCases.TeamMemberships.BootstrapAdminUser;
+using Amolenk.Admitto.Core.Organization.Application.UseCases.Development;
 using Amolenk.Admitto.Core.Organization.Contracts;
 using Amolenk.Admitto.Core.Organization.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.Organization.Infrastructure.UserDirectories.Keycloak;
@@ -100,6 +101,10 @@ public static class OrganizationModuleExtensions
                     builder.Configuration.GetSection(BootstrapAdminUserOptions.SectionName));
                 services.AddHostedService<BootstrapAdminUserInitializer>();
             }
+
+            if (builder.Environment.IsDevelopment()
+                && builder.Configuration.GetValue<bool>("Development:LocalDemoSeed:Enabled"))
+                services.AddHostedService<LocalDemoSeedInitializer>();
 
             return builder;
         }
