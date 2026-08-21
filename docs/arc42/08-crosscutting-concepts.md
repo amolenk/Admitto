@@ -152,6 +152,12 @@ Tests that want a terse construction path use a builder under `tests/Admitto.Tes
 
 `OutboxDispatcher` attempts best-effort dispatch immediately after a successful unit-of-work commit. The Worker host also runs `OutboxRetryBackgroundService`, which scans every registered module `IOutboxDbContext` for bounded batches of `Pending` rows older than the configured retry minimum age and marks them `Sent` after queue send succeeds. The minimum age avoids racing the unit-of-work's immediate post-commit dispatch. Duplicate queue sends are still tolerated because the outbox cannot atomically couple the external queue send with the database update; receiving handlers must therefore stay idempotent.
 
+On the consuming side, the Worker's `ServiceBusMessageProcessor` hosted service wraps the Azure SDK's push-based `ServiceBusProcessor`.
+The broker pushes messages over a long-lived AMQP link that the SDK keeps alive, re-establishes after a fault, and uses to renew the message lock while a handler runs.
+Dispatch is sequential (`MaxConcurrentCalls = 1`), and settlement is explicit (`AutoCompleteMessages = false`): a message is completed once `QueueMessageDispatcher` succeeds and abandoned for redelivery when it fails, so a persistently failing message is dead-lettered by the broker once it exceeds the queue's max delivery count.
+Link and connection faults surface through the processor's error handler as warnings rather than errors, because the processor recovers from them on its own; a real outage shows up as the warning repeating.
+Recovery latency is bounded by `ServiceBusRetryOptions.MaxDelay`, set to 5 seconds in `AddSharedInfrastructureMessagingServices` so a consumer cannot idle for the SDK's 60-second default after a blip (see [ADR-015](../adrs/adr-015-service-bus-push-based-consumption.md)).
+
 For Email module SMTP delivery, `EmailLog` is the send claim. Trigger handlers write a pending log row and enqueue internal delivery work before SMTP is attempted. Delivery handlers and bulk fan-out treat terminal rows as no-ops and retryable pending rows as recoverable work. SMTP itself is non-transactional, so the documented guarantee is duplicate minimization through database-backed claims, not perfect exactly-once delivery.
 
 ### Cross-module lifecycle events
@@ -437,20 +443,23 @@ Service defaults (`Admitto.ServiceDefaults`) configure:
 
 ### Production logging policy
 
-API and Worker production configuration keeps Admitto application logs visible while suppressing routine framework and SDK noise before telemetry ingestion:
+API and Worker configuration keeps Admitto application logs visible while suppressing routine framework and SDK noise before telemetry ingestion:
 
-| Category | Production level | Rationale |
-| :------- | :--------------- | :-------- |
-| `Default` | `Information` | Keeps general operational signal. |
-| `Amolenk.Admitto` | `Information` | Keeps domain/application lifecycle logs. |
-| `Microsoft.AspNetCore` | `Warning` | Suppresses routine framework request logs. |
-| `Microsoft.EntityFrameworkCore.Database.Command` | `Warning` | Suppresses SQL command chatter while retaining command failures. |
-| `Azure.Messaging.ServiceBus` | `Warning` | Suppresses idle receive/link logs while retaining queue warnings and errors. |
-| `Azure.Core` | `Warning` | Suppresses Azure SDK internals except warnings/errors. |
-| `Quartz` | `Warning` | Suppresses scheduler chatter while retaining job/scheduler failures. |
-| `Microsoft.Hosting.Lifetime` | `Information` | Keeps startup/shutdown signal. |
+| Category | Level | Applies from | Rationale |
+| :------- | :---- | :----------- | :-------- |
+| `Default` | `Information` | `appsettings.json` | Keeps general operational signal. |
+| `Amolenk.Admitto` | `Information` | `appsettings.json` | Keeps domain/application lifecycle logs. |
+| `Azure.Messaging.ServiceBus` | `Warning` | `appsettings.json` | Suppresses receive/link lifecycle logs while retaining queue warnings and errors. |
+| `Azure.Core` | `Warning` | `appsettings.json` | Suppresses Azure SDK internals except warnings/errors. |
+| `Microsoft.AspNetCore` | `Warning` | `appsettings.Production.json` | Suppresses routine framework request logs. |
+| `Microsoft.EntityFrameworkCore.Database.Command` | `Warning` | `appsettings.Production.json` | Suppresses SQL command chatter while retaining command failures. |
+| `Quartz` | `Warning` | `appsettings.Production.json` | Suppresses scheduler chatter while retaining job/scheduler failures. |
+| `Microsoft.Hosting.Lifetime` | `Information` | (default) | Keeps startup/shutdown signal. |
 
-The production suppressions live in `appsettings.Production.json`. Local development inherits the shared `Default=Information` baseline from `appsettings.json`, while `appsettings.Development.json` only raises `Amolenk.Admitto` to `Debug`. Developers can temporarily raise any category in production through normal configuration overrides during an incident.
+The two Azure SDK categories are suppressed in the shared `appsettings.json` baseline because they carry no application signal in any environment: they narrate AMQP link and HTTP pipeline mechanics that the SDK already recovers from on its own.
+The framework categories that developers do want locally - EF Core SQL, ASP.NET Core requests, Quartz scheduling - stay at `Information` outside production and are suppressed only in `appsettings.Production.json`.
+`appsettings.Development.json` raises `Amolenk.Admitto` to `Debug`.
+Developers can temporarily raise any category through normal configuration overrides during an incident.
 
 ### Log severity expectations
 

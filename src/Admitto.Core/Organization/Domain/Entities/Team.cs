@@ -126,7 +126,7 @@ public class Team : Aggregate<TeamId>
     {
         EnsureNotArchived();
 
-        var request = TeamEventCreationRequest.Create(requesterId, requestedAt);
+        var request = TeamEventCreationRequest.Create(requesterId, Slug.From("legacy"), requestedAt);
         _eventCreationRequests.Add(request);
         PendingEventCount++;
 
@@ -150,7 +150,11 @@ public class Team : Aggregate<TeamId>
         UserId requesterId,
         DateTimeOffset requestedAt)
     {
-        var request = RequestEventCreation(requesterId, requestedAt);
+        EnsureNotArchived();
+
+        var request = TeamEventCreationRequest.Create(requesterId, publicSlug, requestedAt);
+        _eventCreationRequests.Add(request);
+        PendingEventCount++;
 
         AddDomainEvent(new TicketedEventCreationRequestedDomainEvent(
             request.Id,

@@ -59,7 +59,7 @@ public sealed class ReconfirmFlowTests(TestContext testContext) : EndToEndTestBa
         // accidental over-fanning.
         await Task.Delay(TimeSpan.FromSeconds(2), testContext.CancellationToken);
         var response = await Environment.Email.Client.GetAsync(
-            "/email", testContext.CancellationToken);
+            "/api/email", testContext.CancellationToken);
         var json = await response.Content.ReadFromJsonAsync<JsonElement>(
             cancellationToken: testContext.CancellationToken);
         emails = json.EnumerateArray().ToList();

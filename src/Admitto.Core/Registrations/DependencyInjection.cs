@@ -5,6 +5,7 @@ using Amolenk.Admitto.Core.Registrations.Application.Persistence;
 using Amolenk.Admitto.Core.Registrations.Application.PublicEventLinks;
 using Amolenk.Admitto.Core.Registrations.Application.Security;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Development;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.ResolvePartnerTicketedEvent.PartnerApi;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence;
@@ -91,6 +92,10 @@ public static class RegistrationsModuleExtensions
                         .RepeatForever())
                     .StartNow());
             });
+
+            if (builder.Environment.IsDevelopment()
+                && builder.Configuration.GetValue<bool>("Development:LocalDemoSeed:Enabled"))
+                builder.Services.AddHostedService<LocalDemoSeedInitializer>();
 
             return builder;
         }

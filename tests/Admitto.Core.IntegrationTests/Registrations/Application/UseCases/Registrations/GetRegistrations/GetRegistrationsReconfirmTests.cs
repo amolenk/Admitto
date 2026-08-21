@@ -22,7 +22,7 @@ public sealed class GetRegistrationsReconfirmTests(TestContext testContext) : As
         HasReconfirmed: false);
 
     [TestMethod]
-    public async ValueTask ReconfirmedAttendee_IsExcluded_OnEveryTick()
+    public async ValueTask HandleAsync_ReconfirmedAttendee_ExcludedOnEveryTick()
     {
         var eventId = TicketedEventId.New();
         var teamId = TeamId.New();
@@ -44,7 +44,7 @@ public sealed class GetRegistrationsReconfirmTests(TestContext testContext) : As
     }
 
     [TestMethod]
-    public async ValueTask AttendeeWhoReconfirmsBetweenTicks_IsExcludedNextTick()
+    public async ValueTask HandleAsync_AttendeeReconfirmsBetweenTicks_ExcludedOnNextTick()
     {
         var eventId = TicketedEventId.New();
         var teamId = TeamId.New();
@@ -73,7 +73,7 @@ public sealed class GetRegistrationsReconfirmTests(TestContext testContext) : As
     }
 
     [TestMethod]
-    public async ValueTask NewRegistrationBetweenTicks_IsPickedUpOnNextTick()
+    public async ValueTask HandleAsync_NewRegistrationBetweenTicks_IncludedOnNextTick()
     {
         var eventId = TicketedEventId.New();
         var teamId = TeamId.New();
@@ -94,7 +94,7 @@ public sealed class GetRegistrationsReconfirmTests(TestContext testContext) : As
     }
 
     [TestMethod]
-    public async ValueTask EveryoneReconfirmed_ReturnsEmpty()
+    public async ValueTask HandleAsync_EveryoneReconfirmed_ReturnsEmpty()
     {
         var eventId = TicketedEventId.New();
         var teamId = TeamId.New();
@@ -110,7 +110,7 @@ public sealed class GetRegistrationsReconfirmTests(TestContext testContext) : As
     }
 
     [TestMethod]
-    public async ValueTask CancelledRegistration_IsExcluded_EvenIfNotReconfirmed()
+    public async ValueTask HandleAsync_CancelledRegistration_ExcludedEvenIfNotReconfirmed()
     {
         var eventId = TicketedEventId.New();
         var teamId = TeamId.New();

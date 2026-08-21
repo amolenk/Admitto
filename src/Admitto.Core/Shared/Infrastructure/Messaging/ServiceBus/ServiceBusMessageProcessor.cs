@@ -4,133 +4,143 @@ using Azure.Messaging.ServiceBus;
 namespace Amolenk.Admitto.Core.Shared.Infrastructure.Messaging.ServiceBus;
 
 /// <summary>
-/// Hosted service that polls the Service Bus queue using an explicit receive loop and routes each
-/// received CloudEvent through the <see cref="QueueMessageDispatcher"/>. Registered only by hosts
-/// that opt in (the Worker today).
+/// Hosted service that consumes the Service Bus queue and routes each received CloudEvent through
+/// the <see cref="QueueMessageDispatcher"/>. Registered only by hosts that opt in (the Worker today).
 /// <para>
-/// An explicit polling loop (rather than <see cref="ServiceBusProcessor"/>) is used so that each
-/// call to <see cref="ServiceBusReceiver.ReceiveMessageAsync"/> issues a fresh AMQP credit to the
-/// broker. The Azure SB emulator only checks its MSSQL backend for new messages on fresh credits,
-/// so passive listeners can miss messages for up to the default TryTimeout (60 s). With a 5-second
-/// poll interval this is bounded to 5 s in all environments including the emulator.
+/// Delivery is push-based: the broker pushes messages over a long-lived AMQP link that the SDK's
+/// <see cref="ServiceBusProcessor"/> owns, keeps alive, and re-establishes after a fault. It also
+/// renews the message lock while a handler runs, so a slow handler no longer risks losing its lock
+/// and having the message redelivered.
 /// </para>
 /// <para>
-/// The Aspire-registered <see cref="ServiceBusClient"/> is used so local emulator connection
-/// strings and published Azure managed identity endpoints are both handled by the same client
-/// registration. After <see cref="MaxConsecutiveNullReceives"/> consecutive null results, the
-/// receiver is recreated to refresh the AMQP link when the SB emulator silently stalls delivery.
+/// Messages are settled explicitly (<see cref="ServiceBusProcessorOptions.AutoCompleteMessages"/> is
+/// off): completed once the dispatcher succeeds, abandoned for redelivery when it fails. A message
+/// that keeps failing is dead-lettered by the broker once it exceeds the queue's max delivery count.
 /// </para>
 /// </summary>
-internal sealed class ServiceBusMessageProcessor(
-    ServiceBusClient client,
-    IServiceScopeFactory scopeFactory,
-    ILogger<ServiceBusMessageProcessor> logger) : BackgroundService
+internal sealed partial class ServiceBusMessageProcessor : IHostedService, IAsyncDisposable
 {
     private const string QueueName = "queue";
-    private static readonly TimeSpan ReceiveWaitTime = TimeSpan.FromSeconds(5);
 
-    /// <summary>
-    /// Recreate the receiver after this many consecutive null receives (~30 s idle)
-    /// to refresh the AMQP link when the SB emulator silently stalls delivery.
-    /// </summary>
-    private const int MaxConsecutiveNullReceives = 6;
+    private readonly IServiceScopeFactory _scopeFactory;
+    private readonly ILogger<ServiceBusMessageProcessor> _logger;
+    private readonly ServiceBusProcessor _processor;
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    public ServiceBusMessageProcessor(
+        ServiceBusClient client,
+        IServiceScopeFactory scopeFactory,
+        ILogger<ServiceBusMessageProcessor> logger)
     {
-        logger.LogInformation("Starting message queue processor for queue '{QueueName}'.", QueueName);
+        _scopeFactory = scopeFactory;
+        _logger = logger;
 
-        var receiver = CreateReceiver();
-        var consecutiveNulls = 0;
+        _processor = client.CreateProcessor(QueueName, new ServiceBusProcessorOptions
+        {
+            ReceiveMode = ServiceBusReceiveMode.PeekLock,
+            AutoCompleteMessages = false,
+            // Dispatch stays strictly sequential; handlers have never had to tolerate concurrent
+            // delivery on a single Worker replica.
+            MaxConcurrentCalls = 1
+        });
+
+        _processor.ProcessMessageAsync += ProcessMessageAsync;
+        _processor.ProcessErrorAsync += ProcessErrorAsync;
+    }
+
+    public async Task StartAsync(CancellationToken cancellationToken)
+    {
+        LogStarting(_logger, QueueName);
+
+        await _processor.StartProcessingAsync(cancellationToken);
+    }
+
+    public async Task StopAsync(CancellationToken cancellationToken)
+    {
+        if (!_processor.IsProcessing) return;
+
+        await _processor.StopProcessingAsync(cancellationToken);
+    }
+
+    public ValueTask DisposeAsync() => _processor.DisposeAsync();
+
+    private async Task ProcessMessageAsync(ProcessMessageEventArgs args)
+    {
+        var message = args.Message;
+
         try
         {
-            while (!stoppingToken.IsCancellationRequested)
-            {
-                ServiceBusReceivedMessage? message;
-                try
-                {
-                    message = await receiver.ReceiveMessageAsync(
-                        maxWaitTime: ReceiveWaitTime,
-                        cancellationToken: stoppingToken);
-                }
-                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-                {
-                    break;
-                }
-                catch (Exception ex)
-                {
-                    logger.LogWarning(ex, "Transient error receiving from queue '{QueueName}'; recreating receiver.", QueueName);
-                    await DisposeReceiverAsync(receiver);
-                    receiver = CreateReceiver();
-                    consecutiveNulls = 0;
-                    await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
-                    continue;
-                }
+            var cloudEvent = CloudEvent.Parse(message.Body)
+                ?? throw new InvalidOperationException(
+                    $"Unable to parse CloudEvent from message {message.MessageId}.");
 
-                if (message == null)
-                {
-                    consecutiveNulls++;
-                    if (consecutiveNulls >= MaxConsecutiveNullReceives)
-                    {
-                        logger.LogDebug(
-                            "Recreating receiver after {Count} consecutive empty polls to refresh the AMQP link.",
-                            consecutiveNulls);
-                        await DisposeReceiverAsync(receiver);
-                        receiver = CreateReceiver();
-                        consecutiveNulls = 0;
-                    }
-                    continue;
-                }
+            using var scope = _scopeFactory.CreateScope();
+            var dispatcher = scope.ServiceProvider.GetRequiredService<QueueMessageDispatcher>();
+            await dispatcher.DispatchAsync(cloudEvent, args.CancellationToken);
 
-                consecutiveNulls = 0;
-
-                try
-                {
-                    var cloudEvent = CloudEvent.Parse(message.Body)
-                        ?? throw new InvalidOperationException(
-                            $"Unable to parse CloudEvent from message {message.MessageId}.");
-
-                    using var scope = scopeFactory.CreateScope();
-                    var dispatcher = scope.ServiceProvider.GetRequiredService<QueueMessageDispatcher>();
-                    await dispatcher.DispatchAsync(cloudEvent, stoppingToken);
-
-                    await receiver.CompleteMessageAsync(message, stoppingToken);
-                }
-                catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-                {
-                    // Worker shutting down — let the message lock expire so it is re-queued.
-                    break;
-                }
-                catch (Exception ex)
-                {
-                    logger.LogError(ex, "Failed to process message from queue '{QueueName}'.", QueueName);
-                    try
-                    {
-                        await receiver.AbandonMessageAsync(message, cancellationToken: CancellationToken.None);
-                    }
-                    catch (Exception abandonEx)
-                    {
-                        logger.LogWarning(abandonEx, "Failed to abandon message {MessageId}.", message.MessageId);
-                    }
-                }
-            }
+            await args.CompleteMessageAsync(message, args.CancellationToken);
         }
-        finally
+        catch (OperationCanceledException) when (args.CancellationToken.IsCancellationRequested)
         {
-            await DisposeReceiverAsync(receiver);
+            // Worker shutting down — let the message lock expire so it is redelivered.
+        }
+        catch (Exception ex)
+        {
+            LogProcessingFailed(_logger, QueueName, ex);
+
+            await AbandonAsync(args, message);
         }
     }
 
-    private ServiceBusReceiver CreateReceiver()
+    private async Task AbandonAsync(ProcessMessageEventArgs args, ServiceBusReceivedMessage message)
     {
-        return client.CreateReceiver(QueueName, new ServiceBusReceiverOptions
+        try
         {
-            ReceiveMode = ServiceBusReceiveMode.PeekLock
-        });
+            await args.AbandonMessageAsync(message, cancellationToken: CancellationToken.None);
+        }
+        catch (Exception ex)
+        {
+            LogAbandonFailed(_logger, message.MessageId, ex);
+        }
     }
 
-    private async ValueTask DisposeReceiverAsync(ServiceBusReceiver receiver)
+    private Task ProcessErrorAsync(ProcessErrorEventArgs args)
     {
-        try { await receiver.DisposeAsync(); }
-        catch (Exception ex) { logger.LogWarning(ex, "Failed to dispose receiver for queue '{QueueName}'.", QueueName); }
+        if (args.CancellationToken.IsCancellationRequested) return Task.CompletedTask;
+
+        // The processor reconnects on its own after link and connection faults, so a single
+        // occurrence is not actionable; a genuine outage shows up as the warning repeating.
+        LogProcessorError(_logger, args.ErrorSource, QueueName, args.Exception);
+
+        return Task.CompletedTask;
     }
+
+    [LoggerMessage(
+        LogLevel.Information,
+        "Starting message queue processor for queue '{QueueName}'.")]
+    static partial void LogStarting(ILogger<ServiceBusMessageProcessor> logger, string queueName);
+
+    [LoggerMessage(
+        LogLevel.Error,
+        "Failed to process message from queue '{QueueName}'.")]
+    static partial void LogProcessingFailed(
+        ILogger<ServiceBusMessageProcessor> logger,
+        string queueName,
+        Exception exception);
+
+    [LoggerMessage(
+        LogLevel.Warning,
+        "Failed to abandon message {MessageId}.")]
+    static partial void LogAbandonFailed(
+        ILogger<ServiceBusMessageProcessor> logger,
+        string messageId,
+        Exception exception);
+
+    [LoggerMessage(
+        LogLevel.Warning,
+        "Service Bus processor error from {ErrorSource} on queue '{QueueName}'; the processor will retry.")]
+    static partial void LogProcessorError(
+        ILogger<ServiceBusMessageProcessor> logger,
+        ServiceBusErrorSource errorSource,
+        string queueName,
+        Exception exception);
 }

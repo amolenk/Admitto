@@ -55,14 +55,18 @@ public sealed class GetTicketedEventDetailsTests(TestContext testContext) : Aspi
         result.TeamId.ShouldBe(teamId.Value);
         result.Status.ShouldBe(EventLifecycleStatus.Active);
 
+        // Postgres timestamptz has microsecond precision; DateTimeOffset ticks are
+        // 100ns, so a round trip can shave sub-microsecond ticks off the seeded value.
+        var precisionTolerance = TimeSpan.FromMilliseconds(1);
+
         result.RegistrationPolicy.ShouldNotBeNull();
-        result.RegistrationPolicy.OpensAt.ShouldBe(opensAt);
-        result.RegistrationPolicy.ClosesAt.ShouldBe(closesAt);
+        result.RegistrationPolicy.OpensAt.ShouldBe(opensAt, precisionTolerance);
+        result.RegistrationPolicy.ClosesAt.ShouldBe(closesAt, precisionTolerance);
         result.RegistrationPolicy.AllowedEmailDomain.ShouldBe("@example.com");
 
         result.ReconfirmPolicy.ShouldNotBeNull();
-        result.ReconfirmPolicy.OpensAt.ShouldBe(reconfirmOpens);
-        result.ReconfirmPolicy.ClosesAt.ShouldBe(reconfirmCloses);
+        result.ReconfirmPolicy.OpensAt.ShouldBe(reconfirmOpens, precisionTolerance);
+        result.ReconfirmPolicy.ClosesAt.ShouldBe(reconfirmCloses, precisionTolerance);
         result.ReconfirmPolicy.CadenceHours.ShouldBe(168);
         result.ReconfirmPolicy.MinEmailIntervalHours.ShouldBe(24);
 

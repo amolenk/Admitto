@@ -29,7 +29,7 @@ public class EmailTestContext
 
     public async Task ResetAsync()
     {
-        await Client.DeleteAsync("/email/all");
+        await Client.DeleteAsync("/api/email/all");
     }
 
     public async Task<List<JsonElement>> WaitForAsync(
@@ -42,7 +42,7 @@ public class EmailTestContext
         while (true)
         {
             var mailDevResponse = await Client.GetAsync(
-                "/email",
+                "/api/email",
                 cancellationToken);
 
             if (mailDevResponse.IsSuccessStatusCode)

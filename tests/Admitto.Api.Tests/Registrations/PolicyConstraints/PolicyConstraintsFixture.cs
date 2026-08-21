@@ -7,8 +7,14 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.PolicyConstraints;
 
 internal sealed class PolicyConstraintsFixture
 {
-    public static readonly DateTimeOffset EventStartsAt = DateTimeOffset.UtcNow.AddDays(60);
-    public static readonly DateTimeOffset EventEndsAt = DateTimeOffset.UtcNow.AddDays(61);
+    // Truncated to whole seconds: Postgres timestamptz has microsecond precision,
+    // so an untruncated value round-tripped through the database would come back
+    // slightly earlier than the in-memory constant used by these boundary tests.
+    public static readonly DateTimeOffset EventStartsAt = Truncate(DateTimeOffset.UtcNow.AddDays(60));
+    public static readonly DateTimeOffset EventEndsAt = Truncate(DateTimeOffset.UtcNow.AddDays(61));
+
+    private static DateTimeOffset Truncate(DateTimeOffset value) =>
+        new(value.Ticks - value.Ticks % TimeSpan.TicksPerSecond, value.Offset);
 
     public Guid TeamId { get; private set; }
     public Guid EventId { get; private set; }

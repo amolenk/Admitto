@@ -2,6 +2,7 @@ using Amolenk.Admitto.Core.Organization.Domain.Entities;
 using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace Amolenk.Admitto.Core.Organization.Infrastructure.Persistence.EntityConfigurations;
 
@@ -64,6 +65,13 @@ public class TeamEntityConfiguration : IEntityTypeConfiguration<Team>
 
                 req.Property(r => r.RequesterId)
                     .HasColumnName("requester_id")
+                    .IsRequired();
+
+                req.Property(r => r.PublicSlug)
+                    .HasColumnName("public_slug")
+                    .HasConversion(new ValueConverter<Slug, string>(
+                        value => value.Value,
+                        value => Slug.From(value)))
                     .IsRequired();
 
                 req.Property(r => r.RequestedAt)
