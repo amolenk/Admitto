@@ -33,8 +33,8 @@
 	//		}
 	// }
 
-    "workspaceMount": "source=admitto-workspace,target=/workspace,type=volume",
-    "workspaceFolder": "/workspace/admitto",
+ //   "workspaceMount": "source=admitto-workspace,target=/workspace,type=volume",
+//    "workspaceFolder": "/workspace/admitto",
 
     "mounts": [
         "source=claude-code-config,target=/home/vscode/.claude,type=volume",
@@ -54,9 +54,9 @@
     },
 
     "postStartCommand": {
-        "trust-dotnet-dev-cert": "dotnet dev-certs https --trust",
+//        "trust-dotnet-dev-cert": "dotnet dev-certs https --trust",
 //        "fix-claude-permissions": "sudo chown -R vscode:vscode /home/vscode/.claude",
-        "fix-workspace-permissions": "sudo chown -R vscode:vscode /workspace"
+//        "fix-workspace-permissions": "sudo chown -R vscode:vscode /workspace"
     },
 
 	"customizations": {
