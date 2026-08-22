@@ -65,6 +65,49 @@ public async Task CreateTeam_DuplicateName_ReturnsError() { ... }
 
 **Do not prefix test method names with scenario IDs** (e.g., `SC001_`, `SC-BIND_`). Do not reference scenario IDs in comments either. Describe the scenario in plain English in the test body or method name.
 
+### Given/When/Then Scenario Comments
+Every test method gets a three-line `// Given` / `// When` / `// Then` comment immediately above the `[TestMethod]` attribute, written in plain English from the scenario's perspective — not the code's. This borrows the phrasing style of specs so a test reads as documentation on its own, without needing a separate spec.
+
+- `Given` — the precondition/state the test sets up. Omit this line if there's no meaningful precondition beyond defaults.
+- `When` — the action under test.
+- `Then` — the observable outcome being asserted.
+
+Keep each line to one short sentence. Prefer plain-English description over code identifiers (e.g. "an archived team", not "`TeamBuilder().AsArchived()`"). This comment block is separate from, and does not replace, any existing `// Arrange` / `// Act` / `// Assert` comments inside the test body.
+
+```csharp
+// Given an archived team
+// When the name is changed
+// Then it throws TeamArchived
+[TestMethod]
+public void ChangeName_ArchivedTeam_ThrowsTeamArchived()
+{
+    // Arrange
+    var sut = new TeamBuilder().AsArchived().Build();
+
+    // Act
+    var result = ErrorResult.Capture(() => sut.ChangeName(TeamName.From("New Name")));
+
+    // Assert
+    result.Error.ShouldMatch(Team.Errors.TeamArchived(sut.Id));
+}
+```
+
+This convention applies to new and touched tests going forward; the repo-wide retrofit of existing tests is tracked separately.
+
+### Error Assertions
+When asserting that a `BusinessRuleViolationException` (or captured `Error`) matches a specific domain error, compare against the aggregate/entity's `Errors.*` static instance via `ShouldMatch`, not a raw string error code:
+
+```csharp
+// Good
+result.Error.ShouldMatch(BadgeEvent.Errors.EventNotActive);
+
+// Avoid — breaks silently if the error message/type changes without the code changing,
+// and duplicates a literal that already exists as a typed constant.
+result.Error.Code.ShouldBe("badges_event.event_not_active");
+```
+
+`ShouldMatch` (in `Amolenk.Admitto.Testing.Infrastructure.Assertions`) compares code, type, message, and details in one call. Internal `Errors` classes are visible to test projects via `InternalsVisibleTo`, so there's no need to duplicate the string literal.
+
 ### Builders
 Builders (e.g., `TeamBuilder`, `CouponBuilder`) live in `Admitto.Testing/Builders/` and are shared across all test projects. Add new builders there.
 
