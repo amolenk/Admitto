@@ -54,7 +54,7 @@
     },
 
     "postStartCommand": {
-//        "trust-dotnet-dev-cert": "dotnet dev-certs https --trust",
+        "trust-dotnet-dev-cert": "bash ${containerWorkspaceFolder}/.devcontainer/trust-dev-cert.sh"
 //        "fix-claude-permissions": "sudo chown -R vscode:vscode /home/vscode/.claude",
 //        "fix-workspace-permissions": "sudo chown -R vscode:vscode /workspace"
     },
