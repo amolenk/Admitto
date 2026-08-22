@@ -16,6 +16,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.UseCases.Email
 [TestClass]
 public sealed class SendEmailHandlerTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    // Given a team with configured email settings
+    // When SendEmail is handled
+    // Then a pending email log is written and a delivery command is queued in the outbox without sending yet
     [TestMethod]
     public async ValueTask HandleAsync_ValidSettings_WritesPendingLogAndDeliveryCommand()
     {
@@ -54,6 +57,9 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
         fakeSender.SentMessages.ShouldBeEmpty();
     }
 
+    // Given a team with no email settings configured
+    // When SendEmail is handled
+    // Then the email log is written with a Failed status and an error message
     [TestMethod]
     public async ValueTask HandleAsync_NoSettings_WritesFailedLog()
     {
@@ -84,6 +90,9 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
         });
     }
 
+    // Given a SendEmail command with a given idempotency key
+    // When the command is handled twice with the same key
+    // Then only one email log row exists and no message is sent
     [TestMethod]
     public async ValueTask HandleAsync_DuplicateIdempotencyKey_DoesNotDoubleSend()
     {
@@ -113,6 +122,9 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
         logCount.ShouldBe(1);
     }
 
+    // Given a pending email log already exists for the idempotency key
+    // When SendEmail is handled again
+    // Then no message is sent directly but exactly one delivery command is prepared for recovery
     [TestMethod]
     public async ValueTask HandleAsync_PreExistingPendingLog_PreparesDeliveryCommandForRecovery()
     {
@@ -136,6 +148,9 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
         deliveryCommandCount.ShouldBe(1);
     }
 
+    // Given an email log already marked Sent for the idempotency key
+    // When DeliverEmail is handled
+    // Then no additional send attempt is made
     [TestMethod]
     public async ValueTask DeliverEmail_SentLogExists_DoesNotSendAgain()
     {
@@ -148,6 +163,9 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
         fakeSender.SendAttempts.ShouldBe(0);
     }
 
+    // Given an email log in Pending status for the idempotency key
+    // When DeliverEmail is handled
+    // Then the message is sent once and the log is updated to Sent
     [TestMethod]
     public async ValueTask DeliverEmail_PendingLogExists_SendsAndMarksSent()
     {
@@ -164,6 +182,9 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
         log.Status.ShouldBe(EmailLogStatus.Sent);
     }
 
+    // Given a sender configured to always fail and an email log in Pending status
+    // When DeliverEmail is handled
+    // Then the send is retried inline up to the configured limit, the log stays Pending with the error recorded, and delivery is requeued
     [TestMethod]
     public async ValueTask DeliverEmail_TransientSmtpFailure_RetriesInlineAndRequeues()
     {
@@ -194,6 +215,9 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
         requeued.ShouldBeTrue();
     }
 
+    // Given ticket confirmation template parameters with both an event website and a public event link
+    // When the template is rendered
+    // Then the rendered content links to the public event link, not the raw event website, and shows edit-registration wording
     [TestMethod]
     public void TicketConfirmationTemplate_EventWebsiteLink_UsesPublicEventLink()
     {
@@ -228,6 +252,9 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
         rendered.TextBody.ShouldNotContain("https://devconf.example.com");
     }
 
+    // Given branding parameters with a configured font family and accent color
+    // When every built-in email template is rendered
+    // Then each rendered template's HTML includes the configured font family and accent color
     [TestMethod]
     public void BuiltInEmailTemplates_RenderConfiguredFontAndAccentColor()
     {
@@ -250,6 +277,9 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
         }
     }
 
+    // Given branding parameters built with an accent color and font family
+    // When the template parameters are constructed
+    // Then they expose canonical 'accent_color' and 'font_family' keys and no legacy 'team_accent_color' key
     [TestMethod]
     public void EmailTemplateParameters_AccentColorArgument_ExportsCanonicalAccentColor()
     {
@@ -288,6 +318,9 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
         return (teamId, eventId, fakeSender, handler);
     }
 
+    // Given no team email context row exists yet (the branding projection hasn't caught up)
+    // When effective email settings are resolved for the team
+    // Then default branding and the system sender display name are used
     [TestMethod]
     public async ValueTask ResolveAsync_NoTeamContextRow_UsesDefaultBrandingAndSystemSenderLabel()
     {

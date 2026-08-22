@@ -9,7 +9,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 [TestClass]
 public sealed class CreateCouponTests(TestContext testContext) : AspireIntegrationTestBase
 {
-    // SC-001: Successful coupon creation
+    // Given a ticketed event with a valid ticket type
+    // When a valid CreateCoupon command is handled
+    // Then a coupon is persisted with the given details and no registration-window bypass
     [TestMethod]
     public async ValueTask CreateCoupon_ValidInput_PersistsCouponAndRaisesDomainEvent()
     {
@@ -41,7 +43,9 @@ public sealed class CreateCouponTests(TestContext testContext) : AspireIntegrati
         });
     }
 
-    // SC-002: Coupon with registration window bypass
+    // Given a ticketed event with a valid ticket type
+    // When a CreateCoupon command with the bypass-registration-window flag set is handled
+    // Then the persisted coupon has the bypass flag set
     [TestMethod]
     public async ValueTask CreateCoupon_BypassRegistrationWindow_PersistsWithBypassFlag()
     {
@@ -67,7 +71,9 @@ public sealed class CreateCouponTests(TestContext testContext) : AspireIntegrati
         });
     }
 
-    // SC-003: Rejected — ticket type does not exist
+    // Given a ticketed event
+    // When a CreateCoupon command references a ticket type id that does not exist
+    // Then an unknown-ticket-types error is thrown
     [TestMethod]
     public async ValueTask CreateCoupon_UnknownTicketType_ThrowsUnknownTicketTypesError()
     {
@@ -90,7 +96,9 @@ public sealed class CreateCouponTests(TestContext testContext) : AspireIntegrati
         result.Error.ShouldMatch(Coupon.Errors.UnknownTicketTypes([unknownId]));
     }
 
-    // SC-005: Rejected — expiry in the past
+    // Given a ticketed event with a valid ticket type
+    // When a CreateCoupon command specifies an expiry date in the past
+    // Then an expiry-must-be-in-future error is thrown
     [TestMethod]
     public async ValueTask CreateCoupon_ExpiryInThePast_ThrowsExpiryMustBeInFutureError()
     {
@@ -113,8 +121,8 @@ public sealed class CreateCouponTests(TestContext testContext) : AspireIntegrati
         result.Error.ShouldMatch(Coupon.Errors.ExpiryMustBeInFuture);
     }
 
-    // NOTE: SC-006 (cancelled-event rejection) will be reintroduced against the new
-    // TicketedEvent aggregate in section 8 of redesign-ticketed-event-ownership.
+    // NOTE: cancelled-event rejection will be reintroduced against the new TicketedEvent
+    // aggregate in section 8 of redesign-ticketed-event-ownership.
 
     private static CreateCouponCommand NewCreateCouponCommand(
         TicketedEventId eventId,

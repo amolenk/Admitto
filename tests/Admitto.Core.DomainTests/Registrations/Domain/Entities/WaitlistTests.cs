@@ -37,6 +37,9 @@ public sealed class WaitlistTests
         return catalog.TicketTypes.Single(tt => tt.Id == DefaultTicketTypeId);
     }
 
+    // Given an empty waitlist
+    // When an entry is added for a new email
+    // Then it succeeds, adding a single active entry, without raising domain events
     [TestMethod]
     public void AddEntry_WhenEmailIsNew_AddsActiveEntry()
     {
@@ -57,6 +60,9 @@ public sealed class WaitlistTests
         sut.GetDomainEvents().ShouldBeEmpty();
     }
 
+    // Given an email that already has an active waitlist entry
+    // When the same email is added again
+    // Then it returns false and no duplicate active entry is created
     [TestMethod]
     public void AddEntry_WhenEmailAlreadyActive_ReturnsFalse()
     {
@@ -73,6 +79,9 @@ public sealed class WaitlistTests
         sut.Entries.Count(e => e.Email == email && e.Status == WaitlistEntryStatus.Active).ShouldBe(1);
     }
 
+    // Given a waitlist that already has one active entry
+    // When another new email is added
+    // Then both entries stay active, numbered sequentially by position
     [TestMethod]
     public void AddEntry_WhenNewEmail_AddsActiveEntryAtNextPosition()
     {
@@ -90,6 +99,9 @@ public sealed class WaitlistTests
         sut.Entries.ShouldAllBe(e => e.Status == WaitlistEntryStatus.Active);
     }
 
+    // Given a waitlist with two active entries
+    // When the first entry is removed by email
+    // Then it is marked Removed, the remaining entry is renumbered, and a WaitlistEntryRemoved event is raised
     [TestMethod]
     public void RemoveEntry_ByEmail_MarksEntryRemovedAndRenumbersPositions()
     {
@@ -112,6 +124,9 @@ public sealed class WaitlistTests
             .ShouldBeAssignableTo<WaitlistEntryRemovedDomainEvent>();
     }
 
+    // Given an empty waitlist
+    // When removal is attempted for an email that has no entry
+    // Then it does not throw and raises no domain events
     [TestMethod]
     public void RemoveEntry_ByEmail_WhenNotFound_IsIdempotent()
     {
@@ -124,6 +139,9 @@ public sealed class WaitlistTests
         sut.GetDomainEvents().ShouldBeEmpty();
     }
 
+    // Given an entry that has already been removed
+    // When removal is attempted again by entry id
+    // Then it does not throw and raises no additional domain events
     [TestMethod]
     public void RemoveEntry_ByEntryId_WhenEntryAlreadyRemoved_IsIdempotent()
     {
@@ -140,6 +158,9 @@ public sealed class WaitlistTests
         sut.GetDomainEvents().ShouldBeEmpty();
     }
 
+    // Given an empty waitlist
+    // When removal is attempted for an entry id that does not exist
+    // Then it throws a business rule violation
     [TestMethod]
     public void RemoveEntry_ByEntryId_WhenNotFound_ThrowsEntryNotFoundError()
     {
@@ -151,6 +172,9 @@ public sealed class WaitlistTests
             sut.RemoveEntry(WaitlistEntryId.New()));
     }
 
+    // Given a waitlist whose only entry is about to be removed with no coupons outstanding
+    // When that last entry is removed
+    // Then a WaitlistExhausted domain event is raised for the event and ticket type
     [TestMethod]
     public void CheckExhausted_WhenEntriesAndCouponsAllGone_RaisesWaitlistExhaustedDomainEvent()
     {
@@ -172,6 +196,9 @@ public sealed class WaitlistTests
                 e => e.TicketTypeId.ShouldBe(DefaultTicketTypeId));
     }
 
+    // Given a waitlist whose last entry is removed but an issued coupon is still outstanding
+    // When that last entry is removed
+    // Then no WaitlistExhausted domain event is raised
     [TestMethod]
     public void CheckExhausted_WhenIssuedCouponsRemain_DoesNotRaiseWaitlistExhaustedDomainEvent()
     {
@@ -189,6 +216,9 @@ public sealed class WaitlistTests
         sut.GetDomainEvents().OfType<WaitlistExhaustedDomainEvent>().ShouldBeEmpty();
     }
 
+    // Given a waitlist with an issued coupon
+    // When the coupon is redeemed
+    // Then its status becomes Redeemed
     [TestMethod]
     public void RedeemCoupon_TransitionsStatusToRedeemed()
     {
@@ -204,6 +234,9 @@ public sealed class WaitlistTests
         sut.Coupons.Single().Status.ShouldBe(WaitlistCouponStatus.Redeemed);
     }
 
+    // Given a waitlist with an issued coupon
+    // When the coupon is revoked
+    // Then its status becomes Revoked
     [TestMethod]
     public void RevokeCoupon_TransitionsStatusToRevoked()
     {
@@ -219,6 +252,9 @@ public sealed class WaitlistTests
         sut.Coupons.Single().Status.ShouldBe(WaitlistCouponStatus.Revoked);
     }
 
+    // Given a waitlist with one active entry
+    // When the next coupon is issued for that event and ticket type
+    // Then the top entry is no longer active and a coupon is returned and tracked
     [TestMethod]
     public void IssueNextCoupon_WhenActiveEntryExists_RemovesTopEntryAndReturnsCoupon()
     {
@@ -235,6 +271,9 @@ public sealed class WaitlistTests
         sut.Coupons.ShouldHaveSingleItem().Id.ShouldBe(result.Id);
     }
 
+    // Given a waitlist with two active entries added at different times
+    // When the next coupon is issued
+    // Then it goes to the entry with the earliest position
     [TestMethod]
     public void IssueNextCoupon_IssuesInPositionOrder_WhenMultipleEntries()
     {
@@ -252,6 +291,9 @@ public sealed class WaitlistTests
         result.Email.Value.ShouldBe("first@example.com");
     }
 
+    // Given a waitlist with no active entries
+    // When the next coupon is issued
+    // Then it returns null and no coupon is tracked
     [TestMethod]
     public void IssueNextCoupon_WhenNoActiveEntries_ReturnsNull()
     {
@@ -265,6 +307,9 @@ public sealed class WaitlistTests
         sut.Coupons.ShouldBeEmpty();
     }
 
+    // Given a coupon that has already been redeemed
+    // When redemption is attempted again
+    // Then it throws a business rule violation instead of silently overwriting
     [TestMethod]
     public void RedeemCoupon_WhenCouponAlreadyRedeemed_ThrowsConflictError()
     {
@@ -278,6 +323,9 @@ public sealed class WaitlistTests
         Should.Throw<BusinessRuleViolationException>(() => sut.RedeemCoupon(couponId));
     }
 
+    // Given a coupon that was already revoked (e.g. by an expiry job)
+    // When an attendee then attempts to redeem it
+    // Then it throws a business rule violation
     [TestMethod]
     public void RedeemCoupon_WhenCouponAlreadyRevoked_ThrowsConflictError()
     {
@@ -292,6 +340,9 @@ public sealed class WaitlistTests
         Should.Throw<BusinessRuleViolationException>(() => sut.RedeemCoupon(couponId));
     }
 
+    // Given a coupon that an attendee already redeemed
+    // When an expiry job then attempts to revoke it
+    // Then it throws a business rule violation
     [TestMethod]
     public void RevokeCoupon_WhenCouponAlreadyRedeemed_ThrowsConflictError()
     {
@@ -305,6 +356,9 @@ public sealed class WaitlistTests
         Should.Throw<BusinessRuleViolationException>(() => sut.RevokeCoupon(couponId));
     }
 
+    // Given a coupon that has already been revoked
+    // When revocation is attempted again
+    // Then it throws a business rule violation
     [TestMethod]
     public void RevokeCoupon_WhenCouponAlreadyRevoked_ThrowsConflictError()
     {

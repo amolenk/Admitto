@@ -8,11 +8,14 @@ namespace Amolenk.Admitto.Api.Tests.OpenApi;
 [TestClass]
 public sealed class OpenApiSecuritySchemeTests(TestContext testContext) : EndToEndTestBase
 {
+    // Given the app has started up and discovered the identity provider's OIDC metadata
+    // When the published OpenAPI spec is fetched
+    // Then it advertises the OAuth2 authorization-code flow with non-empty authorization and token URLs
     [TestMethod]
     public async Task OpenApiSpec_ExposesOAuthAuthorizationCodeFlowUrls()
     {
         // Arrange
-        // SC-OPENAPI-SECURITY: The published OpenAPI spec must advertise the OAuth2 authorization-code
+        // The published OpenAPI spec must advertise the OAuth2 authorization-code
         // flow with non-empty authorizationUrl and tokenUrl derived from the OIDC discovery endpoint.
         // This verifies that the app populates the security scheme from the identity provider discovery
         // document at startup rather than hard-coding it.
@@ -52,6 +55,9 @@ public sealed class OpenApiSecuritySchemeTests(TestContext testContext) : EndToE
         tokenUrl.ShouldNotBeNullOrWhiteSpace();
     }
 
+    // Given the published OpenAPI spec
+    // When partner endpoints without special auth requirements are inspected
+    // Then they are wired to require only the ApiKey security scheme (via X-Api-Key header)
     [TestMethod]
     public async Task OpenApiSpec_PartnerEndpointsRequireApiKeyOnlyByDefault()
     {
@@ -72,6 +78,9 @@ public sealed class OpenApiSecuritySchemeTests(TestContext testContext) : EndToE
             .ShouldBe(["ApiKey"]);
     }
 
+    // Given the published OpenAPI spec
+    // When email-verification-gated endpoints are inspected
+    // Then they are wired to require both the ApiKey and EmailVerificationBearer security schemes
     [TestMethod]
     public async Task OpenApiSpec_EmailVerificationEndpointsRequireApiKeyAndVerificationBearer()
     {
@@ -91,6 +100,9 @@ public sealed class OpenApiSecuritySchemeTests(TestContext testContext) : EndToE
             .ShouldBe(["ApiKey", "EmailVerificationBearer"], ignoreOrder: true);
     }
 
+    // Given the published OpenAPI spec
+    // When an admin endpoint is inspected
+    // Then it is wired to require the Bearer security scheme
     [TestMethod]
     public async Task OpenApiSpec_AdminEndpointsRequireBearer()
     {

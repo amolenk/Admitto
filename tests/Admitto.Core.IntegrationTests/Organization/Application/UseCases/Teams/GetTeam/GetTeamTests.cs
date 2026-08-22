@@ -5,12 +5,13 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Organization.Application.UseCase
 [TestClass]
 public sealed class GetTeamTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    // Given a team that exists
+    // When its details are queried by id
+    // Then the team's name and version are returned
     [TestMethod]
     public async ValueTask GetTeam_TeamExists_ReturnsTeamDetails()
     {
         // Arrange
-        // SC-004: Given a team "acme" exists, when a member requests it,
-        // the team's slug, name, and version are returned.
         var fixture = GetTeamFixture.TeamExists();
         await fixture.SetupAsync(Environment);
 

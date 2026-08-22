@@ -5,6 +5,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 [TestClass]
 public sealed class GetTicketedEventsTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    // Given a team with multiple active events starting on different dates
+    // When the active events are listed
+    // Then they are returned ordered by start date, soonest first
     // Events are ordered by start date ascending — soonest event first
     [TestMethod]
     public async ValueTask ListActiveEvents_MultipleEvents_ReturnedSoonestFirst()
@@ -24,6 +27,9 @@ public sealed class GetTicketedEventsTests(TestContext testContext) : AspireInte
         result[1].Name.ShouldBe("Conf 2026");
     }
 
+    // Given a team with a mix of active and archived events
+    // When the active events are listed
+    // Then only the active events are returned and archived ones are excluded
     // List active events excludes archived — only active events returned
     [TestMethod]
     public async ValueTask ListActiveEventsExcludesArchived_ActiveEventsReturned_ArchivedExcluded()

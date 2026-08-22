@@ -16,6 +16,9 @@ public sealed class RequestTicketConfirmationResendHandlerTests(TestContext test
     private static readonly TicketTypeId GeneralTicketId = TicketTypeId.New();
     private const string GeneralTicketName = "General Admission";
 
+    // Given a registered registration
+    // When a ticket confirmation resend is requested
+    // Then a resend-requested integration event is enqueued with the registration's details
     [TestMethod]
     public async ValueTask HandleAsync_RegisteredRegistration_EnqueuesResendRequestedEvent()
     {
@@ -39,6 +42,9 @@ public sealed class RequestTicketConfirmationResendHandlerTests(TestContext test
         payload.GetProperty("ticketNames")[0].GetString().ShouldBe(GeneralTicketName);
     }
 
+    // Given no registration exists with the requested id
+    // When a ticket confirmation resend is requested
+    // Then it fails with a not-found error
     [TestMethod]
     public async ValueTask HandleAsync_MissingRegistration_ThrowsNotFoundError()
     {
@@ -53,6 +59,9 @@ public sealed class RequestTicketConfirmationResendHandlerTests(TestContext test
         result.Error.ShouldMatch(NotFoundError.Create<Registration>());
     }
 
+    // Given a registered registration belonging to a different team
+    // When a ticket confirmation resend is requested for that registration in the wrong team scope
+    // Then it fails with a not-found error
     [TestMethod]
     public async ValueTask HandleAsync_WrongTeamScope_ThrowsNotFoundError()
     {
@@ -67,6 +76,9 @@ public sealed class RequestTicketConfirmationResendHandlerTests(TestContext test
         result.Error.ShouldMatch(NotFoundError.Create<Registration>());
     }
 
+    // Given a registered registration belonging to a different event
+    // When a ticket confirmation resend is requested for that registration in the wrong event scope
+    // Then it fails with a not-found error
     [TestMethod]
     public async ValueTask HandleAsync_WrongEventScope_ThrowsNotFoundError()
     {
@@ -81,6 +93,9 @@ public sealed class RequestTicketConfirmationResendHandlerTests(TestContext test
         result.Error.ShouldMatch(NotFoundError.Create<Registration>());
     }
 
+    // Given a cancelled registration
+    // When a ticket confirmation resend is requested
+    // Then it fails with a registration-not-registered error
     [TestMethod]
     public async ValueTask HandleAsync_CancelledRegistration_ThrowsNotRegisteredError()
     {

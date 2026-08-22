@@ -1,4 +1,6 @@
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.UpdateAdditionalDetailSchema;
+using Amolenk.Admitto.Core.Registrations.Domain.Entities;
+using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,6 +9,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 [TestClass]
 public sealed class UpdateAdditionalDetailSchemaTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    // Given an active ticketed event
+    // When the additional detail schema is updated with new fields
+    // Then the fields are persisted on the event in the given order
     [TestMethod]
     public async ValueTask UpdateAdditionalDetailSchema_ActiveEvent_PersistsSchema()
     {
@@ -39,6 +44,9 @@ public sealed class UpdateAdditionalDetailSchemaTests(TestContext testContext) :
         });
     }
 
+    // Given an active ticketed event
+    // When the additional detail schema is updated with an empty field list
+    // Then the event's additional detail schema is cleared
     [TestMethod]
     public async ValueTask UpdateAdditionalDetailSchema_EmptyList_ClearsSchema()
     {
@@ -64,6 +72,9 @@ public sealed class UpdateAdditionalDetailSchemaTests(TestContext testContext) :
         });
     }
 
+    // Given an archived ticketed event
+    // When the additional detail schema is updated
+    // Then it fails with an event-not-active error
     [TestMethod]
     public async ValueTask UpdateAdditionalDetailSchema_ArchivedEvent_ThrowsEventNotActive()
     {
@@ -81,9 +92,12 @@ public sealed class UpdateAdditionalDetailSchemaTests(TestContext testContext) :
         var result = await ErrorResult.CaptureAsync(async () =>
             await sut.HandleAsync(command, testContext.CancellationToken));
 
-        result.Error.Code.ShouldBe("ticketed_event.event_not_active");
+        result.Error.ShouldMatch(TicketedEvent.Errors.EventNotActive);
     }
 
+    // Given an active ticketed event
+    // When the additional detail schema is updated with a stale version number
+    // Then it fails with a concurrency conflict error
     [TestMethod]
     public async ValueTask UpdateAdditionalDetailSchema_VersionMismatch_ThrowsConcurrencyConflict()
     {
@@ -101,6 +115,6 @@ public sealed class UpdateAdditionalDetailSchemaTests(TestContext testContext) :
         var result = await ErrorResult.CaptureAsync(async () =>
             await sut.HandleAsync(command, testContext.CancellationToken));
 
-        result.Error.Code.ShouldBe("concurrency_conflict");
+        result.Error.ShouldMatch(ConcurrencyConflictError.Create(fixture.SeededVersion + 99u, fixture.SeededVersion));
     }
 }

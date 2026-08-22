@@ -6,12 +6,13 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Organization.Application.UseCase
 [TestClass]
 public sealed class GetTeamMembersTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    // Given a team with two members, alice (Owner) and bob (Crew)
+    // When the team members are listed
+    // Then both members are returned with their correct roles
     [TestMethod]
     public async ValueTask GetTeamMembers_TeamHasMembers_ReturnsAllMembers()
     {
         // Arrange
-        // SC-004: Given team has two members (alice = Owner, bob = Crew), when the team
-        // members are listed, both members are returned with their correct roles.
         var fixture = GetTeamMembersFixture.TeamWithMembers();
         await fixture.SetupAsync(Environment);
 
@@ -28,12 +29,13 @@ public sealed class GetTeamMembersTests(TestContext testContext) : AspireIntegra
         result.ShouldContain(m => m.Email == "bob@example.com" && m.Role == TeamMembershipRoleDto.Crew);
     }
 
+    // Given a team with no members
+    // When the team members are listed
+    // Then an empty list is returned
     [TestMethod]
     public async ValueTask GetTeamMembers_TeamHasNoMembers_ReturnsEmptyList()
     {
         // Arrange
-        // SC-005: Given an empty team (no members), when the team members are listed,
-        // an empty list is returned.
         var fixture = GetTeamMembersFixture.EmptyTeam();
         await fixture.SetupAsync(Environment);
 

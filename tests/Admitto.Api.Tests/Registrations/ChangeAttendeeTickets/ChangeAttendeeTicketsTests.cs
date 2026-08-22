@@ -9,6 +9,9 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.ChangeAttendeeTickets;
 public sealed class ChangeAttendeeTicketsTests(TestContext testContext) : EndToEndTestBase
 {
     // Authenticated organizer changes ticket types — returns 200 OK
+    // Given a registration with an active general admission ticket
+    // When a team member changes the attendee's tickets to a different ticket type
+    // Then the API returns 204 No Content
     [TestMethod]
     public async Task ChangeAttendeeTickets_Organizer_Returns200()
     {
@@ -24,6 +27,9 @@ public sealed class ChangeAttendeeTicketsTests(TestContext testContext) : EndToE
     }
 
     // Non-member (Bob) attempts to change ticket types — returns 403
+    // Given a registration with an active general admission ticket
+    // When a user who is not a member of the team tries to change the attendee's tickets
+    // Then the API returns 403 Forbidden
     [TestMethod]
     public async Task ChangeAttendeeTickets_NonMember_Returns403()
     {

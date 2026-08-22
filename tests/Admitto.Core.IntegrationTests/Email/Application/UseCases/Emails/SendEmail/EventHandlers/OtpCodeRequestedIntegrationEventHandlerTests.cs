@@ -13,6 +13,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.UseCases.Email
 [TestClass]
 public sealed class OtpCodeRequestedIntegrationEventHandlerTests(TestContext testContext)
 {
+    // Given an OTP code was requested for an event
+    // When the OTP code requested integration event is handled
+    // Then a verification-code email is sent without an accent color smuggled through the parameters
     [TestMethod]
     public async ValueTask HandleAsync_OtpCodeRequested_LeavesBrandingToEffectiveEmailSettings()
     {

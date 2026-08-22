@@ -10,12 +10,13 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Organization.Application.UseCase
 [TestClass]
 public sealed class UpdateTeamTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    // Given an active team at a known version
+    // When the name is updated with the correct expected version
+    // Then the name is changed and the version is incremented
     [TestMethod]
     public async ValueTask UpdateTeam_PartialUpdateWithCorrectVersion_UpdatesNameOnly()
     {
         // Arrange
-        // SC-007: Given team "acme" at version N, when email unchanged but name updated
-        // with the correct version, the name changes and version increments.
         var fixture = UpdateTeamFixture.ActiveTeam();
         await fixture.SetupAsync(Environment);
 
@@ -42,12 +43,13 @@ public sealed class UpdateTeamTests(TestContext testContext) : AspireIntegration
         });
     }
 
+    // Given an active team at a known version
+    // When the update is submitted with a stale, non-matching expected version
+    // Then a concurrency conflict error is thrown
     [TestMethod]
     public async ValueTask UpdateTeam_StaleVersion_ThrowsConcurrencyConflict()
     {
         // Arrange
-        // SC-008: Given team "acme" at version N, when update is submitted with version N-1,
-        // the request is rejected with a concurrency conflict error.
         var fixture = UpdateTeamFixture.ActiveTeam();
         await fixture.SetupAsync(Environment);
 
@@ -68,12 +70,13 @@ public sealed class UpdateTeamTests(TestContext testContext) : AspireIntegration
         exception.Error.ShouldMatch(ConcurrencyConflictError.Create(wrongVersion, fixture.TeamVersion));
     }
 
+    // Given an archived team
+    // When an update to the team's name is attempted
+    // Then a team-archived error is thrown
     [TestMethod]
     public async ValueTask UpdateTeam_ArchivedTeam_ThrowsTeamArchived()
     {
         // Arrange
-        // SC-010: Given team "acme" is archived, when an owner attempts to update the name,
-        // the request is rejected because the team is archived.
         var fixture = UpdateTeamFixture.ArchivedTeam();
         await fixture.SetupAsync(Environment);
 

@@ -7,6 +7,9 @@ namespace Amolenk.Admitto.Api.Tests.Badges.ExportBadgeCsv;
 [TestClass]
 public sealed class ExportBadgeCsvTests(TestContext testContext) : EndToEndTestBase
 {
+    // Given a standalone badge type with badge instances
+    // When the badge CSV export is requested
+    // Then it returns a CSV with display name and notes columns ordered by display name
     [TestMethod]
     public async Task ExportBadgeCsv_StandaloneTypeWithInstances_ReturnsCsvWithDisplayNameAndNotes()
     {
@@ -33,6 +36,9 @@ public sealed class ExportBadgeCsvTests(TestContext testContext) : EndToEndTestB
         lines[2].ShouldContain("Bob Jones");
     }
 
+    // Given a standalone badge type with no badge instances
+    // When the badge CSV export is requested
+    // Then it returns only the CSV header row
     [TestMethod]
     public async Task ExportBadgeCsv_StandaloneTypeEmpty_ReturnsHeaderOnly()
     {
@@ -50,6 +56,9 @@ public sealed class ExportBadgeCsvTests(TestContext testContext) : EndToEndTestB
         lines[0].ShouldBe("DisplayName,Notes");
     }
 
+    // Given a ticket-based badge type with registered attendees
+    // When the badge CSV export is requested
+    // Then it returns a CSV containing each attendee's first name, last name, and email
     [TestMethod]
     public async Task ExportBadgeCsv_TicketBasedTypeWithRegistrations_ReturnsCsvWithAttendeeData()
     {
@@ -70,6 +79,9 @@ public sealed class ExportBadgeCsvTests(TestContext testContext) : EndToEndTestB
         lines.ShouldContain(l => l.Contains("Bob") && l.Contains("Jones") && l.Contains("bob@example.com"));
     }
 
+    // Given a ticket-based badge type with one active and one cancelled registration
+    // When the badge CSV export is requested
+    // Then the cancelled registration's attendee is excluded while the active one is included
     [TestMethod]
     public async Task ExportBadgeCsv_TicketBasedTypeWithCancelledRegistration_CancelledNotIncluded()
     {
@@ -88,6 +100,9 @@ public sealed class ExportBadgeCsvTests(TestContext testContext) : EndToEndTestB
         csv.ShouldContain("alice@example.com");
     }
 
+    // Given a ticket-based badge type with no registrations
+    // When the badge CSV export is requested
+    // Then it returns only the CSV header row
     [TestMethod]
     public async Task ExportBadgeCsv_TicketBasedTypeEmpty_ReturnsHeaderOnly()
     {
@@ -105,6 +120,9 @@ public sealed class ExportBadgeCsvTests(TestContext testContext) : EndToEndTestB
         lines[0].ShouldBe("FirstName,LastName,Email");
     }
 
+    // Given no badge type matching the requested id
+    // When the badge CSV export is requested
+    // Then it returns 404 Not Found
     [TestMethod]
     public async Task ExportBadgeCsv_NotFound_Returns404()
     {

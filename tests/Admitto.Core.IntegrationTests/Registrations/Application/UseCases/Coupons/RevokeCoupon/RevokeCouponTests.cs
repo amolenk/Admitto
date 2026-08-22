@@ -9,7 +9,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 [TestClass]
 public sealed class RevokeCouponTests(TestContext testContext) : AspireIntegrationTestBase
 {
-    // SC-010: Successful revocation
+    // Given an active coupon
+    // When a RevokeCoupon command is handled
+    // Then the coupon is marked as revoked
     [TestMethod]
     public async ValueTask RevokeCoupon_ActiveCoupon_SetsRevokedAt()
     {
@@ -31,7 +33,9 @@ public sealed class RevokeCouponTests(TestContext testContext) : AspireIntegrati
         });
     }
 
-    // SC-011: Revoke already-expired coupon — succeeds
+    // Given a coupon that has already expired
+    // When a RevokeCoupon command is handled
+    // Then the coupon is marked as revoked
     [TestMethod]
     public async ValueTask RevokeCoupon_ExpiredCoupon_SetsRevokedAt()
     {
@@ -53,7 +57,9 @@ public sealed class RevokeCouponTests(TestContext testContext) : AspireIntegrati
         });
     }
 
-    // SC-012: Rejected — revoke redeemed coupon
+    // Given a coupon that has already been redeemed
+    // When a RevokeCoupon command is handled
+    // Then a coupon-already-redeemed error is thrown
     [TestMethod]
     public async ValueTask RevokeCoupon_RedeemedCoupon_ThrowsCouponAlreadyRedeemedError()
     {
@@ -73,6 +79,9 @@ public sealed class RevokeCouponTests(TestContext testContext) : AspireIntegrati
     }
 
     // NFR-003: Idempotent revocation
+    // Given a coupon that has already been revoked
+    // When a RevokeCoupon command is handled again
+    // Then it does not throw and the coupon remains revoked
     [TestMethod]
     public async ValueTask RevokeCoupon_AlreadyRevoked_IsIdempotent()
     {
@@ -94,6 +103,9 @@ public sealed class RevokeCouponTests(TestContext testContext) : AspireIntegrati
         });
     }
 
+    // Given no coupon exists with the given id
+    // When a RevokeCoupon command is handled
+    // Then a not-found error is thrown
     [TestMethod]
     public async ValueTask RevokeCoupon_NonExistentCoupon_ThrowsNotFoundError()
     {

@@ -24,6 +24,9 @@ public sealed class RegistrationsIntegrationEventPublisherTests
         _publisher = new RegistrationsIntegrationEventPublisher(_outbox);
     }
 
+    // Given an AttendeeRegistered domain event
+    // When the publisher handles the event
+    // Then a matching AttendeeRegistered integration event is enqueued on the outbox
     [TestMethod]
     public async ValueTask AttendeeRegistered_EnqueuesAttendeeRegisteredIntegrationEvent()
     {
@@ -54,6 +57,9 @@ public sealed class RegistrationsIntegrationEventPublisherTests
         evt.Tickets.ShouldHaveSingleItem().Id.ShouldBe(earlyBirdId.Value);
     }
 
+    // Given an OtpCodeRequested domain event
+    // When the publisher handles the event
+    // Then a matching OtpCodeRequested integration event is enqueued on the outbox
     [TestMethod]
     public async ValueTask OtpCodeRequested_EnqueuesOtpCodeRequestedIntegrationEvent()
     {
@@ -81,6 +87,9 @@ public sealed class RegistrationsIntegrationEventPublisherTests
         evt.PlainCode.ShouldBe("123456");
     }
 
+    // Given a RegistrationCancelled domain event
+    // When the publisher handles the event
+    // Then a matching RegistrationCancelled integration event is enqueued on the outbox
     [TestMethod]
     public async ValueTask RegistrationCancelled_EnqueuesRegistrationCancelledIntegrationEvent()
     {
@@ -108,6 +117,9 @@ public sealed class RegistrationsIntegrationEventPublisherTests
         evt.Reason.ShouldBe(nameof(CancellationReason.AttendeeRequest));
     }
 
+    // Given a RegistrationReconfirmed domain event
+    // When the publisher handles the event
+    // Then a matching RegistrationReconfirmed integration event is enqueued on the outbox
     [TestMethod]
     public async ValueTask RegistrationReconfirmed_EnqueuesRegistrationReconfirmedIntegrationEvent()
     {
@@ -134,6 +146,9 @@ public sealed class RegistrationsIntegrationEventPublisherTests
         evt.ReconfirmedAt.ShouldBe(reconfirmedAt);
     }
 
+    // Given a TicketedEventCreated domain event
+    // When the publisher handles the event
+    // Then a matching TicketedEventCreated integration event is enqueued on the outbox
     [TestMethod]
     public async ValueTask TicketedEventCreated_EnqueuesTicketedEventCreatedIntegrationEvent()
     {
@@ -161,6 +176,9 @@ public sealed class RegistrationsIntegrationEventPublisherTests
         evt.TimeZone.ShouldBe("Europe/Amsterdam");
     }
 
+    // Given a TicketedEventDetailsChanged domain event with a time zone
+    // When the publisher handles the event
+    // Then a matching integration event is enqueued carrying the name, website URL, slug, and time zone
     [TestMethod]
     public async ValueTask TicketedEventDetailsChanged_EnqueuesDetailsChangedIntegrationEventWithTimeZone()
     {
@@ -188,6 +206,9 @@ public sealed class RegistrationsIntegrationEventPublisherTests
         evt.TimeZone.ShouldBe("Europe/Amsterdam");
     }
 
+    // Given a TicketedEventReconfirmPolicyChanged domain event with a policy
+    // When the publisher handles the event
+    // Then a matching integration event is enqueued carrying the policy's dates, cadence, and email interval
     [TestMethod]
     public async ValueTask TicketedEventReconfirmPolicyChanged_EnqueuesIntegrationEvent()
     {
@@ -219,6 +240,9 @@ public sealed class RegistrationsIntegrationEventPublisherTests
         evt.Policy.MinEmailIntervalHours.ShouldBe(24);
     }
 
+    // Given a TicketedEventReconfirmPolicyChanged domain event with no policy
+    // When the publisher handles the event
+    // Then a matching integration event is enqueued with a null policy
     [TestMethod]
     public async ValueTask TicketedEventReconfirmPolicyCleared_EnqueuesIntegrationEventWithNullPolicy()
     {
@@ -235,6 +259,9 @@ public sealed class RegistrationsIntegrationEventPublisherTests
         evt.Policy.ShouldBeNull();
     }
 
+    // Given a TicketedEventStatusChanged domain event with status Archived
+    // When the publisher handles the event
+    // Then a matching TicketedEventArchived integration event is enqueued on the outbox
     [TestMethod]
     public async ValueTask StatusChangedToArchived_EnqueuesArchivedIntegrationEvent()
     {
@@ -250,6 +277,9 @@ public sealed class RegistrationsIntegrationEventPublisherTests
         evt.TeamId.ShouldBe(teamId.Value);
     }
 
+    // Given a TicketsChanged domain event
+    // When the publisher handles the event
+    // Then a matching AttendeeTicketsChanged integration event is enqueued on the outbox
     [TestMethod]
     public async ValueTask TicketsChanged_EnqueuesAttendeeTicketsChangedIntegrationEvent()
     {
@@ -284,6 +314,9 @@ public sealed class RegistrationsIntegrationEventPublisherTests
         evt.ChangedAt.ShouldBe(changedAt);
     }
 
+    // Given a WaitlistCouponIssued domain event
+    // When the publisher handles the event
+    // Then a matching WaitlistCouponIssued integration event is enqueued on the outbox
     [TestMethod]
     public async ValueTask WaitlistCouponIssued_EnqueuesWaitlistCouponIssuedIntegrationEvent()
     {

@@ -9,6 +9,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.UseCases.BulkE
 [TestClass]
 public sealed class GetBulkEmailsHandlerTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    // Given a bulk email job that exists for team A
+    // When bulk emails are queried using team B's ID for the same event
+    // Then an empty list is returned
     [TestMethod]
     public async ValueTask GetBulkEmails_WrongTeamId_ReturnsEmptyList()
     {

@@ -12,6 +12,9 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.PublicTicketTypes;
 public sealed class PublicTicketTypesTests(TestContext testContext) : EndToEndTestBase
 {
     // Only self-service-enabled ticket types are returned.
+    // Given a catalog with a self-service-enabled ticket type and a non-self-service ticket type
+    // When the public ticket types endpoint is called
+    // Then only the self-service-enabled type is returned
     [TestMethod]
     public async Task GetPublicTicketTypes_ReturnsOnlySelfServiceEnabledAndActiveTypes()
     {
@@ -35,6 +38,9 @@ public sealed class PublicTicketTypesTests(TestContext testContext) : EndToEndTe
         items[0].GetProperty("status").GetString().ShouldBe("available");
     }
 
+    // Given an unbounded (uncapped) self-service ticket type
+    // When the public ticket types endpoint is called
+    // Then the ticket type status is available
     [TestMethod]
     public async Task GetPublicTicketTypes_UnboundedTicket_ReturnsAvailableStatus()
     {
@@ -55,6 +61,9 @@ public sealed class PublicTicketTypesTests(TestContext testContext) : EndToEndTe
         item.GetProperty("status").GetString().ShouldBe("available");
     }
 
+    // Given a sold-out self-service ticket type with waitlisting enabled
+    // When the public ticket types endpoint is called
+    // Then the ticket type status is waitlist
     [TestMethod]
     public async Task GetPublicTicketTypes_SoldOutWaitlistableTicket_ReturnsWaitlistStatus()
     {
@@ -75,6 +84,9 @@ public sealed class PublicTicketTypesTests(TestContext testContext) : EndToEndTe
         item.GetProperty("status").GetString().ShouldBe("waitlist");
     }
 
+    // Given a sold-out self-service ticket type without waitlisting
+    // When the public ticket types endpoint is called
+    // Then the ticket type status is soldOut
     [TestMethod]
     public async Task GetPublicTicketTypes_SoldOutNonWaitlistTicket_ReturnsSoldOutStatus()
     {
@@ -95,6 +107,9 @@ public sealed class PublicTicketTypesTests(TestContext testContext) : EndToEndTe
         item.GetProperty("status").GetString().ShouldBe("soldOut");
     }
 
+    // Given an available self-service ticket type
+    // When the public ticket types endpoint is called
+    // Then the response does not expose internal capacity or waitlist fields
     [TestMethod]
     public async Task GetPublicTicketTypes_Response_DoesNotExposeInternalCapacityOrWaitlistFields()
     {
@@ -121,6 +136,9 @@ public sealed class PublicTicketTypesTests(TestContext testContext) : EndToEndTe
     }
 
     // Empty list returned when no self-service ticket types exist
+    // Given a catalog with only a non-self-service ticket type
+    // When the public ticket types endpoint is called
+    // Then an empty list is returned
     [TestMethod]
     public async Task GetPublicTicketTypes_NoSelfServiceTypes_ReturnsEmptyList()
     {
@@ -140,6 +158,9 @@ public sealed class PublicTicketTypesTests(TestContext testContext) : EndToEndTe
     }
 
     // 404 when event does not exist
+    // Given no event exists for the requested slug
+    // When the public ticket types endpoint is called
+    // Then the API returns 404 Not Found
     [TestMethod]
     public async Task GetPublicTicketTypes_NonExistentEvent_Returns404()
     {
@@ -154,6 +175,9 @@ public sealed class PublicTicketTypesTests(TestContext testContext) : EndToEndTe
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
     }
 
+    // Given a request without an API key
+    // When the public ticket types endpoint is called
+    // Then the API returns 401 Unauthorized
     [TestMethod]
     public async Task GetPublicTicketTypes_MissingApiKey_Returns401()
     {

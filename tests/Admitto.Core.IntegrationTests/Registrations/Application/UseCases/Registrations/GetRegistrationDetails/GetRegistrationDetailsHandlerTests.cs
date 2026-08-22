@@ -8,6 +8,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 [TestClass]
 public sealed class GetRegistrationDetailsHandlerTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    // Given an active registration with a registered attendee
+    // When the registration details are queried
+    // Then the full detail including tickets and activities is returned
     [TestMethod]
     public async ValueTask ActiveRegistration_ReturnsFullDetail()
     {
@@ -32,6 +35,9 @@ public sealed class GetRegistrationDetailsHandlerTests(TestContext testContext) 
         result.Activities.ShouldHaveSingleItem().ActivityType.ShouldBe(nameof(ActivityType.Registered));
     }
 
+    // Given a registration whose attendee has reconfirmed
+    // When the registration details are queried
+    // Then it reports the reconfirmed timestamp and both registered and reconfirmed activities
     [TestMethod]
     public async ValueTask ReconfirmedRegistration_ReturnsReconfirmedStatus()
     {
@@ -51,6 +57,9 @@ public sealed class GetRegistrationDetailsHandlerTests(TestContext testContext) 
         result.Activities.ShouldContain(a => a.ActivityType == nameof(ActivityType.Reconfirmed));
     }
 
+    // Given a cancelled registration
+    // When the registration details are queried
+    // Then the cancelled status, cancellation reason, and cancellation activity are returned
     [TestMethod]
     public async ValueTask CancelledRegistration_ReturnsCancelledStatus()
     {
@@ -68,6 +77,9 @@ public sealed class GetRegistrationDetailsHandlerTests(TestContext testContext) 
         result.Activities.ShouldContain(a => a.ActivityType == nameof(ActivityType.Cancelled));
     }
 
+    // Given a registration with additional details captured
+    // When the registration details are queried
+    // Then the additional details are included in the result
     [TestMethod]
     public async ValueTask RegistrationWithAdditionalDetails_ReturnsDetails()
     {
@@ -83,6 +95,9 @@ public sealed class GetRegistrationDetailsHandlerTests(TestContext testContext) 
         result.AdditionalDetails["dietary"].ShouldBe("vegan");
     }
 
+    // Given a registration with multiple tickets
+    // When the registration details are queried
+    // Then both tickets are returned
     [TestMethod]
     public async ValueTask RegistrationWithMultipleTickets_ReturnsBothTickets()
     {
@@ -99,6 +114,9 @@ public sealed class GetRegistrationDetailsHandlerTests(TestContext testContext) 
         result.Tickets.ShouldContain(t => t.Id == fixture.VipId.Value);
     }
 
+    // Given no registration exists for the given registration id
+    // When the registration details are queried
+    // Then null is returned
     [TestMethod]
     public async ValueTask UnknownRegistrationId_ReturnsNull()
     {
@@ -112,6 +130,9 @@ public sealed class GetRegistrationDetailsHandlerTests(TestContext testContext) 
         result.ShouldBeNull();
     }
 
+    // Given a registration that exists but belongs to a different event
+    // When the registration details are queried using another event's id
+    // Then null is returned
     [TestMethod]
     public async ValueTask RegistrationExistsButDifferentEvent_ReturnsNull()
     {
@@ -125,6 +146,9 @@ public sealed class GetRegistrationDetailsHandlerTests(TestContext testContext) 
         result.ShouldBeNull();
     }
 
+    // Given a registration with a reconfirmed attendee
+    // When the registration details are queried
+    // Then the activities are returned in chronological order
     [TestMethod]
     public async ValueTask ActivitiesReturnedInChronologicalOrder()
     {

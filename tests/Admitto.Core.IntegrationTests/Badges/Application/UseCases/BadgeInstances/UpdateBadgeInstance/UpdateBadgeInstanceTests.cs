@@ -9,6 +9,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Badges.Application.UseCases.Badg
 [TestClass]
 public sealed class UpdateBadgeInstanceTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    // Given an existing badge instance for an active event
+    // When it is updated with the correct expected version
+    // Then the instance's display name and notes are updated and its version is incremented
     [TestMethod]
     public async ValueTask UpdateBadgeInstance_WithCorrectVersion_UpdatesInstance()
     {
@@ -41,6 +44,9 @@ public sealed class UpdateBadgeInstanceTests(TestContext testContext) : AspireIn
         });
     }
 
+    // Given an existing badge instance for an active event
+    // When it is updated with a stale expected version
+    // Then it throws a concurrency conflict error
     [TestMethod]
     public async ValueTask UpdateBadgeInstance_WithStaleVersion_ThrowsConcurrencyConflict()
     {
@@ -66,6 +72,9 @@ public sealed class UpdateBadgeInstanceTests(TestContext testContext) : AspireIn
         exception.Error.ShouldMatch(ConcurrencyConflictError.Create(wrongVersion, fixture.BadgeInstanceVersion));
     }
 
+    // Given a badge instance that belongs to a different event than the one specified
+    // When an update for it is attempted using the wrong event's ID
+    // Then it throws a not-found error
     [TestMethod]
     public async ValueTask UpdateBadgeInstance_InstanceBelongsToDifferentEvent_ThrowsNotFoundError()
     {

@@ -10,6 +10,9 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.OtpVerify;
 public sealed class OtpVerifyTests(TestContext testContext) : EndToEndTestBase
 {
     // Successful OTP verification returns 200 with token
+    // Given a valid, unexpired OTP code for an attendee
+    // When the correct code is submitted for verification
+    // Then the API returns 200 OK with a token
     [TestMethod]
     public async Task VerifyOtp_CorrectCode_Returns200WithToken()
     {
@@ -32,6 +35,9 @@ public sealed class OtpVerifyTests(TestContext testContext) : EndToEndTestBase
     }
 
     // Wrong OTP code returns 422 and increments failed attempts
+    // Given a valid OTP code for an attendee
+    // When an incorrect code is submitted for verification
+    // Then the API returns 422 Unprocessable Entity
     [TestMethod]
     public async Task VerifyOtp_WrongCode_Returns422()
     {
@@ -49,6 +55,9 @@ public sealed class OtpVerifyTests(TestContext testContext) : EndToEndTestBase
     }
 
     // Code locked after 5 failed attempts returns 422
+    // Given a code that already has four failed verification attempts
+    // When another incorrect code is submitted, reaching the fifth attempt
+    // Then the code is locked and the API returns 422 Unprocessable Entity
     [TestMethod]
     public async Task VerifyOtp_FifthFailedAttempt_LocksCode_Returns422()
     {
@@ -67,6 +76,9 @@ public sealed class OtpVerifyTests(TestContext testContext) : EndToEndTestBase
     }
 
     // Expired code returns 422
+    // Given an OTP code that has already expired
+    // When the correct code is submitted for verification
+    // Then the API returns 422 Unprocessable Entity
     [TestMethod]
     public async Task VerifyOtp_ExpiredCode_Returns422()
     {
@@ -84,6 +96,9 @@ public sealed class OtpVerifyTests(TestContext testContext) : EndToEndTestBase
     }
 
     // Already-used code returns 422
+    // Given an OTP code that has already been used
+    // When the same code is submitted again for verification
+    // Then the API returns 422 Unprocessable Entity
     [TestMethod]
     public async Task VerifyOtp_AlreadyUsedCode_Returns422()
     {
@@ -101,6 +116,9 @@ public sealed class OtpVerifyTests(TestContext testContext) : EndToEndTestBase
     }
 
     // No code exists for email+event returns 422
+    // Given no OTP code was ever issued for an email address
+    // When a verification code is submitted for that email
+    // Then the API returns 422 Unprocessable Entity
     [TestMethod]
     public async Task VerifyOtp_NoCodeForEmail_Returns422()
     {

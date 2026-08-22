@@ -9,6 +9,9 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.GetAttendeeEmails;
 [TestClass]
 public sealed class GetAttendeeEmailsTests(TestContext testContext) : EndToEndTestBase
 {
+    // Given a registration with a sent confirmation email logged
+    // When a team member fetches the attendee's email history
+    // Then the API returns 200 OK with the confirmation email's details
     [TestMethod]
     public async Task Organizer_ReturnsEmailList()
     {
@@ -29,6 +32,9 @@ public sealed class GetAttendeeEmailsTests(TestContext testContext) : EndToEndTe
         body[0].GetProperty("status").GetString().ShouldBe("Sent");
     }
 
+    // Given a registration with no emails sent
+    // When a team member fetches the attendee's email history
+    // Then the API returns 200 OK with an empty list
     [TestMethod]
     public async Task NoEmails_ReturnsEmptyList()
     {
@@ -46,6 +52,9 @@ public sealed class GetAttendeeEmailsTests(TestContext testContext) : EndToEndTe
         body.ShouldBeEmpty();
     }
 
+    // Given a registration with no emails sent
+    // When a user who is not a member of the team fetches the attendee's email history
+    // Then the API returns 403 Forbidden
     [TestMethod]
     public async Task NonMember_Returns403()
     {

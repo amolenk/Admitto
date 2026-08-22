@@ -10,12 +10,13 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Organization.Application.UseCase
 [TestClass]
 public sealed class ArchiveTeamTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    // Given an active team with no active ticketed events
+    // When the team is archived
+    // Then the team's status changes to archived
     [TestMethod]
     public async ValueTask ArchiveTeam_ActiveTeamNoEvents_ArchivesTeam()
     {
         // Arrange
-        // SC-009: Given an active team "acme" with no active ticketed events,
-        // when the owner archives the team, its status changes to archived.
         var fixture = ArchiveTeamFixture.ActiveTeamWithNoEvents();
         await fixture.SetupAsync(Environment);
 
@@ -38,12 +39,13 @@ public sealed class ArchiveTeamTests(TestContext testContext) : AspireIntegratio
         });
     }
 
+    // Given a team that is already archived
+    // When the owner attempts to archive it again
+    // Then the request is rejected with an already-archived error
     [TestMethod]
     public async ValueTask ArchiveTeam_AlreadyArchivedTeam_ThrowsAlreadyArchived()
     {
         // Arrange
-        // SC-011: Given team "acme" is already archived, when the owner attempts to
-        // archive it again, the request is rejected with an "already archived" error.
         var fixture = ArchiveTeamFixture.AlreadyArchivedTeam();
         await fixture.SetupAsync(Environment);
 
@@ -57,12 +59,13 @@ public sealed class ArchiveTeamTests(TestContext testContext) : AspireIntegratio
         exception.Error.ShouldMatch(Team.Errors.TeamAlreadyArchived(TeamId.From(fixture.TeamId)));
     }
 
+    // Given a team with an upcoming ticketed event
+    // When the owner attempts to archive it
+    // Then the request is rejected and the team remains active
     [TestMethod]
     public async ValueTask ArchiveTeam_HasActiveEvents_ThrowsHasActiveEvents()
     {
         // Arrange
-        // SC-014: Given team "acme" has an upcoming ticketed event,
-        // when the owner attempts to archive it, the request is rejected.
         var fixture = ArchiveTeamFixture.ActiveTeamWithUpcomingEvent();
         await fixture.SetupAsync(Environment);
 
@@ -73,7 +76,8 @@ public sealed class ArchiveTeamTests(TestContext testContext) : AspireIntegratio
         var exception = await Should.ThrowAsync<BusinessRuleViolationException>(
             async () => await sut.HandleAsync(command, testContext.CancellationToken));
 
-        exception.Error.Code.ShouldBe("team.has_active_or_pending_events");
+        exception.Error.ShouldMatch(
+            Team.Errors.HasActiveOrPendingEvents(TeamId.From(fixture.TeamId), active: 1, pending: 0));
 
         // Verify the team remains active
         await Environment.OrganizationDatabase.WithContextAsync(async dbContext =>
@@ -87,6 +91,9 @@ public sealed class ArchiveTeamTests(TestContext testContext) : AspireIntegratio
         });
     }
 
+    // Given a team with a pending ticketed event creation request not yet acknowledged
+    // When the owner attempts to archive it
+    // Then the request is rejected and the team remains active with the pending count preserved
     [TestMethod]
     public async ValueTask ArchiveTeam_HasPendingCreationRequest_ThrowsHasActiveOrPendingEvents()
     {
@@ -102,7 +109,8 @@ public sealed class ArchiveTeamTests(TestContext testContext) : AspireIntegratio
         var exception = await Should.ThrowAsync<BusinessRuleViolationException>(
             async () => await sut.HandleAsync(command, testContext.CancellationToken));
 
-        exception.Error.Code.ShouldBe("team.has_active_or_pending_events");
+        exception.Error.ShouldMatch(
+            Team.Errors.HasActiveOrPendingEvents(TeamId.From(fixture.TeamId), active: 0, pending: 1));
 
         await Environment.OrganizationDatabase.WithContextAsync(async dbContext =>
         {

@@ -10,6 +10,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.Jobs;
 [TestClass]
 public sealed class ProcessExpiredWaitlistCouponsJobTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    // Given a waitlist coupon expired past its grace period with another entry still waiting
+    // When the process-expired-waitlist-coupons job runs
+    // Then the expired coupon is revoked and a fresh coupon is issued to the next waitlist entry
     [TestMethod]
     public async ValueTask Execute_WhenCouponIsExpiredAndWaitlistHasNextEntry_RevokesAndNotifiesNext()
     {
@@ -35,6 +38,9 @@ public sealed class ProcessExpiredWaitlistCouponsJobTests(TestContext testContex
         });
     }
 
+    // Given the last pending waitlist coupon expired past its grace period with no remaining waitlist entries
+    // When the process-expired-waitlist-coupons job runs
+    // Then the coupon is revoked and the ticket type's waitlist mode is cleared
     [TestMethod]
     public async ValueTask Execute_WhenLastCouponExpiresAndWaitlistIsEmpty_LiftsWaitlistMode()
     {
@@ -67,6 +73,9 @@ public sealed class ProcessExpiredWaitlistCouponsJobTests(TestContext testContex
         });
     }
 
+    // Given a waitlist coupon that expired but is still within its grace period
+    // When the process-expired-waitlist-coupons job runs
+    // Then the coupon is left unrevoked
     [TestMethod]
     public async ValueTask Execute_WhenCouponIsWithinGracePeriod_DoesNotRevoke()
     {

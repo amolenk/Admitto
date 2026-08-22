@@ -7,6 +7,9 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.ReconfirmRegistration;
 [TestClass]
 public sealed class ReconfirmRegistrationTests(TestContext testContext) : EndToEndTestBase
 {
+    // Given an existing registration and a valid partner API key
+    // When reconfirmation is requested
+    // Then the API returns 204 No Content
     [TestMethod]
     public async Task ReconfirmRegistration_ExistingRegistration_Returns204()
     {
@@ -20,6 +23,9 @@ public sealed class ReconfirmRegistrationTests(TestContext testContext) : EndToE
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
     }
 
+    // Given an existing registration and a valid partner API key
+    // When reconfirmation is requested twice in a row
+    // Then both calls return 204 No Content
     [TestMethod]
     public async Task ReconfirmRegistration_CalledTwice_IsIdempotent()
     {
@@ -36,6 +42,9 @@ public sealed class ReconfirmRegistrationTests(TestContext testContext) : EndToE
         second.StatusCode.ShouldBe(HttpStatusCode.NoContent);
     }
 
+    // Given an existing registration
+    // When reconfirmation is requested without an API key
+    // Then the API returns 401 Unauthorized
     [TestMethod]
     public async Task ReconfirmRegistration_MissingApiKey_Returns401()
     {
@@ -49,6 +58,9 @@ public sealed class ReconfirmRegistrationTests(TestContext testContext) : EndToE
         response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
 
+    // Given no registration exists with the given id
+    // When reconfirmation is requested for that registration id
+    // Then the API returns 404 Not Found
     [TestMethod]
     public async Task ReconfirmRegistration_UnknownRegistration_Returns404()
     {
@@ -62,6 +74,9 @@ public sealed class ReconfirmRegistrationTests(TestContext testContext) : EndToE
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
     }
 
+    // Given a cancelled registration
+    // When reconfirmation is requested
+    // Then the API returns 409 Conflict
     [TestMethod]
     public async Task ReconfirmRegistration_CancelledRegistration_Returns409()
     {

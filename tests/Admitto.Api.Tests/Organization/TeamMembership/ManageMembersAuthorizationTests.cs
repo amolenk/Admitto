@@ -9,9 +9,9 @@ namespace Amolenk.Admitto.Api.Tests.Organization.TeamMembership;
 [TestClass]
 public sealed class ManageMembersAuthorizationTests(TestContext testContext) : EndToEndTestBase
 {
-    // SC-014: Given the requester is a Crew member of team "acme",
-    //         when they attempt to add a new member to team "acme",
-    //         then the request is rejected as unauthorized.
+    // Given the requester is a Crew member of the team
+    // When they attempt to add a new member to that team
+    // Then the API returns 403 Forbidden
     [TestMethod]
     public async Task CrewMember_CannotManageMembers_Returns403Forbidden()
     {
@@ -31,6 +31,9 @@ public sealed class ManageMembersAuthorizationTests(TestContext testContext) : E
         response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
     }
 
+    // Given the requester is an owner of a different team, not the target team
+    // When they attempt to add a new member to the target team
+    // Then the API returns 403 Forbidden
     [TestMethod]
     public async Task OwnerOfDifferentTeam_CannotManageMembers_Returns403Forbidden()
     {
@@ -50,9 +53,9 @@ public sealed class ManageMembersAuthorizationTests(TestContext testContext) : E
         response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
     }
 
-    // SC-015: Given the requester is an admin but not a member of team "acme",
-    //         when they add "alice@example.com" as a Crew member of team "acme",
-    //         then "alice@example.com" has a Crew membership in team "acme".
+    // Given the requester is a platform admin who is not a member of the team
+    // When they add a new Crew member to that team
+    // Then the API returns 200 OK
     [TestMethod]
     public async Task Admin_BypassesOwnershipCheck_Returns200Ok()
     {

@@ -13,6 +13,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Badges.Application.UseCases.Badg
 [TestClass]
 public sealed class BadgeEventTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    // Given a ticketed event created integration event
+    // When it is handled
+    // Then a badges event is created with active status
     [TestMethod]
     public async ValueTask TicketedEventCreated_CreatesActiveBadgesEvent()
     {
@@ -35,6 +38,9 @@ public sealed class BadgeEventTests(TestContext testContext) : AspireIntegration
         });
     }
 
+    // Given a ticketed event created integration event was already handled once
+    // When the same integration event is redelivered and handled again
+    // Then only one badges event exists for that ticketed event id
     [TestMethod]
     public async ValueTask TicketedEventCreated_IsIdempotentOnRedelivery()
     {
@@ -58,6 +64,9 @@ public sealed class BadgeEventTests(TestContext testContext) : AspireIntegration
         });
     }
 
+    // Given an existing badges event created from a ticketed event
+    // When a ticketed event archived integration event is handled
+    // Then the badges event transitions to archived status
     [TestMethod]
     public async ValueTask TicketedEventArchived_TransitionsBadgesEventToArchived()
     {
@@ -95,6 +104,9 @@ public sealed class BadgeEventTests(TestContext testContext) : AspireIntegration
         });
     }
 
+    // Given no badges event exists for the given ticketed event id
+    // When a ticketed event archived integration event is handled
+    // Then it completes without throwing
     [TestMethod]
     public async ValueTask TicketedEventArchived_IsSafeWhenBadgesEventDoesNotExist()
     {

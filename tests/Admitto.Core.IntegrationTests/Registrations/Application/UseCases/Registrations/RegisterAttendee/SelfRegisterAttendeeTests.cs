@@ -13,6 +13,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 [TestClass]
 public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    // Given an open registration window with available capacity
+    // When an attendee self-registers for a ticket type
+    // Then the registration is created and the ticket type's used capacity increases
     // Successful self-service registration
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_Success_CreatesRegistrationAndUpdatesCapacity()
@@ -39,6 +42,9 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         });
     }
 
+    // Given a ticket type whose capacity is already full
+    // When an attendee self-registers for that ticket type
+    // Then a ticket-state conflict is returned and nothing is persisted
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_CapacityFull_ReturnsTicketStateConflictAndPersistsNothing()
     {
@@ -64,6 +70,9 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         });
     }
 
+    // Given a ticket type not available for self-service registration
+    // When an attendee self-registers for that ticket type
+    // Then a ticket-state conflict is returned
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_SelfServiceDisabled_ReturnsTicketStateConflict()
     {
@@ -81,6 +90,9 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
             unavailableTicketTypeIds: [fixture.GetTicketTypeId("speaker-pass").Value]);
     }
 
+    // Given a registration window that has not yet opened
+    // When an attendee self-registers
+    // Then a registration-not-open error is thrown
     // Self-service rejected — before registration window opens
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_BeforeWindowOpens_ThrowsRegistrationNotOpen()
@@ -94,9 +106,12 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.Code.ShouldBe("registration.not_open");
+        result.Error.ShouldMatch(TicketedEvent.Errors.RegistrationNotOpen);
     }
 
+    // Given a registration window that has already closed
+    // When an attendee self-registers
+    // Then a registration-closed error is thrown
     // Self-service rejected — after registration window closes
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_AfterWindowCloses_ThrowsRegistrationClosed()
@@ -110,9 +125,12 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.Code.ShouldBe("registration.closed");
+        result.Error.ShouldMatch(TicketedEvent.Errors.RegistrationClosed);
     }
 
+    // Given an event with no registration policy configured
+    // When an attendee self-registers
+    // Then a registration-not-open error is thrown
     // Self-service rejected — no registration window configured
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_NoRegistrationPolicy_ThrowsRegistrationNotOpen()
@@ -126,9 +144,12 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.Code.ShouldBe("registration.not_open");
+        result.Error.ShouldMatch(TicketedEvent.Errors.RegistrationNotOpen);
     }
 
+    // Given an event restricted to a specific email domain
+    // When an attendee self-registers with an email from a different domain
+    // Then an email-domain-not-allowed error is thrown
     // Self-service rejected — email domain mismatch
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_DomainMismatch_ThrowsEmailDomainNotAllowed()
@@ -142,9 +163,12 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.Code.ShouldBe("registration.email_domain_not_allowed");
+        result.Error.ShouldMatch(TicketedEvent.Errors.EmailDomainNotAllowed);
     }
 
+    // Given an event restricted to a specific email domain
+    // When an attendee self-registers with an email from that domain
+    // Then the registration is created
     // Self-service allowed — email domain matches
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_DomainMatches_CreatesRegistration()
@@ -166,6 +190,9 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         });
     }
 
+    // Given an event offering multiple ticket types
+    // When an attendee self-registers selecting two of them
+    // Then the registration holds both tickets and each ticket type's capacity is claimed
     // Successful registration with multiple ticket types
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_MultipleTickets_CreatesRegistrationWithBothTickets()
@@ -193,6 +220,9 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         });
     }
 
+    // Given an available ticket type
+    // When an attendee self-registers selecting the same ticket type twice
+    // Then a duplicate-ticket-types error is thrown
     // Rejected — duplicate ticket types in selection
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_DuplicateTickets_ThrowsDuplicateError()
@@ -207,9 +237,12 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.Code.ShouldBe("ticket_catalog.duplicate_ticket_types");
+        result.Error.ShouldMatch(TicketCatalog.Errors.DuplicateTicketTypes([fixture.TicketTypeId.Value]));
     }
 
+    // Given an event with a configured ticket catalog
+    // When an attendee self-registers with a ticket type id that does not exist
+    // Then a ticket-state conflict listing the unknown ticket type is returned
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_UnknownTicketType_ReturnsTicketStateConflict()
     {
@@ -226,6 +259,9 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         AssertTicketStateConflict(result.Error, unknownTicketTypeIds: [unknownTicketTypeId]);
     }
 
+    // Given two ticket types with overlapping time slots
+    // When an attendee self-registers selecting both overlapping ticket types
+    // Then an overlapping-time-slots error is thrown
     // Rejected — overlapping time slots
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_OverlappingTimeSlots_ThrowsOverlappingError()
@@ -241,9 +277,12 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.Code.ShouldBe("ticket_catalog.overlapping_time_slots");
+        result.Error.ShouldMatch(TicketCatalog.Errors.OverlappingTimeSlots(["morning"]));
     }
 
+    // Given an archived ticketed event
+    // When an attendee self-registers
+    // Then an event-not-active error is thrown
     // Rejected — TicketedEvent status is Archived
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_EventArchived_ThrowsEventNotActive()
@@ -260,6 +299,9 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         result.Error.ShouldMatch(TicketCatalog.Errors.EventNotActive);
     }
 
+    // Given an event that becomes archived concurrently between validation and ticket claiming
+    // When an attendee self-registers
+    // Then an event-not-active error is thrown and capacity is left unchanged
     // Rejected — TicketCatalog.EventStatus catches concurrent transition
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_ConcurrentCancelAtClaim_ThrowsEventNotActive()
@@ -273,7 +315,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.Code.ShouldBe("ticket_catalog.event_not_active");
+        result.Error.ShouldMatch(TicketCatalog.Errors.EventNotActive);
 
         await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
         {
@@ -283,6 +325,9 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         });
     }
 
+    // Given an existing active registration for an email address
+    // When an attendee self-registers with the same email address
+    // Then an already-exists error is thrown
     // Rejected — duplicate active email
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_DuplicateActiveEmail_ThrowsBusinessConflict()
@@ -299,6 +344,9 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         result.Error.ShouldMatch(AlreadyExistsError.Create<Registration>());
     }
 
+    // Given a previously cancelled registration for the same email address
+    // When the attendee self-registers again with new tickets and additional details
+    // Then the existing registration is reset to registered with the new tickets and details
     // Self-service resets a cancelled registration
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_CancelledRegistration_ResetsExistingRegistration()
@@ -340,6 +388,9 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         });
     }
 
+    // Given a cancelled registration and a registration window that is closed
+    // When the attendee tries to self-register again with the same email
+    // Then a registration-closed error is thrown and the cancelled registration and capacity are left unchanged
     // Reset is not applied when self-service gates fail
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_ResetGateFails_LeavesCancelledRegistrationAndCapacityUnchanged()
@@ -368,6 +419,9 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         });
     }
 
+    // Given a ticket type in waitlist mode with self-service registration requested
+    // When an attendee tries to register directly instead of joining the waitlist
+    // Then a ticket-state conflict is returned and nothing is persisted
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_WaitlistModeActive_ReturnsTicketStateConflictAndPersistsNothing()
     {
@@ -390,6 +444,9 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         });
     }
 
+    // Given one ticket type available for registration and another only available via waitlist
+    // When an attendee submits both a ticket to register for and a ticket to waitlist for
+    // Then both the registration and the waitlist entry are created atomically
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_MixedRegistrationAndWaitlist_CreatesBothAtomically()
     {
@@ -420,6 +477,9 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         });
     }
 
+    // Given a ticket type only available via waitlist
+    // When an attendee submits only a waitlist request with no tickets to register for
+    // Then a waitlist entry is created and no registration is created
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_WaitlistOnly_CreatesWaitlistEntryWithoutRegistration()
     {
@@ -447,6 +507,9 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         });
     }
 
+    // Given a ticket type that was in waitlist mode but has since become directly registerable
+    // When an attendee submits a request based on the stale split between registered and waitlisted tickets
+    // Then a ticket-state conflict listing both ticket types as registerable is returned and nothing is persisted
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_StaleWaitlistState_ReturnsTicketStateConflictAndPersistsNothing()
     {
@@ -478,6 +541,9 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         });
     }
 
+    // Given ticket types in a mix of registerable, waitlistable, and unavailable states
+    // When an attendee submits a request whose register/waitlist split does not match the actual states
+    // Then a ticket-state conflict reports each ticket type's correct state and nothing is persisted
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_MixedTicketStateConflict_ReportsAllSubmittedStatesAndPersistsNothing()
     {
@@ -513,6 +579,9 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         });
     }
 
+    // Given a registerable ticket type and a waitlist-only ticket type with overlapping time slots
+    // When an attendee registers for one and joins the waitlist for the other
+    // Then both the registration and the waitlist entry are created
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_WaitlistOverlapsRegisteredTicket_CreatesBoth()
     {
@@ -534,6 +603,9 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         });
     }
 
+    // Given two waitlist-only ticket types with overlapping time slots
+    // When an attendee joins the waitlist for both
+    // Then separate waitlist entries are created for each ticket type
     [TestMethod]
     public async ValueTask SelfRegisterAttendee_WaitlistTicketsOverlapEachOther_CreatesBothWaitlistEntries()
     {
@@ -621,14 +693,13 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
         Guid[]? unknownTicketTypeIds = null,
         Guid[]? invalidForRequestedActionTicketTypeIds = null)
     {
-        error.Code.ShouldBe("registration.ticket_state_conflict");
-        error.Type.ShouldBe(ErrorType.Conflict);
-        error.Details.ShouldNotBeNull();
-        ((Guid[])error.Details["registerableTicketTypeIds"]!).ShouldBe(registerableTicketTypeIds ?? []);
-        ((Guid[])error.Details["waitlistableTicketTypeIds"]!).ShouldBe(waitlistableTicketTypeIds ?? []);
-        ((Guid[])error.Details["unavailableTicketTypeIds"]!).ShouldBe(unavailableTicketTypeIds ?? []);
-        ((Guid[])error.Details["unknownTicketTypeIds"]!).ShouldBe(unknownTicketTypeIds ?? []);
-        ((Guid[])error.Details["invalidForRequestedActionTicketTypeIds"]!).ShouldBe(invalidForRequestedActionTicketTypeIds ?? []);
+        error.ShouldMatch(RegisterAttendeeSelfServiceHandler.Errors.TicketStateConflict(
+            new RegisterAttendeeSelfServiceHandler.TicketStateConflict(
+                registerableTicketTypeIds ?? [],
+                waitlistableTicketTypeIds ?? [],
+                unavailableTicketTypeIds ?? [],
+                unknownTicketTypeIds ?? [],
+                invalidForRequestedActionTicketTypeIds ?? [])));
     }
 
     private static RegisterAttendeeSelfServiceHandler NewHandler()

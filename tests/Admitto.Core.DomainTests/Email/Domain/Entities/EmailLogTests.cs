@@ -11,6 +11,8 @@ public sealed class EmailLogTests
 {
     private static readonly DateTimeOffset Now = DateTimeOffset.UtcNow;
 
+    // When an email log is created with all fields specified
+    // Then every property is set to the given value and LastError is null
     [TestMethod]
     public void Create_SetsAllFields()
     {
@@ -41,6 +43,9 @@ public sealed class EmailLogTests
         log.LastError.ShouldBeNull();
     }
 
+    // Given a failed send with no sent-at timestamp but a last error message
+    // When the email log is created
+    // Then SentAt is null, LastError holds the error message, and Status is Failed
     [TestMethod]
     public void Create_WithNullOptionals_SetsNulls()
     {
@@ -61,6 +66,8 @@ public sealed class EmailLogTests
         log.Status.ShouldBe(EmailLogStatus.Failed);
     }
 
+    // When two email logs are created
+    // Then they are assigned distinct ids
     [TestMethod]
     public void Create_TwoLogs_HaveDistinctIds()
     {

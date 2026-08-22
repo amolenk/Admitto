@@ -7,6 +7,9 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.TicketedEvents.DirectPublicEve
 [TestClass]
 public sealed class DirectPublicEventLinksTests(TestContext testContext) : EndToEndTestBase
 {
+    // Given a ticketed event published with a public slug and website URL
+    // When the public event link is requested with an attacker-controlled redirect query parameter
+    // Then the API redirects to the event's configured website URL, ignoring the query parameter
     [TestMethod]
     public async Task PublicEventLink_ExistingSlug_RedirectsToWebsiteUrl()
     {
@@ -22,6 +25,9 @@ public sealed class DirectPublicEventLinksTests(TestContext testContext) : EndTo
         response.Headers.Location?.OriginalString.ShouldBe("https://partner.example.com");
     }
 
+    // Given a ticketed event published with a public slug and website URL
+    // When the public register link is requested
+    // Then the API redirects to the website's register path
     [TestMethod]
     public async Task RegisterLink_ExistingSlug_RedirectsToWebsiteRegisterPath()
     {
@@ -35,6 +41,9 @@ public sealed class DirectPublicEventLinksTests(TestContext testContext) : EndTo
         response.Headers.Location?.ToString().ShouldBe("https://partner.example.com/tickets/register");
     }
 
+    // Given a ticketed event published with a public slug and website URL, and a registration
+    // When the public cancel link is requested for that registration
+    // Then the API redirects to the website's cancel path for that registration
     [TestMethod]
     public async Task CancelLink_ExistingSlug_RedirectsToWebsiteCancelPath()
     {
@@ -51,6 +60,9 @@ public sealed class DirectPublicEventLinksTests(TestContext testContext) : EndTo
             .ShouldBe($"https://partner.example.com/tickets/cancel/{fixture.RegistrationId}");
     }
 
+    // Given a ticketed event published with a public slug and website URL, and a registration
+    // When the public edit link is requested for that registration
+    // Then the API redirects to the website's edit path for that registration
     [TestMethod]
     public async Task EditLink_ExistingSlug_RedirectsToWebsiteEditPath()
     {
@@ -67,6 +79,9 @@ public sealed class DirectPublicEventLinksTests(TestContext testContext) : EndTo
             .ShouldBe($"https://partner.example.com/tickets/edit/{fixture.RegistrationId}");
     }
 
+    // Given no ticketed event exists with the given public slug
+    // When a public register link is requested for that unknown slug
+    // Then the API returns 404 Not Found without a redirect location
     [TestMethod]
     public async Task DirectPublicLink_UnknownSlug_Returns404()
     {

@@ -13,6 +13,9 @@ public sealed class TicketCatalogTests
     private static readonly TicketedEventId DefaultEventId = TicketedEventId.New();
     private static readonly TeamId DefaultTeamId = TeamId.New();
 
+    // Given a catalog for an active event
+    // When a ticket type is added
+    // Then it is added with the given name, capacity, and zero used capacity
     [TestMethod]
     public void AddTicketType_ActiveEvent_AddsSuccessfully()
     {
@@ -36,6 +39,8 @@ public sealed class TicketCatalogTests
         tt.UsedCapacity.ShouldBe(0);
     }
 
+    // When a ticket type is added without a maximum capacity
+    // Then its maximum capacity is null
     [TestMethod]
     public void AddTicketType_NoCapacity_SetsNullMaxCapacity()
     {
@@ -53,6 +58,9 @@ public sealed class TicketCatalogTests
         sut.TicketTypes[0].MaxCapacity.ShouldBeNull();
     }
 
+    // Given a catalog that already has a ticket type named "VIP"
+    // When another ticket type is added with the same name
+    // Then it throws DuplicateTicketTypeName
     [TestMethod]
     public void AddTicketType_DuplicateName_Throws()
     {
@@ -68,6 +76,9 @@ public sealed class TicketCatalogTests
         result.Error.ShouldMatch(TicketCatalog.Errors.DuplicateTicketTypeName(TicketTypeName.From("VIP")));
     }
 
+    // Given an existing ticket type
+    // When its maximum capacity is updated
+    // Then the new capacity is applied
     [TestMethod]
     public void UpdateTicketType_Capacity_Updates()
     {
@@ -83,6 +94,9 @@ public sealed class TicketCatalogTests
         sut.TicketTypes[0].MaxCapacity.ShouldBe(200);
     }
 
+    // Given an existing ticket type
+    // When its name is updated
+    // Then the new name is applied
     [TestMethod]
     public void UpdateTicketType_Name_Updates()
     {
@@ -98,6 +112,9 @@ public sealed class TicketCatalogTests
         sut.TicketTypes[0].Name.ShouldBe(TicketTypeName.From("VIP Access"));
     }
 
+    // Given a catalog with no matching ticket type
+    // When an update is attempted for an unknown ticket type id
+    // Then it throws TicketTypeNotFound
     [TestMethod]
     public void UpdateTicketType_NotFound_Throws()
     {
@@ -113,6 +130,9 @@ public sealed class TicketCatalogTests
         result.Error.ShouldMatch(TicketCatalog.Errors.TicketTypeNotFound(unknownId));
     }
 
+    // Given a ticket type with available capacity
+    // When a ticket is claimed with enforcement enabled
+    // Then the used capacity is incremented
     [TestMethod]
     public void Claim_Enforce_AvailableCapacity_Increments()
     {
@@ -128,6 +148,9 @@ public sealed class TicketCatalogTests
         sut.TicketTypes[0].UsedCapacity.ShouldBe(1);
     }
 
+    // Given a ticket type already at its capacity limit
+    // When a further ticket is claimed with enforcement enabled
+    // Then it throws TicketTypeAtCapacity
     [TestMethod]
     public void Claim_Enforce_AtCapacity_Throws()
     {
@@ -144,6 +167,9 @@ public sealed class TicketCatalogTests
         result.Error.ShouldMatch(Registrations.Domain.Entities.TicketType.Errors.TicketTypeAtCapacity(id));
     }
 
+    // Given a ticket type with no capacity limit and self-service enabled
+    // When a ticket is claimed with enforcement enabled
+    // Then the claim succeeds and used capacity is incremented
     [TestMethod]
     public void Claim_Enforce_NullCapacity_SelfServiceEnabled_Succeeds()
     {
@@ -159,6 +185,9 @@ public sealed class TicketCatalogTests
         sut.TicketTypes[0].UsedCapacity.ShouldBe(1);
     }
 
+    // Given a ticket type already at capacity
+    // When a ticket is claimed without enforcement
+    // Then the used capacity still increments beyond the capacity limit
     [TestMethod]
     public void Claim_Uncapped_AlwaysIncrements()
     {
@@ -175,6 +204,9 @@ public sealed class TicketCatalogTests
         sut.TicketTypes[0].UsedCapacity.ShouldBe(2);
     }
 
+    // Given two ticket types with available capacity
+    // When both are claimed together
+    // Then each ticket type's used capacity is incremented
     [TestMethod]
     public void Claim_MultipleIds_AllIncrement()
     {
@@ -193,6 +225,9 @@ public sealed class TicketCatalogTests
         sut.TicketTypes.Single(t => t.Id == idB).UsedCapacity.ShouldBe(1);
     }
 
+    // Given a catalog that does not contain a given ticket type id
+    // When a claim includes that unknown id
+    // Then it throws UnknownTicketTypes
     [TestMethod]
     public void Claim_UnknownId_Throws()
     {
@@ -209,6 +244,9 @@ public sealed class TicketCatalogTests
         result.Error.ShouldMatch(TicketCatalog.Errors.UnknownTicketTypes([unknownId.Value]));
     }
 
+    // Given a ticket type exists in the catalog
+    // When it is looked up by id
+    // Then the matching ticket type is returned
     [TestMethod]
     public void GetTicketType_Exists_Returns()
     {
@@ -225,6 +263,9 @@ public sealed class TicketCatalogTests
         tt.Id.ShouldBe(id);
     }
 
+    // Given a catalog with no matching ticket type
+    // When it is looked up by an unknown id
+    // Then null is returned
     [TestMethod]
     public void GetTicketType_NotExists_ReturnsNull()
     {
@@ -239,6 +280,8 @@ public sealed class TicketCatalogTests
         tt.ShouldBeNull();
     }
 
+    // When a new catalog is created
+    // Then its event status is Active
     [TestMethod]
     public void NewCatalog_EventStatusIsActive()
     {
@@ -249,6 +292,9 @@ public sealed class TicketCatalogTests
         sut.EventStatus.ShouldBe(EventLifecycleStatus.Active);
     }
 
+    // Given a catalog for an active event
+    // When the event is marked archived
+    // Then the catalog's event status becomes Archived
     [TestMethod]
     public void MarkEventArchived_FromActive_Transitions()
     {
@@ -262,6 +308,9 @@ public sealed class TicketCatalogTests
         sut.EventStatus.ShouldBe(EventLifecycleStatus.Archived);
     }
 
+    // Given a catalog whose event is already archived
+    // When the event is marked archived again
+    // Then the event status remains Archived without error
     [TestMethod]
     public void MarkEventArchived_AlreadyArchived_IsIdempotent()
     {
@@ -276,6 +325,9 @@ public sealed class TicketCatalogTests
         sut.EventStatus.ShouldBe(EventLifecycleStatus.Archived);
     }
 
+    // Given the event has been archived
+    // When a ticket is claimed
+    // Then it throws EventNotActive
     [TestMethod]
     public void Claim_EventArchived_Throws()
     {
@@ -292,6 +344,9 @@ public sealed class TicketCatalogTests
         result.Error.ShouldMatch(TicketCatalog.Errors.EventNotActive);
     }
 
+    // Given the event has been archived
+    // When a new ticket type is added
+    // Then it throws EventNotActive
     [TestMethod]
     public void AddTicketType_EventArchived_Throws()
     {
@@ -307,6 +362,9 @@ public sealed class TicketCatalogTests
         result.Error.ShouldMatch(TicketCatalog.Errors.EventNotActive);
     }
 
+    // Given a ticket type with a claimed ticket
+    // When that ticket type id is released
+    // Then its used capacity is decremented
     [TestMethod]
     public void Release_MatchingIds_DecrementsUsedCapacity()
     {
@@ -324,6 +382,9 @@ public sealed class TicketCatalogTests
         sut.GetTicketType(id)!.UsedCapacity.ShouldBe(0);
     }
 
+    // Given one known ticket type with a claimed ticket and one unknown ticket type id
+    // When both ids are released together
+    // Then the known ticket type is released and the unknown id is skipped without error
     [TestMethod]
     public void Release_UnknownId_IsSilentlySkipped()
     {
@@ -341,6 +402,9 @@ public sealed class TicketCatalogTests
         sut.GetTicketType(knownId)!.UsedCapacity.ShouldBe(0);
     }
 
+    // Given two ticket types each with a claimed ticket
+    // When both are released together
+    // Then each ticket type's used capacity is decremented
     [TestMethod]
     public void Release_MultipleIds_AllDecrement()
     {
@@ -360,6 +424,9 @@ public sealed class TicketCatalogTests
         sut.GetTicketType(idB)!.UsedCapacity.ShouldBe(0);
     }
 
+    // Given a ticket type with available capacity
+    // When the same ticket type id is claimed twice in one request
+    // Then it throws DuplicateTicketTypes
     [TestMethod]
     public void Claim_DuplicateIds_Throws()
     {
@@ -375,6 +442,9 @@ public sealed class TicketCatalogTests
         result.Error.ShouldMatch(TicketCatalog.Errors.DuplicateTicketTypes([id.Value]));
     }
 
+    // Given two ticket types that share the same time slot
+    // When both are claimed together
+    // Then it throws OverlappingTimeSlots
     [TestMethod]
     public void Claim_OverlappingTimeSlots_Throws()
     {
@@ -394,6 +464,9 @@ public sealed class TicketCatalogTests
         result.Error.ShouldMatch(TicketCatalog.Errors.OverlappingTimeSlots(["morning"]));
     }
 
+    // Given a ticket type with available capacity
+    // When a claim is made with an empty list of ticket type ids
+    // Then nothing happens and used capacity is unchanged
     [TestMethod]
     public void Claim_EmptyList_IsNoOp()
     {
@@ -409,6 +482,9 @@ public sealed class TicketCatalogTests
         sut.GetTicketType(id)!.UsedCapacity.ShouldBe(0);
     }
 
+    // Given a ticket type that does not allow self-service
+    // When it is claimed with enforcement enabled
+    // Then it throws TicketTypesNotSelfService
     [TestMethod]
     public void Claim_Enforce_NonSelfServiceTicketType_Throws()
     {
@@ -424,6 +500,9 @@ public sealed class TicketCatalogTests
         result.Error.ShouldMatch(TicketCatalog.Errors.TicketTypesNotSelfService([id.Value]));
     }
 
+    // Given a ticket type that does not allow self-service
+    // When it is claimed without enforcement, such as an admin or coupon claim
+    // Then the claim succeeds and used capacity is incremented
     [TestMethod]
     public void Claim_NoEnforce_NonSelfServiceTicketType_Succeeds()
     {
@@ -441,6 +520,9 @@ public sealed class TicketCatalogTests
 
     // ── Waitlist ─────────────────────────────────────────────────────────────
 
+    // Given a ticket type with waitlist enabled and one slot remaining
+    // When the last slot is claimed with enforcement enabled
+    // Then waitlist mode is activated and a WaitlistModeActivated event is raised
     [TestMethod]
     public void Claim_Enforce_LastSlotWithWaitlistEnabled_ActivatesWaitlistMode()
     {
@@ -461,6 +543,9 @@ public sealed class TicketCatalogTests
             .TicketTypeId.ShouldBe(id);
     }
 
+    // Given a ticket type with waitlist disabled and one slot remaining
+    // When the last slot is claimed with enforcement enabled
+    // Then waitlist mode is not activated and no WaitlistModeActivated event is raised
     [TestMethod]
     public void Claim_Enforce_LastSlotWithWaitlistDisabled_DoesNotActivateWaitlistMode()
     {
@@ -477,6 +562,9 @@ public sealed class TicketCatalogTests
         sut.GetDomainEvents().OfType<WaitlistModeActivatedDomainEvent>().ShouldBeEmpty();
     }
 
+    // Given a ticket type with waitlist enabled and one slot remaining
+    // When the last slot is claimed without enforcement, such as an admin or coupon claim
+    // Then waitlist mode is not activated and no WaitlistModeActivated event is raised
     [TestMethod]
     public void Claim_NoEnforce_LastSlotWithWaitlistEnabled_DoesNotActivateWaitlistMode()
     {
@@ -493,6 +581,9 @@ public sealed class TicketCatalogTests
         sut.GetDomainEvents().OfType<WaitlistModeActivatedDomainEvent>().ShouldBeEmpty();
     }
 
+    // Given a ticket type that is fully sold out
+    // When waitlist is enabled for it via an update
+    // Then waitlist mode activates immediately and a WaitlistModeActivated event is raised
     [TestMethod]
     public void UpdateTicketType_EnableWaitlistOnSoldOutType_ActivatesWaitlistModeImmediately()
     {
@@ -515,6 +606,9 @@ public sealed class TicketCatalogTests
             .TicketTypeId.ShouldBe(id);
     }
 
+    // Given a ticket type with one slot still available
+    // When waitlist is enabled for it via an update
+    // Then waitlist mode does not activate and no WaitlistModeActivated event is raised
     [TestMethod]
     public void UpdateTicketType_EnableWaitlistOnPartiallyFilledType_DoesNotActivateWaitlistMode()
     {
@@ -532,6 +626,9 @@ public sealed class TicketCatalogTests
         sut.GetDomainEvents().OfType<WaitlistModeActivatedDomainEvent>().ShouldBeEmpty();
     }
 
+    // Given a ticket type currently in waitlist mode
+    // When waitlist is disabled for it via an update
+    // Then waitlist mode is forced off and a WaitlistForcedDisabled event is raised
     [TestMethod]
     public void UpdateTicketType_DisableWaitlistWhileInWaitlistMode_ForcesDisableAndRaisesEvent()
     {
@@ -553,6 +650,9 @@ public sealed class TicketCatalogTests
             .TicketTypeId.ShouldBe(id);
     }
 
+    // Given a ticket type with waitlist enabled and a bounded capacity
+    // When the capacity limit is removed via an update
+    // Then waitlist is forced off, waitlist mode clears, and a WaitlistForcedDisabled event is raised
     [TestMethod]
     public void UpdateTicketType_RemoveCapacityLimitWithWaitlistEnabled_ForcesDisableAndRaisesEvent()
     {
@@ -574,6 +674,9 @@ public sealed class TicketCatalogTests
             .TicketTypeId.ShouldBe(id);
     }
 
+    // Given a ticket type that is sold out and in waitlist mode
+    // When its capacity is increased via an update
+    // Then a WaitlistCapacityFreed event is raised reporting the number of freed slots
     [TestMethod]
     public void UpdateTicketType_CapacityIncreaseWhileInWaitlistMode_RaisesWaitlistCapacityFreedEvent()
     {
@@ -594,6 +697,8 @@ public sealed class TicketCatalogTests
         evt.FreedSlots.ShouldBe(3);
     }
 
+    // When a ticket type is added with waitlist enabled but no maximum capacity
+    // Then it throws WaitlistRequiresBoundedCapacity
     [TestMethod]
     public void AddTicketType_WaitlistEnabledWithoutCapacity_Throws()
     {
@@ -609,6 +714,9 @@ public sealed class TicketCatalogTests
         result.Error.ShouldMatch(TicketCatalog.Errors.WaitlistRequiresBoundedCapacity(id));
     }
 
+    // Given a ticket type in waitlist mode with a slot now freed
+    // When waitlist mode is re-evaluated with no active entries and no issued coupons
+    // Then waitlist mode is cleared
     [TestMethod]
     public void ReEvaluateWaitlistMode_AllConditionsMet_ClearsWaitlistMode()
     {
@@ -627,6 +735,9 @@ public sealed class TicketCatalogTests
         sut.GetTicketType(id)!.WaitlistMode.ShouldBeFalse();
     }
 
+    // Given a ticket type in waitlist mode that is still at capacity
+    // When waitlist mode is re-evaluated with no active entries and no issued coupons
+    // Then waitlist mode remains active
     [TestMethod]
     public void ReEvaluateWaitlistMode_StillAtCapacity_KeepsWaitlistMode()
     {
@@ -643,6 +754,9 @@ public sealed class TicketCatalogTests
         sut.GetTicketType(id)!.WaitlistMode.ShouldBeTrue();
     }
 
+    // Given a ticket type in waitlist mode with a slot freed but active waitlist entries remaining
+    // When waitlist mode is re-evaluated
+    // Then waitlist mode remains active
     [TestMethod]
     public void ReEvaluateWaitlistMode_ActiveEntriesRemaining_KeepsWaitlistMode()
     {
@@ -661,6 +775,9 @@ public sealed class TicketCatalogTests
         sut.GetTicketType(id)!.WaitlistMode.ShouldBeTrue();
     }
 
+    // Given a ticket type in waitlist mode with a slot freed but a coupon still outstanding
+    // When waitlist mode is re-evaluated
+    // Then waitlist mode remains active
     [TestMethod]
     public void ReEvaluateWaitlistMode_IssuedCouponsRemaining_KeepsWaitlistMode()
     {
@@ -679,6 +796,9 @@ public sealed class TicketCatalogTests
         sut.GetTicketType(id)!.WaitlistMode.ShouldBeTrue();
     }
 
+    // Given a ticket type in waitlist mode with a slot now freed
+    // When waitlist mode deactivation is attempted
+    // Then waitlist mode is cleared
     [TestMethod]
     public void TryDeactivateWaitlistMode_WhenCapacityAvailable_ClearsWaitlistMode()
     {
@@ -697,6 +817,9 @@ public sealed class TicketCatalogTests
         sut.GetTicketType(id)!.WaitlistMode.ShouldBeFalse();
     }
 
+    // Given a ticket type in waitlist mode that is still at capacity
+    // When waitlist mode deactivation is attempted
+    // Then waitlist mode remains active
     [TestMethod]
     public void TryDeactivateWaitlistMode_WhenAtCapacity_DoesNotClearWaitlistMode()
     {

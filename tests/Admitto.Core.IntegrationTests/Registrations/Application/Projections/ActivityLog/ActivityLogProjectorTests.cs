@@ -11,6 +11,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.Projec
 [TestClass]
 public sealed class ActivityLogProjectorTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    // Given an AttendeeRegistered domain event
+    // When the projector handles the event
+    // Then a Registered activity log entry is created with the event's occurred-on timestamp and no metadata
     [TestMethod]
     public async ValueTask HandleAsync_AttendeeRegistered_CreatesRegisteredEntry()
     {
@@ -44,6 +47,9 @@ public sealed class ActivityLogProjectorTests(TestContext testContext) : AspireI
         });
     }
 
+    // Given a RegistrationReconfirmed domain event
+    // When the projector handles the event
+    // Then a Reconfirmed activity log entry is created with the reconfirmed-at timestamp and no metadata
     [TestMethod]
     public async ValueTask HandleAsync_RegistrationReconfirmed_CreatesReconfirmedEntry()
     {
@@ -74,6 +80,9 @@ public sealed class ActivityLogProjectorTests(TestContext testContext) : AspireI
         });
     }
 
+    // Given a RegistrationCancelled domain event with a cancellation reason
+    // When the projector handles the event
+    // Then a Cancelled activity log entry is created with the reason stored as metadata
     [TestMethod]
     public async ValueTask HandleAsync_RegistrationCancelled_CreatesCancelledEntryWithReason()
     {
@@ -106,6 +115,9 @@ public sealed class ActivityLogProjectorTests(TestContext testContext) : AspireI
         });
     }
 
+    // Given a TicketsChanged domain event with old and new ticket types
+    // When the projector handles the event
+    // Then a TicketsChanged activity log entry is created with metadata listing the old and new ticket type ids
     [TestMethod]
     public async ValueTask HandleAsync_TicketsChanged_CreatesTicketsChangedEntryWithMetadata()
     {
@@ -147,6 +159,9 @@ public sealed class ActivityLogProjectorTests(TestContext testContext) : AspireI
         });
     }
 
+    // Given a registration
+    // When multiple domain events for that registration are handled in sequence
+    // Then an activity log entry accumulates for each event
     [TestMethod]
     public async ValueTask HandleAsync_MultipleEventsForSameRegistration_AllEntriesAccumulate()
     {

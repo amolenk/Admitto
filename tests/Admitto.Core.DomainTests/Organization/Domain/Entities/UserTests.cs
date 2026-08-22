@@ -11,6 +11,8 @@ namespace Amolenk.Admitto.Core.Organization.Domain.Tests.Entities;
 [TestClass]
 public sealed class UserTests
 {
+    // When a new user is created
+    // Then a UserCreated domain event is raised with the user's email address
     [TestMethod]
     public void New_AddsUserCreatedDomainEvent()
     {
@@ -24,6 +26,9 @@ public sealed class UserTests
             .EmailAddress.ShouldBe(UserBuilder.DefaultEmail);
     }
 
+    // Given a user with no membership in a team
+    // When a membership is added for that team with a role
+    // Then the membership is added with the given team and role
     [TestMethod]
     public void AddTeamMembership_NewTeam_AddsMembership()
     {
@@ -44,6 +49,9 @@ public sealed class UserTests
         });
     }
 
+    // Given a user who is already a member of a team
+    // When a membership is added again for the same team
+    // Then it throws UserAlreadyTeamMember
     [TestMethod]
     public void AddTeamMembership_MembershipAlreadyExists_ThrowsException()
     {
@@ -60,6 +68,9 @@ public sealed class UserTests
         result.Error.ShouldMatch(User.Errors.UserAlreadyTeamMember(sut.Id, teamId));
     }
 
+    // Given a user whose last membership was removed and who has a pending deprovisioning deadline
+    // When a new team membership is added
+    // Then the pending deprovisioning is cancelled
     [TestMethod]
     public void AddTeamMembership_PendingDeprovisioning_CancelsDeprovisioning()
     {
@@ -81,6 +92,9 @@ public sealed class UserTests
         sut.DeprovisionAfter.ShouldBeNull();
     }
 
+    // Given a user with an existing membership in a team
+    // When the membership role is changed
+    // Then the membership's role is updated
     [TestMethod]
     public void ChangeTeamMembershipRole_ExistingMembership_UpdatesRole()
     {
@@ -98,6 +112,9 @@ public sealed class UserTests
         sut.Memberships.ShouldHaveSingleItem().Role.ShouldBe(TeamMembershipRole.Owner);
     }
 
+    // Given a user with no membership in a team
+    // When the membership role for that team is changed
+    // Then it throws UserNotTeamMember
     [TestMethod]
     public void ChangeTeamMembershipRole_UserNotMember_ThrowsException()
     {
@@ -112,6 +129,9 @@ public sealed class UserTests
         result.Error.ShouldMatch(User.Errors.UserNotTeamMember(sut.Id, teamId));
     }
 
+    // Given a user with a single team membership
+    // When that membership is removed
+    // Then a future deprovisioning deadline is set
     [TestMethod]
     public void RemoveTeamMembership_LastMembership_SetsDeprovisionAfter()
     {
@@ -130,6 +150,9 @@ public sealed class UserTests
         sut.DeprovisionAfter.Value.ShouldBeGreaterThan(DateTimeOffset.UtcNow);
     }
 
+    // Given a user with memberships in two teams
+    // When the membership in one team is removed
+    // Then no deprovisioning deadline is set
     [TestMethod]
     public void RemoveTeamMembership_NotLastMembership_DoesNotSetDeprovisionAfter()
     {
@@ -149,6 +172,9 @@ public sealed class UserTests
         sut.DeprovisionAfter.ShouldBeNull();
     }
 
+    // Given a user with no membership in a team
+    // When that team's membership is removed
+    // Then it throws UserNotTeamMember
     [TestMethod]
     public void RemoveTeamMembership_UserNotMember_ThrowsException()
     {
@@ -163,6 +189,9 @@ public sealed class UserTests
         result.Error.ShouldMatch(User.Errors.UserNotTeamMember(sut.Id, teamId));
     }
 
+    // Given a user with a pending deprovisioning deadline
+    // When deprovisioning is cancelled
+    // Then the deprovisioning deadline is cleared
     [TestMethod]
     public void CancelDeprovisioning_WithPendingDeprovisioning_ClearsDeprovisionAfter()
     {
@@ -183,6 +212,9 @@ public sealed class UserTests
         sut.DeprovisionAfter.ShouldBeNull();
     }
     
+    // Given a user with no external user id assigned
+    // When an external user id is assigned
+    // Then the user's external user id is set
     [TestMethod]
     public void AssignExternalUserId_NotYetAssigned_SetsExternalUserId()
     {
@@ -198,6 +230,9 @@ public sealed class UserTests
         sut.ExternalUserId.ShouldBe(externalUserId);
     }
     
+    // Given a user who already has an external user id assigned
+    // When a different external user id is assigned
+    // Then the existing external user id is overwritten with the new one
     [TestMethod]
     public void AssignExternalUserId_AlreadyAssigned_OverwritesExistingExternalUserId()
     {

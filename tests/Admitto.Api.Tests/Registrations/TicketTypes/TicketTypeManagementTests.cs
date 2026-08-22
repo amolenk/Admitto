@@ -10,6 +10,9 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.TicketTypes;
 [TestClass]
 public sealed class TicketTypeManagementTests(TestContext testContext) : EndToEndTestBase
 {
+    // Given a ticketed event
+    // When a new ticket type is added with a valid max reconfirm attempts value
+    // Then the API returns 201 Created and the value is persisted on the ticket type
     [TestMethod]
     public async Task AddTicketType_WithValidMaxReconfirmAttempts_PersistsValue()
     {
@@ -40,6 +43,9 @@ public sealed class TicketTypeManagementTests(TestContext testContext) : EndToEn
         });
     }
 
+    // Given a ticketed event
+    // When a new ticket type is added with a max reconfirm attempts value of zero
+    // Then the API returns 400 Bad Request
     [TestMethod]
     public async Task AddTicketType_WithZeroMaxReconfirmAttempts_Returns400()
     {
@@ -60,6 +66,9 @@ public sealed class TicketTypeManagementTests(TestContext testContext) : EndToEn
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 
+    // Given a ticketed event
+    // When a new ticket type is added without specifying a max reconfirm attempts value
+    // Then the API returns 201 Created and the ticket type's max reconfirm attempts is persisted as null
     [TestMethod]
     public async Task AddTicketType_WithoutMaxReconfirmAttempts_PersistsNull()
     {
@@ -89,6 +98,9 @@ public sealed class TicketTypeManagementTests(TestContext testContext) : EndToEn
         });
     }
 
+    // Given an existing ticket type on a ticketed event
+    // When the ticket type is updated with a valid max reconfirm attempts value
+    // Then the API returns 204 No Content and the value is persisted on the ticket type
     [TestMethod]
     public async Task UpdateTicketType_WithValidMaxReconfirmAttempts_PersistsValue()
     {
@@ -114,6 +126,9 @@ public sealed class TicketTypeManagementTests(TestContext testContext) : EndToEn
         });
     }
 
+    // Given an existing ticket type on a ticketed event
+    // When the ticket type is updated with a max reconfirm attempts value of zero
+    // Then the API returns 400 Bad Request
     [TestMethod]
     public async Task UpdateTicketType_WithZeroMaxReconfirmAttempts_Returns400()
     {
@@ -131,6 +146,9 @@ public sealed class TicketTypeManagementTests(TestContext testContext) : EndToEn
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 
+    // Given a ticket type that is sold out
+    // When the ticket type is updated to enable the waitlist
+    // Then the API returns 204 No Content and the ticket type has an active waitlist
     [TestMethod]
     public async Task UpdateTicketType_EnableWaitlistOnSoldOutTicketType_PersistsWaitlist()
     {

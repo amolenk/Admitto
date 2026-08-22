@@ -10,8 +10,10 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 [TestClass]
 public sealed class MaterializeTicketedEventTests(TestContext testContext) : AspireIntegrationTestBase
 {
-    // SC-001: Happy-path materialisation creates aggregate + catalog and raises TicketedEventCreatedDomainEvent.
-    // The domain event is converted to TicketedEventCreatedIntegrationEvent by RegistrationsIntegrationEventPublisher
+    // Given a new ticketed event creation request
+    // When the creation-requested integration event is handled
+    // Then a TicketedEvent aggregate and its catalog are created and a TicketedEventCreatedDomainEvent is raised
+    // NOTE: the domain event is converted to TicketedEventCreatedIntegrationEvent by RegistrationsIntegrationEventPublisher
     // (see RegistrationsIntegrationEventPublisherTests for that coverage).
     [TestMethod]
     public async ValueTask Materialize_NewRequest_CreatesAggregateAndRaisesDomainEvent()
@@ -60,6 +62,9 @@ public sealed class MaterializeTicketedEventTests(TestContext testContext) : Asp
         });
     }
 
+    // Given an existing ticketed event with a given public slug
+    // When a creation-requested integration event for a new event with the same public slug is handled and saved
+    // Then saving throws a database conflict exception
     [TestMethod]
     public async ValueTask Materialize_DuplicatePublicSlug_ThrowsDatabaseConflict()
     {

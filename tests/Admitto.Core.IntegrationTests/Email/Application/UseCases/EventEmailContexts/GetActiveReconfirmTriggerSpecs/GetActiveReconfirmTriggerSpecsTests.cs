@@ -14,6 +14,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.UseCases.Event
 [TestClass]
 public sealed class GetActiveReconfirmTriggerSpecsTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    // Given a projection row for an event with an active reconfirm window, cadence, and time zone
+    // When active reconfirm trigger specs are queried
+    // Then a single spec is returned with fields mapped from the projection
     [TestMethod]
     public async ValueTask HandleAsync_ActivePolicy_ReturnsSpecMappedFromProjection()
     {
@@ -42,6 +45,9 @@ public sealed class GetActiveReconfirmTriggerSpecsTests(TestContext testContext)
         spec.MinEmailIntervalHours.ShouldBe(48);
     }
 
+    // Given a projection row for an event with no reconfirm policy
+    // When active reconfirm trigger specs are queried
+    // Then that event is excluded from the results
     [TestMethod]
     public async ValueTask HandleAsync_EventWithoutReconfirmPolicy_IsExcluded()
     {
@@ -50,6 +56,9 @@ public sealed class GetActiveReconfirmTriggerSpecsTests(TestContext testContext)
         (await QueryAsync()).ShouldBeEmpty();
     }
 
+    // Given a projection row for an archived event
+    // When active reconfirm trigger specs are queried
+    // Then that event is excluded from the results
     [TestMethod]
     public async ValueTask HandleAsync_ArchivedEvent_IsExcluded()
     {
@@ -58,6 +67,9 @@ public sealed class GetActiveReconfirmTriggerSpecsTests(TestContext testContext)
         (await QueryAsync()).ShouldBeEmpty();
     }
 
+    // Given a projection row where the event-context details haven't landed yet, so there is no time zone
+    // When active reconfirm trigger specs are queried
+    // Then that partial row is excluded from the results
     [TestMethod]
     public async ValueTask HandleAsync_PartialProjectionRow_IsExcluded()
     {
@@ -68,6 +80,9 @@ public sealed class GetActiveReconfirmTriggerSpecsTests(TestContext testContext)
         (await QueryAsync()).ShouldBeEmpty();
     }
 
+    // Given a mix of projection rows: one active event, one without a reconfirm policy, and one archived
+    // When active reconfirm trigger specs are queried
+    // Then only the active event's spec is returned
     [TestMethod]
     public async ValueTask HandleAsync_MixOfActiveAndInactiveEvents_ReturnsOnlyActiveOnes()
     {

@@ -13,6 +13,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 public sealed class RegisterWithCouponTests(TestContext testContext) : AspireIntegrationTestBase
 {
     // Successful coupon registration — capacity exceeded, still registers and increments used
+    // Given a coupon for a ticket type whose capacity is already exceeded
+    // When an attendee registers using the coupon
+    // Then the registration succeeds, the coupon is redeemed, and used capacity is incremented
     [TestMethod]
     public async ValueTask RegisterWithCoupon_CapacityExceeded_SucceedsAndIncrementsUsedCapacity()
     {
@@ -41,6 +44,9 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
     }
 
     // Coupon rejected — expired
+    // Given an expired coupon
+    // When an attendee registers using the coupon
+    // Then it fails with a coupon-expired error
     [TestMethod]
     public async ValueTask RegisterWithCoupon_ExpiredCoupon_ThrowsCouponExpiredError()
     {
@@ -57,6 +63,9 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
     }
 
     // Coupon rejected — already redeemed
+    // Given a coupon that has already been redeemed
+    // When an attendee registers using the coupon
+    // Then it fails with a coupon-already-redeemed error
     [TestMethod]
     public async ValueTask RegisterWithCoupon_AlreadyRedeemed_ThrowsCouponAlreadyRedeemedError()
     {
@@ -73,6 +82,9 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
     }
 
     // Coupon rejected — revoked
+    // Given a coupon that has been revoked
+    // When an attendee registers using the coupon
+    // Then it fails with a coupon-revoked error
     [TestMethod]
     public async ValueTask RegisterWithCoupon_RevokedCoupon_ThrowsCouponRevokedError()
     {
@@ -89,6 +101,9 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
     }
 
     // Coupon rejected — ticket type not allowlisted
+    // Given a coupon that only allows a specific ticket type
+    // When an attendee registers requesting a different ticket type
+    // Then it fails with a ticket-type-not-allowed error
     [TestMethod]
     public async ValueTask RegisterWithCoupon_TicketTypeNotAllowlisted_ThrowsNotAllowlistedError()
     {
@@ -109,10 +124,14 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.Code.ShouldBe("coupon.ticket_type_not_allowed");
+        result.Error.ShouldMatch(
+            Coupon.Errors.TicketTypeNotAllowlisted([fixture.GetTicketTypeId("general-admission").Value]));
     }
 
     // Coupon bypasses registration window when flag set
+    // Given a coupon configured to bypass the registration window and a closed registration window
+    // When an attendee registers using the coupon
+    // Then the registration succeeds
     [TestMethod]
     public async ValueTask RegisterWithCoupon_BypassesClosedWindow_Succeeds()
     {
@@ -132,6 +151,9 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
     }
 
     // Coupon respects registration window when flag not set
+    // Given a coupon that does not bypass the registration window and a closed registration window
+    // When an attendee registers using the coupon
+    // Then it fails with a registration-closed error
     [TestMethod]
     public async ValueTask RegisterWithCoupon_RespectsClosedWindow_ThrowsRegistrationClosed()
     {
@@ -144,10 +166,13 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.Code.ShouldBe("registration.closed");
+        result.Error.ShouldMatch(TicketedEvent.Errors.RegistrationClosed);
     }
 
     // Coupon bypasses domain restriction (target email outside allowed domain)
+    // Given a coupon whose target email is outside the event's allowed email domain
+    // When an attendee registers using the coupon
+    // Then the registration succeeds with the coupon's email
     [TestMethod]
     public async ValueTask RegisterWithCoupon_BypassesDomainRestriction_Succeeds()
     {
@@ -168,6 +193,9 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
     }
 
     // Coupon bypasses capacity requirement (null MaxCapacity)
+    // Given a ticket type with no maximum capacity configured
+    // When an attendee registers using a coupon for that ticket type
+    // Then the registration succeeds and used capacity is incremented
     [TestMethod]
     public async ValueTask RegisterWithCoupon_NullCapacity_SucceedsAndIncrementsUsedCapacity()
     {
@@ -192,6 +220,9 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
     }
 
     // Coupon does not bypass archived event — active-status gate still applies
+    // Given an archived ticketed event
+    // When an attendee registers using a valid coupon
+    // Then it fails with an event-not-active error
     [TestMethod]
     public async ValueTask RegisterWithCoupon_EventArchived_ThrowsEventNotActive()
     {
@@ -204,10 +235,13 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.Code.ShouldBe("registration.event_not_active");
+        result.Error.ShouldMatch(RegisterAttendeeWithCouponHandler.Errors.EventNotActive);
     }
 
     // Coupon rejected — supplied email does not match coupon target email
+    // Given a coupon tied to a specific target email
+    // When an attendee registers with a different email
+    // Then it fails with a coupon-email-mismatch error
     [TestMethod]
     public async ValueTask RegisterWithCoupon_EmailMismatch_ThrowsCouponEmailMismatch()
     {
@@ -220,10 +254,13 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.Code.ShouldBe("coupon.email_mismatch");
+        result.Error.ShouldMatch(Coupon.Errors.EmailMismatch);
     }
 
     // Coupon mode does NOT require an email-verification token
+    // Given a valid coupon and no email-verification token supplied
+    // When an attendee registers using the coupon
+    // Then the registration succeeds
     [TestMethod]
     public async ValueTask RegisterWithCoupon_NoTokenRequired_Succeeds()
     {
@@ -243,6 +280,9 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
     }
 
     // Coupon registration resets a cancelled registration
+    // Given a cancelled existing registration with previously stored additional details
+    // When the same attendee re-registers using a coupon with new additional details
+    // Then the existing registration is reset to Registered with the new details and the coupon is redeemed
     [TestMethod]
     public async ValueTask RegisterWithCoupon_CancelledRegistration_ResetsExistingRegistration()
     {
@@ -287,6 +327,9 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
     }
 
     // Waitlist coupon — marks WaitlistCoupon as Redeemed in same transaction
+    // Given a coupon issued from the waitlist
+    // When an attendee registers using the coupon
+    // Then the coupon and the corresponding waitlist coupon are both marked redeemed
     [TestMethod]
     public async ValueTask RegisterWithCoupon_WaitlistCoupon_MarksWaitlistCouponRedeemed()
     {
@@ -309,6 +352,9 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
     }
 
     // Organiser coupon with WaitlistMode active — Waitlist is not touched
+    // Given an organiser-issued coupon while the event's waitlist mode is active
+    // When an attendee registers using the coupon
+    // Then the coupon is redeemed but the waitlist is left untouched
     [TestMethod]
     public async ValueTask RegisterWithCoupon_OrganiserCouponWithWaitlistActive_DoesNotTouchWaitlist()
     {

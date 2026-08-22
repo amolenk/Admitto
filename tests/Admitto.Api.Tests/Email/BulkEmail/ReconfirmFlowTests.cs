@@ -11,7 +11,7 @@ namespace Amolenk.Admitto.Api.Tests.Email.BulkEmail;
 public sealed class ReconfirmFlowTests(TestContext testContext) : EndToEndTestBase
 {
     /// <summary>
-    /// SC-8.5: end-to-end smoke test of the reconfirm fan-out shape.
+    /// End-to-end smoke test of the reconfirm fan-out shape.
     ///
     /// The cron-driven <c>RequestReconfirmationsJob</c> ultimately schedules a
     /// system-triggered <c>BulkEmailJob</c> over the same
@@ -24,6 +24,9 @@ public sealed class ReconfirmFlowTests(TestContext testContext) : EndToEndTestBa
     /// Cron-trigger plumbing itself is covered by the Email module unit tests
     /// in section 7.4.
     /// </summary>
+    // Given registrations that are registered-and-not-reconfirmed, already reconfirmed, and cancelled
+    // When a reconfirm bulk email is created targeting registered attendees who have not reconfirmed
+    // Then only the registered, not-yet-reconfirmed attendee receives the email
     [TestMethod]
     public async Task ReconfirmFanOut_OnlyMailsRegisteredAndNotReconfirmedAttendees()
     {

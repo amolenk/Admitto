@@ -2,6 +2,7 @@ using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.Admi
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Registrations.Domain.DomainEvents;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
+using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
@@ -12,6 +13,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 [TestClass]
 public sealed class AdminRegisterAttendeeTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    // Given an event with ticket capacity already at its maximum
+    // When an admin registers a new attendee
+    // Then the registration is created and capacity is incremented past the limit
     // Successful admin-add registration (capacity at limit still allowed)
     [TestMethod]
     public async ValueTask AdminRegisterAttendee_Success_CreatesRegistrationAndIncrementsCapacity()
@@ -38,6 +42,9 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         });
     }
 
+    // Given an event whose registration window has not yet opened
+    // When an admin registers a new attendee
+    // Then the registration is created despite the window being closed
     // Admin-add bypasses registration window — before opens
     [TestMethod]
     public async ValueTask AdminRegisterAttendee_BeforeWindowOpens_CreatesRegistration()
@@ -53,6 +60,9 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         await AssertSingleRegistrationAsync("speaker@example.com");
     }
 
+    // Given an event whose registration window has already closed
+    // When an admin registers a new attendee
+    // Then the registration is created despite the window being closed
     // Admin-add bypasses registration window — already closed
     [TestMethod]
     public async ValueTask AdminRegisterAttendee_AfterWindowCloses_CreatesRegistration()
@@ -68,6 +78,9 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         await AssertSingleRegistrationAsync("speaker@example.com");
     }
 
+    // Given an event with no registration policy configured
+    // When an admin registers a new attendee
+    // Then the registration is created
     // Admin-add bypasses registration window — never configured
     [TestMethod]
     public async ValueTask AdminRegisterAttendee_NoRegistrationPolicy_CreatesRegistration()
@@ -83,6 +96,9 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         await AssertSingleRegistrationAsync("speaker@example.com");
     }
 
+    // Given an event restricted to a specific email domain
+    // When an admin registers an attendee with an email from a different domain
+    // Then the registration is created
     // Admin-add bypasses email-domain restriction
     [TestMethod]
     public async ValueTask AdminRegisterAttendee_DomainMismatch_CreatesRegistration()
@@ -98,6 +114,9 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         await AssertSingleRegistrationAsync("external@gmail.com");
     }
 
+    // Given a ticket type whose capacity is already full
+    // When an admin registers a new attendee for that ticket type
+    // Then the registration is created and used capacity exceeds the configured limit
     // Admin-add bypasses capacity limit
     [TestMethod]
     public async ValueTask AdminRegisterAttendee_CapacityFull_CreatesRegistrationAndExceedsLimit()
@@ -118,6 +137,9 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         });
     }
 
+    // Given a ticket type with no capacity limit configured
+    // When an admin registers a new attendee for that ticket type
+    // Then the registration is created
     // Admin-add bypasses missing capacity configuration
     [TestMethod]
     public async ValueTask AdminRegisterAttendee_NoCapacitySet_CreatesRegistration()
@@ -133,6 +155,9 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         await AssertSingleRegistrationAsync("speaker@example.com");
     }
 
+    // Given an archived ticketed event
+    // When an admin attempts to register a new attendee
+    // Then an event-not-active error is thrown
     // Admin-add rejected — event not active (Archived)
     [TestMethod]
     public async ValueTask AdminRegisterAttendee_EventArchived_ThrowsEventNotActive()
@@ -146,9 +171,12 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.Code.ShouldBe("registration.event_not_active");
+        result.Error.ShouldMatch(AdminRegisterAttendeeHandler.Errors.EventNotActive);
     }
 
+    // Given a command referring to a ticketed event that does not exist
+    // When an admin attempts to register a new attendee
+    // Then an event-not-found error is thrown
     // Admin-add rejected — event not found
     [TestMethod]
     public async ValueTask AdminRegisterAttendee_EventNotFound_ThrowsEventNotFound()
@@ -162,9 +190,12 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.Code.ShouldBe("ticketed-event.not_found");
+        result.Error.ShouldMatch(NotFoundError.Create<TicketedEvent>());
     }
 
+    // Given an event with no ticket catalog configured
+    // When an admin attempts to register a new attendee
+    // Then a ticket-catalog-not-found error is thrown
     // Admin-add rejected — no ticket types configured
     [TestMethod]
     public async ValueTask AdminRegisterAttendee_NoTicketCatalog_ThrowsNoTicketTypesConfigured()
@@ -178,9 +209,12 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.Code.ShouldBe("ticket-catalog.not_found");
+        result.Error.ShouldMatch(NotFoundError.Create<TicketCatalog>());
     }
 
+    // Given an existing active registration for an email address
+    // When an admin registers a new attendee with the same email address
+    // Then an already-exists error is thrown
     // Admin-add rejected — duplicate active email
     [TestMethod]
     public async ValueTask AdminRegisterAttendee_DuplicateActiveEmail_ThrowsBusinessConflict()
@@ -197,6 +231,9 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         result.Error.ShouldMatch(AlreadyExistsError.Create<Registration>());
     }
 
+    // Given a previously cancelled registration for the same email address
+    // When an admin registers that email again with new tickets and additional details
+    // Then the existing registration is reset to registered with the new tickets and details
     // Admin-add resets a cancelled registration
     [TestMethod]
     public async ValueTask AdminRegisterAttendee_CancelledRegistration_ResetsExistingRegistration()
@@ -239,6 +276,9 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         });
     }
 
+    // Given an available ticket type
+    // When an admin registers an attendee selecting the same ticket type twice
+    // Then a duplicate-ticket-types error is thrown
     // Admin-add rejected — duplicate ticket types in selection
     [TestMethod]
     public async ValueTask AdminRegisterAttendee_DuplicateTickets_ThrowsDuplicateError()
@@ -253,9 +293,12 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.Code.ShouldBe("ticket_catalog.duplicate_ticket_types");
+        result.Error.ShouldMatch(TicketCatalog.Errors.DuplicateTicketTypes([fixture.TicketTypeId.Value]));
     }
 
+    // Given an event with a configured ticket catalog
+    // When an admin registers an attendee with a ticket type id that does not exist
+    // Then an unknown-ticket-types error is thrown
     // Admin-add rejected — unknown ticket type
     [TestMethod]
     public async ValueTask AdminRegisterAttendee_UnknownTicketType_ThrowsUnknownTicketTypesError()
@@ -263,15 +306,19 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         var fixture = RegisterAttendeeFixture.OpenWindowWithCapacity();
         await fixture.SetupAsync(Environment);
 
-        var command = NewCommand(fixture, "speaker@example.com", Guid.NewGuid());
+        var unknownTicketTypeId = Guid.NewGuid();
+        var command = NewCommand(fixture, "speaker@example.com", unknownTicketTypeId);
         var sut = NewHandler();
 
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.Code.ShouldBe("ticket_catalog.unknown_ticket_types");
+        result.Error.ShouldMatch(TicketCatalog.Errors.UnknownTicketTypes([unknownTicketTypeId]));
     }
 
+    // Given two ticket types with overlapping time slots
+    // When an admin registers an attendee selecting both overlapping ticket types
+    // Then an overlapping-time-slots error is thrown
     // Admin-add rejected — overlapping time slots
     [TestMethod]
     public async ValueTask AdminRegisterAttendee_OverlappingTimeSlots_ThrowsOverlappingError()
@@ -286,9 +333,12 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.Code.ShouldBe("ticket_catalog.overlapping_time_slots");
+        result.Error.ShouldMatch(TicketCatalog.Errors.OverlappingTimeSlots(["morning"]));
     }
 
+    // Given an event with an additional-details schema defining known keys
+    // When an admin registers an attendee with an additional-detail key not in the schema
+    // Then a key-not-in-schema error is thrown
     // Admin-add rejected — additional detail key not in schema
     [TestMethod]
     public async ValueTask AdminRegisterAttendee_UnknownAdditionalDetailKey_ThrowsKeyNotInSchema()
@@ -307,9 +357,12 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.Code.ShouldBe("additional_details.key_not_in_schema");
+        result.Error.ShouldMatch(AdditionalDetails.Errors.KeyNotInSchema("shoesize"));
     }
 
+    // Given an event with an additional-details schema limiting value length
+    // When an admin registers an attendee with an additional-detail value exceeding that limit
+    // Then a value-too-long error is thrown
     // Admin-add rejected — additional detail value too long
     [TestMethod]
     public async ValueTask AdminRegisterAttendee_AdditionalDetailValueTooLong_ThrowsValueTooLong()
@@ -328,9 +381,12 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.Code.ShouldBe("additional_details.value_too_long");
+        result.Error.ShouldMatch(AdditionalDetails.Errors.ValueTooLong("tshirt", 5));
     }
 
+    // Given an event that becomes archived concurrently between validation and ticket claiming
+    // When an admin registers a new attendee
+    // Then an event-not-active error is thrown and capacity is left unchanged
     // Concurrent archive detected at claim time
     [TestMethod]
     public async ValueTask AdminRegisterAttendee_ConcurrentCancelAtClaim_ThrowsEventNotActive()
@@ -344,7 +400,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         var result = await ErrorResult.CaptureAsync(
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
-        result.Error.Code.ShouldBe("ticket_catalog.event_not_active");
+        result.Error.ShouldMatch(TicketCatalog.Errors.EventNotActive);
 
         await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
         {
@@ -354,6 +410,9 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         });
     }
 
+    // Given an open registration window
+    // When an admin registers a new attendee without an email-verification token
+    // Then the registration succeeds
     // Admin-add does NOT require an email-verification token
     [TestMethod]
     public async ValueTask AdminRegisterAttendee_NoTokenRequired_Succeeds()

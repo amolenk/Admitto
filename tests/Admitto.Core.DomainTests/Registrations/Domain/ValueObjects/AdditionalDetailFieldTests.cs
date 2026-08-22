@@ -1,5 +1,6 @@
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
+using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Shouldly;
 using Should = Shouldly.Should;
 
@@ -8,6 +9,8 @@ namespace Amolenk.Admitto.Core.Registrations.Domain.Tests.ValueObjects;
 [TestClass]
 public sealed class AdditionalDetailFieldTests
 {
+    // When an additional detail field is created with a valid key, name, and max length
+    // Then the field is created with those values
     [TestMethod]
     public void Create_Valid_ReturnsField()
     {
@@ -18,6 +21,8 @@ public sealed class AdditionalDetailFieldTests
         sut.MaxLength.ShouldBe(200);
     }
 
+    // When the field is created with a name that has leading and trailing whitespace
+    // Then the name is trimmed
     [TestMethod]
     public void Create_TrimsName()
     {
@@ -31,51 +36,61 @@ public sealed class AdditionalDetailFieldTests
     [DataRow("-dietary")]
     [DataRow("")]
     [DataRow("dietary_needs")]
+    // When the field is created with a key that violates the allowed key format
+    // Then it throws a business rule violation with code additional_detail_field.invalid_key
     [TestMethod]
     public void Create_InvalidKey_Throws(string key)
     {
         var act = () => AdditionalDetailField.Create(key, "Name", 10);
 
         Should.Throw<BusinessRuleViolationException>(act)
-            .Error.Code.ShouldBe("additional_detail_field.invalid_key");
+            .Error.ShouldMatch(AdditionalDetailField.Errors.InvalidKey);
     }
 
+    // When the field is created with a key longer than the maximum allowed length
+    // Then it throws a business rule violation with code additional_detail_field.invalid_key
     [TestMethod]
     public void Create_KeyTooLong_Throws()
     {
         var act = () => AdditionalDetailField.Create(new string('a', 51), "Name", 10);
 
         Should.Throw<BusinessRuleViolationException>(act)
-            .Error.Code.ShouldBe("additional_detail_field.invalid_key");
+            .Error.ShouldMatch(AdditionalDetailField.Errors.InvalidKey);
     }
 
+    // When the field is created with a blank name
+    // Then it throws a business rule violation with code additional_detail_field.name_empty
     [TestMethod]
     public void Create_EmptyName_Throws()
     {
         var act = () => AdditionalDetailField.Create("k", "   ", 10);
 
         Should.Throw<BusinessRuleViolationException>(act)
-            .Error.Code.ShouldBe("additional_detail_field.name_empty");
+            .Error.ShouldMatch(AdditionalDetailField.Errors.NameEmpty);
     }
 
+    // When the field is created with a name longer than the maximum allowed length
+    // Then it throws a business rule violation with code additional_detail_field.name_too_long
     [TestMethod]
     public void Create_NameTooLong_Throws()
     {
         var act = () => AdditionalDetailField.Create("k", new string('a', 101), 10);
 
         Should.Throw<BusinessRuleViolationException>(act)
-            .Error.Code.ShouldBe("additional_detail_field.name_too_long");
+            .Error.ShouldMatch(AdditionalDetailField.Errors.NameTooLong);
     }
 
     [DataRow(0)]
     [DataRow(-1)]
     [DataRow(4001)]
+    // When the field is created with a max length outside the allowed range
+    // Then it throws a business rule violation with code additional_detail_field.max_length_out_of_range
     [TestMethod]
     public void Create_MaxLengthOutOfRange_Throws(int maxLength)
     {
         var act = () => AdditionalDetailField.Create("k", "Name", maxLength);
 
         Should.Throw<BusinessRuleViolationException>(act)
-            .Error.Code.ShouldBe("additional_detail_field.max_length_out_of_range");
+            .Error.ShouldMatch(AdditionalDetailField.Errors.MaxLengthOutOfRange);
     }
 }

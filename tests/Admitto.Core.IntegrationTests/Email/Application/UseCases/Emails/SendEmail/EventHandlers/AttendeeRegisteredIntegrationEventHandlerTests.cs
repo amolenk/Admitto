@@ -59,6 +59,9 @@ public sealed class AttendeeRegisteredIntegrationEventHandlerTests(TestContext t
         return query;
     }
 
+    // Given an AttendeeRegistered integration event for an attendee
+    // When the event is handled
+    // Then a ticket confirmation email is sent to the attendee with an idempotency key derived from the registration
     [TestMethod]
     public async Task AttendeeRegistered_DispatchesTicketEmail()
     {
@@ -78,6 +81,9 @@ public sealed class AttendeeRegisteredIntegrationEventHandlerTests(TestContext t
             Arg.Any<CancellationToken>());
     }
 
+    // Given an AttendeeRegistered integration event for an attendee
+    // When the event is handled
+    // Then the sent email's parameters include the event website under the 'EventWebsite' property name
     [TestMethod]
     public async Task AttendeeRegistered_ParametersIncludeEventWebsite()
     {
@@ -100,6 +106,9 @@ public sealed class AttendeeRegisteredIntegrationEventHandlerTests(TestContext t
         eventWebsite.ShouldBe("https://devconf.example.com");
     }
 
+    // Given an AttendeeRegistered integration event for an attendee
+    // When the event is handled
+    // Then the sent email's parameters include the edit-registration link for that attendee
     [TestMethod]
     public async Task AttendeeRegistered_ParametersIncludeEditRegistrationLink()
     {

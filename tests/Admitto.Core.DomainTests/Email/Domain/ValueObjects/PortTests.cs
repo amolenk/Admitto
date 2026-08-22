@@ -6,6 +6,8 @@ namespace Amolenk.Admitto.Core.Email.Domain.Tests.ValueObjects;
 [TestClass]
 public sealed class PortTests
 {
+    // When a port number within the valid range is parsed
+    // Then it succeeds and the resulting value matches the input
     [TestMethod]
     [DataRow(1)]
     [DataRow(587)]
@@ -18,6 +20,8 @@ public sealed class PortTests
         result.ValueObject.Value.ShouldBe(port);
     }
 
+    // When a port number outside the valid range is parsed
+    // Then it fails with a message stating the allowed port range
     [TestMethod]
     [DataRow(0)]
     [DataRow(-1)]

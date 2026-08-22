@@ -9,6 +9,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.UseCases.Email
 [TestClass]
 public sealed class GetAttendeeEmailsHandlerTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    // Given a registration has two logged emails sent at different times
+    // When the attendee's emails are queried
+    // Then both are returned ordered with the most recently sent email first
     [TestMethod]
     public async ValueTask TwoEmails_ReturnsMostRecentFirst()
     {
@@ -59,6 +62,9 @@ public sealed class GetAttendeeEmailsHandlerTests(TestContext testContext) : Asp
         result[0].Status.ShouldBe(EmailLogStatus.Delivered.ToString());
     }
 
+    // Given a registration has no logged emails
+    // When the attendee's emails are queried
+    // Then an empty list is returned
     [TestMethod]
     public async ValueTask NoEmailsForRegistration_ReturnsEmptyList()
     {
@@ -69,6 +75,9 @@ public sealed class GetAttendeeEmailsHandlerTests(TestContext testContext) : Asp
         result.ShouldBeEmpty();
     }
 
+    // Given a registration has an email logged for this event and another for a different event
+    // When the attendee's emails are queried for this event
+    // Then only the email for this event is returned
     [TestMethod]
     public async ValueTask EmailsForDifferentEvent_ExcludedFromResults()
     {
@@ -101,6 +110,9 @@ EmailLog.Create(
         result.ShouldHaveSingleItem().Subject.ShouldBe("Your registration");
     }
 
+    // Given emails logged for this registration and for a different registration in the same event
+    // When the attendee's emails are queried for this registration
+    // Then only the email for this registration is returned
     [TestMethod]
     public async ValueTask EmailsForDifferentRegistration_ExcludedFromResults()
     {
@@ -133,6 +145,9 @@ EmailLog.Create(
         result.ShouldHaveSingleItem().Subject.ShouldBe("Alice's confirmation");
     }
 
+    // Given a logged email that has no associated registration id
+    // When the attendee's emails are queried for a specific registration
+    // Then that email is not included in the results
     [TestMethod]
     public async ValueTask EmailWithoutRegistrationId_NotIncluded()
     {
@@ -155,6 +170,9 @@ EmailLog.Create(
         result.ShouldBeEmpty();
     }
 
+    // Given an email logged for a registration under team A
+    // When the attendee's emails are queried using team B's id
+    // Then no emails are returned
     [TestMethod]
     public async ValueTask EmailsForDifferentTeam_ExcludedFromResults()
     {

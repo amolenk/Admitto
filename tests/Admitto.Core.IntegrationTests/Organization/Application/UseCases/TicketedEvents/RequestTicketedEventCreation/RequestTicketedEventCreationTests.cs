@@ -5,6 +5,7 @@ using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Amolenk.Admitto.Testing.Builders.Organization.Application;
+using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Should = Shouldly.Should;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Organization.Application.UseCases.TicketedEvents.RequestTicketedEventCreation;
@@ -12,6 +13,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Organization.Application.UseCase
 [TestClass]
 public sealed class RequestTicketedEventCreationTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    // Given a team's event creation request for a demo slug
+    // When the demo seed decision is evaluated while the request is pending, and again after the event is created
+    // Then it reports the request as already in flight while pending, and as already created afterwards
     [TestMethod]
     public void LocalDemoSeedRequestState_PendingAndCreatedRequests_AreIdempotent()
     {
@@ -36,6 +40,9 @@ public sealed class RequestTicketedEventCreationTests(TestContext testContext) :
             .ShouldBe(LocalDemoSeedRequestDecision.AlreadyCreated);
     }
 
+    // Given a team's event creation request that has been rejected
+    // When the demo seed decision is evaluated for the same slug
+    // Then it reports the request as terminal
     [TestMethod]
     public void LocalDemoSeedRequestState_RejectedRequest_IsTerminal()
     {
@@ -56,6 +63,9 @@ public sealed class RequestTicketedEventCreationTests(TestContext testContext) :
             .ShouldBe(LocalDemoSeedRequestDecision.Terminal);
     }
 
+    // Given an active team
+    // When a RequestTicketedEventCreation command is handled
+    // Then a pending event creation request is persisted and the team's pending event count is incremented
     [TestMethod]
     public async ValueTask AcceptsRequest_OnActiveTeam_PersistsPendingRequestAndIncrementsCounter()
     {
@@ -97,6 +107,9 @@ public sealed class RequestTicketedEventCreationTests(TestContext testContext) :
         });
     }
 
+    // Given an archived team
+    // When a RequestTicketedEventCreation command is handled
+    // Then a team-archived error is thrown
     [TestMethod]
     public async ValueTask RejectsRequest_OnArchivedTeam_ThrowsTeamArchived()
     {
@@ -121,6 +134,6 @@ public sealed class RequestTicketedEventCreationTests(TestContext testContext) :
         var ex = await Should.ThrowAsync<BusinessRuleViolationException>(
             async () => await sut.HandleAsync(command, testContext.CancellationToken));
 
-        ex.Error.Code.ShouldBe("team.archived");
+        ex.Error.ShouldMatch(Team.Errors.TeamArchived(team.Id));
     }
 }

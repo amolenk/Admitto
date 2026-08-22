@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.ArchiveTicketedEvent;
+using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Microsoft.EntityFrameworkCore;
@@ -8,7 +9,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 [TestClass]
 public sealed class ArchiveTicketedEventTests(TestContext testContext) : AspireIntegrationTestBase
 {
-    // SC-001: Archive active event — transitions Status to Archived
+    // Given an active ticketed event
+    // When the event is archived
+    // Then its status transitions to Archived
     [TestMethod]
     public async ValueTask ArchiveTicketedEvent_ActiveEvent_TransitionsToArchived()
     {
@@ -28,7 +31,9 @@ public sealed class ArchiveTicketedEventTests(TestContext testContext) : AspireI
         });
     }
 
-    // SC-003: Archive already-archived event throws
+    // Given an already-archived ticketed event
+    // When the event is archived again
+    // Then it fails with an event-not-active error
     [TestMethod]
     public async ValueTask ArchiveTicketedEvent_AlreadyArchived_ThrowsEventNotActive()
     {
@@ -40,6 +45,6 @@ public sealed class ArchiveTicketedEventTests(TestContext testContext) : AspireI
         var result = await ErrorResult.CaptureAsync(async () =>
             await sut.HandleAsync(new ArchiveTicketedEventCommand(fixture.EventId.Value, fixture.TeamId.Value), testContext.CancellationToken));
 
-        result.Error.Code.ShouldBe("ticketed_event.event_not_active");
+        result.Error.ShouldMatch(TicketedEvent.Errors.EventNotActive);
     }
 }

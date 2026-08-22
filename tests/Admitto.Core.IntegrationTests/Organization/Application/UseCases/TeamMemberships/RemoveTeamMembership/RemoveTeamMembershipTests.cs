@@ -11,12 +11,13 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Organization.Application.UseCase
 [TestClass]
 public sealed class RemoveTeamMembershipTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    // Given a user who is a member of two teams
+    // When her membership in one team is removed
+    // Then only that membership is removed and she remains a member of the other team
     [TestMethod]
     public async ValueTask RemoveTeamMembership_UserHasOtherTeams_RemovesMembership()
     {
         // Arrange
-        // SC-008: Given alice is a member of two teams, when her membership in one team
-        // is removed, only that membership is removed and she stays in the system.
         var fixture = RemoveTeamMembershipFixture.MemberWithOtherTeams();
         await fixture.SetupAsync(Environment);
 
@@ -39,12 +40,13 @@ public sealed class RemoveTeamMembershipTests(TestContext testContext) : AspireI
         });
     }
 
+    // Given a user who is not a member of the target team
+    // When removal of her membership in that team is attempted
+    // Then the request is rejected with a user-not-team-member error
     [TestMethod]
     public async ValueTask RemoveTeamMembership_UserNotTeamMember_ThrowsError()
     {
         // Arrange
-        // SC-009: Given alice is not a member of the target team, when someone attempts
-        // to remove her membership, the request is rejected.
         var fixture = RemoveTeamMembershipFixture.MemberWithOtherTeams();
         await fixture.SetupAsync(Environment);
 
@@ -62,12 +64,13 @@ public sealed class RemoveTeamMembershipTests(TestContext testContext) : AspireI
                 TeamId.From(nonMemberTeamId)));
     }
 
+    // Given a user who is a member of only one team
+    // When her membership is removed
+    // Then her memberships become empty and DeprovisionAfter is set to approximately seven days from now
     [TestMethod]
     public async ValueTask RemoveTeamMembership_LastMembership_SetsDeprovisionAfter()
     {
         // Arrange
-        // SC-011: Given alice is a member of only one team, when her membership is removed,
-        // DeprovisionAfter is set to approximately now + 7 days.
         var fixture = RemoveTeamMembershipFixture.MemberInOnlyThisTeam();
         await fixture.SetupAsync(Environment);
 

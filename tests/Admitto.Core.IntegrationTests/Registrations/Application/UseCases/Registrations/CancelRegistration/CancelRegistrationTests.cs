@@ -12,7 +12,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 [TestClass]
 public sealed class CancelRegistrationTests(TestContext testContext) : AspireIntegrationTestBase
 {
-    // SC-C01: Admin cancels active registration with AttendeeRequest — sets IsCancelled
+    // Given an active registration
+    // When it is cancelled with reason AttendeeRequest
+    // Then the registration's cancellation reason is set to AttendeeRequest
     [TestMethod]
     public async ValueTask CancelRegistration_AttendeeRequest_SetsCancelledState()
     {
@@ -37,7 +39,9 @@ public sealed class CancelRegistrationTests(TestContext testContext) : AspireInt
         });
     }
 
-    // SC-C02: Admin cancels active registration with VisaLetterDenied — sets IsCancelled
+    // Given an active registration
+    // When it is cancelled with reason VisaLetterDenied
+    // Then the registration's cancellation reason is set to VisaLetterDenied
     [TestMethod]
     public async ValueTask CancelRegistration_VisaLetterDenied_SetsCancelledState()
     {
@@ -62,7 +66,9 @@ public sealed class CancelRegistrationTests(TestContext testContext) : AspireInt
         });
     }
 
-    // SC-C03: Admin cancels already-cancelled registration — throws already_cancelled (409)
+    // Given a registration that is already cancelled
+    // When it is cancelled again
+    // Then it fails with an already-cancelled error
     [TestMethod]
     public async ValueTask CancelRegistration_AlreadyCancelled_ThrowsAlreadyCancelledError()
     {
@@ -82,7 +88,9 @@ public sealed class CancelRegistrationTests(TestContext testContext) : AspireInt
         result.Error.ShouldMatch(Registration.Errors.AlreadyCancelled);
     }
 
-    // SC-C04: Admin cancels non-existent registration — throws not_found (404)
+    // Given no registration exists with the given id
+    // When a cancellation is requested for that id
+    // Then it fails with a not-found error
     [TestMethod]
     public async ValueTask CancelRegistration_RegistrationNotFound_ThrowsNotFoundError()
     {
@@ -100,7 +108,9 @@ public sealed class CancelRegistrationTests(TestContext testContext) : AspireInt
         result.Error.ShouldMatch(NotFoundError.Create<Registration>());
     }
 
-    // SC-C05: Admin cancels registration from wrong event — returns not_found (no info leak)
+    // Given an active registration that belongs to a different event and team
+    // When a cancellation is requested using the wrong event and team id
+    // Then it fails with a not-found error
     [TestMethod]
     public async ValueTask CancelRegistration_WrongEventId_ThrowsNotFoundError()
     {
@@ -120,7 +130,9 @@ public sealed class CancelRegistrationTests(TestContext testContext) : AspireInt
         result.Error.ShouldMatch(NotFoundError.Create<Registration>());
     }
 
-    // SC-C06: Self-service cancellation fails when event has already started
+    // Given a registration for an event that has already started
+    // When the attendee requests self-service cancellation
+    // Then it fails with an event-already-started error
     [TestMethod]
     public async ValueTask CancelRegistration_AttendeeRequest_EventAlreadyStarted_ThrowsConflict()
     {
@@ -140,7 +152,9 @@ public sealed class CancelRegistrationTests(TestContext testContext) : AspireInt
         result.Error.ShouldMatch(CancelRegistrationHandler.Errors.EventAlreadyStarted);
     }
 
-    // SC-C07: Self-service cancellation succeeds when event has not yet started
+    // Given a registration for an event that has not yet started
+    // When the attendee requests self-service cancellation
+    // Then the registration's cancellation reason is set to AttendeeRequest
     [TestMethod]
     public async ValueTask CancelRegistration_AttendeeRequest_EventNotYetStarted_SetsCancelledState()
     {

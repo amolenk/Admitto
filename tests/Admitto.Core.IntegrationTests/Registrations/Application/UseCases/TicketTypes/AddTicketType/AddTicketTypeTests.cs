@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypes.AddTicketType;
+using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Microsoft.EntityFrameworkCore;
@@ -8,7 +9,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 [TestClass]
 public sealed class AddTicketTypeTests(TestContext testContext) : AspireIntegrationTestBase
 {
-    // SC-001: Add ticket type to active event — succeeds, creates catalog and ticket type
+    // Given an active ticketed event with no existing catalog
+    // When a ticket type is added to it
+    // Then a catalog is created containing the new ticket type with the given properties
     [TestMethod]
     public async ValueTask AddTicketType_ActiveEvent_CreatesCatalogAndTicketType()
     {
@@ -45,7 +48,9 @@ public sealed class AddTicketTypeTests(TestContext testContext) : AspireIntegrat
         });
     }
 
-    // SC-002: Add ticket type with no max capacity (null) — succeeds
+    // Given an active ticketed event
+    // When a ticket type is added with no max capacity specified
+    // Then the ticket type is created with a null max capacity
     [TestMethod]
     public async ValueTask AddTicketType_NullMaxCapacity_Succeeds()
     {
@@ -76,7 +81,9 @@ public sealed class AddTicketTypeTests(TestContext testContext) : AspireIntegrat
         });
     }
 
-    // SC-003: Reject duplicate name — throws BusinessRuleViolationException
+    // Given an active event with a catalog that already has a ticket type named "Existing Type"
+    // When a ticket type with the same name is added
+    // Then a duplicate-name error is returned
     [TestMethod]
     public async ValueTask AddTicketType_DuplicateName_ThrowsDuplicateNameError()
     {
@@ -97,9 +104,12 @@ public sealed class AddTicketTypeTests(TestContext testContext) : AspireIntegrat
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
         // Assert
-        result.Error.Code.ShouldBe("ticket_catalog.duplicate_name");
+        result.Error.ShouldMatch(TicketCatalog.Errors.DuplicateTicketTypeName(TicketTypeName.From("Existing Type")));
     }
 
+    // Given an active ticketed event
+    // When a ticket type is added with a max reconfirm attempts value
+    // Then the value is persisted on the created ticket type
     [TestMethod]
     public async ValueTask AddTicketType_WithMaxReconfirmAttempts_PersistsValue()
     {
@@ -125,8 +135,9 @@ public sealed class AddTicketTypeTests(TestContext testContext) : AspireIntegrat
         });
     }
 
-    // NOTE: SC-004 tests cover event-not-active rejection via TicketCatalog.EventStatus.
-
+    // Given an archived ticketed event
+    // When a ticket type is added to it
+    // Then an event-not-active error is returned
     [TestMethod]
     public async ValueTask AddTicketType_ArchivedEvent_ThrowsEventNotActive()
     {
@@ -147,6 +158,6 @@ public sealed class AddTicketTypeTests(TestContext testContext) : AspireIntegrat
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
         // Assert
-        result.Error.Code.ShouldBe("ticket_catalog.event_not_active");
+        result.Error.ShouldMatch(TicketCatalog.Errors.EventNotActive);
     }
 }

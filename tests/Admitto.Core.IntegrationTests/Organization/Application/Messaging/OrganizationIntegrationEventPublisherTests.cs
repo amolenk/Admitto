@@ -10,6 +10,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Organization.Application.Messagi
 [TestClass]
 public sealed class OrganizationIntegrationEventPublisherTests
 {
+    // Given a ticketed event creation was requested
+    // When the TicketedEventCreationRequested domain event is handled
+    // Then a matching TicketedEventCreationRequested integration event is enqueued
     [TestMethod]
     public async ValueTask TicketedEventCreationRequested_EnqueuesIntegrationEvent()
     {

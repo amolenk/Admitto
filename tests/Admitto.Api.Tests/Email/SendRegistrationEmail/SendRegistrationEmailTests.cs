@@ -10,6 +10,9 @@ namespace Amolenk.Admitto.Api.Tests.Email.SendRegistrationEmail;
 [TestClass]
 public sealed class SendRegistrationEmailTests(TestContext testContext) : EndToEndTestBase
 {
+    // Given an event configured with system email settings
+    // When an attendee registers
+    // Then exactly one confirmation email is sent and exactly one EmailLog row with status Sent is created
     [TestMethod]
     public async Task RegisterAttendee_WithSystemEmailSettings_SendsExactlyOneEmailAndLogsIt()
     {
@@ -53,6 +56,9 @@ public sealed class SendRegistrationEmailTests(TestContext testContext) : EndToE
         logEntries[0].Status.ShouldBe(EmailLogStatus.Sent);
     }
 
+    // Given an attendee who has already registered and received a confirmation email
+    // When the registration event is redelivered to the integration event handler
+    // Then no second email is sent and only one EmailLog row remains
     [TestMethod]
     public async Task RegisterAttendee_WithSystemEmailSettings_RedeliveredEventDoesNotDoubleSend()
     {

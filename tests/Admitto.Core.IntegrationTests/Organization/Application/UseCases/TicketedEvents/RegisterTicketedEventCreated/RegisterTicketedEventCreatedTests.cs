@@ -7,6 +7,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Organization.Application.UseCase
 [TestClass]
 public sealed class RegisterTicketedEventCreatedTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    // Given a team with a pending event creation request
+    // When the ticketed-event-created command is handled twice (simulating redelivery)
+    // Then the team's event counts and the request status are updated only once
     [TestMethod]
     public async ValueTask IsIdempotent_OnRedelivery()
     {
@@ -40,6 +43,9 @@ public sealed class RegisterTicketedEventCreatedTests(TestContext testContext) :
         });
     }
 
+    // Given the ticketed-event-created integration event has already been processed
+    // When the integration event handler processes it again
+    // Then the team's event counts are not updated a second time
     [TestMethod]
     public async ValueTask HandleAsync_AlreadyProcessed_DoesNotRegisterEventCreatedAgain()
     {
@@ -65,6 +71,9 @@ public sealed class RegisterTicketedEventCreatedTests(TestContext testContext) :
         });
     }
 
+    // Given the integration event was already handled and then marked as concurrently processed
+    // When SaveChangesAsync is called again with a duplicate inbox marker
+    // Then a DuplicateProcessedMessageException is thrown
     [TestMethod]
     public async ValueTask SaveChangesAsync_DuplicateInboxMarker_ThrowsDuplicateProcessedMessageException()
     {

@@ -5,7 +5,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 [TestClass]
 public sealed class GetTicketTypesTests(TestContext testContext) : AspireIntegrationTestBase
 {
-    // SC-001: List ticket types — returns all types
+    // Given a catalog with a mix of ticket types
+    // When the ticket types are queried
+    // Then all ticket types are returned with their details
     [TestMethod]
     public async ValueTask GetTicketTypes_ReturnsAllTypes()
     {
@@ -31,7 +33,9 @@ public sealed class GetTicketTypesTests(TestContext testContext) : AspireIntegra
         vipPass.Name.ShouldBe("VIP Pass");
     }
 
-    // SC-002: Empty list when no catalog exists — returns empty list
+    // Given an event with no ticket catalog
+    // When the ticket types are queried
+    // Then an empty list is returned
     [TestMethod]
     public async ValueTask GetTicketTypes_NoCatalog_ReturnsEmptyList()
     {

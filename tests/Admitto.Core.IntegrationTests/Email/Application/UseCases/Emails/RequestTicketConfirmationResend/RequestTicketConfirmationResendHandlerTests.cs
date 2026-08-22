@@ -26,6 +26,9 @@ public sealed class RequestTicketConfirmationResendHandlerTests(TestContext test
     private static readonly Guid RegistrationId = Guid.NewGuid();
     private static readonly Guid ResendRequestId = Guid.NewGuid();
 
+    // Given the original ticket confirmation email was already logged as sent
+    // When a ticket confirmation resend is requested
+    // Then a new pending resend email log is created alongside the original
     [TestMethod]
     public async ValueTask HandleAsync_OriginalSentLogExists_CreatesResendLog()
     {
@@ -48,6 +51,9 @@ public sealed class RequestTicketConfirmationResendHandlerTests(TestContext test
         resend.RegistrationId.ShouldBe(Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects.RegistrationId.From(RegistrationId));
     }
 
+    // Given a ticket confirmation resend request
+    // When the same resend request is handled twice
+    // Then only one resend email log is created
     [TestMethod]
     public async ValueTask HandleAsync_SameResendRequestHandledTwice_CreatesOneResendLog()
     {

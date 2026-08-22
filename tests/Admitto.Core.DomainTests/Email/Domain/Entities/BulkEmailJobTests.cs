@@ -14,6 +14,8 @@ public sealed class BulkEmailJobTests
 
     // ---------- Creation ----------
 
+    // When a bulk email job is created with a triggering user
+    // Then it starts pending with zeroed counters and raises a job-requested domain event
     [TestMethod]
     public void Create_WithUserTrigger_StartsPendingAndRaisesScheduledEvent()
     {
@@ -31,6 +33,8 @@ public sealed class BulkEmailJobTests
         job.GetDomainEvents().OfType<BulkEmailJobRequestedDomainEvent>().Count().ShouldBe(1);
     }
 
+    // When a bulk email job is created as system-triggered
+    // Then it has no triggering user and still raises a job-requested domain event
     [TestMethod]
     public void CreateSystemTriggered_HasNullTriggeredBy()
     {
@@ -43,6 +47,9 @@ public sealed class BulkEmailJobTests
 
     // ---------- Lifecycle: Pending → Resolving → Sending → Completed/PartiallyFailed/Failed ----------
 
+    // Given a pending bulk email job
+    // When resolving begins
+    // Then it transitions to Resolving and stamps the started-at time
     [TestMethod]
     public void BeginResolving_FromPending_TransitionsAndStampsStartedAt()
     {
@@ -54,6 +61,9 @@ public sealed class BulkEmailJobTests
         job.StartedAt.ShouldBe(Now);
     }
 
+    // Given a job that has already begun resolving
+    // When resolving is started again
+    // Then it throws an invalid transition error
     [TestMethod]
     public void BeginResolving_NotPending_Throws()
     {
@@ -62,9 +72,13 @@ public sealed class BulkEmailJobTests
 
         var error = ErrorResult.Capture(() => job.BeginResolving(Now));
 
-        error.Error.Code.ShouldBe("bulk_email_job.invalid_transition");
+        error.Error.ShouldMatch(
+            BulkEmailJob.Errors.InvalidTransition(BulkEmailJobStatus.Resolving, BulkEmailJobStatus.Resolving));
     }
 
+    // Given a job that is resolving
+    // When sending begins with a recipient list
+    // Then it transitions to Sending, freezes the recipient snapshot as pending, and resets the counters
     [TestMethod]
     public void BeginSending_FreezesRecipientSnapshotAndResetsCounters()
     {
@@ -87,6 +101,9 @@ public sealed class BulkEmailJobTests
         job.Recipients.ShouldAllBe(r => r.Status == BulkEmailRecipientStatus.Pending);
     }
 
+    // Given a job that is still pending
+    // When sending is started before resolving
+    // Then it throws an invalid transition error
     [TestMethod]
     public void BeginSending_NotResolving_Throws()
     {
@@ -94,9 +111,13 @@ public sealed class BulkEmailJobTests
 
         var error = ErrorResult.Capture(() => job.BeginSending([]));
 
-        error.Error.Code.ShouldBe("bulk_email_job.invalid_transition");
+        error.Error.ShouldMatch(
+            BulkEmailJob.Errors.InvalidTransition(BulkEmailJobStatus.Pending, BulkEmailJobStatus.Sending));
     }
 
+    // Given a job that is sending to two recipients
+    // When one recipient is recorded as sent
+    // Then the sent counter increments and only that recipient's status becomes Sent
     [TestMethod]
     public void RecordSentRecipient_UpdatesPerRecipientStatusAndCounter()
     {
@@ -112,6 +133,9 @@ public sealed class BulkEmailJobTests
             .ShouldBe(BulkEmailRecipientStatus.Pending);
     }
 
+    // Given a job that is sending to a single recipient
+    // When that recipient is recorded as failed with an error message
+    // Then the failed counter increments and the recipient's status and error are set
     [TestMethod]
     public void RecordFailedRecipient_UpdatesStatusErrorAndCounter()
     {
@@ -126,6 +150,9 @@ public sealed class BulkEmailJobTests
         recipient.LastError.ShouldBe("smtp 550");
     }
 
+    // Given a job whose recipient snapshot does not include a given address
+    // When that address is recorded as sent
+    // Then it throws a recipient-not-found error
     [TestMethod]
     public void RecordSentRecipient_NotInSnapshot_Throws()
     {
@@ -133,9 +160,12 @@ public sealed class BulkEmailJobTests
 
         var error = ErrorResult.Capture(() => job.RecordSentRecipient("missing@example.com"));
 
-        error.Error.Code.ShouldBe("bulk_email_job.recipient_not_found");
+        error.Error.ShouldMatch(BulkEmailJob.Errors.RecipientNotFound("missing@example.com"));
     }
 
+    // Given a recipient that has already been recorded as sent
+    // When it is recorded as sent again
+    // Then it throws a recipient-not-pending error
     [TestMethod]
     public void RecordSentRecipient_AlreadySent_Throws()
     {
@@ -144,9 +174,13 @@ public sealed class BulkEmailJobTests
 
         var error = ErrorResult.Capture(() => job.RecordSentRecipient("a@example.com"));
 
-        error.Error.Code.ShouldBe("bulk_email_job.recipient_not_pending");
+        error.Error.ShouldMatch(
+            BulkEmailJob.Errors.RecipientNotPending("a@example.com", BulkEmailRecipientStatus.Sent));
     }
 
+    // Given a sending job where every recipient was sent successfully
+    // When the job is completed
+    // Then it transitions to Completed and stamps the completed-at time
     [TestMethod]
     public void Complete_FromSending_AllSent_TransitionsToCompletedAndRaisesEvent()
     {
@@ -163,6 +197,9 @@ public sealed class BulkEmailJobTests
         job.FailedCount.ShouldBe(0);
     }
 
+    // Given a sending job with one recipient sent and one recipient failed
+    // When the job is completed
+    // Then it transitions to PartiallyFailed
     [TestMethod]
     public void Complete_WithSomeFailed_TransitionsToPartiallyFailed()
     {
@@ -175,6 +212,9 @@ public sealed class BulkEmailJobTests
         job.Status.ShouldBe(BulkEmailJobStatus.PartiallyFailed);
     }
 
+    // Given a sending job where every recipient failed
+    // When the job is completed
+    // Then it transitions to Failed with the failed count reflecting all recipients
     [TestMethod]
     public void Complete_WithAllFailed_TransitionsToFailed()
     {
@@ -188,6 +228,9 @@ public sealed class BulkEmailJobTests
         job.FailedCount.ShouldBe(2);
     }
 
+    // Given a job that is still resolving with no recipients recorded
+    // When the job is completed
+    // Then it transitions to Completed with a recipient count of zero
     [TestMethod]
     public void Complete_FromResolvingWithEmptySnapshot_TransitionsToCompleted()
     {
@@ -205,6 +248,9 @@ public sealed class BulkEmailJobTests
         another.RecipientCount.ShouldBe(0);
     }
 
+    // Given a job that has already completed
+    // When completion is attempted again
+    // Then it throws an invalid transition error
     [TestMethod]
     public void Complete_FromTerminal_Throws()
     {
@@ -214,9 +260,13 @@ public sealed class BulkEmailJobTests
 
         var error = ErrorResult.Capture(() => job.Complete(Now));
 
-        error.Error.Code.ShouldBe("bulk_email_job.invalid_transition");
+        error.Error.ShouldMatch(
+            BulkEmailJob.Errors.InvalidTransition(BulkEmailJobStatus.Completed, BulkEmailJobStatus.Completed));
     }
 
+    // Given a job that is resolving
+    // When the job is failed with an error message
+    // Then it transitions to Failed, records the error, and stamps the completed-at time
     [TestMethod]
     public void Fail_FromAnyNonTerminalState_TransitionsToFailedAndRaisesEvent()
     {
@@ -230,6 +280,9 @@ public sealed class BulkEmailJobTests
         job.CompletedAt.ShouldBe(Now);
     }
 
+    // Given a job that has already completed
+    // When the job is failed
+    // Then it throws an already-terminal error
     [TestMethod]
     public void Fail_FromTerminal_Throws()
     {
@@ -239,11 +292,14 @@ public sealed class BulkEmailJobTests
 
         var error = ErrorResult.Capture(() => job.Fail("late", Now));
 
-        error.Error.Code.ShouldBe("bulk_email_job.already_terminal");
+        error.Error.ShouldMatch(BulkEmailJob.Errors.AlreadyTerminal(BulkEmailJobStatus.Completed));
     }
 
     // ---------- Cancellation ----------
 
+    // Given a job in a non-terminal state (Pending, Resolving, or Sending)
+    // When cancellation is requested
+    // Then the cancellation-requested time is stamped
     [TestMethod]
     [DataRow("Pending")]
     [DataRow("Resolving")]
@@ -257,6 +313,9 @@ public sealed class BulkEmailJobTests
         job.CancellationRequestedAt.ShouldBe(Now);
     }
 
+    // Given a job that already has a cancellation requested
+    // When cancellation is requested again at a later time
+    // Then the original cancellation-requested timestamp is kept
     [TestMethod]
     public void RequestCancellation_IsIdempotent_KeepsFirstTimestamp()
     {
@@ -269,6 +328,9 @@ public sealed class BulkEmailJobTests
         job.CancellationRequestedAt.ShouldBe(Now);
     }
 
+    // Given a job in a terminal state (Completed, PartiallyFailed, Failed, or Cancelled)
+    // When cancellation is requested
+    // Then it throws an already-terminal error
     [TestMethod]
     [DataRow("Completed")]
     [DataRow("PartiallyFailed")]
@@ -280,9 +342,12 @@ public sealed class BulkEmailJobTests
 
         var error = ErrorResult.Capture(() => job.RequestCancellation(Now));
 
-        error.Error.Code.ShouldBe("bulk_email_job.already_terminal");
+        error.Error.ShouldMatch(BulkEmailJob.Errors.AlreadyTerminal(Enum.Parse<BulkEmailJobStatus>(state)));
     }
 
+    // Given a job with a mix of sent, failed, and still-pending recipients where cancellation was requested
+    // When the cancellation is finalised
+    // Then the job becomes Cancelled and remaining pending recipients are marked Cancelled
     [TestMethod]
     public void FinaliseCancelled_MarksRemainingPendingRecipientsCancelled()
     {
@@ -304,6 +369,9 @@ public sealed class BulkEmailJobTests
         job.CancelledCount.ShouldBe(1);
     }
 
+    // Given a job with no cancellation requested
+    // When cancellation finalisation is attempted
+    // Then it throws a no-cancellation-requested error
     [TestMethod]
     public void FinaliseCancelled_WithoutPriorRequest_Throws()
     {
@@ -311,9 +379,12 @@ public sealed class BulkEmailJobTests
 
         var error = ErrorResult.Capture(() => job.FinaliseCancelled(Now));
 
-        error.Error.Code.ShouldBe("bulk_email_job.no_cancellation_requested");
+        error.Error.ShouldMatch(BulkEmailJob.Errors.NoCancellationRequested);
     }
 
+    // Given a job that requested cancellation but then completed before finalisation ran
+    // When cancellation is finalised
+    // Then it does not throw and the job's Completed status is left unchanged
     [TestMethod]
     public void FinaliseCancelled_OnAlreadyTerminalJob_IsNoOp()
     {

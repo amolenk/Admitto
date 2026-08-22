@@ -9,6 +9,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.Projections.Te
 [TestClass]
 public sealed class TeamEmailContextProjectorTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    // Given no existing email context projection for a team
+    // When a TeamDetailsUpdated integration event is handled
+    // Then the team's email context is created with the updated name, accent color, and version
     [TestMethod]
     public async Task TeamDetailsUpdated_UpdatesTeamContext()
     {
@@ -31,6 +34,9 @@ public sealed class TeamEmailContextProjectorTests(TestContext testContext) : As
         });
     }
 
+    // Given a team's email context was already updated to a newer version
+    // When a TeamDetailsUpdated integration event arrives late with an older version
+    // Then the existing team context is not overwritten
     [TestMethod]
     public async Task TeamDetailsUpdated_LateOlderVersion_DoesNotOverwriteTeamContext()
     {

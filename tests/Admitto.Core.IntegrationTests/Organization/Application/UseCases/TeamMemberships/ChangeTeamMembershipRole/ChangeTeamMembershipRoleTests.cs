@@ -12,12 +12,13 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Organization.Application.UseCase
 [TestClass]
 public sealed class ChangeTeamMembershipRoleTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    // Given alice is a Crew member of the team
+    // When the owner changes her role to Organizer
+    // Then her membership role is updated
     [TestMethod]
     public async ValueTask ChangeTeamMembershipRole_MemberExists_UpdatesRole()
     {
         // Arrange
-        // SC-006: Given alice is a Crew member of the team, when the owner changes her
-        // role to Organizer, her membership role is updated.
         var fixture = ChangeTeamMembershipRoleFixture.MemberExists();
         await fixture.SetupAsync(Environment);
 
@@ -40,12 +41,13 @@ public sealed class ChangeTeamMembershipRoleTests(TestContext testContext) : Asp
         });
     }
 
+    // Given alice has no membership in the specified team
+    // When someone attempts to change her role for that team
+    // Then a BusinessRuleViolationException for UserNotTeamMember is thrown
     [TestMethod]
     public async ValueTask ChangeTeamMembershipRole_UserNotTeamMember_ThrowsError()
     {
         // Arrange
-        // SC-007: Given alice has no membership in the specified team, when someone
-        // attempts to change her role, the request is rejected.
         var fixture = ChangeTeamMembershipRoleFixture.MemberExists();
         await fixture.SetupAsync(Environment);
 

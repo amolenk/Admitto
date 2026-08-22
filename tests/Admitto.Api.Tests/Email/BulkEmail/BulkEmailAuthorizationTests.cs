@@ -8,8 +8,10 @@ namespace Amolenk.Admitto.Api.Tests.Email.BulkEmail;
 [TestClass]
 public sealed class BulkEmailAuthorizationTests(TestContext testContext) : EndToEndTestBase
 {
-    // SC-8.6: every bulk-email admin endpoint requires Organizer team membership.
-    // Bob is authenticated but not a member of the team — every call must 403.
+    // Every bulk-email admin endpoint requires Organizer team membership.
+    // Given a user who is authenticated but not a member of the team
+    // When they call every bulk-email admin endpoint (preview, create, list, detail, cancel)
+    // Then each call returns 403 Forbidden
     [TestMethod]
     public async Task NonOrganizer_GetsForbiddenOnEveryEndpoint()
     {

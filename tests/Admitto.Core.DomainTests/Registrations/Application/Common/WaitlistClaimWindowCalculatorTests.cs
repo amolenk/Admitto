@@ -17,6 +17,9 @@ public sealed class WaitlistClaimWindowCalculatorTests
         return new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(localDate, tz));
     }
 
+    // Given the current time is outside quiet hours
+    // When the claim expiry is computed
+    // Then it returns the current time plus the claim window
     [TestMethod]
     public void ComputeExpiresAt_OutsideQuietHours_ReturnsUtcNowPlusClaimWindow()
     {
@@ -31,6 +34,9 @@ public sealed class WaitlistClaimWindowCalculatorTests
         result.ShouldBe(utcNow.AddHours(8), tolerance: TimeSpan.FromSeconds(1));
     }
 
+    // Given the current time is inside quiet hours, before midnight
+    // When the claim expiry is computed
+    // Then it expires at next day's quiet-hours end plus the claim window
     [TestMethod]
     public void ComputeExpiresAt_InsideQuietHours_BeforeMidnight_ExpiresAtQuietEndPlusClaimWindow()
     {
@@ -46,6 +52,9 @@ public sealed class WaitlistClaimWindowCalculatorTests
         result.ShouldBe(expectedWindowStart.AddHours(8), tolerance: TimeSpan.FromSeconds(1));
     }
 
+    // Given the current time is inside quiet hours, in the early morning after midnight
+    // When the claim expiry is computed
+    // Then it expires at the same day's quiet-hours end plus the claim window
     [TestMethod]
     public void ComputeExpiresAt_InsideQuietHours_EarlyMorning_ExpiresAtSameDayQuietEndPlusClaimWindow()
     {
@@ -61,6 +70,9 @@ public sealed class WaitlistClaimWindowCalculatorTests
         result.ShouldBe(expectedWindowStart.AddHours(8), tolerance: TimeSpan.FromSeconds(1));
     }
 
+    // Given the current time is outside quiet hours
+    // When the claim expiry is computed with a 24-hour claim window
+    // Then it returns the current time plus 24 hours
     [TestMethod]
     public void ComputeExpiresAt_CustomClaimWindow_UsesProvidedHours()
     {
@@ -75,6 +87,9 @@ public sealed class WaitlistClaimWindowCalculatorTests
         result.ShouldBe(utcNow.AddHours(24), tolerance: TimeSpan.FromSeconds(1));
     }
 
+    // Given a same-day quiet window and a current time inside it
+    // When the claim expiry is computed
+    // Then it expires at the quiet-hours end that same day plus the claim window
     [TestMethod]
     public void ComputeExpiresAt_SameDayQuietHours_TreatedCorrectly()
     {
@@ -92,6 +107,9 @@ public sealed class WaitlistClaimWindowCalculatorTests
         result.ShouldBe(expectedWindowStart.AddHours(8), tolerance: TimeSpan.FromSeconds(1));
     }
 
+    // Given the quiet-hours start and end are equal, meaning no quiet hours are configured
+    // When the claim expiry is computed
+    // Then it returns the current time plus the claim window
     [TestMethod]
     public void ComputeExpiresAt_NoQuietHours_StartEqualsEnd_ReturnsUtcNowPlusClaimWindow()
     {

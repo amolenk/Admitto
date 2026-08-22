@@ -1,4 +1,6 @@
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.ConfigureWaitlistPolicy;
+using Amolenk.Admitto.Core.Registrations.Domain.Entities;
+using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,6 +9,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 [TestClass]
 public sealed class ConfigureWaitlistPolicyTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    // Given an active ticketed event
+    // When the waitlist policy is configured with new quiet hours
+    // Then the quiet hours are persisted on the event
     [TestMethod]
     public async ValueTask ConfigureWaitlistPolicy_ActiveEvent_PersistsPolicy()
     {
@@ -34,6 +39,9 @@ public sealed class ConfigureWaitlistPolicyTests(TestContext testContext) : Aspi
         });
     }
 
+    // Given an archived ticketed event
+    // When the waitlist policy is configured
+    // Then it fails with an event-not-active error
     [TestMethod]
     public async ValueTask ConfigureWaitlistPolicy_ArchivedEvent_ThrowsEventNotActive()
     {
@@ -52,9 +60,12 @@ public sealed class ConfigureWaitlistPolicyTests(TestContext testContext) : Aspi
         var result = await ErrorResult.CaptureAsync(async () =>
             await sut.HandleAsync(command, testContext.CancellationToken));
 
-        result.Error.Code.ShouldBe("ticketed_event.event_not_active");
+        result.Error.ShouldMatch(TicketedEvent.Errors.EventNotActive);
     }
 
+    // Given an active ticketed event
+    // When the waitlist policy is configured with a stale version number
+    // Then it fails with a concurrency conflict error
     [TestMethod]
     public async ValueTask ConfigureWaitlistPolicy_VersionMismatch_ThrowsConcurrencyConflict()
     {
@@ -73,6 +84,6 @@ public sealed class ConfigureWaitlistPolicyTests(TestContext testContext) : Aspi
         var result = await ErrorResult.CaptureAsync(async () =>
             await sut.HandleAsync(command, testContext.CancellationToken));
 
-        result.Error.Code.ShouldBe("concurrency_conflict");
+        result.Error.ShouldMatch(ConcurrencyConflictError.Create(fixture.SeededVersion + 99u, fixture.SeededVersion));
     }
 }
