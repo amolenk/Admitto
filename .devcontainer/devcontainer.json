@@ -34,7 +34,7 @@
 	// }
 
     "mounts": [
-        "source=admitto-data,target=/home/vscode,type=volume",
+        "source=admitto-devcontainer-data,target=/home/vscode,type=volume",
         "source=${localEnv:HOME}/AGENTS.md,target=/home/vscode/AGENTS.md,type=bind,ro",
         "source=${localEnv:HOME}/AGENTS.md,target=/home/vscode/CLAUDE.md,type=bind,ro",
         "source=${localEnv:HOME}/.aspnet/https,target=/home/vscode/.aspnet/https,type=bind,ro"
