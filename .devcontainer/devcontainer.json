@@ -42,7 +42,8 @@
 
     "containerEnv": {
         // Point the Claude CLI to the config directory inside the container
-		"CLAUDE_CONFIG_DIR": "/home/vscode/.claude"
+		"CLAUDE_CONFIG_DIR": "/home/vscode/.claude",
+        "DOCKER_CLI_HINTS": "false"
     },
 
     "remoteEnv": {
@@ -51,8 +52,10 @@
     },
 
     "postStartCommand": {
-        "trust-dotnet-dev-cert": "bash ${containerWorkspaceFolder}/.devcontainer/trust-dev-cert.sh",
-        "install-oh-my-opencode-slim": "bunx oh-my-opencode-slim@latest install --no-tui --skills=yes --background-subagents=yes"
+        "trust-dotnet-dev-cert": "bash ${containerWorkspaceFolder}/.devcontainer/dotnet/trust-dev-cert.sh",
+        "install-oh-my-opencode-slim": "bash ${containerWorkspaceFolder}/.devcontainer/oh-my-opencode-slim/install.sh ${containerWorkspaceFolder}",
+        "configure-opencode": "bash ${containerWorkspaceFolder}/.devcontainer/opencode/configure.sh ${containerWorkspaceFolder}",
+        "configure-herdr": "bash ${containerWorkspaceFolder}/.devcontainer/herdr/configure.sh ${containerWorkspaceFolder}"
     },
 
 	"customizations": {

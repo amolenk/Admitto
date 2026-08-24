@@ -1,0 +1,61 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "amolenk": {
+      "name": "amolenk (Foundry)",
+      "npm": "@ai-sdk/openai",
+      "api": "https://amolenk-ai.services.ai.azure.com/openai/v1",
+      "models": {
+        "gpt-5.6-sol-amolenk": {
+          "id": "gpt-5.6-sol-amolenk",
+          "name": "gpt-5.6-sol-amolenk",
+          "tool_call": true,
+          "attachment": true,
+          "reasoning": true,
+          "temperature": true,
+          "modalities": {
+            "input": ["text", "image"],
+            "output": ["text"]
+          }
+        },
+        "gpt-5.6-terra-amolenk": {
+          "id": "gpt-5.6-terra-amolenk",
+          "name": "gpt-5.6-terra-amolenk",
+          "tool_call": true,
+          "attachment": true,
+          "reasoning": true,
+          "temperature": true,
+          "modalities": {
+            "input": ["text", "image"],
+            "output": ["text"]
+          }
+        },
+        "gpt-5.6-luna-amolenk": {
+          "id": "gpt-5.6-luna-amolenk",
+          "name": "gpt-5.6-luna-amolenk",
+          "tool_call": true,
+          "attachment": true,
+          "reasoning": true,
+          "temperature": true,
+          "modalities": {
+            "input": ["text", "image"],
+            "output": ["text"]
+          }
+        }
+      }
+    }
+  },
+  "model": "amolenk/gpt-5.6-terra-amolenk",
+  "plugin": [
+    "oh-my-opencode-slim"
+  ],
+  "agent": {
+    "explore": {
+      "disable": true
+    },
+    "general": {
+      "disable": true
+    }
+  },
+  "lsp": true
+}

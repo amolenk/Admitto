@@ -1,0 +1,10 @@
+{
+    "configurations": [
+        {
+            "type": "aspire",
+            "request": "launch",
+            "name": "Aspire: Launch default AppHost",
+            "program": "${workspaceFolder}"
+        }
+    ]
+}
