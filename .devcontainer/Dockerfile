@@ -20,7 +20,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends zsh \
 # Install coding agents as the non-root runtime user.
 USER vscode
 
-RUN sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+RUN if [ ! -d "$HOME/.oh-my-zsh" ]; then \
+        sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended; \
+    fi
 
 ENV PATH="/home/vscode/.local/bin:/home/vscode/.opencode/bin:/home/vscode/.bun/bin:${PATH}"
 
