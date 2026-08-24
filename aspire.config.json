@@ -1,5 +1,5 @@
 {
-  "appHost": {
-    "path": "src/Admitto.AppHost/Admitto.AppHost.csproj"
-  }
+    "appHost": {
+        "path": "src/Admitto.AppHost/Admitto.AppHost.csproj"
+    }
 }

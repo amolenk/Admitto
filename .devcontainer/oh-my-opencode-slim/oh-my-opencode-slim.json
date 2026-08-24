@@ -1,0 +1,58 @@
+{
+  "$schema": "https://unpkg.com/oh-my-opencode-slim@latest/oh-my-opencode-slim.schema.json",
+  "preset": "amolenk",
+  "multiplexer": {
+    "type": "herdr",
+    "layout": "main-vertical"
+  },
+  "presets": {
+    "amolenk": {
+      "orchestrator": {
+        "model": "amolenk/gpt-5.6-terra-amolenk",
+        "variant": "high",
+        "skills": [
+          "*"
+        ],
+        "mcps": [
+          "*",
+          "!context7"
+        ]
+      },
+      "oracle": {
+        "model": "amolenk/gpt-5.6-sol-amolenk",
+        "variant": "high",
+        "skills": [
+          "simplify"
+        ],
+        "mcps": []
+      },
+      "librarian": {
+        "model": "amolenk/gpt-5.6-luna-amolenk",
+        "variant": "low",
+        "skills": [],
+        "mcps": [
+          "context7",
+          "gh_grep"
+        ]
+      },
+      "explorer": {
+        "model": "amolenk/gpt-5.6-luna-amolenk",
+        "variant": "low",
+        "skills": [],
+        "mcps": []
+      },
+      "designer": {
+        "model": "amolenk/gpt-5.6-luna-amolenk",
+        "variant": "medium",
+        "skills": [],
+        "mcps": []
+      },
+      "fixer": {
+        "model": "amolenk/gpt-5.6-luna-amolenk",
+        "variant": "high",
+        "skills": [],
+        "mcps": []
+      }
+    }
+  }
+}
