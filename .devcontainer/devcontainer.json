@@ -55,7 +55,8 @@
     },
 
     "postStartCommand": {
-        "trust-dotnet-dev-cert": "bash ${containerWorkspaceFolder}/.devcontainer/trust-dev-cert.sh"
+        "trust-dotnet-dev-cert": "bash ${containerWorkspaceFolder}/.devcontainer/trust-dev-cert.sh",
+        "install-oh-my-opencode-slim": "bunx oh-my-opencode-slim@latest install --no-tui --skills=yes --background-subagents=yes"
     },
 
 	"customizations": {
@@ -64,7 +65,10 @@
                 "ms-dotnettools.csdevkit",
 				"GitHub.copilot-chat",
 				"microsoft-aspire.aspire-vscode"
-			]
+			],
+			"settings": {
+				"terminal.integrated.defaultProfile.linux": "zsh"
+			}
 		}
 	}
 }
