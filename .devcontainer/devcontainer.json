@@ -33,11 +33,12 @@
 	//		}
 	// }
 
- //   "workspaceMount": "source=admitto-workspace,target=/workspace,type=volume",
-//    "workspaceFolder": "/workspace/admitto",
-
     "mounts": [
-        "source=claude-code-config,target=/home/vscode/.claude,type=volume",
+        "source=admitto-claude-data,target=/home/vscode/.claude,type=volume",
+		"source=admitto-opencode-config,target=/home/vscode/.config/opencode,type=volume",
+		"source=admitto-opencode-data,target=/home/vscode/.local/share/opencode,type=volume",
+        "source=admitto-herdr-config,target=/home/vscode/.config/herdr,type=volume",
+		"source=admitto-herdr-data,target=/home/vscode/.local/state/herdr,type=volume",
         "source=${localEnv:HOME}/AGENTS.md,target=/home/vscode/AGENTS.md,type=bind,ro",
         "source=${localEnv:HOME}/AGENTS.md,target=/home/vscode/CLAUDE.md,type=bind,ro",
         "source=${localEnv:HOME}/.aspnet/https,target=/home/vscode/.aspnet/https,type=bind,ro"
@@ -45,7 +46,7 @@
 
     "containerEnv": {
         // Point the Claude CLI to the config directory inside the container
-        "CLAUDE_CONFIG_DIR": "/home/vscode/.claude"
+		"CLAUDE_CONFIG_DIR": "/home/vscode/.claude"
     },
 
     "remoteEnv": {
@@ -53,16 +54,13 @@
         "ASPNETCORE_Kestrel__Certificates__Default__Password": "${localEnv:ASPNETAPP_HTTPS_PASSWORD}"
     },
 
-    "postStartCommand": {
-//        "trust-dotnet-dev-cert": "dotnet dev-certs https --trust",
-//        "fix-claude-permissions": "sudo chown -R vscode:vscode /home/vscode/.claude",
-//        "fix-workspace-permissions": "sudo chown -R vscode:vscode /workspace"
-    },
+//    "postStartCommand": {
+    //},
 
 	"customizations": {
 		"vscode": {
 			"extensions": [
-				"ms-dotnettools.csdevkit",
+                "ms-dotnettools.csdevkit",
 				"GitHub.copilot-chat",
 				"microsoft-aspire.aspire-vscode"
 			]

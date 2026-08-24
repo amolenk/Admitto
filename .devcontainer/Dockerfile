@@ -5,23 +5,19 @@ ARG CLAUDE_CODE_VERSION=latest
 
 USER root
 
-# Prepare directories that are not runtime-mounted volumes.
-#RUN mkdir -p /home/vscode/.claude \
-#    && chown -R vscode:vscode /home/vscode/.claude
+# Ensure named-volume mount points retain the runtime user's ownership.
+RUN mkdir -p /home/vscode/.claude \
+        /home/vscode/.config/opencode \
+        /home/vscode/.local/share/opencode \
+        /home/vscode/.config/herdr \
+        /home/vscode/.local/state/herdr \
+    && chown -R vscode:vscode /home/vscode/.claude /home/vscode/.config /home/vscode/.local
 
-# Install Node and Claude as the non-root runtime user.
+# Install coding agents as the non-root runtime user.
 USER vscode
 
-#ENV PATH="/home/vscode/.local/bin:${PATH}"
+ENV PATH="/home/vscode/.local/bin:/home/vscode/.opencode/bin:${PATH}"
 
 RUN curl -fsSL https://claude.ai/install.sh | bash
-
-#SHELL ["/bin/bash", "-c"]
-
-#RUN source "${NVM_DIR}/nvm.sh" \
- #   && nvm install "${NODE_VERSION}" \
-  #  && nvm alias default "${NODE_VERSION}" \
-   # && nvm use default \
-    #&& npm install --global "@anthropic-ai/claude-code@${CLAUDE_CODE_VERSION}"
-
-#USER vscode
+RUN curl -fsSL https://opencode.ai/install | bash
+RUN curl -fsSL https://herdr.dev/install.sh | sh
