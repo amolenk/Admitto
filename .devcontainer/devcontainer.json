@@ -41,22 +41,17 @@
     ],
 
     "containerEnv": {
-        // Point the Claude CLI to the config directory inside the container
 		"CLAUDE_CONFIG_DIR": "/home/vscode/.claude",
         "DOCKER_CLI_HINTS": "false"
     },
 
     "remoteEnv": {
         "ASPNETCORE_Kestrel__Certificates__Default__Path": "/home/vscode/.aspnet/https/aspnetapp.pfx",
-        "ASPNETCORE_Kestrel__Certificates__Default__Password": "${localEnv:ASPNETAPP_HTTPS_PASSWORD}"
+        "ASPNETCORE_Kestrel__Certificates__Default__Password": "${localEnv:ASPNETAPP_HTTPS_PASSWORD}",
+        "DOCKER_CLI_HINTS": "false"
     },
 
-    "postStartCommand": {
-        "trust-dotnet-dev-cert": "bash ${containerWorkspaceFolder}/.devcontainer/dotnet/trust-dev-cert.sh",
-        "install-oh-my-opencode-slim": "bash ${containerWorkspaceFolder}/.devcontainer/oh-my-opencode-slim/install.sh ${containerWorkspaceFolder}",
-        "configure-opencode": "bash ${containerWorkspaceFolder}/.devcontainer/opencode/configure.sh ${containerWorkspaceFolder}",
-        "configure-herdr": "bash ${containerWorkspaceFolder}/.devcontainer/herdr/configure.sh ${containerWorkspaceFolder}"
-    },
+    "onCreateCommand": "${containerWorkspaceFolder}/.devcontainer/onCreate.sh",
 
 	"customizations": {
 		"vscode": {
