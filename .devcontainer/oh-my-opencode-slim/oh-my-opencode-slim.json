@@ -1,6 +1,10 @@
 {
   "$schema": "https://unpkg.com/oh-my-opencode-slim@latest/oh-my-opencode-slim.schema.json",
   "preset": "amolenk",
+  "multiplexer": {
+    "type": "herdr",
+    "layout": "main-vertical"
+  },
   "presets": {
     "amolenk": {
       "orchestrator": {
@@ -50,10 +54,5 @@
         "mcps": []
       }
     }
-  },
-  "multiplexer": {
-    "type": "auto",
-    "layout": "main-vertical",
-    "main_pane_size": 60
   }
 }
