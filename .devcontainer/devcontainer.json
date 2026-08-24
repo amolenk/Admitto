@@ -54,8 +54,9 @@
         "ASPNETCORE_Kestrel__Certificates__Default__Password": "${localEnv:ASPNETAPP_HTTPS_PASSWORD}"
     },
 
-//    "postStartCommand": {
-    //},
+    "postStartCommand": {
+        "trust-dotnet-dev-cert": "bash ${containerWorkspaceFolder}/.devcontainer/trust-dev-cert.sh"
+    },
 
 	"customizations": {
 		"vscode": {
