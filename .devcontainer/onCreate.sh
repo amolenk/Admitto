@@ -10,6 +10,41 @@ bunx oh-my-opencode-slim@latest install --no-tui --skills=yes --background-subag
 cp /workspaces/Admitto/.devcontainer/oh-my-opencode-slim/oh-my-opencode-slim.json \
    /home/vscode/.config/opencode/oh-my-opencode-slim.json
 
+if ! grep -Fq 'omos() {' /home/vscode/.zshrc; then
+      cat <<'EOF' >> /home/vscode/.zshrc
+
+omos() {
+   local port arg
+
+   for arg in "$@"; do
+      if [[ "$arg" == --port=* ]]; then
+         port="${arg#--port=}"
+         break
+      fi
+   done
+
+   if [[ -z "$port" ]]; then
+      local -a args=("$@")
+      local -i index
+      for ((index = 1; index <= ${#args}; index++)); do
+         if [[ "${args[index]}" == --port ]]; then
+            port="${args[index + 1]}"
+            break
+         fi
+      done
+   fi
+
+   if [[ -n "$port" ]]; then
+      OPENCODE_PORT="$port" command opencode "$@"
+      return
+   fi
+
+   port=$(python3 -c 'import socket; s = socket.socket(); s.bind(("127.0.0.1", 0)); print(s.getsockname()[1]); s.close()') || return
+   OPENCODE_PORT="$port" command opencode --port "$port" "$@"
+}
+EOF
+fi
+
 echo "################################################################################"
 echo "# Configuring OpenCode..."
 echo "################################################################################"
@@ -27,6 +62,8 @@ echo "##########################################################################
 mkdir -p /home/vscode/.config/herdr
 cp /workspaces/Admitto/.devcontainer/herdr/config.toml \
    /home/vscode/.config/herdr/config.toml
+
+herdr integration install opencode
 
 echo "################################################################################"
 echo "# Trusting .NET development certificate..."
