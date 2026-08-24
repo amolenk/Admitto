@@ -17,6 +17,9 @@ echo "##########################################################################
 cp /workspaces/Admitto/.devcontainer/opencode/opencode.json \
    /home/vscode/.config/opencode/opencode.json
 
+cp /workspaces/Admitto/.devcontainer/opencode/tui.json \
+   /home/vscode/.config/opencode/tui.json
+
 echo "################################################################################"
 echo "# Configuring Herdr..."
 echo "################################################################################"

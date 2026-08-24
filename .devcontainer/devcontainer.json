@@ -47,8 +47,7 @@
 
     "remoteEnv": {
         "ASPNETCORE_Kestrel__Certificates__Default__Path": "/home/vscode/.aspnet/https/aspnetapp.pfx",
-        "ASPNETCORE_Kestrel__Certificates__Default__Password": "${localEnv:ASPNETAPP_HTTPS_PASSWORD}",
-        "DOCKER_CLI_HINTS": "false"
+        "ASPNETCORE_Kestrel__Certificates__Default__Password": "${localEnv:ASPNETAPP_HTTPS_PASSWORD}"
     },
 
     "onCreateCommand": "${containerWorkspaceFolder}/.devcontainer/onCreate.sh",
