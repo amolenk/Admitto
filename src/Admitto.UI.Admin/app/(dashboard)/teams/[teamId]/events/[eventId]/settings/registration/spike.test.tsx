@@ -4,6 +4,7 @@ import { addDays, addYears } from "date-fns";
 
 import { apiClient } from "@/lib/api-client";
 import { renderWithProviders } from "@/test-utils/render";
+import type { UserEvent } from "@testing-library/user-event";
 
 import { RegistrationPolicyForm } from "./registration-policy-form";
 import { TicketedEventDetails } from "../event-detail-types";
@@ -31,7 +32,7 @@ const event: TicketedEventDetails = {
     additionalDetailSchema: [],
 };
 
-async function pickDateTime(user: any, trigger: HTMLElement, targetDate: Date, time: string) {
+async function pickDateTime(user: UserEvent, trigger: HTMLElement, targetDate: Date, time: string) {
     await user.click(trigger);
     const dayText = String(targetDate.getDate());
     const cells = await screen.findAllByRole("gridcell", { name: dayText });
@@ -53,7 +54,7 @@ describe("spike", () => {
         expect(buttons.length).toBe(2);
 
         const today = new Date();
-        let closeDate = addDays(today, 1);
+        const closeDate = addDays(today, 1);
         if (closeDate.getMonth() !== today.getMonth()) {
             // handle rollover in test later
         }

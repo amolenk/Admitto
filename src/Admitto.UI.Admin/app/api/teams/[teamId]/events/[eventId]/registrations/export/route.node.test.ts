@@ -1,15 +1,23 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// The two CSV export routes are the only proxy routes that do not go through
-// `callAdmittoApi` — they hand-roll the response so the browser gets a file download rather
-// than JSON. That makes them the only proxy routes needing tests of their own.
-
+vi.mock("@/lib/auth", () => ({
+    auth: { api: { getAccessToken: vi.fn(async () => ({ accessToken: "test-token" })) } },
+}));
+vi.mock("next/headers", () => ({ headers: vi.fn(async () => new Headers()) }));
 vi.mock("@/lib/admitto-api/generated", () => ({ exportRegistrationsCsv: vi.fn() }));
+vi.mock("@/lib/admitto-api/admitto-client", async () => {
+    const actual = await vi.importActual<typeof import("@/lib/admitto-api/admitto-client")>(
+        "@/lib/admitto-api/admitto-client",
+    );
+    return { ...actual, callAdmittoApi: vi.fn(actual.callAdmittoApi) };
+});
 
 const { exportRegistrationsCsv } = await import("@/lib/admitto-api/generated");
+const { callAdmittoApi } = await import("@/lib/admitto-api/admitto-client");
 const { GET } = await import("./route");
 
 const exportCsv = vi.mocked(exportRegistrationsCsv);
+const callApi = vi.mocked(callAdmittoApi);
 
 const TEAM_ID = "11111111-1111-1111-1111-111111111111";
 const EVENT_ID = "22222222-2222-2222-2222-222222222222";
@@ -50,6 +58,9 @@ describe("registrations CSV export route", () => {
             'attachment; filename="registrations-2026.csv"',
         );
         expect(exportCsv).toHaveBeenCalledWith({ path: { teamId: TEAM_ID, eventId: EVENT_ID } });
+        expect(callApi).toHaveBeenCalledWith(expect.any(Function), {
+            onSuccess: expect.any(Function),
+        });
     });
 
     // Given the backend omits content-disposition
@@ -78,28 +89,24 @@ describe("registrations CSV export route", () => {
         await expect(response.json()).resolves.toEqual(problem);
     });
 
-    // Given the backend fails without a body
-    // When the route forwards it
-    // Then a generic export error stands in, keeping the status
+    // The shared wrapper supplies the standard fallback for an empty upstream error.
     it("substitutes a generic error when the upstream body is empty", async () => {
         exportCsv.mockResolvedValue({ response: new Response(null, { status: 502 }) } as never);
 
         const response = await call();
 
         expect(response.status).toBe(502);
-        await expect(response.json()).resolves.toEqual({ error: "Export failed" });
+        await expect(response.json()).resolves.toEqual({ error: "Upstream API error" });
     });
 
-    // Given a result matching none of the expected shapes
-    // When the route handles it
-    // Then it fails with a 500 rather than serving an empty download
+    // The shared wrapper rejects unexpected SDK result shapes.
     it("returns 500 for an unrecognised result shape", async () => {
         exportCsv.mockResolvedValue({} as never);
 
         const response = await call();
 
         expect(response.status).toBe(500);
-        await expect(response.json()).resolves.toEqual({ error: "Export failed" });
+        await expect(response.json()).resolves.toEqual({ error: "Unexpected API response shape" });
     });
 
     // Given the session has expired, so the SDK throws a 401

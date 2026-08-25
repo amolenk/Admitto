@@ -45,9 +45,25 @@ function renderPage() {
     return renderWithProviders(<WaitlistPage />);
 }
 
+function statContent(label: string): HTMLElement {
+    const statLabel = screen.getAllByText(label).find((element) =>
+        element.closest('[data-slot="card-content"]'),
+    );
+
+    if (!statLabel) throw new Error(`Could not find stat card for ${label}`);
+    return statLabel.closest('[data-slot="card-content"]') as HTMLElement;
+}
+
 describe("WaitlistPage", () => {
+    beforeEach(() => {
+        // The page formats joined/expiry timestamps with the browser's local timezone. Keep
+        // those assertions deterministic rather than depending on the runner's timezone.
+        vi.stubEnv("TZ", "UTC");
+    });
+
     afterEach(() => {
         vi.useRealTimers();
+        vi.unstubAllEnvs();
     });
 
     // Given a ticket type with an active waitlist entry and a pending claim notification
@@ -68,6 +84,18 @@ describe("WaitlistPage", () => {
                         maskedEmail: "ali***@example.com",
                         joinedAt: "2026-08-01T08:00:00Z",
                     }),
+                    waitlistEntryRow({
+                        entryId: "aaaa1111-0000-0000-0000-000000000002",
+                        position: 2,
+                        maskedEmail: "bea***@example.com",
+                        joinedAt: "2026-07-31T08:00:00Z",
+                    }),
+                    waitlistEntryRow({
+                        entryId: "aaaa1111-0000-0000-0000-000000000003",
+                        position: 3,
+                        maskedEmail: "cam***@example.com",
+                        joinedAt: "2026-07-30T08:00:00Z",
+                    }),
                 ],
                 pendingNotifications: [
                     pendingNotificationRow({
@@ -76,7 +104,7 @@ describe("WaitlistPage", () => {
                         expiresAt: "2026-08-01T15:00:00Z",
                     }),
                 ],
-                stats: { totalWaiting: 2, totalPending: 1, sentToday: 3 },
+                stats: { totalWaiting: 3, totalPending: 1, sentToday: 4 },
             }),
         );
 
@@ -84,16 +112,35 @@ describe("WaitlistPage", () => {
 
         expect(await screen.findByRole("heading", { name: "Workshop Pass" })).toBeInTheDocument();
 
-        expect(screen.getByText("2", { selector: "div" })).toBeInTheDocument();
-        expect(screen.getByText("1", { selector: "div" })).toBeInTheDocument();
-        expect(screen.getByText("3", { selector: "div" })).toBeInTheDocument();
+        const waitingStat = statContent("Waiting");
+        const pendingStat = statContent("Pending notifications");
+        const sentTodayStat = statContent("Sent today");
+        expect(within(waitingStat).getByText("3")).toBeInTheDocument();
+        expect(within(pendingStat).getByText("1")).toBeInTheDocument();
+        expect(within(sentTodayStat).getByText("4")).toBeInTheDocument();
 
-        expect(screen.getByText("ali***@example.com")).toBeInTheDocument();
-        expect(screen.getByText("1 Aug 2026")).toBeInTheDocument();
+        const [activeTable, pendingTable] = screen.getAllByRole("table");
+        const activeRows = within(activeTable!).getAllByRole("row").slice(1);
+        const expectedEntries = [
+            ["1", "ali***@example.com", "1 Aug 2026"],
+            ["2", "bea***@example.com", "31 Jul 2026"],
+            ["3", "cam***@example.com", "30 Jul 2026"],
+        ];
 
-        expect(screen.getByText("bob***@example.com")).toBeInTheDocument();
-        expect(screen.getByText("1 Aug 2026, 15:00")).toBeInTheDocument();
-        expect(screen.getByText("in about 5 hours")).toBeInTheDocument();
+        expect(activeRows).toHaveLength(expectedEntries.length);
+        expectedEntries.forEach(([position, email, joined], index) => {
+            const cells = within(activeRows[index]!).getAllByRole("cell");
+            expect(cells[0]).toHaveTextContent(position);
+            expect(cells[1]).toHaveTextContent(email);
+            expect(cells[2]).toHaveTextContent(joined);
+        });
+
+        const pendingRows = within(pendingTable!).getAllByRole("row").slice(1);
+        expect(pendingRows).toHaveLength(1);
+        const pendingCells = within(pendingRows[0]!).getAllByRole("cell");
+        expect(pendingCells[0]).toHaveTextContent("bob***@example.com");
+        expect(pendingCells[1]).toHaveTextContent("1 Aug 2026, 15:00");
+        expect(pendingCells[2]).toHaveTextContent("in about 5 hours");
     });
 
     // Given a ticket type with nobody on its waitlist
@@ -124,6 +171,11 @@ describe("WaitlistPage", () => {
         let waitlist = waitlistDetailsDto({
             activeEntries: [
                 waitlistEntryRow({ entryId: "aaaa1111-0000-0000-0000-000000000001" }),
+                waitlistEntryRow({
+                    entryId: "aaaa1111-0000-0000-0000-000000000002",
+                    position: 2,
+                    maskedEmail: "bea***@example.com",
+                }),
             ],
         });
         get.mockImplementation((url: string) => {
@@ -132,14 +184,24 @@ describe("WaitlistPage", () => {
             return Promise.reject(new Error(`unexpected GET ${url}`));
         });
         del.mockImplementation(async () => {
-            waitlist = waitlistDetailsDto({ activeEntries: [] });
+            waitlist = waitlistDetailsDto({
+                activeEntries: [
+                    waitlistEntryRow({
+                        entryId: "aaaa1111-0000-0000-0000-000000000002",
+                        position: 1,
+                        maskedEmail: "bea***@example.com",
+                    }),
+                ],
+                stats: { totalWaiting: 1, totalPending: 0, sentToday: 0 },
+            });
         });
 
         const { user } = renderPage();
 
-        expect(await screen.findByText("ali***@example.com")).toBeInTheDocument();
+        const initialAlice = await screen.findByText("ali***@example.com");
+        expect(within(initialAlice.closest("tr")!).getAllByRole("cell")[0]).toHaveTextContent("1");
 
-        const row = screen.getByText("ali***@example.com").closest("tr")!;
+        const row = initialAlice.closest("tr")!;
         await user.click(within(row).getByRole("button"));
 
         await waitFor(() =>
@@ -150,6 +212,18 @@ describe("WaitlistPage", () => {
         await waitFor(() =>
             expect(screen.queryByText("ali***@example.com")).not.toBeInTheDocument(),
         );
-        expect(screen.getByText("No one is currently on the waitlist.")).toBeInTheDocument();
+        const remainingBob = screen.getByText("bea***@example.com");
+        const remainingRow = remainingBob.closest("tr")!;
+        const remainingCells = within(remainingRow).getAllByRole("cell");
+        expect(remainingCells[0]).toHaveTextContent("1");
+        expect(remainingCells[1]).toHaveTextContent("bea***@example.com");
+        expect(screen.queryByText("No one is currently on the waitlist.")).not.toBeInTheDocument();
+
+        const waitingStat = statContent("Waiting");
+        const pendingStat = statContent("Pending notifications");
+        const sentTodayStat = statContent("Sent today");
+        expect(within(waitingStat).getByText("1")).toBeInTheDocument();
+        expect(within(pendingStat).getByText("0")).toBeInTheDocument();
+        expect(within(sentTodayStat).getByText("0")).toBeInTheDocument();
     });
 });

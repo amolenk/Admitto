@@ -22,7 +22,6 @@ import {
     SheetHeader,
     SheetTitle,
 } from "@/components/ui/sheet";
-import { FormError } from "@/components/form-error";
 import { AddTicketTypeForm } from "./add-ticket-type-form";
 import { EditTicketTypeForm } from "./edit-ticket-type-form";
 

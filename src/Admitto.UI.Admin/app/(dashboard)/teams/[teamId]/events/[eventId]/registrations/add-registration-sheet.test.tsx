@@ -3,15 +3,16 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { FormError } from "@/components/form-error";
 import { apiClient } from "@/lib/api-client";
-import { additionalDetailFieldDto, ticketTypeDto, validationProblemDetails } from "@/test-utils/builders";
+import { additionalDetailFieldDto, ticketTypeDto } from "@/test-utils/builders";
 import { renderWithProviders } from "@/test-utils/render";
 
 import { AddRegistrationSheet } from "./add-registration-sheet";
 
-// Harvested from openspec `admin-ui-registrations`. `TicketTypeDto` (generated/types.gen.ts)
-// has no cancellation flag at all — `GetTicketTypesHandler` returns every ticket type on the
-// catalog verbatim — so "cancelled types are not selectable" has no representable state in the
-// current contract. Tested instead as: the selector renders exactly the catalog it is given.
+// `TicketTypeDto` (generated/types.gen.ts) has no cancellation flag (`status`, `cancelledAt`, or
+// `isCancelled`). `GetTicketTypesHandler` returns every ticket type verbatim and this component
+// renders every supplied item as a checkbox, so the cancelled-type requirement has no
+// representable state in the current DTO/component. The catalog tests below document that code
+// truth rather than inventing an unsupported cancelled fixture.
 
 vi.mock("@/lib/api-client", () => ({
     apiClient: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },
@@ -85,13 +86,15 @@ describe("AddRegistrationSheet", () => {
         await user.click(ticketCheckbox("General Admission"));
         await user.click(screen.getByRole("button", { name: "Add registration" }));
 
-        expect(await submittedPayload()).toEqual({
+        const payload = {
             email: "ada@example.com",
             firstName: "Ada",
             lastName: "Lovelace",
             ticketTypeIds: ["tt-1"],
             additionalDetails: null,
-        });
+        };
+        expect(await submittedPayload()).toEqual(payload);
+        expect(post).toHaveBeenCalledWith(ENDPOINT, payload);
         await waitFor(() => expect(onOpenChange).toHaveBeenCalledWith(false));
         expect(onAdded).toHaveBeenCalled();
     });
@@ -138,16 +141,43 @@ describe("AddRegistrationSheet", () => {
         expect(post).not.toHaveBeenCalled();
     });
 
-    // Given the backend rejects the email as a duplicate
+    // Given an attendee enters an invalid email address
+    // When the admin submits
+    // Then the email format error is shown and nothing is posted
+    it("blocks submission when the email is invalid", async () => {
+        const { user } = renderSheet();
+
+        await fillAttendee(user, { email: "not-an-email" });
+        await user.click(ticketCheckbox("General Admission"));
+        await user.click(screen.getByRole("button", { name: "Add registration" }));
+
+        expect(await screen.findByText("Enter a valid email")).toBeInTheDocument();
+        expect(post).not.toHaveBeenCalled();
+    });
+
+    // Given an attendee has not selected a ticket type
+    // When the admin submits
+    // Then the ticket selection validation error is shown and nothing is posted
+    it("blocks submission when no ticket type is selected", async () => {
+        const { user } = renderSheet();
+
+        await fillAttendee(user);
+        await user.click(screen.getByRole("button", { name: "Add registration" }));
+
+        expect(await screen.findByText("Select at least one ticket type")).toBeInTheDocument();
+        expect(post).not.toHaveBeenCalled();
+    });
+
+    // Given the backend rejects an already-registered email with its actual conflict response
     // When the form handles the failure
-    // Then the message is mapped onto the email field, not shown as a general banner
-    it("maps a duplicate-email error onto the email field", async () => {
+    // Then the conflict is shown in the general error banner and the form remains open
+    it("shows the actual duplicate-registration conflict in the general banner", async () => {
         post.mockRejectedValue(
-            new FormError(
-                validationProblemDetails({
-                    email: ["An attendee with this email is already registered"],
-                }),
-            ),
+            new FormError({
+                status: 409,
+                title: "Conflict",
+                detail: "Registration already exists.",
+            }),
         );
         const { user } = renderSheet();
 
@@ -155,9 +185,10 @@ describe("AddRegistrationSheet", () => {
         await user.click(ticketCheckbox("General Admission"));
         await user.click(screen.getByRole("button", { name: "Add registration" }));
 
-        expect(
-            await screen.findByText("An attendee with this email is already registered"),
-        ).toBeInTheDocument();
+        const alert = await screen.findByRole("alert");
+        expect(within(alert).getByText("Conflict")).toBeInTheDocument();
+        expect(within(alert).getByText("Registration already exists.")).toBeInTheDocument();
+        expect(screen.getByLabelText("Email")).toBeInTheDocument();
     });
 
     // Given the backend rejects the submission because the event is not active
@@ -191,6 +222,22 @@ describe("AddRegistrationSheet", () => {
         expect(screen.getByText("General Admission")).toBeInTheDocument();
         expect(screen.getByText("Workshop A")).toBeInTheDocument();
         expect(screen.getAllByRole("checkbox")).toHaveLength(2);
+    });
+
+    // Given two ticket types in the event's catalog
+    // When both are selected and the form is submitted
+    // Then both catalog ids are sent to the registration endpoint
+    it("submits the selected ticket types from the catalog", async () => {
+        const { user } = renderSheet({ ticketTypes: [generalAdmission, workshop] });
+
+        await fillAttendee(user);
+        await user.click(ticketCheckbox("General Admission"));
+        await user.click(ticketCheckbox("Workshop A"));
+        await user.click(screen.getByRole("button", { name: "Add registration" }));
+
+        expect(await submittedPayload()).toMatchObject({
+            ticketTypeIds: [generalAdmission.id, workshop.id],
+        });
     });
 
     // Given the event has no ticket types configured

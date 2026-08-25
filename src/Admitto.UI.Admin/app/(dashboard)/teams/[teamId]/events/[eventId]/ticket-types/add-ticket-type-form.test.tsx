@@ -67,6 +67,26 @@ describe("AddTicketTypeForm", () => {
         expect(post).toHaveBeenCalledWith(ENDPOINT, expect.anything());
     });
 
+    // Given the self-service toggle defaults on
+    // When the organizer turns it off before submitting
+    // Then the request explicitly disables self-service registration
+    it("sends self-service disabled when the toggle is turned off", async () => {
+        const { user } = renderForm();
+
+        await user.type(screen.getByPlaceholderText("Early Bird"), "Staff Pass");
+        const selfService = screen.getByRole("switch", {
+            name: /enable self-service registration/i,
+        });
+        expect(selfService).toBeChecked();
+
+        await user.click(selfService);
+        expect(selfService).not.toBeChecked();
+
+        await user.click(screen.getByRole("button", { name: "Add ticket type" }));
+
+        expect(await submittedPayload()).toMatchObject({ selfServiceEnabled: false });
+    });
+
     // Given capacity limiting and the waitlist are both enabled
     // When the form is submitted without touching the claim window
     // Then the capacity, the waitlist flag, and the default 8-hour claim window are sent

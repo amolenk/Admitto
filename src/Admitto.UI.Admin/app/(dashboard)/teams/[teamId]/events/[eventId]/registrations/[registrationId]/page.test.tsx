@@ -2,8 +2,14 @@ import { screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { toast } from "sonner";
 
-import type { TicketTypeDto } from "@/lib/admitto-api/generated";
+import type {
+    ActivityLogEntryDto,
+    AttendeeEmailLogItemDto,
+    RegistrationDetailDto,
+    TicketTypeDto,
+} from "@/lib/admitto-api/generated";
 import { apiClient } from "@/lib/api-client";
+import { ticketTypeDto } from "@/test-utils/builders";
 import { renderWithProviders } from "@/test-utils/render";
 import { setRoute } from "@/test-utils/router";
 
@@ -28,118 +34,92 @@ const put = vi.mocked(apiClient.put);
 const TEAM_ID = "11111111-1111-1111-1111-111111111111";
 const EVENT_ID = "22222222-2222-2222-2222-222222222222";
 const REGISTRATION_ID = "33333333-3333-3333-3333-333333333333";
+const DETAIL_PATH = `/api/teams/${TEAM_ID}/events/${EVENT_ID}/registrations/${REGISTRATION_ID}`;
+const EMAILS_PATH = `${DETAIL_PATH}/emails`;
+const TICKET_TYPES_PATH = `/api/teams/${TEAM_ID}/events/${EVENT_ID}/ticket-types`;
+const CANCEL_PATH = `${DETAIL_PATH}/cancel`;
+const RESEND_PATH = `${DETAIL_PATH}/ticket-email/resend`;
+const TICKETS_PATH = `${DETAIL_PATH}/tickets`;
 
-// ── Local shapes ──────────────────────────────────────────────────────────────
-// The page defines these DTOs itself (not (yet) re-exported from the generated SDK for this
-// shape), so the factories below mirror the page's own local interfaces rather than the
-// generated types.
+const activityEntry = (overrides: Partial<ActivityLogEntryDto> = {}): ActivityLogEntryDto => ({
+    activityType: "Registered",
+    occurredAt: "2026-08-10T09:00:00Z",
+    metadata: null,
+    ...overrides,
+});
 
-interface ActivityLogEntry {
-    activityType: string;
-    occurredAt: string;
-    metadata?: string | null;
-}
+const emailLogItem = (overrides: Partial<AttendeeEmailLogItemDto> = {}): AttendeeEmailLogItemDto => ({
+    id: "eeeeeeee-0000-0000-0000-000000000001",
+    subject: "Your ticket is confirmed",
+    emailType: "TicketConfirmation",
+    status: "Delivered",
+    sentAt: "2026-08-10T09:05:00Z",
+    bulkEmailJobId: null,
+    ...overrides,
+});
 
-interface TicketDetail {
-    id: string;
-    name: string;
-}
+const registrationDetail = (
+    overrides: Partial<RegistrationDetailDto> = {},
+): RegistrationDetailDto => ({
+    id: REGISTRATION_ID,
+    email: "jane.doe@example.com",
+    firstName: "Jane",
+    lastName: "Doe",
+    status: "registered",
+    registeredAt: "2026-08-10T09:00:00Z",
+    hasReconfirmed: false,
+    reconfirmedAt: null,
+    cancellationReason: null,
+    tickets: [{ id: "cccccccc-0000-0000-0000-000000000001", name: "General Admission" }],
+    additionalDetails: {},
+    activities: [activityEntry()],
+    ...overrides,
+});
 
-interface RegistrationDetail {
-    id: string;
-    email: string;
-    firstName?: string | null;
-    lastName?: string | null;
-    status: "registered" | "cancelled";
-    registeredAt: string;
-    hasReconfirmed: boolean;
-    reconfirmedAt?: string | null;
-    cancellationReason?: string | null;
-    tickets: TicketDetail[];
-    additionalDetails: Record<string, string>;
-    activities: ActivityLogEntry[];
-}
-
-interface AttendeeEmailLogItem {
-    id: string;
-    subject: string;
-    emailType: string;
-    status: string;
-    sentAt?: string | null;
-    bulkEmailJobId?: string | null;
-}
-
-function activityEntry(overrides: Partial<ActivityLogEntry> = {}): ActivityLogEntry {
-    return {
-        activityType: "Registered",
-        occurredAt: "2026-08-10T09:00:00Z",
-        metadata: null,
-        ...overrides,
-    };
-}
-
-function registrationDetail(overrides: Partial<RegistrationDetail> = {}): RegistrationDetail {
-    return {
-        id: REGISTRATION_ID,
-        email: "jane.doe@example.com",
-        firstName: "Jane",
-        lastName: "Doe",
-        status: "registered",
-        registeredAt: "2026-08-10T09:00:00Z",
-        hasReconfirmed: false,
-        reconfirmedAt: null,
-        cancellationReason: null,
-        tickets: [{ id: "tt-1", name: "General Admission" }],
-        additionalDetails: {},
-        activities: [activityEntry()],
-        ...overrides,
-    };
-}
-
-function emailLogItem(overrides: Partial<AttendeeEmailLogItem> = {}): AttendeeEmailLogItem {
-    return {
-        id: "email-1",
-        subject: "Your ticket is confirmed",
-        emailType: "TicketConfirmation",
-        status: "Sent",
-        sentAt: "2026-08-10T09:05:00Z",
-        bulkEmailJobId: null,
-        ...overrides,
-    };
-}
-
-function ticketTypeDto(overrides: Partial<TicketTypeDto> = {}): TicketTypeDto {
-    return {
-        id: "tt-1",
-        name: "General Admission",
-        timeSlots: [],
-        maxCapacity: null,
-        usedCapacity: 0,
-        selfServiceEnabled: true,
-        waitlistEnabled: false,
-        waitlistMode: false,
-        claimWindowHours: 0,
-        maxReconfirmAttempts: null,
-        ...overrides,
-    };
-}
-
-/** Wires `apiClient.get` to answer the detail, emails and ticket-types queries by URL shape. */
+/** Wires each mocked HTTP method to its complete expected endpoint, failing on URL drift. */
 function mockApi(
     options: {
-        detail?: RegistrationDetail;
-        emails?: AttendeeEmailLogItem[];
+        detail?: RegistrationDetailDto;
+        emails?: AttendeeEmailLogItemDto[];
         ticketTypes?: TicketTypeDto[];
     } = {},
 ) {
-    const detail = options.detail ?? registrationDetail();
+    let detail = options.detail ?? registrationDetail();
     const emails = options.emails ?? [];
     const ticketTypes = options.ticketTypes ?? [ticketTypeDto()];
 
     get.mockImplementation((path: string) => {
-        if (path.endsWith("/emails")) return Promise.resolve(emails);
-        if (path.endsWith("/ticket-types")) return Promise.resolve(ticketTypes);
-        return Promise.resolve(detail);
+        if (path === DETAIL_PATH) return Promise.resolve(detail);
+        if (path === EMAILS_PATH) return Promise.resolve(emails);
+        if (path === TICKET_TYPES_PATH) return Promise.resolve(ticketTypes);
+        throw new Error(`Unexpected GET ${path}`);
+    });
+
+    post.mockImplementation((path: string, body?: unknown) => {
+        if (path === CANCEL_PATH) {
+            const reason = (body as { reason: string }).reason;
+            detail = {
+                ...detail,
+                status: "cancelled",
+                cancellationReason: reason,
+                activities: [
+                    ...detail.activities,
+                    activityEntry({
+                        activityType: "Cancelled",
+                        occurredAt: "2026-08-12T09:00:00Z",
+                        metadata: reason,
+                    }),
+                ],
+            };
+            return Promise.resolve(undefined);
+        }
+        if (path === RESEND_PATH) return Promise.resolve(undefined);
+        throw new Error(`Unexpected POST ${path}`);
+    });
+
+    put.mockImplementation((path: string) => {
+        if (path === TICKETS_PATH) return Promise.resolve(undefined);
+        throw new Error(`Unexpected PUT ${path}`);
     });
 
     return { detail, emails, ticketTypes };
@@ -157,8 +137,7 @@ function timelineTitles(): string[] {
 
 describe("AttendeeDetailPage", () => {
     beforeEach(() => {
-        post.mockResolvedValue(undefined);
-        put.mockResolvedValue(undefined);
+        vi.resetAllMocks();
     });
 
     // Given a registered attendee with a first and last name
@@ -262,6 +241,8 @@ describe("AttendeeDetailPage", () => {
         renderPage();
 
         expect(await screen.findByText("Registration cancelled (Attendee request)")).toBeInTheDocument();
+        expect(screen.getAllByText("Cancelled").length).toBeGreaterThan(0);
+        expect(screen.getByText("Released")).toBeInTheDocument();
         expect(screen.queryByRole("button", { name: "Cancel registration" })).not.toBeInTheDocument();
     });
 
@@ -371,7 +352,7 @@ describe("AttendeeDetailPage", () => {
 
         await waitFor(() =>
             expect(post).toHaveBeenCalledWith(
-                `/api/teams/${TEAM_ID}/events/${EVENT_ID}/registrations/${REGISTRATION_ID}/cancel`,
+                CANCEL_PATH,
                 { reason: "AttendeeRequest" },
             ),
         );
@@ -379,12 +360,39 @@ describe("AttendeeDetailPage", () => {
         expect(screen.queryByRole("heading", { name: "Cancel registration" })).not.toBeInTheDocument();
     });
 
+    // Given a registered attendee
+    // When cancellation succeeds
+    // Then the detail query refetches and the page changes to the cancelled state, including
+    // released tickets and no longer offering the Cancel control
+    it("refetches and renders the cancelled state after cancellation succeeds", async () => {
+        mockApi();
+        const { user } = renderPage();
+
+        await user.click(await screen.findByRole("button", { name: "Cancel registration" }));
+        await user.click(screen.getByRole("combobox"));
+        await user.click(await screen.findByRole("option", { name: "Attendee request" }));
+        await user.click(screen.getByRole("button", { name: "Confirm cancellation" }));
+
+        await waitFor(() =>
+            expect(post).toHaveBeenCalledWith(CANCEL_PATH, { reason: "AttendeeRequest" }),
+        );
+        await waitFor(() =>
+            expect(get.mock.calls.filter(([path]) => path === DETAIL_PATH)).toHaveLength(2),
+        );
+
+        expect(await screen.findByText("Registration cancelled (Attendee request)")).toBeInTheDocument();
+        expect(screen.getAllByText("Cancelled").length).toBeGreaterThan(0);
+        expect(screen.getByText("Released")).toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Cancel registration" })).not.toBeInTheDocument();
+        expect(toast.success).toHaveBeenCalledWith("Registration cancelled successfully.");
+    });
+
     // Given the organizer opens "Change ticket types" and keeps the current selection
     // When they save
     // Then the tickets endpoint is called with the selected ticket type ids and a success
     // toast confirms the update (per Drift D5, this is a real mutation, not a placeholder)
     it("changes ticket types via a working mutation and shows a success toast", async () => {
-        mockApi({ ticketTypes: [ticketTypeDto({ id: "tt-1", name: "General Admission" })] });
+        mockApi({ ticketTypes: [ticketTypeDto()] });
         const { user } = renderPage();
 
         await user.click(await screen.findByRole("button", { name: "Change" }));
@@ -393,8 +401,8 @@ describe("AttendeeDetailPage", () => {
 
         await waitFor(() =>
             expect(put).toHaveBeenCalledWith(
-                `/api/teams/${TEAM_ID}/events/${EVENT_ID}/registrations/${REGISTRATION_ID}/tickets`,
-                { ticketTypeIds: ["tt-1"] },
+                TICKETS_PATH,
+                { ticketTypeIds: [ticketTypeDto().id] },
             ),
         );
         expect(toast.success).toHaveBeenCalledWith("Ticket types updated successfully.");

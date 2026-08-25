@@ -20,6 +20,9 @@ const put = vi.mocked(apiClient.put);
 
 const TEAM_ID = "66666666-6666-6666-6666-666666666666";
 const EVENT_ID = "77777777-7777-7777-7777-777777777777";
+const TICKET_TYPE_ID = "cccccccc-0000-0000-0000-000000000001";
+const EDIT_ENDPOINT =
+    `/api/teams/${TEAM_ID}/events/${EVENT_ID}/ticket-types/${TICKET_TYPE_ID}`;
 
 function renderForm(overrides: Parameters<typeof ticketTypeDto>[0] = {}) {
     const onSaved = vi.fn();
@@ -47,10 +50,12 @@ describe("EditTicketTypeForm waitlist cascade", () => {
     // When the edit form renders
     // Then neither the max-capacity field nor the waitlist toggle is shown
     it("hides capacity and waitlist fields when the ticket type has no capacity limit", () => {
-        renderForm({ maxCapacity: null, waitlistEnabled: false });
+        renderForm({ maxCapacity: null, waitlistEnabled: true });
 
         expect(screen.queryByPlaceholderText("e.g. 100")).not.toBeInTheDocument();
         expect(screen.queryByRole("switch", { name: /enable waitlist/i })).not.toBeInTheDocument();
+        expect(screen.queryByPlaceholderText("e.g. 8")).not.toBeInTheDocument();
+        expect(screen.queryByText("Schedule")).not.toBeInTheDocument();
     });
 
     // Given a ticket type with no capacity limit
@@ -63,6 +68,11 @@ describe("EditTicketTypeForm waitlist cascade", () => {
 
         expect(screen.getByPlaceholderText("e.g. 100")).toBeInTheDocument();
         expect(screen.getByRole("switch", { name: /enable waitlist/i })).toBeInTheDocument();
+        expect(screen.queryByPlaceholderText("e.g. 8")).not.toBeInTheDocument();
+
+        await user.click(screen.getByRole("switch", { name: /enable waitlist/i }));
+
+        expect(screen.getByPlaceholderText("e.g. 8")).toBeInTheDocument();
     });
 
     // Given a ticket type that already has a capacity limit and an active waitlist
@@ -93,11 +103,49 @@ describe("EditTicketTypeForm waitlist cascade", () => {
 
         await user.click(screen.getByRole("button", { name: "Save changes" }));
 
-        await waitFor(() => expect(put).toHaveBeenCalled());
-        expect(put.mock.calls[0]![1]).toMatchObject({
-            maxCapacity: null,
-            waitlistEnabled: false,
-            claimWindowHours: undefined,
+        await waitFor(() =>
+            expect(put).toHaveBeenCalledWith(EDIT_ENDPOINT, {
+                name: "General Admission",
+                selfServiceEnabled: true,
+                maxCapacity: null,
+                waitlistEnabled: false,
+                claimWindowHours: undefined,
+                maxReconfirmAttempts: null,
+            }),
+        );
+        expect(put.mock.calls[0]![1]).not.toHaveProperty("timeSlots");
+    });
+
+    // Given a ticket type with persisted time slots
+    // When the edit form renders and is saved
+    // Then the slots are displayed as immutable history and omitted from the update payload
+    it("shows time slots as non-editable and omits them from the update payload", async () => {
+        const { user } = renderForm({
+            timeSlots: ["morning", "afternoon"],
+            maxCapacity: 100,
         });
+
+        expect(screen.getByText("Schedule")).toBeInTheDocument();
+        expect(screen.getByText("morning")).toBeInTheDocument();
+        expect(screen.getByText("afternoon")).toBeInTheDocument();
+        expect(screen.getByText("Time slots can't be changed after creation.")).toBeInTheDocument();
+        expect(screen.queryByPlaceholderText("e.g. morning, afternoon")).not.toBeInTheDocument();
+
+        const nameInput = screen.getAllByRole("textbox")[0]!;
+        await user.clear(nameInput);
+        await user.type(nameInput, "Updated Pass");
+        await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+        await waitFor(() =>
+            expect(put).toHaveBeenCalledWith(EDIT_ENDPOINT, {
+                name: "Updated Pass",
+                selfServiceEnabled: true,
+                maxCapacity: 100,
+                waitlistEnabled: false,
+                claimWindowHours: undefined,
+                maxReconfirmAttempts: null,
+            }),
+        );
+        expect(put.mock.calls[0]![1]).not.toHaveProperty("timeSlots");
     });
 });

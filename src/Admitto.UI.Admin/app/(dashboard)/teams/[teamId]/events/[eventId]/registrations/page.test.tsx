@@ -10,21 +10,20 @@ import {
 import { renderWithProviders } from "@/test-utils/render";
 import { setRoute } from "@/test-utils/router";
 
+import { EventHeroCard } from "../components/event-hero-card";
 import RegistrationsPage from "./page";
 
-// Harvested from openspec `admin-ui-registrations`. Two scenarios from the spec ("Summary
-// shows total registrations only when the ticket type has no capacity" / "shows X of
-// capacity") have no surface in the code: `page.tsx` computes a `totalCount` local that is
-// never rendered, and there is no capacity-aware summary anywhere on the page. Not tested —
-// there is nothing to assert. Also note the Reconfirm column formats `reconfirmedAt` with
-// plain `Date#toLocaleString`, not the event-timezone helpers in `lib/time-zones.ts` — tested
-// here only for presence/absence, not for a specific timezone conversion.
+// The capacity-summary scenarios remain blocked by current code truth: `page.tsx` computes a
+// `totalCount` local that is never rendered, does not render a summary tile, and receives no
+// capacity summary prop. The Reconfirm column likewise uses plain `Date#toLocaleString` and
+// ignores the fetched event timezone; the exact host-zone output is asserted below.
 
 vi.mock("@/lib/api-client", () => ({
     apiClient: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },
 }));
 
 const get = vi.mocked(apiClient.get);
+const post = vi.mocked(apiClient.post);
 
 const TEAM_ID = "11111111-1111-1111-1111-111111111111";
 const EVENT_ID = "33333333-3333-3333-3333-333333333333";
@@ -35,6 +34,7 @@ const TICKET_TYPES_URL = `/api/teams/${TEAM_ID}/events/${EVENT_ID}/ticket-types`
 
 const generalAdmission = ticketTypeDto({ id: "tt-ga", name: "General Admission" });
 const vip = ticketTypeDto({ id: "tt-vip", name: "VIP" });
+const workshop = ticketTypeDto({ id: "tt-workshop", name: "Workshop" });
 
 const ada = registrationListItemDto({
     id: "r-ada",
@@ -105,6 +105,33 @@ describe("RegistrationsPage", () => {
         mockData();
     });
 
+    // Given the registrations request has not completed
+    // When the page renders
+    // Then the table area shows loading skeletons instead of an empty state or rows
+    it("shows loading skeletons while registrations are being fetched", async () => {
+        let resolveRegistrations!: (value: ReturnType<typeof registrationListItemDto>[]) => void;
+        const registrationsPending = new Promise<ReturnType<typeof registrationListItemDto>[]>(
+            (resolve) => {
+                resolveRegistrations = resolve;
+            },
+        );
+        get.mockImplementation((url: string) => {
+            if (url === REGISTRATIONS_URL) return registrationsPending;
+            if (url === TICKET_TYPES_URL) return Promise.resolve([generalAdmission, vip]);
+            if (url === EVENT_URL) return Promise.resolve(event);
+            throw new Error(`Unexpected GET ${url}`);
+        });
+
+        const { container } = renderPage();
+
+        expect(container.querySelectorAll('[data-slot="skeleton"]')).toHaveLength(3);
+        expect(screen.queryByRole("table")).not.toBeInTheDocument();
+        expect(screen.queryByText("No registrations yet.")).not.toBeInTheDocument();
+
+        resolveRegistrations([ada]);
+        expect(await screen.findByText("ada@example.com")).toBeInTheDocument();
+    });
+
     // Given an event with registrations
     // When the page loads
     // Then the registrations are fetched and shown
@@ -170,7 +197,20 @@ describe("RegistrationsPage", () => {
         const adaRow = (await screen.findByText("ada@example.com")).closest("tr") as HTMLElement;
         const bobRow = screen.getByText("bob@example.com").closest("tr") as HTMLElement;
         expect(within(adaRow).getByText("—")).toBeInTheDocument();
-        expect(within(bobRow).queryByText("—")).not.toBeInTheDocument();
+        // The event is Europe/Amsterdam, which would be 13:30:00 for this UTC input. The
+        // current component ignores that DTO field and renders the host-zone (UTC) value.
+        expect(within(bobRow).getByText("3/5/2026, 12:30:00")).toBeInTheDocument();
+        expect(within(bobRow).queryByText("3/5/2026, 13:30:00")).not.toBeInTheDocument();
+    });
+
+    // Given a registration with a creation timestamp
+    // When the registered column renders
+    // Then the timestamp is shown in that row
+    it("shows the registration timestamp in the registered column", async () => {
+        renderPage();
+
+        const adaRow = (await screen.findByText("ada@example.com")).closest("tr") as HTMLElement;
+        expect(within(adaRow).getByText(/2026/)).toBeInTheDocument();
     });
 
     // Given attendees with different names and emails
@@ -197,6 +237,20 @@ describe("RegistrationsPage", () => {
 
         expect(screen.queryByText("ada@example.com")).not.toBeInTheDocument();
         expect(screen.getByText("bob@example.com")).toBeInTheDocument();
+    });
+
+    // Given a ticket type in the catalog that no registration has selected
+    // When the filter is selected
+    // Then the table shows its filtered empty state and the result summary is zero
+    it("shows a filtered empty state when no ticket matches", async () => {
+        mockData({ ticketTypes: [generalAdmission, vip, workshop] });
+        const { user } = renderPage();
+        await screen.findByText("ada@example.com");
+
+        await selectOption(user, screen.getByRole("combobox"), "Workshop");
+
+        expect(screen.getByText("No registrations match the current filters.")).toBeInTheDocument();
+        expect(screen.getByText("No results")).toBeInTheDocument();
     });
 
     // Given attendees whose surnames sort differently than insertion order
@@ -236,6 +290,55 @@ describe("RegistrationsPage", () => {
 
         expect(await screen.findByRole("heading", { name: "Add registration" })).toBeInTheDocument();
         expect(screen.getByLabelText("First name")).toBeInTheDocument();
+    });
+
+    // Given the list and add-registration endpoint share state
+    // When an attendee is added successfully from the page
+    // Then the exact request is posted and the invalidated list refetch shows the new row
+    it("refetches and shows a newly added registration", async () => {
+        let registrations = [ada, bob];
+        const added = registrationListItemDto({
+            id: "r-added",
+            firstName: "Grace",
+            lastName: "Hopper",
+            email: "grace@example.com",
+            tickets: [{ id: generalAdmission.id, name: generalAdmission.name }],
+        });
+        const payload = {
+            email: added.email,
+            firstName: added.firstName,
+            lastName: added.lastName,
+            ticketTypeIds: [generalAdmission.id],
+            additionalDetails: null,
+        };
+
+        get.mockImplementation((url: string) => {
+            if (url === REGISTRATIONS_URL) return Promise.resolve(registrations);
+            if (url === TICKET_TYPES_URL) return Promise.resolve([generalAdmission, vip]);
+            if (url === EVENT_URL) return Promise.resolve(event);
+            throw new Error(`Unexpected GET ${url}`);
+        });
+        post.mockImplementation((_url, body) => {
+            expect(body).toEqual(payload);
+            registrations = [...registrations, added];
+            return Promise.resolve(undefined);
+        });
+
+        const { user } = renderPage();
+        await screen.findByText("ada@example.com");
+        await user.click(screen.getByRole("button", { name: "Add registration" }));
+
+        const dialog = await screen.findByRole("dialog");
+        await user.type(within(dialog).getByLabelText("First name"), added.firstName!);
+        await user.type(within(dialog).getByLabelText("Last name"), added.lastName!);
+        await user.type(within(dialog).getByLabelText("Email"), added.email);
+        const ticketLabel = within(dialog).getByText("General Admission").closest("label") as HTMLElement;
+        await user.click(within(ticketLabel).getByRole("checkbox"));
+        await user.click(within(dialog).getByRole("button", { name: "Add registration" }));
+
+        await waitFor(() => expect(post).toHaveBeenCalledWith(REGISTRATIONS_URL, payload));
+        expect(await screen.findByText(added.email)).toBeInTheDocument();
+        expect(get.mock.calls.filter(([url]) => url === REGISTRATIONS_URL).length).toBeGreaterThanOrEqual(2);
     });
 
     // Given the registrations table
@@ -331,5 +434,45 @@ describe("RegistrationsPage pagination", () => {
         expect(await screen.findByText("Showing 26–30 of 30")).toBeInTheDocument();
         expect(dataRows()).toHaveLength(5);
         expect(screen.getByText("Attendee 26")).toBeInTheDocument();
+    });
+});
+
+describe("EventHeroCard registration capacity summary", () => {
+    function registeredStat() {
+        const label = screen.getByText("Registered");
+        return label.parentElement?.parentElement as HTMLElement;
+    }
+
+    // Given the event has no configured ticket capacity
+    // When the event's actual capacity summary UI renders
+    // Then the registered count is labelled as a total without an artificial capacity
+    it("shows the registered total for unlimited capacity", () => {
+        renderWithProviders(
+            <EventHeroCard
+                event={event}
+                ticketTypes={[ticketTypeDto({ maxCapacity: null, usedCapacity: 47 })]}
+            />,
+        );
+
+        const stat = registeredStat();
+        expect(within(stat).getByText("47")).toBeInTheDocument();
+        expect(within(stat).getByText("total")).toBeInTheDocument();
+        expect(within(stat).queryByText(/of/)).not.toBeInTheDocument();
+    });
+
+    // Given the event's ticket catalog has a configured capacity of 250
+    // When the event's actual capacity summary UI renders
+    // Then the registered count is displayed against that capacity
+    it("shows the registered count of configured capacity", () => {
+        renderWithProviders(
+            <EventHeroCard
+                event={event}
+                ticketTypes={[ticketTypeDto({ maxCapacity: 250, usedCapacity: 47 })]}
+            />,
+        );
+
+        const stat = registeredStat();
+        expect(within(stat).getByText("47")).toBeInTheDocument();
+        expect(within(stat).getByText("of 250")).toBeInTheDocument();
     });
 });

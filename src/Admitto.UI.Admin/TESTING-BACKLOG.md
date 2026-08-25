@@ -19,9 +19,9 @@ silently encoded in a test.
 | `DRIFT` | Spec contradicts the code. Resolved in favour of the code — see [Drift](#drift). |
 | `GONE` | The spec describes something that is not implemented at all. See [Not implemented](#not-implemented). |
 
-Counts across the 199 scenario rows: `TODO` 141, `TESTED` 45, `DRIFT` 9, `BROWSER` 4, `GONE` 4,
-`BACKEND` 3. Seven rows carry two classes (a tested scenario that also diverges from the spec),
-so the tags total 206.
+Counts across the 199 scenario rows: `TODO` 0, `TESTED` 176, `DRIFT` 12, `BROWSER` 4, `GONE` 17,
+`BACKEND` 5. Fifteen rows carry two classes (a tested scenario that also diverges from the spec),
+so the tags total 214.
 
 Paths below are relative to `app/(dashboard)/teams/[teamId]/`.
 
@@ -97,44 +97,44 @@ Target: `settings/api-keys/page.tsx` — tests in `settings/api-keys/page.test.t
 
 | Scenario | Class | Target / note |
 | :-- | :-- | :-- |
-| View waitlist page for a ticket type with entries | `TODO` | `events/[eventId]/ticket-types/[ticketTypeId]/waitlist/page.tsx`. Includes email masking (`ali***@example.com`) and the claim-time countdown — both pure client logic, good test targets. |
-| View waitlist page with no entries | `TODO` | Empty state. |
-| Remove an active waitlist entry | `TODO` | The UI half: DELETE + refresh. Position shifting is `BACKEND`. |
+| View waitlist page for a ticket type with entries | `TESTED` | `events/[eventId]/ticket-types/[ticketTypeId]/waitlist/page.test.tsx` covers masked email, countdown, ranked rows, and stats. |
+| View waitlist page with no entries | `TESTED` | Empty state covered in the waitlist page test. |
+| Remove an active waitlist entry | `TESTED` | DELETE + refresh covered; position shifting is `BACKEND`. |
 | Remove entry triggers WaitlistMode re-evaluation | `BACKEND` | Domain rule; no UI surface. |
-| WaitlistEnabled toggle appears only when capacity is configured | `TESTED` | `events/[eventId]/ticket-types/add-ticket-type-form.test.tsx` covers the add form's cascade; the edit form is `TODO`. |
-| Organizer sets quiet hours on event | `TODO` (form) + `BACKEND` (coupon expiry) | `events/[eventId]/settings/waitlist/waitlist-policy-form.tsx`. |
+| WaitlistEnabled toggle appears only when capacity is configured | `TESTED` | Add and edit form cascades are covered by their colocated tests. |
+| Organizer sets quiet hours on event | `TESTED` (form) + `BACKEND` (coupon expiry) | `events/[eventId]/settings/waitlist/waitlist-policy-form.test.tsx`. |
 
 ## admin-ui-registrations (27)
 
 | Scenario | Class | Target / note |
 | :-- | :-- | :-- |
-| Successfully add a registration | `TODO` | `events/[eventId]/registrations/add-registration-sheet.tsx`. |
-| Client-side validation — missing first name | `TODO` | |
-| Client-side validation — missing last name | `TODO` | |
-| Client-side validation — missing email | `TODO` | |
-| Server validation — duplicate email | `TODO` | Field-level mapping via `FormError`. |
-| Server validation — event not active | `TODO` | General banner. |
-| Ticket selection sourced from the event's catalog | `TODO` | Cancelled types not selectable. |
-| Additional details rendered from the event schema | `TODO` | Dynamic fields + `maxLength` from `AdditionalDetailSchema`. High value: schema-driven rendering. |
-| SC001 Page loads and shows registrations | `TODO` | `events/[eventId]/registrations/page.tsx`. |
-| SC002 Empty event shows an empty-state row | `TODO` | |
-| SC003 Attendee column shows first and last name | `TODO` | |
-| SC004 Ticket column shows one badge per ticket | `TODO` | |
-| SC005 Status column reflects the status | `TODO` | |
-| SC006 Reconfirm column reflects HasReconfirmed | `TODO` | Event-zone formatting — leans on the tested `lib/time-zones.ts`. |
-| SC007 Summary shows total only when capacity unset | `TODO` | Client-side arithmetic. |
-| SC008 Summary shows total of capacity | `TODO` | |
-| SC009 Search filters across name and email | `TODO` | `data-table*.tsx` family. |
-| SC010 Ticket-type filter narrows rows | `TODO` | |
-| SC011 Default sort is attendee name ascending | `TODO` | |
-| SC012 Column header toggles sort direction | `TODO` | |
-| SC013 Pagination shows 25 rows per page | `TODO` | |
-| SC014 Next page advances the window | `TODO` | |
-| SC015 Add registration navigates to the add page | `TODO` | |
-| SC016 Export CSV shows a Coming soon notification | `DRIFT` | Export is implemented and downloads — see D4. |
-| SC017 No multi-select checkbox column | `TODO` | A negative assertion; cheap to keep. |
-| SC018 No status tabs above the table | `TODO` | |
-| SC023 Clicking a row navigates to attendee detail | `TODO` | |
+| Successfully add a registration | `TESTED` | `events/[eventId]/registrations/add-registration-sheet.test.tsx` and the stateful page test cover submission and refresh. |
+| Client-side validation — missing first name | `TESTED` | |
+| Client-side validation — missing last name | `TESTED` | |
+| Client-side validation — missing email | `TESTED` | |
+| Server validation — duplicate email | `TESTED` | The actual general 409 error is asserted. |
+| Server validation — event not active | `TESTED` | General banner. |
+| Ticket selection sourced from the event's catalog | `TESTED` + `BACKEND` | UI renders the catalog response; active/cancelled availability is an API contract because `TicketTypeDto` has no lifecycle field. |
+| Additional details rendered from the event schema | `TESTED` | Dynamic fields + `maxLength` from `AdditionalDetailSchema`. |
+| SC001 Page loads and shows registrations | `TESTED` | `events/[eventId]/registrations/page.test.tsx`. |
+| SC002 Empty event shows an empty-state row | `TESTED` | |
+| SC003 Attendee column shows first and last name | `TESTED` | |
+| SC004 Ticket column shows one badge per ticket | `TESTED` | |
+| SC005 Status column reflects the status | `TESTED` | |
+| SC006 Reconfirm column reflects HasReconfirmed | `TESTED` + `DRIFT` | The current component formats in the host zone rather than the event zone. |
+| SC007 Summary shows total only when capacity unset | `GONE` | The registrations page has no summary tile. |
+| SC008 Summary shows total of capacity | `GONE` | The registrations page has no summary tile. |
+| SC009 Search filters across name and email | `TESTED` | |
+| SC010 Ticket-type filter narrows rows | `TESTED` | |
+| SC011 Default sort is attendee name ascending | `TESTED` | |
+| SC012 Column header toggles sort direction | `TESTED` | |
+| SC013 Pagination shows 25 rows per page | `TESTED` | |
+| SC014 Next page advances the window | `TESTED` | |
+| SC015 Add registration navigates to the add page | `TESTED` + `DRIFT` | The implemented affordance opens an add-registration sheet. |
+| SC016 Export CSV shows a Coming soon notification | `TESTED` + `DRIFT` | Export is implemented and downloads — see D4. |
+| SC017 No multi-select checkbox column | `TESTED` | |
+| SC018 No status tabs above the table | `TESTED` | |
+| SC023 Clicking a row navigates to attendee detail | `TESTED` | |
 
 ## admin-ui-attendee-detail (13)
 
@@ -142,19 +142,19 @@ Target: `events/[eventId]/registrations/[registrationId]/page.tsx` (client compo
 
 | Scenario | Class | Note |
 | :-- | :-- | :-- |
-| SC001 Renders details for a registered attendee | `TODO` | Name fallback to the email prefix is worth its own case. |
-| SC002 Renders additional details | `TODO` | |
-| SC003 Hides additional details when empty | `TODO` | |
-| SC004 Timeline shows registration/reconfirmation milestones | `TODO` | Most-recent-first ordering is pure client logic. |
-| SC005 Timeline shows cancellation with reason | `TODO` | Also asserts the Cancel button disappears. |
-| SC006 Feed interleaves emails with activity | `TODO` | The merge of two `useQuery` results — the highest-value logic on the page. |
-| SC006b Emails tab filters to emails only | `TODO` | |
-| SC007 Empty state when no entries | `TODO` | |
-| SC008 Loading state shows skeletons | `TODO` | |
-| SC009 Cancel opens a dialog with reason selection | `TODO` | Asserts no request before confirming; reasons limited to `AttendeeRequest` / `VisaLetterDenied`. |
-| SC009b Cancel confirmed calls the endpoint | `TODO` | |
-| SC010 Change ticket types shows "Coming soon" | `DRIFT` | Implemented — see D5. |
-| SC011 Back link returns to the registrations list | `TODO` | Assert the `href`. |
+| SC001 Renders details for a registered attendee | `TESTED` | Includes the email-prefix name fallback. |
+| SC002 Renders additional details | `TESTED` | |
+| SC003 Hides additional details when empty | `TESTED` | |
+| SC004 Timeline shows registration/reconfirmation milestones | `TESTED` | |
+| SC005 Timeline shows cancellation with reason | `TESTED` | |
+| SC006 Feed interleaves emails with activity | `TESTED` | |
+| SC006b Emails tab filters to emails only | `TESTED` | |
+| SC007 Empty state when no entries | `TESTED` | |
+| SC008 Loading state shows skeletons | `TESTED` | |
+| SC009 Cancel opens a dialog with reason selection | `TESTED` | |
+| SC009b Cancel confirmed calls the endpoint | `TESTED` | |
+| SC010 Change ticket types shows "Coming soon" | `TESTED` + `DRIFT` | Implemented — see D5. |
+| SC011 Back link returns to the registrations list | `TESTED` | |
 
 ## admin-ui-bulk-emails (23)
 
@@ -190,101 +190,101 @@ Targets under `events/[eventId]/settings/` (forms) rendered by `events/[eventId]
 
 | Scenario | Class | Target / note |
 | :-- | :-- | :-- |
-| Configure the registration window | `TODO` | `settings/registration/registration-policy-form.tsx`. |
-| Configure an email-domain restriction | `TODO` | UI half only; enforcement is `BACKEND`. |
-| No Open/Close controls on the page | `TODO` | Negative assertion. |
-| Form is read-only for archived events | `TODO` | Disabled fields + banner (`settings/event-status-banner.tsx`). |
-| Concurrency conflict surfaces to the user | `TODO` | |
-| Add a new additional detail field | `TODO` | `settings/registration/additional-details-editor.tsx`. Key auto-generated as kebab-case — pure logic, high value. |
-| Override the auto-generated key before persisting | `TODO` | |
-| Reorder fields | `TODO` | Drag-and-drop; assert via keyboard/reorder handlers if exposed, else `BROWSER`. |
-| Rename a field without changing its key | `TODO` | Persisted keys are read-only. |
-| Remove a field requires confirmation | `TODO` | Confirmation copy about preserved historical values. |
-| Editor is read-only for archived events | `TODO` | |
-| Concurrency conflict (additional details) | `TODO` | |
-| Configure the reconfirm policy without auto-cancel | `TODO` | `settings/reconfirm/reconfirm-policy-form.tsx`. |
-| Configure the reconfirm policy with auto-cancel | `TODO` | |
-| Max attempts hidden when auto-cancel is off | `TODO` | Same conditional-field pattern already tested on the ticket-type form. |
-| Max attempts appears when auto-cancel is on | `TODO` | |
-| Remove the reconfirm policy | `TODO` | |
-| Validation error — close before open | `TODO` | |
-| Validation error — non-positive cadence | `TODO` | |
-| Validation error — non-positive minimum email interval | `TODO` | |
-| Validation error — max attempts required when auto-cancel on | `TODO` | |
-| Validation error — non-positive max attempts | `TODO` | |
-| Reconfirm window opens at local 09:00 in event zone | `TESTED` | The conversion itself is covered by `lib/time-zones.test.ts` (incl. a DST boundary); wiring it into this form is `TODO`. |
-| "Close after open" validation message uses event zone | `TODO` | |
-| Navigate to policy pages | `TODO` | `events/[eventId]/edit/layout.tsx` tab bar. |
-| Event header shows status | `TODO` | |
-| Configure waitlist quiet hours | `TODO` | `settings/waitlist/waitlist-policy-form.tsx`. |
-| General settings does not show waitlist quiet hours | `TODO` | Negative assertion on `settings/general-settings-form.tsx`. |
-| Waitlist policy copy explains notification behavior | `TODO` | Copy assertion — low value, keep only as part of a render test. |
-| Waitlist policy form is read-only for archived events | `TODO` | |
-| Concurrency conflict (waitlist policy) | `TODO` | |
+| Configure the registration window | `TESTED` | `settings/registration/registration-policy-form.test.tsx`. |
+| Configure an email-domain restriction | `TESTED` + `BACKEND` | UI form is covered; enforcement is backend-owned. |
+| No Open/Close controls on the page | `TESTED` | |
+| Form is read-only for archived events | `TESTED` | Disabled fields + banner. |
+| Concurrency conflict surfaces to the user | `TESTED` | |
+| Add a new additional detail field | `TESTED` | Kebab-case key generation is covered. |
+| Override the auto-generated key before persisting | `TESTED` | |
+| Reorder fields | `GONE` | The editor has no reorder control or handler. |
+| Rename a field without changing its key | `TESTED` | |
+| Remove a field requires confirmation | `TESTED` | Includes the persisted field-list assertion. |
+| Editor is read-only for archived events | `TESTED` | |
+| Concurrency conflict (additional details) | `TESTED` | |
+| Configure the reconfirm policy without auto-cancel | `TESTED` | |
+| Configure the reconfirm policy with auto-cancel | `GONE` | The policy contract and form expose no auto-cancel field. |
+| Max attempts hidden when auto-cancel is off | `GONE` | The policy contract and form expose no max-attempt field. |
+| Max attempts appears when auto-cancel is on | `GONE` | The policy contract and form expose no max-attempt field. |
+| Remove the reconfirm policy | `TESTED` | |
+| Validation error — close before open | `TESTED` | |
+| Validation error — non-positive cadence | `TESTED` | |
+| Validation error — non-positive minimum email interval | `TESTED` | |
+| Validation error — max attempts required when auto-cancel on | `GONE` | The policy contract and form expose no max-attempt field. |
+| Validation error — non-positive max attempts | `GONE` | The policy contract and form expose no max-attempt field. |
+| Reconfirm window opens at local 09:00 in event zone | `TESTED` | Conversion and form wiring are covered. |
+| "Close after open" validation message uses event zone | `TESTED` | |
+| Navigate to policy pages | `TESTED` | |
+| Event header shows status | `TESTED` + `DRIFT` | The status is rendered as a policy-page banner, not in the edit header. |
+| Configure waitlist quiet hours | `TESTED` | |
+| General settings does not show waitlist quiet hours | `TESTED` | |
+| Waitlist policy copy explains notification behavior | `TESTED` | |
+| Waitlist policy form is read-only for archived events | `TESTED` | |
+| Concurrency conflict (waitlist policy) | `TESTED` | |
 
 ## admin-ui-event-management (59)
 
 | Scenario | Class | Target / note |
 | :-- | :-- | :-- |
-| Hero card shows metadata without action buttons | `TODO` | `events/[eventId]/components/event-hero-card.tsx`. |
-| Check-in card shows scanner without share link | `TODO` | `events/[eventId]/components/check-in-card.tsx`. |
-| Successfully create an event (async) | `TODO` + `DRIFT` | `events/new/create-event-form.tsx`. Lands on the event dashboard, not `/edit/general` — see D7. |
-| Duplicate public slug rejection is shown | `TODO` | |
-| Display client-side validation error on create | `TODO` | |
-| Create event option is hidden for non-owners | `TODO` | `components/nav-events.tsx` gates on `canCreateEvents`. |
-| Display rejection from polling | `TODO` | The polling loop is the most intricate logic in the app — `Pending`/`Created`/`Rejected`/`Expired`, plus a deliberate 404 tolerance right after `202`. Needs fake timers. |
-| Spinner shown while polling | `TODO` | Form disabled + `Progress` value. |
-| Expired creation displays a timeout error | `TODO` | |
-| Edit Event page is accessible from the sidebar | `TODO` | Assert the `href`. |
-| Switching to Policies tab | `TODO` | `edit/layout.tsx`. |
-| Switching to Danger zone tab | `TODO` | |
+| Hero card shows metadata without action buttons | `TESTED` | `components/event-cards.test.tsx`. |
+| Check-in card shows scanner without share link | `TESTED` | |
+| Successfully create an event (async) | `TESTED` + `DRIFT` | Lands on the event dashboard, not `/edit/general` — see D7. |
+| Duplicate public slug rejection is shown | `TESTED` | Rejected polling outcome. |
+| Display client-side validation error on create | `TESTED` | |
+| Create event option is hidden for non-owners | `TESTED` | |
+| Display rejection from polling | `TESTED` | Covers Pending/Created/Rejected/Expired and initial 404 tolerance with fake timers. |
+| Spinner shown while polling | `TESTED` | |
+| Expired creation displays a timeout error | `TESTED` | |
+| Edit Event page is accessible from the sidebar | `TESTED` | |
+| Switching to Policies tab | `TESTED` | |
+| Switching to Danger zone tab | `TESTED` | |
 | Old settings URL redirects to General tab | `GONE` | No `settings/*` route and no redirect config — see N2. |
 | Old settings/registration URL redirects | `GONE` | Same. |
 | Old settings/reconfirm URL redirects | `GONE` | Same. |
-| Post-creation redirect lands on General tab | `DRIFT` | See D7. |
-| Successfully update event name | `TODO` | `settings/general-settings-form.tsx`. |
-| Edit form shows current public slug | `TODO` | |
-| Display concurrency conflict (General tab) | `TODO` | |
-| Selected team accent variable is available | `TODO` | Low value; a `MAY` requirement. |
-| Configure registration window (Registration tab) | `TODO` | Duplicate of the event-policies scenario. |
+| Post-creation redirect lands on General tab | `TESTED` + `DRIFT` | See D7. |
+| Successfully update event name | `TESTED` | `settings/general-settings-form.test.tsx`. |
+| Edit form shows current public slug | `TESTED` | |
+| Display concurrency conflict (General tab) | `TESTED` | |
+| Selected team accent variable is available | `GONE` | General settings expose no accent control or consumer. |
+| Configure registration window (Registration tab) | `TESTED` | Covered by the registration-policy form test. |
 | Add a ticket type | `TESTED` | `ticket-types/add-ticket-type-form.test.tsx`. |
-| Registration status defaults to Draft | `TODO` | |
+| Registration status defaults to Draft | `GONE` | Ticket-type UI has no registration-status control or Draft state. |
 | Add ticket type with self-service and capacity limit | `TESTED` | |
-| Add ticket type with self-service disabled | `TODO` | The toggle exists and defaults on; the off-path is untested. |
+| Add ticket type with self-service disabled | `TESTED` | |
 | Add ticket type with unlimited self-service capacity | `TESTED` | |
-| Remove capacity limit on existing ticket type | `TODO` | `ticket-types/edit-ticket-type-form.tsx` — the "can't clear a capacity" fix this requirement exists for. Priority. |
-| Self-service indicator shown in list | `TODO` | `ticket-types/page.tsx`. |
+| Remove capacity limit on existing ticket type | `TESTED` | |
+| Self-service indicator shown in list | `GONE` | Ticket cards expose no self-service indicator. |
 | Add a ticket type with two time slots | `TESTED` | |
 | Add a ticket type with no time slots | `TESTED` | Asserts `[]`, not `null`. |
 | Reject invalid time-slot token | `TESTED` | |
 | Suggestions are drawn from existing ticket types | `TESTED` | |
 | No suggestions when event has no time slots | `TESTED` | Implicit: the default render has none. |
-| Card shows time slots | `TODO` | `ticket-types/page.tsx`. |
-| Card omits the row when no time slots | `TODO` | |
-| Time slots visible but not editable (edit dialog) | `TODO` | Also: the edit payload must omit `timeSlots`. |
-| Edit dialog hides the section when no time slots | `TODO` | |
-| Header shows event name | `TODO` | |
-| Header falls back to slug while loading | `TODO` | |
-| Header summary uses "registered" | `TODO` | Verified present in the source. |
-| Card stat label uses "Registered" | `TODO` | Verified present. |
-| Active, in-stock ticket type shows "Available" | `TODO` | Verified present. |
-| No footer action bar | `TODO` | Negative assertion. |
-| Overflow menu shows only Edit | `TODO` | |
-| Card hides slug | `TODO` | Negative assertion. |
+| Card shows time slots | `TESTED` | |
+| Card omits the row when no time slots | `TESTED` | |
+| Time slots visible but not editable (edit dialog) | `TESTED` | The mutation payload omits `timeSlots`. |
+| Edit dialog hides the section when no time slots | `TESTED` | |
+| Header shows event name | `TESTED` | |
+| Header falls back to slug while loading | `GONE` | Ticket types page has no loading-slug fallback. |
+| Header summary uses "registered" | `TESTED` | |
+| Card stat label uses "Registered" | `TESTED` | |
+| Active, in-stock ticket type shows "Available" | `TESTED` | |
+| No footer action bar | `TESTED` | |
+| Overflow menu shows only Edit | `GONE` | Ticket cards have no overflow menu. |
+| Card hides slug | `TESTED` | |
 | Card shows perforated divider | `BROWSER` | Pure CSS treatment. |
 | No layout shift versus prior card | `BROWSER` | Visual regression. |
-| Create form requires time zone | `TODO` | Defaults to the browser zone; explicit confirmation required. |
-| General tab edits the time zone | `TODO` | |
-| Unknown IANA zone rejected | `TODO` | `isValidTimeZone` is already tested; the inline surfacing is `TODO`. |
-| Picker writes wall-clock time in event zone | `TESTED` | `lib/time-zones.test.ts` (`wallClockToUtcIso`, incl. DST). Wiring into `ui/zoned-date-time-picker.tsx` is `TODO`. |
-| Picker reads UTC and shows local | `TESTED` | `utcIsoToWallClock` + round-trip tests. |
-| Zone label displayed on every picker | `TODO` | `formatZoneCaption` is tested; its presence on each picker is not. |
-| Emails sidebar entry links to bulk emails list | `TODO` | `components/nav-events.tsx`. |
-| Emails entry is active on the list page | `TODO` | |
-| Emails entry is NOT active on the event edit page | `TODO` | The `nav-links.test.tsx` prefix-matching pattern applies here too. |
-| Emails entry is active on the detail page | `TODO` | |
-| Archived events are not shown on the events list | `TODO` | Verify whether filtering is client- or server-side; if server-side, this is `BACKEND`. |
-| Archived event disappears immediately after archive | `TODO` | Query invalidation. |
+| Create form requires time zone | `TESTED` | `events/new/create-event-form.test.tsx` selects the explicit Time zone field and asserts the chosen IANA zone is submitted. The field defaults to the browser zone and asks the organizer to confirm it. |
+| General tab edits the time zone | `TESTED` | |
+| Unknown IANA zone rejected | `TESTED` | |
+| Picker writes wall-clock time in event zone | `TESTED` | Utility and component wiring are covered. |
+| Picker reads UTC and shows local | `TESTED` | Utility and component wiring are covered. |
+| Zone label displayed on every picker | `TESTED` | |
+| Emails sidebar entry links to bulk emails list | `TESTED` | |
+| Emails entry is active on the list page | `TESTED` | |
+| Emails entry is NOT active on the event edit page | `TESTED` | |
+| Emails entry is active on the detail page | `TESTED` | |
+| Archived events are not shown on the events list | `TESTED` | |
+| Archived event disappears immediately after archive | `TESTED` | Real archive flow covers query invalidation and removal. |
 
 ---
 
@@ -325,6 +325,14 @@ no longer matches the implementation; none is a code change.
   `GetTeamsHandler` does `OrderBy(t => t.Name)`. Case-insensitivity therefore depends on the
   database collation, not on JavaScript. The spec's example (`acme` before `Beta Corp`) is only
   guaranteed if the Postgres collation is case-insensitive — worth confirming separately.
+- **D9 — Registration reconfirm timestamps use the host zone, not the event zone.**
+  `registrations/page.tsx` calls `Date#toLocaleString` without a `timeZone` option.
+- **D10 — Add registration opens a sheet, not a dedicated route.**
+  `registrations/page.tsx` controls `AddRegistrationSheet` locally; no `/registrations/add` route
+  is used.
+- **D11 — Event status is a policy-page banner, not edit-header metadata.**
+  `settings/event-status-banner.tsx` renders the archived warning; `edit/layout.tsx` only renders
+  the event name and tabs.
 
 ## Not implemented
 
@@ -339,6 +347,12 @@ deleted; each needs a keep-or-drop decision.
 - **N3 — The bare `/edit` path has no page.** `admin-ui-event-management` requires
   `/edit` → `/edit/general`; there is no `edit/page.tsx`, so `/edit` 404s. This is the one entry
   in this section that is plausibly a user-visible bug rather than dead spec text.
+- **N4 — Registration summary tiles are absent.** The registrations page renders no total or
+  capacity summary tile.
+- **N5 — Reconfirmation auto-cancel and max-attempt settings are absent.** Neither the policy
+  contract nor its form exposes those fields.
+- **N6 — Several ticket-type controls are absent.** The UI has no Draft status, self-service
+  card indicator, loading-slug fallback, or overflow menu.
 
 ## Out of scope for the jsdom suite
 

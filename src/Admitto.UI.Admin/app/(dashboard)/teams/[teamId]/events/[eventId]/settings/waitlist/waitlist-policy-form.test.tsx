@@ -1,6 +1,7 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
+import { FormError } from "@/components/form-error";
 import { apiClient } from "@/lib/api-client";
 import { renderWithProviders } from "@/test-utils/render";
 
@@ -39,13 +40,16 @@ function baseEvent(overrides: Partial<TicketedEventDetails> = {}): TicketedEvent
     };
 }
 
-function renderForm(overrides: Partial<TicketedEventDetails> = {}) {
+function renderForm(
+    overrides: Partial<TicketedEventDetails> = {},
+    disabled = false,
+) {
     return renderWithProviders(
         <WaitlistPolicyForm
             event={baseEvent(overrides)}
             teamId={TEAM_ID}
             eventId={EVENT_ID}
-            disabled={false}
+            disabled={disabled}
         />,
     );
 }
@@ -69,6 +73,11 @@ describe("WaitlistPolicyForm", () => {
         const [start, end] = timeInputs();
         expect(start).toHaveValue("22:00");
         expect(end).toHaveValue("08:00");
+        expect(
+            screen.getByText(
+                "Waitlist notifications are sent immediately. Quiet hours extend the claim deadline so attendees still get the full claim window during waking hours.",
+            ),
+        ).toBeInTheDocument();
     });
 
     // Given an organizer changing the quiet-hours window
@@ -107,7 +116,9 @@ describe("WaitlistPolicyForm", () => {
 
         fireEvent.change(start, { target: { value: "23:00" } });
 
-        expect(screen.getByRole("button", { name: "Save changes" })).toBeEnabled();
+        await waitFor(() =>
+            expect(screen.getByRole("button", { name: "Save changes" })).toBeEnabled(),
+        );
     });
 
     // Given the organizer changed a quiet-hours field but changed their mind
@@ -122,5 +133,47 @@ describe("WaitlistPolicyForm", () => {
 
         expect(timeInputs()[0]).toHaveValue("22:00");
         expect(put).not.toHaveBeenCalled();
+    });
+
+    // Given an archived event
+    // When the policy form renders
+    // Then its quiet-hours controls and actions are read-only
+    it("is read-only for an archived event", () => {
+        renderForm({ status: "archived" }, true);
+
+        const [start, end] = timeInputs();
+        expect(start).toBeDisabled();
+        expect(end).toBeDisabled();
+        expect(screen.getByRole("button", { name: "Discard" })).toBeDisabled();
+        expect(screen.getByRole("button", { name: "Save changes" })).toBeDisabled();
+    });
+
+    // Given the event was modified after the policy page loaded
+    // When the organizer saves their quiet-hours change
+    // Then the concurrency conflict is shown instead of being swallowed
+    it("surfaces a concurrency conflict", async () => {
+        put.mockRejectedValue(
+            new FormError({
+                type: "about:blank",
+                status: 409,
+                title: "Conflict",
+                detail: "The resource was modified by another operation.",
+                errors: {},
+                // These are ProblemDetails extensions emitted with the real concurrency_conflict
+                // error. FormError only consumes the standard title/detail fields.
+                code: "concurrency_conflict",
+                expectedVersion: 4,
+                actualVersion: 5,
+            } as ConstructorParameters<typeof FormError>[0]),
+        );
+        const { user } = renderForm();
+        const [start] = timeInputs();
+
+        fireEvent.change(start, { target: { value: "23:00" } });
+        await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+        const alert = await screen.findByRole("alert");
+        expect(alert).toHaveTextContent("Conflict");
+        expect(alert).toHaveTextContent("The resource was modified by another operation.");
     });
 });
