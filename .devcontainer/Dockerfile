@@ -5,14 +5,6 @@ ARG CLAUDE_CODE_VERSION=latest
 
 USER root
 
-# Ensure named-volume mount points retain the runtime user's ownership.
-# RUN mkdir -p /home/vscode/.claude \
-#         /home/vscode/.config/opencode \
-#         /home/vscode/.local/share/opencode \
-#         /home/vscode/.config/herdr \
-#         /home/vscode/.local/state/herdr \
-#     && chown -R vscode:vscode /home/vscode/.claude /home/vscode/.config /home/vscode/.local
-
 RUN apt-get update && apt-get install -y --no-install-recommends zsh \
     && rm -rf /var/lib/apt/lists/* \
     && chsh -s /usr/bin/zsh vscode
