@@ -9,10 +9,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends zsh \
     && rm -rf /var/lib/apt/lists/* \
     && chsh -s /usr/bin/zsh vscode
 
-RUN apt-get update && apt-get install -y --no-install-recommends zsh \
-    && rm -rf /var/lib/apt/lists/* \
-    && chsh -s /usr/bin/zsh vscode
-
 # Install coding agents as the non-root runtime user.
 USER vscode
 
