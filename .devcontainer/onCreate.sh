@@ -7,7 +7,7 @@ echo "##########################################################################
 
 bunx oh-my-opencode-slim@latest install --no-tui --skills=yes --background-subagents=yes --companion=no
 
-cp /workspaces/Admitto/.devcontainer/oh-my-opencode-slim/oh-my-opencode-slim.json \
+cp .devcontainer/oh-my-opencode-slim/oh-my-opencode-slim.json \
    /home/vscode/.config/opencode/oh-my-opencode-slim.json
 
 if ! grep -Fq 'omos() {' /home/vscode/.zshrc; then
@@ -49,10 +49,10 @@ echo "##########################################################################
 echo "# Configuring OpenCode..."
 echo "################################################################################"
 
-cp /workspaces/Admitto/.devcontainer/opencode/opencode.json \
+cp .devcontainer/opencode/opencode.json \
    /home/vscode/.config/opencode/opencode.json
 
-cp /workspaces/Admitto/.devcontainer/opencode/tui.json \
+cp .devcontainer/opencode/tui.json \
    /home/vscode/.config/opencode/tui.json
 
 echo "################################################################################"
@@ -60,29 +60,23 @@ echo "# Configuring Herdr..."
 echo "################################################################################"
 
 mkdir -p /home/vscode/.config/herdr
-cp /workspaces/Admitto/.devcontainer/herdr/config.toml \
+cp .devcontainer/herdr/config.toml \
    /home/vscode/.config/herdr/config.toml
 
 herdr integration install opencode
 
 echo "################################################################################"
-echo "# Trusting .NET development certificate..."
+echo "# Configuring developer certificate..."
 echo "################################################################################"
 
-CERT_PATH="${ASPNETCORE_Kestrel__Certificates__Default__Path:-}"
-CERT_PASSWORD="${ASPNETCORE_Kestrel__Certificates__Default__Password:-}"
+sudo mkdir -p "$HOME/.aspnet/dev-certs"
+sudo chown "$(id -u):$(id -g)" "$HOME/.aspnet" "$HOME/.aspnet/dev-certs"
+sudo chmod u+rwx "$HOME/.aspnet" "$HOME/.aspnet/dev-certs"
 
-if [ -z "$CERT_PATH" ] || [ ! -f "$CERT_PATH" ]; then
-    echo "trust-dev-cert: no cert at ASPNETCORE_Kestrel__Certificates__Default__Path, skipping."
-    exit 0
+if [ -z "${SSL_CERT_DIR:-}" ]; then
+    export SSL_CERT_DIR="$HOME/.aspnet/dev-certs/trust:/usr/lib/ssl/certs"
+else
+    export SSL_CERT_DIR="$SSL_CERT_DIR:$HOME/.aspnet/dev-certs/trust"
 fi
 
-TMP_CERT="$(mktemp --suffix=.crt)"
-trap 'rm -f "$TMP_CERT"' EXIT
-
-if ! openssl pkcs12 -in "$CERT_PATH" -clcerts -nokeys -passin "pass:${CERT_PASSWORD}" -out "$TMP_CERT" 2>/dev/null; then
-    openssl pkcs12 -in "$CERT_PATH" -clcerts -nokeys -passin "pass:${CERT_PASSWORD}" -out "$TMP_CERT" -legacy
-fi
-
-sudo cp "$TMP_CERT" /usr/local/share/ca-certificates/aspnetcore-dev-cert.crt
-sudo update-ca-certificates
+aspire certs trust

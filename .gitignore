@@ -434,3 +434,4 @@ src/admitto.apphost/aspire-output/
 dotnet
 
 .DS_Store
+.slim/
