@@ -74,6 +74,7 @@
     "@better-auth/cli": "^1.4.21",
     "@eslint/eslintrc": "^3",
     "@hey-api/openapi-ts": "^0.87.5",
+    "@playwright/test": "1.62.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/pg": "^8.16.0",
