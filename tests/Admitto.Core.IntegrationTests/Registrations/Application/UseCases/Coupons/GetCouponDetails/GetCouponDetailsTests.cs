@@ -10,7 +10,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 [TestClass]
 public sealed class GetCouponDetailsTests(TestContext testContext) : AspireIntegrationTestBase
 {
-    // SC-009: View coupon details
+    // Given an existing active coupon with an allowed ticket type
+    // When the coupon details are queried
+    // Then the full coupon details including its code are returned
     [TestMethod]
     public async ValueTask GetCouponDetails_ExistingCoupon_ReturnsFullDetailsIncludingCode()
     {
@@ -36,6 +38,9 @@ public sealed class GetCouponDetailsTests(TestContext testContext) : AspireInteg
             () => result.RevokedAt.ShouldBeNull());
     }
 
+    // Given no coupon exists with the requested id
+    // When the coupon details are queried
+    // Then a not-found error is thrown
     [TestMethod]
     public async ValueTask GetCouponDetails_NonExistentCoupon_ThrowsNotFoundError()
     {
@@ -54,6 +59,9 @@ public sealed class GetCouponDetailsTests(TestContext testContext) : AspireInteg
         result.Error.ShouldMatch(NotFoundError.Create<Coupon>());
     }
 
+    // Given a coupon that belongs to a different team
+    // When the coupon details are queried with the wrong team id
+    // Then a not-found error is thrown
     [TestMethod]
     public async ValueTask GetCouponDetails_WrongTeamId_ThrowsNotFoundError()
     {

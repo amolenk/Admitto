@@ -12,6 +12,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Organization.Application.UseCase
 [TestClass]
 public sealed class ExpireStaleEventCreationRequestsJobTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    // Given a team with a pending event creation request older than the stale timeout
+    // When the expire-stale-event-creation-requests job runs
+    // Then the request is marked expired and the pending count is decremented to zero
     [TestMethod]
     public async ValueTask ExpiresStalePendingRequest_AndDecrementsPendingCount()
     {
@@ -55,6 +58,9 @@ public sealed class ExpireStaleEventCreationRequestsJobTests(TestContext testCon
         });
     }
 
+    // Given a team with a recently created pending event creation request
+    // When the expire-stale-event-creation-requests job runs
+    // Then the request remains pending and the pending count is unchanged
     [TestMethod]
     public async ValueTask LeavesFreshPendingRequestUntouched()
     {

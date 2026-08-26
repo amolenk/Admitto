@@ -6,6 +6,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Organization.Application.UseCase
 [TestClass]
 public sealed class RegisterTicketedEventArchivedTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    // Given a team with an active ticketed event
+    // When the event-archived command is handled twice for the same event
+    // Then the event is counted as archived once, with active count zero and archived count one
     [TestMethod]
     public async ValueTask IsIdempotent_OnRedelivery()
     {
@@ -34,6 +37,9 @@ public sealed class RegisterTicketedEventArchivedTests(TestContext testContext) 
         });
     }
 
+    // Given the event-archived message for a team's active event has already been processed by the inbox
+    // When the archived integration event is handled again
+    // Then the active and archived event counts remain unchanged
     [TestMethod]
     public async ValueTask HandleAsync_AlreadyProcessed_DoesNotRegisterEventArchivedAgain()
     {

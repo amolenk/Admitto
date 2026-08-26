@@ -8,6 +8,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 [TestClass]
 public sealed class ProcessWaitlistNotificationsTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    // Given a waitlist with one active entry and one freed slot
+    // When waitlist notifications are processed
+    // Then a coupon is issued to the top-ranked attendee and their entry is removed
     [TestMethod]
     public async ValueTask ProcessWaitlistNotifications_WithOneEntry_IssuesCouponToTopRankedAttendee()
     {
@@ -41,6 +44,9 @@ public sealed class ProcessWaitlistNotificationsTests(TestContext testContext) :
         });
     }
 
+    // Given a waitlist with two active entries and only one freed slot
+    // When waitlist notifications are processed
+    // Then only one coupon is issued and the remaining entry is renumbered to the top position
     [TestMethod]
     public async ValueTask ProcessWaitlistNotifications_WithMultipleEntriesAndOneFreedSlot_IssuesSingleCoupon()
     {
@@ -70,6 +76,9 @@ public sealed class ProcessWaitlistNotificationsTests(TestContext testContext) :
         });
     }
 
+    // Given a waitlist with one active entry but two freed slots
+    // When waitlist notifications are processed
+    // Then coupons are issued only for the active entries, capped at one
     [TestMethod]
     public async ValueTask ProcessWaitlistNotifications_WhenFewerEntriesThanFreedSlots_IssuesCouponsOnlyForActiveEntries()
     {
@@ -93,6 +102,9 @@ public sealed class ProcessWaitlistNotificationsTests(TestContext testContext) :
         });
     }
 
+    // Given the current time falls inside the event's quiet hours window
+    // When waitlist notifications are processed
+    // Then the issued coupon's expiry is extended to after the quiet hours end
     [TestMethod]
     public async ValueTask ProcessWaitlistNotifications_DuringQuietHours_ExpiryExtendedToAfterQuietHours()
     {

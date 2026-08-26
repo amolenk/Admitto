@@ -38,6 +38,9 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
 {
     private const string DefaultEmailType = BuiltInEmailTemplateNames.Reconfirmation;
 
+    // Given a bulk email job with two recipients that both succeed
+    // When the job is executed
+    // Then the job completes, both recipients are sent, and a single SMTP session is opened and closed
     [TestMethod]
     public async ValueTask Execute_AllRecipientsSucceed_CompletesUsingSingleSmtpSession()
     {
@@ -61,6 +64,9 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
         logs.ShouldAllBe(l => l.Status == EmailLogStatus.Sent && l.BulkEmailJobId == job.Id);
     }
 
+    // Given a bulk email job for a team with a custom team name
+    // When the job is executed
+    // Then the SMTP session is opened using the platform's configured sender address and display name, not the team's
     [TestMethod]
     public async ValueTask Execute_OpensBulkSmtpSessionWithConfiguredPlatformSender()
     {
@@ -76,6 +82,9 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
         fakeSender.LastOpenedSettings.FromDisplayName.ShouldBe("Admitto");
     }
 
+    // Given a bulk custom email whose content references the team name
+    // When the job is executed
+    // Then the sent message's subject and body render the projected team name
     [TestMethod]
     public async ValueTask Execute_CustomContentWithTeamName_RendersProjectedTeamName()
     {
@@ -94,6 +103,9 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
         message.HtmlBody.ShouldBe("<p>Regards, DevConf Team</p>");
     }
 
+    // Given a bulk custom email whose content references branding and QR code parameters
+    // When the job is executed
+    // Then the sent message renders the canonical parameter names and leaves unrecognized aliases empty
     [TestMethod]
     public async ValueTask Execute_CustomContentWithBrandingAndQrCode_RendersCanonicalParameters()
     {
@@ -113,6 +125,9 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
         message.HtmlBody.ShouldBeEmpty();
     }
 
+    // Given a bulk email job with two recipients that both fail to send
+    // When the job is executed
+    // Then the job transitions to Failed with no sent messages and both recipients logged as failed
     [TestMethod]
     public async ValueTask Execute_AllRecipientsFail_TransitionsToFailed()
     {
@@ -135,6 +150,9 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
         logs.Count.ShouldBe(2);
     }
 
+    // Given a bulk email job with one recipient
+    // When the job is executed
+    // Then an email log row exists in Pending status before the SMTP send occurs
     [TestMethod]
     public async ValueTask Execute_BeforeSmtpSend_WritesPendingEmailLog()
     {
@@ -160,6 +178,9 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
     }
 
 
+    // Given a bulk email job with two recipients where one fails to send
+    // When the job is executed
+    // Then the job transitions to PartiallyFailed with one sent and one failed recipient
     [TestMethod]
     public async ValueTask Execute_SomeRecipientsFail_TransitionsToPartiallyFailed()
     {
@@ -175,6 +196,9 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
         reloaded.FailedCount.ShouldBe(1);
     }
 
+    // Given a bulk email job with no recipients
+    // When the job is executed
+    // Then the job completes immediately without opening an SMTP session or sending any messages
     [TestMethod]
     public async ValueTask Execute_EmptyRecipientSet_CompletesImmediately()
     {
@@ -190,6 +214,9 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
         fakeSender.SentMessages.ShouldBeEmpty();
     }
 
+    // Given a job already in Sending status from a crashed pickup, with one recipient Sent and one Pending
+    // When the job is executed again (a resume pickup)
+    // Then only the still-pending recipient is sent and the job completes
     [TestMethod]
     public async ValueTask Execute_ResumeAfterCrash_OnlyProcessesPendingRecipients()
     {
@@ -230,6 +257,9 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
         reloaded.SentCount.ShouldBe(2);
     }
 
+    // Given an email log row already recorded as Sent for the recipient's idempotency key
+    // When the job is executed
+    // Then no message is sent again and the job still completes with the recipient counted as sent
     [TestMethod]
     public async ValueTask Execute_PreExistingEmailLogRow_DedupsViaUniqueIndex()
     {
@@ -264,6 +294,9 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
         reloaded.SentCount.ShouldBe(1);
     }
 
+    // Given an email log row already recorded as Failed for the recipient's idempotency key
+    // When the job is executed
+    // Then the recipient is recorded as failed with the prior error, without attempting SMTP again
     [TestMethod]
     public async ValueTask Execute_PreExistingFailedEmailLogRow_RecordsFailedRecipientWithoutSmtp()
     {
@@ -295,6 +328,9 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
         reloaded.Recipients.Single().LastError.ShouldBe("Previous deterministic failure.");
     }
 
+    // Given a recipient whose SMTP send always fails and inline retries are configured
+    // When the job is executed
+    // Then the send is retried inline the configured number of times before the recipient is recorded as failed
     [TestMethod]
     public async ValueTask Execute_TransientRecipientFailure_RetriesInlineBeforeRecordingFailure()
     {
@@ -319,6 +355,9 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
         log.LastError.ShouldContain("SMTP error (fake)");
     }
 
+    // Given a job whose cancellation was requested before any pickup ran
+    // When the job is executed
+    // Then the job finalizes as Cancelled without opening an SMTP session or sending messages
     [TestMethod]
     public async ValueTask Execute_CancellationRequestedBeforePickup_FinalisesCancelled()
     {
@@ -340,6 +379,9 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
         fakeSender.SentMessages.ShouldBeEmpty();
     }
 
+    // Given a job already Sending (from a crashed pickup) with one recipient Sent and one Pending, and cancellation requested before the resume pickup
+    // When the job is executed again
+    // Then no further messages are sent and the job finalizes as Cancelled with the remaining recipient marked Cancelled
     [TestMethod]
     public async ValueTask Execute_CancellationRequestedDuringSending_RemainingRecipientsCancelled()
     {

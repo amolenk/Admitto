@@ -8,6 +8,9 @@ namespace Amolenk.Admitto.Api.Tests.Auth;
 [TestClass]
 public sealed class UserContextResolutionMiddlewareTests
 {
+    // Given a JWT-authenticated request whose teamId route value is not a valid GUID
+    // When the user context resolution middleware runs
+    // Then it responds with 403 Forbidden and does not call the next middleware
     [TestMethod]
     public async Task InvokeAsync_JwtRequestWithInvalidTeamId_Returns403Forbidden()
     {
@@ -26,6 +29,9 @@ public sealed class UserContextResolutionMiddlewareTests
         nextCalled.ShouldBeFalse();
     }
 
+    // Given a JWT-authenticated request with an eventId route value but no teamId
+    // When the user context resolution middleware runs
+    // Then it responds with 403 Forbidden and does not call the next middleware
     [TestMethod]
     public async Task InvokeAsync_JwtRequestWithEventIdWithoutTeamId_Returns403Forbidden()
     {
@@ -44,6 +50,9 @@ public sealed class UserContextResolutionMiddlewareTests
         nextCalled.ShouldBeFalse();
     }
 
+    // Given an API-key-authenticated request carrying admin route values like eventId
+    // When the user context resolution middleware runs
+    // Then it skips resolution and calls the next middleware
     [TestMethod]
     public async Task InvokeAsync_ApiKeyRequestWithAdminRouteValues_SkipsResolution()
     {

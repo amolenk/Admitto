@@ -9,6 +9,9 @@ public sealed class ScribanEmailRendererTests
 {
     private readonly ScribanEmailRenderer _renderer = new();
 
+    // Given a template whose subject and bodies reference model variables
+    // When the template is rendered with matching data
+    // Then the variables are substituted into the subject, text body, and HTML body
     [TestMethod]
     public void Render_ValidTemplate_SubstitutesVariables()
     {
@@ -25,6 +28,9 @@ public sealed class ScribanEmailRendererTests
         result.HtmlBody.ShouldBe("<p>Your event: DevConf 2026</p>");
     }
 
+    // Given a template referencing variables that are not present in the model
+    // When the template is rendered with an empty model
+    // Then the missing variables are rendered as blank
     [TestMethod]
     public void Render_MissingVariable_LeavesBlank()
     {
@@ -40,6 +46,9 @@ public sealed class ScribanEmailRendererTests
         result.TextBody.ShouldBe("Event: ");
     }
 
+    // Given a template with an invalid Scriban expression in the subject
+    // When the template is rendered
+    // Then it throws an EmailRenderException
     [TestMethod]
     public void Render_ParseError_ThrowsEmailRenderException()
     {

@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypes.UpdateTicketType;
+using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,7 +8,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 [TestClass]
 public sealed class UpdateTicketTypeTests(TestContext testContext) : AspireIntegrationTestBase
 {
-    // SC-001: Update capacity — succeeds
+    // Given an active event with a ticket type
+    // When the ticket type's capacity is updated
+    // Then the new capacity is persisted and other fields are unchanged
     [TestMethod]
     public async ValueTask UpdateTicketType_UpdateCapacity_PersistsNewCapacity()
     {
@@ -40,7 +43,9 @@ public sealed class UpdateTicketTypeTests(TestContext testContext) : AspireInteg
         });
     }
 
-    // SC-002: Update name — succeeds
+    // Given an active event with a ticket type
+    // When the ticket type's name is updated
+    // Then the new name is persisted
     [TestMethod]
     public async ValueTask UpdateTicketType_UpdateName_PersistsNewName()
     {
@@ -71,6 +76,9 @@ public sealed class UpdateTicketTypeTests(TestContext testContext) : AspireInteg
         });
     }
 
+    // Given an active event with a ticket type
+    // When the ticket type's max reconfirm attempts is updated
+    // Then the new value is persisted
     [TestMethod]
     public async ValueTask UpdateTicketType_WithMaxReconfirmAttempts_PersistsValue()
     {
@@ -97,6 +105,9 @@ public sealed class UpdateTicketTypeTests(TestContext testContext) : AspireInteg
         });
     }
 
+    // Given an archived event with a ticket type
+    // When the ticket type's capacity is updated
+    // Then it fails with an event-not-active error
     [TestMethod]
     public async ValueTask UpdateTicketType_ArchivedEvent_ThrowsEventNotActive()
     {
@@ -117,6 +128,6 @@ public sealed class UpdateTicketTypeTests(TestContext testContext) : AspireInteg
             async () => { await sut.HandleAsync(command, testContext.CancellationToken); });
 
         // Assert
-        result.Error.Code.ShouldBe("ticket_catalog.event_not_active");
+        result.Error.ShouldMatch(TicketCatalog.Errors.EventNotActive);
     }
 }

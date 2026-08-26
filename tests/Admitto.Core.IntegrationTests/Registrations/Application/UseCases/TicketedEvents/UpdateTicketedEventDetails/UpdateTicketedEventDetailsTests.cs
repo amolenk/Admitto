@@ -1,4 +1,6 @@
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.UpdateTicketedEventDetails;
+using Amolenk.Admitto.Core.Registrations.Domain.Entities;
+using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,7 +9,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 [TestClass]
 public sealed class UpdateTicketedEventDetailsTests(TestContext testContext) : AspireIntegrationTestBase
 {
-    // SC-001: Update details of active event — new name and dates persist
+    // Given an active ticketed event
+    // When its details are updated with a new name, dates, and time zone
+    // Then the new values are persisted
     [TestMethod]
     public async ValueTask UpdateTicketedEventDetails_ActiveEvent_UpdatesFields()
     {
@@ -44,7 +48,9 @@ public sealed class UpdateTicketedEventDetailsTests(TestContext testContext) : A
         });
     }
 
-    // SC-002: Version mismatch throws concurrency conflict
+    // Given an active ticketed event
+    // When its details are updated with an outdated expected version
+    // Then a concurrency conflict error is returned
     [TestMethod]
     public async ValueTask UpdateTicketedEventDetails_VersionMismatch_ThrowsConcurrencyConflict()
     {
@@ -67,10 +73,12 @@ public sealed class UpdateTicketedEventDetailsTests(TestContext testContext) : A
         var result = await ErrorResult.CaptureAsync(async () =>
             await sut.HandleAsync(command, testContext.CancellationToken));
 
-        result.Error.Code.ShouldBe("concurrency_conflict");
+        result.Error.ShouldMatch(ConcurrencyConflictError.Create(fixture.SeededVersion + 99u, fixture.SeededVersion));
     }
 
-    // SC-003: Updating cancelled event throws (guard: EnsureActive)
+    // Given an archived ticketed event
+    // When its details are updated
+    // Then an event-not-active error is returned
     [TestMethod]
     public async ValueTask UpdateTicketedEventDetails_ArchivedEvent_ThrowsEventNotActive()
     {
@@ -93,6 +101,6 @@ public sealed class UpdateTicketedEventDetailsTests(TestContext testContext) : A
         var result = await ErrorResult.CaptureAsync(async () =>
             await sut.HandleAsync(command, testContext.CancellationToken));
 
-        result.Error.Code.ShouldBe("ticketed_event.event_not_active");
+        result.Error.ShouldMatch(TicketedEvent.Errors.EventNotActive);
     }
 }

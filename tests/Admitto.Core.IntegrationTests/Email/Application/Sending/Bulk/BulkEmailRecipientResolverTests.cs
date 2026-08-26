@@ -11,6 +11,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.Sending.Bulk;
 [TestClass]
 public sealed class BulkEmailRecipientResolverTests
 {
+    // Given an attendee filter and matching registration rows returned by the registrations facade
+    // When recipients are resolved for a team and event
+    // Then the filter is translated to the registrations query contract and each row is projected into a recipient
     [TestMethod]
     public async Task ResolveAsync_AttendeeFilter_MapsFilterToContractAndProjectsRows()
     {
@@ -92,6 +95,9 @@ public sealed class BulkEmailRecipientResolverTests
         bob.RegistrationId.ShouldBe(RegistrationId.From(rows[1].RegistrationId));
     }
 
+    // Given an attendee filter for which the registrations facade returns no rows
+    // When recipients are resolved for a team and event
+    // Then an empty list is returned
     [TestMethod]
     public async Task ResolveAsync_AttendeeFilter_NoMatches_ReturnsEmptyList()
     {

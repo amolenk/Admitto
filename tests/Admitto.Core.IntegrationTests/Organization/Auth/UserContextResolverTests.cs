@@ -9,6 +9,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Organization.Auth;
 [TestClass]
 public sealed class UserContextResolverTests : AspireIntegrationTestBase
 {
+    // Given a pre-invited user with no ExternalUserId bound yet
+    // When the principal signs in for the first time
+    // Then the context resolves and the sub claim is persisted as the user's ExternalUserId
     [TestMethod]
     public async Task FirstSignIn_BindsExternalUserIdAndReturnsContext()
     {
@@ -41,6 +44,9 @@ public sealed class UserContextResolverTests : AspireIntegrationTestBase
         });
     }
 
+    // Given a user with an ExternalUserId already bound
+    // When the principal signs in again with the same sub claim
+    // Then the context resolves directly by ExternalUserId with no role
     [TestMethod]
     public async Task SubsequentSignIn_ResolvesDirectlyByExternalUserId()
     {
@@ -66,6 +72,9 @@ public sealed class UserContextResolverTests : AspireIntegrationTestBase
         result.Role.ShouldBeNull();
     }
 
+    // Given a user with a different ExternalUserId already bound
+    // When the principal signs in with a mismatching sub claim
+    // Then resolution returns null
     [TestMethod]
     public async Task ExternalUserIdMismatch_ReturnsNull()
     {
@@ -89,6 +98,9 @@ public sealed class UserContextResolverTests : AspireIntegrationTestBase
         result.ShouldBeNull();
     }
 
+    // Given no user has been seeded
+    // When the principal signs in with an unknown sub/email combination
+    // Then resolution returns null
     [TestMethod]
     public async Task UnknownUser_ReturnsNull()
     {
@@ -111,6 +123,9 @@ public sealed class UserContextResolverTests : AspireIntegrationTestBase
         result.ShouldBeNull();
     }
 
+    // Given a user who is a member of the team with a specific role
+    // When resolving in the scope of that team
+    // Then the resolved context carries the user's role in that team
     [TestMethod]
     public async Task TeamContext_UserIsMember_RolePopulated()
     {
@@ -137,6 +152,9 @@ public sealed class UserContextResolverTests : AspireIntegrationTestBase
         result.Role.ShouldBe(TeamMembershipRole.Organizer);
     }
 
+    // Given a user who is a member of a different team than the requested one
+    // When resolving in the scope of the requested team
+    // Then the context resolves but the role is not populated
     [TestMethod]
     public async Task TeamContext_UserIsMemberOfDifferentTeam_RoleIsNotPopulated()
     {
@@ -164,6 +182,9 @@ public sealed class UserContextResolverTests : AspireIntegrationTestBase
         result.Role.ShouldBeNull();
     }
 
+    // Given an admin user with no team memberships
+    // When resolving in the global scope
+    // Then the context resolves and marks the user as an admin
     [TestMethod]
     public async Task AdminUser_NoMemberships_StillResolves()
     {
@@ -189,6 +210,9 @@ public sealed class UserContextResolverTests : AspireIntegrationTestBase
         result.IsAdmin.ShouldBeTrue();
     }
 
+    // Given a user with a team membership and an event that belongs to that team
+    // When resolving in the scope of that team and event
+    // Then the context resolves with the user's role
     [TestMethod]
     public async Task EventContext_EventBelongsToTeam_Resolves()
     {
@@ -219,6 +243,9 @@ public sealed class UserContextResolverTests : AspireIntegrationTestBase
         result.Role.ShouldBe(TeamMembershipRole.Crew);
     }
 
+    // Given a user with a team membership and an event that belongs to a different team
+    // When resolving with a route scope pairing the user's team with that foreign event
+    // Then resolution returns null
     [TestMethod]
     public async Task EventContext_EventDoesNotBelongToTeam_ReturnsNull()
     {
@@ -248,6 +275,9 @@ public sealed class UserContextResolverTests : AspireIntegrationTestBase
         result.ShouldBeNull();
     }
 
+    // Given an admin user with no team memberships
+    // When resolving with an event that does not belong to the requested team
+    // Then the context still resolves because admins bypass the event-scope guard
     [TestMethod]
     public async Task AdminUser_EventDoesNotBelongToTeam_Resolves()
     {

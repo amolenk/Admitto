@@ -24,6 +24,9 @@ public sealed class EventEmailContextProjectorTests(TestContext testContext) : A
         return (projector, schedule);
     }
 
+    // Given a TicketedEventCreated integration event that includes a reconfirm policy
+    // When the event is projected
+    // Then the email context view is upserted with the event details and a reconfirm trigger is scheduled
     [TestMethod]
     public async Task TicketedEventCreated_WithPolicy_UpsertsViewAndSchedulesTrigger()
     {
@@ -62,6 +65,9 @@ public sealed class EventEmailContextProjectorTests(TestContext testContext) : A
             Arg.Any<CancellationToken>());
     }
 
+    // Given a TicketedEventCreated integration event with no reconfirm policy
+    // When the event is projected
+    // Then the email context view is upserted but no reconfirm trigger is scheduled
     [TestMethod]
     public async Task TicketedEventCreated_WithoutPolicy_UpsertsViewButDoesNotSchedule()
     {
@@ -89,6 +95,9 @@ public sealed class EventEmailContextProjectorTests(TestContext testContext) : A
             Arg.Any<ScheduleReconfirmationsCommand>(), Arg.Any<CancellationToken>());
     }
 
+    // Given a TicketedEventReconfirmPolicyChanged integration event that clears the policy
+    // When the event is projected
+    // Then a schedule command is issued to remove the reconfirm trigger
     [TestMethod]
     public async Task ReconfirmPolicyChanged_PolicyCleared_RemovesTrigger()
     {
@@ -107,6 +116,9 @@ public sealed class EventEmailContextProjectorTests(TestContext testContext) : A
             Arg.Any<CancellationToken>());
     }
 
+    // Given a fully-populated, schedulable email context view for an event
+    // When a TicketedEventArchived integration event is projected
+    // Then the view is marked archived and its reconfirm trigger is removed
     [TestMethod]
     public async Task TicketedEventArchived_MarksArchivedAndRemovesTrigger()
     {
@@ -144,6 +156,9 @@ public sealed class EventEmailContextProjectorTests(TestContext testContext) : A
             Arg.Any<CancellationToken>());
     }
 
+    // Given a TicketedEventDetailsChanged event that arrives before the TicketedEventCreated event for the same event
+    // When both events are projected out of order
+    // Then a single view accumulates both updates, with the newer source version winning
     [TestMethod]
     public async Task OutOfOrderDetailsThenCreated_AccumulatesIntoSingleView()
     {
@@ -185,6 +200,9 @@ public sealed class EventEmailContextProjectorTests(TestContext testContext) : A
         });
     }
 
+    // Given an existing email context view with an active reconfirm policy
+    // When a TicketedEventDetailsChanged event changes the event's time zone
+    // Then the projection is updated and the reconfirm trigger is rescheduled for the new time zone
     [TestMethod]
     public async Task TicketedEventDetailsChanged_WithNewTimeZone_UpdatesProjectionAndSchedulesTrigger()
     {
@@ -240,6 +258,9 @@ public sealed class EventEmailContextProjectorTests(TestContext testContext) : A
             Arg.Any<CancellationToken>());
     }
 
+    // Given a TicketedEventCreated event that has already been projected and saved
+    // When the same event is delivered and projected again
+    // Then only a single view row exists for the event
     [TestMethod]
     public async Task DuplicateCreatedDelivery_IsIdempotent()
     {

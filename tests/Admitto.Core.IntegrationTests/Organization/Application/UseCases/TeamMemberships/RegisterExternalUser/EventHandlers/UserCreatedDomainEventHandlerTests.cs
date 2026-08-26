@@ -11,6 +11,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Organization.Application.UseCase
 [TestClass]
 public sealed class UserCreatedDomainEventHandlerTests
 {
+    // Given a user has been created
+    // When the UserCreated domain event is handled
+    // Then a RegisterExternalUser command is enqueued for that user
     [TestMethod]
     public async ValueTask UserCreated_EnqueuesRegisterExternalUserCommand()
     {

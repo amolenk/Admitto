@@ -15,6 +15,9 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.ActivityLog;
 public sealed class ActivityLogTests(TestContext testContext) : EndToEndTestBase
 {
     // Registering an attendee via the API produces a single Registered activity entry.
+    // Given a ticketed event with an available ticket type
+    // When an attendee is registered through the admin API
+    // Then the registration detail shows a single Registered activity entry
     [TestMethod]
     public async Task AdminRegisterAttendee_CreatesRegisteredActivityEntry()
     {
@@ -44,6 +47,9 @@ public sealed class ActivityLogTests(TestContext testContext) : EndToEndTestBase
     }
 
     // Cancelling a registration via the API appends a Cancelled activity entry.
+    // Given a registered attendee
+    // When the registration is cancelled through the API
+    // Then the registration detail shows both the Registered and Cancelled activity entries with the cancellation reason
     [TestMethod]
     public async Task CancelRegistration_AppendsCancelledActivityEntry()
     {

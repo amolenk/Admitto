@@ -9,6 +9,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Organization.Application.UseCase
 [TestClass]
 public sealed class BootstrapAdminUserInitializerTests : AspireIntegrationTestBase
 {
+    // Given a fresh database with no users
+    // When the initializer starts
+    // Then an Admin user is created for the configured email with a UserCreatedDomainEvent queued
     [TestMethod]
     public async Task FreshDatabase_CreatesAdminAndSendsInvitation()
     {
@@ -37,6 +40,9 @@ public sealed class BootstrapAdminUserInitializerTests : AspireIntegrationTestBa
             });
     }
 
+    // Given the admin user was already created and provisioned by a previous run
+    // When the initializer starts again
+    // Then no duplicate user or UserCreatedDomainEvent is created, but the user is still invited
     [TestMethod]
     public async Task AdminAlreadyExistsWithExternalUserId_SkipsCreationAndProvisioning()
     {
@@ -66,6 +72,9 @@ public sealed class BootstrapAdminUserInitializerTests : AspireIntegrationTestBa
             .InviteUserAsync(BootstrapAdminUserInitializerFixture.AdminEmail, Arg.Any<CancellationToken>());
     }
 
+    // Given an admin user already exists but has no external user ID
+    // When the initializer starts
+    // Then the user is provisioned and invited, and the external user ID is persisted
     [TestMethod]
     public async Task ExistingAdminWithoutExternalUserId_ProvisionsAndStoresExternalUserId()
     {

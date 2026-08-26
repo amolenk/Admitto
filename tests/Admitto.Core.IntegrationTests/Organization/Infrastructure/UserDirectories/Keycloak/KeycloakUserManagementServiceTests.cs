@@ -8,6 +8,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Organization.Infrastructure.User
 [TestClass]
 public sealed class KeycloakUserManagementServiceTests
 {
+    // Given a Keycloak user that already exists for the given email
+    // When the user is invited
+    // Then no new user is created, an enrollment email is sent, and the existing user id is returned
     [TestMethod]
     public async Task InviteUserAsync_ExistingUser_SendsEnrollmentEmailAndReturnsUserId()
     {
@@ -34,6 +37,9 @@ public sealed class KeycloakUserManagementServiceTests
         await AssertExecuteActionsEmailAsync(handler);
     }
 
+    // Given no Keycloak user exists for the given email
+    // When the user is invited
+    // Then a new passwordless webauthn user is created and an enrollment email is sent
     [TestMethod]
     public async Task InviteUserAsync_NewUser_CreatesUserAndSendsEnrollmentEmail()
     {
@@ -71,6 +77,9 @@ public sealed class KeycloakUserManagementServiceTests
         createBody.ShouldContain("webauthn-register-passwordless");
     }
 
+    // Given execute-actions client id and redirect URI configured in Keycloak options
+    // When the user is invited
+    // Then the execute-actions-email request includes the client id and redirect URI as query parameters
     [TestMethod]
     public async Task InviteUserAsync_WithExecuteActionsClient_AppendsClientAndRedirectUri()
     {

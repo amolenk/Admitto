@@ -8,6 +8,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 [TestClass]
 public sealed class GetTicketedEventDetailsTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    // Given a ticketed event configured with registration, reconfirm, and waitlist policies
+    // When the ticketed event details are queried
+    // Then the response includes the event's status and all configured policy values
     [TestMethod]
     public async ValueTask GetTicketedEventDetails_IncludesAllPolicies()
     {
@@ -74,6 +77,9 @@ public sealed class GetTicketedEventDetailsTests(TestContext testContext) : Aspi
         result.WaitlistPolicy.QuietHoursEnd.ShouldBe(new TimeOnly(7, 0));
     }
 
+    // Given a ticketed event with no registration or reconfirm policy configured
+    // When the ticketed event details are queried
+    // Then the registration and reconfirm policies are null and the waitlist policy uses defaults
     [TestMethod]
     public async ValueTask GetTicketedEventDetails_WithoutPolicies_ReturnsNullPolicies()
     {
@@ -109,6 +115,9 @@ public sealed class GetTicketedEventDetailsTests(TestContext testContext) : Aspi
         result.IsRegistrationOpen.ShouldBeFalse();
     }
 
+    // Given no ticketed event exists for the given ids
+    // When the ticketed event details are queried
+    // Then the result is null
     [TestMethod]
     public async ValueTask GetTicketedEventDetails_NotFound_ReturnsNull()
     {
@@ -121,6 +130,9 @@ public sealed class GetTicketedEventDetailsTests(TestContext testContext) : Aspi
         result.ShouldBeNull();
     }
 
+    // Given a ticketed event that belongs to a different team
+    // When the ticketed event details are queried with the wrong team id
+    // Then the result is null
     [TestMethod]
     public async ValueTask GetTicketedEventDetails_WrongTeamId_ReturnsNull()
     {

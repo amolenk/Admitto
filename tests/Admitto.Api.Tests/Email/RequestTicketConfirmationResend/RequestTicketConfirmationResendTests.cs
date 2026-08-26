@@ -10,6 +10,9 @@ namespace Amolenk.Admitto.Api.Tests.Email.RequestTicketConfirmationResend;
 [TestClass]
 public sealed class RequestTicketConfirmationResendTests(TestContext testContext) : EndToEndTestBase
 {
+    // Given a registered attendee
+    // When an anonymous (unauthenticated) client requests a ticket confirmation resend
+    // Then the API returns 401 Unauthorized
     [TestMethod]
     public async Task Anonymous_Returns401()
     {
@@ -24,6 +27,9 @@ public sealed class RequestTicketConfirmationResendTests(TestContext testContext
         response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
 
+    // Given a registered attendee and a user who is not a member of the owning team
+    // When that user requests a ticket confirmation resend
+    // Then the API returns 403 Forbidden
     [TestMethod]
     public async Task NonMember_Returns403()
     {
@@ -38,6 +44,9 @@ public sealed class RequestTicketConfirmationResendTests(TestContext testContext
         response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
     }
 
+    // Given no registration exists with the requested id
+    // When a ticket confirmation resend is requested for that id
+    // Then the API returns 404 Not Found
     [TestMethod]
     public async Task MissingRegistration_Returns404()
     {
@@ -52,6 +61,9 @@ public sealed class RequestTicketConfirmationResendTests(TestContext testContext
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
     }
 
+    // Given a cancelled registration
+    // When a ticket confirmation resend is requested for it
+    // Then the API returns 409 Conflict with a registration.not_registered problem code
     [TestMethod]
     public async Task CancelledRegistration_ReturnsConflictProblem()
     {
@@ -70,6 +82,9 @@ public sealed class RequestTicketConfirmationResendTests(TestContext testContext
         body.GetProperty("code").GetString().ShouldBe("registration.not_registered");
     }
 
+    // Given a registered attendee
+    // When an organizer requests a ticket confirmation resend
+    // Then the API returns 202 Accepted and persists an outbox message for the resend request
     [TestMethod]
     public async Task RegisteredRegistration_ReturnsAcceptedAndCreatesDurableResendRequest()
     {
@@ -96,6 +111,9 @@ public sealed class RequestTicketConfirmationResendTests(TestContext testContext
             .ShouldBe(fixture.RegistrationId.Value);
     }
 
+    // Given a registered attendee
+    // When a partner requests a ticket confirmation resend via API key
+    // Then the API returns 202 Accepted and persists an outbox message for the resend request
     [TestMethod]
     public async Task PartnerRequestTicketConfirmationResend_RegisteredRegistration_ReturnsAcceptedAndCreatesDurableResendRequest()
     {
@@ -121,6 +139,9 @@ public sealed class RequestTicketConfirmationResendTests(TestContext testContext
             .ShouldBe(fixture.RegistrationId.Value);
     }
 
+    // Given a registered attendee
+    // When a resend is requested through the partner API without an API key
+    // Then the API returns 401 Unauthorized and no resend request is created
     [TestMethod]
     public async Task PartnerRequestTicketConfirmationResend_MissingApiKey_Returns401AndCreatesNoResendRequest()
     {
@@ -136,6 +157,9 @@ public sealed class RequestTicketConfirmationResendTests(TestContext testContext
         await AssertNoResendRequestAsync();
     }
 
+    // Given a registered attendee
+    // When a resend is requested through the partner API with an API key that does not exist
+    // Then the API returns 401 Unauthorized and no resend request is created
     [TestMethod]
     public async Task PartnerRequestTicketConfirmationResend_InvalidApiKey_Returns401AndCreatesNoResendRequest()
     {
@@ -152,6 +176,9 @@ public sealed class RequestTicketConfirmationResendTests(TestContext testContext
         await AssertNoResendRequestAsync();
     }
 
+    // Given a registered attendee whose API key has been revoked
+    // When a resend is requested through the partner API with that revoked API key
+    // Then the API returns 401 Unauthorized and no resend request is created
     [TestMethod]
     public async Task PartnerRequestTicketConfirmationResend_RevokedApiKey_Returns401AndCreatesNoResendRequest()
     {
@@ -168,6 +195,9 @@ public sealed class RequestTicketConfirmationResendTests(TestContext testContext
         await AssertNoResendRequestAsync();
     }
 
+    // Given a registered attendee and an API key belonging to a different team
+    // When a resend is requested through the partner API with that API key
+    // Then the API returns 404 Not Found and no resend request is created
     [TestMethod]
     public async Task PartnerRequestTicketConfirmationResend_ApiKeyForOtherTeam_Returns404AndCreatesNoResendRequest()
     {
@@ -184,6 +214,9 @@ public sealed class RequestTicketConfirmationResendTests(TestContext testContext
         await AssertNoResendRequestAsync();
     }
 
+    // Given no registration exists with the requested id
+    // When a resend is requested through the partner API for that id
+    // Then the API returns 404 Not Found and no resend request is created
     [TestMethod]
     public async Task PartnerRequestTicketConfirmationResend_MissingRegistration_Returns404AndCreatesNoResendRequest()
     {
@@ -201,6 +234,9 @@ public sealed class RequestTicketConfirmationResendTests(TestContext testContext
         await AssertNoResendRequestAsync();
     }
 
+    // Given a cancelled registration
+    // When a resend is requested through the partner API for it
+    // Then the API returns 409 Conflict with a registration.not_registered problem code and no resend request is created
     [TestMethod]
     public async Task PartnerRequestTicketConfirmationResend_CancelledRegistration_ReturnsConflictProblemAndCreatesNoResendRequest()
     {

@@ -14,6 +14,9 @@ public sealed class UpdatePartnerRegistrationHandlerTests(TestContext testContex
     private UpdatePartnerRegistrationHandler CreateSut() =>
         new(Environment.RegistrationsDatabase.Context, TimeProvider.System);
 
+    // Given a partner registration with early-bird and workshop ticket types having available capacity
+    // When a valid update command changes the ticket selection and additional details
+    // Then the registration's details and tickets are persisted and ticket-type capacities are adjusted
     [TestMethod]
     public async ValueTask UpdatePartnerRegistration_ValidInput_PersistsDetailsTicketsAndCapacity()
     {
@@ -52,6 +55,9 @@ public sealed class UpdatePartnerRegistrationHandlerTests(TestContext testContex
         });
     }
 
+    // Given a partner registration with capacity configured
+    // When an update command keeps the same ticket selection and only changes additional details
+    // Then the details are updated and no tickets-changed domain event is raised
     [TestMethod]
     public async ValueTask UpdatePartnerRegistration_DetailsOnly_DoesNotRaiseTicketChangeEvent()
     {
@@ -76,6 +82,9 @@ public sealed class UpdatePartnerRegistrationHandlerTests(TestContext testContex
         registration.GetDomainEvents().OfType<TicketsChangedDomainEvent>().ShouldBeEmpty();
     }
 
+    // Given a partner registration with capacity configured
+    // When an update command includes an additional-details key that is not in the schema
+    // Then a key-not-in-schema error is thrown and the registration is left unchanged
     [TestMethod]
     public async ValueTask UpdatePartnerRegistration_UnknownAdditionalDetailKey_ThrowsAndLeavesRegistrationUnchanged()
     {
@@ -94,6 +103,9 @@ public sealed class UpdatePartnerRegistrationHandlerTests(TestContext testContex
         await AssertRegistrationStillOriginal(fixture);
     }
 
+    // Given a partner registration with capacity configured
+    // When an update command includes an additional-details value that exceeds the allowed length
+    // Then a value-too-long error is thrown and the registration is left unchanged
     [TestMethod]
     public async ValueTask UpdatePartnerRegistration_AdditionalDetailValueTooLong_ThrowsAndLeavesRegistrationUnchanged()
     {
@@ -112,6 +124,9 @@ public sealed class UpdatePartnerRegistrationHandlerTests(TestContext testContex
         await AssertRegistrationStillOriginal(fixture);
     }
 
+    // Given a partner registration where the requested workshop ticket type is sold out
+    // When an update command requests that sold-out ticket type
+    // Then an at-capacity error is thrown and the registration is left unchanged
     [TestMethod]
     public async ValueTask UpdatePartnerRegistration_CapacityFull_ThrowsAndLeavesRegistrationUnchanged()
     {
@@ -121,10 +136,13 @@ public sealed class UpdatePartnerRegistrationHandlerTests(TestContext testContex
         var result = await ErrorResult.CaptureAsync(
             async () => await CreateSut().HandleAsync(ValidWorkshopCommand(fixture), testContext.CancellationToken));
 
-        result.Error.Code.ShouldBe("ticket_type.at_capacity");
+        result.Error.ShouldMatch(TicketType.Errors.TicketTypeAtCapacity(fixture.GetTicketTypeId("workshop")));
         await AssertRegistrationStillOriginal(fixture);
     }
 
+    // Given a partner registration with a waitlist coupon that offers a specific ticket type
+    // When an update command omits the ticket type offered by the waitlist coupon
+    // Then a waitlist-coupon-ticket-missing error is thrown and the registration is left unchanged
     [TestMethod]
     public async ValueTask UpdatePartnerRegistration_WaitlistCouponOfferedTicketMissing_ThrowsAndLeavesRegistrationUnchanged()
     {
@@ -148,6 +166,9 @@ public sealed class UpdatePartnerRegistrationHandlerTests(TestContext testContex
         await AssertRegistrationStillOriginal(fixture);
     }
 
+    // Given a partner registration where the workshop ticket type has self-service updates disabled
+    // When an update command requests that ticket type
+    // Then a ticket-types-not-self-service error is thrown and the registration is left unchanged
     [TestMethod]
     public async ValueTask UpdatePartnerRegistration_SelfServiceDisabledTicket_ThrowsAndLeavesRegistrationUnchanged()
     {
@@ -161,6 +182,9 @@ public sealed class UpdatePartnerRegistrationHandlerTests(TestContext testContex
         await AssertRegistrationStillOriginal(fixture);
     }
 
+    // Given a registration that has already been cancelled
+    // When an update command is handled for it
+    // Then a registration-is-cancelled error is thrown
     [TestMethod]
     public async ValueTask UpdatePartnerRegistration_CancelledRegistration_ThrowsRegistrationIsCancelled()
     {

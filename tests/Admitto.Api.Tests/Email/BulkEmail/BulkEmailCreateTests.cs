@@ -12,6 +12,9 @@ namespace Amolenk.Admitto.Api.Tests.Email.BulkEmail;
 [TestClass]
 public sealed class BulkEmailCreateTests(TestContext testContext) : EndToEndTestBase
 {
+    // Given two registered attendees for an event
+    // When a bulk email job is created with direct subject and body content
+    // Then an email is sent to each recipient and an EmailLog row tagged with the bulk job id is written for each
     [TestMethod]
     public async Task CreateWithDirectContent_FansOutAndLogsEachRecipient()
     {
@@ -61,7 +64,9 @@ public sealed class BulkEmailCreateTests(TestContext testContext) : EndToEndTest
         logs.ShouldAllBe(l => l.IdempotencyKey.StartsWith($"bulk:{bulkJobId:N}:"));
     }
 
-    // SC-8.2: ad-hoc path (no template, subject + bodies on the request) also fans out and logs.
+    // Given a registered attendee for an event
+    // When a bulk email job is created with ad-hoc subject and body overrides instead of a template
+    // Then the email is sent to the recipient with the custom content and logged with the bulk job id
     [TestMethod]
     public async Task CreateWithAdHocOverrides_FansOutAndLogsEachRecipient()
     {

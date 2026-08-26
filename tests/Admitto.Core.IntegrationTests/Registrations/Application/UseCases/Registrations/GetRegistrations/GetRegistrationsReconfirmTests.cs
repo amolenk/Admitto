@@ -21,6 +21,9 @@ public sealed class GetRegistrationsReconfirmTests(TestContext testContext) : As
         RegistrationStatus: RegistrationStatus.Registered,
         HasReconfirmed: false);
 
+    // Given one reconfirmed and one unreconfirmed registration for an event
+    // When registrations are queried with the reconfirm filter across two ticks
+    // Then only the unreconfirmed attendee is returned both times
     [TestMethod]
     public async ValueTask HandleAsync_ReconfirmedAttendee_ExcludedOnEveryTick()
     {
@@ -43,6 +46,9 @@ public sealed class GetRegistrationsReconfirmTests(TestContext testContext) : As
         second.Select(r => r.Email).ShouldBe(["bob@example.com"]);
     }
 
+    // Given an unreconfirmed attendee returned on the first tick
+    // When the attendee reconfirms and the reconfirm-filtered query runs again
+    // Then the attendee is excluded from the next tick's results
     [TestMethod]
     public async ValueTask HandleAsync_AttendeeReconfirmsBetweenTicks_ExcludedOnNextTick()
     {
@@ -72,6 +78,9 @@ public sealed class GetRegistrationsReconfirmTests(TestContext testContext) : As
         afterReconfirm.ShouldBeEmpty();
     }
 
+    // Given one unreconfirmed attendee returned on the first tick
+    // When a second unreconfirmed attendee registers before the next tick
+    // Then both attendees are included in the next tick's results
     [TestMethod]
     public async ValueTask HandleAsync_NewRegistrationBetweenTicks_IncludedOnNextTick()
     {
@@ -93,6 +102,9 @@ public sealed class GetRegistrationsReconfirmTests(TestContext testContext) : As
         second.Select(r => r.Email).OrderBy(e => e).ShouldBe(["alice@example.com", "bob@example.com"]);
     }
 
+    // Given all registered attendees for an event have reconfirmed
+    // When registrations are queried with the reconfirm filter
+    // Then no registrations are returned
     [TestMethod]
     public async ValueTask HandleAsync_EveryoneReconfirmed_ReturnsEmpty()
     {
@@ -109,6 +121,9 @@ public sealed class GetRegistrationsReconfirmTests(TestContext testContext) : As
         (await Query(teamId, eventId)).ShouldBeEmpty();
     }
 
+    // Given an unreconfirmed registration that has since been cancelled
+    // When registrations are queried with the reconfirm filter
+    // Then the cancelled registration is not returned
     [TestMethod]
     public async ValueTask HandleAsync_CancelledRegistration_ExcludedEvenIfNotReconfirmed()
     {

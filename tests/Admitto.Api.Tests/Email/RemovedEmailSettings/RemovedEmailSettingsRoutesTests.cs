@@ -9,6 +9,9 @@ namespace Amolenk.Admitto.Api.Tests.Email.RemovedEmailSettings;
 [TestClass]
 public sealed class RemovedEmailSettingsRoutesTests(TestContext testContext) : EndToEndTestBase
 {
+    // Given an existing team
+    // When the removed GET team email settings route is called
+    // Then it returns 404 Not Found
     [TestMethod]
     public async Task GetTeamEmailSettings_RemovedRoute_ReturnsNotFound()
     {
@@ -21,6 +24,9 @@ public sealed class RemovedEmailSettingsRoutesTests(TestContext testContext) : E
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
     }
 
+    // Given an existing team
+    // When the removed team email settings test route is called
+    // Then it returns 404 Not Found
     [TestMethod]
     public async Task TestTeamEmailSettings_RemovedRoute_ReturnsNotFound()
     {

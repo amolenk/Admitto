@@ -8,6 +8,9 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.GetRegistrations;
 [TestClass]
 public sealed class GetRegistrationsTests(TestContext testContext) : EndToEndTestBase
 {
+    // Given no team exists with the given id
+    // When registrations are requested for that team and a random event id
+    // Then the API returns 404 Not Found
     [TestMethod]
     public async Task UnknownTeam_Returns404()
     {
@@ -21,6 +24,9 @@ public sealed class GetRegistrationsTests(TestContext testContext) : EndToEndTes
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
     }
 
+    // Given an existing team but no event with the given id
+    // When registrations are requested for that team and the unknown event
+    // Then the API returns 404 Not Found
     [TestMethod]
     public async Task UnknownEvent_Returns404()
     {
@@ -34,6 +40,9 @@ public sealed class GetRegistrationsTests(TestContext testContext) : EndToEndTes
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
     }
 
+    // Given an event with a single registration
+    // When a team member fetches the registrations for that event
+    // Then the API returns 200 OK with that registration's email and ticket details
     [TestMethod]
     public async Task Organizer_GetsRegistrationList()
     {
@@ -55,6 +64,9 @@ public sealed class GetRegistrationsTests(TestContext testContext) : EndToEndTes
         body[0].Tickets[0].Id.ShouldBe(GetRegistrationsFixture.TicketTypeId.Value);
     }
 
+    // Given an event with a single registration
+    // When a user who is not a member of the team fetches the registrations for that event
+    // Then the API returns 403 Forbidden
     [TestMethod]
     public async Task NonMember_Returns403()
     {

@@ -5,12 +5,13 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Organization.Application.UseCase
 [TestClass]
 public sealed class GetTeamsTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    // Given active teams "acme" and "beta" and an archived team "retired"
+    // When an admin lists all teams
+    // Then only the active teams are returned with full management permissions
     [TestMethod]
     public async ValueTask GetTeams_AdminListsAllTeams_ReturnsOnlyActiveTeams()
     {
         // Arrange
-        // SC-006: Given teams "acme" (active), "beta" (active), and "retired" (archived),
-        // when an admin lists all teams, only "acme" and "beta" are returned.
         var fixture = GetTeamsFixture.AdminListsAllActiveTeams();
         await fixture.SetupAdminTeamsAsync(Environment);
 
@@ -28,12 +29,13 @@ public sealed class GetTeamsTests(TestContext testContext) : AspireIntegrationTe
         result.ShouldNotContain(t => t.Name == "Retired Team");
     }
 
+    // Given a user is a member of "acme" (with management permissions) and "beta" (without), but not "gamma"
+    // When the user lists their own teams
+    // Then only "acme" and "beta" are returned with their respective permissions
     [TestMethod]
     public async ValueTask GetTeams_NonAdminListsOwnTeams_ReturnsOnlyMemberTeams()
     {
         // Arrange
-        // SC-012: Given user is a member of "acme" and "beta" but not "gamma",
-        // when they list their teams, only "acme" and "beta" are returned.
         var fixture = GetTeamsFixture.UserListsOwnActiveTeams();
         await fixture.SetupMemberTeamsAsync(Environment);
 
@@ -51,12 +53,13 @@ public sealed class GetTeamsTests(TestContext testContext) : AspireIntegrationTe
         result.ShouldNotContain(t => t.Name == "Gamma Events");
     }
 
+    // Given a user is a member of active team "acme" and archived team "beta"
+    // When the user lists their own teams
+    // Then only "acme" is returned
     [TestMethod]
     public async ValueTask GetTeams_NonAdminWithArchivedMembership_ExcludesArchivedTeam()
     {
         // Arrange
-        // SC-013: Given user is a member of "acme" (active) and "beta" (archived),
-        // when they list their teams, only "acme" is returned.
         var fixture = GetTeamsFixture.UserListsOwnTeamsWithArchivedMembership();
         await fixture.SetupMemberTeamsAsync(Environment);
 
@@ -75,6 +78,9 @@ public sealed class GetTeamsTests(TestContext testContext) : AspireIntegrationTe
         result.ShouldNotContain(t => t.Name == "Beta Events");
     }
 
+    // Given teams with mixed-case names "Zebra Events", "acme", and "Beta Corp"
+    // When an admin lists all teams
+    // Then they are returned case-insensitively in alphabetical order
     [TestMethod]
     public async ValueTask GetTeams_AdminListsAllTeams_ReturnsInAlphabeticalOrder()
     {
@@ -97,6 +103,9 @@ public sealed class GetTeamsTests(TestContext testContext) : AspireIntegrationTe
         result[2].Name.ShouldBe("Zebra Events");
     }
 
+    // Given the user's teams have mixed-case names "Zebra Events", "acme", and "Beta Corp"
+    // When the user lists their own teams
+    // Then they are returned case-insensitively in alphabetical order
     [TestMethod]
     public async ValueTask GetTeams_NonAdminListsOwnTeams_ReturnsInAlphabeticalOrder()
     {

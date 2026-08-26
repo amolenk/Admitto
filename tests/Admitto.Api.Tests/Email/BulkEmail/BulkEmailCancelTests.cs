@@ -10,6 +10,9 @@ namespace Amolenk.Admitto.Api.Tests.Email.BulkEmail;
 public sealed class BulkEmailCancelTests(TestContext testContext) : EndToEndTestBase
 {
     // Cancelling a job that is already in a terminal state is a 409.
+    // Given a bulk email job that has already completed sending
+    // When a cancellation is requested for that job
+    // Then it returns 409 Conflict
     [TestMethod]
     public async Task CancelFromTerminalState_ReturnsConflict()
     {

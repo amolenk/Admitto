@@ -10,6 +10,9 @@ namespace Amolenk.Admitto.Api.Tests.Email.BulkEmail;
 public sealed class BulkEmailPreviewTests(TestContext testContext) : EndToEndTestBase
 {
     // POST /preview returns expected count + sample for the attendee filter.
+    // Given registered attendees, some of whom have reconfirmed
+    // When previewing a bulk email filtered to attendees who have not reconfirmed
+    // Then it returns the matching count and a sample listing only those attendees
     [TestMethod]
     public async Task Preview_AttendeeFilter_ReturnsCountAndSample()
     {

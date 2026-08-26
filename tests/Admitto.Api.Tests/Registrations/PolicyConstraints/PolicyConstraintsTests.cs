@@ -8,6 +8,9 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.PolicyConstraints;
 [TestClass]
 public sealed class PolicyConstraintsTests(TestContext testContext) : EndToEndTestBase
 {
+    // Given an active event
+    // When the registration policy window is configured to close exactly at the event start
+    // Then the API returns 204 No Content
     [TestMethod]
     public async Task ConfigureRegistrationPolicy_WindowClosesAtEventStart_Returns204()
     {
@@ -26,6 +29,9 @@ public sealed class PolicyConstraintsTests(TestContext testContext) : EndToEndTe
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
     }
 
+    // Given an active event
+    // When the registration policy window is configured to close after the event start
+    // Then the API returns 400 Bad Request
     [TestMethod]
     public async Task ConfigureRegistrationPolicy_WindowClosesAfterEventStart_Returns400()
     {
@@ -44,6 +50,9 @@ public sealed class PolicyConstraintsTests(TestContext testContext) : EndToEndTe
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 
+    // Given an active event
+    // When the reconfirm policy window is configured to close before the event start
+    // Then the API returns 204 No Content
     [TestMethod]
     public async Task ConfigureReconfirmPolicy_WindowClosesBeforeEventStart_Returns204()
     {
@@ -64,6 +73,9 @@ public sealed class PolicyConstraintsTests(TestContext testContext) : EndToEndTe
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
     }
 
+    // Given an active event
+    // When the reconfirm policy window is configured to close exactly at the event start
+    // Then the API returns 400 Bad Request
     [TestMethod]
     public async Task ConfigureReconfirmPolicy_WindowClosesAtEventStart_Returns400()
     {
@@ -84,6 +96,9 @@ public sealed class PolicyConstraintsTests(TestContext testContext) : EndToEndTe
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 
+    // Given an active event
+    // When the reconfirm policy window is configured to close after the event start
+    // Then the API returns 400 Bad Request
     [TestMethod]
     public async Task ConfigureReconfirmPolicy_WindowClosesAfterEventStart_Returns400()
     {

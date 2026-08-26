@@ -399,6 +399,9 @@ fodyweavers.xsd
 .azure
 .idea/
 
+# Local orchestration state
+.slim/deepwork/
+
 # temporary work-around for claude
 .claude
 .agents/skills/architecture-impact-check

@@ -5,9 +5,7 @@ import { useParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import {
     BadgeInstanceListItemDto,
-    BadgeTypeListItemDto,
     GetBadgeTypesResponse,
-    TicketedEventDetailsDto,
 } from "@/lib/admitto-api/generated";
 import { apiClient } from "@/lib/api-client";
 import { PageLayout } from "@/components/page-layout";
@@ -282,12 +280,6 @@ export default function BadgeInstancesPage() {
         throwOnError: false,
     });
 
-    const event = useQuery({
-        queryKey: ["event", teamId, eventId],
-        queryFn: () =>
-            apiClient.get<TicketedEventDetailsDto>(`/api/teams/${teamId}/events/${eventId}`),
-    });
-
     const badgeTypes = useQuery({
         queryKey: ["badge-types", teamId, eventId],
         queryFn: () =>
@@ -297,7 +289,6 @@ export default function BadgeInstancesPage() {
         throwOnError: false,
     });
 
-    const eventName = event.data?.name ?? "";
     const badgeType = badgeTypes.data?.badgeTypes?.find((bt) => bt.id === badgeTypeId);
     const badgeTypeName = badgeType?.name ?? "";
 

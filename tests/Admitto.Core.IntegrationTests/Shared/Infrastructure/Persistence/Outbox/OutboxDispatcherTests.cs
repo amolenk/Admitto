@@ -13,6 +13,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Shared.Infrastructure.Persistenc
 [TestClass]
 public sealed class OutboxDispatcherTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    // Given a pending outbox message old enough to exceed the minimum age
+    // When orphaned messages are dispatched
+    // Then the message is sent and marked as sent
     [TestMethod]
     public async ValueTask DispatchOrphanedAsync_PendingRow_SendsAndMarksSent()
     {
@@ -38,6 +41,9 @@ public sealed class OutboxDispatcherTests(TestContext testContext) : AspireInteg
         reloaded.State.ShouldBe(OutboxMessageState.Sent);
     }
 
+    // Given a pending outbox message that is too recent to exceed the minimum age
+    // When orphaned messages are dispatched
+    // Then the message is not sent and remains pending
     [TestMethod]
     public async ValueTask DispatchOrphanedAsync_RecentPendingRow_DoesNotSend()
     {
@@ -62,6 +68,9 @@ public sealed class OutboxDispatcherTests(TestContext testContext) : AspireInteg
         reloaded.State.ShouldBe(OutboxMessageState.Pending);
     }
 
+    // Given a pending outbox message old enough to exceed the minimum age
+    // When the outbox retry background service runs
+    // Then the message is eventually sent and marked as sent
     [TestMethod]
     public async ValueTask OutboxRetryBackgroundService_PendingRow_SendsAndMarksSent()
     {
@@ -104,6 +113,9 @@ public sealed class OutboxDispatcherTests(TestContext testContext) : AspireInteg
         }
     }
 
+    // Given a pending outbox message being dispatched concurrently by two scanner instances
+    // When both dispatchers race to send the same message
+    // Then both sends occur but the row ends up marked as sent
     [TestMethod]
     public async ValueTask DispatchOrphanedAsync_DuplicateScannerRace_LeavesRowSent()
     {

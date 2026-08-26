@@ -51,6 +51,9 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
         return query;
     }
 
+    // Given a registration cancelled event caused by an attendee request
+    // When the event is handled
+    // Then a cancellation email is sent to the attendee
     [TestMethod]
     public async Task AttendeeRequest_DispatchesCancellationEmail()
     {
@@ -69,6 +72,9 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
             Arg.Any<CancellationToken>());
     }
 
+    // Given a registration cancelled event caused by a denied visa letter
+    // When the event is handled
+    // Then a visa letter denied email is sent to the attendee
     [TestMethod]
     public async Task VisaLetterDenied_DispatchesVisaLetterDeniedEmail()
     {
@@ -86,6 +92,9 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
             Arg.Any<CancellationToken>());
     }
 
+    // Given a registration cancelled event caused by an automatic reconfirm cancellation
+    // When the event is handled
+    // Then a reconfirm-cancelled email is sent to the attendee
     [TestMethod]
     public async Task ReconfirmAutoCancel_DispatchesReconfirmCancelledEmail()
     {
@@ -100,6 +109,9 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
             Arg.Any<CancellationToken>());
     }
 
+    // Given a registration cancelled event caused by removed ticket types
+    // When the event is handled
+    // Then no email is sent
     [TestMethod]
     public async Task TicketTypesRemoved_NoEmailDispatched()
     {
@@ -115,6 +127,9 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
             Arg.Any<CancellationToken>());
     }
 
+    // Given a registration cancelled event caused by an attendee request
+    // When the event is handled
+    // Then the email recipient name combines the attendee's first and last name
     [TestMethod]
     public async Task AttendeeRequest_PassesFirstNameFromContext()
     {
@@ -131,6 +146,9 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
             Arg.Any<CancellationToken>());
     }
 
+    // Given a registration cancelled event caused by an attendee request
+    // When the event is handled
+    // Then the email parameters include the event website and register link from the rendering context
     [TestMethod]
     public async Task AttendeeRequest_ParametersIncludeEventWebsite()
     {

@@ -1,0 +1,4 @@
+# Vitest runs on Vite, which needs esbuild's platform binary. pnpm blocks
+# postinstall scripts by default, so esbuild must be allowlisted explicitly.
+onlyBuiltDependencies:
+  - esbuild

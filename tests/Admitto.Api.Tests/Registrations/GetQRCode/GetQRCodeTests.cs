@@ -7,6 +7,9 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.GetQRCode;
 [TestClass]
 public sealed class GetQRCodeTests(TestContext testContext) : EndToEndTestBase
 {
+    // Given an existing registration
+    // When its QR code is requested
+    // Then it returns 200 OK with the expected PNG image
     [TestMethod]
     public async Task ExistingRegistration_Returns200WithExpectedPng()
     {
@@ -29,6 +32,9 @@ public sealed class GetQRCodeTests(TestContext testContext) : EndToEndTestBase
         body.ShouldBe(expected);
     }
 
+    // Given an existing registration
+    // When its QR code is requested without an API key
+    // Then it still returns 200 OK
     [TestMethod]
     public async Task MissingApiKey_StillReturns200()
     {
@@ -42,6 +48,9 @@ public sealed class GetQRCodeTests(TestContext testContext) : EndToEndTestBase
         response.StatusCode.ShouldBe(HttpStatusCode.OK);
     }
 
+    // Given an existing registration
+    // When its QR code is requested for an unknown event slug
+    // Then it returns 404 Not Found
     [TestMethod]
     public async Task UnknownEvent_Returns404()
     {
@@ -56,6 +65,9 @@ public sealed class GetQRCodeTests(TestContext testContext) : EndToEndTestBase
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
     }
 
+    // Given an event with no matching registration
+    // When the QR code is requested for an unknown registration id
+    // Then it returns 404 Not Found
     [TestMethod]
     public async Task UnknownRegistration_Returns404()
     {
@@ -71,6 +83,9 @@ public sealed class GetQRCodeTests(TestContext testContext) : EndToEndTestBase
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
     }
 
+    // Given a cancelled registration
+    // When its QR code is requested
+    // Then it still returns 200 OK with a PNG image
     [TestMethod]
     public async Task CancelledRegistration_Returns200()
     {
@@ -89,6 +104,9 @@ public sealed class GetQRCodeTests(TestContext testContext) : EndToEndTestBase
         body.ShouldNotBeEmpty();
     }
 
+    // Given an existing registration
+    // When its QR code is requested via the old partner API route
+    // Then the response does not serve a QR code image
     [TestMethod]
     public async Task OldPartnerApiRoute_DoesNotServeQRCodeImage()
     {

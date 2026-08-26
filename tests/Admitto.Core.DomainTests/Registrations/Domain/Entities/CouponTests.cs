@@ -11,6 +11,9 @@ namespace Amolenk.Admitto.Core.Registrations.Domain.Tests.Entities;
 [TestClass]
 public sealed class CouponTests
 {
+    // Given a coupon requested for a known ticket type with an organiser source
+    // When the coupon is created
+    // Then a single CouponCreated domain event is raised carrying the coupon's identity, email, and code
     [TestMethod]
     public void Create_OrganiserSource_RaisesCouponCreatedDomainEvent()
     {
@@ -38,6 +41,9 @@ public sealed class CouponTests
                 e => e.Code.ShouldBe(sut.Code));
     }
 
+    // Given a coupon created from the waitlist source
+    // When the coupon is created
+    // Then no domain event is raised
     [TestMethod]
     public void Create_WaitlistSource_DoesNotRaiseCouponCreatedDomainEvent()
     {
@@ -50,6 +56,9 @@ public sealed class CouponTests
         sut.GetDomainEvents().ShouldBeEmpty();
     }
 
+    // Given valid coupon input with a known ticket type
+    // When the coupon is created
+    // Then it is Active with the given properties and raises a single CouponCreated domain event
     [TestMethod]
     public void Create_ValidInput_CreatesCouponAndRaisesDomainEvent()
     {
@@ -83,6 +92,8 @@ public sealed class CouponTests
                 e => e.Code.ShouldBe(sut.Code));
     }
 
+    // When a coupon is created with the bypass-registration-window option
+    // Then its bypass flag is set to true
     [TestMethod]
     public void Create_BypassRegistrationWindow_SetsBypassFlag()
     {
@@ -95,6 +106,9 @@ public sealed class CouponTests
         sut.BypassRegistrationWindow.ShouldBeTrue();
     }
 
+    // Given a coupon requested for a ticket type that is not among the available ticket types
+    // When the coupon is created
+    // Then it returns an UnknownTicketTypes error listing the unknown id
     [TestMethod]
     public void Create_UnknownTicketType_ThrowsUnknownTicketTypesError()
     {
@@ -113,6 +127,9 @@ public sealed class CouponTests
         result.Error.ShouldMatch(Coupon.Errors.UnknownTicketTypes(new List<Guid> { unknownId.Value }));
     }
 
+    // Given a coupon created with an expiry date in the past
+    // When the coupon is created
+    // Then it returns an ExpiryMustBeInFuture error
     [TestMethod]
     public void Create_ExpiryInThePast_ThrowsExpiryMustBeInFutureError()
     {
@@ -126,6 +143,9 @@ public sealed class CouponTests
         result.Error.ShouldMatch(Coupon.Errors.ExpiryMustBeInFuture);
     }
 
+    // Given a coupon created with no requested ticket types
+    // When the coupon is created
+    // Then it returns a NoTicketTypes error
     [TestMethod]
     public void Create_NoTicketTypes_ThrowsNoTicketTypesError()
     {
@@ -139,6 +159,9 @@ public sealed class CouponTests
         result.Error.ShouldMatch(Coupon.Errors.NoTicketTypes);
     }
 
+    // Given coupons that are active, revoked, or past their expiry date
+    // When their status is queried at the relevant time
+    // Then each returns the matching status (Active, Revoked, or Expired)
     [TestMethod]
     public void GetStatus_VariousCouponStates_ReturnsCorrectStatus()
     {
@@ -160,6 +183,9 @@ public sealed class CouponTests
         expiredCoupon.GetStatus(now.AddHours(2)).ShouldBe(CouponStatus.Expired);
     }
 
+    // Given valid coupon input covering all optional properties
+    // When the coupon is created
+    // Then all of its properties are populated and accessible as expected
     [TestMethod]
     public void Create_ValidInput_AllPropertiesAccessible()
     {
@@ -194,6 +220,9 @@ public sealed class CouponTests
             () => sut.RevokedAt.ShouldBeNull());
     }
 
+    // Given an active coupon
+    // When the coupon is revoked
+    // Then its revoked-at timestamp is set and its status becomes Revoked
     [TestMethod]
     public void Revoke_ActiveCoupon_SetsRevokedAt()
     {
@@ -208,6 +237,9 @@ public sealed class CouponTests
         sut.GetStatus(CouponBuilder.DefaultNow).ShouldBe(CouponStatus.Revoked);
     }
 
+    // Given a coupon that has already expired
+    // When the coupon is revoked
+    // Then its revoked-at timestamp is set and its status becomes Revoked instead of Expired
     [TestMethod]
     public void Revoke_ExpiredCoupon_SetsRevokedAt()
     {
@@ -229,6 +261,9 @@ public sealed class CouponTests
         sut.GetStatus(afterExpiry).ShouldBe(CouponStatus.Revoked);
     }
 
+    // Given a coupon that has already been redeemed
+    // When revocation is attempted
+    // Then it returns a CouponAlreadyRedeemed error
     [TestMethod]
     public void Revoke_RedeemedCoupon_ThrowsCouponAlreadyRedeemedError()
     {
@@ -245,6 +280,9 @@ public sealed class CouponTests
         result.Error.ShouldMatch(Coupon.Errors.CouponAlreadyRedeemed);
     }
 
+    // Given a coupon that has already been revoked
+    // When the coupon is revoked again
+    // Then the original revoked-at timestamp is kept
     [TestMethod]
     public void Revoke_AlreadyRevokedCoupon_IsIdempotent()
     {

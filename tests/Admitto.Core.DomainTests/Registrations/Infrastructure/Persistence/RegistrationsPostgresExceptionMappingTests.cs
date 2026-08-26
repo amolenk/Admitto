@@ -10,6 +10,9 @@ namespace Amolenk.Admitto.Core.DomainTests.Registrations.Infrastructure.Persiste
 [TestClass]
 public sealed class RegistrationsPostgresExceptionMappingTests
 {
+    // Given a Postgres unique-constraint violation on the registrations event/email index
+    // When the exception is mapped
+    // Then it maps to an AlreadyExists error for Registration
     [TestMethod]
     public void TryMapToError_DuplicateRegistrationConstraint_MapsToAlreadyExistsError()
     {
@@ -25,6 +28,9 @@ public sealed class RegistrationsPostgresExceptionMappingTests
         error.ShouldMatch(AlreadyExistsError.Create<Registration>());
     }
 
+    // Given a Postgres unique-constraint violation on the ticketed events public slug index
+    // When the exception is mapped
+    // Then it maps to an AlreadyExists error for TicketedEvent
     [TestMethod]
     public void TryMapToError_DuplicateEventSlugConstraint_MapsToAlreadyExistsError()
     {
@@ -40,6 +46,9 @@ public sealed class RegistrationsPostgresExceptionMappingTests
         error.ShouldMatch(AlreadyExistsError.Create<TicketedEvent>());
     }
 
+    // Given a Postgres unique-constraint violation on a constraint the mapping does not recognize
+    // When the exception is mapped
+    // Then it returns false and no error is produced
     [TestMethod]
     public void TryMapToError_UnknownConstraint_ReturnsFalse()
     {

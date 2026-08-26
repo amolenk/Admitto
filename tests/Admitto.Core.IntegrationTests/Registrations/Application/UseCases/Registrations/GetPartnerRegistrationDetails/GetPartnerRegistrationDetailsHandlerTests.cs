@@ -7,6 +7,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 [TestClass]
 public sealed class GetPartnerRegistrationDetailsHandlerTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    // Given a registered attendee with additional details
+    // When the partner registration details are queried
+    // Then a reduced detail view including tickets and additional details is returned
     [TestMethod]
     public async ValueTask GetPartnerRegistrationDetails_ExistingRegistration_ReturnsReducedDetail()
     {
@@ -31,6 +34,9 @@ public sealed class GetPartnerRegistrationDetailsHandlerTests(TestContext testCo
         result.AdditionalDetails["dietary"].ShouldBe("vegan");
     }
 
+    // Given a registered attendee with no additional details
+    // When the partner registration details are queried
+    // Then the additional details collection is empty
     [TestMethod]
     public async ValueTask GetPartnerRegistrationDetails_NoAdditionalDetails_ReturnsEmptyDetails()
     {
@@ -48,6 +54,9 @@ public sealed class GetPartnerRegistrationDetailsHandlerTests(TestContext testCo
         result.AdditionalDetails.ShouldBeEmpty();
     }
 
+    // Given no registration exists with the requested id
+    // When the partner registration details are queried
+    // Then the result is null
     [TestMethod]
     public async ValueTask GetPartnerRegistrationDetails_UnknownRegistration_ReturnsNull()
     {

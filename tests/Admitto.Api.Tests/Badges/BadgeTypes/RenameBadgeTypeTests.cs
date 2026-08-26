@@ -8,6 +8,9 @@ namespace Amolenk.Admitto.Api.Tests.Badges.BadgeTypes;
 [TestClass]
 public sealed class RenameBadgeTypeTests(TestContext testContext) : EndToEndTestBase
 {
+    // Given an existing badge type
+    // When it is renamed to a valid, unused name
+    // Then the API returns 204 No Content
     [TestMethod]
     public async Task RenameBadgeType_ValidName_Returns204()
     {
@@ -23,6 +26,9 @@ public sealed class RenameBadgeTypeTests(TestContext testContext) : EndToEndTest
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
     }
 
+    // Given an existing badge type
+    // When it is renamed with the matching expected version
+    // Then the API returns 204 No Content
     [TestMethod]
     public async Task RenameBadgeType_WithCorrectVersion_Returns204()
     {
@@ -38,6 +44,9 @@ public sealed class RenameBadgeTypeTests(TestContext testContext) : EndToEndTest
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
     }
 
+    // Given an existing badge type
+    // When it is renamed with a stale expected version
+    // Then the API returns 409 Conflict
     [TestMethod]
     public async Task RenameBadgeType_WithStaleVersion_Returns409()
     {
@@ -54,6 +63,9 @@ public sealed class RenameBadgeTypeTests(TestContext testContext) : EndToEndTest
         response.StatusCode.ShouldBe(HttpStatusCode.Conflict);
     }
 
+    // Given two existing badge types with different names
+    // When one is renamed to match the other's name
+    // Then the API returns 409 Conflict
     [TestMethod]
     public async Task RenameBadgeType_DuplicateName_Returns409()
     {
@@ -71,6 +83,9 @@ public sealed class RenameBadgeTypeTests(TestContext testContext) : EndToEndTest
         response.StatusCode.ShouldBe(HttpStatusCode.Conflict);
     }
 
+    // Given a badge type belonging to an archived event
+    // When it is renamed
+    // Then the API returns 400 Bad Request
     [TestMethod]
     public async Task RenameBadgeType_ArchivedEvent_Returns400()
     {
@@ -86,6 +101,9 @@ public sealed class RenameBadgeTypeTests(TestContext testContext) : EndToEndTest
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 
+    // Given no badge type exists with the given id
+    // When a rename is requested for that id
+    // Then the API returns 404 Not Found
     [TestMethod]
     public async Task RenameBadgeType_NotFound_Returns404()
     {

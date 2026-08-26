@@ -24,7 +24,7 @@ export async function GET(req: Request) {
 
     const response = NextResponse.redirect(endSessionUrl.toString());
 
-    const cookies = (signOutResponse.headers as any).getSetCookie?.() ?? [];
+    const cookies = (signOutResponse.headers as Headers & { getSetCookie?: () => string[] }).getSetCookie?.() ?? [];
     for (const c of cookies) response.headers.append("set-cookie", c);
 
     return response;

@@ -98,12 +98,12 @@ export default function RegistrationsPage() {
     const [addOpen, setAddOpen] = useState(false);
     const queryClient = useQueryClient();
 
-    const registrations = registrationsQuery.data ?? [];
+    const registrations = registrationsQuery.data;
     const ticketTypes = ticketTypesQuery.data ?? [];
 
     const filtered = useMemo(() => {
         const needle = search.trim().toLowerCase();
-        return registrations.filter((r) => {
+        return (registrations ?? []).filter((r) => {
             if (needle) {
                 const haystack = [
                     r.email,
@@ -159,7 +159,6 @@ export default function RegistrationsPage() {
     }
 
     const isLoading = registrationsQuery.isLoading;
-    const totalCount = registrations.length;
 
     return (
         <PageLayout>
@@ -240,7 +239,7 @@ export default function RegistrationsPage() {
                         <Skeleton className="h-10 w-full" />
                         <Skeleton className="h-10 w-full" />
                     </div>
-                ) : registrations.length === 0 ? (
+                ) : (registrations?.length ?? 0) === 0 ? (
                     <div className="text-center text-sm text-muted-foreground py-12">
                         No registrations yet.
                     </div>

@@ -27,4 +27,4 @@ Email accent color is team-owned branding (`Team.AccentColor`, the shared `Accen
 - arc42 chapter 5 — Email module responsibilities and team branding ownership.
 - arc42 chapter 6 — registration-confirmation email flow.
 - arc42 chapter 7 — deployment-provided system SMTP settings and public tickets base URL.
-- Change: `openspec/changes/route-email-through-admitto/`.
+- Change: the platform sender and public-links rollout.

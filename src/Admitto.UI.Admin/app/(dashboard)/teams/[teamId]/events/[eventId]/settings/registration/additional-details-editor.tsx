@@ -155,8 +155,9 @@ export function AdditionalDetailsEditor({
             );
             await queryClient.invalidateQueries({ queryKey: ["event", teamId, eventId] });
             setDirty(false);
-        } catch (err: any) {
-            const status = err?.status;
+        } catch (err: unknown) {
+            const error = err as { status?: number; detail?: string; message?: string };
+            const status = error.status;
             if (status === 409) {
                 setGeneralError({
                     title: "Concurrency conflict",
@@ -165,7 +166,7 @@ export function AdditionalDetailsEditor({
             } else {
                 setGeneralError({
                     title: "Failed to save schema",
-                    detail: err?.detail ?? err?.message ?? "Unexpected error.",
+                    detail: error.detail ?? error.message ?? "Unexpected error.",
                 });
             }
         } finally {

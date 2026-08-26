@@ -6,12 +6,12 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Organization.Application.UseCase
 
 internal sealed class GetTeamsFixture
 {
-    // SC-006: admin lists all active teams
+    // Teams for: admin lists all active teams
     public Guid ActiveTeamAcmeId { get; private set; }
     public Guid ActiveTeamBetaId { get; private set; }
     public Guid ArchivedTeamRetiredId { get; private set; }
 
-    // SC-012/SC-013: member lists own teams
+    // Teams for: member lists own teams
     public Guid UserId { get; private set; }
     public Guid MemberTeamAcmeId { get; private set; }
     public Guid MemberTeamBetaId { get; private set; }

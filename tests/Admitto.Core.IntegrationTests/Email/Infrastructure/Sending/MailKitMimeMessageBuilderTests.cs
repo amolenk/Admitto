@@ -10,6 +10,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Email.Infrastructure.Sending;
 [TestClass]
 public sealed class MailKitMimeMessageBuilderTests
 {
+    // Given email settings configured with a system sender display name
+    // When a MIME message is built for an outgoing email
+    // Then the message uses the configured sender and no Reply-To address is set
     [TestMethod]
     public void Build_UsesConfiguredSystemSenderAndNeverSetsReplyTo()
     {

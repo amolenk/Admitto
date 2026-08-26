@@ -11,6 +11,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 public sealed class ProjectEventStatusToCatalogDomainEventHandlerTests(TestContext testContext)
     : AspireIntegrationTestBase
 {
+    // Given a ticket catalog exists for an event
+    // When a TicketedEventStatusChanged domain event marks the event as archived
+    // Then the catalog's projected event status is updated to archived
     [TestMethod]
     public async ValueTask Archived_ProjectsOntoCatalog()
     {
@@ -37,6 +40,9 @@ public sealed class ProjectEventStatusToCatalogDomainEventHandlerTests(TestConte
         });
     }
 
+    // Given no ticket catalog exists yet for the event
+    // When a TicketedEventStatusChanged domain event is handled
+    // Then the handler completes without throwing
     [TestMethod]
     public async ValueTask NoCatalog_NoOp()
     {

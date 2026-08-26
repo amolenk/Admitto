@@ -13,6 +13,9 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.SelfRegister;
 public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBase
 {
     // Successful self-service registration returns 201 Created
+    // Given open registration and a valid email verification token
+    // When self-registering with that token
+    // Then it returns 201 Created
     [TestMethod]
     public async Task SelfRegister_ValidToken_Returns201()
     {
@@ -41,6 +44,9 @@ public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBas
     }
 
     // Token missing returns 401
+    // Given open registration
+    // When self-registering without a bearer token
+    // Then it returns 401 Unauthorized
     [TestMethod]
     public async Task SelfRegister_MissingToken_Returns401()
     {
@@ -64,6 +70,9 @@ public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBas
     }
 
     // Invalid/tampered token returns 401
+    // Given open registration
+    // When self-registering with an invalid or tampered token
+    // Then it returns 401 Unauthorized with an email verification error and no ticket-state fields
     [TestMethod]
     public async Task SelfRegister_InvalidToken_Returns401()
     {
@@ -96,6 +105,9 @@ public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBas
         body.TryGetProperty("invalidForRequestedActionTicketTypeIds", out _).ShouldBeFalse();
     }
 
+    // Given open registration where the requested ticket type has since become waitlist-only
+    // When self-registering for that ticket type with a valid token
+    // Then it returns 409 Conflict listing the ticket as waitlistable
     [TestMethod]
     public async Task SelfRegister_TicketBecameWaitlistable_Returns409WithTicketStates()
     {
@@ -133,6 +145,9 @@ public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBas
     }
 
     // Token bound to different event returns 401 — uses one team with two events
+    // Given a verification token issued for one event and a second event under the same team
+    // When registering against the second event using the first event's token
+    // Then it returns 401 Unauthorized
     [TestMethod]
     public async Task SelfRegister_TokenForDifferentEvent_Returns401()
     {
@@ -185,6 +200,9 @@ public sealed class SelfRegisterTests(TestContext testContext) : EndToEndTestBas
         response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
 
+    // Given open registration where self-service is disabled for the ticket type
+    // When self-registering for that ticket type with a valid token
+    // Then it returns 409 Conflict
     [TestMethod]
     public async Task SelfRegister_NonSelfServiceTicketType_Returns409()
     {

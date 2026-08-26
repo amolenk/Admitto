@@ -11,6 +11,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Badges.Application.UseCases.Badg
 [TestClass]
 public sealed class RenameBadgeTypeTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    // Given an active event with a badge type
+    // When the badge type is renamed with the correct expected version
+    // Then the badge type's name is updated and the event version is incremented
     [TestMethod]
     public async ValueTask RenameBadgeType_WithCorrectVersion_RenamesBadgeType()
     {
@@ -44,6 +47,9 @@ public sealed class RenameBadgeTypeTests(TestContext testContext) : AspireIntegr
         });
     }
 
+    // Given an active event with a badge type
+    // When the badge type is renamed with a stale expected version
+    // Then it throws a concurrency conflict error
     [TestMethod]
     public async ValueTask RenameBadgeType_WithStaleVersion_ThrowsConcurrencyConflict()
     {

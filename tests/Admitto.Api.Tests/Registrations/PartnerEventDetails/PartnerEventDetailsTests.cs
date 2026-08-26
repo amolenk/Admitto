@@ -11,6 +11,9 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.PartnerEventDetails;
 public sealed class PartnerEventDetailsTests(TestContext testContext) : EndToEndTestBase
 {
     // Returns descriptive event metadata and additional detail fields in schema order.
+    // Given an event with an allowed email domain and additional detail fields configured
+    // When a partner fetches the event details
+    // Then the API returns 200 OK with the event metadata and fields in schema order
     [TestMethod]
     public async Task GetPartnerEventDetails_ReturnsMetadataAndFields()
     {
@@ -44,6 +47,9 @@ public sealed class PartnerEventDetailsTests(TestContext testContext) : EndToEnd
     }
 
     // Does not leak internal admin-only fields.
+    // Given an existing event
+    // When a partner fetches the event details
+    // Then the response does not include internal admin-only fields
     [TestMethod]
     public async Task GetPartnerEventDetails_DoesNotExposeInternalFields()
     {
@@ -65,6 +71,9 @@ public sealed class PartnerEventDetailsTests(TestContext testContext) : EndToEnd
     }
 
     // Empty field list when the event has no additional detail schema.
+    // Given an event with no additional detail schema and no email domain restriction
+    // When a partner fetches the event details
+    // Then the response has an empty field list and a null allowed email domain
     [TestMethod]
     public async Task GetPartnerEventDetails_NoSchema_ReturnsEmptyFieldList()
     {
@@ -82,6 +91,9 @@ public sealed class PartnerEventDetailsTests(TestContext testContext) : EndToEnd
     }
 
     // 404 when event slug does not exist for the team.
+    // Given no event exists for a given slug
+    // When a partner fetches event details for that unknown slug
+    // Then the API returns 404 Not Found
     [TestMethod]
     public async Task GetPartnerEventDetails_NonExistentEvent_Returns404()
     {
@@ -95,6 +107,9 @@ public sealed class PartnerEventDetailsTests(TestContext testContext) : EndToEnd
     }
 
     // 401 when the API key is missing.
+    // Given an existing event
+    // When event details are requested without an API key
+    // Then the API returns 401 Unauthorized
     [TestMethod]
     public async Task GetPartnerEventDetails_MissingApiKey_Returns401()
     {

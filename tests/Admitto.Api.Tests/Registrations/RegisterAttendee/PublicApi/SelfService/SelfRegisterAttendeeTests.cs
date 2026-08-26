@@ -15,6 +15,9 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : EndToEn
     // Admitto.Core.Module.Registrations.Tests/.../RegisterAttendee/SelfRegisterAttendeeTests.cs which
     // instantiate the handler directly with a StubEmailVerificationTokenValidator.
 
+    // Given a self-service registration request without an email verification token
+    // When the self-register attendee endpoint is called
+    // Then it returns 401 Unauthorized because email verification is required
     [TestMethod]
     public async Task SelfRegister_WithoutToken_Returns401EmailVerificationRequired()
     {
@@ -38,6 +41,9 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : EndToEn
         response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
 
+    // Given a self-service registration request that omits the ticket type selections
+    // When the self-register attendee endpoint is called
+    // Then it returns 400 Bad Request as a validation problem
     [TestMethod]
     public async Task SelfRegister_MissingExplicitTicketSets_Returns400ValidationProblem()
     {

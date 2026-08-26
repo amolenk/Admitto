@@ -10,6 +10,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 [TestClass]
 public sealed class GetPublicCouponDetailsTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    // Given an active coupon with an allowed ticket type
+    // When the public coupon details are queried
+    // Then the response shows the active status, expiry, and allowed ticket types
     [TestMethod]
     public async ValueTask GetPublicCouponDetails_ActiveCoupon_ReturnsStatusAndTicketTypes()
     {
@@ -32,6 +35,9 @@ public sealed class GetPublicCouponDetailsTests(TestContext testContext) : Aspir
             () => result.ExpiresAt.ShouldNotBeNull());
     }
 
+    // Given a coupon that has already been redeemed
+    // When the public coupon details are queried
+    // Then the response shows the redeemed status
     [TestMethod]
     public async ValueTask GetPublicCouponDetails_RedeemedCoupon_ReturnsRedeemedStatus()
     {
@@ -49,6 +55,9 @@ public sealed class GetPublicCouponDetailsTests(TestContext testContext) : Aspir
         result.Status.ShouldBe(CouponStatus.Redeemed);
     }
 
+    // Given no coupon exists with the requested code
+    // When the public coupon details are queried
+    // Then a not-found error is thrown
     [TestMethod]
     public async ValueTask GetPublicCouponDetails_NonExistentCouponCode_ThrowsNotFoundError()
     {
@@ -67,6 +76,9 @@ public sealed class GetPublicCouponDetailsTests(TestContext testContext) : Aspir
         result.Error.ShouldMatch(NotFoundError.Create<Coupon>());
     }
 
+    // Given an active coupon that belongs to a different ticketed event
+    // When the public coupon details are queried for the wrong event
+    // Then a not-found error is thrown
     [TestMethod]
     public async ValueTask GetPublicCouponDetails_CouponBelongsToOtherEvent_ThrowsNotFoundError()
     {

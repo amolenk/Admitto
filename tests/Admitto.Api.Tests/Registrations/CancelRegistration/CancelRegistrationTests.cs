@@ -8,7 +8,9 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.CancelRegistration;
 [TestClass]
 public sealed class CancelRegistrationTests(TestContext testContext) : EndToEndTestBase
 {
-    // SC-C01: Admin cancels active registration with AttendeeRequest — returns 204
+    // Given an active registration
+    // When an admin cancels it with reason AttendeeRequest
+    // Then the API returns 204 No Content
     [TestMethod]
     public async Task CancelRegistration_AttendeeRequest_Returns204()
     {
@@ -23,7 +25,9 @@ public sealed class CancelRegistrationTests(TestContext testContext) : EndToEndT
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
     }
 
-    // SC-C02: Admin cancels active registration with VisaLetterDenied — returns 204
+    // Given an active registration
+    // When an admin cancels it with reason VisaLetterDenied
+    // Then the API returns 204 No Content
     [TestMethod]
     public async Task CancelRegistration_VisaLetterDenied_Returns204()
     {
@@ -38,7 +42,9 @@ public sealed class CancelRegistrationTests(TestContext testContext) : EndToEndT
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
     }
 
-    // SC-C03: Admin supplies TicketTypesRemoved reason — returns 400 (invalid)
+    // Given an active registration
+    // When an admin cancels it with an invalid reason not allowed for admin cancellation
+    // Then the API returns 400 Bad Request
     [TestMethod]
     public async Task CancelRegistration_InvalidReason_Returns400()
     {
@@ -53,7 +59,9 @@ public sealed class CancelRegistrationTests(TestContext testContext) : EndToEndT
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 
-    // SC-C04: Crew member (Bob) cannot cancel — returns 403
+    // Given an active registration and a user with only crew-level team access
+    // When that user attempts to cancel the registration
+    // Then the API returns 403 Forbidden
     [TestMethod]
     public async Task CancelRegistration_CrewMember_Returns403()
     {
@@ -68,7 +76,9 @@ public sealed class CancelRegistrationTests(TestContext testContext) : EndToEndT
         response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
     }
 
-    // SC-C05: Cancel non-existent registration — returns 404
+    // Given no registration exists for a given id
+    // When an admin attempts to cancel that non-existent registration
+    // Then the API returns 404 Not Found
     [TestMethod]
     public async Task CancelRegistration_NotFound_Returns404()
     {

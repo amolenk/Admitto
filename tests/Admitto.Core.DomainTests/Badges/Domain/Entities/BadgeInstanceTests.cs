@@ -19,6 +19,8 @@ public sealed class BadgeInstanceTests
 
     // ── Create ───────────────────────────────────────────────────────────────
 
+    // When a badge instance is created with valid inputs
+    // Then it is created with the given id, team, event, badge type, display name, and notes
     [TestMethod]
     public void Create_ValidInputs_Succeeds()
     {
@@ -32,6 +34,8 @@ public sealed class BadgeInstanceTests
         sut.Notes.ShouldBe(DefaultNotes);
     }
 
+    // When a badge instance is created with an empty display name
+    // Then it throws a value object validation exception
     [TestMethod]
     public void Create_EmptyDisplayName_ThrowsValueObjectValidationException()
     {
@@ -40,6 +44,8 @@ public sealed class BadgeInstanceTests
                 BadgeInstanceDisplayName.From(""), DefaultNotes));
     }
 
+    // When a badge instance is created with a display name longer than the maximum allowed length
+    // Then it throws a value object validation exception
     [TestMethod]
     public void Create_DisplayNameExceedsMaxLength_ThrowsValueObjectValidationException()
     {
@@ -49,6 +55,8 @@ public sealed class BadgeInstanceTests
                 DefaultNotes));
     }
 
+    // When a badge instance is created with notes longer than the maximum allowed length
+    // Then it throws a value object validation exception
     [TestMethod]
     public void Create_NotesExceedMaxLength_ThrowsValueObjectValidationException()
     {
@@ -60,6 +68,9 @@ public sealed class BadgeInstanceTests
 
     // ── Update ───────────────────────────────────────────────────────────────
 
+    // Given an existing badge instance
+    // When it is updated with a new display name and notes
+    // Then the display name and notes are updated
     [TestMethod]
     public void Update_ValidInputs_UpdatesDisplayNameAndNotes()
     {

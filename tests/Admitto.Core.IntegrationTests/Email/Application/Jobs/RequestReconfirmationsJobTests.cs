@@ -25,6 +25,9 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
 {
     private static readonly TeamId TeamId = TeamId.New();
 
+    // Given an attendee who registered only 10 hours ago and a minimum email interval of 48 hours
+    // When the reconfirmations job runs
+    // Then no bulk reconfirm email job is created for them
     [TestMethod]
     public async ValueTask Execute_AttendeeRegisteredRecently_ExcludedFromBulkJob()
     {
@@ -41,6 +44,9 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
         (await LoadBulkEmailJobsAsync()).ShouldBeEmpty();
     }
 
+    // Given an attendee who already received a reconfirmation email 10 hours ago and a minimum email interval of 48 hours
+    // When the reconfirmations job runs
+    // Then no bulk reconfirm email job is created for them because the interval hasn't elapsed
     [TestMethod]
     public async ValueTask Execute_AttendeeReceivedReconfirmRecently_ExcludedFromBulkJob()
     {
@@ -60,6 +66,9 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
         (await LoadBulkEmailJobsAsync()).ShouldBeEmpty();
     }
 
+    // Given an attendee whose last reconfirmation email was sent 72 hours ago and a minimum email interval of 48 hours
+    // When the reconfirmations job runs
+    // Then a bulk reconfirm email job is created that includes the attendee, and no auto-cancel event is published
     [TestMethod]
     public async ValueTask Execute_MinEmailIntervalElapsedSinceLastEmail_AttendeeIncluded()
     {
@@ -85,6 +94,9 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
         (await LoadOutboxMessagesAsync()).ShouldBeEmpty();
     }
 
+    // Given one attendee who already reached their maximum allowed reconfirm attempts and another with unlimited attempts and fewer emails sent
+    // When the reconfirmations job runs
+    // Then the unlimited attendee is included in the bulk reconfirm job while the maxed-out attendee triggers a reconfirm-auto-expired event instead
     [TestMethod]
     public async ValueTask Execute_MixedLogCounts_SplitsReconfirmAndAutoCancelSets()
     {
@@ -119,6 +131,9 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
         GetRegistrationIds(outboxMessages[0].Payload).ShouldBe([workshopId], ignoreOrder: true);
     }
 
+    // Given two attendees with no maximum reconfirm attempts configured, regardless of how many reconfirm emails they already received
+    // When the reconfirmations job runs
+    // Then both attendees are included in the bulk reconfirm job and no auto-cancel event is published
     [TestMethod]
     public async ValueTask Execute_NoEligibleTicketTypes_AllCandidatesGetReconfirmEmail()
     {
@@ -148,6 +163,9 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
         (await LoadOutboxMessagesAsync()).ShouldBeEmpty();
     }
 
+    // Given an attendee who has received fewer reconfirm emails than their maximum allowed attempts
+    // When the reconfirmations job runs
+    // Then the attendee is included in the bulk reconfirm job and no auto-cancel event is published
     [TestMethod]
     public async ValueTask Execute_AllCandidatesBelowThreshold_DoesNotPublishAutoCancelEvent()
     {

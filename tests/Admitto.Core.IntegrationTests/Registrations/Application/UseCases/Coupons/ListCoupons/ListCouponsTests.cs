@@ -6,7 +6,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 [TestClass]
 public sealed class ListCouponsTests(TestContext testContext) : AspireIntegrationTestBase
 {
-    // SC-007: List coupons for an event
+    // Given an event with both an active and a revoked coupon
+    // When the coupons are listed for the event
+    // Then both coupons are returned with their correct status
     [TestMethod]
     public async ValueTask ListCoupons_MultipleCouponStates_ReturnsAllWithCorrectStatus()
     {
@@ -30,7 +32,9 @@ public sealed class ListCouponsTests(TestContext testContext) : AspireIntegratio
         revoked.ShouldNotBeNull().Status.ShouldBe(CouponStatus.Revoked);
     }
 
-    // SC-008: Empty coupon list
+    // Given an event with no coupons
+    // When the coupons are listed for the event
+    // Then an empty list is returned
     [TestMethod]
     public async ValueTask ListCoupons_NoCouponsExist_ReturnsEmptyList()
     {
@@ -48,6 +52,9 @@ public sealed class ListCouponsTests(TestContext testContext) : AspireIntegratio
         result.Coupons.ShouldBeEmpty();
     }
 
+    // Given an event with coupons created by an organiser and coupons generated from the waitlist
+    // When the coupons are listed for the event
+    // Then each coupon is returned with its correct source
     [TestMethod]
     public async ValueTask ListCoupons_MixedSources_ReturnsCorrectSourceForEach()
     {

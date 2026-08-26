@@ -13,6 +13,9 @@ public sealed class BadgeInstanceManagementTests(TestContext testContext) : EndT
 {
     // ─── Add ────────────────────────────────────────────────────────────────
 
+    // Given a standalone badge type
+    // When a badge instance is added to it
+    // Then the API returns 201 Created with the new instance id
     [TestMethod]
     public async Task AddBadgeInstance_ToStandaloneType_Returns201WithId()
     {
@@ -30,6 +33,9 @@ public sealed class BadgeInstanceManagementTests(TestContext testContext) : EndT
         body!.Id.ShouldNotBe(Guid.Empty);
     }
 
+    // Given a ticket-based badge type
+    // When a badge instance is added to it
+    // Then the API returns 400 Bad Request
     [TestMethod]
     public async Task AddBadgeInstance_ToTicketBasedType_Returns400()
     {
@@ -45,6 +51,9 @@ public sealed class BadgeInstanceManagementTests(TestContext testContext) : EndT
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 
+    // Given a standalone badge type
+    // When a badge instance is added with an empty display name
+    // Then the API returns 400 Bad Request
     [TestMethod]
     public async Task AddBadgeInstance_EmptyDisplayName_Returns400()
     {
@@ -60,6 +69,9 @@ public sealed class BadgeInstanceManagementTests(TestContext testContext) : EndT
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 
+    // Given an archived event with a standalone badge type
+    // When a badge instance is added to it
+    // Then the API returns 400 Bad Request
     [TestMethod]
     public async Task AddBadgeInstance_ArchivedEvent_Returns400()
     {
@@ -77,6 +89,9 @@ public sealed class BadgeInstanceManagementTests(TestContext testContext) : EndT
 
     // ─── Update ─────────────────────────────────────────────────────────────
 
+    // Given an existing badge instance
+    // When it is updated with a valid request
+    // Then the API returns 204 No Content
     [TestMethod]
     public async Task UpdateBadgeInstance_ValidRequest_Returns204()
     {
@@ -95,6 +110,9 @@ public sealed class BadgeInstanceManagementTests(TestContext testContext) : EndT
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
     }
 
+    // Given an existing badge instance
+    // When it is updated with the matching expected version
+    // Then the API returns 204 No Content
     [TestMethod]
     public async Task UpdateBadgeInstance_WithCorrectVersion_Returns204()
     {
@@ -113,6 +131,9 @@ public sealed class BadgeInstanceManagementTests(TestContext testContext) : EndT
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
     }
 
+    // Given an existing badge instance
+    // When it is updated with a stale expected version
+    // Then the API returns 409 Conflict
     [TestMethod]
     public async Task UpdateBadgeInstance_WithStaleVersion_Returns409()
     {
@@ -132,6 +153,9 @@ public sealed class BadgeInstanceManagementTests(TestContext testContext) : EndT
         response.StatusCode.ShouldBe(HttpStatusCode.Conflict);
     }
 
+    // Given a badge type with no matching badge instance
+    // When an update is requested for a non-existent instance id
+    // Then the API returns 404 Not Found
     [TestMethod]
     public async Task UpdateBadgeInstance_NotFound_Returns404()
     {
@@ -151,6 +175,9 @@ public sealed class BadgeInstanceManagementTests(TestContext testContext) : EndT
 
     // ─── Delete ─────────────────────────────────────────────────────────────
 
+    // Given an existing badge instance
+    // When it is deleted
+    // Then the API returns 204 No Content
     [TestMethod]
     public async Task DeleteBadgeInstance_ExistingInstance_Returns204()
     {
@@ -166,6 +193,9 @@ public sealed class BadgeInstanceManagementTests(TestContext testContext) : EndT
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
     }
 
+    // Given a badge type with no matching badge instance
+    // When deletion is requested for a non-existent instance id
+    // Then the API returns 404 Not Found
     [TestMethod]
     public async Task DeleteBadgeInstance_NotFound_Returns404()
     {
@@ -182,6 +212,9 @@ public sealed class BadgeInstanceManagementTests(TestContext testContext) : EndT
 
     // ─── List ────────────────────────────────────────────────────────────────
 
+    // Given a standalone badge type with multiple badge instances
+    // When the badge instances are listed
+    // Then the API returns 200 OK with all the instances
     [TestMethod]
     public async Task ListBadgeInstances_StandaloneType_Returns200WithInstances()
     {
@@ -201,6 +234,9 @@ public sealed class BadgeInstanceManagementTests(TestContext testContext) : EndT
         items.ShouldContain(i => i.DisplayName == "Bob Jones" && i.Notes == "Workshop");
     }
 
+    // Given a badge instance belonging to a different event but sharing the same badge type id
+    // When the badge instances for the current event's badge type are listed
+    // Then the instance from the other event is excluded from the results
     [TestMethod]
     public async Task ListBadgeInstances_OtherEventInstanceWithSameBadgeTypeId_ExcludesOtherEventInstance()
     {
@@ -228,6 +264,9 @@ public sealed class BadgeInstanceManagementTests(TestContext testContext) : EndT
         items.ShouldNotContain(i => i.DisplayName == "Mallory Jones");
     }
 
+    // Given a ticket-based badge type
+    // When its badge instances are listed
+    // Then the API returns 400 Bad Request
     [TestMethod]
     public async Task ListBadgeInstances_TicketBasedType_Returns400()
     {

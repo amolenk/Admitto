@@ -7,13 +7,13 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Organization.Application.Jobs;
 [TestClass]
 public sealed class DeprovisionUserIdpJobTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    // Given a user removed from all teams whose deprovisioning grace period has expired
+    // When the deprovisioning job runs
+    // Then the user's IdP account is deleted and their external user id and grace period are cleared
     [TestMethod]
     public async ValueTask DeprovisionUserIdpJob_GracePeriodExpired_DeprovisionsUser()
     {
         // Arrange
-        // SC-013: Given alice has been removed from all teams and her grace period has
-        // expired, when the deprovisioning job runs, her IdP account is deleted and
-        // ExternalUserId + DeprovisionAfter are cleared.
         var fixture = DeprovisionUserIdpJobFixture.GracePeriodExpired();
         await fixture.SetupAsync(Environment);
 

@@ -5,6 +5,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 [TestClass]
 public sealed class GetRegistrationsTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    // Given an event with no registrations
+    // When the registrations are queried
+    // Then an empty list is returned
     [TestMethod]
     public async ValueTask EmptyEvent_ReturnsEmptyList()
     {
@@ -18,6 +21,9 @@ public sealed class GetRegistrationsTests(TestContext testContext) : AspireInteg
         result.ShouldNotBeNull().ShouldBeEmpty();
     }
 
+    // Given an event with two registrations
+    // When the registrations are queried
+    // Then one result item is returned per registration with its ticket details
     [TestMethod]
     public async ValueTask WithRegistrations_ReturnsOneItemPerRegistration()
     {
@@ -42,6 +48,9 @@ public sealed class GetRegistrationsTests(TestContext testContext) : AspireInteg
         result.SingleOrDefault(r => r.Email == "bob@example.com").ShouldNotBeNull();
     }
 
+    // Given a registration that holds multiple tickets
+    // When the registrations are queried
+    // Then all of that registration's tickets are surfaced
     [TestMethod]
     public async ValueTask RegistrationWithMultipleTickets_SurfacesAllTickets()
     {
@@ -64,6 +73,9 @@ public sealed class GetRegistrationsTests(TestContext testContext) : AspireInteg
         vip.ShouldNotBeNull().Name.ShouldBe(GetRegistrationsFixture.VipName);
     }
 
+    // Given registrations spread across two different events
+    // When the registrations are queried for one specific event
+    // Then only that event's registrations are returned, excluding the other event's
     [TestMethod]
     public async ValueTask OnlyReturnsRegistrationsForRequestedEvent()
     {

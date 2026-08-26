@@ -9,6 +9,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 [TestClass]
 public sealed class ReconfirmAutoExpiredIntegrationEventHandlerTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    // Given a registered attendee who has not reconfirmed before the deadline
+    // When the reconfirm-auto-expired event is handled
+    // Then the registration is cancelled with a reconfirm auto-cancel reason
     [TestMethod]
     public async ValueTask HandleAsync_RegisteredUnreconfirmedRegistration_CancelsRegistration()
     {
@@ -30,6 +33,9 @@ public sealed class ReconfirmAutoExpiredIntegrationEventHandlerTests(TestContext
         });
     }
 
+    // Given an attendee who already reconfirmed their registration
+    // When the reconfirm-auto-expired event is handled
+    // Then the registration stays registered and no outbox message is produced
     [TestMethod]
     public async ValueTask HandleAsync_AlreadyReconfirmedRegistration_SkipsCancellation()
     {
@@ -52,6 +58,9 @@ public sealed class ReconfirmAutoExpiredIntegrationEventHandlerTests(TestContext
         });
     }
 
+    // Given a registration that was already cancelled for another reason
+    // When the reconfirm-auto-expired event is handled
+    // Then the original cancellation reason is left unchanged
     [TestMethod]
     public async ValueTask HandleAsync_AlreadyCancelledRegistration_SkipsCancellation()
     {
@@ -72,6 +81,9 @@ public sealed class ReconfirmAutoExpiredIntegrationEventHandlerTests(TestContext
         });
     }
 
+    // Given a registration belonging to an archived ticketed event
+    // When the reconfirm-auto-expired event is handled
+    // Then the registration is left registered but the event is still recorded as processed
     [TestMethod]
     public async ValueTask HandleAsync_ArchivedEvent_SkipsCancellation()
     {
@@ -99,6 +111,9 @@ public sealed class ReconfirmAutoExpiredIntegrationEventHandlerTests(TestContext
         });
     }
 
+    // Given a reconfirm-auto-expired event that has already been processed once
+    // When the same event is handled again
+    // Then the registration is cancelled only once and the event is recorded as processed a single time
     [TestMethod]
     public async ValueTask HandleAsync_RedeliveredEvent_IsIdempotent()
     {

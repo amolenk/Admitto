@@ -14,7 +14,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 // Accepts and emits values in the same `YYYY-MM-DDTHH:mm` string format.
 
 const DATETIME_LOCAL = "yyyy-MM-dd'T'HH:mm";
-const DATE_PART = "yyyy-MM-dd";
 const TIME_PART = "HH:mm";
 
 function parseValue(value: string | undefined): { date: Date | undefined; time: string } {

@@ -68,4 +68,4 @@ The aggregate's `Recipients` snapshot tracks per-recipient send state (`Pending`
 ## References
 - arc42 chapter 5 — building-block view (Email module: bulk email, reconfirm sending).
 - arc42 chapter 6 — runtime view (§6.9 bulk-email fan-out, §6.10 reconfirm scheduling).
-- Change: `openspec/changes/add-bulk-email/` (proposal, design, specs).
+- Change: the bulk-email design.

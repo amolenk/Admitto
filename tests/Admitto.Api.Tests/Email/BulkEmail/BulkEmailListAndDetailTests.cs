@@ -9,8 +9,9 @@ namespace Amolenk.Admitto.Api.Tests.Email.BulkEmail;
 [TestClass]
 public sealed class BulkEmailListAndDetailTests(TestContext testContext) : EndToEndTestBase
 {
-    // SC-8.4: GET / returns the job in the list, GET /{id} returns full detail with
-    // per-recipient status visible after fan-out completes.
+    // Given a bulk email job created for two registered attendees
+    // When the fan-out completes and the job is fetched by list and by id
+    // Then the list includes the job and the detail shows completed status with per-recipient sent status
     [TestMethod]
     public async Task ListAndDetail_ReturnPerRecipientStatus()
     {

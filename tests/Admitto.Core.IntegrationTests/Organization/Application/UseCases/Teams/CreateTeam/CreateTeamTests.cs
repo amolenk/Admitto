@@ -9,6 +9,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Organization.Application.UseCase
 [TestClass]
 public sealed class CreateTeamTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    // Given a valid CreateTeam command
+    // When the command is handled
+    // Then a team is created with the given name
     [TestMethod]
     public async ValueTask CreateTeam_ValidCommand_CreatesTeam()
     {
@@ -42,6 +45,9 @@ public sealed class CreateTeamTests(TestContext testContext) : AspireIntegration
     private static CreateTeamHandler NewCreateTeamHandler() =>
         new(Environment.OrganizationDatabase.Context);
 
+    // Given a CreateTeam command with an empty name
+    // When the command is handled
+    // Then it throws a business rule violation for an empty text value
     [TestMethod]
     public async ValueTask CreateTeam_EmptyName_ThrowsBusinessRuleViolation()
     {

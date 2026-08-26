@@ -10,6 +10,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Organization.Application.UseCase
 [TestClass]
 public sealed class RegisterExternalUserTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    // Given an existing user who is not yet linked to an external identity
+    // When a RegisterExternalUser command is handled for that user
+    // Then the user is updated with the external user id
     [TestMethod]
     public async ValueTask RegisterExternalUser_ExternalUserDoesNotExist_RegistersExternalUser()
     {
@@ -34,6 +37,9 @@ public sealed class RegisterExternalUserTests(TestContext testContext) : AspireI
         });
     }
 
+    // Given no user exists with the given id
+    // When a RegisterExternalUser command is handled
+    // Then a not-found error is thrown
     [TestMethod]
     public async ValueTask RegisterExternalUser_UserDoesNotExist_ThrowsException()
     {

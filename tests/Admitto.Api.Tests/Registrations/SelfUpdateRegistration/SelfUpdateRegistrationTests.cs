@@ -9,6 +9,9 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.SelfUpdateRegistration;
 [TestClass]
 public sealed class SelfUpdateRegistrationTests(TestContext testContext) : EndToEndTestBase
 {
+    // Given an open registration with available workshop capacity
+    // When the attendee submits a valid self-service update
+    // Then the API returns 200 OK and the changes are persisted
     [TestMethod]
     public async Task SelfUpdateRegistration_ValidUpdate_Returns200AndPersistsChanges()
     {
@@ -34,6 +37,9 @@ public sealed class SelfUpdateRegistrationTests(TestContext testContext) : EndTo
         });
     }
 
+    // Given an open registration
+    // When the attendee submits an update missing the required first name
+    // Then the API returns 400 Bad Request with a validation problem
     [TestMethod]
     public async Task SelfUpdateRegistration_MissingFirstName_Returns400ValidationProblem()
     {
@@ -56,6 +62,9 @@ public sealed class SelfUpdateRegistrationTests(TestContext testContext) : EndTo
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 
+    // Given an open registration
+    // When the update request is sent without an API key
+    // Then the API returns 401 Unauthorized
     [TestMethod]
     public async Task SelfUpdateRegistration_MissingApiKey_Returns401()
     {
@@ -70,6 +79,9 @@ public sealed class SelfUpdateRegistrationTests(TestContext testContext) : EndTo
         response.StatusCode.ShouldBe(HttpStatusCode.Unauthorized);
     }
 
+    // Given no registration exists for a given id
+    // When an update is submitted for that non-existent registration
+    // Then the API returns 404 Not Found
     [TestMethod]
     public async Task SelfUpdateRegistration_RegistrationNotFound_Returns404()
     {
@@ -87,6 +99,9 @@ public sealed class SelfUpdateRegistrationTests(TestContext testContext) : EndTo
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
     }
 
+    // Given a registration belonging to one team
+    // When the update is authenticated with an API key belonging to a different team
+    // Then the API returns 404 Not Found
     [TestMethod]
     public async Task SelfUpdateRegistration_ApiKeyForOtherTeam_Returns404()
     {
@@ -104,6 +119,9 @@ public sealed class SelfUpdateRegistrationTests(TestContext testContext) : EndTo
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
     }
 
+    // Given a registration that has already been cancelled
+    // When the attendee attempts to submit a self-service update
+    // Then the API returns 409 Conflict
     [TestMethod]
     public async Task SelfUpdateRegistration_CancelledRegistration_Returns409()
     {
@@ -121,6 +139,9 @@ public sealed class SelfUpdateRegistrationTests(TestContext testContext) : EndTo
         response.StatusCode.ShouldBe(HttpStatusCode.Conflict);
     }
 
+    // Given an open registration
+    // When an update is sent to the deprecated tickets route
+    // Then the API returns 404 Not Found
     [TestMethod]
     public async Task SelfUpdateRegistration_OldTicketsRoute_Returns404()
     {

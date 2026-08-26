@@ -3,6 +3,7 @@ using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Shouldly;
 using Should = Shouldly.Should;
 
@@ -21,6 +22,8 @@ public sealed class TicketedEventTests
 
     // ── Create ───────────────────────────────────────────────────────────────
 
+    // When a ticketed event is created with a valid start and end date
+    // Then it is active with the given identity, a slug derived from its name, and default waitlist quiet hours
     [TestMethod]
     public void Create_ValidDates_ReturnsActiveEvent()
     {
@@ -38,6 +41,8 @@ public sealed class TicketedEventTests
         sut.WaitlistPolicy.QuietHoursEnd.ShouldBe(new TimeOnly(8, 0));
     }
 
+    // When a ticketed event is created with an explicit public slug
+    // Then that slug is stored instead of one derived from the name
     [TestMethod]
     public void Create_PublicSlug_StoresPublicSlug()
     {
@@ -58,6 +63,8 @@ public sealed class TicketedEventTests
         sut.PublicSlug.ShouldBe(publicSlug);
     }
 
+    // When a ticketed event is created with an end date before its start date
+    // Then it throws an end-before-start business rule violation
     [TestMethod]
     public void Create_EndBeforeStart_Throws()
     {
@@ -73,11 +80,14 @@ public sealed class TicketedEventTests
                 TimeZoneId.From("UTC"));
 
         var ex = Should.Throw<BusinessRuleViolationException>(act);
-        ex.Error.Code.ShouldBe("ticketed_event.end_before_start");
+        ex.Error.ShouldMatch(TicketedEvent.Errors.EndBeforeStart);
     }
 
     // ── UpdateDetails ────────────────────────────────────────────────────────
 
+    // Given an active event
+    // When its details are updated with a new name, slug, time zone, and dates
+    // Then all of those fields reflect the new values
     [TestMethod]
     public void UpdateDetails_Active_UpdatesFields()
     {
@@ -97,6 +107,9 @@ public sealed class TicketedEventTests
         sut.EndsAt.ShouldBe(newEnd);
     }
 
+    // Given an active event
+    // When its details are updated with an end date before the start date
+    // Then it throws an end-before-start business rule violation
     [TestMethod]
     public void UpdateDetails_EndBeforeStart_Throws()
     {
@@ -105,9 +118,12 @@ public sealed class TicketedEventTests
         var act = () => sut.UpdateDetails(DefaultName, DefaultWebsite, DefaultBaseUrl, DefaultEnd, DefaultStart);
 
         var ex = Should.Throw<BusinessRuleViolationException>(act);
-        ex.Error.Code.ShouldBe("ticketed_event.end_before_start");
+        ex.Error.ShouldMatch(TicketedEvent.Errors.EndBeforeStart);
     }
 
+    // Given an archived event
+    // When its details are updated
+    // Then it throws an event-not-active business rule violation
     [TestMethod]
     public void UpdateDetails_NotActive_Throws()
     {
@@ -117,9 +133,12 @@ public sealed class TicketedEventTests
         var act = () => sut.UpdateDetails(DefaultName, DefaultWebsite, DefaultBaseUrl, DefaultStart, DefaultEnd);
 
         var ex = Should.Throw<BusinessRuleViolationException>(act);
-        ex.Error.Code.ShouldBe("ticketed_event.event_not_active");
+        ex.Error.ShouldMatch(TicketedEvent.Errors.EventNotActive);
     }
 
+    // Given an event with a registration policy whose window closes at the current start time
+    // When the event's start is moved earlier so the registration window would close after the new start
+    // Then it throws a registration-window-closes-after-event-start business rule violation
     [TestMethod]
     public void UpdateDetails_StartMovesIntoRegistrationWindow_Throws()
     {
@@ -131,9 +150,12 @@ public sealed class TicketedEventTests
             DefaultName, DefaultWebsite, DefaultBaseUrl, DefaultStart.AddDays(-1), DefaultEnd);
 
         var ex = Should.Throw<BusinessRuleViolationException>(act);
-        ex.Error.Code.ShouldBe("ticketed_event.registration_window_closes_after_event_start");
+        ex.Error.ShouldMatch(TicketedEvent.Errors.RegistrationWindowClosesAfterEventStart);
     }
 
+    // Given an event with a registration policy that closes before its start
+    // When the event's start and end are moved later, staying after the registration window closes
+    // Then the update is accepted and the new start is stored
     [TestMethod]
     public void UpdateDetails_StartStillAfterRegistrationWindowClose_Accepted()
     {
@@ -148,6 +170,9 @@ public sealed class TicketedEventTests
         sut.StartsAt.ShouldBe(newStart);
     }
 
+    // Given an event with a reconfirm policy whose window closes just before the current start
+    // When the event's start is moved earlier so the reconfirm window would close after the new start
+    // Then it throws a reconfirm-window-closes-after-event-start business rule violation
     [TestMethod]
     public void UpdateDetails_StartMovesBeforeReconfirmWindowClose_Throws()
     {
@@ -159,11 +184,14 @@ public sealed class TicketedEventTests
             DefaultName, DefaultWebsite, DefaultBaseUrl, DefaultStart.AddDays(-1), DefaultEnd);
 
         var ex = Should.Throw<BusinessRuleViolationException>(act);
-        ex.Error.Code.ShouldBe("ticketed_event.reconfirm_window_closes_after_event_start");
+        ex.Error.ShouldMatch(TicketedEvent.Errors.ReconfirmWindowClosesAfterEventStart);
     }
 
     // ── Archive ──────────────────────────────────────────────────────────────
 
+    // Given an active event
+    // When the event is archived
+    // Then its status becomes Archived and a status-changed domain event is raised
     [TestMethod]
     public void Archive_Active_TransitionsToArchivedAndRaisesEvent()
     {
@@ -178,6 +206,9 @@ public sealed class TicketedEventTests
         raised.NewStatus.ShouldBe(EventLifecycleStatus.Archived);
     }
 
+    // Given an event that has already been archived
+    // When the event is archived again
+    // Then it throws an event-not-active business rule violation
     [TestMethod]
     public void Archive_AlreadyArchived_Throws()
     {
@@ -185,11 +216,14 @@ public sealed class TicketedEventTests
         sut.Archive();
 
         var ex = Should.Throw<BusinessRuleViolationException>(() => sut.Archive());
-        ex.Error.Code.ShouldBe("ticketed_event.event_not_active");
+        ex.Error.ShouldMatch(TicketedEvent.Errors.EventNotActive);
     }
 
     // ── ConfigureRegistrationPolicy ──────────────────────────────────────────
 
+    // Given an active event
+    // When a registration policy is configured
+    // Then the event stores that policy
     [TestMethod]
     public void ConfigureRegistrationPolicy_Active_StoresPolicy()
     {
@@ -201,6 +235,9 @@ public sealed class TicketedEventTests
         sut.RegistrationPolicy.ShouldBe(policy);
     }
 
+    // Given an archived event
+    // When a registration policy is configured
+    // Then it throws an event-not-active business rule violation
     [TestMethod]
     public void ConfigureRegistrationPolicy_Archived_Throws()
     {
@@ -210,9 +247,12 @@ public sealed class TicketedEventTests
         var act = () => sut.ConfigureRegistrationPolicy(NewRegistrationPolicy());
 
         var ex = Should.Throw<BusinessRuleViolationException>(act);
-        ex.Error.Code.ShouldBe("ticketed_event.event_not_active");
+        ex.Error.ShouldMatch(TicketedEvent.Errors.EventNotActive);
     }
 
+    // Given an active event
+    // When a registration policy is configured whose window closes exactly at the event's start
+    // Then the policy is accepted and stored
     [TestMethod]
     public void ConfigureRegistrationPolicy_WindowClosesAtEventStart_Accepted()
     {
@@ -224,6 +264,9 @@ public sealed class TicketedEventTests
         sut.RegistrationPolicy.ShouldBe(policy);
     }
 
+    // Given an active event
+    // When a registration policy is configured whose window closes after the event's start
+    // Then it throws a registration-window-closes-after-event-start business rule violation
     [TestMethod]
     public void ConfigureRegistrationPolicy_WindowClosesAfterEventStart_Throws()
     {
@@ -233,9 +276,12 @@ public sealed class TicketedEventTests
         var act = () => sut.ConfigureRegistrationPolicy(policy);
 
         var ex = Should.Throw<BusinessRuleViolationException>(act);
-        ex.Error.Code.ShouldBe("ticketed_event.registration_window_closes_after_event_start");
+        ex.Error.ShouldMatch(TicketedEvent.Errors.RegistrationWindowClosesAfterEventStart);
     }
 
+    // Given an event with a registration policy already configured
+    // When the policy is configured as null
+    // Then the registration policy is cleared
     [TestMethod]
     public void ConfigureRegistrationPolicy_NullPolicy_ClearsPolicy()
     {
@@ -249,6 +295,9 @@ public sealed class TicketedEventTests
 
     // ── ConfigureReconfirmPolicy ─────────────────────────────────────────────
 
+    // Given an active event
+    // When a reconfirm policy is configured
+    // Then the event stores that policy
     [TestMethod]
     public void ConfigureReconfirmPolicy_Active_StoresPolicy()
     {
@@ -260,6 +309,9 @@ public sealed class TicketedEventTests
         sut.ReconfirmPolicy.ShouldBe(policy);
     }
 
+    // Given an archived event
+    // When a reconfirm policy is configured
+    // Then it throws an event-not-active business rule violation
     [TestMethod]
     public void ConfigureReconfirmPolicy_NotActive_Throws()
     {
@@ -269,9 +321,12 @@ public sealed class TicketedEventTests
         var act = () => sut.ConfigureReconfirmPolicy(NewReconfirmPolicy());
 
         var ex = Should.Throw<BusinessRuleViolationException>(act);
-        ex.Error.Code.ShouldBe("ticketed_event.event_not_active");
+        ex.Error.ShouldMatch(TicketedEvent.Errors.EventNotActive);
     }
 
+    // Given an active event
+    // When a reconfirm policy is configured whose window closes before the event's start
+    // Then the policy is accepted and stored
     [TestMethod]
     public void ConfigureReconfirmPolicy_WindowClosesBeforeEventStart_Accepted()
     {
@@ -284,6 +339,9 @@ public sealed class TicketedEventTests
         sut.ReconfirmPolicy.ShouldBe(policy);
     }
 
+    // Given an active event
+    // When a reconfirm policy is configured whose window closes exactly at the event's start
+    // Then it throws a reconfirm-window-closes-after-event-start business rule violation
     [TestMethod]
     public void ConfigureReconfirmPolicy_WindowClosesAtEventStart_Throws()
     {
@@ -294,9 +352,12 @@ public sealed class TicketedEventTests
         var act = () => sut.ConfigureReconfirmPolicy(policy);
 
         var ex = Should.Throw<BusinessRuleViolationException>(act);
-        ex.Error.Code.ShouldBe("ticketed_event.reconfirm_window_closes_after_event_start");
+        ex.Error.ShouldMatch(TicketedEvent.Errors.ReconfirmWindowClosesAfterEventStart);
     }
 
+    // Given an active event
+    // When a reconfirm policy is configured whose window closes after the event's start
+    // Then it throws a reconfirm-window-closes-after-event-start business rule violation
     [TestMethod]
     public void ConfigureReconfirmPolicy_WindowClosesAfterEventStart_Throws()
     {
@@ -307,9 +368,12 @@ public sealed class TicketedEventTests
         var act = () => sut.ConfigureReconfirmPolicy(policy);
 
         var ex = Should.Throw<BusinessRuleViolationException>(act);
-        ex.Error.Code.ShouldBe("ticketed_event.reconfirm_window_closes_after_event_start");
+        ex.Error.ShouldMatch(TicketedEvent.Errors.ReconfirmWindowClosesAfterEventStart);
     }
 
+    // Given an event with a reconfirm policy already configured
+    // When the policy is configured as null
+    // Then the reconfirm policy is cleared
     [TestMethod]
     public void ConfigureReconfirmPolicy_NullPolicy_Accepted()
     {
@@ -323,6 +387,9 @@ public sealed class TicketedEventTests
 
     // ── ConfigureWaitlistPolicy ──────────────────────────────────────────────
 
+    // Given an active event
+    // When a waitlist quiet-hours policy is configured
+    // Then the event stores the given start and end times
     [TestMethod]
     public void ConfigureWaitlistPolicy_Active_StoresPolicy()
     {
@@ -334,6 +401,9 @@ public sealed class TicketedEventTests
         sut.WaitlistPolicy.QuietHoursEnd.ShouldBe(new TimeOnly(7, 0));
     }
 
+    // Given an archived event
+    // When a waitlist policy is configured
+    // Then it throws an event-not-active business rule violation
     [TestMethod]
     public void ConfigureWaitlistPolicy_NotActive_Throws()
     {
@@ -343,11 +413,14 @@ public sealed class TicketedEventTests
         var act = () => sut.ConfigureWaitlistPolicy(new TimeOnly(23, 0), new TimeOnly(7, 0));
 
         var ex = Should.Throw<BusinessRuleViolationException>(act);
-        ex.Error.Code.ShouldBe("ticketed_event.event_not_active");
+        ex.Error.ShouldMatch(TicketedEvent.Errors.EventNotActive);
     }
 
     // ── UpdateAdditionalDetailSchema ─────────────────────────────────────────
 
+    // Given an active event
+    // When the additional detail schema is updated with two fields
+    // Then the schema stores both fields in order and an AdditionalDetailSchemaUpdated event is raised
     [TestMethod]
     public void UpdateAdditionalDetailSchema_Active_StoresSchemaAndRaisesEvent()
     {
@@ -371,6 +444,9 @@ public sealed class TicketedEventTests
         raised.Schema.Fields.Count.ShouldBe(2);
     }
 
+    // Given an event with an existing additional detail schema
+    // When the schema is updated with a different set of fields
+    // Then the old fields are fully replaced by the new ones
     [TestMethod]
     public void UpdateAdditionalDetailSchema_ReplacesAtomically()
     {
@@ -389,6 +465,9 @@ public sealed class TicketedEventTests
         sut.AdditionalDetailSchema.Fields[0].Key.ShouldBe("tshirt");
     }
 
+    // Given an archived event
+    // When the additional detail schema is updated
+    // Then it throws an event-not-active business rule violation
     [TestMethod]
     public void UpdateAdditionalDetailSchema_Archived_Throws()
     {
@@ -398,9 +477,12 @@ public sealed class TicketedEventTests
         var act = () => sut.UpdateAdditionalDetailSchema(Array.Empty<AdditionalDetailField>());
 
         var ex = Should.Throw<BusinessRuleViolationException>(act);
-        ex.Error.Code.ShouldBe("ticketed_event.event_not_active");
+        ex.Error.ShouldMatch(TicketedEvent.Errors.EventNotActive);
     }
 
+    // Given an active event
+    // When the additional detail schema is updated with two fields sharing the same key
+    // Then it throws a duplicate-key business rule violation
     [TestMethod]
     public void UpdateAdditionalDetailSchema_DuplicateKey_Throws()
     {
@@ -413,9 +495,12 @@ public sealed class TicketedEventTests
         });
 
         var ex = Should.Throw<BusinessRuleViolationException>(act);
-        ex.Error.Code.ShouldBe("additional_detail_schema.duplicate_key");
+        ex.Error.ShouldMatch(AdditionalDetailSchema.Errors.DuplicateKey("dietary"));
     }
 
+    // Given an active event
+    // When the additional detail schema is updated with two fields whose names differ only by case
+    // Then it throws a duplicate-name business rule violation
     [TestMethod]
     public void UpdateAdditionalDetailSchema_DuplicateName_CaseInsensitive_Throws()
     {
@@ -428,9 +513,12 @@ public sealed class TicketedEventTests
         });
 
         var ex = Should.Throw<BusinessRuleViolationException>(act);
-        ex.Error.Code.ShouldBe("additional_detail_schema.duplicate_name");
+        ex.Error.ShouldMatch(AdditionalDetailSchema.Errors.DuplicateName("dietary"));
     }
 
+    // Given an active event
+    // When the additional detail schema is updated with more fields than the allowed maximum
+    // Then it throws a too-many-fields business rule violation
     [TestMethod]
     public void UpdateAdditionalDetailSchema_TooManyFields_Throws()
     {
@@ -442,11 +530,14 @@ public sealed class TicketedEventTests
         var act = () => sut.UpdateAdditionalDetailSchema(fields);
 
         var ex = Should.Throw<BusinessRuleViolationException>(act);
-        ex.Error.Code.ShouldBe("additional_detail_schema.too_many_fields");
+        ex.Error.ShouldMatch(AdditionalDetailSchema.Errors.TooManyFields);
     }
 
     // ── IsRegistrationOpen ───────────────────────────────────────────────────
 
+    // Given an event with no registration policy configured
+    // When checking whether registration is open
+    // Then it returns false
     [TestMethod]
     public void IsRegistrationOpen_NoPolicy_ReturnsFalse()
     {
@@ -455,6 +546,9 @@ public sealed class TicketedEventTests
         sut.IsRegistrationOpen(DateTimeOffset.UtcNow).ShouldBeFalse();
     }
 
+    // Given an active event with a registration window that includes the current time
+    // When checking whether registration is open
+    // Then it returns true
     [TestMethod]
     public void IsRegistrationOpen_InsideWindowAndActive_ReturnsTrue()
     {
@@ -466,6 +560,9 @@ public sealed class TicketedEventTests
         sut.IsRegistrationOpen(now).ShouldBeTrue();
     }
 
+    // Given an active event whose registration window has not opened yet
+    // When checking whether registration is open
+    // Then it returns false
     [TestMethod]
     public void IsRegistrationOpen_BeforeWindow_Active_ReturnsFalse()
     {
@@ -477,6 +574,9 @@ public sealed class TicketedEventTests
         sut.IsRegistrationOpen(now).ShouldBeFalse();
     }
 
+    // Given an active event whose registration window has already closed
+    // When checking whether registration is open
+    // Then it returns false
     [TestMethod]
     public void IsRegistrationOpen_AfterWindow_Active_ReturnsFalse()
     {
@@ -488,6 +588,9 @@ public sealed class TicketedEventTests
         sut.IsRegistrationOpen(now).ShouldBeFalse();
     }
 
+    // Given an archived event whose registration window would otherwise include the current time
+    // When checking whether registration is open
+    // Then it returns false
     [TestMethod]
     public void IsRegistrationOpen_InsideWindow_Archived_ReturnsFalse()
     {
@@ -500,6 +603,9 @@ public sealed class TicketedEventTests
         sut.IsRegistrationOpen(now).ShouldBeFalse();
     }
 
+    // Given an archived event whose registration window has not opened yet
+    // When checking whether registration is open
+    // Then it returns false
     [TestMethod]
     public void IsRegistrationOpen_BeforeWindow_Archived_ReturnsFalse()
     {
@@ -512,6 +618,9 @@ public sealed class TicketedEventTests
         sut.IsRegistrationOpen(now).ShouldBeFalse();
     }
 
+    // Given an archived event whose registration window has already closed
+    // When checking whether registration is open
+    // Then it returns false
     [TestMethod]
     public void IsRegistrationOpen_AfterWindow_Archived_ReturnsFalse()
     {
@@ -526,6 +635,8 @@ public sealed class TicketedEventTests
 
     // ── Value object: RegistrationPolicy ─────────────────────────────────────
 
+    // When a registration policy is created with a close date before its open date
+    // Then it throws a window-close-before-open business rule violation
     [TestMethod]
     public void RegistrationPolicy_CloseBeforeOpen_Throws()
     {
@@ -534,9 +645,11 @@ public sealed class TicketedEventTests
         var act = () => TicketedEventRegistrationPolicy.Create(now.AddDays(1), now);
 
         var ex = Should.Throw<BusinessRuleViolationException>(act);
-        ex.Error.Code.ShouldBe("ticketed_event_registration_policy.window_close_before_open");
+        ex.Error.ShouldMatch(TicketedEventRegistrationPolicy.Errors.WindowCloseBeforeOpen);
     }
 
+    // When a registration policy is created with equal open and close dates
+    // Then it throws a business rule violation
     [TestMethod]
     public void RegistrationPolicy_CloseEqualsOpen_Throws()
     {
@@ -547,6 +660,9 @@ public sealed class TicketedEventTests
         Should.Throw<BusinessRuleViolationException>(act);
     }
 
+    // Given a registration policy restricted to a specific email domain
+    // When checking whether an email's domain is allowed regardless of letter casing
+    // Then a matching domain is allowed and a different domain is not
     [TestMethod]
     public void RegistrationPolicy_EmailDomain_MatchesCaseInsensitively()
     {
@@ -560,6 +676,8 @@ public sealed class TicketedEventTests
 
     // ── Value object: ReconfirmPolicy ────────────────────────────────────────
 
+    // When a reconfirm policy is created with a close date before its open date
+    // Then it throws a window-close-before-open business rule violation
     [TestMethod]
     public void ReconfirmPolicy_CloseBeforeOpen_Throws()
     {
@@ -569,9 +687,11 @@ public sealed class TicketedEventTests
             now.AddDays(2), now, TimeSpan.FromDays(1), TimeSpan.FromHours(24));
 
         var ex = Should.Throw<BusinessRuleViolationException>(act);
-        ex.Error.Code.ShouldBe("ticketed_event_reconfirm_policy.window_close_before_open");
+        ex.Error.ShouldMatch(TicketedEventReconfirmPolicy.Errors.WindowCloseBeforeOpen);
     }
 
+    // When a reconfirm policy is created with a reminder cadence below the one-hour minimum
+    // Then it throws a cadence-below-minimum business rule violation
     [TestMethod]
     public void ReconfirmPolicy_CadenceBelowOneHour_Throws()
     {
@@ -581,7 +701,7 @@ public sealed class TicketedEventTests
             now, now.AddDays(10), TimeSpan.FromMinutes(59), TimeSpan.FromHours(24));
 
         var ex = Should.Throw<BusinessRuleViolationException>(act);
-        ex.Error.Code.ShouldBe("ticketed_event_reconfirm_policy.cadence_below_minimum");
+        ex.Error.ShouldMatch(TicketedEventReconfirmPolicy.Errors.CadenceBelowMinimum);
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────

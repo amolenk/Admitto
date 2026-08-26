@@ -7,6 +7,9 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.ExportRegistrations;
 [TestClass]
 public sealed class ExportRegistrationsTests(TestContext testContext) : EndToEndTestBase
 {
+    // Given an event with multiple registrations
+    // When the registrations are exported
+    // Then the API returns a CSV file containing each attendee's data
     [TestMethod]
     public async Task ExportRegistrations_WithRegistrations_ReturnsCsvWithAttendeeData()
     {
@@ -30,6 +33,9 @@ public sealed class ExportRegistrationsTests(TestContext testContext) : EndToEnd
         lines.ShouldContain(l => l.Contains("Bob") && l.Contains("Jones") && l.Contains("bob@example.com"));
     }
 
+    // Given an event with both an active and a cancelled registration
+    // When the registrations are exported
+    // Then the CSV includes the cancelled attendee with their cancelled status
     [TestMethod]
     public async Task ExportRegistrations_WithCancelledRegistration_IncludesCancelledWithStatus()
     {
@@ -46,6 +52,9 @@ public sealed class ExportRegistrationsTests(TestContext testContext) : EndToEnd
         csv.ShouldContain("Cancelled");
     }
 
+    // Given an event configured with an additional registration detail field
+    // When the registrations are exported
+    // Then the CSV includes an extra column with that detail's value
     [TestMethod]
     public async Task ExportRegistrations_WithAdditionalDetailSchema_IncludesDetailColumns()
     {
@@ -67,6 +76,9 @@ public sealed class ExportRegistrationsTests(TestContext testContext) : EndToEnd
         lines.ShouldContain(l => l.Contains("Alice") && l.Contains("Acme"));
     }
 
+    // Given an event with no registrations
+    // When the registrations are exported
+    // Then the CSV contains only the header row
     [TestMethod]
     public async Task ExportRegistrations_NoRegistrations_ReturnsHeaderOnly()
     {
@@ -82,6 +94,9 @@ public sealed class ExportRegistrationsTests(TestContext testContext) : EndToEnd
         lines[0].ShouldBe("FirstName,LastName,Email,Tickets,Status,RegisteredAt");
     }
 
+    // Given no team exists for a given id
+    // When registrations are exported for that unknown team
+    // Then the API returns 404 Not Found
     [TestMethod]
     public async Task ExportRegistrations_UnknownTeam_Returns404()
     {
@@ -95,6 +110,9 @@ public sealed class ExportRegistrationsTests(TestContext testContext) : EndToEnd
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
     }
 
+    // Given a valid team but no event exists for a given id
+    // When registrations are exported for that unknown event
+    // Then the API returns 404 Not Found
     [TestMethod]
     public async Task ExportRegistrations_UnknownEvent_Returns404()
     {
@@ -108,6 +126,9 @@ public sealed class ExportRegistrationsTests(TestContext testContext) : EndToEnd
         response.StatusCode.ShouldBe(HttpStatusCode.NotFound);
     }
 
+    // Given a user who is not a member of the team owning the event
+    // When that user requests the registrations export
+    // Then the API returns 403 Forbidden
     [TestMethod]
     public async Task ExportRegistrations_NonMember_Returns403()
     {

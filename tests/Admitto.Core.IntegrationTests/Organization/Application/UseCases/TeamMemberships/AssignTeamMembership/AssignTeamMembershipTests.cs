@@ -7,6 +7,7 @@ using Amolenk.Admitto.Core.Organization.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Amolenk.Admitto.Testing.Builders.Organization.Domain;
+using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Microsoft.EntityFrameworkCore;
 using Should = Shouldly.Should;
 
@@ -15,6 +16,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Organization.Application.UseCase
 [TestClass]
 public sealed class AssignTeamMembershipTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    // Given a team with no user for the given email address
+    // When a team membership is assigned to that email address
+    // Then a new user is created and assigned the membership with the given role
     [TestMethod]
     public async ValueTask AssignTeamMembership_UserDoesNotExist_CreatesUserAndAssignsMembership()
     {
@@ -44,6 +48,9 @@ public sealed class AssignTeamMembershipTests(TestContext testContext) : AspireI
         });
     }
 
+    // Given a user already exists but is not a member of the team
+    // When a team membership is assigned to that user's email address
+    // Then the existing user is assigned the membership with the given role
     [TestMethod]
     public async ValueTask AssignTeamMembership_UserAlreadyExists_AssignsMembership()
     {
@@ -73,6 +80,9 @@ public sealed class AssignTeamMembershipTests(TestContext testContext) : AspireI
         });
     }
 
+    // Given a user is already a member of the team
+    // When a team membership is assigned to that user's email address again
+    // Then it throws an "already team member" error
     [TestMethod]
     public async ValueTask AssignTeamMembership_UserAlreadyMember_ThrowsAlreadyMember()
     {
@@ -96,9 +106,12 @@ public sealed class AssignTeamMembershipTests(TestContext testContext) : AspireI
         var exception = await Should.ThrowAsync<BusinessRuleViolationException>(
             async () => await NewAssignTeamMembershipHandler().HandleAsync(duplicateCommand, testContext.CancellationToken));
 
-        exception.Error.Code.ShouldBe("user.already_team_member");
+        exception.Error.ShouldMatch(User.Errors.UserAlreadyTeamMember(user.Id, teamId));
     }
 
+    // Given a user was removed from the team and is pending deprovisioning
+    // When the user is re-assigned a membership on the same team
+    // Then the pending deprovisioning is cancelled
     [TestMethod]
     public async ValueTask AssignTeamMembership_UserHadPendingDeprovisioning_CancelsDeprovisioning()
     {
@@ -145,6 +158,9 @@ public sealed class AssignTeamMembershipTests(TestContext testContext) : AspireI
         });
     }
 
+    // Given a team with no user for the given email address
+    // When a team membership is assigned to that email address, creating a new user
+    // Then a UserCreated domain event is queued on the new user entity
     [TestMethod]
     public async ValueTask AssignTeamMembership_NewUser_RaisesUserCreatedDomainEvent()
     {

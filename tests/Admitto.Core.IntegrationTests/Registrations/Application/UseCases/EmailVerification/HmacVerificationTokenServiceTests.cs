@@ -25,6 +25,9 @@ public sealed class HmacVerificationTokenServiceTests
         return new HmacVerificationTokenService(options, fakeTime ?? new FakeTimeProvider());
     }
 
+    // Given a verification token service
+    // When a token is issued for an email and then validated for the same event
+    // Then validation succeeds and returns the original email
     [TestMethod]
     public void HmacTokenService_Issue_Validate_RoundTrip_ReturnsEmail()
     {
@@ -37,6 +40,9 @@ public sealed class HmacVerificationTokenServiceTests
         claims.Email.ShouldBe(DefaultEmail);
     }
 
+    // Given a token issued with a limited time-to-live
+    // When it is validated after that time-to-live has elapsed
+    // Then validation returns null
     [TestMethod]
     public void HmacTokenService_Validate_ExpiredToken_ReturnsNull()
     {
@@ -53,6 +59,9 @@ public sealed class HmacVerificationTokenServiceTests
         claims.ShouldBeNull();
     }
 
+    // Given a token issued for a specific ticketed event
+    // When it is validated against a different ticketed event id
+    // Then validation returns null
     [TestMethod]
     public void HmacTokenService_Validate_WrongEventId_ReturnsNull()
     {
@@ -66,6 +75,9 @@ public sealed class HmacVerificationTokenServiceTests
         claims.ShouldBeNull();
     }
 
+    // Given a validly issued token
+    // When its signature part is tampered with
+    // Then validation returns null
     [TestMethod]
     public void HmacTokenService_Validate_TamperedToken_ReturnsNull()
     {
@@ -83,6 +95,9 @@ public sealed class HmacVerificationTokenServiceTests
         claims.ShouldBeNull();
     }
 
+    // Given a token string that is empty or does not have the expected structure
+    // When it is validated
+    // Then validation returns null
     [TestMethod]
     public void HmacTokenService_Validate_MalformedToken_ReturnsNull()
     {

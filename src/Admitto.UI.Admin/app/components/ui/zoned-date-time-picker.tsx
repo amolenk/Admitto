@@ -24,7 +24,6 @@ import {
 // without any timezone conversion at the call site.
 
 const WALL_CLOCK = "yyyy-MM-dd'T'HH:mm";
-const TIME_PART = "HH:mm";
 
 export interface ZonedDateTimePickerProps {
     value?: string;

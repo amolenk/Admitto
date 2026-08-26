@@ -17,6 +17,9 @@ public sealed class RegistrationTests
     private static readonly FirstName DefaultFirstName = FirstName.From("Test");
     private static readonly LastName DefaultLastName = LastName.From("User");
 
+    // Given two distinct ticket type snapshots with different time slots
+    // When a registration is created with those tickets
+    // Then each ticket's id and time slots are preserved on the registration
     [TestMethod]
     public void Registration_Create_ValidInput_CreatesWithCorrectSnapshots()
     {
@@ -41,6 +44,8 @@ public sealed class RegistrationTests
         sut.Tickets.ShouldContain(t => t.Id == id2 && t.TimeSlots.SequenceEqual(timeSlots2));
     }
 
+    // When a new registration is created
+    // Then it has the given identity and starts Registered with no reconfirmation or cancellation
     [TestMethod]
     public void Registration_Create_PopulatesIdentityAndDefaults()
     {
@@ -55,6 +60,9 @@ public sealed class RegistrationTests
         sut.CancellationReason.ShouldBeNull();
     }
 
+    // Given an active registration
+    // When it is cancelled at the attendee's request
+    // Then its status becomes Cancelled with that reason and a RegistrationCancelled event is raised
     [TestMethod]
     public void Registration_Cancel_TransitionsAndRaisesEvent()
     {
@@ -68,6 +76,9 @@ public sealed class RegistrationTests
         sut.GetDomainEvents().OfType<RegistrationCancelledDomainEvent>().ShouldHaveSingleItem();
     }
 
+    // Given an active registration
+    // When it is cancelled due to reconfirm auto-cancel
+    // Then its status becomes Cancelled with that specific reason
     [TestMethod]
     public void Registration_CancelWithReconfirmAutoCancel_TransitionsAndStoresReason()
     {
@@ -79,6 +90,9 @@ public sealed class RegistrationTests
         sut.CancellationReason.ShouldBe(CancellationReason.ReconfirmAutoCancel);
     }
 
+    // Given a registration that has already been cancelled
+    // When cancellation is attempted again
+    // Then it returns an AlreadyCancelled error
     [TestMethod]
     public void Registration_CancelTwice_Throws()
     {
@@ -90,6 +104,9 @@ public sealed class RegistrationTests
         result.Error.ShouldMatch(Registration.Errors.AlreadyCancelled);
     }
 
+    // Given an active, not-yet-reconfirmed registration
+    // When it is reconfirmed at a given time
+    // Then it is marked reconfirmed at that time and a RegistrationReconfirmed event is raised
     [TestMethod]
     public void Registration_Reconfirm_SetsFlagAndRaisesEvent()
     {
@@ -104,6 +121,9 @@ public sealed class RegistrationTests
         sut.GetDomainEvents().OfType<RegistrationReconfirmedDomainEvent>().ShouldHaveSingleItem();
     }
 
+    // Given a registration that has already been reconfirmed once
+    // When it is reconfirmed again at a later time
+    // Then the original reconfirmation timestamp is kept and no new event is raised
     [TestMethod]
     public void Registration_ReconfirmTwice_IsIdempotent()
     {
@@ -118,6 +138,9 @@ public sealed class RegistrationTests
         sut.GetDomainEvents().OfType<RegistrationReconfirmedDomainEvent>().ShouldBeEmpty();
     }
 
+    // Given a registration that has been cancelled
+    // When reconfirmation is attempted
+    // Then it returns a CannotReconfirmCancelled error
     [TestMethod]
     public void Registration_ReconfirmAfterCancel_Throws()
     {
@@ -129,6 +152,9 @@ public sealed class RegistrationTests
         result.Error.ShouldMatch(Registration.Errors.CannotReconfirmCancelled);
     }
 
+    // Given an active registration with its original ticket selection
+    // When the tickets are changed to a different set
+    // Then the registration reflects the new tickets and a TicketsChanged event is raised
     [TestMethod]
     public void Registration_ChangeTickets_HappyPath_UpdatesSnapshotAndRaisesEvent()
     {
@@ -151,6 +177,9 @@ public sealed class RegistrationTests
         sut.GetDomainEvents().OfType<TicketsChangedDomainEvent>().ShouldHaveSingleItem();
     }
 
+    // Given a registration with a given ticket selection
+    // When the tickets are "changed" to the exact same selection
+    // Then the tickets remain unchanged and no TicketsChanged event is raised
     [TestMethod]
     public void Registration_ChangeTickets_SameSelection_DoesNotRaiseEvent()
     {
@@ -169,6 +198,9 @@ public sealed class RegistrationTests
         sut.GetDomainEvents().OfType<TicketsChangedDomainEvent>().ShouldBeEmpty();
     }
 
+    // Given an active registration
+    // When the attendee's name, additional details, and tickets are replaced with new values
+    // Then the registration reflects all new values and a TicketsChanged event is raised
     [TestMethod]
     public void Registration_ReplaceAttendeeEditableState_ValidInput_ReplacesDetailsAndTickets()
     {
@@ -190,6 +222,9 @@ public sealed class RegistrationTests
         sut.GetDomainEvents().OfType<TicketsChangedDomainEvent>().ShouldHaveSingleItem();
     }
 
+    // Given a registration with an existing ticket selection
+    // When only the name and additional details are replaced while keeping the same tickets
+    // Then the details update but no TicketsChanged event is raised
     [TestMethod]
     public void Registration_ReplaceAttendeeEditableState_DetailsOnly_DoesNotRaiseTicketChangeEvent()
     {
@@ -210,6 +245,9 @@ public sealed class RegistrationTests
         sut.GetDomainEvents().OfType<TicketsChangedDomainEvent>().ShouldBeEmpty();
     }
 
+    // Given a registration that has been cancelled
+    // When the attendee-editable state is replaced
+    // Then it returns a RegistrationIsCancelled error
     [TestMethod]
     public void Registration_ReplaceAttendeeEditableState_Cancelled_Throws()
     {
@@ -226,6 +264,9 @@ public sealed class RegistrationTests
         result.Error.ShouldMatch(Registration.Errors.RegistrationIsCancelled);
     }
 
+    // Given a registration that has been cancelled
+    // When the tickets are changed
+    // Then it returns a RegistrationIsCancelled error
     [TestMethod]
     public void Registration_ChangeTickets_Cancelled_Throws()
     {
@@ -238,6 +279,9 @@ public sealed class RegistrationTests
         result.Error.ShouldMatch(Registration.Errors.RegistrationIsCancelled);
     }
 
+    // Given a cancelled registration
+    // When it is reset with new attendee data and tickets
+    // Then its identity fields are preserved and its status returns to Registered
     [TestMethod]
     public void Reset_CancelledRegistration_PreservesIdentityAndRestoresRegisteredStatus()
     {
@@ -248,21 +292,55 @@ public sealed class RegistrationTests
         var email = sut.Email;
         sut.Cancel(CancellationReason.AttendeeRequest);
         ClearEvents(sut);
+        var resetAt = DateTimeOffset.UtcNow;
 
         sut.Reset(
             FirstName.From("Reset"),
             LastName.From("User"),
             [new TicketTypeSnapshot(TicketTypeId.New(), TicketTypeName.From("Workshop"), [TimeSlot.From("morning")])],
             AdditionalDetails.From(new Dictionary<string, string> { ["tshirt"] = "M" }),
-            DateTimeOffset.UtcNow);
+            resetAt);
 
         sut.Id.ShouldBe(id);
         sut.TeamId.ShouldBe(teamId);
         sut.EventId.ShouldBe(eventId);
         sut.Email.ShouldBe(email);
         sut.Status.ShouldBe(RegistrationStatus.Registered);
+        sut.CreatedAt.ShouldBe(resetAt);
     }
 
+    // Given a cancelled registration with an earlier creation time
+    // When it is reset at a supplied time
+    // Then its creation time and attendee-registered event use the reset time while its id is preserved
+    [TestMethod]
+    public void Reset_CancelledRegistration_RefreshesCreatedAtAndEventTime()
+    {
+        var sut = NewRegistration();
+        var originalCreatedAt = DateTimeOffset.UtcNow.AddDays(-1);
+        sut.CreatedAt = originalCreatedAt;
+        sut.Cancel(CancellationReason.AttendeeRequest);
+        ClearEvents(sut);
+        var id = sut.Id;
+        var resetAt = DateTimeOffset.UtcNow;
+
+        sut.Reset(
+            FirstName.From("Reset"),
+            LastName.From("User"),
+            [new TicketTypeSnapshot(TicketTypeId.New(), TicketTypeName.From("Workshop"), [])],
+            AdditionalDetails.Empty,
+            resetAt);
+
+        sut.Id.ShouldBe(id);
+        sut.CreatedAt.ShouldBe(resetAt);
+        sut.GetDomainEvents()
+            .OfType<AttendeeRegisteredDomainEvent>()
+            .ShouldHaveSingleItem()
+            .RegisteredAt.ShouldBe(resetAt);
+    }
+
+    // Given a registration that is still active (not cancelled)
+    // When a reset is attempted
+    // Then it returns a CannotResetActive error
     [TestMethod]
     public void Reset_ActiveRegistration_ThrowsCannotResetActive()
     {
@@ -278,6 +356,9 @@ public sealed class RegistrationTests
         result.Error.ShouldMatch(Registration.Errors.CannotResetActive);
     }
 
+    // Given a registration that was reconfirmed and then cancelled
+    // When it is reset
+    // Then its cancellation reason and reconfirmation state are cleared
     [TestMethod]
     public void Reset_CancelledAndReconfirmedRegistration_ClearsCancellationAndReconfirmationState()
     {
@@ -297,6 +378,9 @@ public sealed class RegistrationTests
         sut.ReconfirmedAt.ShouldBeNull();
     }
 
+    // Given a cancelled registration with old tickets and additional details
+    // When it is reset with a new name, new tickets, and new additional details
+    // Then the registration reflects only the new name, tickets, and details
     [TestMethod]
     public void Reset_CancelledRegistration_ReplacesAttendeeTicketsAndAdditionalDetails()
     {
@@ -332,6 +416,9 @@ public sealed class RegistrationTests
         sut.AdditionalDetails["tshirt"].ShouldBe("M");
     }
 
+    // Given a cancelled registration
+    // When it is reset with new attendee data and tickets at a given time
+    // Then an AttendeeRegistered domain event is raised carrying the current registration data
     [TestMethod]
     public void Reset_CancelledRegistration_RaisesAttendeeRegisteredDomainEventWithCurrentData()
     {

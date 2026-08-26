@@ -15,6 +15,9 @@ public sealed class TeamTests
     // ChangeName()
     // -------------------------------------------------------------------------
 
+    // Given an active team
+    // When the name is changed
+    // Then the team's name is updated
     [TestMethod]
     public void ChangeName_ActiveTeam_UpdatesName()
     {
@@ -29,6 +32,9 @@ public sealed class TeamTests
         sut.Name.ShouldBe(newName);
     }
 
+    // Given an archived team
+    // When the name is changed
+    // Then it throws TeamArchived
     [TestMethod]
     public void ChangeName_ArchivedTeam_ThrowsTeamArchived()
     {
@@ -42,6 +48,8 @@ public sealed class TeamTests
         result.Error.ShouldMatch(Team.Errors.TeamArchived(sut.Id));
     }
 
+    // When a team is created without specifying an accent color
+    // Then it uses the default accent color
     [TestMethod]
     public void Create_NoAccentColor_UsesDefaultAccentColor()
     {
@@ -50,6 +58,9 @@ public sealed class TeamTests
         sut.AccentColor.ShouldBe(AccentColor.From(AccentColor.Default));
     }
 
+    // Given an active team
+    // When the accent color is changed
+    // Then the team's accent color is updated
     [TestMethod]
     public void ChangeAccentColor_ActiveTeam_UpdatesAccentColor()
     {
@@ -60,6 +71,9 @@ public sealed class TeamTests
         sut.AccentColor.Value.ShouldBe("#0f766e");
     }
 
+    // Given an archived team
+    // When the accent color is changed
+    // Then it throws TeamArchived
     [TestMethod]
     public void ChangeAccentColor_ArchivedTeam_ThrowsTeamArchived()
     {
@@ -70,6 +84,8 @@ public sealed class TeamTests
         result.Error.ShouldMatch(Team.Errors.TeamArchived(sut.Id));
     }
 
+    // When an accent color is created from an invalid format string
+    // Then it throws a value object validation exception
     [TestMethod]
     public void AccentColor_InvalidFormat_Throws()
     {
@@ -82,6 +98,9 @@ public sealed class TeamTests
     // Archive()
     // -------------------------------------------------------------------------
 
+    // Given an active team
+    // When it is archived
+    // Then it is marked archived with the given archived-at timestamp
     [TestMethod]
     public void Archive_ActiveTeam_SetsArchivedAt()
     {
@@ -97,6 +116,9 @@ public sealed class TeamTests
         sut.ArchivedAt.ShouldBe(now);
     }
 
+    // Given an already archived team
+    // When it is archived again
+    // Then it throws TeamAlreadyArchived
     [TestMethod]
     public void Archive_AlreadyArchivedTeam_ThrowsAlreadyArchived()
     {

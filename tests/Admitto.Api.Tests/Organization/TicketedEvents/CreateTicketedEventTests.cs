@@ -20,10 +20,9 @@ public sealed class CreateTicketedEventTests(TestContext testContext) : EndToEnd
         TimeZone = "Europe/Amsterdam"
     };
 
-    // SC-001: Given a valid event-creation request for team "test-team",
-    //         when Alice (team owner) submits the request,
-    //         then the creation request transitions to status "Created"
-    //         and the response contains the new event's ID.
+    // Given a valid ticketed event creation request for an existing team
+    // When the request is submitted and the creation request is polled until settled
+    // Then the creation request reaches status "Created"
     [TestMethod]
     public async Task ValidRequest_EventReachesCreatedStatus()
     {

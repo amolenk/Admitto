@@ -244,13 +244,12 @@ export default function AttendeeDetailPage() {
     const [timelineFilter, setTimelineFilter] = useState<"all" | "events" | "emails">("all");
 
     const registration = detailQuery.data;
-    const emails = emailsQuery.data ?? [];
     const isLoading = detailQuery.isLoading || emailsQuery.isLoading;
     const hasError = detailQuery.isError || emailsQuery.isError;
 
     const timeline = useMemo(
-        () => buildTimeline(registration?.activities ?? [], emails),
-        [registration, emails],
+        () => buildTimeline(registration?.activities ?? [], emailsQuery.data ?? []),
+        [registration, emailsQuery.data],
     );
 
     const visibleTimeline = useMemo(() => {

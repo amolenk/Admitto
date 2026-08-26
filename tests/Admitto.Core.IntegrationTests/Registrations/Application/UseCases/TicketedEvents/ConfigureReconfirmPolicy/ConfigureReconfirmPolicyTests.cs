@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.ConfigureReconfirmPolicy;
+using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,6 +8,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 [TestClass]
 public sealed class ConfigureReconfirmPolicyTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    // Given an active ticketed event
+    // When a reconfirm policy with open/close dates, cadence, and minimum email interval is configured
+    // Then the policy is persisted on the event
     [TestMethod]
     public async ValueTask ConfigureReconfirmPolicy_ActiveEvent_PersistsPolicy()
     {
@@ -42,6 +46,9 @@ public sealed class ConfigureReconfirmPolicyTests(TestContext testContext) : Asp
         });
     }
 
+    // Given an active event with an existing reconfirm policy
+    // When the policy fields are all cleared
+    // Then the reconfirm policy is removed from the event
     [TestMethod]
     public async ValueTask ConfigureReconfirmPolicy_ClearExistingPolicy_RemovesPolicy()
     {
@@ -70,6 +77,9 @@ public sealed class ConfigureReconfirmPolicyTests(TestContext testContext) : Asp
         });
     }
 
+    // Given an archived ticketed event
+    // When a reconfirm policy is configured
+    // Then it fails with an event-not-active error
     [TestMethod]
     public async ValueTask ConfigureReconfirmPolicy_ArchivedEvent_ThrowsEventNotActive()
     {
@@ -90,9 +100,12 @@ public sealed class ConfigureReconfirmPolicyTests(TestContext testContext) : Asp
                     MinEmailIntervalHours: 24),
                 testContext.CancellationToken));
 
-        result.Error.Code.ShouldBe("ticketed_event.event_not_active");
+        result.Error.ShouldMatch(TicketedEvent.Errors.EventNotActive);
     }
 
+    // Given an active ticketed event
+    // When the reconfirm policy is configured with an opens date and cadence but no closes date or email interval
+    // Then it fails with an incomplete-policy error
     [TestMethod]
     public async ValueTask ConfigureReconfirmPolicy_IncompleteFields_ThrowsIncompletePolicy()
     {
@@ -113,6 +126,6 @@ public sealed class ConfigureReconfirmPolicyTests(TestContext testContext) : Asp
                     MinEmailIntervalHours: null),
                 testContext.CancellationToken));
 
-        result.Error.Code.ShouldBe("configure_reconfirm_policy.incomplete");
+        result.Error.ShouldMatch(ConfigureReconfirmPolicyHandler.Errors.IncompletePolicy);
     }
 }

@@ -7,8 +7,7 @@ namespace Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 /// <para>
 /// This is deliberately a fixed, system-wide constant: font family is not team-owned
 /// branding and is not persisted anywhere. Only <see cref="Default"/> is ever used at
-/// runtime. Do not add a per-team font column without an ADR — see
-/// <c>openspec/specs/email-templates/spec.md</c>.
+/// runtime. Do not add a per-team font column without an ADR.
 /// </para>
 /// </summary>
 [ValueObject<string>]

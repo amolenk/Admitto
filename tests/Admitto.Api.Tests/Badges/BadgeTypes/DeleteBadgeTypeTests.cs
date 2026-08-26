@@ -7,6 +7,9 @@ namespace Amolenk.Admitto.Api.Tests.Badges.BadgeTypes;
 [TestClass]
 public sealed class DeleteBadgeTypeTests(TestContext testContext) : EndToEndTestBase
 {
+    // Given an existing standalone badge type
+    // When it is deleted
+    // Then the API returns 204 No Content
     [TestMethod]
     public async Task DeleteBadgeType_StandaloneType_Returns204()
     {
@@ -20,6 +23,9 @@ public sealed class DeleteBadgeTypeTests(TestContext testContext) : EndToEndTest
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
     }
 
+    // Given an existing ticket-based badge type
+    // When it is deleted
+    // Then the API returns 204 No Content
     [TestMethod]
     public async Task DeleteBadgeType_TicketBasedType_Returns204()
     {
@@ -33,6 +39,9 @@ public sealed class DeleteBadgeTypeTests(TestContext testContext) : EndToEndTest
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
     }
 
+    // Given a standalone badge type with a badge instance
+    // When the badge type is deleted and its instances are then listed
+    // Then listing returns 404 Not Found because the badge type no longer exists
     [TestMethod]
     public async Task DeleteBadgeType_CascadeDeletesInstances_ListInstancesReturns404AfterDeletion()
     {
@@ -52,6 +61,9 @@ public sealed class DeleteBadgeTypeTests(TestContext testContext) : EndToEndTest
         listResponse.StatusCode.ShouldBe(HttpStatusCode.NotFound);
     }
 
+    // Given a badge type belonging to an archived event
+    // When it is deleted
+    // Then the API returns 400 Bad Request
     [TestMethod]
     public async Task DeleteBadgeType_ArchivedEvent_Returns400()
     {
@@ -65,6 +77,9 @@ public sealed class DeleteBadgeTypeTests(TestContext testContext) : EndToEndTest
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 
+    // Given no badge type exists with the given id
+    // When deletion is requested for that id
+    // Then the API returns 404 Not Found
     [TestMethod]
     public async Task DeleteBadgeType_NotFound_Returns404()
     {

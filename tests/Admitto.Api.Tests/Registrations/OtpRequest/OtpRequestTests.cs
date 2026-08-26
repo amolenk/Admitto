@@ -9,6 +9,9 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.OtpRequest;
 public sealed class OtpRequestTests(TestContext testContext) : EndToEndTestBase
 {
     // Successful OTP request returns 202 Accepted
+    // Given an active event and a valid attendee email
+    // When an OTP code is requested for that email
+    // Then the API returns 202 Accepted
     [TestMethod]
     public async Task RequestOtp_ValidEmail_Returns202()
     {
@@ -25,6 +28,9 @@ public sealed class OtpRequestTests(TestContext testContext) : EndToEndTestBase
     }
 
     // Unknown email still returns 202 (no enumeration)
+    // Given an active event
+    // When an OTP code is requested for an email with no known registration
+    // Then the API still returns 202 Accepted, avoiding email enumeration
     [TestMethod]
     public async Task RequestOtp_UnknownEmail_Returns202()
     {
@@ -41,6 +47,9 @@ public sealed class OtpRequestTests(TestContext testContext) : EndToEndTestBase
     }
 
     // Second request supersedes previous pending code and returns 202
+    // Given an active event
+    // When an OTP code is requested twice in a row for the same email
+    // Then both requests return 202 Accepted, with the second superseding the first
     [TestMethod]
     public async Task RequestOtp_SupersedesPreviousCode_Returns202()
     {
@@ -60,6 +69,9 @@ public sealed class OtpRequestTests(TestContext testContext) : EndToEndTestBase
     }
 
      // Rate limit exceeded returns 429 (TooManyRequests)
+    // Given an email that has already reached the OTP request rate limit
+    // When another OTP code is requested for that email
+    // Then the API returns 429 Too Many Requests
     [TestMethod]
     public async Task RequestOtp_RateLimitExceeded_Returns429()
     {
@@ -77,6 +89,9 @@ public sealed class OtpRequestTests(TestContext testContext) : EndToEndTestBase
     }
 
     // Unknown event slug returns 404
+    // Given no event exists for a given slug
+    // When an OTP code is requested against that unknown event slug
+    // Then the API returns 404 Not Found
     [TestMethod]
     public async Task RequestOtp_UnknownEvent_Returns404()
     {
@@ -94,6 +109,9 @@ public sealed class OtpRequestTests(TestContext testContext) : EndToEndTestBase
     }
 
     // Email whose domain is not allowed for the event returns 400
+    // Given an event restricted to a specific email domain
+    // When an OTP code is requested for an email with a disallowed domain
+    // Then the API returns 400 Bad Request
     [TestMethod]
     public async Task RequestOtp_DisallowedDomain_Returns400()
     {
@@ -110,6 +128,9 @@ public sealed class OtpRequestTests(TestContext testContext) : EndToEndTestBase
     }
 
     // Email whose domain matches the restriction returns 202
+    // Given an event restricted to a specific email domain
+    // When an OTP code is requested for an email with the allowed domain
+    // Then the API returns 202 Accepted
     [TestMethod]
     public async Task RequestOtp_AllowedDomain_Returns202()
     {
@@ -126,6 +147,9 @@ public sealed class OtpRequestTests(TestContext testContext) : EndToEndTestBase
     }
 
     // Any domain is accepted when the event has no domain restriction
+    // Given an event with no email domain restriction
+    // When an OTP code is requested for an email with an arbitrary domain
+    // Then the API returns 202 Accepted
     [TestMethod]
     public async Task RequestOtp_NoDomainRestriction_Returns202()
     {

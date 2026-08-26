@@ -8,6 +8,9 @@ namespace Amolenk.Admitto.Api.Tests.Badges.BadgeTypes;
 [TestClass]
 public sealed class AddBadgeTypeTests(TestContext testContext) : EndToEndTestBase
 {
+    // Given an active event
+    // When a standalone badge type is added
+    // Then the API returns 201 Created with the new badge type id
     [TestMethod]
     public async Task AddBadgeType_StandaloneType_Returns201WithId()
     {
@@ -24,6 +27,9 @@ public sealed class AddBadgeTypeTests(TestContext testContext) : EndToEndTestBas
         body!.Id.ShouldNotBe(Guid.Empty);
     }
 
+    // Given an active event
+    // When a ticket-based badge type is added with a ticket type id
+    // Then the API returns 201 Created with the new badge type id
     [TestMethod]
     public async Task AddBadgeType_TicketBasedType_Returns201WithId()
     {
@@ -45,6 +51,9 @@ public sealed class AddBadgeTypeTests(TestContext testContext) : EndToEndTestBas
         body!.Id.ShouldNotBe(Guid.Empty);
     }
 
+    // Given an active event
+    // When a ticket-based badge type is added with no ticket type ids
+    // Then the API returns 400 Bad Request
     [TestMethod]
     public async Task AddBadgeType_TicketBasedWithEmptyTicketTypeIds_Returns400()
     {
@@ -60,6 +69,9 @@ public sealed class AddBadgeTypeTests(TestContext testContext) : EndToEndTestBas
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 
+    // Given an existing badge type with a given name
+    // When a new badge type is added with the same name
+    // Then the API returns 409 Conflict
     [TestMethod]
     public async Task AddBadgeType_DuplicateName_Returns409()
     {
@@ -75,6 +87,9 @@ public sealed class AddBadgeTypeTests(TestContext testContext) : EndToEndTestBas
         response.StatusCode.ShouldBe(HttpStatusCode.Conflict);
     }
 
+    // Given an archived event
+    // When a badge type is added
+    // Then the API returns 400 Bad Request
     [TestMethod]
     public async Task AddBadgeType_ArchivedEvent_Returns400()
     {
@@ -90,6 +105,9 @@ public sealed class AddBadgeTypeTests(TestContext testContext) : EndToEndTestBas
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 
+    // Given a user who is only a crew member of the team
+    // When they attempt to add a badge type
+    // Then the API returns 403 Forbidden
     [TestMethod]
     public async Task AddBadgeType_CrewMember_Returns403()
     {

@@ -12,6 +12,9 @@ public sealed class ChangeAttendeeTicketsHandlerTests(TestContext testContext) :
     private ChangeAttendeeTicketsHandler CreateSut() =>
         new(Environment.RegistrationsDatabase.Context, TimeProvider.System);
 
+    // Given an attendee registered with an early-bird ticket and available workshop capacity
+    // When an admin changes the attendee's tickets to the workshop ticket type
+    // Then the registration holds the workshop ticket and capacity is released and claimed accordingly
     // Admin changes early-bird → workshop; capacity is updated correctly
     [TestMethod]
     public async ValueTask ChangeAttendeeTickets_HappyPath_TicketsUpdatedAndEventRaised()
@@ -46,6 +49,9 @@ public sealed class ChangeAttendeeTicketsHandlerTests(TestContext testContext) :
         });
     }
 
+    // Given a workshop ticket type that is sold out
+    // When an admin changes the attendee's tickets to the sold-out workshop
+    // Then the change succeeds without enforcing capacity
     // Sold-out workshop does NOT block admin change (enforce: false)
     [TestMethod]
     public async ValueTask ChangeAttendeeTickets_SoldOut_AdminBypassesCapacityEnforcement()
@@ -72,6 +78,9 @@ public sealed class ChangeAttendeeTicketsHandlerTests(TestContext testContext) :
         });
     }
 
+    // Given a registration that has been cancelled
+    // When an admin attempts to change its tickets
+    // Then a RegistrationIsCancelled error is thrown
     // Admin attempts to change tickets of a cancelled registration → RegistrationIsCancelled
     [TestMethod]
     public async ValueTask ChangeAttendeeTickets_CancelledRegistration_ThrowsRegistrationIsCancelled()
@@ -92,6 +101,9 @@ public sealed class ChangeAttendeeTicketsHandlerTests(TestContext testContext) :
         result.Error.ShouldMatch(ChangeAttendeeTicketsHandler.Errors.RegistrationIsCancelled);
     }
 
+    // Given a registration that belongs to an archived ticketed event
+    // When an admin attempts to change its tickets
+    // Then an EventNotActive error is thrown
     // Admin attempts to change tickets for an archived event → EventNotActive
     [TestMethod]
     public async ValueTask ChangeAttendeeTickets_ArchivedEvent_ThrowsEventNotActive()
@@ -112,6 +124,9 @@ public sealed class ChangeAttendeeTicketsHandlerTests(TestContext testContext) :
         result.Error.ShouldMatch(TicketCatalog.Errors.EventNotActive);
     }
 
+    // Given an existing registration and a waitlist coupon offering a workshop ticket
+    // When the attendee self-serves a ticket change to the offered workshop ticket using the coupon
+    // Then the registration's tickets are updated, the coupon is redeemed, and capacity is claimed
     [TestMethod]
     public async ValueTask ChangeAttendeeTickets_WaitlistCouponForExistingRegistration_ChangesTicketsAndRedeemsCoupon()
     {
@@ -145,6 +160,9 @@ public sealed class ChangeAttendeeTicketsHandlerTests(TestContext testContext) :
         });
     }
 
+    // Given a waitlist coupon offering a workshop ticket
+    // When the attendee self-serves a ticket change that omits the offered workshop ticket
+    // Then a WaitlistCouponTicketMissing error is thrown and the coupon remains unredeemed
     [TestMethod]
     public async ValueTask ChangeAttendeeTickets_WaitlistCouponOfferedTicketMissing_ThrowsAndLeavesCouponUnredeemed()
     {
@@ -171,6 +189,9 @@ public sealed class ChangeAttendeeTicketsHandlerTests(TestContext testContext) :
         });
     }
 
+    // Given a waitlist coupon and ticket types with overlapping time slots
+    // When the attendee self-serves a ticket change selecting both overlapping ticket types using the coupon
+    // Then an overlapping-time-slots error is thrown and the coupon remains unredeemed
     [TestMethod]
     public async ValueTask ChangeAttendeeTickets_WaitlistCouponFinalSelectionOverlaps_ThrowsAndLeavesCouponUnredeemed()
     {
@@ -188,7 +209,7 @@ public sealed class ChangeAttendeeTicketsHandlerTests(TestContext testContext) :
         var result = await ErrorResult.CaptureAsync(
             async () => await CreateSut().HandleAsync(command, testContext.CancellationToken));
 
-        result.Error.Code.ShouldBe("ticket_catalog.overlapping_time_slots");
+        result.Error.ShouldMatch(TicketCatalog.Errors.OverlappingTimeSlots(["morning"]));
 
         await Environment.RegistrationsDatabase.AssertAsync(async dbContext =>
         {

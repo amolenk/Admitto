@@ -1,4 +1,6 @@
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents.ConfigureRegistrationPolicy;
+using Amolenk.Admitto.Core.Registrations.Domain.Entities;
+using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Microsoft.EntityFrameworkCore;
 
@@ -7,6 +9,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 [TestClass]
 public sealed class ConfigureRegistrationPolicyTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    // Given an active ticketed event
+    // When a registration policy with open/close dates and an allowed email domain is configured
+    // Then the policy is persisted on the event
     [TestMethod]
     public async ValueTask ConfigureRegistrationPolicy_ActiveEvent_PersistsPolicy()
     {
@@ -40,6 +45,9 @@ public sealed class ConfigureRegistrationPolicyTests(TestContext testContext) : 
         });
     }
 
+    // Given an active event with an existing registration policy
+    // When the policy fields are all cleared
+    // Then the registration policy is removed from the event
     [TestMethod]
     public async ValueTask ConfigureRegistrationPolicy_ClearExistingPolicy_RemovesPolicy()
     {
@@ -67,6 +75,9 @@ public sealed class ConfigureRegistrationPolicyTests(TestContext testContext) : 
         });
     }
 
+    // Given an active ticketed event
+    // When the registration policy is configured with an opens date but no closes date
+    // Then it fails with an incomplete-policy error
     [TestMethod]
     public async ValueTask ConfigureRegistrationPolicy_IncompleteFields_ThrowsIncompletePolicy()
     {
@@ -86,9 +97,12 @@ public sealed class ConfigureRegistrationPolicyTests(TestContext testContext) : 
         var result = await ErrorResult.CaptureAsync(async () =>
             await sut.HandleAsync(command, testContext.CancellationToken));
 
-        result.Error.Code.ShouldBe("configure_registration_policy.incomplete");
+        result.Error.ShouldMatch(ConfigureRegistrationPolicyHandler.Errors.IncompletePolicy);
     }
 
+    // Given an archived ticketed event
+    // When a registration policy is configured
+    // Then it fails with an event-not-active error
     [TestMethod]
     public async ValueTask ConfigureRegistrationPolicy_ArchivedEvent_ThrowsEventNotActive()
     {
@@ -108,9 +122,12 @@ public sealed class ConfigureRegistrationPolicyTests(TestContext testContext) : 
         var result = await ErrorResult.CaptureAsync(async () =>
             await sut.HandleAsync(command, testContext.CancellationToken));
 
-        result.Error.Code.ShouldBe("ticketed_event.event_not_active");
+        result.Error.ShouldMatch(TicketedEvent.Errors.EventNotActive);
     }
 
+    // Given an active ticketed event
+    // When the registration policy is configured with a stale version number
+    // Then it fails with a concurrency conflict error
     [TestMethod]
     public async ValueTask ConfigureRegistrationPolicy_VersionMismatch_ThrowsConcurrencyConflict()
     {
@@ -130,6 +147,6 @@ public sealed class ConfigureRegistrationPolicyTests(TestContext testContext) : 
         var result = await ErrorResult.CaptureAsync(async () =>
             await sut.HandleAsync(command, testContext.CancellationToken));
 
-        result.Error.Code.ShouldBe("concurrency_conflict");
+        result.Error.ShouldMatch(ConcurrencyConflictError.Create(fixture.SeededVersion + 99u, fixture.SeededVersion));
     }
 }

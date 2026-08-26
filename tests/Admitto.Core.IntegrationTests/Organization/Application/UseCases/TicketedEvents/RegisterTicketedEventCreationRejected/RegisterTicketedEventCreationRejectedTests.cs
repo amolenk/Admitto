@@ -6,6 +6,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Organization.Application.UseCase
 [TestClass]
 public sealed class RegisterTicketedEventCreationRejectedTests(TestContext testContext) : AspireIntegrationTestBase
 {
+    // Given a team with a pending event creation request
+    // When the rejection command is handled twice for the same request
+    // Then the request is rejected once with the given reason and the pending count drops to zero
     [TestMethod]
     public async ValueTask IsIdempotent_OnRedelivery()
     {
@@ -37,6 +40,9 @@ public sealed class RegisterTicketedEventCreationRejectedTests(TestContext testC
         });
     }
 
+    // Given the rejection message for a pending event creation request has already been processed by the inbox
+    // When the rejection integration event is handled again
+    // Then the request remains pending and the pending event count is unchanged
     [TestMethod]
     public async ValueTask HandleAsync_AlreadyProcessed_DoesNotRegisterEventCreationRejectedAgain()
     {

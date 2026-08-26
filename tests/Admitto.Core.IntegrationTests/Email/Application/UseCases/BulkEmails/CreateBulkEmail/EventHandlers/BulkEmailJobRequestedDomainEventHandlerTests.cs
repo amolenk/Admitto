@@ -11,6 +11,9 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.UseCases.BulkE
 [TestClass]
 public sealed class BulkEmailJobRequestedDomainEventHandlerTests
 {
+    // Given a bulk email job has been requested
+    // When the BulkEmailJobRequested domain event is handled
+    // Then a TriggerBulkEmailJob command is enqueued for that job
     [TestMethod]
     public async ValueTask BulkEmailJobRequested_EnqueuesTriggerCommand()
     {
