@@ -85,4 +85,4 @@ echo "##########################################################################
 echo "# Installing Playwright..."
 echo "################################################################################"
 
-cd "${containerWorkspaceFolder}/src/Admitto.UI.Admin" && pnpm install --frozen-lockfile && pnpm exec playwright install --with-deps chromium
+cd "src/Admitto.UI.Admin" && pnpm install --frozen-lockfile && pnpm exec playwright install --with-deps chromium
