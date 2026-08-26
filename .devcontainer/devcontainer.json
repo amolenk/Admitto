@@ -39,7 +39,7 @@
         "source=${localEnv:HOME}/AGENTS.md,target=/home/vscode/CLAUDE.md,type=bind,ro"
     ],
 
-    "onCreateCommand": "${containerWorkspaceFolder}/.devcontainer/onCreate.sh",
+    "postCreateCommand": "${containerWorkspaceFolder}/.devcontainer/postCreate.sh",
 
 	"customizations": {
 		"vscode": {

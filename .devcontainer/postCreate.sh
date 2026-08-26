@@ -80,3 +80,9 @@ else
 fi
 
 aspire certs trust
+
+echo "################################################################################"
+echo "# Installing Playwright..."
+echo "################################################################################"
+
+cd "src/Admitto.UI.Admin" && pnpm install --frozen-lockfile && pnpm exec playwright install --with-deps chromium
