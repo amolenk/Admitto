@@ -36,8 +36,8 @@ This file applies to `/src`.
 
 When implementing a feature:
 
-### 1. Read the Spec First
-Read the full feature spec at `openspec/specs/<capability>/spec.md` (or use `openspec spec show <capability>`).
+### 1. Read Existing Tests First
+Read the existing tests for the affected module/use case before changing code. Ensure new or touched tests include the three-line Given/When/Then scenario comments required by `tests/AGENTS.md`.
 
 ### 2. Use Existing Capability Grouping First
 The top-level folder under `Application/UseCases/` should extend the existing

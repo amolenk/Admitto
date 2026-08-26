@@ -292,19 +292,50 @@ public sealed class RegistrationTests
         var email = sut.Email;
         sut.Cancel(CancellationReason.AttendeeRequest);
         ClearEvents(sut);
+        var resetAt = DateTimeOffset.UtcNow;
 
         sut.Reset(
             FirstName.From("Reset"),
             LastName.From("User"),
             [new TicketTypeSnapshot(TicketTypeId.New(), TicketTypeName.From("Workshop"), [TimeSlot.From("morning")])],
             AdditionalDetails.From(new Dictionary<string, string> { ["tshirt"] = "M" }),
-            DateTimeOffset.UtcNow);
+            resetAt);
 
         sut.Id.ShouldBe(id);
         sut.TeamId.ShouldBe(teamId);
         sut.EventId.ShouldBe(eventId);
         sut.Email.ShouldBe(email);
         sut.Status.ShouldBe(RegistrationStatus.Registered);
+        sut.CreatedAt.ShouldBe(resetAt);
+    }
+
+    // Given a cancelled registration with an earlier creation time
+    // When it is reset at a supplied time
+    // Then its creation time and attendee-registered event use the reset time while its id is preserved
+    [TestMethod]
+    public void Reset_CancelledRegistration_RefreshesCreatedAtAndEventTime()
+    {
+        var sut = NewRegistration();
+        var originalCreatedAt = DateTimeOffset.UtcNow.AddDays(-1);
+        sut.CreatedAt = originalCreatedAt;
+        sut.Cancel(CancellationReason.AttendeeRequest);
+        ClearEvents(sut);
+        var id = sut.Id;
+        var resetAt = DateTimeOffset.UtcNow;
+
+        sut.Reset(
+            FirstName.From("Reset"),
+            LastName.From("User"),
+            [new TicketTypeSnapshot(TicketTypeId.New(), TicketTypeName.From("Workshop"), [])],
+            AdditionalDetails.Empty,
+            resetAt);
+
+        sut.Id.ShouldBe(id);
+        sut.CreatedAt.ShouldBe(resetAt);
+        sut.GetDomainEvents()
+            .OfType<AttendeeRegisteredDomainEvent>()
+            .ShouldHaveSingleItem()
+            .RegisteredAt.ShouldBe(resetAt);
     }
 
     // Given a registration that is still active (not cancelled)

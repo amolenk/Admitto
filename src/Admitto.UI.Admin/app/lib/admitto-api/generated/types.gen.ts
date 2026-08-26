@@ -340,6 +340,12 @@ export type ListCouponsResult = {
     coupons: Array<CouponSummaryDto>;
 };
 
+export type PartnerAdditionalDetailFieldDto = {
+    key: string;
+    name: string;
+    maxLength: number | string;
+};
+
 export type PartnerRegistrationDetailDto = {
     id: string;
     email: string;
@@ -356,6 +362,17 @@ export type PartnerRegistrationDetailDto = {
 export type PartnerTicketDetailDto = {
     id: string;
     name: string;
+};
+
+export type PartnerTicketedEventDetailsDto = {
+    name: string;
+    slug: string;
+    startsAt: string;
+    endsAt: string;
+    timeZone: string;
+    isRegistrationOpen: boolean;
+    allowedEmailDomain: null | string;
+    additionalDetailFields: Array<PartnerAdditionalDetailFieldDto>;
 };
 
 export type PendingNotificationRow = {
@@ -2969,6 +2986,57 @@ export type ExportBadgeCsvErrors = {
 };
 
 export type ExportBadgeCsvError = ExportBadgeCsvErrors[keyof ExportBadgeCsvErrors];
+
+export type GetPartnerTicketedEventDetailsData = {
+    body?: never;
+    path: {
+        eventSlug: string;
+    };
+    query?: never;
+    url: '/api/events/{eventSlug}';
+};
+
+export type GetPartnerTicketedEventDetailsErrors = {
+    /**
+     * Bad Request
+     */
+    400: HttpValidationProblemDetails;
+    /**
+     * Unauthorized
+     */
+    401: ProblemDetails;
+    /**
+     * Forbidden
+     */
+    403: ProblemDetails;
+    /**
+     * Not Found
+     */
+    404: unknown;
+    /**
+     * Conflict
+     */
+    409: ProblemDetails;
+    /**
+     * Too Many Requests
+     */
+    429: ProblemDetails;
+    /**
+     * Internal Server Error
+     */
+    500: ProblemDetails;
+};
+
+export type GetPartnerTicketedEventDetailsError = GetPartnerTicketedEventDetailsErrors[keyof GetPartnerTicketedEventDetailsErrors];
+
+export type GetPartnerTicketedEventDetailsResponses = {
+    /**
+     * OK
+     */
+    200: PartnerTicketedEventDetailsDto;
+};
+
+export type GetPartnerTicketedEventDetailsResponse = GetPartnerTicketedEventDetailsResponses[keyof GetPartnerTicketedEventDetailsResponses];
 
 export type RequestOtpData = {
     body: RequestOtpHttpRequest;

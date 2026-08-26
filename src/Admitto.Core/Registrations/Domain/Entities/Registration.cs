@@ -94,6 +94,7 @@ public class Registration : Aggregate<RegistrationId>
         if (Status != RegistrationStatus.Cancelled)
             throw new BusinessRuleViolationException(Errors.CannotResetActive);
 
+        CreatedAt = registeredAt;
         FirstName = firstName;
         LastName = lastName;
         Status = RegistrationStatus.Registered;

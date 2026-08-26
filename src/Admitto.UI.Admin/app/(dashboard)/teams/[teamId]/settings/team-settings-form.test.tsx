@@ -8,9 +8,8 @@ import { renderWithProviders } from "@/test-utils/render";
 
 import { TeamSettingsForm } from "./team-settings-form";
 
-// Harvested from openspec `admin-ui-team-crud`. Partial updates only carry the fields that
-// actually changed, plus the loaded `version`, so a stale write is rejected rather than
-// silently clobbering a concurrent edit.
+// Partial updates send only changed fields plus the loaded version, so stale writes are rejected
+// rather than silently overwriting concurrent edits.
 
 vi.mock("@/lib/api-client", () => ({
     apiClient: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },

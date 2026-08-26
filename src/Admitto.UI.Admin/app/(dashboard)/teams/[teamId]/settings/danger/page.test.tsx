@@ -10,9 +10,8 @@ import { routerMock, setRoute } from "@/test-utils/router";
 
 import DangerZonePage from "./page";
 
-// Harvested from openspec `admin-ui-team-danger-zone`. Note the spec says the confirmation
-// input takes the team *slug*; the implementation compares against the team *name* and the
-// dialog copy says "type the team name". The code is authoritative — see TESTING-BACKLOG.md.
+// Team archive confirmation compares against the team name, and the dialog asks the user to
+// type the team name.
 
 vi.mock("@/lib/api-client", () => ({
     apiClient: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },

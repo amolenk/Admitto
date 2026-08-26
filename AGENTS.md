@@ -101,7 +101,8 @@ Keep design of new features in line with existing features. The `design` directo
 
 ## Feature Implementation Checklist
 Before declaring a feature complete:
-- Read the full feature spec in `openspec/specs/` (view `openspec/specs/<capability>/spec.md` or use `openspec spec show <capability>`).
+- Read the existing tests for the affected module/use case first to understand current behavior and test conventions.
+- Ensure new or touched tests include the three-line Given/When/Then scenario comments required by `tests/AGENTS.md`.
 - Each user story maps to one primary slice or implementation unit whenever possible.
 - HTTP-exposed slices: command/query, handler, endpoint, request/validator/response as needed.
 - Internal event-driven work: event-handler pattern under `Application/UseCases/.../EventHandlers/`; jobs under `Application/Jobs/`.

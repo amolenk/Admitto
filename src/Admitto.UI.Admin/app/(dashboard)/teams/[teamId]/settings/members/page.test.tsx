@@ -9,9 +9,7 @@ import { setRoute } from "@/test-utils/router";
 
 import MembersPage from "./page";
 
-// Harvested from openspec `admin-ui-team-membership`. One deliberate divergence: the spec says
-// an invalid email shows "a validation error on the email field"; the implementation instead
-// disables the Add button. The code is authoritative — see TESTING-BACKLOG.md.
+// An invalid email disables the Add button rather than showing a field-level validation error.
 
 vi.mock("@/lib/api-client", () => ({
     apiClient: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },

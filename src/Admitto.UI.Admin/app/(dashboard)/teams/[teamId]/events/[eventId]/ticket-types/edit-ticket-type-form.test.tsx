@@ -7,10 +7,8 @@ import { renderWithProviders } from "@/test-utils/render";
 
 import { EditTicketTypeForm } from "./edit-ticket-type-form";
 
-// Harvested from openspec `admin-ui-waitlist`: "WaitlistEnabled toggle appears only when
-// capacity is configured" is covered for the add form in add-ticket-type-form.test.tsx; this
-// covers the same cascade for the edit form, which starts from a persisted ticket type rather
-// than a blank one.
+// The edit form mirrors the add form's capacity-dependent waitlist toggle while starting from
+// a persisted ticket type rather than a blank one.
 
 vi.mock("@/lib/api-client", () => ({
     apiClient: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },

@@ -7,6 +7,7 @@ using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Time.Testing;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCases.Registrations.RegisterAttendee;
 
@@ -363,7 +364,8 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
             "alice@example.com",
             [fixture.TicketTypeId.Value],
             new Dictionary<string, string> { ["tshirt"] = "M" });
-        var sut = NewHandler();
+        var resetAt = DateTimeOffset.UtcNow.AddMinutes(1);
+        var sut = NewHandler(new FakeTimeProvider(resetAt));
 
         var result = await sut.HandleAsync(command, testContext.CancellationToken);
 
@@ -373,6 +375,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
             var registration = await dbContext.Registrations.SingleAsync(testContext.CancellationToken);
             registration.Id.ShouldBe(fixture.ExistingRegistrationId);
             registration.Status.ShouldBe(RegistrationStatus.Registered);
+            registration.CreatedAt.ShouldBe(resetAt);
             registration.Email.Value.ShouldBe("alice@example.com");
             registration.FirstName.ShouldBe(FirstName.From("Test"));
             registration.LastName.ShouldBe(LastName.From("User"));
@@ -382,6 +385,7 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
             registration.Tickets.ShouldHaveSingleItem().Id.ShouldBe(fixture.TicketTypeId);
             registration.AdditionalDetails["tshirt"].ShouldBe("M");
             AssertAttendeeRegisteredEvent(registration);
+            registration.GetDomainEvents().OfType<AttendeeRegisteredDomainEvent>().Single().RegisteredAt.ShouldBe(resetAt);
 
             var catalog = await dbContext.TicketCatalogs.SingleAsync(testContext.CancellationToken);
             catalog.TicketTypes.Single(tt => tt.Id == fixture.TicketTypeId).UsedCapacity.ShouldBe(1);
@@ -702,6 +706,6 @@ public sealed class SelfRegisterAttendeeTests(TestContext testContext) : AspireI
                 invalidForRequestedActionTicketTypeIds ?? [])));
     }
 
-    private static RegisterAttendeeSelfServiceHandler NewHandler()
-        => new(Environment.RegistrationsDatabase.Context, TimeProvider.System);
+    private static RegisterAttendeeSelfServiceHandler NewHandler(TimeProvider? timeProvider = null)
+        => new(Environment.RegistrationsDatabase.Context, timeProvider ?? TimeProvider.System);
 }

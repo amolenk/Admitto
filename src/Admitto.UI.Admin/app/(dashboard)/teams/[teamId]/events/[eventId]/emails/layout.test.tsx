@@ -7,9 +7,7 @@ import { setRoute } from "@/test-utils/router";
 
 import EmailsLayout from "./layout";
 
-// Harvested from openspec `admin-ui-bulk-emails`. The bulk-emails rework dropped the
-// Templates and Setup tabs, leaving Campaigns as the only tab; that's the code's
-// authoritative shape per TESTING-BACKLOG.md.
+// Campaigns is the only email tab; Templates and Setup are no longer shown.
 
 vi.mock("@/lib/api-client", () => ({
     apiClient: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },

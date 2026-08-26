@@ -8,9 +8,8 @@ import { renderWithProviders } from "@/test-utils/render";
 import { TicketedEventDetails } from "../event-detail-types";
 import { WaitlistPolicyForm } from "./waitlist-policy-form";
 
-// Harvested from openspec `admin-ui-waitlist`: "Organizer sets quiet hours on event". Only the
-// form half is in scope — the coupon-expiry extension that quiet hours drive is a backend rule
-// (see TESTING-BACKLOG.md).
+// The form configures quiet hours; the coupon-expiry extension they affect is enforced by the
+// backend.
 
 vi.mock("@/lib/api-client", () => ({
     apiClient: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },

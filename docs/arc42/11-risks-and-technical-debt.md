@@ -6,6 +6,7 @@
 | :--- | :----- | :--------- | :--------- |
 | Module boundary erosion over time | High — coupling makes independent evolution impossible | Medium | Enforce via project structure, facades, and code review |
 | Single PostgreSQL instance is a shared failure domain | High — all modules go down together | Low (managed DB) | Acceptable for target scale; schema isolation enables future split |
+| No continuous-integration pipeline | High — changes can merge without architecture or automated-test verification | Medium | Track a CI-pipeline initiative that runs architecture tests before the full suite on every pull request |
 
 ## 11.2 Technical debt
 

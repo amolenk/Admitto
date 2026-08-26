@@ -10,8 +10,8 @@ import { routerMock } from "@/test-utils/router";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { TeamSwitcher } from "./team-switcher";
 
-// Harvested from openspec `admin-ui-team-crud`. The switcher drives the current team via
-// `useTeams`/`useTeamStore`; navigation only happens on an actual change of selection.
+// The switcher updates the current team through `useTeams`/`useTeamStore`; navigation occurs
+// only when the selection changes.
 
 vi.mock("@/lib/api-client", () => ({
     apiClient: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },

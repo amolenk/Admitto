@@ -6,6 +6,7 @@ using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Time.Testing;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCases.Registrations.RegisterAttendee;
 
@@ -298,7 +299,8 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
             fixture,
             fixture.CouponEmail.Value,
             new Dictionary<string, string> { ["badge"] = "speaker" });
-        var sut = NewHandler();
+        var resetAt = DateTimeOffset.UtcNow.AddMinutes(1);
+        var sut = NewHandler(new FakeTimeProvider(resetAt));
 
         var registrationId = await sut.HandleAsync(command, testContext.CancellationToken);
 
@@ -308,6 +310,7 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
             var registration = await dbContext.Registrations.SingleAsync(testContext.CancellationToken);
             registration.Id.ShouldBe(fixture.ExistingRegistrationId);
             registration.Status.ShouldBe(RegistrationStatus.Registered);
+            registration.CreatedAt.ShouldBe(resetAt);
             registration.Email.ShouldBe(fixture.CouponEmail);
             registration.FirstName.ShouldBe(FirstName.From("Test"));
             registration.LastName.ShouldBe(LastName.From("User"));
@@ -317,6 +320,7 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
             registration.Tickets.ShouldHaveSingleItem().Id.ShouldBe(fixture.TicketTypeId);
             registration.AdditionalDetails["badge"].ShouldBe("speaker");
             AssertAttendeeRegisteredEvent(registration);
+            registration.GetDomainEvents().OfType<AttendeeRegisteredDomainEvent>().Single().RegisteredAt.ShouldBe(resetAt);
 
             var coupon = await dbContext.Coupons.SingleAsync(testContext.CancellationToken);
             coupon.RedeemedAt.ShouldNotBeNull();
@@ -414,6 +418,6 @@ public sealed class RegisterWithCouponTests(TestContext testContext) : AspireInt
         domainEvent.Tickets.ShouldBe(registration.Tickets);
     }
 
-    private static RegisterAttendeeWithCouponHandler NewHandler()
-        => new(Environment.RegistrationsDatabase.Context, TimeProvider.System);
+    private static RegisterAttendeeWithCouponHandler NewHandler(TimeProvider? timeProvider = null)
+        => new(Environment.RegistrationsDatabase.Context, timeProvider ?? TimeProvider.System);
 }

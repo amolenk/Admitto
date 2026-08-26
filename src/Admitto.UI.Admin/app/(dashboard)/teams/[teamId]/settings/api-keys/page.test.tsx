@@ -9,8 +9,7 @@ import { setRoute } from "@/test-utils/router";
 
 import ApiKeysPage from "./page";
 
-// Harvested from openspec `admin-ui-team-api-keys` (SC103-SC111). As on the Members page,
-// the spec's "validation error when name is empty" is implemented as a disabled button.
+// An empty name disables the create button rather than showing a validation error.
 
 vi.mock("@/lib/api-client", () => ({
     apiClient: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },

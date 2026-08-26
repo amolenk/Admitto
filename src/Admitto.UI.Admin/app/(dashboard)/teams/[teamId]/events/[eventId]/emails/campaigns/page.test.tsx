@@ -8,9 +8,8 @@ import { setRoute } from "@/test-utils/router";
 
 import CampaignsPage from "./page";
 
-// Harvested from openspec `admin-ui-bulk-emails`. The status filter, empty state and row
-// navigation are exercised directly; the proxy calls behind `apiClient.get` are covered
-// generically by `lib/admitto-api/admitto-client.node.test.ts`.
+// The page exercises status filtering, empty state, and row navigation; generic API proxy
+// forwarding is covered separately.
 
 vi.mock("@/lib/api-client", () => ({
     apiClient: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },

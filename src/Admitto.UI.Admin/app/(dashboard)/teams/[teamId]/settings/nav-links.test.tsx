@@ -6,9 +6,7 @@ import { setRoute } from "@/test-utils/router";
 
 import { NavLinks } from "./nav-links";
 
-// Harvested from the navigation scenarios in openspec `admin-ui-team-api-keys` (SC101/SC102),
-// `admin-ui-team-membership` and `admin-ui-team-danger-zone`, which each assert that their tab
-// is present in the settings sidebar and points at the right path.
+// The settings sidebar exposes each settings area under the team's settings base path.
 
 const BASE = "/teams/acme/settings";
 

@@ -8,9 +8,6 @@ import { routerMock } from "@/test-utils/router";
 
 import { CreateTeamForm } from "./create-team-form";
 
-// Harvested from openspec `admin-ui-team-crud`. Redirects to team settings, not the events
-// page — see TESTING-BACKLOG.md D3, confirmed as the current, correct behaviour.
-
 vi.mock("@/lib/api-client", () => ({
     apiClient: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },
 }));

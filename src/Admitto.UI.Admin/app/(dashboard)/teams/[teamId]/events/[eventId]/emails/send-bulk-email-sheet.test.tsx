@@ -6,9 +6,8 @@ import { renderWithProviders } from "@/test-utils/render";
 
 import { SendBulkEmailSheet } from "./send-bulk-email-sheet";
 
-// Harvested from openspec `admin-ui-bulk-emails`. The create proxy forwarding itself is
-// covered generically by `lib/admitto-api/admitto-client.node.test.ts`; this file covers the
-// sheet's own required-fields gate and its attendee-only, template-free recipient model.
+// The sheet enforces required fields and the attendee-only, template-free recipient model;
+// generic API proxy forwarding is covered separately.
 
 vi.mock("@/lib/api-client", () => ({
     apiClient: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },

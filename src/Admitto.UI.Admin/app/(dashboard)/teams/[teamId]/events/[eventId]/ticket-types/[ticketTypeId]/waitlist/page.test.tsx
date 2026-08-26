@@ -13,9 +13,8 @@ import { setRoute } from "@/test-utils/router";
 
 import WaitlistPage from "./page";
 
-// Harvested from openspec `admin-ui-waitlist`. Position shifting and coupon expiry are
-// backend concerns (see TESTING-BACKLOG.md); this page's own job is to render the snapshot
-// it is given, mask emails, and let an organizer remove an active entry.
+// Position shifting and coupon expiry are backend concerns; this page renders the supplied
+// snapshot, masks emails, and lets an organizer remove an active entry.
 
 vi.mock("@/lib/api-client", () => ({
     apiClient: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },

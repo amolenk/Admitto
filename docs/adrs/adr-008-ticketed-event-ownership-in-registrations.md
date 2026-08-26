@@ -50,4 +50,4 @@ Archive lives on Registrations; the aggregate raises an in-module `TicketedEvent
 - arc42 chapter 5 — building-block view (Organization and Registrations module responsibilities).
 - arc42 chapter 6 — runtime view (event creation, archive, attendee registration, policy mutation flows).
 - arc42 chapter 8 — cross-cutting concepts (messaging taxonomy, write-amplifier pattern, in-aggregate lifecycle invariants).
-- Change: `openspec/changes/redesign-ticketed-event-ownership/` (proposal and design).
+- Change: the ticketed-event ownership redesign.

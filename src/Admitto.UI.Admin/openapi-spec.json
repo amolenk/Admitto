@@ -5184,6 +5184,104 @@
         ]
       }
     },
+    "/api/events/{eventSlug}": {
+      "get": {
+        "tags": [
+          "Partner"
+        ],
+        "operationId": "GetPartnerTicketedEventDetails",
+        "parameters": [
+          {
+            "name": "eventSlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          },
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PartnerTicketedEventDetailsDto"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not Found"
+          }
+        },
+        "security": [
+          {
+            "ApiKey": [ ]
+          }
+        ]
+      }
+    },
     "/api/events/{eventSlug}/otp/request": {
       "post": {
         "tags": [
@@ -8181,6 +8279,30 @@
           }
         }
       },
+      "PartnerAdditionalDetailFieldDto": {
+        "required": [
+          "key",
+          "name",
+          "maxLength"
+        ],
+        "type": "object",
+        "properties": {
+          "key": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "maxLength": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "int32"
+          }
+        }
+      },
       "PartnerRegistrationDetailDto": {
         "required": [
           "id",
@@ -8244,6 +8366,53 @@
           },
           "name": {
             "type": "string"
+          }
+        }
+      },
+      "PartnerTicketedEventDetailsDto": {
+        "required": [
+          "name",
+          "slug",
+          "startsAt",
+          "endsAt",
+          "timeZone",
+          "isRegistrationOpen",
+          "allowedEmailDomain",
+          "additionalDetailFields"
+        ],
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "slug": {
+            "type": "string"
+          },
+          "startsAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "endsAt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "timeZone": {
+            "type": "string"
+          },
+          "isRegistrationOpen": {
+            "type": "boolean"
+          },
+          "allowedEmailDomain": {
+            "type": [
+              "null",
+              "string"
+            ]
+          },
+          "additionalDetailFields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PartnerAdditionalDetailFieldDto"
+            }
           }
         }
       },

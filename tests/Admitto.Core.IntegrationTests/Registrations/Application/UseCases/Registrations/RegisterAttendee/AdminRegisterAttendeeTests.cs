@@ -7,6 +7,7 @@ using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Amolenk.Admitto.Testing.Infrastructure.Assertions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Time.Testing;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCases.Registrations.RegisterAttendee;
 
@@ -251,7 +252,8 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
             "alice@example.com",
             [fixture.TicketTypeId.Value],
             new Dictionary<string, string> { ["meal"] = "vegan" });
-        var sut = NewHandler();
+        var resetAt = DateTimeOffset.UtcNow.AddMinutes(1);
+        var sut = NewHandler(new FakeTimeProvider(resetAt));
 
         var registrationId = await sut.HandleAsync(command, testContext.CancellationToken);
 
@@ -261,6 +263,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
             var registration = await dbContext.Registrations.SingleAsync(testContext.CancellationToken);
             registration.Id.ShouldBe(fixture.ExistingRegistrationId);
             registration.Status.ShouldBe(RegistrationStatus.Registered);
+            registration.CreatedAt.ShouldBe(resetAt);
             registration.Email.Value.ShouldBe("alice@example.com");
             registration.FirstName.ShouldBe(FirstName.From("Test"));
             registration.LastName.ShouldBe(LastName.From("User"));
@@ -270,6 +273,7 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
             registration.Tickets.ShouldHaveSingleItem().Id.ShouldBe(fixture.TicketTypeId);
             registration.AdditionalDetails["meal"].ShouldBe("vegan");
             AssertAttendeeRegisteredEvent(registration);
+            registration.GetDomainEvents().OfType<AttendeeRegisteredDomainEvent>().Single().RegisteredAt.ShouldBe(resetAt);
 
             var catalog = await dbContext.TicketCatalogs.SingleAsync(testContext.CancellationToken);
             catalog.TicketTypes.Single(tt => tt.Id == fixture.TicketTypeId).UsedCapacity.ShouldBe(6);
@@ -478,6 +482,6 @@ public sealed class AdminRegisterAttendeeTests(TestContext testContext) : Aspire
         domainEvent.Tickets.ShouldBe(registration.Tickets);
     }
 
-    private static AdminRegisterAttendeeHandler NewHandler()
-        => new(Environment.RegistrationsDatabase.Context, TimeProvider.System);
+    private static AdminRegisterAttendeeHandler NewHandler(TimeProvider? timeProvider = null)
+        => new(Environment.RegistrationsDatabase.Context, timeProvider ?? TimeProvider.System);
 }

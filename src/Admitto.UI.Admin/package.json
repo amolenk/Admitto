@@ -11,6 +11,9 @@
     "test": "vitest",
     "test:run": "vitest run",
     "typecheck": "tsc --noEmit",
+    "e2e": "playwright test",
+    "e2e:headed": "playwright test --headed",
+    "e2e:ui": "playwright test --ui",
     "openapi-ts": "openapi-ts",
     "db:migrate": "better-auth migrate --config app/lib/auth.ts --yes"
   },

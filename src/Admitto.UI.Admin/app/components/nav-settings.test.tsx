@@ -6,9 +6,8 @@ import { routerMock, setRoute } from "@/test-utils/router";
 
 import { NavSettings } from "./nav-settings";
 
-// Harvested from openspec `admin-ui-team-crud`. The sidebar entry is a plain button that
-// pushes the settings route on click (not an anchor), and it is gated on
-// `canManageTeamSettings` — a permissions rule expressed purely in the UI.
+// The sidebar entry is a button that pushes the settings route and is shown only when
+// `canManageTeamSettings` allows it.
 
 const TEAM_ID = "11111111-1111-1111-1111-111111111111";
 

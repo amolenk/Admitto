@@ -8,9 +8,8 @@ import { setRoute } from "@/test-utils/router";
 
 import BulkEmailDetailPage from "./page";
 
-// Harvested from openspec `admin-ui-bulk-emails`. Cancel proxy forwarding is covered
-// generically by `lib/admitto-api/admitto-client.node.test.ts`; this file covers the
-// job-detail rendering and the cancel affordance's client-side wiring.
+// The page covers job-detail rendering and client-side wiring for the cancel affordance;
+// generic API proxy forwarding is covered separately.
 
 vi.mock("@/lib/api-client", () => ({
     apiClient: { get: vi.fn(), post: vi.fn(), put: vi.fn(), delete: vi.fn() },
