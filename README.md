@@ -69,4 +69,4 @@ Set `Organization:BootstrapAdmin:EmailAddress` to provision the first admin user
 
 On startup, `BootstrapAdminInitializer` checks whether a user with this email exists. If not, it creates the user and calls the Auth0 Management API to provision an account and send a passkey-enrollment invitation. The initialiser is idempotent — subsequent startups with the same email are no-ops once the account is fully provisioned.
 
-See [ADR-011](docs/adrs/adr-011-auth0-passkeys.md) for the full rationale and decision record.
+See [ADR-011](docs/adr/adr-011-auth0-passkeys.md) for the full rationale and decision record.

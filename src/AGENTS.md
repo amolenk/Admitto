@@ -106,4 +106,4 @@ Register the endpoint in the module's endpoint registration entry point.
 
 ## When You Change Architecture
 - Update the relevant chapter in `docs/arc42/`.
-- If the change is an architecture decision, add or update an ADR in `docs/adrs/`.
+- If the change is an architecture decision, add or update an ADR in `docs/adr/`.

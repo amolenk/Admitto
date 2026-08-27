@@ -156,7 +156,7 @@ On the consuming side, the Worker's `ServiceBusMessageProcessor` hosted service 
 The broker pushes messages over a long-lived AMQP link that the SDK keeps alive, re-establishes after a fault, and uses to renew the message lock while a handler runs.
 Dispatch is sequential (`MaxConcurrentCalls = 1`), and settlement is explicit (`AutoCompleteMessages = false`): a message is completed once `QueueMessageDispatcher` succeeds and abandoned for redelivery when it fails, so a persistently failing message is dead-lettered by the broker once it exceeds the queue's max delivery count.
 Link and connection faults surface through the processor's error handler as warnings rather than errors, because the processor recovers from them on its own; a real outage shows up as the warning repeating.
-Recovery latency is bounded by `ServiceBusRetryOptions.MaxDelay`, set to 5 seconds in `AddSharedInfrastructureMessagingServices` so a consumer cannot idle for the SDK's 60-second default after a blip (see [ADR-015](../adrs/adr-015-service-bus-push-based-consumption.md)).
+Recovery latency is bounded by `ServiceBusRetryOptions.MaxDelay`, set to 5 seconds in `AddSharedInfrastructureMessagingServices` so a consumer cannot idle for the SDK's 60-second default after a blip (see [ADR-015](../adr/adr-015-service-bus-push-based-consumption.md)).
 
 For Email module SMTP delivery, `EmailLog` is the send claim. Trigger handlers write a pending log row and enqueue internal delivery work before SMTP is attempted. Delivery handlers and bulk fan-out treat terminal rows as no-ops and retryable pending rows as recoverable work. SMTP itself is non-transactional, so the documented guarantee is duplicate minimization through database-backed claims, not perfect exactly-once delivery.
 
@@ -558,7 +558,7 @@ Because `TicketedEvent.Archive()` commits the projection onto `TicketCatalog` in
 
 ### Why not a separate lifecycle-guard aggregate?
 
-Previous designs used a dedicated `TicketedEventLifecycleGuard` aggregate to mirror event status from the Organization module into Registrations. That guard is gone: with `TicketedEvent` now owned by Registrations, the aggregate enforces its own invariants and the only out-of-aggregate projection is the single `EventStatus` field on `TicketCatalog`, which exists solely to make the status + capacity check atomic. See [ADR-008](../adrs/adr-008-ticketed-event-ownership-in-registrations.md).
+Previous designs used a dedicated `TicketedEventLifecycleGuard` aggregate to mirror event status from the Organization module into Registrations. That guard is gone: with `TicketedEvent` now owned by Registrations, the aggregate enforces its own invariants and the only out-of-aggregate projection is the single `EventStatus` field on `TicketCatalog`, which exists solely to make the status + capacity check atomic. See [ADR-008](../adr/adr-008-ticketed-event-ownership-in-registrations.md).
 
 ## 8.15 Architecture enforcement (ArchUnitNET)
 
