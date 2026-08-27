@@ -208,7 +208,7 @@ public sealed class RegistrationsIntegrationEventPublisherTests
 
     // Given a TicketedEventReconfirmPolicyChanged domain event with a policy
     // When the publisher handles the event
-    // Then a matching integration event is enqueued carrying the policy's dates, cadence, and email interval
+    // Then a matching integration event is enqueued carrying the dates, interval, and quiet hours
     [TestMethod]
     public async ValueTask TicketedEventReconfirmPolicyChanged_EnqueuesIntegrationEvent()
     {
@@ -224,8 +224,9 @@ public sealed class RegistrationsIntegrationEventPublisherTests
             TicketedEventReconfirmPolicy.Create(
                 opensAt,
                 closesAt,
-                TimeSpan.FromDays(7),
-                TimeSpan.FromHours(24)));
+                TimeSpan.FromHours(24),
+                new TimeOnly(22),
+                new TimeOnly(8)));
 
         await _publisher.HandleAsync(domainEvent, CancellationToken.None);
 
@@ -236,8 +237,9 @@ public sealed class RegistrationsIntegrationEventPublisherTests
         evt.Policy.ShouldNotBeNull();
         evt.Policy.OpensAt.ShouldBe(opensAt);
         evt.Policy.ClosesAt.ShouldBe(closesAt);
-        evt.Policy.CadenceHours.ShouldBe(168);
         evt.Policy.MinEmailIntervalHours.ShouldBe(24);
+        evt.Policy.QuietHoursStart.ShouldBe(new TimeOnly(22));
+        evt.Policy.QuietHoursEnd.ShouldBe(new TimeOnly(8));
     }
 
     // Given a TicketedEventReconfirmPolicyChanged domain event with no policy

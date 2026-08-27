@@ -37,7 +37,6 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
             null,
             null,
             null,
-            null,
             false);
 
     private static IQueryHandler<GetEventEmailRenderingContextQuery, EventEmailContextDto> ContextQuery()

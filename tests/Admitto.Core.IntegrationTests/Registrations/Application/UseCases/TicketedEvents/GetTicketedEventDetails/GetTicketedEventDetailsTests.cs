@@ -40,8 +40,9 @@ public sealed class GetTicketedEventDetailsTests(TestContext testContext) : Aspi
                 TicketedEventReconfirmPolicy.Create(
                     reconfirmOpens,
                     reconfirmCloses,
-                    TimeSpan.FromDays(7),
-                    TimeSpan.FromHours(24)));
+                    TimeSpan.FromHours(24),
+                    new TimeOnly(22, 0),
+                    new TimeOnly(8, 0)));
             te.ConfigureWaitlistPolicy(new TimeOnly(23, 0), new TimeOnly(7, 0));
 
             ctx.TicketedEvents.Add(te);
@@ -70,8 +71,9 @@ public sealed class GetTicketedEventDetailsTests(TestContext testContext) : Aspi
         result.ReconfirmPolicy.ShouldNotBeNull();
         result.ReconfirmPolicy.OpensAt.ShouldBe(reconfirmOpens, precisionTolerance);
         result.ReconfirmPolicy.ClosesAt.ShouldBe(reconfirmCloses, precisionTolerance);
-        result.ReconfirmPolicy.CadenceHours.ShouldBe(168);
         result.ReconfirmPolicy.MinEmailIntervalHours.ShouldBe(24);
+        result.ReconfirmPolicy.QuietHoursStart.ShouldBe((TimeOnly?)new TimeOnly(22, 0));
+        result.ReconfirmPolicy.QuietHoursEnd.ShouldBe((TimeOnly?)new TimeOnly(8, 0));
 
         result.WaitlistPolicy.QuietHoursStart.ShouldBe(new TimeOnly(23, 0));
         result.WaitlistPolicy.QuietHoursEnd.ShouldBe(new TimeOnly(7, 0));

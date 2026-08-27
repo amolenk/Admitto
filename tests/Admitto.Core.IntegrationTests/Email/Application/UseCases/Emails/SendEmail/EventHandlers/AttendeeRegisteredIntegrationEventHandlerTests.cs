@@ -45,7 +45,6 @@ public sealed class AttendeeRegisteredIntegrationEventHandlerTests(TestContext t
             null,
             null,
             null,
-            null,
             false);
 
     private static IQueryHandler<GetEventEmailRenderingContextQuery, EventEmailContextDto> ContextQuery()

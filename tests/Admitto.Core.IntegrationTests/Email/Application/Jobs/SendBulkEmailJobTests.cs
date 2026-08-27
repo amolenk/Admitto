@@ -509,7 +509,6 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
                     null,
                     null,
                     null,
-                    null,
                     false);
             });
         IUnitOfWork unitOfWork = new UnitOfWork<EmailDbContext>(ctx, new NoOpOutboxMessageSender(), NullLogger<UnitOfWork<EmailDbContext>>.Instance);

@@ -65,7 +65,6 @@ public sealed class PolicyConstraintsTests(TestContext testContext) : EndToEndTe
             {
                 OpensAt = PolicyConstraintsFixture.EventStartsAt.AddDays(-30),
                 ClosesAt = PolicyConstraintsFixture.EventStartsAt.AddSeconds(-1),
-                CadenceHours = 24,
                 MinEmailIntervalHours = 1,
             },
             cancellationToken: testContext.CancellationToken);
@@ -88,7 +87,6 @@ public sealed class PolicyConstraintsTests(TestContext testContext) : EndToEndTe
             {
                 OpensAt = PolicyConstraintsFixture.EventStartsAt.AddDays(-30),
                 ClosesAt = PolicyConstraintsFixture.EventStartsAt,
-                CadenceHours = 24,
                 MinEmailIntervalHours = 1,
             },
             cancellationToken: testContext.CancellationToken);
@@ -111,7 +109,6 @@ public sealed class PolicyConstraintsTests(TestContext testContext) : EndToEndTe
             {
                 OpensAt = PolicyConstraintsFixture.EventStartsAt.AddDays(-30),
                 ClosesAt = PolicyConstraintsFixture.EventStartsAt.AddSeconds(1),
-                CadenceHours = 24,
                 MinEmailIntervalHours = 1,
             },
             cancellationToken: testContext.CancellationToken);

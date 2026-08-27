@@ -79,8 +79,13 @@ public class TicketedEventEntityConfiguration : IEntityTypeConfiguration<Tickete
         {
             p.Property(x => x.OpensAt).HasColumnName("reconfirm_policy_opens_at");
             p.Property(x => x.ClosesAt).HasColumnName("reconfirm_policy_closes_at");
-            p.Property(x => x.Cadence).HasColumnName("reconfirm_policy_cadence");
             p.Property(x => x.MinEmailInterval).HasColumnName("reconfirm_policy_min_email_interval");
+            p.Property(x => x.QuietHoursStart)
+                .HasColumnName("reconfirm_policy_quiet_hours_start")
+                .HasColumnType("time");
+            p.Property(x => x.QuietHoursEnd)
+                .HasColumnName("reconfirm_policy_quiet_hours_end")
+                .HasColumnType("time");
         });
 
         builder.OwnsOne(e => e.WaitlistPolicy, p =>

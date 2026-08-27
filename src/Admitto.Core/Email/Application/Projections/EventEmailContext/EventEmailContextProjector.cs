@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Core.Email.Application.Persistence;
-using Amolenk.Admitto.Core.Email.Application.UseCases.Reconfirmations.ScheduleReconfirmations;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
@@ -11,9 +10,8 @@ namespace Amolenk.Admitto.Core.Email.Application.Projections.EventEmailContext;
 /// Registrations integration events, mirroring the role-based
 /// <c>ActivityLogProjector</c> pattern in Registrations. A single class owns all
 /// projection writes (through <see cref="IEmailReadStore"/>) so the upsert logic
-/// is not duplicated across slices, and re-issues the per-event reconfirm
-/// trigger (via <see cref="ScheduleReconfirmationsCommand"/>) whenever an event
-/// that affects scheduling is projected.
+/// is not duplicated across slices. Schedule-affecting event data is projected
+/// for the stable hourly evaluator.
 /// </summary>
 /// <remarks>
 /// Idempotent under at-least-once delivery: every handler upserts via
@@ -23,8 +21,7 @@ namespace Amolenk.Admitto.Core.Email.Application.Projections.EventEmailContext;
 /// <c>DbContext</c>.
 /// </remarks>
 internal sealed class EventEmailContextProjector(
-    IEmailReadStore readStore,
-    ICommandHandler<ScheduleReconfirmationsCommand> scheduleReconfirmations)
+    IEmailReadStore readStore)
     : IIntegrationEventHandler<TicketedEventCreatedIntegrationEvent>,
       IIntegrationEventHandler<TicketedEventDetailsChangedIntegrationEvent>,
       IIntegrationEventHandler<TicketedEventReconfirmPolicyChangedIntegrationEvent>,
@@ -53,8 +50,6 @@ internal sealed class EventEmailContextProjector(
             integrationEvent.IsArchived,
             now);
 
-        if (applied)
-            await RescheduleReconfirmTriggerAsync(view, cancellationToken);
     }
 
     public async ValueTask HandleAsync(
@@ -76,8 +71,6 @@ internal sealed class EventEmailContextProjector(
             integrationEvent.TimeZone,
             now);
 
-        if (applied)
-            await RescheduleReconfirmTriggerAsync(view, cancellationToken);
     }
 
     public async ValueTask HandleAsync(
@@ -98,15 +91,6 @@ internal sealed class EventEmailContextProjector(
         if (!applied)
             return;
 
-        // A cleared policy removes the trigger; otherwise (re)issue it from the
-        // updated projection state.
-        if (integrationEvent.Policy is null)
-        {
-            await RemoveReconfirmTriggerAsync(integrationEvent.TicketedEventId, cancellationToken);
-            return;
-        }
-
-        await RescheduleReconfirmTriggerAsync(view, cancellationToken);
     }
 
     public async ValueTask HandleAsync(
@@ -141,8 +125,6 @@ internal sealed class EventEmailContextProjector(
         if (!applied)
             return;
 
-        // Archived events must never fire reconfirm triggers.
-        await RemoveReconfirmTriggerAsync(integrationEvent.TicketedEventId, cancellationToken);
     }
 
     private async Task<EventEmailContextView> GetOrCreateAsync(
@@ -173,25 +155,4 @@ internal sealed class EventEmailContextProjector(
         return view;
     }
 
-    private async Task RescheduleReconfirmTriggerAsync(
-        EventEmailContextView view,
-        CancellationToken cancellationToken)
-    {
-        var spec = view.ToReconfirmTriggerSpec();
-        if (spec is null)
-            return;
-
-        await scheduleReconfirmations.HandleAsync(
-            new ScheduleReconfirmationsCommand(view.TicketedEventId.Value, spec),
-            cancellationToken);
-    }
-
-    private async Task RemoveReconfirmTriggerAsync(
-        Guid ticketedEventId,
-        CancellationToken cancellationToken)
-    {
-        await scheduleReconfirmations.HandleAsync(
-            new ScheduleReconfirmationsCommand(ticketedEventId, Spec: null),
-            cancellationToken);
-    }
 }

@@ -67,8 +67,7 @@ export default function EditPoliciesPage() {
                         <CheckCircle2 className="h-4 w-4" />
                         <AlertTitle>Reconfirmation policy configured</AlertTitle>
                         <AlertDescription>
-                            Attendees will be asked to reconfirm every {policy.cadenceHours}{" "}
-                            {policy.cadenceHours === 1 ? "hour" : "hours"}.
+                            Attendees can reconfirm during the configured window. Reminders respect the minimum interval and any optional no-reminder quiet hours.
                         </AlertDescription>
                     </Alert>
                 )}

@@ -135,8 +135,9 @@ internal sealed class BulkEmailFixture
                 reconfirmPolicy: new TicketedEventReconfirmPolicySnapshot(
                     DateTimeOffset.UtcNow.AddDays(-1),
                     DateTimeOffset.UtcNow.AddDays(30),
-                    CadenceHours: 24,
-                    MinEmailIntervalHours: 24),
+                    MinEmailIntervalHours: 24,
+                    QuietHoursStart: null,
+                    QuietHoursEnd: null),
                 isArchived: false,
                 DateTimeOffset.UtcNow);
             var teamContext = TeamEmailContextView.Create(

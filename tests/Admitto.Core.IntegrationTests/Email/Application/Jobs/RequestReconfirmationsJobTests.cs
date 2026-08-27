@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Amolenk.Admitto.Core.Email;
 using Amolenk.Admitto.Core.Email.Application.Jobs;
 using Amolenk.Admitto.Core.Email.Application.Persistence;
 using Amolenk.Admitto.Core.Email.Application.Templating;
@@ -9,10 +10,13 @@ using Amolenk.Admitto.Core.Email.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.IntegrationTests.Email.Application.Jobs.Fakes;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Outbox;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using Amolenk.Admitto.Testing.Builders.Email.Application;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Time.Testing;
 using NSubstitute;
@@ -25,170 +29,252 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
 {
     private static readonly TeamId TeamId = TeamId.New();
 
-    // Given an attendee who registered only 10 hours ago and a minimum email interval of 48 hours
-    // When the reconfirmations job runs
-    // Then no bulk reconfirm email job is created for them
+    // Given an active policy and an attendee who registered too recently
+    // When the stable hourly evaluator runs
+    // Then no reconfirm email job is created
     [TestMethod]
     public async ValueTask Execute_AttendeeRegisteredRecently_ExcludedFromBulkJob()
     {
         var eventId = TicketedEventId.New();
         var now = DateTimeOffset.UtcNow;
+        await SeedPolicyAsync(eventId, now);
+        var facade = FacadeReturning(eventId, [RegistrationItem(Guid.NewGuid(), "alice@example.com", now.AddHours(-10))]);
 
-        var facade = FacadeReturning(eventId, [
-            RegistrationItem(Guid.NewGuid(), "alice@example.com", now.AddHours(-10))
-        ]);
-
-        var job = BuildJob(facade, new FakeTimeProvider(now));
-        await job.Execute(JobContext(eventId, minEmailIntervalHours: 48));
+        await BuildJob(facade, new FakeTimeProvider(now)).Execute(JobContext());
 
         (await LoadBulkEmailJobsAsync()).ShouldBeEmpty();
     }
 
-    // Given an attendee who already received a reconfirmation email 10 hours ago and a minimum email interval of 48 hours
-    // When the reconfirmations job runs
-    // Then no bulk reconfirm email job is created for them because the interval hasn't elapsed
+    // Given an active policy and a sent reconfirm email inside the minimum interval
+    // When the stable hourly evaluator runs
+    // Then the attendee is not included in a new reconfirm email job
     [TestMethod]
     public async ValueTask Execute_AttendeeReceivedReconfirmRecently_ExcludedFromBulkJob()
     {
         var eventId = TicketedEventId.New();
         var now = DateTimeOffset.UtcNow;
-
+        await SeedPolicyAsync(eventId, now);
         await Environment.EmailDatabase.SeedAsync(db =>
             db.EmailLog.Add(ReconfirmEmailLog(eventId, "alice@example.com", now.AddHours(-10))));
+        var facade = FacadeReturning(eventId, [RegistrationItem(Guid.NewGuid(), "alice@example.com", now.AddHours(-72))]);
 
-        var facade = FacadeReturning(eventId, [
-            RegistrationItem(Guid.NewGuid(), "alice@example.com", now.AddHours(-72))
-        ]);
-
-        var job = BuildJob(facade, new FakeTimeProvider(now));
-        await job.Execute(JobContext(eventId, minEmailIntervalHours: 48));
+        await BuildJob(facade, new FakeTimeProvider(now)).Execute(JobContext());
 
         (await LoadBulkEmailJobsAsync()).ShouldBeEmpty();
     }
 
-    // Given an attendee whose last reconfirmation email was sent 72 hours ago and a minimum email interval of 48 hours
-    // When the reconfirmations job runs
-    // Then a bulk reconfirm email job is created that includes the attendee, and no auto-cancel event is published
+    // Given an active policy and an attendee whose interval has elapsed
+    // When the stable hourly evaluator runs
+    // Then one reconfirm email job is created for that attendee
     [TestMethod]
     public async ValueTask Execute_MinEmailIntervalElapsedSinceLastEmail_AttendeeIncluded()
     {
         var eventId = TicketedEventId.New();
         var now = DateTimeOffset.UtcNow;
         var attendeeId = Guid.NewGuid();
-
+        await SeedPolicyAsync(eventId, now);
         await Environment.EmailDatabase.SeedAsync(db =>
             db.EmailLog.Add(ReconfirmEmailLog(eventId, "alice@example.com", now.AddHours(-72))));
+        var facade = FacadeReturning(eventId, [RegistrationItem(attendeeId, "alice@example.com", now.AddHours(-100))]);
 
-        var facade = FacadeReturning(eventId, [
-            RegistrationItem(attendeeId, "alice@example.com", now.AddHours(-100))
-        ]);
-
-        var job = BuildJob(facade, new FakeTimeProvider(now));
-        await job.Execute(JobContext(eventId, minEmailIntervalHours: 48));
+        await BuildJob(facade, new FakeTimeProvider(now)).Execute(JobContext());
 
         var jobs = await LoadBulkEmailJobsAsync();
         jobs.Count.ShouldBe(1);
-        var filter = jobs[0].AttendeeFilter;
-        filter.RegistrationIds.ShouldNotBeNull();
-        filter.RegistrationIds.ShouldContain(attendeeId);
-        (await LoadOutboxMessagesAsync()).ShouldBeEmpty();
+        jobs[0].AttendeeFilter.RegistrationIds!.ShouldContain(attendeeId);
     }
 
-    // Given one attendee who already reached their maximum allowed reconfirm attempts and another with unlimited attempts and fewer emails sent
-    // When the reconfirmations job runs
-    // Then the unlimited attendee is included in the bulk reconfirm job while the maxed-out attendee triggers a reconfirm-auto-expired event instead
+    // Given an active reconfirm job already reserved for an event
+    // When the hourly evaluator runs again
+    // Then it does not create a second overlapping reconfirm job
     [TestMethod]
-    public async ValueTask Execute_MixedLogCounts_SplitsReconfirmAndAutoCancelSets()
+    public async ValueTask Execute_ActiveReconfirmJobExists_SkipsReservation()
     {
         var eventId = TicketedEventId.New();
         var now = DateTimeOffset.UtcNow;
-        var workshopId = Guid.NewGuid();
-        var sessionId = Guid.NewGuid();
+        await SeedPolicyAsync(eventId, now);
+        await Environment.EmailDatabase.SeedAsync(db => db.BulkEmailJobs.Add(
+            BulkEmailJob.CreateSystemTriggered(
+                TeamId,
+                eventId,
+                BuiltInEmailTemplateNames.Reconfirmation,
+                null,
+                null,
+                null,
+                new BulkEmailAttendeeFilter(
+                    RegistrationStatus: RegistrationStatus.Registered,
+                    HasReconfirmed: false),
+                now)));
+        var facade = FacadeReturning(eventId, [RegistrationItem(Guid.NewGuid(), "alice@example.com", now.AddDays(-2))]);
 
+        await BuildJob(facade, new FakeTimeProvider(now)).Execute(JobContext());
+
+        (await LoadBulkEmailJobsAsync()).Count.ShouldBe(1);
+        await facade.DidNotReceiveWithAnyArgs().GetRegistrationsAsync(default, default, default!, default);
+    }
+
+    // Given archived, cleared, partial, future, and closed projected policies
+    // When the hourly evaluator runs
+    // Then none of those policies is evaluated
+    [TestMethod]
+    public async ValueTask Execute_NonEligibleProjectedPolicies_SkipsAll()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var archived = TicketedEventId.New();
+        var cleared = TicketedEventId.New();
+        var partial = TicketedEventId.New();
+        var future = TicketedEventId.New();
+        var closed = TicketedEventId.New();
+        await SeedPolicyAsync(archived, now, archived: true);
+        await SeedPolicyAsync(cleared, now, withoutPolicy: true);
+        await SeedPolicyAsync(partial, now, withoutEventContext: true);
+        await SeedPolicyAsync(future, now, opensAt: now.AddHours(1), closesAt: now.AddHours(2));
+        await SeedPolicyAsync(closed, now, opensAt: now.AddHours(-2), closesAt: now);
+        var facade = Substitute.For<IRegistrationsFacade>();
+
+        await BuildJob(facade, new FakeTimeProvider(now)).Execute(JobContext());
+
+        (await LoadBulkEmailJobsAsync()).ShouldBeEmpty();
+        await facade.DidNotReceiveWithAnyArgs().GetRegistrationsAsync(default, default, default!, default);
+    }
+
+    // Given one policy opening now and another closing now
+    // When the hourly evaluator runs at the boundary
+    // Then only the open-inclusive policy is evaluated
+    [TestMethod]
+    public async ValueTask Execute_WindowBoundaries_UsesOpenInclusiveCloseExclusive()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var opensNow = TicketedEventId.New();
+        var closesNow = TicketedEventId.New();
+        await SeedPolicyAsync(opensNow, now, opensAt: now, closesAt: now.AddHours(1));
+        await SeedPolicyAsync(closesNow, now, opensAt: now.AddHours(-1), closesAt: now);
+        var facade = Substitute.For<IRegistrationsFacade>();
+        facade.GetRegistrationsAsync(
+                Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<QueryRegistrationsDto>(), Arg.Any<CancellationToken>())
+            .Returns(Task.FromResult<IReadOnlyList<RegistrationListItemDto>>([
+                RegistrationItem(Guid.NewGuid(), "alice@example.com", now.AddDays(-2))]));
+
+        await BuildJob(facade, new FakeTimeProvider(now)).Execute(JobContext());
+
+        (await LoadBulkEmailJobsAsync()).Count.ShouldBe(1);
+        await facade.Received(1).GetRegistrationsAsync(
+            TeamId.Value,
+            opensNow.Value,
+            Arg.Any<QueryRegistrationsDto>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    // Given an active policy with an invalid projected timezone
+    // When the hourly evaluator runs
+    // Then the event is skipped rather than evaluated outside quiet hours
+    [TestMethod]
+    public async ValueTask Execute_InvalidProjectedTimezone_SkipsEvent()
+    {
+        var eventId = TicketedEventId.New();
+        var now = DateTimeOffset.UtcNow;
+        await SeedPolicyAsync(eventId, now, timeZone: "Not/AReal_Zone");
+        var facade = FacadeReturning(eventId, [RegistrationItem(Guid.NewGuid(), "alice@example.com", now.AddDays(-2))]);
+
+        await BuildJob(facade, new FakeTimeProvider(now)).Execute(JobContext());
+
+        (await LoadBulkEmailJobsAsync()).ShouldBeEmpty();
+        await facade.DidNotReceiveWithAnyArgs().GetRegistrationsAsync(default, default, default!, default);
+    }
+
+    // Given a maxed-out attendee and sent reconfirm attempts before the interval
+    // When the hourly evaluator runs
+    // Then it publishes automatic expiry without creating another email job
+    [TestMethod]
+    public async ValueTask Execute_MaxAttemptsReached_PublishesAutoExpiry()
+    {
+        var eventId = TicketedEventId.New();
+        var now = DateTimeOffset.UtcNow;
+        var registrationId = Guid.NewGuid();
+        await SeedPolicyAsync(eventId, now);
         await Environment.EmailDatabase.SeedAsync(db =>
         {
-            db.EmailLog.Add(ReconfirmEmailLog(eventId, "workshop@example.com", now.AddDays(-4)));
-            db.EmailLog.Add(ReconfirmEmailLog(eventId, "workshop@example.com", now.AddDays(-3)));
-            db.EmailLog.Add(ReconfirmEmailLog(eventId, "session@example.com", now.AddDays(-3)));
+            db.EmailLog.Add(ReconfirmEmailLog(eventId, "alice@example.com", now.AddDays(-4)));
+            db.EmailLog.Add(ReconfirmEmailLog(eventId, "alice@example.com", now.AddDays(-3)));
         });
+        var facade = FacadeReturning(eventId, [RegistrationItem(
+            registrationId, "alice@example.com", now.AddDays(-10), effectiveMaxReconfirmAttempts: 2)]);
 
-        var facade = FacadeReturning(eventId, [
-            RegistrationItem(workshopId, "workshop@example.com", now.AddDays(-10), effectiveMaxReconfirmAttempts: 2),
-            RegistrationItem(sessionId, "session@example.com", now.AddDays(-10), effectiveMaxReconfirmAttempts: null)
-        ]);
+        await BuildJob(facade, new FakeTimeProvider(now)).Execute(JobContext());
 
-        var job = BuildJob(facade, new FakeTimeProvider(now));
-        await job.Execute(JobContext(eventId, minEmailIntervalHours: 0));
-
-        var bulkJobs = await LoadBulkEmailJobsAsync();
-        bulkJobs.Count.ShouldBe(1);
-        var filter = bulkJobs[0].AttendeeFilter;
-        filter.RegistrationIds.ShouldBe([sessionId], ignoreOrder: true);
-
-        var outboxMessages = await LoadOutboxMessagesAsync();
-        outboxMessages.Count.ShouldBe(1);
-        outboxMessages[0].Type.ShouldBe($"{nameof(Email)}:{nameof(ReconfirmAutoExpiredIntegrationEvent)}");
-        GetRegistrationIds(outboxMessages[0].Payload).ShouldBe([workshopId], ignoreOrder: true);
+        (await LoadBulkEmailJobsAsync()).ShouldBeEmpty();
+        var outbox = await LoadOutboxMessagesAsync();
+        outbox.Count.ShouldBe(1);
+        GetRegistrationIds(outbox[0].Payload).ShouldBe([registrationId], ignoreOrder: true);
     }
 
-    // Given two attendees with no maximum reconfirm attempts configured, regardless of how many reconfirm emails they already received
-    // When the reconfirmations job runs
-    // Then both attendees are included in the bulk reconfirm job and no auto-cancel event is published
+    // Given an active policy with overnight quiet hours
+    // When the hourly evaluation runs during the local quiet interval
+    // Then no reconfirm email job is created
     [TestMethod]
-    public async ValueTask Execute_NoEligibleTicketTypes_AllCandidatesGetReconfirmEmail()
+    public async ValueTask Execute_DuringOvernightQuietHours_SkipsEvent()
     {
         var eventId = TicketedEventId.New();
-        var now = DateTimeOffset.UtcNow;
-        var firstId = Guid.NewGuid();
-        var secondId = Guid.NewGuid();
+        var now = new DateTimeOffset(2030, 6, 1, 23, 0, 0, TimeSpan.Zero);
+        await SeedPolicyAsync(eventId, now, new TimeOnly(22), new TimeOnly(8));
+        var facade = FacadeReturning(eventId, [RegistrationItem(Guid.NewGuid(), "alice@example.com", now.AddDays(-2))]);
 
-        await Environment.EmailDatabase.SeedAsync(db =>
-        {
-            db.EmailLog.Add(ReconfirmEmailLog(eventId, "first@example.com", now.AddDays(-4)));
-            db.EmailLog.Add(ReconfirmEmailLog(eventId, "second@example.com", now.AddDays(-5)));
-            db.EmailLog.Add(ReconfirmEmailLog(eventId, "second@example.com", now.AddDays(-4)));
-        });
+        await BuildJob(facade, new FakeTimeProvider(now)).Execute(JobContext());
 
-        var facade = FacadeReturning(eventId, [
-            RegistrationItem(firstId, "first@example.com", now.AddDays(-10), effectiveMaxReconfirmAttempts: null),
-            RegistrationItem(secondId, "second@example.com", now.AddDays(-10), effectiveMaxReconfirmAttempts: null)
-        ]);
-
-        var job = BuildJob(facade, new FakeTimeProvider(now));
-        await job.Execute(JobContext(eventId, minEmailIntervalHours: 0));
-
-        var bulkJobs = await LoadBulkEmailJobsAsync();
-        bulkJobs.Count.ShouldBe(1);
-        bulkJobs[0].AttendeeFilter.RegistrationIds.ShouldBe([firstId, secondId], ignoreOrder: true);
-        (await LoadOutboxMessagesAsync()).ShouldBeEmpty();
+        (await LoadBulkEmailJobsAsync()).ShouldBeEmpty();
+        await facade.DidNotReceiveWithAnyArgs().GetRegistrationsAsync(default, default, default!, default);
     }
 
-    // Given an attendee who has received fewer reconfirm emails than their maximum allowed attempts
-    // When the reconfirmations job runs
-    // Then the attendee is included in the bulk reconfirm job and no auto-cancel event is published
+    // Given active policies for two events
+    // When the single hourly evaluation runs
+    // Then each eligible event is committed independently
     [TestMethod]
-    public async ValueTask Execute_AllCandidatesBelowThreshold_DoesNotPublishAutoCancelEvent()
+    public async ValueTask Execute_MultipleActivePolicies_CreatesOneJobPerEligibleEvent()
     {
-        var eventId = TicketedEventId.New();
+        var firstEvent = TicketedEventId.New();
+        var secondEvent = TicketedEventId.New();
         var now = DateTimeOffset.UtcNow;
-        var attendeeId = Guid.NewGuid();
+        await SeedPolicyAsync(firstEvent, now);
+        await SeedPolicyAsync(secondEvent, now);
+        var facade = Substitute.For<IRegistrationsFacade>();
+        facade.GetRegistrationsAsync(
+                Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<QueryRegistrationsDto>(), Arg.Any<CancellationToken>())
+            .Returns(call => Task.FromResult<IReadOnlyList<RegistrationListItemDto>>([
+                RegistrationItem(Guid.NewGuid(), $"{call.ArgAt<Guid>(1)}@example.com", now.AddDays(-2))]));
 
-        await Environment.EmailDatabase.SeedAsync(db =>
-            db.EmailLog.Add(ReconfirmEmailLog(eventId, "alice@example.com", now.AddDays(-3))));
+        await BuildJob(facade, new FakeTimeProvider(now)).Execute(JobContext());
 
-        var facade = FacadeReturning(eventId, [
-            RegistrationItem(attendeeId, "alice@example.com", now.AddDays(-10), effectiveMaxReconfirmAttempts: 3)
-        ]);
+        (await LoadBulkEmailJobsAsync()).Count.ShouldBe(2);
+    }
 
-        var job = BuildJob(facade, new FakeTimeProvider(now));
-        await job.Execute(JobContext(eventId, minEmailIntervalHours: 0));
+    private async Task SeedPolicyAsync(
+        TicketedEventId eventId,
+        DateTimeOffset now,
+        TimeOnly? quietStart = null,
+        TimeOnly? quietEnd = null,
+        DateTimeOffset? opensAt = null,
+        DateTimeOffset? closesAt = null,
+        bool archived = false,
+        bool withoutPolicy = false,
+        bool withoutEventContext = false,
+        string timeZone = "UTC")
+    {
+        var builder = new EventEmailContextViewBuilder()
+            .ForTeam(TeamId)
+            .ForEvent(eventId)
+            .At(now)
+            .WithTimeZone(timeZone)
+            .WithWindow(opensAt ?? now.AddHours(-1), closesAt ?? now.AddHours(1));
+        if (quietStart.HasValue && quietEnd.HasValue)
+            builder.WithQuietHours(quietStart.Value, quietEnd.Value);
+        if (archived)
+            builder.Archived();
+        if (withoutPolicy)
+            builder.WithoutReconfirmPolicy();
+        if (withoutEventContext)
+            builder.WithoutEventContext();
 
-        var bulkJobs = await LoadBulkEmailJobsAsync();
-        bulkJobs.Count.ShouldBe(1);
-        var filter = bulkJobs[0].AttendeeFilter;
-        filter.RegistrationIds.ShouldNotBeNull();
-        filter.RegistrationIds.ShouldContain(attendeeId);
-        (await LoadOutboxMessagesAsync()).ShouldBeEmpty();
+        await Environment.EmailDatabase.SeedAsync(db => db.EventEmailContexts.Add(builder.Build()));
     }
 
     private static RegistrationListItemDto RegistrationItem(
@@ -196,86 +282,72 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
         string email,
         DateTimeOffset createdAt,
         int? effectiveMaxReconfirmAttempts = null) =>
-        new(
-            RegistrationId: registrationId,
-            Email: email,
-            FirstName: "Alice",
-            LastName: "Test",
-            TicketTypeIds: [],
-            AdditionalDetails: new Dictionary<string, string>(),
-            CreatedAt: createdAt,
-            Status: RegistrationStatus.Registered,
-            HasReconfirmed: false,
-            ReconfirmedAt: null,
-            EffectiveMaxReconfirmAttempts: effectiveMaxReconfirmAttempts);
+        new(registrationId, email, "Alice", "Test", [], new Dictionary<string, string>(), createdAt,
+            RegistrationStatus.Registered, false, null, effectiveMaxReconfirmAttempts);
 
-    private static IRegistrationsFacade FacadeReturning(TicketedEventId eventId, IReadOnlyList<RegistrationListItemDto> candidates)
+    private static IRegistrationsFacade FacadeReturning(
+        TicketedEventId eventId,
+        IReadOnlyList<RegistrationListItemDto> candidates)
     {
         var facade = Substitute.For<IRegistrationsFacade>();
-        facade
-            .GetRegistrationsAsync(
+        facade.GetRegistrationsAsync(
                 TeamId.Value,
                 eventId.Value,
-                Arg.Is<QueryRegistrationsDto>(q =>
-                    q != null &&
-                    q.RegistrationStatus == RegistrationStatus.Registered &&
-                    q.HasReconfirmed == false &&
-                    q.RegistrationIds == null),
+                Arg.Is<QueryRegistrationsDto>(q => MatchesReconfirmQuery(q)),
                 Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(candidates));
         return facade;
     }
 
-    private static EmailLog ReconfirmEmailLog(TicketedEventId eventId, string recipientEmail, DateTimeOffset sentAt) =>
-        EmailLog.Create(
-            teamId: TeamId,
-            ticketedEventId: eventId,
-            idempotencyKey: $"reconfirm:{Guid.NewGuid():N}",
-            recipient: EmailAddress.From(recipientEmail),
-            emailType: BuiltInEmailTemplateNames.Reconfirmation,
-            subject: "Please reconfirm",
-            status: EmailLogStatus.Sent,
-            sentAt: sentAt,
-            statusUpdatedAt: sentAt);
+    private static bool MatchesReconfirmQuery(QueryRegistrationsDto? query) =>
+        query is not null
+        && query.RegistrationStatus == RegistrationStatus.Registered
+        && query.HasReconfirmed == false;
 
-    private static RequestReconfirmationsJob BuildJob(IRegistrationsFacade facade, TimeProvider timeProvider)
+    private static EmailLog ReconfirmEmailLog(TicketedEventId eventId, string email, DateTimeOffset sentAt) =>
+        EmailLog.Create(TeamId, eventId, $"reconfirm:{Guid.NewGuid():N}", EmailAddress.From(email),
+            BuiltInEmailTemplateNames.Reconfirmation, "Please reconfirm", EmailLogStatus.Sent, sentAt, sentAt);
+
+    private RequestReconfirmationsJob BuildJob(
+        IRegistrationsFacade facade,
+        TimeProvider timeProvider)
     {
         var ctx = Environment.EmailDatabase.Context;
-        IEmailWriteStore writeStore = ctx;
-        var outbox = new Outbox(ctx);
-        IUnitOfWork unitOfWork = new UnitOfWork<EmailDbContext>(ctx, new NoOpOutboxMessageSender(), NullLogger<UnitOfWork<EmailDbContext>>.Instance);
+        var services = new ServiceCollection()
+            .AddScoped<IEmailWriteStore>(_ => new TestEmailWriteStore(ctx))
+            .AddScoped<IRegistrationsFacade>(_ => facade)
+            .AddKeyedScoped<IOutbox>(EmailModule.Key, (_, _) => new Outbox(ctx))
+            .AddKeyedScoped<IUnitOfWork>(EmailModule.Key, (_, _) => new UnitOfWork<EmailDbContext>(
+                ctx, new NoOpOutboxMessageSender(), NullLogger<UnitOfWork<EmailDbContext>>.Instance))
+            .BuildServiceProvider();
 
         return new RequestReconfirmationsJob(
-            writeStore,
-            facade,
-            outbox,
-            unitOfWork,
+            ctx,
+            services.GetRequiredService<IServiceScopeFactory>(),
             timeProvider,
             NullLogger<RequestReconfirmationsJob>.Instance);
     }
 
-    private static IJobExecutionContext JobContext(TicketedEventId eventId, int minEmailIntervalHours)
+    private static IJobExecutionContext JobContext()
     {
-        var data = new JobDataMap
-        {
-            [RequestReconfirmationsJob.TeamIdKey] = TeamId.Value.ToString(),
-            [RequestReconfirmationsJob.TicketedEventIdKey] = eventId.Value.ToString(),
-            [RequestReconfirmationsJob.MinEmailIntervalHoursKey] = minEmailIntervalHours.ToString(),
-        };
-
         var context = Substitute.For<IJobExecutionContext>();
-        context.MergedJobDataMap.Returns(data);
         context.CancellationToken.Returns(CancellationToken.None);
         return context;
     }
 
-    private static async Task<List<BulkEmailJob>> LoadBulkEmailJobsAsync()
+    private sealed class TestEmailWriteStore(EmailDbContext context) : IEmailWriteStore
+    {
+        public DbSet<EmailLog> EmailLog => context.EmailLog;
+        public DbSet<BulkEmailJob> BulkEmailJobs => context.BulkEmailJobs;
+    }
+
+    private async Task<List<BulkEmailJob>> LoadBulkEmailJobsAsync()
     {
         Environment.EmailDatabase.Context.ChangeTracker.Clear();
         return await Environment.EmailDatabase.Context.BulkEmailJobs.AsNoTracking().ToListAsync();
     }
 
-    private static async Task<List<OutboxMessage>> LoadOutboxMessagesAsync()
+    private async Task<List<OutboxMessage>> LoadOutboxMessagesAsync()
     {
         Environment.EmailDatabase.Context.ChangeTracker.Clear();
         return await Environment.EmailDatabase.Context.OutboxMessages.AsNoTracking().ToListAsync();

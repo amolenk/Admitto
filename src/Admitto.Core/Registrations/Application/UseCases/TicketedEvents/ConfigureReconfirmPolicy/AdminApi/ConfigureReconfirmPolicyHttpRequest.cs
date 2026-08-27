@@ -3,8 +3,9 @@ namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketedEvents
 public sealed record ConfigureReconfirmPolicyHttpRequest(
     DateTimeOffset? OpensAt = null,
     DateTimeOffset? ClosesAt = null,
-    int? CadenceHours = null,
     int? MinEmailIntervalHours = null,
+    TimeOnly? QuietHoursStart = null,
+    TimeOnly? QuietHoursEnd = null,
     uint? ExpectedVersion = null)
 {
     internal ConfigureReconfirmPolicyCommand ToCommand(Guid eventId, Guid teamId) => new(
@@ -13,6 +14,7 @@ public sealed record ConfigureReconfirmPolicyHttpRequest(
         ExpectedVersion,
         OpensAt,
         ClosesAt,
-        CadenceHours,
-        MinEmailIntervalHours);
+        MinEmailIntervalHours,
+        QuietHoursStart,
+        QuietHoursEnd);
 }

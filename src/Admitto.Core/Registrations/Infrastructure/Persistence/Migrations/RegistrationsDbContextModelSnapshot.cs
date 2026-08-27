@@ -632,10 +632,6 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
                             b1.Property<Guid>("TicketedEventId")
                                 .HasColumnType("uuid");
 
-                            b1.Property<TimeSpan>("Cadence")
-                                .HasColumnType("interval")
-                                .HasColumnName("reconfirm_policy_cadence");
-
                             b1.Property<DateTimeOffset>("ClosesAt")
                                 .HasColumnType("timestamp with time zone")
                                 .HasColumnName("reconfirm_policy_closes_at");
@@ -647,6 +643,14 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
                             b1.Property<DateTimeOffset>("OpensAt")
                                 .HasColumnType("timestamp with time zone")
                                 .HasColumnName("reconfirm_policy_opens_at");
+
+                            b1.Property<TimeOnly>("QuietHoursEnd")
+                                .HasColumnType("time")
+                                .HasColumnName("reconfirm_policy_quiet_hours_end");
+
+                            b1.Property<TimeOnly>("QuietHoursStart")
+                                .HasColumnType("time")
+                                .HasColumnName("reconfirm_policy_quiet_hours_start");
 
                             b1.HasKey("TicketedEventId");
 

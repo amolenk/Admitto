@@ -45,7 +45,6 @@ public sealed class OtpCodeRequestedIntegrationEventHandlerTests(TestContext tes
                 null,
                 null,
                 null,
-                null,
                 false));
         var sendEmailHandler = new CapturingSendEmailHandler();
         var sut = new OtpCodeRequestedIntegrationEventHandler(contextQuery, sendEmailHandler);

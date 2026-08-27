@@ -21,6 +21,5 @@ internal sealed record EventEmailContextDto(
     string TimeZone,
     DateTimeOffset? ReconfirmOpensAt,
     DateTimeOffset? ReconfirmClosesAt,
-    int? ReconfirmCadenceHours,
     int? ReconfirmMinEmailIntervalHours,
     bool IsArchived);

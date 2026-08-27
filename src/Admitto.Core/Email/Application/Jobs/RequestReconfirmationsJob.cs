@@ -1,4 +1,5 @@
 using Amolenk.Admitto.Core.Email.Application.Persistence;
+using Amolenk.Admitto.Core.Email.Application.Projections.EventEmailContext;
 using Amolenk.Admitto.Core.Email.Application.Templating;
 using Amolenk.Admitto.Core.Email.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Email.Domain.Entities;
@@ -6,69 +7,112 @@ using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
+using Microsoft.EntityFrameworkCore;
+using Npgsql;
 using Quartz;
 
 namespace Amolenk.Admitto.Core.Email.Application.Jobs;
 
 /// <summary>
-/// Quartz job fired by the per-event reconfirm trigger. Each tick evaluates
-/// which registered, un-reconfirmed attendees are eligible for a reconfirmation
-/// email based on the MinEmailInterval throttle (per design D1, D2), then
-/// creates one system-triggered <see cref="BulkEmailJob"/> for the eligible set.
-/// The cron schedule of the per-event trigger encodes the cadence; this job
-/// performs no additional cadence filtering (per design D5).
+/// Evaluates every projected, active reconfirm policy once per hourly Quartz
+/// tick. The operational trigger is stable and hourly; policy cadence is not
+/// persisted because attendee throttling is the only per-recipient schedule.
 /// </summary>
 [DisallowConcurrentExecution]
 internal sealed class RequestReconfirmationsJob(
-    IEmailWriteStore writeStore,
-    IRegistrationsFacade registrationsFacade,
-    [FromKeyedServices(EmailModule.Key)] IOutbox outbox,
-    [FromKeyedServices(EmailModule.Key)] IUnitOfWork unitOfWork,
+    IEmailReadStore readStore,
+    IServiceScopeFactory scopeFactory,
     TimeProvider timeProvider,
     ILogger<RequestReconfirmationsJob> logger)
     : IJob
 {
     public const string Name = nameof(RequestReconfirmationsJob);
-    public const string TeamIdKey = "TeamId";
-    public const string TicketedEventIdKey = "TicketedEventId";
-    public const string MinEmailIntervalHoursKey = "MinEmailIntervalHours";
+    public const string TriggerName = $"{Name}.Hourly";
 
     public async Task Execute(IJobExecutionContext context)
     {
         var ct = context.CancellationToken;
-
-        var teamIdValue = context.MergedJobDataMap.GetGuidValueFromString(TeamIdKey);
-        var eventIdValue = context.MergedJobDataMap.GetGuidValueFromString(TicketedEventIdKey);
-        var teamId = TeamId.From(teamIdValue);
-        var ticketedEventId = TicketedEventId.From(eventIdValue);
-
-        var minIntervalRaw = context.MergedJobDataMap.GetString(MinEmailIntervalHoursKey);
-        int.TryParse(minIntervalRaw, out var minEmailIntervalHours);
-
         var now = timeProvider.GetUtcNow();
+
+        var policies = (await readStore.EventEmailContexts
+            .AsNoTracking()
+            .Where(c => c.ReconfirmOpensAt <= now && now < c.ReconfirmClosesAt)
+            .ToListAsync(ct))
+            .Where(c => c.HasCompleteReconfirmPolicy)
+            .ToList();
+
+        foreach (var policy in policies)
+        {
+            ct.ThrowIfCancellationRequested();
+
+            try
+            {
+                if (!TryGetTimeZone(policy.TimeZone!, out var timeZone))
+                    continue;
+
+                await using var scope = scopeFactory.CreateAsyncScope();
+                var writeStore = scope.ServiceProvider.GetRequiredService<IEmailWriteStore>();
+                var registrationsFacade = scope.ServiceProvider.GetRequiredService<IRegistrationsFacade>();
+                var outbox = scope.ServiceProvider.GetRequiredKeyedService<IOutbox>(EmailModule.Key);
+                var unitOfWork = scope.ServiceProvider.GetRequiredKeyedService<IUnitOfWork>(EmailModule.Key);
+
+                if (await HasOutstandingReconfirmJobAsync(writeStore, policy, ct))
+                    continue;
+
+                if (IsQuietHours(policy, now, timeZone))
+                    continue;
+
+                await EvaluateEventAsync(
+                    policy,
+                    writeStore,
+                    registrationsFacade,
+                    outbox,
+                    unitOfWork,
+                    now,
+                    ct);
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                // An event is the unit of work. A bad projection or a failed
+                // event should not prevent unrelated events being evaluated.
+                logger.LogError(ex,
+                    "Reconfirm evaluation failed for event {TicketedEventId}.",
+                    policy.TicketedEventId.Value);
+            }
+        }
+    }
+
+    private async Task EvaluateEventAsync(
+        EventEmailContextView policy,
+        IEmailWriteStore writeStore,
+        IRegistrationsFacade registrationsFacade,
+        IOutbox outbox,
+        IUnitOfWork unitOfWork,
+        DateTimeOffset now,
+        CancellationToken ct)
+    {
         var candidates = await registrationsFacade.GetRegistrationsAsync(
-            teamId.Value,
-            ticketedEventId.Value,
+            policy.TeamId.Value,
+            policy.TicketedEventId.Value,
             new QueryRegistrationsDto(
                 RegistrationStatus: RegistrationStatus.Registered,
                 HasReconfirmed: false),
             ct);
 
         if (candidates.Count == 0)
-        {
-            logger.LogInformation(
-                "Reconfirm tick for event {TicketedEventId}: no un-reconfirmed attendees, skipping.",
-                eventIdValue);
             return;
-        }
 
         var emailLogDataByEmail = await writeStore.EmailLog
             .AsNoTracking()
             .Where(l =>
-                l.TeamId == teamId &&
-                l.TicketedEventId == ticketedEventId &&
-                l.EmailType == BuiltInEmailTemplateNames.Reconfirmation &&
-                l.Status == EmailLogStatus.Sent)
+                l.TeamId == policy.TeamId
+                && l.TicketedEventId == policy.TicketedEventId
+                && l.EmailType == BuiltInEmailTemplateNames.Reconfirmation
+                && l.Status == EmailLogStatus.Sent)
             .GroupBy(l => l.Recipient)
             .Select(g => new
             {
@@ -78,30 +122,20 @@ internal sealed class RequestReconfirmationsJob(
             })
             .ToDictionaryAsync(x => x.Email.Value, x => (x.LastSentAt, x.Count), ct);
 
-        var eligibleCandidates = candidates;
-        if (minEmailIntervalHours > 0)
-        {
-            var threshold = TimeSpan.FromHours(minEmailIntervalHours);
-            eligibleCandidates = candidates
-                .Where(r =>
-                {
-                    var baseline = emailLogDataByEmail.TryGetValue(r.Email, out var logData) && logData.LastSentAt.HasValue
-                        ? (logData.LastSentAt.Value > r.CreatedAt ? logData.LastSentAt.Value : r.CreatedAt)
-                        : r.CreatedAt;
-                    return baseline + threshold <= now;
-                })
-                .ToList();
-
-            if (eligibleCandidates.Count == 0)
+        var interval = TimeSpan.FromHours(policy.ReconfirmMinEmailIntervalHours!.Value);
+        var eligibleCandidates = candidates
+            .Where(r =>
             {
-                logger.LogInformation(
-                    "Reconfirm tick for event {TicketedEventId}: all {Total} attendees throttled by MinEmailInterval ({Hours}h), skipping.",
-                    eventIdValue,
-                    candidates.Count,
-                    minEmailIntervalHours);
-                return;
-            }
-        }
+                var baseline = emailLogDataByEmail.TryGetValue(r.Email, out var logData)
+                    && logData.LastSentAt.HasValue
+                    ? (logData.LastSentAt.Value > r.CreatedAt ? logData.LastSentAt.Value : r.CreatedAt)
+                    : r.CreatedAt;
+                return baseline + interval <= now;
+            })
+            .ToList();
+
+        if (eligibleCandidates.Count == 0)
+            return;
 
         var reconfirmRegistrationIds = eligibleCandidates
             .Where(r =>
@@ -121,50 +155,99 @@ internal sealed class RequestReconfirmationsJob(
 
         if (reconfirmRegistrationIds.Count > 0)
         {
-            logger.LogInformation(
-                "Reconfirm tick for event {TicketedEventId}: creating bulk-email job for {Eligible} attendees.",
-                eventIdValue,
-                reconfirmRegistrationIds.Count);
-
             var filter = new BulkEmailAttendeeFilter(
                 RegistrationStatus: RegistrationStatus.Registered,
                 HasReconfirmed: false,
                 RegistrationIds: reconfirmRegistrationIds);
 
-            var job = BulkEmailJob.CreateSystemTriggered(
-                teamId,
-                ticketedEventId,
+            writeStore.BulkEmailJobs.Add(BulkEmailJob.CreateSystemTriggered(
+                policy.TeamId,
+                policy.TicketedEventId,
                 BuiltInEmailTemplateNames.Reconfirmation,
                 subject: null,
                 textBody: null,
                 htmlBody: null,
                 attendeeFilter: filter,
-                now: now);
-
-            writeStore.BulkEmailJobs.Add(job);
+                now: now));
         }
 
         if (autoCancelRegistrationIds.Count > 0)
         {
-            logger.LogInformation(
-                "Reconfirm tick for event {TicketedEventId}: auto-cancelling {Cancelled} attendees.",
-                eventIdValue,
-                autoCancelRegistrationIds.Count);
-
             outbox.Enqueue(new ReconfirmAutoExpiredIntegrationEvent(
-                teamId.Value,
-                ticketedEventId.Value,
+                policy.TeamId.Value,
+                policy.TicketedEventId.Value,
                 autoCancelRegistrationIds));
         }
 
-        if (reconfirmRegistrationIds.Count == 0 && autoCancelRegistrationIds.Count == 0)
+        if (reconfirmRegistrationIds.Count > 0 || autoCancelRegistrationIds.Count > 0)
         {
-            logger.LogInformation(
-                "Reconfirm tick for event {TicketedEventId}: no attendees eligible after policy evaluation, skipping.",
-                eventIdValue);
-            return;
+            try
+            {
+                await unitOfWork.SaveChangesAsync(ct);
+            }
+            catch (DbUpdateException ex) when (IsActiveReconfirmReservationViolation(ex))
+            {
+                // Another evaluator won the durable reservation. Its job owns
+                // this event's pending work, so this evaluation is complete.
+            }
+        }
+    }
+
+    private static async Task<bool> HasOutstandingReconfirmJobAsync(
+        IEmailWriteStore writeStore,
+        EventEmailContextView policy,
+        CancellationToken cancellationToken) =>
+        await writeStore.BulkEmailJobs
+            .AsNoTracking()
+            .AnyAsync(j =>
+                j.TeamId == policy.TeamId
+                && j.TicketedEventId == policy.TicketedEventId
+                && j.EmailType == BuiltInEmailTemplateNames.Reconfirmation
+                && j.IsSystemTriggered
+                && (j.Status == BulkEmailJobStatus.Pending
+                    || j.Status == BulkEmailJobStatus.Resolving
+                    || j.Status == BulkEmailJobStatus.Sending),
+                cancellationToken);
+
+    private static bool TryGetTimeZone(string timeZoneId, out TimeZoneInfo timeZone)
+    {
+        try
+        {
+            timeZone = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
+            return true;
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            timeZone = default!;
+        }
+        catch (InvalidTimeZoneException)
+        {
+            timeZone = default!;
         }
 
-        await unitOfWork.SaveChangesAsync(ct);
+        return false;
     }
+
+    private static bool IsQuietHours(
+        EventEmailContextView policy,
+        DateTimeOffset now,
+        TimeZoneInfo timeZone)
+    {
+        if (!policy.ReconfirmQuietHoursStart.HasValue || !policy.ReconfirmQuietHoursEnd.HasValue)
+            return false;
+
+        var localTime = TimeOnly.FromDateTime(TimeZoneInfo.ConvertTime(now, timeZone).DateTime);
+        var start = policy.ReconfirmQuietHoursStart.Value;
+        var end = policy.ReconfirmQuietHoursEnd.Value;
+
+        // Quiet hours are [start, end), with start > end denoting an overnight
+        // interval. Equal times are rejected by the domain policy.
+        return start < end
+            ? localTime >= start && localTime < end
+            : localTime >= start || localTime < end;
+    }
+
+    private static bool IsActiveReconfirmReservationViolation(DbUpdateException exception) =>
+        exception.InnerException is PostgresException postgresException
+        && postgresException.ConstraintName == "IX_bulk_email_jobs_active_reconfirm_event";
 }

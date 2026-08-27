@@ -56,10 +56,6 @@ namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(64)")
                         .HasColumnName("public_slug");
 
-                    b.Property<int?>("ReconfirmCadenceHours")
-                        .HasColumnType("integer")
-                        .HasColumnName("reconfirm_cadence_hours");
-
                     b.Property<DateTimeOffset?>("ReconfirmClosesAt")
                         .HasColumnType("timestamptz")
                         .HasColumnName("reconfirm_closes_at");
@@ -71,6 +67,14 @@ namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset?>("ReconfirmOpensAt")
                         .HasColumnType("timestamptz")
                         .HasColumnName("reconfirm_opens_at");
+
+                    b.Property<TimeOnly?>("ReconfirmQuietHoursEnd")
+                        .HasColumnType("time")
+                        .HasColumnName("reconfirm_quiet_hours_end");
+
+                    b.Property<TimeOnly?>("ReconfirmQuietHoursStart")
+                        .HasColumnType("time")
+                        .HasColumnName("reconfirm_quiet_hours_start");
 
                     b.Property<int?>("SelfServiceTicketTypeCount")
                         .HasColumnType("integer")
@@ -268,6 +272,11 @@ namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence.Migrations
                     b.HasIndex("TicketedEventId", "CreatedAt")
                         .IsDescending(false, true)
                         .HasDatabaseName("IX_bulk_email_jobs_event_created_at");
+
+                    b.HasIndex("TicketedEventId", "EmailType")
+                        .IsUnique()
+                        .HasDatabaseName("IX_bulk_email_jobs_active_reconfirm_event")
+                        .HasFilter("is_system_triggered = TRUE AND email_type = 'Reconfirmation' AND status IN ('Pending', 'Resolving', 'Sending')");
 
                     b.ToTable("bulk_email_jobs", "email");
                 });
