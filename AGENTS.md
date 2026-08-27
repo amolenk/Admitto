@@ -99,6 +99,20 @@ See `docs/AGENTS.md` for doc update rules.
 ## Admin UI Design
 Keep design of new features in line with existing features. The `design` directory contains the original UI design.
 
+## Agent skills
+
+### Issue tracker
+
+Issues and specs are tracked in this repository's GitHub Issues. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The default five canonical triage labels are used. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+This is a single-context repository. See `docs/agents/domain.md`.
+
 ## Feature Implementation Checklist
 Before declaring a feature complete:
 - Read the existing tests for the affected module/use case first to understand current behavior and test conventions.
