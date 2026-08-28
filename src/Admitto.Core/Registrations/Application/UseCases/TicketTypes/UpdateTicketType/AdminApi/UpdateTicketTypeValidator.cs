@@ -24,11 +24,10 @@ public sealed class UpdateTicketTypeValidator : AbstractValidator<UpdateTicketTy
                 .WithMessage("ClaimWindowHours must be at least 1.");
         });
 
-        When(x => x.MaxReconfirmAttempts is not null, () =>
+        When(x => x.MaxReconfirmationEmails is not null, () =>
         {
-            RuleFor(x => x.MaxReconfirmAttempts!.Value)
-                .GreaterThanOrEqualTo(1)
-                .WithMessage("MaxReconfirmAttempts must be at least 1.");
+            RuleFor(x => x.MaxReconfirmationEmails!.Value)
+                .MustBeParseable(ReconfirmationEmailLimit.TryFrom);
         });
     }
 }

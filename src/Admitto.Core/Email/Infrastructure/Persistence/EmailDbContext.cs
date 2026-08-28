@@ -45,6 +45,10 @@ public sealed class EmailDbContext(DbContextOptions<EmailDbContext> options)
             .HaveConversion<RegistrationId.EfCoreValueConverter>();
 
         configurationBuilder
+            .Properties<RegistrationCycleId>()
+            .HaveConversion<RegistrationCycleId.EfCoreValueConverter>();
+
+        configurationBuilder
             .Properties<EmailAddress>()
             .HaveConversion<EmailAddress.EfCoreValueConverter>();
 

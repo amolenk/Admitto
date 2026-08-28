@@ -51,7 +51,7 @@ public class TicketCatalog : Aggregate<TicketedEventId>
         bool selfServiceEnabled = true,
         bool waitlistEnabled = false,
         int claimWindowHours = 8,
-        int? maxReconfirmAttempts = null)
+        ReconfirmationEmailLimit? maxReconfirmationEmails = null)
     {
         EnsureEventActive();
 
@@ -61,7 +61,7 @@ public class TicketCatalog : Aggregate<TicketedEventId>
         if (waitlistEnabled && maxCapacity is null)
             throw new BusinessRuleViolationException(Errors.WaitlistRequiresBoundedCapacity(id));
 
-        _ticketTypes.Add(new TicketType(id, name, timeSlots, maxCapacity, selfServiceEnabled, waitlistEnabled, claimWindowHours, maxReconfirmAttempts));
+        _ticketTypes.Add(new TicketType(id, name, timeSlots, maxCapacity, selfServiceEnabled, waitlistEnabled, claimWindowHours, maxReconfirmationEmails));
         AddDomainEvent(new TicketCatalogSelfServiceTicketTypeCountChangedDomainEvent(
             TeamId,
             Id,
@@ -76,8 +76,8 @@ public class TicketCatalog : Aggregate<TicketedEventId>
         bool? selfServiceEnabled = null,
         bool? waitlistEnabled = null,
         int? claimWindowHours = null,
-        int? maxReconfirmAttempts = null,
-        bool updateMaxReconfirmAttempts = false)
+        ReconfirmationEmailLimit? maxReconfirmationEmails = null,
+        bool updateMaxReconfirmationEmails = false)
     {
         EnsureEventActive();
 
@@ -94,8 +94,8 @@ public class TicketCatalog : Aggregate<TicketedEventId>
         if (claimWindowHours is not null)
             ticketType.UpdateClaimWindowHours(claimWindowHours.Value);
 
-        if (updateMaxReconfirmAttempts)
-            ticketType.UpdateMaxReconfirmAttempts(maxReconfirmAttempts);
+        if (updateMaxReconfirmationEmails)
+            ticketType.UpdateMaxReconfirmationEmails(maxReconfirmationEmails);
 
         // Disabling waitlist or removing capacity limit forces waitlist off
         bool forceDisabling = (waitlistEnabled == false && ticketType.WaitlistEnabled)

@@ -34,6 +34,10 @@ public class RegistrationEntityConfiguration : IEntityTypeConfiguration<Registra
             .HasColumnName("event_id")
             .IsRequired();
 
+        builder.Property(e => e.RegistrationCycleId)
+            .HasColumnName("registration_cycle_id")
+            .IsRequired();
+
         builder.Property(e => e.Email)
             .HasColumnName("email")
             .IsRequired()

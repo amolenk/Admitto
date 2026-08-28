@@ -5,6 +5,7 @@ using Amolenk.Admitto.Core.Email.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Email.Domain.Entities;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Contracts;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Microsoft.EntityFrameworkCore;
@@ -106,29 +107,24 @@ internal sealed class RequestReconfirmationsJob(
         if (candidates.Count == 0)
             return;
 
-        var emailLogDataByEmail = await writeStore.EmailLog
+        var sentReconfirmationLogs = await writeStore.EmailLog
             .AsNoTracking()
             .Where(l =>
                 l.TeamId == policy.TeamId
                 && l.TicketedEventId == policy.TicketedEventId
                 && l.EmailType == BuiltInEmailTemplateNames.Reconfirmation
-                && l.Status == EmailLogStatus.Sent)
-            .GroupBy(l => l.Recipient)
-            .Select(g => new
-            {
-                Email = g.Key,
-                LastSentAt = g.Max(l => l.SentAt),
-                Count = g.Count()
-            })
-            .ToDictionaryAsync(x => x.Email.Value, x => (x.LastSentAt, x.Count), ct);
+                && (l.Status == EmailLogStatus.Sent || l.Status == EmailLogStatus.Delivered)
+                && l.SentAt.HasValue)
+            .Select(l => new ReconfirmLogData(l.RegistrationCycleId, l.SentAt!.Value))
+            .ToListAsync(ct);
 
         var interval = TimeSpan.FromHours(policy.ReconfirmMinEmailIntervalHours!.Value);
         var eligibleCandidates = candidates
             .Where(r =>
             {
-                var baseline = emailLogDataByEmail.TryGetValue(r.Email, out var logData)
-                    && logData.LastSentAt.HasValue
-                    ? (logData.LastSentAt.Value > r.CreatedAt ? logData.LastSentAt.Value : r.CreatedAt)
+                var lastSentAt = GetCurrentCycleLogs(sentReconfirmationLogs, r).MaxBy(l => l.SentAt)?.SentAt;
+                var baseline = lastSentAt.HasValue && lastSentAt.Value > r.CreatedAt
+                    ? lastSentAt.Value
                     : r.CreatedAt;
                 return baseline + interval <= now;
             })
@@ -139,17 +135,25 @@ internal sealed class RequestReconfirmationsJob(
 
         var reconfirmRegistrationIds = eligibleCandidates
             .Where(r =>
-                r.EffectiveMaxReconfirmAttempts is null
-                || !emailLogDataByEmail.TryGetValue(r.Email, out var logData)
-                || logData.Count < r.EffectiveMaxReconfirmAttempts.Value)
+            {
+                if (r.EffectiveMaxReconfirmationEmails is null)
+                    return true;
+
+                return GetCurrentCycleLogs(sentReconfirmationLogs, r).Count
+                    < r.EffectiveMaxReconfirmationEmails.Value;
+            })
             .Select(r => r.RegistrationId)
             .ToList();
 
         var autoCancelRegistrationIds = eligibleCandidates
             .Where(r =>
-                r.EffectiveMaxReconfirmAttempts is not null
-                && emailLogDataByEmail.TryGetValue(r.Email, out var logData)
-                && logData.Count >= r.EffectiveMaxReconfirmAttempts.Value)
+            {
+                if (r.EffectiveMaxReconfirmationEmails is null)
+                    return false;
+
+                return GetCurrentCycleLogs(sentReconfirmationLogs, r).Count
+                    >= r.EffectiveMaxReconfirmationEmails.Value;
+            })
             .Select(r => r.RegistrationId)
             .ToList();
 
@@ -158,7 +162,10 @@ internal sealed class RequestReconfirmationsJob(
             var filter = new BulkEmailAttendeeFilter(
                 RegistrationStatus: RegistrationStatus.Registered,
                 HasReconfirmed: false,
-                RegistrationIds: reconfirmRegistrationIds);
+                RegistrationIds: reconfirmRegistrationIds,
+                RegistrationCycleIds: eligibleCandidates
+                    .Where(r => reconfirmRegistrationIds.Contains(r.RegistrationId))
+                    .ToDictionary(r => r.RegistrationId, r => r.RegistrationCycleId));
 
             writeStore.BulkEmailJobs.Add(BulkEmailJob.CreateSystemTriggered(
                 policy.TeamId,
@@ -173,10 +180,21 @@ internal sealed class RequestReconfirmationsJob(
 
         if (autoCancelRegistrationIds.Count > 0)
         {
+            var references = eligibleCandidates
+                .Where(r => autoCancelRegistrationIds.Contains(r.RegistrationId))
+                .Select(r => new ReconfirmAutoExpiredRegistrationReference(
+                    r.RegistrationId,
+                    r.RegistrationCycleId,
+                    r.RegistrationVersion,
+                    r.TicketCatalogVersion,
+                    r.TicketTypeIds))
+                .ToList();
+
             outbox.Enqueue(new ReconfirmAutoExpiredIntegrationEvent(
                 policy.TeamId.Value,
                 policy.TicketedEventId.Value,
-                autoCancelRegistrationIds));
+                autoCancelRegistrationIds,
+                references));
         }
 
         if (reconfirmRegistrationIds.Count > 0 || autoCancelRegistrationIds.Count > 0)
@@ -208,6 +226,18 @@ internal sealed class RequestReconfirmationsJob(
                     || j.Status == BulkEmailJobStatus.Resolving
                     || j.Status == BulkEmailJobStatus.Sending),
                 cancellationToken);
+
+    private static IReadOnlyList<ReconfirmLogData> GetCurrentCycleLogs(
+        IReadOnlyList<ReconfirmLogData> logs,
+        RegistrationListItemDto registration) =>
+        logs.Where(log =>
+                log.SentAt >= registration.CreatedAt
+                && log.RegistrationCycleId == RegistrationCycleId.From(registration.RegistrationCycleId))
+            .ToList();
+
+    private sealed record ReconfirmLogData(
+        RegistrationCycleId? RegistrationCycleId,
+        DateTimeOffset SentAt);
 
     private static bool TryGetTimeZone(string timeZoneId, out TimeZoneInfo timeZone)
     {

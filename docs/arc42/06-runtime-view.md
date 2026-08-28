@@ -307,9 +307,9 @@ sequenceDiagram
 
 **Cancellation**: `POST /admin/.../bulk-emails/{id}/cancel` sets `CancellationRequestedAt` on the aggregate; the worker observes it between recipients and during the per-message delay, transitions remaining `Pending` rows to `Cancelled`, and closes the SMTP session cleanly.
 
-## 6.10 Reconfirm scheduling (hourly active-event evaluation)
+## 6.10 Reconfirm scheduling and cycle limits (hourly active-event evaluation)
 
-The reconfirmation policy is owned by `TicketedEvent` in Registrations. Email projects the schedule-affecting event data needed for evaluation: policy presence and window, minimum email interval, optional event-local quiet hours, event time zone, and lifecycle state. A recurring Quartz job in the Worker evaluates enabled Active events once per hour; the policy controls eligibility, not scheduler timing.
+The reconfirmation policy is owned by `TicketedEvent` in Registrations. Email projects the schedule-affecting event data needed for evaluation: policy presence and window, minimum email interval, optional event-local quiet hours, event time zone, and lifecycle state. A recurring Quartz job in the Worker evaluates enabled Active events once per hour; the policy controls eligibility, not scheduler timing. Ticket types may add an optional maximum reconfirmation-email count, with the strictest configured value governing each registration's current cycle.
 
 ```mermaid
 sequenceDiagram
@@ -338,9 +338,9 @@ sequenceDiagram
     end
 ```
 
-**Eligibility**: an event is evaluated only when its reconfirm policy is enabled, its lifecycle is Active, and the current instant is in the half-open window `[opensAt, closesAt)`. Optional event-local quiet hours defer routine evaluation. For each registered attendee with `HasReconfirmed=false`, the configured minimum whole-hour interval since registration or the last reconfirmation email must also have elapsed. The hourly evaluation runs on a fixed operational schedule; organizers configure the window, interval, and optional quiet hours.
+**Eligibility**: an event is evaluated only when its reconfirm policy is enabled, its lifecycle is Active, and the current instant is in the half-open window `[opensAt, closesAt)`. Optional event-local quiet hours defer routine evaluation. For each registered attendee with `HasReconfirmed=false`, the configured minimum whole-hour interval since registration or the last reconfirmation email must also have elapsed. Only successfully delivered reconfirmation emails count toward the current cycle's strictest ticket-type maximum. When that maximum is exhausted, the hourly evaluator auto-cancels the registration through the normal cancellation flow and its side effects instead of creating another reminder. The hourly evaluation runs on a fixed operational schedule; organizers configure the window, interval, and optional quiet hours.
 
-**Attendee reconfirm action**: the reconfirm email CTA points at the Admitto public `reconfirm_link` (`/e/{publicSlug}/reconfirm/{registrationId}`), which redirects to the event website. The event website then POSTs back to the API-key-authenticated partner endpoint `POST /api/events/{eventSlug}/registrations/{registrationId}/reconfirm`, invoking `Registration.Reconfirm()` (idempotent; rejected for cancelled registrations). This sets `HasReconfirmed=true`, so the attendee drops out of the next hourly evaluation's candidate set. As with other partner endpoints, the write is audited against the API key's team identity.
+**Attendee reconfirm action**: the reconfirm email CTA points at the Admitto public `reconfirm_link` (`/e/{publicSlug}/reconfirm/{registrationId}`), which redirects to the event website. The event website then POSTs back to the API-key-authenticated partner endpoint `POST /api/events/{eventSlug}/registrations/{registrationId}/reconfirm`, invoking `Registration.Reconfirm()` (idempotent; rejected for cancelled registrations). This sets `HasReconfirmed=true`, so the attendee drops out of the next hourly evaluation's candidate set. As with other partner endpoints, the write is audited against the API key's team identity. A new registration or a reset/reregistration after cancellation starts a fresh reconfirmation cycle.
 
 **Lifecycle cleanup**: clearing the reconfirm policy or archiving the event updates the Email projection so the event is no longer enabled and Active. Future hourly evaluations therefore skip it and create no routine reconfirmation work.
 

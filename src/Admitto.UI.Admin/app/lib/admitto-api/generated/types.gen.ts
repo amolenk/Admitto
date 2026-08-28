@@ -42,7 +42,7 @@ export type AddTicketTypeHttpRequest = {
     maxCapacity?: null | number | string;
     waitlistEnabled?: boolean;
     claimWindowHours?: number | string;
-    maxReconfirmAttempts?: null | number | string;
+    maxReconfirmationEmails?: null | number | string;
 };
 
 export type AddTicketTypeHttpResponse = {
@@ -589,7 +589,7 @@ export type TicketTypeDto = {
     waitlistEnabled: boolean;
     waitlistMode: boolean;
     claimWindowHours: number | string;
-    maxReconfirmAttempts: null | number | string;
+    maxReconfirmationEmails: null | number | string;
 };
 
 export type UpdateAdditionalDetailSchemaHttpRequest = {
@@ -636,7 +636,7 @@ export type UpdateTicketTypeHttpRequest = {
     selfServiceEnabled?: null | boolean;
     waitlistEnabled?: null | boolean;
     claimWindowHours?: null | number | string;
-    maxReconfirmAttempts?: null | number | string;
+    maxReconfirmationEmails?: null | number | string;
 };
 
 export type VerifyOtpHttpRequest = {

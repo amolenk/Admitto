@@ -8,6 +8,7 @@ using Amolenk.Admitto.Core.Email.Application.UseCases.EventEmailContexts.GetEven
 using Amolenk.Admitto.Core.Email.Domain.Entities;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
+using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Microsoft.Extensions.Options;
@@ -36,6 +37,7 @@ namespace Amolenk.Admitto.Core.Email.Application.Jobs;
 internal sealed class SendBulkEmailJob(
     IEmailWriteStore writeStore,
     IBulkEmailRecipientResolver recipientResolver,
+    IRegistrationsFacade registrationsFacade,
     IQueryHandler<GetEventEmailRenderingContextQuery, EventEmailContextDto> eventContextQuery,
     IEffectiveEmailSettingsResolver settingsResolver,
     IEmailTemplateService templateService,
@@ -84,6 +86,15 @@ internal sealed class SendBulkEmailJob(
                 logger.LogInformation(
                     "Bulk-email job {BulkEmailJobId} already terminal ({Status}); skipping.",
                     bulkJobIdValue, job.Status);
+                return;
+            }
+
+            if (job.Status == BulkEmailJobStatus.Pending
+                && job.EmailType == BuiltInEmailTemplateNames.Reconfirmation
+                && !HasExpectedRegistrationCycles(job.AttendeeFilter))
+            {
+                job.Fail("Reconfirmation job has no expected registration cycles.", DateTimeOffset.UtcNow);
+                await unitOfWork.SaveChangesAsync(ct);
                 return;
             }
 
@@ -225,6 +236,14 @@ internal sealed class SendBulkEmailJob(
 
         try
         {
+            if (job.EmailType == BuiltInEmailTemplateNames.Reconfirmation
+                && !await IsCurrentReconfirmRecipientAsync(job, recipient, ct))
+            {
+                job.RecordCancelledRecipient(recipient.Email.Value);
+                await unitOfWork.SaveChangesAsync(ct);
+                return;
+            }
+
             var parameters = JsonSerializer.Deserialize<Dictionary<string, object?>>(
                 recipient.ParametersJson, ParametersJsonOptions) ?? new Dictionary<string, object?>();
             parameters["accent_color"] = settings.AccentColor.Value;
@@ -298,7 +317,8 @@ internal sealed class SendBulkEmailJob(
                     statusUpdatedAt: now,
                     lastError: ex.Message,
                     bulkEmailJobId: job.Id,
-                    registrationId: recipient.RegistrationId);
+                    registrationId: recipient.RegistrationId,
+                    registrationCycleId: recipient.RegistrationCycleId);
 
                 writeStore.EmailLog.Add(log);
             }
@@ -336,7 +356,8 @@ internal sealed class SendBulkEmailJob(
             sentAt: null,
             statusUpdatedAt: now,
             bulkEmailJobId: job.Id,
-            registrationId: recipient.RegistrationId);
+            registrationId: recipient.RegistrationId,
+            registrationCycleId: recipient.RegistrationCycleId);
 
         writeStore.EmailLog.Add(log);
 
@@ -395,6 +416,66 @@ internal sealed class SendBulkEmailJob(
             .Where(j => j.Id == jobId && j.TeamId == teamId && j.TicketedEventId == ticketedEventId)
             .Select(j => j.CancellationRequestedAt)
             .FirstOrDefaultAsync(ct) is not null;
+    }
+
+    private static bool HasExpectedRegistrationCycles(BulkEmailAttendeeFilter filter) =>
+        filter.RegistrationIds is not { Count: > 0 }
+        || (filter.RegistrationCycleIds is { } registrationCycles
+            && filter.RegistrationIds.All(registrationCycles.ContainsKey));
+
+    private async Task<bool> IsCurrentReconfirmRecipientAsync(
+        BulkEmailJob job,
+        BulkEmailRecipient recipient,
+        CancellationToken cancellationToken)
+    {
+        if (recipient.RegistrationCycleId is null)
+            return false;
+
+        var rows = await registrationsFacade.GetRegistrationsAsync(
+            job.TeamId.Value,
+            job.TicketedEventId.Value,
+            new QueryRegistrationsDto(
+                RegistrationStatus: RegistrationStatus.Registered,
+                HasReconfirmed: false,
+                RegistrationIds: [recipient.RegistrationId.Value]),
+            cancellationToken);
+
+        var current = rows.FirstOrDefault(row =>
+            row.RegistrationId == recipient.RegistrationId.Value
+            && row.RegistrationCycleId == recipient.RegistrationCycleId.Value
+            && row.Status == RegistrationStatus.Registered
+            && !row.HasReconfirmed);
+
+        if (current is null || !HasSameTicketSelection(recipient.ParametersJson, current.TicketTypeIds))
+            return false;
+
+        if (current.EffectiveMaxReconfirmationEmails is null)
+            return true;
+
+        var successfulEmailCount = await writeStore.EmailLog
+            .AsNoTracking()
+            .CountAsync(log =>
+                log.TeamId == job.TeamId
+                && log.TicketedEventId == job.TicketedEventId
+                && log.RegistrationId == recipient.RegistrationId
+                && log.RegistrationCycleId == recipient.RegistrationCycleId
+                && log.EmailType == BuiltInEmailTemplateNames.Reconfirmation
+                && (log.Status == EmailLogStatus.Sent || log.Status == EmailLogStatus.Delivered),
+                cancellationToken);
+
+        return successfulEmailCount < current.EffectiveMaxReconfirmationEmails.Value;
+    }
+
+    private static bool HasSameTicketSelection(
+        string parametersJson,
+        IReadOnlyCollection<Guid> currentTicketTypeIds)
+    {
+        using var document = JsonDocument.Parse(parametersJson);
+        if (!document.RootElement.TryGetProperty("ticket_type_ids", out var ticketTypeIds))
+            return currentTicketTypeIds.Count == 0;
+
+        var expected = ticketTypeIds.EnumerateArray().Select(value => value.GetGuid()).ToHashSet();
+        return expected.SetEquals(currentTicketTypeIds);
     }
 
     private static bool IsEmailLogIdempotencyViolation(DbUpdateException ex)

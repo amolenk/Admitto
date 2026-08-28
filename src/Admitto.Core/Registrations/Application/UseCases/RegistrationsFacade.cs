@@ -27,20 +27,20 @@ internal sealed class RegistrationsFacade(
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == ticketedEventId && c.TeamId == team, cancellationToken);
 
-        var maxAttemptsByTypeId = catalog?.TicketTypes
-            .Where(t => t.MaxReconfirmAttempts.HasValue)
-            .ToDictionary(t => t.Id.Value, t => t.MaxReconfirmAttempts!.Value)
+        var maxReconfirmationEmailsByTypeId = catalog?.TicketTypes
+            .Where(t => t.MaxReconfirmationEmails.HasValue)
+            .ToDictionary(t => t.Id.Value, t => t.MaxReconfirmationEmails!.Value.Value)
             ?? new Dictionary<Guid, int>();
 
         return (result ?? [])
             .Select(r =>
             {
                 var ticketTypeIds = r.Tickets.Select(t => t.Id).ToArray();
-                var relevantAttempts = ticketTypeIds
-                    .Where(id => maxAttemptsByTypeId.ContainsKey(id))
-                    .Select(id => maxAttemptsByTypeId[id])
+                var relevantEmailLimits = ticketTypeIds
+                    .Where(id => maxReconfirmationEmailsByTypeId.ContainsKey(id))
+                    .Select(id => maxReconfirmationEmailsByTypeId[id])
                     .ToList();
-                var effectiveMax = relevantAttempts.Count > 0 ? (int?)relevantAttempts.Min() : null;
+                var effectiveMax = relevantEmailLimits.Count > 0 ? (int?)relevantEmailLimits.Min() : null;
 
                 return new RegistrationListItemDto(
                     r.Id,
@@ -50,6 +50,9 @@ internal sealed class RegistrationsFacade(
                     ticketTypeIds,
                     r.AdditionalDetails,
                     r.CreatedAt,
+                    r.RegistrationCycleId,
+                    r.RegistrationVersion,
+                    r.TicketCatalogVersion,
                     r.Status,
                     r.HasReconfirmed,
                     r.ReconfirmedAt,

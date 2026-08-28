@@ -27,7 +27,7 @@ const addSchema = z.object({
     maxCapacity: z.number().int().min(1).optional(),
     waitlistEnabled: z.boolean(),
     claimWindowHours: z.number().int().min(1).optional(),
-    maxReconfirmAttempts: z.number().int().min(1, "Must be at least 1").optional(),
+    maxReconfirmationEmails: z.number().int().min(1, "Must be at least 1").optional(),
     timeSlots: z.array(z.string().regex(slugRegex)),
 });
 
@@ -54,7 +54,7 @@ export function AddTicketTypeForm({
         maxCapacity: undefined,
         waitlistEnabled: false,
         claimWindowHours: 8,
-        maxReconfirmAttempts: undefined,
+        maxReconfirmationEmails: undefined,
         timeSlots: [],
     });
 
@@ -68,7 +68,7 @@ export function AddTicketTypeForm({
             maxCapacity: values.limitCapacity ? (values.maxCapacity ?? null) : null,
             waitlistEnabled: values.limitCapacity ? values.waitlistEnabled : false,
             claimWindowHours: values.limitCapacity && values.waitlistEnabled ? (values.claimWindowHours ?? 8) : undefined,
-            maxReconfirmAttempts: values.maxReconfirmAttempts ?? null,
+            maxReconfirmationEmails: values.maxReconfirmationEmails ?? null,
             timeSlots: values.timeSlots,
         });
         await queryClient.invalidateQueries({ queryKey: ["ticket-types", teamId, eventId] });
@@ -201,10 +201,10 @@ export function AddTicketTypeForm({
                     <SheetSection title="Reconfirmation">
                         <FormField
                             control={form.control}
-                            name="maxReconfirmAttempts"
+                            name="maxReconfirmationEmails"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Max reconfirmation attempts (optional)</FormLabel>
+                                    <FormLabel>Maximum reconfirmation emails (optional)</FormLabel>
                                     <FormControl>
                                         <Input
                                             type="number"
@@ -217,8 +217,7 @@ export function AddTicketTypeForm({
                                         />
                                     </FormControl>
                                     <FormDescription>
-                                        When set, registrations with this ticket type will be automatically cancelled
-                                        if not reconfirmed within this many attempts.
+                                        Maximum delivered emails for this registration cycle; leave blank for unlimited.
                                     </FormDescription>
                                     <FormMessage />
                                 </FormItem>

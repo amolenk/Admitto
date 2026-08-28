@@ -13,7 +13,7 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail.Event
 /// <remarks>
 /// Template routing: AttendeeRequest → cancellation; VisaLetterDenied → visa-letter-denied.
 /// TicketTypesRemoved is a no-op (handled by a future change).
-/// Idempotency key: <c>registration-cancelled:{registrationId}</c>.
+/// Idempotency key: <c>registration-cancelled:{integrationEventId}</c>.
 /// </remarks>
 internal sealed class RegistrationCancelledIntegrationEventHandler(
     IQueryHandler<GetEventEmailRenderingContextQuery, EventEmailContextDto> eventContextQuery,
@@ -28,7 +28,7 @@ internal sealed class RegistrationCancelledIntegrationEventHandler(
         if (emailType is null)
             return;
 
-        var idempotencyKey = $"registration-cancelled:{integrationEvent.RegistrationId}";
+        var idempotencyKey = $"registration-cancelled:{integrationEvent.IntegrationEventId:N}";
 
         var eventContext = await eventContextQuery.HandleAsync(
             new GetEventEmailRenderingContextQuery(

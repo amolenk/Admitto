@@ -233,6 +233,10 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
                         .HasColumnType("uuid")
                         .HasColumnName("event_id");
 
+                    b.Property<Guid>("RegistrationCycleId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("registration_cycle_id");
+
                     b.Property<string>("FirstName")
                         .IsRequired()
                         .HasMaxLength(100)
@@ -587,7 +591,7 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
                             b1.Property<int?>("MaxCapacity")
                                 .HasJsonPropertyName("max_capacity");
 
-                            b1.Property<int?>("MaxReconfirmAttempts")
+                            b1.Property<int?>("MaxReconfirmationEmails")
                                 .HasJsonPropertyName("max_reconfirm_attempts");
 
                             b1.Property<string>("Name")

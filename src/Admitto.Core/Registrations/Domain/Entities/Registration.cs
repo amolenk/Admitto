@@ -17,6 +17,7 @@ public class Registration : Aggregate<RegistrationId>
         RegistrationId id,
         TeamId teamId,
         TicketedEventId eventId,
+        RegistrationCycleId registrationCycleId,
         EmailAddress email,
         FirstName firstName,
         LastName lastName,
@@ -27,6 +28,7 @@ public class Registration : Aggregate<RegistrationId>
     {
         TeamId = teamId;
         EventId = eventId;
+        RegistrationCycleId = registrationCycleId;
         Email = email;
         FirstName = firstName;
         LastName = lastName;
@@ -41,6 +43,7 @@ public class Registration : Aggregate<RegistrationId>
 
     public TeamId TeamId { get; private set; }
     public TicketedEventId EventId { get; private set; }
+    public RegistrationCycleId RegistrationCycleId { get; private set; }
     public EmailAddress Email { get; private set; }
     public FirstName FirstName { get; private set; }
     public LastName LastName { get; private set; }
@@ -65,6 +68,7 @@ public class Registration : Aggregate<RegistrationId>
             RegistrationId.New(),
             teamId,
             eventId,
+            RegistrationCycleId.New(),
             email,
             firstName,
             lastName,
@@ -95,6 +99,7 @@ public class Registration : Aggregate<RegistrationId>
             throw new BusinessRuleViolationException(Errors.CannotResetActive);
 
         CreatedAt = registeredAt;
+        RegistrationCycleId = RegistrationCycleId.New();
         FirstName = firstName;
         LastName = lastName;
         Status = RegistrationStatus.Registered;

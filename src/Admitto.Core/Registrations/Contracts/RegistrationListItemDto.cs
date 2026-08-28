@@ -15,7 +15,10 @@ public sealed record RegistrationListItemDto(
     IReadOnlyCollection<Guid> TicketTypeIds,
     IReadOnlyDictionary<string, string> AdditionalDetails,
     DateTimeOffset CreatedAt,
+    Guid RegistrationCycleId,
+    uint RegistrationVersion,
+    uint TicketCatalogVersion,
     RegistrationStatus Status,
     bool HasReconfirmed,
     DateTimeOffset? ReconfirmedAt,
-    int? EffectiveMaxReconfirmAttempts);
+    int? EffectiveMaxReconfirmationEmails);

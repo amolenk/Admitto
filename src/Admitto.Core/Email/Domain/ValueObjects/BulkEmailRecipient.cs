@@ -24,11 +24,13 @@ public sealed class BulkEmailRecipient
         EmailAddress email,
         string displayName,
         RegistrationId registrationId,
-        string parametersJson)
+        string parametersJson,
+        RegistrationCycleId? registrationCycleId = null)
     {
         Email = email;
         DisplayName = displayName;
         RegistrationId = registrationId;
+        RegistrationCycleId = registrationCycleId;
         ParametersJson = string.IsNullOrWhiteSpace(parametersJson) ? "{}" : parametersJson;
         Status = BulkEmailRecipientStatus.Pending;
         LastError = null;
@@ -37,6 +39,7 @@ public sealed class BulkEmailRecipient
     public EmailAddress Email { get; private set; }
     public string DisplayName { get; private set; }
     public RegistrationId RegistrationId { get; private set; }
+    public RegistrationCycleId? RegistrationCycleId { get; private set; }
     public string ParametersJson { get; private set; }
     public BulkEmailRecipientStatus Status { get; private set; }
     public string? LastError { get; private set; }

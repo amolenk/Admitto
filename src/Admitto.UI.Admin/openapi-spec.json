@@ -7120,7 +7120,7 @@
             "format": "int32",
             "default": 8
           },
-          "maxReconfirmAttempts": {
+          "maxReconfirmationEmails": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
@@ -9421,7 +9421,7 @@
           "waitlistEnabled",
           "waitlistMode",
           "claimWindowHours",
-          "maxReconfirmAttempts"
+          "maxReconfirmationEmails"
         ],
         "type": "object",
         "properties": {
@@ -9472,7 +9472,7 @@
             ],
             "format": "int32"
           },
-          "maxReconfirmAttempts": {
+          "maxReconfirmationEmails": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
@@ -9692,7 +9692,7 @@
             ],
             "format": "int32"
           },
-          "maxReconfirmAttempts": {
+          "maxReconfirmationEmails": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",

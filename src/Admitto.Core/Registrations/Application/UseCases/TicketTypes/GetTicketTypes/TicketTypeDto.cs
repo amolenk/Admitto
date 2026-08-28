@@ -10,4 +10,4 @@ internal sealed record TicketTypeDto(
     bool WaitlistEnabled,
     bool WaitlistMode,
     int ClaimWindowHours,
-    int? MaxReconfirmAttempts);
+    int? MaxReconfirmationEmails);

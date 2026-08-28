@@ -321,6 +321,10 @@ namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("registration_id");
 
+                    b.Property<Guid?>("RegistrationCycleId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("registration_cycle_id");
+
                     b.Property<DateTimeOffset?>("SentAt")
                         .HasColumnType("timestamptz")
                         .HasColumnName("sent_at");
@@ -439,6 +443,9 @@ namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence.Migrations
 
                             b1.Property<Guid>("RegistrationId")
                                 .HasJsonPropertyName("registration_id");
+
+                            b1.Property<Guid?>("RegistrationCycleId")
+                                .HasJsonPropertyName("registration_cycle_id");
 
                             b1.Property<string>("Status")
                                 .IsRequired()

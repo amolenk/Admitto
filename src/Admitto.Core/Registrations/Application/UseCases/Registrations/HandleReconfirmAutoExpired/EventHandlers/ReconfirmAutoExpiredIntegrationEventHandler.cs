@@ -29,30 +29,51 @@ internal sealed class ReconfirmAutoExpiredIntegrationEventHandler(IRegistrations
             .AnyAsync(
                 e => e.Id == ticketedEventId && e.TeamId == teamId && e.Status == EventLifecycleStatus.Active,
                 cancellationToken);
-        var catalogIsActive = await writeStore.TicketCatalogs
+        var catalog = await writeStore.TicketCatalogs
             .AsNoTracking()
-            .AnyAsync(
+            .FirstOrDefaultAsync(
                 c => c.Id == ticketedEventId && c.TeamId == teamId && c.EventStatus == EventLifecycleStatus.Active,
                 cancellationToken);
 
-        if (!eventIsActive || !catalogIsActive)
+        if (!eventIsActive || catalog is null)
         {
             writeStore.ProcessedMessages.Add(
                 ProcessedMessage.Create(messageKey, DateTimeOffset.UtcNow));
             return;
         }
 
-        foreach (var registrationIdValue in integrationEvent.RegistrationIds)
+        if (integrationEvent.RegistrationReferences is null)
         {
-            var registrationId = RegistrationId.From(registrationIdValue);
+            writeStore.ProcessedMessages.Add(
+                ProcessedMessage.Create(messageKey, DateTimeOffset.UtcNow));
+            return;
+        }
+
+        foreach (var reference in integrationEvent.RegistrationReferences)
+        {
+            if (reference.RegistrationCycleId is null
+                || reference.RegistrationVersion is null
+                || reference.TicketCatalogVersion is null
+                || reference.TicketTypeIds is null
+                || catalog.Version != reference.TicketCatalogVersion.Value)
+                continue;
+
+            var registrationId = RegistrationId.From(reference.RegistrationId);
+            var registrationCycleId = RegistrationCycleId.From(reference.RegistrationCycleId.Value);
             var registration = await writeStore.Registrations
                 .FirstOrDefaultAsync(
-                    r => r.Id == registrationId && r.TeamId == teamId && r.EventId == ticketedEventId,
+                    r => r.Id == registrationId
+                        && r.TeamId == teamId
+                        && r.EventId == ticketedEventId
+                        && r.RegistrationCycleId == registrationCycleId
+                        && r.Version == reference.RegistrationVersion.Value,
                     cancellationToken);
 
             if (registration is null
                 || registration.Status != RegistrationStatus.Registered
-                || registration.HasReconfirmed)
+                || registration.HasReconfirmed
+                || !registration.Tickets.Select(t => t.Id.Value).ToHashSet()
+                    .SetEquals(reference.TicketTypeIds))
             {
                 continue;
             }

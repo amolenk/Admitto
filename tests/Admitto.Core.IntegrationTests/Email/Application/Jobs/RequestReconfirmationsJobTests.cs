@@ -9,6 +9,7 @@ using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Email.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.IntegrationTests.Email.Application.Jobs.Fakes;
 using Amolenk.Admitto.Core.Registrations.Contracts;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence;
@@ -53,10 +54,13 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
     {
         var eventId = TicketedEventId.New();
         var now = DateTimeOffset.UtcNow;
+        var attendeeId = Guid.NewGuid();
+        var cycleId = Guid.NewGuid();
         await SeedPolicyAsync(eventId, now);
         await Environment.EmailDatabase.SeedAsync(db =>
-            db.EmailLog.Add(ReconfirmEmailLog(eventId, "alice@example.com", now.AddHours(-10))));
-        var facade = FacadeReturning(eventId, [RegistrationItem(Guid.NewGuid(), "alice@example.com", now.AddHours(-72))]);
+            db.EmailLog.Add(ReconfirmEmailLog(eventId, attendeeId, "alice@example.com", now.AddHours(-10),
+                registrationCycleId: cycleId)));
+        var facade = FacadeReturning(eventId, [RegistrationItem(attendeeId, "alice@example.com", now.AddHours(-72), cycleId: cycleId)]);
 
         await BuildJob(facade, new FakeTimeProvider(now)).Execute(JobContext());
 
@@ -72,10 +76,12 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
         var eventId = TicketedEventId.New();
         var now = DateTimeOffset.UtcNow;
         var attendeeId = Guid.NewGuid();
+        var cycleId = Guid.NewGuid();
         await SeedPolicyAsync(eventId, now);
         await Environment.EmailDatabase.SeedAsync(db =>
-            db.EmailLog.Add(ReconfirmEmailLog(eventId, "alice@example.com", now.AddHours(-72))));
-        var facade = FacadeReturning(eventId, [RegistrationItem(attendeeId, "alice@example.com", now.AddHours(-100))]);
+            db.EmailLog.Add(ReconfirmEmailLog(eventId, attendeeId, "alice@example.com", now.AddHours(-72),
+                registrationCycleId: cycleId)));
+        var facade = FacadeReturning(eventId, [RegistrationItem(attendeeId, "alice@example.com", now.AddHours(-100), cycleId: cycleId)]);
 
         await BuildJob(facade, new FakeTimeProvider(now)).Execute(JobContext());
 
@@ -182,23 +188,27 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
         await facade.DidNotReceiveWithAnyArgs().GetRegistrationsAsync(default, default, default!, default);
     }
 
-    // Given a maxed-out attendee and sent reconfirm attempts before the interval
+    // Given a maxed-out attendee and sent reconfirmation emails before the interval
     // When the hourly evaluator runs
     // Then it publishes automatic expiry without creating another email job
     [TestMethod]
-    public async ValueTask Execute_MaxAttemptsReached_PublishesAutoExpiry()
+    public async ValueTask Execute_MaxReconfirmationEmailsReached_PublishesAutoExpiry()
     {
         var eventId = TicketedEventId.New();
         var now = DateTimeOffset.UtcNow;
         var registrationId = Guid.NewGuid();
+        var cycleId = Guid.NewGuid();
         await SeedPolicyAsync(eventId, now);
         await Environment.EmailDatabase.SeedAsync(db =>
         {
-            db.EmailLog.Add(ReconfirmEmailLog(eventId, "alice@example.com", now.AddDays(-4)));
-            db.EmailLog.Add(ReconfirmEmailLog(eventId, "alice@example.com", now.AddDays(-3)));
+            db.EmailLog.Add(ReconfirmEmailLog(eventId, registrationId, "alice@example.com", now.AddDays(-4),
+                registrationCycleId: cycleId));
+            db.EmailLog.Add(ReconfirmEmailLog(eventId, registrationId, "alice@example.com", now.AddDays(-3),
+                registrationCycleId: cycleId));
         });
         var facade = FacadeReturning(eventId, [RegistrationItem(
-            registrationId, "alice@example.com", now.AddDays(-10), effectiveMaxReconfirmAttempts: 2)]);
+            registrationId, "alice@example.com", now.AddDays(-10), effectiveMaxReconfirmationEmails: 2,
+            cycleId: cycleId)]);
 
         await BuildJob(facade, new FakeTimeProvider(now)).Execute(JobContext());
 
@@ -206,6 +216,164 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
         var outbox = await LoadOutboxMessagesAsync();
         outbox.Count.ShouldBe(1);
         GetRegistrationIds(outbox[0].Payload).ShouldBe([registrationId], ignoreOrder: true);
+        outbox[0].Payload.RootElement.GetProperty("registrationReferences")[0]
+            .GetProperty("registrationCycleId").GetGuid().ShouldBe(cycleId);
+    }
+
+    // Given an attendee with a delivered reconfirmation email at the maximum
+    // When the hourly evaluator runs
+    // Then it publishes automatic expiry without creating another email job
+    [TestMethod]
+    public async ValueTask Execute_DeliveredReconfirmationEmailReachesMaximum_PublishesAutoExpiry()
+    {
+        var eventId = TicketedEventId.New();
+        var now = DateTimeOffset.UtcNow;
+        var registrationId = Guid.NewGuid();
+        var cycleId = Guid.NewGuid();
+        await SeedPolicyAsync(eventId, now);
+        await Environment.EmailDatabase.SeedAsync(db =>
+            db.EmailLog.Add(ReconfirmEmailLog(
+                eventId,
+                registrationId,
+                "alice@example.com",
+                now.AddDays(-1),
+                registrationCycleId: cycleId,
+                status: EmailLogStatus.Delivered)));
+        var facade = FacadeReturning(eventId, [RegistrationItem(
+            registrationId,
+            "alice@example.com",
+            now.AddDays(-2),
+            effectiveMaxReconfirmationEmails: 1,
+            cycleId: cycleId)]);
+
+        await BuildJob(facade, new FakeTimeProvider(now)).Execute(JobContext());
+
+        (await LoadBulkEmailJobsAsync()).ShouldBeEmpty();
+        (await LoadOutboxMessagesAsync()).ShouldHaveSingleItem();
+    }
+
+    // Given a registered attendee with only failed and pending reconfirmation logs
+    // When the hourly evaluator runs
+    // Then the attendee remains eligible because only sent emails count
+    [TestMethod]
+    public async ValueTask Execute_OnlyUnsentReconfirmationLogs_StillCreatesEmailJob()
+    {
+        var eventId = TicketedEventId.New();
+        var now = DateTimeOffset.UtcNow;
+        var registrationId = Guid.NewGuid();
+        await SeedPolicyAsync(eventId, now);
+        await Environment.EmailDatabase.SeedAsync(db =>
+        {
+            db.EmailLog.Add(UnsentReconfirmEmailLog(
+                eventId, registrationId, "alice@example.com", EmailLogStatus.Failed, now.AddDays(-2)));
+            db.EmailLog.Add(UnsentReconfirmEmailLog(
+                eventId, registrationId, "alice@example.com", EmailLogStatus.Pending, now.AddDays(-1)));
+        });
+        var facade = FacadeReturning(eventId, [RegistrationItem(
+            registrationId, "alice@example.com", now.AddDays(-10), effectiveMaxReconfirmationEmails: 1,
+            cycleId: Guid.NewGuid())]);
+
+        await BuildJob(facade, new FakeTimeProvider(now)).Execute(JobContext());
+
+        var jobs = await LoadBulkEmailJobsAsync();
+        var job = jobs.ShouldHaveSingleItem();
+        job.AttendeeFilter.RegistrationIds.ShouldNotBeNull();
+        job.AttendeeFilter.RegistrationIds.ShouldContain(registrationId);
+        (await LoadOutboxMessagesAsync()).ShouldBeEmpty();
+    }
+
+    // Given a registration reset after a previous cycle had sent reconfirmation emails
+    // When the hourly evaluator runs for the fresh cycle
+    // Then prior-cycle emails do not exhaust the maximum
+    [TestMethod]
+    public async ValueTask Execute_ReconfirmationLogsBeforeRegistrationCycle_AreIgnored()
+    {
+        var eventId = TicketedEventId.New();
+        var now = DateTimeOffset.UtcNow;
+        var registrationId = Guid.NewGuid();
+        await SeedPolicyAsync(eventId, now);
+        await Environment.EmailDatabase.SeedAsync(db =>
+        {
+            db.EmailLog.Add(ReconfirmEmailLog(
+                eventId, registrationId, "alice@example.com", now.AddDays(-10)));
+        });
+        var facade = FacadeReturning(eventId, [RegistrationItem(
+            registrationId, "alice@example.com", now.AddDays(-2), effectiveMaxReconfirmationEmails: 1,
+            cycleId: Guid.NewGuid())]);
+
+        await BuildJob(facade, new FakeTimeProvider(now)).Execute(JobContext());
+
+        var jobs = await LoadBulkEmailJobsAsync();
+        var job = jobs.ShouldHaveSingleItem();
+        job.AttendeeFilter.RegistrationIds.ShouldNotBeNull();
+        job.AttendeeFilter.RegistrationIds.ShouldContain(registrationId);
+        (await LoadOutboxMessagesAsync()).ShouldBeEmpty();
+    }
+
+    // Given a sent reconfirmation email from a different cycle inside the fresh cycle's dates
+    // When the hourly evaluator runs
+    // Then the mismatched-cycle email does not exhaust the current maximum
+    [TestMethod]
+    public async ValueTask Execute_ReconfirmationLogFromDifferentCycle_IsIgnored()
+    {
+        var eventId = TicketedEventId.New();
+        var now = DateTimeOffset.UtcNow;
+        var registrationId = Guid.NewGuid();
+        var currentCycleId = Guid.NewGuid();
+        await SeedPolicyAsync(eventId, now);
+        await Environment.EmailDatabase.SeedAsync(db =>
+            db.EmailLog.Add(ReconfirmEmailLog(
+                eventId,
+                registrationId,
+                "alice@example.com",
+                now.AddDays(-1),
+                registrationCycleId: Guid.NewGuid())));
+        var facade = FacadeReturning(eventId, [RegistrationItem(
+            registrationId,
+            "alice@example.com",
+            now.AddDays(-2),
+            effectiveMaxReconfirmationEmails: 1,
+            cycleId: currentCycleId)]);
+
+        await BuildJob(facade, new FakeTimeProvider(now)).Execute(JobContext());
+
+        var jobs = await LoadBulkEmailJobsAsync();
+        var job = jobs.ShouldHaveSingleItem();
+        job.AttendeeFilter.RegistrationIds.ShouldNotBeNull();
+        job.AttendeeFilter.RegistrationIds.ShouldContain(registrationId);
+        (await LoadOutboxMessagesAsync()).ShouldBeEmpty();
+    }
+
+    // Given a fresh registration with a legacy null-cycle reconfirmation log
+    // When the hourly evaluator runs
+    // Then the unknown-cycle log does not exhaust the explicit current cycle
+    [TestMethod]
+    public async ValueTask Execute_NullCycleReconfirmationLog_IsIgnoredForExplicitCycle()
+    {
+        var eventId = TicketedEventId.New();
+        var now = DateTimeOffset.UtcNow;
+        var registrationId = Guid.NewGuid();
+        var cycleId = Guid.NewGuid();
+        await SeedPolicyAsync(eventId, now);
+        await Environment.EmailDatabase.SeedAsync(db =>
+            db.EmailLog.Add(ReconfirmEmailLog(
+                eventId,
+                registrationId,
+                "alice@example.com",
+                now.AddHours(-2),
+                status: EmailLogStatus.Sent)));
+        var facade = FacadeReturning(eventId, [RegistrationItem(
+            registrationId,
+            "alice@example.com",
+            now.AddDays(-2),
+            effectiveMaxReconfirmationEmails: 1,
+            cycleId: cycleId)]);
+
+        await BuildJob(facade, new FakeTimeProvider(now)).Execute(JobContext());
+
+        var jobs = await LoadBulkEmailJobsAsync();
+        jobs.ShouldHaveSingleItem();
+        (await LoadOutboxMessagesAsync()).ShouldBeEmpty();
     }
 
     // Given an active policy with overnight quiet hours
@@ -281,9 +449,11 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
         Guid registrationId,
         string email,
         DateTimeOffset createdAt,
-        int? effectiveMaxReconfirmAttempts = null) =>
+        int? effectiveMaxReconfirmationEmails = null,
+        Guid? cycleId = null) =>
         new(registrationId, email, "Alice", "Test", [], new Dictionary<string, string>(), createdAt,
-            RegistrationStatus.Registered, false, null, effectiveMaxReconfirmAttempts);
+            cycleId ?? Guid.NewGuid(), 1, 1, RegistrationStatus.Registered, false, null,
+            effectiveMaxReconfirmationEmails);
 
     private static IRegistrationsFacade FacadeReturning(
         TicketedEventId eventId,
@@ -304,9 +474,27 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
         && query.RegistrationStatus == RegistrationStatus.Registered
         && query.HasReconfirmed == false;
 
-    private static EmailLog ReconfirmEmailLog(TicketedEventId eventId, string email, DateTimeOffset sentAt) =>
+    private static EmailLog ReconfirmEmailLog(
+        TicketedEventId eventId,
+        Guid? registrationId,
+        string email,
+        DateTimeOffset sentAt,
+        Guid? registrationCycleId = null,
+        EmailLogStatus status = EmailLogStatus.Sent) =>
         EmailLog.Create(TeamId, eventId, $"reconfirm:{Guid.NewGuid():N}", EmailAddress.From(email),
-            BuiltInEmailTemplateNames.Reconfirmation, "Please reconfirm", EmailLogStatus.Sent, sentAt, sentAt);
+            BuiltInEmailTemplateNames.Reconfirmation, "Please reconfirm", status, sentAt, sentAt,
+            registrationId: registrationId is null ? null : RegistrationId.From(registrationId.Value),
+            registrationCycleId: registrationCycleId is null ? null : RegistrationCycleId.From(registrationCycleId.Value));
+
+    private static EmailLog UnsentReconfirmEmailLog(
+        TicketedEventId eventId,
+        Guid registrationId,
+        string email,
+        EmailLogStatus status,
+        DateTimeOffset statusUpdatedAt) =>
+        EmailLog.Create(TeamId, eventId, $"reconfirm:{Guid.NewGuid():N}", EmailAddress.From(email),
+            BuiltInEmailTemplateNames.Reconfirmation, "Please reconfirm", status, null, statusUpdatedAt,
+            registrationId: RegistrationId.From(registrationId));
 
     private RequestReconfirmationsJob BuildJob(
         IRegistrationsFacade facade,

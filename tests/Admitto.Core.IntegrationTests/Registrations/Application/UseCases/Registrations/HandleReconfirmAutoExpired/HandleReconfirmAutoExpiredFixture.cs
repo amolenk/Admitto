@@ -2,6 +2,7 @@ using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using Microsoft.EntityFrameworkCore;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCases.Registrations.HandleReconfirmAutoExpired;
 
@@ -14,6 +15,10 @@ internal sealed class HandleReconfirmAutoExpiredFixture
     public TeamId TeamId { get; } = TeamId.New();
     public TicketedEventId TicketedEventId { get; } = TicketedEventId.New();
     public RegistrationId RegistrationId { get; private set; } = RegistrationId.New();
+    public RegistrationCycleId CycleId { get; private set; } = RegistrationCycleId.New();
+    public TicketTypeId TicketTypeId { get; private set; } = TicketTypeId.New();
+    public uint RegistrationVersion { get; private set; }
+    public uint CatalogVersion { get; private set; }
 
     private HandleReconfirmAutoExpiredFixture() { }
 
@@ -28,7 +33,7 @@ internal sealed class HandleReconfirmAutoExpiredFixture
 
         await environment.RegistrationsDatabase.SeedAsync(dbContext =>
         {
-            var ticketTypeId = TicketTypeId.New();
+            var ticketTypeId = TicketTypeId;
             var ticketedEvent = TicketedEvent.Create(
                 CreationRequestId.From(Guid.NewGuid()),
                 TicketedEventId,
@@ -75,5 +80,14 @@ internal sealed class HandleReconfirmAutoExpiredFixture
         });
 
         RegistrationId = seeded!.Id;
+        CycleId = seeded.RegistrationCycleId;
+        RegistrationVersion = seeded.Version;
+        await environment.RegistrationsDatabase.WithContextAsync(async db =>
+        {
+            CatalogVersion = await db.TicketCatalogs
+                .Where(c => c.Id == TicketedEventId)
+                .Select(c => c.Version)
+                .SingleAsync();
+        });
     }
 }

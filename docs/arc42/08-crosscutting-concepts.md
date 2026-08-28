@@ -158,7 +158,7 @@ Dispatch is sequential (`MaxConcurrentCalls = 1`), and settlement is explicit (`
 Link and connection faults surface through the processor's error handler as warnings rather than errors, because the processor recovers from them on its own; a real outage shows up as the warning repeating.
 Recovery latency is bounded by `ServiceBusRetryOptions.MaxDelay`, set to 5 seconds in `AddSharedInfrastructureMessagingServices` so a consumer cannot idle for the SDK's 60-second default after a blip (see [ADR-015](../adr/adr-015-service-bus-push-based-consumption.md)).
 
-For Email module SMTP delivery, `EmailLog` is the send claim. Trigger handlers write a pending log row and enqueue internal delivery work before SMTP is attempted. Delivery handlers and bulk fan-out treat terminal rows as no-ops and retryable pending rows as recoverable work. SMTP itself is non-transactional, so the documented guarantee is duplicate minimization through database-backed claims, not perfect exactly-once delivery.
+For Email module SMTP delivery, `EmailLog` is the send claim. Trigger handlers write a pending log row and enqueue internal delivery work before SMTP is attempted. Delivery handlers and bulk fan-out treat terminal rows as no-ops and retryable pending rows as recoverable work. SMTP itself is non-transactional, so the documented guarantee is duplicate minimization through database-backed claims, not perfect exactly-once delivery. Reconfirmation limits are cycle-scoped: the strictest optional ticket-type maximum applies, only successfully delivered emails count, and reset/reregistration starts a fresh cycle. Exhausted registrations are auto-cancelled through the normal cancellation path so its standard side effects remain intact.
 
 ### Cross-module lifecycle events
 

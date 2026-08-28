@@ -121,6 +121,9 @@ internal sealed class BulkEmailJobEntityConfiguration : IEntityTypeConfiguration
                 .HasJsonPropertyName("registration_id")
                 .IsRequired();
 
+            b.Property(r => r.RegistrationCycleId)
+                .HasJsonPropertyName("registration_cycle_id");
+
             b.Property(r => r.ParametersJson)
                 .HasJsonPropertyName("parameters")
                 .IsRequired();

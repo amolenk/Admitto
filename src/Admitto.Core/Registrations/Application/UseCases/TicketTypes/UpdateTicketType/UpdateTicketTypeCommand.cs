@@ -11,5 +11,5 @@ internal sealed record UpdateTicketTypeCommand(
     bool? SelfServiceEnabled = null,
     bool? WaitlistEnabled = null,
     int? ClaimWindowHours = null,
-    int? MaxReconfirmAttempts = null,
-    bool UpdateMaxReconfirmAttempts = false) : Command;
+    int? MaxReconfirmationEmails = null,
+    bool UpdateMaxReconfirmationEmails = false) : Command;

@@ -103,7 +103,7 @@ export function ticketTypeDto(overrides: Partial<TicketTypeDto> = {}): TicketTyp
         waitlistEnabled: false,
         waitlistMode: false,
         claimWindowHours: 0,
-        maxReconfirmAttempts: null,
+        maxReconfirmationEmails: null,
         ...overrides,
     };
 }
