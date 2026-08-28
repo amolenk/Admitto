@@ -62,6 +62,26 @@ public sealed class RegistrationTests
         sut.RegistrationCycleId.Value.ShouldNotBe(Guid.Empty);
     }
 
+    // Given a logical registration timestamp
+    // When a registration is created
+    // Then CreatedAt preserves that timestamp for eligibility calculations
+    [TestMethod]
+    public void Registration_Create_WithRegisteredAt_PreservesCreatedAt()
+    {
+        var registeredAt = DateTimeOffset.UtcNow.AddDays(-2);
+
+        var sut = Registration.Create(
+            DefaultTeamId,
+            DefaultEventId,
+            DefaultEmail,
+            DefaultFirstName,
+            DefaultLastName,
+            [],
+            registeredAt: registeredAt);
+
+        sut.CreatedAt.ShouldBe(registeredAt);
+    }
+
     // Given an active registration
     // When it is cancelled at the attendee's request
     // Then its status becomes Cancelled with that reason and a RegistrationCancelled event is raised

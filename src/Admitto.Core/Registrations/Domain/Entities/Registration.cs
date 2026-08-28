@@ -26,6 +26,7 @@ public class Registration : Aggregate<RegistrationId>
         DateTimeOffset registeredAt)
         : base(id)
     {
+        CreatedAt = registeredAt;
         TeamId = teamId;
         EventId = eventId;
         RegistrationCycleId = registrationCycleId;

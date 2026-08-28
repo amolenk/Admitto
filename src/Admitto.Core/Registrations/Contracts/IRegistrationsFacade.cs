@@ -21,4 +21,15 @@ public interface IRegistrationsFacade
         Guid teamId,
         Guid eventId,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Checks one queued reconfirmation recipient against authoritative event
+    /// and registration state at the supplied instant. This is deliberately a
+    /// dedicated seam rather than an extension of the generic list query.
+    /// </summary>
+    Task<ReconfirmDeliveryState> GetReconfirmDeliveryStateAsync(
+        Guid teamId,
+        Guid eventId,
+        ReconfirmDeliveryQuery query,
+        CancellationToken cancellationToken = default);
 }

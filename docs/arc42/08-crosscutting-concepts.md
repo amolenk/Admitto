@@ -51,9 +51,10 @@ Some workflows need to consult another module's state inside the same request wi
 | Facade | Module | Used by | Purpose |
 | :----- | :----- | :------ | :------ |
 | `IOrganizationFacade` | Organization | Registrations | Check team membership, look up team by ID |
+| `IRegistrationsFacade` | Registrations | Email | Resolve recipients and authorize reconfirm delivery against live event/registration state |
 Facades are read-only and side-effect-free. Cross-module *writes* still go through commands and integration events on the outbox (see §8.6).
 
-Email does not synchronously query Organization or Registrations for reusable email rendering context. It owns eventually consistent team/event context projections populated from integration events and uses live Registrations facade reads only for attendee-source recipient resolution and reconfirm candidate eligibility during the hourly event evaluation.
+Email does not synchronously query Organization or Registrations for reusable email rendering context. It owns eventually consistent team/event context projections populated from integration events and uses live Registrations facade reads for attendee-source recipient resolution, hourly reconfirm candidate eligibility, and the dedicated authoritative reconfirm delivery check immediately before SMTP submission.
 
 ## 8.5 Use case slice layout
 
@@ -158,7 +159,7 @@ Dispatch is sequential (`MaxConcurrentCalls = 1`), and settlement is explicit (`
 Link and connection faults surface through the processor's error handler as warnings rather than errors, because the processor recovers from them on its own; a real outage shows up as the warning repeating.
 Recovery latency is bounded by `ServiceBusRetryOptions.MaxDelay`, set to 5 seconds in `AddSharedInfrastructureMessagingServices` so a consumer cannot idle for the SDK's 60-second default after a blip (see [ADR-015](../adr/adr-015-service-bus-push-based-consumption.md)).
 
-For Email module SMTP delivery, `EmailLog` is the send claim. Trigger handlers write a pending log row and enqueue internal delivery work before SMTP is attempted. Delivery handlers and bulk fan-out treat terminal rows as no-ops and retryable pending rows as recoverable work. SMTP itself is non-transactional, so the documented guarantee is duplicate minimization through database-backed claims, not perfect exactly-once delivery. Reconfirmation limits are cycle-scoped: the strictest optional ticket-type maximum applies, only successfully delivered emails count, and reset/reregistration starts a fresh cycle. Exhausted registrations are auto-cancelled through the normal cancellation path so its standard side effects remain intact.
+For Email module SMTP delivery, `EmailLog` is the send claim. Trigger handlers write a pending log row and enqueue internal delivery work before SMTP is attempted. Delivery handlers and bulk fan-out treat terminal rows as no-ops and retryable pending rows as recoverable work. SMTP itself is non-transactional, so the documented guarantee is duplicate minimization through database-backed claims, not perfect exactly-once delivery. Reconfirmation fan-out calls the dedicated live `IRegistrationsFacade.GetReconfirmDeliveryStateAsync` seam immediately before submission; Registrations owns lifecycle/policy/quiet-hours and queued snapshot validation, while Email owns successful-log interval and allowance evaluation. Reconfirmation limits are cycle-scoped: the strictest optional ticket-type maximum applies, only successfully delivered emails count, and reset/reregistration starts a fresh cycle. Exhausted registrations are auto-cancelled through the normal cancellation path so its standard side effects remain intact.
 
 ### Cross-module lifecycle events
 

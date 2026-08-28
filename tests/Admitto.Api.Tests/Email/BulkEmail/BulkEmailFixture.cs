@@ -9,6 +9,7 @@ using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using TeamBuilder = Amolenk.Admitto.Testing.Builders.Organization.Application.TeamBuilder;
+using Microsoft.EntityFrameworkCore;
 
 namespace Amolenk.Admitto.Api.Tests.Email.BulkEmail;
 
@@ -82,6 +83,11 @@ internal sealed class BulkEmailFixture
             TicketedEventRegistrationPolicy.Create(
                 DateTimeOffset.UtcNow.AddDays(-1),
                 DateTimeOffset.UtcNow.AddDays(30)));
+        ticketedEvent.ConfigureReconfirmPolicy(
+            TicketedEventReconfirmPolicy.Create(
+                DateTimeOffset.UtcNow.AddDays(-1),
+                DateTimeOffset.UtcNow.AddDays(30),
+                TimeSpan.FromHours(1)));
 
         var catalog = TicketCatalog.Create(EventId, team.Id);
         catalog.AddTicketType(TicketTypeId, TicketTypeName.From("General Admission"), [], 100);
@@ -97,7 +103,8 @@ internal sealed class BulkEmailFixture
                 EmailAddress.From(seed.Email),
                 FirstName.From(seed.FirstName),
                 LastName.From(seed.LastName),
-                [ticketSnapshot]);
+                [ticketSnapshot],
+                registeredAt: DateTimeOffset.UtcNow.AddDays(-2));
 
             if (seed.Reconfirmed)
                 registration.Reconfirm(DateTimeOffset.UtcNow);
@@ -116,6 +123,10 @@ internal sealed class BulkEmailFixture
             foreach (var registration in Registrations)
                 db.Registrations.Add(registration);
         });
+        // AuditInterceptor stamps CreatedAt on inserts. Move fixture
+        // registrations into an elapsed reconfirm interval for delivery tests.
+        await environment.RegistrationsDatabase.Context.Database.ExecuteSqlInterpolatedAsync(
+            $"UPDATE registrations.registrations SET created_at = {DateTimeOffset.UtcNow.AddDays(-2)}");
 
         // Seed the Email-owned rendering projection directly. In production this
         // row is maintained by EventEmailContextProjector from Organization /

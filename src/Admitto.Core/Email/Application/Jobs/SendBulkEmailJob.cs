@@ -45,7 +45,8 @@ internal sealed class SendBulkEmailJob(
     IBulkSmtpSender bulkSmtpSender,
     [FromKeyedServices(EmailModule.Key)] IUnitOfWork unitOfWork,
     IOptionsMonitor<BulkEmailOptions> options,
-    ILogger<SendBulkEmailJob> logger)
+    ILogger<SendBulkEmailJob> logger,
+    TimeProvider timeProvider)
     : IJob
 {
     public const string Name = nameof(SendBulkEmailJob);
@@ -98,16 +99,6 @@ internal sealed class SendBulkEmailJob(
                 return;
             }
 
-            // Resolve effective settings up front; without them we can't open
-            // an SMTP session and the job is unrecoverable until reconfigured.
-            var settings = await settingsResolver.ResolveAsync(job.TeamId, job.TicketedEventId, ct);
-            if (settings is null || !settings.IsValid())
-            {
-                job.Fail("Email settings not configured or incomplete.", DateTimeOffset.UtcNow);
-                await unitOfWork.SaveChangesAsync(ct);
-                return;
-            }
-
             // Phase 1: snapshot recipients (Pending → Resolving → Sending) in
             // one transaction. Resume pickups skip this branch.
             if (job.Status == BulkEmailJobStatus.Pending)
@@ -138,6 +129,39 @@ internal sealed class SendBulkEmailJob(
                 }
 
                 await unitOfWork.SaveChangesAsync(ct);
+            }
+
+            var pending = job.Recipients
+                .Where(r => r.Status == BulkEmailRecipientStatus.Pending)
+                .ToList();
+
+            // Authoritative Registrations checks happen before SMTP settings,
+            // content rendering, and session creation. A queued reconfirmation
+            // job therefore cannot fail into a stale send when event policy or
+            // attendee state changed after the snapshot was made.
+            if (job.EmailType == BuiltInEmailTemplateNames.Reconfirmation)
+            {
+                await SuppressIneligibleReconfirmRecipientsAsync(job, pending, ct);
+                pending = job.Recipients
+                    .Where(r => r.Status == BulkEmailRecipientStatus.Pending)
+                    .ToList();
+            }
+
+            if (pending.Count == 0)
+            {
+                job.Complete(timeProvider.GetUtcNow());
+                await unitOfWork.SaveChangesAsync(ct);
+                return;
+            }
+
+            // Resolve effective settings only once an eligible recipient exists;
+            // without them we can't open an SMTP session.
+            var settings = await settingsResolver.ResolveAsync(job.TeamId, job.TicketedEventId, ct);
+            if (settings is null || !settings.IsValid())
+            {
+                job.Fail("Email settings not configured or incomplete.", timeProvider.GetUtcNow());
+                await unitOfWork.SaveChangesAsync(ct);
+                return;
             }
 
             // Phase 2: stream the snapshot through a single SMTP session.
@@ -171,10 +195,6 @@ internal sealed class SendBulkEmailJob(
                 await unitOfWork.SaveChangesAsync(ct);
                 return;
             }
-
-            var pending = job.Recipients
-                .Where(r => r.Status == BulkEmailRecipientStatus.Pending)
-                .ToList();
 
             // Skip opening an SMTP session entirely when cancellation was
             // requested before pickup or there is nothing left to send.
@@ -231,21 +251,23 @@ internal sealed class SendBulkEmailJob(
         CancellationToken ct)
     {
         var idempotencyKey = $"bulk:{job.Id.Value:N}:{recipient.Email.Value.ToLowerInvariant()}";
-        var now = DateTimeOffset.UtcNow;
+        var now = timeProvider.GetUtcNow();
         EmailLog? log = null;
 
         try
         {
+            var parameters = JsonSerializer.Deserialize<Dictionary<string, object?>>(
+                recipient.ParametersJson, ParametersJsonOptions) ?? new Dictionary<string, object?>();
+            var expectedTicketTypeIds = ReadTicketTypeIds(parameters);
+
             if (job.EmailType == BuiltInEmailTemplateNames.Reconfirmation
-                && !await IsCurrentReconfirmRecipientAsync(job, recipient, ct))
+                && !await IsCurrentReconfirmRecipientAsync(job, recipient, expectedTicketTypeIds, ct))
             {
                 job.RecordCancelledRecipient(recipient.Email.Value);
                 await unitOfWork.SaveChangesAsync(ct);
                 return;
             }
 
-            var parameters = JsonSerializer.Deserialize<Dictionary<string, object?>>(
-                recipient.ParametersJson, ParametersJsonOptions) ?? new Dictionary<string, object?>();
             parameters["accent_color"] = settings.AccentColor.Value;
             parameters["font_family"] = settings.FontFamily.Value;
             parameters["team_name"] = eventContext.TeamName;
@@ -253,6 +275,7 @@ internal sealed class SendBulkEmailJob(
             parameters["event_website"] = eventContext.WebsiteUrl;
             parameters["public_event_link"] = eventContext.PublicEventLink;
             parameters["register_link"] = eventContext.RegisterLink;
+            parameters["reconfirm_link"] = BuildRegistrationLink(eventContext.PublicEventLink, "reconfirm", recipient.RegistrationId);
             parameters["cancel_link"] = BuildRegistrationLink(eventContext.PublicEventLink, "cancel", recipient.RegistrationId);
             parameters["edit_registration_link"] = BuildRegistrationLink(eventContext.PublicEventLink, "edit", recipient.RegistrationId);
             parameters["qrcode_link"] = BuildRegistrationLink(eventContext.PublicEventLink, "qr-code", recipient.RegistrationId);
@@ -286,7 +309,25 @@ internal sealed class SendBulkEmailJob(
                 return;
             }
 
-            await SendWithInlineRetriesAsync(session, message, ct);
+            var delivered = await SendWithInlineRetriesAsync(
+                session,
+                message,
+                ct,
+                job.EmailType == BuiltInEmailTemplateNames.Reconfirmation
+                    ? admissionToken => GetCurrentReconfirmAdmissionAsync(
+                        job,
+                        recipient,
+                        expectedTicketTypeIds,
+                        admissionToken)
+                    : null);
+
+            if (!delivered)
+            {
+                writeStore.EmailLog.Remove(log);
+                job.RecordCancelledRecipient(recipient.Email.Value);
+                await unitOfWork.SaveChangesAsync(ct);
+                return;
+            }
 
             log.MarkSent(rendered.Subject, now);
             job.RecordSentRecipient(recipient.Email.Value);
@@ -330,6 +371,26 @@ internal sealed class SendBulkEmailJob(
             job.RecordFailedRecipient(recipient.Email.Value, ex.Message);
 
             await unitOfWork.SaveChangesAsync(ct);
+        }
+    }
+
+    private async Task SuppressIneligibleReconfirmRecipientsAsync(
+        BulkEmailJob job,
+        IReadOnlyList<BulkEmailRecipient> pending,
+        CancellationToken cancellationToken)
+    {
+        foreach (var recipient in pending)
+        {
+            var parameters = JsonSerializer.Deserialize<Dictionary<string, object?>>(
+                recipient.ParametersJson, ParametersJsonOptions) ?? new Dictionary<string, object?>();
+            var expectedTicketTypeIds = ReadTicketTypeIds(parameters);
+
+            if (await IsCurrentReconfirmRecipientAsync(
+                    job, recipient, expectedTicketTypeIds, cancellationToken))
+                continue;
+
+            job.RecordCancelledRecipient(recipient.Email.Value);
+            await unitOfWork.SaveChangesAsync(cancellationToken);
         }
     }
 
@@ -426,66 +487,79 @@ internal sealed class SendBulkEmailJob(
     private async Task<bool> IsCurrentReconfirmRecipientAsync(
         BulkEmailJob job,
         BulkEmailRecipient recipient,
+        IReadOnlyCollection<Guid> expectedTicketTypeIds,
+        CancellationToken cancellationToken)
+        => await GetCurrentReconfirmAdmissionAsync(
+            job, recipient, expectedTicketTypeIds, cancellationToken) is not null;
+
+    private async Task<ReconfirmDeliveryState.Allowed?> GetCurrentReconfirmAdmissionAsync(
+        BulkEmailJob job,
+        BulkEmailRecipient recipient,
+        IReadOnlyCollection<Guid> expectedTicketTypeIds,
         CancellationToken cancellationToken)
     {
-        if (recipient.RegistrationCycleId is null)
-            return false;
-
-        var rows = await registrationsFacade.GetRegistrationsAsync(
+        var now = timeProvider.GetUtcNow();
+        var state = await registrationsFacade.GetReconfirmDeliveryStateAsync(
             job.TeamId.Value,
             job.TicketedEventId.Value,
-            new QueryRegistrationsDto(
-                RegistrationStatus: RegistrationStatus.Registered,
-                HasReconfirmed: false,
-                RegistrationIds: [recipient.RegistrationId.Value]),
+            new ReconfirmDeliveryQuery(
+                recipient.RegistrationId.Value,
+                recipient.RegistrationCycleId?.Value ?? Guid.Empty,
+                expectedTicketTypeIds,
+                now),
             cancellationToken);
 
-        var current = rows.FirstOrDefault(row =>
-            row.RegistrationId == recipient.RegistrationId.Value
-            && row.RegistrationCycleId == recipient.RegistrationCycleId.Value
-            && row.Status == RegistrationStatus.Registered
-            && !row.HasReconfirmed);
+        if (state is not ReconfirmDeliveryState.Allowed allowed
+            || now >= allowed.DeliveryCutoffAt)
+            return null;
 
-        if (current is null || !HasSameTicketSelection(recipient.ParametersJson, current.TicketTypeIds))
-            return false;
-
-        if (current.EffectiveMaxReconfirmationEmails is null)
-            return true;
-
-        var successfulEmailCount = await writeStore.EmailLog
+        var sentLogs = await writeStore.EmailLog
             .AsNoTracking()
-            .CountAsync(log =>
+            .Where(log =>
                 log.TeamId == job.TeamId
                 && log.TicketedEventId == job.TicketedEventId
                 && log.RegistrationId == recipient.RegistrationId
                 && log.RegistrationCycleId == recipient.RegistrationCycleId
                 && log.EmailType == BuiltInEmailTemplateNames.Reconfirmation
-                && (log.Status == EmailLogStatus.Sent || log.Status == EmailLogStatus.Delivered),
-                cancellationToken);
+                && (log.Status == EmailLogStatus.Sent || log.Status == EmailLogStatus.Delivered)
+                && log.SentAt.HasValue)
+            .Select(log => log.SentAt!.Value)
+            .ToListAsync(cancellationToken);
+        DateTimeOffset? lastSentAt = sentLogs.Count == 0 ? null : sentLogs.Max();
+        var baseline = lastSentAt.HasValue && lastSentAt.Value > allowed.RegistrationCreatedAt
+            ? lastSentAt.Value
+            : allowed.RegistrationCreatedAt;
+        if (baseline + allowed.MinimumEmailInterval > now)
+            return null;
 
-        return successfulEmailCount < current.EffectiveMaxReconfirmationEmails.Value;
+        if (allowed.EffectiveMaxReconfirmationEmails is null)
+            return allowed;
+
+        return sentLogs.Count < allowed.EffectiveMaxReconfirmationEmails.Value ? allowed : null;
     }
 
-    private static bool HasSameTicketSelection(
-        string parametersJson,
-        IReadOnlyCollection<Guid> currentTicketTypeIds)
+    private static IReadOnlyCollection<Guid> ReadTicketTypeIds(
+        IReadOnlyDictionary<string, object?> parameters)
     {
-        using var document = JsonDocument.Parse(parametersJson);
-        if (!document.RootElement.TryGetProperty("ticket_type_ids", out var ticketTypeIds))
-            return currentTicketTypeIds.Count == 0;
+        if (!parameters.TryGetValue("ticket_type_ids", out var raw)
+            || raw is not JsonElement element
+            || element.ValueKind != JsonValueKind.Array)
+        {
+            return [];
+        }
 
-        var expected = ticketTypeIds.EnumerateArray().Select(value => value.GetGuid()).ToHashSet();
-        return expected.SetEquals(currentTicketTypeIds);
+        return element.EnumerateArray().Select(value => value.GetGuid()).ToArray();
     }
 
     private static bool IsEmailLogIdempotencyViolation(DbUpdateException ex)
         => ex.InnerException is PostgresException pg
            && pg.ConstraintName == "IX_email_log_event_recipient_idempotency";
 
-    private async ValueTask<string?> SendWithInlineRetriesAsync(
+    private async Task<bool> SendWithInlineRetriesAsync(
         IBulkSmtpSession session,
         EmailMessage message,
-        CancellationToken ct)
+        CancellationToken ct,
+        Func<CancellationToken, Task<ReconfirmDeliveryState.Allowed?>>? admissionCheck = null)
     {
         Exception? lastException = null;
         for (var attempt = 0; attempt <= options.CurrentValue.InlineRetryCount; attempt++)
@@ -493,20 +567,103 @@ internal sealed class SendBulkEmailJob(
             if (attempt > 0 && options.CurrentValue.InlineRetryDelay > TimeSpan.Zero)
                 await Task.Delay(options.CurrentValue.InlineRetryDelay, ct);
 
+            DeliveryCutoffCancellation? cutoffCancellation = null;
             try
             {
-                return await session.SendAsync(message, ct);
+                var admission = admissionCheck is null ? null : await admissionCheck(ct);
+                if (admissionCheck is not null && admission is null)
+                    return false;
+
+                if (admission is not null)
+                {
+                    cutoffCancellation = new DeliveryCutoffCancellation(
+                        timeProvider,
+                        admission.DeliveryCutoffAt,
+                        ct);
+                    if (cutoffCancellation.CutoffReached)
+                        return false;
+                }
+
+                await session.SendAsync(message, cutoffCancellation?.Token ?? ct);
+                return true;
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {
                 throw;
             }
+            catch (OperationCanceledException) when (cutoffCancellation?.CutoffReached == true)
+            {
+                return false;
+            }
             catch (Exception ex)
             {
                 lastException = ex;
             }
+            finally
+            {
+                cutoffCancellation?.Dispose();
+            }
         }
 
         throw lastException ?? new InvalidOperationException("SMTP delivery failed.");
+    }
+
+    private sealed class DeliveryCutoffCancellation : IDisposable
+    {
+        private static readonly TimeSpan MaximumTimerDelay =
+            TimeSpan.FromMilliseconds(uint.MaxValue - 1L);
+
+        private readonly TimeProvider _timeProvider;
+        private readonly DateTimeOffset _cutoff;
+        private readonly CancellationTokenSource _source;
+        private ITimer? _timer;
+        private int _cutoffReached;
+
+        public DeliveryCutoffCancellation(
+            TimeProvider timeProvider,
+            DateTimeOffset cutoff,
+            CancellationToken callerToken)
+        {
+            _timeProvider = timeProvider;
+            _cutoff = cutoff;
+            _source = CancellationTokenSource.CreateLinkedTokenSource(callerToken);
+            var delay = cutoff - timeProvider.GetUtcNow();
+            if (delay <= TimeSpan.Zero)
+            {
+                ReachCutoff();
+                return;
+            }
+
+            _timer = timeProvider.CreateTimer(
+                static state => ((DeliveryCutoffCancellation)state!).ReachCutoff(),
+                this,
+                TimerDelay(delay),
+                Timeout.InfiniteTimeSpan);
+        }
+
+        public CancellationToken Token => _source.Token;
+        public bool CutoffReached => Volatile.Read(ref _cutoffReached) == 1;
+
+        public void Dispose()
+        {
+            _timer?.Dispose();
+            _source.Dispose();
+        }
+
+        private void ReachCutoff()
+        {
+            var remaining = _cutoff - _timeProvider.GetUtcNow();
+            if (remaining > TimeSpan.Zero)
+            {
+                _timer?.Change(TimerDelay(remaining), Timeout.InfiniteTimeSpan);
+                return;
+            }
+
+            Interlocked.Exchange(ref _cutoffReached, 1);
+            _source.Cancel();
+        }
+
+        private static TimeSpan TimerDelay(TimeSpan remaining) =>
+            remaining > MaximumTimerDelay ? MaximumTimerDelay : remaining;
     }
 }

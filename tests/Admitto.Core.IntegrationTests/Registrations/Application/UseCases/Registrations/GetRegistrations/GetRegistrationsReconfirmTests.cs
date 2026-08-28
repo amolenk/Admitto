@@ -1,10 +1,12 @@
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.GetRegistrations;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases;
 using Amolenk.Admitto.Core.Registrations.Contracts;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using GetRegistrationsNs = Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.GetRegistrations;
+using GetReconfirmDeliveryStateNs = Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.GetReconfirmDeliveryState;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCases.Registrations.GetRegistrations;
 
@@ -194,7 +196,9 @@ public sealed class GetRegistrationsReconfirmTests(TestContext testContext) : As
 
         var facade = new RegistrationsFacade(
             new GetRegistrationsHandler(Environment.RegistrationsDatabase.Context),
-            Environment.RegistrationsDatabase.Context);
+            Environment.RegistrationsDatabase.Context,
+            new GetReconfirmDeliveryStateNs.GetReconfirmDeliveryStateHandler(
+                Environment.RegistrationsDatabase.Context));
 
         var result = await facade.GetRegistrationsAsync(teamId.Value, eventId.Value, ReconfirmFilter,
             testContext.CancellationToken);

@@ -2,6 +2,7 @@ using System.Text.Json;
 using Amolenk.Admitto.Core.Email;
 using Amolenk.Admitto.Core.Email.Application.Jobs;
 using Amolenk.Admitto.Core.Email.Application.Persistence;
+using Amolenk.Admitto.Core.Email.Application.Sending.Bulk;
 using Amolenk.Admitto.Core.Email.Application.Templating;
 using Amolenk.Admitto.Core.Email.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Email.Domain.Entities;
@@ -16,6 +17,7 @@ using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Outbox;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Amolenk.Admitto.Testing.Builders.Email.Application;
+using Amolenk.Admitto.Testing.Builders.Email.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -384,13 +386,101 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
     {
         var eventId = TicketedEventId.New();
         var now = new DateTimeOffset(2030, 6, 1, 23, 0, 0, TimeSpan.Zero);
-        await SeedPolicyAsync(eventId, now, new TimeOnly(22), new TimeOnly(8));
+        await SeedPolicyAsync(eventId, now, new TimeOnly(22, 0), new TimeOnly(8, 0));
         var facade = FacadeReturning(eventId, [RegistrationItem(Guid.NewGuid(), "alice@example.com", now.AddDays(-2))]);
 
         await BuildJob(facade, new FakeTimeProvider(now)).Execute(JobContext());
 
         (await LoadBulkEmailJobsAsync()).ShouldBeEmpty();
         await facade.DidNotReceiveWithAnyArgs().GetRegistrationsAsync(default, default, default!, default);
+    }
+
+    // Given a queued reminder drained during quiet hours and a live attendee state for the next hour
+    // When the next permitted hourly evaluation runs
+    // Then it creates a fresh job from the current facade result instead of resuming the drained snapshot
+    [TestMethod]
+    public async ValueTask Execute_QuietHourDrainedJob_NextPermittedEvaluationCreatesFreshJob()
+    {
+        var quietNow = new DateTimeOffset(2030, 6, 1, 23, 0, 0, TimeSpan.Zero);
+        var nextPermittedHour = new DateTimeOffset(2030, 6, 2, 9, 0, 0, TimeSpan.Zero);
+        var eventId = TicketedEventId.New();
+        var registrationId = Guid.NewGuid();
+        var cycleId = Guid.NewGuid();
+        await SeedPolicyAsync(
+            eventId,
+            quietNow,
+            quietStart: new TimeOnly(22, 0),
+            quietEnd: new TimeOnly(8, 0),
+            opensAt: quietNow.AddDays(-1),
+            closesAt: quietNow.AddDays(2));
+
+        var recipient = BulkEmailJobBuilder.Recipient(
+            "alice@example.com", "Alice", RegistrationCycleId.From(cycleId));
+        var queuedJob = BulkEmailJob.CreateSystemTriggered(
+            TeamId,
+            eventId,
+            BuiltInEmailTemplateNames.Reconfirmation,
+            null,
+            null,
+            null,
+            new BulkEmailAttendeeFilter(
+                RegistrationStatus: RegistrationStatus.Registered,
+                HasReconfirmed: false,
+                RegistrationIds: [registrationId],
+                RegistrationCycleIds: new Dictionary<Guid, Guid> { [registrationId] = cycleId }),
+            quietNow);
+        await Environment.EmailDatabase.SeedAsync(db =>
+        {
+            db.BulkEmailJobs.Add(queuedJob);
+            db.TeamEmailContexts.Add(SendBulkEmailJobFixture.CreateTeamEmailContext(TeamId));
+        });
+
+        var facade = Substitute.For<IRegistrationsFacade>();
+        facade.GetReconfirmDeliveryStateAsync(
+                Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<ReconfirmDeliveryQuery>(), Arg.Any<CancellationToken>())
+            .Returns(new ReconfirmDeliveryState.Suppressed(ReconfirmDeliverySuppression.QuietHours));
+        facade.GetRegistrationsAsync(
+                TeamId.Value,
+                eventId.Value,
+                Arg.Is<QueryRegistrationsDto>(q => MatchesReconfirmQuery(q)),
+                Arg.Any<CancellationToken>())
+            .Returns([RegistrationItem(
+                registrationId,
+                "alice@example.com",
+                quietNow.AddDays(-2),
+                cycleId: cycleId)]);
+
+        var resolver = Substitute.For<IBulkEmailRecipientResolver>();
+        resolver.ResolveAsync(
+                TeamId,
+                eventId,
+                Arg.Any<BulkEmailAttendeeFilter>(),
+                Arg.Any<CancellationToken>())
+            .Returns([recipient]);
+        var sender = new FakeBulkSmtpSender();
+        var fanOut = SendBulkEmailJobFixture.BuildExistingJobFanOutAt(
+            Environment,
+            sender,
+            resolver,
+            facade,
+            new FakeTimeProvider(quietNow));
+
+        await fanOut.Execute(SendBulkEmailJobFixture.JobContext(queuedJob));
+
+        (await LoadBulkEmailJobsAsync()).Single().Status.ShouldBe(BulkEmailJobStatus.Completed);
+
+        facade.GetReconfirmDeliveryStateAsync(
+                Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<ReconfirmDeliveryQuery>(), Arg.Any<CancellationToken>())
+            .Returns(new ReconfirmDeliveryState.Allowed(
+                quietNow.AddDays(-2), TimeSpan.FromHours(1), null, nextPermittedHour.AddHours(1)));
+        await BuildJob(facade, new FakeTimeProvider(nextPermittedHour)).Execute(JobContext());
+
+        var jobs = await LoadBulkEmailJobsAsync();
+        jobs.Count.ShouldBe(2);
+        var freshJob = jobs.Single(j => j.Id != queuedJob.Id);
+        freshJob.Status.ShouldBe(BulkEmailJobStatus.Pending);
+        freshJob.AttendeeFilter.RegistrationIds.ShouldBe([registrationId]);
+        freshJob.AttendeeFilter.RegistrationCycleIds![registrationId].ShouldBe(cycleId);
     }
 
     // Given active policies for two events

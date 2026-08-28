@@ -77,6 +77,8 @@ Example: Registrations module needs ticket types from Organization.
 
 The same facade is used by authorization handlers to resolve team membership roles.
 
+For reconfirmation delivery, `RegistrationsFacade.GetReconfirmDeliveryStateAsync` delegates to the dedicated `GetReconfirmDeliveryStateHandler`. The handler reads authoritative Registrations aggregates and returns either a complete allowed state (registration timestamp, interval, maximum, and cutoff) or a suppression reason; Email then applies its successful-log allowance before SMTP admission.
+
 ## 6.4 Event creation (Organization → Registrations async flow)
 
 Event creation is a two-phase async flow. Organization validates team-level invariants and acts as the creation **gatekeeper**; Registrations materialises the authoritative `TicketedEvent` and reports back with an outcome. The Admin UI submits the request and polls a creation-status endpoint until it sees a terminal state.
@@ -288,11 +290,24 @@ sequenceDiagram
     FanOut->>SMTP: connect (single connection)
     loop for each Pending recipient
       FanOut->>FanOut: check CancellationRequestedAt
-      FanOut->>FanOut: render job-owned or built-in content with team/event context
-      FanOut->>EmailLog: insert Pending claim key=bulk:{jobId}:{email}
-      FanOut->>SMTP: MAIL FROM / RCPT TO / DATA
-      FanOut->>EmailLog: update claim to Sent or Failed
-      FanOut->>Job: update per-recipient status + counters
+      alt reconfirm email
+        FanOut->>Facade: authoritative live reconfirm delivery check at now
+        alt registered, unreconfirmed, eligible, and outside quiet hours
+          FanOut->>FanOut: render job-owned or built-in content with team/event context
+          FanOut->>EmailLog: insert Pending claim key=bulk:{jobId}:{email}
+          FanOut->>SMTP: MAIL FROM / RCPT TO / DATA
+          FanOut->>EmailLog: update claim to Sent or Failed
+          FanOut->>Job: update per-recipient status + counters
+        else stale, ineligible, archived, expired, or quiet hours
+          FanOut->>Job: mark recipient Cancelled (no EmailLog claim)
+        end
+      else other bulk email
+        FanOut->>FanOut: render job-owned content with team/event context
+        FanOut->>EmailLog: insert Pending claim key=bulk:{jobId}:{email}
+        FanOut->>SMTP: MAIL FROM / RCPT TO / DATA
+        FanOut->>EmailLog: update claim to Sent or Failed
+        FanOut->>Job: update per-recipient status + counters
+      end
       FanOut->>FanOut: Task.Delay(PerMessageDelay, ct)
     end
     FanOut->>SMTP: QUIT
@@ -306,6 +321,8 @@ sequenceDiagram
 **Rendering context**: bulk fan-out merges the frozen recipient parameters with Email's projected team/event context, including `team_name`, event details, public links, and `qrcode_link`, plus the branding parameters `accent_color` and `font_family` taken from the resolved `EffectiveEmailSettings` (the same source the transactional path uses). This same parameter set is available to both built-in templates and custom job-owned content; duplicate aliases such as `team_accent_color` and `qr_code_link` are not exposed.
 
 **Cancellation**: `POST /admin/.../bulk-emails/{id}/cancel` sets `CancellationRequestedAt` on the aggregate; the worker observes it between recipients and during the per-message delay, transitions remaining `Pending` rows to `Cancelled`, and closes the SMTP session cleanly.
+
+**Reconfirmation delivery-time guard**: a queued reconfirmation reminder is never trusted solely because it was eligible when the bulk snapshot was made. The Worker queries the authoritative Registrations facade immediately before each SMTP submission. Registrations owns the live event lifecycle, policy, time zone/quiet-hours, registration status, cycle, ticket selection, and effective maximum check; Email adds its successful `EmailLog` count/latest timestamp and send-claim rules. It suppresses reconfirmed/cancelled or otherwise ineligible registrations, archived events, disabled or expired policies, and quiet hours. Suppressed recipients do not create `EmailLog` claims; failed SMTP attempts likewise do not count toward the successful-email reconfirmation allowance. A job deferred or drained by quiet hours is completed without resuming its stale pending snapshot, so the next permitted hourly evaluation performs a fresh candidate query.
 
 ## 6.10 Reconfirm scheduling and cycle limits (hourly active-event evaluation)
 
@@ -345,6 +362,8 @@ sequenceDiagram
 **Lifecycle cleanup**: clearing the reconfirm policy or archiving the event updates the Email projection so the event is no longer enabled and Active. Future hourly evaluations therefore skip it and create no routine reconfirmation work.
 
 **Projection consistency**: Email rendering and scheduling use the latest `email.event_email_context_view` row available when the worker handles a message. Recent Organization/Registrations edits may lag by queue delivery time; this staleness is accepted for email rendering and does not affect registration correctness.
+
+For reconfirmation delivery, projection lag cannot authorize a stale reminder: the fan-out guard uses the authoritative live Registrations delivery query at the current instant. Rendering may still use the eventually consistent Email projection. The returned cutoff creates a linked, `TimeProvider`-scheduled cancellation token that is passed through the SMTP submission. If the cutoff fires while the SMTP adapter is in its pre-transmission seam, the token cancels the attempt and the recipient is suppressed rather than failed; this does not claim transactional rollback of bytes already accepted by an external SMTP server. Suppressed and failed attempts are excluded from the successful-email allowance, and the next permitted hourly evaluation starts from a fresh facade query rather than a deferred stale batch.
 
 **Clustering**: Quartz uses the PostgreSQL-backed store in `quartz-db` with clustering enabled. Worker instances host the scheduler and execute the hourly evaluation and its jobs. During rolling deployments or temporary Worker scale-out, Quartz acquires the recurring evaluation on only one live scheduler instance.
 
