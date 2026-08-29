@@ -23,6 +23,22 @@ public sealed class ReconfirmRegistrationTests(TestContext testContext) : EndToE
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
     }
 
+    // Given a below-maximum attendee after the reconfirm policy has closed
+    // When reconfirmation is requested through the Partner API
+    // Then the API still returns 204 No Content
+    [TestMethod]
+    public async Task ReconfirmRegistration_BelowMaximumAfterPolicyClose_Returns204()
+    {
+        var fixture = ReconfirmRegistrationFixture.BelowMaximumAfterPolicyClose();
+        await fixture.SetupAsync(Environment);
+
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
+        var response = await client.PostAsync(
+            fixture.ReconfirmRoute(fixture.RegistrationId.Value), null, testContext.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
+    }
+
     // Given an existing registration and a valid partner API key
     // When reconfirmation is requested twice in a row
     // Then both calls return 204 No Content

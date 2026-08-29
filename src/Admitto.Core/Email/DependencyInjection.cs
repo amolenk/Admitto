@@ -79,6 +79,8 @@ public static class EmailModuleExtensions
             var services = builder.Services;
             var assembly = Assembly.GetExecutingAssembly();
 
+            services.AddSingleton<IReconfirmPolicyCloseScheduler, ReconfirmPolicyCloseScheduler>();
+
             // Integration event handlers
             services.AddIntegrationEventHandlersFromAssembly(assembly, EmailModule.NamespacePrefix);
 

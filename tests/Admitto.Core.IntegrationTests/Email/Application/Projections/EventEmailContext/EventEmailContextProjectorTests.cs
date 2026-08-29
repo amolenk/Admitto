@@ -1,8 +1,10 @@
 using Amolenk.Admitto.Core.Email.Application.Projections.EventEmailContext;
+using Amolenk.Admitto.Core.Email.Application.Jobs;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Amolenk.Admitto.Testing.Builders.Registrations.Contracts;
+using NSubstitute;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.Projections.EventEmailContext;
 
@@ -12,8 +14,9 @@ public sealed class EventEmailContextProjectorTests(TestContext testContext) : A
     private static readonly DateTimeOffset Opens = new(2030, 1, 1, 0, 0, 0, TimeSpan.Zero);
     private static readonly DateTimeOffset Closes = new(2030, 12, 31, 0, 0, 0, TimeSpan.Zero);
 
-    private EventEmailContextProjector CreateProjector() =>
-        new(Environment.EmailDatabase.Context);
+    private EventEmailContextProjector CreateProjector(
+        IReconfirmPolicyCloseScheduler? closeScheduler = null) =>
+        new(Environment.EmailDatabase.Context, closeScheduler);
 
     // Given a created event with a reconfirm policy including overnight quiet hours
     // When the event is projected
@@ -48,6 +51,32 @@ public sealed class EventEmailContextProjectorTests(TestContext testContext) : A
             view.ReconfirmQuietHoursEnd.ShouldBe(new TimeOnly(8));
             view.HasCompleteReconfirmPolicy.ShouldBeTrue();
         });
+    }
+
+    // Given a policy whose close is not aligned to the hourly trigger
+    // When the policy is projected
+    // Then a one-shot close evaluation is scheduled at the exact close instant
+    [TestMethod]
+    public async Task TicketedEventCreated_NonHourPolicyClose_SchedulesTerminalEvaluation()
+    {
+        var teamId = TeamId.New();
+        var eventId = TicketedEventId.New();
+        var closeScheduler = Substitute.For<IReconfirmPolicyCloseScheduler>();
+        var projector = CreateProjector(closeScheduler);
+
+        await projector.HandleAsync(
+            new TicketedEventCreatedIntegrationEventBuilder()
+                .WithTeamId(teamId.Value)
+                .WithTicketedEventId(eventId.Value)
+                .WithReconfirmPolicy(new TicketedEventReconfirmPolicySnapshot(
+                    Opens, Closes, 24, null, null))
+                .Build(),
+            testContext.CancellationToken);
+
+        await closeScheduler.Received(1).ScheduleAsync(
+            eventId,
+            Closes,
+            Arg.Any<CancellationToken>());
     }
 
     // Given a created event that has already been projected and saved

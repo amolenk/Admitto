@@ -123,9 +123,9 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
 
     // Given archived, cleared, partial, future, and closed projected policies
     // When the hourly evaluator runs
-    // Then none of those policies is evaluated
+    // Then only the closed policy receives its terminal evaluation
     [TestMethod]
-    public async ValueTask Execute_NonEligibleProjectedPolicies_SkipsAll()
+    public async ValueTask Execute_NonEligibleProjectedPolicies_EvaluatesOnlyClosedPolicy()
     {
         var now = DateTimeOffset.UtcNow;
         var archived = TicketedEventId.New();
@@ -143,12 +143,16 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
         await BuildJob(facade, new FakeTimeProvider(now)).Execute(JobContext());
 
         (await LoadBulkEmailJobsAsync()).ShouldBeEmpty();
-        await facade.DidNotReceiveWithAnyArgs().GetRegistrationsAsync(default, default, default!, default);
+        await facade.Received(1).GetRegistrationsAsync(
+            TeamId.Value,
+            closed.Value,
+            Arg.Any<QueryRegistrationsDto>(),
+            Arg.Any<CancellationToken>());
     }
 
     // Given one policy opening now and another closing now
     // When the hourly evaluator runs at the boundary
-    // Then only the open-inclusive policy is evaluated
+    // Then the open policy creates a reminder and the closing policy creates none
     [TestMethod]
     public async ValueTask Execute_WindowBoundaries_UsesOpenInclusiveCloseExclusive()
     {
@@ -169,6 +173,41 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
         await facade.Received(1).GetRegistrationsAsync(
             TeamId.Value,
             opensNow.Value,
+            Arg.Any<QueryRegistrationsDto>(),
+            Arg.Any<CancellationToken>());
+    }
+
+    // Given a non-hour policy close and an unrelated open policy
+    // When the one-shot close trigger runs
+    // Then only the targeted policy receives terminal evaluation
+    [TestMethod]
+    public async ValueTask Execute_PolicyCloseTrigger_TargetsOnlyItsPolicy()
+    {
+        var now = new DateTimeOffset(2030, 6, 1, 12, 17, 31, TimeSpan.Zero);
+        var targetedEventId = TicketedEventId.New();
+        var unrelatedEventId = TicketedEventId.New();
+        await SeedPolicyAsync(targetedEventId, now, closesAt: now);
+        await SeedPolicyAsync(
+            unrelatedEventId,
+            now,
+            opensAt: now.AddHours(-1),
+            closesAt: now.AddHours(1));
+        var facade = FacadeReturning(
+            targetedEventId,
+            [RegistrationItem(Guid.NewGuid(), "targeted@example.com", now.AddDays(-2))]);
+
+        await BuildJob(facade, new FakeTimeProvider(now)).Execute(
+            PolicyCloseJobContext(targetedEventId, now));
+
+        (await LoadBulkEmailJobsAsync()).ShouldBeEmpty();
+        await facade.Received(1).GetRegistrationsAsync(
+            TeamId.Value,
+            targetedEventId.Value,
+            Arg.Any<QueryRegistrationsDto>(),
+            Arg.Any<CancellationToken>());
+        await facade.DidNotReceive().GetRegistrationsAsync(
+            TeamId.Value,
+            unrelatedEventId.Value,
             Arg.Any<QueryRegistrationsDto>(),
             Arg.Any<CancellationToken>());
     }
@@ -249,6 +288,42 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
             cycleId: cycleId)]);
 
         await BuildJob(facade, new FakeTimeProvider(now)).Execute(JobContext());
+
+        (await LoadBulkEmailJobsAsync()).ShouldBeEmpty();
+        (await LoadOutboxMessagesAsync()).ShouldHaveSingleItem();
+    }
+
+    // Given an active policy closing now with maxed and below-max attendees during quiet hours
+    // When the hourly evaluator reaches the exclusive close boundary
+    // Then it cancels only the maxed attendee without creating a reminder job
+    [TestMethod]
+    public async ValueTask Execute_AtPolicyClose_CancelsOnlyMaxedAttendeesWithoutReminder()
+    {
+        var now = new DateTimeOffset(2030, 6, 1, 23, 0, 0, TimeSpan.Zero);
+        var fixture = ReconfirmPolicyCloseFixture.MaxedAndBelowMaximum(now);
+        await fixture.SetupAsync(Environment);
+
+        await BuildJob(fixture.Facade(), new FakeTimeProvider(now)).Execute(JobContext());
+
+        (await LoadBulkEmailJobsAsync()).ShouldBeEmpty();
+        var outbox = await LoadOutboxMessagesAsync();
+        outbox.ShouldHaveSingleItem();
+        GetRegistrationIds(outbox[0].Payload).ShouldBe([fixture.MaxedRegistrationId]);
+    }
+
+    // Given an active policy that has already reached its close boundary
+    // When the hourly evaluator runs again for the same policy close
+    // Then it does not publish a second automatic expiry event
+    [TestMethod]
+    public async ValueTask Execute_AtPolicyClose_RedeliveryIsIdempotent()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var fixture = ReconfirmPolicyCloseFixture.SingleMaxed(now);
+        await fixture.SetupAsync(Environment);
+        var job = BuildJob(fixture.Facade(), new FakeTimeProvider(now));
+
+        await job.Execute(JobContext());
+        await job.Execute(JobContext());
 
         (await LoadBulkEmailJobsAsync()).ShouldBeEmpty();
         (await LoadOutboxMessagesAsync()).ShouldHaveSingleItem();
@@ -613,10 +688,27 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
         return context;
     }
 
+    private static IJobExecutionContext PolicyCloseJobContext(
+        TicketedEventId eventId,
+        DateTimeOffset closesAt)
+    {
+        var context = Substitute.For<IJobExecutionContext>();
+        context.CancellationToken.Returns(CancellationToken.None);
+        context.MergedJobDataMap.Returns(new JobDataMap
+        {
+            [RequestReconfirmationsJob.PolicyCloseEventIdKey] = eventId.Value.ToString(),
+            [RequestReconfirmationsJob.PolicyCloseAtKey] =
+                closesAt.ToString("O", System.Globalization.CultureInfo.InvariantCulture)
+        });
+        return context;
+    }
+
     private sealed class TestEmailWriteStore(EmailDbContext context) : IEmailWriteStore
     {
         public DbSet<EmailLog> EmailLog => context.EmailLog;
         public DbSet<BulkEmailJob> BulkEmailJobs => context.BulkEmailJobs;
+        public DbSet<ReconfirmPolicyCloseEvaluation> ReconfirmPolicyCloseEvaluations =>
+            context.ReconfirmPolicyCloseEvaluations;
     }
 
     private async Task<List<BulkEmailJob>> LoadBulkEmailJobsAsync()

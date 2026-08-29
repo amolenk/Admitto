@@ -155,6 +155,32 @@ namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence.Migrations
                     b.ToTable("team_email_context_view", "email");
                 });
 
+            modelBuilder.Entity("Amolenk.Admitto.Core.Email.Domain.Entities.ReconfirmPolicyCloseEvaluation", b =>
+                {
+                    b.Property<Guid>("TeamId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("team_id");
+
+                    b.Property<Guid>("TicketedEventId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("ticketed_event_id");
+
+                    b.Property<DateTimeOffset>("ClosesAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("closes_at");
+
+                    b.Property<DateTimeOffset>("EvaluatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("evaluated_at");
+
+                    b.HasKey("TeamId", "TicketedEventId", "ClosesAt");
+
+                    b.HasIndex("TicketedEventId", "ClosesAt")
+                        .HasDatabaseName("IX_reconfirm_policy_close_evaluations_event_close");
+
+                    b.ToTable("reconfirm_policy_close_evaluations", "email");
+                });
+
             modelBuilder.Entity("Amolenk.Admitto.Core.Email.Domain.Entities.BulkEmailJob", b =>
                 {
                     b.Property<Guid>("Id")

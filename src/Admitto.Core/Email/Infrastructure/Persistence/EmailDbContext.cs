@@ -16,6 +16,7 @@ public sealed class EmailDbContext(DbContextOptions<EmailDbContext> options)
 
     public DbSet<EmailLog> EmailLog => Set<EmailLog>();
     public DbSet<BulkEmailJob> BulkEmailJobs => Set<BulkEmailJob>();
+    public DbSet<ReconfirmPolicyCloseEvaluation> ReconfirmPolicyCloseEvaluations => Set<ReconfirmPolicyCloseEvaluation>();
     public DbSet<EventEmailContextView> EventEmailContexts => Set<EventEmailContextView>();
     public DbSet<TeamEmailContextView> TeamEmailContexts => Set<TeamEmailContextView>();
 

@@ -65,8 +65,7 @@ internal sealed class ReconfirmAutoExpiredIntegrationEventHandler(IRegistrations
                     r => r.Id == registrationId
                         && r.TeamId == teamId
                         && r.EventId == ticketedEventId
-                        && r.RegistrationCycleId == registrationCycleId
-                        && r.Version == reference.RegistrationVersion.Value,
+                        && r.RegistrationCycleId == registrationCycleId,
                     cancellationToken);
 
             if (registration is null
@@ -78,6 +77,10 @@ internal sealed class ReconfirmAutoExpiredIntegrationEventHandler(IRegistrations
                 continue;
             }
 
+            // A harmless version advance (for example, an attendee detail edit)
+            // must not permanently discard an otherwise valid terminal
+            // cancellation. Cycle, status, ticket selection, and catalog-version
+            // guards above still reject stale asynchronous evaluations.
             registration.Cancel(CancellationReason.ReconfirmAutoCancel);
         }
 

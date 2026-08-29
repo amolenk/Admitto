@@ -162,6 +162,52 @@ public sealed class ReconfirmAutoExpiredIntegrationEventHandlerTests(TestContext
         });
     }
 
+    // Given a maxed attendee whose registration version advanced after evaluation
+    // When the reconfirm-auto-expired event is handled
+    // Then the current registration is still cancelled safely
+    [TestMethod]
+    public async ValueTask HandleAsync_VersionAdvancedWithoutTicketChange_CancelsCurrentRegistration()
+    {
+        var fixture = HandleReconfirmAutoExpiredFixture.ActiveRegistration();
+        await fixture.SetupAsync(Environment);
+        await ClearOutboxAsync();
+
+        await Environment.RegistrationsDatabase.SeedAsync(db =>
+        {
+            var registration = db.Registrations.First(r => r.Id == fixture.RegistrationId);
+            registration.ReplaceAttendeeEditableState(
+                FirstName.From("Updated"),
+                LastName.From("Attendee"),
+                registration.AdditionalDetails,
+                [new TicketTypeSnapshot(fixture.TicketTypeId, TicketTypeName.From("General"), [])],
+                DateTimeOffset.UtcNow);
+        });
+
+        await Environment.RegistrationsDatabase.AssertAsync(async db =>
+        {
+            var registration = await db.Registrations.FirstAsync(r => r.Id == fixture.RegistrationId);
+            registration.Status.ShouldBe(RegistrationStatus.Registered);
+            registration.RegistrationCycleId.ShouldBe(fixture.CycleId);
+            registration.Tickets.Select(ticket => ticket.Id.Value).ShouldBe([fixture.TicketTypeId.Value]);
+        });
+
+        var sut = new ReconfirmAutoExpiredIntegrationEventHandler(Environment.RegistrationsDatabase.Context);
+        await sut.HandleAsync(
+            new ReconfirmAutoExpiredIntegrationEvent(
+                fixture.TeamId.Value,
+                fixture.TicketedEventId.Value,
+                [],
+                [Reference(fixture)]),
+            testContext.CancellationToken);
+        await Environment.RegistrationsDatabase.Context.SaveChangesAsync(testContext.CancellationToken);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async db =>
+        {
+            (await db.Registrations.FirstAsync(r => r.Id == fixture.RegistrationId, testContext.CancellationToken))
+                .CancellationReason.ShouldBe(CancellationReason.ReconfirmAutoCancel);
+        });
+    }
+
     // Given a reconfirm-auto-expired message without cycle references
     // When the message is handled
     // Then the registration is left unchanged
