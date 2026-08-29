@@ -24,6 +24,7 @@ public sealed class BulkEmailPreviewTests(TestContext testContext) : EndToEndTes
 
         var request = new
         {
+            EmailType = "bulk-custom",
             AttendeeFilter = new { HasReconfirmed = false }
         };
 

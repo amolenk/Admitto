@@ -1,7 +1,9 @@
-using System.Globalization;
 using Amolenk.Admitto.Core.Email.Application.Persistence;
 using Amolenk.Admitto.Core.Email.Application.Projections.EventEmailContext;
+using Amolenk.Admitto.Core.Email.Application.Sending;
+using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
 using Amolenk.Admitto.Core.Email.Application.Templating;
+using Amolenk.Admitto.Core.Email.Application.UseCases.EventEmailContexts.GetEventEmailRenderingContext;
 using Amolenk.Admitto.Core.Email.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Email.Domain.Entities;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
@@ -10,16 +12,16 @@ using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Npgsql;
 using Quartz;
 
 namespace Amolenk.Admitto.Core.Email.Application.Jobs;
 
 /// <summary>
-/// Evaluates every projected, active reconfirm policy on the fixed hourly Quartz
-/// tick and on one-shot policy-close triggers. Reminder cadence is not persisted;
-/// close triggers exist only to guarantee the terminal evaluation at non-hour
-/// boundaries.
+/// Evaluates every projected reconfirmation policy on the one fixed hourly
+/// trigger. A run creates minimal ReconfirmationBatch lifecycle records and
+/// sends all live candidates directly; it never schedules or resumes bulk work.
 /// </summary>
 [DisallowConcurrentExecution]
 internal sealed class RequestReconfirmationsJob(
@@ -31,75 +33,36 @@ internal sealed class RequestReconfirmationsJob(
 {
     public const string Name = nameof(RequestReconfirmationsJob);
     public const string TriggerName = $"{Name}.Hourly";
-    public const string PolicyCloseTriggerGroup = "reconfirm-close";
-    public const string PolicyCloseEventIdKey = "PolicyCloseEventId";
-    public const string PolicyCloseAtKey = "PolicyCloseAt";
-
-    public static TriggerKey PolicyCloseTriggerKey(
-        TicketedEventId ticketedEventId,
-        DateTimeOffset closesAt) =>
-        new(
-            $"{ticketedEventId.Value:N}.{closesAt.UtcTicks}",
-            PolicyCloseTriggerGroup);
 
     public async Task Execute(IJobExecutionContext context)
     {
         var ct = context.CancellationToken;
+        await FailAllActiveBatchesAsync(ct);
+
         var now = timeProvider.GetUtcNow();
-
-        if (HasPolicyCloseTarget(context))
-        {
-            if (!TryGetPolicyCloseTarget(context, out var targetEventId, out var targetClosesAt))
-            {
-                logger.LogWarning("Ignoring malformed reconfirm policy-close trigger data.");
-                return;
-            }
-
-            var targetedPolicy = await readStore.EventEmailContexts
-                .AsNoTracking()
-                .SingleOrDefaultAsync(
-                    c => c.TicketedEventId == targetEventId!.Value
-                        && c.ReconfirmClosesAt == targetClosesAt,
-                    ct);
-
-            if (targetedPolicy is not null
-                && targetedPolicy.HasCompleteReconfirmPolicy
-                && now >= targetClosesAt)
-            {
-                await EvaluatePolicyAsync(targetedPolicy, now, ct, terminalOnly: true);
-            }
-
-            return;
-        }
+        await using var smtp = new RunSmtpSession(scopeFactory);
 
         var policies = (await readStore.EventEmailContexts
-            .AsNoTracking()
-            .Where(c => c.ReconfirmOpensAt <= now)
-            .ToListAsync(ct))
+                .AsNoTracking()
+                .Where(c => c.ReconfirmOpensAt <= now)
+                .OrderBy(c => c.CreatedAt)
+                .ToListAsync(ct))
             .Where(c => c.HasCompleteReconfirmPolicy)
             .ToList();
 
         foreach (var policy in policies)
         {
             ct.ThrowIfCancellationRequested();
-
-            await EvaluatePolicyAsync(policy, now, ct, terminalOnly: false);
+            var policyNow = timeProvider.GetUtcNow();
+            await EvaluatePolicyAsync(policy, policyNow, smtp, ct);
         }
-    }
-
-    private static bool HasPolicyCloseTarget(IJobExecutionContext context)
-    {
-        var jobData = context.MergedJobDataMap;
-        return jobData is not null
-            && (jobData.ContainsKey(PolicyCloseEventIdKey)
-                || jobData.ContainsKey(PolicyCloseAtKey));
     }
 
     private async Task EvaluatePolicyAsync(
         EventEmailContextView policy,
         DateTimeOffset now,
-        CancellationToken ct,
-        bool terminalOnly)
+        RunSmtpSession smtp,
+        CancellationToken ct)
     {
         try
         {
@@ -109,36 +72,118 @@ internal sealed class RequestReconfirmationsJob(
             var outbox = scope.ServiceProvider.GetRequiredKeyedService<IOutbox>(EmailModule.Key);
             var unitOfWork = scope.ServiceProvider.GetRequiredKeyedService<IUnitOfWork>(EmailModule.Key);
 
-            if (terminalOnly || now >= policy.ReconfirmClosesAt!.Value)
+            if (now >= policy.ReconfirmClosesAt!.Value)
             {
                 await EvaluatePolicyCloseAsync(
-                    policy,
-                    writeStore,
-                    registrationsFacade,
-                    outbox,
-                    unitOfWork,
-                    now,
-                    ct);
+                    policy, writeStore, registrationsFacade, outbox, unitOfWork, now, ct);
                 return;
             }
 
-            if (!TryGetTimeZone(policy.TimeZone!, out var timeZone))
+            if (!TryGetTimeZone(policy.TimeZone!, out var timeZone)
+                || IsQuietHours(policy, now, timeZone))
                 return;
 
-            if (await HasOutstandingReconfirmJobAsync(writeStore, policy, ct))
+            var (candidates, sentReconfirmationLogs) = await LoadCandidatesAndLogsAsync(
+                policy, writeStore, registrationsFacade, ct);
+
+            var eligibleCandidates = candidates
+                .Where(registration =>
+                {
+                    var currentLogs = GetCurrentCycleLogs(sentReconfirmationLogs, registration);
+                    var lastSentAt = currentLogs.MaxBy(log => log.SentAt)?.SentAt;
+                    var baseline = lastSentAt.HasValue && lastSentAt.Value > registration.CreatedAt
+                        ? lastSentAt.Value
+                        : registration.CreatedAt;
+                    return baseline + TimeSpan.FromHours(policy.ReconfirmMinEmailIntervalHours!.Value) <= now;
+                })
+                .ToList();
+
+            var reconfirmCandidates = eligibleCandidates
+                .Where(registration =>
+                    registration.EffectiveMaxReconfirmationEmails is null
+                    || GetCurrentCycleLogs(sentReconfirmationLogs, registration).Count
+                        < registration.EffectiveMaxReconfirmationEmails.Value)
+                .ToList();
+
+            var autoCancelCandidates = eligibleCandidates
+                .Where(registration =>
+                    registration.EffectiveMaxReconfirmationEmails.HasValue
+                    && GetCurrentCycleLogs(sentReconfirmationLogs, registration).Count
+                        >= registration.EffectiveMaxReconfirmationEmails.Value)
+                .ToList();
+
+            var batchGateNow = timeProvider.GetUtcNow();
+            if (batchGateNow >= policy.ReconfirmClosesAt!.Value)
+            {
+                await EvaluatePolicyCloseAsync(
+                    policy, writeStore, registrationsFacade, outbox, unitOfWork, batchGateNow, ct);
+                return;
+            }
+
+            if (IsQuietHours(policy, batchGateNow, timeZone))
                 return;
 
-            if (IsQuietHours(policy, now, timeZone))
-                return;
+            if (autoCancelCandidates.Count > 0)
+            {
+                outbox.Enqueue(new ReconfirmAutoExpiredIntegrationEvent(
+                    policy.TeamId.Value,
+                    policy.TicketedEventId.Value,
+                    autoCancelCandidates.Select(r => r.RegistrationId).ToList(),
+                    BuildAutoExpiredReferences(autoCancelCandidates)));
+            }
 
-            await EvaluateEventAsync(
-                policy,
-                writeStore,
-                registrationsFacade,
-                outbox,
-                unitOfWork,
-                now,
-                ct);
+            if (reconfirmCandidates.Count == 0)
+            {
+                if (autoCancelCandidates.Count > 0)
+                    await unitOfWork.SaveChangesAsync(ct);
+                return;
+            }
+
+            var batch = ReconfirmationBatch.Create(policy.TeamId, policy.TicketedEventId, batchGateNow);
+            writeStore.ReconfirmationBatches.Add(batch);
+            try
+            {
+                await unitOfWork.SaveChangesAsync(ct);
+            }
+            catch (DbUpdateException ex) when (IsActiveBatchReservationViolation(ex))
+            {
+                return;
+            }
+
+            batch.BeginSending(batchGateNow);
+            try
+            {
+                await unitOfWork.SaveChangesAsync(ct);
+                await DeliverBatchAsync(
+                    batch,
+                    reconfirmCandidates,
+                    writeStore,
+                    registrationsFacade,
+                    scope.ServiceProvider.GetRequiredService<IEffectiveEmailSettingsResolver>(),
+                    scope.ServiceProvider.GetRequiredService<IEmailTemplateService>(),
+                    scope.ServiceProvider.GetRequiredService<IEmailRenderer>(),
+                    scope.ServiceProvider.GetRequiredService<IQueryHandler<GetEventEmailRenderingContextQuery, EventEmailContextDto>>(),
+                    smtp,
+                    scope.ServiceProvider.GetRequiredService<IOptionsMonitor<EmailDeliveryOptions>>(),
+                    timeProvider,
+                    unitOfWork,
+                    ct);
+
+                batch.Complete(timeProvider.GetUtcNow());
+                await unitOfWork.SaveChangesAsync(ct);
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                await FailBatchAsync(batch.Id, "Reconfirmation batch interrupted.");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                await FailBatchAsync(batch.Id, ex.Message);
+                logger.LogError(ex,
+                    "Reconfirmation batch failed for event {TicketedEventId}.",
+                    policy.TicketedEventId.Value);
+            }
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -146,42 +191,303 @@ internal sealed class RequestReconfirmationsJob(
         }
         catch (Exception ex)
         {
-            // An event is the unit of work. A bad projection or a failed
-            // event should not prevent unrelated events being evaluated.
             logger.LogError(ex,
                 "Reconfirm evaluation failed for event {TicketedEventId}.",
                 policy.TicketedEventId.Value);
         }
     }
 
-    private static bool TryGetPolicyCloseTarget(
-        IJobExecutionContext context,
-        out TicketedEventId? eventId,
-        out DateTimeOffset closesAt)
+    private async Task FailAllActiveBatchesAsync(CancellationToken ct)
     {
-        eventId = null;
-        closesAt = default;
-        var jobData = context.MergedJobDataMap;
-        if (jobData is null)
-            return false;
+        await using var scope = scopeFactory.CreateAsyncScope();
+        var writeStore = scope.ServiceProvider.GetRequiredService<IEmailWriteStore>();
+        var unitOfWork = scope.ServiceProvider.GetRequiredKeyedService<IUnitOfWork>(EmailModule.Key);
+        var now = timeProvider.GetUtcNow();
+        var active = await writeStore.ReconfirmationBatches
+            .Where(batch => batch.Status == ReconfirmationBatchStatus.Pending
+                    || batch.Status == ReconfirmationBatchStatus.Sending)
+            .ToListAsync(ct);
 
-        var eventIdText = jobData.GetString(PolicyCloseEventIdKey);
-        var closeText = jobData.GetString(PolicyCloseAtKey);
-        if (!Guid.TryParse(eventIdText, out var eventGuid)
-            || !DateTimeOffset.TryParse(
-                closeText,
-                CultureInfo.InvariantCulture,
-                DateTimeStyles.RoundtripKind,
-                out closesAt))
-        {
-            return false;
-        }
+        if (active.Count == 0)
+            return;
 
-        eventId = TicketedEventId.From(eventGuid);
-        return true;
+        var activeBatchIds = active.Select(batch => batch.Id).ToList();
+        var pendingClaims = await writeStore.EmailLog
+            .Where(log => log.ReconfirmationBatchId.HasValue
+                && activeBatchIds.Contains(log.ReconfirmationBatchId.Value)
+                && log.Status == EmailLogStatus.Pending)
+            .ToListAsync(ct);
+
+        foreach (var batch in active)
+            batch.Fail("Reconfirmation batch was interrupted.", now);
+        foreach (var claim in pendingClaims)
+            claim.MarkFailed(claim.Subject, "Reconfirmation batch was interrupted.", now);
+
+        await unitOfWork.SaveChangesAsync(ct);
     }
 
-    private async Task EvaluatePolicyCloseAsync(
+    private static async Task DeliverBatchAsync(
+        ReconfirmationBatch batch,
+        IReadOnlyList<RegistrationListItemDto> candidates,
+        IEmailWriteStore writeStore,
+        IRegistrationsFacade registrationsFacade,
+        IEffectiveEmailSettingsResolver settingsResolver,
+        IEmailTemplateService templateService,
+        IEmailRenderer renderer,
+        IQueryHandler<GetEventEmailRenderingContextQuery, EventEmailContextDto> eventContextQuery,
+        RunSmtpSession smtp,
+        IOptionsMonitor<EmailDeliveryOptions> options,
+        TimeProvider timeProvider,
+        IUnitOfWork unitOfWork,
+        CancellationToken ct)
+    {
+        var settings = await settingsResolver.ResolveAsync(batch.TeamId, batch.TicketedEventId, ct);
+        if (settings is null || !settings.IsValid())
+            throw new InvalidOperationException("Email settings not configured or incomplete.");
+
+        var eventContext = await eventContextQuery.HandleAsync(
+            new GetEventEmailRenderingContextQuery(batch.TeamId, batch.TicketedEventId, RegistrationId: null), ct);
+        var template = await templateService.LoadAsync(
+            BuiltInEmailTemplateNames.Reconfirmation,
+            batch.TeamId,
+            batch.TicketedEventId,
+            ct);
+        var session = await smtp.GetOrOpenAsync(settings, ct);
+
+        foreach (var candidate in candidates)
+        {
+            ct.ThrowIfCancellationRequested();
+            await DeliverCandidateAsync(
+                batch,
+                candidate,
+                eventContext,
+                template,
+                settings,
+                registrationsFacade,
+                writeStore,
+                renderer,
+                session,
+                options,
+                timeProvider,
+                unitOfWork,
+                ct);
+        }
+    }
+
+    private static async Task DeliverCandidateAsync(
+        ReconfirmationBatch batch,
+        RegistrationListItemDto candidate,
+        EventEmailContextDto eventContext,
+        EmailTemplate template,
+        EffectiveEmailSettings settings,
+        IRegistrationsFacade registrationsFacade,
+        IEmailWriteStore writeStore,
+        IEmailRenderer renderer,
+        ISmtpBatchSession session,
+        IOptionsMonitor<EmailDeliveryOptions> options,
+        TimeProvider timeProvider,
+        IUnitOfWork unitOfWork,
+        CancellationToken ct)
+    {
+        var now = timeProvider.GetUtcNow();
+        var deliveryState = await GetCurrentAdmissionAsync(
+            batch,
+            candidate,
+            registrationsFacade,
+            writeStore,
+            timeProvider,
+            ct);
+        if (deliveryState is null)
+            return;
+
+        var idempotencyKey =
+            $"reconfirm:{batch.Id.Value:N}:{candidate.RegistrationId}:{candidate.RegistrationCycleId:N}";
+        var log = await writeStore.EmailLog.FirstOrDefaultAsync(
+            existing => existing.TicketedEventId == batch.TicketedEventId
+                && existing.RegistrationId == RegistrationId.From(candidate.RegistrationId)
+                && existing.RegistrationCycleId == RegistrationCycleId.From(candidate.RegistrationCycleId)
+                && existing.IdempotencyKey == idempotencyKey,
+            ct);
+        if (log?.IsTerminal == true)
+            return;
+
+        var parameters = new Dictionary<string, object?>
+        {
+            ["first_name"] = candidate.FirstName,
+            ["last_name"] = candidate.LastName,
+            ["email"] = candidate.Email,
+            ["registration_id"] = candidate.RegistrationId,
+            ["ticket_type_ids"] = candidate.TicketTypeIds,
+            ["additional_details"] = candidate.AdditionalDetails,
+            ["accent_color"] = settings.AccentColor.Value,
+            ["font_family"] = settings.FontFamily.Value,
+            ["team_name"] = eventContext.TeamName,
+            ["event_name"] = eventContext.EventName,
+            ["event_website"] = eventContext.WebsiteUrl,
+            ["public_event_link"] = eventContext.PublicEventLink,
+            ["register_link"] = eventContext.RegisterLink,
+            ["reconfirm_link"] = $"{eventContext.PublicEventLink}/reconfirm/{candidate.RegistrationId}",
+            ["cancel_link"] = $"{eventContext.PublicEventLink}/cancel/{candidate.RegistrationId}",
+            ["edit_registration_link"] = $"{eventContext.PublicEventLink}/edit/{candidate.RegistrationId}",
+            ["qrcode_link"] = $"{eventContext.PublicEventLink}/qr-code/{candidate.RegistrationId}"
+        };
+        var rendered = renderer.Render(template, parameters, null, null, null);
+        var message = new EmailMessage(
+            candidate.Email,
+            string.Concat(candidate.FirstName, " ", candidate.LastName).Trim(),
+            rendered.Subject,
+            rendered.TextBody,
+            rendered.HtmlBody);
+
+        log ??= EmailLog.Create(
+            batch.TeamId,
+            batch.TicketedEventId,
+            idempotencyKey,
+            EmailAddress.From(candidate.Email),
+            BuiltInEmailTemplateNames.Reconfirmation,
+            rendered.Subject,
+            EmailLogStatus.Pending,
+            null,
+            now,
+            reconfirmationBatchId: batch.Id,
+            registrationId: RegistrationId.From(candidate.RegistrationId),
+            registrationCycleId: RegistrationCycleId.From(candidate.RegistrationCycleId));
+        if (writeStore.EmailLog.Local.All(existing => existing.Id != log.Id))
+            writeStore.EmailLog.Add(log);
+        await unitOfWork.SaveChangesAsync(ct);
+
+        try
+        {
+            var delivered = await SendWithInlineRetriesAsync(
+                session,
+                message,
+                options,
+                async admissionToken => (await GetCurrentAdmissionAsync(
+                    batch,
+                    candidate,
+                    registrationsFacade,
+                    writeStore,
+                    timeProvider,
+                    admissionToken)) is not null,
+                ct);
+            if (!delivered)
+            {
+                writeStore.EmailLog.Remove(log);
+                await unitOfWork.SaveChangesAsync(ct);
+                return;
+            }
+
+            log.MarkSent(rendered.Subject, timeProvider.GetUtcNow());
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            log.MarkFailed(rendered.Subject, ex.Message, timeProvider.GetUtcNow());
+        }
+
+        await unitOfWork.SaveChangesAsync(ct);
+    }
+
+    private static async Task<ReconfirmDeliveryState.Allowed?> GetCurrentAdmissionAsync(
+        ReconfirmationBatch batch,
+        RegistrationListItemDto candidate,
+        IRegistrationsFacade registrationsFacade,
+        IEmailWriteStore writeStore,
+        TimeProvider timeProvider,
+        CancellationToken ct)
+    {
+        var currentNow = timeProvider.GetUtcNow();
+        var query = new ReconfirmDeliveryQuery(
+            candidate.RegistrationId,
+            candidate.RegistrationCycleId,
+            candidate.TicketTypeIds,
+            currentNow);
+        var state = await registrationsFacade.GetReconfirmDeliveryStateAsync(
+            batch.TeamId.Value,
+            batch.TicketedEventId.Value,
+            query,
+            ct);
+
+        // Window and quiet-hours are start gates. Other authoritative guards
+        // (event lifecycle, registration state/cycle, and ticket selection)
+        // remain delivery-time guards.
+        if (state is ReconfirmDeliveryState.Suppressed suppressed
+            && suppressed.Reason is ReconfirmDeliverySuppression.OutsideWindow
+                or ReconfirmDeliverySuppression.QuietHours)
+        {
+            state = await registrationsFacade.GetReconfirmDeliveryStateAsync(
+                batch.TeamId.Value,
+                batch.TicketedEventId.Value,
+                query with { Now = batch.StartedAt ?? batch.CreatedAt },
+                ct);
+        }
+
+        if (state is not ReconfirmDeliveryState.Allowed allowed)
+            return null;
+
+        var logs = await writeStore.EmailLog
+            .AsNoTracking()
+            .Where(log => log.TeamId == batch.TeamId
+                && log.TicketedEventId == batch.TicketedEventId
+                && log.RegistrationId == RegistrationId.From(candidate.RegistrationId)
+                && log.RegistrationCycleId == RegistrationCycleId.From(candidate.RegistrationCycleId)
+                && log.EmailType == BuiltInEmailTemplateNames.Reconfirmation
+                && (log.Status == EmailLogStatus.Sent || log.Status == EmailLogStatus.Delivered)
+                && log.SentAt.HasValue
+                && log.SentAt >= candidate.CreatedAt)
+            .Select(log => log.SentAt!.Value)
+            .ToListAsync(ct);
+        var lastSentAt = logs.Count == 0 ? (DateTimeOffset?)null : logs.Max();
+        var baseline = lastSentAt.HasValue && lastSentAt.Value > allowed.RegistrationCreatedAt
+            ? lastSentAt.Value
+            : allowed.RegistrationCreatedAt;
+        if (baseline + allowed.MinimumEmailInterval > currentNow)
+            return null;
+
+        return allowed.EffectiveMaxReconfirmationEmails is null
+            || logs.Count < allowed.EffectiveMaxReconfirmationEmails.Value
+            ? allowed
+            : null;
+    }
+
+    private static async Task<bool> SendWithInlineRetriesAsync(
+        ISmtpBatchSession session,
+        EmailMessage message,
+        IOptionsMonitor<EmailDeliveryOptions> options,
+        Func<CancellationToken, Task<bool>> admissionCheck,
+        CancellationToken ct)
+    {
+        Exception? lastException = null;
+        for (var attempt = 0; attempt <= options.CurrentValue.InlineRetryCount; attempt++)
+        {
+            if (attempt > 0 && options.CurrentValue.InlineRetryDelay > TimeSpan.Zero)
+                await Task.Delay(options.CurrentValue.InlineRetryDelay, ct);
+
+            try
+            {
+                if (!await admissionCheck(ct))
+                    return false;
+
+                await session.SendAsync(message, ct);
+                return true;
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception ex)
+            {
+                lastException = ex;
+            }
+        }
+
+        throw lastException ?? new InvalidOperationException("SMTP delivery failed.");
+    }
+
+    private static async Task EvaluatePolicyCloseAsync(
         EventEmailContextView policy,
         IEmailWriteStore writeStore,
         IRegistrationsFacade registrationsFacade,
@@ -193,229 +499,83 @@ internal sealed class RequestReconfirmationsJob(
         var closesAt = policy.ReconfirmClosesAt!.Value;
         var alreadyEvaluated = await writeStore.ReconfirmPolicyCloseEvaluations
             .AsNoTracking()
-            .AnyAsync(e =>
-                e.TeamId == policy.TeamId
+            .AnyAsync(e => e.TeamId == policy.TeamId
                 && e.TicketedEventId == policy.TicketedEventId
-                && e.ClosesAt == closesAt,
-                ct);
+                && e.ClosesAt == closesAt, ct);
         if (alreadyEvaluated)
             return;
 
         var (candidates, sentReconfirmationLogs) = await LoadCandidatesAndLogsAsync(
-            policy,
-            writeStore,
-            registrationsFacade,
-            ct);
-
+            policy, writeStore, registrationsFacade, ct);
         var autoCancelCandidates = candidates
-            .Where(r =>
-                r.EffectiveMaxReconfirmationEmails.HasValue
+            .Where(r => r.EffectiveMaxReconfirmationEmails.HasValue
                 && GetCurrentCycleLogs(sentReconfirmationLogs, r).Count
                     >= r.EffectiveMaxReconfirmationEmails.Value)
             .ToList();
-
         if (autoCancelCandidates.Count > 0)
         {
-            var registrationIds = autoCancelCandidates.Select(r => r.RegistrationId).ToList();
-            var references = BuildAutoExpiredReferences(autoCancelCandidates);
-
             outbox.Enqueue(new ReconfirmAutoExpiredIntegrationEvent(
                 policy.TeamId.Value,
                 policy.TicketedEventId.Value,
-                registrationIds,
-                references));
+                autoCancelCandidates.Select(r => r.RegistrationId).ToList(),
+                BuildAutoExpiredReferences(autoCancelCandidates)));
         }
 
         writeStore.ReconfirmPolicyCloseEvaluations.Add(
-            ReconfirmPolicyCloseEvaluation.Create(
-                policy.TeamId,
-                policy.TicketedEventId,
-                closesAt,
-                now));
-
+            ReconfirmPolicyCloseEvaluation.Create(policy.TeamId, policy.TicketedEventId, closesAt, now));
         try
         {
             await unitOfWork.SaveChangesAsync(ct);
         }
         catch (DbUpdateException ex) when (IsPolicyCloseEvaluationReservationViolation(ex))
         {
-            // Another evaluator recorded this policy close. Its marker and
-            // cancellation event own the terminal evaluation.
+            // Another hourly evaluator recorded this requested deadline.
         }
     }
 
-    private async Task EvaluateEventAsync(
-        EventEmailContextView policy,
-        IEmailWriteStore writeStore,
-        IRegistrationsFacade registrationsFacade,
-        IOutbox outbox,
-        IUnitOfWork unitOfWork,
-        DateTimeOffset now,
-        CancellationToken ct)
-    {
-        var (candidates, sentReconfirmationLogs) = await LoadCandidatesAndLogsAsync(
-            policy,
-            writeStore,
-            registrationsFacade,
-            ct);
-
-        if (candidates.Count == 0)
-            return;
-
-        var interval = TimeSpan.FromHours(policy.ReconfirmMinEmailIntervalHours!.Value);
-        var eligibleCandidates = candidates
-            .Where(r =>
-            {
-                var lastSentAt = GetCurrentCycleLogs(sentReconfirmationLogs, r).MaxBy(l => l.SentAt)?.SentAt;
-                var baseline = lastSentAt.HasValue && lastSentAt.Value > r.CreatedAt
-                    ? lastSentAt.Value
-                    : r.CreatedAt;
-                return baseline + interval <= now;
-            })
-            .ToList();
-
-        if (eligibleCandidates.Count == 0)
-            return;
-
-        var reconfirmRegistrationIds = eligibleCandidates
-            .Where(r =>
-            {
-                if (r.EffectiveMaxReconfirmationEmails is null)
-                    return true;
-
-                return GetCurrentCycleLogs(sentReconfirmationLogs, r).Count
-                    < r.EffectiveMaxReconfirmationEmails.Value;
-            })
-            .Select(r => r.RegistrationId)
-            .ToList();
-
-        var autoCancelRegistrationIds = eligibleCandidates
-            .Where(r =>
-            {
-                if (r.EffectiveMaxReconfirmationEmails is null)
-                    return false;
-
-                return GetCurrentCycleLogs(sentReconfirmationLogs, r).Count
-                    >= r.EffectiveMaxReconfirmationEmails.Value;
-            })
-            .Select(r => r.RegistrationId)
-            .ToList();
-
-        if (reconfirmRegistrationIds.Count > 0)
-        {
-            var filter = new BulkEmailAttendeeFilter(
-                RegistrationStatus: RegistrationStatus.Registered,
-                HasReconfirmed: false,
-                RegistrationIds: reconfirmRegistrationIds,
-                RegistrationCycleIds: eligibleCandidates
-                    .Where(r => reconfirmRegistrationIds.Contains(r.RegistrationId))
-                    .ToDictionary(r => r.RegistrationId, r => r.RegistrationCycleId));
-
-            writeStore.BulkEmailJobs.Add(BulkEmailJob.CreateSystemTriggered(
-                policy.TeamId,
-                policy.TicketedEventId,
-                BuiltInEmailTemplateNames.Reconfirmation,
-                subject: null,
-                textBody: null,
-                htmlBody: null,
-                attendeeFilter: filter,
-                now: now));
-        }
-
-        if (autoCancelRegistrationIds.Count > 0)
-        {
-            var references = BuildAutoExpiredReferences(
-                eligibleCandidates.Where(r => autoCancelRegistrationIds.Contains(r.RegistrationId)));
-
-            outbox.Enqueue(new ReconfirmAutoExpiredIntegrationEvent(
-                policy.TeamId.Value,
-                policy.TicketedEventId.Value,
-                autoCancelRegistrationIds,
-                references));
-        }
-
-        if (reconfirmRegistrationIds.Count > 0 || autoCancelRegistrationIds.Count > 0)
-        {
-            try
-            {
-                await unitOfWork.SaveChangesAsync(ct);
-            }
-            catch (DbUpdateException ex) when (IsActiveReconfirmReservationViolation(ex))
-            {
-                // Another evaluator won the durable reservation. Its job owns
-                // this event's pending work, so this evaluation is complete.
-            }
-        }
-    }
-
-    private static async Task<bool> HasOutstandingReconfirmJobAsync(
-        IEmailWriteStore writeStore,
-        EventEmailContextView policy,
-        CancellationToken cancellationToken) =>
-        await writeStore.BulkEmailJobs
-            .AsNoTracking()
-            .AnyAsync(j =>
-                j.TeamId == policy.TeamId
-                && j.TicketedEventId == policy.TicketedEventId
-                && j.EmailType == BuiltInEmailTemplateNames.Reconfirmation
-                && j.IsSystemTriggered
-                && (j.Status == BulkEmailJobStatus.Pending
-                    || j.Status == BulkEmailJobStatus.Resolving
-                    || j.Status == BulkEmailJobStatus.Sending),
-                cancellationToken);
-
-    private static IReadOnlyList<ReconfirmLogData> GetCurrentCycleLogs(
-        IReadOnlyList<ReconfirmLogData> logs,
-        RegistrationListItemDto registration) =>
-        logs.Where(log =>
-                log.SentAt >= registration.CreatedAt
-                && log.RegistrationCycleId == RegistrationCycleId.From(registration.RegistrationCycleId))
-            .ToList();
-
-    private static async Task<(
-        IReadOnlyList<RegistrationListItemDto> Candidates,
+    private static async Task<(IReadOnlyList<RegistrationListItemDto> Candidates,
         IReadOnlyList<ReconfirmLogData> SentReconfirmationLogs)> LoadCandidatesAndLogsAsync(
         EventEmailContextView policy,
         IEmailWriteStore writeStore,
         IRegistrationsFacade registrationsFacade,
-        CancellationToken cancellationToken)
+        CancellationToken ct)
     {
         var candidates = await registrationsFacade.GetRegistrationsAsync(
             policy.TeamId.Value,
             policy.TicketedEventId.Value,
-            new QueryRegistrationsDto(
-                RegistrationStatus: RegistrationStatus.Registered,
-                HasReconfirmed: false),
-            cancellationToken);
-
-        var sentReconfirmationLogs = await writeStore.EmailLog
+            new QueryRegistrationsDto(RegistrationStatus: RegistrationStatus.Registered, HasReconfirmed: false),
+            ct);
+        var logs = await writeStore.EmailLog
             .AsNoTracking()
-            .Where(l =>
-                l.TeamId == policy.TeamId
-                && l.TicketedEventId == policy.TicketedEventId
-                && l.EmailType == BuiltInEmailTemplateNames.Reconfirmation
-                && (l.Status == EmailLogStatus.Sent || l.Status == EmailLogStatus.Delivered)
-                && l.SentAt.HasValue)
-            .Select(l => new ReconfirmLogData(l.RegistrationCycleId, l.SentAt!.Value))
-            .ToListAsync(cancellationToken);
-
-        return (candidates, sentReconfirmationLogs);
+            .Where(log => log.TeamId == policy.TeamId
+                && log.TicketedEventId == policy.TicketedEventId
+                && log.EmailType == BuiltInEmailTemplateNames.Reconfirmation
+                && (log.Status == EmailLogStatus.Sent || log.Status == EmailLogStatus.Delivered)
+                && log.SentAt.HasValue)
+            .Select(log => new ReconfirmLogData(
+                log.RegistrationId,
+                log.RegistrationCycleId,
+                log.SentAt!.Value))
+            .ToListAsync(ct);
+        return (candidates, logs);
     }
+
+    private static IReadOnlyList<ReconfirmLogData> GetCurrentCycleLogs(
+        IReadOnlyList<ReconfirmLogData> logs,
+        RegistrationListItemDto registration) =>
+        logs.Where(log => log.RegistrationId == RegistrationId.From(registration.RegistrationId)
+            && log.RegistrationCycleId == RegistrationCycleId.From(registration.RegistrationCycleId)
+            && log.SentAt >= registration.CreatedAt)
+            .ToList();
 
     private static IReadOnlyList<ReconfirmAutoExpiredRegistrationReference> BuildAutoExpiredReferences(
         IEnumerable<RegistrationListItemDto> registrations) =>
-        registrations
-            .Select(r => new ReconfirmAutoExpiredRegistrationReference(
-                r.RegistrationId,
-                r.RegistrationCycleId,
-                r.RegistrationVersion,
-                r.TicketCatalogVersion,
-                r.TicketTypeIds))
-            .ToList();
-
-    private sealed record ReconfirmLogData(
-        RegistrationCycleId? RegistrationCycleId,
-        DateTimeOffset SentAt);
+        registrations.Select(r => new ReconfirmAutoExpiredRegistrationReference(
+            r.RegistrationId,
+            r.RegistrationCycleId,
+            r.RegistrationVersion,
+            r.TicketCatalogVersion,
+            r.TicketTypeIds)).ToList();
 
     private static bool TryGetTimeZone(string timeZoneId, out TimeZoneInfo timeZone)
     {
@@ -432,34 +592,70 @@ internal sealed class RequestReconfirmationsJob(
         {
             timeZone = default!;
         }
-
         return false;
     }
 
-    private static bool IsQuietHours(
-        EventEmailContextView policy,
-        DateTimeOffset now,
-        TimeZoneInfo timeZone)
+    private static bool IsQuietHours(EventEmailContextView policy, DateTimeOffset now, TimeZoneInfo timeZone)
     {
         if (!policy.ReconfirmQuietHoursStart.HasValue || !policy.ReconfirmQuietHoursEnd.HasValue)
             return false;
-
         var localTime = TimeOnly.FromDateTime(TimeZoneInfo.ConvertTime(now, timeZone).DateTime);
         var start = policy.ReconfirmQuietHoursStart.Value;
         var end = policy.ReconfirmQuietHoursEnd.Value;
-
-        // Quiet hours are [start, end), with start > end denoting an overnight
-        // interval. Equal times are rejected by the domain policy.
         return start < end
             ? localTime >= start && localTime < end
             : localTime >= start || localTime < end;
     }
 
-    private static bool IsActiveReconfirmReservationViolation(DbUpdateException exception) =>
+    private async Task FailBatchAsync(ReconfirmationBatchId batchId, string error)
+    {
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        await using var scope = scopeFactory.CreateAsyncScope();
+        var writeStore = scope.ServiceProvider.GetRequiredService<IEmailWriteStore>();
+        var unitOfWork = scope.ServiceProvider.GetRequiredKeyedService<IUnitOfWork>(EmailModule.Key);
+        var batch = await writeStore.ReconfirmationBatches
+            .SingleOrDefaultAsync(candidate => candidate.Id == batchId, timeout.Token);
+        if (batch is null)
+            throw new InvalidOperationException($"Reconfirmation batch {batchId.Value} was not found while recording failure.");
+
+        batch.Fail(error, timeProvider.GetUtcNow());
+        await unitOfWork.SaveChangesAsync(timeout.Token);
+    }
+
+    private static bool IsActiveBatchReservationViolation(DbUpdateException exception) =>
         exception.InnerException is PostgresException postgresException
-        && postgresException.ConstraintName == "IX_bulk_email_jobs_active_reconfirm_event";
+        && postgresException.ConstraintName == "IX_reconfirmation_batches_active_event";
 
     private static bool IsPolicyCloseEvaluationReservationViolation(DbUpdateException exception) =>
         exception.InnerException is PostgresException postgresException
         && postgresException.ConstraintName == "PK_reconfirm_policy_close_evaluations";
+
+    private sealed record ReconfirmLogData(
+        RegistrationId? RegistrationId,
+        RegistrationCycleId? RegistrationCycleId,
+        DateTimeOffset SentAt);
+
+    private sealed class RunSmtpSession(IServiceScopeFactory scopeFactory) : IAsyncDisposable
+    {
+        private ISmtpBatchSession? _session;
+
+        public async Task<ISmtpBatchSession> GetOrOpenAsync(
+            EffectiveEmailSettings settings,
+            CancellationToken ct)
+        {
+            if (_session is not null)
+                return _session;
+
+            await using var scope = scopeFactory.CreateAsyncScope();
+            var sender = scope.ServiceProvider.GetRequiredService<ISmtpBatchSender>();
+            _session = await sender.OpenSessionAsync(settings, ct);
+            return _session;
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            if (_session is not null)
+                await _session.DisposeAsync();
+        }
+    }
 }

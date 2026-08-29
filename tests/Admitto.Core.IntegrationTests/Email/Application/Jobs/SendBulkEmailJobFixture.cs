@@ -37,6 +37,7 @@ internal sealed class SendBulkEmailJobFixture
     private readonly string? _textBody;
     private readonly string? _htmlBody;
     private readonly int? _inlineRetryCount;
+    private readonly TimeSpan? _perMessageDelay;
     private readonly IRegistrationsFacade? _registrationsFacade;
     private readonly TimeProvider _timeProvider;
 
@@ -49,7 +50,8 @@ internal sealed class SendBulkEmailJobFixture
         string? htmlBody = null,
         int? inlineRetryCount = null,
         IRegistrationsFacade? registrationsFacade = null,
-        TimeProvider? timeProvider = null)
+        TimeProvider? timeProvider = null,
+        TimeSpan? perMessageDelay = null)
     {
         _recipients = recipients;
         _emailType = emailType;
@@ -58,17 +60,20 @@ internal sealed class SendBulkEmailJobFixture
         _textBody = textBody;
         _htmlBody = htmlBody;
         _inlineRetryCount = inlineRetryCount;
+        _perMessageDelay = perMessageDelay;
         _registrationsFacade = registrationsFacade;
         _timeProvider = timeProvider ?? TimeProvider.System;
     }
 
     public static SendBulkEmailJobFixture Standard(IReadOnlyList<BulkEmailRecipient> recipients) =>
-        new(recipients, BuiltInEmailTemplateNames.Reconfirmation);
+        new(recipients, BuiltInEmailTemplateNames.BulkCustom,
+            subject: "Bulk update", textBody: "Bulk update", htmlBody: "<p>Bulk update</p>");
 
     public static SendBulkEmailJobFixture PlatformSender(
         IReadOnlyList<BulkEmailRecipient> recipients,
         string teamName) =>
-        new(recipients, BuiltInEmailTemplateNames.Reconfirmation, teamName: teamName);
+        new(recipients, BuiltInEmailTemplateNames.BulkCustom, teamName: teamName,
+            subject: "Bulk update", textBody: "Bulk update", htmlBody: "<p>Bulk update</p>");
 
     public static SendBulkEmailJobFixture CustomContent(
         IReadOnlyList<BulkEmailRecipient> recipients,
@@ -93,7 +98,16 @@ internal sealed class SendBulkEmailJobFixture
     public static SendBulkEmailJobFixture Retryable(
         IReadOnlyList<BulkEmailRecipient> recipients,
         int inlineRetryCount) =>
-        new(recipients, BuiltInEmailTemplateNames.Reconfirmation, inlineRetryCount: inlineRetryCount);
+        new(recipients, BuiltInEmailTemplateNames.BulkCustom,
+            subject: "Bulk update", textBody: "Bulk update", htmlBody: "<p>Bulk update</p>",
+            inlineRetryCount: inlineRetryCount);
+
+    public static SendBulkEmailJobFixture Delayed(
+        IReadOnlyList<BulkEmailRecipient> recipients,
+        TimeSpan perMessageDelay) =>
+        new(recipients, BuiltInEmailTemplateNames.BulkCustom,
+            subject: "Bulk update", textBody: "Bulk update", htmlBody: "<p>Bulk update</p>",
+            perMessageDelay: perMessageDelay);
 
     public async ValueTask<(BulkEmailJob Job, FakeBulkSmtpSender Sender, SendBulkEmailJob FanOut)> SetupAsync(
         IntegrationTestEnvironment environment)
@@ -133,7 +147,8 @@ internal sealed class SendBulkEmailJobFixture
             resolver,
             registrationsFacade,
             _timeProvider,
-            _inlineRetryCount ?? new BulkEmailOptions().InlineRetryCount);
+            _inlineRetryCount ?? new BulkEmailOptions().InlineRetryCount,
+            _perMessageDelay ?? TimeSpan.Zero);
         return (job, sender, fanOut);
     }
 
@@ -149,7 +164,7 @@ internal sealed class SendBulkEmailJobFixture
         IBulkEmailRecipientResolver recipientResolver,
         IRegistrationsFacade registrationsFacade) =>
         BuildFanOut(environment, sender, recipientResolver, registrationsFacade, TimeProvider.System,
-            new BulkEmailOptions().InlineRetryCount);
+            new BulkEmailOptions().InlineRetryCount, TimeSpan.Zero);
 
     public static SendBulkEmailJob BuildExistingJobFanOutAt(
         IntegrationTestEnvironment environment,
@@ -158,7 +173,7 @@ internal sealed class SendBulkEmailJobFixture
         IRegistrationsFacade registrationsFacade,
         TimeProvider timeProvider) =>
         BuildFanOut(environment, sender, recipientResolver, registrationsFacade, timeProvider,
-            new BulkEmailOptions().InlineRetryCount);
+            new BulkEmailOptions().InlineRetryCount, TimeSpan.Zero);
 
     public static SendBulkEmailJob BuildLegacyFanOut(
         IntegrationTestEnvironment environment,
@@ -170,7 +185,8 @@ internal sealed class SendBulkEmailJobFixture
             recipientResolver,
             Substitute.For<IRegistrationsFacade>(),
             TimeProvider.System,
-            new BulkEmailOptions().InlineRetryCount);
+            new BulkEmailOptions().InlineRetryCount,
+            TimeSpan.Zero);
 
     private static SendBulkEmailJob BuildFanOut(
         IntegrationTestEnvironment environment,
@@ -178,7 +194,8 @@ internal sealed class SendBulkEmailJobFixture
         IBulkEmailRecipientResolver recipientResolver,
         IRegistrationsFacade registrationsFacade,
         TimeProvider timeProvider,
-        int inlineRetryCount)
+        int inlineRetryCount,
+        TimeSpan perMessageDelay)
     {
         var ctx = environment.EmailDatabase.Context;
         IEmailWriteStore writeStore = ctx;
@@ -213,14 +230,13 @@ internal sealed class SendBulkEmailJobFixture
             });
         var options = new BulkEmailOptions
         {
-            PerMessageDelay = TimeSpan.Zero,
+            PerMessageDelay = perMessageDelay,
             InlineRetryCount = inlineRetryCount,
             InlineRetryDelay = TimeSpan.Zero
         };
         return new SendBulkEmailJob(
             writeStore,
             recipientResolver,
-            registrationsFacade,
             eventContextQuery,
             settingsResolver,
             new EmailTemplateService(),

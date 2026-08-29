@@ -68,9 +68,17 @@ internal sealed class EmailLogEntityConfiguration : IEntityTypeConfiguration<Ema
         builder.Property(e => e.BulkEmailJobId)
             .HasColumnName("bulk_email_job_id");
 
+        builder.Property(e => e.ReconfirmationBatchId)
+            .HasColumnName("reconfirmation_batch_id");
+
         builder.HasOne<BulkEmailJob>()
             .WithMany()
             .HasForeignKey(e => e.BulkEmailJobId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.HasOne<ReconfirmationBatch>()
+            .WithMany()
+            .HasForeignKey(e => e.ReconfirmationBatchId)
             .OnDelete(DeleteBehavior.SetNull);
 
         builder.HasIndex(e => new { e.TicketedEventId, e.Recipient, e.IdempotencyKey })

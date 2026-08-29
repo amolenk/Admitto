@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Core.Email.Application.Sending;
-using Amolenk.Admitto.Core.Email.Application.Sending.Bulk;
 using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.Jobs.Fakes;
@@ -11,7 +10,7 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.Jobs.Fakes;
 /// hook for test-side actions to run as a side effect of <c>SendAsync</c>
 /// (e.g. requesting cancellation).
 /// </summary>
-internal sealed class FakeBulkSmtpSender : IBulkSmtpSender
+internal sealed class FakeBulkSmtpSender : ISmtpBatchSender
 {
     private readonly HashSet<string> _failOn = new(StringComparer.OrdinalIgnoreCase);
     public string Provider => "FakeBulk";
@@ -25,16 +24,16 @@ internal sealed class FakeBulkSmtpSender : IBulkSmtpSender
 
     public void FailOn(string recipientEmail) => _failOn.Add(recipientEmail);
 
-    public Task<IBulkSmtpSession> OpenSessionAsync(
+    public Task<ISmtpBatchSession> OpenSessionAsync(
         EffectiveEmailSettings settings,
         CancellationToken cancellationToken = default)
     {
         SessionsOpened++;
         LastOpenedSettings = settings;
-        return Task.FromResult<IBulkSmtpSession>(new Session(this));
+        return Task.FromResult<ISmtpBatchSession>(new Session(this));
     }
 
-    private sealed class Session(FakeBulkSmtpSender owner) : IBulkSmtpSession
+    private sealed class Session(FakeBulkSmtpSender owner) : ISmtpBatchSession
     {
         public async Task<string?> SendAsync(EmailMessage message, CancellationToken cancellationToken = default)
         {

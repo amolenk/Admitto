@@ -67,7 +67,7 @@ public static class EmailModuleExtensions
                 EmailModule.Key);
 
             services.AddSingleton<IEmailSender, MailKitEmailSender>();
-            services.AddSingleton<IBulkSmtpSender, MailKitBulkSmtpSender>();
+            services.AddSingleton<ISmtpBatchSender, MailKitSmtpBatchSender>();
 
             return builder;
         }
@@ -78,8 +78,6 @@ public static class EmailModuleExtensions
 
             var services = builder.Services;
             var assembly = Assembly.GetExecutingAssembly();
-
-            services.AddSingleton<IReconfirmPolicyCloseScheduler, ReconfirmPolicyCloseScheduler>();
 
             // Integration event handlers
             services.AddIntegrationEventHandlersFromAssembly(assembly, EmailModule.NamespacePrefix);
@@ -110,8 +108,6 @@ public static class EmailModuleExtensions
                 // TriggerBulkEmailJobHandler so each bulk job gets a unique
                 // JobKey (D10: per-job concurrency isolation).
             });
-
-            services.AddHostedService<RemoveLegacyReconfirmTriggersStartupService>();
 
             return builder;
         }

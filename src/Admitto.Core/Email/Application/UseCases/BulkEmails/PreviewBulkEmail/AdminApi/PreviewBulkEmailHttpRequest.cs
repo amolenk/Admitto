@@ -7,4 +7,5 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.BulkEmails.PreviewBulk
 /// live Registrations data.
 /// </summary>
 public sealed record PreviewBulkEmailHttpRequest(
-    AttendeeFilterHttpDto AttendeeFilter);
+    AttendeeFilterHttpDto AttendeeFilter,
+    string? EmailType = null);

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Diagnostics;
 using Amolenk.Admitto.Core.Email.Application.Jobs;
 using Amolenk.Admitto.Core.Email.Application.Persistence;
 using Amolenk.Admitto.Core.Email.Application.Projections.EventEmailContext;
@@ -42,7 +43,7 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.Jobs;
 [TestClass]
 public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireIntegrationTestBase
 {
-    private const string DefaultEmailType = BuiltInEmailTemplateNames.Reconfirmation;
+    private const string DefaultEmailType = BuiltInEmailTemplateNames.BulkCustom;
 
     // Given a bulk email job with two recipients that both succeed
     // When the job is executed
@@ -244,6 +245,7 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
         var job = new BulkEmailJobBuilder()
             .ForTeam(teamId).ForEvent(eventId)
             .WithEmailType(DefaultEmailType)
+            .WithAdHocBodies("Bulk update", "Bulk update", "<p>Bulk update</p>")
             .Build();
         job.BeginResolving(DateTimeOffset.UtcNow);
         job.BeginSending([alice, bob]);
@@ -348,354 +350,27 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
         reloaded.Recipients.Single().LastError.ShouldBe("Previous deterministic failure.");
     }
 
-    // Given a reconfirm recipient whose registration has moved to a new cycle
-    // When the fan-out rechecks the registration before SMTP
-    // Then the stale recipient is cancelled without sending
-    [TestMethod]
-    public async ValueTask Execute_ReconfirmRecipientCycleChanged_SuppressesStaleSend()
-    {
-        var oldCycleId = RegistrationCycleId.New();
-        var currentCycleId = RegistrationCycleId.New();
-        var recipient = Recipient("alice@example.com", "Alice", oldCycleId);
-        var registrationsFacade = Substitute.For<IRegistrationsFacade>();
-        registrationsFacade.GetRegistrationsAsync(
-                Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<QueryRegistrationsDto>(), Arg.Any<CancellationToken>())
-            .Returns([new RegistrationListItemDto(
-                recipient.RegistrationId.Value,
-                recipient.Email.Value,
-                "Alice",
-                "Test",
-                [],
-                new Dictionary<string, string>(),
-                DateTimeOffset.UtcNow.AddDays(-1),
-                currentCycleId.Value,
-                1,
-                1,
-                RegistrationStatus.Registered,
-                false,
-                null,
-                null)]);
-        registrationsFacade.GetReconfirmDeliveryStateAsync(
-                Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<ReconfirmDeliveryQuery>(), Arg.Any<CancellationToken>())
-            .Returns(DeliveryState(suppression: ReconfirmDeliverySuppression.RegistrationCycleChanged));
 
-        var (job, sender, fanOut) = await SendBulkEmailJobFixture
-            .ReconfirmWithFacade([recipient], registrationsFacade)
-            .SetupAsync(Environment);
 
-        await fanOut.Execute(JobContext(job));
 
-        sender.SentMessages.ShouldBeEmpty();
-        var reloaded = await ReloadJobAsync(job.Id);
-        reloaded.Recipients.ShouldHaveSingleItem().Status.ShouldBe(BulkEmailRecipientStatus.Cancelled);
-    }
 
-    // Given a persisted reconfirm job from before cycle snapshots existed
-    // When the worker picks up the pending job
-    // Then it fails closed without resolving or sending any recipient
-    [TestMethod]
-    public async ValueTask Execute_LegacyReconfirmFilterWithoutExpectedCycles_FailsClosed()
-    {
-        var teamId = TeamId.New();
-        var eventId = TicketedEventId.New();
-        var registrationId = RegistrationId.New();
-        var job = new BulkEmailJobBuilder()
-            .ForTeam(teamId)
-            .ForEvent(eventId)
-            .WithEmailType(BuiltInEmailTemplateNames.Reconfirmation)
-            .WithAttendeeFilter(new BulkEmailAttendeeFilter(
-                RegistrationStatus: RegistrationStatus.Registered,
-                HasReconfirmed: false,
-                RegistrationIds: [registrationId.Value]))
-            .AsSystemTriggered()
-            .Build();
-        await Environment.EmailDatabase.SeedAsync(db =>
-        {
-            db.BulkEmailJobs.Add(job);
-            db.TeamEmailContexts.Add(CreateTeamEmailContext(teamId));
-        });
 
-        var resolver = Substitute.For<IBulkEmailRecipientResolver>();
-        var sender = new FakeBulkSmtpSender();
-        var fanOut = SendBulkEmailJobFixture.BuildLegacyFanOut(Environment, sender, resolver);
 
-        await fanOut.Execute(JobContext(job));
 
-        resolver.ReceivedCalls().ShouldBeEmpty();
-        sender.SentMessages.ShouldBeEmpty();
-        (await ReloadJobAsync(job.Id)).Status.ShouldBe(BulkEmailJobStatus.Failed);
-    }
 
-    // Given a queued reconfirm reminder and a successful email already at the newly stricter limit
-    // When the worker rechecks eligibility before SMTP
-    // Then the recipient is cancelled without sending a stale reminder
-    [TestMethod]
-    public async ValueTask Execute_ReconfirmLimitTightenedAfterQueue_SuppressesAtLimit()
-    {
-        var cycleId = RegistrationCycleId.New();
-        var recipient = Recipient("alice@example.com", "Alice", cycleId);
-        var registrationsFacade = Substitute.For<IRegistrationsFacade>();
-        registrationsFacade.GetRegistrationsAsync(
-                Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<QueryRegistrationsDto>(), Arg.Any<CancellationToken>())
-            .Returns([CurrentRow(recipient, cycleId, maxReconfirmationEmails: 1)]);
-        registrationsFacade.GetReconfirmDeliveryStateAsync(
-                Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<ReconfirmDeliveryQuery>(), Arg.Any<CancellationToken>())
-            .Returns(DeliveryState(maximum: 1));
-        var (job, sender, fanOut) = await SendBulkEmailJobFixture
-            .ReconfirmWithFacade([recipient], registrationsFacade)
-            .SetupAsync(Environment);
-        await Environment.EmailDatabase.SeedAsync(db => db.EmailLog.Add(EmailLog.Create(
-            job.TeamId,
-            job.TicketedEventId,
-            $"old:{Guid.NewGuid():N}",
-            recipient.Email,
-            BuiltInEmailTemplateNames.Reconfirmation,
-            "Reconfirm",
-            EmailLogStatus.Delivered,
-            DateTimeOffset.UtcNow.AddMinutes(-5),
-            DateTimeOffset.UtcNow,
-            registrationId: recipient.RegistrationId,
-            registrationCycleId: cycleId)));
 
-        await fanOut.Execute(JobContext(job));
 
-        sender.SentMessages.ShouldBeEmpty();
-        (await ReloadJobAsync(job.Id)).Recipients.ShouldHaveSingleItem()
-            .Status.ShouldBe(BulkEmailRecipientStatus.Cancelled);
-    }
 
-    // Given a queued reconfirm reminder with an old ticket selection
-    // When the registration ticket selection changes before SMTP
-    // Then the stale recipient is cancelled without sending
-    [TestMethod]
-    public async ValueTask Execute_ReconfirmTicketSelectionChangedAfterQueue_SuppressesStaleSend()
-    {
-        var cycleId = RegistrationCycleId.New();
-        var oldTicketTypeId = Guid.NewGuid();
-        var newTicketTypeId = Guid.NewGuid();
-        var recipient = new BulkEmailRecipient(
-            EmailAddress.From("alice@example.com"),
-            "Alice",
-            RegistrationId.New(),
-            JsonSerializer.Serialize(new { ticket_type_ids = new[] { oldTicketTypeId } }),
-            cycleId);
-        var registrationsFacade = Substitute.For<IRegistrationsFacade>();
-        registrationsFacade.GetRegistrationsAsync(
-                Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<QueryRegistrationsDto>(), Arg.Any<CancellationToken>())
-            .Returns([CurrentRow(recipient, cycleId, [newTicketTypeId])]);
-        registrationsFacade.GetReconfirmDeliveryStateAsync(
-                Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<ReconfirmDeliveryQuery>(), Arg.Any<CancellationToken>())
-            .Returns(DeliveryState(
-                suppression: ReconfirmDeliverySuppression.TicketSelectionChanged));
-        var (job, sender, fanOut) = await SendBulkEmailJobFixture
-            .ReconfirmWithFacade([recipient], registrationsFacade)
-            .SetupAsync(Environment);
 
-        await fanOut.Execute(JobContext(job));
 
-        sender.SentMessages.ShouldBeEmpty();
-        (await ReloadJobAsync(job.Id)).Recipients.ShouldHaveSingleItem()
-            .Status.ShouldBe(BulkEmailRecipientStatus.Cancelled);
-    }
 
-    // Given a queued reconfirm reminder for an archived event
-    // When the worker picks up the reminder
-    // Then it is suppressed without opening SMTP
-    [TestMethod]
-    public async ValueTask Execute_ReconfirmEventArchivedAfterQueue_SuppressesReminder()
-    {
-        var registrationsFacade = Substitute.For<IRegistrationsFacade>();
-        registrationsFacade.GetReconfirmDeliveryStateAsync(
-                Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<ReconfirmDeliveryQuery>(), Arg.Any<CancellationToken>())
-            .Returns(DeliveryState(suppression: ReconfirmDeliverySuppression.EventNotActive));
-        var (job, sender, fanOut) = await SendBulkEmailJobFixture
-            .ReconfirmWithFacade([Recipient("alice@example.com")], registrationsFacade)
-            .SetupAsync(Environment);
 
-        await fanOut.Execute(JobContext(job));
 
-        sender.SentMessages.ShouldBeEmpty();
-        sender.SessionsOpened.ShouldBe(0);
-        (await ReloadJobAsync(job.Id)).Status.ShouldBe(BulkEmailJobStatus.Completed);
-    }
 
-    // Given a queued reconfirm reminder after its policy window has closed
-    // When the worker picks up the reminder
-    // Then it is suppressed without opening SMTP
-    [TestMethod]
-    public async ValueTask Execute_ReconfirmPolicyWindowExpiredAfterQueue_SuppressesReminder()
-    {
-        var now = DateTimeOffset.UtcNow;
-        var registrationsFacade = Substitute.For<IRegistrationsFacade>();
-        registrationsFacade.GetReconfirmDeliveryStateAsync(
-                Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<ReconfirmDeliveryQuery>(), Arg.Any<CancellationToken>())
-            .Returns(DeliveryState(suppression: ReconfirmDeliverySuppression.OutsideWindow));
-        var (job, sender, fanOut) = await SendBulkEmailJobFixture
-            .ReconfirmWithFacade([Recipient("alice@example.com")], registrationsFacade)
-            .SetupAsync(Environment);
 
-        await fanOut.Execute(JobContext(job));
 
-        sender.SentMessages.ShouldBeEmpty();
-        (await ReloadJobAsync(job.Id)).Status.ShouldBe(BulkEmailJobStatus.Completed);
-    }
 
-    // Given a queued reconfirm reminder after its policy has been disabled
-    // When the worker picks up the reminder
-    // Then it is suppressed without opening SMTP
-    [TestMethod]
-    public async ValueTask Execute_ReconfirmPolicyDisabledAfterQueue_SuppressesReminder()
-    {
-        var registrationsFacade = Substitute.For<IRegistrationsFacade>();
-        registrationsFacade.GetReconfirmDeliveryStateAsync(
-                Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<ReconfirmDeliveryQuery>(), Arg.Any<CancellationToken>())
-            .Returns(DeliveryState(suppression: ReconfirmDeliverySuppression.PolicyDisabled));
-        var (job, sender, fanOut) = await SendBulkEmailJobFixture
-            .ReconfirmWithFacade([Recipient("alice@example.com")], registrationsFacade)
-            .SetupAsync(Environment);
 
-        await fanOut.Execute(JobContext(job));
-
-        sender.SentMessages.ShouldBeEmpty();
-        sender.SessionsOpened.ShouldBe(0);
-        (await ReloadJobAsync(job.Id)).Status.ShouldBe(BulkEmailJobStatus.Completed);
-    }
-
-    // Given a queued reconfirm reminder during event-local quiet hours
-    // When the worker picks up the reminder
-    // Then it is deferred without opening SMTP
-    [TestMethod]
-    public async ValueTask Execute_ReconfirmPickupDuringQuietHours_DefersWithoutSending()
-    {
-        var now = new DateTimeOffset(2030, 6, 1, 23, 0, 0, TimeSpan.Zero);
-        var registrationsFacade = Substitute.For<IRegistrationsFacade>();
-        registrationsFacade.GetReconfirmDeliveryStateAsync(
-                Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<ReconfirmDeliveryQuery>(), Arg.Any<CancellationToken>())
-            .Returns(DeliveryState(suppression: ReconfirmDeliverySuppression.QuietHours));
-        var (job, sender, fanOut) = await SendBulkEmailJobFixture
-            .ReconfirmWithFacadeAt([Recipient("alice@example.com")], registrationsFacade, new FakeTimeProvider(now))
-            .SetupAsync(Environment);
-
-        await fanOut.Execute(JobContext(job));
-
-        sender.SentMessages.ShouldBeEmpty();
-        sender.SessionsOpened.ShouldBe(0);
-        (await ReloadJobAsync(job.Id)).Status.ShouldBe(BulkEmailJobStatus.Completed);
-    }
-
-    // Given a reconfirm send admitted just before the quiet-hours cutoff
-    // When fake time crosses the cutoff in the SMTP pre-send callback
-    // Then no message is delivered and the recipient is suppressed
-    [TestMethod]
-    public async ValueTask Execute_ReconfirmBatchCrossesQuietBoundary_SuppressesLaterRecipient()
-    {
-        var beforeQuietHours = new DateTimeOffset(2030, 6, 1, 21, 59, 0, TimeSpan.Zero);
-        var quietHoursCutoff = new DateTimeOffset(2030, 6, 1, 22, 0, 0, TimeSpan.Zero);
-        var fakeTime = new FakeTimeProvider(beforeQuietHours);
-        var registrationsFacade = Substitute.For<IRegistrationsFacade>();
-        registrationsFacade.GetReconfirmDeliveryStateAsync(
-                Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<ReconfirmDeliveryQuery>(), Arg.Any<CancellationToken>())
-            .Returns(call =>
-            {
-                var query = call.Arg<ReconfirmDeliveryQuery>()!;
-                return query.Now >= quietHoursCutoff
-                    ? DeliveryState(suppression: ReconfirmDeliverySuppression.QuietHours)
-                    : DeliveryState(cutoffAt: quietHoursCutoff);
-            });
-        var (job, sender, fanOut) = await SendBulkEmailJobFixture
-            .ReconfirmWithFacadeAt(
-                [Recipient("alice@example.com"), Recipient("bob@example.com")],
-                registrationsFacade,
-                fakeTime)
-            .SetupAsync(Environment);
-        sender.OnBeforeSendAsync = message =>
-        {
-            if (message.RecipientAddress == "alice@example.com")
-                fakeTime.Advance(TimeSpan.FromMinutes(2));
-            return Task.CompletedTask;
-        };
-
-        await fanOut.Execute(JobContext(job));
-
-        sender.SessionsOpened.ShouldBe(1);
-        sender.SendAttempts.ShouldBe(["alice@example.com"]);
-        sender.SentMessages.ShouldBeEmpty();
-        var reloaded = await ReloadJobAsync(job.Id);
-        reloaded.FailedCount.ShouldBe(0);
-        reloaded.SentCount.ShouldBe(0);
-        reloaded.CancelledCount.ShouldBe(2);
-        reloaded.Recipients.Single(r => r.Email == "alice@example.com").Status
-            .ShouldBe(BulkEmailRecipientStatus.Cancelled);
-        reloaded.Recipients.Single(r => r.Email == "bob@example.com").Status
-            .ShouldBe(BulkEmailRecipientStatus.Cancelled);
-        (await Environment.EmailDatabase.Context.EmailLog.AsNoTracking().ToListAsync(testContext.CancellationToken))
-            .ShouldBeEmpty();
-    }
-
-    // Given a queued reconfirm reminder whose minimum interval has not elapsed
-    // When the worker rechecks eligibility before SMTP
-    // Then it is suppressed without consuming successful-email allowance
-    [TestMethod]
-    public async ValueTask Execute_ReconfirmMinimumIntervalNotElapsed_SuppressesReminder()
-    {
-        var cycleId = RegistrationCycleId.New();
-        var recipient = Recipient("alice@example.com", "Alice", cycleId);
-        var registrationsFacade = Substitute.For<IRegistrationsFacade>();
-        registrationsFacade.GetRegistrationsAsync(
-                Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<QueryRegistrationsDto>(), Arg.Any<CancellationToken>())
-            .Returns([CurrentRow(recipient, cycleId, maxReconfirmationEmails: 1)]);
-        registrationsFacade.GetReconfirmDeliveryStateAsync(
-                Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<ReconfirmDeliveryQuery>(), Arg.Any<CancellationToken>())
-            .Returns(DeliveryState(minimumInterval: TimeSpan.FromHours(48), maximum: 1));
-
-        var (job, sender, fanOut) = await SendBulkEmailJobFixture
-            .ReconfirmWithFacade([recipient], registrationsFacade)
-            .SetupAsync(Environment);
-
-        await fanOut.Execute(JobContext(job));
-
-        sender.SentMessages.ShouldBeEmpty();
-        (await ReloadJobAsync(job.Id)).Recipients.ShouldHaveSingleItem()
-            .Status.ShouldBe(BulkEmailRecipientStatus.Cancelled);
-    }
-
-    // Given a queued reconfirm reminder with a failed prior attempt at its maximum
-    // When the worker rechecks eligibility before SMTP
-    // Then it sends because failed attempts do not consume successful-email allowance
-    [TestMethod]
-    public async ValueTask Execute_ReconfirmFailedPriorAttempt_DoesNotConsumeAllowance()
-    {
-        var cycleId = RegistrationCycleId.New();
-        var recipient = Recipient("alice@example.com", "Alice", cycleId);
-        var registrationsFacade = Substitute.For<IRegistrationsFacade>();
-        registrationsFacade.GetRegistrationsAsync(
-                Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<QueryRegistrationsDto>(), Arg.Any<CancellationToken>())
-            .Returns([CurrentRow(recipient, cycleId, maxReconfirmationEmails: 1)]);
-        registrationsFacade.GetReconfirmDeliveryStateAsync(
-                Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<ReconfirmDeliveryQuery>(), Arg.Any<CancellationToken>())
-            .Returns(DeliveryState(maximum: 1));
-
-        var (job, sender, fanOut) = await SendBulkEmailJobFixture
-            .ReconfirmWithFacade([recipient], registrationsFacade)
-            .SetupAsync(Environment);
-        await Environment.EmailDatabase.SeedAsync(db => db.EmailLog.Add(EmailLog.Create(
-            job.TeamId,
-            job.TicketedEventId,
-            $"failed:{Guid.NewGuid():N}",
-            recipient.Email,
-            BuiltInEmailTemplateNames.Reconfirmation,
-            "Reconfirm",
-            EmailLogStatus.Failed,
-            sentAt: null,
-            statusUpdatedAt: DateTimeOffset.UtcNow,
-            registrationId: recipient.RegistrationId,
-            registrationCycleId: cycleId)));
-
-        await fanOut.Execute(JobContext(job));
-
-        sender.SentMessages.ShouldHaveSingleItem();
-        (await ReloadJobAsync(job.Id)).SentCount.ShouldBe(1);
-    }
 
     // Given a recipient whose SMTP send always fails and inline retries are configured
     // When the job is executed
@@ -722,6 +397,23 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
         log.Status.ShouldBe(EmailLogStatus.Failed);
         log.LastError.ShouldNotBeNull();
         log.LastError.ShouldContain("SMTP error (fake)");
+    }
+
+    // Given a generic bulk job configured with a per-recipient delay
+    // When the fan-out sends two recipients
+    // Then it honors the configured delay between sends
+    [TestMethod]
+    public async ValueTask Execute_ConfiguredGenericBulkDelay_IsHonored()
+    {
+        var configuredDelay = TimeSpan.FromMilliseconds(40);
+        var (job, _, fanOut) = await SendBulkEmailJobFixture
+            .Delayed([Recipient("alice@example.com"), Recipient("bob@example.com")], configuredDelay)
+            .SetupAsync(Environment);
+        var stopwatch = Stopwatch.StartNew();
+
+        await fanOut.Execute(JobContext(job));
+
+        stopwatch.Elapsed.ShouldBeGreaterThanOrEqualTo(configuredDelay);
     }
 
     // Given a job whose cancellation was requested before any pickup ran
@@ -776,6 +468,7 @@ public sealed class SendBulkEmailJobTests(TestContext testContext) : AspireInteg
         var job = new BulkEmailJobBuilder()
             .ForTeam(teamId).ForEvent(eventId)
             .WithEmailType(DefaultEmailType)
+            .WithAdHocBodies("Bulk update", "Bulk update", "<p>Bulk update</p>")
             .Build();
         job.BeginResolving(DateTimeOffset.UtcNow);
         job.BeginSending([alice, bob]);

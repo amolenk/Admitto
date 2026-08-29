@@ -6,5 +6,6 @@ public interface IEmailWriteStore
 {
     DbSet<EmailLog> EmailLog { get; }
     DbSet<BulkEmailJob> BulkEmailJobs { get; }
+    DbSet<ReconfirmationBatch> ReconfirmationBatches { get; }
     DbSet<ReconfirmPolicyCloseEvaluation> ReconfirmPolicyCloseEvaluations { get; }
 }

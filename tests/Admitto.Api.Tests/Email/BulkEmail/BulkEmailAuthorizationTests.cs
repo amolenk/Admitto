@@ -22,6 +22,7 @@ public sealed class BulkEmailAuthorizationTests(TestContext testContext) : EndTo
             fixture.PreviewRoute,
             new
             {
+                EmailType = "bulk-custom",
                 AttendeeFilter = new { }
             },
             cancellationToken: testContext.CancellationToken);

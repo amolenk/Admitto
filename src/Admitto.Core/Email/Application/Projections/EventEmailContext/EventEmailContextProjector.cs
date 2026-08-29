@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Core.Email.Application.Persistence;
-using Amolenk.Admitto.Core.Email.Application.Jobs;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
@@ -22,8 +21,7 @@ namespace Amolenk.Admitto.Core.Email.Application.Projections.EventEmailContext;
 /// <c>DbContext</c>.
 /// </remarks>
 internal sealed class EventEmailContextProjector(
-    IEmailReadStore readStore,
-    IReconfirmPolicyCloseScheduler? closeScheduler = null)
+    IEmailReadStore readStore)
     : IIntegrationEventHandler<TicketedEventCreatedIntegrationEvent>,
       IIntegrationEventHandler<TicketedEventDetailsChangedIntegrationEvent>,
       IIntegrationEventHandler<TicketedEventReconfirmPolicyChangedIntegrationEvent>,
@@ -51,9 +49,6 @@ internal sealed class EventEmailContextProjector(
             integrationEvent.ReconfirmPolicy,
             integrationEvent.IsArchived,
             now);
-
-        if (applied)
-            await SyncCloseScheduleAsync(view, previousClosesAt: null, cancellationToken);
 
     }
 
@@ -89,15 +84,12 @@ internal sealed class EventEmailContextProjector(
             now,
             cancellationToken);
 
-        var previousClosesAt = view.ReconfirmClosesAt;
         var applied = view.UpdateReconfirmPolicy(
             integrationEvent.TicketedEventVersion,
             integrationEvent.Policy,
             now);
         if (!applied)
             return;
-
-        await SyncCloseScheduleAsync(view, previousClosesAt, cancellationToken);
 
     }
 
@@ -129,45 +121,9 @@ internal sealed class EventEmailContextProjector(
             now,
             cancellationToken);
 
-        var previousClosesAt = view.ReconfirmClosesAt;
         var applied = view.MarkArchived(integrationEvent.TicketedEventVersion, now);
         if (!applied)
             return;
-
-        if (closeScheduler is not null && previousClosesAt.HasValue)
-        {
-            await closeScheduler.UnscheduleAsync(
-                view.TicketedEventId,
-                previousClosesAt.Value,
-                cancellationToken);
-        }
-
-    }
-
-    private async Task SyncCloseScheduleAsync(
-        EventEmailContextView view,
-        DateTimeOffset? previousClosesAt,
-        CancellationToken cancellationToken)
-    {
-        if (closeScheduler is null)
-            return;
-
-        if (previousClosesAt.HasValue
-            && previousClosesAt != view.ReconfirmClosesAt)
-        {
-            await closeScheduler.UnscheduleAsync(
-                view.TicketedEventId,
-                previousClosesAt.Value,
-                cancellationToken);
-        }
-
-        if (!view.IsArchived && view.ReconfirmClosesAt.HasValue)
-        {
-            await closeScheduler.ScheduleAsync(
-                view.TicketedEventId,
-                view.ReconfirmClosesAt.Value,
-                cancellationToken);
-        }
     }
 
     private async Task<EventEmailContextView> GetOrCreateAsync(

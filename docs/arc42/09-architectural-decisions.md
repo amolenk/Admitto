@@ -12,12 +12,13 @@ Detailed ADRs are stored in [`/docs/adr/`](../adr/).
 | — | Admin UI technology stack | Accepted | [ADR-006](../adr/adr-006-admin-ui-technology-stack.md) |
 | — | Lifecycle guard pattern in the Registrations module | Superseded by ADR-008 | [ADR-007](../adr/adr-007-lifecycle-guard-pattern.md) |
 | — | TicketedEvent ownership moved to Registrations; EventStatus projected onto TicketCatalog | Accepted | [ADR-008](../adr/adr-008-ticketed-event-ownership-in-registrations.md) |
-| — | Bulk-email fan-out: snapshot recipients, single SMTP connection, per-event time zone | Accepted | [ADR-009](../adr/adr-009-bulk-email-design.md) |
+| — | Bulk-email fan-out: snapshot recipients, single SMTP connection, per-event time zone | Bulk/reconfirmation portions superseded by ADR-017; event-time-zone decision remains accepted | [ADR-009](../adr/adr-009-bulk-email-design.md) |
 | 2026-06-10 | Keycloak as the production identity provider | Accepted | [ADR-012](../adr/adr-012-keycloak-production-identity-provider.md) |
 | 2026-06-26 | Platform SMTP sender, public event links, and team-owned email branding | Accepted | [ADR-013](../adr/adr-013-platform-sender-public-links.md) |
 | 2026-06-27 | Email-owned event rendering context projection | Accepted | [ADR-014](../adr/adr-014-email-event-context-projection.md) |
 | 2026-08-16 | Azure Service Bus with push-based consumption | Accepted | [ADR-015](../adr/adr-015-service-bus-push-based-consumption.md) |
-| 2026-08-27 | Hourly reconfirmation evaluation replacing per-event triggers | Accepted | [ADR-016](../adr/adr-016-hourly-reconfirmation-evaluation.md) |
+| 2026-08-27 | Hourly reconfirmation evaluation replacing per-event triggers | Superseded by ADR-017 | [ADR-016](../adr/adr-016-hourly-reconfirmation-evaluation.md) |
+| 2026-08-29 | Reconfirmation batches and requested deadlines | Accepted; implementation pending | [ADR-017](../adr/adr-017-reconfirmation-batches-and-requested-deadlines.md) |
 
 ## Done-when
 

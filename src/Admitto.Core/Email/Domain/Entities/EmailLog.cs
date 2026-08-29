@@ -25,6 +25,7 @@ public class EmailLog : Entity<EmailLogId>
         string? lastError,
         int deliveryAttemptCount,
         BulkEmailJobId? bulkEmailJobId,
+        ReconfirmationBatchId? reconfirmationBatchId,
         RegistrationId? registrationId,
         RegistrationCycleId? registrationCycleId)
         : base(id)
@@ -41,6 +42,7 @@ public class EmailLog : Entity<EmailLogId>
         LastError = lastError;
         DeliveryAttemptCount = deliveryAttemptCount;
         BulkEmailJobId = bulkEmailJobId;
+        ReconfirmationBatchId = reconfirmationBatchId;
         RegistrationId = registrationId;
         RegistrationCycleId = registrationCycleId;
     }
@@ -65,6 +67,12 @@ public class EmailLog : Entity<EmailLogId>
     public BulkEmailJobId? BulkEmailJobId { get; private set; }
 
     /// <summary>
+    /// When this log row was produced by a reconfirmation batch, links back to
+    /// the batch lifecycle record. Null for generic bulk and transactional mail.
+    /// </summary>
+    public ReconfirmationBatchId? ReconfirmationBatchId { get; private set; }
+
+    /// <summary>
     /// The registration associated with this email send, when applicable.
     /// <c>null</c> for external-list bulk sends and any send not tied to a
     /// specific registration.
@@ -85,6 +93,7 @@ public class EmailLog : Entity<EmailLogId>
         string? lastError = null,
         int deliveryAttemptCount = 0,
         BulkEmailJobId? bulkEmailJobId = null,
+        ReconfirmationBatchId? reconfirmationBatchId = null,
         RegistrationId? registrationId = null,
         RegistrationCycleId? registrationCycleId = null)
     {
@@ -102,6 +111,7 @@ public class EmailLog : Entity<EmailLogId>
             lastError,
             deliveryAttemptCount,
             bulkEmailJobId,
+            reconfirmationBatchId,
             registrationId,
             registrationCycleId);
     }

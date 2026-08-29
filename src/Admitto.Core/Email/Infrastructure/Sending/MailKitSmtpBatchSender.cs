@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Core.Email.Application.Sending;
-using Amolenk.Admitto.Core.Email.Application.Sending.Bulk;
 using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using MailKit.Net.Smtp;
@@ -7,11 +6,11 @@ using MailKit.Security;
 
 namespace Amolenk.Admitto.Core.Email.Infrastructure.Sending;
 
-internal sealed class MailKitBulkSmtpSender : IBulkSmtpSender
+internal sealed class MailKitSmtpBatchSender : ISmtpBatchSender
 {
     public string Provider => "MailKit/SMTP";
 
-    public async Task<IBulkSmtpSession> OpenSessionAsync(
+    public async Task<ISmtpBatchSession> OpenSessionAsync(
         EffectiveEmailSettings settings,
         CancellationToken cancellationToken = default)
     {
@@ -32,7 +31,7 @@ internal sealed class MailKitBulkSmtpSender : IBulkSmtpSender
             await client.AuthenticateAsync(settings.Username, settings.Password, cancellationToken);
         }
 
-        return new MailKitBulkSmtpSession(
+        return new MailKitSmtpBatchSession(
             client,
             settings.FromAddress,
             settings.FromDisplayName);
@@ -45,10 +44,10 @@ internal sealed class MailKitBulkSmtpSender : IBulkSmtpSender
                 ? SecureSocketOptions.StartTls
                 : SecureSocketOptions.None;
 
-    private sealed class MailKitBulkSmtpSession(
+    private sealed class MailKitSmtpBatchSession(
         SmtpClient client,
         EmailAddress fromAddress,
-        string fromDisplayName) : IBulkSmtpSession
+        string fromDisplayName) : ISmtpBatchSession
     {
         public async Task<string?> SendAsync(EmailMessage message, CancellationToken cancellationToken = default)
         {
