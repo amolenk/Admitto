@@ -2,7 +2,6 @@ using System.Text.Json;
 using Amolenk.Admitto.Core.Email;
 using Amolenk.Admitto.Core.Email.Application.Jobs;
 using Amolenk.Admitto.Core.Email.Application.Persistence;
-using Amolenk.Admitto.Core.Email.Application.Sending.Bulk;
 using Amolenk.Admitto.Core.Email.Application.Sending;
 using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
 using Amolenk.Admitto.Core.Email.Application.Templating;
@@ -35,7 +34,7 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.Jobs;
 public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
 {
     private static readonly TeamId TeamId = TeamId.New();
-    private FakeBulkSmtpSender _lastSender = default!;
+    private FakeSmtpBatchSender _lastSender = default!;
 
     // Given an active policy and an attendee who registered too recently
     // When the stable hourly evaluator runs
@@ -947,7 +946,7 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
                 ctx))
             .AddScoped<IEmailTemplateService>(_ => new EmailTemplateService())
             .AddSingleton<IEmailRenderer, ScribanEmailRenderer>()
-            .AddSingleton<ISmtpBatchSender>(_lastSender = new FakeBulkSmtpSender())
+            .AddSingleton<ISmtpBatchSender>(_lastSender = new FakeSmtpBatchSender())
             .AddSingleton<IOptionsMonitor<EmailDeliveryOptions>>(
                 new StaticOptionsMonitor<EmailDeliveryOptions>(new EmailDeliveryOptions
                 {
@@ -1015,7 +1014,6 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
     private sealed class TestEmailWriteStore(EmailDbContext context) : IEmailWriteStore
     {
         public DbSet<EmailLog> EmailLog => context.EmailLog;
-        public DbSet<BulkEmailJob> BulkEmailJobs => context.BulkEmailJobs;
         public DbSet<ReconfirmationBatch> ReconfirmationBatches => context.ReconfirmationBatches;
         public DbSet<ReconfirmPolicyCloseEvaluation> ReconfirmPolicyCloseEvaluations =>
             context.ReconfirmPolicyCloseEvaluations;

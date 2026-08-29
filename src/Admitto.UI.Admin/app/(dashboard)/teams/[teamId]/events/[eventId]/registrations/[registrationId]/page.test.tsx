@@ -54,7 +54,6 @@ const emailLogItem = (overrides: Partial<AttendeeEmailLogItemDto> = {}): Attende
     emailType: "TicketConfirmation",
     status: "Delivered",
     sentAt: "2026-08-10T09:05:00Z",
-    bulkEmailJobId: null,
     ...overrides,
 });
 

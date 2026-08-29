@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted; implementation pending. Supersedes [ADR-016](adr-016-hourly-reconfirmation-evaluation.md). The design recorded here is the target state and does not claim that the current runtime already matches it. The bulk and reconfirmation portions of [ADR-009](adr-009-bulk-email-design.md) are superseded where they conflict with this decision.
+Accepted and implemented. Supersedes [ADR-016](adr-016-hourly-reconfirmation-evaluation.md). The bulk and reconfirmation portions of [ADR-009](adr-009-bulk-email-design.md) are superseded where they conflict with this decision.
 
 ## Context
 
@@ -29,7 +29,7 @@ ADR-016 couples reconfirmation to an hourly evaluator plus an additional Quartz 
 
 ### Deployment
 
-Implementation is pending. Rollout requires no data migration or legacy Quartz cleanup because no existing bulk jobs or reconfirmation windows exist. A schema migration still removes the obsolete generic-bulk persistence.
+Implementation is complete. The schema migration `20260829000004_RemoveGenericBulkEmail` removes the obsolete generic-bulk persistence, including the `bulk_email_jobs` table and its `EmailLog` foreign key. No legacy Quartz cleanup is required because the implementation uses one recurring hourly trigger and no per-event reconfirmation windows.
 
 ## Rationale
 

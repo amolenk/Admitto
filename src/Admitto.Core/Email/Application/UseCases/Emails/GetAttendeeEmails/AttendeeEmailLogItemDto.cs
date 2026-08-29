@@ -5,5 +5,4 @@ public sealed record AttendeeEmailLogItemDto(
     string Subject,
     string EmailType,
     string Status,
-    DateTimeOffset? SentAt,
-    Guid? BulkEmailJobId);
+    DateTimeOffset? SentAt);

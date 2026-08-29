@@ -3,7 +3,6 @@ using Amolenk.Admitto.Core.Email;
 using Amolenk.Admitto.Core.Email.Application.Jobs;
 using Amolenk.Admitto.Core.Email.Application.Persistence;
 using Amolenk.Admitto.Core.Email.Application.Sending;
-using Amolenk.Admitto.Core.Email.Application.Sending.Bulk;
 using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
 using Amolenk.Admitto.Core.Email.Application.Templating;
 using Amolenk.Admitto.Core.Email.Application.UseCases.EventEmailContexts.GetEventEmailRenderingContext;
@@ -25,7 +24,6 @@ public static class EmailModuleExtensions
             var services = builder.Services;
             var assembly = Assembly.GetExecutingAssembly();
 
-            // Quartz infrastructure is needed by handlers that trigger bulk jobs.
             services.AddQuartz();
 
             // Command handlers
@@ -46,10 +44,7 @@ public static class EmailModuleExtensions
 
             services.AddScoped<IEffectiveEmailSettingsResolver, EffectiveEmailSettingsResolver>();
             services.AddScoped<IEmailTemplateService, EmailTemplateService>();
-            services.AddScoped<IBulkEmailRecipientResolver, BulkEmailRecipientResolver>();
             services.AddSingleton<IEmailRenderer, ScribanEmailRenderer>();
-            services.Configure<BulkEmailOptions>(
-                builder.Configuration.GetSection(BulkEmailOptions.SectionName));
             services.Configure<EmailDeliveryOptions>(
                 builder.Configuration.GetSection("Email:Delivery"));
             services.Configure<SystemEmailOptions>(
@@ -82,13 +77,6 @@ public static class EmailModuleExtensions
             // Integration event handlers
             services.AddIntegrationEventHandlersFromAssembly(assembly, EmailModule.NamespacePrefix);
 
-            // Worker-only interface mappings — concretes already registered by AddEmailModule scan;
-            // integration event handlers and the queue dispatcher resolve these by interface.
-            // services.AddScoped<ICommandHandler<SendEmailCommand>, SendEmailHandler>(sp =>
-            //     sp.GetRequiredService<SendEmailHandler>());
-            // services.AddScoped<ICommandHandler<TriggerBulkEmailJobCommand>, TriggerBulkEmailJobHandler>(sp =>
-            //     sp.GetRequiredService<TriggerBulkEmailJobHandler>());
-
             // Quartz job registrations (hosted service is started once by AddSharedInfrastructureQueueConsumer)
             services.AddQuartz(options =>
             {
@@ -104,9 +92,6 @@ public static class EmailModuleExtensions
                         .InTimeZone(TimeZoneInfo.Utc)
                         .WithMisfireHandlingInstructionDoNothing()));
 
-                // SendBulkEmailJob is scheduled dynamically per-bulk-job by
-                // TriggerBulkEmailJobHandler so each bulk job gets a unique
-                // JobKey (D10: per-job concurrency isolation).
             });
 
             return builder;

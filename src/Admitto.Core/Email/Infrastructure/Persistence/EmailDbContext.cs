@@ -16,7 +16,6 @@ public sealed class EmailDbContext(DbContextOptions<EmailDbContext> options)
     public static string SchemaName => "email";
 
     public DbSet<EmailLog> EmailLog => Set<EmailLog>();
-    public DbSet<BulkEmailJob> BulkEmailJobs => Set<BulkEmailJob>();
     public DbSet<ReconfirmationBatch> ReconfirmationBatches => Set<ReconfirmationBatch>();
     public DbSet<ReconfirmPolicyCloseEvaluation> ReconfirmPolicyCloseEvaluations => Set<ReconfirmPolicyCloseEvaluation>();
     public DbSet<EventEmailContextView> EventEmailContexts => Set<EventEmailContextView>();
@@ -62,10 +61,6 @@ public sealed class EmailDbContext(DbContextOptions<EmailDbContext> options)
         configurationBuilder
             .Properties<Port>()
             .HaveConversion<Port.EfCoreValueConverter>();
-
-        configurationBuilder
-            .Properties<BulkEmailJobId>()
-            .HaveConversion<BulkEmailJobId.EfCoreValueConverter>();
 
         configurationBuilder
             .Properties<ReconfirmationBatchId>()

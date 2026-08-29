@@ -262,56 +262,7 @@ Admin and Partner ticket-confirmation resends are requested through Registration
 
 **Configuration failure**: if deployment system SMTP settings are missing or invalid, registration itself is unaffected. The email work records the failure through the normal `EmailLog`/delivery-error path and operator telemetry; this is an operability issue, not team-owned event state. Transient SMTP failures remain retryable until the configured delivery attempt limit is reached.
 
-## 6.9 Bulk-email fan-out (single SMTP connection)
-
-When an admin starts a generic bulk send, a `BulkEmailJob` is created in `Pending` state and a Quartz trigger queues `BulkEmailFanOutJob`. The fan-out job opens **one** SMTP connection per pickup and streams every recipient through it; the single-send pipeline is bypassed deliberately to avoid one TLS handshake per recipient. Reconfirmation does not use this flow; it is created and sent synchronously by the hourly reconfirmation job in §6.10.
-
-```mermaid
-sequenceDiagram
-    participant Admin as Admin
-    participant Endpoint as Admin endpoint
-    participant Job as BulkEmailJob
-    participant FanOut as BulkEmailFanOutJob (Worker)
-    participant Resolver as Recipient resolver
-    participant Facade as IRegistrationsFacade
-    participant SMTP as SMTP server
-    participant EmailLog as email.email_log
-
-    Admin->>Endpoint: start bulk send with Subject/TextBody/HtmlBody
-    Endpoint->>Job: create (Pending) with AttendeeFilter and job-owned content
-    Endpoint-->>Admin: 202 Accepted (jobId)
-    FanOut->>Job: pick up (DisallowConcurrentExecution per jobId)
-    Job->>Job: transition Pending → Resolving
-    Resolver->>Resolver: map BulkEmailAttendeeFilter → QueryRegistrationsDto
-    Resolver->>Facade: GetRegistrationsAsync(eventId, filter)
-    Facade-->>Resolver: projection rows
-    Resolver->>Job: persist frozen Recipients snapshot
-    Job->>Job: transition Resolving → Sending
-    FanOut->>SMTP: connect (single connection)
-    loop for each Pending recipient
-      FanOut->>FanOut: check CancellationRequestedAt
-      FanOut->>FanOut: render job-owned content with team/event context
-      FanOut->>EmailLog: insert Pending claim key=bulk:{jobId}:{email}
-      FanOut->>SMTP: MAIL FROM / RCPT TO / DATA
-      FanOut->>EmailLog: update claim to Sent or Failed
-      FanOut->>Job: update per-recipient status + counters
-      FanOut->>FanOut: Task.Delay(PerMessageDelay, ct)
-    end
-    FanOut->>SMTP: QUIT
-    Job->>Job: finalise → Completed / PartiallyFailed / Cancelled / Failed
-```
-
-**Resume-after-crash**: only `Pending` rows on the snapshot are picked up on the next run; per-recipient `EmailLog` uniqueness on `(ticketed_event_id, recipient, idempotency_key)` is the database-backed claim that prevents pre-existing terminal recipient logs from sending again.
-
-**Recipient source**: bulk email targets registered attendees only. The job persists an Email-owned `BulkEmailAttendeeFilter`; the resolver maps it to the Registrations `QueryRegistrationsDto` contract at the facade-call boundary, so the query contract is never part of Email's durable state. There is no external/CSV source.
-
-**Rendering context**: bulk fan-out merges the frozen recipient parameters with Email's projected team/event context, including `team_name`, event details, public links, and `qrcode_link`, plus the branding parameters `accent_color` and `font_family` taken from the resolved `EffectiveEmailSettings` (the same source the transactional path uses). This same parameter set is available to both built-in templates and custom job-owned content; duplicate aliases such as `team_accent_color` and `qr_code_link` are not exposed.
-
-**Cancellation**: `POST /admin/.../bulk-emails/{id}/cancel` sets `CancellationRequestedAt` on the aggregate; the worker observes it between recipients and during the per-message delay, transitions remaining `Pending` rows to `Cancelled`, and closes the SMTP session cleanly.
-
-Generic bulk email remains snapshot-based and resumable as described above. It is unrelated to reconfirmation and does not serve reconfirmation reminders.
-
-## 6.10 Reconfirm scheduling and cycle limits (hourly active-event evaluation)
+## 6.9 Reconfirm scheduling and cycle limits (hourly active-event evaluation)
 
 The reconfirmation policy is owned by `TicketedEvent` in Registrations. Email projects the schedule-affecting event data needed for evaluation: policy presence and window, minimum email interval, optional event-local quiet hours, event time zone, and lifecycle state. A recurring Quartz job in the Worker evaluates enabled Active events once per hour; the policy controls eligibility, not scheduler timing. Ticket types may add an optional maximum reconfirmation-email count, with the strictest configured value governing each registration's current cycle.
 
@@ -373,7 +324,7 @@ For reconfirmation delivery, projection lag cannot authorize a stale reminder: e
 
 **Clustering**: Quartz uses the PostgreSQL-backed store in `quartz-db` with clustering enabled. Worker instances host the scheduler and execute the hourly evaluation and its jobs. During rolling deployments or temporary Worker scale-out, Quartz acquires the recurring evaluation on only one live scheduler instance.
 
-## 6.11 User sign-in and ExternalUserId binding
+## 6.10 User sign-in and ExternalUserId binding
 
 In production, Admin UI users authenticate through Keycloak's hosted passkey-only browser flow. The production browser flow starts directly at WebAuthn passwordless authentication, so users are prompted by the browser/passkey provider rather than entering an email address first. Keycloak performs the WebAuthn assertion ceremony and returns OIDC tokens to the Admin UI; Admitto never handles passkey material or WebAuthn challenge/response details. Keycloak's account-console client is disabled so authenticated users cannot use the standalone Keycloak account UI for profile or credential management. Local development intentionally uses a separate Keycloak realm where the first screen remains the standard username/password form with a passkey alternative, and end-to-end tests keep test-only direct-grant clients so automation remains offline and repeatable.
 
@@ -413,7 +364,7 @@ sequenceDiagram
 
 **Unknown identity**: if neither `sub` nor `email` matches any user, the resolver returns 403. The user must be provisioned before they can authenticate.
 
-## 6.12 Bootstrap admin provisioning
+## 6.11 Bootstrap admin provisioning
 
 On API startup, `BootstrapAdminInitializer` ensures the first admin account exists without requiring manual IdP console steps. Production bootstrap creates or reconciles the Admitto admin user, creates or finds the matching Keycloak user, and asks Keycloak to send a `webauthn-register-passwordless` execute-actions email through Keycloak's configured SMTP server. The action link leads the operator through Keycloak's passkey enrollment pages, not an Admitto-hosted WebAuthn flow. Local development keeps password-capable seeded users while also allowing passkey sign-in for users who enroll one.
 
@@ -425,7 +376,7 @@ On API startup, `BootstrapAdminInitializer` ensures the first admin account exis
 
 The initialiser runs once per process start and is safe to run on every rolling deployment — repeated calls are no-ops when the bootstrap admin is already fully provisioned.
 
-## 6.13 Keycloak account-action email
+## 6.12 Keycloak account-action email
 
 Keycloak owns account-action email rendering and SMTP delivery. Admitto provisions or reconciles the user through Keycloak's Admin API and then calls `execute-actions-email` with `client_id=admitto-ui` and the Admin UI public URL as the redirect target. Keycloak generates the action token, renders the account-action email with the Admitto email theme, and sends it through its configured SMTP server. The execute-actions copy is invitation-oriented and describes the user-facing passkey setup, not Keycloak required-action identifiers.
 
@@ -443,7 +394,7 @@ sequenceDiagram
   Keycloak->>SMTP: Send account-action email
 ```
 
-The Email module is not involved in this flow: no Admitto email integration event is published, no `EmailLog` row is written, and no Admitto template is rendered. Application-owned emails still use the Email module flows in §6.8-§6.10.
+The Email module is not involved in this flow: no Admitto email integration event is published, no `EmailLog` row is written, and no Admitto template is rendered. Application-owned emails still use the Email module flows in §6.8-§6.9.
 
 In Aspire run mode, the local realm keeps preprovisioned username/password users, shows the standard username/password form first with a passkey alternative, and points Keycloak SMTP at MailDev. Normal password sign-in does not send email. To verify the path locally, trigger a Keycloak execute-actions email such as `webauthn-register-passwordless`; Keycloak sends the final email to MailDev.
 

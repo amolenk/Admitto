@@ -24,8 +24,7 @@ internal sealed class GetAttendeeEmailsHandler(IEmailWriteStore writeStore)
                 Subject: e.Subject,
                 EmailType: e.EmailType,
                 Status: e.Status.ToString(),
-                SentAt: e.SentAt,
-                BulkEmailJobId: e.BulkEmailJobId?.Value))
+                SentAt: e.SentAt))
             .ToList();
     }
 }

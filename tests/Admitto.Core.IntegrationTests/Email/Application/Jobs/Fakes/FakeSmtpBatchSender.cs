@@ -4,16 +4,16 @@ using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
 namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.Jobs.Fakes;
 
 /// <summary>
-/// Fake bulk SMTP sender used by <see cref="Application.Jobs.SendBulkEmailJob"/>
-/// integration tests. Records the number of sessions opened and every message
+/// Fake SMTP batch sender used by reconfirmation integration tests. Records the
+/// number of sessions opened and every message
 /// that flows through them; supports per-recipient failure injection plus a
 /// hook for test-side actions to run as a side effect of <c>SendAsync</c>
 /// (e.g. requesting cancellation).
 /// </summary>
-internal sealed class FakeBulkSmtpSender : ISmtpBatchSender
+internal sealed class FakeSmtpBatchSender : ISmtpBatchSender
 {
     private readonly HashSet<string> _failOn = new(StringComparer.OrdinalIgnoreCase);
-    public string Provider => "FakeBulk";
+    public string Provider => "FakeSmtpBatch";
 
     public int SessionsOpened { get; private set; }
     public int SessionsClosed { get; private set; }
@@ -33,7 +33,7 @@ internal sealed class FakeBulkSmtpSender : ISmtpBatchSender
         return Task.FromResult<ISmtpBatchSession>(new Session(this));
     }
 
-    private sealed class Session(FakeBulkSmtpSender owner) : ISmtpBatchSession
+    private sealed class Session(FakeSmtpBatchSender owner) : ISmtpBatchSession
     {
         public async Task<string?> SendAsync(EmailMessage message, CancellationToken cancellationToken = default)
         {

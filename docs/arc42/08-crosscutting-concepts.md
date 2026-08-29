@@ -51,10 +51,10 @@ Some workflows need to consult another module's state inside the same request wi
 | Facade | Module | Used by | Purpose |
 | :----- | :----- | :------ | :------ |
 | `IOrganizationFacade` | Organization | Registrations | Check team membership, look up team by ID |
-| `IRegistrationsFacade` | Registrations | Email | Resolve recipients and authorize reconfirm delivery against live event/registration state |
+| `IRegistrationsFacade` | Registrations | Email | Query live reconfirm candidates and authorize reconfirm delivery against event/registration state |
 Facades are read-only and side-effect-free. Cross-module *writes* still go through commands and integration events on the outbox (see §8.6).
 
-Email does not synchronously query Organization or Registrations for reusable email rendering context. It owns eventually consistent team/event context projections populated from integration events; live reconfirm candidate and admission reads use `IRegistrationsFacade`. Reconfirmation batch lifecycle and delivery semantics are defined in [§6.10](06-runtime-view.md#610-reconfirm-scheduling-and-cycle-limits-hourly-active-event-evaluation).
+Email does not synchronously query Organization or Registrations for reusable email rendering context. It owns eventually consistent team/event context projections populated from integration events; live reconfirm candidate and admission reads use `IRegistrationsFacade`. Reconfirmation batch lifecycle and delivery semantics are defined in [§6.9](06-runtime-view.md#69-reconfirm-scheduling-and-cycle-limits-hourly-active-event-evaluation).
 
 ## 8.5 Use case slice layout
 
@@ -136,11 +136,11 @@ Two event tiers, each with distinct scope:
 | Domain event | In-transaction, synchronous | Not persisted separately | `Domain/DomainEvents/` |
 | Command / Integration event | Async, via outbox | Outbox table | `Application/…/` or `*.Contracts/IntegrationEvents/` |
 
-**Why two tiers?** Domain events are dispatched synchronously within the same transaction via `IDomainEventHandler<T>` — they don't cross the message bus. Handlers that need async processing (fan-out, cross-module writes) inject `IOutbox` and call `outbox.Enqueue(command)` or `outbox.Enqueue(integrationEvent)` inside the same handler. The `DomainEventsInterceptor` publishes domain events after `SaveChanges`; the outbox message was already inserted in the same transaction.
+**Why two tiers?** Domain events are dispatched synchronously within the same transaction via `IDomainEventHandler<T>` — they don't cross the message bus. Handlers that need async processing (scheduled work, cross-module writes) inject `IOutbox` and call `outbox.Enqueue(command)` or `outbox.Enqueue(integrationEvent)` inside the same handler. The `DomainEventsInterceptor` publishes domain events after `SaveChanges`; the outbox message was already inserted in the same transaction.
 
 **Commands vs integration events on the outbox**
 
-- `ICommand` — used for internal, within-module async work (e.g. a scheduled Quartz fan-out triggered by a domain event). Type key: `command.{module-kebab}.{command-name-kebab}` (strips `-command` suffix). The `QueueMessageDispatcher` deserialises and routes these to the module's `IMediator`.
+- `ICommand` — used for internal, within-module async work (for example, scheduled Quartz work triggered by a domain event). Type key: `command.{module-kebab}.{command-name-kebab}` (strips `-command` suffix). The `QueueMessageDispatcher` deserialises and routes these to the module's `IMediator`.
 - `IIntegrationEvent` — used for cross-module contracts. Type key: `integration.{module-kebab}.{event-name-kebab}` (strips `-integration-event` suffix). Lives in `*.Contracts/IntegrationEvents/`.
 
 **Message contracts declare exactly one public constructor** (enforced by `MessagingConventionTests`), covering integration events, commands, and domain events.
@@ -159,7 +159,7 @@ Dispatch is sequential (`MaxConcurrentCalls = 1`), and settlement is explicit (`
 Link and connection faults surface through the processor's error handler as warnings rather than errors, because the processor recovers from them on its own; a real outage shows up as the warning repeating.
 Recovery latency is bounded by `ServiceBusRetryOptions.MaxDelay`, set to 5 seconds in `AddSharedInfrastructureMessagingServices` so a consumer cannot idle for the SDK's 60-second default after a blip (see [ADR-015](../adr/adr-015-service-bus-push-based-consumption.md)).
 
-For Email module SMTP delivery, `EmailLog` is the auditable send claim. Generic bulk trigger handlers enqueue delivery work and generic bulk fan-out keeps its snapshot/resume behavior; this infrastructure is unrelated to reconfirmation. Reconfirmation uses the hourly batch flow described in [§6.10](06-runtime-view.md#610-reconfirm-scheduling-and-cycle-limits-hourly-active-event-evaluation), with live Registrations authorization and cycle-scoped `EmailLog` history.
+For Email module SMTP delivery, `EmailLog` is the auditable send claim. Transactional delivery uses the normal claim/render/outbox pipeline. Reconfirmation uses the hourly batch flow described in [§6.9](06-runtime-view.md#69-reconfirm-scheduling-and-cycle-limits-hourly-active-event-evaluation), with live Registrations authorization and cycle-scoped `EmailLog` history.
 
 ### Cross-module lifecycle events
 
@@ -466,7 +466,7 @@ Developers can temporarily raise any category through normal configuration overr
 
 `Error` and `Critical` application logs are operator-actionable and feed Azure alert evaluation. Use them for unexpected failures such as unhandled API exceptions, failed queue message processing, unrecoverable job failures, or startup reconciliation failures. Expected validation, authorization, not-found, concurrency, and business-rule outcomes must stay below `Error` and be returned as ProblemDetails or domain errors rather than logged as alerting failures.
 
-The existing API and Worker `LogError` calls are reserved for unhandled exceptions, queue processing failures, bulk-email failures that require operator attention, and reconfirm evaluation failures.
+The existing API and Worker `LogError` calls are reserved for unhandled exceptions, queue processing failures, and reconfirm evaluation failures.
 
 ### Azure Monitor sampling
 

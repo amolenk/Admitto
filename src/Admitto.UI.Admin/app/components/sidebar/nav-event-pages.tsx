@@ -8,7 +8,6 @@ import {
     ClipboardList,
     Ticket,
     Hourglass,
-    Mail,
     CalendarCog,
 } from "lucide-react";
 import {
@@ -27,7 +26,6 @@ const eventPages = [
     { label: "Ticket types", href: "/ticket-types", icon: Ticket },
     { label: "Waitlist", href: "/waitlist", icon: Hourglass },
     { label: "Badges", href: "/badge-types", icon: IdCard },
-    { label: "Emails", href: "/emails/campaigns", icon: Mail },
 ];
 
 async function fetchEvent(teamId: string, eventId: string): Promise<TicketedEventDetailsDto> {
@@ -58,9 +56,6 @@ export function NavEventPages({ teamId }: { teamId: string }) {
         }
         if (pageHref === "/edit/general") {
             return pathname.startsWith(`${basePath}/edit`);
-        }
-        if (pageHref === "/emails/campaigns") {
-            return pathname.startsWith(`${basePath}/emails`);
         }
         return pathname.startsWith(fullPath);
     }

@@ -24,7 +24,6 @@ public class EmailLog : Entity<EmailLogId>
         DateTimeOffset statusUpdatedAt,
         string? lastError,
         int deliveryAttemptCount,
-        BulkEmailJobId? bulkEmailJobId,
         ReconfirmationBatchId? reconfirmationBatchId,
         RegistrationId? registrationId,
         RegistrationCycleId? registrationCycleId)
@@ -41,7 +40,6 @@ public class EmailLog : Entity<EmailLogId>
         StatusUpdatedAt = statusUpdatedAt;
         LastError = lastError;
         DeliveryAttemptCount = deliveryAttemptCount;
-        BulkEmailJobId = bulkEmailJobId;
         ReconfirmationBatchId = reconfirmationBatchId;
         RegistrationId = registrationId;
         RegistrationCycleId = registrationCycleId;
@@ -60,22 +58,14 @@ public class EmailLog : Entity<EmailLogId>
     public int DeliveryAttemptCount { get; private set; }
 
     /// <summary>
-    /// When this log row was produced by a bulk-email fan-out, links back to
-    /// the originating <see cref="BulkEmailJob"/>. <c>null</c> for single-send
-    /// emails.
-    /// </summary>
-    public BulkEmailJobId? BulkEmailJobId { get; private set; }
-
-    /// <summary>
     /// When this log row was produced by a reconfirmation batch, links back to
-    /// the batch lifecycle record. Null for generic bulk and transactional mail.
+    /// the batch lifecycle record. Null for transactional mail.
     /// </summary>
     public ReconfirmationBatchId? ReconfirmationBatchId { get; private set; }
 
     /// <summary>
     /// The registration associated with this email send, when applicable.
-    /// <c>null</c> for external-list bulk sends and any send not tied to a
-    /// specific registration.
+    /// <c>null</c> for any send not tied to a specific registration.
     /// </summary>
     public RegistrationId? RegistrationId { get; private set; }
     public RegistrationCycleId? RegistrationCycleId { get; private set; }
@@ -92,7 +82,6 @@ public class EmailLog : Entity<EmailLogId>
         DateTimeOffset statusUpdatedAt,
         string? lastError = null,
         int deliveryAttemptCount = 0,
-        BulkEmailJobId? bulkEmailJobId = null,
         ReconfirmationBatchId? reconfirmationBatchId = null,
         RegistrationId? registrationId = null,
         RegistrationCycleId? registrationCycleId = null)
@@ -110,7 +99,6 @@ public class EmailLog : Entity<EmailLogId>
             statusUpdatedAt,
             lastError,
             deliveryAttemptCount,
-            bulkEmailJobId,
             reconfirmationBatchId,
             registrationId,
             registrationCycleId);

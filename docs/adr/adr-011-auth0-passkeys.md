@@ -79,6 +79,6 @@ The initialiser is idempotent: if the user already exists and has an `ExternalUs
 
 ## References
 - arc42 chapter 5 — building-block view (infrastructure mapping table).
-- arc42 chapter 6 — runtime view (§6.11 user sign-in and ExternalUserId binding, §6.12 bootstrap admin provisioning).
+- arc42 chapter 6 — runtime view (§6.10 user sign-in and ExternalUserId binding, §6.11 bootstrap admin provisioning).
 - arc42 chapter 7 — deployment view (production shape).
 - Change: the Auth0 passkey identity-provider evaluation.

@@ -3,7 +3,7 @@ using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
 namespace Amolenk.Admitto.Core.Email.Application.Sending;
 
 /// <summary>
-/// Session-mode SMTP sender shared by generic bulk and reconfirmation batches.
+/// Session-mode SMTP sender used by reconfirmation batches.
 /// </summary>
 public interface ISmtpBatchSender
 {

@@ -1,8 +1,6 @@
 import type {
     AdditionalDetailFieldDto,
     ApiKeyListItemDto,
-    BulkEmailJobDetailDto,
-    BulkEmailListItemDto,
     HttpValidationProblemDetails,
     PendingNotificationRow,
     RegistrationListItemDto,
@@ -121,6 +119,9 @@ export function registrationListItemDto(
         additionalDetails: {},
         createdAt: "2026-03-01T10:00:00Z",
         status: "registered",
+        registrationCycleId: "eeeeeeee-0000-0000-0000-000000000001",
+        registrationVersion: 1,
+        ticketCatalogVersion: 1,
         hasReconfirmed: false,
         reconfirmedAt: null,
         ...overrides,
@@ -180,61 +181,6 @@ export function ticketedEventListItemDto(
     };
 }
 
-/** A bulk email job as `/api/teams/{teamId}/events/{eventId}/bulk-emails` lists it. */
-export function bulkEmailListItemDto(
-    overrides: Partial<BulkEmailListItemDto> = {},
-): BulkEmailListItemDto {
-    return {
-        id: "ffffffff-0000-0000-0000-000000000001",
-        emailType: "bulk-custom",
-        status: "completed",
-        recipientCount: 10,
-        sentCount: 10,
-        failedCount: 0,
-        cancelledCount: 0,
-        isSystemTriggered: false,
-        triggeredBy: "owner@example.com",
-        createdAt: "2026-03-01T10:00:00Z",
-        startedAt: "2026-03-01T10:00:05Z",
-        completedAt: "2026-03-01T10:01:00Z",
-        cancellationRequestedAt: null,
-        cancelledAt: null,
-        ...overrides,
-    };
-}
-
-/** A bulk email job as `/api/teams/{teamId}/events/{eventId}/bulk-emails/{jobId}` returns it. */
-export function bulkEmailJobDetailDto(
-    overrides: Partial<BulkEmailJobDetailDto> = {},
-): BulkEmailJobDetailDto {
-    return {
-        id: "ffffffff-0000-0000-0000-000000000001",
-        teamId: "11111111-1111-1111-1111-111111111111",
-        ticketedEventId: "33333333-3333-3333-3333-333333333333",
-        emailType: "bulk-custom",
-        subject: "Important update for DevConf 2026",
-        textBody: "Hello, this is an important update.",
-        htmlBody: "<p>Hello, this is an important update.</p>",
-        attendeeFilter: {},
-        status: "completed",
-        recipientCount: 10,
-        sentCount: 10,
-        failedCount: 0,
-        cancelledCount: 0,
-        lastError: null,
-        isSystemTriggered: false,
-        triggeredBy: "owner@example.com",
-        createdAt: "2026-03-01T10:00:00Z",
-        startedAt: "2026-03-01T10:00:05Z",
-        completedAt: "2026-03-01T10:01:00Z",
-        cancellationRequestedAt: null,
-        cancelledAt: null,
-        version: 1,
-        recipients: [],
-        ...overrides,
-    };
-}
-
 // ── Attendee-detail DTOs ─────────────────────────────────────────────────────
 //
 // These back the local interfaces declared in
@@ -269,7 +215,6 @@ export interface AttendeeEmailLogItemDto {
     emailType: string;
     status: string;
     sentAt?: string | null;
-    bulkEmailJobId?: string | null;
 }
 
 /** A registration as the attendee-detail page's detail endpoint returns it. */
@@ -315,7 +260,6 @@ export function attendeeEmailLogItemDto(
         emailType: "TicketConfirmation",
         status: "Delivered",
         sentAt: "2026-03-01T10:05:00Z",
-        bulkEmailJobId: null,
         ...overrides,
     };
 }

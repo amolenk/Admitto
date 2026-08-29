@@ -18,7 +18,7 @@ Detailed ADRs are stored in [`/docs/adr/`](../adr/).
 | 2026-06-27 | Email-owned event rendering context projection | Accepted | [ADR-014](../adr/adr-014-email-event-context-projection.md) |
 | 2026-08-16 | Azure Service Bus with push-based consumption | Accepted | [ADR-015](../adr/adr-015-service-bus-push-based-consumption.md) |
 | 2026-08-27 | Hourly reconfirmation evaluation replacing per-event triggers | Superseded by ADR-017 | [ADR-016](../adr/adr-016-hourly-reconfirmation-evaluation.md) |
-| 2026-08-29 | Reconfirmation batches and requested deadlines | Accepted; implementation pending | [ADR-017](../adr/adr-017-reconfirmation-batches-and-requested-deadlines.md) |
+| 2026-08-29 | Reconfirmation batches and requested deadlines | Accepted and implemented | [ADR-017](../adr/adr-017-reconfirmation-batches-and-requested-deadlines.md) |
 
 ## Done-when
 

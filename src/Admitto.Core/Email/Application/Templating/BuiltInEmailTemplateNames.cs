@@ -15,5 +15,4 @@ public static class BuiltInEmailTemplateNames
     public const string VerificationCode   = "Verification code";
     public const string CouponInvitation   = "Coupon invitation";
     public const string WaitlistNotification = "Waitlist notification";
-    public const string BulkCustom = "bulk-custom";
 }

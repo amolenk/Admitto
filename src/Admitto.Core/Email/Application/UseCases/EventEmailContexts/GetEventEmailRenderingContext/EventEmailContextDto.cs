@@ -5,7 +5,7 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.EventEmailContexts.Get
 /// from the Email-owned team/event context projections plus public-link
 /// configuration. Returned by
 /// <see cref="GetEventEmailRenderingContextHandler"/> and consumed by the
-/// transactional <c>SendEmail</c> handlers and the bulk-email fan-out job.
+/// transactional <c>SendEmail</c> handlers and reconfirmation batches.
 /// </summary>
 internal sealed record EventEmailContextDto(
     Guid TeamId,
