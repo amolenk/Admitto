@@ -4,7 +4,7 @@ using Amolenk.Admitto.Core.Email.Application.Templating;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using NSubstitute;
 
-namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.UseCases.Emails.SendEmail.EventHandlers;
+namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.UseCases.Emails.PrepareEmailDelivery.EventHandlers;
 
 internal static class TransactionalEmailComposerSubstituteExtensions
 {

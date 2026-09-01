@@ -2,11 +2,11 @@ using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.ComposeTransactiona
 using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.PrepareEmailDelivery;
 using Amolenk.Admitto.Core.Email.Application.Templating;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
-using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail.EventHandlers;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.PrepareEmailDelivery.EventHandlers;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using NSubstitute;
 
-namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.UseCases.Emails.SendEmail.EventHandlers;
+namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.UseCases.Emails.PrepareEmailDelivery.EventHandlers;
 
 internal sealed class CouponEmailAdapterFixture
 {

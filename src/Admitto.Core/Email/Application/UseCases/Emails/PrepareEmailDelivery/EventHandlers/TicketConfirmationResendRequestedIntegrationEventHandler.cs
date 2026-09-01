@@ -4,30 +4,26 @@ using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.PrepareEmailDeliver
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
-namespace Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail.EventHandlers;
+namespace Amolenk.Admitto.Core.Email.Application.UseCases.Emails.PrepareEmailDelivery.EventHandlers;
 
-/// <summary>
-/// Sends a new TicketConfirmation email when an attendee's tickets have changed.
-/// </summary>
-internal sealed class AttendeeTicketsChangedIntegrationEventHandler(
+internal sealed class TicketConfirmationResendRequestedIntegrationEventHandler(
     ITransactionalEmailComposer composer,
     ICommandHandler<PrepareEmailDeliveryCommand> prepareDeliveryHandler)
-    : IIntegrationEventHandler<AttendeeTicketsChangedIntegrationEvent>
+    : IIntegrationEventHandler<TicketConfirmationResendRequestedIntegrationEvent>
 {
     public async ValueTask HandleAsync(
-        AttendeeTicketsChangedIntegrationEvent integrationEvent,
+        TicketConfirmationResendRequestedIntegrationEvent integrationEvent,
         CancellationToken cancellationToken)
     {
-        var changedAtMs = integrationEvent.ChangedAt.ToUnixTimeMilliseconds();
-        var idempotencyKey = $"tickets-changed:{integrationEvent.RegistrationId}:{changedAtMs}";
-
+        var registrationId = RegistrationId.From(integrationEvent.RegistrationId);
         var fullName = $"{integrationEvent.FirstName} {integrationEvent.LastName}".Trim();
+        var idempotencyKey = $"ticket-confirmation-resend:{integrationEvent.RegistrationId}:{integrationEvent.ResendRequestId}";
         var intent = new TicketConfirmationIntent(
             TeamId.From(integrationEvent.TeamId),
             TicketedEventId.From(integrationEvent.TicketedEventId),
-            RegistrationId.From(integrationEvent.RegistrationId),
+            registrationId,
             integrationEvent.FirstName,
-            integrationEvent.NewTickets.Select(t => t.Name).ToArray());
+            integrationEvent.TicketNames);
         var rendered = await composer.ComposeAsync(intent, cancellationToken);
         await TransactionalEmailDeliveryPreparation.PrepareAsync(
             prepareDeliveryHandler,

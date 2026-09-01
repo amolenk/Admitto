@@ -1,4 +1,4 @@
-using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail.EventHandlers;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.PrepareEmailDelivery.EventHandlers;
 using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.ComposeTransactionalEmail;
 using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.PrepareEmailDelivery;
 using Amolenk.Admitto.Core.Email.Application.Templating;
@@ -8,7 +8,7 @@ using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using NSubstitute;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
-namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.UseCases.Emails.SendEmail.EventHandlers;
+namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.UseCases.Emails.PrepareEmailDelivery.EventHandlers;
 
 [TestClass]
 public sealed class AttendeeRegisteredIntegrationEventHandlerTests(TestContext testContext)

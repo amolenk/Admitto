@@ -4,26 +4,30 @@ using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
-namespace Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail.EventHandlers;
+namespace Amolenk.Admitto.Core.Email.Application.UseCases.Emails.PrepareEmailDelivery.EventHandlers;
 
 /// <summary>
-/// Translates the OTP integration event into a typed verification-code intent.
-/// Idempotency key: <c>otp-requested:{otpCodeId}</c>.
+/// Handles <see cref="WaitlistCouponIssuedIntegrationEvent"/> by sending a notification email
+/// containing the coupon code and expiry to the waiting attendee.
+/// Idempotency key: <c>waitlist-coupon-issued:{teamId}:{ticketedEventId}:{couponCode}</c>.
 /// </summary>
-internal sealed class OtpCodeRequestedIntegrationEventHandler(
+internal sealed class WaitlistCouponIssuedIntegrationEventHandler(
     ITransactionalEmailComposer composer,
     ICommandHandler<PrepareEmailDeliveryCommand> prepareDeliveryHandler)
-    : IIntegrationEventHandler<OtpCodeRequestedIntegrationEvent>
+    : IIntegrationEventHandler<WaitlistCouponIssuedIntegrationEvent>
 {
     public async ValueTask HandleAsync(
-        OtpCodeRequestedIntegrationEvent integrationEvent,
+        WaitlistCouponIssuedIntegrationEvent integrationEvent,
         CancellationToken cancellationToken)
     {
-        var idempotencyKey = $"otp-requested:{integrationEvent.OtpCodeId}";
-        var rendered = await composer.ComposeAsync(new VerificationCodeIntent(
+        var idempotencyKey =
+            $"waitlist-coupon-issued:{integrationEvent.TeamId}:{integrationEvent.TicketedEventId}:{integrationEvent.CouponCode}";
+        var rendered = await composer.ComposeAsync(new WaitlistOfferIntent(
             TeamId.From(integrationEvent.TeamId),
             TicketedEventId.From(integrationEvent.TicketedEventId),
-            integrationEvent.PlainCode), cancellationToken);
+            integrationEvent.CouponCode,
+            integrationEvent.TicketTypeName,
+            integrationEvent.ExpiresAt), cancellationToken);
         await TransactionalEmailDeliveryPreparation.PrepareAsync(
             prepareDeliveryHandler,
             new TransactionalEmailDelivery(

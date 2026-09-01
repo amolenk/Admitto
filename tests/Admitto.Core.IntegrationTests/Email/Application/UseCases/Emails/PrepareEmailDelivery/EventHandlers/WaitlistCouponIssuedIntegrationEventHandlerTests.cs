@@ -6,7 +6,7 @@ using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using NSubstitute;
 
-namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.UseCases.Emails.SendEmail.EventHandlers;
+namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.UseCases.Emails.PrepareEmailDelivery.EventHandlers;
 
 [TestClass]
 public sealed class WaitlistCouponIssuedIntegrationEventHandlerTests(TestContext testContext)
