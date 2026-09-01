@@ -1,5 +1,8 @@
 using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail.EventHandlers;
-using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.ComposeTicketConfirmation;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.ComposeTransactionalEmail;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.PrepareEmailDelivery;
+using Amolenk.Admitto.Core.Email.Application.Templating;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using NSubstitute;
@@ -26,60 +29,73 @@ public sealed class AttendeeRegisteredIntegrationEventHandlerTests(TestContext t
             [],
             DateTimeOffset.UtcNow);
 
-    // Given an AttendeeRegistered integration event for an attendee
-    // When the event is handled
-    // Then a ticket confirmation email is sent to the attendee with an idempotency key derived from the registration
+    // Given an attendee has completed registration
+    // When the registration confirmation event is processed
+    // Then the attendee receives a ticket confirmation email
     [TestMethod]
     public async Task AttendeeRegistered_DispatchesTicketEmail()
     {
-        var composer = Substitute.For<ITicketConfirmationEmailComposer>();
+        var composer = Substitute.For<ITransactionalEmailComposer>();
+        composer.ReturnRenderedEmail();
 
-        var sut = new AttendeeRegisteredIntegrationEventHandler(composer);
+        var deliveryHandler = Substitute.For<ICommandHandler<PrepareEmailDeliveryCommand>>();
+        var sut = new AttendeeRegisteredIntegrationEventHandler(composer, deliveryHandler);
 
         var evt = Event();
         await sut.HandleAsync(evt, testContext.CancellationToken);
 
         await composer.Received(1).ComposeAsync(
-            TeamGuid,
-            EventGuid,
-            Arg.Is<TicketConfirmationIntent>(i => i!.RegistrationId == RegistrationId.From(RegId)),
-            Arg.Is<TicketConfirmationDelivery>(d =>
-                d!.RecipientAddress == "alice@example.com" &&
-                d.RecipientName == "Alice Anderson" &&
-                d.IdempotencyKey == $"attendee-registered:{RegId}:{evt.RegisteredAt:O}"),
+            Arg.Is<TicketConfirmationIntent>(d =>
+                d!.TeamId == TeamGuid && d.TicketedEventId == EventGuid &&
+                d.RegistrationId == RegistrationId.From(RegId)),
             Arg.Any<CancellationToken>());
+
+        var delivery = deliveryHandler.ReceivedDelivery();
+        delivery.RecipientAddress.ShouldBe("alice@example.com");
+        delivery.RecipientName.ShouldBe("Alice Anderson");
+        delivery.IdempotencyKey.ShouldBe($"attendee-registered:{RegId}:{evt.RegisteredAt:O}");
+        delivery.EmailType.ShouldBe(BuiltInEmailTemplateNames.TicketConfirmation);
+        delivery.RegistrationId.ShouldBe(RegId);
     }
 
-    // Given an AttendeeRegistered integration event for an attendee
-    // When the event is handled
-    // Then the shared intent includes the attendee's first and last names
+    // Given an attendee has completed registration
+    // When the registration confirmation event is processed
+    // Then the ticket confirmation includes the attendee's name
     [TestMethod]
     public async Task AttendeeRegistered_IntentIncludesAttendeeFacts()
     {
-        var composer = Substitute.For<ITicketConfirmationEmailComposer>();
+        var composer = Substitute.For<ITransactionalEmailComposer>();
+        composer.ReturnRenderedEmail();
 
-        var sut = new AttendeeRegisteredIntegrationEventHandler(composer);
+        var deliveryHandler = Substitute.For<ICommandHandler<PrepareEmailDeliveryCommand>>();
+        var sut = new AttendeeRegisteredIntegrationEventHandler(composer, deliveryHandler);
 
-        await sut.HandleAsync(Event(), testContext.CancellationToken);
+        var evt = Event();
+        await sut.HandleAsync(evt, testContext.CancellationToken);
 
-        var captured = (TicketConfirmationIntent)composer.ReceivedCalls().Single().GetArguments()[2]!;
+        var captured = (TicketConfirmationIntent)composer.ReceivedCalls().Single().GetArguments()[0]!;
         captured.FirstName.ShouldBe("Alice");
-        captured.FirstName.ShouldBe("Alice");
+        var delivery = deliveryHandler.ReceivedDelivery();
+        delivery.RecipientName.ShouldBe("Alice Anderson");
     }
 
-    // Given an AttendeeRegistered integration event for an attendee
-    // When the event is handled
-    // Then the shared intent includes the attendee's ticket facts
+    // Given an attendee has completed registration
+    // When the registration confirmation event is processed
+    // Then the ticket confirmation keeps the attendee's registration details
     [TestMethod]
     public async Task AttendeeRegistered_IntentIncludesTicketFacts()
     {
-        var composer = Substitute.For<ITicketConfirmationEmailComposer>();
+        var composer = Substitute.For<ITransactionalEmailComposer>();
+        composer.ReturnRenderedEmail();
 
-        var sut = new AttendeeRegisteredIntegrationEventHandler(composer);
+        var deliveryHandler = Substitute.For<ICommandHandler<PrepareEmailDeliveryCommand>>();
+        var sut = new AttendeeRegisteredIntegrationEventHandler(composer, deliveryHandler);
 
         await sut.HandleAsync(Event(), testContext.CancellationToken);
 
-        var captured = (TicketConfirmationIntent)composer.ReceivedCalls().Single().GetArguments()[2]!;
+        var captured = (TicketConfirmationIntent)composer.ReceivedCalls().Single().GetArguments()[0]!;
         captured.TicketTypes.ShouldBeEmpty();
+        var delivery = deliveryHandler.ReceivedDelivery();
+        delivery.RegistrationId.ShouldBe(RegId);
     }
 }

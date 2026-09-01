@@ -5,8 +5,8 @@ using Amolenk.Admitto.Core.Email.Application.Persistence;
 using Amolenk.Admitto.Core.Email.Application.Sending;
 using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
 using Amolenk.Admitto.Core.Email.Application.Templating;
-using Amolenk.Admitto.Core.Email.Application.Templating.EventEmailRenderingContext;
-using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.ComposeReconfirmation;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.ComposeTransactionalEmail;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.PrepareEmailDelivery;
 using Amolenk.Admitto.Core.Email.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Email.Domain.Entities;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
@@ -37,8 +37,6 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
     private static readonly TeamId TeamId = TeamId.New();
     private FakeSmtpBatchSender _lastSender = default!;
     private int _eventCompositionScopeCreations;
-    private int _eventContextScopeRetrievals;
-    private int _templateLoads;
 
     // Given an active policy and an attendee who registered too recently
     // When the stable hourly evaluator runs
@@ -497,8 +495,7 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
 
         _lastSender.SentMessages.Count.ShouldBe(2);
         _eventCompositionScopeCreations.ShouldBe(1);
-        _eventContextScopeRetrievals.ShouldBe(1);
-        _templateLoads.ShouldBe(1);
+        _eventCompositionScopeCreations.ShouldBe(1);
     }
 
     // Given two live candidates whose delivery crosses the requested deadline
@@ -966,7 +963,7 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
             .AddScoped<IEmailWriteStore>(_ => new TestEmailWriteStore(ctx))
             .AddSingleton<IEmailReadStore>(_ => ctx)
             .AddScoped<IRegistrationsFacade>(_ => facade)
-            .AddScoped<IEffectiveEmailSettingsResolver>(_ => new EffectiveEmailSettingsResolver(
+            .AddScoped<ISmtpTransportSettingsResolver>(_ => new SmtpTransportSettingsResolver(
                 Options.Create(new SystemEmailOptions
                 {
                     SmtpHost = "smtp.example.com",
@@ -974,16 +971,13 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
                     FromAddress = "tickets@admitto.org",
                     AuthMode = invalidSettings ? "Basic" : "None"
                 })))
-            .AddScoped<IEmailTemplateService>(_ =>
-                new RecordingEmailTemplateService(() => _templateLoads++))
             .AddSingleton<IEmailRenderer, ScribanEmailRenderer>()
-            .AddScoped<IEmailPreparationService>(provider =>
-                new RecordingEmailPreparationService(
-                    new EmailPreparationService(
+            .AddScoped<ITransactionalEmailComposer>(provider =>
+                new RecordingTransactionalEmailComposer(
+                    new TransactionalEmailComposer(
                         provider.GetRequiredService<IEmailReadStore>(),
-                        provider.GetRequiredService<IEmailTemplateService>(),
                         provider.GetRequiredService<IEmailRenderer>(),
-                        provider.GetRequiredService<IEventEmailRenderingContextProvider>()),
+                        Options.Create(new PublicEventLinksOptions { BaseUrl = "https://tickets.example.com" })),
                     () => _eventCompositionScopeCreations++))
             .AddSingleton<ISmtpBatchSender>(_lastSender = new FakeSmtpBatchSender())
             .AddSingleton<IOptionsMonitor<EmailDeliveryOptions>>(
@@ -992,8 +986,6 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
                     PerMessageDelay = TimeSpan.Zero,
                     InlineRetryDelay = TimeSpan.Zero
                 }))
-            .AddScoped<IEventEmailRenderingContextProvider>(_ =>
-                new TestEventEmailRenderingContextProvider(() => _eventContextScopeRetrievals++))
             .AddKeyedScoped<IOutbox>(EmailModule.Key, (_, _) => new Outbox(ctx))
             .AddKeyedScoped<IUnitOfWork>(EmailModule.Key, (_, _) => new UnitOfWork<EmailDbContext>(
                 ctx, new NoOpOutboxMessageSender(), NullLogger<UnitOfWork<EmailDbContext>>.Instance))
@@ -1006,30 +998,9 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
             NullLogger<RequestReconfirmationsJob>.Instance);
     }
 
-    private sealed class RecordingEmailTemplateService(Action onLoad) : IEmailTemplateService
-    {
-        private readonly EmailTemplateService _inner = new();
-
-        public ValueTask<EmailTemplate> LoadAsync(
-            string name,
-            TeamId teamId,
-            TicketedEventId eventId,
-            CancellationToken cancellationToken = default)
-        {
-            onLoad();
-            return _inner.LoadAsync(name, teamId, eventId, cancellationToken);
-        }
-
-        public ValueTask<EmailTemplate> LoadAsync(
-            string name,
-            TeamId teamId,
-            CancellationToken cancellationToken = default) =>
-            _inner.LoadAsync(name, teamId, cancellationToken);
-    }
-
-    private sealed class RecordingEmailPreparationService(
-        EmailPreparationService inner,
-        Action onReconfirmationScopeCreated) : IEmailPreparationService
+    private sealed class RecordingTransactionalEmailComposer(
+        ITransactionalEmailComposer inner,
+        Action onReconfirmationScopeCreated) : ITransactionalEmailComposer
     {
         public ValueTask<ReconfirmationEmailCompositionScope> CreateReconfirmationScopeAsync(
             TeamId teamId,
@@ -1043,72 +1014,10 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
                 cancellationToken);
         }
 
-        public ValueTask<RenderedEmail> PrepareAsync(
-            string emailType,
-            TeamId teamId,
-            TicketedEventId eventId,
-            object parameters,
+        public ValueTask<RenderedTransactionalEmail> ComposeAsync(
+            TransactionalEmailIntent composition,
             CancellationToken cancellationToken = default) =>
-            inner.PrepareAsync(emailType, teamId, eventId, parameters, cancellationToken);
-
-        public ValueTask<RenderedEmail> PrepareAsync(
-            string emailType,
-            TeamId teamId,
-            TicketedEventId eventId,
-            object parameters,
-            AccentColor accentColor,
-            CancellationToken cancellationToken = default) =>
-            inner.PrepareAsync(emailType, teamId, eventId, parameters, accentColor, cancellationToken);
-    }
-
-    private sealed class TestEventEmailRenderingContextProvider(Action onScopeRetrieved)
-        : IEventEmailRenderingContextProvider
-    {
-        public ValueTask<EventEmailRenderingScope> GetScopeAsync(
-            TeamId teamId,
-            TicketedEventId ticketedEventId,
-            CancellationToken cancellationToken)
-        {
-            onScopeRetrieved();
-            return ValueTask.FromResult(new EventEmailRenderingScope(
-                teamId,
-                ticketedEventId,
-                "DevConf Team",
-                AccentColor.From("#2563eb"),
-                "DevConf",
-                "https://example.com",
-                "https://tickets.example.com/e/devconf",
-                "UTC",
-                null,
-                null,
-                null,
-                false));
-        }
-
-        public ValueTask<EventEmailContextDto> GetContextAsync(
-            TeamId teamId,
-            TicketedEventId ticketedEventId,
-            RegistrationId? registrationId,
-            CancellationToken cancellationToken)
-        {
-            return
-            ValueTask.FromResult(new EventEmailContextDto(
-                teamId.Value,
-                ticketedEventId.Value,
-                "DevConf Team",
-                "DevConf",
-                "https://example.com",
-                "https://tickets.example.com/e/devconf",
-                "https://tickets.example.com/e/devconf/register",
-                "https://tickets.example.com/e/devconf/qr-code",
-                "https://tickets.example.com/e/devconf/cancel",
-                "https://tickets.example.com/e/devconf/edit",
-                "UTC",
-                null,
-                null,
-                null,
-                false));
-        }
+            inner.ComposeAsync(composition, cancellationToken);
     }
 
     private sealed class StaticOptionsMonitor<T>(T value) : IOptionsMonitor<T>

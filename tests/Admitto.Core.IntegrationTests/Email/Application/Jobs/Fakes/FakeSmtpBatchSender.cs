@@ -17,7 +17,7 @@ internal sealed class FakeSmtpBatchSender : ISmtpBatchSender
 
     public int SessionsOpened { get; private set; }
     public int SessionsClosed { get; private set; }
-    public EffectiveEmailSettings? LastOpenedSettings { get; private set; }
+    public SmtpTransportSettings? LastOpenedSettings { get; private set; }
     public List<string> SendAttempts { get; } = [];
     public List<EmailMessage> SentMessages { get; } = [];
     public Func<EmailMessage, Task>? OnBeforeSendAsync { get; set; }
@@ -25,7 +25,7 @@ internal sealed class FakeSmtpBatchSender : ISmtpBatchSender
     public void FailOn(string recipientEmail) => _failOn.Add(recipientEmail);
 
     public Task<ISmtpBatchSession> OpenSessionAsync(
-        EffectiveEmailSettings settings,
+        SmtpTransportSettings settings,
         CancellationToken cancellationToken = default)
     {
         SessionsOpened++;

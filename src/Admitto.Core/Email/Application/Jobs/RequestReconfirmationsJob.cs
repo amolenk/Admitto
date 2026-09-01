@@ -3,7 +3,7 @@ using Amolenk.Admitto.Core.Email.Application.Projections.EventEmailContext;
 using Amolenk.Admitto.Core.Email.Application.Sending;
 using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
 using Amolenk.Admitto.Core.Email.Application.Templating;
-using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.ComposeReconfirmation;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.ComposeTransactionalEmail;
 using Amolenk.Admitto.Core.Email.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Email.Domain.Entities;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
@@ -172,7 +172,7 @@ internal sealed class RequestReconfirmationsJob(
                 reconfirmCandidates,
                 writeStore,
                 registrationsFacade,
-                scope.ServiceProvider.GetRequiredService<IEmailPreparationService>(),
+                scope.ServiceProvider.GetRequiredService<ITransactionalEmailComposer>(),
                 smtp,
                 scope.ServiceProvider.GetRequiredService<IOptionsMonitor<EmailDeliveryOptions>>(),
                 timeProvider,
@@ -201,14 +201,14 @@ internal sealed class RequestReconfirmationsJob(
         IReadOnlyList<RegistrationListItemDto> candidates,
         IEmailWriteStore writeStore,
         IRegistrationsFacade registrationsFacade,
-        IEmailPreparationService preparationService,
+        ITransactionalEmailComposer composition,
         RunSmtpSession smtp,
         IOptionsMonitor<EmailDeliveryOptions> options,
         TimeProvider timeProvider,
         IUnitOfWork unitOfWork,
         CancellationToken ct)
     {
-        var compositionScope = await preparationService.CreateReconfirmationScopeAsync(
+        var compositionScope = await composition.CreateReconfirmationScopeAsync(
             teamId,
             eventId,
             ct);
@@ -559,7 +559,7 @@ internal sealed class RequestReconfirmationsJob(
     private sealed class RunSmtpSession(IServiceScopeFactory scopeFactory) : IAsyncDisposable
     {
         private ISmtpBatchSession? _session;
-        private EffectiveEmailSettings? _settings;
+        private SmtpTransportSettings? _settings;
         private bool _settingsResolved;
 
         public async Task<ISmtpBatchSession> GetOrOpenAsync(CancellationToken ct)
@@ -574,7 +574,7 @@ internal sealed class RequestReconfirmationsJob(
             {
                 await using var settingsScope = scopeFactory.CreateAsyncScope();
                 var settingsResolver = settingsScope.ServiceProvider
-                    .GetRequiredService<IEffectiveEmailSettingsResolver>();
+                    .GetRequiredService<ISmtpTransportSettingsResolver>();
                 _settings = await settingsResolver.ResolveAsync(ct);
                 _settingsResolved = true;
             }

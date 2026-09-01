@@ -1,5 +1,6 @@
 using Amolenk.Admitto.Core.Email.Application.Sending;
 using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
+using Amolenk.Admitto.Core.Email.Application.Templating;
 using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.DeliverEmail;
 using Amolenk.Admitto.Core.Email.Domain.Entities;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
@@ -86,7 +87,7 @@ internal sealed class DeliverEmailFixture
             EventId,
             IdempotencyKey,
             EmailAddress.From("alice@example.com"),
-            "ticket-confirmation",
+            BuiltInEmailTemplateNames.TicketConfirmation,
             "Subject",
             status,
             sentAt,
@@ -96,7 +97,7 @@ internal sealed class DeliverEmailFixture
     public DeliverEmailHandler BuildHandler(IntegrationTestEnvironment environment) =>
         new(
             environment.EmailDatabase.Context,
-            new EffectiveEmailSettingsResolver(Options.Create(_systemEmail)),
+            new SmtpTransportSettingsResolver(Options.Create(_systemEmail)),
             Sender,
             new Outbox(environment.EmailDatabase.Context),
             new StaticOptionsMonitor<EmailDeliveryOptions>(_deliveryOptions));
@@ -106,7 +107,7 @@ internal sealed class DeliverEmailFixture
         EventId.Value,
         "alice@example.com",
         "Alice",
-        "ticket-confirmation",
+        BuiltInEmailTemplateNames.TicketConfirmation,
         IdempotencyKey,
         "Subject",
         "Text",
@@ -119,7 +120,7 @@ internal sealed class DeliverEmailFixture
         public bool ShouldThrow { get; set; }
 
         public ValueTask<string?> SendAsync(
-            EffectiveEmailSettings settings,
+            SmtpTransportSettings settings,
             EmailMessage message,
             CancellationToken cancellationToken = default)
         {

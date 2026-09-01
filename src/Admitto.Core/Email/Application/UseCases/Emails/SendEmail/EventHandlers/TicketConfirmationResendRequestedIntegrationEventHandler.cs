@@ -1,12 +1,14 @@
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
-using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.ComposeTicketConfirmation;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.ComposeTransactionalEmail;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.PrepareEmailDelivery;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail.EventHandlers;
 
 internal sealed class TicketConfirmationResendRequestedIntegrationEventHandler(
-    ITicketConfirmationEmailComposer composer)
+    ITransactionalEmailComposer composer,
+    ICommandHandler<PrepareEmailDeliveryCommand> prepareDeliveryHandler)
     : IIntegrationEventHandler<TicketConfirmationResendRequestedIntegrationEvent>
 {
     public async ValueTask HandleAsync(
@@ -16,14 +18,23 @@ internal sealed class TicketConfirmationResendRequestedIntegrationEventHandler(
         var registrationId = RegistrationId.From(integrationEvent.RegistrationId);
         var fullName = $"{integrationEvent.FirstName} {integrationEvent.LastName}".Trim();
         var idempotencyKey = $"ticket-confirmation-resend:{integrationEvent.RegistrationId}:{integrationEvent.ResendRequestId}";
-        await composer.ComposeAsync(
+        var intent = new TicketConfirmationIntent(
             TeamId.From(integrationEvent.TeamId),
             TicketedEventId.From(integrationEvent.TicketedEventId),
-            new TicketConfirmationIntent(
-                registrationId,
-                integrationEvent.FirstName,
-                integrationEvent.TicketNames),
-            new TicketConfirmationDelivery(integrationEvent.RecipientEmail, fullName, idempotencyKey),
+            registrationId,
+            integrationEvent.FirstName,
+            integrationEvent.TicketNames);
+        var rendered = await composer.ComposeAsync(intent, cancellationToken);
+        await TransactionalEmailDeliveryPreparation.PrepareAsync(
+            prepareDeliveryHandler,
+            new TransactionalEmailDelivery(
+                integrationEvent.TeamId,
+                integrationEvent.TicketedEventId,
+                integrationEvent.RecipientEmail,
+                fullName,
+                idempotencyKey,
+                integrationEvent.RegistrationId),
+            rendered,
             cancellationToken);
     }
 }

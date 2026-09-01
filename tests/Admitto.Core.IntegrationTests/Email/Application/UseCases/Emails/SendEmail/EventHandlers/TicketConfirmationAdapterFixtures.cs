@@ -1,4 +1,6 @@
-using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.ComposeTicketConfirmation;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.ComposeTransactionalEmail;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.PrepareEmailDelivery;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using NSubstitute;
 
@@ -8,7 +10,9 @@ internal sealed class AttendeeTicketsChangedIntegrationEventHandlerFixture
 {
     private AttendeeTicketsChangedIntegrationEventHandlerFixture()
     {
-        Composer = Substitute.For<ITicketConfirmationEmailComposer>();
+        Composer = Substitute.For<ITransactionalEmailComposer>();
+        Composer.ReturnRenderedEmail();
+        DeliveryHandler = Substitute.For<ICommandHandler<PrepareEmailDeliveryCommand>>();
         ChangedAt = new DateTimeOffset(2026, 8, 31, 12, 30, 0, TimeSpan.Zero);
         IntegrationEvent = new AttendeeTicketsChangedIntegrationEvent(
             TeamGuid,
@@ -23,7 +27,8 @@ internal sealed class AttendeeTicketsChangedIntegrationEventHandlerFixture
 
     public static AttendeeTicketsChangedIntegrationEventHandlerFixture Create() => new();
 
-    public ITicketConfirmationEmailComposer Composer { get; }
+    public ITransactionalEmailComposer Composer { get; }
+    public ICommandHandler<PrepareEmailDeliveryCommand> DeliveryHandler { get; }
     public DateTimeOffset ChangedAt { get; }
     public AttendeeTicketsChangedIntegrationEvent IntegrationEvent { get; }
 
@@ -36,7 +41,9 @@ internal sealed class TicketConfirmationResendRequestedIntegrationEventHandlerFi
 {
     private TicketConfirmationResendRequestedIntegrationEventHandlerFixture()
     {
-        Composer = Substitute.For<ITicketConfirmationEmailComposer>();
+        Composer = Substitute.For<ITransactionalEmailComposer>();
+        Composer.ReturnRenderedEmail();
+        DeliveryHandler = Substitute.For<ICommandHandler<PrepareEmailDeliveryCommand>>();
         ResendRequestId = Guid.NewGuid();
         IntegrationEvent = new TicketConfirmationResendRequestedIntegrationEvent(
             TeamGuid,
@@ -51,7 +58,8 @@ internal sealed class TicketConfirmationResendRequestedIntegrationEventHandlerFi
 
     public static TicketConfirmationResendRequestedIntegrationEventHandlerFixture Create() => new();
 
-    public ITicketConfirmationEmailComposer Composer { get; }
+    public ITransactionalEmailComposer Composer { get; }
+    public ICommandHandler<PrepareEmailDeliveryCommand> DeliveryHandler { get; }
     public Guid ResendRequestId { get; }
     public TicketConfirmationResendRequestedIntegrationEvent IntegrationEvent { get; }
 

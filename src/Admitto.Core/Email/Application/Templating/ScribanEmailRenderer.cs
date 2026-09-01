@@ -1,4 +1,3 @@
-using Amolenk.Admitto.Core.Email.Domain.Entities;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Scriban;
 using Scriban.Runtime;
@@ -7,23 +6,15 @@ namespace Amolenk.Admitto.Core.Email.Application.Templating;
 
 internal sealed class ScribanEmailRenderer : IEmailRenderer
 {
-    public RenderedEmail Render(EmailTemplate template, object parameters)
-        => Render(template, parameters, null, null, null);
-
-    public RenderedEmail Render(
-        EmailTemplate template,
-        object parameters,
-        string? subjectOverride,
-        string? textBodyOverride,
-        string? htmlBodyOverride)
+    public RenderedEmail Render(EmailTemplate template, IReadOnlyDictionary<string, object?> parameters)
     {
-        var subject  = RenderString(subjectOverride  ?? template.Subject,  parameters);
-        var textBody = RenderString(textBodyOverride ?? template.TextBody, parameters);
-        var htmlBody = RenderString(htmlBodyOverride ?? template.HtmlBody, parameters);
+        var subject  = RenderString(template.Subject, parameters);
+        var textBody = RenderString(template.TextBody, parameters);
+        var htmlBody = RenderString(template.HtmlBody, parameters);
         return new RenderedEmail(subject, textBody, htmlBody);
     }
 
-    private static string RenderString(string templateText, object parameters)
+    private static string RenderString(string templateText, IReadOnlyDictionary<string, object?> parameters)
     {
         var scribanTemplate = Template.Parse(templateText);
         if (scribanTemplate.HasErrors)
@@ -34,16 +25,9 @@ internal sealed class ScribanEmailRenderer : IEmailRenderer
 
         var context = new TemplateContext { StrictVariables = true };
         var scriptObject = new ScriptObject();
-        if (parameters is IReadOnlyDictionary<string, object?> dictionary)
+        foreach (var (key, value) in parameters)
         {
-            foreach (var (key, value) in dictionary)
-            {
-                scriptObject.SetValue(key, value, readOnly: true);
-            }
-        }
-        else
-        {
-            scriptObject.Import(parameters, renamer: member => StandardMemberRenamer.Rename(member));
+            scriptObject.SetValue(key, value, readOnly: true);
         }
         context.PushGlobal(scriptObject);
 

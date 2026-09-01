@@ -13,7 +13,7 @@ Outgoing messages carry the platform's own sender identity: the `From` address i
 
 `TicketedEvent` owns a globally unique `PublicSlug`. Attendee-facing event links are generated from the configured public tickets base URL plus `/e/{publicSlug}`. The public route resolves only stored slugs and does not accept arbitrary redirect targets.
 
-Email accent color is team-owned branding (`Team.AccentColor`, the shared `AccentColor` value object). Built-in Email templates receive this value through module-owned context rather than through email settings rows: the `team_email_context_view` projection is the single stored source, and it reaches the renderer through `EffectiveEmailSettings.AccentColor` for both transactional and bulk sending. Event-scoped rendering context (`EventEmailContextDto`) deliberately carries no branding, so there is exactly one accent-color path. Font family is not team-owned; it is a fixed system constant.
+Email accent color is team-owned branding (`Team.AccentColor`, the shared `AccentColor` value object). Built-in Email templates receive this value through the single `ITransactionalEmailComposer` and the module-owned `team_email_context_view` projection, never through SMTP transport settings. The composer applies the projected value to the typed event-scoped template mapping; an absent team row uses the default accent. Font family is not team-owned; it is a fixed system constant.
 
 ## Consequences
 - SMTP failures caused by missing/invalid system configuration are operational failures, not team-owned event state.

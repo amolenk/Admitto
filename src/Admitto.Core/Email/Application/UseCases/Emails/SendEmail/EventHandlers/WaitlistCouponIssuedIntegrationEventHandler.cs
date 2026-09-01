@@ -1,4 +1,5 @@
-using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.ComposeCouponEmail;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.ComposeTransactionalEmail;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.PrepareEmailDelivery;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
@@ -11,7 +12,8 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail.Event
 /// Idempotency key: <c>waitlist-coupon-issued:{teamId}:{ticketedEventId}:{couponCode}</c>.
 /// </summary>
 internal sealed class WaitlistCouponIssuedIntegrationEventHandler(
-    ICouponEmailComposer composer)
+    ITransactionalEmailComposer composer,
+    ICommandHandler<PrepareEmailDeliveryCommand> prepareDeliveryHandler)
     : IIntegrationEventHandler<WaitlistCouponIssuedIntegrationEvent>
 {
     public async ValueTask HandleAsync(
@@ -20,17 +22,21 @@ internal sealed class WaitlistCouponIssuedIntegrationEventHandler(
     {
         var idempotencyKey =
             $"waitlist-coupon-issued:{integrationEvent.TeamId}:{integrationEvent.TicketedEventId}:{integrationEvent.CouponCode}";
-        await composer.ComposeAsync(
+        var rendered = await composer.ComposeAsync(new WaitlistOfferIntent(
             TeamId.From(integrationEvent.TeamId),
             TicketedEventId.From(integrationEvent.TicketedEventId),
-            new WaitlistOfferIntent(
-                integrationEvent.CouponCode,
-                integrationEvent.TicketTypeName,
-                integrationEvent.ExpiresAt),
-            new CouponEmailDelivery(
+            integrationEvent.CouponCode,
+            integrationEvent.TicketTypeName,
+            integrationEvent.ExpiresAt), cancellationToken);
+        await TransactionalEmailDeliveryPreparation.PrepareAsync(
+            prepareDeliveryHandler,
+            new TransactionalEmailDelivery(
+                integrationEvent.TeamId,
+                integrationEvent.TicketedEventId,
                 integrationEvent.RecipientEmail,
                 integrationEvent.RecipientEmail,
                 idempotencyKey),
+            rendered,
             cancellationToken);
     }
 }

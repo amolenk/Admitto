@@ -20,7 +20,11 @@ public sealed class ScribanEmailRendererTests
             .WithHtmlBody("<p>Your event: {{ event_name }}</p>")
             .Build();
 
-        var result = _renderer.Render(template, new { FirstName = "Alice", EventName = "DevConf 2026" });
+        var result = _renderer.Render(template, new Dictionary<string, object?>
+        {
+            ["first_name"] = "Alice",
+            ["event_name"] = "DevConf 2026"
+        });
 
         result.Subject.ShouldBe("Hello Alice");
         result.TextBody.ShouldBe("Your event: DevConf 2026");
@@ -39,7 +43,8 @@ public sealed class ScribanEmailRendererTests
             .WithHtmlBody("<p>body</p>")
             .Build();
 
-        Should.Throw<EmailRenderException>(() => _renderer.Render(template, new { }));
+        Should.Throw<EmailRenderException>(() => _renderer.Render(
+            template, new Dictionary<string, object?>()));
     }
 
     // Given a template referencing variables that are not present in the model
@@ -54,6 +59,7 @@ public sealed class ScribanEmailRendererTests
             .WithHtmlBody("<b>{{ event_name }}</b>")
             .Build();
 
-        Should.Throw<EmailRenderException>(() => _renderer.Render(template, new { }));
+        Should.Throw<EmailRenderException>(() => _renderer.Render(
+            template, new Dictionary<string, object?>()));
     }
 }

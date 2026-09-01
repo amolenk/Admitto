@@ -1,4 +1,7 @@
-using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.ComposeVerificationCode;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.ComposeTransactionalEmail;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.PrepareEmailDelivery;
+using Amolenk.Admitto.Core.Email.Application.Templating;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail.EventHandlers;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
@@ -10,17 +13,19 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.UseCases.Email
 [TestClass]
 public sealed class OtpCodeRequestedIntegrationEventHandlerTests(TestContext testContext)
 {
-    // Given an OTP code was requested for an event
-    // When the OTP code requested integration event is handled
-    // Then the typed composer receives only the code, recipient, and idempotency data
+    // Given an attendee has requested a verification code
+    // When the verification-code event is processed
+    // Then the attendee receives an email containing the verification code
     [TestMethod]
-    public async ValueTask HandleAsync_OtpCodeRequested_TranslatesToTypedComposer()
+    public async ValueTask HandleAsync_OtpCodeRequested_SendsVerificationCodeEmail()
     {
         var teamId = Guid.NewGuid();
         var eventId = Guid.NewGuid();
         var otpCodeId = Guid.NewGuid();
-        var composer = Substitute.For<IVerificationCodeEmailComposer>();
-        var sut = new OtpCodeRequestedIntegrationEventHandler(composer);
+        var composer = Substitute.For<ITransactionalEmailComposer>();
+        composer.ReturnRenderedEmail(BuiltInEmailTemplateNames.VerificationCode);
+        var deliveryHandler = Substitute.For<ICommandHandler<PrepareEmailDeliveryCommand>>();
+        var sut = new OtpCodeRequestedIntegrationEventHandler(composer, deliveryHandler);
 
         await sut.HandleAsync(new OtpCodeRequestedIntegrationEvent(
             otpCodeId,
@@ -31,13 +36,16 @@ public sealed class OtpCodeRequestedIntegrationEventHandlerTests(TestContext tes
             "123456"), testContext.CancellationToken);
 
         await composer.Received(1).ComposeAsync(
-            TeamId.From(teamId),
-            TicketedEventId.From(eventId),
-            Arg.Is<VerificationCodeIntent>(intent => intent!.PlainCode == "123456"),
-            Arg.Is<VerificationCodeDelivery>(delivery =>
-                delivery!.RecipientAddress == "alice@example.com"
-                && delivery.RecipientName == "alice@example.com"
-                && delivery.IdempotencyKey == $"otp-requested:{otpCodeId}"),
+            Arg.Is<VerificationCodeIntent>(intent =>
+                intent!.TeamId == TeamId.From(teamId)
+                && intent.TicketedEventId == TicketedEventId.From(eventId)
+                && intent.PlainCode == "123456"),
             Arg.Any<CancellationToken>());
+
+        var delivery = deliveryHandler.ReceivedDelivery();
+        delivery.RecipientAddress.ShouldBe("alice@example.com");
+        delivery.IdempotencyKey.ShouldBe($"otp-requested:{otpCodeId}");
+        delivery.EmailType.ShouldBe(BuiltInEmailTemplateNames.VerificationCode);
+        delivery.RegistrationId.ShouldBeNull();
     }
 }

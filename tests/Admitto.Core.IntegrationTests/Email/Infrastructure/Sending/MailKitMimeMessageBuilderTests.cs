@@ -28,7 +28,7 @@ public sealed class MailKitMimeMessageBuilderTests
         result.ReplyTo.ShouldBeEmpty();
     }
 
-    private static EffectiveEmailSettings CreateSettings(string fromDisplayName) =>
+    private static SmtpTransportSettings CreateSettings(string fromDisplayName) =>
         new(
             Hostname.From("smtp.admitto.org"),
             Port.From(587),

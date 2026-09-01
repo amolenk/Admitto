@@ -1,12 +1,10 @@
-using Amolenk.Admitto.Core.Email.Application.Sending;
-using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
+using Amolenk.Admitto.Core.Email.Application.Projections.EventEmailContext;
 using Amolenk.Admitto.Core.Email.Application.Templating;
 using Amolenk.Admitto.Core.Email.Application.Projections.TeamEmailContext;
 using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail;
 using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.PrepareEmailDelivery;
 using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail.EventHandlers;
-using Amolenk.Admitto.Core.Email.Application.Templating.EventEmailRenderingContext;
-using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.ComposeTicketConfirmation;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.ComposeTransactionalEmail;
 using Amolenk.Admitto.Core.Email.Domain.Entities;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
@@ -16,7 +14,6 @@ using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Outbox;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using NSubstitute;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.UseCases.Emails.RequestTicketConfirmationResend;
 
@@ -78,48 +75,9 @@ public sealed class RequestTicketConfirmationResendHandlerTests(TestContext test
     {
         await SeedTeamEmailContextAsync();
 
-        var eventContextProvider = Substitute.For<IEventEmailRenderingContextProvider>();
-        eventContextProvider
-            .GetContextAsync(
-                TeamId,
-                EventId,
-                Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects.RegistrationId.From(RegistrationId),
-                Arg.Any<CancellationToken>())
-            .Returns(new EventEmailContextDto(
-                TeamId.Value,
-                EventId.Value,
-                "DevConf Team",
-                "DevConf",
-                "https://devconf.example.com",
-                "https://tickets.example.com/devconf",
-                "https://tickets.example.com/devconf/register",
-                $"https://tickets.example.com/devconf/qr-code/{RegistrationId}",
-                $"https://tickets.example.com/devconf/cancel/{RegistrationId}",
-                $"https://tickets.example.com/devconf/edit/{RegistrationId}",
-                "UTC",
-                null,
-                null,
-                null,
-                false));
-
-        eventContextProvider
-            .GetScopeAsync(TeamId, EventId, Arg.Any<CancellationToken>())
-            .Returns(new EventEmailRenderingScope(
-                TeamId,
-                EventId,
-                "DevConf Team",
-                AccentColor.From("#0f766e"),
-                "DevConf",
-                "https://devconf.example.com",
-                "https://tickets.example.com/devconf",
-                "UTC",
-                null,
-                null,
-                null,
-                false));
-
         return new TicketConfirmationResendRequestedIntegrationEventHandler(
-            BuildComposer(eventContextProvider));
+            BuildComposer(),
+            new PrepareEmailDeliveryHandler(Environment.EmailDatabase.Context, new Outbox(Environment.EmailDatabase.Context)));
     }
 
     private async ValueTask SeedTeamEmailContextAsync()
@@ -129,23 +87,18 @@ public sealed class RequestTicketConfirmationResendHandlerTests(TestContext test
             TeamId, "DevConf Team", "#0f766e", teamVersion: 1, now);
 
         await Environment.EmailDatabase.SeedAsync(db => db.TeamEmailContexts.Add(teamContext));
+        var eventContext = EventEmailContextView.CreatePartial(TeamId, EventId, now);
+        eventContext.UpdateEventContext(1, "DevConf", "https://devconf.example.com", "devconf", "UTC", 1,
+            null, false, now);
+        await Environment.EmailDatabase.SeedAsync(db => db.EventEmailContexts.Add(eventContext));
     }
 
-    private TicketConfirmationEmailComposer BuildComposer(
-        IEventEmailRenderingContextProvider eventContextProvider)
+    private TransactionalEmailComposer BuildComposer()
     {
-        var preparationService = new EmailPreparationService(
+        return new TransactionalEmailComposer(
             Environment.EmailDatabase.Context,
-            new EmailTemplateService(),
             new ScribanEmailRenderer(),
-            eventContextProvider);
-        var outbox = new Outbox(Environment.EmailDatabase.Context);
-
-        return new TicketConfirmationEmailComposer(
-            Environment.EmailDatabase.Context,
-            eventContextProvider,
-            preparationService,
-            new PrepareEmailDeliveryHandler(Environment.EmailDatabase.Context, outbox));
+            Options.Create(new PublicEventLinksOptions { BaseUrl = "https://tickets.example.com" }));
     }
 
     private static TicketConfirmationResendRequestedIntegrationEvent Command() =>

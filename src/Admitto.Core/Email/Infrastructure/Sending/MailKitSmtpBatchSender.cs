@@ -11,7 +11,7 @@ internal sealed class MailKitSmtpBatchSender : ISmtpBatchSender
     public string Provider => "MailKit/SMTP";
 
     public async Task<ISmtpBatchSession> OpenSessionAsync(
-        EffectiveEmailSettings settings,
+        SmtpTransportSettings settings,
         CancellationToken cancellationToken = default)
     {
         var client = new SmtpClient();
@@ -37,7 +37,7 @@ internal sealed class MailKitSmtpBatchSender : ISmtpBatchSender
             settings.FromDisplayName);
     }
 
-    private static SecureSocketOptions GetSecureSocketOptions(EffectiveEmailSettings settings) =>
+    private static SecureSocketOptions GetSecureSocketOptions(SmtpTransportSettings settings) =>
         settings.SmtpSsl
             ? SecureSocketOptions.SslOnConnect
             : settings.SmtpStartTls

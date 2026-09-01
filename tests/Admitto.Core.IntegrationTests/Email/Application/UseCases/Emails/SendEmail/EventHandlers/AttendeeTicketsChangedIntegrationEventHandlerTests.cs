@@ -1,4 +1,7 @@
-using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.ComposeTicketConfirmation;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.ComposeTransactionalEmail;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.PrepareEmailDelivery;
+using Amolenk.Admitto.Core.Email.Application.Templating;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail.EventHandlers;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using NSubstitute;
@@ -8,24 +11,28 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.UseCases.Email
 [TestClass]
 public sealed class AttendeeTicketsChangedIntegrationEventHandlerTests
 {
-    // Given an attendee ticket-change event
-    // When the event is handled
-    // Then the common composer receives the ticket intent and exact delivery identity
+    // Given an attendee has changed their ticket selection
+    // When the ticket-change event is processed
+    // Then the attendee receives a ticket confirmation with the updated registration details
     [TestMethod]
     public async Task HandleAsync_TicketSelectionChanged_DelegatesRecipientAndIntent()
     {
         var fixture = AttendeeTicketsChangedIntegrationEventHandlerFixture.Create();
 
-        await new AttendeeTicketsChangedIntegrationEventHandler(fixture.Composer)
+        await new AttendeeTicketsChangedIntegrationEventHandler(fixture.Composer, fixture.DeliveryHandler)
             .HandleAsync(fixture.IntegrationEvent, CancellationToken.None);
 
         var arguments = fixture.Composer.ReceivedCalls().Single().GetArguments();
-        var intent = (TicketConfirmationIntent)arguments[2]!;
+        var intent = (TicketConfirmationIntent)arguments[0]!;
         intent.FirstName.ShouldBe("Alice");
         intent.TicketTypes.ShouldBe(["General Admission"]);
-        var delivery = (TicketConfirmationDelivery)arguments[3]!;
+        intent.RegistrationId.Value.ShouldBe(AttendeeTicketsChangedIntegrationEventHandlerFixture.RegistrationGuid);
+
+        var delivery = fixture.DeliveryHandler.ReceivedDelivery();
         delivery.RecipientAddress.ShouldBe("alice@example.com");
         delivery.IdempotencyKey.ShouldBe(
-            $"tickets-changed:{AttendeeTicketsChangedIntegrationEventHandlerFixture.RegistrationGuid}:{fixture.ChangedAt.ToUnixTimeMilliseconds()}");
+            $"tickets-changed:{fixture.IntegrationEvent.RegistrationId}:{fixture.ChangedAt.ToUnixTimeMilliseconds()}");
+        delivery.EmailType.ShouldBe(BuiltInEmailTemplateNames.TicketConfirmation);
+        delivery.RegistrationId.ShouldBe(AttendeeTicketsChangedIntegrationEventHandlerFixture.RegistrationGuid);
     }
 }

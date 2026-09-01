@@ -5,7 +5,7 @@ namespace Amolenk.Admitto.Core.Email.Application.Sending.Settings;
 /// <summary>
 /// Resolved and decrypted email settings ready for use by the send pipeline.
 /// </summary>
-public sealed record EffectiveEmailSettings(
+public sealed record SmtpTransportSettings(
     Hostname SmtpHost,
     Port SmtpPort,
     bool SmtpSsl,

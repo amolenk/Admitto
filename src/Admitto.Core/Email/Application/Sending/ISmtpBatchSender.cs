@@ -10,7 +10,7 @@ public interface ISmtpBatchSender
     string Provider { get; }
 
     Task<ISmtpBatchSession> OpenSessionAsync(
-        EffectiveEmailSettings settings,
+        SmtpTransportSettings settings,
         CancellationToken cancellationToken = default);
 }
 

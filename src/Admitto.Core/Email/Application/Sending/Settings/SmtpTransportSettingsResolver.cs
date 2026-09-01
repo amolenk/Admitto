@@ -7,29 +7,29 @@ namespace Amolenk.Admitto.Core.Email.Application.Sending.Settings;
 /// <summary>
 /// Email-module-internal contract for resolving deployment SMTP settings.
 /// </summary>
-internal interface IEffectiveEmailSettingsResolver
+internal interface ISmtpTransportSettingsResolver
 {
-    ValueTask<EffectiveEmailSettings?> ResolveAsync(
+    ValueTask<SmtpTransportSettings?> ResolveAsync(
         CancellationToken cancellationToken = default);
 }
 
-internal sealed class EffectiveEmailSettingsResolver(
-    IOptions<SystemEmailOptions> options) : IEffectiveEmailSettingsResolver
+internal sealed class SmtpTransportSettingsResolver(
+    IOptions<SystemEmailOptions> options) : ISmtpTransportSettingsResolver
 {
-    public ValueTask<EffectiveEmailSettings?> ResolveAsync(
+    public ValueTask<SmtpTransportSettings?> ResolveAsync(
         CancellationToken cancellationToken = default)
     {
         var value = options.Value;
         if (string.IsNullOrWhiteSpace(value.SmtpHost) || string.IsNullOrWhiteSpace(value.FromAddress))
-            return ValueTask.FromResult<EffectiveEmailSettings?>(null);
+            return ValueTask.FromResult<SmtpTransportSettings?>(null);
 
         var authMode = ResolveAuthMode(value.AuthMode);
         if (authMode is null)
-            return ValueTask.FromResult<EffectiveEmailSettings?>(null);
+            return ValueTask.FromResult<SmtpTransportSettings?>(null);
 
         try
         {
-            var settings = new EffectiveEmailSettings(
+            var settings = new SmtpTransportSettings(
                 Hostname.From(value.SmtpHost),
                 Port.From(value.SmtpPort),
                 value.SmtpSsl,
@@ -40,12 +40,12 @@ internal sealed class EffectiveEmailSettingsResolver(
                 authMode == EmailAuthMode.Basic ? value.Username : null,
                 authMode == EmailAuthMode.Basic ? value.Password : null);
 
-            return ValueTask.FromResult<EffectiveEmailSettings?>(settings.IsValid() ? settings : null);
+            return ValueTask.FromResult<SmtpTransportSettings?>(settings.IsValid() ? settings : null);
         }
         catch (ValueObjectValidationException)
         {
             // Invalid value-object configuration is an expected configuration failure.
-            return ValueTask.FromResult<EffectiveEmailSettings?>(null);
+            return ValueTask.FromResult<SmtpTransportSettings?>(null);
         }
     }
 

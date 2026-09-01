@@ -1,4 +1,5 @@
-using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.ComposeRegistrationCancellation;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.ComposeTransactionalEmail;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.PrepareEmailDelivery;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
@@ -15,36 +16,57 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail.Event
 /// Idempotency key: <c>registration-cancelled:{integrationEventId}</c>.
 /// </remarks>
 internal sealed class RegistrationCancelledIntegrationEventHandler(
-    IRegistrationCancellationEmailComposer composer)
+    ITransactionalEmailComposer composer,
+    ICommandHandler<PrepareEmailDeliveryCommand> prepareDeliveryHandler)
     : IIntegrationEventHandler<RegistrationCancelledIntegrationEvent>
 {
     public async ValueTask HandleAsync(
         RegistrationCancelledIntegrationEvent integrationEvent,
         CancellationToken cancellationToken)
     {
-        var intent = ResolveIntent(integrationEvent.Reason, integrationEvent.FirstName);
-        if (intent is null)
+        var idempotencyKey = $"registration-cancelled:{integrationEvent.IntegrationEventId:N}";
+        var dispatch = ResolveDispatch(integrationEvent, idempotencyKey);
+        if (dispatch is null)
             return;
 
-        var idempotencyKey = $"registration-cancelled:{integrationEvent.IntegrationEventId:N}";
-
-        await composer.ComposeAsync(
-            TeamId.From(integrationEvent.TeamId),
-            TicketedEventId.From(integrationEvent.TicketedEventId),
-            intent,
-            new RegistrationCancellationDelivery(
-                integrationEvent.RecipientEmail,
-                $"{integrationEvent.FirstName} {integrationEvent.LastName}".Trim(),
-                idempotencyKey,
-                RegistrationId.From(integrationEvent.RegistrationId)),
+        var rendered = await composer.ComposeAsync(dispatch.Intent, cancellationToken);
+        await TransactionalEmailDeliveryPreparation.PrepareAsync(
+            prepareDeliveryHandler,
+            dispatch.Delivery,
+            rendered,
             cancellationToken);
     }
 
-    private static RegistrationCancellationIntent? ResolveIntent(string reason, string firstName) => reason switch
+    private static CancellationEmailDispatch? ResolveDispatch(
+        RegistrationCancelledIntegrationEvent integrationEvent,
+        string idempotencyKey)
     {
-        "AttendeeRequest" => new AttendeeRequestCancellationIntent(firstName),
-        "VisaLetterDenied" => new VisaLetterDeniedCancellationIntent(firstName),
-        "ReconfirmAutoCancel" => new ReconfirmAutoCancellationIntent(firstName),
-        _ => null
-    };
+        var teamId = TeamId.From(integrationEvent.TeamId);
+        var eventId = TicketedEventId.From(integrationEvent.TicketedEventId);
+        var registrationId = RegistrationId.From(integrationEvent.RegistrationId);
+        var recipientName = $"{integrationEvent.FirstName} {integrationEvent.LastName}".Trim();
+        return integrationEvent.Reason switch
+        {
+            "AttendeeRequest" => new CancellationEmailDispatch(
+                new AttendeeRequestCancellationIntent(teamId, eventId, integrationEvent.FirstName, registrationId),
+                new TransactionalEmailDelivery(
+                    integrationEvent.TeamId, integrationEvent.TicketedEventId,
+                    integrationEvent.RecipientEmail, recipientName, idempotencyKey, integrationEvent.RegistrationId)),
+            "VisaLetterDenied" => new CancellationEmailDispatch(
+                new VisaLetterDeniedCancellationIntent(teamId, eventId, integrationEvent.FirstName, registrationId),
+                new TransactionalEmailDelivery(
+                    integrationEvent.TeamId, integrationEvent.TicketedEventId,
+                    integrationEvent.RecipientEmail, recipientName, idempotencyKey, integrationEvent.RegistrationId)),
+            "ReconfirmAutoCancel" => new CancellationEmailDispatch(
+                new ReconfirmAutoCancellationIntent(teamId, eventId, integrationEvent.FirstName, registrationId),
+                new TransactionalEmailDelivery(
+                    integrationEvent.TeamId, integrationEvent.TicketedEventId,
+                    integrationEvent.RecipientEmail, recipientName, idempotencyKey, integrationEvent.RegistrationId)),
+            _ => null
+        };
+    }
+
+    private sealed record CancellationEmailDispatch(
+        RegistrationCancellationIntent Intent,
+        TransactionalEmailDelivery Delivery);
 }

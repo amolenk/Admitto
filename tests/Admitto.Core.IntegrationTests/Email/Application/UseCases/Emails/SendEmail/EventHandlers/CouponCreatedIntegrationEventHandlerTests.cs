@@ -1,4 +1,7 @@
-using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.ComposeCouponEmail;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.ComposeTransactionalEmail;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.PrepareEmailDelivery;
+using Amolenk.Admitto.Core.Email.Application.Templating;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using NSubstitute;
@@ -9,11 +12,11 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.UseCases.Email
 public sealed class CouponCreatedIntegrationEventHandlerTests(TestContext testContext)
     : AspireIntegrationTestBase
 {
-    // Given an organizer-created coupon integration event
-    // When the event is handled
-    // Then a typed coupon invitation intent preserves the recipient and existing idempotency key
+    // Given an organizer has created a coupon for an attendee
+    // When the coupon invitation event is processed
+    // Then the attendee receives a coupon invitation email
     [TestMethod]
-    public async Task HandleAsync_OrganizerCoupon_UsesCouponInvitationIntentAndDelivery()
+    public async Task HandleAsync_OrganizerCoupon_UsesCouponInvitationIntent()
     {
         var fixture = CouponEmailAdapterFixture.OrganizerCreatedCoupon();
 
@@ -22,13 +25,16 @@ public sealed class CouponCreatedIntegrationEventHandlerTests(TestContext testCo
             testContext.CancellationToken);
 
         await fixture.Composer.Received(1).ComposeAsync(
-            TeamId.From(fixture.TeamId),
-            TicketedEventId.From(fixture.EventId),
-            Arg.Is<CouponInvitationIntent>(intent => intent!.CouponCode == "GENERAL-123"),
-            Arg.Is<CouponEmailDelivery>(delivery =>
-                delivery!.RecipientAddress == "alice@example.com"
-                && delivery.RecipientName == "alice@example.com"
-                && delivery.IdempotencyKey == "coupon-created:GENERAL-123"),
+            Arg.Is<CouponInvitationIntent>(intent =>
+                intent!.TeamId == TeamId.From(fixture.TeamId)
+                && intent.TicketedEventId == TicketedEventId.From(fixture.EventId)
+                && intent.CouponCode == "GENERAL-123"),
             Arg.Any<CancellationToken>());
+
+        var delivery = fixture.DeliveryHandler.ReceivedDelivery();
+        delivery.RecipientAddress.ShouldBe("alice@example.com");
+        delivery.IdempotencyKey.ShouldBe("coupon-created:GENERAL-123");
+        delivery.EmailType.ShouldBe(BuiltInEmailTemplateNames.CouponInvitation);
+        delivery.RegistrationId.ShouldBeNull();
     }
 }

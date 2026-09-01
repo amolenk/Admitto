@@ -11,7 +11,7 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.Emails.DeliverEmail;
 
 internal sealed class DeliverEmailHandler(
     IEmailWriteStore writeStore,
-    IEffectiveEmailSettingsResolver settingsResolver,
+    ISmtpTransportSettingsResolver settingsResolver,
     IEmailSender emailSender,
     [FromKeyedServices(EmailModule.Key)] IOutbox outbox,
     IOptionsMonitor<EmailDeliveryOptions> options)
