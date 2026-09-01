@@ -45,12 +45,14 @@ internal sealed class VerificationCodeEmailComposer(
         CancellationToken cancellationToken = default)
     {
         var recipient = EmailAddress.From(delivery.RecipientAddress);
-        var existing = await writeStore.EmailLog.FirstOrDefaultAsync(
-            log => log.TeamId == teamId
-                && log.TicketedEventId == ticketedEventId
-                && log.Recipient == recipient
-                && log.IdempotencyKey == delivery.IdempotencyKey,
-            cancellationToken);
+        var existing = await writeStore.EmailLog
+            .AsNoTracking()
+            .FirstOrDefaultAsync(
+                log => log.TeamId == teamId
+                    && log.TicketedEventId == ticketedEventId
+                    && log.Recipient == recipient
+                    && log.IdempotencyKey == delivery.IdempotencyKey,
+                cancellationToken);
 
         // Terminal claims are authoritative idempotency guards. Check them before
         // loading projections so a redelivery remains a no-op after projection loss.

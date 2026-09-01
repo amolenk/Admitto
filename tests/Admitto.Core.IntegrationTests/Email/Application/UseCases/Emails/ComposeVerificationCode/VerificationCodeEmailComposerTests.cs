@@ -114,4 +114,117 @@ public sealed class VerificationCodeEmailComposerTests(TestContext testContext)
         (await Environment.EmailDatabase.Context.OutboxMessages.CountAsync(testContext.CancellationToken))
             .ShouldBe(0);
     }
+
+    // Given a complete event and existing team branding projection
+    // When a verification code email is composed
+    // Then the projected team name and accent are used in the rendered delivery
+    [TestMethod]
+    public async ValueTask ComposeAsync_ExistingTeamContext_UsesProjectedTeamBranding()
+    {
+        var teamId = TeamId.New();
+        var eventId = TicketedEventId.New();
+        var fixture = VerificationCodeEmailComposerFixture.ExistingTeamContext();
+        await fixture.SetupAsync(Environment, teamId, eventId);
+
+        await fixture.BuildComposer(Environment).ComposeAsync(
+            teamId,
+            eventId,
+            new VerificationCodeIntent("123456"),
+            new VerificationCodeDelivery(
+                "alice@example.com",
+                "alice@example.com",
+                "otp-requested:team-branding"),
+            testContext.CancellationToken);
+        await Environment.EmailDatabase.Context.SaveChangesAsync(testContext.CancellationToken);
+
+        var log = await Environment.EmailDatabase.Context.EmailLog
+            .AsNoTracking()
+            .SingleAsync(testContext.CancellationToken);
+        log.Subject.ShouldBe("Your DevConf registration code");
+
+        var delivery = await Environment.EmailDatabase.Context.OutboxMessages
+            .AsNoTracking()
+            .SingleAsync(testContext.CancellationToken);
+        var text = delivery.Payload.RootElement.GetProperty("textBody").GetString()!;
+        var html = delivery.Payload.RootElement.GetProperty("htmlBody").GetString()!;
+
+        text.ShouldContain("DevConf Team");
+        html.ShouldContain("DevConf Team");
+        html.ShouldContain("#0f766e");
+    }
+
+    // Given no event projection on the first delivery attempt
+    // When the projection arrives and the same verification email is retried
+    // Then it is claimed and queued without changing its delivery identity
+    [TestMethod]
+    public async ValueTask ComposeAsync_ContextArrivesAfterFailure_SucceedsOnRetry()
+    {
+        var teamId = TeamId.New();
+        var eventId = TicketedEventId.New();
+        var fixture = VerificationCodeEmailComposerFixture.CompleteEventContext();
+        var composer = fixture.BuildComposer(Environment);
+        var intent = new VerificationCodeIntent("123456");
+        var delivery = new VerificationCodeDelivery(
+            "alice@example.com",
+            "alice@example.com",
+            "otp-requested:retry");
+
+        await Should.ThrowAsync<EventEmailContextMissingException>(async () =>
+            await composer.ComposeAsync(
+                teamId,
+                eventId,
+                intent,
+                delivery,
+                testContext.CancellationToken));
+
+        (await Environment.EmailDatabase.Context.EmailLog.CountAsync(testContext.CancellationToken))
+            .ShouldBe(0);
+        (await Environment.EmailDatabase.Context.OutboxMessages.CountAsync(testContext.CancellationToken))
+            .ShouldBe(0);
+
+        await fixture.SetupAsync(Environment, teamId, eventId);
+        await composer.ComposeAsync(
+            teamId,
+            eventId,
+            intent,
+            delivery,
+            testContext.CancellationToken);
+        await Environment.EmailDatabase.Context.SaveChangesAsync(testContext.CancellationToken);
+
+        var log = await Environment.EmailDatabase.Context.EmailLog
+            .AsNoTracking()
+            .SingleAsync(testContext.CancellationToken);
+        log.Recipient.Value.ShouldBe(delivery.RecipientAddress);
+        log.IdempotencyKey.ShouldBe(delivery.IdempotencyKey);
+        (await Environment.EmailDatabase.Context.OutboxMessages.CountAsync(testContext.CancellationToken))
+            .ShouldBe(1);
+    }
+
+    // Given a terminal verification email claim and no event projection
+    // When the same verification email is redelivered
+    // Then it short-circuits without loading context or creating delivery work
+    [TestMethod]
+    public async ValueTask ComposeAsync_TerminalClaimAndMissingContext_DoesNothing()
+    {
+        var teamId = TeamId.New();
+        var eventId = TicketedEventId.New();
+        var delivery = new VerificationCodeDelivery(
+            "alice@example.com",
+            "alice@example.com",
+            "otp-requested:terminal");
+        var fixture = VerificationCodeEmailComposerFixture.CompleteEventContext();
+        await fixture.SeedTerminalClaimAsync(Environment, teamId, eventId, delivery);
+
+        await fixture.BuildComposer(Environment).ComposeAsync(
+            teamId,
+            eventId,
+            new VerificationCodeIntent("123456"),
+            delivery,
+            testContext.CancellationToken);
+
+        (await Environment.EmailDatabase.Context.EmailLog.CountAsync(testContext.CancellationToken))
+            .ShouldBe(1);
+        (await Environment.EmailDatabase.Context.OutboxMessages.CountAsync(testContext.CancellationToken))
+            .ShouldBe(0);
+    }
 }
