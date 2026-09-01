@@ -1,0 +1,16 @@
+You're invited to {{ event_name }}
+
+Hi there,
+
+The {{ team_name }} team invited you to register for {{ event_name }}.
+
+Your coupon code: {{ coupon_code }}
+
+Register now:
+{{ register_link }}
+
+For more details about the event, visit:
+{{ event_website }}
+
+Best regards,
+The {{ team_name }} Team

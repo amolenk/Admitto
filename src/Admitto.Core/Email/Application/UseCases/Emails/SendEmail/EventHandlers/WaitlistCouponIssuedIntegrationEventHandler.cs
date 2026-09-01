@@ -1,5 +1,4 @@
-using Amolenk.Admitto.Core.Email.Application.Templating;
-using Amolenk.Admitto.Core.Email.Application.Templating.EventEmailRenderingContext;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.ComposeCouponEmail;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
@@ -12,8 +11,7 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail.Event
 /// Idempotency key: <c>waitlist-coupon-issued:{teamId}:{ticketedEventId}:{couponCode}</c>.
 /// </summary>
 internal sealed class WaitlistCouponIssuedIntegrationEventHandler(
-    IEventEmailRenderingContextProvider eventContextProvider,
-    ICommandHandler<SendEmailCommand> sendEmailHandler)
+    ICouponEmailComposer composer)
     : IIntegrationEventHandler<WaitlistCouponIssuedIntegrationEvent>
 {
     public async ValueTask HandleAsync(
@@ -22,31 +20,17 @@ internal sealed class WaitlistCouponIssuedIntegrationEventHandler(
     {
         var idempotencyKey =
             $"waitlist-coupon-issued:{integrationEvent.TeamId}:{integrationEvent.TicketedEventId}:{integrationEvent.CouponCode}";
-        var eventContext = await eventContextProvider.GetContextAsync(
+        await composer.ComposeAsync(
             TeamId.From(integrationEvent.TeamId),
             TicketedEventId.From(integrationEvent.TicketedEventId),
-            registrationId: null,
-            cancellationToken: cancellationToken);
-
-        var command = new SendEmailCommand(
-            TeamId: integrationEvent.TeamId,
-            TicketedEventId: integrationEvent.TicketedEventId,
-            RecipientAddress: integrationEvent.RecipientEmail,
-            RecipientName: integrationEvent.RecipientEmail,
-            EmailType: BuiltInEmailTemplateNames.WaitlistNotification,
-            IdempotencyKey: idempotencyKey,
-            Parameters: new
-            {
+            new WaitlistOfferIntent(
                 integrationEvent.CouponCode,
                 integrationEvent.TicketTypeName,
-                ExpiresAt = integrationEvent.ExpiresAt.ToString("f"),
-                eventContext.TeamName,
-                eventContext.EventName,
-                EventWebsite = eventContext.WebsiteUrl,
-                eventContext.RegisterLink,
-            },
-            RegistrationId: null);
-
-        await sendEmailHandler.HandleAsync(command, cancellationToken);
+                integrationEvent.ExpiresAt),
+            new CouponEmailDelivery(
+                integrationEvent.RecipientEmail,
+                integrationEvent.RecipientEmail,
+                idempotencyKey),
+            cancellationToken);
     }
 }

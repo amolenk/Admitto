@@ -45,6 +45,8 @@ internal static class BuiltInEmailTemplateCatalog
                 resourceKey:  "visa-letter-denied"),
             Build(BuiltInEmailTemplateNames.VerificationCode,
                 resourceKey:  "otp-code"),
+            Build(BuiltInEmailTemplateNames.CouponInvitation,
+                resourceKey: "coupon-invitation"),
             Build(BuiltInEmailTemplateNames.WaitlistNotification,
                 resourceKey:  "waitlist-notification"),
         ];
