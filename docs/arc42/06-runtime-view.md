@@ -273,6 +273,10 @@ Admin and Partner ticket-confirmation resends are requested through Registration
 
 **Configuration failure**: if deployment system SMTP settings are missing or invalid, registration itself is unaffected. The email work records the failure through the normal `EmailLog`/delivery-error path and operator telemetry; this is an operability issue, not team-owned event state. Transient SMTP failures remain retryable until the configured delivery attempt limit is reached.
 
+### OTP verification-code email
+
+An `OtpCodeRequested` integration event is translated by the Email module's thin adapter into a typed verification-code intent and delivery value. The adapter preserves the recipient address and uses `otp-requested:{OtpCodeId}` as the idempotency key; it does not resolve or copy event/team rendering facts. The verification-code composer loads one complete Email-owned event scope, applies the absent-team defaults (`Admitto` and `#2563eb`), renders the built-in `VerificationCode` template with the closed mapping `plain_code`, `event_name`, and `team_name`, and then calls `PrepareEmailDelivery`. Missing or incomplete event context fails before the `EmailLog` claim and Email outbox enqueue, allowing queue redelivery after projection catch-up.
+
 ## 6.9 Reconfirm scheduling and cycle limits (hourly active-event evaluation)
 
 The reconfirmation policy is owned by `TicketedEvent` in Registrations. Email projects the schedule-affecting event data needed for evaluation: policy presence and window, minimum email interval, optional event-local quiet hours, event time zone, and lifecycle state. A recurring Quartz job in the Worker evaluates enabled Active events once per hour; the policy controls eligibility, not scheduler timing. Ticket types may add an optional maximum reconfirmation-email count, with the strictest configured value governing each registration's current cycle.

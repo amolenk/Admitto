@@ -1,5 +1,4 @@
-using Amolenk.Admitto.Core.Email.Application.Templating;
-using Amolenk.Admitto.Core.Email.Application.Templating.EventEmailRenderingContext;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.ComposeVerificationCode;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
@@ -7,13 +6,11 @@ using Amolenk.Admitto.Core.Shared.Application.Messaging;
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail.EventHandlers;
 
 /// <summary>
-/// Handles <see cref="OtpCodeRequestedIntegrationEvent"/> by dispatching a
-/// <see cref="SendEmailCommand"/> to send the OTP verification code to the attendee.
+/// Translates the OTP integration event into a typed verification-code intent.
 /// Idempotency key: <c>otp-requested:{otpCodeId}</c>.
 /// </summary>
 internal sealed class OtpCodeRequestedIntegrationEventHandler(
-    IEventEmailRenderingContextProvider eventContextProvider,
-    ICommandHandler<SendEmailCommand> sendEmailHandler)
+    IVerificationCodeEmailComposer composer)
     : IIntegrationEventHandler<OtpCodeRequestedIntegrationEvent>
 {
     public async ValueTask HandleAsync(
@@ -21,28 +18,14 @@ internal sealed class OtpCodeRequestedIntegrationEventHandler(
         CancellationToken cancellationToken)
     {
         var idempotencyKey = $"otp-requested:{integrationEvent.OtpCodeId}";
-        var eventContext = await eventContextProvider.GetContextAsync(
+        await composer.ComposeAsync(
             TeamId.From(integrationEvent.TeamId),
             TicketedEventId.From(integrationEvent.TicketedEventId),
-            registrationId: null,
-            cancellationToken: cancellationToken);
-
-        var command = new SendEmailCommand(
-            TeamId: integrationEvent.TeamId,
-            TicketedEventId: integrationEvent.TicketedEventId,
-            RecipientAddress: integrationEvent.RecipientEmail,
-            RecipientName: integrationEvent.RecipientEmail,
-            EmailType: BuiltInEmailTemplateNames.VerificationCode,
-            IdempotencyKey: idempotencyKey,
-            Parameters: new
-            {
-                integrationEvent.PlainCode,
-                eventContext.TeamName,
-                eventContext.EventName,
+            new VerificationCodeIntent(integrationEvent.PlainCode),
+            new VerificationCodeDelivery(
                 integrationEvent.RecipientEmail,
-            },
-            RegistrationId: null);
-
-        await sendEmailHandler.HandleAsync(command, cancellationToken);
+                integrationEvent.RecipientEmail,
+                idempotencyKey),
+            cancellationToken);
     }
 }
