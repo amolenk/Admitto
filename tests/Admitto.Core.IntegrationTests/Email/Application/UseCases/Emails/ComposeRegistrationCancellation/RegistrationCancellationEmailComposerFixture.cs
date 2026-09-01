@@ -84,7 +84,8 @@ internal sealed class RegistrationCancellationEmailComposerFixture
         var preparation = new EmailPreparationService(
             environment.EmailDatabase.Context,
             new EmailTemplateService(),
-            new ScribanEmailRenderer());
+            new ScribanEmailRenderer(),
+            contextProvider);
         var prepareDelivery = new PrepareEmailDeliveryHandler(
             environment.EmailDatabase.Context,
             new Outbox(environment.EmailDatabase.Context));

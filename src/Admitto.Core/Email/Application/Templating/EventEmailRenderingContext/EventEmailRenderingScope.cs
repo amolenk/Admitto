@@ -1,9 +1,8 @@
 using Amolenk.Admitto.Core.Email.Application.Templating;
-using Amolenk.Admitto.Core.Email.Application.Templating.EventEmailRenderingContext;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 
-namespace Amolenk.Admitto.Core.Email.Application.UseCases.Emails.ComposeTicketConfirmation;
+namespace Amolenk.Admitto.Core.Email.Application.Templating.EventEmailRenderingContext;
 
 /// <summary>
 /// Immutable event-scoped Email context. The team and event projections are read
@@ -50,4 +49,5 @@ internal sealed record EventEmailRenderingScope(
             ReconfirmMinEmailIntervalHours,
             IsArchived);
     }
+
 }

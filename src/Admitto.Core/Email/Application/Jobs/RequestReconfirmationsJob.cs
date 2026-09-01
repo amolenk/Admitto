@@ -3,7 +3,7 @@ using Amolenk.Admitto.Core.Email.Application.Projections.EventEmailContext;
 using Amolenk.Admitto.Core.Email.Application.Sending;
 using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
 using Amolenk.Admitto.Core.Email.Application.Templating;
-using Amolenk.Admitto.Core.Email.Application.Templating.EventEmailRenderingContext;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.ComposeReconfirmation;
 using Amolenk.Admitto.Core.Email.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Email.Domain.Entities;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
@@ -173,7 +173,6 @@ internal sealed class RequestReconfirmationsJob(
                 writeStore,
                 registrationsFacade,
                 scope.ServiceProvider.GetRequiredService<IEmailPreparationService>(),
-                scope.ServiceProvider.GetRequiredService<IEventEmailRenderingContextProvider>(),
                 smtp,
                 scope.ServiceProvider.GetRequiredService<IOptionsMonitor<EmailDeliveryOptions>>(),
                 timeProvider,
@@ -203,14 +202,16 @@ internal sealed class RequestReconfirmationsJob(
         IEmailWriteStore writeStore,
         IRegistrationsFacade registrationsFacade,
         IEmailPreparationService preparationService,
-        IEventEmailRenderingContextProvider eventContextProvider,
         RunSmtpSession smtp,
         IOptionsMonitor<EmailDeliveryOptions> options,
         TimeProvider timeProvider,
         IUnitOfWork unitOfWork,
         CancellationToken ct)
     {
-        var eventContext = await eventContextProvider.GetContextAsync(teamId, eventId, null, ct);
+        var compositionScope = await preparationService.CreateReconfirmationScopeAsync(
+            teamId,
+            eventId,
+            ct);
 
         foreach (var candidate in candidates)
         {
@@ -220,10 +221,9 @@ internal sealed class RequestReconfirmationsJob(
                 eventId,
                 deliveryStart,
                 candidate,
-                eventContext,
+                compositionScope,
                 registrationsFacade,
                 writeStore,
-                preparationService,
                 smtp,
                 options,
                 timeProvider,
@@ -237,10 +237,9 @@ internal sealed class RequestReconfirmationsJob(
         TicketedEventId eventId,
         DateTimeOffset deliveryStart,
         RegistrationListItemDto candidate,
-        EventEmailContextDto eventContext,
+        ReconfirmationEmailCompositionScope compositionScope,
         IRegistrationsFacade registrationsFacade,
         IEmailWriteStore writeStore,
-        IEmailPreparationService preparationService,
         RunSmtpSession smtp,
         IOptionsMonitor<EmailDeliveryOptions> options,
         TimeProvider timeProvider,
@@ -262,32 +261,8 @@ internal sealed class RequestReconfirmationsJob(
 
         var registrationId = RegistrationId.From(candidate.RegistrationId);
         var registrationCycleId = RegistrationCycleId.From(candidate.RegistrationCycleId);
-        var links = RegistrationEmailLinks.From(eventContext.PublicEventLink, registrationId);
-
-        var parameters = new
-        {
-            FirstName = candidate.FirstName,
-            LastName = candidate.LastName,
-            Email = candidate.Email,
-            RegistrationId = candidate.RegistrationId,
-            TicketTypeIds = candidate.TicketTypeIds,
-            AdditionalDetails = candidate.AdditionalDetails,
-            TeamName = eventContext.TeamName,
-            EventName = eventContext.EventName,
-            EventWebsite = eventContext.WebsiteUrl,
-            links.PublicEventLink,
-            links.RegisterLink,
-            links.ReconfirmLink,
-            links.CancelLink,
-            links.EditRegistrationLink,
-            links.QRCodeLink
-        };
-        var rendered = await preparationService.PrepareAsync(
-            BuiltInEmailTemplateNames.Reconfirmation,
-            teamId,
-            eventId,
-            parameters,
-            ct);
+        var intent = new ReconfirmationIntent(candidate.FirstName, registrationId);
+        var rendered = compositionScope.Render(intent);
         var session = await smtp.GetOrOpenAsync(ct);
         var message = new EmailMessage(
             candidate.Email,

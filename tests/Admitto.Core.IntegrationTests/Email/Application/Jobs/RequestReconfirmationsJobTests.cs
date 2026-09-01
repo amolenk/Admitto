@@ -6,7 +6,7 @@ using Amolenk.Admitto.Core.Email.Application.Sending;
 using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
 using Amolenk.Admitto.Core.Email.Application.Templating;
 using Amolenk.Admitto.Core.Email.Application.Templating.EventEmailRenderingContext;
-using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.ComposeTicketConfirmation;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.ComposeReconfirmation;
 using Amolenk.Admitto.Core.Email.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Email.Domain.Entities;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
@@ -36,6 +36,9 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
 {
     private static readonly TeamId TeamId = TeamId.New();
     private FakeSmtpBatchSender _lastSender = default!;
+    private int _eventCompositionScopeCreations;
+    private int _eventContextScopeRetrievals;
+    private int _templateLoads;
 
     // Given an active policy and an attendee who registered too recently
     // When the stable hourly evaluator runs
@@ -472,6 +475,30 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
         _lastSender.SentMessages.Count.ShouldBe(2);
         (await Environment.EmailDatabase.Context.EmailLog.AsNoTracking().CountAsync())
             .ShouldBe(2);
+    }
+
+    // Given one evaluated event with multiple eligible attendees
+    // When the hourly evaluator sends reconfirmations
+    // Then all messages are sent using one event composition scope
+    [TestMethod]
+    public async ValueTask Execute_MultipleCandidates_ReusesOneEventCompositionScope()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var eventId = TicketedEventId.New();
+        await SeedPolicyAsync(eventId, now);
+        var candidates = new[]
+        {
+            RegistrationItem(Guid.NewGuid(), "alice@example.com", now.AddDays(-2)),
+            RegistrationItem(Guid.NewGuid(), "bob@example.com", now.AddDays(-2))
+        };
+        var facade = FacadeReturning(eventId, candidates);
+
+        await BuildJob(facade, new FakeTimeProvider(now)).Execute(JobContext());
+
+        _lastSender.SentMessages.Count.ShouldBe(2);
+        _eventCompositionScopeCreations.ShouldBe(1);
+        _eventContextScopeRetrievals.ShouldBe(1);
+        _templateLoads.ShouldBe(1);
     }
 
     // Given two live candidates whose delivery crosses the requested deadline
@@ -947,9 +974,17 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
                     FromAddress = "tickets@admitto.org",
                     AuthMode = invalidSettings ? "Basic" : "None"
                 })))
-            .AddScoped<IEmailTemplateService>(_ => new EmailTemplateService())
+            .AddScoped<IEmailTemplateService>(_ =>
+                new RecordingEmailTemplateService(() => _templateLoads++))
             .AddSingleton<IEmailRenderer, ScribanEmailRenderer>()
-            .AddScoped<IEmailPreparationService, EmailPreparationService>()
+            .AddScoped<IEmailPreparationService>(provider =>
+                new RecordingEmailPreparationService(
+                    new EmailPreparationService(
+                        provider.GetRequiredService<IEmailReadStore>(),
+                        provider.GetRequiredService<IEmailTemplateService>(),
+                        provider.GetRequiredService<IEmailRenderer>(),
+                        provider.GetRequiredService<IEventEmailRenderingContextProvider>()),
+                    () => _eventCompositionScopeCreations++))
             .AddSingleton<ISmtpBatchSender>(_lastSender = new FakeSmtpBatchSender())
             .AddSingleton<IOptionsMonitor<EmailDeliveryOptions>>(
                 new StaticOptionsMonitor<EmailDeliveryOptions>(new EmailDeliveryOptions
@@ -958,7 +993,7 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
                     InlineRetryDelay = TimeSpan.Zero
                 }))
             .AddScoped<IEventEmailRenderingContextProvider>(_ =>
-                new TestEventEmailRenderingContextProvider())
+                new TestEventEmailRenderingContextProvider(() => _eventContextScopeRetrievals++))
             .AddKeyedScoped<IOutbox>(EmailModule.Key, (_, _) => new Outbox(ctx))
             .AddKeyedScoped<IUnitOfWork>(EmailModule.Key, (_, _) => new UnitOfWork<EmailDbContext>(
                 ctx, new NoOpOutboxMessageSender(), NullLogger<UnitOfWork<EmailDbContext>>.Instance))
@@ -971,7 +1006,62 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
             NullLogger<RequestReconfirmationsJob>.Instance);
     }
 
-    private sealed class TestEventEmailRenderingContextProvider
+    private sealed class RecordingEmailTemplateService(Action onLoad) : IEmailTemplateService
+    {
+        private readonly EmailTemplateService _inner = new();
+
+        public ValueTask<EmailTemplate> LoadAsync(
+            string name,
+            TeamId teamId,
+            TicketedEventId eventId,
+            CancellationToken cancellationToken = default)
+        {
+            onLoad();
+            return _inner.LoadAsync(name, teamId, eventId, cancellationToken);
+        }
+
+        public ValueTask<EmailTemplate> LoadAsync(
+            string name,
+            TeamId teamId,
+            CancellationToken cancellationToken = default) =>
+            _inner.LoadAsync(name, teamId, cancellationToken);
+    }
+
+    private sealed class RecordingEmailPreparationService(
+        EmailPreparationService inner,
+        Action onReconfirmationScopeCreated) : IEmailPreparationService
+    {
+        public ValueTask<ReconfirmationEmailCompositionScope> CreateReconfirmationScopeAsync(
+            TeamId teamId,
+            TicketedEventId eventId,
+            CancellationToken cancellationToken = default)
+        {
+            onReconfirmationScopeCreated();
+            return inner.CreateReconfirmationScopeAsync(
+                teamId,
+                eventId,
+                cancellationToken);
+        }
+
+        public ValueTask<RenderedEmail> PrepareAsync(
+            string emailType,
+            TeamId teamId,
+            TicketedEventId eventId,
+            object parameters,
+            CancellationToken cancellationToken = default) =>
+            inner.PrepareAsync(emailType, teamId, eventId, parameters, cancellationToken);
+
+        public ValueTask<RenderedEmail> PrepareAsync(
+            string emailType,
+            TeamId teamId,
+            TicketedEventId eventId,
+            object parameters,
+            AccentColor accentColor,
+            CancellationToken cancellationToken = default) =>
+            inner.PrepareAsync(emailType, teamId, eventId, parameters, accentColor, cancellationToken);
+    }
+
+    private sealed class TestEventEmailRenderingContextProvider(Action onScopeRetrieved)
         : IEventEmailRenderingContextProvider
     {
         public ValueTask<EventEmailRenderingScope> GetScopeAsync(
@@ -979,6 +1069,7 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
             TicketedEventId ticketedEventId,
             CancellationToken cancellationToken)
         {
+            onScopeRetrieved();
             return ValueTask.FromResult(new EventEmailRenderingScope(
                 teamId,
                 ticketedEventId,

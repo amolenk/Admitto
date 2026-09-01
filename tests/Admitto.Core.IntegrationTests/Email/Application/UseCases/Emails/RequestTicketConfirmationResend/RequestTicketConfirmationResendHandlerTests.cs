@@ -137,7 +137,8 @@ public sealed class RequestTicketConfirmationResendHandlerTests(TestContext test
         var preparationService = new EmailPreparationService(
             Environment.EmailDatabase.Context,
             new EmailTemplateService(),
-            new ScribanEmailRenderer());
+            new ScribanEmailRenderer(),
+            eventContextProvider);
         var outbox = new Outbox(Environment.EmailDatabase.Context);
 
         return new TicketConfirmationEmailComposer(

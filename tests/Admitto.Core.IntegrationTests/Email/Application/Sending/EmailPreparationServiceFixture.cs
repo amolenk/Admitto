@@ -1,5 +1,7 @@
 using Amolenk.Admitto.Core.Email.Application.Sending;
 using Amolenk.Admitto.Core.Email.Application.Templating;
+using Amolenk.Admitto.Core.Email.Application.Templating.EventEmailRenderingContext;
+using Microsoft.Extensions.Options;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.Sending;
 
@@ -13,5 +15,8 @@ internal sealed class EmailPreparationServiceFixture
         new(
             environment.EmailDatabase.Context,
             new EmailTemplateService(),
-            new ScribanEmailRenderer());
+            new ScribanEmailRenderer(),
+            new EventEmailRenderingContextProvider(
+                environment.EmailDatabase.Context,
+                Options.Create(new PublicEventLinksOptions { BaseUrl = "https://public.example/e" })));
 }

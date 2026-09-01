@@ -298,8 +298,10 @@ sequenceDiagram
         Facade-->>Eval: candidate projection
         Eval->>Eval: apply minimum whole-hour email interval
         alt eligible candidates present
+          Eval->>Eval: create one immutable event rendering scope and prepared template
           loop live candidates
             Eval->>Facade: authoritative delivery check
+            Eval->>Eval: compose typed attendee intent with registration-specific facts
             Eval->>EmailLog: insert Pending claim matched to registration and cycle
             Eval->>SMTP: send through shared hourly-run session
             Eval->>EmailLog: update claim to Sent or Failed

@@ -1,5 +1,7 @@
 using Amolenk.Admitto.Core.Email.Application.Persistence;
 using Amolenk.Admitto.Core.Email.Application.Templating;
+using Amolenk.Admitto.Core.Email.Application.Templating.EventEmailRenderingContext;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.ComposeReconfirmation;
 using Amolenk.Admitto.Core.Email.Domain.Entities;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 
@@ -7,6 +9,11 @@ namespace Amolenk.Admitto.Core.Email.Application.Sending;
 
 internal interface IEmailPreparationService
 {
+    ValueTask<ReconfirmationEmailCompositionScope> CreateReconfirmationScopeAsync(
+        TeamId teamId,
+        TicketedEventId eventId,
+        CancellationToken cancellationToken = default);
+
     ValueTask<RenderedEmail> PrepareAsync(
         string emailType,
         TeamId teamId,
@@ -26,8 +33,31 @@ internal interface IEmailPreparationService
 internal sealed class EmailPreparationService(
     IEmailReadStore readStore,
     IEmailTemplateService templateService,
-    IEmailRenderer renderer) : IEmailPreparationService
+    IEmailRenderer renderer,
+    IEventEmailRenderingContextProvider eventContextProvider) : IEmailPreparationService
 {
+    public async ValueTask<ReconfirmationEmailCompositionScope> CreateReconfirmationScopeAsync(
+        TeamId teamId,
+        TicketedEventId eventId,
+        CancellationToken cancellationToken = default)
+    {
+        var eventContext = await eventContextProvider.GetScopeAsync(
+            teamId,
+            eventId,
+            cancellationToken);
+        var template = await templateService.LoadAsync(
+            BuiltInEmailTemplateNames.Reconfirmation,
+            teamId,
+            eventId,
+            cancellationToken);
+
+        return new ReconfirmationEmailCompositionScope(
+            eventContext,
+            template,
+            EmailFontFamily.From(EmailFontFamily.Default),
+            renderer);
+    }
+
     public async ValueTask<RenderedEmail> PrepareAsync(
         string emailType,
         TeamId teamId,

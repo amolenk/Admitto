@@ -1,5 +1,6 @@
 using Amolenk.Admitto.Core.Email.Application.Sending;
 using Amolenk.Admitto.Core.Email.Application.Templating;
+using Amolenk.Admitto.Core.Email.Application.Templating.EventEmailRenderingContext;
 using Amolenk.Admitto.Core.Email.Application.Projections.TeamEmailContext;
 using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.PrepareEmailDelivery;
 using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail;
@@ -8,6 +9,7 @@ using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Outbox;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
+using NSubstitute;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.UseCases.Emails.SendEmail;
 
@@ -247,7 +249,8 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
         var preparationService = new EmailPreparationService(
             Environment.EmailDatabase.Context,
             templateService,
-            renderer);
+            renderer,
+            Substitute.For<IEventEmailRenderingContextProvider>());
         var outbox = new Outbox(Environment.EmailDatabase.Context);
         var prepareDeliveryHandler = new PrepareEmailDeliveryHandler(
             Environment.EmailDatabase.Context,
