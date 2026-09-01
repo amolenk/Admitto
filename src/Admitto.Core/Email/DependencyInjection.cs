@@ -7,6 +7,7 @@ using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
 using Amolenk.Admitto.Core.Email.Application.Templating;
 using Amolenk.Admitto.Core.Email.Application.Templating.EventEmailRenderingContext;
 using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.ComposeTicketConfirmation;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.ComposeRegistrationCancellation;
 using Amolenk.Admitto.Core.Email.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.Email.Infrastructure.Sending;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Messaging;
@@ -68,6 +69,7 @@ public static class EmailModuleExtensions
             services.AddScoped<IEmailPreparationService, EmailPreparationService>();
             services.AddScoped<IEventEmailRenderingContextProvider, EventEmailRenderingContextProvider>();
             services.AddScoped<ITicketConfirmationEmailComposer, TicketConfirmationEmailComposer>();
+            services.AddScoped<IRegistrationCancellationEmailComposer, RegistrationCancellationEmailComposer>();
             services.Configure<EmailDeliveryOptions>(
                 builder.Configuration.GetSection("Email:Delivery"));
             services.Configure<SystemEmailOptions>(

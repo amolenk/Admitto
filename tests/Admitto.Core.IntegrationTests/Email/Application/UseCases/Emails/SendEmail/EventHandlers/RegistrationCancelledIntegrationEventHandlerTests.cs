@@ -1,12 +1,8 @@
-using Amolenk.Admitto.Core.Email.Application.Templating;
-using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.ComposeRegistrationCancellation;
 using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail.EventHandlers;
-using Amolenk.Admitto.Core.Email.Application.Templating.EventEmailRenderingContext;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
-using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
-using Amolenk.Admitto.Core.Shared.Application.Messaging;
-using NSubstitute;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
+using NSubstitute;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.UseCases.Emails.SendEmail.EventHandlers;
 
@@ -16,190 +12,116 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
 {
     private static readonly TeamId TeamGuid = TeamId.New();
     private static readonly TicketedEventId EventGuid = TicketedEventId.New();
-    private static readonly Guid RegId = Guid.NewGuid();
+    private static readonly Guid RegistrationGuid = Guid.NewGuid();
 
     private static RegistrationCancelledIntegrationEvent Event(string reason) =>
-        new(TeamGuid.Value, EventGuid.Value, RegId, "alice@example.com", "Alice", "Test", reason)
+        new(TeamGuid.Value, EventGuid.Value, RegistrationGuid, "alice@example.com", "Alice", "Test", reason)
         {
             IntegrationEventId = Guid.Parse("11111111-1111-1111-1111-111111111111")
         };
 
-    private static EventEmailContextDto Context() =>
-        new(
-            TeamGuid.Value,
-            EventGuid.Value,
-            "DevConf Team",
-            "DevConf 2025",
-            "https://devconf.example.com",
-            "https://tickets.example.com",
-            "https://tickets.example.com/register",
-            "https://tickets.example.com/qr-code/" + RegId,
-            "https://tickets.example.com/cancel/" + RegId,
-            "https://tickets.example.com/edit/" + RegId,
-            "Europe/Amsterdam",
-            null,
-            null,
-            null,
-            false);
-
-    private static IEventEmailRenderingContextProvider ContextProvider()
-    {
-        var provider = Substitute.For<IEventEmailRenderingContextProvider>();
-        provider.GetContextAsync(
-                TeamGuid,
-                EventGuid,
-                RegistrationId.From(RegId),
-                Arg.Any<CancellationToken>())
-            .Returns(Context());
-        return provider;
-    }
-
-    // Given a registration cancelled event caused by an attendee request
-    // When the event is handled
-    // Then a cancellation email is sent to the attendee
+    // Given an attendee asks to cancel a registration
+    // When the cancellation message is processed
+    // Then the attendee cancellation email uses their name and address
     [TestMethod]
-    public async Task AttendeeRequest_DispatchesCancellationEmail()
+    public async Task HandleAsync_AttendeeRequest_UsesTypedIntentAndDelivery()
     {
-        var sendEmailHandler = Substitute.For<ICommandHandler<SendEmailCommand>>();
-
-        var sut = new RegistrationCancelledIntegrationEventHandler(ContextProvider(), sendEmailHandler);
+        var composer = Substitute.For<IRegistrationCancellationEmailComposer>();
+        var sut = new RegistrationCancelledIntegrationEventHandler(composer);
 
         await sut.HandleAsync(Event("AttendeeRequest"), testContext.CancellationToken);
 
-        await sendEmailHandler.Received(1).HandleAsync(
-            Arg.Is<SendEmailCommand>(c =>
-                c != null &&
-                c.EmailType == BuiltInEmailTemplateNames.Cancellation &&
-                c.RecipientAddress == "alice@example.com" &&
-                c.IdempotencyKey == "registration-cancelled:11111111111111111111111111111111"),
+        await composer.Received(1).ComposeAsync(
+            TeamGuid,
+            EventGuid,
+            Arg.Is<AttendeeRequestCancellationIntent>(intent => intent != null && intent.FirstName == "Alice"),
+            Arg.Is<RegistrationCancellationDelivery>(delivery =>
+                delivery != null && delivery.RegistrationId.Value == RegistrationGuid
+                && delivery.RecipientAddress == "alice@example.com"
+                && delivery.RecipientName == "Alice Test"
+                && delivery.IdempotencyKey == "registration-cancelled:11111111111111111111111111111111"),
             Arg.Any<CancellationToken>());
     }
 
-    // Given two cancellation events for the same registration
-    // When one event is redelivered and a later cancellation event occurs
-    // Then each event gets its own key while redelivery reuses the event key
+    // Given an attendee is denied a visa invitation letter
+    // When the cancellation message is processed
+    // Then the attendee's visa-denial email uses their first name
     [TestMethod]
-    public async Task ReconfirmAutoCancel_UsesIntegrationEventIdForIdempotency()
+    public async Task HandleAsync_VisaLetterDenied_UsesTypedIntent()
     {
-        var sendEmailHandler = Substitute.For<ICommandHandler<SendEmailCommand>>();
-        var first = Event("ReconfirmAutoCancel");
-        var second = first with { IntegrationEventId = Guid.Parse("22222222-2222-2222-2222-222222222222") };
-        var sut = new RegistrationCancelledIntegrationEventHandler(ContextProvider(), sendEmailHandler);
-
-        await sut.HandleAsync(first, testContext.CancellationToken);
-        await sut.HandleAsync(first, testContext.CancellationToken);
-        await sut.HandleAsync(second, testContext.CancellationToken);
-
-        var commands = sendEmailHandler.ReceivedCalls()
-            .Select(call => call.GetArguments()[0])
-            .OfType<SendEmailCommand>()
-            .ToList();
-        commands.Count.ShouldBe(3);
-        commands[0].IdempotencyKey.ShouldBe("registration-cancelled:11111111111111111111111111111111");
-        commands[1].IdempotencyKey.ShouldBe(commands[0].IdempotencyKey);
-        commands[2].IdempotencyKey.ShouldBe("registration-cancelled:22222222222222222222222222222222");
-    }
-
-    // Given a registration cancelled event caused by a denied visa letter
-    // When the event is handled
-    // Then a visa letter denied email is sent to the attendee
-    [TestMethod]
-    public async Task VisaLetterDenied_DispatchesVisaLetterDeniedEmail()
-    {
-        var sendEmailHandler = Substitute.For<ICommandHandler<SendEmailCommand>>();
-
-        var sut = new RegistrationCancelledIntegrationEventHandler(ContextProvider(), sendEmailHandler);
+        var composer = Substitute.For<IRegistrationCancellationEmailComposer>();
+        var sut = new RegistrationCancelledIntegrationEventHandler(composer);
 
         await sut.HandleAsync(Event("VisaLetterDenied"), testContext.CancellationToken);
 
-        await sendEmailHandler.Received(1).HandleAsync(
-            Arg.Is<SendEmailCommand>(c =>
-                c != null &&
-                c.EmailType == BuiltInEmailTemplateNames.VisaLetterDenied &&
-                c.RecipientAddress == "alice@example.com"),
+        await composer.Received(1).ComposeAsync(
+            TeamGuid,
+            EventGuid,
+            Arg.Is<VisaLetterDeniedCancellationIntent>(intent => intent != null && intent.FirstName == "Alice"),
+            Arg.Any<RegistrationCancellationDelivery>(),
             Arg.Any<CancellationToken>());
     }
 
-    // Given a registration cancelled event caused by an automatic reconfirm cancellation
-    // When the event is handled
-    // Then a reconfirm-cancelled email is sent to the attendee
+    // Given an attendee does not reconfirm in time
+    // When the automatic cancellation message is processed
+    // Then the attendee's cancellation email uses the reconfirm reason
     [TestMethod]
-    public async Task ReconfirmAutoCancel_DispatchesReconfirmCancelledEmail()
+    public async Task HandleAsync_ReconfirmAutoCancel_UsesTypedIntent()
     {
-        var sendEmailHandler = Substitute.For<ICommandHandler<SendEmailCommand>>();
-
-        var sut = new RegistrationCancelledIntegrationEventHandler(ContextProvider(), sendEmailHandler);
+        var composer = Substitute.For<IRegistrationCancellationEmailComposer>();
+        var sut = new RegistrationCancelledIntegrationEventHandler(composer);
 
         await sut.HandleAsync(Event("ReconfirmAutoCancel"), testContext.CancellationToken);
 
-        await sendEmailHandler.Received(1).HandleAsync(
-            Arg.Is<SendEmailCommand>(c => c != null && c.EmailType == BuiltInEmailTemplateNames.ReconfirmCancelled),
+        await composer.Received(1).ComposeAsync(
+            TeamGuid,
+            EventGuid,
+            Arg.Is<ReconfirmAutoCancellationIntent>(intent => intent != null && intent.FirstName == "Alice"),
+            Arg.Any<RegistrationCancellationDelivery>(),
             Arg.Any<CancellationToken>());
     }
 
-    // Given a registration cancelled event caused by removed ticket types
-    // When the event is handled
-    // Then no email is sent
+    // Given the same cancellation arrives in two integration messages with different message IDs
+    // When both messages are processed
+    // Then each message ID produces its own idempotency key
     [TestMethod]
-    public async Task TicketTypesRemoved_NoEmailDispatched()
+    public async Task HandleAsync_DifferentIntegrationMessageIds_UsesEachForIdempotency()
     {
-        var contextProvider = Substitute.For<IEventEmailRenderingContextProvider>();
-        var sendEmailHandler = Substitute.For<ICommandHandler<SendEmailCommand>>();
+        var composer = Substitute.For<IRegistrationCancellationEmailComposer>();
+        var second = Event("ReconfirmAutoCancel") with
+        {
+            IntegrationEventId = Guid.Parse("22222222-2222-2222-2222-222222222222")
+        };
+        var sut = new RegistrationCancelledIntegrationEventHandler(composer);
 
-        var sut = new RegistrationCancelledIntegrationEventHandler(contextProvider, sendEmailHandler);
+        await sut.HandleAsync(Event("ReconfirmAutoCancel"), testContext.CancellationToken);
+        await sut.HandleAsync(second, testContext.CancellationToken);
+
+        var deliveries = composer.ReceivedCalls()
+            .Select(call => call.GetArguments()[3])
+            .OfType<RegistrationCancellationDelivery>()
+            .ToList();
+        deliveries.Count.ShouldBe(2);
+        deliveries[0].IdempotencyKey.ShouldBe("registration-cancelled:11111111111111111111111111111111");
+        deliveries[1].IdempotencyKey.ShouldBe("registration-cancelled:22222222222222222222222222222222");
+    }
+
+    // Given an attendee's registration is cancelled because tickets were removed
+    // When the cancellation message is processed
+    // Then no cancellation email work is created
+    [TestMethod]
+    public async Task HandleAsync_TicketTypesRemoved_SilentlySkipsCancellationEmail()
+    {
+        var composer = Substitute.For<IRegistrationCancellationEmailComposer>();
+        var sut = new RegistrationCancelledIntegrationEventHandler(composer);
 
         await sut.HandleAsync(Event("TicketTypesRemoved"), testContext.CancellationToken);
 
-        await sendEmailHandler.DidNotReceive().HandleAsync(
-            Arg.Any<SendEmailCommand>(),
-            Arg.Any<CancellationToken>());
+        await composer.DidNotReceiveWithAnyArgs().ComposeAsync(
+            TeamGuid,
+            EventGuid,
+            default!,
+            default!,
+            default);
     }
-
-    // Given a registration cancelled event caused by an attendee request
-    // When the event is handled
-    // Then the email recipient name combines the attendee's first and last name
-    [TestMethod]
-    public async Task AttendeeRequest_PassesFirstNameFromContext()
-    {
-        var sendEmailHandler = Substitute.For<ICommandHandler<SendEmailCommand>>();
-
-        var sut = new RegistrationCancelledIntegrationEventHandler(ContextProvider(), sendEmailHandler);
-
-        await sut.HandleAsync(Event("AttendeeRequest"), testContext.CancellationToken);
-
-        await sendEmailHandler.Received(1).HandleAsync(
-            Arg.Is<SendEmailCommand>(c =>
-                c != null &&
-                c.RecipientName == "Alice Test"),
-            Arg.Any<CancellationToken>());
-    }
-
-    // Given a registration cancelled event caused by an attendee request
-    // When the event is handled
-    // Then the email parameters include the event website and register link from the rendering context
-    [TestMethod]
-    public async Task AttendeeRequest_ParametersIncludeEventWebsite()
-    {
-        var sendEmailHandler = Substitute.For<ICommandHandler<SendEmailCommand>>();
-
-        SendEmailCommand? captured = null;
-        sendEmailHandler
-            .HandleAsync(Arg.Do<SendEmailCommand>(c => captured = c), Arg.Any<CancellationToken>())
-            .Returns(ValueTask.CompletedTask);
-
-        var sut = new RegistrationCancelledIntegrationEventHandler(ContextProvider(), sendEmailHandler);
-
-        await sut.HandleAsync(Event("AttendeeRequest"), testContext.CancellationToken);
-
-        captured.ShouldNotBeNull();
-
-        // Verify the property is named 'EventWebsite' (→ Scriban 'event_website'), not
-        // 'EventWebsiteUrl' (→ 'event_website_url') which would leave {{ event_website }} empty.
-        var eventWebsite = GetParam(captured.Parameters, "EventWebsite");
-        eventWebsite.ShouldBe("https://devconf.example.com");
-        GetParam(captured.Parameters, "RegisterLink").ShouldBe("https://tickets.example.com/register");
-    }
-
-    private static object? GetParam(object parameters, string name) =>
-        parameters.GetType().GetProperty(name)?.GetValue(parameters);
 }
