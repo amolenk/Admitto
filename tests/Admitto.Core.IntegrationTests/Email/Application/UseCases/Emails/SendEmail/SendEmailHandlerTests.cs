@@ -28,7 +28,7 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
             "alice@example.com", "Alice",
             BuiltInEmailTemplateNames.TicketConfirmation,
             IdempotencyKey: "test-key-1",
-            Parameters: new { FirstName = "Alice", EventName = "DevConf" });
+            Parameters: TicketParameters());
 
         // Act
         await handler.HandleAsync(command, testContext.CancellationToken);
@@ -69,7 +69,7 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
             "alice@example.com", "Alice",
             BuiltInEmailTemplateNames.TicketConfirmation,
             IdempotencyKey: "test-key-no-settings",
-            Parameters: new { FirstName = "Alice", EventName = "DevConf" });
+            Parameters: TicketParameters());
 
         // Act
         await handler.HandleAsync(command, testContext.CancellationToken);
@@ -109,7 +109,7 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
             "alice@example.com", "Alice",
             BuiltInEmailTemplateNames.TicketConfirmation,
             IdempotencyKey: "test-key-dedup",
-            Parameters: new { FirstName = "Alice", EventName = "DevConf" });
+            Parameters: TicketParameters());
 
         // Act — send twice
         await handler.HandleAsync(command, testContext.CancellationToken);
@@ -141,7 +141,7 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
             "alice@example.com", "Alice",
             BuiltInEmailTemplateNames.TicketConfirmation,
             IdempotencyKey: "test-key-pending-recovery",
-            Parameters: new { FirstName = "Alice", EventName = "DevConf" });
+            Parameters: TicketParameters());
 
         await handler.HandleAsync(command, testContext.CancellationToken);
         await Environment.EmailDatabase.Context.SaveChangesAsync(testContext.CancellationToken);
@@ -164,6 +164,7 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
             new
             {
                 FirstName = "Alice",
+                TeamName = "Admitto",
                 EventName = "DevConf",
                 EventWebsite = "https://devconf.example.com",
                 PublicEventLink = "https://admitto.example.com/e/devconf",
@@ -288,5 +289,19 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
             sentAt: sentAt,
             statusUpdatedAt: now)));
     }
+
+    private static object TicketParameters() => new
+    {
+        FirstName = "Alice",
+        LastName = "Anderson",
+        TeamName = "Admitto",
+        EventName = "DevConf",
+        EventWebsite = "https://devconf.example.com",
+        PublicEventLink = "https://admitto.example.com/e/devconf",
+        QRCodeLink = "https://admitto.example.com/e/devconf/qr-code/registration",
+        CancelLink = "https://admitto.example.com/e/devconf/cancel/registration",
+        EditRegistrationLink = "https://admitto.example.com/e/devconf/edit/registration",
+        TicketTypes = Array.Empty<string>()
+    };
 
 }

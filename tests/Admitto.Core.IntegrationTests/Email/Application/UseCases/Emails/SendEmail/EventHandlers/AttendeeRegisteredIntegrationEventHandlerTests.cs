@@ -1,10 +1,7 @@
-using Amolenk.Admitto.Core.Email.Application.Templating;
-using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail;
 using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail.EventHandlers;
-using Amolenk.Admitto.Core.Email.Application.Templating.EventEmailRenderingContext;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.ComposeTicketConfirmation;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
-using Amolenk.Admitto.Core.Shared.Application.Messaging;
 using NSubstitute;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 
@@ -29,105 +26,60 @@ public sealed class AttendeeRegisteredIntegrationEventHandlerTests(TestContext t
             [],
             DateTimeOffset.UtcNow);
 
-    private static EventEmailContextDto Context() =>
-        new(
-            TeamGuid.Value,
-            EventGuid.Value,
-            "DevConf Team",
-            "DevConf 2025",
-            "https://devconf.example.com",
-            "https://tickets.example.com",
-            "https://tickets.example.com/register",
-            "https://tickets.example.com/qr-code/" + RegId,
-            "https://tickets.example.com/cancel/" + RegId,
-            "https://tickets.example.com/edit/" + RegId,
-            "Europe/Amsterdam",
-            null,
-            null,
-            null,
-            false);
-
-    private static IEventEmailRenderingContextProvider ContextProvider()
-    {
-        var provider = Substitute.For<IEventEmailRenderingContextProvider>();
-        provider.GetContextAsync(
-                TeamGuid,
-                EventGuid,
-                RegistrationId.From(RegId),
-                Arg.Any<CancellationToken>())
-            .Returns(Context());
-        return provider;
-    }
-
     // Given an AttendeeRegistered integration event for an attendee
     // When the event is handled
     // Then a ticket confirmation email is sent to the attendee with an idempotency key derived from the registration
     [TestMethod]
     public async Task AttendeeRegistered_DispatchesTicketEmail()
     {
-        var sendEmailHandler = Substitute.For<ICommandHandler<SendEmailCommand>>();
+        var composer = Substitute.For<ITicketConfirmationEmailComposer>();
 
-        var sut = new AttendeeRegisteredIntegrationEventHandler(ContextProvider(), sendEmailHandler);
+        var sut = new AttendeeRegisteredIntegrationEventHandler(composer);
 
         var evt = Event();
         await sut.HandleAsync(evt, testContext.CancellationToken);
 
-        await sendEmailHandler.Received(1).HandleAsync(
-            Arg.Is<SendEmailCommand>(c =>
-                c != null &&
-                c.EmailType == BuiltInEmailTemplateNames.TicketConfirmation &&
-                c.RecipientAddress == "alice@example.com" &&
-                c.IdempotencyKey == $"attendee-registered:{RegId}:{evt.RegisteredAt:O}"),
+        await composer.Received(1).ComposeAsync(
+            TeamGuid,
+            EventGuid,
+            Arg.Is<TicketConfirmationIntent>(i => i!.RegistrationId == RegistrationId.From(RegId)),
+            Arg.Is<TicketConfirmationDelivery>(d =>
+                d!.RecipientAddress == "alice@example.com" &&
+                d.RecipientName == "Alice Anderson" &&
+                d.IdempotencyKey == $"attendee-registered:{RegId}:{evt.RegisteredAt:O}"),
             Arg.Any<CancellationToken>());
     }
 
     // Given an AttendeeRegistered integration event for an attendee
     // When the event is handled
-    // Then the sent email's parameters include the event website under the 'EventWebsite' property name
+    // Then the shared intent includes the attendee's first and last names
     [TestMethod]
-    public async Task AttendeeRegistered_ParametersIncludeEventWebsite()
+    public async Task AttendeeRegistered_IntentIncludesAttendeeFacts()
     {
-        var sendEmailHandler = Substitute.For<ICommandHandler<SendEmailCommand>>();
+        var composer = Substitute.For<ITicketConfirmationEmailComposer>();
 
-        SendEmailCommand? captured = null;
-        sendEmailHandler
-            .HandleAsync(Arg.Do<SendEmailCommand>(c => captured = c), Arg.Any<CancellationToken>())
-            .Returns(ValueTask.CompletedTask);
-
-        var sut = new AttendeeRegisteredIntegrationEventHandler(ContextProvider(), sendEmailHandler);
+        var sut = new AttendeeRegisteredIntegrationEventHandler(composer);
 
         await sut.HandleAsync(Event(), testContext.CancellationToken);
 
-        captured.ShouldNotBeNull();
-
-        // Verify the property is named 'EventWebsite' (→ Scriban 'event_website'), not
-        // 'EventWebsiteUrl' (→ 'event_website_url') which would leave {{ event_website }} empty.
-        var eventWebsite = GetParam(captured.Parameters, "EventWebsite");
-        eventWebsite.ShouldBe("https://devconf.example.com");
+        var captured = (TicketConfirmationIntent)composer.ReceivedCalls().Single().GetArguments()[2]!;
+        captured.FirstName.ShouldBe("Alice");
+        captured.FirstName.ShouldBe("Alice");
     }
 
     // Given an AttendeeRegistered integration event for an attendee
     // When the event is handled
-    // Then the sent email's parameters include the edit-registration link for that attendee
+    // Then the shared intent includes the attendee's ticket facts
     [TestMethod]
-    public async Task AttendeeRegistered_ParametersIncludeEditRegistrationLink()
+    public async Task AttendeeRegistered_IntentIncludesTicketFacts()
     {
-        var sendEmailHandler = Substitute.For<ICommandHandler<SendEmailCommand>>();
+        var composer = Substitute.For<ITicketConfirmationEmailComposer>();
 
-        SendEmailCommand? captured = null;
-        sendEmailHandler
-            .HandleAsync(Arg.Do<SendEmailCommand>(c => captured = c), Arg.Any<CancellationToken>())
-            .Returns(ValueTask.CompletedTask);
-
-        var sut = new AttendeeRegisteredIntegrationEventHandler(ContextProvider(), sendEmailHandler);
+        var sut = new AttendeeRegisteredIntegrationEventHandler(composer);
 
         await sut.HandleAsync(Event(), testContext.CancellationToken);
 
-        captured.ShouldNotBeNull();
-        GetParam(captured.Parameters, "EditRegistrationLink")
-            .ShouldBe("https://tickets.example.com/edit/" + RegId);
+        var captured = (TicketConfirmationIntent)composer.ReceivedCalls().Single().GetArguments()[2]!;
+        captured.TicketTypes.ShouldBeEmpty();
     }
-
-    private static object? GetParam(object parameters, string name) =>
-        parameters.GetType().GetProperty(name)?.GetValue(parameters);
 }

@@ -6,6 +6,7 @@ using Amolenk.Admitto.Core.Email.Application.Sending;
 using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
 using Amolenk.Admitto.Core.Email.Application.Templating;
 using Amolenk.Admitto.Core.Email.Application.Templating.EventEmailRenderingContext;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.ComposeTicketConfirmation;
 using Amolenk.Admitto.Core.Email.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.Email.Infrastructure.Sending;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Messaging;
@@ -42,18 +43,6 @@ public static class EmailModuleExtensions
             //     assembly,
             //     EmailModule.NamespacePrefix));
 
-            services.AddScoped<IEffectiveEmailSettingsResolver, EffectiveEmailSettingsResolver>();
-            services.AddScoped<IEmailTemplateService, EmailTemplateService>();
-            services.AddSingleton<IEmailRenderer, ScribanEmailRenderer>();
-            services.AddScoped<IEmailPreparationService, EmailPreparationService>();
-            services.AddScoped<IEventEmailRenderingContextProvider, EventEmailRenderingContextProvider>();
-            services.Configure<EmailDeliveryOptions>(
-                builder.Configuration.GetSection("Email:Delivery"));
-            services.Configure<SystemEmailOptions>(
-                builder.Configuration.GetSection(SystemEmailOptions.SectionName));
-            services.Configure<PublicEventLinksOptions>(
-                builder.Configuration.GetSection(PublicEventLinksOptions.SectionName));
-
             // Infrastructure
             builder.AddModuleDatabaseServices<IEmailWriteStore, EmailDbContext>(EmailModule.Key);
 
@@ -62,9 +51,6 @@ public static class EmailModuleExtensions
 
             services.AddKeyedScoped<IPostgresExceptionMapping, EmailPostgresExceptionMapping>(
                 EmailModule.Key);
-
-            services.AddSingleton<IEmailSender, MailKitEmailSender>();
-            services.AddSingleton<ISmtpBatchSender, MailKitSmtpBatchSender>();
 
             return builder;
         }
@@ -75,6 +61,21 @@ public static class EmailModuleExtensions
 
             var services = builder.Services;
             var assembly = Assembly.GetExecutingAssembly();
+
+            services.AddScoped<IEffectiveEmailSettingsResolver, EffectiveEmailSettingsResolver>();
+            services.AddScoped<IEmailTemplateService, EmailTemplateService>();
+            services.AddSingleton<IEmailRenderer, ScribanEmailRenderer>();
+            services.AddScoped<IEmailPreparationService, EmailPreparationService>();
+            services.AddScoped<IEventEmailRenderingContextProvider, EventEmailRenderingContextProvider>();
+            services.AddScoped<ITicketConfirmationEmailComposer, TicketConfirmationEmailComposer>();
+            services.Configure<EmailDeliveryOptions>(
+                builder.Configuration.GetSection("Email:Delivery"));
+            services.Configure<SystemEmailOptions>(
+                builder.Configuration.GetSection(SystemEmailOptions.SectionName));
+            services.Configure<PublicEventLinksOptions>(
+                builder.Configuration.GetSection(PublicEventLinksOptions.SectionName));
+            services.AddSingleton<IEmailSender, MailKitEmailSender>();
+            services.AddSingleton<ISmtpBatchSender, MailKitSmtpBatchSender>();
 
             // Integration event handlers
             services.AddIntegrationEventHandlersFromAssembly(assembly, EmailModule.NamespacePrefix);

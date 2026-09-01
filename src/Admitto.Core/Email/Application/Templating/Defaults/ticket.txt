@@ -1,4 +1,4 @@
-Your {{ event_name }} Ticket
+{{ team_name }}: Your {{ event_name }} Ticket
 
 Hi {{ first_name }},
 
@@ -24,4 +24,4 @@ For more details about the event, visit our website: {{ public_event_link }}
 We look forward to seeing you there!
 
 Best regards,
-The {{ event_name }} Team
+The {{ team_name }} Team

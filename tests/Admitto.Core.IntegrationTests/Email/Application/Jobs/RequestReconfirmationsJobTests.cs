@@ -6,6 +6,7 @@ using Amolenk.Admitto.Core.Email.Application.Sending;
 using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
 using Amolenk.Admitto.Core.Email.Application.Templating;
 using Amolenk.Admitto.Core.Email.Application.Templating.EventEmailRenderingContext;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.ComposeTicketConfirmation;
 using Amolenk.Admitto.Core.Email.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Email.Domain.Entities;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
@@ -973,6 +974,26 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
     private sealed class TestEventEmailRenderingContextProvider
         : IEventEmailRenderingContextProvider
     {
+        public ValueTask<EventEmailRenderingScope> GetScopeAsync(
+            TeamId teamId,
+            TicketedEventId ticketedEventId,
+            CancellationToken cancellationToken)
+        {
+            return ValueTask.FromResult(new EventEmailRenderingScope(
+                teamId,
+                ticketedEventId,
+                "DevConf Team",
+                AccentColor.From("#2563eb"),
+                "DevConf",
+                "https://example.com",
+                "https://tickets.example.com/e/devconf",
+                "UTC",
+                null,
+                null,
+                null,
+                false));
+        }
+
         public ValueTask<EventEmailContextDto> GetContextAsync(
             TeamId teamId,
             TicketedEventId ticketedEventId,

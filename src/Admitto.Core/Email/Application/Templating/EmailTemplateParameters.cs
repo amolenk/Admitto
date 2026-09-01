@@ -17,9 +17,15 @@ internal static class EmailTemplateParameters
             ["font_family"] = fontFamily.Value
         };
 
-        foreach (var property in parameters.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public))
+        if (parameters is IReadOnlyDictionary<string, object?> dictionary)
         {
-            result[StandardMemberRenamer.Rename(property.Name)] = property.GetValue(parameters);
+            foreach (var (key, value) in dictionary)
+                result[key] = value;
+        }
+        else
+        {
+            foreach (var property in parameters.GetType().GetProperties(BindingFlags.Instance | BindingFlags.Public))
+                result[StandardMemberRenamer.Rename(property.Name)] = property.GetValue(parameters);
         }
 
         return result;

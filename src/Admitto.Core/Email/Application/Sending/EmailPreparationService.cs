@@ -13,6 +13,14 @@ internal interface IEmailPreparationService
         TicketedEventId eventId,
         object parameters,
         CancellationToken cancellationToken = default);
+
+    ValueTask<RenderedEmail> PrepareAsync(
+        string emailType,
+        TeamId teamId,
+        TicketedEventId eventId,
+        object parameters,
+        AccentColor accentColor,
+        CancellationToken cancellationToken = default);
 }
 
 internal sealed class EmailPreparationService(
@@ -27,14 +35,25 @@ internal sealed class EmailPreparationService(
         object parameters,
         CancellationToken cancellationToken = default)
     {
-        // Branding is Email-owned context. SMTP transport is deployment-global and is
-        // deliberately not resolved while preparing a message.
         var accentColor = await readStore.TeamEmailContexts
                 .AsNoTracking()
                 .Where(c => c.TeamId == teamId)
                 .Select(c => (AccentColor?)c.AccentColor)
                 .SingleOrDefaultAsync(cancellationToken)
             ?? AccentColor.From(AccentColor.Default);
+        return await PrepareAsync(emailType, teamId, eventId, parameters, accentColor, cancellationToken);
+    }
+
+    public async ValueTask<RenderedEmail> PrepareAsync(
+        string emailType,
+        TeamId teamId,
+        TicketedEventId eventId,
+        object parameters,
+        AccentColor accentColor,
+        CancellationToken cancellationToken = default)
+    {
+        // Branding is Email-owned context. SMTP transport is deployment-global and is
+        // deliberately not resolved while preparing a message.
         var fontFamily = EmailFontFamily.From(EmailFontFamily.Default);
 
         var template = await templateService.LoadAsync(

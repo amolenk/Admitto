@@ -32,7 +32,7 @@ internal sealed class ScribanEmailRenderer : IEmailRenderer
             throw new EmailRenderException($"Template parse error: {errors}");
         }
 
-        var context = new TemplateContext { StrictVariables = false };
+        var context = new TemplateContext { StrictVariables = true };
         var scriptObject = new ScriptObject();
         if (parameters is IReadOnlyDictionary<string, object?> dictionary)
         {

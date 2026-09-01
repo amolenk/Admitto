@@ -1,6 +1,5 @@
-using Amolenk.Admitto.Core.Email.Application.Templating;
-using Amolenk.Admitto.Core.Email.Application.Templating.EventEmailRenderingContext;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.ComposeTicketConfirmation;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
 
@@ -10,8 +9,7 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail.Event
 /// Sends a TicketConfirmation email when an attendee has registered.
 /// </summary>
 internal sealed class AttendeeRegisteredIntegrationEventHandler(
-    IEventEmailRenderingContextProvider eventContextProvider,
-    ICommandHandler<SendEmailCommand> sendEmailHandler)
+    ITicketConfirmationEmailComposer composer)
     : IIntegrationEventHandler<AttendeeRegisteredIntegrationEvent>
 {
     public async ValueTask HandleAsync(
@@ -20,38 +18,15 @@ internal sealed class AttendeeRegisteredIntegrationEventHandler(
     {
         var idempotencyKey = $"attendee-registered:{integrationEvent.RegistrationId}:{integrationEvent.RegisteredAt:O}";
 
-        var eventContext = await eventContextProvider.GetContextAsync(
+        var fullName = $"{integrationEvent.FirstName} {integrationEvent.LastName}".Trim();
+        await composer.ComposeAsync(
             TeamId.From(integrationEvent.TeamId),
             TicketedEventId.From(integrationEvent.TicketedEventId),
-            RegistrationId.From(integrationEvent.RegistrationId),
-            cancellationToken);
-
-        var fullName = $"{integrationEvent.FirstName} {integrationEvent.LastName}".Trim();
-        var ticketTypeNames = integrationEvent.Tickets.Select(t => t.Name).ToArray();
-
-        var command = new SendEmailCommand(
-            TeamId: integrationEvent.TeamId,
-            TicketedEventId: integrationEvent.TicketedEventId,
-            RecipientAddress: integrationEvent.RecipientEmail,
-            RecipientName: fullName,
-            EmailType: BuiltInEmailTemplateNames.TicketConfirmation,
-            IdempotencyKey: idempotencyKey,
-            Parameters: new
-            {
-                RecipientName = fullName,
+            new TicketConfirmationIntent(
+                RegistrationId.From(integrationEvent.RegistrationId),
                 integrationEvent.FirstName,
-                integrationEvent.LastName,
-                eventContext.TeamName,
-                eventContext.EventName,
-                EventWebsite = eventContext.WebsiteUrl,
-                eventContext.PublicEventLink,
-                eventContext.QRCodeLink,
-                eventContext.CancelLink,
-                eventContext.EditRegistrationLink,
-                TicketTypes = ticketTypeNames
-            },
-            RegistrationId: integrationEvent.RegistrationId);
-
-        await sendEmailHandler.HandleAsync(command, cancellationToken);
+                integrationEvent.Tickets.Select(t => t.Name).ToArray()),
+            new TicketConfirmationDelivery(integrationEvent.RecipientEmail, fullName, idempotencyKey),
+            cancellationToken);
     }
 }

@@ -9,8 +9,11 @@ internal static class EmailTemplateSampleParameters
     public static object Create() => new
     {
         EventName     = "DevConf 2026",
+        TeamName      = "Admitto",
         FirstName     = "Alice",
+        LastName      = "Anderson",
         RegisterLink  = "https://example.com/register",
+        PublicEventLink = "https://example.com/event",
         QrcodeLink    = "https://example.com/qrcode",
         TicketTypes   = new[] { "Conference Pass" },
         CancelLink    = "https://example.com/cancel",

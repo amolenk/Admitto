@@ -6,6 +6,7 @@ using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail;
 using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.PrepareEmailDelivery;
 using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail.EventHandlers;
 using Amolenk.Admitto.Core.Email.Application.Templating.EventEmailRenderingContext;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.ComposeTicketConfirmation;
 using Amolenk.Admitto.Core.Email.Domain.Entities;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
@@ -101,7 +102,24 @@ public sealed class RequestTicketConfirmationResendHandlerTests(TestContext test
                 null,
                 false));
 
-        return new TicketConfirmationResendRequestedIntegrationEventHandler(eventContextProvider, BuildSendEmailHandler());
+        eventContextProvider
+            .GetScopeAsync(TeamId, EventId, Arg.Any<CancellationToken>())
+            .Returns(new EventEmailRenderingScope(
+                TeamId,
+                EventId,
+                "DevConf Team",
+                AccentColor.From("#0f766e"),
+                "DevConf",
+                "https://devconf.example.com",
+                "https://tickets.example.com/devconf",
+                "UTC",
+                null,
+                null,
+                null,
+                false));
+
+        return new TicketConfirmationResendRequestedIntegrationEventHandler(
+            BuildComposer(eventContextProvider));
     }
 
     private async ValueTask SeedTeamEmailContextAsync()
@@ -113,7 +131,8 @@ public sealed class RequestTicketConfirmationResendHandlerTests(TestContext test
         await Environment.EmailDatabase.SeedAsync(db => db.TeamEmailContexts.Add(teamContext));
     }
 
-    private SendEmailHandler BuildSendEmailHandler()
+    private TicketConfirmationEmailComposer BuildComposer(
+        IEventEmailRenderingContextProvider eventContextProvider)
     {
         var preparationService = new EmailPreparationService(
             Environment.EmailDatabase.Context,
@@ -121,8 +140,9 @@ public sealed class RequestTicketConfirmationResendHandlerTests(TestContext test
             new ScribanEmailRenderer());
         var outbox = new Outbox(Environment.EmailDatabase.Context);
 
-        return new SendEmailHandler(
+        return new TicketConfirmationEmailComposer(
             Environment.EmailDatabase.Context,
+            eventContextProvider,
             preparationService,
             new PrepareEmailDeliveryHandler(Environment.EmailDatabase.Context, outbox));
     }

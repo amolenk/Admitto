@@ -225,14 +225,18 @@ sequenceDiagram
 
 ## 6.8 Registration-confirmation email flow
 
-When an attendee registers successfully, the API handler emits an `AttendeeRegistered` integration event via the outbox. The Worker picks it up and prepares durable e-mail delivery work. SMTP is attempted only after the Email module has committed an `EmailLog` claim and an internal delivery command.
+When an attendee registers successfully, the API handler emits an `AttendeeRegistered` integration event via the outbox. The Worker picks it up and translates it to a typed ticket-confirmation intent. The Email composer checks the terminal claim first, then creates one immutable team/event scope, renders explicit template variables, and submits the rendered payload to `PrepareEmailDelivery`. SMTP is attempted only after the Email module has committed an `EmailLog` claim and an internal delivery command.
 
 ```mermaid
 sequenceDiagram
     participant Api as API host
     participant Outbox as Integration-event outbox
     participant Worker as Worker host
-    participant EmailHandler as AttendeeRegistered handler (Email module)
+    participant Adapter as AttendeeRegistered adapter (Email module)
+    participant Composer as ComposeTicketConfirmation
+    participant Scope as immutable event scope
+    participant Renderer as Scriban renderer
+    participant Prepare as PrepareEmailDelivery handler
     participant EmailOutbox as Email outbox
     participant EmailLog as email.email_log
     participant Delivery as DeliverEmail command handler
@@ -240,15 +244,22 @@ sequenceDiagram
 
     Api->>Outbox: AttendeeRegistered (in same UoW transaction)
     Worker->>Outbox: poll & dequeue
-    Worker->>EmailHandler: dispatch AttendeeRegistered
-    EmailHandler->>EmailLog: check send claim (attendee-registered:<registrationId>:<registeredAt>)
+    Worker->>Adapter: dispatch AttendeeRegistered
+    Adapter->>Composer: typed intent + recipient/idempotency key
+    Composer->>EmailLog: check terminal claim
     alt terminal claim exists
-        EmailHandler-->>Worker: ack (no-op, idempotency guard)
+        Composer-->>Worker: ack (no-op, idempotency guard)
     else no terminal claim exists
-        EmailHandler->>EmailHandler: resolve deployment system SMTP settings
-    EmailHandler->>EmailHandler: read Email event context projection and render built-in content via Scriban
-        EmailHandler->>EmailLog: insert Pending claim
-        EmailHandler->>EmailOutbox: enqueue DeliverEmail command (same UoW)
+        Composer->>Scope: load complete event context + system label
+        alt event context missing or incomplete
+            Scope-->>Worker: retryable failure (no claim)
+        else context available
+            Composer->>Renderer: render explicit ticket variables
+            Renderer-->>Composer: subject/text/HTML payload
+            Composer->>Prepare: PrepareEmailDelivery (rendered payload)
+            Prepare->>EmailLog: insert Pending claim
+            Prepare->>EmailOutbox: enqueue DeliverEmail command (same UoW)
+        end
         Worker->>EmailOutbox: poll & dequeue DeliverEmail
         Worker->>Delivery: load committed claim
         Delivery->>SMTP: SMTP send with bounded inline retries
@@ -258,7 +269,7 @@ sequenceDiagram
 
 **Idempotency**: the `EmailLog` row with key `attendee-registered:<registrationId>:<registeredAt>` is the send claim. A re-delivered integration event that observes a terminal claim is acked without another SMTP attempt; a pending claim can enqueue delivery again for recovery. SMTP itself is not transactional, so rare duplicate delivery races or a crash after SMTP success but before updating the log can still produce a later duplicate during recovery.
 
-Admin and Partner ticket-confirmation resends are requested through Registrations-owned endpoints. The API validates the scoped registration, writes a Registrations outbox message carrying the resend snapshot, and returns `202 Accepted`. Partner requests derive the team scope from the API-key principal and resolve the event slug within that team before dispatching the shared resend command. The Worker delivers `TicketConfirmationResendRequestedIntegrationEvent` to the Email module, which then uses the normal `SendEmailCommand` claim/render/outbox pipeline with idempotency key `ticket-confirmation-resend:<registrationId>:<resendRequestId>`. SMTP delivery remains Worker-only through `DeliverEmailCommand`; the API host neither creates EmailLog claims nor opens SMTP connections.
+Admin and Partner ticket-confirmation resends are requested through Registrations-owned endpoints. The API validates the scoped registration, writes a Registrations outbox message carrying the resend snapshot, and returns `202 Accepted`. Partner requests derive the team scope from the API-key principal and resolve the event slug within that team before dispatching the shared resend command. The Worker delivers `TicketConfirmationResendRequestedIntegrationEvent` to the Email module, whose thin adapter creates the typed intent and invokes the ticket-confirmation composer. The composer short-circuits an existing terminal claim; otherwise it loads the immutable event scope, renders explicit subject/text/HTML, and submits the payload to `PrepareEmailDelivery` with idempotency key `ticket-confirmation-resend:<registrationId>:<resendRequestId>`. Missing or incomplete event context fails before claim preparation so queue redelivery remains retryable. SMTP delivery remains Worker-only through `DeliverEmailCommand`; the API host neither creates EmailLog claims nor opens SMTP connections.
 
 **Configuration failure**: if deployment system SMTP settings are missing or invalid, registration itself is unaffected. The email work records the failure through the normal `EmailLog`/delivery-error path and operator telemetry; this is an operability issue, not team-owned event state. Transient SMTP failures remain retryable until the configured delivery attempt limit is reached.
 
