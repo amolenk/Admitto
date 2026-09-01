@@ -1,8 +1,7 @@
 using Amolenk.Admitto.Core.Email.Application.Persistence;
 using Amolenk.Admitto.Core.Email.Application.Sending;
-using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
 using Amolenk.Admitto.Core.Email.Application.Templating;
-using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.DeliverEmail;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.PrepareEmailDelivery;
 using Amolenk.Admitto.Core.Email.Domain.Entities;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
@@ -12,10 +11,8 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail;
 
 internal sealed class SendEmailHandler(
     IEmailWriteStore writeStore,
-    IEffectiveEmailSettingsResolver settingsResolver,
-    IEmailTemplateService templateService,
-    IEmailRenderer renderer,
-    [FromKeyedServices(EmailModule.Key)] IOutbox outbox) : ICommandHandler<SendEmailCommand>, IWorkerOnly
+    IEmailPreparationService preparationService,
+    ICommandHandler<PrepareEmailDeliveryCommand> prepareDeliveryHandler) : ICommandHandler<SendEmailCommand>, IWorkerOnly
 {
     public async ValueTask HandleAsync(SendEmailCommand command, CancellationToken cancellationToken)
     {
@@ -40,50 +37,15 @@ internal sealed class SendEmailHandler(
 
         var now = DateTimeOffset.UtcNow;
 
-        // Resolve effective settings.
-        var settings = await settingsResolver.ResolveAsync(
-            teamId,
-            ticketedEventId,
-            cancellationToken);
-
-        if (settings is null || !settings.IsValid())
-        {
-            if (existing is null)
-            {
-                writeStore.EmailLog.Add(EmailLog.Create(
-                    teamId: teamId,
-                    ticketedEventId: ticketedEventId,
-                    idempotencyKey: command.IdempotencyKey,
-                    recipient: recipient,
-                    emailType: command.EmailType,
-                    subject: string.Empty,
-                    status: EmailLogStatus.Failed,
-                    sentAt: null,
-                    statusUpdatedAt: now,
-                    lastError: "System email settings are not configured or incomplete.",
-                    registrationId: registrationId));
-            }
-            else
-            {
-                existing.MarkFailed(string.Empty, "System email settings are not configured or incomplete.", now);
-            }
-            return;
-        }
-
-        // Resolve + render template.
         RenderedEmail rendered;
         try
         {
-            var template = await templateService.LoadAsync(
+            rendered = await preparationService.PrepareAsync(
                 command.EmailType,
                 teamId,
                 ticketedEventId,
-                cancellationToken);
-            var parameters = EmailTemplateParameters.WithBranding(
                 command.Parameters,
-                settings.AccentColor,
-                settings.FontFamily);
-            rendered = renderer.Render(template, parameters);
+                cancellationToken);
         }
         catch (EmailRenderException ex)
         {
@@ -109,30 +71,18 @@ internal sealed class SendEmailHandler(
             return;
         }
 
-        if (existing is null)
-        {
-            writeStore.EmailLog.Add(EmailLog.Create(
-                teamId: teamId,
-                ticketedEventId: ticketedEventId,
-                idempotencyKey: command.IdempotencyKey,
-                recipient: recipient,
-                emailType: command.EmailType,
-                subject: rendered.Subject,
-                status: EmailLogStatus.Pending,
-                sentAt: null,
-                statusUpdatedAt: now,
-                registrationId: registrationId));
-        }
-
-        outbox.Enqueue(new DeliverEmailCommand(
-            command.TeamId,
-            command.TicketedEventId,
-            command.RecipientAddress,
-            command.RecipientName,
-            command.EmailType,
-            command.IdempotencyKey,
-            rendered.Subject,
-            rendered.TextBody,
-            rendered.HtmlBody));
+        await prepareDeliveryHandler.HandleAsync(
+            new PrepareEmailDeliveryCommand(
+                command.TeamId,
+                command.TicketedEventId,
+                command.RecipientAddress,
+                command.RecipientName,
+                command.EmailType,
+                command.IdempotencyKey,
+                rendered.Subject,
+                rendered.TextBody,
+                rendered.HtmlBody,
+                command.RegistrationId),
+            cancellationToken);
     }
 }

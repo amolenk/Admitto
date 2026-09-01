@@ -5,7 +5,7 @@ using Amolenk.Admitto.Core.Email.Application.Persistence;
 using Amolenk.Admitto.Core.Email.Application.Sending;
 using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
 using Amolenk.Admitto.Core.Email.Application.Templating;
-using Amolenk.Admitto.Core.Email.Application.UseCases.EventEmailContexts.GetEventEmailRenderingContext;
+using Amolenk.Admitto.Core.Email.Application.Templating.EventEmailRenderingContext;
 using Amolenk.Admitto.Core.Email.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.Email.Infrastructure.Sending;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Messaging;
@@ -45,6 +45,8 @@ public static class EmailModuleExtensions
             services.AddScoped<IEffectiveEmailSettingsResolver, EffectiveEmailSettingsResolver>();
             services.AddScoped<IEmailTemplateService, EmailTemplateService>();
             services.AddSingleton<IEmailRenderer, ScribanEmailRenderer>();
+            services.AddScoped<IEmailPreparationService, EmailPreparationService>();
+            services.AddScoped<IEventEmailRenderingContextProvider, EventEmailRenderingContextProvider>();
             services.Configure<EmailDeliveryOptions>(
                 builder.Configuration.GetSection("Email:Delivery"));
             services.Configure<SystemEmailOptions>(

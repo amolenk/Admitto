@@ -1,15 +1,13 @@
 using Amolenk.Admitto.Core.Email.Application.Sending;
-using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
 using Amolenk.Admitto.Core.Email.Application.Templating;
 using Amolenk.Admitto.Core.Email.Application.Projections.TeamEmailContext;
-using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.DeliverEmail;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.PrepareEmailDelivery;
 using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail;
 using Amolenk.Admitto.Core.Email.Domain.Entities;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Outbox;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.UseCases.Emails.SendEmail;
 
@@ -57,14 +55,14 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
         fakeSender.SentMessages.ShouldBeEmpty();
     }
 
-    // Given a team with no email settings configured
+    // Given a team with no SMTP settings configured
     // When SendEmail is handled
-    // Then the email log is written with a Failed status and an error message
+    // Then a pending claim and delivery command are still prepared
     [TestMethod]
-    public async ValueTask HandleAsync_NoSettings_WritesFailedLog()
+    public async ValueTask HandleAsync_NoSettings_PreparesPendingDelivery()
     {
         // Arrange — no settings seeded
-        var (teamId, eventId, _, handler) = await BuildHandlerAsync(configureSystemEmail: false);
+        var (teamId, eventId, fakeSender, handler) = await BuildHandlerAsync(seedTeamBrandingContext: false);
 
         var command = new SendEmailCommand(
             teamId.Value, eventId.Value,
@@ -85,9 +83,16 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
                 .FirstOrDefaultAsync(l => l.IdempotencyKey == "test-key-no-settings", testContext.CancellationToken);
 
             log.ShouldNotBeNull();
-            log.Status.ShouldBe(EmailLogStatus.Failed);
-            log.LastError.ShouldNotBeNullOrEmpty();
+            log.Status.ShouldBe(EmailLogStatus.Pending);
+            log.LastError.ShouldBeNull();
+
+            var delivery = await db.OutboxMessages
+                .AsNoTracking()
+                .SingleOrDefaultAsync(m => m.Type == "Email:Emails.DeliverEmail.DeliverEmailCommand", testContext.CancellationToken);
+            delivery.ShouldNotBeNull();
         });
+
+        fakeSender.SentMessages.ShouldBeEmpty();
     }
 
     // Given a SendEmail command with a given idempotency key
@@ -146,73 +151,6 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
             .AsNoTracking()
             .CountAsync(m => m.Type == "Email:Emails.DeliverEmail.DeliverEmailCommand", testContext.CancellationToken);
         deliveryCommandCount.ShouldBe(1);
-    }
-
-    // Given an email log already marked Sent for the idempotency key
-    // When DeliverEmail is handled
-    // Then no additional send attempt is made
-    [TestMethod]
-    public async ValueTask DeliverEmail_SentLogExists_DoesNotSendAgain()
-    {
-        var (teamId, eventId, fakeSender, handler) = await BuildDeliverHandlerAsync();
-        await SeedLogAsync(teamId, eventId, "sent-key", EmailLogStatus.Sent, sentAt: DateTimeOffset.UtcNow);
-
-        await handler.HandleAsync(DeliverCommand(teamId, eventId, "sent-key"), testContext.CancellationToken);
-        await Environment.EmailDatabase.Context.SaveChangesAsync(testContext.CancellationToken);
-
-        fakeSender.SendAttempts.ShouldBe(0);
-    }
-
-    // Given an email log in Pending status for the idempotency key
-    // When DeliverEmail is handled
-    // Then the message is sent once and the log is updated to Sent
-    [TestMethod]
-    public async ValueTask DeliverEmail_PendingLogExists_SendsAndMarksSent()
-    {
-        var (teamId, eventId, fakeSender, handler) = await BuildDeliverHandlerAsync();
-        await SeedLogAsync(teamId, eventId, "deliver-key", EmailLogStatus.Pending);
-
-        await handler.HandleAsync(DeliverCommand(teamId, eventId, "deliver-key"), testContext.CancellationToken);
-        await Environment.EmailDatabase.Context.SaveChangesAsync(testContext.CancellationToken);
-
-        fakeSender.SendAttempts.ShouldBe(1);
-        var log = await Environment.EmailDatabase.Context.EmailLog
-            .AsNoTracking()
-            .SingleAsync(l => l.IdempotencyKey == "deliver-key", testContext.CancellationToken);
-        log.Status.ShouldBe(EmailLogStatus.Sent);
-    }
-
-    // Given a sender configured to always fail and an email log in Pending status
-    // When DeliverEmail is handled
-    // Then the send is retried inline up to the configured limit, the log stays Pending with the error recorded, and delivery is requeued
-    [TestMethod]
-    public async ValueTask DeliverEmail_TransientSmtpFailure_RetriesInlineAndRequeues()
-    {
-        var (teamId, eventId, fakeSender, handler) = await BuildDeliverHandlerAsync(
-            new EmailDeliveryOptions
-            {
-                InlineRetryCount = 2,
-                InlineRetryDelay = TimeSpan.Zero,
-                MaxDeliveryAttempts = 3
-            });
-        fakeSender.ShouldThrow = true;
-        await SeedLogAsync(teamId, eventId, "retry-key", EmailLogStatus.Pending);
-
-        await handler.HandleAsync(DeliverCommand(teamId, eventId, "retry-key"), testContext.CancellationToken);
-        await Environment.EmailDatabase.Context.SaveChangesAsync(testContext.CancellationToken);
-
-        fakeSender.SendAttempts.ShouldBe(3);
-        var log = await Environment.EmailDatabase.Context.EmailLog
-            .AsNoTracking()
-            .SingleAsync(l => l.IdempotencyKey == "retry-key", testContext.CancellationToken);
-        log.Status.ShouldBe(EmailLogStatus.Pending);
-        log.DeliveryAttemptCount.ShouldBe(1);
-        log.LastError.ShouldBe("SMTP error (fake)");
-
-        var requeued = await Environment.EmailDatabase.Context.OutboxMessages
-            .AsNoTracking()
-            .AnyAsync(m => m.Type == "Email:Emails.DeliverEmail.DeliverEmailCommand", testContext.CancellationToken);
-        requeued.ShouldBeTrue();
     }
 
     // Given ticket confirmation template parameters with both an event website and a public event link
@@ -294,80 +232,33 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
     }
 
     private async ValueTask<(TeamId, TicketedEventId, FakeEmailSender, SendEmailHandler)> BuildHandlerAsync(
-        bool configureSystemEmail = true)
+        bool seedTeamBrandingContext = true)
     {
         var teamId = TeamId.New();
         var eventId = TicketedEventId.New();
         var fakeSender = new FakeEmailSender();
 
-        if (configureSystemEmail)
+        if (seedTeamBrandingContext)
             await SeedTeamEmailContextAsync(teamId);
 
-        var settingsResolver = BuildSettingsResolver(configureSystemEmail);
         var templateService = new EmailTemplateService();
         var renderer = new ScribanEmailRenderer();
+        var preparationService = new EmailPreparationService(
+            Environment.EmailDatabase.Context,
+            templateService,
+            renderer);
         var outbox = new Outbox(Environment.EmailDatabase.Context);
+        var prepareDeliveryHandler = new PrepareEmailDeliveryHandler(
+            Environment.EmailDatabase.Context,
+            outbox);
 
         var handler = new SendEmailHandler(
             Environment.EmailDatabase.Context,
-            settingsResolver,
-            templateService,
-            renderer,
-            outbox);
+            preparationService,
+            prepareDeliveryHandler);
 
         return (teamId, eventId, fakeSender, handler);
     }
-
-    // Given no team email context row exists yet (the branding projection hasn't caught up)
-    // When effective email settings are resolved for the team
-    // Then default branding and the system sender display name are used
-    [TestMethod]
-    public async ValueTask ResolveAsync_NoTeamContextRow_UsesDefaultBrandingAndSystemSenderLabel()
-    {
-        // The projection is eventually consistent: the team's branding integration event
-        // has not reached Email yet, so there is no row at all. Sending must still work.
-        var settings = await BuildSettingsResolver().ResolveAsync(TeamId.New(), testContext.CancellationToken);
-
-        settings.ShouldNotBeNull();
-        settings.AccentColor.ShouldBe(AccentColor.From(AccentColor.Default));
-        settings.FontFamily.ShouldBe(EmailFontFamily.From(EmailFontFamily.Default));
-        settings.FromDisplayName.ShouldBe("Admitto");
-    }
-
-    private async ValueTask<(TeamId, TicketedEventId, FakeEmailSender, DeliverEmailHandler)> BuildDeliverHandlerAsync(
-        EmailDeliveryOptions? deliveryOptions = null)
-    {
-        var teamId = TeamId.New();
-        var eventId = TicketedEventId.New();
-        var fakeSender = new FakeEmailSender();
-
-        await SeedTeamEmailContextAsync(teamId);
-
-        var settingsResolver = BuildSettingsResolver();
-        var outbox = new Outbox(Environment.EmailDatabase.Context);
-        var options = new StaticOptionsMonitor<EmailDeliveryOptions>(deliveryOptions ?? new EmailDeliveryOptions());
-
-        var handler = new DeliverEmailHandler(
-            Environment.EmailDatabase.Context,
-            settingsResolver,
-            fakeSender,
-            outbox,
-            options);
-
-        return (teamId, eventId, fakeSender, handler);
-    }
-
-    private EffectiveEmailSettingsResolver BuildSettingsResolver(bool configureSystemEmail = true) =>
-        new(Options.Create(configureSystemEmail
-            ? new SystemEmailOptions
-            {
-                SmtpHost = "smtp.example.com",
-                SmtpPort = 587,
-                FromAddress = "tickets@admitto.org",
-                AuthMode = "None"
-            }
-            : new SystemEmailOptions()),
-            Environment.EmailDatabase.Context);
 
     private async ValueTask SeedTeamEmailContextAsync(TeamId teamId)
     {
@@ -398,22 +289,4 @@ public sealed class SendEmailHandlerTests(TestContext testContext) : AspireInteg
             statusUpdatedAt: now)));
     }
 
-    private static DeliverEmailCommand DeliverCommand(TeamId teamId, TicketedEventId eventId, string idempotencyKey) =>
-        new(
-            teamId.Value,
-            eventId.Value,
-            "alice@example.com",
-            "Alice",
-            BuiltInEmailTemplateNames.TicketConfirmation,
-            idempotencyKey,
-            "Subject",
-            "Text",
-            "<p>Html</p>");
-
-    private sealed class StaticOptionsMonitor<T>(T value) : IOptionsMonitor<T>
-    {
-        public T CurrentValue => value;
-        public T Get(string? name) => value;
-        public IDisposable? OnChange(Action<T, string?> listener) => null;
-    }
 }

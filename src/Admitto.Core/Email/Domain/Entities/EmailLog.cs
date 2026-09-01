@@ -24,7 +24,6 @@ public class EmailLog : Entity<EmailLogId>
         DateTimeOffset statusUpdatedAt,
         string? lastError,
         int deliveryAttemptCount,
-        ReconfirmationBatchId? reconfirmationBatchId,
         RegistrationId? registrationId,
         RegistrationCycleId? registrationCycleId)
         : base(id)
@@ -40,7 +39,6 @@ public class EmailLog : Entity<EmailLogId>
         StatusUpdatedAt = statusUpdatedAt;
         LastError = lastError;
         DeliveryAttemptCount = deliveryAttemptCount;
-        ReconfirmationBatchId = reconfirmationBatchId;
         RegistrationId = registrationId;
         RegistrationCycleId = registrationCycleId;
     }
@@ -56,12 +54,6 @@ public class EmailLog : Entity<EmailLogId>
     public DateTimeOffset StatusUpdatedAt { get; private set; }
     public string? LastError { get; private set; }
     public int DeliveryAttemptCount { get; private set; }
-
-    /// <summary>
-    /// When this log row was produced by a reconfirmation batch, links back to
-    /// the batch lifecycle record. Null for transactional mail.
-    /// </summary>
-    public ReconfirmationBatchId? ReconfirmationBatchId { get; private set; }
 
     /// <summary>
     /// The registration associated with this email send, when applicable.
@@ -82,7 +74,6 @@ public class EmailLog : Entity<EmailLogId>
         DateTimeOffset statusUpdatedAt,
         string? lastError = null,
         int deliveryAttemptCount = 0,
-        ReconfirmationBatchId? reconfirmationBatchId = null,
         RegistrationId? registrationId = null,
         RegistrationCycleId? registrationCycleId = null)
     {
@@ -99,7 +90,6 @@ public class EmailLog : Entity<EmailLogId>
             statusUpdatedAt,
             lastError,
             deliveryAttemptCount,
-            reconfirmationBatchId,
             registrationId,
             registrationCycleId);
     }

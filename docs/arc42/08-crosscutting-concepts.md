@@ -54,7 +54,7 @@ Some workflows need to consult another module's state inside the same request wi
 | `IRegistrationsFacade` | Registrations | Email | Query live reconfirm candidates and authorize reconfirm delivery against event/registration state |
 Facades are read-only and side-effect-free. Cross-module *writes* still go through commands and integration events on the outbox (see §8.6).
 
-Email does not synchronously query Organization or Registrations for reusable email rendering context. It owns eventually consistent team/event context projections populated from integration events; live reconfirm candidate and admission reads use `IRegistrationsFacade`. Reconfirmation batch lifecycle and delivery semantics are defined in [§6.9](06-runtime-view.md#69-reconfirm-scheduling-and-cycle-limits-hourly-active-event-evaluation).
+Email does not synchronously query Organization or Registrations for reusable email rendering context. It owns eventually consistent team/event context projections populated from integration events; live reconfirm candidate and admission reads use `IRegistrationsFacade`. Reconfirmation evaluation and delivery semantics are defined in [§6.9](06-runtime-view.md#69-reconfirm-scheduling-and-cycle-limits-hourly-active-event-evaluation). Reconfirmation has no durable run or batch lifecycle; Quartz coordination prevents overlapping hourly executions, while `EmailLog` remains the delivery-level audit and idempotency record.
 
 ## 8.5 Use case slice layout
 
@@ -159,7 +159,7 @@ Dispatch is sequential (`MaxConcurrentCalls = 1`), and settlement is explicit (`
 Link and connection faults surface through the processor's error handler as warnings rather than errors, because the processor recovers from them on its own; a real outage shows up as the warning repeating.
 Recovery latency is bounded by `ServiceBusRetryOptions.MaxDelay`, set to 5 seconds in `AddSharedInfrastructureMessagingServices` so a consumer cannot idle for the SDK's 60-second default after a blip (see [ADR-015](../adr/adr-015-service-bus-push-based-consumption.md)).
 
-For Email module SMTP delivery, `EmailLog` is the auditable send claim. Transactional delivery uses the normal claim/render/outbox pipeline. Reconfirmation uses the hourly batch flow described in [§6.9](06-runtime-view.md#69-reconfirm-scheduling-and-cycle-limits-hourly-active-event-evaluation), with live Registrations authorization and cycle-scoped `EmailLog` history.
+For Email module SMTP delivery, `EmailLog` is the auditable send claim and delivery-level idempotency record. Transactional delivery uses the normal claim/render/outbox pipeline. Reconfirmation uses the hourly evaluation described in [§6.9](06-runtime-view.md#69-reconfirm-scheduling-and-cycle-limits-hourly-active-event-evaluation), with live Registrations authorization and cycle-scoped `EmailLog` history; it does not persist a batch lifecycle or batch audit record.
 
 ### Cross-module lifecycle events
 
@@ -188,7 +188,7 @@ Quartz is configured once in shared infrastructure (`AddSharedQuartzInfrastructu
 
 The Worker host starts `QuartzHostedService`. API handlers may resolve `ISchedulerFactory` to persist schedules, but API does not host job execution. This lets schedules written by API or queue handlers be acquired by any Worker replica while Quartz guarantees that a trigger fires on only one cluster node.
 
-`Admitto.AppHost/DatabaseScripts/quartz.sql` owns the `QRTZ_` schema initialization for `quartz-db`, using Quartz's PostgreSQL table layout. The schema script is idempotent and is not managed by EF Core migrations because Quartz owns those tables.
+`Admitto.AppHost/DatabaseScripts/quartz.sql` owns the `QRTZ_` schema initialization for `quartz-db`, using Quartz's PostgreSQL table layout. The schema script is idempotent and is not managed by EF Core migrations because Quartz owns those tables. The clustered persistent store and `[DisallowConcurrentExecution]` on the hourly reconfirmation job ensure that only one Worker executes that job at a time across the cluster.
 
 ## 8.7 Error handling
 
@@ -523,7 +523,7 @@ Committing per record (not per batch) limits the blast radius of failures and al
 
 ### Scheduling
 
-Jobs are registered with an in-memory trigger (no persistent Quartz store). The trigger fires on an interval appropriate for the SLA of the business operation — hourly for IdP deprovisioning. The schedule is defined alongside the job registration in the module's `DependencyInjection.cs`.
+Jobs are registered with Quartz triggers. The shared Worker scheduler uses the clustered persistent store described in §8.6.1; a trigger fires on an interval appropriate for the SLA of the business operation. The reconfirmation evaluator is the fixed hourly schedule described in [§6.9](06-runtime-view.md#69-reconfirm-scheduling-and-cycle-limits-hourly-active-event-evaluation), with no durable batch lifecycle alongside it. Other job schedules are defined alongside their job registration in the module's `DependencyInjection.cs`.
 
 ### Testing jobs
 

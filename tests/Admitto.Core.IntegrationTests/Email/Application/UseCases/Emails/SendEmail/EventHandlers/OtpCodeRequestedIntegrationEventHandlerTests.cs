@@ -1,7 +1,7 @@
 using Amolenk.Admitto.Core.Email.Application.Templating;
 using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail;
 using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail.EventHandlers;
-using Amolenk.Admitto.Core.Email.Application.UseCases.EventEmailContexts.GetEventEmailRenderingContext;
+using Amolenk.Admitto.Core.Email.Application.Templating.EventEmailRenderingContext;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
@@ -21,14 +21,12 @@ public sealed class OtpCodeRequestedIntegrationEventHandlerTests(TestContext tes
     {
         var teamId = Guid.NewGuid();
         var eventId = Guid.NewGuid();
-        var contextQuery = Substitute.For<IQueryHandler<GetEventEmailRenderingContextQuery, EventEmailContextDto>>();
-        contextQuery
-            .HandleAsync(
-                Arg.Is<GetEventEmailRenderingContextQuery>(q =>
-                    q != null &&
-                    q.TeamId == TeamId.From(teamId)
-                    && q.TicketedEventId == TicketedEventId.From(eventId)
-                    && q.RegistrationId == null),
+        var contextProvider = Substitute.For<IEventEmailRenderingContextProvider>();
+        contextProvider
+            .GetContextAsync(
+                TeamId.From(teamId),
+                TicketedEventId.From(eventId),
+                registrationId: null,
                 Arg.Any<CancellationToken>())
             .Returns(new EventEmailContextDto(
                 teamId,
@@ -47,7 +45,7 @@ public sealed class OtpCodeRequestedIntegrationEventHandlerTests(TestContext tes
                 null,
                 false));
         var sendEmailHandler = new CapturingSendEmailHandler();
-        var sut = new OtpCodeRequestedIntegrationEventHandler(contextQuery, sendEmailHandler);
+        var sut = new OtpCodeRequestedIntegrationEventHandler(contextProvider, sendEmailHandler);
 
         await sut.HandleAsync(new OtpCodeRequestedIntegrationEvent(
             Guid.NewGuid(),

@@ -1,4 +1,4 @@
-namespace Amolenk.Admitto.Core.Email.Application.UseCases.EventEmailContexts.GetEventEmailRenderingContext;
+namespace Amolenk.Admitto.Core.Email.Application.Templating.EventEmailRenderingContext;
 
 /// <summary>
 /// Deployment configuration for the public base URL used to derive per-event

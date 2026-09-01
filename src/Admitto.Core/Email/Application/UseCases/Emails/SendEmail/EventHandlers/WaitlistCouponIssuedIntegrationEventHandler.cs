@@ -1,5 +1,5 @@
 using Amolenk.Admitto.Core.Email.Application.Templating;
-using Amolenk.Admitto.Core.Email.Application.UseCases.EventEmailContexts.GetEventEmailRenderingContext;
+using Amolenk.Admitto.Core.Email.Application.Templating.EventEmailRenderingContext;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
@@ -12,7 +12,7 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail.Event
 /// Idempotency key: <c>waitlist-coupon-issued:{teamId}:{ticketedEventId}:{couponCode}</c>.
 /// </summary>
 internal sealed class WaitlistCouponIssuedIntegrationEventHandler(
-    IQueryHandler<GetEventEmailRenderingContextQuery, EventEmailContextDto> eventContextQuery,
+    IEventEmailRenderingContextProvider eventContextProvider,
     ICommandHandler<SendEmailCommand> sendEmailHandler)
     : IIntegrationEventHandler<WaitlistCouponIssuedIntegrationEvent>
 {
@@ -22,12 +22,11 @@ internal sealed class WaitlistCouponIssuedIntegrationEventHandler(
     {
         var idempotencyKey =
             $"waitlist-coupon-issued:{integrationEvent.TeamId}:{integrationEvent.TicketedEventId}:{integrationEvent.CouponCode}";
-        var eventContext = await eventContextQuery.HandleAsync(
-            new GetEventEmailRenderingContextQuery(
-                TeamId.From(integrationEvent.TeamId),
-                TicketedEventId.From(integrationEvent.TicketedEventId),
-                RegistrationId: null),
-            cancellationToken);
+        var eventContext = await eventContextProvider.GetContextAsync(
+            TeamId.From(integrationEvent.TeamId),
+            TicketedEventId.From(integrationEvent.TicketedEventId),
+            registrationId: null,
+            cancellationToken: cancellationToken);
 
         var command = new SendEmailCommand(
             TeamId: integrationEvent.TeamId,

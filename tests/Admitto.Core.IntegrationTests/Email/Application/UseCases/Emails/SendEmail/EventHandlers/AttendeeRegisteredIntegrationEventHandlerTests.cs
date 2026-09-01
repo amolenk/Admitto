@@ -1,7 +1,7 @@
 using Amolenk.Admitto.Core.Email.Application.Templating;
 using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail;
 using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail.EventHandlers;
-using Amolenk.Admitto.Core.Email.Application.UseCases.EventEmailContexts.GetEventEmailRenderingContext;
+using Amolenk.Admitto.Core.Email.Application.Templating.EventEmailRenderingContext;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
@@ -47,15 +47,16 @@ public sealed class AttendeeRegisteredIntegrationEventHandlerTests(TestContext t
             null,
             false);
 
-    private static IQueryHandler<GetEventEmailRenderingContextQuery, EventEmailContextDto> ContextQuery()
+    private static IEventEmailRenderingContextProvider ContextProvider()
     {
-        var query = Substitute.For<IQueryHandler<GetEventEmailRenderingContextQuery, EventEmailContextDto>>();
-        query.HandleAsync(
-                Arg.Is<GetEventEmailRenderingContextQuery>(q =>
-                    q != null && q.TeamId == TeamGuid && q.TicketedEventId == EventGuid),
+        var provider = Substitute.For<IEventEmailRenderingContextProvider>();
+        provider.GetContextAsync(
+                TeamGuid,
+                EventGuid,
+                RegistrationId.From(RegId),
                 Arg.Any<CancellationToken>())
             .Returns(Context());
-        return query;
+        return provider;
     }
 
     // Given an AttendeeRegistered integration event for an attendee
@@ -66,7 +67,7 @@ public sealed class AttendeeRegisteredIntegrationEventHandlerTests(TestContext t
     {
         var sendEmailHandler = Substitute.For<ICommandHandler<SendEmailCommand>>();
 
-        var sut = new AttendeeRegisteredIntegrationEventHandler(ContextQuery(), sendEmailHandler);
+        var sut = new AttendeeRegisteredIntegrationEventHandler(ContextProvider(), sendEmailHandler);
 
         var evt = Event();
         await sut.HandleAsync(evt, testContext.CancellationToken);
@@ -93,7 +94,7 @@ public sealed class AttendeeRegisteredIntegrationEventHandlerTests(TestContext t
             .HandleAsync(Arg.Do<SendEmailCommand>(c => captured = c), Arg.Any<CancellationToken>())
             .Returns(ValueTask.CompletedTask);
 
-        var sut = new AttendeeRegisteredIntegrationEventHandler(ContextQuery(), sendEmailHandler);
+        var sut = new AttendeeRegisteredIntegrationEventHandler(ContextProvider(), sendEmailHandler);
 
         await sut.HandleAsync(Event(), testContext.CancellationToken);
 
@@ -118,7 +119,7 @@ public sealed class AttendeeRegisteredIntegrationEventHandlerTests(TestContext t
             .HandleAsync(Arg.Do<SendEmailCommand>(c => captured = c), Arg.Any<CancellationToken>())
             .Returns(ValueTask.CompletedTask);
 
-        var sut = new AttendeeRegisteredIntegrationEventHandler(ContextQuery(), sendEmailHandler);
+        var sut = new AttendeeRegisteredIntegrationEventHandler(ContextProvider(), sendEmailHandler);
 
         await sut.HandleAsync(Event(), testContext.CancellationToken);
 

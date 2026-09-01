@@ -1,7 +1,9 @@
 using Amolenk.Admitto.Core.Email.Contracts.IntegrationEvents;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.HandleReconfirmAutoExpired.EventHandlers;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.CancelUnreconfirmedRegistrations;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.CancelUnreconfirmedRegistrations.EventHandlers;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Inbox;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 
@@ -23,7 +25,7 @@ public sealed class ReconfirmAutoExpiredIntegrationEventHandlerTests(TestContext
         await fixture.SetupAsync(Environment);
         await ClearOutboxAsync();
 
-        var sut = new ReconfirmAutoExpiredIntegrationEventHandler(Environment.RegistrationsDatabase.Context);
+        var sut = NewSut();
         await sut.HandleAsync(
             new ReconfirmAutoExpiredIntegrationEvent(fixture.TeamId.Value, fixture.TicketedEventId.Value,
                 [],
@@ -49,7 +51,7 @@ public sealed class ReconfirmAutoExpiredIntegrationEventHandlerTests(TestContext
         await fixture.SetupAsync(Environment);
         await ClearOutboxAsync();
 
-        var sut = new ReconfirmAutoExpiredIntegrationEventHandler(Environment.RegistrationsDatabase.Context);
+        var sut = NewSut();
         await sut.HandleAsync(
             new ReconfirmAutoExpiredIntegrationEvent(fixture.TeamId.Value, fixture.TicketedEventId.Value,
                 [],
@@ -76,7 +78,7 @@ public sealed class ReconfirmAutoExpiredIntegrationEventHandlerTests(TestContext
         await fixture.SetupAsync(Environment);
         await ClearOutboxAsync();
 
-        var sut = new ReconfirmAutoExpiredIntegrationEventHandler(Environment.RegistrationsDatabase.Context);
+        var sut = NewSut();
         await sut.HandleAsync(
             new ReconfirmAutoExpiredIntegrationEvent(fixture.TeamId.Value, fixture.TicketedEventId.Value,
                 [],
@@ -109,7 +111,7 @@ public sealed class ReconfirmAutoExpiredIntegrationEventHandlerTests(TestContext
             IntegrationEventId = integrationEventId
         };
 
-        var sut = new ReconfirmAutoExpiredIntegrationEventHandler(Environment.RegistrationsDatabase.Context);
+        var sut = NewSut();
         await sut.HandleAsync(integrationEvent, testContext.CancellationToken);
         await Environment.RegistrationsDatabase.Context.SaveChangesAsync(testContext.CancellationToken);
 
@@ -119,7 +121,7 @@ public sealed class ReconfirmAutoExpiredIntegrationEventHandlerTests(TestContext
             registration.Status.ShouldBe(RegistrationStatus.Registered);
 
             var processedMessage = await db.ProcessedMessages.SingleAsync(testContext.CancellationToken);
-            processedMessage.MessageKey.ShouldBe(integrationEventId.ToString("N"));
+            processedMessage.MessageKey.ShouldBe(ProcessedMessageKey(integrationEventId));
         });
     }
 
@@ -141,13 +143,13 @@ public sealed class ReconfirmAutoExpiredIntegrationEventHandlerTests(TestContext
             IntegrationEventId = integrationEventId
         };
 
-        var sut = new ReconfirmAutoExpiredIntegrationEventHandler(Environment.RegistrationsDatabase.Context);
+        var sut = NewSut();
         await sut.HandleAsync(integrationEvent, testContext.CancellationToken);
         await Environment.RegistrationsDatabase.Context.SaveChangesAsync(testContext.CancellationToken);
 
         Environment.RegistrationsDatabase.Context.ChangeTracker.Clear();
 
-        sut = new ReconfirmAutoExpiredIntegrationEventHandler(Environment.RegistrationsDatabase.Context);
+        sut = NewSut();
         await sut.HandleAsync(integrationEvent, testContext.CancellationToken);
         await Environment.RegistrationsDatabase.Context.SaveChangesAsync(testContext.CancellationToken);
 
@@ -158,7 +160,7 @@ public sealed class ReconfirmAutoExpiredIntegrationEventHandlerTests(TestContext
 
             var processedMessages = await db.ProcessedMessages.ToListAsync(testContext.CancellationToken);
             processedMessages.Count.ShouldBe(1);
-            processedMessages[0].MessageKey.ShouldBe(integrationEventId.ToString("N"));
+            processedMessages[0].MessageKey.ShouldBe(ProcessedMessageKey(integrationEventId));
         });
     }
 
@@ -191,7 +193,7 @@ public sealed class ReconfirmAutoExpiredIntegrationEventHandlerTests(TestContext
             registration.Tickets.Select(ticket => ticket.Id.Value).ShouldBe([fixture.TicketTypeId.Value]);
         });
 
-        var sut = new ReconfirmAutoExpiredIntegrationEventHandler(Environment.RegistrationsDatabase.Context);
+        var sut = NewSut();
         await sut.HandleAsync(
             new ReconfirmAutoExpiredIntegrationEvent(
                 fixture.TeamId.Value,
@@ -218,7 +220,7 @@ public sealed class ReconfirmAutoExpiredIntegrationEventHandlerTests(TestContext
         await fixture.SetupAsync(Environment);
         await ClearOutboxAsync();
 
-        var sut = new ReconfirmAutoExpiredIntegrationEventHandler(Environment.RegistrationsDatabase.Context);
+        var sut = NewSut();
         await sut.HandleAsync(
             new ReconfirmAutoExpiredIntegrationEvent(
                 fixture.TeamId.Value,
@@ -257,7 +259,7 @@ public sealed class ReconfirmAutoExpiredIntegrationEventHandlerTests(TestContext
                 DateTimeOffset.UtcNow);
         });
 
-        var sut = new ReconfirmAutoExpiredIntegrationEventHandler(Environment.RegistrationsDatabase.Context);
+        var sut = NewSut();
         await sut.HandleAsync(
             new ReconfirmAutoExpiredIntegrationEvent(
                 fixture.TeamId.Value,
@@ -299,7 +301,7 @@ public sealed class ReconfirmAutoExpiredIntegrationEventHandlerTests(TestContext
                 DateTimeOffset.UtcNow);
         });
 
-        var sut = new ReconfirmAutoExpiredIntegrationEventHandler(Environment.RegistrationsDatabase.Context);
+        var sut = NewSut();
         await sut.HandleAsync(
             new ReconfirmAutoExpiredIntegrationEvent(
                 fixture.TeamId.Value,
@@ -338,7 +340,7 @@ public sealed class ReconfirmAutoExpiredIntegrationEventHandlerTests(TestContext
                 updateMaxReconfirmationEmails: true);
         });
 
-        var sut = new ReconfirmAutoExpiredIntegrationEventHandler(Environment.RegistrationsDatabase.Context);
+        var sut = NewSut();
         await sut.HandleAsync(
             new ReconfirmAutoExpiredIntegrationEvent(
                 fixture.TeamId.Value,
@@ -354,6 +356,14 @@ public sealed class ReconfirmAutoExpiredIntegrationEventHandlerTests(TestContext
                 .Status.ShouldBe(RegistrationStatus.Registered);
         });
     }
+
+    private ReconfirmAutoExpiredIntegrationEventHandler NewSut() =>
+        new(
+            new CancelUnreconfirmedRegistrationsHandler(Environment.RegistrationsDatabase.Context),
+            new Inbox(Environment.RegistrationsDatabase.Context));
+
+    private static string ProcessedMessageKey(Guid integrationEventId) =>
+        $"{integrationEventId:N}.{typeof(ReconfirmAutoExpiredIntegrationEventHandler).FullName}";
 
     private static async Task ClearOutboxAsync()
     {

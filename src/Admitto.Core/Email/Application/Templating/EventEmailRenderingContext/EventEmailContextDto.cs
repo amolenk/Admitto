@@ -1,10 +1,10 @@
-namespace Amolenk.Admitto.Core.Email.Application.UseCases.EventEmailContexts.GetEventEmailRenderingContext;
+namespace Amolenk.Admitto.Core.Email.Application.Templating.EventEmailRenderingContext;
 
 /// <summary>
 /// Fully-derived team/event rendering context for a single email, assembled
 /// from the Email-owned team/event context projections plus public-link
 /// configuration. Returned by
-/// <see cref="GetEventEmailRenderingContextHandler"/> and consumed by the
+/// <see cref="EventEmailRenderingContextProvider"/> and consumed by the
 /// transactional <c>SendEmail</c> handlers and reconfirmation batches.
 /// </summary>
 internal sealed record EventEmailContextDto(

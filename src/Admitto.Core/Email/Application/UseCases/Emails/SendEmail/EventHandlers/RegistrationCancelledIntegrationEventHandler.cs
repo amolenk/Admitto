@@ -1,5 +1,5 @@
 using Amolenk.Admitto.Core.Email.Application.Templating;
-using Amolenk.Admitto.Core.Email.Application.UseCases.EventEmailContexts.GetEventEmailRenderingContext;
+using Amolenk.Admitto.Core.Email.Application.Templating.EventEmailRenderingContext;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
@@ -16,7 +16,7 @@ namespace Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail.Event
 /// Idempotency key: <c>registration-cancelled:{integrationEventId}</c>.
 /// </remarks>
 internal sealed class RegistrationCancelledIntegrationEventHandler(
-    IQueryHandler<GetEventEmailRenderingContextQuery, EventEmailContextDto> eventContextQuery,
+    IEventEmailRenderingContextProvider eventContextProvider,
     ICommandHandler<SendEmailCommand> sendEmailHandler)
     : IIntegrationEventHandler<RegistrationCancelledIntegrationEvent>
 {
@@ -30,11 +30,10 @@ internal sealed class RegistrationCancelledIntegrationEventHandler(
 
         var idempotencyKey = $"registration-cancelled:{integrationEvent.IntegrationEventId:N}";
 
-        var eventContext = await eventContextQuery.HandleAsync(
-            new GetEventEmailRenderingContextQuery(
-                TeamId.From(integrationEvent.TeamId),
-                TicketedEventId.From(integrationEvent.TicketedEventId),
-                RegistrationId.From(integrationEvent.RegistrationId)),
+        var eventContext = await eventContextProvider.GetContextAsync(
+            TeamId.From(integrationEvent.TeamId),
+            TicketedEventId.From(integrationEvent.TicketedEventId),
+            RegistrationId.From(integrationEvent.RegistrationId),
             cancellationToken);
 
         var firstName = integrationEvent.FirstName;

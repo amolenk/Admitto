@@ -181,81 +181,11 @@ namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence.Migrations
                     b.ToTable("reconfirm_policy_close_evaluations", "email");
                 });
 
-            modelBuilder.Entity("Amolenk.Admitto.Core.Email.Domain.Entities.ReconfirmationBatch", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("created_at");
-
-                    b.Property<DateTimeOffset?>("CompletedAt")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("completed_at");
-
-                    b.Property<DateTimeOffset>("LastChangedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("last_changed_at");
-
-                    b.Property<string>("LastChangedBy")
-                        .IsRequired()
-                        .HasMaxLength(320)
-                        .HasColumnType("character varying(320)")
-                        .HasColumnName("last_changed_by");
-
-                    b.Property<string>("LastError")
-                        .HasColumnType("text")
-                        .HasColumnName("last_error");
-
-                    b.Property<DateTimeOffset?>("StartedAt")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("started_at");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)")
-                        .HasColumnName("status");
-
-                    b.Property<Guid>("TeamId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("team_id");
-
-                    b.Property<Guid>("TicketedEventId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("ticketed_event_id");
-
-                    b.Property<uint>("Version")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("TicketedEventId")
-                        .IsUnique()
-                        .HasDatabaseName("IX_reconfirmation_batches_active_event")
-                        .HasFilter("status IN ('Pending', 'Sending')");
-
-                    b.HasIndex("TicketedEventId", "CreatedAt")
-                        .IsDescending(false, true)
-                        .HasDatabaseName("IX_reconfirmation_batches_event_created_at");
-
-                    b.ToTable("reconfirmation_batches", "email");
-                });
-
             modelBuilder.Entity("Amolenk.Admitto.Core.Email.Domain.Entities.EmailLog", b =>
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
                         .HasColumnName("id");
-
-                    b.Property<Guid?>("ReconfirmationBatchId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("reconfirmation_batch_id");
 
                     b.Property<int>("DeliveryAttemptCount")
                         .HasColumnType("integer")
@@ -321,8 +251,6 @@ namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ReconfirmationBatchId");
-
                     b.HasIndex("Recipient", "IdempotencyKey")
                         .IsUnique()
                         .HasDatabaseName("IX_email_log_system_recipient_idempotency")
@@ -383,13 +311,6 @@ namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence.Migrations
                     b.ToTable("outbox", "email");
                 });
 
-            modelBuilder.Entity("Amolenk.Admitto.Core.Email.Domain.Entities.EmailLog", b =>
-                {
-                    b.HasOne("Amolenk.Admitto.Core.Email.Domain.Entities.ReconfirmationBatch", null)
-                        .WithMany()
-                        .HasForeignKey("ReconfirmationBatchId")
-                        .OnDelete(DeleteBehavior.SetNull);
-                });
 #pragma warning restore 612, 618
         }
     }

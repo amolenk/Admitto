@@ -1,7 +1,7 @@
 using Amolenk.Admitto.Core.Email.Application.Templating;
 using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail;
 using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail.EventHandlers;
-using Amolenk.Admitto.Core.Email.Application.UseCases.EventEmailContexts.GetEventEmailRenderingContext;
+using Amolenk.Admitto.Core.Email.Application.Templating.EventEmailRenderingContext;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
@@ -42,15 +42,16 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
             null,
             false);
 
-    private static IQueryHandler<GetEventEmailRenderingContextQuery, EventEmailContextDto> ContextQuery()
+    private static IEventEmailRenderingContextProvider ContextProvider()
     {
-        var query = Substitute.For<IQueryHandler<GetEventEmailRenderingContextQuery, EventEmailContextDto>>();
-        query.HandleAsync(
-                Arg.Is<GetEventEmailRenderingContextQuery>(q =>
-                    q != null && q.TeamId == TeamGuid && q.TicketedEventId == EventGuid),
+        var provider = Substitute.For<IEventEmailRenderingContextProvider>();
+        provider.GetContextAsync(
+                TeamGuid,
+                EventGuid,
+                RegistrationId.From(RegId),
                 Arg.Any<CancellationToken>())
             .Returns(Context());
-        return query;
+        return provider;
     }
 
     // Given a registration cancelled event caused by an attendee request
@@ -61,7 +62,7 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
     {
         var sendEmailHandler = Substitute.For<ICommandHandler<SendEmailCommand>>();
 
-        var sut = new RegistrationCancelledIntegrationEventHandler(ContextQuery(), sendEmailHandler);
+        var sut = new RegistrationCancelledIntegrationEventHandler(ContextProvider(), sendEmailHandler);
 
         await sut.HandleAsync(Event("AttendeeRequest"), testContext.CancellationToken);
 
@@ -83,7 +84,7 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
         var sendEmailHandler = Substitute.For<ICommandHandler<SendEmailCommand>>();
         var first = Event("ReconfirmAutoCancel");
         var second = first with { IntegrationEventId = Guid.Parse("22222222-2222-2222-2222-222222222222") };
-        var sut = new RegistrationCancelledIntegrationEventHandler(ContextQuery(), sendEmailHandler);
+        var sut = new RegistrationCancelledIntegrationEventHandler(ContextProvider(), sendEmailHandler);
 
         await sut.HandleAsync(first, testContext.CancellationToken);
         await sut.HandleAsync(first, testContext.CancellationToken);
@@ -107,7 +108,7 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
     {
         var sendEmailHandler = Substitute.For<ICommandHandler<SendEmailCommand>>();
 
-        var sut = new RegistrationCancelledIntegrationEventHandler(ContextQuery(), sendEmailHandler);
+        var sut = new RegistrationCancelledIntegrationEventHandler(ContextProvider(), sendEmailHandler);
 
         await sut.HandleAsync(Event("VisaLetterDenied"), testContext.CancellationToken);
 
@@ -127,7 +128,7 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
     {
         var sendEmailHandler = Substitute.For<ICommandHandler<SendEmailCommand>>();
 
-        var sut = new RegistrationCancelledIntegrationEventHandler(ContextQuery(), sendEmailHandler);
+        var sut = new RegistrationCancelledIntegrationEventHandler(ContextProvider(), sendEmailHandler);
 
         await sut.HandleAsync(Event("ReconfirmAutoCancel"), testContext.CancellationToken);
 
@@ -142,10 +143,10 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
     [TestMethod]
     public async Task TicketTypesRemoved_NoEmailDispatched()
     {
-        var contextQuery = Substitute.For<IQueryHandler<GetEventEmailRenderingContextQuery, EventEmailContextDto>>();
+        var contextProvider = Substitute.For<IEventEmailRenderingContextProvider>();
         var sendEmailHandler = Substitute.For<ICommandHandler<SendEmailCommand>>();
 
-        var sut = new RegistrationCancelledIntegrationEventHandler(contextQuery, sendEmailHandler);
+        var sut = new RegistrationCancelledIntegrationEventHandler(contextProvider, sendEmailHandler);
 
         await sut.HandleAsync(Event("TicketTypesRemoved"), testContext.CancellationToken);
 
@@ -162,7 +163,7 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
     {
         var sendEmailHandler = Substitute.For<ICommandHandler<SendEmailCommand>>();
 
-        var sut = new RegistrationCancelledIntegrationEventHandler(ContextQuery(), sendEmailHandler);
+        var sut = new RegistrationCancelledIntegrationEventHandler(ContextProvider(), sendEmailHandler);
 
         await sut.HandleAsync(Event("AttendeeRequest"), testContext.CancellationToken);
 
@@ -186,7 +187,7 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
             .HandleAsync(Arg.Do<SendEmailCommand>(c => captured = c), Arg.Any<CancellationToken>())
             .Returns(ValueTask.CompletedTask);
 
-        var sut = new RegistrationCancelledIntegrationEventHandler(ContextQuery(), sendEmailHandler);
+        var sut = new RegistrationCancelledIntegrationEventHandler(ContextProvider(), sendEmailHandler);
 
         await sut.HandleAsync(Event("AttendeeRequest"), testContext.CancellationToken);
 

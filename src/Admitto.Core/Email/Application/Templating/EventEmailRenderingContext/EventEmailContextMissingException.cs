@@ -1,4 +1,4 @@
-namespace Amolenk.Admitto.Core.Email.Application.UseCases.EventEmailContexts.GetEventEmailRenderingContext;
+namespace Amolenk.Admitto.Core.Email.Application.Templating.EventEmailRenderingContext;
 
 /// <summary>
 /// Thrown when the Email-owned event context projection is missing or does not

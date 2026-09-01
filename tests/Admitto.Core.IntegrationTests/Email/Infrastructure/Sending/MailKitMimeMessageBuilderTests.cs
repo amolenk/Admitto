@@ -38,9 +38,7 @@ public sealed class MailKitMimeMessageBuilderTests
             fromDisplayName,
             EmailAuthMode.None,
             Username: null,
-            Password: null,
-            AccentColor.From("#0f766e"),
-            EmailFontFamily.From("Arial"));
+            Password: null);
 
     private static EmailMessage CreateMessage() =>
         new(

@@ -1,5 +1,5 @@
 using Amolenk.Admitto.Core.Email.Application.Templating;
-using Amolenk.Admitto.Core.Email.Application.UseCases.EventEmailContexts.GetEventEmailRenderingContext;
+using Amolenk.Admitto.Core.Email.Application.Templating.EventEmailRenderingContext;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
@@ -8,7 +8,7 @@ using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 namespace Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail.EventHandlers;
 
 internal sealed class TicketConfirmationResendRequestedIntegrationEventHandler(
-    IQueryHandler<GetEventEmailRenderingContextQuery, EventEmailContextDto> eventContextQuery,
+    IEventEmailRenderingContextProvider eventContextProvider,
     ICommandHandler<SendEmailCommand> sendEmailHandler)
     : IIntegrationEventHandler<TicketConfirmationResendRequestedIntegrationEvent>
 {
@@ -17,11 +17,10 @@ internal sealed class TicketConfirmationResendRequestedIntegrationEventHandler(
         CancellationToken cancellationToken)
     {
         var registrationId = RegistrationId.From(integrationEvent.RegistrationId);
-        var eventContext = await eventContextQuery.HandleAsync(
-            new GetEventEmailRenderingContextQuery(
-                TeamId.From(integrationEvent.TeamId),
-                TicketedEventId.From(integrationEvent.TicketedEventId),
-                registrationId),
+        var eventContext = await eventContextProvider.GetContextAsync(
+            TeamId.From(integrationEvent.TeamId),
+            TicketedEventId.From(integrationEvent.TicketedEventId),
+            registrationId,
             cancellationToken);
 
         var fullName = $"{integrationEvent.FirstName} {integrationEvent.LastName}".Trim();

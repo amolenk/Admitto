@@ -77,7 +77,7 @@ Example: Registrations module needs ticket types from Organization.
 
 The same facade is used by authorization handlers to resolve team membership roles.
 
-For reconfirmation delivery, `RegistrationsFacade.GetReconfirmDeliveryStateAsync` delegates to the dedicated `GetReconfirmDeliveryStateHandler`. The handler reads authoritative Registrations aggregates and returns either a complete allowed state (registration timestamp, interval, and maximum) or a suppression reason; Email then applies its successful-log allowance before SMTP admission. The hourly batch uses its start instant for the policy window and quiet-hours gate while retaining the other authoritative delivery guards.
+For reconfirmation delivery, `RegistrationsFacade.GetReconfirmDeliveryStateAsync` delegates to the dedicated `GetReconfirmDeliveryStateHandler`. The handler reads authoritative Registrations aggregates and returns either a complete allowed state (registration timestamp, interval, and maximum) or a suppression reason; Email then applies its successful-log allowance before SMTP admission. The hourly evaluation uses its start instant for the policy window and quiet-hours gate while retaining the other authoritative delivery guards.
 
 ## 6.4 Event creation (Organization → Registrations async flow)
 
@@ -273,7 +273,6 @@ sequenceDiagram
     participant Quartz as Clustered Quartz scheduler
     participant Eval as RequestReconfirmationsJob
     participant Facade as IRegistrationsFacade
-    participant Batch as ReconfirmationBatch
     participant SMTP as SMTP server
     participant EmailLog as email.email_log
     participant Outbox as Email outbox
@@ -283,20 +282,17 @@ sequenceDiagram
     Eval->>Projection: read enabled Active event specifications
     loop each enabled Active event
       alt now < closesAt
-        Eval->>Eval: require batch start ∈ [opensAt, closesAt) and outside quiet hours
+        Eval->>Eval: require evaluation start ∈ [opensAt, closesAt) and outside quiet hours
         Eval->>Facade: QueryRegistrationsAsync(Status=Registered, HasReconfirmed=false)
         Facade-->>Eval: candidate projection
         Eval->>Eval: apply minimum whole-hour email interval
         alt eligible candidates present
-          Eval->>Batch: create minimal Pending batch
-          Eval->>Batch: transition Pending → Sending
           loop live candidates
             Eval->>Facade: authoritative delivery check
             Eval->>EmailLog: insert Pending claim matched to registration and cycle
             Eval->>SMTP: send through shared hourly-run session
             Eval->>EmailLog: update claim to Sent or Failed
           end
-          Eval->>Batch: transition Sending → Completed
         else no eligible candidates
           Eval-->>Quartz: continue (no-op for event)
         end
@@ -312,7 +308,7 @@ sequenceDiagram
     end
 ```
 
-**Eligibility**: routine evaluation requires an enabled policy, an Active event, and the batch start instant in the half-open window `[opensAt, closesAt)`. Optional event-local quiet hours gate starting a batch. For each registered attendee with `HasReconfirmed=false`, the configured minimum whole-hour interval since registration or the last reconfirmation email must also have elapsed. Only successfully delivered reconfirmation emails matched to the registration's current cycle count toward that cycle's strictest ticket-type maximum. During routine evaluation, an otherwise-due attendee already at that maximum is auto-cancelled through the normal flow instead of receiving another reminder. At the first hourly tick where `now >= closesAt`, the job makes one durable terminal evaluation, creates no batch, ignores quiet hours and the minimum interval, and auto-cancels only registered, unreconfirmed attendees already at the effective maximum. Below-max attendees remain registered and can still reconfirm. The cancellation event follows the normal cancellation flow, whose Email handler dispatches the reconfirm-cancelled notification without quiet-hours gating. There is no policy-close trigger or dynamic reconfirmation fan-out trigger.
+**Eligibility**: routine evaluation requires an enabled policy, an Active event, and the evaluation start instant in the half-open window `[opensAt, closesAt)`. Optional event-local quiet hours gate starting routine reconfirmation delivery. For each registered attendee with `HasReconfirmed=false`, the configured minimum whole-hour interval since registration or the last reconfirmation email must also have elapsed. Only successfully delivered reconfirmation emails matched to the registration's current cycle count toward that cycle's strictest ticket-type maximum. During routine evaluation, an otherwise-due attendee already at that maximum is auto-cancelled through the normal flow instead of receiving another reminder. At the first hourly tick where `now >= closesAt`, the job makes one durable terminal evaluation, creates no routine delivery work, ignores quiet hours and the minimum interval, and auto-cancels only registered, unreconfirmed attendees already at the effective maximum. Below-max attendees remain registered and can still reconfirm. The cancellation event follows the normal cancellation flow, whose Email handler dispatches the reconfirm-cancelled notification without quiet-hours gating. There is no policy-close trigger or dynamic reconfirmation fan-out trigger.
 
 **Attendee reconfirm action**: the reconfirm email CTA points at the Admitto public `reconfirm_link` (`/e/{publicSlug}/reconfirm/{registrationId}`), which redirects to the event website. The event website then POSTs back to the API-key-authenticated partner endpoint `POST /api/events/{eventSlug}/registrations/{registrationId}/reconfirm`, invoking `Registration.Reconfirm()` (idempotent; rejected for cancelled registrations). This sets `HasReconfirmed=true`, so the attendee drops out of the next hourly evaluation's candidate set. As with other partner endpoints, the write is audited against the API key's team identity. A new registration or a reset/reregistration after cancellation starts a fresh reconfirmation cycle.
 
@@ -320,9 +316,9 @@ sequenceDiagram
 
 **Projection consistency**: Email rendering and scheduling use the latest `email.event_email_context_view` row available when the worker handles a message. Recent Organization/Registrations edits may lag by queue delivery time; this staleness is accepted for email rendering and does not affect registration correctness.
 
-For reconfirmation delivery, projection lag cannot authorize a stale reminder: each candidate is checked against the authoritative live Registrations state immediately before submission. The batch start instant is used for the policy window and quiet-hours gate; current authoritative lifecycle, registration status, cycle, and ticket selection still suppress a candidate that changed after the batch started. Rendering may use the eventually consistent Email projection. A batch has no recipient snapshot or resumable progress: if interrupted, it is marked Failed, and the next hourly evaluation queries fresh candidates. One SMTP session is opened lazily and shared by all reconfirmation batches in the hourly run. Pending `EmailLog` claims and terminal audit rows preserve idempotency; failed attempts do not count toward the successful-email allowance. A batch already started is allowed to finish when quiet hours begin or the requested deadline passes.
+For reconfirmation delivery, projection lag cannot authorize a stale reminder: each candidate is checked against the authoritative live Registrations state immediately before submission. The evaluation start instant is used for the policy window and quiet-hours gate; current authoritative lifecycle, registration status, cycle, and ticket selection still suppress a candidate that changed after evaluation began. Rendering may use the eventually consistent Email projection. The evaluation has no durable batch, recipient snapshot, or resumable progress: if interrupted, the next hourly evaluation queries fresh candidates. One SMTP session is opened lazily and shared by the hourly run. Pending `EmailLog` claims and terminal delivery audit rows preserve idempotency; failed attempts do not count toward the successful-email allowance. An evaluation already started is allowed to finish when quiet hours begin or the requested deadline passes.
 
-**Clustering**: Quartz uses the PostgreSQL-backed store in `quartz-db` with clustering enabled. Worker instances host the scheduler and execute the hourly evaluation and its jobs. During rolling deployments or temporary Worker scale-out, Quartz acquires the recurring evaluation on only one live scheduler instance.
+**Clustering**: Quartz uses the PostgreSQL-backed persistent store in `quartz-db` with clustering enabled. The hourly evaluator is marked `[DisallowConcurrentExecution]`; together, the job constraint and clustered store prevent overlapping executions across Worker instances. During rolling deployments or temporary Worker scale-out, Quartz acquires the recurring evaluation on only one live scheduler instance, so no durable `ReconfirmationBatch` lifecycle is needed for coordination.
 
 ## 6.10 User sign-in and ExternalUserId binding
 

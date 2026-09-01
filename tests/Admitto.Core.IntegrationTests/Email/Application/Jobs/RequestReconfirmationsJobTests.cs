@@ -5,7 +5,7 @@ using Amolenk.Admitto.Core.Email.Application.Persistence;
 using Amolenk.Admitto.Core.Email.Application.Sending;
 using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
 using Amolenk.Admitto.Core.Email.Application.Templating;
-using Amolenk.Admitto.Core.Email.Application.UseCases.EventEmailContexts.GetEventEmailRenderingContext;
+using Amolenk.Admitto.Core.Email.Application.Templating.EventEmailRenderingContext;
 using Amolenk.Admitto.Core.Email.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Email.Domain.Entities;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
@@ -38,9 +38,9 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
 
     // Given an active policy and an attendee who registered too recently
     // When the stable hourly evaluator runs
-    // Then no reconfirmation batch is created
+    // Then no reconfirmation email is claimed
     [TestMethod]
-    public async ValueTask Execute_AttendeeRegisteredRecently_ExcludedFromBatch()
+    public async ValueTask Execute_AttendeeRegisteredRecently_ExcludedFromReconfirmation()
     {
         var eventId = TicketedEventId.New();
         var now = DateTimeOffset.UtcNow;
@@ -49,14 +49,14 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
 
         await BuildJob(facade, new FakeTimeProvider(now)).Execute(JobContext());
 
-        (await LoadBatchesAsync()).ShouldBeEmpty();
+        (await LoadEmailLogsAsync()).ShouldBeEmpty();
     }
 
     // Given an active policy and a sent reconfirm email inside the minimum interval
     // When the stable hourly evaluator runs
-    // Then the attendee is not included in a new reconfirmation batch
+    // Then the attendee is not included in a new reconfirmation email attempt
     [TestMethod]
-    public async ValueTask Execute_AttendeeReceivedReconfirmRecently_ExcludedFromBatch()
+    public async ValueTask Execute_AttendeeReceivedReconfirmRecently_ExcludedFromReconfirmation()
     {
         var eventId = TicketedEventId.New();
         var now = DateTimeOffset.UtcNow;
@@ -70,12 +70,12 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
 
         await BuildJob(facade, new FakeTimeProvider(now)).Execute(JobContext());
 
-        (await LoadBatchesAsync()).ShouldBeEmpty();
+        (await LoadEmailLogsAsync()).ShouldHaveSingleItem();
     }
 
     // Given an active policy and an attendee whose interval has elapsed
     // When the stable hourly evaluator runs
-    // Then one reconfirmation batch is created for that attendee
+    // Then one new reconfirmation email is claimed for that attendee
     [TestMethod]
     public async ValueTask Execute_MinEmailIntervalElapsedSinceLastEmail_AttendeeIncluded()
     {
@@ -91,29 +91,9 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
 
         await BuildJob(facade, new FakeTimeProvider(now)).Execute(JobContext());
 
-        var jobs = await LoadBatchesAsync();
-        jobs.Count.ShouldBe(1);
-    }
-
-    // Given an interrupted reconfirmation batch for an event
-    // When the hourly evaluator runs again
-    // Then it fails the old batch before creating fresh work
-    [TestMethod]
-    public async ValueTask Execute_ActiveReconfirmJobExists_SkipsReservation()
-    {
-        var eventId = TicketedEventId.New();
-        var now = DateTimeOffset.UtcNow;
-        await SeedPolicyAsync(eventId, now);
-        var interrupted = ReconfirmationBatch.Create(TeamId, eventId, now.AddHours(-1));
-        interrupted.BeginSending(now.AddHours(-1));
-        await Environment.EmailDatabase.SeedAsync(db => db.ReconfirmationBatches.Add(interrupted));
-        var facade = FacadeReturning(eventId, [RegistrationItem(Guid.NewGuid(), "alice@example.com", now.AddDays(-2))]);
-
-        await BuildJob(facade, new FakeTimeProvider(now)).Execute(JobContext());
-
-        var batches = await LoadBatchesAsync();
-        batches.Count.ShouldBe(2);
-        batches.Single(batch => batch.Id == interrupted.Id).Status.ShouldBe(ReconfirmationBatchStatus.Failed);
+        var logs = await LoadEmailLogsAsync();
+        logs.Count.ShouldBe(2);
+        logs.Count(log => log.Status == EmailLogStatus.Sent).ShouldBe(2);
     }
 
     // Given archived, cleared, partial, future, and closed projected policies
@@ -137,7 +117,7 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
 
         await BuildJob(facade, new FakeTimeProvider(now)).Execute(JobContext());
 
-        (await LoadBatchesAsync()).ShouldBeEmpty();
+        (await LoadEmailLogsAsync()).ShouldBeEmpty();
         await facade.Received(1).GetRegistrationsAsync(
             TeamId.Value,
             closed.Value,
@@ -161,10 +141,14 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
                 Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<QueryRegistrationsDto>(), Arg.Any<CancellationToken>())
             .Returns(Task.FromResult<IReadOnlyList<RegistrationListItemDto>>([
                 RegistrationItem(Guid.NewGuid(), "alice@example.com", now.AddDays(-2))]));
+        facade.GetReconfirmDeliveryStateAsync(
+                Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<ReconfirmDeliveryQuery>(), Arg.Any<CancellationToken>())
+            .Returns(new ReconfirmDeliveryState.Allowed(
+                now.AddDays(-2), TimeSpan.FromHours(1), null, now.AddHours(1)));
 
         await BuildJob(facade, new FakeTimeProvider(now)).Execute(JobContext());
 
-        (await LoadBatchesAsync()).Count.ShouldBe(1);
+        (await LoadEmailLogsAsync()).Count.ShouldBe(1);
         await facade.Received(1).GetRegistrationsAsync(
             TeamId.Value,
             opensNow.Value,
@@ -185,13 +169,13 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
 
         await BuildJob(facade, new FakeTimeProvider(now)).Execute(JobContext());
 
-        (await LoadBatchesAsync()).ShouldBeEmpty();
+        (await LoadEmailLogsAsync()).ShouldBeEmpty();
         await facade.DidNotReceiveWithAnyArgs().GetRegistrationsAsync(default, default, default!, default);
     }
 
     // Given a maxed-out attendee and sent reconfirmation emails before the interval
     // When the hourly evaluator runs
-    // Then it publishes automatic expiry without creating another batch
+    // Then it publishes automatic expiry without creating another reminder
     [TestMethod]
     public async ValueTask Execute_MaxReconfirmationEmailsReached_PublishesAutoExpiry()
     {
@@ -213,7 +197,7 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
 
         await BuildJob(facade, new FakeTimeProvider(now)).Execute(JobContext());
 
-        (await LoadBatchesAsync()).ShouldBeEmpty();
+        (await LoadEmailLogsAsync()).Count.ShouldBe(2);
         var outbox = await LoadOutboxMessagesAsync();
         outbox.Count.ShouldBe(1);
         GetRegistrationIds(outbox[0].Payload).ShouldBe([registrationId], ignoreOrder: true);
@@ -223,7 +207,7 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
 
     // Given an attendee with a delivered reconfirmation email at the maximum
     // When the hourly evaluator runs
-    // Then it publishes automatic expiry without creating another batch
+    // Then it publishes automatic expiry without creating another reminder
     [TestMethod]
     public async ValueTask Execute_DeliveredReconfirmationEmailReachesMaximum_PublishesAutoExpiry()
     {
@@ -249,8 +233,42 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
 
         await BuildJob(facade, new FakeTimeProvider(now)).Execute(JobContext());
 
-        (await LoadBatchesAsync()).ShouldBeEmpty();
+        (await LoadEmailLogsAsync()).ShouldHaveSingleItem();
         (await LoadOutboxMessagesAsync()).ShouldHaveSingleItem();
+    }
+
+    // Given a maxed attendee and another attendee due for a reminder
+    // When email setup fails after auto-expiry is enqueued
+    // Then the auto-expiry request remains committed
+    [TestMethod]
+    public async ValueTask Execute_EmailSetupFails_AutoExpiryIsCommittedBeforeDeliveryPreparation()
+    {
+        var eventId = TicketedEventId.New();
+        var now = DateTimeOffset.UtcNow;
+        var maxedRegistrationId = Guid.NewGuid();
+        var maxedCycleId = Guid.NewGuid();
+        var dueRegistrationId = Guid.NewGuid();
+        var dueCycleId = Guid.NewGuid();
+        await SeedPolicyAsync(eventId, now);
+        await Environment.EmailDatabase.SeedAsync(db =>
+        {
+            db.EmailLog.Add(ReconfirmEmailLog(
+                eventId, maxedRegistrationId, "maxed@example.com", now.AddDays(-2), maxedCycleId));
+            db.EmailLog.Add(ReconfirmEmailLog(
+                eventId, dueRegistrationId, "due@example.com", now.AddDays(-2), dueCycleId));
+        });
+        var facade = FacadeReturning(eventId,
+        [
+            RegistrationItem(maxedRegistrationId, "maxed@example.com", now.AddDays(-10), 1, maxedCycleId),
+            RegistrationItem(dueRegistrationId, "due@example.com", now.AddDays(-10), 2, dueCycleId)
+        ]);
+
+        await BuildJob(facade, new FakeTimeProvider(now), invalidSettings: true).Execute(JobContext());
+
+        var outbox = await LoadOutboxMessagesAsync();
+        outbox.ShouldHaveSingleItem();
+        GetRegistrationIds(outbox[0].Payload).ShouldBe([maxedRegistrationId]);
+        (await LoadEmailLogsAsync()).Count.ShouldBe(2);
     }
 
     // Given an active policy closing now with maxed and below-max attendees during quiet hours
@@ -265,7 +283,7 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
 
         await BuildJob(fixture.Facade(), new FakeTimeProvider(now)).Execute(JobContext());
 
-        (await LoadBatchesAsync()).ShouldBeEmpty();
+        (await LoadEmailLogsAsync()).Count.ShouldBe(2);
         var outbox = await LoadOutboxMessagesAsync();
         outbox.ShouldHaveSingleItem();
         GetRegistrationIds(outbox[0].Payload).ShouldBe([fixture.MaxedRegistrationId]);
@@ -285,7 +303,7 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
         await job.Execute(JobContext());
         await job.Execute(JobContext());
 
-        (await LoadBatchesAsync()).ShouldBeEmpty();
+        (await LoadEmailLogsAsync()).ShouldHaveSingleItem();
         (await LoadOutboxMessagesAsync()).ShouldHaveSingleItem();
     }
 
@@ -293,7 +311,7 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
     // When the hourly evaluator runs
     // Then the attendee remains eligible because only sent emails count
     [TestMethod]
-    public async ValueTask Execute_OnlyUnsentReconfirmationLogs_StillCreatesEmailJob()
+    public async ValueTask Execute_OnlyUnsentReconfirmationLogs_StillClaimsEmail()
     {
         var eventId = TicketedEventId.New();
         var now = DateTimeOffset.UtcNow;
@@ -312,8 +330,8 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
 
         await BuildJob(facade, new FakeTimeProvider(now)).Execute(JobContext());
 
-        var jobs = await LoadBatchesAsync();
-        var job = jobs.ShouldHaveSingleItem();
+        var logs = await LoadEmailLogsAsync();
+        logs.Count.ShouldBe(3);
         (await LoadOutboxMessagesAsync()).ShouldBeEmpty();
     }
 
@@ -338,8 +356,8 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
 
         await BuildJob(facade, new FakeTimeProvider(now)).Execute(JobContext());
 
-        var jobs = await LoadBatchesAsync();
-        var job = jobs.ShouldHaveSingleItem();
+        var logs = await LoadEmailLogsAsync();
+        logs.Count.ShouldBe(2);
         (await LoadOutboxMessagesAsync()).ShouldBeEmpty();
     }
 
@@ -370,8 +388,8 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
 
         await BuildJob(facade, new FakeTimeProvider(now)).Execute(JobContext());
 
-        var jobs = await LoadBatchesAsync();
-        var job = jobs.ShouldHaveSingleItem();
+        var logs = await LoadEmailLogsAsync();
+        logs.Count.ShouldBe(2);
         (await LoadOutboxMessagesAsync()).ShouldBeEmpty();
     }
 
@@ -402,14 +420,14 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
 
         await BuildJob(facade, new FakeTimeProvider(now)).Execute(JobContext());
 
-        var jobs = await LoadBatchesAsync();
-        jobs.ShouldHaveSingleItem();
+        var logs = await LoadEmailLogsAsync();
+        logs.Count.ShouldBe(2);
         (await LoadOutboxMessagesAsync()).ShouldBeEmpty();
     }
 
     // Given an active policy with overnight quiet hours
     // When the hourly evaluation runs during the local quiet interval
-    // Then no reconfirmation batch is created
+    // Then no reconfirmation email is claimed
     [TestMethod]
     public async ValueTask Execute_DuringOvernightQuietHours_SkipsEvent()
     {
@@ -420,7 +438,7 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
 
         await BuildJob(facade, new FakeTimeProvider(now)).Execute(JobContext());
 
-        (await LoadBatchesAsync()).ShouldBeEmpty();
+        (await LoadEmailLogsAsync()).ShouldBeEmpty();
         await facade.DidNotReceiveWithAnyArgs().GetRegistrationsAsync(default, default, default!, default);
     }
 
@@ -428,7 +446,7 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
     // When the single hourly evaluation runs
     // Then each eligible event is committed independently
     [TestMethod]
-    public async ValueTask Execute_MultipleActivePolicies_CreatesOneBatchPerEligibleEvent()
+    public async ValueTask Execute_MultipleActivePolicies_DeliversOneEmailPerEligibleEvent()
     {
         var firstEvent = TicketedEventId.New();
         var secondEvent = TicketedEventId.New();
@@ -447,7 +465,7 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
 
         await BuildJob(facade, new FakeTimeProvider(now)).Execute(JobContext());
 
-        (await LoadBatchesAsync()).Count.ShouldBe(2);
+        (await LoadEmailLogsAsync()).Count.ShouldBe(2);
         _lastSender.SessionsOpened.ShouldBe(1);
         _lastSender.SessionsClosed.ShouldBe(1);
         _lastSender.SentMessages.Count.ShouldBe(2);
@@ -455,11 +473,11 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
             .ShouldBe(2);
     }
 
-    // Given two live candidates in one batch whose delivery crosses the requested deadline
-    // When the hourly run sends the batch
+    // Given two live candidates whose delivery crosses the requested deadline
+    // When the hourly run sends the reminders
     // Then both candidates finish through the shared SMTP session
     [TestMethod]
-    public async ValueTask Execute_BatchCrossesRequestedDeadline_DeliversAllCandidates()
+    public async ValueTask Execute_DeliveryCrossesRequestedDeadline_DeliversAllCandidates()
     {
         var start = new DateTimeOffset(2030, 6, 1, 21, 59, 0, TimeSpan.Zero);
         var close = start.AddMinutes(1);
@@ -494,15 +512,16 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
 
         await job.Execute(JobContext());
 
-        var batches = await LoadBatchesAsync();
-        batches.ShouldHaveSingleItem().Status.ShouldBe(ReconfirmationBatchStatus.Completed);
+        var logs = await LoadEmailLogsAsync();
+        logs.Count.ShouldBe(2);
+        logs.ShouldAllBe(log => log.Status == EmailLogStatus.Sent);
         _lastSender.SessionsOpened.ShouldBe(1);
         _lastSender.SentMessages.Count.ShouldBe(2);
     }
 
     // Given a later policy that reaches its requested deadline while an earlier policy sends
     // When the hourly job evaluates policies in sequence
-    // Then the later policy performs terminal evaluation instead of starting a batch
+    // Then the later policy performs terminal evaluation instead of starting delivery
     [TestMethod]
     public async ValueTask Execute_LaterPolicyCrossesDeadlineDuringEarlierDelivery_UsesFreshPolicyTime()
     {
@@ -554,18 +573,18 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
 
         await job.Execute(JobContext());
 
-        var batches = await LoadBatchesAsync();
-        batches.ShouldHaveSingleItem().TicketedEventId.ShouldBe(firstEvent);
+        var logs = await LoadEmailLogsAsync();
+        logs.ShouldHaveSingleItem().TicketedEventId.ShouldBe(firstEvent);
         (await Environment.EmailDatabase.Context.ReconfirmPolicyCloseEvaluations.AsNoTracking()
                 .CountAsync(e => e.TicketedEventId == laterEvent))
             .ShouldBe(1);
     }
 
     // Given candidate selection that advances into event quiet hours
-    // When the hourly job reaches the batch reservation gate
-    // Then it skips creating a batch
+    // When the hourly job reaches the delivery gate
+    // Then it skips claiming a reminder
     [TestMethod]
-    public async ValueTask Execute_CandidateSelectionEntersQuietHours_SkipsBatchCreation()
+    public async ValueTask Execute_CandidateSelectionEntersQuietHours_SkipsDelivery()
     {
         var start = new DateTimeOffset(2030, 6, 1, 21, 59, 0, TimeSpan.Zero);
         var eventId = TicketedEventId.New();
@@ -592,12 +611,12 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
 
         await BuildJob(facade, fakeTime).Execute(JobContext());
 
-        (await LoadBatchesAsync()).ShouldBeEmpty();
+        (await LoadEmailLogsAsync()).ShouldBeEmpty();
     }
 
     // Given candidate selection that advances beyond the requested deadline
-    // When the hourly job reaches the batch reservation gate
-    // Then it performs terminal evaluation without creating a batch
+    // When the hourly job reaches the delivery gate
+    // Then it performs terminal evaluation without claiming a reminder
     [TestMethod]
     public async ValueTask Execute_CandidateSelectionCrossesDeadline_PerformsTerminalEvaluation()
     {
@@ -624,7 +643,7 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
 
         await BuildJob(facade, fakeTime).Execute(JobContext());
 
-        (await LoadBatchesAsync()).ShouldBeEmpty();
+        (await LoadEmailLogsAsync()).ShouldBeEmpty();
         (await Environment.EmailDatabase.Context.ReconfirmPolicyCloseEvaluations.AsNoTracking()
                 .CountAsync(e => e.TicketedEventId == eventId))
             .ShouldBe(1);
@@ -652,7 +671,6 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
 
         _lastSender.SentMessages.ShouldBeEmpty();
         (await Environment.EmailDatabase.Context.EmailLog.AsNoTracking().ToListAsync()).ShouldBeEmpty();
-        (await LoadBatchesAsync()).ShouldHaveSingleItem().Status.ShouldBe(ReconfirmationBatchStatus.Completed);
     }
 
     // Given a candidate whose authoritative state changes after its EmailLog claim
@@ -686,7 +704,7 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
     }
 
     // Given two candidates and an SMTP failure for one of them
-    // When the hourly batch is delivered
+    // When the hourly reminders are delivered
     // Then successful and failed EmailLog outcomes are both recorded
     [TestMethod]
     public async ValueTask Execute_MixedSmtpResults_CompletesAndAuditsEachAttempt()
@@ -710,16 +728,15 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
 
         var logs = await Environment.EmailDatabase.Context.EmailLog.AsNoTracking().ToListAsync();
         logs.Count.ShouldBe(2);
-        logs.ShouldAllBe(log => log.ReconfirmationBatchId.HasValue);
         logs.Count(log => log.Status == EmailLogStatus.Sent).ShouldBe(1);
         logs.Count(log => log.Status == EmailLogStatus.Failed).ShouldBe(1);
     }
 
-    // Given a previous batch whose SMTP attempt failed
+    // Given a previous hourly delivery whose SMTP attempt failed
     // When a later hourly run evaluates the same live candidate
     // Then the failed attempt does not consume the successful-email allowance
     [TestMethod]
-    public async ValueTask Execute_FailedAttempt_DoesNotBlockFutureBatch()
+    public async ValueTask Execute_FailedAttempt_DoesNotBlockFutureReminder()
     {
         var firstNow = DateTimeOffset.UtcNow;
         var eventId = TicketedEventId.New();
@@ -737,91 +754,61 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
         var secondNow = firstNow.AddHours(2);
         await BuildJob(facade, new FakeTimeProvider(secondNow)).Execute(JobContext());
 
-        var batches = await LoadBatchesAsync();
-        batches.Count.ShouldBe(2);
-        batches.ShouldAllBe(batch => batch.Status == ReconfirmationBatchStatus.Completed);
         var logs = await Environment.EmailDatabase.Context.EmailLog.AsNoTracking().ToListAsync();
         logs.Count.ShouldBe(2);
+        logs.Select(log => log.IdempotencyKey).Distinct().Count().ShouldBe(2);
         logs.Count(log => log.Status == EmailLogStatus.Failed).ShouldBe(1);
         logs.Count(log => log.Status == EmailLogStatus.Sent).ShouldBe(1);
     }
 
-    // Given an active batch for an event with no usable projected policy
-    // When the hourly job starts
-    // Then it fails the batch before evaluating fresh candidates for other events
+    // Given a previously persisted pending reconfirmation claim
+    // When a later job execution starts and evaluates the due candidate
+    // Then it fails the orphaned claim and creates a fresh delivery claim
     [TestMethod]
-    public async ValueTask Execute_ActiveBatchesForArchivedOrIncompletePolicies_AreFailedAtJobStart()
-    {
-        var now = DateTimeOffset.UtcNow;
-        var archived = TicketedEventId.New();
-        var cleared = TicketedEventId.New();
-        var incomplete = TicketedEventId.New();
-        var future = TicketedEventId.New();
-        await SeedPolicyAsync(archived, now, archived: true);
-        await SeedPolicyAsync(cleared, now, withoutPolicy: true);
-        await SeedPolicyAsync(incomplete, now, withoutEventContext: true);
-        await SeedPolicyAsync(future, now, opensAt: now.AddHours(1), closesAt: now.AddHours(2));
-
-        var batches = new[] { archived, cleared, incomplete, future }
-            .Select(eventId =>
-            {
-                var batch = ReconfirmationBatch.Create(TeamId, eventId, now.AddMinutes(-5));
-                batch.BeginSending(now.AddMinutes(-5));
-                return batch;
-            })
-            .ToList();
-        await Environment.EmailDatabase.SeedAsync(db =>
-        {
-            db.ReconfirmationBatches.AddRange(batches);
-            db.EmailLog.Add(EmailLog.Create(
-                TeamId,
-                archived,
-                $"reconfirm:{batches[0].Id.Value:N}:pending",
-                EmailAddress.From("abandoned@example.com"),
-                BuiltInEmailTemplateNames.Reconfirmation,
-                "Reconfirm",
-                EmailLogStatus.Pending,
-                null,
-                now.AddMinutes(-4),
-                reconfirmationBatchId: batches[0].Id,
-                registrationId: RegistrationId.New(),
-                registrationCycleId: RegistrationCycleId.New()));
-        });
-
-        await BuildJob(Substitute.For<IRegistrationsFacade>(), new FakeTimeProvider(now)).Execute(JobContext());
-
-        var reloaded = await LoadBatchesAsync();
-        reloaded.ShouldAllBe(batch => batch.Status == ReconfirmationBatchStatus.Failed);
-        var abandonedClaim = await Environment.EmailDatabase.Context.EmailLog
-            .AsNoTracking()
-            .SingleAsync(log => log.ReconfirmationBatchId == batches[0].Id);
-        abandonedClaim.Status.ShouldBe(EmailLogStatus.Failed);
-    }
-
-    // Given a candidate whose batch preparation fails after the batch is started
-    // When the hourly job encounters the preparation failure
-    // Then a fresh context records the batch as Failed
-    [TestMethod]
-    public async ValueTask Execute_BatchPreparationFails_PersistsFailedInFreshContext()
+    public async ValueTask Execute_PreviousPendingClaim_IsFailedBeforeFreshDeliveryClaim()
     {
         var now = DateTimeOffset.UtcNow;
         var eventId = TicketedEventId.New();
         await SeedPolicyAsync(eventId, now);
-        var candidate = RegistrationItem(Guid.NewGuid(), "alice@example.com", now.AddDays(-2));
+        var registrationId = Guid.NewGuid();
+        var cycleId = Guid.NewGuid();
+        var candidate = RegistrationItem(registrationId, "alice@example.com", now.AddDays(-2), cycleId: cycleId);
+        await Environment.EmailDatabase.SeedAsync(db =>
+            db.EmailLog.Add(EmailLog.Create(
+                TeamId,
+                eventId,
+                "reconfirm:pending-claim",
+                EmailAddress.From(candidate.Email),
+                BuiltInEmailTemplateNames.Reconfirmation,
+                "Please reconfirm",
+                EmailLogStatus.Pending,
+                null,
+                now.AddDays(-30),
+                registrationId: RegistrationId.From(registrationId),
+                registrationCycleId: RegistrationCycleId.From(cycleId))));
         var facade = FacadeReturning(eventId, [candidate]);
+        facade.GetReconfirmDeliveryStateAsync(
+                Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<ReconfirmDeliveryQuery>(), Arg.Any<CancellationToken>())
+            .Returns(new ReconfirmDeliveryState.Allowed(candidate.CreatedAt, TimeSpan.FromHours(1), null, now.AddHours(1)));
 
-        await BuildJob(facade, new FakeTimeProvider(now), failEventContext: true).Execute(JobContext());
+        await BuildJob(facade, new FakeTimeProvider(now)).Execute(JobContext());
 
-        var failed = (await LoadBatchesAsync()).ShouldHaveSingleItem();
-        failed.Status.ShouldBe(ReconfirmationBatchStatus.Failed);
-        failed.LastError!.ShouldContain("Induced event-context failure");
+        var logs = await LoadEmailLogsAsync();
+        logs.Count.ShouldBe(2);
+        logs.Count(log => log.Status == EmailLogStatus.Failed).ShouldBe(1);
+        logs.Single(log => log.Status == EmailLogStatus.Failed)
+            .LastError!.ShouldContain("interrupted");
+        logs.Count(log => log.Status == EmailLogStatus.Sent).ShouldBe(1);
+        logs.Select(log => log.IdempotencyKey).Distinct().Count().ShouldBe(2);
+        logs.ShouldAllBe(log => log.RegistrationCycleId == RegistrationCycleId.From(cycleId));
+        _lastSender.SentMessages.ShouldHaveSingleItem();
     }
 
-    // Given a started batch whose worker cancellation interrupts SMTP delivery
+    // Given a worker cancellation that interrupts SMTP delivery
     // When the hourly job executes with the cancellation token
-    // Then it persists the batch as Failed before propagating cancellation
+    // Then it records the interrupted email as Failed before propagating cancellation
     [TestMethod]
-    public async ValueTask Execute_CancellationInterruptsStartedBatch_PersistsFailed()
+    public async ValueTask Execute_CancellationInterruptsDelivery_PersistsFailedEmailLog()
     {
         var now = DateTimeOffset.UtcNow;
         var eventId = TicketedEventId.New();
@@ -842,7 +829,7 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
         await Should.ThrowAsync<OperationCanceledException>(
             () => job.Execute(JobContext(cancellation.Token)));
 
-        (await LoadBatchesAsync()).ShouldHaveSingleItem().Status.ShouldBe(ReconfirmationBatchStatus.Failed);
+        (await LoadEmailLogsAsync()).ShouldHaveSingleItem().Status.ShouldBe(EmailLogStatus.Failed);
     }
 
     private async Task SeedPolicyAsync(
@@ -896,6 +883,21 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
                 Arg.Is<QueryRegistrationsDto>(q => MatchesReconfirmQuery(q)),
                 Arg.Any<CancellationToken>())
             .Returns(Task.FromResult(candidates));
+        facade.GetReconfirmDeliveryStateAsync(
+                TeamId.Value,
+                eventId.Value,
+                Arg.Any<ReconfirmDeliveryQuery>(),
+                Arg.Any<CancellationToken>())
+            .Returns(call =>
+            {
+                var query = call.Arg<ReconfirmDeliveryQuery>()!;
+                var candidate = candidates.Single(r => r.RegistrationId == query.RegistrationId);
+                return new ReconfirmDeliveryState.Allowed(
+                    candidate.CreatedAt,
+                    TimeSpan.FromHours(1),
+                    candidate.EffectiveMaxReconfirmationEmails,
+                    DateTimeOffset.MaxValue);
+            });
         return facade;
     }
 
@@ -929,11 +931,12 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
     private RequestReconfirmationsJob BuildJob(
         IRegistrationsFacade facade,
         TimeProvider timeProvider,
-        bool failEventContext = false)
+        bool invalidSettings = false)
     {
         var ctx = Environment.EmailDatabase.Context;
         var services = new ServiceCollection()
             .AddScoped<IEmailWriteStore>(_ => new TestEmailWriteStore(ctx))
+            .AddSingleton<IEmailReadStore>(_ => ctx)
             .AddScoped<IRegistrationsFacade>(_ => facade)
             .AddScoped<IEffectiveEmailSettingsResolver>(_ => new EffectiveEmailSettingsResolver(
                 Options.Create(new SystemEmailOptions
@@ -941,11 +944,11 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
                     SmtpHost = "smtp.example.com",
                     SmtpPort = 587,
                     FromAddress = "tickets@admitto.org",
-                    AuthMode = "None"
-                }),
-                ctx))
+                    AuthMode = invalidSettings ? "Basic" : "None"
+                })))
             .AddScoped<IEmailTemplateService>(_ => new EmailTemplateService())
             .AddSingleton<IEmailRenderer, ScribanEmailRenderer>()
+            .AddScoped<IEmailPreparationService, EmailPreparationService>()
             .AddSingleton<ISmtpBatchSender>(_lastSender = new FakeSmtpBatchSender())
             .AddSingleton<IOptionsMonitor<EmailDeliveryOptions>>(
                 new StaticOptionsMonitor<EmailDeliveryOptions>(new EmailDeliveryOptions
@@ -953,8 +956,8 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
                     PerMessageDelay = TimeSpan.Zero,
                     InlineRetryDelay = TimeSpan.Zero
                 }))
-            .AddScoped<IQueryHandler<GetEventEmailRenderingContextQuery, EventEmailContextDto>>(_ =>
-                new TestEventEmailContextQuery(failEventContext))
+            .AddScoped<IEventEmailRenderingContextProvider>(_ =>
+                new TestEventEmailRenderingContextProvider())
             .AddKeyedScoped<IOutbox>(EmailModule.Key, (_, _) => new Outbox(ctx))
             .AddKeyedScoped<IUnitOfWork>(EmailModule.Key, (_, _) => new UnitOfWork<EmailDbContext>(
                 ctx, new NoOpOutboxMessageSender(), NullLogger<UnitOfWork<EmailDbContext>>.Instance))
@@ -967,20 +970,19 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
             NullLogger<RequestReconfirmationsJob>.Instance);
     }
 
-    private sealed class TestEventEmailContextQuery(bool fail)
-        : IQueryHandler<GetEventEmailRenderingContextQuery, EventEmailContextDto>
+    private sealed class TestEventEmailRenderingContextProvider
+        : IEventEmailRenderingContextProvider
     {
-        public ValueTask<EventEmailContextDto> HandleAsync(
-            GetEventEmailRenderingContextQuery query,
+        public ValueTask<EventEmailContextDto> GetContextAsync(
+            TeamId teamId,
+            TicketedEventId ticketedEventId,
+            RegistrationId? registrationId,
             CancellationToken cancellationToken)
         {
-            if (fail)
-                throw new InvalidOperationException("Induced event-context failure.");
-
             return
             ValueTask.FromResult(new EventEmailContextDto(
-                query.TeamId.Value,
-                query.TicketedEventId.Value,
+                teamId.Value,
+                ticketedEventId.Value,
                 "DevConf Team",
                 "DevConf",
                 "https://example.com",
@@ -1014,15 +1016,14 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
     private sealed class TestEmailWriteStore(EmailDbContext context) : IEmailWriteStore
     {
         public DbSet<EmailLog> EmailLog => context.EmailLog;
-        public DbSet<ReconfirmationBatch> ReconfirmationBatches => context.ReconfirmationBatches;
         public DbSet<ReconfirmPolicyCloseEvaluation> ReconfirmPolicyCloseEvaluations =>
             context.ReconfirmPolicyCloseEvaluations;
     }
 
-    private async Task<List<ReconfirmationBatch>> LoadBatchesAsync()
+    private async Task<List<EmailLog>> LoadEmailLogsAsync()
     {
         Environment.EmailDatabase.Context.ChangeTracker.Clear();
-        return await Environment.EmailDatabase.Context.ReconfirmationBatches.AsNoTracking().ToListAsync();
+        return await Environment.EmailDatabase.Context.EmailLog.AsNoTracking().ToListAsync();
     }
 
     private async Task<List<OutboxMessage>> LoadOutboxMessagesAsync()

@@ -3,8 +3,9 @@ using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
 using Amolenk.Admitto.Core.Email.Application.Templating;
 using Amolenk.Admitto.Core.Email.Application.Projections.TeamEmailContext;
 using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.PrepareEmailDelivery;
 using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.SendEmail.EventHandlers;
-using Amolenk.Admitto.Core.Email.Application.UseCases.EventEmailContexts.GetEventEmailRenderingContext;
+using Amolenk.Admitto.Core.Email.Application.Templating.EventEmailRenderingContext;
 using Amolenk.Admitto.Core.Email.Domain.Entities;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
@@ -76,9 +77,13 @@ public sealed class RequestTicketConfirmationResendHandlerTests(TestContext test
     {
         await SeedTeamEmailContextAsync();
 
-        var eventContextQuery = Substitute.For<IQueryHandler<GetEventEmailRenderingContextQuery, EventEmailContextDto>>();
-        eventContextQuery
-            .HandleAsync(Arg.Any<GetEventEmailRenderingContextQuery>(), Arg.Any<CancellationToken>())
+        var eventContextProvider = Substitute.For<IEventEmailRenderingContextProvider>();
+        eventContextProvider
+            .GetContextAsync(
+                TeamId,
+                EventId,
+                Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects.RegistrationId.From(RegistrationId),
+                Arg.Any<CancellationToken>())
             .Returns(new EventEmailContextDto(
                 TeamId.Value,
                 EventId.Value,
@@ -96,7 +101,7 @@ public sealed class RequestTicketConfirmationResendHandlerTests(TestContext test
                 null,
                 false));
 
-        return new TicketConfirmationResendRequestedIntegrationEventHandler(eventContextQuery, BuildSendEmailHandler());
+        return new TicketConfirmationResendRequestedIntegrationEventHandler(eventContextProvider, BuildSendEmailHandler());
     }
 
     private async ValueTask SeedTeamEmailContextAsync()
@@ -108,21 +113,19 @@ public sealed class RequestTicketConfirmationResendHandlerTests(TestContext test
         await Environment.EmailDatabase.SeedAsync(db => db.TeamEmailContexts.Add(teamContext));
     }
 
-    private SendEmailHandler BuildSendEmailHandler() =>
-        new(
+    private SendEmailHandler BuildSendEmailHandler()
+    {
+        var preparationService = new EmailPreparationService(
             Environment.EmailDatabase.Context,
-            new EffectiveEmailSettingsResolver(
-                Options.Create(new SystemEmailOptions
-                {
-                    SmtpHost = "smtp.example.com",
-                    SmtpPort = 587,
-                    FromAddress = "tickets@admitto.org",
-                    AuthMode = "None"
-                }),
-                Environment.EmailDatabase.Context),
             new EmailTemplateService(),
-            new ScribanEmailRenderer(),
-            new Outbox(Environment.EmailDatabase.Context));
+            new ScribanEmailRenderer());
+        var outbox = new Outbox(Environment.EmailDatabase.Context);
+
+        return new SendEmailHandler(
+            Environment.EmailDatabase.Context,
+            preparationService,
+            new PrepareEmailDeliveryHandler(Environment.EmailDatabase.Context, outbox));
+    }
 
     private static TicketConfirmationResendRequestedIntegrationEvent Command() =>
         new(

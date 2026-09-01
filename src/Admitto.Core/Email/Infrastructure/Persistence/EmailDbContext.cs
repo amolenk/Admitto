@@ -3,7 +3,6 @@ using Amolenk.Admitto.Core.Email.Application.Projections.EventEmailContext;
 using Amolenk.Admitto.Core.Email.Application.Projections.TeamEmailContext;
 using Amolenk.Admitto.Core.Email.Domain.Entities;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
-using Amolenk.Admitto.Core.Email.Infrastructure.Persistence.ValueConverters;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Outbox;
@@ -16,7 +15,6 @@ public sealed class EmailDbContext(DbContextOptions<EmailDbContext> options)
     public static string SchemaName => "email";
 
     public DbSet<EmailLog> EmailLog => Set<EmailLog>();
-    public DbSet<ReconfirmationBatch> ReconfirmationBatches => Set<ReconfirmationBatch>();
     public DbSet<ReconfirmPolicyCloseEvaluation> ReconfirmPolicyCloseEvaluations => Set<ReconfirmPolicyCloseEvaluation>();
     public DbSet<EventEmailContextView> EventEmailContexts => Set<EventEmailContextView>();
     public DbSet<TeamEmailContextView> TeamEmailContexts => Set<TeamEmailContextView>();
@@ -61,10 +59,6 @@ public sealed class EmailDbContext(DbContextOptions<EmailDbContext> options)
         configurationBuilder
             .Properties<Port>()
             .HaveConversion<Port.EfCoreValueConverter>();
-
-        configurationBuilder
-            .Properties<ReconfirmationBatchId>()
-            .HaveConversion<ReconfirmationBatchIdConverter>();
 
         configurationBuilder
             .Properties<EmailLogId>()

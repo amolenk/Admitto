@@ -20,7 +20,7 @@ These three decisions are tightly coupled — snapshot semantics enable single-c
 
 When a `BulkEmailJob` transitions `Pending → Resolving`, the resolver maps the job's Email-owned `BulkEmailAttendeeFilter` to the Registrations `QueryRegistrationsDto` contract, calls `IRegistrationsFacade.GetRegistrationsAsync(eventId, filter)`, and persists a `BulkEmailRecipient` snapshot on the job: `(email, displayName, registrationId, parametersJson, status)`. Subsequent retries of the fan-out re-read the snapshot; they do **not** re-query Registrations.
 
-The former reconfirm jobs were created by the hourly evaluation described in [ADR-016](adr-016-hourly-reconfirmation-evaluation.md). ADR-017 replaced this model with a minimal `ReconfirmationBatch` and no recipient snapshot.
+The former reconfirm jobs were created by the hourly evaluation described in [ADR-016](adr-016-hourly-reconfirmation-evaluation.md). ADR-017 superseded that model with a single hourly evaluator using live candidates and no recipient snapshot; its accepted implementation also removed the previously proposed `ReconfirmationBatch` persistence. `EmailLog` remains the delivery-level audit and idempotency record.
 
 **Single recipient source (updated by `remove-bulk-email-csv`).** A bulk-email job targets registered attendees only. The earlier discriminated-source model (`BulkEmailJobSource` with `AttendeeSource` + `ExternalListSource`, the CSV / arbitrary-recipient path) was removed to protect the sending domain's reputation; there is no longer a second recipient source. With one source, the polymorphic value object was collapsed:
 

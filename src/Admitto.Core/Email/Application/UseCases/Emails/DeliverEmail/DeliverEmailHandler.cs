@@ -28,7 +28,9 @@ internal sealed class DeliverEmailHandler(
         if (log is null || log.IsTerminal)
             return;
 
-        var settings = await settingsResolver.ResolveAsync(teamId, ticketedEventId, cancellationToken);
+        // SMTP transport and sender identity are deployment-global. Delivery must not
+        // depend on team/event context, which is only part of the claim scope.
+        var settings = await settingsResolver.ResolveAsync(cancellationToken);
         if (settings is null || !settings.IsValid())
         {
             log.MarkFailed(command.Subject, "Email settings not configured or incomplete.", now);

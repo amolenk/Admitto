@@ -1,29 +1,20 @@
-using Amolenk.Admitto.Core.Email.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
-using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Inbox;
 
-namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.HandleReconfirmAutoExpired.EventHandlers;
+namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.CancelUnreconfirmedRegistrations;
 
-internal sealed class ReconfirmAutoExpiredIntegrationEventHandler(IRegistrationsWriteStore writeStore)
-    : IIntegrationEventHandler<ReconfirmAutoExpiredIntegrationEvent>
+internal sealed class CancelUnreconfirmedRegistrationsHandler(IRegistrationsWriteStore writeStore)
+    : ICommandHandler<CancelUnreconfirmedRegistrationsCommand>
 {
     public async ValueTask HandleAsync(
-        ReconfirmAutoExpiredIntegrationEvent integrationEvent,
+        CancelUnreconfirmedRegistrationsCommand command,
         CancellationToken cancellationToken)
     {
-        var messageKey = integrationEvent.IntegrationEventId.ToString("N");
-        var alreadyHandled = await writeStore.ProcessedMessages
-            .AnyAsync(x => x.MessageKey == messageKey, cancellationToken);
-
-        if (alreadyHandled)
-            return;
-
-        var teamId = TeamId.From(integrationEvent.TeamId);
-        var ticketedEventId = TicketedEventId.From(integrationEvent.TicketedEventId);
+        var teamId = TeamId.From(command.TeamId);
+        var ticketedEventId = TicketedEventId.From(command.TicketedEventId);
         var eventIsActive = await writeStore.TicketedEvents
             .AsNoTracking()
             .AnyAsync(
@@ -35,21 +26,10 @@ internal sealed class ReconfirmAutoExpiredIntegrationEventHandler(IRegistrations
                 c => c.Id == ticketedEventId && c.TeamId == teamId && c.EventStatus == EventLifecycleStatus.Active,
                 cancellationToken);
 
-        if (!eventIsActive || catalog is null)
-        {
-            writeStore.ProcessedMessages.Add(
-                ProcessedMessage.Create(messageKey, DateTimeOffset.UtcNow));
+        if (!eventIsActive || catalog is null || command.RegistrationReferences is null)
             return;
-        }
 
-        if (integrationEvent.RegistrationReferences is null)
-        {
-            writeStore.ProcessedMessages.Add(
-                ProcessedMessage.Create(messageKey, DateTimeOffset.UtcNow));
-            return;
-        }
-
-        foreach (var reference in integrationEvent.RegistrationReferences)
+        foreach (var reference in command.RegistrationReferences)
         {
             if (reference.RegistrationCycleId is null
                 || reference.RegistrationVersion is null
@@ -83,8 +63,5 @@ internal sealed class ReconfirmAutoExpiredIntegrationEventHandler(IRegistrations
             // guards above still reject stale asynchronous evaluations.
             registration.Cancel(CancellationReason.ReconfirmAutoCancel);
         }
-
-        writeStore.ProcessedMessages.Add(
-            ProcessedMessage.Create(messageKey, DateTimeOffset.UtcNow));
     }
 }

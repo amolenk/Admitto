@@ -65,14 +65,6 @@ internal sealed class EmailLogEntityConfiguration : IEntityTypeConfiguration<Ema
             .HasColumnName("delivery_attempt_count")
             .IsRequired();
 
-        builder.Property(e => e.ReconfirmationBatchId)
-            .HasColumnName("reconfirmation_batch_id");
-
-        builder.HasOne<ReconfirmationBatch>()
-            .WithMany()
-            .HasForeignKey(e => e.ReconfirmationBatchId)
-            .OnDelete(DeleteBehavior.SetNull);
-
         builder.HasIndex(e => new { e.TicketedEventId, e.Recipient, e.IdempotencyKey })
             .HasDatabaseName("IX_email_log_event_recipient_idempotency")
             .HasFilter("ticketed_event_id IS NOT NULL")
