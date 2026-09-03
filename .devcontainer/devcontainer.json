@@ -36,8 +36,8 @@
 
     "mounts": [
         "source=admitto-devcontainer-data,target=/home/vscode,type=volume",
-        "source=${localEnv:HOME}/AGENTS.md,target=/home/vscode/AGENTS.md,type=bind,ro",
-        "source=${localEnv:HOME}/AGENTS.md,target=/home/vscode/CLAUDE.md,type=bind,ro"
+        "source=${localEnv:HOME}/dotfiles/llms/AGENTS.md,target=/home/vscode/AGENTS.md,type=bind,ro",
+        "source=${localEnv:HOME}/dotfiles/llms/AGENTS.md,target=/home/vscode/CLAUDE.md,type=bind,ro"
     ],
 
     "postCreateCommand": "${containerWorkspaceFolder}/.devcontainer/postCreate.sh",
