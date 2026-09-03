@@ -67,6 +67,11 @@ One user story should map to one slice whenever possible. If a spec intentionall
 merges behavior, document the exception in the spec or architecture record rather
 than relying on an implicit convention.
 
+Application support services shared by multiple use-case slices are not use cases
+and live under a capability-specific `Application/{Capability}/` folder instead.
+For example, Email's transactional composition support lives under
+`Email/Application/Composing/`.
+
 ### Standard HTTP-exposed slice
 
 ```

@@ -4,78 +4,7 @@ using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Microsoft.Extensions.Options;
 
-namespace Amolenk.Admitto.Core.Email.Application.UseCases.Emails.ComposeTransactionalEmail;
-
-internal sealed class PublicEventLinksOptions
-{
-    // Public event links are owned and configured by Registrations.
-    public const string SectionName = "Registrations:PublicEventLinks";
-    public string BaseUrl { get; init; } = "http://localhost";
-}
-
-/// <summary>
-/// Cause-specific facts for one transactional email. Recipient selection,
-/// idempotency, claims, and delivery are deliberately outside this model.
-/// </summary>
-internal abstract record TransactionalEmailIntent(
-    TeamId TeamId,
-    TicketedEventId TicketedEventId);
-
-internal sealed record TicketConfirmationIntent(
-    TeamId TeamId,
-    TicketedEventId TicketedEventId,
-    RegistrationId RegistrationId,
-    string FirstName,
-    IReadOnlyList<string> TicketTypes)
-    : TransactionalEmailIntent(TeamId, TicketedEventId);
-
-internal sealed record CouponInvitationIntent(
-    TeamId TeamId,
-    TicketedEventId TicketedEventId,
-    string CouponCode)
-    : TransactionalEmailIntent(TeamId, TicketedEventId);
-
-internal sealed record WaitlistOfferIntent(
-    TeamId TeamId,
-    TicketedEventId TicketedEventId,
-    string CouponCode,
-    string TicketTypeName,
-    DateTimeOffset ExpiresAt)
-    : TransactionalEmailIntent(TeamId, TicketedEventId);
-
-internal abstract record RegistrationCancellationIntent(
-    TeamId TeamId,
-    TicketedEventId TicketedEventId,
-    string FirstName,
-    RegistrationId RegistrationId)
-    : TransactionalEmailIntent(TeamId, TicketedEventId);
-
-internal sealed record AttendeeRequestCancellationIntent(
-    TeamId TeamId,
-    TicketedEventId TicketedEventId,
-    string FirstName,
-    RegistrationId RegistrationId)
-    : RegistrationCancellationIntent(TeamId, TicketedEventId, FirstName, RegistrationId);
-
-internal sealed record ReconfirmAutoCancellationIntent(
-    TeamId TeamId,
-    TicketedEventId TicketedEventId,
-    string FirstName,
-    RegistrationId RegistrationId)
-    : RegistrationCancellationIntent(TeamId, TicketedEventId, FirstName, RegistrationId);
-
-internal sealed record VisaLetterDeniedCancellationIntent(
-    TeamId TeamId,
-    TicketedEventId TicketedEventId,
-    string FirstName,
-    RegistrationId RegistrationId)
-    : RegistrationCancellationIntent(TeamId, TicketedEventId, FirstName, RegistrationId);
-
-internal sealed record VerificationCodeIntent(
-    TeamId TeamId,
-    TicketedEventId TicketedEventId,
-    string PlainCode)
-    : TransactionalEmailIntent(TeamId, TicketedEventId);
+namespace Amolenk.Admitto.Core.Email.Application.Composing;
 
 internal sealed record RenderedTransactionalEmail(
     string EmailType,
@@ -225,24 +154,6 @@ internal sealed class TransactionalEmailComposer(
             ["register_link"] = context.GetLinks(registrationId).RegisterLink,
             ["event_website"] = context.WebsiteUrl
         };
-}
-
-internal sealed record TransactionalEmailContext(
-    TeamId TeamId,
-    TicketedEventId EventId,
-    string TeamName,
-    AccentColor AccentColor,
-    string EventName,
-    string WebsiteUrl,
-    string PublicEventLink,
-    string TimeZone,
-    DateTimeOffset? ReconfirmOpensAt,
-    DateTimeOffset? ReconfirmClosesAt,
-    int? ReconfirmMinEmailIntervalHours,
-    bool IsArchived)
-{
-    public RegistrationEmailLinks GetLinks(RegistrationId? registrationId) =>
-        RegistrationEmailLinks.From(PublicEventLink, registrationId);
 }
 
 internal sealed class EventEmailContextMissingException(Guid teamId, Guid eventId)

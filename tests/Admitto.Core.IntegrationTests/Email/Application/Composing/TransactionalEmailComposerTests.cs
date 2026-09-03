@@ -1,11 +1,11 @@
-using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.ComposeTransactionalEmail;
+using Amolenk.Admitto.Core.Email.Application.Composing;
 using Amolenk.Admitto.Core.Email.Application.Templating;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 
-namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.UseCases.Emails.ComposeTransactionalEmail;
+namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.Composing;
 
 [TestClass]
 public sealed class TransactionalEmailComposerTests(TestContext testContext) : AspireIntegrationTestBase

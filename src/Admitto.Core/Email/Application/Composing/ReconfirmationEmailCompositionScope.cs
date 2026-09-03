@@ -2,7 +2,7 @@ using Amolenk.Admitto.Core.Email.Application.Templating;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 
-namespace Amolenk.Admitto.Core.Email.Application.UseCases.Emails.ComposeTransactionalEmail;
+namespace Amolenk.Admitto.Core.Email.Application.Composing;
 
 internal sealed record ReconfirmationIntent(string FirstName, RegistrationId RegistrationId);
 
