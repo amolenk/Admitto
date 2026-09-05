@@ -42,8 +42,9 @@ internal sealed class ConfigureReconfirmPolicyFixture
                     TicketedEventReconfirmPolicy.Create(
                         DateTimeOffset.UtcNow.AddDays(5),
                         DateTimeOffset.UtcNow.AddDays(15),
-                        TimeSpan.FromDays(7),
-                        TimeSpan.FromHours(24)));
+                        TimeSpan.FromHours(24),
+                        new TimeOnly(22),
+                        new TimeOnly(8)));
             }
 
             if (_archive) ticketedEvent.Archive();

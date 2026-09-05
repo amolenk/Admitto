@@ -36,10 +36,14 @@ public sealed class BulkEmailJobBuilder
             : BulkEmailJob.Create(
                 _teamId, _eventId, _emailType, _subject, _textBody, _htmlBody, _attendeeFilter, _triggeredBy, _now);
 
-    public static BulkEmailRecipient Recipient(string email, string? displayName = null) =>
+    public static BulkEmailRecipient Recipient(
+        string email,
+        string? displayName = null,
+        RegistrationCycleId? registrationCycleId = null) =>
         new(
             EmailAddress.From(email),
             displayName ?? email,
             RegistrationId.New(),
-            parametersJson: "{}");
+            parametersJson: "{}",
+            registrationCycleId: registrationCycleId ?? RegistrationCycleId.New());
 }

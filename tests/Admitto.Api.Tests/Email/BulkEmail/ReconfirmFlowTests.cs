@@ -15,18 +15,16 @@ public sealed class ReconfirmFlowTests(TestContext testContext) : EndToEndTestBa
     ///
     /// The cron-driven <c>RequestReconfirmationsJob</c> ultimately schedules a
     /// system-triggered <c>BulkEmailJob</c> over the same
-    /// <c>AttendeeSource(filter: Registered + HasReconfirmed=false, type: reconfirm)</c>
-    /// shape that we exercise here directly. Driving the cron from outside the
-    /// worker is impractical (it ticks at 09:00 in the event time zone), so we
-    /// schedule the equivalent job through the public create endpoint and
-    /// assert that fan-out only mails the un-reconfirmed registered attendee.
+    /// reconfirmation shape that we exercise here directly. The request targets
+    /// all attendees so delivery-time suppression, rather than only recipient
+    /// resolution, is observable through the public HTTP/email path.
     ///
     /// Cron-trigger plumbing itself is covered by the Email module unit tests
     /// in section 7.4.
     /// </summary>
     // Given registrations that are registered-and-not-reconfirmed, already reconfirmed, and cancelled
-    // When a reconfirm bulk email is created targeting registered attendees who have not reconfirmed
-    // Then only the registered, not-yet-reconfirmed attendee receives the email
+    // When a reconfirm bulk email is created for all attendees
+    // Then only the live registered, not-yet-reconfirmed attendee receives the email
     [TestMethod]
     public async Task ReconfirmFanOut_OnlyMailsRegisteredAndNotReconfirmedAttendees()
     {
@@ -35,23 +33,27 @@ public sealed class ReconfirmFlowTests(TestContext testContext) : EndToEndTestBa
             .WithRegistration("already-reconfirmed@example.com", "Already", "Reconfirmed", reconfirmed: true)
             .WithRegistration("cancelled@example.com", "Was", "Cancelled", cancelled: true);
         await fixture.SetupAsync(Environment);
-
         var createResponse = await Environment.ApiClient.PostAsJsonAsync(
             fixture.CreateRoute,
             new
             {
-                EmailType = "bulk-custom",
+                EmailType = "Reconfirmation",
                 Subject = "Please reconfirm {{ first_name }}",
-                TextBody = "Please reconfirm {{ first_name }}",
-                HtmlBody = "<p>Please reconfirm {{ first_name }}</p>",
-                AttendeeFilter = new
-                {
-                    RegistrationStatus = "registered",
-                    HasReconfirmed = false
-                }
+                TextBody = "Please reconfirm {{ first_name }}: {{ reconfirm_link }}",
+                HtmlBody = "<p>Please reconfirm {{ first_name }}: {{ reconfirm_link }}</p>",
+                AttendeeFilter = new { }
             },
             cancellationToken: testContext.CancellationToken);
         createResponse.StatusCode.ShouldBe(HttpStatusCode.Created);
+        var createBody = await createResponse.Content.ReadFromJsonAsync<JsonElement>(
+            cancellationToken: testContext.CancellationToken);
+        var jobDetail = await fixture.PollUntilTerminalAsync(
+            createBody.GetProperty("bulkEmailJobId").GetGuid(),
+            Environment,
+            testContext.CancellationToken);
+        jobDetail.GetProperty("status").GetString().ShouldBe("completed");
+        jobDetail.GetProperty("recipientCount").GetInt32().ShouldBe(3);
+        jobDetail.GetProperty("sentCount").GetInt32().ShouldBe(1);
 
         var emails = await Environment.Email.WaitForAsync(
             expectedCount: 1,
@@ -68,5 +70,6 @@ public sealed class ReconfirmFlowTests(TestContext testContext) : EndToEndTestBa
         emails = json.EnumerateArray().ToList();
 
         EmailTestContext.GetLowercaseRecipientAddresses(emails).ShouldBe(["needs-reconfirm@example.com"]);
+        emails.Single().GetProperty("text").GetString()!.ShouldContain("/reconfirm/");
     }
 }

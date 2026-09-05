@@ -8,5 +8,6 @@ internal sealed record ConfigureReconfirmPolicyCommand(
     uint? ExpectedVersion,
     DateTimeOffset? OpensAt,
     DateTimeOffset? ClosesAt,
-    int? CadenceHours,
-    int? MinEmailIntervalHours) : Command;
+    int? MinEmailIntervalHours,
+    TimeOnly? QuietHoursStart,
+    TimeOnly? QuietHoursEnd) : Command;

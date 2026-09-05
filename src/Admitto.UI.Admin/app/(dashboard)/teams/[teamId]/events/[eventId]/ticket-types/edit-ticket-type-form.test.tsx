@@ -108,7 +108,7 @@ describe("EditTicketTypeForm waitlist cascade", () => {
                 maxCapacity: null,
                 waitlistEnabled: false,
                 claimWindowHours: undefined,
-                maxReconfirmAttempts: null,
+                maxReconfirmationEmails: null,
             }),
         );
         expect(put.mock.calls[0]![1]).not.toHaveProperty("timeSlots");
@@ -141,7 +141,7 @@ describe("EditTicketTypeForm waitlist cascade", () => {
                 maxCapacity: 100,
                 waitlistEnabled: false,
                 claimWindowHours: undefined,
-                maxReconfirmAttempts: null,
+                maxReconfirmationEmails: null,
             }),
         );
         expect(put.mock.calls[0]![1]).not.toHaveProperty("timeSlots");

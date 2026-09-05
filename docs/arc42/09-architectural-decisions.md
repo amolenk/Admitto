@@ -17,6 +17,7 @@ Detailed ADRs are stored in [`/docs/adr/`](../adr/).
 | 2026-06-26 | Platform SMTP sender, public event links, and team-owned email branding | Accepted | [ADR-013](../adr/adr-013-platform-sender-public-links.md) |
 | 2026-06-27 | Email-owned event rendering context projection | Accepted | [ADR-014](../adr/adr-014-email-event-context-projection.md) |
 | 2026-08-16 | Azure Service Bus with push-based consumption | Accepted | [ADR-015](../adr/adr-015-service-bus-push-based-consumption.md) |
+| 2026-08-27 | Hourly reconfirmation evaluation replacing per-event triggers | Accepted | [ADR-016](../adr/adr-016-hourly-reconfirmation-evaluation.md) |
 
 ## Done-when
 

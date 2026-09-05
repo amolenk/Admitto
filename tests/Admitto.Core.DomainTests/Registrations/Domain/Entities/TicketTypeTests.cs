@@ -110,42 +110,42 @@ public sealed class TicketTypeTests
     }
 
     // Given a newly created ticket type
-    // When the max reconfirm attempts is updated to a valid value
+    // When the maximum reconfirmation emails is updated to a valid value
     // Then the property reflects the new value
     [TestMethod]
-    public void UpdateMaxReconfirmAttempts_ValidValue_SetsProperty()
+    public void UpdateMaxReconfirmationEmails_ValidValue_SetsProperty()
     {
         var ticketType = CreateTicketType();
 
-        ticketType.UpdateMaxReconfirmAttempts(3);
+        ticketType.UpdateMaxReconfirmationEmails(ReconfirmationEmailLimit.From(3));
 
-        ticketType.MaxReconfirmAttempts.ShouldBe(3);
+        ticketType.MaxReconfirmationEmails!.Value.Value.ShouldBe(3);
     }
 
-    // Given a newly created ticket type
-    // When the max reconfirm attempts is updated to zero
-    // Then it throws a below-minimum business rule violation
+    // Given a maximum reconfirmation email limit
+    // When zero is parsed as the limit
+    // Then parsing fails validation
     [TestMethod]
-    public void UpdateMaxReconfirmAttempts_Zero_ThrowsValidationError()
+    public void ReconfirmationEmailLimit_Zero_FailsValidation()
     {
         var ticketType = CreateTicketType();
 
-        var ex = Should.Throw<BusinessRuleViolationException>(() => ticketType.UpdateMaxReconfirmAttempts(0));
+        var result = ReconfirmationEmailLimit.TryFrom(0);
 
-        ex.Error.ShouldMatch(TicketType.Errors.MaxReconfirmAttemptsBelowMinimum);
+        result.IsSuccess.ShouldBeFalse();
     }
 
-    // Given a ticket type with a max reconfirm attempts value already set
-    // When the max reconfirm attempts is updated to null
+    // Given a ticket type with a maximum reconfirmation emails value already set
+    // When the maximum reconfirmation emails is updated to null
     // Then the property becomes null, disabling auto-cancel for the type
     [TestMethod]
-    public void UpdateMaxReconfirmAttempts_Null_DisablesAutoCancelForType()
+    public void UpdateMaxReconfirmationEmails_Null_DisablesAutoCancelForType()
     {
         var ticketType = CreateTicketType();
-        ticketType.UpdateMaxReconfirmAttempts(3);
+        ticketType.UpdateMaxReconfirmationEmails(ReconfirmationEmailLimit.From(3));
 
-        ticketType.UpdateMaxReconfirmAttempts(null);
+        ticketType.UpdateMaxReconfirmationEmails(null);
 
-        ticketType.MaxReconfirmAttempts.ShouldBeNull();
+        ticketType.MaxReconfirmationEmails.ShouldBeNull();
     }
 }

@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:59255/"
+      "url": "http://localhost:37449/"
     }
   ],
   "paths": {
@@ -6060,6 +6060,100 @@
         ]
       }
     },
+    "/api/events/{eventSlug}/registrations/{registrationId}/reconfirm": {
+      "post": {
+        "tags": [
+          "Partner"
+        ],
+        "operationId": "ReconfirmRegistration",
+        "parameters": [
+          {
+            "name": "eventSlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "registrationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKey": [ ]
+          }
+        ]
+      }
+    },
     "/api/events/{eventSlug}/registrations/{registrationId}/ticket-email/resend": {
       "post": {
         "tags": [
@@ -6757,6 +6851,58 @@
         }
       }
     },
+    "/e/{eventSlug}/reconfirm/{registrationId}": {
+      "get": {
+        "tags": [
+          "Public"
+        ],
+        "operationId": "RedirectToReconfirm",
+        "parameters": [
+          {
+            "name": "eventSlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "registrationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "Not Found"
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/e/{eventSlug}/qr-code/{registrationId}": {
       "get": {
         "tags": [
@@ -6974,7 +7120,7 @@
             "format": "int32",
             "default": 8
           },
-          "maxReconfirmAttempts": {
+          "maxReconfirmationEmails": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
@@ -7745,15 +7891,6 @@
             ],
             "format": "date-time"
           },
-          "cadenceHours": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
           "minEmailIntervalHours": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
@@ -7762,6 +7899,20 @@
               "string"
             ],
             "format": "int32"
+          },
+          "quietHoursStart": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "time"
+          },
+          "quietHoursEnd": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "time"
           },
           "expectedVersion": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -8573,8 +8724,9 @@
         "required": [
           "opensAt",
           "closesAt",
-          "cadenceHours",
-          "minEmailIntervalHours"
+          "minEmailIntervalHours",
+          "quietHoursStart",
+          "quietHoursEnd"
         ],
         "type": "object",
         "properties": {
@@ -8586,14 +8738,6 @@
             "type": "string",
             "format": "date-time"
           },
-          "cadenceHours": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
           "minEmailIntervalHours": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
@@ -8601,6 +8745,20 @@
               "string"
             ],
             "format": "int32"
+          },
+          "quietHoursStart": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "time"
+          },
+          "quietHoursEnd": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "time"
           }
         }
       },
@@ -9263,7 +9421,7 @@
           "waitlistEnabled",
           "waitlistMode",
           "claimWindowHours",
-          "maxReconfirmAttempts"
+          "maxReconfirmationEmails"
         ],
         "type": "object",
         "properties": {
@@ -9314,7 +9472,7 @@
             ],
             "format": "int32"
           },
-          "maxReconfirmAttempts": {
+          "maxReconfirmationEmails": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
@@ -9534,7 +9692,7 @@
             ],
             "format": "int32"
           },
-          "maxReconfirmAttempts": {
+          "maxReconfirmationEmails": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",

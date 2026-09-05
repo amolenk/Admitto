@@ -59,11 +59,19 @@ internal sealed class BulkEmailRecipientResolver(IRegistrationsFacade registrati
 
             var displayName = string.Concat(row.FirstName, " ", row.LastName).Trim();
 
+            if (attendeeFilter.RegistrationCycleIds is { } expectedCycles
+                && (!expectedCycles.TryGetValue(row.RegistrationId, out var expectedCycleId)
+                    || expectedCycleId != row.RegistrationCycleId))
+            {
+                continue;
+            }
+
             recipients.Add(new BulkEmailRecipient(
                 email: EmailAddress.From(row.Email),
                 displayName: displayName,
                 registrationId: RegistrationId.From(row.RegistrationId),
-                parametersJson: JsonSerializer.Serialize(parameters, ParametersJsonOptions)));
+                parametersJson: JsonSerializer.Serialize(parameters, ParametersJsonOptions),
+                registrationCycleId: RegistrationCycleId.From(row.RegistrationCycleId)));
         }
 
         return recipients;

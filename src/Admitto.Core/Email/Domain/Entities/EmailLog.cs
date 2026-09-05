@@ -25,7 +25,8 @@ public class EmailLog : Entity<EmailLogId>
         string? lastError,
         int deliveryAttemptCount,
         BulkEmailJobId? bulkEmailJobId,
-        RegistrationId? registrationId)
+        RegistrationId? registrationId,
+        RegistrationCycleId? registrationCycleId)
         : base(id)
     {
         TeamId = teamId;
@@ -41,6 +42,7 @@ public class EmailLog : Entity<EmailLogId>
         DeliveryAttemptCount = deliveryAttemptCount;
         BulkEmailJobId = bulkEmailJobId;
         RegistrationId = registrationId;
+        RegistrationCycleId = registrationCycleId;
     }
 
     public TeamId? TeamId { get; private set; }
@@ -68,6 +70,7 @@ public class EmailLog : Entity<EmailLogId>
     /// specific registration.
     /// </summary>
     public RegistrationId? RegistrationId { get; private set; }
+    public RegistrationCycleId? RegistrationCycleId { get; private set; }
 
     public static EmailLog Create(
         TeamId? teamId,
@@ -82,7 +85,8 @@ public class EmailLog : Entity<EmailLogId>
         string? lastError = null,
         int deliveryAttemptCount = 0,
         BulkEmailJobId? bulkEmailJobId = null,
-        RegistrationId? registrationId = null)
+        RegistrationId? registrationId = null,
+        RegistrationCycleId? registrationCycleId = null)
     {
         return new EmailLog(
             EmailLogId.New(),
@@ -98,7 +102,8 @@ public class EmailLog : Entity<EmailLogId>
             lastError,
             deliveryAttemptCount,
             bulkEmailJobId,
-            registrationId);
+            registrationId,
+            registrationCycleId);
     }
 
     public bool IsTerminal => Status is EmailLogStatus.Sent or EmailLogStatus.Delivered or EmailLogStatus.Failed or EmailLogStatus.Bounced;

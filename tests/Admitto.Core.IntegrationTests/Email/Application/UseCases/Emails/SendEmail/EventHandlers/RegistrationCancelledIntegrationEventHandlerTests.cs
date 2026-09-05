@@ -19,7 +19,10 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
     private static readonly Guid RegId = Guid.NewGuid();
 
     private static RegistrationCancelledIntegrationEvent Event(string reason) =>
-        new(TeamGuid.Value, EventGuid.Value, RegId, "alice@example.com", "Alice", "Test", reason);
+        new(TeamGuid.Value, EventGuid.Value, RegId, "alice@example.com", "Alice", "Test", reason)
+        {
+            IntegrationEventId = Guid.Parse("11111111-1111-1111-1111-111111111111")
+        };
 
     private static EventEmailContextDto Context() =>
         new(
@@ -34,7 +37,6 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
             "https://tickets.example.com/cancel/" + RegId,
             "https://tickets.example.com/edit/" + RegId,
             "Europe/Amsterdam",
-            null,
             null,
             null,
             null,
@@ -68,8 +70,33 @@ public sealed class RegistrationCancelledIntegrationEventHandlerTests(TestContex
                 c != null &&
                 c.EmailType == BuiltInEmailTemplateNames.Cancellation &&
                 c.RecipientAddress == "alice@example.com" &&
-                c.IdempotencyKey == $"registration-cancelled:{RegId}"),
+                c.IdempotencyKey == "registration-cancelled:11111111111111111111111111111111"),
             Arg.Any<CancellationToken>());
+    }
+
+    // Given two cancellation events for the same registration
+    // When one event is redelivered and a later cancellation event occurs
+    // Then each event gets its own key while redelivery reuses the event key
+    [TestMethod]
+    public async Task ReconfirmAutoCancel_UsesIntegrationEventIdForIdempotency()
+    {
+        var sendEmailHandler = Substitute.For<ICommandHandler<SendEmailCommand>>();
+        var first = Event("ReconfirmAutoCancel");
+        var second = first with { IntegrationEventId = Guid.Parse("22222222-2222-2222-2222-222222222222") };
+        var sut = new RegistrationCancelledIntegrationEventHandler(ContextQuery(), sendEmailHandler);
+
+        await sut.HandleAsync(first, testContext.CancellationToken);
+        await sut.HandleAsync(first, testContext.CancellationToken);
+        await sut.HandleAsync(second, testContext.CancellationToken);
+
+        var commands = sendEmailHandler.ReceivedCalls()
+            .Select(call => call.GetArguments()[0])
+            .OfType<SendEmailCommand>()
+            .ToList();
+        commands.Count.ShouldBe(3);
+        commands[0].IdempotencyKey.ShouldBe("registration-cancelled:11111111111111111111111111111111");
+        commands[1].IdempotencyKey.ShouldBe(commands[0].IdempotencyKey);
+        commands[2].IdempotencyKey.ShouldBe("registration-cancelled:22222222222222222222222222222222");
     }
 
     // Given a registration cancelled event caused by a denied visa letter

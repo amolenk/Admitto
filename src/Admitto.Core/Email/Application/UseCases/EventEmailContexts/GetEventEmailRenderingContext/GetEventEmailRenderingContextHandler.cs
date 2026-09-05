@@ -48,7 +48,6 @@ internal sealed class GetEventEmailRenderingContextHandler(
             projection.TimeZone ?? string.Empty,
             projection.ReconfirmOpensAt,
             projection.ReconfirmClosesAt,
-            projection.ReconfirmCadenceHours,
             projection.ReconfirmMinEmailIntervalHours,
             projection.IsArchived);
     }

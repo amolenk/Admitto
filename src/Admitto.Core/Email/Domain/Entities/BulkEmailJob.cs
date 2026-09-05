@@ -177,6 +177,15 @@ public sealed class BulkEmailJob : Aggregate<BulkEmailJobId>
         LastError = error;
     }
 
+    public void RecordCancelledRecipient(string email)
+    {
+        EnsureStatus(BulkEmailJobStatus.Sending);
+
+        var recipient = FindPendingRecipient(email);
+        recipient.MarkCancelled();
+        CancelledCount++;
+    }
+
     /// <summary>
     /// Cooperative-cancellation request. Valid in any non-terminal state.
     /// Idempotent: a second request is a no-op.

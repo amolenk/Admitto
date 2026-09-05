@@ -24,4 +24,5 @@ public sealed record BulkEmailAttendeeFilter(
     DateTimeOffset? RegisteredAfter = null,
     DateTimeOffset? RegisteredBefore = null,
     IReadOnlyDictionary<string, string>? AdditionalDetailEquals = null,
-    IReadOnlyCollection<Guid>? RegistrationIds = null);
+    IReadOnlyCollection<Guid>? RegistrationIds = null,
+    IReadOnlyDictionary<Guid, Guid>? RegistrationCycleIds = null);

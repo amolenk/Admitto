@@ -56,10 +56,6 @@ namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(64)")
                         .HasColumnName("public_slug");
 
-                    b.Property<int?>("ReconfirmCadenceHours")
-                        .HasColumnType("integer")
-                        .HasColumnName("reconfirm_cadence_hours");
-
                     b.Property<DateTimeOffset?>("ReconfirmClosesAt")
                         .HasColumnType("timestamptz")
                         .HasColumnName("reconfirm_closes_at");
@@ -71,6 +67,14 @@ namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset?>("ReconfirmOpensAt")
                         .HasColumnType("timestamptz")
                         .HasColumnName("reconfirm_opens_at");
+
+                    b.Property<TimeOnly?>("ReconfirmQuietHoursEnd")
+                        .HasColumnType("time")
+                        .HasColumnName("reconfirm_quiet_hours_end");
+
+                    b.Property<TimeOnly?>("ReconfirmQuietHoursStart")
+                        .HasColumnType("time")
+                        .HasColumnName("reconfirm_quiet_hours_start");
 
                     b.Property<int?>("SelfServiceTicketTypeCount")
                         .HasColumnType("integer")
@@ -149,6 +153,32 @@ namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence.Migrations
                     b.HasKey("TeamId");
 
                     b.ToTable("team_email_context_view", "email");
+                });
+
+            modelBuilder.Entity("Amolenk.Admitto.Core.Email.Domain.Entities.ReconfirmPolicyCloseEvaluation", b =>
+                {
+                    b.Property<Guid>("TeamId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("team_id");
+
+                    b.Property<Guid>("TicketedEventId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("ticketed_event_id");
+
+                    b.Property<DateTimeOffset>("ClosesAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("closes_at");
+
+                    b.Property<DateTimeOffset>("EvaluatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("evaluated_at");
+
+                    b.HasKey("TeamId", "TicketedEventId", "ClosesAt");
+
+                    b.HasIndex("TicketedEventId", "ClosesAt")
+                        .HasDatabaseName("IX_reconfirm_policy_close_evaluations_event_close");
+
+                    b.ToTable("reconfirm_policy_close_evaluations", "email");
                 });
 
             modelBuilder.Entity("Amolenk.Admitto.Core.Email.Domain.Entities.BulkEmailJob", b =>
@@ -269,6 +299,11 @@ namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence.Migrations
                         .IsDescending(false, true)
                         .HasDatabaseName("IX_bulk_email_jobs_event_created_at");
 
+                    b.HasIndex("TicketedEventId", "EmailType")
+                        .IsUnique()
+                        .HasDatabaseName("IX_bulk_email_jobs_active_reconfirm_event")
+                        .HasFilter("is_system_triggered = TRUE AND email_type = 'Reconfirmation' AND status IN ('Pending', 'Resolving', 'Sending')");
+
                     b.ToTable("bulk_email_jobs", "email");
                 });
 
@@ -311,6 +346,10 @@ namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("RegistrationId")
                         .HasColumnType("uuid")
                         .HasColumnName("registration_id");
+
+                    b.Property<Guid?>("RegistrationCycleId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("registration_cycle_id");
 
                     b.Property<DateTimeOffset?>("SentAt")
                         .HasColumnType("timestamptz")
@@ -430,6 +469,9 @@ namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence.Migrations
 
                             b1.Property<Guid>("RegistrationId")
                                 .HasJsonPropertyName("registration_id");
+
+                            b1.Property<Guid?>("RegistrationCycleId")
+                                .HasJsonPropertyName("registration_cycle_id");
 
                             b1.Property<string>("Status")
                                 .IsRequired()

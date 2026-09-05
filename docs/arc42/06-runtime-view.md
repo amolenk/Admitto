@@ -77,6 +77,8 @@ Example: Registrations module needs ticket types from Organization.
 
 The same facade is used by authorization handlers to resolve team membership roles.
 
+For reconfirmation delivery, `RegistrationsFacade.GetReconfirmDeliveryStateAsync` delegates to the dedicated `GetReconfirmDeliveryStateHandler`. The handler reads authoritative Registrations aggregates and returns either a complete allowed state (registration timestamp, interval, maximum, and cutoff) or a suppression reason; Email then applies its successful-log allowance before SMTP admission.
+
 ## 6.4 Event creation (Organization → Registrations async flow)
 
 Event creation is a two-phase async flow. Organization validates team-level invariants and acts as the creation **gatekeeper**; Registrations materialises the authoritative `TicketedEvent` and reports back with an outcome. The Admin UI submits the request and polls a creation-status endpoint until it sees a terminal state.
@@ -262,12 +264,12 @@ Admin and Partner ticket-confirmation resends are requested through Registration
 
 ## 6.9 Bulk-email fan-out (single SMTP connection)
 
-When an admin starts a bulk send (or the reconfirm scheduler ticks), a `BulkEmailJob` is created in `Pending` state and a Quartz trigger queues `BulkEmailFanOutJob`. The fan-out job opens **one** SMTP connection per pickup and streams every recipient through it; the single-send pipeline is bypassed deliberately to avoid one TLS handshake per recipient.
+When an admin starts a bulk send (or hourly reconfirm evaluation selects recipients), a `BulkEmailJob` is created in `Pending` state and a Quartz trigger queues `BulkEmailFanOutJob`. The fan-out job opens **one** SMTP connection per pickup and streams every recipient through it; the single-send pipeline is bypassed deliberately to avoid one TLS handshake per recipient.
 
 ```mermaid
 sequenceDiagram
-    participant Admin as Admin / Reconfirm tick
-    participant Endpoint as Admin endpoint / Reconfirm job
+    participant Admin as Admin / Hourly reconfirm evaluation
+    participant Endpoint as Admin endpoint / Reconfirm evaluation
     participant Job as BulkEmailJob
     participant FanOut as BulkEmailFanOutJob (Worker)
     participant Resolver as Recipient resolver
@@ -288,11 +290,24 @@ sequenceDiagram
     FanOut->>SMTP: connect (single connection)
     loop for each Pending recipient
       FanOut->>FanOut: check CancellationRequestedAt
-      FanOut->>FanOut: render job-owned or built-in content with team/event context
-      FanOut->>EmailLog: insert Pending claim key=bulk:{jobId}:{email}
-      FanOut->>SMTP: MAIL FROM / RCPT TO / DATA
-      FanOut->>EmailLog: update claim to Sent or Failed
-      FanOut->>Job: update per-recipient status + counters
+      alt reconfirm email
+        FanOut->>Facade: authoritative live reconfirm delivery check at now
+        alt registered, unreconfirmed, eligible, and outside quiet hours
+          FanOut->>FanOut: render job-owned or built-in content with team/event context
+          FanOut->>EmailLog: insert Pending claim key=bulk:{jobId}:{email}
+          FanOut->>SMTP: MAIL FROM / RCPT TO / DATA
+          FanOut->>EmailLog: update claim to Sent or Failed
+          FanOut->>Job: update per-recipient status + counters
+        else stale, ineligible, archived, expired, or quiet hours
+          FanOut->>Job: mark recipient Cancelled (no EmailLog claim)
+        end
+      else other bulk email
+        FanOut->>FanOut: render job-owned content with team/event context
+        FanOut->>EmailLog: insert Pending claim key=bulk:{jobId}:{email}
+        FanOut->>SMTP: MAIL FROM / RCPT TO / DATA
+        FanOut->>EmailLog: update claim to Sent or Failed
+        FanOut->>Job: update per-recipient status + counters
+      end
       FanOut->>FanOut: Task.Delay(PerMessageDelay, ct)
     end
     FanOut->>SMTP: QUIT
@@ -307,44 +322,63 @@ sequenceDiagram
 
 **Cancellation**: `POST /admin/.../bulk-emails/{id}/cancel` sets `CancellationRequestedAt` on the aggregate; the worker observes it between recipients and during the per-message delay, transitions remaining `Pending` rows to `Cancelled`, and closes the SMTP session cleanly.
 
-## 6.10 Reconfirm scheduling (per-event Quartz trigger)
+**Reconfirmation delivery-time guard**: a queued reconfirmation reminder is never trusted solely because it was eligible when the bulk snapshot was made. The Worker queries the authoritative Registrations facade immediately before each SMTP submission. Registrations owns the live event lifecycle, policy, time zone/quiet-hours, registration status, cycle, ticket selection, and effective maximum check; Email adds its successful `EmailLog` count/latest timestamp and send-claim rules. It suppresses reconfirmed/cancelled or otherwise ineligible registrations, archived events, disabled or expired policies, and quiet hours. Suppressed recipients do not create `EmailLog` claims; failed SMTP attempts likewise do not count toward the successful-email reconfirmation allowance. A job deferred or drained by quiet hours is completed without resuming its stale pending snapshot, so the next permitted hourly evaluation performs a fresh candidate query.
 
-The Email module owns one static Quartz job (`EvaluateReconfirmJob`) and registers a per-event trigger whose cron is derived from `TicketedEventReconfirmPolicy` and evaluated in `TicketedEvent.TimeZone`. Triggers are kept in sync with Registrations through integration events.
+## 6.10 Reconfirm scheduling and cycle limits (hourly active-event evaluation)
+
+The reconfirmation policy is owned by `TicketedEvent` in Registrations. Email projects the schedule-affecting event data needed for evaluation: policy presence and window, minimum email interval, optional event-local quiet hours, event time zone, and lifecycle state. A recurring Quartz job in the Worker evaluates enabled Active events once per hour; the policy controls eligibility, not scheduler timing. Ticket types may add an optional maximum reconfirmation-email count, with the strictest configured value governing each registration's current cycle.
 
 ```mermaid
 sequenceDiagram
     participant RegOutbox as Reg outbox
-    participant ReconfirmHandlers as Reconfirm scheduler handlers
+    participant Projection as Email event context projection
     participant Quartz as Clustered Quartz scheduler
-    participant Eval as EvaluateReconfirmJob (per-event trigger)
+    participant CloseTrigger as One-shot policy-close trigger
+    participant Eval as Hourly reconfirm evaluation
     participant Facade as IRegistrationsFacade
     participant Job as BulkEmailJob (reconfirm)
     participant FanOut as BulkEmailFanOutJob
+    participant Outbox as Email outbox
 
-    RegOutbox->>ReconfirmHandlers: TicketedEventCreated / DetailsChanged / ReconfirmPolicyChanged / Archived
-    ReconfirmHandlers->>Projection: upsert Email event context scheduling snapshot
-    ReconfirmHandlers->>Quartz: upsert / remove per-event trigger from projected policy/time zone
-    Note over Quartz: fires per cadence inside reconfirm window
-    Quartz->>Eval: trigger fires (eventId)
-    Eval->>Facade: QueryRegistrationsAsync(Status=Registered, HasReconfirmed=false)
-    Facade-->>Eval: candidate projection
-    alt no candidates
-      Eval-->>Quartz: ack (no-op)
-    else candidates present
-      Eval->>Job: create BulkEmailJob (email_type=reconfirm, attendee snapshot)
-      Job->>FanOut: queued (see §6.9)
+    RegOutbox->>Projection: project event details, policy, time zone, and lifecycle
+    Quartz->>Eval: hourly evaluation
+    CloseTrigger->>Eval: exact policy-close evaluation
+    Eval->>Projection: read enabled Active event specifications
+    loop each enabled Active event
+      alt now < closesAt
+        Eval->>Eval: require now ∈ [opensAt, closesAt) and outside quiet hours
+        Eval->>Facade: QueryRegistrationsAsync(Status=Registered, HasReconfirmed=false)
+        Facade-->>Eval: candidate projection
+        Eval->>Eval: apply minimum whole-hour email interval
+        alt eligible candidates present
+          Eval->>Job: create BulkEmailJob (email_type=reconfirm, attendee snapshot)
+          Job->>FanOut: queued (see §6.9)
+        else no eligible candidates
+          Eval-->>Quartz: continue (no-op for event)
+        end
+      else now >= closesAt
+        Eval->>Eval: claim durable policy-close evaluation
+        Eval->>Facade: QueryRegistrationsAsync(Status=Registered, HasReconfirmed=false)
+        Facade-->>Eval: candidate projection
+        Eval->>Eval: ignore quiet hours and minimum interval; count successful logs
+        Eval->>Eval: select only attendees at effective maximum
+        Eval->>Outbox: ReconfirmAutoExpiredIntegrationEvent (selected attendees only)
+        Note over Eval: no reminder BulkEmailJob is created; repeated ticks are no-ops
+      end
     end
 ```
 
-**Eligibility**: live `HasReconfirmed=false` is the only gate — no extra `email_log` cadence filter. The cron *is* the cadence; tightening the policy (e.g. 7d → 3d) immediately changes prompt frequency.
+**Eligibility**: routine evaluation requires an enabled policy, an Active event, and the current instant in the half-open window `[opensAt, closesAt)`. Optional event-local quiet hours defer routine evaluation. For each registered attendee with `HasReconfirmed=false`, the configured minimum whole-hour interval since registration or the last reconfirmation email must also have elapsed. Only successfully delivered reconfirmation emails count toward the current cycle's strictest ticket-type maximum. During routine evaluation, an otherwise-due attendee already at that maximum is auto-cancelled through the normal flow instead of receiving another reminder. At `now >= closesAt`, the hourly or one-shot close trigger makes one durable terminal evaluation for that policy close, creates no reminder work, ignores quiet hours and the minimum interval, and auto-cancels only registered, unreconfirmed attendees already at the effective maximum. Below-max attendees remain registered and can still reconfirm. The cancellation event follows the normal cancellation flow, whose Email handler dispatches the reconfirm-cancelled notification without quiet-hours gating. The hourly evaluation remains fixed operational cadence; the one-shot close trigger exists only to cover non-hour policy boundaries.
 
-**Attendee reconfirm action**: the reconfirm email CTA points at the Admitto public `reconfirm_link` (`/e/{publicSlug}/reconfirm/{registrationId}`), which redirects to the event website. The event website then POSTs back to the API-key-authenticated partner endpoint `POST /api/events/{eventSlug}/registrations/{registrationId}/reconfirm`, invoking `Registration.Reconfirm()` (idempotent; rejected for cancelled registrations). This sets `HasReconfirmed=true`, so the attendee drops out of the next scheduler tick's candidate set. As with other partner endpoints, the write is audited against the API key's team identity.
+**Attendee reconfirm action**: the reconfirm email CTA points at the Admitto public `reconfirm_link` (`/e/{publicSlug}/reconfirm/{registrationId}`), which redirects to the event website. The event website then POSTs back to the API-key-authenticated partner endpoint `POST /api/events/{eventSlug}/registrations/{registrationId}/reconfirm`, invoking `Registration.Reconfirm()` (idempotent; rejected for cancelled registrations). This sets `HasReconfirmed=true`, so the attendee drops out of the next hourly evaluation's candidate set. As with other partner endpoints, the write is audited against the API key's team identity. A new registration or a reset/reregistration after cancellation starts a fresh reconfirmation cycle.
 
-**Lifecycle cleanup**: `TicketedEventArchived` integration events mark the Email projection archived and remove the trigger so archived events stop receiving reconfirm prompts.
+**Lifecycle cleanup**: clearing the reconfirm policy or archiving the event updates the Email projection so the event is no longer enabled and Active. Future hourly evaluations therefore skip it and create no routine reconfirmation work.
 
 **Projection consistency**: Email rendering and scheduling use the latest `email.event_email_context_view` row available when the worker handles a message. Recent Organization/Registrations edits may lag by queue delivery time; this staleness is accepted for email rendering and does not affect registration correctness.
 
-**Clustering**: Quartz uses the PostgreSQL-backed store in `quartz-db` with clustering enabled. API handlers can persist schedules, while Worker instances host the scheduler and execute jobs. During rolling deployments or temporary Worker scale-out, Quartz acquires each trigger on only one live scheduler instance.
+For reconfirmation delivery, projection lag cannot authorize a stale reminder: the fan-out guard uses the authoritative live Registrations delivery query at the current instant. Rendering may still use the eventually consistent Email projection. The returned cutoff creates a linked, `TimeProvider`-scheduled cancellation token that is passed through the SMTP submission. If the cutoff fires while the SMTP adapter is in its pre-transmission seam, the token cancels the attempt and the recipient is suppressed rather than failed; this does not claim transactional rollback of bytes already accepted by an external SMTP server. Suppressed and failed attempts are excluded from the successful-email allowance, and queued reminders that reach or pass the exclusive policy close are suppressed rather than delivered. The next permitted hourly evaluation starts from a fresh facade query rather than a deferred stale batch.
+
+**Clustering**: Quartz uses the PostgreSQL-backed store in `quartz-db` with clustering enabled. Worker instances host the scheduler and execute the hourly evaluation and its jobs. During rolling deployments or temporary Worker scale-out, Quartz acquires the recurring evaluation on only one live scheduler instance.
 
 ## 6.11 User sign-in and ExternalUserId binding
 

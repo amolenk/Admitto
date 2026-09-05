@@ -36,10 +36,13 @@ public sealed class BulkEmailRecipientResolverTests
                 TicketTypeIds: [Guid.NewGuid()],
                 AdditionalDetails: new Dictionary<string, string> { ["company"] = "Acme" },
                 CreatedAt: DateTimeOffset.UtcNow,
+                RegistrationCycleId: Guid.NewGuid(),
+                RegistrationVersion: 1,
+                TicketCatalogVersion: 1,
                 Status: RegistrationStatus.Registered,
                 HasReconfirmed: false,
                 ReconfirmedAt: null,
-                EffectiveMaxReconfirmAttempts: null),
+                EffectiveMaxReconfirmationEmails: null),
             new RegistrationListItemDto(
                 RegistrationId: Guid.NewGuid(),
                 Email: "bob@example.com",
@@ -48,10 +51,13 @@ public sealed class BulkEmailRecipientResolverTests
                 TicketTypeIds: [],
                 AdditionalDetails: new Dictionary<string, string>(),
                 CreatedAt: DateTimeOffset.UtcNow,
+                RegistrationCycleId: Guid.NewGuid(),
+                RegistrationVersion: 1,
+                TicketCatalogVersion: 1,
                 Status: RegistrationStatus.Registered,
                 HasReconfirmed: false,
                 ReconfirmedAt: null,
-                EffectiveMaxReconfirmAttempts: null),
+                EffectiveMaxReconfirmationEmails: null),
         };
 
         var facade = Substitute.For<IRegistrationsFacade>();
@@ -93,6 +99,51 @@ public sealed class BulkEmailRecipientResolverTests
         var bob = recipients[1];
         bob.DisplayName.ShouldBe("Bob Jones");
         bob.RegistrationId.ShouldBe(RegistrationId.From(rows[1].RegistrationId));
+    }
+
+    // Given two registrations with only one matching the expected cycle snapshot
+    // When reconfirm recipients are resolved
+    // Then the stale-cycle registration is excluded
+    [TestMethod]
+    public async Task ResolveAsync_ReconfirmCycleMismatch_ExcludesStaleRecipient()
+    {
+        var eventId = TicketedEventId.New();
+        var teamId = TeamId.New();
+        var firstRegistrationId = Guid.NewGuid();
+        var secondRegistrationId = Guid.NewGuid();
+        var expectedCycleId = Guid.NewGuid();
+        var rows = new[]
+        {
+            new RegistrationListItemDto(
+                firstRegistrationId, "alice@example.com", "Alice", "Smith", [],
+                new Dictionary<string, string>(), DateTimeOffset.UtcNow,
+                expectedCycleId, 1, 1, RegistrationStatus.Registered, false, null, 1),
+            new RegistrationListItemDto(
+                secondRegistrationId, "bob@example.com", "Bob", "Jones", [],
+                new Dictionary<string, string>(), DateTimeOffset.UtcNow,
+                Guid.NewGuid(), 1, 1, RegistrationStatus.Registered, false, null, 1)
+        };
+        var facade = Substitute.For<IRegistrationsFacade>();
+        facade.GetRegistrationsAsync(
+                teamId.Value, eventId.Value, Arg.Any<QueryRegistrationsDto>(), Arg.Any<CancellationToken>())
+            .Returns(rows);
+
+        var resolver = new BulkEmailRecipientResolver(facade);
+        var recipients = await resolver.ResolveAsync(
+            teamId,
+            eventId,
+            new BulkEmailAttendeeFilter(
+                RegistrationStatus: RegistrationStatus.Registered,
+                HasReconfirmed: false,
+                RegistrationIds: [firstRegistrationId, secondRegistrationId],
+                RegistrationCycleIds: new Dictionary<Guid, Guid>
+                {
+                    [firstRegistrationId] = expectedCycleId,
+                    [secondRegistrationId] = expectedCycleId
+                }),
+            CancellationToken.None);
+
+        recipients.ShouldHaveSingleItem().RegistrationId.ShouldBe(RegistrationId.From(firstRegistrationId));
     }
 
     // Given an attendee filter for which the registrations facade returns no rows

@@ -121,6 +121,9 @@ internal sealed class BulkEmailJobEntityConfiguration : IEntityTypeConfiguration
                 .HasJsonPropertyName("registration_id")
                 .IsRequired();
 
+            b.Property(r => r.RegistrationCycleId)
+                .HasJsonPropertyName("registration_cycle_id");
+
             b.Property(r => r.ParametersJson)
                 .HasJsonPropertyName("parameters")
                 .IsRequired();
@@ -140,5 +143,13 @@ internal sealed class BulkEmailJobEntityConfiguration : IEntityTypeConfiguration
 
         builder.HasIndex(e => e.Status)
             .HasDatabaseName("IX_bulk_email_jobs_status");
+
+        // A system reconfirm job is the durable reservation for an event's
+        // current hourly evaluation. The partial unique index closes the race
+        // between two evaluators that both observe no pending job.
+        builder.HasIndex(e => new { e.TicketedEventId, e.EmailType })
+            .HasDatabaseName("IX_bulk_email_jobs_active_reconfirm_event")
+            .IsUnique()
+            .HasFilter("is_system_triggered = TRUE AND email_type = 'Reconfirmation' AND status IN ('Pending', 'Resolving', 'Sending')");
     }
 }

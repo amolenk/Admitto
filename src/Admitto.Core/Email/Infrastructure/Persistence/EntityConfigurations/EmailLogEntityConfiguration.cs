@@ -90,6 +90,9 @@ internal sealed class EmailLogEntityConfiguration : IEntityTypeConfiguration<Ema
         builder.Property(e => e.RegistrationId)
             .HasColumnName("registration_id");
 
+        builder.Property(e => e.RegistrationCycleId)
+            .HasColumnName("registration_cycle_id");
+
         builder.HasIndex(e => new { e.TicketedEventId, e.RegistrationId })
             .HasDatabaseName("IX_email_log_event_registration");
 

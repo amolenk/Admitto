@@ -43,6 +43,8 @@ internal sealed class FakeBulkSmtpSender : IBulkSmtpSender
             if (owner.OnBeforeSendAsync is not null)
                 await owner.OnBeforeSendAsync(message);
 
+            // A TimeProvider-driven cutoff may fire while the pre-send hook
+            // advances fake time; do not submit the message after that point.
             cancellationToken.ThrowIfCancellationRequested();
 
             if (owner._failOn.Contains(message.RecipientAddress))

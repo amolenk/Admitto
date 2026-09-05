@@ -7,7 +7,6 @@ using Amolenk.Admitto.Core.Email.Application.Sending.Bulk;
 using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
 using Amolenk.Admitto.Core.Email.Application.Templating;
 using Amolenk.Admitto.Core.Email.Application.UseCases.EventEmailContexts.GetEventEmailRenderingContext;
-using Amolenk.Admitto.Core.Email.Application.UseCases.Reconfirmations.ReconcileReconfirmationScheduling;
 using Amolenk.Admitto.Core.Email.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.Email.Infrastructure.Sending;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Messaging;
@@ -26,9 +25,7 @@ public static class EmailModuleExtensions
             var services = builder.Services;
             var assembly = Assembly.GetExecutingAssembly();
 
-            // Quartz infrastructure is needed by handlers that schedule/trigger jobs
-            // (ScheduleReconfirmationsHandler, TriggerBulkEmailJobHandler). Job
-            // registrations and the hosted service live in AddEmailModuleWorker.
+            // Quartz infrastructure is needed by handlers that trigger bulk jobs.
             services.AddQuartz();
 
             // Command handlers
@@ -82,6 +79,8 @@ public static class EmailModuleExtensions
             var services = builder.Services;
             var assembly = Assembly.GetExecutingAssembly();
 
+            services.AddSingleton<IReconfirmPolicyCloseScheduler, ReconfirmPolicyCloseScheduler>();
+
             // Integration event handlers
             services.AddIntegrationEventHandlersFromAssembly(assembly, EmailModule.NamespacePrefix);
 
@@ -89,28 +88,30 @@ public static class EmailModuleExtensions
             // integration event handlers and the queue dispatcher resolve these by interface.
             // services.AddScoped<ICommandHandler<SendEmailCommand>, SendEmailHandler>(sp =>
             //     sp.GetRequiredService<SendEmailHandler>());
-            // services.AddScoped<ICommandHandler<ScheduleReconfirmationsCommand>, ScheduleReconfirmationsHandler>(sp =>
-            //     sp.GetRequiredService<ScheduleReconfirmationsHandler>());
             // services.AddScoped<ICommandHandler<TriggerBulkEmailJobCommand>, TriggerBulkEmailJobHandler>(sp =>
             //     sp.GetRequiredService<TriggerBulkEmailJobHandler>());
 
             // Quartz job registrations (hosted service is started once by AddSharedInfrastructureQueueConsumer)
             services.AddQuartz(options =>
             {
-                // RequestReconfirmationsJob is registered statically; per-event
-                // triggers are added/replaced/removed by the
-                // ScheduleReconfirmations use case in response to integration
-                // events.
+                // One stable trigger evaluates all active projected policies.
                 options.AddJob<RequestReconfirmationsJob>(c => c
                     .StoreDurably()
                     .WithIdentity(RequestReconfirmationsJob.Name));
+
+                options.AddTrigger(trigger => trigger
+                    .ForJob(RequestReconfirmationsJob.Name)
+                    .WithIdentity(RequestReconfirmationsJob.TriggerName)
+                    .WithCronSchedule("0 0 * * * ?", cron => cron
+                        .InTimeZone(TimeZoneInfo.Utc)
+                        .WithMisfireHandlingInstructionDoNothing()));
 
                 // SendBulkEmailJob is scheduled dynamically per-bulk-job by
                 // TriggerBulkEmailJobHandler so each bulk job gets a unique
                 // JobKey (D10: per-job concurrency isolation).
             });
 
-            services.AddHostedService<ReconcileReconfirmationSchedulingStartupService>();
+            services.AddHostedService<RemoveLegacyReconfirmTriggersStartupService>();
 
             return builder;
         }

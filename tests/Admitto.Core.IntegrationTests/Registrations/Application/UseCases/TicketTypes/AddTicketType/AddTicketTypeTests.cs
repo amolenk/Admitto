@@ -44,7 +44,7 @@ public sealed class AddTicketTypeTests(TestContext testContext) : AspireIntegrat
             ticketType.Name.Value.ShouldBe("General Admission");
             ticketType.TimeSlots.ShouldContain(TimeSlot.From("morning"));
             ticketType.MaxCapacity.ShouldBe(100);
-            ticketType.MaxReconfirmAttempts.ShouldBeNull();
+            ticketType.MaxReconfirmationEmails.ShouldBeNull();
         });
     }
 
@@ -108,10 +108,10 @@ public sealed class AddTicketTypeTests(TestContext testContext) : AspireIntegrat
     }
 
     // Given an active ticketed event
-    // When a ticket type is added with a max reconfirm attempts value
+    // When a ticket type is added with a maximum reconfirmation emails value
     // Then the value is persisted on the created ticket type
     [TestMethod]
-    public async ValueTask AddTicketType_WithMaxReconfirmAttempts_PersistsValue()
+    public async ValueTask AddTicketType_WithMaxReconfirmationEmails_PersistsValue()
     {
         var fixture = AddTicketTypeFixture.ActiveEvent();
         await fixture.SetupAsync(Environment);
@@ -122,7 +122,7 @@ public sealed class AddTicketTypeTests(TestContext testContext) : AspireIntegrat
             "Workshop",
             [],
             50,
-            MaxReconfirmAttempts: 3);
+            MaxReconfirmationEmails: 3);
         var sut = new AddTicketTypeHandler(Environment.RegistrationsDatabase.Context);
 
         await sut.HandleAsync(command, testContext.CancellationToken);
@@ -131,7 +131,7 @@ public sealed class AddTicketTypeTests(TestContext testContext) : AspireIntegrat
         {
             var catalog = await dbContext.TicketCatalogs.FirstOrDefaultAsync(c => c.Id == fixture.EventId, testContext.CancellationToken);
             catalog.ShouldNotBeNull();
-            catalog.TicketTypes[0].MaxReconfirmAttempts.ShouldBe(3);
+            catalog.TicketTypes[0].MaxReconfirmationEmails!.Value.Value.ShouldBe(3);
         });
     }
 

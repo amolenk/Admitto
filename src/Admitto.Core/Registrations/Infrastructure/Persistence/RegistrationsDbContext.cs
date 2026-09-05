@@ -55,6 +55,10 @@ public sealed class RegistrationsDbContext(DbContextOptions<RegistrationsDbConte
             .HaveConversion<RegistrationId.EfCoreValueConverter>();
 
         configurationBuilder
+            .Properties<RegistrationCycleId>()
+            .HaveConversion<RegistrationCycleId.EfCoreValueConverter>();
+
+        configurationBuilder
             .Properties<EmailAddress>()
             .HaveConversion<EmailAddress.EfCoreValueConverter>();
 
@@ -97,5 +101,9 @@ public sealed class RegistrationsDbContext(DbContextOptions<RegistrationsDbConte
         configurationBuilder
             .Properties<TicketTypeId>()
             .HaveConversion<TicketTypeId.EfCoreValueConverter>();
+
+        configurationBuilder
+            .Properties<ReconfirmationEmailLimit>()
+            .HaveConversion<ReconfirmationEmailLimit.EfCoreValueConverter>();
     }
 }

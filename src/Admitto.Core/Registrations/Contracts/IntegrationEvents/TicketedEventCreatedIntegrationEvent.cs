@@ -10,8 +10,8 @@ namespace Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 /// <c>TeamEventCreationRequest</c> as <c>Created</c>, decrement
 /// <c>PendingEventCount</c>, and increment <c>ActiveEventCount</c>. The
 /// <paramref name="TimeZone"/> field carries the event's IANA zone so the
-/// Email module's reconfirm scheduler can register the per-event trigger
-/// without an additional read against Registrations.
+/// Email module's hourly evaluator can apply event-local quiet hours without
+/// an additional read against Registrations.
 /// </summary>
 [method: JsonConstructor]
 public sealed record TicketedEventCreatedIntegrationEvent(

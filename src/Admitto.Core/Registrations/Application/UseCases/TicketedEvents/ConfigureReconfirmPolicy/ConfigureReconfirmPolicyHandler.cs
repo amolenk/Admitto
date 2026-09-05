@@ -25,13 +25,14 @@ internal sealed class ConfigureReconfirmPolicyHandler(IRegistrationsWriteStore w
 
         var hasAnyField = command.OpensAt is not null
             || command.ClosesAt is not null
-            || command.CadenceHours is not null
-            || command.MinEmailIntervalHours is not null;
+            || command.MinEmailIntervalHours is not null
+            || command.QuietHoursStart is not null
+            || command.QuietHoursEnd is not null;
 
         if (hasAnyField)
         {
             if (command.OpensAt is null || command.ClosesAt is null
-                || command.CadenceHours is null || command.MinEmailIntervalHours is null)
+                || command.MinEmailIntervalHours is null)
             {
                 throw new BusinessRuleViolationException(Errors.IncompletePolicy);
             }
@@ -39,8 +40,9 @@ internal sealed class ConfigureReconfirmPolicyHandler(IRegistrationsWriteStore w
             policy = TicketedEventReconfirmPolicy.Create(
                 command.OpensAt.Value,
                 command.ClosesAt.Value,
-                TimeSpan.FromHours(command.CadenceHours.Value),
-                TimeSpan.FromHours(command.MinEmailIntervalHours.Value));
+                TimeSpan.FromHours(command.MinEmailIntervalHours.Value),
+                command.QuietHoursStart,
+                command.QuietHoursEnd);
         }
 
         ticketedEvent.ConfigureReconfirmPolicy(policy);
@@ -50,7 +52,7 @@ internal sealed class ConfigureReconfirmPolicyHandler(IRegistrationsWriteStore w
     {
         public static readonly Error IncompletePolicy = new(
             "configure_reconfirm_policy.incomplete",
-            "Reconfirm policy requires OpensAt, ClosesAt, CadenceHours, and MinEmailIntervalHours — send all four fields to configure or none to clear.",
+            "Reconfirm policy requires OpensAt, ClosesAt, and MinEmailIntervalHours — send all required fields to configure or none to clear.",
             Type: ErrorType.Validation);
     }
 }

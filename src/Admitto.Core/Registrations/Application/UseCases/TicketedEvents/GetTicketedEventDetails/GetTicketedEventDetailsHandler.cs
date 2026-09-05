@@ -44,8 +44,9 @@ internal sealed class GetTicketedEventDetailsHandler(
                 : new ReconfirmPolicyDto(
                     ticketedEvent.ReconfirmPolicy.OpensAt,
                     ticketedEvent.ReconfirmPolicy.ClosesAt,
-                    (int)ticketedEvent.ReconfirmPolicy.Cadence.TotalHours,
-                    (int)ticketedEvent.ReconfirmPolicy.MinEmailInterval.TotalHours),
+                    (int)ticketedEvent.ReconfirmPolicy.MinEmailInterval.TotalHours,
+                    ticketedEvent.ReconfirmPolicy.QuietHoursStart,
+                    ticketedEvent.ReconfirmPolicy.QuietHoursEnd),
             new WaitlistPolicyDto(
                 ticketedEvent.WaitlistPolicy.QuietHoursStart,
                 ticketedEvent.WaitlistPolicy.QuietHoursEnd),

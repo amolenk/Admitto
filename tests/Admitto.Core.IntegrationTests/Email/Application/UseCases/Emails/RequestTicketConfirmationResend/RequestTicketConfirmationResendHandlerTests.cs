@@ -94,7 +94,6 @@ public sealed class RequestTicketConfirmationResendHandlerTests(TestContext test
                 null,
                 null,
                 null,
-                null,
                 false));
 
         return new TicketConfirmationResendRequestedIntegrationEventHandler(eventContextQuery, BuildSendEmailHandler());

@@ -16,13 +16,6 @@ public sealed class ConfigureReconfirmPolicyValidator : AbstractValidator<Config
                 .NotNull()
                 .WithMessage("ClosesAt is required when configuring a reconfirm policy.");
 
-            RuleFor(x => x.CadenceHours)
-                .NotNull()
-                .WithMessage("CadenceHours is required when configuring a reconfirm policy.")
-                .GreaterThanOrEqualTo(1)
-                .When(x => x.CadenceHours is not null)
-                .WithMessage("Reconfirmation cadence must be at least 1 hour.");
-
             RuleFor(x => x.MinEmailIntervalHours)
                 .NotNull()
                 .WithMessage("MinEmailIntervalHours is required when configuring a reconfirm policy.")
@@ -40,6 +33,7 @@ public sealed class ConfigureReconfirmPolicyValidator : AbstractValidator<Config
     private static bool HasAnyField(ConfigureReconfirmPolicyHttpRequest r) =>
         r.OpensAt is not null
         || r.ClosesAt is not null
-        || r.CadenceHours is not null
-        || r.MinEmailIntervalHours is not null;
+        || r.MinEmailIntervalHours is not null
+        || r.QuietHoursStart is not null
+        || r.QuietHoursEnd is not null;
 }
