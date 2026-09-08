@@ -1,8 +1,8 @@
+using System.Diagnostics;
 using Amolenk.Admitto.Core.Email.Application.Persistence;
 using Amolenk.Admitto.Core.Email.Application.Projections.EventEmailContext;
 using Amolenk.Admitto.Core.Email.Application.Sending;
 using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
-using Amolenk.Admitto.Core.Email.Application.Templating;
 using Amolenk.Admitto.Core.Email.Application.Composing;
 using Amolenk.Admitto.Core.Email.Contracts.IntegrationEvents;
 using Amolenk.Admitto.Core.Email.Domain.Entities;
@@ -19,46 +19,84 @@ using Quartz;
 namespace Amolenk.Admitto.Core.Email.Application.Jobs;
 
 /// <summary>
-/// Evaluates every projected reconfirmation policy on the one fixed hourly
-/// trigger and sends live candidates directly. EmailLog is the durable claim,
-/// delivery status, audit record, and idempotency boundary for each attempt.
+/// Evaluates every projected reconfirmation policy on one recurring Worker trigger
+/// and sends live candidates directly. EmailLog is the durable claim, delivery
+/// status, audit record, and idempotency boundary for each attempt.
 /// </summary>
 [DisallowConcurrentExecution]
-internal sealed class RequestReconfirmationsJob(
+internal sealed class SendReconfirmationEmailsJob(
     IEmailReadStore readStore,
     IServiceScopeFactory scopeFactory,
     TimeProvider timeProvider,
-    ILogger<RequestReconfirmationsJob> logger)
+    ILogger<SendReconfirmationEmailsJob> logger)
     : IJob
 {
-    public const string Name = nameof(RequestReconfirmationsJob);
-    public const string TriggerName = $"{Name}.Hourly";
+    // These identities predate the class rename and must remain stable for the
+    // persistent Quartz store to replace the existing schedule in place.
+    public const string Name = "RequestReconfirmationsJob";
+    public const string TriggerName = "RequestReconfirmationsJob.Hourly";
 
     public async Task Execute(IJobExecutionContext context)
     {
         var ct = context.CancellationToken;
-        await FailOrphanedPendingReconfirmationsAsync(ct);
+        var startedAt = timeProvider.GetUtcNow();
+        var stopwatch = Stopwatch.StartNew();
+        var statistics = new RunStatistics();
+        logger.LogInformation("Reconfirmation email run started at {RunStartedAt}.", startedAt);
 
-        var now = timeProvider.GetUtcNow();
-        await using var smtp = new RunSmtpSession(scopeFactory);
-
-        var policies = (await readStore.EventEmailContexts
-                .AsNoTracking()
-                .Where(c => c.ReconfirmOpensAt <= now)
-                .OrderBy(c => c.CreatedAt)
-                .ToListAsync(ct))
-            .Where(c => c.HasCompleteReconfirmPolicy)
-            .ToList();
-
-        foreach (var policy in policies)
+        try
         {
-            ct.ThrowIfCancellationRequested();
-            var policyNow = timeProvider.GetUtcNow();
-            await EvaluatePolicyAsync(policy, policyNow, smtp, ct);
+            statistics.OrphanedClaimsFailed += await FailOrphanedPendingReconfirmationsAsync(ct);
+
+            var now = timeProvider.GetUtcNow();
+            await using var smtp = new RunSmtpSession(scopeFactory);
+
+            var policies = (await readStore.EventEmailContexts
+                    .AsNoTracking()
+                    .Where(c => c.ReconfirmOpensAt <= now)
+                    .OrderBy(c => c.CreatedAt)
+                    .ToListAsync(ct))
+                .Where(c => c.HasCompleteReconfirmPolicy)
+                .ToList();
+            statistics.PoliciesFound = policies.Count;
+
+            foreach (var policy in policies)
+            {
+                ct.ThrowIfCancellationRequested();
+                statistics.EventsEvaluated++;
+                var policyNow = timeProvider.GetUtcNow();
+                await EvaluatePolicyAsync(policy, policyNow, smtp, statistics, ct);
+            }
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested)
+        {
+            logger.LogWarning("Reconfirmation email run cancelled.");
+            throw;
+        }
+        catch (Exception ex)
+        {
+            statistics.Failures++;
+            logger.LogError(ex, "Reconfirmation email run failed before completion.");
+            throw;
+        }
+        finally
+        {
+            stopwatch.Stop();
+            logger.LogInformation(
+                "Reconfirmation email run completed in {Duration}. PoliciesFound={PoliciesFound} EventsEvaluated={EventsEvaluated} EmailsSent={EmailsSent} CandidatesDeferred={CandidatesDeferred} DeliveriesSkipped={DeliveriesSkipped} OrphanedClaimsFailed={OrphanedClaimsFailed} RegistrationsAutoExpired={RegistrationsAutoExpired} Failures={Failures}.",
+                stopwatch.Elapsed,
+                statistics.PoliciesFound,
+                statistics.EventsEvaluated,
+                statistics.EmailsSent,
+                statistics.CandidatesDeferred,
+                statistics.DeliveriesSkipped,
+                statistics.OrphanedClaimsFailed,
+                statistics.RegistrationsAutoExpired,
+                statistics.Failures);
         }
     }
 
-    private async Task FailOrphanedPendingReconfirmationsAsync(CancellationToken ct)
+    private async Task<int> FailOrphanedPendingReconfirmationsAsync(CancellationToken ct)
     {
         await using var scope = scopeFactory.CreateAsyncScope();
         var writeStore = scope.ServiceProvider.GetRequiredService<IEmailWriteStore>();
@@ -69,19 +107,26 @@ internal sealed class RequestReconfirmationsJob(
             .ToListAsync(ct);
 
         if (pending.Count == 0)
-            return;
+            return 0;
 
         var now = timeProvider.GetUtcNow();
         foreach (var log in pending)
+        {
             log.MarkFailed(log.Subject, "Reconfirmation delivery was interrupted before completion.", now);
+            logger.LogWarning(
+                "Marked orphaned reconfirmation claim as failed for registration {RegistrationId}.",
+                log.RegistrationId?.Value);
+        }
 
         await unitOfWork.SaveChangesAsync(ct);
+        return pending.Count;
     }
 
     private async Task EvaluatePolicyAsync(
         EventEmailContextView policy,
         DateTimeOffset now,
         RunSmtpSession smtp,
+        RunStatistics statistics,
         CancellationToken ct)
     {
         try
@@ -96,14 +141,23 @@ internal sealed class RequestReconfirmationsJob(
 
             if (now >= policy.ReconfirmClosesAt!.Value)
             {
-                await EvaluatePolicyCloseAsync(
+                statistics.RegistrationsAutoExpired += await EvaluatePolicyCloseAsync(
                     policy, writeStore, registrationsFacade, outbox, unitOfWork, now, ct);
                 return;
             }
 
-            if (!TryGetTimeZone(policy.TimeZone!, out var timeZone)
-                || IsQuietHours(policy, now, timeZone))
+            var validTimeZone = TryGetTimeZone(policy.TimeZone!, out var timeZone);
+            if (!validTimeZone || IsQuietHours(policy, now, timeZone))
+            {
+                if (!validTimeZone)
+                {
+                    logger.LogWarning(
+                        "Reconfirmation evaluation skipped for event {TicketedEventId}: projected time zone {TimeZoneId} is invalid.",
+                        policy.TicketedEventId.Value,
+                        policy.TimeZone);
+                }
                 return;
+            }
 
             var (candidates, sentReconfirmationLogs) = await LoadCandidatesAndLogsAsync(
                 policy, writeStore, registrationsFacade, ct);
@@ -119,6 +173,7 @@ internal sealed class RequestReconfirmationsJob(
                     return baseline + TimeSpan.FromHours(policy.ReconfirmMinEmailIntervalHours!.Value) <= now;
                 })
                 .ToList();
+            statistics.CandidatesDeferred += candidates.Count - eligibleCandidates.Count;
 
             var reconfirmCandidates = eligibleCandidates
                 .Where(registration =>
@@ -136,11 +191,11 @@ internal sealed class RequestReconfirmationsJob(
 
             // Candidate selection can take long enough to cross a policy gate.
             // The delivery start instant is retained for the admission fallback,
-            // allowing an already-started hourly run to finish its candidates.
+            // allowing an already-started run to finish its candidates.
             var deliveryStart = timeProvider.GetUtcNow();
             if (deliveryStart >= policy.ReconfirmClosesAt!.Value)
             {
-                await EvaluatePolicyCloseAsync(
+                statistics.RegistrationsAutoExpired += await EvaluatePolicyCloseAsync(
                     policy, writeStore, registrationsFacade, outbox, unitOfWork, deliveryStart, ct);
                 return;
             }
@@ -150,6 +205,7 @@ internal sealed class RequestReconfirmationsJob(
 
             if (autoCancelCandidates.Count > 0)
             {
+                statistics.RegistrationsAutoExpired += autoCancelCandidates.Count;
                 outbox.Enqueue(new ReconfirmAutoExpiredIntegrationEvent(
                     teamId.Value,
                     eventId.Value,
@@ -165,7 +221,7 @@ internal sealed class RequestReconfirmationsJob(
             if (reconfirmCandidates.Count == 0)
                 return;
 
-            await DeliverCandidatesAsync(
+            var deliveryStatistics = await DeliverCandidatesAsync(
                 teamId,
                 eventId,
                 deliveryStart,
@@ -176,8 +232,12 @@ internal sealed class RequestReconfirmationsJob(
                 smtp,
                 scope.ServiceProvider.GetRequiredService<IOptionsMonitor<EmailDeliveryOptions>>(),
                 timeProvider,
+                logger,
                 unitOfWork,
                 ct);
+            statistics.EmailsSent += deliveryStatistics.EmailsSent;
+            statistics.DeliveriesSkipped += deliveryStatistics.DeliveriesSkipped;
+            statistics.Failures += deliveryStatistics.Failures;
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -188,13 +248,14 @@ internal sealed class RequestReconfirmationsJob(
         }
         catch (Exception ex)
         {
+            statistics.Failures++;
             logger.LogError(ex,
                 "Reconfirm evaluation failed for event {TicketedEventId}.",
                 policy.TicketedEventId.Value);
         }
     }
 
-    private static async Task DeliverCandidatesAsync(
+    private static async Task<DeliveryStatistics> DeliverCandidatesAsync(
         TeamId teamId,
         TicketedEventId eventId,
         DateTimeOffset deliveryStart,
@@ -205,6 +266,7 @@ internal sealed class RequestReconfirmationsJob(
         RunSmtpSession smtp,
         IOptionsMonitor<EmailDeliveryOptions> options,
         TimeProvider timeProvider,
+        ILogger<SendReconfirmationEmailsJob> logger,
         IUnitOfWork unitOfWork,
         CancellationToken ct)
     {
@@ -213,10 +275,11 @@ internal sealed class RequestReconfirmationsJob(
             eventId,
             ct);
 
+        var statistics = new DeliveryStatistics();
         foreach (var candidate in candidates)
         {
             ct.ThrowIfCancellationRequested();
-            await DeliverCandidateAsync(
+            var result = await DeliverCandidateAsync(
                 teamId,
                 eventId,
                 deliveryStart,
@@ -227,12 +290,27 @@ internal sealed class RequestReconfirmationsJob(
                 smtp,
                 options,
                 timeProvider,
+                logger,
                 unitOfWork,
                 ct);
+            switch (result)
+            {
+                case DeliveryResult.Sent:
+                    statistics.EmailsSent++;
+                    break;
+                case DeliveryResult.Skipped:
+                    statistics.DeliveriesSkipped++;
+                    break;
+                case DeliveryResult.Failed:
+                    statistics.Failures++;
+                    break;
+            }
         }
+
+        return statistics;
     }
 
-    private static async Task DeliverCandidateAsync(
+    private static async Task<DeliveryResult> DeliverCandidateAsync(
         TeamId teamId,
         TicketedEventId eventId,
         DateTimeOffset deliveryStart,
@@ -243,11 +321,12 @@ internal sealed class RequestReconfirmationsJob(
         RunSmtpSession smtp,
         IOptionsMonitor<EmailDeliveryOptions> options,
         TimeProvider timeProvider,
+        ILogger<SendReconfirmationEmailsJob> logger,
         IUnitOfWork unitOfWork,
         CancellationToken ct)
     {
         var now = timeProvider.GetUtcNow();
-        var deliveryState = await GetCurrentAdmissionAsync(
+        var admission = await GetCurrentAdmissionAsync(
             teamId,
             eventId,
             candidate,
@@ -256,8 +335,15 @@ internal sealed class RequestReconfirmationsJob(
             deliveryStart,
             timeProvider,
             ct);
-        if (deliveryState is null)
-            return;
+        if (admission.Allowed is null)
+        {
+            logger.LogWarning(
+                "Reconfirmation delivery skipped for event {TicketedEventId}, registration {RegistrationId}: {SuppressionReason}.",
+                eventId.Value,
+                candidate.RegistrationId,
+                admission.SuppressionReason);
+            return DeliveryResult.Skipped;
+        }
 
         var registrationId = RegistrationId.From(candidate.RegistrationId);
         var registrationCycleId = RegistrationCycleId.From(candidate.RegistrationCycleId);
@@ -290,11 +376,11 @@ internal sealed class RequestReconfirmationsJob(
 
         try
         {
-            var delivered = await SendWithInlineRetriesAsync(
+            var deliveryAttempt = await SendWithInlineRetriesAsync(
                 session,
                 message,
                 options,
-                async admissionToken => (await GetCurrentAdmissionAsync(
+                admissionToken => GetCurrentAdmissionAsync(
                     teamId,
                     eventId,
                     candidate,
@@ -302,13 +388,18 @@ internal sealed class RequestReconfirmationsJob(
                     writeStore,
                     deliveryStart,
                     timeProvider,
-                    admissionToken)) is not null,
+                    admissionToken),
                 ct);
-            if (!delivered)
+            if (!deliveryAttempt.Delivered)
             {
                 writeStore.EmailLog.Remove(log);
                 await unitOfWork.SaveChangesAsync(ct);
-                return;
+                logger.LogWarning(
+                    "Reconfirmation delivery skipped for event {TicketedEventId}, registration {RegistrationId}: {SuppressionReason}.",
+                    eventId.Value,
+                    candidate.RegistrationId,
+                    deliveryAttempt.SuppressionReason);
+                return DeliveryResult.Skipped;
             }
 
             log.MarkSent(rendered.Subject, timeProvider.GetUtcNow());
@@ -322,12 +413,20 @@ internal sealed class RequestReconfirmationsJob(
         catch (Exception ex)
         {
             log.MarkFailed(rendered.Subject, ex.Message, timeProvider.GetUtcNow());
+            logger.LogError(
+                ex,
+                "Reconfirmation email delivery failed for event {TicketedEventId}, registration {RegistrationId}.",
+                eventId.Value,
+                candidate.RegistrationId);
         }
 
         await unitOfWork.SaveChangesAsync(ct);
+        return log.Status == EmailLogStatus.Sent
+            ? DeliveryResult.Sent
+            : DeliveryResult.Failed;
     }
 
-    private static async Task<ReconfirmDeliveryState.Allowed?> GetCurrentAdmissionAsync(
+    private static async Task<AdmissionResult> GetCurrentAdmissionAsync(
         TeamId teamId,
         TicketedEventId eventId,
         RegistrationListItemDto candidate,
@@ -364,7 +463,12 @@ internal sealed class RequestReconfirmationsJob(
         }
 
         if (state is not ReconfirmDeliveryState.Allowed allowed)
-            return null;
+        {
+            var suppressionReason = state is ReconfirmDeliveryState.Suppressed suppressedState
+                ? suppressedState.Reason.ToString()
+                : "Unknown";
+            return new AdmissionResult(null, suppressionReason);
+        }
 
         var registrationId = RegistrationId.From(candidate.RegistrationId);
         var registrationCycleId = RegistrationCycleId.From(candidate.RegistrationCycleId);
@@ -385,19 +489,19 @@ internal sealed class RequestReconfirmationsJob(
             ? lastSentAt.Value
             : allowed.RegistrationCreatedAt;
         if (baseline + allowed.MinimumEmailInterval > currentNow)
-            return null;
+            return new AdmissionResult(null, "MinimumEmailIntervalNotElapsed");
 
         return allowed.EffectiveMaxReconfirmationEmails is null
             || logs.Count < allowed.EffectiveMaxReconfirmationEmails.Value
-            ? allowed
-            : null;
+            ? new AdmissionResult(allowed, null)
+            : new AdmissionResult(null, "MaximumReconfirmationEmailsReached");
     }
 
-    private static async Task<bool> SendWithInlineRetriesAsync(
+    private static async Task<DeliveryAttemptResult> SendWithInlineRetriesAsync(
         ISmtpBatchSession session,
         EmailMessage message,
         IOptionsMonitor<EmailDeliveryOptions> options,
-        Func<CancellationToken, Task<bool>> admissionCheck,
+        Func<CancellationToken, Task<AdmissionResult>> admissionCheck,
         CancellationToken ct)
     {
         Exception? lastException = null;
@@ -408,11 +512,12 @@ internal sealed class RequestReconfirmationsJob(
 
             try
             {
-                if (!await admissionCheck(ct))
-                    return false;
+                var admission = await admissionCheck(ct);
+                if (admission.Allowed is null)
+                    return new DeliveryAttemptResult(false, admission.SuppressionReason);
 
                 await session.SendAsync(message, ct);
-                return true;
+                return new DeliveryAttemptResult(true, null);
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested)
             {
@@ -427,7 +532,7 @@ internal sealed class RequestReconfirmationsJob(
         throw lastException ?? new InvalidOperationException("SMTP delivery failed.");
     }
 
-    private static async Task EvaluatePolicyCloseAsync(
+    private static async Task<int> EvaluatePolicyCloseAsync(
         EventEmailContextView policy,
         IEmailWriteStore writeStore,
         IRegistrationsFacade registrationsFacade,
@@ -443,7 +548,7 @@ internal sealed class RequestReconfirmationsJob(
                 && e.TicketedEventId == policy.TicketedEventId
                 && e.ClosesAt == closesAt, ct);
         if (alreadyEvaluated)
-            return;
+            return 0;
 
         var (candidates, sentReconfirmationLogs) = await LoadCandidatesAndLogsAsync(
             policy, writeStore, registrationsFacade, ct);
@@ -469,8 +574,11 @@ internal sealed class RequestReconfirmationsJob(
         }
         catch (DbUpdateException ex) when (IsPolicyCloseEvaluationReservationViolation(ex))
         {
-            // Another hourly evaluator recorded this requested deadline.
+            // Another evaluator recorded this requested deadline.
+            return 0;
         }
+
+        return autoCancelCandidates.Count;
     }
 
     private static async Task<(IReadOnlyList<RegistrationListItemDto> Candidates,
@@ -555,6 +663,40 @@ internal sealed class RequestReconfirmationsJob(
         RegistrationId? RegistrationId,
         RegistrationCycleId? RegistrationCycleId,
         DateTimeOffset SentAt);
+
+    private sealed record AdmissionResult(
+        ReconfirmDeliveryState.Allowed? Allowed,
+        string? SuppressionReason);
+
+    private sealed record DeliveryAttemptResult(
+        bool Delivered,
+        string? SuppressionReason);
+
+    private sealed class RunStatistics
+    {
+        public int PoliciesFound { get; set; }
+        public int EventsEvaluated { get; set; }
+        public int EmailsSent { get; set; }
+        public int CandidatesDeferred { get; set; }
+        public int DeliveriesSkipped { get; set; }
+        public int OrphanedClaimsFailed { get; set; }
+        public int RegistrationsAutoExpired { get; set; }
+        public int Failures { get; set; }
+    }
+
+    private sealed class DeliveryStatistics
+    {
+        public int EmailsSent { get; set; }
+        public int DeliveriesSkipped { get; set; }
+        public int Failures { get; set; }
+    }
+
+    private enum DeliveryResult
+    {
+        Sent,
+        Skipped,
+        Failed
+    }
 
     private sealed class RunSmtpSession(IServiceScopeFactory scopeFactory) : IAsyncDisposable
     {

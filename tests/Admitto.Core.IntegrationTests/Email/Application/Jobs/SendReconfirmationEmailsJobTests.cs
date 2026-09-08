@@ -4,7 +4,6 @@ using Amolenk.Admitto.Core.Email.Application.Jobs;
 using Amolenk.Admitto.Core.Email.Application.Persistence;
 using Amolenk.Admitto.Core.Email.Application.Sending;
 using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
-using Amolenk.Admitto.Core.Email.Application.Templating;
 using Amolenk.Admitto.Core.Email.Application.Composing;
 using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.PrepareEmailDelivery;
 using Amolenk.Admitto.Core.Email.Contracts.IntegrationEvents;
@@ -23,6 +22,8 @@ using Amolenk.Admitto.Testing.Builders.Email.Application;
 using Amolenk.Admitto.Testing.Builders.Email.Domain;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Time.Testing;
@@ -32,7 +33,7 @@ using Quartz;
 namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.Jobs;
 
 [TestClass]
-public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
+public sealed class SendReconfirmationEmailsJobTests : AspireIntegrationTestBase
 {
     private static readonly TeamId TeamId = TeamId.New();
     private FakeSmtpBatchSender _lastSender = default!;
@@ -48,10 +49,13 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
         var now = DateTimeOffset.UtcNow;
         await SeedPolicyAsync(eventId, now);
         var facade = FacadeReturning(eventId, [RegistrationItem(Guid.NewGuid(), "alice@example.com", now.AddHours(-10))]);
+        var logger = new RecordingLogger<SendReconfirmationEmailsJob>();
 
-        await BuildJob(facade, new FakeTimeProvider(now)).Execute(JobContext());
+        await BuildJob(facade, new FakeTimeProvider(now), logger: logger).Execute(JobContext());
 
         (await LoadEmailLogsAsync()).ShouldBeEmpty();
+        var completion = CompletionLog(logger);
+        completion.Properties["CandidatesDeferred"].ShouldBe(1);
     }
 
     // Given an active policy and a sent reconfirm email inside the minimum interval
@@ -196,8 +200,9 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
         var facade = FacadeReturning(eventId, [RegistrationItem(
             registrationId, "alice@example.com", now.AddDays(-10), effectiveMaxReconfirmationEmails: 2,
             cycleId: cycleId)]);
+        var logger = new RecordingLogger<SendReconfirmationEmailsJob>();
 
-        await BuildJob(facade, new FakeTimeProvider(now)).Execute(JobContext());
+        await BuildJob(facade, new FakeTimeProvider(now), logger: logger).Execute(JobContext());
 
         (await LoadEmailLogsAsync()).Count.ShouldBe(2);
         var outbox = await LoadOutboxMessagesAsync();
@@ -205,6 +210,7 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
         GetRegistrationIds(outbox[0].Payload).ShouldBe([registrationId], ignoreOrder: true);
         outbox[0].Payload.RootElement.GetProperty("registrationReferences")[0]
             .GetProperty("registrationCycleId").GetGuid().ShouldBe(cycleId);
+        CompletionLog(logger).Properties["RegistrationsAutoExpired"].ShouldBe(1);
     }
 
     // Given an attendee with a delivered reconfirmation email at the maximum
@@ -737,17 +743,19 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
         var now = DateTimeOffset.UtcNow;
         var eventId = TicketedEventId.New();
         await SeedPolicyAsync(eventId, now);
+        var failedRegistrationId = Guid.NewGuid();
         var candidates = new[]
         {
             RegistrationItem(Guid.NewGuid(), "alice@example.com", now.AddDays(-2)),
-            RegistrationItem(Guid.NewGuid(), "bob@example.com", now.AddDays(-2))
+            RegistrationItem(failedRegistrationId, "bob@example.com", now.AddDays(-2))
         };
         var facade = FacadeReturning(eventId, candidates);
         facade.GetReconfirmDeliveryStateAsync(
                 Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<ReconfirmDeliveryQuery>(), Arg.Any<CancellationToken>())
             .Returns(new ReconfirmDeliveryState.Allowed(now.AddDays(-2), TimeSpan.FromHours(1), null, now.AddHours(1)));
 
-        var job = BuildJob(facade, new FakeTimeProvider(now));
+        var logger = new RecordingLogger<SendReconfirmationEmailsJob>();
+        var job = BuildJob(facade, new FakeTimeProvider(now), logger: logger);
         _lastSender.FailOn("bob@example.com");
         await job.Execute(JobContext());
 
@@ -755,6 +763,10 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
         logs.Count.ShouldBe(2);
         logs.Count(log => log.Status == EmailLogStatus.Sent).ShouldBe(1);
         logs.Count(log => log.Status == EmailLogStatus.Failed).ShouldBe(1);
+        var error = logger.Entries.Single(entry => entry.Level == LogLevel.Error);
+        error.Message.ShouldContain(failedRegistrationId.ToString());
+        error.Message.ShouldNotContain("bob@example.com");
+        CompletionLog(logger).Properties["Failures"].ShouldBe(1);
     }
 
     // Given a previous hourly delivery whose SMTP attempt failed
@@ -816,7 +828,8 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
                 Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<ReconfirmDeliveryQuery>(), Arg.Any<CancellationToken>())
             .Returns(new ReconfirmDeliveryState.Allowed(candidate.CreatedAt, TimeSpan.FromHours(1), null, now.AddHours(1)));
 
-        await BuildJob(facade, new FakeTimeProvider(now)).Execute(JobContext());
+        var logger = new RecordingLogger<SendReconfirmationEmailsJob>();
+        await BuildJob(facade, new FakeTimeProvider(now), logger: logger).Execute(JobContext());
 
         var logs = await LoadEmailLogsAsync();
         logs.Count.ShouldBe(2);
@@ -827,6 +840,9 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
         logs.Select(log => log.IdempotencyKey).Distinct().Count().ShouldBe(2);
         logs.ShouldAllBe(log => log.RegistrationCycleId == RegistrationCycleId.From(cycleId));
         _lastSender.SentMessages.ShouldHaveSingleItem();
+        logger.Entries.ShouldContain(entry =>
+            entry.Level == LogLevel.Warning && entry.Message.Contains("orphaned", StringComparison.Ordinal));
+        CompletionLog(logger).Properties["OrphanedClaimsFailed"].ShouldBe(1);
     }
 
     // Given a worker cancellation that interrupts SMTP delivery
@@ -857,6 +873,149 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
         (await LoadEmailLogsAsync()).ShouldHaveSingleItem().Status.ShouldBe(EmailLogStatus.Failed);
     }
 
+    // Given one active event with one eligible attendee
+    // When the reconfirmation run completes
+    // Then its structured completion log contains PII-free run counts
+    [TestMethod]
+    public async ValueTask Execute_CompletedRun_LogsStructuredPiiFreeCounts()
+    {
+        var eventId = TicketedEventId.New();
+        var now = DateTimeOffset.UtcNow;
+        await SeedPolicyAsync(eventId, now);
+        var logger = new RecordingLogger<SendReconfirmationEmailsJob>();
+        var facade = FacadeReturning(eventId, [RegistrationItem(
+            Guid.NewGuid(), "alice@example.com", now.AddDays(-2))]);
+
+        await BuildJob(facade, new FakeTimeProvider(now), logger: logger).Execute(JobContext());
+
+        var start = logger.Entries.Single(entry => entry.Message.StartsWith(
+            "Reconfirmation email run started", StringComparison.Ordinal));
+        start.Level.ShouldBe(LogLevel.Information);
+        start.Properties["RunStartedAt"].ShouldBe(now);
+
+        var completion = CompletionLog(logger);
+        completion.Level.ShouldBe(LogLevel.Information);
+        completion.Properties["Duration"].ShouldBeOfType<TimeSpan>().ShouldBeGreaterThanOrEqualTo(TimeSpan.Zero);
+        completion.Properties["PoliciesFound"].ShouldBe(1);
+        completion.Properties["EventsEvaluated"].ShouldBe(1);
+        completion.Properties["EmailsSent"].ShouldBe(1);
+        completion.Properties["CandidatesDeferred"].ShouldBe(0);
+        completion.Properties["DeliveriesSkipped"].ShouldBe(0);
+        completion.Properties["OrphanedClaimsFailed"].ShouldBe(0);
+        completion.Properties["RegistrationsAutoExpired"].ShouldBe(0);
+        completion.Properties["Failures"].ShouldBe(0);
+        logger.Entries.Select(entry => entry.Message).ShouldNotContain(
+            message => message.Contains("alice@example.com", StringComparison.Ordinal));
+    }
+
+    // Given a candidate rejected by authoritative reconfirmation admission
+    // When the reconfirmation run evaluates the candidate
+    // Then the warning contains its registration identifier and safe reason
+    [TestMethod]
+    public async ValueTask Execute_AdmissionSuppression_LogsRegistrationAndReason()
+    {
+        var now = DateTimeOffset.UtcNow;
+        var eventId = TicketedEventId.New();
+        var registrationId = Guid.NewGuid();
+        await SeedPolicyAsync(eventId, now);
+        var candidate = RegistrationItem(registrationId, "alice@example.com", now.AddDays(-2));
+        var facade = FacadeReturning(eventId, [candidate]);
+        facade.GetReconfirmDeliveryStateAsync(
+                Arg.Any<Guid>(), Arg.Any<Guid>(), Arg.Any<ReconfirmDeliveryQuery>(), Arg.Any<CancellationToken>())
+            .Returns(new ReconfirmDeliveryState.Suppressed(ReconfirmDeliverySuppression.RegistrationReconfirmed));
+        var logger = new RecordingLogger<SendReconfirmationEmailsJob>();
+
+        await BuildJob(facade, new FakeTimeProvider(now), logger: logger).Execute(JobContext());
+
+        var warning = logger.Entries.Single(entry => entry.Level == LogLevel.Warning
+            && entry.Message.Contains("delivery skipped", StringComparison.Ordinal));
+        warning.Message.ShouldContain(registrationId.ToString());
+        warning.Message.ShouldContain(nameof(ReconfirmDeliverySuppression.RegistrationReconfirmed));
+        warning.Message.ShouldNotContain("alice@example.com");
+        CompletionLog(logger).Properties["DeliveriesSkipped"].ShouldBe(1);
+    }
+
+    // Given a reconfirmation interval below the supported minimum
+    // When the Worker email module is configured
+    // Then startup configuration fails validation
+    [TestMethod]
+    [DataRow("00:00:30")]
+    [DataRow("00:00:00")]
+    [DataRow("-00:01:00")]
+    public void AddEmailModuleWorker_IntervalBelowMinimum_FailsConfiguration(string interval)
+    {
+        var builder = Host.CreateApplicationBuilder();
+        builder.Configuration[ReconfirmationJobOptions.IntervalConfigurationKey] = interval;
+
+        Should.Throw<OptionsValidationException>(() => builder.AddEmailModuleWorker());
+    }
+
+    // Given a Worker configuration with a malformed reconfirmation interval
+    // When the email module is configured
+    // Then startup configuration fails validation
+    [TestMethod]
+    public void AddEmailModuleWorker_MalformedInterval_FailsConfiguration()
+    {
+        var builder = Host.CreateApplicationBuilder();
+        builder.Configuration[ReconfirmationJobOptions.IntervalConfigurationKey] = "not-a-duration";
+
+        Should.Throw<OptionsValidationException>(() => builder.AddEmailModuleWorker());
+    }
+
+    // Given a Worker configuration without a reconfirmation interval
+    // When the email module is configured
+    // Then startup configuration fails validation
+    [TestMethod]
+    public void AddEmailModuleWorker_MissingInterval_FailsConfiguration()
+    {
+        var builder = Host.CreateApplicationBuilder();
+
+        Should.Throw<OptionsValidationException>(() => builder.AddEmailModuleWorker());
+    }
+
+    // Given a Worker reconfirmation interval of five minutes
+    // When the email module registers its Quartz schedule
+    // Then the trigger uses that interval and starts immediately
+    [TestMethod]
+    public async ValueTask AddEmailModuleWorker_ConfiguredInterval_RegistersSimpleTrigger()
+    {
+        var builder = Host.CreateApplicationBuilder();
+        builder.Configuration["Email:Reconfirmation:Interval"] = "00:05:00";
+        builder.AddEmailModuleWorker();
+        var provider = builder.Services.BuildServiceProvider();
+        var scheduler = await provider.GetRequiredService<ISchedulerFactory>().GetScheduler();
+
+        var trigger = await scheduler.GetTrigger(new TriggerKey(SendReconfirmationEmailsJob.TriggerName));
+        trigger.ShouldNotBeNull();
+        trigger.ShouldBeAssignableTo<ISimpleTrigger>().RepeatInterval.ShouldBe(TimeSpan.FromMinutes(5));
+        trigger.StartTimeUtc.ShouldBeLessThanOrEqualTo(DateTimeOffset.UtcNow);
+        trigger.Key.Name.ShouldBe("RequestReconfirmationsJob.Hourly");
+        trigger.JobKey.Name.ShouldBe("RequestReconfirmationsJob");
+        var job = await scheduler.GetJobDetail(new JobKey(SendReconfirmationEmailsJob.Name));
+        job.ShouldNotBeNull();
+        job.JobType.ShouldBe(typeof(SendReconfirmationEmailsJob));
+        provider.GetRequiredService<IOptions<QuartzOptions>>().Value
+            .Scheduling.OverWriteExistingData.ShouldBeTrue();
+    }
+
+    // Given the Worker default reconfirmation interval
+    // When the email module registers its Quartz schedule
+    // Then the trigger runs hourly with the stable legacy identity
+    [TestMethod]
+    public async ValueTask AddEmailModuleWorker_DefaultInterval_RegistersHourlyTrigger()
+    {
+        var builder = Host.CreateApplicationBuilder();
+        builder.Configuration[ReconfirmationJobOptions.IntervalConfigurationKey] =
+            ReconfirmationJobOptions.DefaultInterval.ToString();
+        builder.AddEmailModuleWorker();
+        var provider = builder.Services.BuildServiceProvider();
+        var scheduler = await provider.GetRequiredService<ISchedulerFactory>().GetScheduler();
+
+        var trigger = await scheduler.GetTrigger(new TriggerKey("RequestReconfirmationsJob.Hourly"));
+        trigger.ShouldNotBeNull();
+        trigger.ShouldBeAssignableTo<ISimpleTrigger>().RepeatInterval.ShouldBe(TimeSpan.FromHours(1));
+    }
+
     private async Task SeedPolicyAsync(
         TicketedEventId eventId,
         DateTimeOffset now,
@@ -864,6 +1023,7 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
         TimeOnly? quietEnd = null,
         DateTimeOffset? opensAt = null,
         DateTimeOffset? closesAt = null,
+        int minEmailIntervalHours = 24,
         bool archived = false,
         bool withoutPolicy = false,
         bool withoutEventContext = false,
@@ -874,6 +1034,7 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
             .ForEvent(eventId)
             .At(now)
             .WithTimeZone(timeZone)
+            .WithMinEmailIntervalHours(minEmailIntervalHours)
             .WithWindow(opensAt ?? now.AddHours(-1), closesAt ?? now.AddHours(1));
         if (quietStart.HasValue && quietEnd.HasValue)
             builder.WithQuietHours(quietStart.Value, quietEnd.Value);
@@ -953,10 +1114,11 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
             BuiltInEmailTemplateNames.Reconfirmation, "Please reconfirm", status, null, statusUpdatedAt,
             registrationId: RegistrationId.From(registrationId));
 
-    private RequestReconfirmationsJob BuildJob(
+    private SendReconfirmationEmailsJob BuildJob(
         IRegistrationsFacade facade,
         TimeProvider timeProvider,
-        bool invalidSettings = false)
+        bool invalidSettings = false,
+        ILogger<SendReconfirmationEmailsJob>? logger = null)
     {
         var ctx = Environment.EmailDatabase.Context;
         var services = new ServiceCollection()
@@ -991,11 +1153,11 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
                 ctx, new NoOpOutboxMessageSender(), NullLogger<UnitOfWork<EmailDbContext>>.Instance))
             .BuildServiceProvider();
 
-        return new RequestReconfirmationsJob(
+        return new SendReconfirmationEmailsJob(
             ctx,
             services.GetRequiredService<IServiceScopeFactory>(),
             timeProvider,
-            NullLogger<RequestReconfirmationsJob>.Instance);
+            logger ?? NullLogger<SendReconfirmationEmailsJob>.Instance);
     }
 
     private sealed class RecordingTransactionalEmailComposer(
@@ -1025,6 +1187,38 @@ public sealed class RequestReconfirmationsJobTests : AspireIntegrationTestBase
         public T CurrentValue => value;
         public T Get(string? name) => value;
         public IDisposable? OnChange(Action<T, string?> listener) => null;
+    }
+
+    private sealed record LogEntry(
+        LogLevel Level,
+        string Message,
+        IReadOnlyDictionary<string, object?> Properties);
+
+    private static LogEntry CompletionLog(RecordingLogger<SendReconfirmationEmailsJob> logger) =>
+        logger.Entries.Single(entry => entry.Message.StartsWith(
+            "Reconfirmation email run completed", StringComparison.Ordinal));
+
+    private sealed class RecordingLogger<T> : ILogger<T>
+    {
+        public List<LogEntry> Entries { get; } = [];
+
+        public IDisposable BeginScope<TState>(TState state) where TState : notnull =>
+            NullLogger<T>.Instance.BeginScope(state);
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            var properties = state is IEnumerable<KeyValuePair<string, object?>> pairs
+                ? pairs.ToDictionary(pair => pair.Key, pair => pair.Value)
+                : new Dictionary<string, object?>();
+            Entries.Add(new LogEntry(logLevel, formatter(state, exception), properties));
+        }
     }
 
     private static IJobExecutionContext JobContext(CancellationToken cancellationToken = default)

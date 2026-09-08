@@ -10,6 +10,7 @@ using Amolenk.Admitto.Core.Email.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.Email.Infrastructure.Sending;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Messaging;
 using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence;
+using Microsoft.Extensions.Options;
 using Quartz;
 
 // ReSharper disable once CheckNamespace
@@ -70,6 +71,12 @@ public static class EmailModuleExtensions
                 builder.Configuration.GetSection(SystemEmailOptions.SectionName));
             services.Configure<PublicEventLinksOptions>(
                 builder.Configuration.GetSection(PublicEventLinksOptions.SectionName));
+
+            var reconfirmationOptions = ReconfirmationJobOptions.Parse(
+                builder.Configuration[ReconfirmationJobOptions.IntervalConfigurationKey]);
+            services.AddSingleton<IOptions<ReconfirmationJobOptions>>(
+                Microsoft.Extensions.Options.Options.Create(reconfirmationOptions));
+
             services.AddSingleton<IEmailSender, MailKitEmailSender>();
             services.AddSingleton<ISmtpBatchSender, MailKitSmtpBatchSender>();
 
@@ -79,20 +86,27 @@ public static class EmailModuleExtensions
             // Quartz job registrations (hosted service is started once by AddSharedInfrastructureQueueConsumer)
             services.AddQuartz(options =>
             {
-                // One stable trigger evaluates all active projected policies.
-                options.AddJob<RequestReconfirmationsJob>(c => c
+                // One stable trigger evaluates all active projected policies. The interval is
+                // captured at Worker startup; changing it requires a Worker restart.
+                options.AddJob<SendReconfirmationEmailsJob>(c => c
                     .StoreDurably()
-                    .WithIdentity(RequestReconfirmationsJob.Name));
+                    .WithIdentity(SendReconfirmationEmailsJob.Name));
 
                 options.AddTrigger(trigger => trigger
-                    .ForJob(RequestReconfirmationsJob.Name)
-                    .WithIdentity(RequestReconfirmationsJob.TriggerName)
-                    .WithCronSchedule("0 0 * * * ?", cron => cron
-                        .InTimeZone(TimeZoneInfo.Utc)
-                        .WithMisfireHandlingInstructionDoNothing()));
+                    .ForJob(SendReconfirmationEmailsJob.Name)
+                    .WithIdentity(SendReconfirmationEmailsJob.TriggerName)
+                    .WithSimpleSchedule(schedule => schedule
+                        .WithInterval(reconfirmationOptions.Interval)
+                        .RepeatForever())
+                    .StartNow());
 
             });
 
+            services.Configure<QuartzOptions>(options =>
+            {
+                options.Scheduling.OverWriteExistingData = true;
+                options.Scheduling.IgnoreDuplicates = false;
+            });
             return builder;
         }
     }
