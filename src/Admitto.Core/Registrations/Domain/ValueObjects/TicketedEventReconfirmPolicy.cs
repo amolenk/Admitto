@@ -3,15 +3,13 @@ using Amolenk.Admitto.Core.Shared.Kernel.ErrorHandling;
 namespace Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 
 /// <summary>
-/// Value-object policy describing the reconfirmation window, cadence, and
-/// per-attendee minimum email interval for a <c>TicketedEvent</c>.
-/// The cadence and minimum email interval must each be at least one hour.
+/// Value-object policy describing the reconfirmation window, per-attendee
+/// minimum email interval, and optional event-local quiet hours.
 /// </summary>
 public sealed record TicketedEventReconfirmPolicy
 {
     public DateTimeOffset OpensAt { get; }
     public DateTimeOffset ClosesAt { get; }
-    public TimeSpan Cadence { get; }
 
     /// <summary>
     /// Minimum time that must have elapsed since the later of an attendee's
@@ -19,39 +17,51 @@ public sealed record TicketedEventReconfirmPolicy
     /// reconfirmation email may be sent to them.
     /// </summary>
     public TimeSpan MinEmailInterval { get; }
+    public TimeOnly? QuietHoursStart { get; }
+    public TimeOnly? QuietHoursEnd { get; }
 
     private TicketedEventReconfirmPolicy(
         DateTimeOffset opensAt,
         DateTimeOffset closesAt,
-        TimeSpan cadence,
-        TimeSpan minEmailInterval)
+        TimeSpan minEmailInterval,
+        TimeOnly? quietHoursStart,
+        TimeOnly? quietHoursEnd)
     {
         OpensAt = opensAt;
         ClosesAt = closesAt;
-        Cadence = cadence;
         MinEmailInterval = minEmailInterval;
+        QuietHoursStart = quietHoursStart;
+        QuietHoursEnd = quietHoursEnd;
     }
 
     public static TicketedEventReconfirmPolicy Create(
         DateTimeOffset opensAt,
         DateTimeOffset closesAt,
-        TimeSpan cadence,
-        TimeSpan minEmailInterval)
+        TimeSpan minEmailInterval,
+        TimeOnly? quietHoursStart = null,
+        TimeOnly? quietHoursEnd = null)
     {
         if (closesAt <= opensAt)
             throw new BusinessRuleViolationException(Errors.WindowCloseBeforeOpen);
 
-        if (cadence < TimeSpan.FromHours(1))
-            throw new BusinessRuleViolationException(Errors.CadenceBelowMinimum);
-
         if (minEmailInterval < TimeSpan.FromHours(1))
             throw new BusinessRuleViolationException(Errors.MinEmailIntervalBelowMinimum);
+
+        if (minEmailInterval.Ticks % TimeSpan.TicksPerHour != 0)
+            throw new BusinessRuleViolationException(Errors.MinEmailIntervalMustBeWholeHours);
+
+        if (quietHoursStart.HasValue != quietHoursEnd.HasValue)
+            throw new BusinessRuleViolationException(Errors.QuietHoursMustBePaired);
+
+        if (quietHoursStart.HasValue && quietHoursStart == quietHoursEnd)
+            throw new BusinessRuleViolationException(Errors.QuietHoursCannotBeEqual);
 
         return new TicketedEventReconfirmPolicy(
             opensAt,
             closesAt,
-            cadence,
-            minEmailInterval);
+            minEmailInterval,
+            quietHoursStart,
+            quietHoursEnd);
     }
 
     internal static class Errors
@@ -60,12 +70,20 @@ public sealed record TicketedEventReconfirmPolicy
             "ticketed_event_reconfirm_policy.window_close_before_open",
             "Reconfirmation window close time must be strictly after open time.");
 
-        public static readonly Error CadenceBelowMinimum = new(
-            "ticketed_event_reconfirm_policy.cadence_below_minimum",
-            "Reconfirmation cadence must be at least 1 hour.");
-
         public static readonly Error MinEmailIntervalBelowMinimum = new(
             "ticketed_event_reconfirm_policy.min_email_interval_below_minimum",
             "Minimum email interval must be at least 1 hour.");
+
+        public static readonly Error MinEmailIntervalMustBeWholeHours = new(
+            "ticketed_event_reconfirm_policy.min_email_interval_must_be_whole_hours",
+            "Minimum email interval must be a whole number of hours.");
+
+        public static readonly Error QuietHoursMustBePaired = new(
+            "ticketed_event_reconfirm_policy.quiet_hours_must_be_paired",
+            "Quiet-hours start and end must be supplied together.");
+
+        public static readonly Error QuietHoursCannotBeEqual = new(
+            "ticketed_event_reconfirm_policy.quiet_hours_cannot_be_equal",
+            "Quiet-hours start and end must be different.");
     }
 }

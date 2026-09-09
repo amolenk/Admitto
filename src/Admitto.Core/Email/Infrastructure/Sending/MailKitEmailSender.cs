@@ -11,7 +11,7 @@ internal sealed class MailKitEmailSender : IEmailSender
     public string Provider => "MailKit/SMTP";
 
     public async ValueTask<string?> SendAsync(
-        EffectiveEmailSettings settings,
+        SmtpTransportSettings settings,
         EmailMessage message,
         CancellationToken cancellationToken = default)
     {
@@ -40,7 +40,7 @@ internal sealed class MailKitEmailSender : IEmailSender
         return result;
     }
 
-    private static SecureSocketOptions GetSecureSocketOptions(EffectiveEmailSettings settings) =>
+    private static SecureSocketOptions GetSecureSocketOptions(SmtpTransportSettings settings) =>
         settings.SmtpSsl
             ? SecureSocketOptions.SslOnConnect
             : settings.SmtpStartTls

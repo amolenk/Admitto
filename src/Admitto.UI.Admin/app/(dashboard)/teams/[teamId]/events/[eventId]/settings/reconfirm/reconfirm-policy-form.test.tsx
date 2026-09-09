@@ -33,8 +33,9 @@ function baseEvent(overrides: Partial<TicketedEventDetails> = {}): TicketedEvent
         reconfirmPolicy: {
             opensAt: "2025-05-01T08:00:00Z",
             closesAt: "2025-05-25T08:00:00Z",
-            cadenceHours: 24,
             minEmailIntervalHours: 1,
+            quietHoursStart: null,
+            quietHoursEnd: null,
         },
         waitlistPolicy: { quietHoursStart: "22:00:00", quietHoursEnd: "08:00:00" },
         ...overrides,
@@ -65,14 +66,10 @@ describe("ReconfirmPolicyForm", () => {
         put.mockResolvedValue(undefined);
     });
 
-    // Given an existing policy with auto-cancel left off (the form's currently supported policy
-    // shape), when the organizer changes its cadence and email interval, then the policy is sent
-    // with the loaded version and no stale fields.
-    it("configures the reconfirm policy without auto-cancel", async () => {
+    it("configures the reconfirm policy with a minimum reminder interval", async () => {
         const { user } = renderForm();
-        const [cadence, minEmailInterval] = numberInputs();
+        const [minEmailInterval] = numberInputs();
 
-        fireEvent.change(cadence, { target: { value: "168", valueAsNumber: 168 } });
         fireEvent.change(minEmailInterval, { target: { value: "48", valueAsNumber: 48 } });
         await user.click(screen.getByRole("button", { name: "Save changes" }));
 
@@ -82,8 +79,9 @@ describe("ReconfirmPolicyForm", () => {
                 {
                     opensAt: "2025-05-01T08:00:00Z",
                     closesAt: "2025-05-25T08:00:00Z",
-                    cadenceHours: 168,
                     minEmailIntervalHours: 48,
+                    quietHoursStart: null,
+                    quietHoursEnd: null,
                     expectedVersion: 4,
                 },
             ),
@@ -101,7 +99,9 @@ describe("ReconfirmPolicyForm", () => {
                 {
                     opensAt: null,
                     closesAt: null,
-                    cadenceHours: null,
+                    minEmailIntervalHours: null,
+                    quietHoursStart: null,
+                    quietHoursEnd: null,
                     expectedVersion: 4,
                 },
             ),
@@ -114,6 +114,28 @@ describe("ReconfirmPolicyForm", () => {
         expect(screen.queryByRole("button", { name: "Remove policy" })).not.toBeInTheDocument();
     });
 
+    it("sends optional overnight no-reminder quiet hours", async () => {
+        const { user } = renderForm();
+        await user.click(screen.getByRole("switch"));
+        const quietTimes = Array.from(document.querySelectorAll<HTMLInputElement>('input[type="time"]'));
+        fireEvent.change(quietTimes[0], { target: { value: "22:00" } });
+        fireEvent.change(quietTimes[1], { target: { value: "06:00" } });
+        await user.click(screen.getByRole("button", { name: "Save changes" }));
+
+        await waitFor(() => expect(put).toHaveBeenCalledWith(expect.any(String), expect.objectContaining({ quietHoursStart: "22:00:00", quietHoursEnd: "06:00:00" })));
+    });
+
+    it("blocks equal quiet-hours boundaries before submit", async () => {
+        const { user } = renderForm();
+        await user.click(screen.getByRole("switch"));
+        const quietTimes = Array.from(document.querySelectorAll<HTMLInputElement>('input[type="time"]'));
+        fireEvent.change(quietTimes[0], { target: { value: "22:00" } });
+        fireEvent.change(quietTimes[1], { target: { value: "22:00" } });
+        await user.click(screen.getByRole("button", { name: "Save changes" }));
+        expect(await screen.findByText("Quiet hours must have different start and end times")).toBeInTheDocument();
+        expect(put).not.toHaveBeenCalled();
+    });
+
     it("blocks a close date before the open date after changing displayed event-zone values", async () => {
         const { user } = renderForm({
             timeZone: "America/Los_Angeles",
@@ -121,8 +143,9 @@ describe("ReconfirmPolicyForm", () => {
                 // Initially valid: May 25 at 22:30 and May 26 at 00:30 in the event zone.
                 opensAt: "2025-05-26T05:30:00Z",
                 closesAt: "2025-05-26T07:30:00Z",
-                cadenceHours: 24,
                 minEmailIntervalHours: 1,
+                quietHoursStart: null,
+                quietHoursEnd: null,
             },
         });
 
@@ -156,20 +179,9 @@ describe("ReconfirmPolicyForm", () => {
         expect(put).not.toHaveBeenCalled();
     });
 
-    it("blocks a non-positive cadence", async () => {
-        const { user } = renderForm();
-        const [cadence] = numberInputs();
-
-        fireEvent.change(cadence, { target: { value: "0", valueAsNumber: 0 } });
-        await user.click(screen.getByRole("button", { name: "Save changes" }));
-
-        expect(await screen.findByText("Cadence must be at least 1 hour")).toBeInTheDocument();
-        expect(put).not.toHaveBeenCalled();
-    });
-
     it("blocks a non-positive minimum email interval", async () => {
         const { user } = renderForm();
-        const [, minEmailInterval] = numberInputs();
+        const [minEmailInterval] = numberInputs();
 
         fireEvent.change(minEmailInterval, { target: { value: "0", valueAsNumber: 0 } });
         await user.click(screen.getByRole("button", { name: "Save changes" }));
@@ -229,9 +241,9 @@ describe("ReconfirmPolicyForm", () => {
             } as ConstructorParameters<typeof FormError>[0]),
         );
         const { user } = renderForm();
-        const [cadence] = numberInputs();
+        const [minEmailInterval] = numberInputs();
 
-        fireEvent.change(cadence, { target: { value: "48", valueAsNumber: 48 } });
+        fireEvent.change(minEmailInterval, { target: { value: "48", valueAsNumber: 48 } });
         await user.click(screen.getByRole("button", { name: "Save changes" }));
 
         const alert = await screen.findByRole("alert");

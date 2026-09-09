@@ -74,7 +74,6 @@ interface AttendeeEmailLogItemDto {
     emailType: string;
     status: string;
     sentAt?: string | null;
-    bulkEmailJobId?: string | null;
 }
 
 // ── Fetch helpers ─────────────────────────────────────────────────────────────

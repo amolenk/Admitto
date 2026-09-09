@@ -77,6 +77,8 @@ Example: Registrations module needs ticket types from Organization.
 
 The same facade is used by authorization handlers to resolve team membership roles.
 
+For reconfirmation delivery, `RegistrationsFacade.GetReconfirmDeliveryStateAsync` delegates to the dedicated `GetReconfirmDeliveryStateHandler`. The handler reads authoritative Registrations aggregates and returns either a complete allowed state (registration timestamp, interval, and maximum) or a suppression reason; Email then applies its successful-log allowance before SMTP admission. The recurring evaluation uses its start instant for the policy window and quiet-hours gate while retaining the other authoritative delivery guards.
+
 ## 6.4 Event creation (Organization → Registrations async flow)
 
 Event creation is a two-phase async flow. Organization validates team-level invariants and acts as the creation **gatekeeper**; Registrations materialises the authoritative `TicketedEvent` and reports back with an outcome. The Admin UI submits the request and polls a creation-status endpoint until it sees a terminal state.
@@ -223,14 +225,18 @@ sequenceDiagram
 
 ## 6.8 Registration-confirmation email flow
 
-When an attendee registers successfully, the API handler emits an `AttendeeRegistered` integration event via the outbox. The Worker picks it up and prepares durable e-mail delivery work. SMTP is attempted only after the Email module has committed an `EmailLog` claim and an internal delivery command.
+When an attendee registers successfully, the API handler emits an `AttendeeRegistered` integration event via the outbox. The Worker picks it up and translates it to a cause-specific typed intent. The single transactional composer loads one immutable event scope and returns the rendered type and content; it does not select recipients, inspect `EmailLog`, or prepare delivery. The thin integration-event handler adds recipient/idempotency metadata and invokes `PrepareEmailDelivery`. SMTP is attempted only after the Email module has committed an `EmailLog` claim and an internal delivery command.
 
 ```mermaid
 sequenceDiagram
     participant Api as API host
     participant Outbox as Integration-event outbox
     participant Worker as Worker host
-    participant EmailHandler as AttendeeRegistered handler (Email module)
+    participant Adapter as AttendeeRegistered adapter (Email module)
+    participant Composer as ITransactionalEmailComposer
+    participant Scope as immutable event scope
+    participant Renderer as Scriban renderer
+    participant Prepare as PrepareEmailDelivery handler
     participant EmailOutbox as Email outbox
     participant EmailLog as email.email_log
     participant Delivery as DeliverEmail command handler
@@ -238,15 +244,17 @@ sequenceDiagram
 
     Api->>Outbox: AttendeeRegistered (in same UoW transaction)
     Worker->>Outbox: poll & dequeue
-    Worker->>EmailHandler: dispatch AttendeeRegistered
-    EmailHandler->>EmailLog: check send claim (attendee-registered:<registrationId>:<registeredAt>)
-    alt terminal claim exists
-        EmailHandler-->>Worker: ack (no-op, idempotency guard)
-    else no terminal claim exists
-        EmailHandler->>EmailHandler: resolve deployment system SMTP settings
-    EmailHandler->>EmailHandler: read Email event context projection and render built-in content via Scriban
-        EmailHandler->>EmailLog: insert Pending claim
-        EmailHandler->>EmailOutbox: enqueue DeliverEmail command (same UoW)
+    Worker->>Adapter: dispatch AttendeeRegistered
+    Adapter->>Composer: typed cause-specific intent
+    Composer->>Scope: load complete event context + system label
+    alt event context missing or incomplete
+        Scope-->>Worker: retryable failure (no claim)
+    else context available
+        Composer->>Renderer: render explicit ticket variables
+        Renderer-->>Composer: type + subject/text/HTML payload
+        Adapter->>Prepare: recipient/idempotency metadata + rendered payload
+        Prepare->>EmailLog: insert Pending claim
+        Prepare->>EmailOutbox: enqueue DeliverEmail command (same UoW)
         Worker->>EmailOutbox: poll & dequeue DeliverEmail
         Worker->>Delivery: load committed claim
         Delivery->>SMTP: SMTP send with bounded inline retries
@@ -256,97 +264,78 @@ sequenceDiagram
 
 **Idempotency**: the `EmailLog` row with key `attendee-registered:<registrationId>:<registeredAt>` is the send claim. A re-delivered integration event that observes a terminal claim is acked without another SMTP attempt; a pending claim can enqueue delivery again for recovery. SMTP itself is not transactional, so rare duplicate delivery races or a crash after SMTP success but before updating the log can still produce a later duplicate during recovery.
 
-Admin and Partner ticket-confirmation resends are requested through Registrations-owned endpoints. The API validates the scoped registration, writes a Registrations outbox message carrying the resend snapshot, and returns `202 Accepted`. Partner requests derive the team scope from the API-key principal and resolve the event slug within that team before dispatching the shared resend command. The Worker delivers `TicketConfirmationResendRequestedIntegrationEvent` to the Email module, which then uses the normal `SendEmailCommand` claim/render/outbox pipeline with idempotency key `ticket-confirmation-resend:<registrationId>:<resendRequestId>`. SMTP delivery remains Worker-only through `DeliverEmailCommand`; the API host neither creates EmailLog claims nor opens SMTP connections.
+Admin and Partner ticket-confirmation resends are requested through Registrations-owned endpoints. The API validates the scoped registration, writes a Registrations outbox message carrying the resend snapshot, and returns `202 Accepted`. Partner requests derive the team scope from the API-key principal and resolve the event slug within that team before dispatching the shared resend command. The Worker delivers `TicketConfirmationResendRequestedIntegrationEvent` to the Email module, whose thin adapter creates the typed intent, invokes the composer, and passes the returned content plus resend identity to `PrepareEmailDelivery`. The durable delivery boundary owns terminal-claim idempotency with key `ticket-confirmation-resend:<registrationId>:<resendRequestId>`. Missing or incomplete event context fails before claim preparation so queue redelivery remains retryable. SMTP delivery remains Worker-only through `DeliverEmailCommand`; the API host neither creates EmailLog claims nor opens SMTP connections.
 
 **Configuration failure**: if deployment system SMTP settings are missing or invalid, registration itself is unaffected. The email work records the failure through the normal `EmailLog`/delivery-error path and operator telemetry; this is an operability issue, not team-owned event state. Transient SMTP failures remain retryable until the configured delivery attempt limit is reached.
 
-## 6.9 Bulk-email fan-out (single SMTP connection)
+### OTP verification-code email
 
-When an admin starts a bulk send (or the reconfirm scheduler ticks), a `BulkEmailJob` is created in `Pending` state and a Quartz trigger queues `BulkEmailFanOutJob`. The fan-out job opens **one** SMTP connection per pickup and streams every recipient through it; the single-send pipeline is bypassed deliberately to avoid one TLS handshake per recipient.
+An `OtpCodeRequested` integration event is translated by the Email module's thin adapter into a typed verification-code intent for the single `ITransactionalEmailComposer`. The composer receives only typed cause facts (`TeamId`, `TicketedEventId`, and the plain code); it does not receive recipient or idempotency metadata. The composer loads one complete Email-owned event scope, applies the absent-team defaults (`Admitto` and `#2563eb`), and returns rendered `VerificationCode` content from the closed mapping `plain_code`, `event_name`, and `team_name`. The adapter then supplies the recipient and `otp-requested:{OtpCodeId}` idempotency key to `PrepareEmailDelivery`, which owns the claim and delivery outbox. Missing or incomplete event context fails before the `EmailLog` claim and Email outbox enqueue, allowing queue redelivery after projection catch-up.
 
-```mermaid
-sequenceDiagram
-    participant Admin as Admin / Reconfirm tick
-    participant Endpoint as Admin endpoint / Reconfirm job
-    participant Job as BulkEmailJob
-    participant FanOut as BulkEmailFanOutJob (Worker)
-    participant Resolver as Recipient resolver
-    participant Facade as IRegistrationsFacade
-    participant SMTP as SMTP server
-    participant EmailLog as email.email_log
+<a id="69-reconfirm-scheduling-and-cycle-limits-hourly-active-event-evaluation"></a>
+## 6.9 Reconfirm scheduling and cycle limits (configurable recurring active-event evaluation; hourly default)
 
-    Admin->>Endpoint: start bulk send with Subject/TextBody/HtmlBody
-    Endpoint->>Job: create (Pending) with AttendeeFilter and job-owned content
-    Endpoint-->>Admin: 202 Accepted (jobId)
-    FanOut->>Job: pick up (DisallowConcurrentExecution per jobId)
-    Job->>Job: transition Pending → Resolving
-    Resolver->>Resolver: map BulkEmailAttendeeFilter → QueryRegistrationsDto
-    Resolver->>Facade: GetRegistrationsAsync(eventId, filter)
-    Facade-->>Resolver: projection rows
-    Resolver->>Job: persist frozen Recipients snapshot
-    Job->>Job: transition Resolving → Sending
-    FanOut->>SMTP: connect (single connection)
-    loop for each Pending recipient
-      FanOut->>FanOut: check CancellationRequestedAt
-      FanOut->>FanOut: render job-owned or built-in content with team/event context
-      FanOut->>EmailLog: insert Pending claim key=bulk:{jobId}:{email}
-      FanOut->>SMTP: MAIL FROM / RCPT TO / DATA
-      FanOut->>EmailLog: update claim to Sent or Failed
-      FanOut->>Job: update per-recipient status + counters
-      FanOut->>FanOut: Task.Delay(PerMessageDelay, ct)
-    end
-    FanOut->>SMTP: QUIT
-    Job->>Job: finalise → Completed / PartiallyFailed / Cancelled / Failed
-```
-
-**Resume-after-crash**: only `Pending` rows on the snapshot are picked up on the next run; per-recipient `EmailLog` uniqueness on `(ticketed_event_id, recipient, idempotency_key)` is the database-backed claim that prevents pre-existing terminal recipient logs from sending again.
-
-**Recipient source**: bulk email targets registered attendees only. The job persists an Email-owned `BulkEmailAttendeeFilter`; the resolver maps it to the Registrations `QueryRegistrationsDto` contract at the facade-call boundary, so the query contract is never part of Email's durable state. There is no external/CSV source.
-
-**Rendering context**: bulk fan-out merges the frozen recipient parameters with Email's projected team/event context, including `team_name`, event details, public links, and `qrcode_link`, plus the branding parameters `accent_color` and `font_family` taken from the resolved `EffectiveEmailSettings` (the same source the transactional path uses). This same parameter set is available to both built-in templates and custom job-owned content; duplicate aliases such as `team_accent_color` and `qr_code_link` are not exposed.
-
-**Cancellation**: `POST /admin/.../bulk-emails/{id}/cancel` sets `CancellationRequestedAt` on the aggregate; the worker observes it between recipients and during the per-message delay, transitions remaining `Pending` rows to `Cancelled`, and closes the SMTP session cleanly.
-
-## 6.10 Reconfirm scheduling (per-event Quartz trigger)
-
-The Email module owns one static Quartz job (`EvaluateReconfirmJob`) and registers a per-event trigger whose cron is derived from `TicketedEventReconfirmPolicy` and evaluated in `TicketedEvent.TimeZone`. Triggers are kept in sync with Registrations through integration events.
+The reconfirmation policy is owned by `TicketedEvent` in Registrations. Email projects the schedule-affecting event data needed for evaluation: policy presence and window, minimum email interval, optional event-local quiet hours, event time zone, and lifecycle state. A recurring Quartz job in the Worker evaluates enabled Active events on the restart-required `Email:Reconfirmation:Interval` setting, which defaults to one hour and must be at least one minute. The Worker fails startup when the setting is missing, malformed, or below the minimum. The setting is captured when the Worker starts; it is not dynamically reloaded. Ticket types may add an optional maximum reconfirmation-email count, with the strictest configured value governing each registration's current cycle.
 
 ```mermaid
 sequenceDiagram
     participant RegOutbox as Reg outbox
-    participant ReconfirmHandlers as Reconfirm scheduler handlers
+    participant Projection as Email event context projection
     participant Quartz as Clustered Quartz scheduler
-    participant Eval as EvaluateReconfirmJob (per-event trigger)
+    participant Eval as SendReconfirmationEmailsJob
     participant Facade as IRegistrationsFacade
-    participant Job as BulkEmailJob (reconfirm)
-    participant FanOut as BulkEmailFanOutJob
+    participant SMTP as SMTP server
+    participant EmailLog as email.email_log
+    participant Outbox as Email outbox
 
-    RegOutbox->>ReconfirmHandlers: TicketedEventCreated / DetailsChanged / ReconfirmPolicyChanged / Archived
-    ReconfirmHandlers->>Projection: upsert Email event context scheduling snapshot
-    ReconfirmHandlers->>Quartz: upsert / remove per-event trigger from projected policy/time zone
-    Note over Quartz: fires per cadence inside reconfirm window
-    Quartz->>Eval: trigger fires (eventId)
-    Eval->>Facade: QueryRegistrationsAsync(Status=Registered, HasReconfirmed=false)
-    Facade-->>Eval: candidate projection
-    alt no candidates
-      Eval-->>Quartz: ack (no-op)
-    else candidates present
-      Eval->>Job: create BulkEmailJob (email_type=reconfirm, attendee snapshot)
-      Job->>FanOut: queued (see §6.9)
+    RegOutbox->>Projection: project event details, policy, time zone, and lifecycle
+    Quartz->>Eval: recurring evaluation at configured interval
+    Eval->>Projection: read enabled Active event specifications
+    loop each enabled Active event
+      alt now < closesAt
+        Eval->>Eval: require evaluation start ∈ [opensAt, closesAt) and outside quiet hours
+        Eval->>Facade: QueryRegistrationsAsync(Status=Registered, HasReconfirmed=false)
+        Facade-->>Eval: candidate projection
+        Eval->>Eval: apply configured minimum interval
+        alt eligible candidates present
+          Eval->>Eval: create one immutable event composition scope and built-in template
+          loop live candidates
+            Eval->>Facade: authoritative delivery check
+            Eval->>Eval: compose typed attendee intent with registration-specific facts
+            Eval->>EmailLog: insert Pending claim matched to registration and cycle
+            Eval->>SMTP: send through shared run session
+            Eval->>EmailLog: update claim to Sent or Failed
+          end
+        else no eligible candidates
+          Eval-->>Quartz: continue (no-op for event)
+        end
+      else now >= closesAt
+        Eval->>Eval: claim durable policy-close evaluation
+        Eval->>Facade: QueryRegistrationsAsync(Status=Registered, HasReconfirmed=false)
+        Facade-->>Eval: candidate projection
+        Eval->>Eval: ignore quiet hours and minimum interval; count successful logs
+        Eval->>Eval: select only attendees at effective maximum
+        Eval->>Outbox: ReconfirmAutoExpiredIntegrationEvent (selected attendees only)
+        Note over Eval: no batch is created; repeated interval ticks are no-ops
+      end
     end
 ```
 
-**Eligibility**: live `HasReconfirmed=false` is the only gate — no extra `email_log` cadence filter. The cron *is* the cadence; tightening the policy (e.g. 7d → 3d) immediately changes prompt frequency.
+**Eligibility**: routine evaluation requires an enabled policy, an Active event, and the evaluation start instant in the half-open window `[opensAt, closesAt)`. Optional event-local quiet hours gate starting routine reconfirmation delivery. For each registered attendee with `HasReconfirmed=false`, the configured minimum whole-hour interval since registration or the last reconfirmation email must also have elapsed. The same check is applied again by the authoritative pre-SMTP delivery gate. Only successfully delivered reconfirmation emails matched to the registration's current cycle count toward that cycle's strictest ticket-type maximum. During routine evaluation, an otherwise-due attendee already at that maximum is auto-cancelled through the normal flow instead of receiving another reminder. At the first scheduler tick where `now >= closesAt`, the job makes one durable terminal evaluation, creates no routine delivery work, ignores quiet hours and the minimum interval, and auto-cancels only registered, unreconfirmed attendees already at the effective maximum. Below-max attendees remain registered and can still reconfirm. The cancellation event follows the normal cancellation flow, whose Email handler dispatches the reconfirm-cancelled notification without quiet-hours gating. There is no policy-close trigger or dynamic reconfirmation fan-out trigger.
 
-**Attendee reconfirm action**: the reconfirm email CTA points at the Admitto public `reconfirm_link` (`/e/{publicSlug}/reconfirm/{registrationId}`), which redirects to the event website. The event website then POSTs back to the API-key-authenticated partner endpoint `POST /api/events/{eventSlug}/registrations/{registrationId}/reconfirm`, invoking `Registration.Reconfirm()` (idempotent; rejected for cancelled registrations). This sets `HasReconfirmed=true`, so the attendee drops out of the next scheduler tick's candidate set. As with other partner endpoints, the write is audited against the API key's team identity.
+**Attendee reconfirm action**: the reconfirm email CTA points at the Admitto public `reconfirm_link` (`/e/{publicSlug}/reconfirm/{registrationId}`), which redirects to the event website. The event website then POSTs back to the API-key-authenticated partner endpoint `POST /api/events/{eventSlug}/registrations/{registrationId}/reconfirm`, invoking `Registration.Reconfirm()` (idempotent; rejected for cancelled registrations). This sets `HasReconfirmed=true`, so the attendee drops out of the next evaluation's candidate set. As with other partner endpoints, the write is audited against the API key's team identity. A new registration or a reset/reregistration after cancellation starts a fresh reconfirmation cycle.
 
-**Lifecycle cleanup**: `TicketedEventArchived` integration events mark the Email projection archived and remove the trigger so archived events stop receiving reconfirm prompts.
+**Lifecycle cleanup**: clearing the reconfirm policy or archiving the event updates the Email projection so the event is no longer enabled and Active. Future evaluations therefore skip it and create no routine reconfirmation work.
 
 **Projection consistency**: Email rendering and scheduling use the latest `email.event_email_context_view` row available when the worker handles a message. Recent Organization/Registrations edits may lag by queue delivery time; this staleness is accepted for email rendering and does not affect registration correctness.
 
-**Clustering**: Quartz uses the PostgreSQL-backed store in `quartz-db` with clustering enabled. API handlers can persist schedules, while Worker instances host the scheduler and execute jobs. During rolling deployments or temporary Worker scale-out, Quartz acquires each trigger on only one live scheduler instance.
+For reconfirmation delivery, projection lag cannot authorize a stale reminder: each candidate is checked against the authoritative live Registrations state immediately before submission. The evaluation start instant is used for the policy window and quiet-hours gate; current authoritative lifecycle, registration status, cycle, and ticket selection still suppress a candidate that changed after evaluation began. Rendering may use the eventually consistent Email projection. The evaluation has no durable batch, recipient snapshot, or resumable progress: if interrupted, the next scheduled evaluation queries fresh candidates. One SMTP session is opened lazily and shared by the run. Pending `EmailLog` claims and terminal delivery audit rows preserve idempotency; failed attempts do not count toward the successful-email allowance. An evaluation already started is allowed to finish when quiet hours begin or the requested deadline passes.
 
-## 6.11 User sign-in and ExternalUserId binding
+**Run logging**: each run writes structured, PII-free start and completion logs. The completion record includes duration and counts for policies found, events evaluated, emails sent, candidates deferred before claiming, deliveries skipped after admission suppression, orphaned claims failed during recovery, registrations auto-expired at policy limits, and failures. Actionable candidate warnings/errors include only the registration identifier and safe suppression reason; no recipient PII is logged. No metrics, alerts, health checks, or durable run record are created.
+
+**Clustering**: Quartz uses the PostgreSQL-backed persistent store in `quartz-db` with clustering enabled. The evaluator is marked `[DisallowConcurrentExecution]`; together, the job constraint and clustered store prevent overlapping executions across Worker instances. During rolling deployments or temporary Worker scale-out, Quartz acquires the recurring evaluation on only one live scheduler instance, so no durable `ReconfirmationBatch` lifecycle is needed for coordination.
+
+## 6.10 User sign-in and ExternalUserId binding
 
 In production, Admin UI users authenticate through Keycloak's hosted passkey-only browser flow. The production browser flow starts directly at WebAuthn passwordless authentication, so users are prompted by the browser/passkey provider rather than entering an email address first. Keycloak performs the WebAuthn assertion ceremony and returns OIDC tokens to the Admin UI; Admitto never handles passkey material or WebAuthn challenge/response details. Keycloak's account-console client is disabled so authenticated users cannot use the standalone Keycloak account UI for profile or credential management. Local development intentionally uses a separate Keycloak realm where the first screen remains the standard username/password form with a passkey alternative, and end-to-end tests keep test-only direct-grant clients so automation remains offline and repeatable.
 
@@ -386,7 +375,7 @@ sequenceDiagram
 
 **Unknown identity**: if neither `sub` nor `email` matches any user, the resolver returns 403. The user must be provisioned before they can authenticate.
 
-## 6.12 Bootstrap admin provisioning
+## 6.11 Bootstrap admin provisioning
 
 On API startup, `BootstrapAdminInitializer` ensures the first admin account exists without requiring manual IdP console steps. Production bootstrap creates or reconciles the Admitto admin user, creates or finds the matching Keycloak user, and asks Keycloak to send a `webauthn-register-passwordless` execute-actions email through Keycloak's configured SMTP server. The action link leads the operator through Keycloak's passkey enrollment pages, not an Admitto-hosted WebAuthn flow. Local development keeps password-capable seeded users while also allowing passkey sign-in for users who enroll one.
 
@@ -398,7 +387,7 @@ On API startup, `BootstrapAdminInitializer` ensures the first admin account exis
 
 The initialiser runs once per process start and is safe to run on every rolling deployment — repeated calls are no-ops when the bootstrap admin is already fully provisioned.
 
-## 6.13 Keycloak account-action email
+## 6.12 Keycloak account-action email
 
 Keycloak owns account-action email rendering and SMTP delivery. Admitto provisions or reconciles the user through Keycloak's Admin API and then calls `execute-actions-email` with `client_id=admitto-ui` and the Admin UI public URL as the redirect target. Keycloak generates the action token, renders the account-action email with the Admitto email theme, and sends it through its configured SMTP server. The execute-actions copy is invitation-oriented and describes the user-facing passkey setup, not Keycloak required-action identifiers.
 
@@ -416,7 +405,7 @@ sequenceDiagram
   Keycloak->>SMTP: Send account-action email
 ```
 
-The Email module is not involved in this flow: no Admitto email integration event is published, no `EmailLog` row is written, and no Admitto template is rendered. Application-owned emails still use the Email module flows in §6.8-§6.10.
+The Email module is not involved in this flow: no Admitto email integration event is published, no `EmailLog` row is written, and no Admitto template is rendered. Application-owned emails still use the Email module flows in §6.8-§6.9.
 
 In Aspire run mode, the local realm keeps preprovisioned username/password users, shows the standard username/password form first with a passkey alternative, and points Keycloak SMTP at MailDev. Normal password sign-in does not send email. To verify the path locally, trigger a Keycloak execute-actions email such as `webauthn-register-passwordless`; Keycloak sends the final email to MailDev.
 

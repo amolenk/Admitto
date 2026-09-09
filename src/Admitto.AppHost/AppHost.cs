@@ -487,8 +487,6 @@ if (!infraOnly)
             .WithEnvironment(
                 "EMAIL__SYSTEM__SMTPPORT",
                 ReferenceExpression.Create($"{mailDev!.GetEndpoint("smtp").Property(EndpointProperty.Port)}"))
-            // Disable the per-message delay so bulk-email fan-out completes quickly
-            .WithEnvironment("BULKEMAIL__PERMESSAGEDELAY", "00:00:00")
             .WithEnvironment("REGISTRATIONS__PUBLICEVENTLINKS__BASEURL", ReferenceExpression.Create($"{apiUrlRef!}/e"))
             .WaitFor(mailDev!);
     }

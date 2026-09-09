@@ -58,6 +58,28 @@ public sealed class RegistrationTests
         sut.HasReconfirmed.ShouldBeFalse();
         sut.ReconfirmedAt.ShouldBeNull();
         sut.CancellationReason.ShouldBeNull();
+        sut.RegistrationCycleId.IsInitialized().ShouldBeTrue();
+        sut.RegistrationCycleId.Value.ShouldNotBe(Guid.Empty);
+    }
+
+    // Given a logical registration timestamp
+    // When a registration is created
+    // Then CreatedAt preserves that timestamp for eligibility calculations
+    [TestMethod]
+    public void Registration_Create_WithRegisteredAt_PreservesCreatedAt()
+    {
+        var registeredAt = DateTimeOffset.UtcNow.AddDays(-2);
+
+        var sut = Registration.Create(
+            DefaultTeamId,
+            DefaultEventId,
+            DefaultEmail,
+            DefaultFirstName,
+            DefaultLastName,
+            [],
+            registeredAt: registeredAt);
+
+        sut.CreatedAt.ShouldBe(registeredAt);
     }
 
     // Given an active registration
@@ -332,6 +354,7 @@ public sealed class RegistrationTests
 
         sut.Id.ShouldBe(id);
         sut.CreatedAt.ShouldBe(resetAt);
+        sut.RegistrationCycleId.IsInitialized().ShouldBeTrue();
         sut.GetDomainEvents()
             .OfType<AttendeeRegisteredDomainEvent>()
             .ShouldHaveSingleItem()
@@ -376,6 +399,26 @@ public sealed class RegistrationTests
         sut.CancellationReason.ShouldBeNull();
         sut.HasReconfirmed.ShouldBeFalse();
         sut.ReconfirmedAt.ShouldBeNull();
+    }
+
+    // Given a cancelled registration with a previous registration cycle
+    // When it is reset
+    // Then a new cycle identifier is generated
+    [TestMethod]
+    public void Reset_CancelledRegistration_RenewsRegistrationCycleId()
+    {
+        var sut = NewRegistration();
+        var originalCycleId = sut.RegistrationCycleId;
+        sut.Cancel(CancellationReason.AttendeeRequest);
+
+        sut.Reset(
+            FirstName.From("Reset"),
+            LastName.From("User"),
+            [new TicketTypeSnapshot(TicketTypeId.New(), TicketTypeName.From("Workshop"), [])],
+            AdditionalDetails.Empty,
+            DateTimeOffset.UtcNow);
+
+        sut.RegistrationCycleId.ShouldNotBe(originalCycleId);
     }
 
     // Given a cancelled registration with old tickets and additional details

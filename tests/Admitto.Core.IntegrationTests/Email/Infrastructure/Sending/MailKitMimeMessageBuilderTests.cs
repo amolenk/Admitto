@@ -28,7 +28,7 @@ public sealed class MailKitMimeMessageBuilderTests
         result.ReplyTo.ShouldBeEmpty();
     }
 
-    private static EffectiveEmailSettings CreateSettings(string fromDisplayName) =>
+    private static SmtpTransportSettings CreateSettings(string fromDisplayName) =>
         new(
             Hostname.From("smtp.admitto.org"),
             Port.From(587),
@@ -38,9 +38,7 @@ public sealed class MailKitMimeMessageBuilderTests
             fromDisplayName,
             EmailAuthMode.None,
             Username: null,
-            Password: null,
-            AccentColor.From("#0f766e"),
-            EmailFontFamily.From("Arial"));
+            Password: null);
 
     private static EmailMessage CreateMessage() =>
         new(

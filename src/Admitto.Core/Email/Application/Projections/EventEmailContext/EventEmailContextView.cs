@@ -9,13 +9,13 @@ namespace Amolenk.Admitto.Core.Email.Application.Projections.EventEmailContext;
 /// <summary>
 /// Email-owned, eventually-consistent read model holding the slow-changing
 /// team/event facts the Email module needs to render transactional and bulk
-/// emails and to schedule reconfirm triggers. One row per
+/// emails and to evaluate reconfirm policies hourly. One row per
 /// <c>(TeamId, TicketedEventId)</c>, maintained by
 /// <see cref="EventEmailContextProjector"/> from Organization and Registrations
 /// integration events. Rows may be partial while complementary events are still
 /// in flight; consumers validate required fields via
 /// <see cref="HasRequiredRenderingContext"/> /
-/// <see cref="HasActiveReconfirmScheduleContext"/>.
+/// <see cref="HasCompleteReconfirmPolicy"/>.
 /// </summary>
 public sealed class EventEmailContextView : IIsVersioned
 {
@@ -40,8 +40,9 @@ public sealed class EventEmailContextView : IIsVersioned
     public string? TimeZone { get; private set; }
     public DateTimeOffset? ReconfirmOpensAt { get; private set; }
     public DateTimeOffset? ReconfirmClosesAt { get; private set; }
-    public int? ReconfirmCadenceHours { get; private set; }
     public int? ReconfirmMinEmailIntervalHours { get; private set; }
+    public TimeOnly? ReconfirmQuietHoursStart { get; private set; }
+    public TimeOnly? ReconfirmQuietHoursEnd { get; private set; }
     public int? SelfServiceTicketTypeCount { get; private set; }
     public bool IsArchived { get; private set; }
     public uint TicketedEventVersion { get; private set; }
@@ -112,8 +113,9 @@ public sealed class EventEmailContextView : IIsVersioned
     {
         ReconfirmOpensAt = policy?.OpensAt;
         ReconfirmClosesAt = policy?.ClosesAt;
-        ReconfirmCadenceHours = policy?.CadenceHours;
         ReconfirmMinEmailIntervalHours = policy?.MinEmailIntervalHours;
+        ReconfirmQuietHoursStart = policy?.QuietHoursStart;
+        ReconfirmQuietHoursEnd = policy?.QuietHoursEnd;
         LastUpdatedAt = now;
     }
 
@@ -153,27 +155,11 @@ public sealed class EventEmailContextView : IIsVersioned
         return true;
     }
 
-    public bool HasActiveReconfirmScheduleContext =>
+    public bool HasCompleteReconfirmPolicy =>
         !IsArchived
         && !string.IsNullOrWhiteSpace(TimeZone)
         && ReconfirmOpensAt.HasValue
         && ReconfirmClosesAt.HasValue
-        && ReconfirmCadenceHours.HasValue
-        && ReconfirmMinEmailIntervalHours.HasValue;
-
-    /// <summary>
-    /// Maps this view to a <see cref="ReconfirmTriggerSpecDto"/> when it carries
-    /// an active reconfirm schedule context, otherwise <c>null</c>.
-    /// </summary>
-    public ReconfirmTriggerSpecDto? ToReconfirmTriggerSpec() =>
-        HasActiveReconfirmScheduleContext
-            ? new ReconfirmTriggerSpecDto(
-                TeamId.Value,
-                TicketedEventId.Value,
-                TimeZone!,
-                ReconfirmOpensAt!.Value,
-                ReconfirmClosesAt!.Value,
-                ReconfirmCadenceHours!.Value,
-                ReconfirmMinEmailIntervalHours!.Value)
-            : null;
+        && ReconfirmMinEmailIntervalHours.HasValue
+        && ReconfirmQuietHoursStart.HasValue == ReconfirmQuietHoursEnd.HasValue;
 }

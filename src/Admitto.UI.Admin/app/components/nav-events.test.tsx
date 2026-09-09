@@ -17,7 +17,6 @@ const get = vi.mocked(apiClient.get);
 
 const TEAM_ID = "11111111-1111-1111-1111-111111111111";
 const EVENT_ID = "33333333-3333-3333-3333-333333333333";
-const JOB_ID = "ffffffff-0000-0000-0000-000000000001";
 
 describe("NavEvents", () => {
     beforeEach(() => {
@@ -61,18 +60,15 @@ describe("NavEventPages", () => {
         return renderWithProviders(<NavEventPages teamId={TEAM_ID} />);
     }
 
-    function emailsButton() {
-        return screen.getByRole("button", { name: "Emails" });
-    }
+    it("does not expose campaign create, list, detail, or cancel entry points", () => {
+        renderPages(`/teams/${TEAM_ID}/events/${EVENT_ID}`);
 
-    it("targets the bulk emails list from the Emails sidebar entry", async () => {
-        const { user } = renderPages(`/teams/${TEAM_ID}/events/${EVENT_ID}`);
-
-        await user.click(emailsButton());
-
-        expect(routerMock.push).toHaveBeenCalledWith(
-            `/teams/${TEAM_ID}/events/${EVENT_ID}/emails/campaigns`,
-        );
+        expect(screen.queryByRole("button", { name: "Emails" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("link", { name: "Campaigns" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("link", { name: /create campaign/i })).not.toBeInTheDocument();
+        expect(screen.queryByRole("link", { name: /campaign detail/i })).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: /send bulk email/i })).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: /cancel bulk email/i })).not.toBeInTheDocument();
     });
 
     it("targets the General edit page from the Edit event sidebar entry", async () => {
@@ -85,21 +81,9 @@ describe("NavEventPages", () => {
         );
     });
 
-    it("marks Emails active on the bulk emails list", () => {
-        renderPages(`/teams/${TEAM_ID}/events/${EVENT_ID}/emails/campaigns`);
-
-        expect(emailsButton()).toHaveAttribute("data-active", "true");
-    });
-
-    it("does not mark Emails active on the event edit page", () => {
+    it("does not expose email navigation on the event edit page", () => {
         renderPages(`/teams/${TEAM_ID}/events/${EVENT_ID}/edit/policies`);
 
-        expect(emailsButton()).toHaveAttribute("data-active", "false");
-    });
-
-    it("keeps Emails active on a bulk email detail page", () => {
-        renderPages(`/teams/${TEAM_ID}/events/${EVENT_ID}/emails/campaigns/${JOB_ID}`);
-
-        expect(emailsButton()).toHaveAttribute("data-active", "true");
+        expect(screen.queryByRole("button", { name: "Emails" })).not.toBeInTheDocument();
     });
 });

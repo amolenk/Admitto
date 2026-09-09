@@ -84,6 +84,9 @@ internal sealed class GetRegistrationsHandler(IRegistrationsWriteStore writeStor
                     .ToList(),
                 r.AdditionalDetails.ToDictionary(kvp => kvp.Key, kvp => kvp.Value),
                 r.CreatedAt,
+                r.RegistrationCycleId.Value,
+                r.Version,
+                catalog?.Version ?? 0,
                 r.Status,
                 r.HasReconfirmed,
                 r.ReconfirmedAt))

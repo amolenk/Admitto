@@ -11,7 +11,8 @@ using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Outbox;
 namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence;
 
 public sealed class RegistrationsDbContext(DbContextOptions<RegistrationsDbContext> options)
-    : DbContext(options), IModuleDbContext, IRegistrationsReadStore, IRegistrationsWriteStore, IOutboxDbContext
+    : DbContext(options), IModuleDbContext, IRegistrationsReadStore, IRegistrationsWriteStore, IOutboxDbContext,
+        IInboxDbContext
 {
     public static string SchemaName => "registrations";
 
@@ -53,6 +54,10 @@ public sealed class RegistrationsDbContext(DbContextOptions<RegistrationsDbConte
         configurationBuilder
             .Properties<RegistrationId>()
             .HaveConversion<RegistrationId.EfCoreValueConverter>();
+
+        configurationBuilder
+            .Properties<RegistrationCycleId>()
+            .HaveConversion<RegistrationCycleId.EfCoreValueConverter>();
 
         configurationBuilder
             .Properties<EmailAddress>()
@@ -97,5 +102,9 @@ public sealed class RegistrationsDbContext(DbContextOptions<RegistrationsDbConte
         configurationBuilder
             .Properties<TicketTypeId>()
             .HaveConversion<TicketTypeId.EfCoreValueConverter>();
+
+        configurationBuilder
+            .Properties<ReconfirmationEmailLimit>()
+            .HaveConversion<ReconfirmationEmailLimit.EfCoreValueConverter>();
     }
 }

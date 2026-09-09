@@ -7,19 +7,20 @@ namespace Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
 /// Snapshot of a <c>TicketedEventReconfirmPolicy</c> as it appears at the moment
 /// the policy is set or updated. Carried on
 /// <see cref="TicketedEventReconfirmPolicyChangedIntegrationEvent"/> so subscribers
-/// (e.g. the Email module's reconfirm scheduler) can register a Quartz trigger
-/// without a follow-up read against the Registrations module.
+/// (e.g. the Email module's hourly evaluator) can update its projection without
+/// a follow-up read against the Registrations module.
 /// </summary>
 public sealed record TicketedEventReconfirmPolicySnapshot(
     DateTimeOffset OpensAt,
     DateTimeOffset ClosesAt,
-    int CadenceHours,
-    int MinEmailIntervalHours);
+    int MinEmailIntervalHours,
+    TimeOnly? QuietHoursStart,
+    TimeOnly? QuietHoursEnd);
 
 /// <summary>
 /// Published by the Registrations module whenever a ticketed event's reconfirm
 /// policy is set, updated, or cleared. The Email module consumes this to
-/// (re)register or remove the per-event reconfirm trigger.
+/// update or clear the projected reconfirm policy.
 /// </summary>
 /// <param name="TeamId">Owning team.</param>
 /// <param name="TicketedEventId">Ticketed event whose policy changed.</param>

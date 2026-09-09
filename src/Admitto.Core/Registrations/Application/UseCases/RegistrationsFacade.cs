@@ -1,4 +1,5 @@
 using GetRegistrationsNs = Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.GetRegistrations;
+using GetReconfirmDeliveryStateNs = Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.GetReconfirmDeliveryState;
 using Amolenk.Admitto.Core.Registrations.Application.Persistence;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Shared.Application.Messaging;
@@ -8,7 +9,9 @@ namespace Amolenk.Admitto.Core.Registrations.Application.UseCases;
 internal sealed class RegistrationsFacade(
     IQueryHandler<GetRegistrationsNs.GetRegistrationsQuery, IReadOnlyList<GetRegistrationsNs.RegistrationListItemDto>?>
         getRegistrationsHandler,
-    IRegistrationsWriteStore writeStore) : IRegistrationsFacade
+    IRegistrationsWriteStore writeStore,
+    IQueryHandler<GetReconfirmDeliveryStateNs.GetReconfirmDeliveryStateQuery, ReconfirmDeliveryState>
+        getReconfirmDeliveryStateHandler) : IRegistrationsFacade
 {
     public async Task<IReadOnlyList<RegistrationListItemDto>> GetRegistrationsAsync(
         Guid teamId,
@@ -27,20 +30,10 @@ internal sealed class RegistrationsFacade(
             .AsNoTracking()
             .FirstOrDefaultAsync(c => c.Id == ticketedEventId && c.TeamId == team, cancellationToken);
 
-        var maxAttemptsByTypeId = catalog?.TicketTypes
-            .Where(t => t.MaxReconfirmAttempts.HasValue)
-            .ToDictionary(t => t.Id.Value, t => t.MaxReconfirmAttempts!.Value)
-            ?? new Dictionary<Guid, int>();
-
         return (result ?? [])
             .Select(r =>
             {
                 var ticketTypeIds = r.Tickets.Select(t => t.Id).ToArray();
-                var relevantAttempts = ticketTypeIds
-                    .Where(id => maxAttemptsByTypeId.ContainsKey(id))
-                    .Select(id => maxAttemptsByTypeId[id])
-                    .ToList();
-                var effectiveMax = relevantAttempts.Count > 0 ? (int?)relevantAttempts.Min() : null;
 
                 return new RegistrationListItemDto(
                     r.Id,
@@ -50,10 +43,13 @@ internal sealed class RegistrationsFacade(
                     ticketTypeIds,
                     r.AdditionalDetails,
                     r.CreatedAt,
+                    r.RegistrationCycleId,
+                    r.RegistrationVersion,
+                    r.TicketCatalogVersion,
                     r.Status,
                     r.HasReconfirmed,
                     r.ReconfirmedAt,
-                    effectiveMax);
+                    GetEffectiveMaximum(catalog, ticketTypeIds));
             })
             .ToList();
     }
@@ -76,5 +72,33 @@ internal sealed class RegistrationsFacade(
         return ticketedEvent.AdditionalDetailSchema.Fields
             .Select(f => new AdditionalDetailFieldDto(f.Key, f.Name))
             .ToList();
+    }
+
+    public async Task<ReconfirmDeliveryState> GetReconfirmDeliveryStateAsync(
+        Guid teamId,
+        Guid eventId,
+        ReconfirmDeliveryQuery query,
+        CancellationToken cancellationToken = default)
+    {
+        return await getReconfirmDeliveryStateHandler.HandleAsync(
+            new GetReconfirmDeliveryStateNs.GetReconfirmDeliveryStateQuery(
+                TeamId.From(teamId),
+                TicketedEventId.From(eventId),
+                query),
+            cancellationToken);
+    }
+
+    private static int? GetEffectiveMaximum(
+        Domain.Entities.TicketCatalog? catalog,
+        IEnumerable<Guid> ticketTypeIds)
+    {
+        if (catalog is null)
+            return null;
+
+        var limits = catalog.TicketTypes
+            .Where(t => t.MaxReconfirmationEmails.HasValue && ticketTypeIds.Contains(t.Id.Value))
+            .Select(t => t.MaxReconfirmationEmails!.Value.Value)
+            .ToList();
+        return limits.Count > 0 ? limits.Min() : null;
     }
 }

@@ -67,7 +67,7 @@ public class TicketCatalogEntityConfiguration : IEntityTypeConfiguration<TicketC
                 .HasJsonPropertyName("claim_window_hours")
                 .IsRequired();
 
-            b.Property(tt => tt.MaxReconfirmAttempts)
+            b.Property(tt => tt.MaxReconfirmationEmails)
                 .HasJsonPropertyName("max_reconfirm_attempts");
 
             b.PrimitiveCollection(tt => tt.TimeSlots)

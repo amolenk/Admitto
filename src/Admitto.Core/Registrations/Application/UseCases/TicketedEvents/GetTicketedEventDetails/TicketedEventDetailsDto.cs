@@ -30,8 +30,9 @@ public sealed record RegistrationPolicyDto(
 public sealed record ReconfirmPolicyDto(
     DateTimeOffset OpensAt,
     DateTimeOffset ClosesAt,
-    int CadenceHours,
-    int MinEmailIntervalHours);
+    int MinEmailIntervalHours,
+    TimeOnly? QuietHoursStart,
+    TimeOnly? QuietHoursEnd);
 
 public sealed record WaitlistPolicyDto(
     TimeOnly QuietHoursStart,

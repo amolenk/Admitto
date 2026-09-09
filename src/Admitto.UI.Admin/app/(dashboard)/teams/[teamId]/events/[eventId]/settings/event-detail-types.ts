@@ -9,8 +9,9 @@ export interface RegistrationPolicy {
 export interface ReconfirmPolicy {
     opensAt: string;
     closesAt: string;
-    cadenceHours: number;
     minEmailIntervalHours: number;
+    quietHoursStart: string | null;
+    quietHoursEnd: string | null;
 }
 
 export interface WaitlistPolicy {

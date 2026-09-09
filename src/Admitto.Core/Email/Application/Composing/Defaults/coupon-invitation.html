@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>You're invited to {{ event_name }}</title>
+</head>
+
+<body style="margin: 0; padding: 0; background-color: #f9f9f9; font-family: {{ font_family }};">
+
+<div style="width: 560px; line-height: 1.5; background-color: #ffffff; margin: 20px auto; padding: 20px; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+    <h1 style="font-size: 24px; font-weight: bold; color: {{ accent_color }}; margin-top: 0;">
+        You're invited to {{ event_name }}
+    </h1>
+
+    <p>Hi there,</p>
+    <p>The <strong>{{ team_name }}</strong> team invited you to register for <strong>{{ event_name }}</strong>.</p>
+
+    <div style="background-color: #f0f4ff; border-radius: 6px; padding: 20px; margin: 20px 0; text-align: center;">
+        <p style="margin: 0 0 8px 0; font-size: 14px; color: #555;">Your coupon code</p>
+        <p style="font-size: 28px; font-weight: bold; color: {{ accent_color }}; letter-spacing: 4px; margin: 0;">{{ coupon_code }}</p>
+    </div>
+
+    <div style="text-align: center; margin: 30px 0;">
+        <a href="{{ register_link }}"
+           style="display: inline-block; background-color: {{ accent_color }}; color: #ffffff; padding: 12px 32px; text-decoration: none; border-radius: 4px; font-weight: bold; font-size: 16px;">
+            Register Now
+        </a>
+    </div>
+
+    <p>For more details about the event, visit <a href="{{ event_website }}" style="color: {{ accent_color }};">the event website</a>.</p>
+
+    <div style="border-top: 1px solid #ddd; margin-top: 20px; padding-top: 16px; font-size: 13px; color: #666;">
+        <p style="margin: 0;">Best regards,<br>The {{ team_name }} Team</p>
+    </div>
+</div>
+
+</body>
+</html>

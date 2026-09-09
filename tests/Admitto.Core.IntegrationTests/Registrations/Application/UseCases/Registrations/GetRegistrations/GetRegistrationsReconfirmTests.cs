@@ -1,9 +1,12 @@
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.GetRegistrations;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases;
 using Amolenk.Admitto.Core.Registrations.Contracts;
+using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using GetRegistrationsNs = Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.GetRegistrations;
+using GetReconfirmDeliveryStateNs = Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.GetReconfirmDeliveryState;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCases.Registrations.GetRegistrations;
 
@@ -146,6 +149,62 @@ public sealed class GetRegistrationsReconfirmTests(TestContext testContext) : As
         });
 
         (await Query(teamId, eventId)).ShouldBeEmpty();
+    }
+
+    // Given a registration with two finite limits and one unlimited ticket type
+    // When the registrations facade calculates the reconfirmation maximum
+    // Then the bounded type's smaller maximum governs and unlimited does not relax it
+    [TestMethod]
+    public async ValueTask GetRegistrations_BoundedAndUnlimitedTicketTypes_UsesBoundedMinimum()
+    {
+        var eventId = TicketedEventId.New();
+        var teamId = TeamId.New();
+        var boundedId = TicketTypeId.New();
+        var largerBoundedId = TicketTypeId.New();
+        var unlimitedId = TicketTypeId.New();
+
+        await Environment.RegistrationsDatabase.SeedAsync(db =>
+        {
+            db.TicketedEvents.Add(NewTicketedEvent(teamId, eventId));
+            var catalog = TicketCatalog.Create(eventId, teamId);
+            catalog.AddTicketType(boundedId, TicketTypeName.From("Bounded"), [], 10,
+                maxReconfirmationEmails: ReconfirmationEmailLimit.From(2));
+            catalog.AddTicketType(largerBoundedId, TicketTypeName.From("Larger bounded"), [], 10,
+                maxReconfirmationEmails: ReconfirmationEmailLimit.From(5));
+            catalog.AddTicketType(unlimitedId, TicketTypeName.From("Unlimited"), [], null,
+                maxReconfirmationEmails: null);
+            db.TicketCatalogs.Add(catalog);
+            db.Registrations.Add(Registration.Create(
+                teamId,
+                eventId,
+                EmailAddress.From("alice@example.com"),
+                FirstName.From("Alice"),
+                LastName.From("Doe"),
+                [
+                    new TicketTypeSnapshot(boundedId, TicketTypeName.From("Bounded"), []),
+                    new TicketTypeSnapshot(largerBoundedId, TicketTypeName.From("Larger bounded"), []),
+                    new TicketTypeSnapshot(unlimitedId, TicketTypeName.From("Unlimited"), [])
+                ]));
+            db.Registrations.Add(Registration.Create(
+                teamId,
+                eventId,
+                EmailAddress.From("bob@example.com"),
+                FirstName.From("Bob"),
+                LastName.From("Doe"),
+                [new TicketTypeSnapshot(unlimitedId, TicketTypeName.From("Unlimited"), [])]));
+        });
+
+        var facade = new RegistrationsFacade(
+            new GetRegistrationsHandler(Environment.RegistrationsDatabase.Context),
+            Environment.RegistrationsDatabase.Context,
+            new GetReconfirmDeliveryStateNs.GetReconfirmDeliveryStateHandler(
+                Environment.RegistrationsDatabase.Context));
+
+        var result = await facade.GetRegistrationsAsync(teamId.Value, eventId.Value, ReconfirmFilter,
+            testContext.CancellationToken);
+
+        result.Single(r => r.Email == "alice@example.com").EffectiveMaxReconfirmationEmails.ShouldBe(2);
+        result.Single(r => r.Email == "bob@example.com").EffectiveMaxReconfirmationEmails.ShouldBeNull();
     }
 
     private static Registration NewRegistration(

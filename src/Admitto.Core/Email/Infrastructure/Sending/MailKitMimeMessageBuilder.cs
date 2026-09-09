@@ -16,7 +16,7 @@ namespace Amolenk.Admitto.Core.Email.Infrastructure.Sending;
 /// </summary>
 internal static class MailKitMimeMessageBuilder
 {
-    public static MimeMessage Build(EffectiveEmailSettings settings, EmailMessage message)
+    public static MimeMessage Build(SmtpTransportSettings settings, EmailMessage message)
         => Build(settings.FromAddress, settings.FromDisplayName, message);
 
     public static MimeMessage Build(

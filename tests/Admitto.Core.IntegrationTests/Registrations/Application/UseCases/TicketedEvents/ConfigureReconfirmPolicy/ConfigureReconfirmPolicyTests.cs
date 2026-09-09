@@ -9,69 +9,54 @@ namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCas
 public sealed class ConfigureReconfirmPolicyTests(TestContext testContext) : AspireIntegrationTestBase
 {
     // Given an active ticketed event
-    // When a reconfirm policy with open/close dates, cadence, and minimum email interval is configured
+    // When a reconfirm policy with dates, an interval, and quiet hours is configured
     // Then the policy is persisted on the event
     [TestMethod]
     public async ValueTask ConfigureReconfirmPolicy_ActiveEvent_PersistsPolicy()
     {
         var fixture = ConfigureReconfirmPolicyFixture.ActiveEvent();
         await fixture.SetupAsync(Environment);
-
         var opensAt = DateTimeOffset.UtcNow.AddDays(5);
         var closesAt = DateTimeOffset.UtcNow.AddDays(15);
-
         var sut = new ConfigureReconfirmPolicyHandler(Environment.RegistrationsDatabase.Context);
 
-        await sut.HandleAsync(
-            new ConfigureReconfirmPolicyCommand(
-                fixture.EventId.Value,
-                fixture.TeamId.Value,
-                fixture.SeededVersion,
-                opensAt,
-                closesAt,
-                CadenceHours: 7,
-                MinEmailIntervalHours: 24),
+        await sut.HandleAsync(new ConfigureReconfirmPolicyCommand(
+            fixture.EventId.Value, fixture.TeamId.Value, fixture.SeededVersion,
+            opensAt, closesAt, 24, new TimeOnly(22), new TimeOnly(8)),
             testContext.CancellationToken);
 
         await Environment.RegistrationsDatabase.AssertAsync(async ctx =>
         {
-            var te = await ctx.TicketedEvents
-                .FirstOrDefaultAsync(e => e.Id == fixture.EventId, testContext.CancellationToken);
+            var te = await ctx.TicketedEvents.FirstOrDefaultAsync(
+                e => e.Id == fixture.EventId, testContext.CancellationToken);
             te.ShouldNotBeNull();
             te.ReconfirmPolicy.ShouldNotBeNull();
             te.ReconfirmPolicy.OpensAt.ShouldBe(opensAt);
             te.ReconfirmPolicy.ClosesAt.ShouldBe(closesAt);
-            te.ReconfirmPolicy.Cadence.ShouldBe(TimeSpan.FromHours(7));
             te.ReconfirmPolicy.MinEmailInterval.ShouldBe(TimeSpan.FromHours(24));
+            te.ReconfirmPolicy.QuietHoursStart.ShouldBe(new TimeOnly(22));
+            te.ReconfirmPolicy.QuietHoursEnd.ShouldBe(new TimeOnly(8));
         });
     }
 
     // Given an active event with an existing reconfirm policy
-    // When the policy fields are all cleared
+    // When all policy fields are cleared
     // Then the reconfirm policy is removed from the event
     [TestMethod]
     public async ValueTask ConfigureReconfirmPolicy_ClearExistingPolicy_RemovesPolicy()
     {
         var fixture = ConfigureReconfirmPolicyFixture.ActiveWithExistingPolicy();
         await fixture.SetupAsync(Environment);
-
         var sut = new ConfigureReconfirmPolicyHandler(Environment.RegistrationsDatabase.Context);
 
-        await sut.HandleAsync(
-            new ConfigureReconfirmPolicyCommand(
-                fixture.EventId.Value,
-                fixture.TeamId.Value,
-                fixture.SeededVersion,
-                OpensAt: null,
-                ClosesAt: null,
-                CadenceHours: null,
-                MinEmailIntervalHours: null),
-            testContext.CancellationToken);
+        await sut.HandleAsync(new ConfigureReconfirmPolicyCommand(
+            fixture.EventId.Value, fixture.TeamId.Value, fixture.SeededVersion,
+            null, null, null, null, null), testContext.CancellationToken);
 
         await Environment.RegistrationsDatabase.AssertAsync(async ctx =>
         {
-            var te = await ctx.TicketedEvents
-                .FirstOrDefaultAsync(e => e.Id == fixture.EventId, testContext.CancellationToken);
+            var te = await ctx.TicketedEvents.FirstOrDefaultAsync(
+                e => e.Id == fixture.EventId, testContext.CancellationToken);
             te.ShouldNotBeNull();
             te.ReconfirmPolicy.ShouldBeNull();
         });
@@ -85,46 +70,32 @@ public sealed class ConfigureReconfirmPolicyTests(TestContext testContext) : Asp
     {
         var fixture = ConfigureReconfirmPolicyFixture.ArchivedEvent();
         await fixture.SetupAsync(Environment);
-
         var sut = new ConfigureReconfirmPolicyHandler(Environment.RegistrationsDatabase.Context);
 
-        var result = await ErrorResult.CaptureAsync(async () =>
-            await sut.HandleAsync(
-                new ConfigureReconfirmPolicyCommand(
-                    fixture.EventId.Value,
-                    fixture.TeamId.Value,
-                    fixture.SeededVersion,
-                    DateTimeOffset.UtcNow.AddDays(5),
-                    DateTimeOffset.UtcNow.AddDays(15),
-                    CadenceHours: 7,
-                    MinEmailIntervalHours: 24),
-                testContext.CancellationToken));
+        var result = await ErrorResult.CaptureAsync(() => sut.HandleAsync(
+            new ConfigureReconfirmPolicyCommand(
+                fixture.EventId.Value, fixture.TeamId.Value, fixture.SeededVersion,
+                DateTimeOffset.UtcNow.AddDays(5), DateTimeOffset.UtcNow.AddDays(15),
+                24, null, null), testContext.CancellationToken));
 
         result.Error.ShouldMatch(TicketedEvent.Errors.EventNotActive);
     }
 
     // Given an active ticketed event
-    // When the reconfirm policy is configured with an opens date and cadence but no closes date or email interval
+    // When a policy is configured with only an opening date
     // Then it fails with an incomplete-policy error
     [TestMethod]
     public async ValueTask ConfigureReconfirmPolicy_IncompleteFields_ThrowsIncompletePolicy()
     {
         var fixture = ConfigureReconfirmPolicyFixture.ActiveEvent();
         await fixture.SetupAsync(Environment);
-
         var sut = new ConfigureReconfirmPolicyHandler(Environment.RegistrationsDatabase.Context);
 
-        var result = await ErrorResult.CaptureAsync(async () =>
-            await sut.HandleAsync(
-                new ConfigureReconfirmPolicyCommand(
-                    fixture.EventId.Value,
-                    fixture.TeamId.Value,
-                    fixture.SeededVersion,
-                    OpensAt: DateTimeOffset.UtcNow.AddDays(5),
-                    ClosesAt: null,
-                    CadenceHours: 7,
-                    MinEmailIntervalHours: null),
-                testContext.CancellationToken));
+        var result = await ErrorResult.CaptureAsync(() => sut.HandleAsync(
+            new ConfigureReconfirmPolicyCommand(
+                fixture.EventId.Value, fixture.TeamId.Value, fixture.SeededVersion,
+                DateTimeOffset.UtcNow.AddDays(5), null, 24, null, null),
+            testContext.CancellationToken));
 
         result.Error.ShouldMatch(ConfigureReconfirmPolicyHandler.Errors.IncompletePolicy);
     }

@@ -24,11 +24,13 @@ internal sealed class AddTicketTypeHandler(IRegistrationsWriteStore writeStore)
         var timeSlots = command.TimeSlots
             .Select(TimeSlot.From)
             .ToArray();
+        ReconfirmationEmailLimit? reconfirmationEmailLimit = command.MaxReconfirmationEmails is null
+            ? null
+            : ReconfirmationEmailLimit.From(command.MaxReconfirmationEmails.Value);
 
         catalog.AddTicketType(id, name, timeSlots, command.MaxCapacity, command.SelfServiceEnabled,
-            command.WaitlistEnabled, command.ClaimWindowHours, command.MaxReconfirmAttempts);
+            command.WaitlistEnabled, command.ClaimWindowHours, reconfirmationEmailLimit);
 
         return id.Value;
     }
 }
-

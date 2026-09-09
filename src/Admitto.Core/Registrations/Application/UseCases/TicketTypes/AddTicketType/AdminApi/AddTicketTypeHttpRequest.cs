@@ -7,7 +7,7 @@ public sealed record AddTicketTypeHttpRequest(
     int? MaxCapacity = null,
     bool WaitlistEnabled = false,
     int ClaimWindowHours = 8,
-    int? MaxReconfirmAttempts = null)
+    int? MaxReconfirmationEmails = null)
 {
     internal AddTicketTypeCommand ToCommand(Guid eventId, Guid teamId) => new(
         eventId,
@@ -18,5 +18,5 @@ public sealed record AddTicketTypeHttpRequest(
         SelfServiceEnabled,
         WaitlistEnabled,
         ClaimWindowHours,
-        MaxReconfirmAttempts);
+        MaxReconfirmationEmails);
 }

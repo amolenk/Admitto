@@ -56,10 +56,6 @@ namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence.Migrations
                         .HasColumnType("character varying(64)")
                         .HasColumnName("public_slug");
 
-                    b.Property<int?>("ReconfirmCadenceHours")
-                        .HasColumnType("integer")
-                        .HasColumnName("reconfirm_cadence_hours");
-
                     b.Property<DateTimeOffset?>("ReconfirmClosesAt")
                         .HasColumnType("timestamptz")
                         .HasColumnName("reconfirm_closes_at");
@@ -71,6 +67,14 @@ namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence.Migrations
                     b.Property<DateTimeOffset?>("ReconfirmOpensAt")
                         .HasColumnType("timestamptz")
                         .HasColumnName("reconfirm_opens_at");
+
+                    b.Property<TimeOnly?>("ReconfirmQuietHoursEnd")
+                        .HasColumnType("time")
+                        .HasColumnName("reconfirm_quiet_hours_end");
+
+                    b.Property<TimeOnly?>("ReconfirmQuietHoursStart")
+                        .HasColumnType("time")
+                        .HasColumnName("reconfirm_quiet_hours_start");
 
                     b.Property<int?>("SelfServiceTicketTypeCount")
                         .HasColumnType("integer")
@@ -151,125 +155,30 @@ namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence.Migrations
                     b.ToTable("team_email_context_view", "email");
                 });
 
-            modelBuilder.Entity("Amolenk.Admitto.Core.Email.Domain.Entities.BulkEmailJob", b =>
+            modelBuilder.Entity("Amolenk.Admitto.Core.Email.Domain.Entities.ReconfirmPolicyCloseEvaluation", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<string>("AttendeeFilter")
-                        .IsRequired()
-                        .HasColumnType("jsonb")
-                        .HasColumnName("attendee_filter");
-
-                    b.Property<DateTimeOffset?>("CancellationRequestedAt")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("cancellation_requested_at");
-
-                    b.Property<DateTimeOffset?>("CancelledAt")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("cancelled_at");
-
-                    b.Property<int>("CancelledCount")
-                        .HasColumnType("integer")
-                        .HasColumnName("cancelled_count");
-
-                    b.Property<DateTimeOffset?>("CompletedAt")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("completed_at");
-
-                    b.Property<DateTimeOffset>("CreatedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("created_at");
-
-                    b.Property<string>("EmailType")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("character varying(100)")
-                        .HasColumnName("email_type");
-
-                    b.Property<int>("FailedCount")
-                        .HasColumnType("integer")
-                        .HasColumnName("failed_count");
-
-                    b.Property<string>("HtmlBody")
-                        .HasColumnType("text")
-                        .HasColumnName("html_body");
-
-                    b.Property<bool>("IsSystemTriggered")
-                        .HasColumnType("boolean")
-                        .HasColumnName("is_system_triggered");
-
-                    b.Property<DateTimeOffset>("LastChangedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("last_changed_at");
-
-                    b.Property<string>("LastChangedBy")
-                        .IsRequired()
-                        .HasMaxLength(320)
-                        .HasColumnType("character varying(320)")
-                        .HasColumnName("last_changed_by");
-
-                    b.Property<string>("LastError")
-                        .HasColumnType("text")
-                        .HasColumnName("last_error");
-
-                    b.Property<int>("RecipientCount")
-                        .HasColumnType("integer")
-                        .HasColumnName("recipient_count");
-
-                    b.Property<int>("SentCount")
-                        .HasColumnType("integer")
-                        .HasColumnName("sent_count");
-
-                    b.Property<DateTimeOffset?>("StartedAt")
-                        .HasColumnType("timestamptz")
-                        .HasColumnName("started_at");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasMaxLength(32)
-                        .HasColumnType("character varying(32)")
-                        .HasColumnName("status");
-
-                    b.Property<string>("Subject")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)")
-                        .HasColumnName("subject");
-
                     b.Property<Guid>("TeamId")
                         .HasColumnType("uuid")
                         .HasColumnName("team_id");
-
-                    b.Property<string>("TextBody")
-                        .HasColumnType("text")
-                        .HasColumnName("text_body");
 
                     b.Property<Guid>("TicketedEventId")
                         .HasColumnType("uuid")
                         .HasColumnName("ticketed_event_id");
 
-                    b.Property<string>("TriggeredBy")
-                        .HasMaxLength(320)
-                        .HasColumnType("character varying(320)")
-                        .HasColumnName("triggered_by");
+                    b.Property<DateTimeOffset>("ClosesAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("closes_at");
 
-                    b.Property<uint>("Version")
-                        .IsConcurrencyToken()
-                        .ValueGeneratedOnAddOrUpdate()
-                        .HasColumnType("xid")
-                        .HasColumnName("xmin");
+                    b.Property<DateTimeOffset>("EvaluatedAt")
+                        .HasColumnType("timestamptz")
+                        .HasColumnName("evaluated_at");
 
-                    b.HasKey("Id");
+                    b.HasKey("TeamId", "TicketedEventId", "ClosesAt");
 
-                    b.HasIndex("Status")
-                        .HasDatabaseName("IX_bulk_email_jobs_status");
+                    b.HasIndex("TicketedEventId", "ClosesAt")
+                        .HasDatabaseName("IX_reconfirm_policy_close_evaluations_event_close");
 
-                    b.HasIndex("TicketedEventId", "CreatedAt")
-                        .IsDescending(false, true)
-                        .HasDatabaseName("IX_bulk_email_jobs_event_created_at");
-
-                    b.ToTable("bulk_email_jobs", "email");
+                    b.ToTable("reconfirm_policy_close_evaluations", "email");
                 });
 
             modelBuilder.Entity("Amolenk.Admitto.Core.Email.Domain.Entities.EmailLog", b =>
@@ -277,10 +186,6 @@ namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
                         .HasColumnName("id");
-
-                    b.Property<Guid?>("BulkEmailJobId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("bulk_email_job_id");
 
                     b.Property<int>("DeliveryAttemptCount")
                         .HasColumnType("integer")
@@ -312,6 +217,10 @@ namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("registration_id");
 
+                    b.Property<Guid?>("RegistrationCycleId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("registration_cycle_id");
+
                     b.Property<DateTimeOffset?>("SentAt")
                         .HasColumnType("timestamptz")
                         .HasColumnName("sent_at");
@@ -341,8 +250,6 @@ namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence.Migrations
                         .HasColumnName("ticketed_event_id");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("BulkEmailJobId");
 
                     b.HasIndex("Recipient", "IdempotencyKey")
                         .IsUnique()
@@ -404,59 +311,6 @@ namespace Amolenk.Admitto.Core.Email.Infrastructure.Persistence.Migrations
                     b.ToTable("outbox", "email");
                 });
 
-            modelBuilder.Entity("Amolenk.Admitto.Core.Email.Domain.Entities.BulkEmailJob", b =>
-                {
-                    b.OwnsMany("Amolenk.Admitto.Core.Email.Domain.ValueObjects.BulkEmailRecipient", "Recipients", b1 =>
-                        {
-                            b1.Property<Guid>("BulkEmailJobId");
-
-                            b1.Property<int>("__synthesizedOrdinal")
-                                .ValueGeneratedOnAdd();
-
-                            b1.Property<string>("DisplayName")
-                                .IsRequired()
-                                .HasJsonPropertyName("display_name");
-
-                            b1.Property<string>("Email")
-                                .IsRequired()
-                                .HasJsonPropertyName("email");
-
-                            b1.Property<string>("LastError")
-                                .HasJsonPropertyName("last_error");
-
-                            b1.Property<string>("ParametersJson")
-                                .IsRequired()
-                                .HasJsonPropertyName("parameters");
-
-                            b1.Property<Guid>("RegistrationId")
-                                .HasJsonPropertyName("registration_id");
-
-                            b1.Property<string>("Status")
-                                .IsRequired()
-                                .HasJsonPropertyName("status");
-
-                            b1.HasKey("BulkEmailJobId", "__synthesizedOrdinal");
-
-                            b1.ToTable("bulk_email_jobs", "email");
-
-                            b1
-                                .ToJson("recipients")
-                                .HasColumnType("jsonb");
-
-                            b1.WithOwner()
-                                .HasForeignKey("BulkEmailJobId");
-                        });
-
-                    b.Navigation("Recipients");
-                });
-
-            modelBuilder.Entity("Amolenk.Admitto.Core.Email.Domain.Entities.EmailLog", b =>
-                {
-                    b.HasOne("Amolenk.Admitto.Core.Email.Domain.Entities.BulkEmailJob", null)
-                        .WithMany()
-                        .HasForeignKey("BulkEmailJobId")
-                        .OnDelete(DeleteBehavior.SetNull);
-                });
 #pragma warning restore 612, 618
         }
     }

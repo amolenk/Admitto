@@ -6,517 +6,10 @@
   },
   "servers": [
     {
-      "url": "http://localhost:59255/"
+      "url": "http://localhost:42931/"
     }
   ],
   "paths": {
-    "/admin/teams/{teamId}/events/{eventId}/bulk-emails/preview": {
-      "post": {
-        "tags": [
-          "Admin - Bulk Emails"
-        ],
-        "operationId": "PreviewBulkEmail",
-        "parameters": [
-          {
-            "name": "teamId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "eventId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PreviewBulkEmailHttpRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PreviewBulkEmailResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "Bearer": [ ]
-          }
-        ]
-      }
-    },
-    "/admin/teams/{teamId}/events/{eventId}/bulk-emails": {
-      "post": {
-        "tags": [
-          "Admin - Bulk Emails"
-        ],
-        "operationId": "CreateBulkEmail",
-        "parameters": [
-          {
-            "name": "teamId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "eventId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateBulkEmailHttpRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "201": {
-            "description": "Created",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CreateBulkEmailResponse"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "Bearer": [ ]
-          }
-        ]
-      },
-      "get": {
-        "tags": [
-          "Admin - Bulk Emails"
-        ],
-        "operationId": "GetBulkEmails",
-        "parameters": [
-          {
-            "name": "teamId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "eventId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "$ref": "#/components/schemas/BulkEmailListItemDto"
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "Bearer": [ ]
-          }
-        ]
-      }
-    },
-    "/admin/teams/{teamId}/events/{eventId}/bulk-emails/{bulkEmailJobId}": {
-      "get": {
-        "tags": [
-          "Admin - Bulk Emails"
-        ],
-        "operationId": "GetBulkEmail",
-        "parameters": [
-          {
-            "name": "teamId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "eventId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "bulkEmailJobId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BulkEmailJobDetailDto"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "Bearer": [ ]
-          }
-        ]
-      }
-    },
-    "/admin/teams/{teamId}/events/{eventId}/bulk-emails/{bulkEmailJobId}/cancel": {
-      "post": {
-        "tags": [
-          "Admin - Bulk Emails"
-        ],
-        "operationId": "CancelBulkEmail",
-        "parameters": [
-          {
-            "name": "teamId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "eventId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          {
-            "name": "bulkEmailJobId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        ],
-        "responses": {
-          "400": {
-            "description": "Bad Request",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "Unauthorized",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Forbidden",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "409": {
-            "description": "Conflict",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "Internal Server Error",
-            "content": {
-              "application/problem+json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProblemDetails"
-                }
-              }
-            }
-          },
-          "202": {
-            "description": "Accepted"
-          }
-        },
-        "security": [
-          {
-            "Bearer": [ ]
-          }
-        ]
-      }
-    },
     "/admin/teams/{teamId}/events/{eventId}/registrations/{registrationId}/emails": {
       "get": {
         "tags": [
@@ -6060,6 +5553,100 @@
         ]
       }
     },
+    "/api/events/{eventSlug}/registrations/{registrationId}/reconfirm": {
+      "post": {
+        "tags": [
+          "Partner"
+        ],
+        "operationId": "ReconfirmRegistration",
+        "parameters": [
+          {
+            "name": "eventSlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "registrationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "401": {
+            "description": "Unauthorized",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Conflict",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HttpValidationProblemDetails"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "ApiKey": [ ]
+          }
+        ]
+      }
+    },
     "/api/events/{eventSlug}/registrations/{registrationId}/ticket-email/resend": {
       "post": {
         "tags": [
@@ -6757,6 +6344,58 @@
         }
       }
     },
+    "/e/{eventSlug}/reconfirm/{registrationId}": {
+      "get": {
+        "tags": [
+          "Public"
+        ],
+        "operationId": "RedirectToReconfirm",
+        "parameters": [
+          {
+            "name": "eventSlug",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "registrationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "404": {
+            "description": "Not Found"
+          },
+          "429": {
+            "description": "Too Many Requests",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProblemDetails"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/e/{eventSlug}/qr-code/{registrationId}": {
       "get": {
         "tags": [
@@ -6974,7 +6613,7 @@
             "format": "int32",
             "default": 8
           },
-          "maxReconfirmAttempts": {
+          "maxReconfirmationEmails": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
@@ -7136,8 +6775,7 @@
           "subject",
           "emailType",
           "status",
-          "sentAt",
-          "bulkEmailJobId"
+          "sentAt"
         ],
         "type": "object",
         "properties": {
@@ -7160,67 +6798,6 @@
               "string"
             ],
             "format": "date-time"
-          },
-          "bulkEmailJobId": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "uuid"
-          }
-        }
-      },
-      "AttendeeFilterHttpDto": {
-        "type": "object",
-        "properties": {
-          "ticketTypeIds": {
-            "type": [
-              "null",
-              "array"
-            ],
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          "registrationStatus": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/RegistrationStatus"
-              }
-            ]
-          },
-          "hasReconfirmed": {
-            "type": [
-              "null",
-              "boolean"
-            ]
-          },
-          "registeredAfter": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          },
-          "registeredBefore": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          },
-          "additionalDetailEquals": {
-            "type": [
-              "null",
-              "object"
-            ],
-            "additionalProperties": {
-              "type": "string"
-            }
           }
         }
       },
@@ -7290,401 +6867,6 @@
           }
         }
       },
-      "BulkEmailAttendeeFilter": {
-        "type": "object",
-        "properties": {
-          "ticketTypeIds": {
-            "type": [
-              "null",
-              "array"
-            ],
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            }
-          },
-          "registrationStatus": {
-            "oneOf": [
-              {
-                "type": "null"
-              },
-              {
-                "$ref": "#/components/schemas/RegistrationStatus"
-              }
-            ]
-          },
-          "hasReconfirmed": {
-            "type": [
-              "null",
-              "boolean"
-            ]
-          },
-          "registeredAfter": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          },
-          "registeredBefore": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          },
-          "additionalDetailEquals": {
-            "type": [
-              "null",
-              "object"
-            ],
-            "additionalProperties": {
-              "type": "string"
-            }
-          },
-          "registrationIds": {
-            "type": [
-              "null",
-              "array"
-            ],
-            "items": {
-              "type": "string",
-              "format": "uuid"
-            }
-          }
-        }
-      },
-      "BulkEmailJobDetailDto": {
-        "required": [
-          "id",
-          "teamId",
-          "ticketedEventId",
-          "emailType",
-          "subject",
-          "textBody",
-          "htmlBody",
-          "attendeeFilter",
-          "status",
-          "recipientCount",
-          "sentCount",
-          "failedCount",
-          "cancelledCount",
-          "lastError",
-          "isSystemTriggered",
-          "triggeredBy",
-          "createdAt",
-          "startedAt",
-          "completedAt",
-          "cancellationRequestedAt",
-          "cancelledAt",
-          "version",
-          "recipients"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "teamId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "ticketedEventId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "emailType": {
-            "type": "string"
-          },
-          "subject": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "textBody": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "htmlBody": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "attendeeFilter": {
-            "$ref": "#/components/schemas/BulkEmailAttendeeFilter"
-          },
-          "status": {
-            "$ref": "#/components/schemas/BulkEmailJobStatus"
-          },
-          "recipientCount": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "sentCount": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "failedCount": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "cancelledCount": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "lastError": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "isSystemTriggered": {
-            "type": "boolean"
-          },
-          "triggeredBy": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "startedAt": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          },
-          "completedAt": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          },
-          "cancellationRequestedAt": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          },
-          "cancelledAt": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          },
-          "version": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "uint32"
-          },
-          "recipients": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/BulkEmailRecipientDto"
-            }
-          }
-        }
-      },
-      "BulkEmailJobStatus": {
-        "enum": [
-          "pending",
-          "resolving",
-          "sending",
-          "completed",
-          "partiallyFailed",
-          "failed",
-          "cancelled"
-        ]
-      },
-      "BulkEmailListItemDto": {
-        "required": [
-          "id",
-          "emailType",
-          "status",
-          "recipientCount",
-          "sentCount",
-          "failedCount",
-          "cancelledCount",
-          "isSystemTriggered",
-          "triggeredBy",
-          "createdAt",
-          "startedAt",
-          "completedAt",
-          "cancellationRequestedAt",
-          "cancelledAt"
-        ],
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "emailType": {
-            "type": "string"
-          },
-          "status": {
-            "$ref": "#/components/schemas/BulkEmailJobStatus"
-          },
-          "recipientCount": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "sentCount": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "failedCount": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "cancelledCount": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "isSystemTriggered": {
-            "type": "boolean"
-          },
-          "triggeredBy": {
-            "type": [
-              "null",
-              "string"
-            ]
-          },
-          "createdAt": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "startedAt": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          },
-          "completedAt": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          },
-          "cancellationRequestedAt": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          },
-          "cancelledAt": {
-            "type": [
-              "null",
-              "string"
-            ],
-            "format": "date-time"
-          }
-        }
-      },
-      "BulkEmailRecipientDto": {
-        "required": [
-          "email",
-          "displayName",
-          "registrationId",
-          "status",
-          "lastError"
-        ],
-        "type": "object",
-        "properties": {
-          "email": {
-            "type": "string"
-          },
-          "displayName": {
-            "type": "string"
-          },
-          "registrationId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "status": {
-            "$ref": "#/components/schemas/BulkEmailRecipientStatus"
-          },
-          "lastError": {
-            "type": [
-              "null",
-              "string"
-            ]
-          }
-        }
-      },
-      "BulkEmailRecipientPreviewDto": {
-        "required": [
-          "email",
-          "displayName"
-        ],
-        "type": "object",
-        "properties": {
-          "email": {
-            "type": "string"
-          },
-          "displayName": {
-            "type": "string"
-          }
-        }
-      },
-      "BulkEmailRecipientStatus": {
-        "enum": [
-          "pending",
-          "sent",
-          "failed",
-          "cancelled"
-        ]
-      },
       "CancelRegistrationHttpRequest": {
         "required": [
           "reason"
@@ -7745,15 +6927,6 @@
             ],
             "format": "date-time"
           },
-          "cadenceHours": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "null",
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
           "minEmailIntervalHours": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
@@ -7762,6 +6935,20 @@
               "string"
             ],
             "format": "int32"
+          },
+          "quietHoursStart": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "time"
+          },
+          "quietHoursEnd": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "time"
           },
           "expectedVersion": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
@@ -7989,45 +7176,6 @@
           },
           "key": {
             "type": "string"
-          }
-        }
-      },
-      "CreateBulkEmailHttpRequest": {
-        "required": [
-          "emailType",
-          "subject",
-          "textBody",
-          "htmlBody",
-          "attendeeFilter"
-        ],
-        "type": "object",
-        "properties": {
-          "emailType": {
-            "type": "string"
-          },
-          "subject": {
-            "type": "string"
-          },
-          "textBody": {
-            "type": "string"
-          },
-          "htmlBody": {
-            "type": "string"
-          },
-          "attendeeFilter": {
-            "$ref": "#/components/schemas/AttendeeFilterHttpDto"
-          }
-        }
-      },
-      "CreateBulkEmailResponse": {
-        "required": [
-          "bulkEmailJobId"
-        ],
-        "type": "object",
-        "properties": {
-          "bulkEmailJobId": {
-            "type": "string",
-            "format": "uuid"
           }
         }
       },
@@ -8437,40 +7585,6 @@
           }
         }
       },
-      "PreviewBulkEmailHttpRequest": {
-        "required": [
-          "attendeeFilter"
-        ],
-        "type": "object",
-        "properties": {
-          "attendeeFilter": {
-            "$ref": "#/components/schemas/AttendeeFilterHttpDto"
-          }
-        }
-      },
-      "PreviewBulkEmailResponse": {
-        "required": [
-          "count",
-          "sample"
-        ],
-        "type": "object",
-        "properties": {
-          "count": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
-          "sample": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/BulkEmailRecipientPreviewDto"
-            }
-          }
-        }
-      },
       "ProblemDetails": {
         "type": "object",
         "properties": {
@@ -8573,8 +7687,9 @@
         "required": [
           "opensAt",
           "closesAt",
-          "cadenceHours",
-          "minEmailIntervalHours"
+          "minEmailIntervalHours",
+          "quietHoursStart",
+          "quietHoursEnd"
         ],
         "type": "object",
         "properties": {
@@ -8586,14 +7701,6 @@
             "type": "string",
             "format": "date-time"
           },
-          "cadenceHours": {
-            "pattern": "^-?(?:0|[1-9]\\d*)$",
-            "type": [
-              "integer",
-              "string"
-            ],
-            "format": "int32"
-          },
           "minEmailIntervalHours": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
@@ -8601,6 +7708,20 @@
               "string"
             ],
             "format": "int32"
+          },
+          "quietHoursStart": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "time"
+          },
+          "quietHoursEnd": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "time"
           }
         }
       },
@@ -8847,6 +7968,9 @@
           "tickets",
           "additionalDetails",
           "createdAt",
+          "registrationCycleId",
+          "registrationVersion",
+          "ticketCatalogVersion",
           "status",
           "hasReconfirmed",
           "reconfirmedAt"
@@ -8881,6 +8005,26 @@
           "createdAt": {
             "type": "string",
             "format": "date-time"
+          },
+          "registrationCycleId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "registrationVersion": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "uint32"
+          },
+          "ticketCatalogVersion": {
+            "pattern": "^-?(?:0|[1-9]\\d*)$",
+            "type": [
+              "integer",
+              "string"
+            ],
+            "format": "uint32"
           },
           "status": {
             "$ref": "#/components/schemas/RegistrationStatus"
@@ -8924,8 +8068,7 @@
       "RegistrationStatus": {
         "enum": [
           "registered",
-          "cancelled",
-          null
+          "cancelled"
         ]
       },
       "RenameBadgeTypeHttpRequest": {
@@ -9263,7 +8406,7 @@
           "waitlistEnabled",
           "waitlistMode",
           "claimWindowHours",
-          "maxReconfirmAttempts"
+          "maxReconfirmationEmails"
         ],
         "type": "object",
         "properties": {
@@ -9314,7 +8457,7 @@
             ],
             "format": "int32"
           },
-          "maxReconfirmAttempts": {
+          "maxReconfirmationEmails": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
@@ -9534,7 +8677,7 @@
             ],
             "format": "int32"
           },
-          "maxReconfirmAttempts": {
+          "maxReconfirmationEmails": {
             "pattern": "^-?(?:0|[1-9]\\d*)$",
             "type": [
               "null",
@@ -9697,9 +8840,6 @@
     }
   },
   "tags": [
-    {
-      "name": "Admin - Bulk Emails"
-    },
     {
       "name": "Admin - Registrations"
     },

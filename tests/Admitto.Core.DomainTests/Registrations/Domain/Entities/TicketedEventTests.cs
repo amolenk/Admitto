@@ -178,7 +178,7 @@ public sealed class TicketedEventTests
     {
         var sut = NewEvent();
         sut.ConfigureReconfirmPolicy(TicketedEventReconfirmPolicy.Create(
-            DefaultStart.AddDays(-60), DefaultStart.AddSeconds(-1), TimeSpan.FromDays(2), TimeSpan.FromHours(24)));
+            DefaultStart.AddDays(-60), DefaultStart.AddSeconds(-1), TimeSpan.FromHours(24)));
 
         var act = () => sut.UpdateDetails(
             DefaultName, DefaultWebsite, DefaultBaseUrl, DefaultStart.AddDays(-1), DefaultEnd);
@@ -332,7 +332,7 @@ public sealed class TicketedEventTests
     {
         var sut = NewEvent();
         var policy = TicketedEventReconfirmPolicy.Create(
-            DefaultStart.AddDays(-60), DefaultStart.AddSeconds(-1), TimeSpan.FromDays(2), TimeSpan.FromHours(24));
+            DefaultStart.AddDays(-60), DefaultStart.AddSeconds(-1), TimeSpan.FromHours(24));
 
         sut.ConfigureReconfirmPolicy(policy);
 
@@ -347,7 +347,7 @@ public sealed class TicketedEventTests
     {
         var sut = NewEvent();
         var policy = TicketedEventReconfirmPolicy.Create(
-            DefaultStart.AddDays(-60), DefaultStart, TimeSpan.FromDays(2), TimeSpan.FromHours(24));
+            DefaultStart.AddDays(-60), DefaultStart, TimeSpan.FromHours(24));
 
         var act = () => sut.ConfigureReconfirmPolicy(policy);
 
@@ -363,7 +363,7 @@ public sealed class TicketedEventTests
     {
         var sut = NewEvent();
         var policy = TicketedEventReconfirmPolicy.Create(
-            DefaultStart.AddDays(-60), DefaultStart.AddSeconds(1), TimeSpan.FromDays(2), TimeSpan.FromHours(24));
+            DefaultStart.AddDays(-60), DefaultStart.AddSeconds(1), TimeSpan.FromHours(24));
 
         var act = () => sut.ConfigureReconfirmPolicy(policy);
 
@@ -684,24 +684,69 @@ public sealed class TicketedEventTests
         var now = DateTimeOffset.UtcNow;
 
         var act = () => TicketedEventReconfirmPolicy.Create(
-            now.AddDays(2), now, TimeSpan.FromDays(1), TimeSpan.FromHours(24));
+            now.AddDays(2), now, TimeSpan.FromHours(24));
 
         var ex = Should.Throw<BusinessRuleViolationException>(act);
         ex.Error.ShouldMatch(TicketedEventReconfirmPolicy.Errors.WindowCloseBeforeOpen);
     }
 
-    // When a reconfirm policy is created with a reminder cadence below the one-hour minimum
-    // Then it throws a cadence-below-minimum business rule violation
+    // When a reconfirm policy is created with a minimum interval below one hour
+    // Then it throws a minimum-interval-below-minimum business rule violation
     [TestMethod]
-    public void ReconfirmPolicy_CadenceBelowOneHour_Throws()
+    public void ReconfirmPolicy_MinEmailIntervalBelowOneHour_Throws()
     {
         var now = DateTimeOffset.UtcNow;
 
         var act = () => TicketedEventReconfirmPolicy.Create(
-            now, now.AddDays(10), TimeSpan.FromMinutes(59), TimeSpan.FromHours(24));
+            now, now.AddDays(10), TimeSpan.FromMinutes(59));
 
         var ex = Should.Throw<BusinessRuleViolationException>(act);
-        ex.Error.ShouldMatch(TicketedEventReconfirmPolicy.Errors.CadenceBelowMinimum);
+        ex.Error.ShouldMatch(TicketedEventReconfirmPolicy.Errors.MinEmailIntervalBelowMinimum);
+    }
+
+    // Given a valid reconfirmation window
+    // When the minimum email interval is fractional
+    // Then it throws a whole-hours business rule violation
+    [TestMethod]
+    public void ReconfirmPolicy_FractionalMinEmailInterval_Throws()
+    {
+        var now = DateTimeOffset.UtcNow;
+
+        var act = () => TicketedEventReconfirmPolicy.Create(
+            now, now.AddDays(10), TimeSpan.FromHours(1.5));
+
+        var ex = Should.Throw<BusinessRuleViolationException>(act);
+        ex.Error.ShouldMatch(TicketedEventReconfirmPolicy.Errors.MinEmailIntervalMustBeWholeHours);
+    }
+
+    // Given a valid reconfirmation window and interval
+    // When quiet-hours start and end are equal
+    // Then it throws a quiet-hours business rule violation
+    [TestMethod]
+    public void ReconfirmPolicy_EqualQuietHours_Throws()
+    {
+        var now = DateTimeOffset.UtcNow;
+
+        var act = () => TicketedEventReconfirmPolicy.Create(
+            now, now.AddDays(10), TimeSpan.FromHours(1), new TimeOnly(22), new TimeOnly(22));
+
+        var ex = Should.Throw<BusinessRuleViolationException>(act);
+        ex.Error.ShouldMatch(TicketedEventReconfirmPolicy.Errors.QuietHoursCannotBeEqual);
+    }
+
+    // Given a valid reconfirmation window and interval
+    // When only one quiet-hours boundary is supplied
+    // Then it throws a paired-quiet-hours business rule violation
+    [TestMethod]
+    public void ReconfirmPolicy_OneSidedQuietHours_Throws()
+    {
+        var now = DateTimeOffset.UtcNow;
+
+        var act = () => TicketedEventReconfirmPolicy.Create(
+            now, now.AddDays(10), TimeSpan.FromHours(1), new TimeOnly(22), null);
+
+        var ex = Should.Throw<BusinessRuleViolationException>(act);
+        ex.Error.ShouldMatch(TicketedEventReconfirmPolicy.Errors.QuietHoursMustBePaired);
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
@@ -721,6 +766,6 @@ public sealed class TicketedEventTests
     {
         var now = DateTimeOffset.UtcNow;
         return TicketedEventReconfirmPolicy.Create(
-            now.AddDays(-10), now.AddDays(-1), TimeSpan.FromDays(2), TimeSpan.FromHours(24));
+            now.AddDays(-10), now.AddDays(-1), TimeSpan.FromHours(24));
     }
 }

@@ -45,11 +45,16 @@ internal sealed class EventEmailContextViewEntityConfiguration
             .HasColumnName("reconfirm_closes_at")
             .HasColumnType("timestamptz");
 
-        builder.Property(e => e.ReconfirmCadenceHours)
-            .HasColumnName("reconfirm_cadence_hours");
-
         builder.Property(e => e.ReconfirmMinEmailIntervalHours)
             .HasColumnName("reconfirm_min_email_interval_hours");
+
+        builder.Property(e => e.ReconfirmQuietHoursStart)
+            .HasColumnName("reconfirm_quiet_hours_start")
+            .HasColumnType("time");
+
+        builder.Property(e => e.ReconfirmQuietHoursEnd)
+            .HasColumnName("reconfirm_quiet_hours_end")
+            .HasColumnType("time");
 
         builder.Property(e => e.SelfServiceTicketTypeCount)
             .HasColumnName("self_service_ticket_type_count");

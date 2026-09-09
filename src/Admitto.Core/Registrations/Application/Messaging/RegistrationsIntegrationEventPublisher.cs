@@ -129,8 +129,9 @@ internal sealed class RegistrationsIntegrationEventPublisher(
                 : new TicketedEventReconfirmPolicySnapshot(
                     domainEvent.Policy.OpensAt,
                     domainEvent.Policy.ClosesAt,
-                    (int)domainEvent.Policy.Cadence.TotalHours,
-                    (int)domainEvent.Policy.MinEmailInterval.TotalHours)));
+                    (int)domainEvent.Policy.MinEmailInterval.TotalHours,
+                    domainEvent.Policy.QuietHoursStart,
+                    domainEvent.Policy.QuietHoursEnd)));
 
         return ValueTask.CompletedTask;
     }

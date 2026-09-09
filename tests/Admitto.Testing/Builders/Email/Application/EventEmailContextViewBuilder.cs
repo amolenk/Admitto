@@ -6,8 +6,8 @@ namespace Amolenk.Admitto.Testing.Builders.Email.Application;
 
 /// <summary>
 /// Builds <see cref="EventEmailContextView"/> projection rows, the Email-owned
-/// scheduling oracle for reconfirm triggers. Defaults produce a row with an
-/// active reconfirm policy whose window is open around <see cref="At"/>.
+/// hourly-evaluation projection. Defaults produce a row with an active
+/// reconfirm policy whose window is open around <see cref="At"/>.
 /// </summary>
 public sealed class EventEmailContextViewBuilder
 {
@@ -23,8 +23,9 @@ public sealed class EventEmailContextViewBuilder
     private bool _hasPolicy = true;
     private DateTimeOffset? _opensAt;
     private DateTimeOffset? _closesAt;
-    private int _cadenceHours = 24;
     private int _minEmailIntervalHours = 24;
+    private TimeOnly? _quietHoursStart;
+    private TimeOnly? _quietHoursEnd;
 
     public EventEmailContextViewBuilder ForTeam(TeamId teamId) { _teamId = teamId; return this; }
 
@@ -34,15 +35,16 @@ public sealed class EventEmailContextViewBuilder
 
     public EventEmailContextViewBuilder WithTimeZone(string timeZone) { _timeZone = timeZone; return this; }
 
-    public EventEmailContextViewBuilder WithCadenceHours(int cadenceHours)
-    {
-        _cadenceHours = cadenceHours;
-        return this;
-    }
-
     public EventEmailContextViewBuilder WithMinEmailIntervalHours(int minEmailIntervalHours)
     {
         _minEmailIntervalHours = minEmailIntervalHours;
+        return this;
+    }
+
+    public EventEmailContextViewBuilder WithQuietHours(TimeOnly start, TimeOnly end)
+    {
+        _quietHoursStart = start;
+        _quietHoursEnd = end;
         return this;
     }
 
@@ -85,8 +87,9 @@ public sealed class EventEmailContextViewBuilder
             ? new TicketedEventReconfirmPolicySnapshot(
                 _opensAt ?? _now.AddHours(-1),
                 _closesAt ?? _now.AddHours(1),
-                _cadenceHours,
-                _minEmailIntervalHours)
+                _minEmailIntervalHours,
+                _quietHoursStart,
+                _quietHoursEnd)
             : null;
 
         view.UpdateEventContext(

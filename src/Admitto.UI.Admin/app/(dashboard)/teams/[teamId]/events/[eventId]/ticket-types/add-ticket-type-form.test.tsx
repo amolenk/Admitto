@@ -61,10 +61,33 @@ describe("AddTicketTypeForm", () => {
             maxCapacity: null,
             waitlistEnabled: false,
             claimWindowHours: undefined,
-            maxReconfirmAttempts: null,
+            maxReconfirmationEmails: null,
             timeSlots: [],
         });
         expect(post).toHaveBeenCalledWith(ENDPOINT, expect.anything());
+    });
+
+    // Given the reconfirmation limit is optional
+    // When the ticket type form renders
+    // Then the organizer sees the cycle-scoped delivered-email terminology
+    it("labels the reconfirmation email limit by registration cycle", () => {
+        renderForm();
+
+        expect(screen.getByLabelText("Maximum reconfirmation emails (optional)")).toBeInTheDocument();
+        expect(screen.getByText("Maximum delivered emails for this registration cycle; leave blank for unlimited.")).toBeInTheDocument();
+    });
+
+    // Given an optional reconfirmation email limit
+    // When the organizer enters a positive whole number and submits
+    // Then the renamed payload property is sent
+    it("sends the maximum reconfirmation emails payload", async () => {
+        const { user } = renderForm();
+
+        await user.type(screen.getByPlaceholderText("Early Bird"), "General Admission");
+        await user.type(screen.getByLabelText("Maximum reconfirmation emails (optional)"), "3");
+        await user.click(screen.getByRole("button", { name: "Add ticket type" }));
+
+        expect(await submittedPayload()).toMatchObject({ maxReconfirmationEmails: 3 });
     });
 
     // Given the self-service toggle defaults on

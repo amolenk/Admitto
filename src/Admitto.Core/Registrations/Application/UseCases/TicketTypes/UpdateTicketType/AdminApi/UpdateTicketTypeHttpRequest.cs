@@ -4,7 +4,7 @@ namespace Amolenk.Admitto.Core.Registrations.Application.UseCases.TicketTypes.Up
 
 public sealed class UpdateTicketTypeHttpRequest
 {
-    private int? _maxReconfirmAttempts;
+    private int? _maxReconfirmationEmails;
 
     public string? Name { get; init; }
     public int? MaxCapacity { get; init; }
@@ -12,18 +12,18 @@ public sealed class UpdateTicketTypeHttpRequest
     public bool? WaitlistEnabled { get; init; }
     public int? ClaimWindowHours { get; init; }
 
-    public int? MaxReconfirmAttempts
+    public int? MaxReconfirmationEmails
     {
-        get => _maxReconfirmAttempts;
+        get => _maxReconfirmationEmails;
         init
         {
-            _maxReconfirmAttempts = value;
-            MaxReconfirmAttemptsSpecified = true;
+            _maxReconfirmationEmails = value;
+            MaxReconfirmationEmailsSpecified = true;
         }
     }
 
     [JsonIgnore]
-    internal bool MaxReconfirmAttemptsSpecified { get; private set; }
+    internal bool MaxReconfirmationEmailsSpecified { get; private set; }
 
     internal UpdateTicketTypeCommand ToCommand(Guid eventId, Guid teamId, Guid ticketTypeId) => new(
         eventId,
@@ -34,6 +34,6 @@ public sealed class UpdateTicketTypeHttpRequest
         SelfServiceEnabled,
         WaitlistEnabled,
         ClaimWindowHours,
-        MaxReconfirmAttempts,
-        MaxReconfirmAttemptsSpecified);
+        MaxReconfirmationEmails,
+        MaxReconfirmationEmailsSpecified);
 }

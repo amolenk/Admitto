@@ -65,14 +65,6 @@ internal sealed class EmailLogEntityConfiguration : IEntityTypeConfiguration<Ema
             .HasColumnName("delivery_attempt_count")
             .IsRequired();
 
-        builder.Property(e => e.BulkEmailJobId)
-            .HasColumnName("bulk_email_job_id");
-
-        builder.HasOne<BulkEmailJob>()
-            .WithMany()
-            .HasForeignKey(e => e.BulkEmailJobId)
-            .OnDelete(DeleteBehavior.SetNull);
-
         builder.HasIndex(e => new { e.TicketedEventId, e.Recipient, e.IdempotencyKey })
             .HasDatabaseName("IX_email_log_event_recipient_idempotency")
             .HasFilter("ticketed_event_id IS NOT NULL")
@@ -89,6 +81,9 @@ internal sealed class EmailLogEntityConfiguration : IEntityTypeConfiguration<Ema
 
         builder.Property(e => e.RegistrationId)
             .HasColumnName("registration_id");
+
+        builder.Property(e => e.RegistrationCycleId)
+            .HasColumnName("registration_cycle_id");
 
         builder.HasIndex(e => new { e.TicketedEventId, e.RegistrationId })
             .HasDatabaseName("IX_email_log_event_registration");

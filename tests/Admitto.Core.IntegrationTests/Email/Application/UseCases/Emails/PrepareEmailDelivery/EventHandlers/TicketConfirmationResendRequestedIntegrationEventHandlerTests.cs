@@ -1,0 +1,37 @@
+using Amolenk.Admitto.Core.Email.Application.Composing;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.PrepareEmailDelivery;
+using Amolenk.Admitto.Core.Shared.Application.Messaging;
+using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.PrepareEmailDelivery.EventHandlers;
+using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
+using NSubstitute;
+
+namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.UseCases.Emails.PrepareEmailDelivery.EventHandlers;
+
+[TestClass]
+public sealed class TicketConfirmationResendRequestedIntegrationEventHandlerTests
+{
+    // Given an attendee has requested another ticket confirmation
+    // When the resend event is processed
+    // Then the attendee receives another ticket confirmation email
+    [TestMethod]
+    public async Task HandleAsync_ResendRequested_DelegatesRecipientAndIntent()
+    {
+        var fixture = TicketConfirmationResendRequestedIntegrationEventHandlerFixture.Create();
+
+        await new TicketConfirmationResendRequestedIntegrationEventHandler(fixture.Composer, fixture.DeliveryHandler)
+            .HandleAsync(fixture.IntegrationEvent, CancellationToken.None);
+
+        var arguments = fixture.Composer.ReceivedCalls().Single().GetArguments();
+        var intent = (TicketConfirmationIntent)arguments[0]!;
+        intent.FirstName.ShouldBe("Alice");
+        intent.TicketTypes.ShouldBe(["General Admission"]);
+        intent.RegistrationId.Value.ShouldBe(TicketConfirmationResendRequestedIntegrationEventHandlerFixture.RegistrationGuid);
+
+        var delivery = fixture.DeliveryHandler.ReceivedDelivery();
+        delivery.RecipientAddress.ShouldBe("alice@example.com");
+        delivery.IdempotencyKey.ShouldBe(
+            $"ticket-confirmation-resend:{fixture.IntegrationEvent.RegistrationId}:{fixture.ResendRequestId}");
+        delivery.EmailType.ShouldBe(BuiltInEmailTemplateNames.TicketConfirmation);
+        delivery.RegistrationId.ShouldBe(TicketConfirmationResendRequestedIntegrationEventHandlerFixture.RegistrationGuid);
+    }
+}

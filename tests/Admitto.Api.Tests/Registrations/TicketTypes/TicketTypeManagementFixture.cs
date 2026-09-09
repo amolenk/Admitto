@@ -10,6 +10,7 @@ internal sealed class TicketTypeManagementFixture
 {
     public static readonly TicketTypeId ExistingTicketTypeId = TicketTypeId.From(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
     private bool _seedSoldOutTicketType;
+    private bool _seedExistingMaxReconfirmationEmails;
 
     public Guid TeamId { get; private set; }
     public Guid EventId { get; private set; }
@@ -21,6 +22,7 @@ internal sealed class TicketTypeManagementFixture
 
     public static TicketTypeManagementFixture Active() => new();
     public static TicketTypeManagementFixture WithSoldOutTicketType() => new() { _seedSoldOutTicketType = true };
+    public static TicketTypeManagementFixture WithExistingMaxReconfirmationEmails() => new() { _seedExistingMaxReconfirmationEmails = true };
 
     public async ValueTask SetupAsync(EndToEndTestEnvironment environment)
     {
@@ -42,7 +44,14 @@ internal sealed class TicketTypeManagementFixture
             TimeZoneId.From("UTC"));
 
         var catalog = TicketCatalog.Create(eventId, team.Id);
-        catalog.AddTicketType(ExistingTicketTypeId, TicketTypeName.From("Workshop"), [], _seedSoldOutTicketType ? 1 : 100);
+        catalog.AddTicketType(
+            ExistingTicketTypeId,
+            TicketTypeName.From("Workshop"),
+            [],
+            _seedSoldOutTicketType ? 1 : 100,
+            maxReconfirmationEmails: _seedExistingMaxReconfirmationEmails
+                ? ReconfirmationEmailLimit.From(3)
+                : null);
 
         if (_seedSoldOutTicketType)
         {

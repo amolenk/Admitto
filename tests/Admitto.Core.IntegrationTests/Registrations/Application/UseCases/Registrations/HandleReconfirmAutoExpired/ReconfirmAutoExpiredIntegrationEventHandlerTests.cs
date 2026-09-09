@@ -1,7 +1,10 @@
 using Amolenk.Admitto.Core.Email.Contracts.IntegrationEvents;
-using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.HandleReconfirmAutoExpired.EventHandlers;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.CancelUnreconfirmedRegistrations;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.CancelUnreconfirmedRegistrations.EventHandlers;
 using Amolenk.Admitto.Core.Registrations.Contracts;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Shared.Infrastructure.Persistence.Inbox;
+using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 
 namespace Amolenk.Admitto.Core.IntegrationTests.Registrations.Application.UseCases.Registrations.HandleReconfirmAutoExpired;
@@ -15,13 +18,18 @@ public sealed class ReconfirmAutoExpiredIntegrationEventHandlerTests(TestContext
     [TestMethod]
     public async ValueTask HandleAsync_RegisteredUnreconfirmedRegistration_CancelsRegistration()
     {
+        // DatabaseTestContext intentionally omits DomainEventsInterceptor; this handler seam
+        // proves the cancellation transition, while dedicated waitlist and email handler tests
+        // cover the downstream release/notification paths.
         var fixture = HandleReconfirmAutoExpiredFixture.ActiveRegistration();
         await fixture.SetupAsync(Environment);
         await ClearOutboxAsync();
 
-        var sut = new ReconfirmAutoExpiredIntegrationEventHandler(Environment.RegistrationsDatabase.Context);
+        var sut = NewSut();
         await sut.HandleAsync(
-            new ReconfirmAutoExpiredIntegrationEvent(fixture.TeamId.Value, fixture.TicketedEventId.Value, [fixture.RegistrationId.Value]),
+            new ReconfirmAutoExpiredIntegrationEvent(fixture.TeamId.Value, fixture.TicketedEventId.Value,
+                [],
+                [Reference(fixture)]),
             testContext.CancellationToken);
         await Environment.RegistrationsDatabase.Context.SaveChangesAsync(testContext.CancellationToken);
 
@@ -43,9 +51,11 @@ public sealed class ReconfirmAutoExpiredIntegrationEventHandlerTests(TestContext
         await fixture.SetupAsync(Environment);
         await ClearOutboxAsync();
 
-        var sut = new ReconfirmAutoExpiredIntegrationEventHandler(Environment.RegistrationsDatabase.Context);
+        var sut = NewSut();
         await sut.HandleAsync(
-            new ReconfirmAutoExpiredIntegrationEvent(fixture.TeamId.Value, fixture.TicketedEventId.Value, [fixture.RegistrationId.Value]),
+            new ReconfirmAutoExpiredIntegrationEvent(fixture.TeamId.Value, fixture.TicketedEventId.Value,
+                [],
+                [Reference(fixture)]),
             testContext.CancellationToken);
         await Environment.RegistrationsDatabase.Context.SaveChangesAsync(testContext.CancellationToken);
 
@@ -68,9 +78,11 @@ public sealed class ReconfirmAutoExpiredIntegrationEventHandlerTests(TestContext
         await fixture.SetupAsync(Environment);
         await ClearOutboxAsync();
 
-        var sut = new ReconfirmAutoExpiredIntegrationEventHandler(Environment.RegistrationsDatabase.Context);
+        var sut = NewSut();
         await sut.HandleAsync(
-            new ReconfirmAutoExpiredIntegrationEvent(fixture.TeamId.Value, fixture.TicketedEventId.Value, [fixture.RegistrationId.Value]),
+            new ReconfirmAutoExpiredIntegrationEvent(fixture.TeamId.Value, fixture.TicketedEventId.Value,
+                [],
+                [Reference(fixture)]),
             testContext.CancellationToken);
         await Environment.RegistrationsDatabase.Context.SaveChangesAsync(testContext.CancellationToken);
 
@@ -92,12 +104,14 @@ public sealed class ReconfirmAutoExpiredIntegrationEventHandlerTests(TestContext
         await ClearOutboxAsync();
 
         var integrationEventId = Guid.NewGuid();
-        var integrationEvent = new ReconfirmAutoExpiredIntegrationEvent(fixture.TeamId.Value, fixture.TicketedEventId.Value, [fixture.RegistrationId.Value])
+        var integrationEvent = new ReconfirmAutoExpiredIntegrationEvent(fixture.TeamId.Value, fixture.TicketedEventId.Value,
+            [],
+            [Reference(fixture)])
         {
             IntegrationEventId = integrationEventId
         };
 
-        var sut = new ReconfirmAutoExpiredIntegrationEventHandler(Environment.RegistrationsDatabase.Context);
+        var sut = NewSut();
         await sut.HandleAsync(integrationEvent, testContext.CancellationToken);
         await Environment.RegistrationsDatabase.Context.SaveChangesAsync(testContext.CancellationToken);
 
@@ -107,7 +121,7 @@ public sealed class ReconfirmAutoExpiredIntegrationEventHandlerTests(TestContext
             registration.Status.ShouldBe(RegistrationStatus.Registered);
 
             var processedMessage = await db.ProcessedMessages.SingleAsync(testContext.CancellationToken);
-            processedMessage.MessageKey.ShouldBe(integrationEventId.ToString("N"));
+            processedMessage.MessageKey.ShouldBe(ProcessedMessageKey(integrationEventId));
         });
     }
 
@@ -122,18 +136,20 @@ public sealed class ReconfirmAutoExpiredIntegrationEventHandlerTests(TestContext
         await ClearOutboxAsync();
 
         var integrationEventId = Guid.NewGuid();
-        var integrationEvent = new ReconfirmAutoExpiredIntegrationEvent(fixture.TeamId.Value, fixture.TicketedEventId.Value, [fixture.RegistrationId.Value])
+        var integrationEvent = new ReconfirmAutoExpiredIntegrationEvent(fixture.TeamId.Value, fixture.TicketedEventId.Value,
+            [],
+            [Reference(fixture)])
         {
             IntegrationEventId = integrationEventId
         };
 
-        var sut = new ReconfirmAutoExpiredIntegrationEventHandler(Environment.RegistrationsDatabase.Context);
+        var sut = NewSut();
         await sut.HandleAsync(integrationEvent, testContext.CancellationToken);
         await Environment.RegistrationsDatabase.Context.SaveChangesAsync(testContext.CancellationToken);
 
         Environment.RegistrationsDatabase.Context.ChangeTracker.Clear();
 
-        sut = new ReconfirmAutoExpiredIntegrationEventHandler(Environment.RegistrationsDatabase.Context);
+        sut = NewSut();
         await sut.HandleAsync(integrationEvent, testContext.CancellationToken);
         await Environment.RegistrationsDatabase.Context.SaveChangesAsync(testContext.CancellationToken);
 
@@ -144,9 +160,210 @@ public sealed class ReconfirmAutoExpiredIntegrationEventHandlerTests(TestContext
 
             var processedMessages = await db.ProcessedMessages.ToListAsync(testContext.CancellationToken);
             processedMessages.Count.ShouldBe(1);
-            processedMessages[0].MessageKey.ShouldBe(integrationEventId.ToString("N"));
+            processedMessages[0].MessageKey.ShouldBe(ProcessedMessageKey(integrationEventId));
         });
     }
+
+    // Given a maxed attendee whose registration version advanced after evaluation
+    // When the reconfirm-auto-expired event is handled
+    // Then the current registration is still cancelled safely
+    [TestMethod]
+    public async ValueTask HandleAsync_VersionAdvancedWithoutTicketChange_CancelsCurrentRegistration()
+    {
+        var fixture = HandleReconfirmAutoExpiredFixture.ActiveRegistration();
+        await fixture.SetupAsync(Environment);
+        await ClearOutboxAsync();
+
+        await Environment.RegistrationsDatabase.SeedAsync(db =>
+        {
+            var registration = db.Registrations.First(r => r.Id == fixture.RegistrationId);
+            registration.ReplaceAttendeeEditableState(
+                FirstName.From("Updated"),
+                LastName.From("Attendee"),
+                registration.AdditionalDetails,
+                [new TicketTypeSnapshot(fixture.TicketTypeId, TicketTypeName.From("General"), [])],
+                DateTimeOffset.UtcNow);
+        });
+
+        await Environment.RegistrationsDatabase.AssertAsync(async db =>
+        {
+            var registration = await db.Registrations.FirstAsync(r => r.Id == fixture.RegistrationId);
+            registration.Status.ShouldBe(RegistrationStatus.Registered);
+            registration.RegistrationCycleId.ShouldBe(fixture.CycleId);
+            registration.Tickets.Select(ticket => ticket.Id.Value).ShouldBe([fixture.TicketTypeId.Value]);
+        });
+
+        var sut = NewSut();
+        await sut.HandleAsync(
+            new ReconfirmAutoExpiredIntegrationEvent(
+                fixture.TeamId.Value,
+                fixture.TicketedEventId.Value,
+                [],
+                [Reference(fixture)]),
+            testContext.CancellationToken);
+        await Environment.RegistrationsDatabase.Context.SaveChangesAsync(testContext.CancellationToken);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async db =>
+        {
+            (await db.Registrations.FirstAsync(r => r.Id == fixture.RegistrationId, testContext.CancellationToken))
+                .CancellationReason.ShouldBe(CancellationReason.ReconfirmAutoCancel);
+        });
+    }
+
+    // Given a reconfirm-auto-expired message without cycle references
+    // When the message is handled
+    // Then the registration is left unchanged
+    [TestMethod]
+    public async ValueTask HandleAsync_LegacyMessageWithoutCycleReferences_DoesNotCancel()
+    {
+        var fixture = HandleReconfirmAutoExpiredFixture.ActiveRegistration();
+        await fixture.SetupAsync(Environment);
+        await ClearOutboxAsync();
+
+        var sut = NewSut();
+        await sut.HandleAsync(
+            new ReconfirmAutoExpiredIntegrationEvent(
+                fixture.TeamId.Value,
+                fixture.TicketedEventId.Value,
+                [fixture.RegistrationId.Value]),
+            testContext.CancellationToken);
+        await Environment.RegistrationsDatabase.Context.SaveChangesAsync(testContext.CancellationToken);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async db =>
+        {
+            var registration = await db.Registrations.FirstAsync(r => r.Id == fixture.RegistrationId, testContext.CancellationToken);
+            registration.Status.ShouldBe(RegistrationStatus.Registered);
+        });
+    }
+
+    // Given a reconfirm-auto-expired message for a previous registration cycle
+    // When the registration is reset before the message is handled
+    // Then the fresh cycle remains registered
+    [TestMethod]
+    public async ValueTask HandleAsync_StaleCycleAfterReset_DoesNotCancelFreshRegistration()
+    {
+        var fixture = HandleReconfirmAutoExpiredFixture.ActiveRegistration();
+        await fixture.SetupAsync(Environment);
+        await ClearOutboxAsync();
+        var oldCycleId = fixture.CycleId;
+
+        await Environment.RegistrationsDatabase.SeedAsync(db =>
+        {
+            var registration = db.Registrations.First(r => r.Id == fixture.RegistrationId);
+            registration.Cancel(CancellationReason.AttendeeRequest);
+            registration.Reset(
+                FirstName.From("Reset"),
+                LastName.From("User"),
+                registration.Tickets,
+                registration.AdditionalDetails,
+                DateTimeOffset.UtcNow);
+        });
+
+        var sut = NewSut();
+        await sut.HandleAsync(
+            new ReconfirmAutoExpiredIntegrationEvent(
+                fixture.TeamId.Value,
+                fixture.TicketedEventId.Value,
+                [],
+                [new ReconfirmAutoExpiredRegistrationReference(
+                    fixture.RegistrationId.Value,
+                    oldCycleId.Value,
+                    fixture.RegistrationVersion,
+                    fixture.CatalogVersion,
+                    [fixture.TicketTypeId.Value])]),
+            testContext.CancellationToken);
+        await Environment.RegistrationsDatabase.Context.SaveChangesAsync(testContext.CancellationToken);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async db =>
+        {
+            var registration = await db.Registrations.FirstAsync(r => r.Id == fixture.RegistrationId, testContext.CancellationToken);
+            registration.Status.ShouldBe(RegistrationStatus.Registered);
+            registration.RegistrationCycleId.ShouldNotBe(oldCycleId);
+        });
+    }
+
+    // Given a reconfirm-auto-expired message with the original ticket snapshot
+    // When the registration tickets change before the message is handled
+    // Then the registration remains registered
+    [TestMethod]
+    public async ValueTask HandleAsync_TicketChangeAfterEvaluation_DoesNotCancel()
+    {
+        var fixture = HandleReconfirmAutoExpiredFixture.ActiveRegistration();
+        await fixture.SetupAsync(Environment);
+        await ClearOutboxAsync();
+        var reference = Reference(fixture);
+
+        await Environment.RegistrationsDatabase.SeedAsync(db =>
+        {
+            var registration = db.Registrations.First(r => r.Id == fixture.RegistrationId);
+            registration.ChangeTickets(
+                [new TicketTypeSnapshot(TicketTypeId.New(), TicketTypeName.From("Changed"), [])],
+                DateTimeOffset.UtcNow);
+        });
+
+        var sut = NewSut();
+        await sut.HandleAsync(
+            new ReconfirmAutoExpiredIntegrationEvent(
+                fixture.TeamId.Value,
+                fixture.TicketedEventId.Value,
+                [],
+                [reference]),
+            testContext.CancellationToken);
+        await Environment.RegistrationsDatabase.Context.SaveChangesAsync(testContext.CancellationToken);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async db =>
+        {
+            (await db.Registrations.FirstAsync(r => r.Id == fixture.RegistrationId, testContext.CancellationToken))
+                .Status.ShouldBe(RegistrationStatus.Registered);
+        });
+    }
+
+    // Given a reconfirm-auto-expired message with the current catalog version
+    // When the ticket-type reconfirmation limit changes before handling
+    // Then the registration remains registered for the next evaluation
+    [TestMethod]
+    public async ValueTask HandleAsync_TicketCatalogVersionChanged_DoesNotCancel()
+    {
+        var fixture = HandleReconfirmAutoExpiredFixture.ActiveRegistration();
+        await fixture.SetupAsync(Environment);
+        await ClearOutboxAsync();
+        var reference = Reference(fixture);
+
+        await Environment.RegistrationsDatabase.SeedAsync(db =>
+        {
+            var catalog = db.TicketCatalogs.First(c => c.Id == fixture.TicketedEventId);
+            catalog.UpdateTicketType(
+                fixture.TicketTypeId,
+                null,
+                null,
+                maxReconfirmationEmails: ReconfirmationEmailLimit.From(2),
+                updateMaxReconfirmationEmails: true);
+        });
+
+        var sut = NewSut();
+        await sut.HandleAsync(
+            new ReconfirmAutoExpiredIntegrationEvent(
+                fixture.TeamId.Value,
+                fixture.TicketedEventId.Value,
+                [],
+                [reference]),
+            testContext.CancellationToken);
+        await Environment.RegistrationsDatabase.Context.SaveChangesAsync(testContext.CancellationToken);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async db =>
+        {
+            (await db.Registrations.FirstAsync(r => r.Id == fixture.RegistrationId, testContext.CancellationToken))
+                .Status.ShouldBe(RegistrationStatus.Registered);
+        });
+    }
+
+    private ReconfirmAutoExpiredIntegrationEventHandler NewSut() =>
+        new(
+            new CancelUnreconfirmedRegistrationsHandler(Environment.RegistrationsDatabase.Context),
+            new Inbox(Environment.RegistrationsDatabase.Context));
+
+    private static string ProcessedMessageKey(Guid integrationEventId) =>
+        $"{integrationEventId:N}.{typeof(ReconfirmAutoExpiredIntegrationEventHandler).FullName}";
 
     private static async Task ClearOutboxAsync()
     {
@@ -155,4 +372,13 @@ public sealed class ReconfirmAutoExpiredIntegrationEventHandlerTests(TestContext
         await db.SaveChangesAsync();
         db.ChangeTracker.Clear();
     }
+
+    private static ReconfirmAutoExpiredRegistrationReference Reference(
+        HandleReconfirmAutoExpiredFixture fixture) =>
+        new(
+            fixture.RegistrationId.Value,
+            fixture.CycleId.Value,
+            fixture.RegistrationVersion,
+            fixture.CatalogVersion,
+            [fixture.TicketTypeId.Value]);
 }

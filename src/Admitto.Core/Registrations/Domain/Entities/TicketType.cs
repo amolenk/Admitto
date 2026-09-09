@@ -20,7 +20,7 @@ public class TicketType : Entity<TicketTypeId>
         bool selfServiceEnabled = true,
         bool waitlistEnabled = false,
         int claimWindowHours = 8,
-        int? maxReconfirmAttempts = null)
+        ReconfirmationEmailLimit? maxReconfirmationEmails = null)
         : base(id)
     {
         Name = name;
@@ -30,7 +30,7 @@ public class TicketType : Entity<TicketTypeId>
         SelfServiceEnabled = selfServiceEnabled;
         WaitlistEnabled = waitlistEnabled;
         ClaimWindowHours = claimWindowHours;
-        UpdateMaxReconfirmAttempts(maxReconfirmAttempts);
+        UpdateMaxReconfirmationEmails(maxReconfirmationEmails);
     }
 
     public TicketTypeName Name { get; private set; }
@@ -41,7 +41,7 @@ public class TicketType : Entity<TicketTypeId>
     public bool WaitlistEnabled { get; private set; }
     public bool WaitlistMode { get; private set; }
     public int ClaimWindowHours { get; private set; } = 8;
-    public int? MaxReconfirmAttempts { get; private set; }
+    public ReconfirmationEmailLimit? MaxReconfirmationEmails { get; private set; }
     public bool IsSoldOut => MaxCapacity is not null && UsedCapacity >= MaxCapacity.Value;
 
     public void UpdateName(TicketTypeName name)
@@ -59,12 +59,9 @@ public class TicketType : Entity<TicketTypeId>
         SelfServiceEnabled = enabled;
     }
 
-    public void UpdateMaxReconfirmAttempts(int? value)
+    public void UpdateMaxReconfirmationEmails(ReconfirmationEmailLimit? value)
     {
-        if (value is <= 0)
-            throw new BusinessRuleViolationException(Errors.MaxReconfirmAttemptsBelowMinimum);
-
-        MaxReconfirmAttempts = value;
+        MaxReconfirmationEmails = value;
     }
 
     internal void EnableWaitlist()
@@ -139,8 +136,5 @@ public class TicketType : Entity<TicketTypeId>
                 "Ticket type is at full capacity.",
                 Details: new Dictionary<string, object?> { ["id"] = id.Value });
 
-        public static Error MaxReconfirmAttemptsBelowMinimum =>
-            new("ticket_type.max_reconfirm_attempts_below_minimum",
-                "MaxReconfirmAttempts must be at least 1.");
     }
 }

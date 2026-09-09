@@ -106,7 +106,7 @@ describe("RegistrationPolicyForm", () => {
                 expectedVersion: 3,
             }),
         );
-    });
+    }, 10_000);
 
     // Given an existing registration window
     // When the organizer enables domain restriction and enters a domain

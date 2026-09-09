@@ -1,0 +1,62 @@
+using Amolenk.Admitto.Core.Email.Application.Sending;
+using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
+
+namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.Jobs.Fakes;
+
+/// <summary>
+/// Fake SMTP batch sender used by reconfirmation integration tests. Records the
+/// number of sessions opened and every message
+/// that flows through them; supports per-recipient failure injection plus a
+/// hook for test-side actions to run as a side effect of <c>SendAsync</c>
+/// (e.g. requesting cancellation).
+/// </summary>
+internal sealed class FakeSmtpBatchSender : ISmtpBatchSender
+{
+    private readonly HashSet<string> _failOn = new(StringComparer.OrdinalIgnoreCase);
+    public string Provider => "FakeSmtpBatch";
+
+    public int SessionsOpened { get; private set; }
+    public int SessionsClosed { get; private set; }
+    public SmtpTransportSettings? LastOpenedSettings { get; private set; }
+    public List<string> SendAttempts { get; } = [];
+    public List<EmailMessage> SentMessages { get; } = [];
+    public Func<EmailMessage, Task>? OnBeforeSendAsync { get; set; }
+
+    public void FailOn(string recipientEmail) => _failOn.Add(recipientEmail);
+
+    public Task<ISmtpBatchSession> OpenSessionAsync(
+        SmtpTransportSettings settings,
+        CancellationToken cancellationToken = default)
+    {
+        SessionsOpened++;
+        LastOpenedSettings = settings;
+        return Task.FromResult<ISmtpBatchSession>(new Session(this));
+    }
+
+    private sealed class Session(FakeSmtpBatchSender owner) : ISmtpBatchSession
+    {
+        public async Task<string?> SendAsync(EmailMessage message, CancellationToken cancellationToken = default)
+        {
+            owner.SendAttempts.Add(message.RecipientAddress);
+
+            if (owner.OnBeforeSendAsync is not null)
+                await owner.OnBeforeSendAsync(message);
+
+            // A TimeProvider-driven cutoff may fire while the pre-send hook
+            // advances fake time; do not submit the message after that point.
+            cancellationToken.ThrowIfCancellationRequested();
+
+            if (owner._failOn.Contains(message.RecipientAddress))
+                throw new InvalidOperationException($"SMTP error (fake) for {message.RecipientAddress}");
+
+            owner.SentMessages.Add(message);
+            return $"msg-{owner.SentMessages.Count}";
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            owner.SessionsClosed++;
+            return ValueTask.CompletedTask;
+        }
+    }
+}

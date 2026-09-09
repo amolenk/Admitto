@@ -19,7 +19,7 @@
 | `keycloak` | Identity provider; local uses the Aspire Keycloak resource, production uses the custom Keycloak image from `KeycloakConfiguration/Dockerfile` |
 | `maildev` | Local SMTP server with web UI |
 
-The Worker receives Admitto application-email SMTP configuration from AppHost as `Email:System:*` settings. Local development points these settings at MailDev. Production publish mode exposes one shared SMTP parameter set (`smtpHost`, `smtpPort`, `smtpFromAddress`, `smtpFromDisplayName`, `smtpAuth`, `smtpUsername`, `smtpPassword`, `smtpSsl`, and `smtpStartTls`) and wires it to both Keycloak account-action email and the Worker application-email path. Public attendee links are generated from `Registrations:PublicTickets:BaseUrl` plus `/e/{TicketedEvent.PublicSlug}`.
+The Worker receives Admitto application-email SMTP configuration from AppHost as `Email:System:*` settings. Local development points these settings at MailDev. Production publish mode exposes one shared SMTP parameter set (`smtpHost`, `smtpPort`, `smtpFromAddress`, `smtpFromDisplayName`, `smtpAuth`, `smtpUsername`, `smtpPassword`, `smtpSsl`, and `smtpStartTls`) and wires it to both Keycloak account-action email and the Worker application-email path. The Worker also reads the restart-required `Email:Reconfirmation:Interval` setting for the clustered reconfirmation evaluator; Worker appsettings supplies the one-hour default and startup validation requires at least one minute. Public attendee links are generated from `Registrations:PublicTickets:BaseUrl` plus `/e/{TicketedEvent.PublicSlug}`.
 
 `tickets.admitto.org` is intended to be a second custom domain bound directly to the API Container App for anonymous Public API links. It is a host alias, not an HTTP redirect. For Azure Container Apps managed certificate issuance and renewal, create a direct CNAME from `tickets.admitto.org` to the generated Container Apps hostname, then bind `tickets.admitto.org` as a custom domain on the API app with its own certificate. Avoid chaining the CNAME through another hostname that performs redirects; mail clients should request `/e/...` directly from the API ingress.
 
@@ -61,7 +61,7 @@ MailDev `smtp` endpoint and uses no-auth defaults so execute-actions emails can
 be inspected locally, while publish mode requires the shared deployment-specific
 host, sender, username, and secret password values. The same shared values are also
 mapped into the Worker's `Email:System:*` settings for attendee, OTP,
-reconfirmation, cancellation, waitlist, admin-triggered resend, and bulk emails.
+reconfirmation, cancellation, waitlist, and admin-triggered resend.
 
 ## 7.2 Production shape
 

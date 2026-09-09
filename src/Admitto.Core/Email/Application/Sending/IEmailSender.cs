@@ -13,7 +13,7 @@ public interface IEmailSender
     string Provider { get; }
 
     ValueTask<string?> SendAsync(
-        EffectiveEmailSettings settings,
+        SmtpTransportSettings settings,
         EmailMessage message,
         CancellationToken cancellationToken = default);
 }
