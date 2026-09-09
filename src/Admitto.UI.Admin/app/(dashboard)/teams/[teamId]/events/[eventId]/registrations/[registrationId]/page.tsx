@@ -174,7 +174,7 @@ function buildTimeline(
             detail = "Attendee registered for the event.";
         } else if (kind === "reconfirmed") {
             title = "Attendance reconfirmed";
-            detail = "Attendee confirmed their attendance.";
+            detail = "Registration was reconfirmed.";
         } else if (kind === "cancelled") {
             const reason = cancellationReasonLabel(a.metadata);
             title = `Registration cancelled (${reason})`;
@@ -234,6 +234,9 @@ export default function AttendeeDetailPage() {
     const [cancelReason, setCancelReason] = useState("");
     const [isCancelling, setIsCancelling] = useState(false);
     const [isResendingTicketEmail, setIsResendingTicketEmail] = useState(false);
+
+    const [reconfirmDialogOpen, setReconfirmDialogOpen] = useState(false);
+    const [isReconfirming, setIsReconfirming] = useState(false);
 
     const [changeTicketsDialogOpen, setChangeTicketsDialogOpen] = useState(false);
     const [selectedTicketTypeIds, setSelectedTicketTypeIds] = useState<string[]>([]);
@@ -302,6 +305,24 @@ export default function AttendeeDetailPage() {
             toast.error("Failed to request ticket email resend. Please try again.");
         } finally {
             setIsResendingTicketEmail(false);
+        }
+    }
+
+    async function handleReconfirmConfirm() {
+        setIsReconfirming(true);
+        try {
+            await apiClient.post(
+                `/api/teams/${teamId}/events/${eventId}/registrations/${registrationId}/reconfirm`,
+            );
+            await queryClient.invalidateQueries({
+                queryKey: ["registration-detail", teamId, eventId, registrationId],
+            });
+            toast.success("Attendance reconfirmed.");
+            setReconfirmDialogOpen(false);
+        } catch {
+            toast.error("Failed to reconfirm attendance. Please try again.");
+        } finally {
+            setIsReconfirming(false);
         }
     }
 
@@ -405,19 +426,18 @@ export default function AttendeeDetailPage() {
                                         <h1 className="font-display text-[26px] font-semibold tracking-tight leading-none">
                                             {name}
                                         </h1>
-                                        {registration.status === "registered" ? (
-                                            <Badge variant="outline" className="text-success border-success/30 bg-success/10">
-                                                Registered
-                                            </Badge>
-                                        ) : (
+                                        {registration.status === "cancelled" ? (
                                             <Badge variant="outline" className="text-muted-foreground border-muted-foreground/30 bg-muted">
                                                 Cancelled
                                             </Badge>
-                                        )}
-                                        {registration.hasReconfirmed && (
+                                        ) : registration.hasReconfirmed ? (
                                             <Badge variant="outline" className="text-primary border-primary/30 bg-primary/10">
                                                 <CheckCircle className="size-3 mr-1" />
                                                 Reconfirmed
+                                            </Badge>
+                                        ) : (
+                                            <Badge variant="outline" className="text-success border-success/30 bg-success/10">
+                                                Registered
                                             </Badge>
                                         )}
                                     </div>
@@ -447,6 +467,16 @@ export default function AttendeeDetailPage() {
                                             <RotateCcw className="size-3.5" />
                                             {isResendingTicketEmail ? "Requesting…" : "Resend ticket email"}
                                         </Button>
+                                        {!registration.hasReconfirmed && (
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => setReconfirmDialogOpen(true)}
+                                            >
+                                                <CheckCircle className="size-3.5" />
+                                                Reconfirm attendance
+                                            </Button>
+                                        )}
                                         <Button
                                             variant="outline"
                                             size="sm"
@@ -659,6 +689,31 @@ export default function AttendeeDetailPage() {
                             onClick={handleCancelConfirm}
                         >
                             {isCancelling ? "Cancelling…" : "Confirm cancellation"}
+                        </Button>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+            {/* Reconfirm dialog */}
+            <AlertDialog
+                open={reconfirmDialogOpen}
+                onOpenChange={(open) => {
+                    if (!open) {
+                        setReconfirmDialogOpen(false);
+                    }
+                }}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Reconfirm attendance?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will mark the registration as reconfirmed, as if the attendee had
+                            confirmed it themselves.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isReconfirming}>Cancel</AlertDialogCancel>
+                        <Button disabled={isReconfirming} onClick={handleReconfirmConfirm}>
+                            {isReconfirming ? "Reconfirming…" : "Reconfirm"}
                         </Button>
                     </AlertDialogFooter>
                 </AlertDialogContent>

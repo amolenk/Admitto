@@ -22,6 +22,12 @@ internal sealed class ReconfirmRegistrationHandler(
             r => r.Id == registrationId && r.EventId == ticketedEventId && r.TeamId == teamId,
             cancellationToken);
 
+        var catalog = await writeStore.TicketCatalogs.GetUntrackedAsync(
+            c => c.Id == ticketedEventId && c.TeamId == teamId,
+            cancellationToken);
+
+        catalog.EnsureEventActive();
+
         registration.Reconfirm(timeProvider.GetUtcNow());
     }
 }

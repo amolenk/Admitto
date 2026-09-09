@@ -1,5 +1,6 @@
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.CancelRegistration.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.CancelRegistration.PartnerApi;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.ReconfirmRegistration.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.ChangeAttendeeTickets.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Coupons.CreateCoupon.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Coupons.GetCouponDetails.AdminApi;
@@ -74,6 +75,7 @@ public static class RegistrationsModule
             .MapExportRegistrationsCsv()
             .MapGetRegistrationDetails()
             .MapCancelRegistration()
+            .MapAdminReconfirmRegistration()
             .MapChangeAttendeeTickets()
             .MapRequestTicketConfirmationResend();
 

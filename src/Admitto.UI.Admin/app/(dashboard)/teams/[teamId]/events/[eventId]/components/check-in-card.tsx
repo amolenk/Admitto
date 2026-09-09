@@ -1,6 +1,6 @@
 "use client";
 
-import { TicketedEventDetailsDto, TicketTypeDto } from "@/lib/admitto-api/generated";
+import { RegistrationListItemDto, TicketedEventDetailsDto, TicketTypeDto } from "@/lib/admitto-api/generated";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,11 +20,16 @@ function formatTime(iso: string, zone: string): string {
 interface CheckInCardProps {
     event: TicketedEventDetailsDto;
     ticketTypes: TicketTypeDto[];
+    registrations?: RegistrationListItemDto[];
 }
 
-export function CheckInCard({ event, ticketTypes }: CheckInCardProps) {
+export function CheckInCard({ event, ticketTypes, registrations }: CheckInCardProps) {
     const days = daysUntil(event.startsAt);
     const totalUsed = ticketTypes.reduce((sum, t) => sum + Number(t.usedCapacity), 0);
+    const reconfirmedCount = (registrations ?? []).filter(
+        (registration) => registration.status === "registered" && registration.hasReconfirmed,
+    ).length;
+    const expected = reconfirmedCount >= 1 ? reconfirmedCount : totalUsed;
 
     return (
         <Card className="p-5">
@@ -62,7 +67,7 @@ export function CheckInCard({ event, ticketTypes }: CheckInCardProps) {
             </div>
             <div className="grid grid-cols-3 mt-4 gap-3 text-center">
                 <CheckinPill n="0" label="Checked in" />
-                <CheckinPill n={String(totalUsed)} label="Expected" primary />
+                <CheckinPill n={String(expected)} label="Expected" primary />
                 <CheckinPill n="0%" label="Complete" muted />
             </div>
         </Card>

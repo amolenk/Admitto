@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.EntityConfigurations;
 
-public class RegistrationEntityConfiguration : IEntityTypeConfiguration<Registration>
+public class RgregistrationEntityConfiguration : IEntityTypeConfiguration<Registration>
 {
     public void Configure(EntityTypeBuilder<Registration> builder)
     {
@@ -70,6 +70,9 @@ public class RegistrationEntityConfiguration : IEntityTypeConfiguration<Registra
             .HasColumnName("cancellation_reason")
             .HasConversion<string>()
             .HasMaxLength(32);
+
+        builder.Property(e => e.CancelledAt)
+            .HasColumnName("cancelled_at");
 
         builder.HasIndex(e => new { e.EventId, e.Email })
             .HasDatabaseName("IX_registrations_event_id_email")

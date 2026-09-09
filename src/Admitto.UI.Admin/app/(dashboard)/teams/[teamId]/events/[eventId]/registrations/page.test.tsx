@@ -175,42 +175,104 @@ describe("RegistrationsPage", () => {
         expect(within(bobRow).getByText("General Admission")).toBeInTheDocument();
     });
 
-    // Given registrations with different statuses
+    // Given a cancelled, reconfirmed registration and a plain registered one
     // When the status column renders
-    // Then each row reflects its own registration status
-    it("reflects the registration status in the status column", async () => {
+    // Then the cancelled row shows Cancelled and not Reconfirmed
+    it("reflects Cancelled > Reconfirmed > Registered precedence in the status column", async () => {
         renderPage();
 
         const adaRow = (await screen.findByText("ada@example.com")).closest("tr") as HTMLElement;
         const bobRow = screen.getByText("bob@example.com").closest("tr") as HTMLElement;
         expect(within(adaRow).getByText("Registered")).toBeInTheDocument();
+        // bob is cancelled AND hasReconfirmed - Cancelled must win
         expect(within(bobRow).getByText("Cancelled")).toBeInTheDocument();
+        expect(within(bobRow).queryByText("Reconfirmed")).not.toBeInTheDocument();
     });
 
-    // Given one attendee who has not reconfirmed and one who has
-    // When the reconfirm column renders
-    // Then the unreconfirmed row shows a placeholder and the reconfirmed row shows a formatted
-    // timestamp
-    it("reflects HasReconfirmed in the reconfirm column", async () => {
+    // Given a registered, reconfirmed registration
+    // When the status column renders
+    // Then it shows "Reconfirmed"
+    it("shows Reconfirmed for a registered, reconfirmed registration", async () => {
+        mockData({
+            registrations: [
+                registrationListItemDto({
+                    id: "r-carol",
+                    email: "carol@example.com",
+                    status: "registered",
+                    hasReconfirmed: true,
+                    reconfirmedAt: "2026-03-06T08:00:00Z",
+                }),
+            ],
+        });
+
         renderPage();
 
-        const adaRow = (await screen.findByText("ada@example.com")).closest("tr") as HTMLElement;
-        const bobRow = screen.getByText("bob@example.com").closest("tr") as HTMLElement;
-        expect(within(adaRow).getByText("—")).toBeInTheDocument();
-        // The event is Europe/Amsterdam, which would be 13:30:00 for this UTC input. The
-        // current component ignores that DTO field and renders the host-zone (UTC) value.
-        expect(within(bobRow).getByText("3/5/2026, 12:30:00")).toBeInTheDocument();
-        expect(within(bobRow).queryByText("3/5/2026, 13:30:00")).not.toBeInTheDocument();
+        const row = (await screen.findByText("carol@example.com")).closest("tr") as HTMLElement;
+        expect(within(row).getByText("Reconfirmed")).toBeInTheDocument();
     });
 
-    // Given a registration with a creation timestamp
-    // When the registered column renders
-    // Then the timestamp is shown in that row
-    it("shows the registration timestamp in the registered column", async () => {
+    // Given the registrations table
+    // When it renders
+    // Then no separate Reconfirm date/time column is present
+    it("has no separate Reconfirm date/time column", async () => {
+        renderPage();
+        await screen.findByText("ada@example.com");
+
+        expect(screen.queryByText("Reconfirm")).not.toBeInTheDocument();
+    });
+
+    // Given the registrations table
+    // When it renders
+    // Then the remaining date column header reads "Date"
+    it("renders the date column header as Date", async () => {
+        renderPage();
+        await screen.findByText("ada@example.com");
+
+        expect(screen.getByRole("columnheader", { name: /Date/ })).toBeInTheDocument();
+    });
+
+    // Given a cancelled, a reconfirmed and a plain registered registration
+    // When the Date column renders
+    // Then each row shows the timestamp matching its own displayed status
+    it("shows CancelledAt/ReconfirmedAt/CreatedAt in the Date column per row status", async () => {
+        const cancelled = registrationListItemDto({
+            id: "r-cancelled",
+            email: "cancelled@example.com",
+            status: "cancelled",
+            hasReconfirmed: true,
+            reconfirmedAt: "2026-03-05T12:30:00Z",
+            cancelledAt: "2026-03-07T09:15:00Z",
+            createdAt: "2026-03-01T00:00:00Z",
+        });
+        const reconfirmed = registrationListItemDto({
+            id: "r-reconfirmed",
+            email: "reconfirmed@example.com",
+            status: "registered",
+            hasReconfirmed: true,
+            reconfirmedAt: "2026-03-05T12:30:00Z",
+            cancelledAt: null,
+            createdAt: "2026-03-01T00:00:00Z",
+        });
+        const registered = registrationListItemDto({
+            id: "r-registered",
+            email: "registered@example.com",
+            status: "registered",
+            hasReconfirmed: false,
+            reconfirmedAt: null,
+            cancelledAt: null,
+            createdAt: "2026-03-01T10:00:00Z",
+        });
+        mockData({ registrations: [cancelled, reconfirmed, registered] });
+
         renderPage();
 
-        const adaRow = (await screen.findByText("ada@example.com")).closest("tr") as HTMLElement;
-        expect(within(adaRow).getByText(/2026/)).toBeInTheDocument();
+        const cancelledRow = (await screen.findByText("cancelled@example.com")).closest("tr") as HTMLElement;
+        const reconfirmedRow = screen.getByText("reconfirmed@example.com").closest("tr") as HTMLElement;
+        const registeredRow = screen.getByText("registered@example.com").closest("tr") as HTMLElement;
+
+        expect(within(cancelledRow).getByText("3/7/2026, 09:15:00")).toBeInTheDocument();
+        expect(within(reconfirmedRow).getByText("3/5/2026, 12:30:00")).toBeInTheDocument();
+        expect(within(registeredRow).getByText("3/1/2026, 10:00:00")).toBeInTheDocument();
     });
 
     // Given attendees with different names and emails
@@ -233,7 +295,7 @@ describe("RegistrationsPage", () => {
         const { user } = renderPage();
         await screen.findByText("ada@example.com");
 
-        await selectOption(user, screen.getByRole("combobox"), "VIP");
+        await selectOption(user, screen.getByRole("combobox", { name: "Ticket type" }), "VIP");
 
         expect(screen.queryByText("ada@example.com")).not.toBeInTheDocument();
         expect(screen.getByText("bob@example.com")).toBeInTheDocument();
@@ -247,10 +309,118 @@ describe("RegistrationsPage", () => {
         const { user } = renderPage();
         await screen.findByText("ada@example.com");
 
-        await selectOption(user, screen.getByRole("combobox"), "Workshop");
+        await selectOption(user, screen.getByRole("combobox", { name: "Ticket type" }), "Workshop");
 
         expect(screen.getByText("No registrations match the current filters.")).toBeInTheDocument();
         expect(screen.getByText("No results")).toBeInTheDocument();
+    });
+
+    // Given registrations with each of the three statuses
+    // When the Status filter is set to a specific status
+    // Then only rows with that displayed status remain
+    it("narrows rows with the status filter", async () => {
+        const cancelled = registrationListItemDto({
+            id: "r-cancelled",
+            email: "cancelled@example.com",
+            status: "cancelled",
+        });
+        const reconfirmed = registrationListItemDto({
+            id: "r-reconfirmed",
+            email: "reconfirmed@example.com",
+            status: "registered",
+            hasReconfirmed: true,
+            reconfirmedAt: "2026-03-05T12:30:00Z",
+        });
+        const registered = registrationListItemDto({
+            id: "r-registered",
+            email: "registered@example.com",
+            status: "registered",
+            hasReconfirmed: false,
+        });
+        mockData({ registrations: [cancelled, reconfirmed, registered] });
+
+        const { user } = renderPage();
+        await screen.findByText("cancelled@example.com");
+
+        await selectOption(user, screen.getByRole("combobox", { name: "Status" }), "Reconfirmed");
+
+        expect(screen.queryByText("cancelled@example.com")).not.toBeInTheDocument();
+        expect(screen.queryByText("registered@example.com")).not.toBeInTheDocument();
+        expect(screen.getByText("reconfirmed@example.com")).toBeInTheDocument();
+    });
+
+    // Given registrations with each of the three statuses
+    // When the Status filter is set to "Registered"
+    // Then only the non-reconfirmed, non-cancelled row remains
+    it("narrows rows to only Registered with the status filter", async () => {
+        const cancelled = registrationListItemDto({
+            id: "r-cancelled-2",
+            email: "cancelled2@example.com",
+            status: "cancelled",
+        });
+        const reconfirmed = registrationListItemDto({
+            id: "r-reconfirmed-2",
+            email: "reconfirmed2@example.com",
+            status: "registered",
+            hasReconfirmed: true,
+            reconfirmedAt: "2026-03-05T12:30:00Z",
+        });
+        const registered = registrationListItemDto({
+            id: "r-registered-2",
+            email: "registered2@example.com",
+            status: "registered",
+            hasReconfirmed: false,
+        });
+        mockData({ registrations: [cancelled, reconfirmed, registered] });
+
+        const { user } = renderPage();
+        await screen.findByText("cancelled2@example.com");
+
+        await selectOption(user, screen.getByRole("combobox", { name: "Status" }), "Registered");
+
+        expect(screen.queryByText("cancelled2@example.com")).not.toBeInTheDocument();
+        expect(screen.queryByText("reconfirmed2@example.com")).not.toBeInTheDocument();
+        expect(screen.getByText("registered2@example.com")).toBeInTheDocument();
+    });
+
+    // Given registrations with each of the three statuses
+    // When the Status filter is set to "Cancelled"
+    // Then only the cancelled row remains, even though it has also reconfirmed
+    it("narrows rows to only Cancelled with the status filter", async () => {
+        const cancelled = registrationListItemDto({
+            id: "r-cancelled-3",
+            email: "cancelled3@example.com",
+            status: "cancelled",
+            hasReconfirmed: true,
+            reconfirmedAt: "2026-03-05T12:30:00Z",
+        });
+        const registered = registrationListItemDto({
+            id: "r-registered-3",
+            email: "registered3@example.com",
+            status: "registered",
+            hasReconfirmed: false,
+        });
+        mockData({ registrations: [cancelled, registered] });
+
+        const { user } = renderPage();
+        await screen.findByText("cancelled3@example.com");
+
+        await selectOption(user, screen.getByRole("combobox", { name: "Status" }), "Cancelled");
+
+        expect(screen.getByText("cancelled3@example.com")).toBeInTheDocument();
+        expect(screen.queryByText("registered3@example.com")).not.toBeInTheDocument();
+    });
+
+    // Given the Status filter defaults to "All statuses"
+    // When no filter is applied
+    // Then rows of every status remain visible
+    it("shows all statuses by default in the status filter", async () => {
+        renderPage();
+        await screen.findByText("ada@example.com");
+
+        expect(screen.getByRole("combobox", { name: "Status" })).toHaveTextContent("All statuses");
+        expect(screen.getByText("ada@example.com")).toBeInTheDocument();
+        expect(screen.getByText("bob@example.com")).toBeInTheDocument();
     });
 
     // Given attendees whose surnames sort differently than insertion order

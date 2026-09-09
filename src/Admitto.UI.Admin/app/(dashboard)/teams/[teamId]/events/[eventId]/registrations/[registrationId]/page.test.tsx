@@ -1,4 +1,4 @@
-import { screen, waitFor } from "@testing-library/react";
+import { screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { toast } from "sonner";
 
@@ -39,6 +39,7 @@ const EMAILS_PATH = `${DETAIL_PATH}/emails`;
 const TICKET_TYPES_PATH = `/api/teams/${TEAM_ID}/events/${EVENT_ID}/ticket-types`;
 const CANCEL_PATH = `${DETAIL_PATH}/cancel`;
 const RESEND_PATH = `${DETAIL_PATH}/ticket-email/resend`;
+const RECONFIRM_PATH = `${DETAIL_PATH}/reconfirm`;
 const TICKETS_PATH = `${DETAIL_PATH}/tickets`;
 
 const activityEntry = (overrides: Partial<ActivityLogEntryDto> = {}): ActivityLogEntryDto => ({
@@ -113,6 +114,21 @@ function mockApi(
             return Promise.resolve(undefined);
         }
         if (path === RESEND_PATH) return Promise.resolve(undefined);
+        if (path === RECONFIRM_PATH) {
+            detail = {
+                ...detail,
+                hasReconfirmed: true,
+                reconfirmedAt: "2026-08-12T09:00:00Z",
+                activities: [
+                    ...detail.activities,
+                    activityEntry({
+                        activityType: "Reconfirmed",
+                        occurredAt: "2026-08-12T09:00:00Z",
+                    }),
+                ],
+            };
+            return Promise.resolve(undefined);
+        }
         throw new Error(`Unexpected POST ${path}`);
     });
 
@@ -192,6 +208,61 @@ describe("AttendeeDetailPage", () => {
         expect(dl!.querySelectorAll("dt")).toHaveLength(5);
     });
 
+    // Given a registered attendee who has not reconfirmed
+    // When the status badge renders
+    // Then only the "Registered" badge is shown, not "Reconfirmed"
+    it("shows only the Registered badge for a registered, non-reconfirmed attendee", async () => {
+        mockApi({ detail: registrationDetail({ status: "registered", hasReconfirmed: false }) });
+
+        renderPage();
+
+        const heading = await screen.findByRole("heading", { level: 1 });
+        const badgeRow = heading.parentElement!;
+        expect(within(badgeRow).getByText("Registered")).toBeInTheDocument();
+        expect(within(badgeRow).queryByText("Reconfirmed")).not.toBeInTheDocument();
+    });
+
+    // Given a registered attendee who has reconfirmed their attendance
+    // When the status badge renders
+    // Then only the "Reconfirmed" badge is shown, not "Registered"
+    it("shows only the Reconfirmed badge for a registered, reconfirmed attendee", async () => {
+        mockApi({
+            detail: registrationDetail({
+                status: "registered",
+                hasReconfirmed: true,
+                reconfirmedAt: "2026-08-11T10:00:00Z",
+            }),
+        });
+
+        renderPage();
+
+        const heading = await screen.findByRole("heading", { level: 1 });
+        const badgeRow = heading.parentElement!;
+        expect(within(badgeRow).getByText("Reconfirmed")).toBeInTheDocument();
+        expect(within(badgeRow).queryByText("Registered")).not.toBeInTheDocument();
+    });
+
+    // Given a cancelled registration that had previously been reconfirmed
+    // When the status badge renders
+    // Then only the "Cancelled" badge is shown, not "Reconfirmed"
+    it("shows only the Cancelled badge for a cancelled attendee, even if previously reconfirmed", async () => {
+        mockApi({
+            detail: registrationDetail({
+                status: "cancelled",
+                hasReconfirmed: true,
+                reconfirmedAt: "2026-08-11T10:00:00Z",
+                cancellationReason: "AttendeeRequest",
+            }),
+        });
+
+        renderPage();
+
+        const heading = await screen.findByRole("heading", { level: 1 });
+        const badgeRow = heading.parentElement!;
+        expect(within(badgeRow).getByText("Cancelled")).toBeInTheDocument();
+        expect(within(badgeRow).queryByText("Reconfirmed")).not.toBeInTheDocument();
+    });
+
     // Given an attendee who registered and later reconfirmed
     // When the timeline renders
     // Then the reconfirmation milestone appears above the earlier registration milestone
@@ -210,6 +281,7 @@ describe("AttendeeDetailPage", () => {
         renderPage();
 
         await screen.findByText("Attendance reconfirmed");
+        expect(screen.getByText("Registration was reconfirmed.")).toBeInTheDocument();
         const titles = timelineTitles();
         const reconfirmedIndex = titles.findIndex((t) => t.includes("Attendance reconfirmed"));
         const registeredIndex = titles.findIndex((t) => t.includes("Started registration"));
@@ -384,6 +456,68 @@ describe("AttendeeDetailPage", () => {
         expect(screen.getByText("Released")).toBeInTheDocument();
         expect(screen.queryByRole("button", { name: "Cancel registration" })).not.toBeInTheDocument();
         expect(toast.success).toHaveBeenCalledWith("Registration cancelled successfully.");
+    });
+
+    // Given an attendee who has already reconfirmed their attendance
+    // When the hero card renders
+    // Then the Reconfirm attendance button is no longer offered
+    it("hides the Reconfirm attendance button once already reconfirmed", async () => {
+        mockApi({ detail: registrationDetail({ hasReconfirmed: true, reconfirmedAt: "2026-08-11T10:00:00Z" }) });
+
+        renderPage();
+
+        await screen.findByRole("heading", { level: 1 });
+        expect(screen.queryByRole("button", { name: "Reconfirm attendance" })).not.toBeInTheDocument();
+    });
+
+    // Given a registered, unreconfirmed attendee
+    // When the organizer opens the reconfirm dialog
+    // Then a confirmation prompt appears and no request is sent yet
+    it("opens a reconfirm confirmation dialog and sends nothing before confirming", async () => {
+        mockApi();
+        const { user } = renderPage();
+
+        await user.click(await screen.findByRole("button", { name: "Reconfirm attendance" }));
+
+        expect(await screen.findByRole("heading", { name: "Reconfirm attendance?" })).toBeInTheDocument();
+        expect(post).not.toHaveBeenCalled();
+    });
+
+    // Given the reconfirm dialog is open
+    // When the organizer confirms
+    // Then the reconfirm endpoint is called, a success toast is shown, the dialog closes, and
+    // the page refetches to show the reconfirmed state
+    it("calls the reconfirm endpoint once confirmed and refetches the reconfirmed state", async () => {
+        mockApi();
+        const { user } = renderPage();
+
+        await user.click(await screen.findByRole("button", { name: "Reconfirm attendance" }));
+        await user.click(await screen.findByRole("button", { name: "Reconfirm" }));
+
+        await waitFor(() => expect(post).toHaveBeenCalledWith(RECONFIRM_PATH));
+        expect(toast.success).toHaveBeenCalledWith("Attendance reconfirmed.");
+        expect(screen.queryByRole("heading", { name: "Reconfirm attendance?" })).not.toBeInTheDocument();
+
+        await waitFor(() =>
+            expect(get.mock.calls.filter(([path]) => path === DETAIL_PATH)).toHaveLength(2),
+        );
+        expect(await screen.findByRole("heading", { level: 1 })).toBeInTheDocument();
+        expect(screen.getAllByText("Reconfirmed").length).toBeGreaterThan(0);
+    });
+
+    // Given a cancelled registration
+    // When the hero card renders
+    // Then the Reconfirm attendance button is not offered, since there is no active
+    // registration to reconfirm
+    it("hides the Reconfirm attendance button for a cancelled registration", async () => {
+        mockApi({
+            detail: registrationDetail({ status: "cancelled", cancellationReason: "AttendeeRequest" }),
+        });
+
+        renderPage();
+
+        await screen.findByRole("heading", { level: 1 });
+        expect(screen.queryByRole("button", { name: "Reconfirm attendance" })).not.toBeInTheDocument();
     });
 
     // Given the organizer opens "Change ticket types" and keeps the current selection
