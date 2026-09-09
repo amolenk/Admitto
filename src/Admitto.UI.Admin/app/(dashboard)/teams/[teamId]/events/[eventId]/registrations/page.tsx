@@ -69,6 +69,27 @@ function attendeeSortKey(r: RegistrationListItemDto) {
     return [r.lastName ?? "", r.firstName ?? "", r.email].join(" ").toLowerCase();
 }
 
+type DisplayStatus = "cancelled" | "reconfirmed" | "registered";
+
+/** Cancelled > Reconfirmed > Registered, matching the attendee detail page badge. */
+function displayStatus(r: RegistrationListItemDto): DisplayStatus {
+    if (r.status === "cancelled") return "cancelled";
+    if (r.hasReconfirmed) return "reconfirmed";
+    return "registered";
+}
+
+/** The timestamp matching the row's currently displayed status. */
+function displayDate(r: RegistrationListItemDto): string {
+    switch (displayStatus(r)) {
+        case "cancelled":
+            return r.cancelledAt ?? r.createdAt;
+        case "reconfirmed":
+            return r.reconfirmedAt ?? r.createdAt;
+        default:
+            return r.createdAt;
+    }
+}
+
 export default function RegistrationsPage() {
     const { teamId, eventId } = useParams<{ teamId: string; eventId: string }>();
 
@@ -92,6 +113,7 @@ export default function RegistrationsPage() {
 
     const [search, setSearch] = useState("");
     const [ticketFilter, setTicketFilter] = useState<string>("all");
+    const [statusFilter, setStatusFilter] = useState<DisplayStatus | "all">("all");
     const [sortKey, setSortKey] = useState<SortKey>("attendee");
     const [sortDir, setSortDir] = useState<SortDir>("asc");
     const [page, setPage] = useState(1);
@@ -115,9 +137,12 @@ export default function RegistrationsPage() {
             if (ticketFilter !== "all" && !r.tickets.some((t) => t.id === ticketFilter)) {
                 return false;
             }
+            if (statusFilter !== "all" && displayStatus(r) !== statusFilter) {
+                return false;
+            }
             return true;
         });
-    }, [registrations, search, ticketFilter]);
+    }, [registrations, search, ticketFilter, statusFilter]);
 
     const sorted = useMemo(() => {
         const arr = [...filtered];
@@ -134,8 +159,8 @@ export default function RegistrationsPage() {
                 case "registered":
                 default:
                     return (
-                        (new Date(a.createdAt).getTime() -
-                            new Date(b.createdAt).getTime()) *
+                        (new Date(displayDate(a)).getTime() -
+                            new Date(displayDate(b)).getTime()) *
                         dir
                     );
             }
@@ -219,7 +244,7 @@ export default function RegistrationsPage() {
                             setPage(1);
                         }}
                     >
-                        <SelectTrigger className="w-[200px]">
+                        <SelectTrigger className="w-[200px]" aria-label="Ticket type">
                             <SelectValue placeholder="All ticket types" />
                         </SelectTrigger>
                         <SelectContent>
@@ -229,6 +254,23 @@ export default function RegistrationsPage() {
                                     {t.name}
                                 </SelectItem>
                             ))}
+                        </SelectContent>
+                    </Select>
+                    <Select
+                        value={statusFilter}
+                        onValueChange={(v) => {
+                            setStatusFilter(v as DisplayStatus | "all");
+                            setPage(1);
+                        }}
+                    >
+                        <SelectTrigger className="w-[200px]" aria-label="Status">
+                            <SelectValue placeholder="All statuses" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All statuses</SelectItem>
+                            <SelectItem value="registered">Registered</SelectItem>
+                            <SelectItem value="reconfirmed">Reconfirmed</SelectItem>
+                            <SelectItem value="cancelled">Cancelled</SelectItem>
                         </SelectContent>
                     </Select>
                 </div>
@@ -261,9 +303,8 @@ export default function RegistrationsPage() {
                                         onClick={() => toggleSort("ticket")}
                                     />
                                     <TableHead>Status</TableHead>
-                                    <TableHead className="hidden sm:table-cell">Reconfirm</TableHead>
                                     <SortableHead
-                                        label="Registered"
+                                        label="Date"
                                         className="hidden sm:table-cell"
                                         active={sortKey === "registered"}
                                         dir={sortDir}
@@ -274,13 +315,13 @@ export default function RegistrationsPage() {
                             <TableBody>
                                 {pageRows.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={5} className="text-center text-sm text-muted-foreground py-8">
+                                        <TableCell colSpan={4} className="text-center text-sm text-muted-foreground py-8">
                                             No registrations match the current filters.
                                         </TableCell>
                                     </TableRow>
                                 ) : (
                                     pageRows.map((r) => {
-                                        const isCancelled = r.status === "cancelled";
+                                        const status = displayStatus(r);
                                         return (
                                             <TableRow key={r.id}>
                                                 <TableCell>
@@ -299,9 +340,13 @@ export default function RegistrationsPage() {
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>
-                                                    {isCancelled ? (
+                                                    {status === "cancelled" ? (
                                                         <Badge variant="outline" className="text-muted-foreground border-muted-foreground/30 bg-muted">
                                                             Cancelled
+                                                        </Badge>
+                                                    ) : status === "reconfirmed" ? (
+                                                        <Badge variant="outline" className="text-primary border-primary/30 bg-primary/10">
+                                                            Reconfirmed
                                                         </Badge>
                                                     ) : (
                                                         <Badge variant="outline" className="text-success border-success/30 bg-success/10">
@@ -309,17 +354,8 @@ export default function RegistrationsPage() {
                                                         </Badge>
                                                     )}
                                                 </TableCell>
-                                                <TableCell className="hidden sm:table-cell text-xs">
-                                                    {r.hasReconfirmed && r.reconfirmedAt ? (
-                                                        <span className="font-mono tabular-nums">
-                                                            {new Date(r.reconfirmedAt).toLocaleString(undefined, { hour12: false })}
-                                                        </span>
-                                                    ) : (
-                                                        <span className="text-muted-foreground">—</span>
-                                                    )}
-                                                </TableCell>
                                                 <TableCell className="hidden sm:table-cell font-mono tabular-nums text-xs">
-                                                    {new Date(r.createdAt).toLocaleString(undefined, { hour12: false })}
+                                                    {new Date(displayDate(r)).toLocaleString(undefined, { hour12: false })}
                                                 </TableCell>
                                             </TableRow>
                                         );
