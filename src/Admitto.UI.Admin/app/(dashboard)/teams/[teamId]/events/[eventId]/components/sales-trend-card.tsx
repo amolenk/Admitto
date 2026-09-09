@@ -30,7 +30,7 @@ interface DayBucket {
     cancellations: number;
 }
 
-function buildBuckets(registrations: RegistrationListItemDto[], range: Range): DayBucket[] {
+export function buildBuckets(registrations: RegistrationListItemDto[], range: Range): DayBucket[] {
     const today = startOfDay(new Date());
     const msPerDay = 1000 * 60 * 60 * 24;
 
@@ -60,12 +60,16 @@ function buildBuckets(registrations: RegistrationListItemDto[], range: Range): D
     const bucketMap = new Map(buckets.map((b) => [b.date, b]));
 
     for (const reg of registrations) {
-        const key = format(parseISO(reg.createdAt), "yyyy-MM-dd");
-        const bucket = bucketMap.get(key);
-        if (bucket) {
-            if (reg.status === "registered") {
+        if (reg.status === "registered") {
+            const key = format(parseISO(reg.createdAt), "yyyy-MM-dd");
+            const bucket = bucketMap.get(key);
+            if (bucket) {
                 bucket.registrations++;
-            } else if (reg.status === "cancelled") {
+            }
+        } else if (reg.status === "cancelled" && reg.cancelledAt) {
+            const key = format(parseISO(reg.cancelledAt), "yyyy-MM-dd");
+            const bucket = bucketMap.get(key);
+            if (bucket) {
                 bucket.cancellations++;
             }
         }

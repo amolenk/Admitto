@@ -1,6 +1,6 @@
 "use client";
 
-import { TicketedEventDetailsDto, TicketTypeDto } from "@/lib/admitto-api/generated";
+import { RegistrationListItemDto, TicketedEventDetailsDto, TicketTypeDto } from "@/lib/admitto-api/generated";
 import type { CSSProperties } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -56,6 +56,7 @@ interface EventHeroCardProps {
     event: TicketedEventDetailsDto;
     openStatus?: { isOpen: boolean } | null;
     ticketTypes?: TicketTypeDto[] | null;
+    registrations?: RegistrationListItemDto[];
 }
 
 function getRegistrationStat(event: EventHeroCardProps["event"]): { value: string | number; sub: string; muted: boolean } {
@@ -80,7 +81,7 @@ function statusLabel(status: string): string {
     return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
 }
 
-export function EventHeroCard({ event, openStatus, ticketTypes }: EventHeroCardProps) {
+export function EventHeroCard({ event, openStatus, ticketTypes, registrations }: EventHeroCardProps) {
     const days = daysUntil(event.startsAt);
     const isPast = new Date(event.endsAt).getTime() < Date.now();
     const isLive = !isPast && new Date(event.startsAt).getTime() <= Date.now();
@@ -96,6 +97,9 @@ export function EventHeroCard({ event, openStatus, ticketTypes }: EventHeroCardP
     const hasUnlimited = ticketTypes?.some(t => !Number(t.maxCapacity)) ?? false;
     const hasCapacity = totalCapacity > 0;
     const capacityPct = hasCapacity ? Math.round((totalUsed / totalCapacity) * 100) : 0;
+    const reconfirmedCount = (registrations ?? []).filter(
+        (registration) => registration.status === "registered" && registration.hasReconfirmed,
+    ).length;
 
     const regStat = getRegistrationStat(event);
 
@@ -168,7 +172,7 @@ export function EventHeroCard({ event, openStatus, ticketTypes }: EventHeroCardP
                     </div>
                 </div>
             </div>
-            <div className="grid grid-cols-2 divide-x border-t">
+            <div className={`grid ${reconfirmedCount >= 1 ? "grid-cols-3" : "grid-cols-2"} divide-x border-t`}>
                 <HeroStat
                     label="Status"
                     value={regStat.value}
@@ -181,6 +185,9 @@ export function EventHeroCard({ event, openStatus, ticketTypes }: EventHeroCardP
                     sub={hasCapacity ? `of ${totalCapacity}${hasUnlimited ? "+" : ""}` : "total"}
                     pct={hasCapacity ? capacityPct : undefined}
                 />
+                {reconfirmedCount >= 1 && (
+                    <HeroStat label="Reconfirmed" value={reconfirmedCount} sub="attendees" />
+                )}
             </div>
         </Card>
     );

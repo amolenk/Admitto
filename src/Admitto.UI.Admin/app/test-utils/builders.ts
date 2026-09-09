@@ -124,6 +124,7 @@ export function registrationListItemDto(
         ticketCatalogVersion: 1,
         hasReconfirmed: false,
         reconfirmedAt: null,
+        cancelledAt: null,
         ...overrides,
     };
 }

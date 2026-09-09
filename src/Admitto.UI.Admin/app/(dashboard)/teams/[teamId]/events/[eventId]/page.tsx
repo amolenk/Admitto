@@ -77,6 +77,7 @@ export default function EventDashboardPage() {
                             : null
                     }
                     ticketTypes={ticketTypes.data}
+                    registrations={registrations.data}
                 />
                 <SalesTrendCard
                     registrations={registrations.data}
@@ -89,7 +90,11 @@ export default function EventDashboardPage() {
                         ticketTypes={ticketTypes.data ?? []}
                         isLoading={ticketTypes.isLoading}
                     />
-                    <CheckInCard event={event.data} ticketTypes={ticketTypes.data ?? []} />
+                    <CheckInCard
+                        event={event.data}
+                        ticketTypes={ticketTypes.data ?? []}
+                        registrations={registrations.data}
+                    />
                 </div>
             </div>
         </PageLayout>
