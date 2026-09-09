@@ -1,6 +1,5 @@
 using Amolenk.Admitto.Core.Email.Application.Projections.EventEmailContext;
 using Amolenk.Admitto.Core.Email.Application.Projections.TeamEmailContext;
-using Amolenk.Admitto.Core.Email.Application.Templating;
 using Amolenk.Admitto.Core.Email.Application.Composing;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.Extensions.Options;

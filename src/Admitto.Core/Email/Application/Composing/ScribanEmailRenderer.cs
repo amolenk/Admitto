@@ -2,7 +2,7 @@ using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Scriban;
 using Scriban.Runtime;
 
-namespace Amolenk.Admitto.Core.Email.Application.Templating;
+namespace Amolenk.Admitto.Core.Email.Application.Composing;
 
 internal sealed class ScribanEmailRenderer : IEmailRenderer
 {

@@ -1,6 +1,6 @@
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 
-namespace Amolenk.Admitto.Core.Email.Application.Templating;
+namespace Amolenk.Admitto.Core.Email.Application.Composing;
 
 /// <summary>
 /// Renders an <see cref="EmailTemplate"/> using a closed, explicit template-value map.

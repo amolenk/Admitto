@@ -5,6 +5,12 @@
     "type": "herdr",
     "layout": "main-vertical"
   },
+  "backgroundJobs": {
+    "orchestratorWake": {
+      "enabled": false
+    },
+    "waitForUserGuard": true
+  },
   "presets": {
     "amolenk": {
       "orchestrator": {

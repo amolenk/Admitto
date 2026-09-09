@@ -1,5 +1,5 @@
 using Amolenk.Admitto.Core.Email.Application.Projections.EventEmailContext;
-using Amolenk.Admitto.Core.Email.Application.Templating;
+using Amolenk.Admitto.Core.Email.Application.Composing;
 using Amolenk.Admitto.Core.Email.Domain.Entities;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Contracts;

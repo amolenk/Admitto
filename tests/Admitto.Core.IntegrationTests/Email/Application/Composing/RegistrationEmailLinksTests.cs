@@ -1,7 +1,7 @@
-using Amolenk.Admitto.Core.Email.Application.Templating;
+using Amolenk.Admitto.Core.Email.Application.Composing;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 
-namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.UseCases.Emails.SendEmail;
+namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.Composing;
 
 [TestClass]
 public sealed class RegistrationEmailLinksTests

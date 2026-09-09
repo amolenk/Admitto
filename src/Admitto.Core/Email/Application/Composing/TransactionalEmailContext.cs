@@ -1,5 +1,4 @@
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
-using Amolenk.Admitto.Core.Email.Application.Templating;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 

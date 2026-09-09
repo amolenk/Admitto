@@ -4,7 +4,6 @@ using Amolenk.Admitto.Core.Email.Application.Jobs;
 using Amolenk.Admitto.Core.Email.Application.Persistence;
 using Amolenk.Admitto.Core.Email.Application.Sending;
 using Amolenk.Admitto.Core.Email.Application.Sending.Settings;
-using Amolenk.Admitto.Core.Email.Application.Templating;
 using Amolenk.Admitto.Core.Email.Application.Composing;
 using Amolenk.Admitto.Core.Email.Infrastructure.Persistence;
 using Amolenk.Admitto.Core.Email.Infrastructure.Sending;
@@ -101,12 +100,12 @@ public static class EmailModuleExtensions
                     .StartNow());
 
             });
-
             services.Configure<QuartzOptions>(options =>
             {
                 options.Scheduling.OverWriteExistingData = true;
                 options.Scheduling.IgnoreDuplicates = false;
             });
+
             return builder;
         }
     }

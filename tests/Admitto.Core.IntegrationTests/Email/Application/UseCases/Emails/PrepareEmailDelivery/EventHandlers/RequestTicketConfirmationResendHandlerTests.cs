@@ -1,9 +1,8 @@
 using Amolenk.Admitto.Core.Email.Application.Projections.EventEmailContext;
-using Amolenk.Admitto.Core.Email.Application.Templating;
+using Amolenk.Admitto.Core.Email.Application.Composing;
 using Amolenk.Admitto.Core.Email.Application.Projections.TeamEmailContext;
 using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.PrepareEmailDelivery;
 using Amolenk.Admitto.Core.Email.Application.UseCases.Emails.PrepareEmailDelivery.EventHandlers;
-using Amolenk.Admitto.Core.Email.Application.Composing;
 using Amolenk.Admitto.Core.Email.Domain.Entities;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Contracts.IntegrationEvents;
@@ -14,7 +13,7 @@ using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
-namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.UseCases.Emails.RequestTicketConfirmationResend;
+namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.UseCases.Emails.PrepareEmailDelivery.EventHandlers;
 
 [TestClass]
 public sealed class RequestTicketConfirmationResendHandlerTests(TestContext testContext) : AspireIntegrationTestBase

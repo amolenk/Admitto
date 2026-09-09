@@ -1,4 +1,4 @@
-namespace Amolenk.Admitto.Core.Email.Application.Templating;
+namespace Amolenk.Admitto.Core.Email.Application.Composing;
 
 /// <summary>
 /// Thrown when a Scriban template fails to parse or render.

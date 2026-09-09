@@ -1,6 +1,6 @@
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 
-namespace Amolenk.Admitto.Core.Email.Application.Templating;
+namespace Amolenk.Admitto.Core.Email.Application.Composing;
 
 internal sealed record RegistrationEmailLinks(
     string PublicEventLink,

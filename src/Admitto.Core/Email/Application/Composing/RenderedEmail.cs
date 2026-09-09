@@ -1,4 +1,4 @@
-namespace Amolenk.Admitto.Core.Email.Application.Templating;
+namespace Amolenk.Admitto.Core.Email.Application.Composing;
 
 /// <summary>
 /// Represents the rendered output of an email template.

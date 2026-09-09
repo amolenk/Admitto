@@ -1,7 +1,7 @@
-using Amolenk.Admitto.Core.Email.Application.Templating;
+using Amolenk.Admitto.Core.Email.Application.Composing;
 using Amolenk.Admitto.Testing.Builders.Email.Domain;
 
-namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.Templating;
+namespace Amolenk.Admitto.Core.IntegrationTests.Email.Application.Composing;
 
 [TestClass]
 public sealed class ScribanEmailRendererTests

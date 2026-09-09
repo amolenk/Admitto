@@ -1,7 +1,7 @@
 using System.Reflection;
 using Amolenk.Admitto.Core.Email.Domain.ValueObjects;
 
-namespace Amolenk.Admitto.Core.Email.Application.Templating;
+namespace Amolenk.Admitto.Core.Email.Application.Composing;
 
 /// <summary>
 /// Ordered catalog of all built-in email templates and their defaults.
@@ -10,7 +10,7 @@ namespace Amolenk.Admitto.Core.Email.Application.Templating;
 internal static class BuiltInEmailTemplateCatalog
 {
     private static readonly Assembly Assembly = typeof(BuiltInEmailTemplateCatalog).Assembly;
-    private const string ResourcePrefix = "Amolenk.Admitto.Core.Email.Application.Templating.Defaults.";
+    private const string ResourcePrefix = "Amolenk.Admitto.Core.Email.Application.Composing.Defaults.";
 
     // Ordered list — determines display order in the UI.
     private static readonly IReadOnlyList<EmailTemplate> Entries = BuildEntries();
