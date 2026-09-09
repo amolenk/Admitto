@@ -405,19 +405,18 @@ export default function AttendeeDetailPage() {
                                         <h1 className="font-display text-[26px] font-semibold tracking-tight leading-none">
                                             {name}
                                         </h1>
-                                        {registration.status === "registered" ? (
-                                            <Badge variant="outline" className="text-success border-success/30 bg-success/10">
-                                                Registered
-                                            </Badge>
-                                        ) : (
+                                        {registration.status === "cancelled" ? (
                                             <Badge variant="outline" className="text-muted-foreground border-muted-foreground/30 bg-muted">
                                                 Cancelled
                                             </Badge>
-                                        )}
-                                        {registration.hasReconfirmed && (
+                                        ) : registration.hasReconfirmed ? (
                                             <Badge variant="outline" className="text-primary border-primary/30 bg-primary/10">
                                                 <CheckCircle className="size-3 mr-1" />
                                                 Reconfirmed
+                                            </Badge>
+                                        ) : (
+                                            <Badge variant="outline" className="text-success border-success/30 bg-success/10">
+                                                Registered
                                             </Badge>
                                         )}
                                     </div>
