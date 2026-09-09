@@ -52,6 +52,7 @@ public class Registration : Aggregate<RegistrationId>
     public bool HasReconfirmed { get; private set; }
     public DateTimeOffset? ReconfirmedAt { get; private set; }
     public CancellationReason? CancellationReason { get; private set; }
+    public DateTimeOffset? CancelledAt { get; private set; }
     public IReadOnlyList<TicketTypeSnapshot> Tickets => _tickets.AsReadOnly();
     public AdditionalDetails AdditionalDetails { get; private set; } = AdditionalDetails.Empty;
 
@@ -85,6 +86,7 @@ public class Registration : Aggregate<RegistrationId>
 
         Status = RegistrationStatus.Cancelled;
         CancellationReason = reason;
+        CancelledAt = DateTimeOffset.UtcNow;
 
         AddDomainEvent(new RegistrationCancelledDomainEvent(TeamId, EventId, Id, Email, FirstName, LastName, reason));
     }
@@ -107,6 +109,7 @@ public class Registration : Aggregate<RegistrationId>
         HasReconfirmed = false;
         ReconfirmedAt = null;
         CancellationReason = null;
+        CancelledAt = null;
         _tickets.Clear();
         _tickets.AddRange(tickets);
         AdditionalDetails = additionalDetails;

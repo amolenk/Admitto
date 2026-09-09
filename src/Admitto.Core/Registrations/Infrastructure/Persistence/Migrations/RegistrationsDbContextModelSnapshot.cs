@@ -19,7 +19,7 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("registrations")
-                .HasAnnotation("ProductVersion", "10.0.9")
+                .HasAnnotation("ProductVersion", "10.0.10")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -219,6 +219,10 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
                         .HasColumnType("character varying(32)")
                         .HasColumnName("cancellation_reason");
 
+                    b.Property<DateTimeOffset?>("CancelledAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("cancelled_at");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -232,10 +236,6 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
                     b.Property<Guid>("EventId")
                         .HasColumnType("uuid")
                         .HasColumnName("event_id");
-
-                    b.Property<Guid>("RegistrationCycleId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("registration_cycle_id");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
@@ -266,6 +266,10 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
                     b.Property<DateTimeOffset?>("ReconfirmedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("reconfirmed_at");
+
+                    b.Property<Guid>("RegistrationCycleId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("registration_cycle_id");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -648,11 +652,11 @@ namespace Amolenk.Admitto.Core.Registrations.Infrastructure.Persistence.Migratio
                                 .HasColumnType("timestamp with time zone")
                                 .HasColumnName("reconfirm_policy_opens_at");
 
-                            b1.Property<TimeOnly>("QuietHoursEnd")
+                            b1.Property<TimeOnly?>("QuietHoursEnd")
                                 .HasColumnType("time")
                                 .HasColumnName("reconfirm_policy_quiet_hours_end");
 
-                            b1.Property<TimeOnly>("QuietHoursStart")
+                            b1.Property<TimeOnly?>("QuietHoursStart")
                                 .HasColumnType("time")
                                 .HasColumnName("reconfirm_policy_quiet_hours_start");
 

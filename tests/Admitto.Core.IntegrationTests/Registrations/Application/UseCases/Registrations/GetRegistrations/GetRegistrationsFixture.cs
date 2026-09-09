@@ -18,6 +18,7 @@ internal sealed class GetRegistrationsFixture
     private bool _seedRegistrations;
     private bool _seedMultiTicketRegistration;
     private bool _seedOtherEventRegistration;
+    private bool _seedCancelledRegistration;
 
     private GetRegistrationsFixture() { }
 
@@ -37,6 +38,11 @@ internal sealed class GetRegistrationsFixture
     {
         _seedRegistrations = true,
         _seedOtherEventRegistration = true,
+    };
+
+    public static GetRegistrationsFixture WithCancelledAndActiveRegistration() => new()
+    {
+        _seedCancelledRegistration = true,
     };
 
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
@@ -100,6 +106,32 @@ internal sealed class GetRegistrationsFixture
                 ]);
 
             await environment.RegistrationsDatabase.SeedAsync(db => db.Registrations.Add(multi));
+        }
+
+        if (_seedCancelledRegistration)
+        {
+            var cancelled = Registration.Create(
+                TeamId,
+                EventId,
+                EmailAddress.From("erin@example.com"),
+                FirstName.From("Erin"),
+                LastName.From("Doe"),
+                [new TicketTypeSnapshot(GeneralId, TicketTypeName.From(GeneralName), [])]);
+            cancelled.Cancel(CancellationReason.AttendeeRequest);
+
+            var active = Registration.Create(
+                TeamId,
+                EventId,
+                EmailAddress.From("frank@example.com"),
+                FirstName.From("Frank"),
+                LastName.From("Doe"),
+                [new TicketTypeSnapshot(GeneralId, TicketTypeName.From(GeneralName), [])]);
+
+            await environment.RegistrationsDatabase.SeedAsync(db =>
+            {
+                db.Registrations.Add(cancelled);
+                db.Registrations.Add(active);
+            });
         }
 
         if (_seedOtherEventRegistration)

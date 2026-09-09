@@ -15,6 +15,7 @@ public sealed record RegistrationListItemDto(
     uint TicketCatalogVersion,
     RegistrationStatus Status,
     bool HasReconfirmed,
-    DateTimeOffset? ReconfirmedAt);
+    DateTimeOffset? ReconfirmedAt,
+    DateTimeOffset? CancelledAt);
 
 public sealed record TicketSummaryDto(Guid Id, string Name);

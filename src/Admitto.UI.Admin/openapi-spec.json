@@ -6,7 +6,7 @@
   },
   "servers": [
     {
-      "url": "http://localhost:42931/"
+      "url": "http://localhost:41919/"
     }
   ],
   "paths": {
@@ -7973,7 +7973,8 @@
           "ticketCatalogVersion",
           "status",
           "hasReconfirmed",
-          "reconfirmedAt"
+          "reconfirmedAt",
+          "cancelledAt"
         ],
         "type": "object",
         "properties": {
@@ -8033,6 +8034,13 @@
             "type": "boolean"
           },
           "reconfirmedAt": {
+            "type": [
+              "null",
+              "string"
+            ],
+            "format": "date-time"
+          },
+          "cancelledAt": {
             "type": [
               "null",
               "string"

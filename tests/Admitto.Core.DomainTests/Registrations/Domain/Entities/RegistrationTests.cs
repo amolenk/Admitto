@@ -99,6 +99,23 @@ public sealed class RegistrationTests
     }
 
     // Given an active registration
+    // When it is cancelled
+    // Then CancelledAt is set to the cancellation moment
+    [TestMethod]
+    public void Registration_Cancel_SetsCancelledAt()
+    {
+        var sut = NewRegistration();
+        sut.CancelledAt.ShouldBeNull();
+        var before = DateTimeOffset.UtcNow;
+
+        sut.Cancel(CancellationReason.AttendeeRequest);
+
+        var after = DateTimeOffset.UtcNow;
+        sut.CancelledAt.ShouldNotBeNull();
+        sut.CancelledAt!.Value.ShouldBeInRange(before, after);
+    }
+
+    // Given an active registration
     // When it is cancelled due to reconfirm auto-cancel
     // Then its status becomes Cancelled with that specific reason
     [TestMethod]
@@ -399,6 +416,26 @@ public sealed class RegistrationTests
         sut.CancellationReason.ShouldBeNull();
         sut.HasReconfirmed.ShouldBeFalse();
         sut.ReconfirmedAt.ShouldBeNull();
+    }
+
+    // Given a registration that was cancelled
+    // When it is reset
+    // Then CancelledAt is cleared back to null
+    [TestMethod]
+    public void Reset_CancelledRegistration_ClearsCancelledAt()
+    {
+        var sut = NewRegistration();
+        sut.Cancel(CancellationReason.AttendeeRequest);
+        sut.CancelledAt.ShouldNotBeNull();
+
+        sut.Reset(
+            FirstName.From("Reset"),
+            LastName.From("User"),
+            [new TicketTypeSnapshot(TicketTypeId.New(), TicketTypeName.From("Workshop"), [])],
+            AdditionalDetails.Empty,
+            DateTimeOffset.UtcNow);
+
+        sut.CancelledAt.ShouldBeNull();
     }
 
     // Given a cancelled registration with a previous registration cycle

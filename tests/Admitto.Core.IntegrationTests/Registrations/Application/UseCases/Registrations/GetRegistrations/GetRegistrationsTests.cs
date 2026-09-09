@@ -97,6 +97,27 @@ public sealed class GetRegistrationsTests(TestContext testContext) : AspireInteg
         otherResult.ShouldNotBeNull().ShouldHaveSingleItem().Email.ShouldBe("dave@example.com");
     }
 
+    // Given a cancelled registration and an active registration
+    // When the registrations are queried
+    // Then CancelledAt is populated for the cancelled one and null for the active one
+    [TestMethod]
+    public async ValueTask WithCancelledRegistration_PopulatesCancelledAt()
+    {
+        var fixture = GetRegistrationsFixture.WithCancelledAndActiveRegistration();
+        await fixture.SetupAsync(Environment);
+
+        var result = await NewHandler().HandleAsync(
+            new GetRegistrationsQuery(fixture.EventId, fixture.TeamId),
+            testContext.CancellationToken);
+
+        result.ShouldNotBeNull();
+        var cancelled = result.SingleOrDefault(r => r.Email == "erin@example.com");
+        cancelled.ShouldNotBeNull().CancelledAt.ShouldNotBeNull();
+
+        var active = result.SingleOrDefault(r => r.Email == "frank@example.com");
+        active.ShouldNotBeNull().CancelledAt.ShouldBeNull();
+    }
+
     private static GetRegistrationsHandler NewHandler() =>
         new(Environment.RegistrationsDatabase.Context);
 }
