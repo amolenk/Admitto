@@ -53,6 +53,7 @@ export default function EventDashboardPage() {
         queryKey: ["check-in-summary", teamId, eventId],
         queryFn: () => fetchCheckInSummary(teamId, eventId),
         throwOnError: false,
+        refetchOnMount: "always",
     });
 
     if (event.isLoading) {
@@ -101,8 +102,6 @@ export default function EventDashboardPage() {
                     />
                     <CheckInCard
                         event={event.data}
-                        ticketTypes={ticketTypes.data ?? []}
-                        registrations={registrations.data}
                         summary={summary.data}
                     />
                 </div>

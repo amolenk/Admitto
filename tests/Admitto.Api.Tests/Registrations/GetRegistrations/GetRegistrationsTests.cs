@@ -64,6 +64,28 @@ public sealed class GetRegistrationsTests(TestContext testContext) : EndToEndTes
         body[0].Tickets[0].Id.ShouldBe(GetRegistrationsFixture.TicketTypeId.Value);
     }
 
+    // Given an event with a single registration and a crew member of its team
+    // When the crew member fetches the registrations for that event
+    // Then the API returns 200 OK with that registration
+    [TestMethod]
+    public async Task GetRegistrations_CrewMember_ReturnsRegistrationList()
+    {
+        var fixture = GetRegistrationsFixture.BobIsCrewMember();
+        await fixture.SetupAsync(Environment);
+
+        var response = await Environment.BobApiClient.GetAsync(
+            fixture.Route,
+            testContext.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+
+        var body = await response.Content.ReadFromJsonAsync<RegistrationItemDto[]>(
+            cancellationToken: testContext.CancellationToken);
+        body.ShouldNotBeNull();
+        body.Length.ShouldBe(1);
+        body[0].Email.ShouldBe("alice@example.com");
+    }
+
     // Given an event with a single registration
     // When a user who is not a member of the team fetches the registrations for that event
     // Then the API returns 403 Forbidden

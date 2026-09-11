@@ -56,4 +56,19 @@ public sealed class SelfCancelRegistrationTests(TestContext testContext) : EndTo
 
         response.StatusCode.ShouldBe(HttpStatusCode.Conflict);
     }
+
+    // Given a checked-in registration
+    // When the attendee self-cancels the registration
+    // Then the API returns 409 Conflict
+    [TestMethod]
+    public async Task SelfCancelRegistration_CheckedInRegistration_Returns409()
+    {
+        var fixture = SelfCancelRegistrationFixture.WithCheckedInRegistration();
+        await fixture.SetupAsync(Environment);
+
+        using var client = Environment.CreatePartnerApiClient(fixture.ApiKey);
+        var response = await client.PostAsync(fixture.CancelRoute, null, testContext.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.Conflict);
+    }
 }

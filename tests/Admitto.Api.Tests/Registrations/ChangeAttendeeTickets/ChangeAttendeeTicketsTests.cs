@@ -26,7 +26,6 @@ public sealed class ChangeAttendeeTicketsTests(TestContext testContext) : EndToE
         response.StatusCode.ShouldBe(HttpStatusCode.NoContent);
     }
 
-    // Non-member (Bob) attempts to change ticket types — returns 403
     // Given a registration with an active general admission ticket
     // When a user who is not a member of the team tries to change the attendee's tickets
     // Then the API returns 403 Forbidden
@@ -34,6 +33,23 @@ public sealed class ChangeAttendeeTicketsTests(TestContext testContext) : EndToE
     public async Task ChangeAttendeeTickets_NonMember_Returns403()
     {
         var fixture = ChangeAttendeeTicketsFixture.WithActiveRegistration();
+        await fixture.SetupAsync(Environment);
+
+        var request = new { TicketTypeIds = new[] { ChangeAttendeeTicketsFixture.WorkshopId.Value } };
+
+        var response = await Environment.BobApiClient.PutAsJsonAsync(
+            fixture.Route, request, cancellationToken: testContext.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.Forbidden);
+    }
+
+    // Given a registration with an active general admission ticket
+    // When a Crew member tries to change the attendee's tickets
+    // Then the API returns 403 Forbidden
+    [TestMethod]
+    public async Task ChangeAttendeeTickets_CrewMember_Returns403()
+    {
+        var fixture = ChangeAttendeeTicketsFixture.WithCrewMember();
         await fixture.SetupAsync(Environment);
 
         var request = new { TicketTypeIds = new[] { ChangeAttendeeTicketsFixture.WorkshopId.Value } };

@@ -83,14 +83,16 @@ function mockApi(
         detail?: RegistrationDetailDto;
         emails?: AttendeeEmailLogItemDto[];
         ticketTypes?: TicketTypeDto[];
+        canManageAttendees?: boolean;
     } = {},
 ) {
     let detail = options.detail ?? registrationDetail();
     const emails = options.emails ?? [];
     const ticketTypes = options.ticketTypes ?? [ticketTypeDto()];
+    const canManageAttendees = options.canManageAttendees ?? true;
 
     get.mockImplementation((path: string) => {
-        if (path === "/api/teams") return Promise.resolve([teamListItemDto({ teamId: TEAM_ID, canManageAttendees: true })]);
+        if (path === "/api/teams") return Promise.resolve([teamListItemDto({ teamId: TEAM_ID, canManageAttendees })]);
         if (path === `/api/teams/${TEAM_ID}/events/${EVENT_ID}`) return Promise.resolve({ startsAt: "2026-08-12T10:00:00Z", timeZone: "Europe/Amsterdam" });
         if (path === DETAIL_PATH) return Promise.resolve(detail);
         if (path === EMAILS_PATH) return Promise.resolve(emails);
@@ -243,6 +245,50 @@ describe("AttendeeDetailPage", () => {
         const badgeRow = heading.parentElement!;
         expect(within(badgeRow).getByText("Reconfirmed")).toBeInTheDocument();
         expect(within(badgeRow).queryByText("Registered")).not.toBeInTheDocument();
+    });
+
+    // Given a crew member viewing a registered attendee
+    // When the attendee detail page loads
+    // Then attendee details and manual check-in are available, but management controls are hidden
+    it("lets crew view details and manually check in without attendee management controls", async () => {
+        mockApi({ canManageAttendees: false });
+
+        const { user } = renderPage();
+
+        expect(await screen.findByRole("heading", { level: 1, name: "Jane Doe" })).toBeInTheDocument();
+        expect(screen.getByText("Details")).toBeInTheDocument();
+        const checkInButton = screen.getByRole("button", { name: "Check in" });
+        expect(checkInButton).toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Cancel registration" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Reconfirm attendance" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Change" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Resend ticket email" })).not.toBeInTheDocument();
+
+        await user.click(checkInButton);
+        expect(await screen.findByRole("heading", { name: "Check in Jane Doe?" })).toBeInTheDocument();
+    });
+
+    // Given a registered attendee who has been checked in at the event
+    // When the detail page renders
+    // Then the event-local check-in time and Checked in timeline entry are shown, with cancel and reconfirm hidden
+    it("shows the event-local check-in time and hides cancel and reconfirm controls", async () => {
+        mockApi({
+            detail: registrationDetail({
+                checkedInAt: "2026-08-12T09:00:00Z",
+                activities: [
+                    activityEntry({ activityType: "Registered" }),
+                    activityEntry({ activityType: "CheckedIn", occurredAt: "2026-08-12T09:00:00Z" }),
+                ],
+            }),
+        });
+
+        renderPage();
+
+        expect(await screen.findByText("Checked in · 2026-08-12 11:00")).toBeInTheDocument();
+        expect(screen.getByText("Checked in", { selector: "span" })).toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Check in" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Cancel registration" })).not.toBeInTheDocument();
+        expect(screen.queryByRole("button", { name: "Reconfirm attendance" })).not.toBeInTheDocument();
     });
 
     // Given a cancelled registration that had previously been reconfirmed

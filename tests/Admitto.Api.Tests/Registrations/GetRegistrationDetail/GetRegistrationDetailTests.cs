@@ -40,6 +40,36 @@ public sealed class GetRegistrationDetailTests(TestContext testContext) : EndToE
         body.GetProperty("activities").GetArrayLength().ShouldBe(0);
     }
 
+    // Given an active registration and a crew member of its team
+    // When the crew member requests the registration detail
+    // Then the API returns the full registration detail needed for manual check-in
+    [TestMethod]
+    public async Task CrewMember_ReturnsFullRegistrationDetail()
+    {
+        var fixture = GetRegistrationDetailFixture.WithActiveRegistrationForCrewMember();
+        await fixture.SetupAsync(Environment);
+
+        var response = await Environment.BobApiClient.GetAsync(
+            fixture.RegistrationRoute, testContext.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.OK);
+
+        var body = await response.Content.ReadFromJsonAsync<JsonElement>(
+            cancellationToken: testContext.CancellationToken);
+        body.GetProperty("id").GetGuid().ShouldBe(fixture.RegistrationId.Value);
+        body.GetProperty("email").GetString().ShouldBe("alice@example.com");
+        body.GetProperty("firstName").GetString().ShouldBe("Alice");
+        body.GetProperty("lastName").GetString().ShouldBe("Doe");
+        body.GetProperty("status").GetString().ShouldBe("registered");
+        body.GetProperty("hasReconfirmed").GetBoolean().ShouldBeFalse();
+
+        var tickets = body.GetProperty("tickets").EnumerateArray().ToList();
+        tickets.ShouldHaveSingleItem();
+        tickets[0].GetProperty("id").GetString().ShouldBe(GetRegistrationDetailFixture.TicketTypeId.Value.ToString());
+
+        body.GetProperty("activities").GetArrayLength().ShouldBe(0);
+    }
+
     // Given no registration exists with the requested id
     // When the registration detail is requested
     // Then the API returns 404 Not Found

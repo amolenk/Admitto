@@ -6,6 +6,7 @@ using Amolenk.Admitto.Core.Organization.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using TeamBuilder = Amolenk.Admitto.Testing.Builders.Organization.Application.TeamBuilder;
 
@@ -25,15 +26,18 @@ internal sealed class RequestTicketConfirmationResendFixture
     private readonly bool _cancelled;
     private readonly bool _revokeApiKey;
     private readonly bool _seedOtherTeamApiKey;
+    private readonly bool _bobIsCrew;
 
     private RequestTicketConfirmationResendFixture(
         bool cancelled,
         bool revokeApiKey = false,
-        bool seedOtherTeamApiKey = false)
+        bool seedOtherTeamApiKey = false,
+        bool bobIsCrew = false)
     {
         _cancelled = cancelled;
         _revokeApiKey = revokeApiKey;
         _seedOtherTeamApiKey = seedOtherTeamApiKey;
+        _bobIsCrew = bobIsCrew;
     }
 
     public static RequestTicketConfirmationResendFixture RegisteredAttendee() => new(cancelled: false);
@@ -45,6 +49,9 @@ internal sealed class RequestTicketConfirmationResendFixture
 
     public static RequestTicketConfirmationResendFixture RegisteredAttendeeWithOtherTeamApiKey() =>
         new(cancelled: false, seedOtherTeamApiKey: true);
+
+    public static RequestTicketConfirmationResendFixture RegisteredAttendeeWithCrewMember() =>
+        new(cancelled: false, bobIsCrew: true);
 
     public string ResendRoute =>
         $"/admin/teams/{TeamId}/events/{EventId}/registrations/{RegistrationId.Value}/ticket-email/resend";
@@ -100,9 +107,21 @@ internal sealed class RequestTicketConfirmationResendFixture
             otherApiKey = ApiKeyTestHelper.CreateApiKeyEntity2(otherTeam.Id);
         }
 
+        var bob = _bobIsCrew
+            ? await environment.OrganizationDatabase.Context.Users.GetAsync(
+                u => u.EmailAddress == EmailAddress.From("bob@example.com"))
+            : null;
+
         await environment.OrganizationDatabase.SeedAsync(db =>
         {
             db.Teams.Add(team);
+            if (bob is not null)
+            {
+                bob.AddTeamMembership(team.Id, TeamMembershipRole.Crew);
+                var creationRequest = team.RequestEventCreation(bob.Id, DateTimeOffset.UtcNow);
+                team.RegisterEventCreated(creationRequest.Id, eventId, DateTimeOffset.UtcNow);
+            }
+
             db.ApiKeys.Add(apiKey);
             if (otherTeam is not null)
                 db.Teams.Add(otherTeam);

@@ -207,7 +207,7 @@ The previous Partner API route `GET /api/events/{eventId}/registrations/{registr
 
 ## 6.6.3 Admin QR check-in
 
-The admin scanner is online-only. It reads the literal `RegistrationId` from the QR code and sends that raw value together with the selected team and event to the Admin API; the server performs all scope and registration validation. Check-in requires the selected event to be `Active`, but does not require the current time to be within the event's start/end dates.
+The admin scanner is online-only. It reads the literal `RegistrationId` from the QR code and sends that raw value together with the selected team and event to the Admin API; the server performs all scope and registration validation. Crew can list registrations, open attendee detail, create registrations, and check attendees in; cancellation, ticket changes, email resend, and reconfirmation remain Organizer/Owner operations. Check-in requires the selected event to be `Active`, but does not require the current time to be within the event's start/end dates.
 
 ```mermaid
 sequenceDiagram

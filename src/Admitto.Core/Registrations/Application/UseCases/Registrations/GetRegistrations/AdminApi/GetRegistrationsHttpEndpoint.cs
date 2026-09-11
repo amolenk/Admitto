@@ -10,7 +10,7 @@ public static class GetRegistrationsHttpEndpoint
         group
             .MapGet("/", GetRegistrations)
             .WithName(nameof(GetRegistrations))
-            .RequireAuthorization(policy => policy.RequireTeamMembership(TeamMembershipRole.Organizer));
+            .RequireAuthorization(policy => policy.RequireTeamMembership(TeamMembershipRole.Crew));
 
         return group;
     }

@@ -59,6 +59,23 @@ public sealed class CancelRegistrationTests(TestContext testContext) : EndToEndT
         response.StatusCode.ShouldBe(HttpStatusCode.BadRequest);
     }
 
+    // Given a checked-in registration
+    // When an admin cancels it
+    // Then the API returns 409 Conflict
+    [TestMethod]
+    public async Task CancelRegistration_CheckedInRegistration_Returns409()
+    {
+        var fixture = CancelRegistrationFixture.CheckedInRegistration();
+        await fixture.SetupAsync(Environment);
+
+        var request = new { Reason = "AttendeeRequest" };
+
+        var response = await Environment.ApiClient.PostAsJsonAsync(
+            fixture.Route, request, cancellationToken: testContext.CancellationToken);
+
+        response.StatusCode.ShouldBe(HttpStatusCode.Conflict);
+    }
+
     // Given an active registration and a user with only crew-level team access
     // When that user attempts to cancel the registration
     // Then the API returns 403 Forbidden

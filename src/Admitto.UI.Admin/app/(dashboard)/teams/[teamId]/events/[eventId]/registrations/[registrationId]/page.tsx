@@ -231,12 +231,7 @@ export default function AttendeeDetailPage() {
     const hasError = detailQuery.isError || (canManageAttendees && emailsQuery.isError);
 
     const timeline = useMemo(
-        () => buildTimeline([
-            ...(registration?.activities ?? []),
-            ...(registration?.checkedInAt && !(registration.activities ?? []).some((a) => a.activityType.toLowerCase() === "checkedin")
-                ? [{ activityType: "CheckedIn", occurredAt: registration.checkedInAt, metadata: null }]
-                : []),
-        ], canManageAttendees ? emailsQuery.data ?? [] : []),
+        () => buildTimeline(registration?.activities ?? [], canManageAttendees ? emailsQuery.data ?? [] : []),
         [registration, emailsQuery.data, canManageAttendees],
     );
 

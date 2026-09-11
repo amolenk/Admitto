@@ -1,6 +1,7 @@
 using Amolenk.Admitto.Api.Tests.Infrastructure.Hosting;
 using Amolenk.Admitto.Core.Registrations.Domain.Entities;
 using Amolenk.Admitto.Core.Registrations.Domain.ValueObjects;
+using Amolenk.Admitto.Core.Shared.Application.Persistence;
 using Amolenk.Admitto.Core.Shared.Kernel.ValueObjects;
 using Amolenk.Admitto.Core.Registrations.Contracts.ValueObjects;
 using TeamBuilder = Amolenk.Admitto.Testing.Builders.Organization.Application.TeamBuilder;
@@ -9,6 +10,8 @@ namespace Amolenk.Admitto.Api.Tests.Registrations.ChangeAttendeeTickets;
 
 internal sealed class ChangeAttendeeTicketsFixture
 {
+    private readonly bool _bobIsCrew;
+
     public static readonly TicketTypeId GeneralAdmissionId = TicketTypeId.From(new Guid("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"));
     public static readonly TicketTypeId WorkshopId = TicketTypeId.From(new Guid("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"));
 
@@ -20,9 +23,13 @@ internal sealed class ChangeAttendeeTicketsFixture
     public string Route =>
         $"/admin/teams/{TeamId}/events/{EventId}/registrations/{RegistrationId.Value}/tickets";
 
-    private ChangeAttendeeTicketsFixture() { }
+    private ChangeAttendeeTicketsFixture(bool bobIsCrew = false)
+    {
+        _bobIsCrew = bobIsCrew;
+    }
 
     public static ChangeAttendeeTicketsFixture WithActiveRegistration() => new();
+    public static ChangeAttendeeTicketsFixture WithCrewMember() => new(bobIsCrew: true);
 
     public async ValueTask SetupAsync(EndToEndTestEnvironment environment)
     {
@@ -57,7 +64,22 @@ internal sealed class ChangeAttendeeTicketsFixture
             [new TicketTypeSnapshot(GeneralAdmissionId, TicketTypeName.From("General Admission"), [])]);
         RegistrationId = registration.Id;
 
-        await environment.OrganizationDatabase.SeedAsync(db => db.Teams.Add(team));
+        var bob = _bobIsCrew
+            ? await environment.OrganizationDatabase.Context.Users.GetAsync(
+                u => u.EmailAddress == EmailAddress.From("bob@example.com"))
+            : null;
+
+        await environment.OrganizationDatabase.SeedAsync(db =>
+        {
+            if (bob is not null)
+            {
+                bob.AddTeamMembership(team.Id, TeamMembershipRole.Crew);
+                var creationRequest = team.RequestEventCreation(bob.Id, DateTimeOffset.UtcNow);
+                team.RegisterEventCreated(creationRequest.Id, eventId, DateTimeOffset.UtcNow);
+            }
+
+            db.Teams.Add(team);
+        });
         await environment.RegistrationsDatabase.SeedAsync(db =>
         {
             db.TicketedEvents.Add(ticketedEvent);

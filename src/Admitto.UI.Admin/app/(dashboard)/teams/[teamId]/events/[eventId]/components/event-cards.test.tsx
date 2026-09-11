@@ -49,16 +49,30 @@ describe("event dashboard cards", () => {
         expect(screen.queryByRole("button")).not.toBeInTheDocument();
     });
 
+    // Given an event whose UTC start crosses into the previous date in its event time zone
+    // When the check-in card renders
+    // Then it shows the event-local start date and time instead of a relative day count
+    it("CheckInCard_EventStartsAtCrossesUtcDateBoundary_ShowsEventLocalDateAndTime", () => {
+        const boundaryEvent = ticketedEventDetailsDto({
+            startsAt: "2027-06-13T01:30:00.000Z",
+            timeZone: "America/Los_Angeles",
+        });
+
+        renderWithProviders(<CheckInCard event={boundaryEvent} />);
+
+        expect(screen.getByText("Jun 12, 2027 · 18:30")).toBeInTheDocument();
+        expect(screen.queryByText(/days/)).not.toBeInTheDocument();
+    });
+
     // Given an event with expected attendees
     // When the check-in card renders
-    // Then it exposes the scanner action and check-in metadata without a share link
-    it("shows the scanner without a share link", () => {
-        renderWithProviders(<CheckInCard event={event} ticketTypes={ticketTypes} summary={{ checkedInCount: 0, expectedCount: 42 }} />);
+    // Then it exposes the scanner action and check-in counts without a share link
+    it("CheckInCard_WithExpectedAttendees_ShowsScannerAndCounts", () => {
+        renderWithProviders(<CheckInCard event={event} summary={{ checkedInCount: 0, expectedCount: 42 }} />);
 
         expect(screen.getByText("Check-in")).toBeInTheDocument();
         expect(screen.getByText("Event day")).toBeInTheDocument();
         expect(screen.getByText("20:00")).toBeInTheDocument();
-        expect(screen.getByText("12 days")).toBeInTheDocument();
         expect(screen.getByRole("button", { name: "Scanner" })).toBeInTheDocument();
         expect(screen.getByText("42")).toBeInTheDocument();
         expect(screen.queryByRole("link")).not.toBeInTheDocument();
@@ -103,26 +117,26 @@ describe("event dashboard cards", () => {
     // When the check-in card renders
     // Then Expected equals total used capacity
     it("uses total used capacity for Expected without reconfirmations", () => {
-        renderWithProviders(<CheckInCard event={event} ticketTypes={ticketTypes} registrations={[]} summary={{ checkedInCount: 0, expectedCount: 42 }} />);
+        renderWithProviders(<CheckInCard event={event} summary={{ checkedInCount: 0, expectedCount: 42 }} />);
 
         expect(screen.getByText("Expected")).toBeInTheDocument();
         expect(screen.getByText("42")).toBeInTheDocument();
     });
 
-    // Given two active reconfirmed registrations
+    // Given the attendance summary reports two expected attendees
     // When the check-in card renders
-    // Then Expected equals the reconfirmed count
-    it("uses the reconfirmed count for Expected when available", () => {
-        const registrations = [
-            registrationListItemDto({ id: "reg-1", hasReconfirmed: true }),
-            registrationListItemDto({ id: "reg-2", hasReconfirmed: true }),
-        ];
-
-        renderWithProviders(<CheckInCard event={event} ticketTypes={ticketTypes} registrations={registrations} summary={{ checkedInCount: 0, expectedCount: 2 }} />);
+    // Then Expected uses summary.expectedCount
+    it("CheckInCard_SummaryReportsExpectedAttendees_DisplaysSummaryCount", () => {
+        renderWithProviders(
+            <CheckInCard
+                event={event}
+                summary={{ checkedInCount: 0, expectedCount: 2 }}
+            />,
+        );
 
         expect(screen.getByText("Expected")).toBeInTheDocument();
         expect(screen.getByText("2")).toBeInTheDocument();
-        expect(screen.queryByText("42")).not.toBeInTheDocument();
+        expect(screen.queryByText("1")).not.toBeInTheDocument();
     });
 
     // Given a cancelled registration that was previously reconfirmed
