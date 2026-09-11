@@ -24,8 +24,8 @@ public sealed class GetTeamsTests(TestContext testContext) : AspireIntegrationTe
         // Assert
         result.ShouldNotBeNull();
         result.Count.ShouldBe(2);
-        result.ShouldContain(t => t.Name == "Acme Events" && t.CanManageTeamSettings && t.CanCreateEvents);
-        result.ShouldContain(t => t.Name == "Beta Events" && t.CanManageTeamSettings && t.CanCreateEvents);
+        result.ShouldContain(t => t.Name == "Acme Events" && t.CanManageTeamSettings && t.CanCreateEvents && t.CanManageAttendees);
+        result.ShouldContain(t => t.Name == "Beta Events" && t.CanManageTeamSettings && t.CanCreateEvents && t.CanManageAttendees);
         result.ShouldNotContain(t => t.Name == "Retired Team");
     }
 
@@ -51,6 +51,25 @@ public sealed class GetTeamsTests(TestContext testContext) : AspireIntegrationTe
         result.ShouldContain(t => t.Name == "Acme Events" && t.CanManageTeamSettings && t.CanCreateEvents);
         result.ShouldContain(t => t.Name == "Beta Events" && !t.CanManageTeamSettings && !t.CanCreateEvents);
         result.ShouldNotContain(t => t.Name == "Gamma Events");
+    }
+
+    // Given a user with Owner, Organizer, and Crew memberships across teams
+    // When the user lists their teams
+    // Then only Owner and Organizer teams can manage attendees while Crew cannot
+    [TestMethod]
+    public async ValueTask GetTeams_MembershipRoles_MapCanManageAttendeesCapability()
+    {
+        var fixture = GetTeamsFixture.UserListsOwnActiveTeams();
+        await fixture.SetupRoleCapabilityTeamsAsync(Environment);
+
+        var query = new GetTeamsQuery(fixture.UserId, CallerIsAdmin: false);
+        var sut = new GetTeamsHandler(Environment.OrganizationDatabase.Context);
+
+        var result = await sut.HandleAsync(query, testContext.CancellationToken);
+
+        result.Single(t => t.TeamId == fixture.CapabilityOwnerTeamId).CanManageAttendees.ShouldBeTrue();
+        result.Single(t => t.TeamId == fixture.CapabilityOrganizerTeamId).CanManageAttendees.ShouldBeTrue();
+        result.Single(t => t.TeamId == fixture.CapabilityCrewTeamId).CanManageAttendees.ShouldBeFalse();
     }
 
     // Given a user is a member of active team "acme" and archived team "beta"

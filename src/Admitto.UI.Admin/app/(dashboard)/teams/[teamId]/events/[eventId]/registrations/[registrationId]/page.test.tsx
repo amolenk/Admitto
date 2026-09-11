@@ -9,7 +9,7 @@ import type {
     TicketTypeDto,
 } from "@/lib/admitto-api/generated";
 import { apiClient } from "@/lib/api-client";
-import { ticketTypeDto } from "@/test-utils/builders";
+import { teamListItemDto, ticketTypeDto } from "@/test-utils/builders";
 import { renderWithProviders } from "@/test-utils/render";
 import { setRoute } from "@/test-utils/router";
 
@@ -68,6 +68,7 @@ const registrationDetail = (
     status: "registered",
     registeredAt: "2026-08-10T09:00:00Z",
     hasReconfirmed: false,
+    checkedInAt: null,
     reconfirmedAt: null,
     cancellationReason: null,
     tickets: [{ id: "cccccccc-0000-0000-0000-000000000001", name: "General Admission" }],
@@ -89,6 +90,8 @@ function mockApi(
     const ticketTypes = options.ticketTypes ?? [ticketTypeDto()];
 
     get.mockImplementation((path: string) => {
+        if (path === "/api/teams") return Promise.resolve([teamListItemDto({ teamId: TEAM_ID, canManageAttendees: true })]);
+        if (path === `/api/teams/${TEAM_ID}/events/${EVENT_ID}`) return Promise.resolve({ startsAt: "2026-08-12T10:00:00Z", timeZone: "Europe/Amsterdam" });
         if (path === DETAIL_PATH) return Promise.resolve(detail);
         if (path === EMAILS_PATH) return Promise.resolve(emails);
         if (path === TICKET_TYPES_PATH) return Promise.resolve(ticketTypes);

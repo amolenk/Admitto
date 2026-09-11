@@ -205,6 +205,36 @@ QR-code retrieval is exposed only as `GET /e/{eventSlug}/qr-code/{registrationId
 
 The previous Partner API route `GET /api/events/{eventId}/registrations/{registrationId}/qr-code` is no longer exposed.
 
+## 6.6.3 Admin QR check-in
+
+The admin scanner is online-only. It reads the literal `RegistrationId` from the QR code and sends that raw value together with the selected team and event to the Admin API; the server performs all scope and registration validation. Check-in requires the selected event to be `Active`, but does not require the current time to be within the event's start/end dates.
+
+```mermaid
+sequenceDiagram
+  participant Scanner as Admin scanner
+  participant Endpoint as Admin check-in endpoint
+  participant Auth as Team/event authorization
+  participant Handler as Check-in handler
+  participant Event as TicketedEvent
+  participant Registration
+  participant Interceptor as DomainEventsInterceptor
+  participant Activity as ActivityLogProjector
+
+  Scanner->>Endpoint: submit raw RegistrationId + selected team/event
+  Endpoint->>Auth: authorize selected team/event
+  Endpoint->>Handler: Send(CheckInCommand)
+  Handler->>Event: load selected event
+  Handler->>Registration: load by (eventId, RegistrationId)
+  Handler->>Registration: CheckIn()
+  Registration-->>Registration: raise check-in domain event
+  Endpoint->>Interceptor: SaveChangesAsync (module UoW)
+  Interceptor->>Activity: dispatch domain event; project timestamp-only activity row
+  Interceptor-->>Endpoint: transaction committed
+  Endpoint-->>Scanner: success
+```
+
+The handler rejects a missing, wrong-event, or cancelled registration and refuses an inactive event. It does not perform start/end gating. Check-in is one-way: `CheckedInAt` is set once, and the reciprocal invariant prevents a checked-in registration from being cancelled and a cancelled registration from being checked in. The domain event only updates the activity timeline; it does not enqueue a notification or create an audit record. Simultaneous attempts for the same registration are reconciled to one `Success`; every competing request returns `AlreadyCheckedIn` with the persisted `CheckedInAt` timestamp, rather than exposing a public concurrency conflict or creating a second check-in.
+
 ## 6.7 Policy mutation flow
 
 Policy commands (`ConfigureRegistrationPolicyCommand`, `ConfigureReconfirmPolicyCommand`, `ConfigureWaitlistPolicyCommand`) load the `TicketedEvent` aggregate and call the matching policy mutator directly. Each mutator refuses when the event's status is not Active, so there is no separate lifecycle guard. Optimistic concurrency is supplied by `TicketedEvent.Version`.

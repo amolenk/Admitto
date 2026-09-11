@@ -68,6 +68,37 @@ public sealed class ReconfirmAutoExpiredIntegrationEventHandlerTests(TestContext
         });
     }
 
+    // Given a registered attendee who has already checked in
+    // When the reconfirm-auto-expired event is handled
+    // Then the checked-in registration remains registered and no cancellation is produced
+    [TestMethod]
+    public async ValueTask HandleAsync_CheckedInRegistration_SkipsCancellation()
+    {
+        var fixture = HandleReconfirmAutoExpiredFixture.CheckedInRegistration();
+        await fixture.SetupAsync(Environment);
+        await ClearOutboxAsync();
+
+        var sut = NewSut();
+        await sut.HandleAsync(
+            new ReconfirmAutoExpiredIntegrationEvent(
+                fixture.TeamId.Value,
+                fixture.TicketedEventId.Value,
+                [],
+                [Reference(fixture)]),
+            testContext.CancellationToken);
+        await Environment.RegistrationsDatabase.Context.SaveChangesAsync(testContext.CancellationToken);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async db =>
+        {
+            var registration = await db.Registrations.FirstAsync(
+                r => r.Id == fixture.RegistrationId,
+                testContext.CancellationToken);
+            registration.Status.ShouldBe(RegistrationStatus.Registered);
+            registration.CheckedInAt.ShouldNotBeNull();
+            (await db.OutboxMessages.ToListAsync(testContext.CancellationToken)).ShouldBeEmpty();
+        });
+    }
+
     // Given a registration that was already cancelled for another reason
     // When the reconfirm-auto-expired event is handled
     // Then the original cancellation reason is left unchanged

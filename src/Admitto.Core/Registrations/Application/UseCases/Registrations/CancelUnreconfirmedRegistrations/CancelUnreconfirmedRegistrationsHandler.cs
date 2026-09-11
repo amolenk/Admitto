@@ -50,6 +50,7 @@ internal sealed class CancelUnreconfirmedRegistrationsHandler(IRegistrationsWrit
 
             if (registration is null
                 || registration.Status != RegistrationStatus.Registered
+                || registration.CheckedInAt is not null
                 || registration.HasReconfirmed
                 || !registration.Tickets.Select(t => t.Id.Value).ToHashSet()
                     .SetEquals(reference.TicketTypeIds))

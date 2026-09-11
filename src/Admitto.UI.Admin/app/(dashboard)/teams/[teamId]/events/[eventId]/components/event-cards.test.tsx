@@ -53,7 +53,7 @@ describe("event dashboard cards", () => {
     // When the check-in card renders
     // Then it exposes the scanner action and check-in metadata without a share link
     it("shows the scanner without a share link", () => {
-        renderWithProviders(<CheckInCard event={event} ticketTypes={ticketTypes} />);
+        renderWithProviders(<CheckInCard event={event} ticketTypes={ticketTypes} summary={{ checkedInCount: 0, expectedCount: 42 }} />);
 
         expect(screen.getByText("Check-in")).toBeInTheDocument();
         expect(screen.getByText("Event day")).toBeInTheDocument();
@@ -103,7 +103,7 @@ describe("event dashboard cards", () => {
     // When the check-in card renders
     // Then Expected equals total used capacity
     it("uses total used capacity for Expected without reconfirmations", () => {
-        renderWithProviders(<CheckInCard event={event} ticketTypes={ticketTypes} registrations={[]} />);
+        renderWithProviders(<CheckInCard event={event} ticketTypes={ticketTypes} registrations={[]} summary={{ checkedInCount: 0, expectedCount: 42 }} />);
 
         expect(screen.getByText("Expected")).toBeInTheDocument();
         expect(screen.getByText("42")).toBeInTheDocument();
@@ -118,7 +118,7 @@ describe("event dashboard cards", () => {
             registrationListItemDto({ id: "reg-2", hasReconfirmed: true }),
         ];
 
-        renderWithProviders(<CheckInCard event={event} ticketTypes={ticketTypes} registrations={registrations} />);
+        renderWithProviders(<CheckInCard event={event} ticketTypes={ticketTypes} registrations={registrations} summary={{ checkedInCount: 0, expectedCount: 2 }} />);
 
         expect(screen.getByText("Expected")).toBeInTheDocument();
         expect(screen.getByText("2")).toBeInTheDocument();

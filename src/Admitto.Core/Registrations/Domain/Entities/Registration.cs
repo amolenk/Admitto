@@ -36,8 +36,10 @@ public class Registration : Aggregate<RegistrationId>
         Status = RegistrationStatus.Registered;
         HasReconfirmed = false;
         ReconfirmedAt = null;
+        CheckedInAt = null;
         _tickets = tickets.ToList();
         AdditionalDetails = additionalDetails;
+        SearchText = BuildSearchText(email, firstName, lastName);
 
         AddDomainEvent(new AttendeeRegisteredDomainEvent(teamId, eventId, id, email, firstName, lastName, tickets, registeredAt));
     }
@@ -53,6 +55,8 @@ public class Registration : Aggregate<RegistrationId>
     public DateTimeOffset? ReconfirmedAt { get; private set; }
     public CancellationReason? CancellationReason { get; private set; }
     public DateTimeOffset? CancelledAt { get; private set; }
+    public DateTimeOffset? CheckedInAt { get; private set; }
+    public string SearchText { get; private set; } = string.Empty;
     public IReadOnlyList<TicketTypeSnapshot> Tickets => _tickets.AsReadOnly();
     public AdditionalDetails AdditionalDetails { get; private set; } = AdditionalDetails.Empty;
 
@@ -84,6 +88,9 @@ public class Registration : Aggregate<RegistrationId>
         if (Status == RegistrationStatus.Cancelled)
             throw new BusinessRuleViolationException(Errors.AlreadyCancelled);
 
+        if (CheckedInAt is not null)
+            throw new BusinessRuleViolationException(Errors.CannotCancelCheckedIn);
+
         Status = RegistrationStatus.Cancelled;
         CancellationReason = reason;
         CancelledAt = DateTimeOffset.UtcNow;
@@ -110,9 +117,11 @@ public class Registration : Aggregate<RegistrationId>
         ReconfirmedAt = null;
         CancellationReason = null;
         CancelledAt = null;
+        CheckedInAt = null;
         _tickets.Clear();
         _tickets.AddRange(tickets);
         AdditionalDetails = additionalDetails;
+        SearchText = BuildSearchText(Email, FirstName, LastName);
 
         AddDomainEvent(new AttendeeRegisteredDomainEvent(
             TeamId,
@@ -157,6 +166,7 @@ public class Registration : Aggregate<RegistrationId>
         FirstName = firstName;
         LastName = lastName;
         AdditionalDetails = additionalDetails;
+        SearchText = BuildSearchText(Email, FirstName, LastName);
         _tickets.Clear();
         _tickets.AddRange(newTickets);
 
@@ -182,6 +192,21 @@ public class Registration : Aggregate<RegistrationId>
         AddDomainEvent(new RegistrationReconfirmedDomainEvent(TeamId, EventId, Id, Email, now));
     }
 
+    public void CheckIn(DateTimeOffset serverNow)
+    {
+        if (Status == RegistrationStatus.Cancelled)
+            throw new BusinessRuleViolationException(Errors.CannotCheckInCancelled);
+
+        if (CheckedInAt is not null)
+            return;
+
+        CheckedInAt = serverNow;
+        AddDomainEvent(new RegistrationCheckedInDomainEvent(TeamId, EventId, Id, serverNow));
+    }
+
+    private static string BuildSearchText(EmailAddress email, FirstName firstName, LastName lastName) =>
+        $"{firstName.Value} {lastName.Value} {email.Value}".ToLowerInvariant();
+
     private static bool HasSameTicketSelection(
         IReadOnlyList<TicketTypeSnapshot> currentTickets,
         IReadOnlyList<TicketTypeSnapshot> newTickets)
@@ -203,6 +228,16 @@ public class Registration : Aggregate<RegistrationId>
         public static readonly Error AlreadyCancelled = new(
             "registration.already_cancelled",
             "Registration is already cancelled.",
+            Type: ErrorType.Conflict);
+
+        public static readonly Error CannotCancelCheckedIn = new(
+            "registration.cannot_cancel_checked_in",
+            "A checked-in registration cannot be cancelled.",
+            Type: ErrorType.Conflict);
+
+        public static readonly Error CannotCheckInCancelled = new(
+            "registration.cannot_check_in_cancelled",
+            "A cancelled registration cannot be checked in.",
             Type: ErrorType.Conflict);
 
         public static readonly Error CannotReconfirmCancelled = new(

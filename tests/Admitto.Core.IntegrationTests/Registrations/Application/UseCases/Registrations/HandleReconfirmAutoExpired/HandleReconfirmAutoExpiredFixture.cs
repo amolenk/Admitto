@@ -11,6 +11,7 @@ internal sealed class HandleReconfirmAutoExpiredFixture
     private bool _cancelled;
     private bool _archived;
     private bool _reconfirmed;
+    private bool _checkedIn;
 
     public TeamId TeamId { get; } = TeamId.New();
     public TicketedEventId TicketedEventId { get; } = TicketedEventId.New();
@@ -26,6 +27,7 @@ internal sealed class HandleReconfirmAutoExpiredFixture
     public static HandleReconfirmAutoExpiredFixture ArchivedEventRegistration() => new() { _archived = true };
     public static HandleReconfirmAutoExpiredFixture CancelledRegistration() => new() { _cancelled = true };
     public static HandleReconfirmAutoExpiredFixture ReconfirmedRegistration() => new() { _reconfirmed = true };
+    public static HandleReconfirmAutoExpiredFixture CheckedInRegistration() => new() { _checkedIn = true };
 
     public async ValueTask SetupAsync(IntegrationTestEnvironment environment)
     {
@@ -68,6 +70,11 @@ internal sealed class HandleReconfirmAutoExpiredFixture
             if (_reconfirmed)
             {
                 registration.Reconfirm(DateTimeOffset.UtcNow);
+            }
+
+            if (_checkedIn)
+            {
+                registration.CheckIn(DateTimeOffset.UtcNow);
             }
 
             if (_cancelled)

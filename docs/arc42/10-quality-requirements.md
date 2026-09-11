@@ -11,6 +11,7 @@ Quality goals from [chapter 1](01-introduction-and-goals.md) are made concrete h
 | Q-03 | Reliability | Outbox dispatch fails after transaction commit | Message stays in outbox table for background retry | No messages lost | #2 |
 | Q-04 | Security | Unauthenticated request to admin endpoint | 401 returned before handler executes | JWT validation runs in middleware | #4 |
 | Q-05 | Operational simplicity | Operator deploys a new version | Single build artifact per host; no service mesh or discovery required | One container image per host, shared database and queue | #3 |
+| Q-06 | Attendance reliability/security | Admin scanner submits a raw QR `RegistrationId` for a selected team/event | Only the scoped registration is checked in; cancelled/wrong-scope registrations are rejected, date boundaries do not block an Active event, and concurrent attempts yield exactly one `Success` while all competitors receive `AlreadyCheckedIn` with the persisted timestamp | Server-side scope validation, one-way `CheckedInAt`, deterministic concurrent-scan reconciliation; expected count excludes cancelled and includes unreconfirmed registrations | #2 / #4 |
 
 ## 10.2 Test strategy
 
@@ -122,6 +123,10 @@ var result = await ErrorResult.CaptureAsync(
 
 result.Error.ShouldMatch(Coupon.Errors.ExpiryMustBeInFuture);
 ```
+
+### Attendance check-in coverage
+
+Domain tests cover the one-way check-in and cancellation/check-in reciprocal invariant. Integration/API tests cover raw QR validation under the selected team/event, Active-only behavior without start/end gating, timestamp-only activity projection, expected-attendee counting, and concurrent-scan reconciliation (`Success` once; `AlreadyCheckedIn` with the persisted timestamp for competitors). The runtime sequence is documented in [§6.6.3](06-runtime-view.md#663-admin-qr-check-in).
 
 ## Done-when
 

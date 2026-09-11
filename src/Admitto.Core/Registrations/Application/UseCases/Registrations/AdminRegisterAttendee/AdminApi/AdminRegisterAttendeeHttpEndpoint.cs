@@ -11,7 +11,7 @@ public static class AdminRegisterAttendeeHttpEndpoint
         group
             .MapPost("/", AdminRegisterAttendee)
             .WithName(nameof(AdminRegisterAttendee))
-            .RequireAuthorization(policy => policy.RequireTeamMembership(TeamMembershipRole.Organizer));
+            .RequireAuthorization(policy => policy.RequireTeamMembership(TeamMembershipRole.Crew));
 
         return group;
     }

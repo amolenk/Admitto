@@ -4,7 +4,9 @@ import { RegistrationListItemDto, TicketedEventDetailsDto, TicketTypeDto } from 
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Clock, QrCode } from "lucide-react";
+import { Clock, QrCode, ArrowUpRight } from "lucide-react";
+import { useRouter } from "next/navigation";
+import type { CheckInSummaryDto } from "@/lib/admitto-api/generated/types.gen";
 import { formatInEventZone } from "@/lib/time-zones";
 
 function daysUntil(iso: string): number {
@@ -21,15 +23,14 @@ interface CheckInCardProps {
     event: TicketedEventDetailsDto;
     ticketTypes: TicketTypeDto[];
     registrations?: RegistrationListItemDto[];
+    summary?: CheckInSummaryDto;
 }
 
-export function CheckInCard({ event, ticketTypes, registrations }: CheckInCardProps) {
+export function CheckInCard({ event, ticketTypes, registrations, summary }: CheckInCardProps) {
+    const router = useRouter();
     const days = daysUntil(event.startsAt);
-    const totalUsed = ticketTypes.reduce((sum, t) => sum + Number(t.usedCapacity), 0);
-    const reconfirmedCount = (registrations ?? []).filter(
-        (registration) => registration.status === "registered" && registration.hasReconfirmed,
-    ).length;
-    const expected = reconfirmedCount >= 1 ? reconfirmedCount : totalUsed;
+    const expected = summary ? Number(summary.expectedCount) : null;
+    const checkedIn = summary ? Number(summary.checkedInCount) : null;
 
     return (
         <Card className="p-5">
@@ -52,23 +53,24 @@ export function CheckInCard({ event, ticketTypes, registrations }: CheckInCardPr
                     </div>
                     <div className="min-w-0 flex-1">
                         <p className="text-[13.5px] leading-relaxed">
-                            Check-in opens automatically at{" "}
+                            Scanner is available while the event is active. The event starts at{" "}
                             <span className="font-mono font-medium">{formatTime(event.startsAt, event.timeZone)}</span>{" "}
-                            on event day. Share the QR scanner link with your door team.
+                            in {event.timeZone}.
                         </p>
                         <div className="flex gap-2 mt-3">
-                            <Button variant="outline" size="sm">
+                            <Button variant="outline" size="sm" onClick={() => router.push(`/teams/${event.teamId}/events/${event.id}/check-in`)}>
                                 <QrCode className="size-3.5" />
                                 Scanner
+                                <ArrowUpRight className="size-3.5" />
                             </Button>
                         </div>
                     </div>
                 </div>
             </div>
             <div className="grid grid-cols-3 mt-4 gap-3 text-center">
-                <CheckinPill n="0" label="Checked in" />
-                <CheckinPill n={String(expected)} label="Expected" primary />
-                <CheckinPill n="0%" label="Complete" muted />
+                <CheckinPill n={checkedIn === null ? "—" : String(checkedIn)} label="Checked in" />
+                <CheckinPill n={expected === null ? "—" : String(expected)} label="Expected" primary />
+                <CheckinPill n={expected === null ? "—" : `${expected ? Math.round((checkedIn! / expected) * 100) : 0}%`} label="Complete" muted />
             </div>
         </Card>
     );

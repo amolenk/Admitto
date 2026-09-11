@@ -159,6 +159,36 @@ public sealed class ActivityLogProjectorTests(TestContext testContext) : AspireI
         });
     }
 
+    // Given a RegistrationCheckedIn domain event
+    // When the projector handles the event
+    // Then a CheckedIn activity log entry is created with no metadata
+    [TestMethod]
+    public async ValueTask HandleAsync_RegistrationCheckedIn_CreatesCheckedInEntryWithoutMetadata()
+    {
+        var registrationId = RegistrationId.New();
+        var teamId = TeamId.New();
+        var eventId = TicketedEventId.New();
+        var checkedInAt = DateTimeOffset.UtcNow.AddMinutes(-2);
+        var domainEvent = new RegistrationCheckedInDomainEvent(
+            teamId,
+            eventId,
+            registrationId,
+            checkedInAt);
+
+        var projector = new ActivityLogProjector(Environment.RegistrationsDatabase.Context);
+        await projector.HandleAsync(domainEvent, testContext.CancellationToken);
+
+        await Environment.RegistrationsDatabase.AssertAsync(async db =>
+        {
+            var entry = await db.ActivityLog.SingleAsync(
+                a => a.RegistrationId == registrationId.Value,
+                testContext.CancellationToken);
+            entry.ActivityType.ShouldBe(ActivityType.CheckedIn);
+            entry.OccurredAt.ShouldBe(checkedInAt);
+            entry.Metadata.ShouldBeNull();
+        });
+    }
+
     // Given a registration
     // When multiple domain events for that registration are handled in sequence
     // Then an activity log entry accumulates for each event

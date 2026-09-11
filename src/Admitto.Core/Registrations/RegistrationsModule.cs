@@ -9,8 +9,11 @@ using Amolenk.Admitto.Core.Registrations.Application.UseCases.Coupons.ListCoupon
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Coupons.RevokeCoupon.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.GetQRCode.PublicApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.GetRegistrationDetails.AdminApi;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.CheckIn.AdminApi;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.GetCheckInSummary.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.GetPartnerRegistrationDetails.PartnerApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.GetRegistrations.AdminApi;
+using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.LookupCheckInCandidates.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RequestTicketConfirmationResend.AdminApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.RequestTicketConfirmationResend.PartnerApi;
 using Amolenk.Admitto.Core.Registrations.Application.UseCases.Registrations.ResolvePartnerRegistration.PartnerApi;
@@ -74,6 +77,9 @@ public static class RegistrationsModule
             .MapGetRegistrations()
             .MapExportRegistrationsCsv()
             .MapGetRegistrationDetails()
+            .MapCheckIn()
+            .MapLookupCheckInCandidates()
+            .MapGetCheckInSummary()
             .MapCancelRegistration()
             .MapAdminReconfirmRegistration()
             .MapChangeAttendeeTickets()

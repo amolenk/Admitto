@@ -14,9 +14,12 @@ import {
     RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
-import { TicketTypeDto } from "@/lib/admitto-api/generated";
+import { ActivityLogEntryDto, AttendeeEmailLogItemDto, CheckInResponse, RegistrationDetailDto, TicketDetailDto, TicketTypeDto, TicketedEventDetailsDto } from "@/lib/admitto-api/generated";
 import { apiClient } from "@/lib/api-client";
 import { FormError } from "@/components/form-error";
+import { formatInEventZone } from "@/lib/time-zones";
+import { useTeams } from "@/hooks/use-teams";
+import { mapCheckInOutcome } from "@/lib/check-in";
 import { PageLayout } from "@/components/page-layout";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -39,42 +42,6 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-
-// ── Local types (new DTOs not yet in generated SDK) ──────────────────────────
-
-interface ActivityLogEntryDto {
-    activityType: string;
-    occurredAt: string;
-    metadata?: string | null;
-}
-
-interface TicketDetailDto {
-    id: string;
-    name: string;
-}
-
-interface RegistrationDetailDto {
-    id: string;
-    email: string;
-    firstName?: string | null;
-    lastName?: string | null;
-    status: string;
-    registeredAt: string;
-    hasReconfirmed: boolean;
-    reconfirmedAt?: string | null;
-    cancellationReason?: string | null;
-    tickets: TicketDetailDto[];
-    additionalDetails: Record<string, string>;
-    activities: ActivityLogEntryDto[];
-}
-
-interface AttendeeEmailLogItemDto {
-    id: string;
-    subject: string;
-    emailType: string;
-    status: string;
-    sentAt?: string | null;
-}
 
 // ── Fetch helpers ─────────────────────────────────────────────────────────────
 
@@ -151,7 +118,7 @@ function cancellationReasonLabel(reason?: string | null): string {
 
 // ── Timeline item definition ──────────────────────────────────────────────────
 
-type TimelineKind = "registered" | "reconfirmed" | "cancelled" | "ticketschanged" | "email";
+type TimelineKind = "registered" | "reconfirmed" | "cancelled" | "ticketschanged" | "checkedin" | "email";
 
 interface TimelineEntry {
     kind: TimelineKind;
@@ -189,6 +156,9 @@ function buildTimeline(
             } catch {
                 detail = "Ticket selection was updated.";
             }
+        } else if (kind === "checkedin") {
+            title = "Checked in";
+            detail = "Attendee was checked in at the door.";
         }
         return { kind, ts: a.occurredAt, title, detail };
     });
@@ -215,6 +185,8 @@ export default function AttendeeDetailPage() {
         registrationId: string;
     }>();
     const queryClient = useQueryClient();
+    const { selectedTeam } = useTeams();
+    const canManageAttendees = selectedTeam?.canManageAttendees === true;
 
     const detailQuery = useQuery({
         queryKey: ["registration-detail", teamId, eventId, registrationId],
@@ -228,6 +200,13 @@ export default function AttendeeDetailPage() {
         queryFn: () => fetchAttendeeEmails(teamId, eventId, registrationId),
         throwOnError: false,
         retry: false,
+        enabled: canManageAttendees,
+    });
+    const eventQuery = useQuery({
+        queryKey: ["event", teamId, eventId],
+        queryFn: () => apiClient.get<TicketedEventDetailsDto>(`/api/teams/${teamId}/events/${eventId}`),
+        throwOnError: false,
+        retry: false,
     });
 
     const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
@@ -237,21 +216,28 @@ export default function AttendeeDetailPage() {
 
     const [reconfirmDialogOpen, setReconfirmDialogOpen] = useState(false);
     const [isReconfirming, setIsReconfirming] = useState(false);
+    const [checkInDialogOpen, setCheckInDialogOpen] = useState(false);
+    const [isCheckingIn, setIsCheckingIn] = useState(false);
 
     const [changeTicketsDialogOpen, setChangeTicketsDialogOpen] = useState(false);
     const [selectedTicketTypeIds, setSelectedTicketTypeIds] = useState<string[]>([]);
     const [isChangingTickets, setIsChangingTickets] = useState(false);
     const [changeTicketsError, setChangeTicketsError] = useState<string | null>(null);
 
-    const [timelineFilter, setTimelineFilter] = useState<"all" | "events" | "emails">("all");
+    const [timelineFilter, setTimelineFilter] = useState<string>("all");
 
     const registration = detailQuery.data;
-    const isLoading = detailQuery.isLoading || emailsQuery.isLoading;
-    const hasError = detailQuery.isError || emailsQuery.isError;
+    const isLoading = detailQuery.isLoading || (canManageAttendees && emailsQuery.isLoading);
+    const hasError = detailQuery.isError || (canManageAttendees && emailsQuery.isError);
 
     const timeline = useMemo(
-        () => buildTimeline(registration?.activities ?? [], emailsQuery.data ?? []),
-        [registration, emailsQuery.data],
+        () => buildTimeline([
+            ...(registration?.activities ?? []),
+            ...(registration?.checkedInAt && !(registration.activities ?? []).some((a) => a.activityType.toLowerCase() === "checkedin")
+                ? [{ activityType: "CheckedIn", occurredAt: registration.checkedInAt, metadata: null }]
+                : []),
+        ], canManageAttendees ? emailsQuery.data ?? [] : []),
+        [registration, emailsQuery.data, canManageAttendees],
     );
 
     const visibleTimeline = useMemo(() => {
@@ -263,7 +249,7 @@ export default function AttendeeDetailPage() {
     const ticketTypesQuery = useQuery({
         queryKey: ["ticket-types", teamId, eventId],
         queryFn: () => fetchTicketTypes(teamId, eventId),
-        enabled: changeTicketsDialogOpen,
+        enabled: changeTicketsDialogOpen && canManageAttendees,
         throwOnError: false,
         retry: false,
     });
@@ -326,6 +312,23 @@ export default function AttendeeDetailPage() {
         }
     }
 
+    async function handleCheckInConfirm() {
+        setIsCheckingIn(true);
+        try {
+            const response = await apiClient.post<CheckInResponse>(`/api/teams/${teamId}/events/${eventId}/registrations/check-in`, { credential: registrationId });
+            const result = mapCheckInOutcome(response);
+            if (result.kind !== "success") {
+                toast.error(result.kind === "duplicate" ? `Already checked in${response.checkedInAt && eventQuery.data ? ` at ${formatInEventZone(response.checkedInAt, eventQuery.data.timeZone, "HH:mm")}` : ""}` : result.kind === "cancelled" ? "Cancelled — Create Registration is required." : result.kind === "inactive" ? "This event is not active." : "This attendee is not valid for this event.");
+                return;
+            }
+            await queryClient.invalidateQueries({ queryKey: ["registration-detail", teamId, eventId, registrationId] });
+            await queryClient.invalidateQueries({ queryKey: ["check-in-summary", teamId, eventId] });
+            toast.success("Attendee checked in.");
+            setCheckInDialogOpen(false);
+        } catch { toast.error("Could not check in this attendee. Please try again."); }
+        finally { setIsCheckingIn(false); }
+    }
+
     async function handleChangeTicketsConfirm() {
         setIsChangingTickets(true);
         setChangeTicketsError(null);
@@ -349,6 +352,9 @@ export default function AttendeeDetailPage() {
     }
 
     const name = registration ? attendeeFullName(registration) : "";
+    const earlyArrivalWarning = eventQuery.data
+        ? Date.now() >= new Date(eventQuery.data.startsAt).getTime() - 30 * 60_000 && Date.now() < new Date(eventQuery.data.startsAt).getTime()
+        : false;
 
     return (
         <PageLayout>
@@ -458,7 +464,7 @@ export default function AttendeeDetailPage() {
                             <div className="flex items-center gap-2 flex-none">
                                 {registration.status === "registered" && (
                                     <>
-                                        <Button
+                                        {canManageAttendees && <Button
                                             variant="outline"
                                             size="sm"
                                             disabled={isResendingTicketEmail}
@@ -466,8 +472,9 @@ export default function AttendeeDetailPage() {
                                         >
                                             <RotateCcw className="size-3.5" />
                                             {isResendingTicketEmail ? "Requesting…" : "Resend ticket email"}
-                                        </Button>
-                                        {!registration.hasReconfirmed && (
+                                        </Button>}
+                                        {!registration.checkedInAt && <Button variant="default" size="sm" onClick={() => setCheckInDialogOpen(true)}><CheckCircle className="size-3.5" /> Check in</Button>}
+                                        {canManageAttendees && !registration.hasReconfirmed && !registration.checkedInAt && (
                                             <Button
                                                 variant="outline"
                                                 size="sm"
@@ -477,7 +484,7 @@ export default function AttendeeDetailPage() {
                                                 Reconfirm attendance
                                             </Button>
                                         )}
-                                        <Button
+                                        {canManageAttendees && !registration.checkedInAt && <Button
                                             variant="outline"
                                             size="sm"
                                             className="text-destructive border-destructive/35 hover:bg-destructive/10 hover:text-destructive"
@@ -488,7 +495,7 @@ export default function AttendeeDetailPage() {
                                         >
                                             <Trash2 className="size-3.5" />
                                             Cancel registration
-                                        </Button>
+                                        </Button>}
                                     </>
                                 )}
                             </div>
@@ -548,6 +555,7 @@ export default function AttendeeDetailPage() {
                                         </div>
                                     ))}
                                 </dl>
+                                <div className="mt-3 border-t pt-3 text-[13.5px]"><span className="text-muted-foreground">Attendance</span><span className="ml-3">{registration.checkedInAt ? `Checked in · ${eventQuery.data ? formatInEventZone(registration.checkedInAt, eventQuery.data.timeZone, "yyyy-MM-dd HH:mm") : "time unavailable"}` : "Not checked in"}</span></div>
                             </Card>
 
                             {/* Tickets card */}
@@ -561,7 +569,7 @@ export default function AttendeeDetailPage() {
                                             Selected
                                         </h3>
                                     </div>
-                                    <Button
+                                    {canManageAttendees && <Button
                                         variant="ghost"
                                         size="sm"
                                         className="text-muted-foreground"
@@ -572,7 +580,7 @@ export default function AttendeeDetailPage() {
                                         }}
                                     >
                                         Change
-                                    </Button>
+                                    </Button>}
                                 </div>
                                 <div className="flex flex-col gap-3">
                                     {registration.tickets.length === 0 ? (
@@ -619,7 +627,7 @@ export default function AttendeeDetailPage() {
                                         </h3>
                                     </div>
                                     <div className="flex rounded-md border overflow-hidden text-[12px]">
-                                        {(["all", "events", "emails"] as const).map((tab) => (
+                                        {(["all", "events", ...(canManageAttendees ? ["emails"] : [])] as const).map((tab) => (
                                             <button
                                                 key={tab}
                                                 type="button"
@@ -653,6 +661,22 @@ export default function AttendeeDetailPage() {
                     </div>
                 </>
             )}
+
+            {/* Manual check-in confirmation */}
+            <AlertDialog open={checkInDialogOpen} onOpenChange={setCheckInDialogOpen}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Check in {name}?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This marks the attendee as present. {eventQuery.data ? `The event starts at ${formatInEventZone(eventQuery.data.startsAt, eventQuery.data.timeZone, "HH:mm zzz")} (${eventQuery.data.timeZone}).` : "The event start time is loading."} {earlyArrivalWarning && "The event starts within 30 minutes; early check-in is allowed for crew."}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isCheckingIn}>Cancel</AlertDialogCancel>
+                        <Button onClick={handleCheckInConfirm} disabled={isCheckingIn}>{isCheckingIn ? "Checking in…" : "Confirm check-in"}</Button>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             {/* Cancel dialog */}
             <AlertDialog
@@ -812,6 +836,12 @@ const kindMeta: Record<
         bgClass: "bg-amber-50",
         borderClass: "border-amber-200",
         Icon: ArrowRightLeft,
+    },
+    checkedin: {
+        color: "text-emerald-600",
+        bgClass: "bg-emerald-50",
+        borderClass: "border-emerald-200",
+        Icon: CheckCircle,
     },
     email: {
         color: "text-muted-foreground",
